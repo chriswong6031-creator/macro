@@ -50,7 +50,11 @@ _DATA_SYM_RE = re.compile(r'data-sym="([^"]+)"')
 
 # CORE live universe — always fetched even if no page links them yet. Drives the
 # landing Market clock rows + dashboard index/futures tiles. All keyless via Yahoo.
-US_INDEXES = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX"]
+# ^IRX/^FVX/^TNX/^TYX are Yahoo YIELD indexes quoting 10x the yield percent
+# (^TNX 46.92 = 4.692%). All four tenors are needed for a curve read — a 10y
+# alone cannot say whether a move was a steepener or a flattener.
+US_INDEXES = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX",
+              "^IRX", "^FVX", "^TNX", "^TYX"]
 US_FUTURES = ["ES=F", "NQ=F", "YM=F", "RTY=F"]              # overnight, reference only
 INTL_INDEXES = [
     "^HSI",        # Hang Seng (Hong Kong)
@@ -95,6 +99,8 @@ CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
 DISPLAY_SYMBOLS = [
     "SPY", "QQQ", "^DJI", "^RUT",            # macro market strip (DJI/RUT tiles carry data-sym ^DJI/^RUT)
     *TAPE_SYMBOLS,                            # six-instrument macro tape
+    "^IRX", "^FVX", "^TYX",                  # curve tenors (with ^TNX above) — brain market packet CURVE/FLAGS
+    "^VIX",                                   # vol row for the brain packet TAPE line
     "000001.SS", "510300.SS", "^HSI",        # china page live strip
     "BTC-USD",                               # Bitcoin Vector header (24/7)
     "GC=F", "SI=F", "HG=F", "CL=F", "BZ=F",  # commodities strip (DXY is in the tape above)

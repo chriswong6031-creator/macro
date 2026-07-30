@@ -1,0 +1,790 @@
+"""Tests for engine/neuralweb/brain_market_intel.py — the Mastermind retrieval pair.
+
+All offline: stdlib only, no network, no LLM, no API key, no gateway import.
+
+TWO DELIBERATE ISOLATIONS, both guarding documented house traps:
+
+  1. THE CLOCK IS FROZEN AND THREADED. Every fixture timestamp is derived from
+     `NOW` and passed to the function under test as `now=NOW`. Fixtures with
+     hard-coded ISO dates aged against the wall clock have detonated twice here
+     as scheduled CI reds (see scripts/marketing_fastlane_daemon._merge_wires_window
+     and tests/test_marketing_press_copy.py); a relative-to-NOW fixture cannot.
+
+  2. THE HOST RUNG OF THE PATH LADDER IS NEUTRALISED. /var/lib/macro-live/public/live
+     genuinely exists on the VPS and may exist on a self-hosted runner, so a test
+     that let the ladder fall through to it would read PRODUCTION wires and pass
+     or fail depending on which machine ran it. The autouse fixture repoints that
+     constant at a nonexistent path and clears MACRO_LIVE_DIR, so every test pins
+     repo-relative behaviour only.
+
+Coverage:
+   1-8   live wire: salience/recency ordering, window filter, limit clamp, symbol
+         preference + backfill, ticker-list matching, word boundaries, zh passthrough,
+         unparseable ts skipped
+   9-10  path ladder: MACRO_LIVE_DIR wins; fallback used when the live dir is empty
+  11-14  merge: nightly top-up, cross-source dedupe, notes, `rejected` never served
+  15-16  TI-R5 OUTPUT WHITELIST — the epistemics law, pinned mechanically
+  17-25  research search: scoring, recency decay, top_pick, truncation, short query,
+         corrupt/missing catalog, real-catalog smoke
+  26-27  tool schemas
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+import sys
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
+from engine.neuralweb import brain_market_intel as bmi  # noqa: E402
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+# The one instant this whole module lives at.
+NOW = datetime(2026, 7, 29, 15, 0, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_ladder(monkeypatch):
+    """Make the path ladder host-independent (see this module's docstring)."""
+    monkeypatch.delenv("MACRO_LIVE_DIR", raising=False)
+    monkeypatch.setattr(bmi, "_VPS_LIVE_DIR", "/nonexistent/macro-live/public/live")
+
+
+# --------------------------------------------------------------------------- #
+# Fixture builders — every timestamp is relative to NOW
+# --------------------------------------------------------------------------- #
+def _ago(hours: float) -> str:
+    """ISO stamp `hours` before NOW, in the wire's "…Z" form."""
+    return (NOW - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _days_ago(days: float) -> str:
+    """ISO stamp `days` before NOW (research vault's published_at form)."""
+    return (NOW - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _wire(iid: str, headline: str, hours_ago: float = 1.0, **over) -> dict:
+    """One wires.v1 rail item, shaped like engine/marketing/press_lane._build_rail_item."""
+    item = {
+        "id": iid,
+        "ts": _ago(hours_ago),
+        "class": "policy",
+        "label_en": "Washington",
+        "label_zh": "政策",
+        "register": "markets",
+        "en": headline,
+        "attribution": "",
+        "corroboration": "reports",
+    }
+    item.update(over)
+    return item
+
+
+def _write_wires(directory: pathlib.Path, items: list[dict], *, bare_list: bool = False) -> None:
+    """Publish a wires.json payload into `directory` (dict form, or a bare list)."""
+    directory.mkdir(parents=True, exist_ok=True)
+    payload = items if bare_list else {
+        "schema": "wires.v1",
+        "updated_at": _ago(0),
+        "items": items,
+    }
+    (directory / "wires.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _write_nightly(
+    root: pathlib.Path,
+    *,
+    headlines: list[dict] | None = None,
+    market: list[dict] | None = None,
+    rejected: list[dict] | None = None,
+    by_ticker: dict | None = None,
+) -> None:
+    """Write site/news/macro.json + site/news/financial.json in their real shapes."""
+    news = root / "site" / "news"
+    news.mkdir(parents=True, exist_ok=True)
+    (news / "macro.json").write_text(json.dumps({
+        "schema": "macro_news.v1",
+        "fetched_at": _ago(0),
+        "headlines": headlines or [],
+        "rejected": rejected or [],
+    }), encoding="utf-8")
+    (news / "financial.json").write_text(json.dumps({
+        "schema": "financial_news.v1",
+        "fetched_at": _ago(0),
+        "market": market or [],
+        "by_ticker": by_ticker or {},
+    }), encoding="utf-8")
+
+
+def _nightly_item(title: str, hours_ago: float = 1.0, **over) -> dict:
+    """One site/news item (macro `headlines` / financial `market` shape)."""
+    item = {
+        "title": title,
+        "url": "https://example.com/x",
+        "domain": "example.com",
+        "seendate": _ago(hours_ago),
+        "importance_score": 70,
+        "tickers": [],
+    }
+    item.update(over)
+    return item
+
+
+def _events(root, **kw) -> list[dict]:
+    """get_market_events at the frozen clock, returning just the event list."""
+    return bmi.get_market_events(root, now=NOW, **kw)["events"]
+
+
+# --------------------------------------------------------------------------- #
+# 1-8  Live wire behaviour
+# --------------------------------------------------------------------------- #
+def test_wire_orders_by_salience_then_recency(tmp_path):
+    """Salience desc first; among equal (or absent) salience, newest first."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("a", "Middling item", hours_ago=1, salience=50),
+        _wire("b", "Top item", hours_ago=5, salience=90),
+        _wire("c", "Second item", hours_ago=3, salience=70),
+    ])
+    assert [e["headline"] for e in _events(tmp_path)] == [
+        "Top item", "Second item", "Middling item",
+    ]
+
+
+def test_unscored_wire_items_rank_by_recency_after_scored_ones(tmp_path):
+    """The published rail carries NO `salience` (it lives on the daemon's scored
+    item), so this is the ordinary production path: rank by ts, and never invent
+    a score — the emitted salience stays None."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("a", "Older unscored", hours_ago=4),
+        _wire("b", "Newer unscored", hours_ago=1),
+        _wire("c", "Scored", hours_ago=9, salience=10),
+    ])
+    events = _events(tmp_path)
+    assert [e["headline"] for e in events] == ["Scored", "Newer unscored", "Older unscored"]
+    assert events[1]["salience"] is None and events[2]["salience"] is None
+
+
+def test_window_filters_out_stale_wire_items(tmp_path):
+    """An item older than window_h is dropped, not shown as current."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("fresh", "Two hours old", hours_ago=2),
+        _wire("stale", "Thirty hours old", hours_ago=30),
+    ])
+    assert [e["headline"] for e in _events(tmp_path, window_h=12)] == ["Two hours old"]
+    # Widening the window admits it — the filter is the window, not a hidden cap.
+    assert len(_events(tmp_path, window_h=48)) == 2
+
+
+def test_limit_is_clamped_to_the_documented_bounds(tmp_path):
+    """1..10, and unusable input falls back to the default rather than raising."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire(f"i{n}", f"Item {n}", hours_ago=1 + n * 0.1) for n in range(12)
+    ])
+    assert len(_events(tmp_path, limit=3)) == 3
+    assert len(_events(tmp_path, limit=99)) == 10      # capped at 10
+    assert len(_events(tmp_path, limit=0)) == 1        # floored at 1
+    assert len(_events(tmp_path, limit="nonsense")) == 5   # default
+
+
+def test_window_h_is_clamped_too(tmp_path):
+    """window_h outside 1..48 clamps; the returned window_h reports what was USED."""
+    _write_wires(tmp_path / "site" / "live", [_wire("a", "Item", hours_ago=1)])
+    assert bmi.get_market_events(tmp_path, window_h=500, now=NOW)["window_h"] == 48.0
+    assert bmi.get_market_events(tmp_path, window_h=0.1, now=NOW)["window_h"] == 1.0
+    assert bmi.get_market_events(tmp_path, window_h=None, now=NOW)["window_h"] == 12.0
+
+
+def test_symbol_prefers_matching_items_then_backfills(tmp_path):
+    """A symbol reorders — it never truncates to nothing. A quiet ticker still
+    returns the broad tape, which is the honest answer to 'what about NVDA'."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("g1", "General macro item one", hours_ago=1, salience=95),
+        _wire("g2", "General macro item two", hours_ago=2, salience=94),
+        _wire("m1", "NVDA lifts its outlook", hours_ago=6, salience=10),
+        _wire("g3", "General macro item three", hours_ago=3, salience=93),
+    ])
+    events = _events(tmp_path, limit=3, symbol="NVDA")
+    assert events[0]["headline"] == "NVDA lifts its outlook", "match leads despite low salience"
+    assert len(events) == 3, "general items backfill to the limit"
+    assert [e["headline"] for e in events[1:]] == [
+        "General macro item one", "General macro item two",
+    ]
+
+
+def test_symbol_matches_the_ticker_list_not_only_the_text(tmp_path):
+    """The brief's contract is text OR tickers; the ticker list is the only signal
+    when the headline names the company but not the symbol."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("g", "Broad tape moves", hours_ago=1, salience=99),
+        _wire("m", "Apple ships a new laptop", hours_ago=8, salience=1, tickers=["AAPL"]),
+    ])
+    assert _events(tmp_path, limit=2, symbol="AAPL")[0]["headline"] == "Apple ships a new laptop"
+
+
+@pytest.mark.parametrize(
+    "symbol, decoy, real",
+    [
+        ("BA", "BABA earnings beat", "BA wins a defense contract"),
+        ("C", "CPI prints hot", "C reports earnings"),
+    ],
+)
+def test_symbol_matching_respects_word_boundaries(tmp_path, symbol, decoy, real):
+    """'BA' must not hit 'BABA' and 'C' must not hit 'CPI' — a substring match
+    would silently mis-attribute every headline to a short ticker.
+
+    The decoy is the NEWER item, so it would lead on recency alone; the genuine
+    match must still be promoted past it. That ordering is what makes this test
+    bite — asserting 'order unchanged' would pass even if both items matched.
+    """
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("decoy", decoy, hours_ago=1),
+        _wire("real", real, hours_ago=5),
+    ])
+    events = _events(tmp_path, symbol=symbol)
+    assert [e["headline"] for e in events] == [real, decoy], (
+        f"{symbol!r} matched the decoy {decoy!r} as a substring"
+    )
+
+
+def test_zh_passes_through_and_is_absent_when_untranslated(tmp_path):
+    """An untranslated item must NOT carry headline_zh — the rail's own honest
+    disclosure rule (英文原文), never English passed off as translated."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("t", "Fed holds rates steady", hours_ago=1, salience=90, zh="美联储维持利率不变"),
+        _wire("u", "Dollar slips", hours_ago=2, salience=80),
+    ])
+    translated, plain = _events(tmp_path)
+    assert translated["headline_zh"] == "美联储维持利率不变"
+    assert "headline_zh" not in plain
+
+
+def test_unparseable_ts_is_skipped(tmp_path):
+    """An event with no trustworthy timestamp cannot be placed in a freshness
+    window, and guessing one would be inventing a fact."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("ok", "Parseable", hours_ago=1),
+        _wire("bad", "Garbage stamp", ts="not-a-date"),
+        _wire("empty", "Blank stamp", ts=""),
+        _wire("none", "Null stamp", ts=None),
+    ])
+    assert [e["headline"] for e in _events(tmp_path)] == ["Parseable"]
+
+
+def test_a_bare_top_level_list_payload_is_accepted(tmp_path):
+    """Defensive shape handling: dev/ad-hoc files are sometimes a bare list."""
+    _write_wires(tmp_path / "site" / "live", [_wire("a", "Bare list item")], bare_list=True)
+    assert [e["headline"] for e in _events(tmp_path)] == ["Bare list item"]
+
+
+# --------------------------------------------------------------------------- #
+# 9-10  Path ladder
+# --------------------------------------------------------------------------- #
+def test_env_macro_live_dir_wins_over_repo_paths(tmp_path, monkeypatch):
+    """MACRO_LIVE_DIR is the top rung: the deployed host's live dir must beat a
+    stale repo copy, matching scripts/notify_turn_events.py:93."""
+    live = tmp_path / "hostlive"
+    _write_wires(live, [_wire("env", "From the env dir")])
+    _write_wires(tmp_path / "site" / "live", [_wire("repo", "From site/live")])
+    monkeypatch.setenv("MACRO_LIVE_DIR", str(live))
+
+    assert bmi._resolve_wires_path(tmp_path) == live / "wires.json"
+    assert [e["headline"] for e in _events(tmp_path)] == ["From the env dir"]
+
+
+def test_fallback_file_is_used_when_the_live_dir_is_empty(tmp_path, monkeypatch):
+    """A present-but-EMPTY live dir must fall through, not blank the read.
+
+    This is where a reader must diverge from the daemon's writer ladder
+    (_wires_sink_target picks the first candidate whose PARENT exists): on a dev
+    box the live dir exists and is empty while the gitignored dev sink under
+    data/marketing/press/ holds the real window.
+    """
+    empty_live = tmp_path / "hostlive"
+    empty_live.mkdir(parents=True)
+    monkeypatch.setenv("MACRO_LIVE_DIR", str(empty_live))
+    _write_wires(tmp_path / "data" / "marketing" / "press", [_wire("dev", "From the dev sink")])
+
+    assert bmi._resolve_wires_path(tmp_path) == tmp_path / "data/marketing/press/wires.json"
+    assert [e["headline"] for e in _events(tmp_path)] == ["From the dev sink"]
+
+
+def test_site_live_outranks_the_dev_sink(tmp_path):
+    """Ladder order between the two repo-relative rungs."""
+    _write_wires(tmp_path / "site" / "live", [_wire("s", "From site/live")])
+    _write_wires(tmp_path / "data" / "marketing" / "press", [_wire("d", "From the dev sink")])
+    assert [e["headline"] for e in _events(tmp_path)] == ["From site/live"]
+
+
+def test_no_wire_anywhere_resolves_to_none_and_never_raises(tmp_path):
+    assert bmi._resolve_wires_path(tmp_path) is None
+    result = bmi.get_market_events(tmp_path, now=NOW)
+    assert result["events"] == [] and result["note"] == "no fresh events in window"
+
+
+def test_corrupt_wire_json_degrades_to_the_nightly(tmp_path):
+    """Corrupt live artifact must not take the turn down — it falls to the digest."""
+    live = tmp_path / "site" / "live"
+    live.mkdir(parents=True)
+    (live / "wires.json").write_text("{not json", encoding="utf-8")
+    _write_nightly(tmp_path, headlines=[_nightly_item("Nightly still works")])
+
+    result = bmi.get_market_events(tmp_path, now=NOW)
+    assert [e["headline"] for e in result["events"]] == ["Nightly still works"]
+    assert result["note"] == "nightly digest only"
+
+
+# --------------------------------------------------------------------------- #
+# 11-14  Merge, dedupe, notes
+# --------------------------------------------------------------------------- #
+def test_nightly_tops_up_a_thin_wire(tmp_path):
+    """Ordering is SOURCE-MAJOR: the wire's items first, then the top-up. The two
+    pools are never sorted against each other — press salience and the news
+    desk's importance score share a 0..100 range and nothing else."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("w1", "Wire item one", hours_ago=4, salience=20),
+        _wire("w2", "Wire item two", hours_ago=5, salience=10),
+    ])
+    _write_nightly(
+        tmp_path,
+        headlines=[_nightly_item("Macro digest item", hours_ago=1, importance_score=99)],
+        market=[_nightly_item("Financial digest item", hours_ago=2, quality=100)],
+    )
+    events = _events(tmp_path, limit=5)
+    assert [e["source_kind"] for e in events] == [
+        "live_wire", "live_wire", "nightly", "nightly",
+    ]
+    assert [e["headline"] for e in events[:2]] == ["Wire item one", "Wire item two"]
+    assert {e["headline"] for e in events[2:]} == {"Macro digest item", "Financial digest item"}
+    # The digest's 99/100 desk scores do NOT outrank a salience-20 wire item:
+    # source-major ordering is what stops that cross-pool comparison happening.
+    assert events[0]["salience"] == 20.0
+
+
+def test_nightly_is_not_even_read_when_the_wire_fills_the_limit(tmp_path, monkeypatch):
+    """"Only to top up" is literal — the digest files are not opened at all.
+
+    Asserted with a SPY, not by inspecting the output: source-major ordering means
+    a needlessly-merged digest item gets truncated away anyway, so an output-only
+    assertion passes whether or not the guard exists. (Verified by mutation: making
+    the merge unconditional left every output assertion green.)
+    """
+    calls: list[tuple] = []
+    real = bmi._collect_nightly_events
+    monkeypatch.setattr(
+        bmi, "_collect_nightly_events",
+        lambda root, cutoff: (calls.append((root, cutoff)), real(root, cutoff))[1],
+    )
+    _write_wires(tmp_path / "site" / "live", [
+        _wire(f"w{n}", f"Wire item {n}", hours_ago=1 + n * 0.1) for n in range(3)
+    ])
+    _write_nightly(tmp_path, headlines=[_nightly_item("Should not appear", importance_score=100)])
+
+    events = _events(tmp_path, limit=3)
+    assert calls == [], "the digest was read despite a full wire"
+    assert all(e["source_kind"] == "live_wire" for e in events)
+    assert "Should not appear" not in {e["headline"] for e in events}
+
+    # …and it IS read when the wire comes up short.
+    assert len(_events(tmp_path, limit=5)) == 4 and len(calls) == 1
+
+
+def test_a_nightly_twin_of_a_wire_story_is_deduped(tmp_path):
+    """press_lane composes rail text as '<headline> -- <attribution> · <stamp>',
+    so the tails must come off for the dedupe key or the same story shows twice."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("w", "Fed holds rates steady -- Reuters · SPY +0.3%", hours_ago=1),
+    ])
+    _write_nightly(tmp_path, headlines=[
+        _nightly_item("Fed holds rates steady", hours_ago=2),
+        _nightly_item("Dollar slips after the decision", hours_ago=3),
+    ])
+    events = _events(tmp_path, limit=5)
+    assert len(events) == 2, "the twin was deduped"
+    assert events[0]["source_kind"] == "live_wire", "the wire copy wins (chip + zh + composed text)"
+    assert events[0]["headline"].startswith("Fed holds rates steady -- Reuters")
+    assert events[1]["headline"] == "Dollar slips after the decision"
+
+
+def test_notes_report_which_source_actually_answered(tmp_path):
+    """Three states, three honest notes."""
+    assert bmi.get_market_events(tmp_path, now=NOW)["note"] == "no fresh events in window"
+
+    _write_nightly(tmp_path, headlines=[_nightly_item("Digest only")])
+    assert bmi.get_market_events(tmp_path, now=NOW)["note"] == "nightly digest only"
+
+    _write_wires(tmp_path / "site" / "live", [_wire("w", "Wire is up")])
+    assert bmi.get_market_events(tmp_path, now=NOW)["note"] == "live wire"
+
+
+def test_stale_nightly_digest_is_not_served_as_current(tmp_path):
+    """The window binds the digest too — a day-old macro.json must not answer
+    'what happened today' just because it is the only file present."""
+    _write_nightly(tmp_path, headlines=[_nightly_item("Yesterday's news", hours_ago=30)])
+    result = bmi.get_market_events(tmp_path, window_h=12, now=NOW)
+    assert result["events"] == [] and result["note"] == "no fresh events in window"
+
+
+def test_rejected_headlines_are_never_returned(tmp_path):
+    """site/news/*.json also carries a `rejected` list — headlines the desk
+    filtered OUT. Serving those would present rejected material as news, which is
+    why the container keys are a whitelist rather than 'every list-valued key'."""
+    _write_nightly(
+        tmp_path,
+        headlines=[],
+        rejected=[_nightly_item("Rejected junk headline", hours_ago=1)],
+    )
+    assert _events(tmp_path) == []
+
+
+def test_financial_by_ticker_bucket_is_read(tmp_path):
+    """financial.json keeps per-ticker items in a dict-of-lists bucket; a symbol
+    question is exactly where those matter."""
+    _write_nightly(tmp_path, by_ticker={"NVDA": [_nightly_item("NVDA guidance raised", hours_ago=1)]})
+    assert [e["headline"] for e in _events(tmp_path, symbol="NVDA")] == ["NVDA guidance raised"]
+
+
+def test_nightly_items_carry_no_manufactured_corroboration(tmp_path):
+    """The digest makes no corroboration decision, so the field is None — never a
+    fabricated 'reports' chip that would imply a sourcing judgement we never made."""
+    _write_nightly(tmp_path, headlines=[_nightly_item("Digest item")])
+    assert _events(tmp_path)[0]["corroboration"] is None
+
+
+# --------------------------------------------------------------------------- #
+# 15-16  TI-R5 output whitelist — the epistemics law, pinned mechanically
+# --------------------------------------------------------------------------- #
+def test_event_items_carry_exactly_the_documented_keys(tmp_path):
+    """Every event key is in EVENT_FIELDS, and every required field is present.
+
+    This is the mechanical form of the module's epistemics law: the output is a
+    whitelist, so no upstream field can reach the model's context without an
+    edit here.
+    """
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("t", "Translated item", hours_ago=1, salience=90, zh="翻译"),
+        _wire("p", "Plain item", hours_ago=2),
+    ])
+    _write_nightly(tmp_path, headlines=[_nightly_item("Digest item", hours_ago=3)])
+
+    events = _events(tmp_path, limit=10)
+    assert len(events) == 3
+    for event in events:
+        extra = set(event) - set(bmi.EVENT_FIELDS)
+        assert not extra, f"undocumented output field(s): {sorted(extra)}"
+        missing = set(bmi.EVENT_FIELDS_REQUIRED) - set(event)
+        assert not missing, f"missing required field(s): {sorted(missing)}"
+
+
+def test_forbidden_effect_fields_never_reach_the_output(tmp_path):
+    """TI-R5 / A7: no predicted effect, no beneficiary or casualty list, no
+    invented probability — NOT EVEN IF an upstream lane starts publishing them.
+
+    The shock→beneficiary/'shelter' map is a standing house KILL
+    (research/DO_NOT_REBUILD.md §1). This test feeds every forbidden shape
+    through the reader and asserts none of it survives the projection.
+    """
+    poisoned = _wire("x", "Tariffs raised on imports", hours_ago=1, salience=88)
+    poisoned.update({
+        "beneficiaries": ["XLU", "GLD"],
+        "casualties": ["XLK"],
+        "shelter": "gold",
+        "probability": 0.72,
+        "expected_move": 1.4,
+        "predicted_effect": "semis sell off",
+        "front_run": True,
+        "impact_score": 9,
+    })
+    _write_wires(tmp_path / "site" / "live", [poisoned])
+
+    result = bmi.get_market_events(tmp_path, now=NOW)
+    event = result["events"][0]
+    assert event["headline"] == "Tariffs raised on imports", "the FACT still comes through"
+    for banned in ("beneficiaries", "casualties", "shelter", "probability",
+                   "expected_move", "predicted_effect", "front_run", "impact_score"):
+        assert banned not in event, f"{banned} leaked into the output"
+
+    # Belt and braces: none of the forbidden VALUES appear anywhere in the payload,
+    # so nothing slipped through under a different key either.
+    blob = json.dumps(result, ensure_ascii=False)
+    for value in ("XLU", "GLD", "XLK", "gold", "0.72", "semis sell off"):
+        assert value not in blob, f"forbidden value {value!r} survived projection"
+
+
+# --------------------------------------------------------------------------- #
+# 17-25  Research-vault search
+# --------------------------------------------------------------------------- #
+def _catalog(root: pathlib.Path, items: list[dict]) -> None:
+    """Write a research_vault.catalog.v1 file."""
+    directory = root / "data" / "research_vault"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "catalog.json").write_text(json.dumps({
+        "schema": "research_vault.catalog.v1",
+        "generated_at": _ago(0),
+        "count": len(items),
+        "items": items,
+    }), encoding="utf-8")
+
+
+def _note(iid: str, title: str, *, days: float = 0.0, points=(), institution="Citi",
+          top_pick=False, side="sell") -> dict:
+    """One catalog item in its committed shape."""
+    return {
+        "id": iid,
+        "title": title,
+        "institution": institution,
+        "side": side,
+        "desk": "",
+        "published_at": _days_ago(days),
+        "summary_points": list(points),
+        "tags": [],
+        "tickers": [],
+        "top_pick": top_pick,
+        "pages": 9,
+        "language": "en",
+    }
+
+
+def _search(root, query, **kw) -> dict:
+    return bmi.search_research(root, query, now=NOW, **kw)
+
+
+def test_a_title_hit_outranks_a_summary_hit(tmp_path):
+    """3.0 per title token vs 1.5 per summary token, same date → title wins."""
+    _catalog(tmp_path, [
+        _note("s", "Unrelated Wrapper Note", points=["momentum crowding is extreme"]),
+        _note("t", "Momentum Crowding Risk", points=["nothing relevant here"]),
+    ])
+    results = _search(tmp_path, "momentum crowding")["results"]
+    assert [r["id"] for r in results] == ["t", "s"]
+
+
+def test_recency_decay_demotes_a_stale_exact_match(tmp_path):
+    """Explicitly constructed: a 60-day-old TWO-token title match must lose to a
+    same-day ONE-token title match.
+
+        stale: 2 title hits × 3.0 = 6.0, factor max(0.35, 1-60/45) = 0.35 → 2.10
+        fresh: 1 title hit  × 3.0 = 3.0, factor 1.0                     → 3.00
+    """
+    _catalog(tmp_path, [
+        _note("stale", "Momentum Crowding Unwind", days=60),
+        _note("fresh", "Momentum Only Note", days=0),
+    ])
+    results = _search(tmp_path, "momentum crowding")["results"]
+    assert [r["id"] for r in results] == ["fresh", "stale"], (
+        "the recency factor must outweigh the extra exact-match token"
+    )
+
+
+def test_recency_factor_floors_at_035_and_never_goes_negative(tmp_path):
+    """A very old note is demoted, never erased or negated (a negative factor
+    would invert the ranking and put the oldest research on top)."""
+    assert bmi._recency_factor(_days_ago(0), NOW) == pytest.approx(1.0)
+    assert bmi._recency_factor(_days_ago(45), NOW) == pytest.approx(bmi._RECENCY_FLOOR)
+    assert bmi._recency_factor(_days_ago(4000), NOW) == pytest.approx(bmi._RECENCY_FLOOR)
+    assert bmi._recency_factor(None, NOW) == pytest.approx(bmi._RECENCY_FLOOR)
+    # A future stamp is clock skew, not extra freshness.
+    assert bmi._recency_factor((NOW + timedelta(days=5)).isoformat(), NOW) == pytest.approx(1.0)
+
+
+def test_top_pick_breaks_a_tie(tmp_path):
+    """+1.0, applied to two otherwise identical notes."""
+    _catalog(tmp_path, [
+        _note("plain", "Momentum Crowding Alpha", days=1),
+        _note("picked", "Momentum Crowding Beta", days=1, top_pick=True),
+    ])
+    results = _search(tmp_path, "momentum crowding")["results"]
+    assert [r["id"] for r in results] == ["picked", "plain"]
+    assert results[0]["top_pick"] is True and results[1]["top_pick"] is False
+
+
+def test_top_pick_alone_never_admits_an_irrelevant_note(tmp_path):
+    """The bonus is a tiebreak among relevant research, not a ticket into every
+    result set — otherwise the 8 committed top picks would answer every query."""
+    _catalog(tmp_path, [
+        _note("irrelevant", "Japanese Government Bond Supply", top_pick=True),
+        _note("relevant", "Momentum Crowding Risk"),
+    ])
+    assert [r["id"] for r in _search(tmp_path, "momentum crowding")["results"]] == ["relevant"]
+
+
+def test_an_institution_word_hit_scores(tmp_path):
+    """2.0 for an institution word — 'what does Goldman think' is a real ask."""
+    _catalog(tmp_path, [
+        _note("gs", "Rates Outlook Update", institution="Goldman Sachs"),
+        _note("other", "Rates Outlook Update Two", institution="Nuveen"),
+    ])
+    results = _search(tmp_path, "goldman rates")["results"]
+    assert results[0]["id"] == "gs" and results[0]["institution"] == "Goldman Sachs"
+
+
+def test_summary_points_are_capped_at_four_and_truncated_to_220(tmp_path):
+    _catalog(tmp_path, [
+        _note("long", "Momentum Crowding Deep Dive",
+              points=["A" * 400, "second", "third", "fourth", "fifth", "sixth"]),
+    ])
+    points = _search(tmp_path, "momentum crowding")["results"][0]["summary_points"]
+    assert len(points) == 4, "first four only"
+    assert all(len(p) <= 220 for p in points)
+    assert len(points[0]) == 220 and points[0].endswith("…"), (
+        "the ellipsis is inside the budget — a 221-char result would break a "
+        "caller sizing a context window off the documented cap"
+    )
+    assert points[1:] == ["second", "third", "fourth"]
+
+
+def test_result_items_carry_the_documented_keys(tmp_path):
+    _catalog(tmp_path, [_note("r", "Momentum Crowding Risk", points=["p1"])])
+    result = _search(tmp_path, "momentum crowding")
+    assert set(result) == {"query", "results", "count_scanned", "note"}
+    assert set(result["results"][0]) == {
+        "id", "title", "institution", "side", "published_at", "summary_points", "top_pick",
+    }
+    assert result["count_scanned"] == 1
+    assert "third-party" in result["note"] and "not the desk's own signals" in result["note"]
+
+
+def test_limit_is_clamped_to_one_through_eight(tmp_path):
+    _catalog(tmp_path, [_note(f"n{i}", f"Momentum Crowding Note {i}") for i in range(10)])
+    assert len(_search(tmp_path, "momentum crowding", limit=3)["results"]) == 3
+    assert len(_search(tmp_path, "momentum crowding", limit=99)["results"]) == 8
+    assert len(_search(tmp_path, "momentum crowding", limit=0)["results"]) == 1
+    assert len(_search(tmp_path, "momentum crowding", limit=None)["results"]) == 5
+
+
+def test_a_short_query_says_so_rather_than_faking_a_search(tmp_path):
+    """One bare token against hundreds of notes ranks essentially by recency and
+    would read as a search that worked."""
+    _catalog(tmp_path, [_note("r", "Momentum Crowding Risk")])
+    for query in ("momentum", "", "   ", "a", None):
+        result = _search(tmp_path, query)
+        assert result["results"] == [] and result["note"] == "query too short", query
+
+
+def test_qualified_tickers_survive_tokenisation(tmp_path):
+    """Splitting on non-alnum would shred 600036.SH into '600036' + 'sh'."""
+    assert "600036.sh" in bmi._tokenize("600036.SH outlook")
+    _catalog(tmp_path, [_note("cn", "600036.SH Deposit Repricing Outlook")])
+    assert _search(tmp_path, "600036.SH outlook")["results"][0]["id"] == "cn"
+
+
+def test_a_repeated_query_word_does_not_buy_a_double_weight(tmp_path):
+    """Distinct-token counting: 'momentum momentum crowding' must score exactly as
+    'momentum crowding', or a user could inflate a match by repeating himself."""
+    items = [_note("a", "Momentum Crowding Risk"), _note("b", "Momentum Only")]
+    _catalog(tmp_path, items)
+    once = [r["id"] for r in _search(tmp_path, "momentum crowding")["results"]]
+    twice = [r["id"] for r in _search(tmp_path, "momentum momentum crowding")["results"]]
+    assert once == twice
+
+
+def test_a_corrupt_catalog_reports_unavailable_and_never_raises(tmp_path):
+    directory = tmp_path / "data" / "research_vault"
+    directory.mkdir(parents=True)
+    (directory / "catalog.json").write_text("{not json", encoding="utf-8")
+    result = _search(tmp_path, "hedge fund momentum")
+    assert result["results"] == [] and result["note"] == "research vault unavailable"
+
+
+def test_a_missing_catalog_reports_unavailable(tmp_path):
+    result = _search(tmp_path, "hedge fund momentum")
+    assert result["results"] == [] and result["note"] == "research vault unavailable"
+
+
+def test_an_unexpected_container_shape_reports_unavailable(tmp_path):
+    """Valid JSON, wrong shape — the same honest answer, not a crash."""
+    directory = tmp_path / "data" / "research_vault"
+    directory.mkdir(parents=True)
+    (directory / "catalog.json").write_text('{"schema": "x", "items": "not a list"}', encoding="utf-8")
+    assert _search(tmp_path, "hedge fund momentum")["note"] == "research vault unavailable"
+
+
+def test_no_match_is_not_the_same_as_no_vault(tmp_path):
+    """An empty result over a HEALTHY vault keeps the third-party note, so the
+    model can say 'the vault has nothing on this' rather than 'it is broken'."""
+    _catalog(tmp_path, [_note("r", "Japanese Government Bond Supply")])
+    result = _search(tmp_path, "momentum crowding")
+    assert result["results"] == []
+    assert result["note"] != "research vault unavailable"
+    assert result["count_scanned"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# Smoke test against the REAL committed catalog
+# --------------------------------------------------------------------------- #
+@pytest.mark.skipif(
+    not (ROOT / "data" / "research_vault" / "catalog.json").exists(),
+    reason="data/research_vault/catalog.json not present in this checkout",
+)
+def test_real_catalog_search_returns_usable_results():
+    """The committed vault (~346 institutional notes), searched at the WALL clock
+    on purpose: this is the one test that proves the function works against real
+    data as it ages, so it must not be pinned to NOW."""
+    result = bmi.search_research(ROOT, "hedge fund momentum")
+    assert result["count_scanned"] > 100, "the real catalog was scanned"
+    assert result["results"], "a plain thematic query must return something"
+    top = result["results"][0]
+    assert top["title"] and isinstance(top["title"], str)
+    assert top["summary_points"] and all(p.strip() for p in top["summary_points"])
+    assert all(len(p) <= 220 for r in result["results"] for p in r["summary_points"])
+    assert len(result["results"]) <= 5
+
+
+@pytest.mark.skipif(
+    not (ROOT / "site" / "news" / "macro.json").exists(),
+    reason="site/news/macro.json not present in this checkout",
+)
+def test_real_repo_events_read_never_raises():
+    """get_market_events against the real checkout: whatever the freshness of the
+    committed digests, it returns a well-formed envelope with an honest note."""
+    result = bmi.get_market_events(ROOT, window_h=48, limit=5)
+    assert set(result) == {"asof", "window_h", "events", "note"}
+    assert result["note"] in {"live wire", "nightly digest only", "no fresh events in window"}
+    for event in result["events"]:
+        assert not set(event) - set(bmi.EVENT_FIELDS)
+
+
+# --------------------------------------------------------------------------- #
+# 26-27  Tool schemas
+# --------------------------------------------------------------------------- #
+def test_events_tool_schema_shape_and_bounds():
+    schema = bmi.EVENTS_TOOL_SCHEMA
+    assert schema["name"] == "get_market_events"
+    props = schema["input_schema"]["properties"]
+    assert schema["input_schema"]["type"] == "object"
+    assert set(props) == {"window_h", "limit", "symbol"}
+    assert props["window_h"]["type"] == "number"
+    assert props["limit"]["type"] == "integer"
+    assert props["symbol"]["type"] == "string"
+    assert schema["input_schema"]["required"] == [], "every argument is optional"
+    # The bounds the code enforces must be the bounds the model is told.
+    assert "1..48" in props["window_h"]["description"] and "default 12" in props["window_h"]["description"]
+    assert "1..10" in props["limit"]["description"] and "default 5" in props["limit"]["description"]
+    # WHEN to call, and the epistemics fence.
+    description = schema["description"]
+    assert "why is the market moving" in description
+    assert "FACTS ONLY" in description
+    assert "beneficiary" in description, "the TI-R5 fence is stated to the model too"
+
+
+def test_research_tool_schema_shape_and_attribution_instruction():
+    schema = bmi.RESEARCH_TOOL_SCHEMA
+    assert schema["name"] == "search_research"
+    props = schema["input_schema"]["properties"]
+    assert set(props) == {"query", "limit"}
+    assert props["query"]["type"] == "string" and props["limit"]["type"] == "integer"
+    assert schema["input_schema"]["required"] == ["query"]
+    assert "1..8" in props["limit"]["description"] and "default 5" in props["limit"]["description"]
+    description = schema["description"]
+    assert "third-party" in description
+    assert "institution" in description, "views must be attributed, never absorbed"
+    assert "never present" in description
+
+
+def test_both_schemas_are_json_serialisable():
+    """They are handed to the Anthropic SDK verbatim."""
+    for schema in (bmi.EVENTS_TOOL_SCHEMA, bmi.RESEARCH_TOOL_SCHEMA):
+        assert json.loads(json.dumps(schema)) == schema

@@ -22,7 +22,10 @@ def test_yahoo_batch_stays_under_the_spark_cliff():
 def test_core_index_and_futures_symbols_always_in_universe(tmp_path):
     uni = blq.build_universe(tmp_path)                 # empty site dir -> CORE only
     for sym in ("^GSPC", "^IXIC", "^DJI", "^VIX", "ES=F", "NQ=F", "^HSI",
-                "000001.SS", "^N225", "GC=F", "EURUSD=X"):
+                "000001.SS", "^N225", "GC=F", "EURUSD=X",
+                # All four Yahoo yield-index tenors: the curve read needs a front
+                # AND a long leg to name a steepener vs a flattener.
+                "^IRX", "^FVX", "^TNX", "^TYX"):
         assert sym in uni, sym
 
 
