@@ -1005,11 +1005,30 @@ jobs:
           # persists data/leader_radar/state_history.parquet + revisions_history.parquet;
           # writes site/leaderradar/radar.json (schema leader_radar.v2).
           # Absent stores → honest nulls. Always exits 0; never breaks the render.
-          # DELIBERATELY absent from the render/engine-render express lanes (vetted
-          # 2026-07-25): the data/ writes are lane-gated and safe, but the bake is not —
-          # pick_lab consumes radar.json fires with no as_of guard, and the payload churns
-          # built_at/elapsed_s per run. See the omission comments in both express lanes;
-          # hardening tracked separately.
+          # ALSO RUNS IN BOTH EXPRESS RENDER LANES at scope=all (#3612, 2026-07-26) —
+          # serial post-band, after spine(). The 2026-07-25 "deliberately absent" verdict
+          # that stood here is DEAD: the two bake-side blockers it named were FIXED in
+          # #3578, not accepted as risks. (1) pick_lab's _load_radar_json
+          # (engine/pick_lab/candidates.py) gates radar.json on as_of ==
+          # data/yahoo/SPY.parquet's data-through — the same anchor this builder derives
+          # as_of from — so a stale express artifact resolves to [] and express-computed
+          # fires can never advance the forward pick ledger. (2) Off-nightly,
+          # built_at/elapsed_s are carried from the committed artifact when the payload is
+          # otherwise byte-identical, so an untouched rebake commits nothing and the
+          # dead-man reading of built_at stays honest. (#3578 also added the rs_series lag
+          # disclosure + the PIT state/fire view caps that make a rebake reproduce the
+          # nightly bake.) data/ writes stay COLLECT_LANE=nightly-gated (HOUSE-U5) and the
+          # express lanes commit site/ ONLY, so this nightly remains the sole advancer of
+          # the radar's forward stores.
+          # LIVE-VERIFICATION: the 22:30 UTC nightly is NOT the only path to a fresh
+          # site/leaderradar/radar.json. render.yml's region_of maps both
+          # scripts/build_leader_radar.py (via scripts/build_*.py) and
+          # templates/leader_radar.html.j2 (via templates/*) to `all`, and one `all`-mapped
+          # dirty file forces scope=all — so a leader-radar change always carries its own
+          # express rebake. engine-render.yml has no scope picker: an engine/** push (e.g.
+          # engine/leader_lifecycle.py) runs with the default scope=all, which calls
+          # leaderradar too. Narrow scopes do NOT call it — an unrelated
+          # scope=china/hk/markets/… render leaves radar.json at its last bake.
           run_py "leader radar (build_leader_radar)" scripts.build_leader_radar
           # Pick Lab nightly runner — AFTER build_stock_board_v2 (producer-core snapshot already
           # written by build_stock_library, which runs inside build_site above). Enriches the
