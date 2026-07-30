@@ -4686,6 +4686,56 @@ function flrGateReasons(loss) {
   </div>`;
 }
 
+/* ---- 6 · WHAT THE AUDITOR PULLED -------------------------------------- */
+/* The batch auditor is the operator's stand-in: it reads a whole desk-day at
+   once and cuts posts that read like a bot, repeat each other, lecture, or say
+   nothing. Showing its counts alone would rebuild the tinted window, so every
+   cut arrives with the post text and the reason. */
+function flrAuditor(a) {
+  if (!a || !a.present) {
+    return `<div class="card"><h3>Batch auditor</h3>
+      <div class="note muted">${esc((a && a.note) || "not run yet")}</div></div>`;
+  }
+  if (a.error) {
+    return `<div class="card"><h3>Batch auditor</h3>
+      <div class="note" style="color:var(--bad)">The audit failed: ${esc(a.error)}.
+      Nothing was cut, so tonight's posts are unaudited.</div></div>`;
+  }
+
+  const reasons = (a.by_reason || []).map(r => `<div class="flr-led-row is-loss">
+    <div class="flr-led-n">${flrN(r.n)}</div>
+    <div class="flr-led-w">${esc(r.word)}</div>
+  </div>`).join("");
+
+  const cuts = (a.cuts || []).slice(0, 12).map(c => `<tr>
+    <td class="sub" style="white-space:nowrap"><b>${esc(c.account || "?")}</b>
+      <div class="note muted">${esc(c.kind || "")}</div></td>
+    <td class="sub">${esc(c.text || "")}</td>
+    <td class="sub" style="white-space:nowrap">
+      ${(c.codes || []).map(x => `<span class="statpill s-warn">${esc(x)}</span>`).join(" ")}
+      ${c.note ? `<div class="note muted">${esc(c.note)}</div>` : ""}</td>
+  </tr>`).join("");
+
+  const notes = Object.entries(a.notes || {}).map(([desk, n]) =>
+    `<div class="note muted"><b>${esc(desk)}:</b> ${esc(n)}</div>`).join("");
+
+  const unaud = a.unaudited
+    ? `<div class="note" style="color:var(--loss);margin-top:6px">${flrN(a.unaudited)} posts
+       could not be audited. Those are unreviewed, not approved.</div>` : "";
+
+  return `<div class="card">
+    <h3>Batch auditor <span class="cnt">${flrN(a.kept)} kept · ${flrN(a.cut)} cut${
+      a.cut_share != null ? ` · ${flrPct(a.cut_share)} of the day` : ""}</span></h3>
+    <div class="note muted" style="margin-bottom:10px">Reads each desk's whole day at once — the only gate that can see one post repeating another. It can cut a post and must say why; it can never rewrite one.</div>
+    ${reasons ? `<div class="flr-led" style="margin-bottom:12px">${reasons}</div>` : ""}
+    ${notes ? `<div style="margin-bottom:10px">${notes}</div>` : ""}
+    ${cuts ? `<table><thead><tr><th>Desk</th><th>The post it pulled</th><th>Why</th></tr></thead>
+      <tbody>${cuts}</tbody></table>` : `<div class="note muted">Nothing cut.</div>`}
+    ${unaud}
+    <div class="note" style="margin-top:9px">${esc(a.verdict || "")}</div>
+  </div>`;
+}
+
 /* ---- THE FLOOR PAGE --------------------------------------------------- */
 RENDER.marketing_floor = async () => {
   const v = $("#view");
@@ -4721,6 +4771,7 @@ RENDER.marketing_floor = async () => {
     ${flrAuthorship(d.authorship)}
     ${flrLedger(d.dispatch_ledger)}
     <div class="section">Why posts were held</div>
+    ${flrAuditor(d.auditor)}
     ${flrGateReasons(d.loss)}
     ${flrCollisions(d.loss)}
     ${flrDeskYield(d.loss)}`;

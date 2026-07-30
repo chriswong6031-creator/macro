@@ -3823,6 +3823,66 @@ def content_plan(
         _copy_mode = "fallback"
 
     # Second reconciliation of `all_items` — the writer's drops land after the
+    # ── Batch auditor (operator 2026-07-30, one-week probation) ──────────────
+    # The last gate, and the only one that reads a whole day at once. Runs AFTER
+    # the copy exists (it judges words, not plans) and BEFORE the surviving-id
+    # reconciliation below, so a cut post leaves the plan the same way every
+    # other drop does.
+    #
+    # D1 ONLY: D1 is the sole day that has ever enqueued, so auditing the
+    # evergreen forward tail would spend calls judging posts that cannot post.
+    #
+    # Per ACCOUNT, because "does this feed read like a bot" is a question about
+    # one timeline. Judging six desks in one window would let a repeat across
+    # two different accounts — which no reader sees — cut a good post.
+    _audit_report: dict[str, Any] = {
+        "ran": False, "kept": 0, "cut": 0, "unaudited": 0, "cuts": [], "notes": {},
+    }
+    try:
+        from engine.marketing import copy_auditor as _auditor  # noqa: PLC0415
+
+        _win = _auditor.window_size(cfg)
+        for _row in account_rows:
+            _aid = str(_row.get("id") or "")
+            _queue = _row.get("queue") or []
+            _d1 = [d for d in _queue if str(d.get("slot") or "").startswith("D1-")]
+            if not _d1:
+                continue
+            _cut_ids: set[str] = set()
+            for _off in range(0, len(_d1), _win):
+                _chunk = _d1[_off:_off + _win]
+                _res = _auditor.audit_batch(
+                    [{"account": _aid, "kind": d.get("type"),
+                      "text": f"{d.get('headline') or ''}\n{d.get('body') or ''}".strip()}
+                     for d in _chunk],
+                    cfg=cfg,
+                )
+                _audit_report["ran"] = _audit_report["ran"] or bool(_res.get("ok"))
+                _audit_report["unaudited"] += int(_res.get("unaudited") or 0)
+                if _res.get("batch_note"):
+                    _audit_report["notes"][_aid] = _res["batch_note"]
+                for _d, _v in zip(_chunk, _res.get("verdicts") or []):
+                    if _v.get("verdict") != "cut":
+                        continue
+                    _cut_ids.add(str(_d.get("id")))
+                    _d["_audit_cut"] = _v.get("codes") or []
+                    _audit_report["cuts"].append({
+                        "id": _d.get("id"), "account": _aid,
+                        "kind": _d.get("type"), "codes": _v.get("codes") or [],
+                        "note": _v.get("note") or "",
+                        "text": f"{_d.get('headline') or ''} {_d.get('body') or ''}".strip()[:280],
+                    })
+            if _cut_ids:
+                _row["queue"] = [d for d in _queue if str(d.get("id")) not in _cut_ids]
+                _audit_report["cut"] += len(_cut_ids)
+        _audit_report["kept"] = sum(
+            1 for r in account_rows for d in (r.get("queue") or [])
+            if str(d.get("slot") or "").startswith("D1-"))
+    except Exception as exc:  # noqa: BLE001 — an auditor must never break a night
+        _audit_report["error"] = f"{type(exc).__name__}: {exc}"
+        print(f"::warning title=marketing-auditor-failed::batch audit did not "
+              f"run: {type(exc).__name__}", flush=True)
+
     # budget's, and both have to be reflected in distinctness() and the summary.
     _surviving_ids = {
         str(it.get("id")) for row in account_rows for it in (row.get("queue") or [])
@@ -3917,6 +3977,11 @@ def content_plan(
                 # count above was the only trace; the feed then read uniform
                 # because half of all watchlist posts were dead signals wearing
                 # proximity copy (operator 2026-07-30).
+                # The batch auditor's day. `cuts` carries the post text with the
+                # reason so the console can show the operator exactly what was
+                # pulled and why — a gate that only prints a count is the tinted
+                # window this whole operation exists to fix.
+                "auditor": _audit_report,
                 "signals_dropped_not_demoted": sum(_signal_gate_drops.values()),
                 "signals_dropped_by_reason": dict(_signal_gate_reasons),
                 "demotable_gate_reasons": sorted(_demotable),

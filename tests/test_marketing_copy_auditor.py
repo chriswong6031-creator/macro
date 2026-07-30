@@ -111,3 +111,55 @@ class TestContract:
         import yaml, pathlib
         cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
         assert "luna" not in ca._audit_cfg(cfg)["codex_source_model"].lower()
+
+
+class TestPlanWiring:
+    """The auditor is the last gate in content_plan. These pin the properties
+    that keep a judge safe inside a publishing path."""
+
+    def test_it_runs_after_copy_and_before_reconciliation(self):
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        audit_at = src.index("from engine.marketing import copy_auditor as _auditor")
+        # There are TWO reconciliation blocks; the one that matters is the first
+        # one AFTER the auditor, which is what folds its cuts into all_items.
+        recon_at = src.index("_surviving_ids = {", audit_at)
+        assert audit_at < recon_at, (
+            "a cut must leave the plan through the same reconciliation as every "
+            "other drop, or all_items and the queues diverge")
+
+    def test_it_only_audits_the_shipping_day(self):
+        """D1 is the only day that has ever enqueued; auditing the forward tail
+        spends model calls judging posts that cannot post."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        seg = src[src.index("copy_auditor as _auditor"):][:2000]
+        assert 'startswith("D1-")' in seg
+
+    def test_it_audits_per_account(self):
+        """'Does this feed read like a bot' is a question about ONE timeline.
+        A repeat across two desks is invisible to any reader."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        seg = src[src.index("copy_auditor as _auditor"):][:2000]
+        assert "for _row in account_rows:" in seg
+
+    def test_an_auditor_failure_cannot_break_the_night(self):
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        seg = src[src.index("copy_auditor as _auditor"):][:3000]
+        assert "except Exception" in seg
+        assert "marketing-auditor-failed" in seg
+
+    def test_cuts_carry_the_text_and_the_reason(self):
+        """A gate that prints only a count is the tinted window again."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        seg = src[src.index("copy_auditor as _auditor"):][:3000]
+        for field in ('"codes"', '"note"', '"text"'):
+            assert field in seg, f"cut record missing {field}"

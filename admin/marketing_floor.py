@@ -494,10 +494,65 @@ def floor(root=None) -> dict:  # noqa: PLR0912, PLR0915
                 "by_desk": _desk_yield(cp),
                 "gate_reasons": _gate_reasons(posts),
             },
+            "auditor": _auditor_block(cp),
             "awaiting_review": awaiting,
         }
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": f"floor panel error: {exc}"}
+
+
+def _auditor_block(cp: dict | None) -> dict:
+    """What the batch auditor pulled from tonight's plan, and why.
+
+    The auditor is the operator's stand-in — it cuts posts that read like a bot,
+    repeat each other, lecture, or say nothing. Showing only its counts would
+    reproduce the exact defect this console was built to fix, so the cut posts
+    travel with their text and the reason.
+    """
+    report = ((cp or {}).get("report") or {}) if isinstance(cp, dict) else {}
+    blk = ((report.get("copy") or {}).get("auditor") or {}) if isinstance(report, dict) else {}
+    if not isinstance(blk, dict) or not blk:
+        return {"present": False,
+                "note": "The batch auditor has not run over a plan on this host yet."}
+
+    cuts = [c for c in (blk.get("cuts") or []) if isinstance(c, dict)]
+    by_reason: Counter[str] = Counter()
+    for c in cuts:
+        for code in (c.get("codes") or ["unspecified"]):
+            by_reason[str(code)] += 1
+    words = {
+        "bot_voice": "reads like a machine",
+        "repetitive": "says what another post already said",
+        "lectures": "talks down to the reader",
+        "no_thesis": "a stat dump with no argument",
+        "makes_no_sense": "does not parse on its own",
+        "has_errors": "numbers or output that are wrong",
+        "no_value": "true but worthless",
+    }
+    kept, cut = int(blk.get("kept") or 0), int(blk.get("cut") or 0)
+    total = kept + cut
+    return {
+        "present": True,
+        "ran": bool(blk.get("ran")),
+        "kept": kept,
+        "cut": cut,
+        "unaudited": int(blk.get("unaudited") or 0),
+        "cut_share": round(cut / total, 4) if total else None,
+        "error": blk.get("error"),
+        "by_reason": [{"code": k, "word": words.get(k, k.replace("_", " ")), "n": v}
+                      for k, v in by_reason.most_common()],
+        "notes": blk.get("notes") or {},
+        "cuts": cuts[:40],
+        # A high cut rate is not the auditor being harsh — it is the writer being
+        # handed material it cannot say anything new about. Say so, because the
+        # operator's next move differs completely between the two readings.
+        "verdict": (
+            "The auditor is doing the work the supply should be doing: more than "
+            "a third of the day was cut. Look upstream at the content mix, not "
+            "at the gate." if total and cut / total > 0.33 else
+            "Cut rate is in a normal band." if total else
+            "Nothing audited yet."),
+    }
 
 
 def _gate_reasons(posts: list[dict]) -> list[dict]:
