@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T12:22:11.940851+00:00",
-  "count": 387,
+  "generated_at": "2026-07-30T14:10:49.368245+00:00",
+  "count": 389,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -33,6 +33,48 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ehqbfjwfxxq-ad763b",
+      "title": "JPM US Market Intell Afternoon Briefing 29.07",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:26:06Z",
+      "summary_points": [
+        "**Geopolitical Escalation**: Iran's attack on US forces and tanker triggered 7% oil surge, SPX/NDX/RTY reversal, 10Y yields to 4.677%, amplifying risk-off sentiment and dampening US-Iran MOU optimism.",
+        "**Critical Data Catalysts**: Tomorrow's US PCE (3.75% YoY), Core PCE (3.4%), 2Q GDP (2.0% QoQ), and earnings (AAPL, AMZN, BMY) dominate positioning; global events (BOE, China PMI, Eurozone GDP) drive macro shifts.",
+        "**Inflation Stickiness**: P&G cites production cost-driven sticky inflation; JPM Econ forecasts CPI at 3.5% Q3, 3.6% Q4, declining to 1.9% by Q2 2027, with corporate inflation outpacing consumer energy effects.",
+        "**Tech Earnings & AI Dynamics**: Meta Q3 revenue met expectations but 2026 Opex increased; AI infrastructure/security software (JP2INFSF, JP2SESF) favored over application software (JP2APSF) due to capex tailwinds and client disruption risks.",
+        "**Fed Policy & Yield Risk**: Fed's muted statement initially lifted risk assets, but yields rose to 4.677% (10Y), triggering equity reversal; hawkish narrative (Warsh) supports consumer health but yields pressure equities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4aoajzqskpx-37ff8b",
+      "title": "JPM US Market Intell Afternoon Briefing 29.07",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:25:19Z",
+      "summary_points": [
+        "**Geopolitical Escalation Impact**: Iran's attack on US forces and tanker triggered 7% oil surge, SPX/NDX/RTY reversal, 10Y yields to 4.677%, amplifying risk-off sentiment and dampening US-Iran MOU optimism.",
+        "**Critical Data Catalysts**: Tomorrow’s US PCE (3.75% YoY), Personal Income, 2Q GDP (2.0% QoQ), and tech earnings (AAPL, AMZN, BMY) dominate positioning; global events (BOE, China PMI, Eurozone GDP) add macro pressure.",
+        "**Inflation Stickiness & Corporate Headwinds**: P&G cites sticky inflation from production costs (vs.",
+        "energy), JPM Econ forecasts CPI 3.6% Q4 → 1.9% Q2 2027; $1B after-tax energy cost impact from oil >$100/bbl.",
+        "**Extreme Technical Drawdown**: JPMURE’s -19.1% peak-to-trough decline (long-leg-driven) is deepest in 20 years, signaling consolidation phase with potential upside risk-reward skew."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-akfx9mz059l-03d7b1",
       "title": "US EQUITIES COLOR PRESSER PRESSURE",
