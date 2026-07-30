@@ -203,6 +203,7 @@ def _svg_spans(text: str) -> list[tuple[int, int]]:
 _LINK_TAG_RE = re.compile(r"<link\b[^>]*>", re.IGNORECASE)
 _REL_ATTR_RE = re.compile(r'\brel\s*=\s*"([^"]*)"', re.IGNORECASE)
 _HREF_ATTR_RE = re.compile(r'\bhref\s*=\s*"([^"]*)"', re.IGNORECASE)
+_AS_ATTR_RE = re.compile(r'\bas\s*=\s*"([^"]*)"', re.IGNORECASE)
 _CSS_IMPORT_RE = re.compile(
     r"""@import\s+(?:url\(\s*)?["']?([^"')\s;]+)["']?""", re.IGNORECASE
 )
@@ -231,6 +232,58 @@ def preload_css_text(text: str, imports_for: Callable[[str], list[str]]) -> str:
     render-blocking sheets keep first claim on bandwidth. Idempotent: a URL already
     preloaded (or already linked in the head) is skipped. Body <link>s inside inline
     <svg> are ignored — they are inert there and never fetched (see _svg_spans)."""
+    # Refresh EXISTING stylesheet preloads before deciding which hints are
+    # missing. optimize_assets_text deliberately skips rel=preload because a
+    # preload mirrors a URL owned by the real stylesheet link; independently
+    # re-hashing it could create a second cache key. The old implementation
+    # never closed the other half of that contract, though: once a hint existed,
+    # it stayed on its old ?v= forever while the real stylesheet advanced.
+    #
+    # PR #4015 exposed the production shape on 3,263 pages:
+    #
+    #   preload    navigation-refresh.css?v=88af7a13
+    #   stylesheet navigation-refresh.css?v=f38c6288
+    #
+    # The browser fetched both bodies and the "preload" warmed nothing. Derive
+    # each stylesheet preload from the real linked/imported URL, by bare path,
+    # so a cache-busting sweep moves the pair together. Only as=style preloads
+    # are eligible; image/font/script hints remain untouched.
+    desired_by_path: dict[str, str] = {}
+    for lm in _LINK_TAG_RE.finditer(text):
+        tag = lm.group(0)
+        rel_m, href_m = _REL_ATTR_RE.search(tag), _HREF_ATTR_RE.search(tag)
+        if not rel_m or not href_m:
+            continue
+        rels = rel_m.group(1).lower().split()
+        href = href_m.group(1)
+        if "stylesheet" not in rels or not _is_local_asset(href):
+            continue
+        desired_by_path[href.split("?", 1)[0].split("#", 1)[0]] = href
+        for imp in imports_for(href):
+            resolved = _resolve_rel(href, imp)
+            desired_by_path[resolved.split("?", 1)[0].split("#", 1)[0]] = resolved
+
+    def _refresh_preload(lm: "re.Match[str]") -> str:
+        tag = lm.group(0)
+        rel_m = _REL_ATTR_RE.search(tag)
+        as_m = _AS_ATTR_RE.search(tag)
+        href_m = _HREF_ATTR_RE.search(tag)
+        if (
+            not rel_m
+            or "preload" not in rel_m.group(1).lower().split()
+            or not as_m
+            or as_m.group(1).lower() != "style"
+            or not href_m
+        ):
+            return tag
+        href = href_m.group(1)
+        desired = desired_by_path.get(href.split("?", 1)[0].split("#", 1)[0])
+        if not desired or desired == href:
+            return tag
+        return tag[:href_m.start(1)] + desired + tag[href_m.end(1):]
+
+    text = _LINK_TAG_RE.sub(_refresh_preload, text)
+
     m = _HEAD_RE.search(text)
     if not m:
         return text

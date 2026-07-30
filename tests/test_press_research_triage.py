@@ -465,20 +465,59 @@ class TestRanking:
         assert any(line.startswith("::warning")
                    for line in capsys.readouterr().out.splitlines())
 
-    def test_the_degraded_cluster_state_is_named_not_smoothed(self, tmp_path):
-        """Without `datasketch` the density is a FLOOR, and it says so.
+    @pytest.mark.parametrize("wheel", [False, True],
+                             ids=["datasketch-absent", "datasketch-present"])
+    def test_the_degraded_cluster_state_is_named_not_smoothed(self, tmp_path,
+                                                              monkeypatch, wheel):
+        """Each dependency state names ITSELF: a FLOOR is never a measurement.
 
-        Asserted through the documented state rather than by requiring the
-        wheel, so this suite never becomes importorskip-gated.
+        Both states are FORCED at the availability seam instead of inherited
+        from whatever the runner happens to have installed, so this suite stays
+        importorskip-free AND stops being environment-dependent.
+
+        Asserting a UNION of both branches (`state in ("observed",
+        "exact-only")`) was the earlier bug: a one-item rank reads
+        `measured-alone` WITH the wheel and `exact-only` without it, so the test
+        passed only in the minimal CI pack env and failed on any dev machine
+        carrying datasketch. A union assertion also could not pin which state
+        belongs to which dependency state — which is the whole claim here.
         """
+        from engine.marketing import story_spine as SS
+
+        if wheel:
+            # `near_dup_enabled` only REPORTS `_backend.available`; the near-dup
+            # machinery guards on the backend itself, so forcing the property
+            # cannot drive an absent wheel down a path that needs it.
+            monkeypatch.setattr(SS.StorySpine, "near_dup_enabled",
+                                property(lambda self: True))
+        else:
+            # A None in sys.modules makes `import datasketch` raise, so the REAL
+            # probe in `_MinHashBackend.__init__` takes its absent branch and
+            # produces its real downgrade — wheel installed or not.
+            monkeypatch.setitem(sys.modules, "datasketch", None)  # type: ignore[arg-type]
+
         root = F.fixture_root(tmp_path)
         cfg = P.load_config(root)
         res = T.rank([_item("a")], as_of="2026-07-26", root=root, cfg=cfg)
         detail = res["rows"][0]["component_detail"]["cluster_density"]
-        assert detail["state"] in ("observed", "exact-only")
-        if detail["state"] == "exact-only":
+
+        assert res["near_dup_enabled"] is wheel
+        if wheel:
+            # Clustered and genuinely alone on its theme, BY MEASUREMENT — the
+            # degraded label must not leak into a state the near-dup pass really
+            # observed.
+            assert detail["state"] == "measured-alone"
+            assert "IS" in detail["note"]
+            assert "FLOOR" not in detail["note"]
+        else:
+            assert detail["state"] == "exact-only"
             assert "FLOOR" in detail["note"]
-            assert res["near_dup_enabled"] is False
+            # The degradation is disclosed at the RUN level too, not only per
+            # row. Asserted on the returned downgrade rather than on stdout:
+            # `_notice` prints once per PROCESS, so a capsys assertion here
+            # would pass or fail on test ORDER.
+            assert any("story-spine-no-datasketch" in d for d in res["downgrades"]), (
+                res["downgrades"])
 
 
 # ═════════════════════════════════════════════════════════════════════════════

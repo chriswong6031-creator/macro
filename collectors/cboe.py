@@ -12,7 +12,8 @@ EOD cadence: a regime/vol-context input, not a day-trading tool.
 from __future__ import annotations
 
 import logging
-from datetime import date
+import time
+from datetime import date, timedelta
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,13 @@ from collectors.base import Adapter
 from lib import config
 
 log = logging.getLogger(__name__)
+
+# 2026-07-27: the CBOE CDN rate-limited (HTTP 429) the delayed_quotes chain endpoint
+# for ~a minute spanning the putcall + gex sweeps; the 3s/6s/12s per-request ladder sat
+# entirely inside the window, so _SPX/SPY/MSFT (and putcall with them) lost the session
+# while QQQ recovered on a retry 10s later. The window flaps per-request, so one spaced
+# extra attempt after a real cooldown beats more rapid-fire retries.
+CHAIN_429_COOLDOWN_S = 60.0
 
 
 class PutCallAdapter(Adapter):
@@ -36,9 +44,9 @@ class PutCallAdapter(Adapter):
     def __init__(self) -> None:
         self.cfg = config.load()["cboe"]
 
-    def _chain_volumes(self, symbol: str) -> tuple[float, float]:
+    def _chain_volumes(self, symbol: str, retries: int | None = None) -> tuple[float, float]:
         url = self.cfg["chain_url"].replace("_SPX", symbol)
-        r = self.http_get(url, retries=self.cfg["retries"], timeout=120)
+        r = self.http_get(url, retries=retries or self.cfg["retries"], timeout=120)
         options = pd.DataFrame(r.json()["data"]["options"])
         cp = options["option"].str.extract(r"\d{6}([CP])\d{8}$")[0]
         vol = pd.to_numeric(options["volume"], errors="coerce").fillna(0)
@@ -46,7 +54,13 @@ class PutCallAdapter(Adapter):
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         from datetime import date
-        put_idx, call_idx = self._chain_volumes("_SPX")
+        try:
+            put_idx, call_idx = self._chain_volumes("_SPX")
+        except Exception as e:  # noqa: BLE001 — one spaced retry, then fail the source
+            log.warning("putcall: _SPX chain failed (%s); cooling down %.0fs for one "
+                        "spaced retry", e, CHAIN_429_COOLDOWN_S)
+            time.sleep(CHAIN_429_COOLDOWN_S)
+            put_idx, call_idx = self._chain_volumes("_SPX", retries=1)
         put_eq = call_eq = 0.0
         for sym in ("SPY", "QQQ", "IWM"):
             try:
@@ -87,11 +101,11 @@ class GexAdapter(Adapter):
     def __init__(self) -> None:
         self.cfg = config.load()["cboe"]
 
-    def _chain(self, symbol: str) -> tuple[pd.DataFrame, float]:
+    def _chain(self, symbol: str, retries: int | None = None) -> tuple[pd.DataFrame, float]:
         """Fetch + parse one underlying's delayed chain -> per-strike DataFrame
         [K, T, iv(decimal), oi, gamma, is_call, expiry] + spot."""
         url = self.cfg["chain_url"].replace("_SPX", symbol)
-        r = self.http_get(url, retries=self.cfg["retries"], timeout=120)
+        r = self.http_get(url, retries=retries or self.cfg["retries"], timeout=120)
         data = r.json()["data"]
         spot = float(data.get("close") or data.get("current_price"))
         o = pd.DataFrame(data["options"])
@@ -138,21 +152,138 @@ class GexAdapter(Adapter):
         return pd.DataFrame({k: [summ.get(k)] for k in keep},
                             index=[pd.Timestamp(date.today())])
 
-    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+    def _collect_symbol(self, sym: str, gcfg: dict, ecfg: dict,
+                        out: dict[str, pd.DataFrame], retries: int | None = None) -> None:
         from engine.gex_engine import compute_gex     # lazy — keep the collector light
+        chain, spot = self._chain(sym, retries=retries)
+        summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043),
+                                             "q": GEX_Q.get(sym, 0.0)})
+        out[f"gex_{sym.lstrip('_')}"] = self._row(summ)
+        if sym == "_SPX":
+            out["gex"] = self._legacy_spx(chain, spot, gcfg)
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         gcfg = self.cfg["gex"]
         symbols = gcfg.get("symbols", DEFAULT_GEX_SYMBOLS)
         ecfg = {k: gcfg[k] for k in ("contract_multiplier", "pct_move",
                                      "strike_window_pct", "max_expiry_days") if k in gcfg}
         out: dict[str, pd.DataFrame] = {}
+        failed: list[str] = []
         for sym in symbols:
             try:
-                chain, spot = self._chain(sym)
-                summ = compute_gex(chain, spot, cfg={**ecfg, "r": gcfg.get("r", 0.043),
-                                                     "q": GEX_Q.get(sym, 0.0)})
-                out[f"gex_{sym.lstrip('_')}"] = self._row(summ)
-                if sym == "_SPX":
-                    out["gex"] = self._legacy_spx(chain, spot, gcfg)
+                self._collect_symbol(sym, gcfg, ecfg, out)
             except Exception as e:  # noqa: BLE001 — partial coverage still useful
+                failed.append(sym)
                 log.warning("gex: %s failed: %s", sym, e)
+        if failed:
+            # A chain snapshot is unrecoverable after tonight — spend one cooldown on a
+            # single-attempt second sweep before accepting a permanent per-symbol hole.
+            time.sleep(CHAIN_429_COOLDOWN_S)
+            for sym in failed:
+                try:
+                    self._collect_symbol(sym, gcfg, ecfg, out, retries=1)
+                    log.info("gex: %s recovered on the post-cooldown sweep", sym)
+                except Exception as e:  # noqa: BLE001 — coverage tripwire makes this loud
+                    log.warning("gex: %s failed after cooldown too: %s", sym, e)
         return out
+
+
+# ------------------------------------------------------------------ session coverage
+# Pinned IN CODE, not derived from config (the ^GSPC lesson, collectors/yahoo): a
+# config-derived expectation goes blind the moment a name falls out of the list.
+# Dropping a symbol from collection is an explicit decision — update this too.
+CHAIN_FAMILY_SERIES: tuple[str, ...] = (
+    "putcall", "gex", *(f"gex_{s.lstrip('_')}" for s in DEFAULT_GEX_SYMBOLS))
+
+# The board/alert-critical backbone: engine/conditions reads putcall, build_site + the
+# gex_flip_cross alert read the legacy gex frame, the regime panel leans on gex_SPX.
+# All three missing the same session = the 2026-07-27 whole-collection shape.
+CORE_CHAIN_SERIES: tuple[str, ...] = ("putcall", "gex", "gex_SPX")
+
+# Sessions permanently absent from the store, with why. The delayed-quotes endpoint
+# serves only the LIVE snapshot — a missed session cannot be honestly backfilled, so
+# the disclosure entry here is the accepted terminal state (never fabricate a row).
+# The coverage tripwire stays loud about an unregistered hole until it is either
+# healed (impossible for chains) or explicitly registered here with its cause.
+KNOWN_PERMANENT_GAPS: dict[date, str] = {
+    date(2026, 7, 27): "CBOE CDN rate-limited (HTTP 429) the delayed_quotes chain "
+                       "endpoint through the whole retry window of the 07-27 evening "
+                       "collect (run 30314534128): putcall + gex/gex_SPX/gex_SPY/"
+                       "gex_MSFT lost the session; snapshots are unrecoverable.",
+}
+
+
+def check_chain_session_coverage(lookback_sessions: int = 5) -> list[dict]:
+    """Store-level NYSE-session coverage tripwire for the delayed-chain family.
+
+    The 2026-07-27 miss was invisible to every existing layer: putcall FAILED but
+    graceful degradation kept the run green; gex returned 7/10 symbols so the source
+    was 'ok' and detect_stale_series (which only sees RETURNED frames) had nothing to
+    flag; the store-level cor/vol tripwire does not cover this family; and every
+    tail-age check went green again the next evening when 07-28 landed — a one-day
+    hole is permanently invisible to any last-obs check after one day. So this check
+    asks for MEMBERSHIP of each of the last `lookback_sessions` expected NYSE sessions
+    (weekend/holiday-dated snapshot rows can never mask a missing session date), and a
+    miss stays loud for a week rather than one silent evening. Warn/alert only — it
+    writes run_status stale_series entries and prints line-start ::warning/::error
+    annotations (bare print, NEVER via a logger — the prefixing format would make
+    GitHub drop them); it never fails the lane."""
+    from collectors.base import _write_stale_series
+    from lib import nyse_calendar, store
+
+    expected = nyse_calendar.expected_last_session()
+    window = nyse_calendar.sessions_between(
+        expected - timedelta(days=3 * lookback_sessions + 10), expected)[-lookback_sessions:]
+    problems: list[dict] = []
+    missing_by_series: dict[str, list[date]] = {}
+    for series in CHAIN_FAMILY_SERIES:
+        df = store.read("cboe", series)
+        if df is None:
+            problems.append({"group": "cboe", "series": series, "rows": 0,
+                             "last_obs": None, "cadence_days": 1, "age_days": None,
+                             "reason": "missing from store"})
+            missing_by_series[series] = list(window)
+            log.warning("chain coverage: %s — missing from store", series)
+            continue
+        have = {pd.Timestamp(t).date() for t in df.index}
+        if not have:
+            problems.append({"group": "cboe", "series": series, "rows": 0,
+                             "last_obs": None, "cadence_days": 1, "age_days": None,
+                             "reason": "empty store frame"})
+            missing_by_series[series] = list(window)
+            log.warning("chain coverage: %s — empty store frame", series)
+            continue
+        first = min(have)
+        missing = [s for s in window
+                   if s not in have and s not in KNOWN_PERMANENT_GAPS
+                   and s >= first]  # a young series owes only its own era
+        if missing:
+            last = max(have)
+            reason = (f"missing NYSE session row(s) {', '.join(map(str, missing))} "
+                      f"in the last {lookback_sessions} sessions (last obs {last})")
+            problems.append({"group": "cboe", "series": series, "rows": len(df),
+                             "last_obs": str(last), "cadence_days": 1,
+                             "age_days": (expected - last).days, "reason": reason})
+            missing_by_series[series] = missing
+            log.warning("chain coverage: %s — %s", series, reason)
+    if problems:
+        _write_stale_series(problems)
+        affected = ", ".join(f"{s}[{','.join(map(str, d))}]"
+                             for s, d in missing_by_series.items())
+        print(f"::warning title=cboe-session-miss::{len(problems)} of "
+              f"{len(CHAIN_FAMILY_SERIES)} cboe delayed-chain series missing session "
+              f"rows: {affected} — chain snapshots are unrecoverable; investigate "
+              f"TODAY or register the gap in collectors/cboe.py KNOWN_PERMANENT_GAPS",
+              flush=True)
+        core_missing = set.intersection(
+            *(set(missing_by_series.get(s, [])) for s in CORE_CHAIN_SERIES))
+        if core_missing:
+            days = ", ".join(map(str, sorted(core_missing)))
+            print(f"::error title=cboe-session-miss::whole-family miss — putcall + gex "
+                  f"+ gex_SPX all lack session(s) {days} (the 2026-07-27 shape); the "
+                  f"board regime panel, conditions P/C and the gex_flip_cross alert "
+                  f"are all running without that session", flush=True)
+    else:
+        log.info("chain coverage: all %d series carry the last %d sessions "
+                 "(through %s)", len(CHAIN_FAMILY_SERIES), lookback_sessions, expected)
+    return problems

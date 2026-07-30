@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-30",
-  "generated_utc": "2026-07-30T03:24:53.329317+00:00",
-  "n_tickers": 2576,
+  "generated_utc": "2026-07-30T07:02:37.572325+00:00",
+  "n_tickers": 2572,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
     "HUBB": {
@@ -1628,12 +1628,11 @@
     "ALGN": {
       "ticker": "ALGN",
       "channels": [
-        "activist_13d",
         "material_8k"
       ],
-      "weighted_score": 0.75,
+      "weighted_score": 0.55,
       "material_8k_30d": 2,
-      "convergence_score": 2,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -19788,6 +19787,16 @@
     },
     "INCY": {
       "ticker": "INCY",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "NOTVQ": {
+      "ticker": "NOTVQ",
       "channels": [
         "special_situation"
       ],

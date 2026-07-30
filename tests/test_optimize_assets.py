@@ -283,6 +283,33 @@ def test_preload_url_matches_stylesheet_url_exactly():
     assert 'href="a.css"' not in out  # never the unstamped form
 
 
+def test_existing_stale_preload_tracks_the_real_stylesheet_url():
+    """A pre-existing hint is a mirror, not an independently frozen cache key.
+
+    PR #4015's fast lane advanced the real navigation stylesheet on every page
+    but left the old preload URL in place, so browsers fetched both versions.
+    """
+    page = (
+        '<html><head><link rel="preload" as="style" href="navigation-refresh.css?v=deadbeef">'
+        '</head><body><link rel="stylesheet" '
+        'href="navigation-refresh.css?v=f38c6288"></body></html>'
+    )
+    out = preload_css_text(page, lambda h: [])
+    assert "navigation-refresh.css?v=deadbeef" not in out
+    assert out.count("navigation-refresh.css?v=f38c6288") == 2
+    assert preload_css_text(out, lambda h: []) == out
+
+
+def test_preload_refresh_never_rewrites_a_non_style_hint():
+    page = (
+        '<html><head><link rel="preload" as="script" href="app.css?v=deadbeef">'
+        '</head><body><link rel="stylesheet" href="app.css?v=f38c6288"></body></html>'
+    )
+    out = preload_css_text(page, lambda h: [])
+    assert 'as="script" href="app.css?v=deadbeef"' in out
+    assert 'as="style" href="app.css?v=f38c6288"' in out
+
+
 def test_preload_hint_keeps_head_css_priority_and_is_idempotent():
     page = ('<html><head><link rel="stylesheet" href="theme.css?v=1"></head>'
             '<body><link rel="stylesheet" href="b.css?v=2"></body></html>')
