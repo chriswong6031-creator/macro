@@ -75,10 +75,11 @@ DEFAULT_ANCHORS = [
     # backfill may take several nightly runs; only stable after the _manifest.json is
     # first written by a successful --dirs hk_stocks_ext run.
     # massive_stock_day: whole-market daily OHLCV parquets (Setup-Species W0.6a).
-    # Same deal — NOT in DEFAULT until the first publish from the store host lands
-    # (as of 2026-07-03 the store has never been published; anchoring it now would
-    # red-flag every heartbeat with DARK). Add via config r2_data_plane.anchors once
-    # live; the coverage probe below then also checks its CONTENT continuity.
+    # ARMED 2026-07-29 via config r2_data_plane.anchors — the first publish landed
+    # 2026-07-03 and the store now publishes nightly from the collect job (restore ->
+    # incremental -> publish, daily.yml). Deliberately still NOT in DEFAULT: config is
+    # the live lever, so the anchor set can be pulled without a code deploy. The
+    # coverage probe below additionally content-checks its embedded collector manifest.
     # ── options planes (R0.9, Options Superintelligence masterplan 2026-07-31) ──
     # Until 2026-07-31 NO options plane had a dead-man's switch, which is exactly
     # how the chain-heat lane served an 8-day-stale artifact unnoticed and the
@@ -351,19 +352,54 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
             warn.append(f"coverage probe {d}: manifest carries no store coverage yet "
                         "(pre-coverage publish?) — content continuity unverifiable")
             continue
-        run_bd = cov.get("max_missing_run_weekdays")
+        # Which missing-run figure decides the fail (2026-07-29): prefer the collector's
+        # trailing-window figure when the manifest carries it. A FULL-HISTORY run is a
+        # poor gate — it can be an artifact of a stale/mid-backfill resume-state snapshot
+        # (2026-07-29: a committed sidecar claiming 471 days against 1,302 actually in
+        # the store) or the shrinking remainder of a hole the capped nightly incremental
+        # is already chipping. Either way it would red this heartbeat, and daily.yml's
+        # strict engine anchor with it, for days while saying nothing about tonight's
+        # feed. The recent-window figure is the live signal: a NEW tip-adjacent hole, the
+        # 2026-07-03 incident class. A legacy manifest without the key keeps the
+        # full-history behaviour unchanged. Both figures are recorded either way.
+        run_full = cov.get("max_missing_run_weekdays")
+        run_recent = cov.get("max_missing_run_weekdays_recent")
+        run_bd = run_full if run_recent is None else run_recent
         latest = anchor_blk.get("last") or store.get("latest_date") or cov.get("last_day")
         rec: dict = {}
-        if run_bd is not None:
+
+        # EVERY coercion here is guarded. A published manifest is untrusted input, and
+        # healthcheck.check_r2_freshness wraps run() in `except Exception -> {"ok": True}`
+        # — so one raised ValueError does not fail loudly, it silently voids the WHOLE R2
+        # tripwire, every anchor with it. A bad figure warns and is left out of the record.
+        def _figure(value: object, key: str) -> int | None:
             try:
-                run_bd = int(run_bd)
+                return int(value)  # type: ignore[arg-type]
             except (TypeError, ValueError):
-                warn.append(f"coverage probe {d}: bad max_missing_run_weekdays {run_bd!r}")
-            else:
-                rec["max_missing_run_weekdays"] = run_bd
-                if run_bd > coverage_max_run_bdays:
-                    fail.append(f"R2 COVERAGE HOLE: {d} reports a {run_bd}-business-day "
-                                f"missing run (limit {coverage_max_run_bdays}) — the "
+                warn.append(f"coverage probe {d}: bad {key} {value!r}")
+                return None
+
+        if run_full is not None:
+            got = _figure(run_full, "max_missing_run_weekdays")
+            if got is not None:
+                rec["max_missing_run_weekdays"] = got
+        if run_recent is not None:
+            got = _figure(run_recent, "max_missing_run_weekdays_recent")
+            if got is not None:
+                rec["max_missing_run_weekdays_recent"] = got
+                rec["recent_window_bdays"] = cov.get("recent_window_bdays")
+        if run_bd is not None:
+            # rec's two figures are set above from run_full/run_recent separately — do NOT
+            # re-assign max_missing_run_weekdays from run_bd here: when the manifest carries
+            # a recent-window figure run_bd IS that figure, so it would overwrite the
+            # full-history number the record is meant to report alongside it.
+            run_bd_i = _figure(run_bd, "max_missing_run_weekdays")
+            if run_bd_i is not None:
+                scope = ("business-day missing run" if run_recent is None else
+                         "business-day missing run inside its recent window")
+                if run_bd_i > coverage_max_run_bdays:
+                    fail.append(f"R2 COVERAGE HOLE: {d} reports a {run_bd_i}-{scope} "
+                                f"(limit {coverage_max_run_bdays}) — the "
                                 "published store has an interior content gap")
         if latest:
             try:
