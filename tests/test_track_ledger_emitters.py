@@ -395,6 +395,38 @@ class TestCNEmitLedger:
             assert r["st"] in tl.STATUS_VOCAB
             assert set(r["fl"]).issubset(set(tl.FLAG_VOCAB))
 
+    def test_explicit_current_definition_never_falls_back_to_legacy(
+        self, monkeypatch, tmp_path
+    ):
+        from engine import china_standout_track as cst
+        from scripts import build_china_library as bcl
+
+        path = _cn_board_parquet(tmp_path)
+        board = pd.read_parquet(path)
+        board["board_definition"] = [
+            "legacy", "legacy", "cn_prophet_v2", "cn_prophet_v2",
+        ]
+        board.to_parquet(path, index=False)
+        monkeypatch.setattr(cst, "_store_path", lambda: path)
+        monkeypatch.setattr(cst, "_price_frame", _cn_price_frame)
+        monkeypatch.setattr(cst, "_bench_close", _cn_bench_series)
+        site = tmp_path / "site"
+        (site / "factordata").mkdir(parents=True)
+
+        assert bcl.emit_cn_track_ledger(
+            site,
+            {"available": True, "board_definition": "legacy"},
+            [],
+            board_definition="cn_prophet_v2",
+            asof="2026-07-29",
+        )
+        doc = json.loads(
+            (site / "factordata" / "cn_track_ledger.json").read_text()
+        )
+        assert doc["meta"]["board_definition"] == "cn_prophet_v2"
+        assert doc["summary"]["board_definition"] == "cn_prophet_v2"
+        assert {row["t"] for row in doc["rows"]} == {"601318.SS", "000001.SZ"}
+
     def test_state_comes_from_the_sample_not_from_bt(self, monkeypatch, tmp_path):
         """The publish state must follow THIS ledger's own matured sample.
 

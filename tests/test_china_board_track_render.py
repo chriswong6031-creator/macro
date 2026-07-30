@@ -35,14 +35,22 @@ def _render_block(setups: dict) -> str:
 
 
 def test_accruing_state_maps_to_chip():
-    bt = {"available": True, "n_rows": 120, "dates": ["2026-06-30"],
-          "grading": {"entry_basis": "t1_hl2"},
-          "by_horizon": {"21d": {"n": 0, "note": "accruing"}}}
-    html = _render_block(setups={"board_track": bt,
-                                 "coverage": {"data_through": "2026-06-30", "partial_session": False}})
+    ledger = {
+        "schema": "track_ledger/v1",
+        "market": "CN",
+        "as_of": "2026-06-30",
+        "state": "accruing",
+        "summary": {"horizon": 10, "n_logged": 120, "n_matured": 0},
+        "rows": [],
+        "meta": {"grain": "episode", "board_definition": "cn_prophet_v2"},
+    }
+    html = _render_block(setups={
+        "board_definition": "cn_prophet_v2",
+        "track_ledger": ledger,
+        "coverage": {"data_through": "2026-06-30", "partial_session": False},
+    })
     assert 'id="trd-btn"' in html and 'id="trd-dlg"' in html      # chip + dialog mount
     assert 'data-state="accruing"' in html                        # honest not-matured state
-    assert "2026-07-29" in html                                   # first-read ETA on the accruing card
     assert 'data-market="cn"' in html
 
 
@@ -53,7 +61,10 @@ _CN_LEDGER = {
                 "ci_lo_pct": 52.5, "ci_hi_pct": 67.7, "exp_lo_pct": -0.73, "exp_hi_pct": 3.01,
                 "n_matured": 261, "n_inflight": 216, "n_board_days": 7, "median_hold": 10,
                 "n_logged": 477, "n_locked_excluded": 1},
-    "rows": [], "meta": {"grain": "episode"},
+    "rows": [], "meta": {
+        "grain": "episode",
+        "board_definition": "cn_prophet_v2",
+    },
 }
 
 
@@ -70,7 +81,8 @@ def test_scored_state_reads_the_ledger_not_the_research_grade():
                       "marker_dates": "forbidden"},
           "by_horizon": {"21d": {"n": 40, "hit_vs_csi300": 0.575, "hit_ci": [0.42, 0.72],
                                  "median_excess": 0.018, "board_rank_ic": -0.12}}}
-    html = _render_block(setups={"board_track": bt, "track_ledger": _CN_LEDGER,
+    html = _render_block(setups={"board_definition": "cn_prophet_v2",
+                                 "board_track": bt, "track_ledger": _CN_LEDGER,
                                  "coverage": {"data_through": "2026-07-01", "partial_session": False}})
     assert 'data-state="scored"' in html
     assert "59% win" in html                                      # from the ledger
@@ -82,21 +94,26 @@ def test_scored_state_reads_the_ledger_not_the_research_grade():
     assert "7 separate board days" in html
 
 
-def test_scored_falls_back_to_accruing_without_a_ledger():
-    """A rich research grade must not be able to promote a chip with no ledger."""
+def test_scored_research_grade_does_not_render_without_matching_ledger():
+    """A rich research grade must not impersonate the popup's absent ledger."""
     bt = {"available": True, "n_rows": 240, "dates": ["2026-06-30"],
           "grading": {"entry_basis": "t1_hl2"},
           "by_horizon": {"21d": {"n": 40, "hit_vs_csi300": 0.575, "hit_ci": [0.42, 0.72]}}}
-    html = _render_block(setups={"board_track": bt,
+    html = _render_block(setups={"board_definition": "cn_prophet_v2",
+                                 "board_track": bt,
                                  "coverage": {"data_through": "2026-07-01", "partial_session": False}})
-    assert 'data-state="accruing"' in html
+    assert 'id="trd-btn"' not in html
     assert "58%" not in html
 
 
 def test_partial_session_folds_into_footnote():
-    bt = {"available": True, "n_rows": 120, "dates": ["2026-07-02"],
-          "grading": {"entry_basis": "t1_hl2"}, "by_horizon": {"21d": {"n": 0, "note": "accruing"}}}
-    html = _render_block(setups={"board_track": bt,
+    ledger = {
+        **_CN_LEDGER,
+        "state": "accruing",
+        "summary": {"horizon": 10, "n_logged": 120, "n_matured": 0},
+    }
+    html = _render_block(setups={"board_definition": "cn_prophet_v2",
+                                 "track_ledger": ledger,
                                  "coverage": {"data_through": "2026-07-02", "partial_session": True}})
     # the disclosure moves into the ONE merged footnote (Law 4), not a stacked strip
     assert "not yet logged" in html.lower() or "未记录" in html

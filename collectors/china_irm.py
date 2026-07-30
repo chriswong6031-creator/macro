@@ -294,11 +294,12 @@ def write_velocity(row: dict | None) -> int:
 # ------------------------------------------------------------------ universe + cursor --
 
 def board_universe() -> list[str]:
-    """Sorted 6-digit SZ codes of the board universe (china_setups.json → buy).
+    """Sorted 6-digit SZ codes across every surfaced Prophet lane.
 
     Read pattern per collectors/china_fundamentals.py:_high_value_universe — the
-    names actually surfaced on the China board. A missing/corrupt file is a LOUD
-    empty universe (0-row night), never a crash.
+    names users can inspect on the China board, not only the capped featured shelf.
+    ``watch`` remains a legacy fallback. A missing/corrupt file is a LOUD empty
+    universe (0-row night), never a crash.
     """
     path = config.site_dir() / "factordata" / "china_setups.json"
     if not path.exists():
@@ -310,14 +311,20 @@ def board_universe() -> list[str]:
         log.warning("china_irm: could not parse china_setups.json (%s) — empty universe", e)
         return []
     codes = set()
-    for r in (doc.get("buy") or []):
-        t = r.get("ticker") if isinstance(r, dict) else None
-        if t and t.endswith(_SUFFIX):
-            head = t.split(".")[0]
-            if len(head) == 6 and head.isdigit():
-                codes.add(head)
+    lane_keys = (
+        ("buy", "more_actionable", "late_or_unfillable", "forming")
+        if doc.get("schema_version") == "2.0.0"
+        else ("buy", "watch")
+    )
+    for key in lane_keys:
+        for r in (doc.get(key) or []):
+            t = r.get("ticker") if isinstance(r, dict) else None
+            if t and t.endswith(_SUFFIX):
+                head = t.split(".")[0]
+                if len(head) == 6 and head.isdigit():
+                    codes.add(head)
     if not codes:
-        log.warning("china_irm: no %s names in china_setups.json buy list", _SUFFIX)
+        log.warning("china_irm: no %s names in surfaced china_setups lanes", _SUFFIX)
     return sorted(codes)
 
 

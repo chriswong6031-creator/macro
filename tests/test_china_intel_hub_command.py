@@ -51,6 +51,33 @@ def _board_row(ticker, label="BOTTOMING"):
             "state": "TURN SIGNALED", "alpha": 0.79, "setup": 1.2}
 
 
+def test_prophet_v2_board_loaders_include_explicit_depth_lanes(monkeypatch):
+    payload = {
+        "schema_version": "2.0.0",
+        "buy": [{**_board_row("600001.SS"), "lane": "featured"}],
+        "more_actionable": [
+            {**_board_row("600002.SS"), "lane": "more_actionable"}
+        ],
+        "late_or_unfillable": [
+            {**_board_row("600003.SS"), "lane": "late_or_unfillable"}
+        ],
+        "forming": [{**_board_row("600004.SS"), "lane": "forming"}],
+        "watch": [_board_row("699999.SS")],
+    }
+    monkeypatch.setattr(
+        hub,
+        "_read_json",
+        lambda rel: payload if "china_standouts" in rel else None,
+    )
+
+    assert hub._load_board_membership() == {
+        "600001.SS", "600002.SS", "600003.SS", "600004.SS",
+    }
+    rows = hub._load_board_rows()
+    assert set(rows) == hub._load_board_membership()
+    assert rows["600003.SS"]["lane"] == "late_or_unfillable"
+
+
 # ── T1: all inputs missing → empty command ───────────────────────────────────
 
 def test_empty_inputs_returns_valid_schema(monkeypatch):

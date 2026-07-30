@@ -363,6 +363,36 @@ def test_adapt_china_board_fill_basis_preserved(tmp_path):
     assert row5["terminal_state_clean15_126"] == "CLEAN_LIFTOFF"
 
 
+def test_adapt_china_board_isolates_latest_definition(tmp_path):
+    path = _make_china_board(tmp_path)
+    legacy = pd.read_parquet(path).assign(
+        ticker="LEGACY.SS",
+        date="2026-07-29",
+        board_definition="legacy",
+    )
+    current = pd.read_parquet(path).assign(
+        ticker="CURRENT.SS",
+        date="2026-07-29",
+        board_definition="cn_prophet_v2",
+    )
+    pd.concat([legacy, current], ignore_index=True).to_parquet(
+        path, index=False
+    )
+
+    df, gaps = Q.adapt_china_board(root=tmp_path)
+
+    assert not gaps
+    assert set(df["symbol"]) == {"CURRENT.SS"}
+    assert all(
+        sid.startswith("board_cn:cn_prophet_v2:")
+        for sid in df["signal_id"]
+    )
+    assert all(
+        family.startswith("cn_board:cn_prophet_v2:")
+        for family in df["family"]
+    )
+
+
 # ---------------------------------------------------------------------------
 # (6) adapt_qledger — claim⋈grade join + namespaced signal_ids
 # ---------------------------------------------------------------------------
