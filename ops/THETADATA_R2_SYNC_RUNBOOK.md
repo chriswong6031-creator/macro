@@ -92,3 +92,35 @@ it to the ops-wt store path afterwards.
 Chartered by research/THETADATA_OPS_RUNBOOK.md §7 (R2 publish plan, A4/A8: raw
 vendor pulls are never git-committed). Before this lane (2026-07-16) the
 publish was manual-only — no scheduled caller existed in any workflow or plist.
+
+### 2026-07-29 — post-migration vintage-skew heal (OIP W0)
+
+The 07-25 M2→M1 rsync left `flow-ops-wt` mixed-vintage: `scripts/publish_r2.py`
+was current while `engine/thetadata_store.py` predated `resolve_thetadata_store`,
+so this lane died on ImportError all four nights 07-25→07-28 — the store's only
+offsite copy was not advancing. `com.macro.optionsmatrix` was likewise running a
+pre-#3521 runner whose gate demanded same-evening OI[t] (structurally impossible
+at 19:00 ET), burning its 2h retry window and exiting 1 nightly.
+
+Heal (per this runbook's path-scoped deploy doctrine — never a whole-tree
+reset): five files copied from origin/main and md5-verified on the host —
+`engine/thetadata_store.py` (strict superset of the old symbols),
+`lib/nyse_calendar.py`, `ops/launchd/run_options_matrix.sh`,
+`scripts/build_options_matrix.py`, `engine/options_matrix.py` — with
+`.bak-oip-w0` backups beside each. Verification before re-arming: `publish_r2
+--dry-run` scanned 13,127 files → 2,277 changed / 0 guarded; a matrix smoke
+(`MATRIX_FRESHNESS_BYPASS=1 MATRIX_NO_PUBLISH=1`) built all 10 roots locally.
+
+Same-evening outcomes: the kickstarted real sync uploaded 2,276/2,277 (one
+transient mid-multipart failure on `greeks/IWM/2017.parquet`, re-pushed by the
+follow-up delta run); the 16:00 PT scheduled matrix run passed its gate on
+attempt 1 and published all 10 roots + 594 gex_state JSONs — **the lane's first
+autonomous publish ever** (R2 matrices had been frozen at the 07-09 manual
+smoke). The theta-staleness sentinel's "greeks 1 session behind" WARN during
+this window was the historical greeks backfill still grinding 2026 shards —
+self-healing and watched, not a lane fault.
+
+Standing lesson: after any host migration, md5-compare the deploy tree's import
+closure against origin/main before trusting lane exit codes — a mixed-vintage
+tree fails on the seam between two files, and launchd's last-exit column cannot
+distinguish that from a data problem.
