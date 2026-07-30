@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T15:10:33.291783+00:00",
-  "count": 396,
+  "generated_at": "2026-07-30T15:25:37.795717+00:00",
+  "count": 397,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -111,6 +111,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-glqstf9l5an-60a80f",
+      "title": "JPM Flows Liquidity",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:29:07Z",
+      "summary_points": [
+        "**Tech/semiconductor deleveraging accelerates**: Hedge funds unwinding April/May leverage (Fig 1), elevated short interest (Figs 2-3), and momentum reversals (Nasdaq, Kospi, Nikkei) limit further deleveraging room for equities.",
+        "**Clarity Act odds collapse to 37%**: Senate rejection and ethics hurdles reduce crypto regulatory clarity odds, threatening institutional capital inflows and market growth.",
+        "**Leveraged ETF AUM normalizes 85%**: Unwinding ~85% of April/May surge (memory stocks 55%) reduces leverage volatility as a key equity risk factor.",
+        "**Memory prices sustain upward trend**: DRAM/NAND prices (Fig 10) provide fundamental support to memory makers amid deleveraging.",
+        "**Hyperscalers capex upgrades to $770bn/$925bn**: Bloomberg consensus raises 2026/2027 AI infrastructure investment, signaling accelerated demand."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 31,
       "language": "en",
       "needs_metadata": false
     },
