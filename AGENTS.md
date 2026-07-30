@@ -172,6 +172,14 @@ The contract is actively enforced for Claude by the tracked `SessionStart` and
 `Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
 files, then refuses a normal stop while session-created work is uncommitted,
 unpushed, unmerged, awaiting a render, or absent from production.
+The dirty snapshot judges only this checkout's own work. Untracked entries under
+another fleet's worktree roots (`.claude/worktrees/`, `.claire/worktrees/`,
+`.codex-worktrees/`) are excluded — a blocked session can neither commit another
+session's checkout nor delete it without destroying live work — and a path that
+LEAVES `git status`, whether committed or newly ignored, stops counting as
+outstanding. Both stay fail-closed: tracked content under those roots gates
+normally, and a tracked file the session deleted is still reported by git as
+` D`, so it still blocks.
 Codex must follow the same chain directly from this file. A genuine repeated
 external blocker must be reported as `SHIP LOOP BLOCKED:` with concrete evidence;
 ordinary local cleanup, authentication setup, and waiting are not blockers.

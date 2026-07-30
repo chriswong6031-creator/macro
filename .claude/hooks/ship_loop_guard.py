@@ -82,6 +82,20 @@ EXTERNAL_BLOCKERS = {
     "live_unreachable",
     "live_stale",
 }
+# Roots holding OTHER agent sessions' checkouts. A repository serving several
+# fleets accumulates dozens of them side by side — measured 2026-07-30 in the
+# primary checkout: 34 `.codex-worktrees/*` entries plus `.claire/worktrees/*`
+# and `.claude/worktrees/*`. Their contents churn continuously while their owners
+# work, and a session blocked on them has no move that helps: it cannot commit
+# another session's checkout and cannot delete one without destroying live work.
+# Keep this list closed and hardcoded rather than environment-driven — it is a
+# hole in the dirty gate, so it has to be reviewable in the diff, and a lever
+# that could widen it to `/` would turn the gate off.
+AGENT_WORKTREE_ROOTS = (
+    ".claude/worktrees/",
+    ".claire/worktrees/",
+    ".codex-worktrees/",
+)
 
 
 def _emit(value: dict[str, Any]) -> None:
@@ -147,19 +161,52 @@ def _state_path(root: Path, payload: dict[str, Any]) -> Path:
     return directory / f"{session}.json"
 
 
-def _file_digest(path: Path) -> str:
+def _entry_digest(path: Path) -> str:
+    """Describe one status entry by CONTENT, never by metadata that drifts.
+
+    The directory branch is the load-bearing one. `--untracked-files=all` stops
+    at a nested repository rather than recursing into it, and every agent
+    worktree carries a `.git` file, so git reports each one as a single
+    untracked DIRECTORY entry (`?? .codex-worktrees/foo/`). Any stat-derived
+    fingerprint of that entry — `st_mtime_ns` above all — changes whenever the
+    owning session touches an immediate child, so the entry flips to "touched"
+    no matter what the session being judged does. Directories therefore
+    fingerprint on presence alone: git already declined to look inside, and
+    whether the directory is dirty is a question about its own repository.
+
+    Presence still has to be distinguishable from absence, which is why this
+    returns "dir" rather than reusing "missing". Conflating the two would let a
+    vanished path and a present directory compare equal.
+    """
     try:
-        if path.is_file() and not path.is_symlink():
+        if path.is_symlink():
+            return "symlink:" + os.readlink(path)
+        if path.is_dir():
+            return "dir"
+        if path.is_file():
             digest = hashlib.sha256()
             with path.open("rb") as handle:
                 for chunk in iter(lambda: handle.read(1024 * 1024), b""):
                     digest.update(chunk)
             return digest.hexdigest()
-        if path.is_symlink():
-            return "symlink:" + os.readlink(path)
     except OSError:
         pass
     return "missing"
+
+
+def _is_agent_worktree_path(path: str, status: str) -> bool:
+    """Whether this entry belongs to another agent session's checkout.
+
+    Fail-CLOSED on two axes. Only UNTRACKED entries qualify: these roots are
+    ignored by construction, so anything git tracks under one is real
+    repository content and keeps gating normally. And the match is anchored at
+    the repository root — porcelain paths are always root-relative, with no
+    leading `./` — so a nested `docs/.codex-worktrees/` deeper in the tree is
+    not excused by a root named the same.
+    """
+    if status.strip() != "??":
+        return False
+    return any(path.startswith(root) for root in AGENT_WORKTREE_ROOTS)
 
 
 def _fingerprint(root: Path) -> dict[str, str]:
@@ -179,12 +226,33 @@ def _fingerprint(root: Path) -> dict[str, str]:
         status, display_path = line[:2], line[3:]
         # For rename records, the destination is the content-bearing path.
         path = display_path.rsplit(" -> ", 1)[-1].strip('"')
-        result[path] = f"{status}:{_file_digest(root / path)}"
+        if _is_agent_worktree_path(path, status):
+            continue
+        result[path] = f"{status}:{_entry_digest(root / path)}"
     return result
 
 
 def _changed_since_baseline(baseline: dict[str, str], now: dict[str, str]) -> list[str]:
-    return sorted(path for path in set(baseline) | set(now) if baseline.get(path) != now.get(path))
+    """Paths git STILL calls dirty whose state differs from the session baseline.
+
+    Iterating `now` rather than the union with `baseline` is the whole point.
+    Under the union, a path that LEAVES the status output — because it became
+    gitignored or excluded mid-session, because it was committed, or because
+    another session removed its own checkout — compared `<fingerprint>` against
+    `None` and was reported as work this session had failed to ship. Measured
+    2026-07-30: adding `.codex-worktrees/` to `.git/info/exclude` mid-session
+    turned 34 already-baselined directories into outstanding changes, so the act
+    of correctly ignoring them CAUSED the block, and no session-side action
+    could clear it.
+
+    Git's own status codes stay the authority for the inverse case, which is why
+    this reads `now` instead of testing set membership by hand: a tracked file
+    the session DELETED is still reported, as ` D`, so it stays in `now` with a
+    changed value and still blocks. Only paths git no longer considers dirty at
+    all drop out — and a path that is clean by git's account is, by definition,
+    not uncommitted work.
+    """
+    return sorted(path for path, value in now.items() if baseline.get(path) != value)
 
 
 def _load(path: Path) -> dict[str, Any] | None:
