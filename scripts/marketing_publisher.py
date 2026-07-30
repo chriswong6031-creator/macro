@@ -426,6 +426,46 @@ def _item_ticker(it: dict) -> str:
     return hit.group(0).lstrip("$") if hit else ""
 
 
+#: Cashtags in post copy. `$ALL`/`$ERIE` style — 1-5 letters, optional class
+#: suffix. Deliberately not anchored to the item's `source.ticker`, because the
+#: posts this catches carry their tickers ONLY in the text.
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
+
+
+def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
+    """A post that names tickers and ships no picture. Returns the tickers, or "".
+
+    OPERATOR LAW, 2026-07-30, stated in these words after seeing the live
+    account: "YOU WILL NOT SHIP THESE TEXT ONLY, ID RATHER YOU DESTROY THE
+    ENTIRE ENGINE THAN SHIP TEXT ONLY, CUZ NO ONE CARES ABOUT THESE TICKER POSTS
+    IF UR GOING TO SHIP THEM NAKED WITH NO CHARTS."
+
+    :func:`_missing_required_media` could not enforce that. It keys on
+    ``_CHART_BEARING_KINDS`` (signal/chart/watchlist/receipt) AND requires a
+    ``media[]`` entry to already exist — it defers a post whose chart was BUILT
+    and failed to upload. The posts actually reaching the timeline were
+    `theme_list` and `mover`: not chart-bearing kinds, carrying no media at all,
+    so both conditions missed and they auto-posted bare. Measured on the live
+    flagship account: "Insurance - Property & Casualty: 7 of 7 names lower right
+    now, median -3.9%. Worst: $ERIE -6.1%, $TRV -4.6%, $ALL -4.1%" — 3 views.
+    Its siblings drew 1, 2 and 4.
+
+    So the rule is keyed on what the operator actually said: a post that NAMES
+    TICKERS ships a picture, whatever kind it claims to be. A post with no
+    cashtag (macro prose, education, a breadth read) is unaffected.
+    """
+    if not _media_enabled_cfg(pub_cfg) or media_paths:
+        # Media globally off → nothing can resolve a picture and gating on that
+        # would wedge every ticker post, same reasoning as the deferral gate.
+        return ""
+    if any(isinstance(m, dict) for m in (it.get("media") or [])):
+        # A chart exists but has no URL yet — that is the DEFERRAL case above,
+        # which is recoverable via the backfill. Not this rule's business.
+        return ""
+    found = _CASHTAG_RE.findall(str(it.get("text") or ""))
+    return " ".join(sorted(set(found))) if found else ""
+
+
 def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> bool:
     """True when this is a ticker post that HAS a chart and cannot reach it.
 
@@ -1845,6 +1885,25 @@ def main(argv: list[str] | None = None) -> int:
         # waiver silently converted a charted entry-timing read into a naked call
         # — the one failure mode the gate exists for. A deferred item is not
         # refused, it retries the moment the media backfill lands.
+        # A post that NAMES TICKERS ships a picture (operator 2026-07-30). Unlike
+        # the deferral below there is no chart coming — nothing was rendered — so
+        # this quarantines rather than waits. It runs FIRST because the deferral
+        # gate structurally cannot see these: they are not chart-bearing kinds
+        # and carry no media[] entry.
+        _bare = _bare_cashtag_post(it, pub_cfg, media_paths)
+        if _bare:
+            print(f"::warning title=marketing-bare-cashtag::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — names {_bare} "
+                  f"with no chart. A ticker post ships a picture or it does not "
+                  f"ship.", flush=True)
+            log.warning("item %s (%s/%s) quarantined — bare cashtags %s, no media",
+                        iid, account, it.get("kind"), _bare)
+            OB.transition(iid, "quarantined", actor="publisher",
+                          note=f"bare cashtag post: names {_bare} with no chart")
+            counters["quarantined_bare_cashtag"] = counters.get(
+                "quarantined_bare_cashtag", 0) + 1
+            continue
+
         if _missing_required_media(it, pub_cfg, media_paths):
             _charts = _chart_ids_for(it)
             _age_days = _item_age_days(it, now)

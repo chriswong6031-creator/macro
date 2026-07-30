@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "produced_by": "engine/marketing/content_studio.py",
+  "produced_at": "2026-07-30T10:26:39Z",
+  "tier": "display",
+  "schema": "marketing.shape_ledger/v1",
+  "as_of": "2026-07-30",
+  "window_days": 14,
+  "days": [
+    {
+      "as_of": "2026-07-30",
+      "accounts": {
+        "flagship": {
+          "list": 3,
+          "two_part": 8,
+          "one_liner": 7,
+          "stack": 5
+        },
+        "founder": {
+          "list": 6,
+          "one_liner": 9,
+          "two_part": 6,
+          "caption": 1,
+          "stack": 7
+        },
+        "meagan": {
+          "stack": 1,
+          "two_part": 2,
+          "list": 2
+        },
+        "sophia": {
+          "list": 5,
+          "caption": 1,
+          "two_part": 10,
+          "one_liner": 11,
+          "stack": 11
+        },
+        "kelly": {
+          "stack": 5,
+          "two_part": 7,
+          "list": 3,
+          "one_liner": 11
+        },
+        "cici": {
+          "list": 2,
+          "caption": 1,
+          "stack": 2,
+          "one_liner": 6,
+          "two_part": 3
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,680 @@
+{
+  "schema": "marketing.lab_rollup/v1",
+  "produced_by": "engine/marketing/telemetry.py",
+  "as_of": "2026-07-30",
+  "n_posts": 30,
+  "n_rows": 30,
+  "n_orphans": 0,
+  "n_unmeasured": 13,
+  "cells": [
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S5",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 2,
+      "n_posts": 2,
+      "med_impressions": 18.0,
+      "med_likes": 0.5,
+      "med_replies": 0.0,
+      "med_reposts": 0.0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S1",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 15,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S2",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 16,
+      "med_likes": 1,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S3",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 13,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S4",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 15,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S6",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 19,
+      "med_likes": 1,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S7",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 2,
+      "n_posts": 2,
+      "med_impressions": 12.5,
+      "med_likes": 0.5,
+      "med_replies": 0.0,
+      "med_reposts": 0.0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S8",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 27,
+      "med_likes": 1,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "sophia",
+        "persona": "pattern/history",
+        "slot": "D1-S2",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 17,
+      "med_likes": 2,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "signal",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S2",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 7,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "founder",
+        "persona": "fast, reactive",
+        "slot": "D1-S1",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 129,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "cici",
+        "persona": "specialist",
+        "slot": "D1-S2",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 7,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "signal",
+        "account": "meagan",
+        "persona": "educational",
+        "slot": "D1-S2",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 19,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "chart",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S2",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 7,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "sophia",
+        "persona": "pattern/history",
+        "slot": "D1-S3",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 22,
+      "med_likes": 2,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "founder",
+        "persona": "fast, reactive",
+        "slot": "D1-S4",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 43,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "cici",
+        "persona": "specialist",
+        "slot": "D1-S4",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 9,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "sophia",
+        "persona": "pattern/history",
+        "slot": "D1-S7",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 33,
+      "med_likes": 2,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "founder",
+        "persona": "fast, reactive",
+        "slot": "D1-S9",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 7,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S9",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 23,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "meagan",
+        "persona": "educational",
+        "slot": "D1-S9",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 21,
+      "med_likes": 1,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "chart",
+        "account": "founder",
+        "persona": "fast, reactive",
+        "slot": "D1-S11",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 30,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "chart",
+        "account": "meagan",
+        "persona": "educational",
+        "slot": "D1-S13",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 34,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "chart",
+        "account": "cici",
+        "persona": "specialist",
+        "slot": "D1-S13",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 6,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S13",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 8,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "chart",
+        "account": "cici",
+        "persona": "specialist",
+        "slot": "D1-S17",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 3,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "chart",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S16",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 12,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    },
+    {
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S18",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "n": 1,
+      "n_posts": 1,
+      "med_impressions": 13,
+      "med_likes": 0,
+      "med_replies": 0,
+      "med_reposts": 0,
+      "verdict": "seeding"
+    }
+  ],
+  "top_posts": [
+    {
+      "post_id": "ob-2026-07-28-4effd4b0ed",
+      "dims": {
+        "kind": "watchlist",
+        "account": "founder",
+        "persona": "fast, reactive",
+        "slot": "D1-S1",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 129,
+      "likes": 0,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-28-bfef75e496",
+      "dims": {
+        "kind": "watchlist",
+        "account": "founder",
+        "persona": "fast, reactive",
+        "slot": "D1-S4",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 43,
+      "likes": 0,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-28-ae8a44dd25",
+      "dims": {
+        "kind": "chart",
+        "account": "meagan",
+        "persona": "educational",
+        "slot": "D1-S13",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 34,
+      "likes": 0,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-28-34e8ac1226",
+      "dims": {
+        "kind": "watchlist",
+        "account": "sophia",
+        "persona": "pattern/history",
+        "slot": "D1-S7",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 33,
+      "likes": 2,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-28-51ede5a024",
+      "dims": {
+        "kind": "chart",
+        "account": "founder",
+        "persona": "fast, reactive",
+        "slot": "D1-S11",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 30,
+      "likes": 0,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-26-63346749b3",
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S8",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 27,
+      "likes": 1,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-28-34417b908c",
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S9",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 23,
+      "likes": 0,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-28-cea8d558bd",
+      "dims": {
+        "kind": "watchlist",
+        "account": "sophia",
+        "persona": "pattern/history",
+        "slot": "D1-S3",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 22,
+      "likes": 2,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-26-c704d7b7c7",
+      "dims": {
+        "kind": "watchlist",
+        "account": "flagship",
+        "persona": "authoritative desk",
+        "slot": "D1-S5",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 21,
+      "likes": 1,
+      "replies": 0
+    },
+    {
+      "post_id": "ob-2026-07-28-7e98808787",
+      "dims": {
+        "kind": "watchlist",
+        "account": "meagan",
+        "persona": "educational",
+        "slot": "D1-S9",
+        "mode": "unknown",
+        "cashtag_tier": "unknown"
+      },
+      "impressions": 21,
+      "likes": 1,
+      "replies": 0
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H01",
+      "title": "Multi-cashtag theme list outperforms single-ticker posts on impressions",
+      "state": "seeding",
+      "n_evidence": 0,
+      "note": "Playbook §2: one post in 6–10 cashtag streams simultaneously. Test: compare theme_list vs. signal/chart impressions medians."
+    },
+    {
+      "id": "H02",
+      "title": "Instant earnings reaction posts capture the highest-traffic cashtag window",
+      "state": "seeding",
+      "n_evidence": 0,
+      "note": "Playbook §3 item 3: earnings cards posted within minutes of release reach thousands of searchers while the cashtag is hot. Test: event-type posts vs. non-event impressions, same slot."
+    },
+    {
+      "id": "H03",
+      "title": "Chart receipt posts generate more replies than copy-only posts",
+      "state": "seeding",
+      "n_evidence": 0,
+      "note": "Playbook §3: annotated mover chart on its cashtag earns more scroll-stops and replies than text-only. Test: posts with chart_id set vs. chart_id null — replies median."
+    },
+    {
+      "id": "H04",
+      "title": "Persona effect: 'tape reader' voice outperforms 'authoritative desk' on engagement rate at cold-start",
+      "state": "seeding",
+      "n_evidence": 0,
+      "note": "Playbook §7: cold accounts need loud/engagement-bait style. Test: research_b (tape-reader) vs. flagship (authoritative desk) — (likes+replies)/impressions."
+    },
+    {
+      "id": "H05",
+      "title": "LLM-written copy outperforms deterministic copy on likes in theme-list format",
+      "state": "seeding",
+      "n_evidence": 0,
+      "note": "Copywriter layer: llm mode uses persona voice ceiling; deterministic uses templated floor. Test: mode=llm vs mode=deterministic within theme_list kind — likes median."
+    },
+    {
+      "id": "H06",
+      "title": "Open-window (D1-AM / pre-market) slots generate higher impressions than mid-day",
+      "state": "seeding",
+      "n_evidence": 0,
+      "note": "Playbook §4: 09:15–10:30 ET and earnings windows are attention peaks. Test: slot D1-AM vs. D2-PM median impressions."
+    },
+    {
+      "id": "H07",
+      "title": "Bearish/crash-themed mover posts reach more non-followers than rally posts",
+      "state": "seeding",
+      "n_evidence": 0,
+      "note": "Playbook §3 item 2: 'pain travels' — bearish chart of a crash outperforms rally. Test: mover posts where move_pct < 0 vs > 0 — impressions."
+    }
+  ]
+}

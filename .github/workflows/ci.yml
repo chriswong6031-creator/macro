@@ -1271,6 +1271,10 @@ on:
       # day at once, so it is the only one that can see cross-post monotony.
       - "tests/test_marketing_copy_auditor.py"
       - "engine/marketing/copy_auditor.py"
+      # Bare-cashtag law (operator 2026-07-30): a post that names tickers
+      # ships a picture. The kind-keyed media gate structurally could not
+      # see theme_list/mover, which is what was auto-posting naked.
+      - "tests/test_marketing_bare_cashtag.py"
       - ".github/workflows/marketing-copy-dryrun.yml"
       # chart coverage (#3895, 2026-07-28): every ticker-bearing post carries an
       # illustration; the live gate picks the card VARIANT rather than vetoing it;

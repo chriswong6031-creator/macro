@@ -28,9 +28,9 @@
 
 ## 3. Honest Track Record
 
-Graded receipts (last 14d): 1 — 0 wins / 0 losses / 1 mixed (win rate n/a — no decisive outcomes yet)
+No graded track record yet — 0 graded receipts in the last 14d.
 
-- Publications in ledger: 1
+- Publications in ledger: 44
 - Signal source: Prophet graded plans (real outcome, not backtest).
 
 ---

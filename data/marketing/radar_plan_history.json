@@ -11,7 +11,26 @@
     {
       "as_of": "2026-07-30",
       "tickers": [
+        "AMCR",
+        "ARES",
+        "ARLO",
+        "AVNT",
+        "CBOE",
+        "CDW",
+        "CUBI",
+        "CVI",
+        "EQT",
+        "GPI",
+        "HSY",
         "LII",
+        "LPG",
+        "MOS",
+        "MSFT",
+        "N",
+        "NSSC",
+        "SONO",
+        "TEL",
+        "TPR",
         "VRT"
       ]
     },
