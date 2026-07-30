@@ -160,7 +160,8 @@ def test_allocation_and_strategy_legacy_urls_are_durable_redirects():
     template = (ROOT / "templates" / "vector_allocation.html.j2").read_text(
         encoding="utf-8"
     )
-    assert 'href="https://www.mastermind-x.com/crypto.html"' in template
+    assert '"_seo_head.html.j2"' in template
+    assert '"crypto" ~ ".html"' in template
     assert "crypto.html#allocation" in template
 
     vector_builder = (ROOT / "scripts" / "build_vector.py").read_text(encoding="utf-8")
