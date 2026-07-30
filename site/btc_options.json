@@ -1,0 +1,48 @@
+{
+  "schema": "crypto.btc_options/v1",
+  "tier": "display",
+  "display_only": true,
+  "as_of": "2026-07-30",
+  "generated_at": "2026-07-30T23:30:43.600936+00:00",
+  "coverage": {
+    "available": true,
+    "observations": 42,
+    "first_date": "2026-06-13",
+    "last_date": "2026-07-30",
+    "note_en": "42 daily point-in-time chain snapshots accrued since 2026-06-13.",
+    "note_zh": "自 2026-06-13 起已积累 42 个每日链上快照。"
+  },
+  "spot": 64243.04,
+  "volatility": {
+    "dvol": 37.45,
+    "atm_iv_7d": 35.159623320038264,
+    "atm_iv_30d": 35.67585299293219,
+    "atm_iv_90d": 38.419949950724735,
+    "atm_iv_180d": 41.27609430542944,
+    "term_slope_30_90": 2.744096957792543,
+    "rr_25d": -5.394548304606303,
+    "skew_25d": 0.15136218587559774,
+    "skew_term": -0.010583343614595425
+  },
+  "positioning": {
+    "put_call_oi_ratio": 0.43885446094526964,
+    "put_call_vol_ratio": 0.8096367367462596,
+    "max_pain": 64000.0,
+    "max_pain_expiry_d": 1.3217001337152778,
+    "total_oi_btc": 453851.1
+  },
+  "gamma": {
+    "gex_per_1pct_usd": 103449170.63587463,
+    "gamma_concentration_usd": 413776495.9719088,
+    "flip": 63005.35075665196,
+    "distance_pct": 1.93,
+    "regime": "long",
+    "assumption_en": "Dealer sign assumes long calls and short puts.",
+    "assumption_zh": "交易商符号假设为多头看涨、空头看跌。"
+  },
+  "basis": {
+    "annualized_pct": 4.283129257361172,
+    "front_annualized_pct": 4.43735323876143,
+    "slope_pct": -0.25296183940657446
+  }
+}

@@ -1,11 +1,13 @@
 """Coinbase Exchange public candles collector (free, keyless).
 
-Two series:
+Four series:
 - btc_daily:  OHLCV from 2015-07 (intraday-quality, complements Yahoo's 2014->)
 - btc_hourly: OHLCV from 2016 (~92k rows) — REQUIRED for Phase 2 flash-crash
   state-machine calibration (intraday vs interday vol split, Key Risk Elements).
+- eth_daily:  ETH-USD OHLCV from its Coinbase listing date.
+- sol_daily:  SOL-USD OHLCV from its Coinbase listing date.
 
-API: GET /products/BTC-USD/candles?start&end&granularity
+API: GET /products/{product}/candles?start&end&granularity
      -> [[epoch, low, high, open, close, volume], ...] newest-first, max 300/req.
 Public rate limit ~10 req/s; we pace at cfg.pace_seconds. Full hourly backfill
 is ~310 requests (~2 min) and runs only with --full-history or when the series
@@ -39,13 +41,21 @@ class CoinbaseAdapter(Adapter):
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         out: dict[str, pd.DataFrame] = {}
-        out["btc_daily"] = self._candles("btc_daily", 86400,
-                                         self.cfg["earliest"], full_history)
-        out["btc_hourly"] = self._candles("btc_hourly", 3600,
-                                          self.cfg["hourly_earliest"], full_history)
+        out["btc_daily"] = self._candles(
+            "btc_daily", "BTC-USD", 86400, self.cfg["earliest"], full_history
+        )
+        out["btc_hourly"] = self._candles(
+            "btc_hourly", "BTC-USD", 3600, self.cfg["hourly_earliest"], full_history
+        )
+        out["eth_daily"] = self._candles(
+            "eth_daily", "ETH-USD", 86400, self.cfg["eth_earliest"], full_history
+        )
+        out["sol_daily"] = self._candles(
+            "sol_daily", "SOL-USD", 86400, self.cfg["sol_earliest"], full_history
+        )
         return out
 
-    def _candles(self, series: str, granularity: int, earliest: str,
+    def _candles(self, series: str, product: str, granularity: int, earliest: str,
                  full_history: bool) -> pd.DataFrame:
         stored = store.read(self.group, series)
         if full_history or stored is None or stored.empty:
@@ -62,7 +72,7 @@ class CoinbaseAdapter(Adapter):
         while cursor < end:
             chunk_end = min(cursor + step, end)
             r = self.http_get(
-                self.cfg["candles_url"],
+                self.cfg["candles_url"].format(product=product),
                 retries=self.cfg["retries"],
                 params={"granularity": str(granularity),
                         "start": cursor.isoformat(),
@@ -91,7 +101,7 @@ class CoinbaseAdapter(Adapter):
             raise ValueError(f"{self.name}/{name}: empty frame")
         df = df.copy()
         df.index = pd.to_datetime(df.index)
-        if name == "btc_daily":
+        if name.endswith("_daily"):
             df.index = df.index.normalize()
         df = df[~df.index.duplicated(keep="last")].sort_index().dropna(how="all")
         if df.empty:

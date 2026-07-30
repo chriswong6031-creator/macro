@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/crypto_asset_states.schema.json",
+  "title": "Crypto asset states display contract",
+  "type": "object",
+  "required": ["schema", "tier", "display_only", "authority", "as_of", "assets"],
+  "properties": {
+    "schema": {"const": "crypto.asset_states/v1"},
+    "tier": {"const": "display"},
+    "display_only": {"const": true},
+    "authority": {"const": "states_only"},
+    "as_of": {"type": ["string", "null"], "format": "date"},
+    "assets": {
+      "type": "object",
+      "required": ["ETH", "SOL"],
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "symbol", "display_only", "authority", "allocation",
+          "recommendation", "coverage", "trend", "risk", "relative"
+        ],
+        "properties": {
+          "display_only": {"const": true},
+          "authority": {"const": "states_only"},
+          "allocation": {"type": "null"},
+          "recommendation": {"type": "null"}
+        }
+      }
+    }
+  }
+}
