@@ -14456,6 +14456,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <div class="muted" style="font-size:11px;margin-top:6px">{{ t(RS.disclaimer, RS.disclaimer) }}</div>
   </div>
   {% endif %}
+  {# CLOSING MARKER — load-bearing, do not delete.
+     tests/test_fear_euphoria.py::_render_risk_state_banner slices this banner out of
+     the template by literal markers and renders it in isolation. It used to end the
+     slice on the NEXT section's header ("<!-- ==== MACRO NOWCAST"), i.e. on a
+     neighbour it does not own — so when the dislocation panel and its header were
+     demoted to macro_signals.html on 2026-07-30, `src.index(...)` raised
+     ValueError and reddened ci-pack-0 on a change that never touched this banner.
+     The banner now delimits ITSELF: the slice is bounded by markers that belong to
+     it, and editing whatever follows can no longer break it. #}
+  <!-- ============ /EARLY RISK-STATE BANNER ============ -->
 
   {# mtf-monitor (Multi-timeframe technical monitor) retired — folded into the Market State command-center #}
 
