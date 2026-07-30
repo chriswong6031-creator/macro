@@ -52,6 +52,9 @@ from .paths import ROOT
 
 _LOG_NAME = "response_log.jsonl"
 _EVAL_NAME = "response_eval.jsonl"
+# Weekly automated eval summary, written by scripts/run_brain_eval.py (W2 harness).
+# The panel READS it; nothing in admin/ writes it — the weekly workflow owns it.
+_SUMMARY_NAME = "eval_summary_latest.json"
 _SUBDIR = ("data", "mastermind")
 
 # Bound the request path: read at most this many trailing ledger lines per call.
@@ -113,6 +116,10 @@ def _log_path(root: Path | None) -> Path:
 
 def _eval_path(root: Path | None) -> Path:
     return _base(root).joinpath(*_SUBDIR, _EVAL_NAME)
+
+
+def _summary_path(root: Path | None) -> Path:
+    return _base(root).joinpath(*_SUBDIR, _SUMMARY_NAME)
 
 
 def _now_iso() -> str:
@@ -806,6 +813,109 @@ def classify_contradictions(limit: int = 20, root: Path | None = None) -> dict:
                 "generated_at": _now_iso()}
     finally:
         _CLASSIFY_LOCK.release()
+
+
+# ---------------------------------------------------------------------------
+# Weekly automated eval summary (W2 harness) — READ ONLY
+# ---------------------------------------------------------------------------
+
+# Bound the tag census the panel renders — the §9 taxonomy is 7 long, the card
+# shows the worst 3.
+_SUMMARY_TOP_TAGS = 3
+
+
+def eval_summary(root: Path | None = None) -> dict:
+    """The latest weekly answer-quality summary, or {} when there is none yet.
+
+    Written by scripts/run_brain_eval.py (the brain-eval workflow, Sunday 13:00
+    UTC) into data/mastermind/eval_summary_latest.json. This module only READS
+    it — the harness owns the file, and the panel must never be able to mutate a
+    measurement.
+
+    The scores in here are INTERNAL QA TELEMETRY. They are safe on an admin panel
+    (localhost, single operator) and nowhere else: nothing may copy them to site/
+    or any user-facing surface.
+
+    Shaped, not passed through raw: the file is a local artifact an operator can
+    hand-edit, and app.js indexes `by_lane` and `tags` directly. Coercing the
+    types here means a malformed file renders as an honest "no data" instead of
+    handing the renderer a string where it expects a count. Fail-soft — a missing
+    or corrupt file returns {"ok": False, ...}, never an exception.
+    """
+    try:
+        p = _summary_path(root)
+        if not p.exists():
+            return {"ok": False, "error": "absent", "generated_at": _now_iso()}
+        doc = json.loads(p.read_text(encoding="utf-8"))
+        if not isinstance(doc, dict):
+            return {"ok": False, "error": "malformed", "generated_at": _now_iso()}
+
+        def _int(v: Any) -> int:
+            try:
+                return int(v)
+            except (TypeError, ValueError):
+                return 0
+
+        def _rate(v: Any) -> float | None:
+            try:
+                f = float(v)
+            except (TypeError, ValueError):
+                return None
+            return round(max(0.0, min(1.0, f)), 3)
+
+        lanes: dict[str, dict] = {}
+        raw_lanes = doc.get("by_lane")
+        if isinstance(raw_lanes, dict):
+            for lane, row in raw_lanes.items():
+                if not isinstance(row, dict):
+                    continue
+                lanes[str(lane)[:24]] = {
+                    "n": _int(row.get("n")),
+                    "judged": _int(row.get("judged")),
+                    "passed": _int(row.get("passed")),
+                    "pass_rate": _rate(row.get("pass_rate")),
+                    "mean_total": _rate_free(row.get("mean_total")),
+                }
+
+        raw_tags = doc.get("tags")
+        pairs = ([(str(k)[:40], _int(v)) for k, v in raw_tags.items()]
+                 if isinstance(raw_tags, dict) else [])
+        pairs.sort(key=lambda kv: -kv[1])
+
+        bench = doc.get("benchmark") if isinstance(doc.get("benchmark"), dict) else {}
+        return {
+            "ok": True,
+            "iso_week": str(doc.get("iso_week") or "")[:12],
+            "run_at": str(doc.get("generated_at") or "")[:25],
+            "window_days": _int(doc.get("window_days")),
+            "dry_run": bool(doc.get("dry_run")),
+            "pass_threshold": _int(doc.get("pass_threshold")),
+            "sampled": _int(doc.get("sampled")),
+            "judged": _int(doc.get("judged")),
+            "passed": _int(doc.get("passed")),
+            "pass_rate": _rate(doc.get("pass_rate")),
+            "mean_total": _rate_free(doc.get("mean_total")),
+            "hard_fails": _int(doc.get("hard_fails")),
+            "by_lane": lanes,
+            "top_tags": [{"tag": t, "n": n} for t, n in pairs[:_SUMMARY_TOP_TAGS]],
+            "benchmark": {
+                "benchmark_id": str(bench.get("benchmark_id") or "")[:64],
+                "total": _rate_free(bench.get("total")),
+                "passed": bool(bench.get("passed")),
+                "error": str(bench.get("error") or "")[:64],
+            },
+            "generated_at": _now_iso(),
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {"ok": False, "error": str(exc), "generated_at": _now_iso()}
+
+
+def _rate_free(v: Any) -> float | None:
+    """A number with no 0..1 clamp — rubric totals run 0..100. None when absent."""
+    try:
+        return round(float(v), 1)
+    except (TypeError, ValueError):
+        return None
 
 
 # ---------------------------------------------------------------------------

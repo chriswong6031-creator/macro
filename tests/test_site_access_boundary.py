@@ -364,6 +364,8 @@ def test_generated_data_is_not_accidentally_public():
         "/live/release_publications.json",
         "/prophet/showcase.json",
         "/factordata/tech_lab.json",
+        # Static Natural Earth geometry required by the public start-page globe.
+        "/world-110m.json",
     }
     exposed_json = {p for p in public if p.endswith(".json")}
     assert exposed_json == intentional

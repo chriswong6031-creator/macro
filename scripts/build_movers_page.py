@@ -41,11 +41,22 @@ def _cta_url() -> str:
 # build_context — pure function, testable
 # ─────────────────────────────────────────────────────────────────────────────
 
-def build_context(data: dict | None) -> dict:
+def build_context(data: dict | None, linkable: frozenset[str] | None = None) -> dict:
     """Build the Jinja context dict from the movers source data.
 
     Missing/empty data returns an empty-state context (page still renders).
+
+    `linkable` is the set of tickers that ship a stocks/<T>.html dossier (see
+    lib.pages.rendered_ticker_pages). The heatmap this page reads is a wider
+    universe than the rendered one, so a mover or theme member can be a symbol
+    with no page — 12 of them were linked from here. Each row carries
+    `has_page`; the template drops the anchor, not the row, when it is False.
+    None means "universe unknown, link everything" (the pre-filter behaviour),
+    which keeps this function pure and testable without a site tree.
     """
+    def _has_page(ticker: str) -> bool:
+        return linkable is None or ticker in linkable
+
     tf = "1D"
 
     if data is None:
@@ -69,12 +80,14 @@ def build_context(data: dict | None) -> dict:
     # Map to template shape: {ticker, name, pct, sector}
     gainers = [
         {"ticker": m.get("ticker", ""), "name": m.get("name", ""),
-         "pct": m.get("pct", 0.0), "sector": m.get("sector", "")}
+         "pct": m.get("pct", 0.0), "sector": m.get("sector", ""),
+         "has_page": _has_page(m.get("ticker", ""))}
         for m in gainers_raw
     ]
     losers = [
         {"ticker": m.get("ticker", ""), "name": m.get("name", ""),
-         "pct": m.get("pct", 0.0), "sector": m.get("sector", "")}
+         "pct": m.get("pct", 0.0), "sector": m.get("sector", ""),
+         "has_page": _has_page(m.get("ticker", ""))}
         for m in losers_raw
     ]
 
@@ -82,7 +95,8 @@ def build_context(data: dict | None) -> dict:
     # Map theme members to {ticker, pct}; theme display string in theme key
     themes = []
     for th in themes_raw[:6]:
-        members = [{"ticker": m.get("ticker", ""), "pct": m.get("pct", 0.0)}
+        members = [{"ticker": m.get("ticker", ""), "pct": m.get("pct", 0.0),
+                    "has_page": _has_page(m.get("ticker", ""))}
                    for m in (th.get("members") or [])]
         themes.append({
             "theme": th.get("theme", ""),
@@ -135,7 +149,14 @@ def render(root: Path) -> None:
     except Exception:  # noqa: BLE001
         pass
 
-    ctx = build_context(data)
+    # This page is rendered from inside build_site, which runs BEFORE
+    # build_ticker_pages, so site/stocks/ here holds the PREVIOUS render's
+    # pages. Nothing prunes that directory, so it is a subset of what ships
+    # after tonight's ticker pass: sound to link from, one night behind for a
+    # ticker whose dossier is brand new.
+    from lib.pages import rendered_ticker_pages  # noqa: PLC0415
+
+    ctx = build_context(data, linkable=rendered_ticker_pages(root / "site"))
 
     # Render HTML
     html = render_html(root, ctx)

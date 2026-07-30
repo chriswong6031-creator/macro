@@ -238,26 +238,42 @@ def test_bytes_floor_scoped_to_registered_dirs():
 
 class _FakeS3:
     """Just enough boto3-client surface for publish(): empty remote listing,
-    upload_file raising on selected keys, manifest get/put recording."""
+    upload_file raising on selected keys, manifest get/put recording.
 
-    def __init__(self, fail_keys=()):
+    Uploads and puts land in ONE keyspace (`objects`) that get_object reads back —
+    the fidelity that matters here, because the defect under test is precisely an
+    upload and a put racing for the same key. `objects` may be seeded to model a
+    manifest left by a previous run."""
+
+    def __init__(self, fail_keys=(), objects: dict | None = None):
         self.fail_keys = set(fail_keys)
+        self.objects: dict[str, bytes] = dict(objects or {})
         self.uploaded: list[str] = []
         self.manifest_puts: list[str] = []
+        self.transfer_configs: list[object] = []
+        self.put_bodies: list[bytes] = []
 
     def list_objects_v2(self, **kw):
         return {"Contents": [], "IsTruncated": False}
 
     def get_object(self, **kw):
-        raise Exception("no remote manifest")
+        body = self.objects.get(kw["Key"])
+        if body is None:
+            raise Exception("no such key")
+        import io
+        return {"Body": io.BytesIO(body)}
 
-    def upload_file(self, filename, bucket, key, ExtraArgs=None):
+    def upload_file(self, filename, bucket, key, ExtraArgs=None, Config=None):
+        self.transfer_configs.append(Config)
         if key in self.fail_keys:
             raise ConnectionError(f"simulated terminal failure: {key}")
         self.uploaded.append(key)
+        self.objects[key] = Path(filename).read_bytes()
 
     def put_object(self, **kw):
         self.manifest_puts.append(kw["Key"])
+        self.put_bodies.append(kw["Body"])
+        self.objects[kw["Key"]] = kw["Body"]
 
 
 def _wire_fake_tree(tmp_path, monkeypatch, s3, names):
@@ -270,7 +286,7 @@ def _wire_fake_tree(tmp_path, monkeypatch, s3, names):
     monkeypatch.setattr(config, "ROOT", tmp_path)
     monkeypatch.setattr(config, "load",
                         lambda: {"storage": {"site_dir": "site", "data_dir": "data"}})
-    monkeypatch.setattr(pr2, "_client", lambda: s3)
+    monkeypatch.setattr(pr2, "_client", lambda *a, **k: s3)
     monkeypatch.setenv("R2_BUCKET", "test-bucket")
     return pr2
 
@@ -292,6 +308,129 @@ def test_clean_publish_exits_zero_and_puts_manifest(tmp_path, monkeypatch):
     assert s3.manifest_puts == ["stockdata/_manifest.json"]
 
 
+# ── the store's own _manifest.json is not delta-upload material ──────────────
+# 2026-07-30: `<dir>/_manifest.json` is a PUBLISH-side key, but publish() built its
+# file list with a bare rglob, so a data-dir store's collector-written _manifest.json
+# — a DIFFERENT document that merely shares the name — was uploaded to that same key
+# during the ordinary delta pass, then overwritten by the publisher's doc at the end of
+# the run. On any run with an upload failure the publisher's put is skipped and the RAW
+# collector doc is what remains (verified on R2 2026-07-30). Three failures follow, and
+# all three are tested below: audit_r2 reads a doc it cannot parse; the key's
+# Last-Modified is refreshed on a night the publisher never wrote, so the freshness
+# tripwire reads FRESH; and _remote_manifest sees no `count`, making the shrink guard
+# vacuously true for every data dir. fetch_r2 already skips these keys on the DOWNLOAD
+# leg — this is the upload half of the same contract.
+
+def test_uploadable_drops_the_data_dir_store_manifest(tmp_path):
+    from scripts.publish_r2 import _uploadable
+    files = [tmp_path / "_manifest.json", tmp_path / "_backfill_state.json",
+             tmp_path / "eod" / "SPY" / "2026.parquet"]
+    kept = _uploadable("thetadata_eod", tmp_path, files)
+    assert tmp_path / "_manifest.json" not in kept
+    # only the manifest goes — state and data files still sync
+    assert kept == [tmp_path / "_backfill_state.json", tmp_path / "eod" / "SPY" / "2026.parquet"]
+
+
+def test_uploadable_only_drops_the_store_ROOT_manifest(tmp_path):
+    """A nested _manifest.json is store content — its key collides with nothing."""
+    from scripts.publish_r2 import _uploadable
+    nested = tmp_path / "eod" / "_manifest.json"
+    assert _uploadable("thetadata_eod", tmp_path, [nested]) == [nested]
+
+
+def test_uploadable_is_data_dir_scoped(tmp_path):
+    """Site dirs are built fresh each run and carry no collector manifest — unfiltered."""
+    from scripts.publish_r2 import _uploadable
+    files = [tmp_path / "_manifest.json", tmp_path / "SPY.json"]
+    assert _uploadable("stockdata", tmp_path, files) == files
+
+
+def _wire_fake_store(tmp_path, monkeypatch, s3, d, n_data_files=140):
+    """A materialised data-dir store: enough parquets to clear _DATA_DIR_MIN_FILES,
+    plus the collector-written _manifest.json whose top-level "store" is a STRING."""
+    import lib.config as config
+    import scripts.publish_r2 as pr2
+    base = tmp_path / "data" / d
+    (base / "eod" / "SPY").mkdir(parents=True)
+    for i in range(n_data_files):
+        (base / "eod" / "SPY" / f"{2000 + i}.parquet").write_bytes(b"x" * 64)
+    (base / "_manifest.json").write_text(json.dumps(
+        {"store": d, "n_roots": 1, "per_root": {"SPY": {"n_years": n_data_files}},
+         "updated_at": "2026-07-30T05:00:00+00:00"}))
+    monkeypatch.setattr(config, "ROOT", tmp_path)
+    monkeypatch.setattr(config, "load",
+                        lambda: {"storage": {"site_dir": "site", "data_dir": "data"}})
+    # *a/**k: publish() passes its worker count to _client (pool sizing, #4065).
+    monkeypatch.setattr(pr2, "_client", lambda *a, **k: s3)
+    monkeypatch.setenv("R2_BUCKET", "test-bucket")
+    return pr2, base
+
+
+def test_store_manifest_never_rides_the_delta_pass(tmp_path, monkeypatch):
+    s3 = _FakeS3()
+    pr2, _ = _wire_fake_store(tmp_path, monkeypatch, s3, "massive_stock_day")
+    assert pr2.publish(["massive_stock_day"]) == 0
+    assert "massive_stock_day/_manifest.json" not in s3.uploaded
+    # the publisher's own doc still lands, exactly once, and still carries the
+    # collector doc under "store" — nothing is lost by excluding the file
+    assert s3.manifest_puts == ["massive_stock_day/_manifest.json"]
+    doc = json.loads(s3.put_bodies[0])
+    assert doc["store"]["store"] == "massive_stock_day"
+    assert doc["count"] == 140 and "_manifest.json" not in doc["files"]
+
+
+def test_failed_run_leaves_the_manifest_key_completely_untouched(tmp_path, monkeypatch):
+    """THE freshness fix. A run with an upload failure skips the publisher's put; if the
+    collector doc had ridden the delta pass it would still have refreshed the key's
+    Last-Modified — audit_r2's freshness anchor — leaving a vacuous green on a night the
+    manifest never advanced. Nothing may touch the key on such a run."""
+    s3 = _FakeS3(fail_keys={"massive_stock_day/eod/SPY/2000.parquet"})
+    pr2, _ = _wire_fake_store(tmp_path, monkeypatch, s3, "massive_stock_day")
+    assert pr2.publish(["massive_stock_day"]) == 1
+    assert s3.manifest_puts == []
+    assert not any(k.endswith("_manifest.json") for k in s3.uploaded)
+
+
+def test_no_manifest_run_leaves_the_key_untouched_for_data_dirs(tmp_path, monkeypatch):
+    """--no-manifest is documented as 'leave _manifest.json untouched'. For data dirs it
+    silently replaced the key with the raw collector doc via the delta pass."""
+    s3 = _FakeS3()
+    pr2, _ = _wire_fake_store(tmp_path, monkeypatch, s3, "massive_stock_day")
+    assert pr2.publish(["massive_stock_day"], manifest=False) == 0
+    assert s3.manifest_puts == []
+    assert not any(k.endswith("_manifest.json") for k in s3.uploaded)
+
+
+def test_shrink_guard_is_no_longer_vacuous_for_data_dirs(tmp_path, monkeypatch):
+    """_remote_manifest reads `<dir>/_manifest.json`. While the collector doc sat at that
+    key it had no `count`, so _manifest_ok returned 'no usable remote manifest' EVERY run
+    and the guard protected nothing. With the publisher's doc there, a partial tree is
+    refused as designed."""
+    key = "massive_stock_day/_manifest.json"
+    remote = json.dumps({"dir": "massive_stock_day", "count": 5000,
+                         "files": ["x.parquet"]}).encode()
+    s3 = _FakeS3(objects={key: remote})
+    pr2, _ = _wire_fake_store(tmp_path, monkeypatch, s3, "massive_stock_day", n_data_files=140)
+    assert pr2.publish(["massive_stock_day"]) == 0
+    # 140 << 5000 * 0.5 — blocked. Before the fix the delta pass had already replaced
+    # the remote doc with the collector's (no `count`) by the time _remote_manifest read
+    # it, so the guard saw "no usable remote manifest" and waved the shrink through.
+    assert s3.manifest_puts == []
+    assert json.loads(s3.objects[key]) == json.loads(remote)   # untouched by the run
+
+
+def test_thetadata_eod_store_manifest_excluded_through_the_real_resolver(tmp_path, monkeypatch):
+    """The lane that motivated this: publish_r2 --dirs thetadata_eod on the ops host,
+    where the store path comes from THETADATA_STORE via resolve_thetadata_store."""
+    s3 = _FakeS3()
+    pr2, base = _wire_fake_store(tmp_path, monkeypatch, s3, "thetadata_eod")
+    monkeypatch.setenv("THETADATA_STORE", str(base))
+    assert pr2.publish(["thetadata_eod"]) == 0
+    assert "thetadata_eod/_manifest.json" not in s3.uploaded
+    assert s3.manifest_puts == ["thetadata_eod/_manifest.json"]
+    assert json.loads(s3.put_bodies[0])["store"]["store"] == "thetadata_eod"
+
+
 def test_client_retry_config(monkeypatch):
     """The shared client (fetch_r2 reuses it) must carry the bulk-lane retry
     posture: 10 adaptive attempts, not the 4/standard that died 2026-07-16."""
@@ -308,3 +447,82 @@ def test_client_retry_config(monkeypatch):
     # fail-fast connect bounds the hard-down worst case (serial dir lists inside
     # daily.yml's 150-min engine job) — 10 retries must not mean 10 x 60s hangs
     assert cfg.connect_timeout == 15 and cfg.read_timeout == 60
+
+
+# ── connection-pool sizing ────────────────────────────────────────────────────
+# 2026-07-29 incident: the pool was a flat 64 while the real ceiling is
+# workers(32) x s3transfer's per-file part concurrency(10) = 320. urllib3
+# discarded every connection released into the full pool (1,119 warnings in one
+# run) and the TLS churn killed multipart parts outright — 16 terminal failures
+# across three runs, every one a `?uploadId=...&partNumber=N` request. Because
+# publish() refuses to write the manifest when ANY upload failed, the offsite
+# INDEX stopped advancing while the bytes kept landing.
+#
+# These assert the pure arithmetic on purpose: the CI pack that runs this file
+# installs no boto3, so anything behind importorskip("boto3") is DISARMED here
+# and cannot be the only guard on the invariant.
+
+def test_pool_covers_worker_times_transfer_concurrency():
+    """The pool must cover every worker's full multipart fan-out, not one
+    connection per worker — that undercount is the whole 2026-07-29 defect."""
+    from scripts.publish_r2 import _TRANSFER_CONCURRENCY, _pool_size
+    for workers in (16, 32, 64):
+        assert _pool_size(workers) >= workers * _TRANSFER_CONCURRENCY
+
+
+def test_default_workers_pool_beats_the_flat_64_that_starved():
+    """publish()'s default 32 workers must land well clear of the old 64."""
+    from scripts.publish_r2 import _pool_size
+    assert _pool_size(32) >= 320
+
+
+def test_pool_never_drops_below_the_historical_floor():
+    """A small --workers must not shrink the pool below what shipped before."""
+    from scripts.publish_r2 import _pool_size
+    assert _pool_size(1) >= 64 and _pool_size(0) >= 64
+
+
+def test_publish_passes_workers_through_to_the_pool(tmp_path, monkeypatch):
+    """publish(workers=N) must size the client for N — a client built for the
+    default while the executor runs N is the same under-provisioning by another
+    route."""
+    s3 = _FakeS3()
+    pr2 = _wire_fake_tree(tmp_path, monkeypatch, s3, ["A.json"])
+    seen: list[int] = []
+
+    def _spy(workers=32, *a, **k):
+        seen.append(workers)
+        return s3
+
+    monkeypatch.setattr(pr2, "_client", _spy)      # after _wire_fake_tree's own patch
+    pr2.publish(["stockdata"], workers=8)
+    assert seen == [8], f"publish did not hand its worker count to the client: {seen}"
+
+
+def test_transfer_concurrency_is_pinned_not_inherited(tmp_path, monkeypatch):
+    """The pool arithmetic is derived from _TRANSFER_CONCURRENCY, so the upload
+    call must PIN that value rather than inherit s3transfer's default — a future
+    default bump would otherwise silently under-provision the pool again."""
+    import pytest
+    pytest.importorskip("boto3")
+    from scripts.publish_r2 import _TRANSFER_CONCURRENCY
+    s3 = _FakeS3()
+    pr2 = _wire_fake_tree(tmp_path, monkeypatch, s3, ["A.json", "B.json"])
+    assert pr2.publish(["stockdata"]) == 0
+    assert len(s3.transfer_configs) == 2
+    for cfg in s3.transfer_configs:
+        assert cfg is not None, "upload_file inherited s3transfer's default config"
+        assert cfg.max_concurrency == _TRANSFER_CONCURRENCY
+
+
+def test_client_pool_is_sized_from_workers(monkeypatch):
+    """End-to-end on the real botocore Config (skipped in the thin CI pack —
+    test_pool_covers_worker_times_transfer_concurrency is the armed guard)."""
+    import pytest
+    pytest.importorskip("boto3")
+    from scripts.publish_r2 import _client, _pool_size
+    monkeypatch.setenv("R2_ENDPOINT", "https://example.r2.cloudflarestorage.com")
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "x")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "y")
+    assert _client(32).meta.config.max_pool_connections == _pool_size(32)
+    assert _client(16).meta.config.max_pool_connections == _pool_size(16)

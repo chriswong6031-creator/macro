@@ -105,6 +105,23 @@ same live store. Everything else continues to come from `/opt/macro/site.served`
   Lower priority, 90% CPU and 1 GiB memory.
 - `macro-live-bars.timer`: hourly at `:37` during 13:00–21:00 UTC weekdays.
   Lowest priority, 90% CPU and 1.25 GiB memory.
+- `macro-live-prophet.timer`: every ~5 minutes at `:03/5` during 13:00–21:59 UTC
+  weekdays; the pass itself stands down outside 09:25–16:25 America/New_York on the
+  Eastern clock (and on NYSE holidays) via `engine/prophet_live/live_states.in_window`,
+  so one schedule covers both DST regimes. Lowest priority tier, 60% CPU and 512 MiB
+  memory — measured 2026-07-30 at ~0.5 CPU-seconds and ~95 MB peak RSS per pass
+  against a production-shaped 1,742-name pack and the real 2,025-symbol quote
+  snapshot. It reads `state/quotes_full.json` and `public/live/quotes.json` off disk
+  (no network for quotes), publishes the state map and event spool to R2, and writes
+  `public/live/prophet_live.json` by atomic rename. That file is **gated**: it is not
+  in the reviewed public `/live/*` list, so it passes registration + entitlement
+  before Caddy serves it. Requires `R2_*` in `/etc/macro-live.env` and `boto3` in the
+  venv; without them the pass reads the public mirror and publishes nothing.
+  `.github/workflows/prophet-live.yml` is the self-disabling backstop for this lane.
+  Stand-down without touching a unit: set `PROPHET_LIVE_NO_PUBLISH=1` in
+  `/etc/macro-live.env` — the timer keeps ticking and nothing is written to R2 or to
+  the served copy. `systemctl disable --now macro-live-prophet.timer` is the harder
+  stop; note that a later commit which changes either unit file re-arms it.
 
 Systemd will not start a second instance of an active oneshot service. The Python
 lane locks also coalesce manual/timer overlap. Every browser artifact is JSON

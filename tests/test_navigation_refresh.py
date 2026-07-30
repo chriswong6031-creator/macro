@@ -36,6 +36,39 @@ def test_public_research_menu_is_product_focused() -> None:
         assert f'href="{{{{ NP }}}}{public_page}"' in NAV
 
 
+def test_approved_mockup_is_the_navigation_source_of_truth() -> None:
+    for copy in (
+        "Your complete market command center",
+        "Search every published research note",
+        "What’s strengthening and fading now",
+        "Today’s strongest confirmed setups",
+        "Growth, inflation and liquidity now",
+    ):
+        assert copy in NAV
+
+    assert 'class="icon-drawing' in NAV
+    assert "APPROVED MOCKUP — SOURCE-OF-TRUTH PORT" in REFRESH_CSS
+    for marker in (
+        "grid-template-columns: minmax(0, 1fr) 245px",
+        "grid-template-columns: 62px minmax(0, 1fr)",
+        "min-height: 78px",
+        "width: 58px",
+        "height: 58px",
+        "font-size: 15px",
+        "font-weight: 650",
+        "width: 276px",
+    ):
+        assert marker in REFRESH_CSS
+
+    assert "MOCKUP_ICON_PATHS" in MARKET_JS
+    assert "MOCKUP_RESEARCH_DESCRIPTION_BY_FILE" in MARKET_JS
+    assert "legacy CSS-mask icon library" in MARKET_JS
+    assert "{{ t('Crypto', '加密') }}" not in NAV
+    assert "removeLegacyCryptoMenu(links)" in MARKET_JS
+    for label in ("Bitcoin Overview", "Allocation Strategy", "BTC Strategy"):
+        assert label in MARKET_JS
+
+
 def test_global_cycles_uses_accessible_in_panel_drill() -> None:
     assert "data-nav-drill-open" in NAV
     assert "data-nav-drill-panel" in NAV
@@ -45,7 +78,10 @@ def test_global_cycles_uses_accessible_in_panel_drill() -> None:
 
 
 def test_market_folding_reuses_canonical_menu_dom() -> None:
-    assert "intlMenu.appendChild(toSubmenu(countries[k]))" in MARKET_JS
+    assert "foldTarget.appendChild(toSubmenu(countries[k]))" in MARKET_JS
+    assert "intlMenu.querySelector(':scope > .nav-market-rail')" in MARKET_JS
+    assert "enhanceMarketMenus(links)" in MARKET_JS
+    assert "MARKET_MENU" in MARKET_JS
     assert "MMXMarkets.current" in MARKET_JS
     assert "mmx-markets-change" in MARKET_JS
     assert "currentPreference.enabled.slice()" in MARKET_JS
@@ -91,7 +127,7 @@ def test_search_waits_for_refresh_css_on_stale_rendered_pages() -> None:
     assert "if (loaded) initNavSearch()" in THEME_JS
 
 
-def test_navigation_is_content_aware_and_mastermind_moved_into_research() -> None:
+def test_navigation_is_content_aware_and_research_rail_matches_mockup() -> None:
     for marker in (
         "initAdaptiveNav",
         "data-nav-layout",
@@ -101,11 +137,12 @@ def test_navigation_is_content_aware_and_mastermind_moved_into_research() -> Non
     ):
         assert marker in THEME_JS
 
-    assert 'class="nav-mastermind-cta"' in NAV
-    assert 'href="https://bot.mastermind-x.com"' in NAV
+    assert 'class="nav-mastermind-cta"' not in NAV
+    assert 'href="https://bot.mastermind-x.com"' not in NAV
+    assert "Cleaner by design" in NAV
+    assert "Detailed diagnostics and proprietary labs move to the admin console." in NAV
     shared_chrome = (ROOT / "templates" / "_site_nav.html.j2").read_text(encoding="utf-8")
     assert "mastermind-link" not in shared_chrome
-    assert '.nav-ctrls a[href*="bot.mastermind-x.com"]' in REFRESH_CSS
 
 
 def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -> None:

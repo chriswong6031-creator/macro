@@ -163,8 +163,12 @@ Two speeds, one skeleton — heavy compute nightly, light joins intraday
 4. **Delivery** (exists): enqueue `kind="breaking"` `scheduled_at="immediate"`
    → immediate items are floor/cap-exempt and unjittered (2026-07-27 re-spec)
    → self-dispatch `marketing-publish.yml post_now_item=<ids>` → ~2–3 min to
-   Buffer post-shallow-checkout. End-to-end latency = detector cadence (≤5m)
-   + radar runtime (~1m) + dispatch (~3m) ≈ **≤9 min typical**, inside gate 1.
+   Buffer post-shallow-checkout. End-to-end latency = detector cadence
+   + radar runtime (~1m) + dispatch (~3m). **The ≤5m detector cadence this
+   assumed does not exist** — GitHub delivers ~1.4 of this lane's 92 daily ticks
+   per hour, so the honest figure is ~17 min mean / ~50 min tail with the shipped
+   multi-pass loop, against gate 0.1's 20 min. Measurements, options and the
+   recommended fix are in §3.6; do not quote a latency from this bullet.
 5. **Charts**: single-name → v2 tape card (extend `_PRICE_SUBDIRS` to
    `data/massive_stock_day` so ANY liquid name renders); sector → new grid
    card (tiles + % + logos, Phase 1.5); market-wide → heatmap image reuse.
@@ -174,11 +178,91 @@ Two speeds, one skeleton — heavy compute nightly, light joins intraday
 lanes fold INTO the radar loop as detectors (one intraday loop, N detectors)
 rather than reviving a separate daemon. Its emit/dedupe plumbing is reusable.
 
+### §3.6 Trigger strategy — GitHub cron cannot deliver the 5-minute cadence
+
+§3.4 assumed "detector cadence (≤5m)". That assumption is false, and it is the
+remaining structural gap against gate 0.1.
+
+**Measured, 2026-07-29, the 13:00–21:00Z window.** GitHub delivered **104
+scheduled runs across ALL 46 scheduled workflows in this repo** — about 13 an
+hour for the whole estate. Per lane, against ticks asked for:
+
+| lane | scheduled | delivered | rate |
+|---|---|---|---|
+| live-quotes (`*/5` + `*/15`) | 128 | 11 | 8.6% |
+| marketing-hot-tape (`*/5`) | ~92 | 6 | 6.5% |
+| vps-live-heartbeat (`*/10`) | 48 | 6 | 12.5% |
+| merge-on-green (`*/10`) | 48 | 6 | 12.5% |
+
+Every high-frequency lane lands at **~1–1.5 runs/hour regardless of how many
+ticks it asks for**. `startedAt == createdAt` on every run, so nothing is
+queuing — GitHub simply never creates the runs. This is a known standing
+condition here, already recorded for the merge sweeper (memory:
+`merge-on-green-sweeper-cron-starvation`), and it is why "the cron says `*/5`"
+has never been evidence about cadence.
+
+**What that does to gate 0.1.** At 1.4 passes/hour the mean detection gap is
+~43 min, so a random cross waits ~21 min before the radar even looks, plus ~1
+min radar and ~3 min dispatch→Buffer: **~25 min mean, ~47 min tail.** Gate 0.1
+asks for ≤20 min. The gate was unreachable before a single line of detector code
+ran.
+
+**Options assessed.**
+
+1. **Fewer, denser crons** — no. The delivery rate is per-lane and roughly flat;
+   re-shaping 92 ticks into 30 does not raise the ~1.4/hour floor, it only
+   coarsens the schedule we fail to get.
+2. **More crons** — untested and probably no. Delivered counts (5–11 per lane per
+   8h) track lane count far more tightly than requested-tick count, which points
+   at a per-lane floor rather than a proportional share of a repo budget. Not
+   worth spending the estate's schedule budget to find out.
+3. **In-run multi-pass** — shipped 2026-07-30 as a stepping stone, then
+   superseded by 5 the same day. Bounded to 3 passes it took the mean to ~17 min
+   but left the tail untouched, because the passes cluster and the ~33-minute
+   holes between delivered ticks remain.
+4. **External `repository_dispatch` ticker** (Mac Studio launchd timer) — an exact
+   cadence and near-zero Actions cost, but it needs a **fine-grained PAT with
+   `actions:write`** (GITHUB_TOKEN does not exist outside Actions) and puts a
+   product dependency on the render-pool host. The PAT is operator-only work.
+5. **Session-long poller — CHOSEN AND SHIPPED (operator delegated the call
+   2026-07-30).** One bootstrap tick runs the lane as a session: a 2-entry matrix
+   with `max-parallel: 1` gives two serialized halves (a GitHub *job* caps at 6h;
+   the window is 6h50m), each looping every `PASS_INTERVAL_S` until the ET window
+   closes or its own `JOB_BUDGET_S` is spent. **True 5-minute cadence, so the whole
+   latency distribution is compliant rather than just the median.**
+
+**Why 5 over 4 — and a correction.** An earlier draft of this section priced 5 at
+~$77/month and 4 at ~$23/month and recommended 4 on cost. **Both figures were
+wrong: this repo is PUBLIC, and GitHub-hosted runner minutes are free and
+unlimited for public repositories.** Cost was the entire case for 4, and it does
+not exist. What remains is that 4 needs a credential and a host and 5 needs
+neither — so 5 wins outright.
+
+A self-dispatch chain of short runs was also considered and rejected: it would
+rest on the GITHUB_TOKEN `workflow_dispatch` carve-out, and nothing in this repo
+demonstrates that carve-out working. `metabolism-cycle.yml` writes exactly such a
+chain, yet every one of its `workflow_dispatch` runs was human-triggered. `sleep`
+in a job needs no such premise.
+
+**What the poller does NOT fix.** It does not make the crons deliver. They are
+demoted to two jobs only: bootstrapping the session, and acting as the crash
+dead-man. If a half dies mid-session, the next delivered tick (~45 min at the
+measured rate) starts a fresh session for the remainder — so a crash costs up to
+~45 minutes of coverage, not the day. `fail-fast: false` keeps half 2 alive when
+half 1 dies, and the concurrency group makes a tick arriving mid-session queue and
+then stand down out-of-window harmlessly. Worth revisiting 4 if that ~45-minute
+crash window ever proves material.
+
+**Standing rule.** A cadence claim in this repo is about *delivered* runs, never
+about the cron expression. When tuning any intraday lane, measure delivery first
+(`gh api "/repos/:owner/:repo/actions/runs?created=<from>..<to>&event=schedule"`)
+and treat the crontab as an upper bound that reality will not honour.
+
 ## §4 Data inventory — have vs need
 
 | Capability | Source | Status |
 |---|---|---|
-| 5-min live quotes, ~2.1k names | live-data branch + site/live + heatmap | HAVE (merge is freshness-safe since #3913) |
+| 5-min live quotes, ~2.1k names | radar self-fetch (primary, 2026-07-30) + live-data branch + site/live + heatmap | HAVE (freshness-safe merge since #3913; the radar no longer depends on another lane's commit cadence, and the ceiling allows for the feed's declared ~15-min delay) |
 | Sector membership + sizes | sp500_heatmap tiles (503, sector+size) | HAVE |
 | Daily bars, 20k names | data/massive_stock_day | HAVE |
 | Earnings calendar + AH/BMO flag | data/earnings/earnings.parquet (1,364) | HAVE |
@@ -215,6 +299,18 @@ rather than reviving a separate daemon. Its emit/dedupe plumbing is reusable.
 - XG charter §6: employee desks join per-call lanes only after XG-W2 enables —
   Hot Tape routes to mastermind_news + flagship until then (cadence-spec chip
   task_0cd280af is in flight; its resolver enablement widens routing later).
+- **Dark-desk park (2026-07-29):** the severity_account ↔ desk_network gap is
+  closed in `scripts/marketing_publisher.py`, not in routing. `severity_account`
+  keeps no liveness fallback — rerouting sub-85 events to flagship would break
+  the flagship law (≥85 severity, ≤1 per pass). Instead any dispatch addressed
+  to a desk that is not effective-enabled quarantines as `account_disabled`
+  (post_now included, both the auto-approve pass and the post loop), with a
+  once-per-account `::warning`. Arming remains the one desk_network flip
+  (XG-W2): fresh radar items flow from that moment, parked history stays dead.
+  A dispatch whose every requested item was dark-parked exits 0 by ruling
+  (2026-07-29) — the annotation and the `account_disabled` ledger rows are the
+  receipts, and a red several times a day until XG-W2 would only train
+  red-fatigue; red stays for genuine failures (validation, unknown id, mixed).
 - In-flight sessions to coordinate with: word-salad copy rewrite
   (task_445d4ea5 — owns template mechanics), Buffer recall (task_318af965 —
   shipped `recall_pending`), cadence specs (task_0cd280af).

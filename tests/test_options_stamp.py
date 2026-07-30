@@ -1192,3 +1192,321 @@ def test_ovc_from_chain_prior_oi_keyed_per_contract_not_pooled_across_expiries()
         f"contribute (0 < share < 1); got {share_pos!r}. Zero means the fixture expiries "
         f"drifted out of the dte<=7 window (front7 path not exercised)."
     )
+
+
+# ── SESSION DISCIPLINE: non-session store entries must never enter a positional window ──
+# The #3721 weekend-row class, as it applies to the two PINNED positioning stores. Both
+# accrue one entry per CALENDAR day, so weekend/holiday runs deposit a re-fetch of the
+# prior session's reading — a fabricated observation, since the builder recomputes IV /
+# spot / walls off a stale carried-forward price. Every chain and summary reader in
+# engine/options_stamp.py slices its store POSITIONALLY, so a fabricated entry silently
+# redefines "yesterday" and "5 sessions ago".
+#
+# Measured on the real stores at 2026-07-30 (the numbers these tests encode as fixtures):
+#   * data/polygon_gex/chains/      — 11 of 40 files are non-sessions; the 07-25 / 07-26
+#     files are byte-identical (163,564 rows, 117,303,840 total OI) and the 07-27 file
+#     carries that same reading, so the raw 6-file DOI window spanned only 4 sessions.
+#   * data/polygon_gex/summary_*    — 3,281 of 12,472 rows (26.3%) are non-sessions, so
+#     iloc[-6] resolved to 2026-07-14 where 5 sessions back from 07-21 is 07-10.
+#
+# 2026-07-25/26 are a Sat/Sun pair and 2026-06-19 is Juneteenth — the three shapes.
+
+_SAT = _dt.date(2026, 7, 25)
+_SUN = _dt.date(2026, 7, 26)
+_JUNETEENTH = _dt.date(2026, 6, 19)
+
+
+def _write_chain_files(dirpath: Path, dates, *, dup_oi_on=()):
+    """Write one chain parquet per date. Dates in ``dup_oi_on`` share one OI vintage."""
+    for i, d in enumerate(dates):
+        oi = 1000.0 if d in dup_oi_on else 1000.0 + 100.0 * i
+        frame = _chain_frame("FOO", call_oi=oi, volume=25.0)
+        frame.to_parquet(dirpath / f"{d.isoformat()}.parquet", index=False)
+
+
+def test_default_chain_dates_drops_non_session_files(monkeypatch, tmp_path):
+    """_default_chain_dates() returns SESSIONS only — weekends and holidays are dropped."""
+    from engine import options_stamp as st
+
+    dates = [
+        _JUNETEENTH,                 # holiday (Fri)
+        _dt.date(2026, 6, 20),       # Sat
+        _dt.date(2026, 6, 21),       # Sun
+        _dt.date(2026, 6, 22),       # Mon — session
+        _dt.date(2026, 6, 23),       # Tue — session
+        _SAT, _SUN,
+        _dt.date(2026, 7, 27),       # Mon — session
+    ]
+    _write_chain_files(tmp_path, dates)
+    monkeypatch.setattr(st, "_chains_dir", lambda: tmp_path)
+
+    got = st._default_chain_dates()
+
+    assert got == [_dt.date(2026, 6, 22), _dt.date(2026, 6, 23), _dt.date(2026, 7, 27)]
+    for d in (_JUNETEENTH, _dt.date(2026, 6, 20), _dt.date(2026, 6, 21), _SAT, _SUN):
+        assert d not in got
+    assert got == sorted(got)
+
+
+def test_voi_pair_is_two_distinct_sessions_not_one_vintage(monkeypatch, tmp_path):
+    """The #4018 shape: usable[-1]/usable[-2] must not be one vintage seen twice.
+
+    Fixture mirrors the real store — the Sat/Sun files carry the SAME OI as each other,
+    so before the filter the voi flag compared a snapshot against a copy of itself.
+    """
+    from engine import options_stamp as st
+
+    fri, mon = _dt.date(2026, 7, 24), _dt.date(2026, 7, 27)
+    _write_chain_files(tmp_path, [fri, _SAT, _SUN, mon], dup_oi_on=(_SAT, _SUN))
+    monkeypatch.setattr(st, "_chains_dir", lambda: tmp_path)
+
+    # as_of on the Sunday is the worst case: unfiltered, both sides are the weekend pair
+    usable = [d for d in st._default_chain_dates() if d <= _SUN]
+    assert usable[-1] == fri, "the weekend files must not be the newest usable snapshot"
+    assert len(usable) == 1, "only Friday is a session on/before that Sunday"
+
+    # and on the Monday the pair straddles two genuinely different sessions
+    usable_mon = [d for d in st._default_chain_dates() if d <= mon]
+    assert (usable_mon[-1], usable_mon[-2]) == (mon, fri)
+    assert usable_mon[-1] != usable_mon[-2]
+
+
+def test_doi_window_is_six_distinct_sessions(monkeypatch, tmp_path):
+    """The OLS window must be 6 SESSIONS, not 6 files spanning fewer sessions.
+
+    Pins the measured defect: the raw 07-25..07-30 window covered only 4 distinct
+    sessions, so half the fit was duplicated points and the slope was biased to zero.
+    """
+    from engine import options_stamp as st
+    from lib.nyse_calendar import is_session
+
+    # two full weeks of calendar days — 10 sessions, 4 weekend days
+    dates = [_dt.date(2026, 7, 13) + _dt.timedelta(days=i) for i in range(14)]
+    _write_chain_files(tmp_path, dates)
+    monkeypatch.setattr(st, "_chains_dir", lambda: tmp_path)
+
+    as_of = _dt.date(2026, 7, 24)
+    window = [d for d in st._default_chain_dates() if d <= as_of][-6:]
+
+    assert len(window) == 6
+    assert len(set(window)) == 6
+    assert all(is_session(d) for d in window), f"non-session in the OLS window: {window}"
+    # 6 sessions back from Fri 07-24 reaches into the prior week, not just this one
+    assert window[0] == _dt.date(2026, 7, 17)
+
+
+def test_default_chain_dates_covers_all_three_positional_readers(monkeypatch, tmp_path):
+    """One choke point: the filter is inherited by doi_slope, voi_flag AND ovc.
+
+    Guards the design choice — a future refactor that reintroduces an unfiltered glob in
+    any single reader would break this.
+    """
+    from engine import options_stamp as st
+
+    dates = [_dt.date(2026, 7, 13) + _dt.timedelta(days=i) for i in range(14)]
+    _write_chain_files(tmp_path, dates)
+    monkeypatch.setattr(st, "_chains_dir", lambda: tmp_path)
+
+    seen: list[_dt.date] = []
+
+    def _spy_read(d):
+        seen.append(d)
+        return _chain_frame("FOO")
+
+    st.stamp_options_state(
+        "2026-07-24", "FOO",
+        read_summary=lambda t: None, read_chain=_spy_read,
+        skew_df=pd.DataFrame(), ivspread_df=pd.DataFrame(),
+    )
+
+    assert seen, "no chain snapshot was read"
+    for d in seen:
+        assert d.weekday() < 5, f"a reader was handed the weekend snapshot {d}"
+    assert _SAT not in seen and _SUN not in seen
+
+
+def test_default_read_summary_drops_non_session_rows(monkeypatch, tmp_path):
+    """summary_*.parquet weekend rows are fabricated observations — filter on read."""
+    from engine import options_stamp as st
+
+    dates = [_dt.date(2026, 7, 13) + _dt.timedelta(days=i) for i in range(14)]
+    _summary_frame([d.isoformat() for d in dates]).to_parquet(
+        tmp_path / "summary_FOO.parquet"
+    )
+    monkeypatch.setattr(st, "_summary_dir", lambda: tmp_path)
+
+    got = st._default_read_summary("FOO")
+
+    assert got is not None
+    got_dates = [pd.Timestamp(d).date() for d in got.index]
+    assert len(got_dates) == 10, "10 sessions in 2026-07-13..26"
+    assert all(d.weekday() < 5 for d in got_dates)
+    for d in (_SAT, _SUN, _dt.date(2026, 7, 18), _dt.date(2026, 7, 19)):
+        assert d not in got_dates
+
+
+def test_summary_iloc6_is_five_sessions_back(monkeypatch, tmp_path):
+    """iloc[-6] on the summary frame must mean '5 sessions ago'.
+
+    Pins the measured vanna defect: at as_of 2026-07-21 the unfiltered iloc[-6] resolved
+    to 2026-07-14, where the true 5-sessions-back row is 2026-07-10.
+    """
+    from engine import options_stamp as st
+
+    dates = [_dt.date(2026, 7, 6) + _dt.timedelta(days=i) for i in range(16)]
+    _summary_frame([d.isoformat() for d in dates]).to_parquet(
+        tmp_path / "summary_FOO.parquet"
+    )
+    monkeypatch.setattr(st, "_summary_dir", lambda: tmp_path)
+
+    sdf = st._default_read_summary("FOO")
+    as_of = _dt.date(2026, 7, 21)
+    usable = sdf[[pd.Timestamp(d).date() <= as_of for d in sdf.index]]
+
+    assert pd.Timestamp(usable.index[-1]).date() == as_of
+    assert pd.Timestamp(usable.index[-6]).date() == _dt.date(2026, 7, 14)
+    # ^ 07-21 Tue back 5 sessions: 20, 17, 16, 15, 14 — a real session, not 07-15/16
+    #   as the unfiltered frame would have given (which counted 07-18/19 as sessions).
+    assert all(pd.Timestamp(d).date().weekday() < 5 for d in usable.index)
+
+
+def test_holiday_file_is_dropped_not_just_weekends(monkeypatch, tmp_path):
+    """Juneteenth 2026-06-19 is a Friday holiday — the weekday check alone misses it."""
+    from engine import options_stamp as st
+
+    dates = [_dt.date(2026, 6, 17), _dt.date(2026, 6, 18), _JUNETEENTH,
+             _dt.date(2026, 6, 22)]
+    _write_chain_files(tmp_path, dates)
+    monkeypatch.setattr(st, "_chains_dir", lambda: tmp_path)
+
+    got = st._default_chain_dates()
+
+    assert _JUNETEENTH.weekday() < 5, "fixture premise: Juneteenth 2026 falls on a Friday"
+    assert _JUNETEENTH not in got
+    assert got == [_dt.date(2026, 6, 17), _dt.date(2026, 6, 18), _dt.date(2026, 6, 22)]
+
+
+# ── REPAIR: --restamp-positional reaches rows the retry gate cannot ──────────────────
+# Fixing the readers is not enough. The no-overwrite rule means a row stamped BEFORE the
+# session filter keeps its wrong positional values forever, because the options-family
+# retry gate opens only when ALL STAMP_COVERAGE_COLS are null. Measured on the real ledger
+# at 2026-07-30: 241 rows carry a positional value, and every one of them also carries
+# opt_gamma_regime / opt_wall_up / opt_wall_down / opt_iv30 — so nulling just the positional
+# columns re-opens 0 of 241. scripts.stamp_options_state --restamp-positional is the lever.
+
+_SENTINEL_SLOPE = 999.0   # a value no real fit produces — proves a recompute happened
+
+
+def _positional_locked_ledger():
+    """A ledger row already stamped by the PRE-session-filter reader.
+
+    Mirrors the real shape: the positional columns carry values AND several non-positional
+    coverage columns are non-null, which is exactly what jams the retry gate.
+    """
+    df = pd.DataFrame({
+        "as_of": ["2026-06-22"],
+        "ticker": ["FOO"],
+        "lane": ["buy"],
+        "horizon": [5],
+        "fwd_ret_5": [0.01],
+    })
+    for c in STAMP_COLS:
+        df[c] = None
+    df["opt_doi_slope_5d"] = _SENTINEL_SLOPE      # positional — provably stale
+    df["opt_voi_flag"] = True                     # positional
+    df["opt_gamma_regime"] = "long"               # non-positional; jams the gate
+    df["opt_wall_up"] = 110.0
+    df["opt_wall_down"] = 95.0
+    df["opt_iv30"] = 0.25
+    return df
+
+
+def _patch_stores(monkeypatch, *, chain_dates, summary_dates):
+    """Point both the engine readers and the runner's imported name at fixtures."""
+    monkeypatch.setattr("engine.options_stamp._default_chain_dates",
+                        lambda: list(chain_dates))
+    monkeypatch.setattr("scripts.stamp_options_state._default_chain_dates",
+                        lambda: list(chain_dates))
+    monkeypatch.setattr("engine.options_stamp._default_read_chain",
+                        lambda d: _chain_frame("FOO", call_oi=1000.0 + 100.0 * d.day))
+    monkeypatch.setattr("engine.options_stamp._default_read_summary",
+                        lambda t: (_summary_frame([d.isoformat() for d in summary_dates])
+                                   if t == "FOO" else None))
+
+
+def test_nulling_positional_cols_alone_does_not_reopen_retry_gate(monkeypatch):
+    """WHY the flag exists: the ordinary gate can never reach these rows.
+
+    This is the measured 0-of-241 result, as a unit test.
+    """
+    df = _positional_locked_ledger()
+    df["opt_doi_slope_5d"] = None
+    df["opt_voi_flag"] = None
+
+    present = [c for c in STAMP_COVERAGE_COLS if c in df.columns]
+    assert not df[present].isna().all(axis=1).any(), (
+        "row would be retry-eligible — the premise of --restamp-positional is wrong"
+    )
+
+
+def test_restamp_positional_recomputes_a_locked_value(monkeypatch):
+    """The flag replaces a pre-filter positional value; default mode leaves it alone."""
+    # six SESSIONS on/before the fire's 2026-06-22 — note 06-19 is Juneteenth, so the
+    # window has to reach back into the prior week to fill _DOI_WINDOW
+    sessions = [_dt.date(2026, 6, 11), _dt.date(2026, 6, 12), _dt.date(2026, 6, 15),
+                _dt.date(2026, 6, 16), _dt.date(2026, 6, 17), _dt.date(2026, 6, 18),
+                _dt.date(2026, 6, 22)]
+    _patch_stores(monkeypatch, chain_dates=sessions, summary_dates=sessions)
+
+    # default mode: the no-overwrite contract holds, nothing is re-stamped
+    out_default, n_default = stamp_ledger(_positional_locked_ledger())
+    assert n_default == 0
+    assert out_default["opt_doi_slope_5d"].iloc[0] == _SENTINEL_SLOPE
+
+    # repair mode: the stale value is recomputed from the session-filtered window
+    out_repair, n_repair = stamp_ledger(_positional_locked_ledger(), restamp_positional=True)
+    assert n_repair == 1
+    got = out_repair["opt_doi_slope_5d"].iloc[0]
+    assert got is not None and got != _SENTINEL_SLOPE, (
+        f"positional column was not recomputed (still {got})"
+    )
+
+
+def test_restamp_positional_never_nulls_an_existing_value(monkeypatch):
+    """Non-destructive: where the chains store is absent the repair is a NO-OP.
+
+    The summary store still supplies coverage columns, so the commit branch DOES run —
+    without the guard it would write None over the existing positional values. This is the
+    realistic failure mode: the stores are gitignored, so the repair may be run somewhere
+    that has summaries but no chains.
+    """
+    # six SESSIONS on/before the fire's 2026-06-22 — note 06-19 is Juneteenth, so the
+    # window has to reach back into the prior week to fill _DOI_WINDOW
+    sessions = [_dt.date(2026, 6, 11), _dt.date(2026, 6, 12), _dt.date(2026, 6, 15),
+                _dt.date(2026, 6, 16), _dt.date(2026, 6, 17), _dt.date(2026, 6, 18),
+                _dt.date(2026, 6, 22)]
+    _patch_stores(monkeypatch, chain_dates=[], summary_dates=sessions)  # chains ABSENT
+
+    out, _ = stamp_ledger(_positional_locked_ledger(), restamp_positional=True)
+
+    assert out["opt_doi_slope_5d"].iloc[0] == _SENTINEL_SLOPE, "a null overwrote a value"
+    assert bool(out["opt_voi_flag"].iloc[0]) is True
+    # the non-positional columns still recompute normally
+    assert out["opt_gamma_regime"].iloc[0] == "long"
+
+
+def test_restamp_positional_leaves_unstamped_rows_to_the_normal_gate(monkeypatch):
+    """The flag only ADDS eligibility — a never-stamped row is still stamped normally."""
+    # six SESSIONS on/before the fire's 2026-06-22 — note 06-19 is Juneteenth, so the
+    # window has to reach back into the prior week to fill _DOI_WINDOW
+    sessions = [_dt.date(2026, 6, 11), _dt.date(2026, 6, 12), _dt.date(2026, 6, 15),
+                _dt.date(2026, 6, 16), _dt.date(2026, 6, 17), _dt.date(2026, 6, 18),
+                _dt.date(2026, 6, 22)]
+    _patch_stores(monkeypatch, chain_dates=sessions, summary_dates=sessions)
+
+    df = _legacy_ledger()          # no opt_* columns at all
+    out, n = stamp_ledger(df, restamp_positional=True)
+
+    foo = out[out["ticker"] == "FOO"]
+    assert n >= 1
+    assert foo["opt_gamma_regime"].notna().all()

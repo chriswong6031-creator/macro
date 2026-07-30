@@ -103,6 +103,12 @@ def test_signal_death_classifies_as_push_timeout():
     assert r.stdout.strip() == "push-timeout"
 
 
+def test_git_exit_128_without_sigalrm_is_not_misclassified_as_timeout():
+    out = "fatal: could not read Username for 'https://github.com': No such device or address"
+    r = run_sh(f'push_retry_init "t"; push_classify 128 {out!r}; echo "$PUSH_FAIL_CLASS"')
+    assert r.stdout.strip() == "push-error"
+
+
 def test_every_class_has_a_plain_word_reason():
     r = run_sh(
         """
@@ -271,6 +277,191 @@ def _init_repo(path: Path) -> None:
     subprocess.run(["git", "init", "-q", "-b", "main", str(path)], check=True)
     subprocess.run(["git", "-C", str(path), "config", "user.email", "t@t"], check=True)
     subprocess.run(["git", "-C", str(path), "config", "user.name", "t"], check=True)
+
+
+def _git_output(repo: Path, *args: str, input_text: str | None = None) -> str:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        check=True,
+        capture_output=True,
+        text=True,
+        input=input_text,
+    ).stdout.strip()
+
+
+def _object_is_local(repo: Path, oid: str) -> bool:
+    loose = repo / ".git" / "objects" / oid[:2] / oid[2:]
+    if loose.exists():
+        return True
+    for index in (repo / ".git" / "objects" / "pack").glob("*.idx"):
+        packed = subprocess.run(
+            ["git", "verify-pack", "-v", index],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout
+        if any(line.startswith(f"{oid} ") for line in packed.splitlines()):
+            return True
+    return False
+
+
+def test_metadata_replay_preserves_new_main_without_fetching_promised_blobs(tmp_path):
+    """The render's common race path is a tree merge, not a checkout/rebase.
+
+    A concurrent data commit must survive, the generated site must land, and an
+    unchanged 1 MiB promised blob must remain absent from the blobless lane clone.
+    """
+    bare = tmp_path / "origin.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True)
+    _git_output(bare, "config", "uploadpack.allowFilter", "true")
+
+    seed = tmp_path / "seed"
+    _init_repo(seed)
+    (seed / "site").mkdir()
+    (seed / "data").mkdir()
+    (seed / "site" / "index.html").write_text("<html>old</html>\n")
+    (seed / "site" / "unchanged.bin").write_bytes(b"x" * 1024 * 1024)
+    (seed / "data" / "live.txt").write_text("base\n")
+    _git_output(seed, "add", ".")
+    _git_output(seed, "commit", "-m", "seed")
+    _git_output(seed, "push", "-q", str(bare), "main")
+
+    lane = tmp_path / "lane"
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "-q",
+            "--no-checkout",
+            "--filter=blob:none",
+            "--depth=1",
+            "--branch",
+            "main",
+            f"file://{bare}",
+            str(lane),
+        ],
+        check=True,
+    )
+    _git_output(lane, "config", "user.email", "render@example.test")
+    _git_output(lane, "config", "user.name", "render-test")
+    render_parent = _git_output(lane, "rev-parse", "HEAD")
+    stable_blob = _git_output(lane, "rev-parse", "HEAD:site/unchanged.bin")
+    assert not _object_is_local(lane, stable_blob)
+
+    # Build a site-only render commit directly from the index. No checkout is needed.
+    _git_output(lane, "read-tree", "HEAD")
+    rendered_blob = _git_output(
+        lane,
+        "hash-object",
+        "-w",
+        "--stdin",
+        input_text="<html>fresh render</html>\n",
+    )
+    _git_output(
+        lane,
+        "update-index",
+        "--add",
+        "--cacheinfo",
+        "100644",
+        rendered_blob,
+        "site/index.html",
+    )
+    rendered_tree = _git_output(lane, "write-tree", "--missing-ok")
+    render_commit = _git_output(
+        lane,
+        "commit-tree",
+        rendered_tree,
+        "-p",
+        render_parent,
+        input_text="render: site re-render\n",
+    )
+    assert not _object_is_local(lane, stable_blob)
+
+    # Main advances while the render is running, but only outside generated outputs.
+    (seed / "data" / "live.txt").write_text("concurrent main\n")
+    (seed / "code.txt").write_text("new code\n")
+    _git_output(seed, "add", "data/live.txt", "code.txt")
+    _git_output(seed, "commit", "-m", "advance main")
+    _git_output(seed, "push", "-q", str(bare), "main")
+    _git_output(lane, "fetch", "-q", "--depth=2", "origin", "main")
+    concurrent_main = _git_output(lane, "rev-parse", "origin/main")
+    assert not _object_is_local(lane, stable_blob)
+
+    index_path = tmp_path / "publish.index"
+    r = run_sh(
+        """
+        replay=$(push_metadata_replay_commit \
+          "$RENDER_PARENT" origin/main "$RENDER_COMMIT" \
+          "render: site re-render" "$PUBLISH_INDEX")
+        echo "replay=$replay"
+        """,
+        env={
+            "RENDER_PARENT": render_parent,
+            "RENDER_COMMIT": render_commit,
+            "PUBLISH_INDEX": str(index_path),
+        },
+        cwd=lane,
+    )
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+    replay = next(line.removeprefix("replay=") for line in r.stdout.splitlines() if line.startswith("replay="))
+    assert not _object_is_local(lane, stable_blob)
+    _git_output(lane, "update-ref", "refs/heads/render-publish-test", replay)
+    assert not _object_is_local(lane, stable_blob)
+    _git_output(
+        lane,
+        "push",
+        "-q",
+        "origin",
+        "refs/heads/render-publish-test:refs/heads/main",
+    )
+    published = _git_output(bare, "rev-parse", "refs/heads/main")
+    assert _git_output(bare, "rev-parse", f"{published}^") == concurrent_main
+    assert _git_output(bare, "show", f"{published}:site/index.html") == (
+        "<html>fresh render</html>"
+    )
+    assert _git_output(bare, "show", f"{published}:data/live.txt") == "concurrent main"
+    assert _git_output(bare, "show", f"{published}:code.txt") == "new code"
+    assert not index_path.exists()
+    assert not _object_is_local(lane, stable_blob)
+
+
+def test_metadata_replay_reports_a_real_same_path_conflict(tmp_path):
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    (repo / "site").mkdir()
+    (repo / "site" / "index.html").write_text("base\n")
+    _git_output(repo, "add", ".")
+    _git_output(repo, "commit", "-m", "base")
+    base = _git_output(repo, "rev-parse", "HEAD")
+
+    (repo / "site" / "index.html").write_text("render\n")
+    _git_output(repo, "commit", "-am", "render")
+    render_commit = _git_output(repo, "rev-parse", "HEAD")
+    _git_output(repo, "checkout", "-q", "-b", "new-main", base)
+    (repo / "site" / "index.html").write_text("new main\n")
+    _git_output(repo, "commit", "-am", "new main")
+    new_main = _git_output(repo, "rev-parse", "HEAD")
+
+    r = run_sh(
+        """
+        if push_metadata_replay_commit "$BASE" "$ONTO" "$RENDER" \
+             "should conflict" "$INDEX"; then
+          echo "unexpected success"
+          exit 1
+        fi
+        echo "fallback required"
+        """,
+        env={
+            "BASE": base,
+            "ONTO": new_main,
+            "RENDER": render_commit,
+            "INDEX": str(tmp_path / "conflict.index"),
+        },
+        cwd=repo,
+    )
+    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
+    assert "fallback required" in r.stdout
 
 
 def test_abort_rebase_flags_a_conflict_only_when_a_rebase_is_in_progress(tmp_path):
@@ -651,8 +842,12 @@ def _lane_fixture(tmp_path: Path, rejects: int = 0):
 
 
 def _run_lane(block: str, lane: Path, stub: Path, summary: Path, render_ok: bool):
+    runner_temp = summary.parent / "runner-temp"
+    runner_temp.mkdir(exist_ok=True)
     env = {**os.environ, "PATH": f"{stub}:{os.environ['PATH']}",
-           "GITHUB_WORKSPACE": str(REPO_ROOT), "GITHUB_STEP_SUMMARY": str(summary)}
+           "GITHUB_WORKSPACE": str(REPO_ROOT), "GITHUB_STEP_SUMMARY": str(summary),
+           "RUNNER_TEMP": str(runner_temp), "GITHUB_RUN_ID": "123",
+           "GITHUB_RUN_ATTEMPT": "1"}
     if render_ok:
         env["RENDER_OK"] = "1"
     else:
@@ -706,21 +901,15 @@ def test_render_lane_block_survives_seven_ref_lock_losses(tmp_path):
     assert "rebase conflicts=0" in text, text
 
 
-def test_render_lane_block_does_not_stamp_from_on_a_partial_render(tmp_path):
-    """The watermark contract: a run that did not complete its render (no RENDER_OK)
-    must not become the `from=` watermark the NEXT run diffs against, or the pages it
-    skipped are silently marked rendered."""
-    block = _lane_block("render.yml", RENDER_STEP,
-                        {"steps.pick.outputs.scope": "all",
-                         "steps.pick.outputs.rendered_from": "deadbeef"})
-    bare, lane, stub = _lane_fixture(tmp_path)
-    summary = tmp_path / "summary.md"; summary.touch()
-    r = _run_lane(block, lane, stub, summary, render_ok=False)
-    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
-    log = subprocess.run(["git", "-C", str(bare), "log", "--oneline", "-5", "main"],
-                         capture_output=True, text=True, check=True).stdout
-    assert "render: site re-render" in log, "the partial render never landed"
-    assert "from=" not in log, f"partial render STAMPED from= — contract broken:\n{log}"
+def test_render_lane_never_invokes_publish_on_a_partial_render():
+    """A cancelled, timed-out, or guard-failed render must keep last-good main live."""
+    doc = yaml.safe_load((REPO_ROOT / ".github" / "workflows" / "render.yml").read_text())
+    steps = doc["jobs"]["render"]["steps"]
+    publish = next(step for step in steps if step.get("name") == RENDER_STEP)
+
+    assert publish["if"] == "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
+    assert "(scope=$SCOPE, from=$FROM)" in publish["run"]
+    assert '(scope=$SCOPE)"' not in publish["run"]
 
 
 # ---------------------------------------------------------------------------

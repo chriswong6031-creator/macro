@@ -308,6 +308,25 @@ def _render_page(root: Path, rows: list[dict], treasury: dict | None = None) -> 
         html = inject_text(html, "")
     except Exception:  # noqa: BLE001
         pass
+    # ?v=-stamp + preload the rendered page NOW, with the same passes the render
+    # lanes run site-wide: the hourly sentinel commits this page straight to main
+    # with NO post-render optimize_assets step, so an unstamped render regressed
+    # every asset ref to a bare URL on each alert update (2026-07-29) — the edge
+    # then re-validates theme.css & co on every nav, and the page sat dirty under
+    # `python -m scripts.optimize_assets` in every clean checkout. Runs AFTER the
+    # banner include so wh_banner.js is stamped too; refs resolve from site/,
+    # where the page ships. Degrade-never-raise: a failure ships the unstamped
+    # page (the next sweep lane heals it) but must be loud in the Actions summary
+    # — a silent skip here is this exact regression again.
+    try:
+        from scripts.optimize_assets import make_optimizer
+        site = root / config.load().get("storage", {}).get("site_dir", "site")
+        html = make_optimizer(site)(html, site)
+    except Exception as e:  # noqa: BLE001
+        log.warning("whitehouse.html asset stamping failed (%s)", e)
+        msg = " ".join(str(e).split()) or type(e).__name__
+        print(f"::warning title=wh_stamp::whitehouse.html rendered UN-stamped ({msg}) "
+              "— the next optimize_assets sweep heals it", flush=True)
     return html
 
 

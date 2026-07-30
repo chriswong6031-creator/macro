@@ -185,13 +185,9 @@ def test_pair_converges_even_when_a_normalizer_rewrote_the_site_copy(tmp_path):
 def test_pair_is_stamped_before_the_site_walk(tmp_path):
     """Ordering is load-bearing: the pair must be done BEFORE the 3.2k-page site walk.
 
-    A render is cancelled far more often than it completes on a merge-spree day, and the
-    lane's commit step is `if: always()` — so this sweep can be SIGTERMed part-way and the
-    half-done tree still gets committed. With the site walk first, a kill during it left
-    site/chat.html re-stamped (it sorts early) while templates/chat.html was never
-    reached; `--fix` resolves toward templates/ so it could not repair the pair either,
-    and main landed DIVERGED with the pages.yml publish gate red (2026-07-26, cancelled
-    run 30203476381 -> 886fe25d89e). Pair-first makes every interruption point safe.
+    Historically the lane committed on cancellation, so a kill during this sweep could
+    land a half-done tree. The publish gate now rejects that state, while pair-first keeps
+    the normalizer itself interruption-safe for every caller.
     """
     site, templates = _pair_tree(
         tmp_path, '<html><head><script src="theme.js?v=deadbeef" defer></script></head></html>'

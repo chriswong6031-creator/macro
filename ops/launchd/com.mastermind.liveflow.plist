@@ -49,14 +49,24 @@
       run_with_env.sh sources .env (R2 creds + THETADATA_STORE) before launching Python.
       Adjust python path to match your conda/venv activation.
 
-      DEPLOY-WORKTREE DOCTRINE: these paths point at the DEDICATED deploy
-      worktree /Users/chriswong/liveflow-ops-wt (pinned to origin/main), NOT
-      the main checkout.  The main checkout is shared by many live agent
-      sessions and is frequently parked at a detached HEAD that lacks
+      DEPLOY-TREE DOCTRINE: these paths point at the DEDICATED deploy tree
+      /Users/chriswong/liveflow-ops-wt (pinned to origin/main), NOT a shared
+      agent checkout.  A shared checkout is used by many live agent sessions
+      and is frequently parked at a detached HEAD that lacks
       scripts/live_flow_poller.py — running launchd from there fails with
-      ModuleNotFoundError.  Create/refresh the worktree with:
-        git worktree add -B ops/liveflow-deploy /Users/chriswong/liveflow-ops-wt origin/main
-        cp <main>/.env /Users/chriswong/liveflow-ops-wt/.env   # incl. THETADATA_STORE
+      ModuleNotFoundError.
+
+      The deploy tree is a STANDALONE SHALLOW CLONE, not a git worktree.  The
+      old `git worktree add` recipe needed a parent checkout that does not
+      exist on the M1 ops host, which left the tree with a dangling gitdir:
+      pointer and no working git at all.  Refresh it with a depth-1 fetch of
+      origin main followed by a hard reset onto FETCH_HEAD; the exact commands,
+      the full rebuild recipe and the GitHub auth notes all live in
+      ops/LIVE_FLOW_RUNBOOK.md ("Deploy-tree doctrine (live-flow poller)").
+
+      The interpreter below is a symlink to /Users/chriswong/miniconda3/envs/
+      plane/bin/python on the M1 (the installed plist spells out the resolved
+      path); both are the same binary.
     -->
     <string>/Users/chriswong/liveflow-ops-wt/ops/launchd/run_with_env.sh</string>
     <string>/Users/chriswong/liveflow-ops-wt/.env</string>

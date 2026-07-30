@@ -67,7 +67,7 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
-<link rel="stylesheet" href="landing.css?v=b32fbe18">
+<link rel="stylesheet" href="landing.css?v=92eef2ef">
 </head>
 <body>
 
@@ -174,6 +174,7 @@
   <!-- the field: a bottom-anchored wash under a fine hairline curtain. Its tint is
        the §8 signature — it follows body[data-regime], which the gauge cycle sets. -->
   <div class="tx-curtain" aria-hidden="true"></div>
+  <canvas class="market-field" id="market-field" aria-hidden="true"></canvas>
   <div class="cover-in">
 
     <!-- copy column -->
@@ -1231,6 +1232,154 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
 /* ═════════ suite live components ═════════ */
 const CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const STILL = document.documentElement.classList.contains('still');
+
+/* — living market field: the curtain's vertical instruments bend as slow market
+     tides move through them. Two canvas depths plus the CSS hairline fallback keep
+     the field dimensional on desktop; coarse/mobile devices render one slower,
+     lower-resolution layer. The loop sleeps off-screen and in background tabs. — */
+(function(){
+  const canvas=document.getElementById('market-field');
+  const cover=canvas&&canvas.closest('.cover');
+  if(!canvas||!cover||CALM||STILL) return;
+  const ctx=canvas.getContext('2d',{alpha:true});
+  if(!ctx) return;
+
+  const palettes={
+    goldilocks:[70,105,238],
+    reflation:[34,142,112],
+    deflation:[96,112,142],
+    stagflation:[180,132,43]
+  };
+  let target=palettes.goldilocks.slice(), colour=target.slice();
+  let width=0,height=0,dpr=1,mobile=false,active=false,raf=0,last=0;
+  let pointerX=-9999,pointerY=-9999,pointerTarget=0,pointerPower=0;
+  const finePointer=matchMedia('(hover:hover) and (pointer:fine)');
+
+  function syncPalette(){
+    target=(palettes[document.body.dataset.regime]||palettes.goldilocks).slice();
+  }
+  function resize(){
+    const box=canvas.getBoundingClientRect();
+    width=Math.max(1,Math.round(box.width));
+    height=Math.max(1,Math.round(box.height));
+    mobile=width<760||!finePointer.matches;
+    dpr=Math.min(window.devicePixelRatio||1,mobile?1.25:1.6);
+    const pixelWidth=Math.max(1,Math.round(width*dpr));
+    const pixelHeight=Math.max(1,Math.round(height*dpr));
+    if(canvas.width!==pixelWidth||canvas.height!==pixelHeight){
+      canvas.width=pixelWidth; canvas.height=pixelHeight;
+    }
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  function rgba(alpha){
+    return 'rgba('+colour.map(Math.round).join(',')+','+alpha+')';
+  }
+  function gaussian(n){ return Math.exp(-(n*n)); }
+  function lineLayer(time,gap,baseAlpha,amplitude,phase,lineWidth){
+    const sweep=((time*(mobile?.018:.032)+phase*317)%(width+640))-320;
+    const echo=width+280-((time*(mobile?.009:.017)+phase*191)%(width+560));
+    const gradient=ctx.createLinearGradient(0,0,0,height);
+    gradient.addColorStop(0,rgba(0));
+    gradient.addColorStop(.2,rgba(.42));
+    gradient.addColorStop(.72,rgba(.96));
+    gradient.addColorStop(1,rgba(0));
+    ctx.strokeStyle=gradient;
+    ctx.lineWidth=lineWidth;
+    ctx.lineCap='round';
+
+    for(let x=-gap;x<=width+gap;x+=gap){
+      const crest=gaussian((x-sweep)/(width*.19+88));
+      const counter=gaussian((x-echo)/(width*.25+116))*.62;
+      const energy=Math.min(1,crest+counter);
+      ctx.globalAlpha=baseAlpha+energy*baseAlpha*1.55;
+      ctx.beginPath();
+      for(let y=-8;y<=height+10;y+=mobile?18:13){
+        const depth=y/Math.max(1,height);
+        const tide=Math.sin(y*.018+time*.00022+x*.0036+phase)*amplitude*(.72+energy*2.4);
+        const interference=Math.sin(y*.007-time*.00012+x*.011+phase*1.7)*amplitude*.66;
+        let wake=0;
+        if(!mobile&&pointerPower>.002){
+          const dx=x-pointerX,dy=y-pointerY;
+          const distance=Math.sqrt(dx*dx+dy*dy);
+          wake=gaussian(distance/150)*Math.sin(distance*.045-time*.0038)*9*pointerPower*(1-depth*.24);
+        }
+        const drawX=x+tide+interference+wake;
+        if(y===-8) ctx.moveTo(drawX,y); else ctx.lineTo(drawX,y);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha=1;
+  }
+  function priceBreath(time){
+    const y0=height*.48;
+    ctx.save();
+    ctx.globalCompositeOperation='screen';
+    ctx.beginPath();
+    for(let x=-12;x<=width+12;x+=8){
+      const y=y0
+        +Math.sin(x*.0062-time*(mobile?.00023:.00038))*height*.045
+        +Math.sin(x*.014+time*.00019)*height*.018;
+      if(x===-12) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.strokeStyle=rgba(mobile?.055:.075);
+    ctx.lineWidth=1;
+    ctx.shadowColor=rgba(.22);
+    ctx.shadowBlur=mobile?7:14;
+    ctx.stroke();
+    ctx.restore();
+  }
+  function lightTide(time){
+    const x=((time*(mobile?.018:.032))%(width+640))-320;
+    const glow=ctx.createRadialGradient(x,height*.62,0,x,height*.62,width*(mobile?.34:.24));
+    glow.addColorStop(0,rgba(mobile?.075:.11));
+    glow.addColorStop(.46,rgba(mobile?.025:.04));
+    glow.addColorStop(1,rgba(0));
+    ctx.fillStyle=glow;
+    ctx.fillRect(0,0,width,height);
+  }
+  function paint(time){
+    ctx.clearRect(0,0,width,height);
+    for(let i=0;i<3;i++) colour[i]+=(target[i]-colour[i])*.025;
+    pointerPower+=(pointerTarget-pointerPower)*.055;
+    lightTide(time);
+    if(!mobile) lineLayer(time,18,.15,1.15,1.9,.72);
+    lineLayer(time,mobile?13:8,mobile?.2:.17,mobile?1.3:1.75,.35,mobile?.75:.66);
+    priceBreath(time);
+  }
+  function frame(time){
+    raf=0;
+    if(!active||document.hidden) return;
+    const minFrame=mobile?32:16;
+    if(!last||time-last>=minFrame){ paint(time); last=time; }
+    raf=requestAnimationFrame(frame);
+  }
+  function start(){
+    if(!raf&&active&&!document.hidden) raf=requestAnimationFrame(frame);
+  }
+  function stop(){
+    if(raf) cancelAnimationFrame(raf);
+    raf=0; last=0;
+  }
+
+  if(finePointer.matches){
+    cover.addEventListener('pointermove',event=>{
+      if(mobile) return;
+      const box=canvas.getBoundingClientRect();
+      pointerX=event.clientX-box.left;
+      pointerY=event.clientY-box.top;
+      pointerTarget=pointerY>-120&&pointerY<height+120?1:0;
+    },{passive:true});
+    cover.addEventListener('pointerleave',()=>{ pointerTarget=0; },{passive:true});
+  }
+  new MutationObserver(syncPalette).observe(document.body,{attributes:true,attributeFilter:['data-regime']});
+  new ResizeObserver(()=>{ resize(); if(active) paint(performance.now()); }).observe(canvas);
+  new IntersectionObserver(entries=>{
+    active=entries.some(entry=>entry.isIntersecting);
+    if(active) start(); else stop();
+  },{rootMargin:'120px 0px',threshold:.01}).observe(cover);
+  document.addEventListener('visibilitychange',()=>{ if(document.hidden) stop(); else start(); });
+  syncPalette(); resize();
+})();
 
 /* — hero pyramid: one scripted regime cycle drives the gauge, the buy lane and
      the filings feed in sync (Mixed → Risk On → back, ~26s). An illustrative

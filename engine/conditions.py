@@ -161,8 +161,12 @@ def conditions_frame(f: pd.DataFrame) -> pd.DataFrame:
             out[sub] = s
     # Commercial-paper spreads (bps): A2/P2 = lower-tier minus top-tier CP (credit
     # quality); CP-bill = top-tier CP minus the 3m bill (funding / liquidity).
+    # bill leg = us3m_bill (DTB3, discount basis) — basis-matched to the CP legs, which
+    # the Fed quotes as annual discount yields. Deliberately NOT the us3m curve node
+    # (DGS3MO, bond-equivalent): that runs ~13bp rich by convention alone and would
+    # narrow the funding spread for a reason that is not funding stress.
     cp_look = scfg.get("cp_pctile_lookback_d", 1260)
-    aa_cp, a2p2, bill = _col(f, "aa_cp_90d"), _col(f, "a2p2_cp_90d"), _col(f, "us3m")
+    aa_cp, a2p2, bill = _col(f, "aa_cp_90d"), _col(f, "a2p2_cp_90d"), _col(f, "us3m_bill")
     if aa_cp is not None and a2p2 is not None:
         out["a2p2_spread"] = (a2p2 - aa_cp) * 100.0
         out["a2p2_spread_pctile"] = pct_rank_window(out["a2p2_spread"], cp_look)

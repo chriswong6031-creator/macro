@@ -252,7 +252,8 @@ def main():
 
     # ----- 6. de-risk overlay vs baselines -----------------------------------
     P("\n## 6. De-risk overlay vs dumb baselines (drawdown reduction)\n")
-    bill = pd.read_parquet(DATA / "fred" / "DTB3.parquet")["us3m"].reindex(px.index).ffill().fillna(0.0)
+    # positional read: the DTB3 column follows its config alias (us3m -> us3m_bill, 2026-07-30)
+    bill = pd.read_parquet(DATA / "fred" / "DTB3.parquet").iloc[:, 0].reindex(px.index).ffill().fillna(0.0)
 
     # signal-based: rolling-4y p80 of composite -> rich
     comp_thr = comp.rolling(ROLL, min_periods=MINP).quantile(P_HI / 100.0)

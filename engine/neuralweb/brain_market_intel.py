@@ -12,11 +12,17 @@ PUBLIC API
 ----------
 get_market_events(root, window_h=12.0, limit=5, symbol=None) -> dict
     Fresh market events, merged from the intraday press wire (wires.v1) and
-    topped up from the nightly news digests when the wire is thin.
+    topped up from the nightly news digests when the wire is thin. The wire pool
+    is permuted by the desk's ranked-wire sidecar when a fresh one is published
+    (W2 — see the _WIRE_RANK_BASENAME block); recency otherwise.
 
-search_research(root, query, limit=5) -> dict
-    Deterministic keyword search over the committed research-vault catalog
-    (third-party institutional summaries — never the desk's own signals).
+search_research(root, query, limit=5, mode="search") -> dict
+    mode="search"   — deterministic keyword search over the committed
+                      research-vault catalog (third-party institutional
+                      summaries — never the desk's own signals).
+    mode="clusters" — street-convergence view of the SAME catalog: which themes
+                      N>=3 fresh notes from >=2 institutions are all writing
+                      about. A retrieval summary, never consensus-as-authority.
 
 EVENTS_TOOL_SCHEMA / RESEARCH_TOOL_SCHEMA
     Anthropic tool definitions, shaped like brain_gateway._brain_tool_schemas().
@@ -192,6 +198,26 @@ def _float_or_none(raw) -> float | None:
 _WIRES_BASENAME = "wires.json"
 _VPS_LIVE_DIR = "/var/lib/macro-live/public/live"
 
+# --- ranked-wire sidecar (W2) ---------------------------------------------- #
+# The public rail carries NO salience, by the news desk's ruling: internal
+# ranking numbers never ride a user-fetchable payload (their leak law, 2026-07-30,
+# Intelligence Desk V2 lane). So the desk's ordering arrives out-of-band, on a
+# NON-public STATE path, as a list of ids in best-first order:
+#
+#   {"schema": "wire_rank.v1", "updated_at": "<ISO>", "ids": ["<id>", ...]}
+#
+# Ordering by POSITION, with deliberately no numbers at all: there is no score to
+# leak, nothing to quote back, and nothing an LLM could re-present as a desk
+# probability. The effect here is a permutation of the wire pool and NOTHING else
+# — EVENT_FIELDS is unchanged, so no sidecar value can reach the model's context.
+# This module never writes the file.
+_WIRE_RANK_BASENAME = "wire_rank.json"
+_VPS_STATE_DIR = "/var/lib/macro-live/state"
+# Older than this and the ranking is ignored: a wire window turns over in
+# minutes, so a stale ordering is worse than honest recency (it would pin an hour-
+# old lead story to the top of a fresh tape).
+_WIRE_RANK_MAX_AGE_MIN = 45.0
+
 
 def _wires_candidates(root: Path) -> list[Path]:
     """Ordered candidate paths for the wires.v1 payload (highest precedence first)."""
@@ -220,6 +246,102 @@ def _resolve_wires_path(root: Path) -> Path | None:
         except OSError:
             continue
     return None
+
+
+def _wire_rank_candidates(root: Path) -> list[Path]:
+    """Ordered candidate paths for the ranked-wire sidecar (highest first).
+
+    Mirrors the wires ladder but on the STATE dir, not the PUBLIC live dir —
+    that separation is the whole point of the sidecar (see the block comment
+    above). MACRO_LIVE_STATE_DIR is the deployed override
+    (app/deploy/live-setup.sh:80, scripts/vps_live_orchestrator.py:459).
+    """
+    candidates: list[Path] = []
+    env_dir = os.environ.get("MACRO_LIVE_STATE_DIR")
+    if env_dir:
+        candidates.append(Path(env_dir) / _WIRE_RANK_BASENAME)
+    state = Path(_VPS_STATE_DIR)
+    try:
+        if state.is_dir():
+            candidates.append(state / _WIRE_RANK_BASENAME)
+    except OSError:
+        pass  # unreadable mount point — skip the rung, never raise
+    # Dev sink: the same gitignored directory the fastlane daemon writes wires to.
+    candidates.append(root / "data" / "marketing" / "press" / _WIRE_RANK_BASENAME)
+    return candidates
+
+
+def _resolve_wire_rank_path(root: Path) -> Path | None:
+    """First sidecar candidate whose FILE exists, else None.
+
+    File-exists (not dir-exists), same as _resolve_wires_path: on a dev box the
+    state dir can exist and be empty while the dev sink holds the real file.
+    """
+    for cand in _wire_rank_candidates(root):
+        try:
+            if cand.is_file():
+                return cand
+        except OSError:
+            continue
+    return None
+
+
+def _wire_rank_order(root: Path, now: datetime) -> dict[str, int] | None:
+    """{wire item id: position} from a FRESH sidecar, else None.
+
+    None — meaning "fall back to the honest recency order" — for every degraded
+    case: no file, corrupt JSON, no `ids` list, an unparseable `updated_at`, or a
+    stamp older than _WIRE_RANK_MAX_AGE_MIN.
+
+    An unparseable/absent stamp is treated as unusable rather than fresh: a
+    ranking whose age cannot be established cannot be shown to be current, and
+    assuming freshness is how a dead daemon's last ordering outlives it. A
+    FUTURE stamp is clock skew, not staleness, so it passes (the same rule
+    _recency_factor applies to research dates).
+
+    The schema string is checked loosely, matching _wire_items: a reader that
+    hard-failed on a rename would go dark on a schema bump, and every field
+    access here is already defensive.
+    """
+    path = _resolve_wire_rank_path(root)
+    if path is None:
+        return None
+    payload = _read_json(path)
+    if not isinstance(payload, dict):
+        return None
+    stamp = _parse_ts(payload.get("updated_at"))
+    if stamp is None:
+        return None
+    age_min = (now - stamp).total_seconds() / 60.0
+    if age_min > _WIRE_RANK_MAX_AGE_MIN:
+        return None
+    ids = payload.get("ids")
+    if not isinstance(ids, list):
+        return None
+    order: dict[str, int] = {}
+    for pos, raw in enumerate(ids):
+        if not isinstance(raw, str):
+            continue
+        key = raw.strip()
+        if key and key not in order:  # first position wins on a duplicated id
+            order[key] = pos
+    return order or None
+
+
+def _apply_wire_rank(
+    pool: list[tuple[float, datetime, dict, list, str | None]],
+    order: dict[str, int] | None,
+) -> list[tuple[float, datetime, dict, list, str | None]]:
+    """Reorder the wire pool by sidecar position; unranked items keep their order.
+
+    Stable-sorted on position with a +inf default, so items the sidecar does not
+    name retain the salience/recency order `_rank` gave them and land AFTER every
+    ranked one. Nothing about the events themselves changes — this is a
+    permutation, which is why no output field had to be added.
+    """
+    if not order:
+        return pool
+    return sorted(pool, key=lambda row: order.get(row[4] or "", float("inf")))
 
 
 def _wire_items(payload) -> list[dict]:
@@ -278,13 +400,14 @@ def _project_event(
     return event
 
 
-def _collect_wire_events(root: Path, cutoff: datetime) -> list[tuple[float, datetime, dict, list]]:
+def _collect_wire_events(root: Path, cutoff: datetime) -> list[tuple[float, datetime, dict, list, str | None]]:
     """Read the live wire and project its in-window items.
 
-    Returns (salience_sort_value, ts, event, tickers) rows. The ticker list rides
-    ALONGSIDE the projected event rather than inside it: `tickers` is not an
-    output field (EVENT_FIELDS), but symbol matching needs it, so it is carried
-    out-of-band and dropped before the return.
+    Returns (salience_sort_value, ts, event, tickers, item_id) rows. The ticker
+    list and the id ride ALONGSIDE the projected event rather than inside it:
+    neither is an output field (EVENT_FIELDS), but symbol matching needs the
+    tickers and the ranked sidecar needs the id, so both are carried out-of-band
+    and dropped before the return.
 
     SHAPE NOTE: the published rail item carries id/ts/class/label_en/label_zh/
     register/en/attribution/corroboration (+ optional zh, tape_stamp) — it does
@@ -296,7 +419,7 @@ def _collect_wire_events(root: Path, cutoff: datetime) -> list[tuple[float, date
     if path is None:
         return []
     items = _wire_items(_read_json(path))
-    out: list[tuple[float, datetime, dict, list]] = []
+    out: list[tuple[float, datetime, dict, list, str | None]] = []
     for item in items:
         ts = _parse_ts(item.get("ts") or item.get("published_at"))
         if ts is None or ts < cutoff:
@@ -325,6 +448,7 @@ def _collect_wire_events(root: Path, cutoff: datetime) -> list[tuple[float, date
                 source_kind="live_wire",
             ),
             item.get("tickers") if isinstance(item.get("tickers"), list) else [],
+            _first_text(item, "id"),
         ))
     return out
 
@@ -361,15 +485,19 @@ def _nightly_candidate_items(payload) -> list[dict]:
     return items
 
 
-def _collect_nightly_events(root: Path, cutoff: datetime) -> list[tuple[float, datetime, dict, list]]:
+def _collect_nightly_events(root: Path, cutoff: datetime) -> list[tuple[float, datetime, dict, list, str | None]]:
     """Project in-window items from the nightly news digests.
+
+    Same row shape as _collect_wire_events so one `_rank`/`_absorb` serves both.
+    The trailing id is always None here: the ranked sidecar covers the WIRE pool
+    only — the desk ranks the intraday tape, not last night's digest.
 
     SALIENCE NOTE: these are the NEWS desk's own scores (`importance_score`,
     `quality`, `rank_score` — all roughly 0..100), not press-lane salience. They
     are emitted because they are facts the desk computed, but nightly items are
     never sorted against wire items by them (see get_market_events).
     """
-    out: list[tuple[float, datetime, dict, list]] = []
+    out: list[tuple[float, datetime, dict, list, str | None]] = []
     for name in _NIGHTLY_FILES:
         payload = _read_json(root / "site" / "news" / name)
         if payload is None:
@@ -403,11 +531,14 @@ def _collect_nightly_events(root: Path, cutoff: datetime) -> list[tuple[float, d
                     source_kind="nightly",
                 ),
                 item.get("tickers") if isinstance(item.get("tickers"), list) else [],
+                None,
             ))
     return out
 
 
-def _rank(pool: list[tuple[float, datetime, dict, list]]) -> list[tuple[float, datetime, dict, list]]:
+def _rank(
+    pool: list[tuple[float, datetime, dict, list, str | None]],
+) -> list[tuple[float, datetime, dict, list, str | None]]:
     """Sort one source pool by salience desc, then timestamp desc."""
     return sorted(pool, key=lambda row: (-row[0], -row[1].timestamp()))
 
@@ -452,7 +583,8 @@ def get_market_events(
          used ONLY to top up when the wire yields fewer than `limit`.
 
     Ordering is SOURCE-MAJOR: wire events first (ranked among themselves by
-    salience desc then ts desc), then nightly top-ups (ranked the same way).
+    salience desc then ts desc, then permuted by the ranked-wire sidecar when a
+    fresh one exists), then nightly top-ups (ranked the same way).
     The two pools are never sorted against each other, because their scores are
     not the same quantity — press salience and the news desk's importance/quality
     scores share a 0..100 range and nothing else, so a cross-pool comparison
@@ -481,6 +613,9 @@ def get_market_events(
 
     try:
         wire_pool = _rank(_collect_wire_events(root, cutoff))
+        # The desk's own ordering, when a fresh non-public sidecar publishes one;
+        # otherwise the recency order above stands (see _wire_rank_order).
+        wire_pool = _apply_wire_rank(wire_pool, _wire_rank_order(root, reference))
     except Exception:  # noqa: BLE001 — retrieval must not take the turn down
         wire_pool = []
 
@@ -491,8 +626,8 @@ def get_market_events(
     seen: set[str] = set()
     selected: list[tuple[dict, bool]] = []  # (event, is_symbol_match)
 
-    def _absorb(pool: list[tuple[float, datetime, dict, list]]) -> None:
-        for _sal, _ts, event, tickers in pool:
+    def _absorb(pool: list[tuple[float, datetime, dict, list, str | None]]) -> None:
+        for _sal, _ts, event, tickers, _iid in pool:
             key = _dedupe_key(event.get("headline"))
             if key and key in seen:
                 continue
@@ -630,11 +765,284 @@ def _catalog_items(root: Path) -> list[dict] | None:
     return [it for it in items if isinstance(it, dict)]
 
 
+# --------------------------------------------------------------------------- #
+# FUNCTION 2b — street clusters (W2): what is the street all writing about?
+# --------------------------------------------------------------------------- #
+# WHAT THE CATALOG ACTUALLY GIVES US (recon, 2026-07-30, 374 items, ~7d window):
+# `institution` is filled 374/374 across 28 distinct houses, and `side` splits
+# sell 319 / independent 55. `desk`, `tags` and `tickers` are filled 0/374 —
+# DEAD FIELDS. So convergence is read off text + institution, and nothing here
+# touches tags/tickers: a theme keyed on an always-empty field would return zero
+# clusters forever and read as "the street agrees on nothing". Deterministic and
+# offline throughout — no embeddings, no LLM, no network.
+#
+# WHY THEMES ARE ANCHORED ON TERMS, AND ON THE TITLE (measured, not assumed)
+# -------------------------------------------------------------------------
+# The obvious build — bag-of-words over title+summary, greedy document
+# clustering, join on Jaccard>=0.3 or >=2 shared tokens — was implemented first
+# and MEASURED against the real catalog. It fabricates convergence:
+#
+#   * Top cluster: 51 reports / 14 houses labelled "hike fed rate", whose members
+#     were "US EQUITIES COLOR PRESSER PRESSURE", "In Credit 27 07 2026" and
+#     "Chile MPC Keeps Policy Rate at 4.5" — nothing in common.
+#   * Second: 22 reports / 8 houses labelled "global policy data", members
+#     "Qualcomm First Take", "CBRE 2Q26", "Pi gev 3q26".
+#
+# The cause is structural, not a tuning miss. Half this catalog is MULTI-TOPIC
+# daily briefings ("GS MORNING 1 Oil Tracker, 2 USDJPY Topside, 3 Korea Update,
+# 4 ..."), whose token bags span the whole macro universe. Each one is a hub that
+# chains unrelated notes into one blob, and tightening the distinctiveness of the
+# shared tokens (swept at 2/4/6/8% document frequency) never separates them.
+# Reporting that as "14 houses are converging" would be a manufactured consensus
+# claim — the exact laundered-escalation failure TI-R5 exists to stop.
+#
+# So a theme is a TERM plus the notes whose OWN TITLE names it. A title is the
+# note's declaration of its subject; a mention buried in an omnibus briefing's
+# bullets is not. That makes the emitted claim literally checkable — "11 notes
+# from 6 houses have 'oil' in the title" — instead of an unfalsifiable grouping.
+# Adding the summariser's bolded bullet headers as a second membership signal was
+# tried too and rejected: recall rose but "geopolitical" then swept in "Ford
+# Motor July 29", because an omnibus note's headers span everything its bullets
+# do. Measured output of the shipped version: credit 10 reports/8 houses,
+# europe 12/6, oil 11/6, iran 6/6, china 19/5, earnings 11/5 — every member's
+# title genuinely names its theme.
+#
+# A term must start with a LETTER and run >=3 chars. That one rule drops the
+# measurement noise this catalog is full of ("152bps", "2q26", "500") while
+# keeping subject words that carry a digit ("mag7").
+_CLUSTER_TOKEN_RE = re.compile(r"[a-z][a-z0-9]{2,}")
+
+# Grammar words, report FURNITURE, and calendar words — the vocabulary of a
+# note's packaging rather than its subject. Frozen and hand-checked against the
+# real titles: "JPM GLOBAL MARKET INTELLIGENCE" and "DB Research Europe" are
+# recurring PUBLICATION SERIES names, so market/global/research/intelligence must
+# not become themes. "The street is focused on: market" is also exactly the vague
+# glance-tier copy the design doctrine bans.
+_CLUSTER_STOPWORDS: frozenset[str] = frozenset({
+    # grammar / connective
+    "and", "the", "for", "with", "from", "that", "this", "will", "has", "have",
+    "are", "but", "not", "its", "was", "were", "been", "into", "over", "more",
+    "less", "than", "per", "all", "any", "out", "our", "their", "they", "them",
+    "what", "when", "where", "which", "while", "also", "may", "can", "could",
+    "would", "should", "still", "after", "before", "amid", "amidst", "versus",
+    "vs", "about", "above", "below", "between", "both", "each", "other",
+    "others", "some", "such", "only", "own", "same", "too", "very", "just",
+    "now", "one", "two", "three", "new", "near", "next", "last", "most",
+    "much", "many", "due", "despite", "since", "until", "again", "off", "via",
+    "without", "within", "across", "against", "along", "among", "around",
+    "because", "being", "does", "doing", "done", "during", "further",
+    "however", "itself", "made", "make", "making", "need", "needs", "once",
+    "said", "says", "see", "seen", "set", "sets", "show", "shows", "thus",
+    "toward", "towards", "use", "used", "using", "whether", "though",
+    "although", "either", "neither", "yet", "already", "onto", "under", "upon",
+    "here", "there", "then", "who", "whom", "how", "why",
+    # report furniture / recurring publication-series words
+    "report", "reports", "update", "updates", "note", "notes", "weekly",
+    "monthly", "daily", "quarterly", "preview", "review", "first", "second",
+    "third", "take", "takes", "group", "inc", "corp", "ltd", "plc", "llc",
+    "research", "comment", "comments", "commentary", "color", "colour",
+    "morning", "afternoon", "evening", "midday", "overnight", "summary",
+    "brief", "briefing", "briefings", "desk", "recap", "wrap", "edition",
+    "deck", "chart", "charts", "table", "exhibit", "appendix", "page", "pages",
+    "key", "focus", "thoughts", "views", "view", "read", "reading", "insight",
+    "insights", "idea", "ideas", "call", "calls", "week", "month", "year",
+    "quarter", "today", "yesterday", "session", "meeting", "market", "markets",
+    "global", "macro", "equity", "equities", "intelligence", "intell",
+    "strategy", "strategies", "thematic", "think", "point", "talk", "tracker",
+    "navigator", "kickstart", "analyst", "economics", "outlook",
+    # calendar
+    "january", "february", "march", "april", "june", "july", "august",
+    "september", "october", "november", "december", "jan", "feb", "mar", "apr",
+    "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec", "monday",
+    "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+})
+
+# A term in more than a quarter of the window's notes is the week's WEATHER, not
+# a theme worth naming: it has no discriminating power and its "N houses wrote
+# about it" reads as convergence when it is just vocabulary.
+_CLUSTER_DF_CEILING = 0.25
+# Two terms whose supporting note sets overlap this much are one theme said two
+# ways ("oil"/"crude"); merging on the DOCUMENT sets rather than on token
+# similarity is what keeps an omnibus note from chaining themes together.
+_CLUSTER_MERGE_JACCARD = 0.5
+_CLUSTER_THEME_TERMS = 3         # words in the emitted theme label
+_CLUSTER_REPORTS_SHOWN = 3       # newest N reports listed per theme
+_CLUSTER_SCAN_CAP = 800          # bounds the walk on a runaway catalog
+
+_CLUSTERS_SCHEMA = "brain.research_clusters.v1"
+_CLUSTERS_NOTE = (
+    "Convergence is a retrieval summary of what the street is writing about — "
+    "not a view, not consensus-as-authority."
+)
+
+_MODE_SEARCH, _MODE_CLUSTERS = "search", "clusters"
+
+
+def _is_clusters_mode(mode) -> bool:
+    """True only for an explicit clusters request; anything else searches.
+
+    Lenient on the way in (case, whitespace, a non-string the model invented) and
+    strict about the DEFAULT: an unrecognised mode runs the search it always did
+    rather than erroring, because the gateway hands model arguments straight
+    through and a typo must not cost the user his answer.
+    """
+    return isinstance(mode, str) and mode.strip().lower() == _MODE_CLUSTERS
+
+
+def _cluster_tokens(item: dict) -> frozenset[str]:
+    """The note's OWN declared subject: filtered tokens of its title.
+
+    Title only — see the block comment above for the measured reason. Markdown
+    needs no stripping pass: a token regex anchored on a letter run drops
+    asterisks, colons and dashes by itself.
+    """
+    text = str(item.get("title") or "").lower()
+    return frozenset(
+        t for t in _CLUSTER_TOKEN_RE.findall(text) if t not in _CLUSTER_STOPWORDS
+    )
+
+
+def _cluster_sort_key(item: dict) -> tuple:
+    """Newest-first ordering key, total and stable.
+
+    A note with no readable date sorts LAST rather than first, and `id` closes
+    the order so a catalog rebuild cannot reshuffle the output.
+    """
+    ts = _parse_ts(item.get("published_at"))
+    return (ts is None, -ts.timestamp() if ts is not None else 0.0,
+            str(item.get("id") or ""))
+
+
+def _research_clusters(
+    items: list[dict],
+    *,
+    now: datetime,
+    min_reports: int = 3,
+    min_institutions: int = 2,
+    max_clusters: int = 5,
+) -> dict:
+    """Themes several houses are writing about at once. Deterministic; never raises.
+
+    A theme is a subject TERM plus every note whose title names it. Terms whose
+    supporting note sets overlap by >=_CLUSTER_MERGE_JACCARD are folded together
+    so one subject said two ways lands once, and the label keeps up to
+    _CLUSTER_THEME_TERMS of them.
+
+    A theme is only REPORTED when >=min_reports notes from >=min_institutions
+    distinct houses carry it. One house publishing three notes on its own idea is
+    not the street converging — it is one desk repeating itself, and the
+    institution count is the only thing that separates the two.
+
+    Empty is an honest answer: `clusters: []` means nothing cleared the bar, not
+    that the read failed.
+    """
+    rows: list[tuple[tuple, dict, frozenset[str]]] = []
+    for item in items:
+        tokens = _cluster_tokens(item)
+        if tokens:
+            rows.append((_cluster_sort_key(item), item, tokens))
+    # Sort BEFORE the cap: `items` arrives in whatever order the catalog builder
+    # wrote it, which is not guaranteed to be chronological, so capping the raw
+    # list could silently drop the NEWEST notes on a large vintage. Newest-first
+    # then truncate keeps the cap a bound on cost, not a bias in what is read.
+    rows.sort(key=lambda row: row[0])
+    del rows[_CLUSTER_SCAN_CAP:]
+    scanned = len(rows)
+
+    # term -> the set of note indices whose title carries it
+    support: dict[str, set[int]] = {}
+    for index, (_key, _item, tokens) in enumerate(rows):
+        for token in tokens:
+            support.setdefault(token, set()).add(index)
+
+    floor = max(1, int(min_reports))
+    # The ambient ceiling can never fall BELOW the admission floor: on a small
+    # catalog a quarter of the notes is fewer than min_reports, so a scaled-only
+    # ceiling would classify every shared term as ambient and report nothing —
+    # silently, and only on small inputs. max() keeps the floor always reachable
+    # and needs no magic minimum-N cliff.
+    ceiling = max(scanned * _CLUSTER_DF_CEILING, float(floor))
+    candidates = sorted(
+        ((len(docs), term) for term, docs in support.items()
+         if floor <= len(docs) <= ceiling),
+        # Commonest term first, alphabetical among equals: a total order, so the
+        # same catalog always folds into the same themes.
+        key=lambda row: (-row[0], row[1]),
+    )
+
+    themes: list[dict] = []
+    for _count, term in candidates:
+        docs = support[term]
+        for theme in themes:
+            union = len(docs | theme["docs"])
+            if union and len(docs & theme["docs"]) / union >= _CLUSTER_MERGE_JACCARD:
+                theme["terms"].append(term)
+                theme["docs"] |= docs
+                break
+        else:
+            themes.append({"terms": [term], "docs": set(docs)})
+
+    reported: list[tuple[tuple, dict]] = []
+    for theme in themes:
+        members = [rows[i][1] for i in sorted(theme["docs"])]
+        institutions = sorted({
+            inst for inst in (_first_text(m, "institution") for m in members) if inst
+        })
+        if len(members) < min_reports or len(institutions) < min_institutions:
+            continue
+        reported.append(_cluster_projection(theme["terms"], members, institutions))
+
+    # n_institutions desc, n_reports desc, newest first, theme — a total order.
+    reported.sort(key=lambda row: row[0])
+    return {
+        "schema": _CLUSTERS_SCHEMA,
+        "asof": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "count_scanned": scanned,
+        "clusters": [payload for _key, payload in reported[:max(1, int(max_clusters))]],
+        "note": _CLUSTERS_NOTE,
+    }
+
+
+def _cluster_projection(terms: list[str], members: list[dict],
+                        institutions: list[str]) -> tuple[tuple, dict]:
+    """(sort_key, output theme). Literal fields only — no score, no confidence.
+
+    `window_days` is the theme's OWN span, oldest to newest report: "6 houses
+    inside 1.7 days" and "6 houses across a fortnight" are different facts about
+    convergence, and the catalog's rolling window cannot express either.
+    """
+    theme = " ".join(terms[:_CLUSTER_THEME_TERMS])
+    stamps = [s for s in (_parse_ts(m.get("published_at")) for m in members)
+              if s is not None]
+    window_days = (round((max(stamps) - min(stamps)).total_seconds() / 86400.0, 1)
+                   if len(stamps) > 1 else 0.0)
+    newest = max(str(m.get("published_at") or "") for m in members)
+    shown = sorted(members, key=_cluster_sort_key)[:_CLUSTER_REPORTS_SHOWN]
+    payload = {
+        "theme": theme,
+        "n_reports": len(members),
+        "n_institutions": len(institutions),
+        "institutions": institutions,
+        "window_days": window_days,
+        "top_pick_count": sum(1 for m in members if m.get("top_pick")),
+        "reports": [{
+            "id": m.get("id"),
+            "title": m.get("title"),
+            "institution": m.get("institution"),
+            "published_at": m.get("published_at"),
+        } for m in shown],
+    }
+    sort_key = (-len(institutions), -len(members), _neg_str_key(newest), theme)
+    return sort_key, payload
+
+
+
 def search_research(
     root: Path,
-    query: str,
+    query: str = "",
     limit: int = _RESEARCH_LIMIT_DEFAULT,
     *,
+    mode: str | None = None,
     now: datetime | None = None,
 ) -> dict:
     """Keyword-search the research vault — THIRD-PARTY views, not the desk's own.
@@ -655,6 +1063,12 @@ def search_research(
     bare word against 346 institutional notes ranks essentially by recency and
     would read as a search that worked. A missing or corrupt catalog returns
     "research vault unavailable". Never raises.
+
+    mode="clusters" answers a different question over the same catalog — which
+    themes several houses are all writing about right now — and returns the
+    brain.research_clusters.v1 envelope instead of `results`. `query` and `limit`
+    are not read in that mode (see the clusters block above). Any other mode
+    value, including a typo, searches.
     """
     reference = now or datetime.now(timezone.utc)
     if reference.tzinfo is None:
@@ -666,6 +1080,30 @@ def search_research(
         "institutional research summaries — third-party views, "
         "not the desk's own signals"
     )
+
+    # --- clusters mode ----------------------------------------------------- #
+    # Same tool, same catalog, same tier gate (the gateway gates by NAME, so this
+    # mode inherits the Insider/Pro fence without touching it). The query is not
+    # read here: convergence is a property of the whole window, and filtering it
+    # by search terms would answer "who agrees with my premise" instead.
+    if _is_clusters_mode(mode):
+        try:
+            items = _catalog_items(root)
+        except Exception:  # noqa: BLE001
+            items = None
+        if items is None:
+            return {"schema": "brain.research_clusters.v1",
+                    "asof": reference.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "count_scanned": 0, "clusters": [],
+                    "note": "research vault unavailable"}
+        try:
+            return _research_clusters(items, now=reference)
+        except Exception:  # noqa: BLE001 — retrieval must not take the turn down
+            return {"schema": "brain.research_clusters.v1",
+                    "asof": reference.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    "count_scanned": 0, "clusters": [],
+                    "note": "street clusters unavailable"}
+
     tokens = _tokenize(query)
     if len(tokens) < 2:
         return {"query": str(query or ""), "results": [], "count_scanned": 0,
@@ -792,7 +1230,13 @@ RESEARCH_TOOL_SCHEMA: dict = {
         "second opinion beside the desk's own signals. Returns third-party "
         "institutional research summaries — attribute every view to its "
         "institution ('Goldman Sachs writes…'), never present one as the desk's "
-        "own read, and say plainly when a note disagrees with the engine."
+        "own read, and say plainly when a note disagrees with the engine. "
+        "Set mode='clusters' instead of searching when the user asks what the "
+        "street is FOCUSED on, where the desks are converging or crowding, or "
+        "what everyone is writing about this week: that returns the themes "
+        "several houses hit at once, with the report counts and house names. "
+        "Convergence is what was WRITTEN, not evidence the view is right — many "
+        "desks agreeing is a crowding fact, so name the houses and say so."
     ),
     "input_schema": {
         "type": "object",
@@ -801,12 +1245,22 @@ RESEARCH_TOOL_SCHEMA: dict = {
                 "type": "string",
                 "description": (
                     "Search terms — theme, ticker, or institution (needs at "
-                    "least 2 words, e.g. 'hedge fund momentum', 'NVDA capex')"
+                    "least 2 words, e.g. 'hedge fund momentum', 'NVDA capex'). "
+                    "Ignored when mode='clusters'; pass '' there."
                 ),
             },
             "limit": {
                 "type": "integer",
                 "description": "Max results to return (1..8, default 5)",
+            },
+            "mode": {
+                "type": "string",
+                "enum": [_MODE_SEARCH, _MODE_CLUSTERS],
+                "description": (
+                    "'search' (default) ranks individual notes against the "
+                    "query; 'clusters' ignores the query and returns the themes "
+                    "3+ notes from 2+ institutions share right now."
+                ),
             },
         },
         "required": ["query"],

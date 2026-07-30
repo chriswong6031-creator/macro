@@ -1,0 +1,40 @@
+{
+  "handles": {
+    "Barchart": {
+      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_kept": 0
+    },
+    "DeItaone": {
+      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_kept": 0
+    },
+    "FirstSquawk": {
+      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_kept": 0
+    },
+    "KobeissiLetter": {
+      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_kept": 0
+    },
+    "unusual_whales": {
+      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_kept": 0
+    }
+  },
+  "last_run": {
+    "at": "2026-07-30T22:16:18Z",
+    "calls": 5,
+    "rows": 0,
+    "stopped": null,
+    "usd": 0.00075
+  },
+  "months": {
+    "2026-07": {
+      "calls": 5,
+      "tweets": 0,
+      "usd": 0.00075
+    }
+  },
+  "schema": "marketing.x_intel_state/v1",
+  "updated_at": "2026-07-30T22:16:18Z"
+}

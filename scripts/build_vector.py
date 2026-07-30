@@ -2545,85 +2545,56 @@ html[data-lang="zh"] .regime-drift .l-zh{display:inline}
 .rep-latest{font-size:11px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:32ch;display:block;margin-top:2px}
 .ipo-line{font-size:11px;opacity:.82;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;margin-top:2px}
 
-/* ===== personal welcome — a quiet intelligence surface, not a chat bubble.
-   A small reasoning constellation identifies the speaker; the changing market read
-   remains the only loud element. Greeting + brand share one grid cell so the handoff
-   never shifts the globe. Decorative (aria-hidden); the brand remains accessible. ===== */
+/* ===== personal welcome — a thought suspended above the globe.
+   The neutral radial veil gives the words enough separation to read as glass without
+   becoming a card, console, or chat bubble. Greeting + brand share one grid cell so
+   the handoff never shifts the globe. Decorative (aria-hidden); brand stays accessible. ===== */
 .hub-hero-stack{display:grid;isolation:isolate}
 .hub-hero-stack>.hub-greet,.hub-hero-stack>.hub-brand{grid-area:1/1}
 .hub-brand{transition:opacity .82s ease,transform .82s cubic-bezier(.2,.75,.25,1)}
-.hub-greet{display:flex;align-items:center;justify-content:center;min-height:clamp(132px,16vw,168px);
- opacity:0;pointer-events:none;transform:translateY(-7px) scale(.985);
+.hub-greet{display:flex;align-items:center;justify-content:center;min-height:clamp(122px,15vw,158px);
+ opacity:0;pointer-events:none;transform:translateY(-6px) scale(.99);
  transition:opacity .62s ease,transform .8s cubic-bezier(.2,.75,.25,1)}
 .h.greet-run .hub-greet{opacity:1;transform:none}
 .h.greet-run .hub-brand{opacity:0;transform:translateY(9px) scale(.99)}
-.hub-intel-shell{position:relative;isolation:isolate;display:grid;grid-template-rows:auto 1fr auto;
- width:min(760px,calc(100vw - 42px));min-height:clamp(126px,15vw,154px);padding:13px 17px 11px;
- overflow:hidden;border:1px solid color-mix(in srgb,var(--info) 22%,var(--line));
- border-radius:22px;background:
- linear-gradient(135deg,color-mix(in srgb,var(--panel) 92%,var(--info) 8%),color-mix(in srgb,var(--panel) 96%,transparent));
- box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 16%,transparent),
-  0 20px 52px -30px color-mix(in srgb,var(--info) 55%,transparent),
-  0 7px 24px -18px color-mix(in srgb,var(--text) 42%,transparent);
- -webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15)}
-.hub-intel-shell::before{content:"";position:absolute;z-index:-1;inset:-90% 32% -90% -12%;
- background:radial-gradient(circle,color-mix(in srgb,var(--info) 15%,transparent) 0,transparent 64%);
- opacity:.82;transform:translateX(-12%);transition:transform 1.2s ease}
-.hub-intel-shell::after{content:"";position:absolute;z-index:-1;top:0;bottom:0;width:28%;
- left:-32%;transform:skewX(-14deg);opacity:0;
- background:linear-gradient(90deg,transparent,color-mix(in srgb,#fff 11%,transparent),transparent)}
-.h.greet-run .hub-intel-shell::before{transform:translateX(0)}
-.hub-greet.is-speaking .hub-intel-shell::after{opacity:1;animation:intelSweep 4.8s ease-in-out infinite}
-.hub-intel-meta,.hub-intel-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;
- color:color-mix(in srgb,var(--muted) 88%,var(--text));font-family:var(--font-mono);
- font-size:9.5px;font-weight:720;line-height:1;letter-spacing:.14em;text-transform:uppercase}
-.hub-intel-id{display:inline-flex;align-items:center;gap:9px;color:color-mix(in srgb,var(--text) 82%,var(--info));letter-spacing:.11em}
-.hub-intel-mark{position:relative;width:23px;height:23px;flex:none}
-.hub-intel-core{position:absolute;left:8px;top:8px;width:7px;height:7px;border-radius:50%;
- background:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 14%,transparent),0 0 13px color-mix(in srgb,var(--info) 70%,transparent)}
-.hub-intel-orbit{position:absolute;inset:1px;border:1px solid color-mix(in srgb,var(--info) 52%,transparent);
- border-left-color:transparent;border-radius:50%;animation:intelOrbit 3.8s linear infinite}
-.hub-intel-sat{position:absolute;width:3px;height:3px;border-radius:50%;background:color-mix(in srgb,var(--info) 68%,#fff)}
-.hub-intel-sat.sat-a{top:1px;left:10px}.hub-intel-sat.sat-b{right:1px;bottom:5px}.hub-intel-sat.sat-c{left:1px;bottom:4px;opacity:.6}
-.hub-intel-mode{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
-.hub-intel-mode::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--up);
- box-shadow:0 0 0 3px color-mix(in srgb,var(--up) 13%,transparent),0 0 9px color-mix(in srgb,var(--up) 52%,transparent)}
-.hub-intel-mode.mode-read{display:none}
-.hub-greet.convo .hub-intel-mode.mode-ready{display:none}
-.hub-greet.convo .hub-intel-mode.mode-read{display:inline-flex}
-.hub-intel-message{display:flex;align-items:center;justify-content:center;gap:4px;min-height:78px;padding:8px 22px 6px}
+.hub-intel-shell{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:center;
+ width:min(820px,calc(100vw - 40px));min-height:clamp(112px,13vw,140px);padding:22px clamp(26px,6vw,72px)}
+.hub-intel-shell::before{content:"";position:absolute;z-index:-1;inset:-24px -56px;
+ background:radial-gradient(ellipse at center,
+  color-mix(in srgb,var(--panel) 82%,transparent) 0,
+  color-mix(in srgb,var(--panel) 56%,transparent) 40%,
+  color-mix(in srgb,var(--panel) 22%,transparent) 63%,transparent 78%);
+ -webkit-backdrop-filter:blur(18px) saturate(1.04);backdrop-filter:blur(18px) saturate(1.04);
+ -webkit-mask-image:radial-gradient(ellipse at center,#000 27%,rgba(0,0,0,.84) 48%,transparent 77%);
+ mask-image:radial-gradient(ellipse at center,#000 27%,rgba(0,0,0,.84) 48%,transparent 77%);
+ opacity:.68;transform:scale(.94);transition:opacity .9s ease,transform 1.1s cubic-bezier(.2,.75,.25,1);
+ filter:drop-shadow(0 18px 26px color-mix(in srgb,var(--text) 9%,transparent))}
+.h.greet-run .hub-intel-shell::before{opacity:.92;transform:scale(1)}
+.hub-greet.is-speaking .hub-intel-shell::before{opacity:1}
+.hub-greet.is-thinking .hub-intel-shell::before{opacity:.72}
+.hub-intel-message{display:flex;align-items:center;justify-content:center;gap:5px;min-height:78px;width:100%}
 .hub-greet .greet-tx{font-family:var(--font-ui);font-weight:820;letter-spacing:-.018em;line-height:1.07;text-align:center;
  font-size:clamp(29px,4.5vw,48px);text-wrap:balance;transition:opacity .32s ease;
- background:linear-gradient(112deg,var(--text) 18%,color-mix(in srgb,var(--text) 66%,var(--info)) 72%,var(--info) 118%);
- -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
- filter:drop-shadow(0 1px 1px var(--bg)) drop-shadow(0 0 20px var(--bg))}
-.hub-greet .greet-caret{width:3px;height:clamp(27px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
- background:var(--info);box-shadow:0 0 11px color-mix(in srgb,var(--info) 68%,transparent);animation:greetCaret 1.05s steps(1) infinite}
+ color:var(--text);text-shadow:0 1px 1px var(--bg),0 10px 34px color-mix(in srgb,var(--text) 14%,transparent)}
+.hub-greet .greet-caret{width:2px;height:clamp(27px,4vw,40px);flex:none;border-radius:2px;transform:translateY(3px);
+ background:color-mix(in srgb,var(--text) 72%,transparent);box-shadow:0 0 10px color-mix(in srgb,var(--text) 22%,transparent);
+ animation:greetCaret 1.05s steps(1) infinite}
 .hub-greet.convo .greet-tx{font-size:clamp(19px,2.45vw,28px);font-weight:620;letter-spacing:-.008em;line-height:1.33;
  max-width:min(33ch,calc(100vw - 108px))}
 html[data-lang="zh"] .hub-greet.convo .greet-tx{max-width:min(20em,calc(100vw - 108px));letter-spacing:.01em;line-height:1.42}
 .hub-greet.convo .greet-caret{display:none}
 .hub-greet.convo .greet-tx::after{content:"";display:inline-block;width:2px;height:1.02em;margin-left:4px;transform:translateY(3px);
- border-radius:1px;background:var(--info);box-shadow:0 0 8px color-mix(in srgb,var(--info) 50%,transparent);animation:greetCaret 1.05s steps(1) infinite}
-.hub-intel-foot{padding-top:7px;border-top:1px solid color-mix(in srgb,var(--line) 68%,transparent);letter-spacing:.12em}
-.hub-intel-wave{display:flex;align-items:center;justify-content:flex-end;gap:3px;width:38px;height:10px}
-.hub-intel-wave i{display:block;width:2px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--info) 72%,var(--text));
- transform-origin:center;animation:intelWave 1.15s ease-in-out infinite}
-.hub-intel-wave i:nth-child(2){animation-delay:-.82s}.hub-intel-wave i:nth-child(3){animation-delay:-.55s}
-.hub-intel-wave i:nth-child(4){animation-delay:-.28s}.hub-intel-wave i:nth-child(5){animation-delay:-.68s}
-.hub-greet.is-thinking .hub-intel-wave i{animation-duration:1.8s;opacity:.48}
+ border-radius:1px;background:color-mix(in srgb,var(--text) 72%,transparent);
+ box-shadow:0 0 8px color-mix(in srgb,var(--text) 22%,transparent);animation:greetCaret 1.05s steps(1) infinite}
 @keyframes greetCaret{0%,49%{opacity:1}50%,100%{opacity:0}}
-@keyframes intelOrbit{to{transform:rotate(360deg)}}
-@keyframes intelSweep{0%,14%{left:-32%}55%,100%{left:122%}}
-@keyframes intelWave{0%,100%{height:3px;opacity:.42}50%{height:10px;opacity:1}}
 @media(max-width:560px){
- .hub-greet{min-height:140px}.hub-intel-shell{width:calc(100vw - 34px);min-height:132px;padding:12px 13px 10px;border-radius:18px}
- .hub-intel-message{min-height:80px;padding:8px 6px 5px}.hub-intel-meta,.hub-intel-foot{font-size:8.5px;letter-spacing:.1em}
- .hub-intel-context .context-long{display:none}.hub-greet.convo .greet-tx,html[data-lang="zh"] .hub-greet.convo .greet-tx{max-width:calc(100vw - 62px)}
+ .hub-greet{min-height:132px}.hub-intel-shell{width:calc(100vw - 24px);min-height:120px;padding:18px 23px}
+ .hub-intel-shell::before{inset:-18px -22px}.hub-intel-message{min-height:78px}
+ .hub-greet.convo .greet-tx,html[data-lang="zh"] .hub-greet.convo .greet-tx{max-width:calc(100vw - 58px)}
 }
 @media(prefers-reduced-motion:reduce){
- .hub-brand,.hub-greet,.hub-intel-shell::before{transition:none}.hub-intel-shell::after{display:none}
- .hub-greet .greet-caret,.hub-greet.convo .greet-tx::after,.hub-intel-orbit,.hub-intel-wave i{animation:none}
+ .hub-brand,.hub-greet,.hub-intel-shell::before{transition:none;animation:none}
+ .hub-greet .greet-caret,.hub-greet.convo .greet-tx::after{animation:none}
 }
 </style>"""
 
@@ -3357,17 +3328,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         # accessible content; the greeting is decorative (aria-hidden).
         + '<div class="hub-hero-stack">'
         + '<div class="hub-greet" aria-hidden="true"><div class="hub-intel-shell">'
-        + '<div class="hub-intel-meta"><span class="hub-intel-id">'
-        + '<span class="hub-intel-mark"><i class="hub-intel-core"></i><i class="hub-intel-orbit"></i>'
-        + '<i class="hub-intel-sat sat-a"></i><i class="hub-intel-sat sat-b"></i><i class="hub-intel-sat sat-c"></i></span>'
-        + '<span>MASTERMIND</span></span>'
-        + '<span class="hub-intel-mode mode-ready">' + _bi("Connected", "已连接") + '</span>'
-        + '<span class="hub-intel-mode mode-read">' + _bi("Market read", "市场解读") + '</span></div>'
         + '<div class="hub-intel-message"><span class="greet-tx"></span><span class="greet-caret"></span></div>'
-        + '<div class="hub-intel-foot"><span class="hub-intel-context">'
-        + _bi('<span class="context-long">Global context · </span>09 markets',
-              '<span class="context-long">全球脉络 · </span>9 个市场')
-        + '</span><span class="hub-intel-wave"><i></i><i></i><i></i><i></i><i></i></span></div>'
         + '</div></div>'
         + '<div class="hub-brand"><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMINDX</span></h1>'
@@ -3534,68 +3495,15 @@ def build_allocation_page(env, site: Path, sig: pd.DataFrame, cards: dict,
                           breadth: dict | None = None, env_d: dict | None = None,
                           gate: dict | None = None,
                           **_ignored) -> None:
-    """The allocation deep-dive page: the Master Signal recommendation + Kelly sizing +
-    forward cones (shared with vector.html), AND the altcoin-cycle / ETH allocation keyed
-    to (cycle regime x alt-season x risk). New context is optional (back-compatible)."""
-    from engine import alt_cycle
-    cfg = config.load()["vector"]["alt_cycle"]
-    close = sig["close"]
-    last = sig.iloc[-1]
-    eth = _series("yahoo", "ETH-USD")
-    eb = alt_cycle.ethbtc_signal(eth, close, cfg)
-    cg = store.read("coingecko", "global_market")
-    dom = float(cg["btc_dominance_pct"].iloc[-1]) if cg is not None and not cg.empty else None
-    ethdom = float(cg["eth_dominance_pct"].iloc[-1]) if cg is not None and not cg.empty else None
-    score, bucket = alt_cycle.alt_season_score(eb, dom, cfg)
-    lad = mtf_a.get("ladder") or {}
-    regime = lad.get("regime")
-    grid = alt_cycle.alloc_grid(regime, bucket)
-    # Reconcile with vector.html's headline OPTIMAL STRATEGY: TOTAL crypto exposure =
-    # alloc_pct (the tactical risk gate, alloc_optimal); the alt-cycle grid only SPLITS
-    # that budget across BTC/ETH/alts. So when the gate is shut (alloc_pct=0) this page
-    # is 100% cash too — no more "100% cash here / 25% BTC there" incongruence.
-    alloc_pct = round(100 * last["alloc_optimal"]) if pd.notna(last.get("alloc_optimal")) else 0
-    _rs = grid["btc"] + grid["eth"] + grid["alts"]
-    if _rs > 0 and alloc_pct > 0:
-        _b = round(alloc_pct * grid["btc"] / _rs)
-        _e = round(alloc_pct * grid["eth"] / _rs)
-        _a = alloc_pct - _b - _e          # absorb rounding so crypto sums to alloc_pct
-    else:
-        _b = _e = _a = 0
-    rec = {"btc": _b, "eth": _e, "alts": _a, "cash": 100 - alloc_pct,
-           "regime_key": grid["regime_key"], "season_key": grid["season_key"]}
-    pvm = {
-        "as_of": sig.index.max().strftime("%b %d, %Y"),
-        "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
-        "price": close.iloc[-1],
-        "grid": rec, "grid_full": grid, "regime": regime, "regime_label": lad.get("regime_label"),
-        "regime_label_zh": lad.get("regime_label_zh"), "verdict": verdict,
-        "alloc_pct": alloc_pct,
-        "gate": gate or {"active": False},   # W3: the ONE stamped gated-state flag
-        "cards": cards,
-        # shared command-center decision layer (reused from vector.html). NOTE: the local
-        # `rec` above is the BTC/ETH/alts/cash SPLIT — the recommendation is `recommend_d`.
-        "master": master or {"ok": False},
-        "rec": recommend_d or {"ok": False},
-        "cones": cones or {"ok": False},
-        "sizing": sizing,
-        "catalyst": catalyst,
-        "breadth": breadth or {},
-        "env": env_d or {},
-        "alt": {
-            "ethbtc": _r(eb.get("level"), 4) if eb else None,
-            "ethbtc_pctile": eb.get("pctile") if eb else None,
-            "above_ma": eb.get("above_ma") if eb else None,
-            "slope": _r(100 * eb["slope"], 1) if eb.get("slope") is not None else None,
-            "season": eb.get("season") if eb else None,
-            "score": score, "bucket": bucket,
-            "dom": _r(dom, 1), "ethdom": _r(ethdom, 1),
-        },
-        "chart_ethbtc": chart_ethbtc(eb["ratio"], eb.get("ma"), cfg) if eb else "",
-    }
-    html = env.get_template("vector_allocation.html.j2").render(**pvm, C=C)
+    """Render the retired allocation URL as a source-owned compatibility redirect.
+
+    The allocation model moved into crypto.html in Wave 2. Keeping this builder hook
+    makes every full render actively preserve that move instead of letting a stale,
+    previously generated dashboard survive as an orphaned site artifact.
+    """
+    html = env.get_template("vector_allocation.html.j2").render()
     write_page(site / "vector_allocation.html", html)
-    log.info("wrote %s/vector_allocation.html (%d KB)", site, len(html) // 1024)
+    log.info("wrote %s/vector_allocation.html redirect", site)
 
 
 def _override_falsifier_health(ct: dict, gate: dict, vcfg: dict) -> dict:
@@ -4547,6 +4455,7 @@ def main() -> int:
     except Exception as e:  # noqa: BLE001
         log.error("international dashboard subprocess launch failed (%s)", e)
         _intl_proc = None
+    build_allocation_page(env, site, sig, cards, mtf_a, verdict)
     try:
         build_timeline(site, sig)
     except Exception as e:  # noqa: BLE001 — never let the time-machine tape break the build

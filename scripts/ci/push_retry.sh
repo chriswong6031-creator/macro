@@ -52,9 +52,9 @@
 #
 # The deadline is a HARD ceiling: no loop can outlive its job's timeout-minutes waiting
 # for a ref. When it expires the caller's existing give-up path runs unchanged. Nothing
-# here touches the RENDER_OK/`from=` watermark contract, the `-X theirs` semantics, or
-# scripts/rebase_autoresolve_hashed_css.sh — a run that pushes a partial render still
-# must not stamp `from=`.
+# here changes the caller's completion gate, `-X theirs` semantics, or
+# scripts/rebase_autoresolve_hashed_css.sh. Render invokes this library only after its
+# builders and guards complete, so an incomplete tree never enters the push loop.
 #
 # Tunables (plain shell assignments, set BEFORE push_retry_init — the library is
 # SOURCED into the step's own shell, so no export is needed; each has a working
@@ -108,7 +108,7 @@ push_attempt() {
 # Pure (no git calls) so tests can drive the table directly.
 push_classify() {
   local rc="$1" out="$2"
-  if [ "$rc" -ge 128 ]; then
+  if [ "$rc" -eq 142 ]; then
     PUSH_FAIL_CLASS="push-timeout"
     return 0
   fi
@@ -143,6 +143,79 @@ push_do() {
   fi
   push_classify "$rc" "$out"
   return "$rc"
+}
+
+# Replay one generated commit onto a newer main using tree metadata only.
+#
+# Arguments:
+#   $1  original parent the generated commit was built from
+#   $2  newer commit to publish on top of (normally origin/main)
+#   $3  generated commit
+#   $4  commit message
+#   $5  caller-owned temporary index path
+#
+# `git pull --rebase` checks out the replayed commit and can lazy-fetch thousands of
+# promised blobs in a blobless runner checkout even when main advanced only in
+# unrelated code/data paths. Even `read-tree -m` hydrates unchanged promised blobs on
+# the runner's Git build, so this helper is stricter:
+#   1. load the newer main tree into a temporary index;
+#   2. enumerate only the generated commit's changed paths via tree metadata;
+#   3. reject any path that newer main changed differently; and
+#   4. overlay the generated mode/object IDs with update-index.
+# Unchanged entries remain object IDs; `write-tree --missing-ok` never asks the
+# promisor remote for their bytes. A true same-path conflict returns non-zero so the
+# caller can use its existing porcelain rebase + specialised conflict guards.
+push_metadata_replay_commit() {
+  local render_parent="$1" onto="$2" render_commit="$3" message="$4" index_path="$5"
+  local onto_commit tree commit rc=0 status path base_entry onto_entry render_entry
+  local meta mode oid
+
+  onto_commit=$(git rev-parse "${onto}^{commit}") || return 1
+  rm -f -- "$index_path" "$index_path.lock"
+  GIT_INDEX_FILE="$index_path" git read-tree "$onto_commit" || rc=$?
+  while [ "$rc" -eq 0 ] \
+    && IFS= read -r -d '' status \
+    && IFS= read -r -d '' path; do
+    base_entry=$(git ls-tree "$render_parent" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    onto_entry=$(git ls-tree "$onto_commit" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    render_entry=$(git ls-tree "$render_commit" -- "$path") || rc=$?
+    [ "$rc" -eq 0 ] || break
+    if [ "$onto_entry" != "$base_entry" ] && [ "$onto_entry" != "$render_entry" ]; then
+      printf 'metadata replay conflict: newer main also changed %s\n' "$path" >&2
+      rc=1
+      break
+    fi
+    case "$status" in
+      D)
+        GIT_INDEX_FILE="$index_path" git update-index --force-remove -- "$path" || rc=$?
+        ;;
+      A|M|T)
+        meta=${render_entry%%$'\t'*}
+        mode=${meta%% *}
+        oid=${meta##* }
+        GIT_INDEX_FILE="$index_path" git update-index --add --cacheinfo \
+          "$mode" "$oid" "$path" || rc=$?
+        ;;
+      *)
+        printf 'metadata replay cannot apply status %s for %s\n' "$status" "$path" >&2
+        rc=1
+        ;;
+    esac
+  done < <(
+    git diff-tree -r --no-commit-id --no-renames --name-status -z \
+      "$render_parent" "$render_commit"
+  )
+  if [ "$rc" -eq 0 ]; then
+    tree=$(GIT_INDEX_FILE="$index_path" git write-tree --missing-ok) || rc=$?
+  fi
+  if [ "$rc" -eq 0 ]; then
+    commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$onto_commit") || rc=$?
+  fi
+  rm -f -- "$index_path" "$index_path.lock"
+  [ "$rc" -eq 0 ] || return "$rc"
+  printf '%s\n' "$commit"
 }
 
 # Drop-in replacement for the loops' bare `git rebase --abort 2>/dev/null || true`.

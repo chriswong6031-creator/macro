@@ -1,0 +1,1 @@
+{"schema":"ai_costs.usage.v1","ts":"2026-07-30T12:04:03Z","lane":"whitehouse","provider":"codex","model":"gpt-5.6-sol","key_id":"codex_account","input_tokens":10502,"output_tokens":13,"cache_read_tokens":0,"cache_creation_tokens":0,"est_cost_usd":null,"cost_basis":"subscription","cycle_id":"","stage":"whitehouse_brain","note":""}
