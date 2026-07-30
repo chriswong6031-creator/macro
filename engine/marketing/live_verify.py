@@ -7,13 +7,19 @@ can be underwater, run away, or sitting on an earnings print by the time its
 slot arrives (the "engine said buy, it's down 7% on earnings" case). This
 module is the last-line freshness gate the publisher runs per item, per slot.
 
-Data sources (all repo-local files, fail-soft):
+Data sources (repo-local files, fail-soft):
   * data/marketing/live_quotes_snapshot.json — full-universe quotes the publish
     workflow fetches from the live-data branch just before running (5-min
     cadence artifact, ~2k symbols, 15-min-delayed prices).
   * site/live/quotes.json — display-subset fallback (~30 symbols, 30-min cadence).
   * site/marketdata/sp500_heatmap.json — 1D pct fallback (30-min cadence in RTH).
   * data/earnings/earnings.parquet — next_date / next_time per ticker (nightly).
+
+Plus ONE optional non-local source, off unless a caller asks for it: the VPS
+public live plane (``remote_urls``, see :func:`load_live_quotes`). Every repo-local
+artifact above is written by a GitHub lane, so all three inherit that scheduler's
+delivery; the VPS plane does not. It is opt-in rather than automatic because it
+buys COVERAGE OF 34 MACRO SYMBOLS AND NOTHING ELSE — see :data:`PUBLIC_QUOTES_URL`.
 
 Verdict per item: {"action": "post" | "skip" | "quarantine", "reasons": [...]}
   * quarantine — the copy is WRONG on today's tape (adverse move, underwater,
@@ -75,6 +81,34 @@ _SNAPSHOT_REL = Path("data") / "marketing" / "live_quotes_snapshot.json"
 _DISPLAY_REL = Path("site") / "live" / "quotes.json"
 _HEATMAP_REL = Path("site") / "marketdata" / "sp500_heatmap.json"
 _EARNINGS_REL = Path("data") / "earnings" / "earnings.parquet"
+
+#: The VPS live plane's public quote artifact — the DEFAULT for ``remote_urls``.
+#:
+#: WHY IT EXISTS. Every repo-local source above is written by a GitHub Actions lane,
+#: so all three carry that scheduler's delivery rate. Since VPS_LIVE_PRIMARY=true
+#: (2026-07-27) the ``*/5`` legs of live-quotes.yml and intraday-fastpath.yml stand
+#: themselves down, leaving the ``live-data`` branch on a ``*/15`` leg that GitHub
+#: then throttles further — measured 2026-07-30T13:41Z at 83 MINUTES old, against a
+#: publisher ceiling of 45 and a radar ceiling of 27. The same artifact off the VPS
+#: measured 31 SECONDS old at 13:41:49Z. The host that already publishes the tape is
+#: simply not on the GitHub scheduler.
+#:
+#: WHAT IT DOES **NOT** BUY — read this before wiring a new consumer. This URL is the
+#: 34-symbol DISPLAY set: indices, ETFs, futures, FX, crypto (measured 2026-07-30 —
+#: SPY, QQQ, ^VIX, ES=F, ^TNX, BTC-USD, USDJPY=X ... and no single-name equity at
+#: all). The ~2,100-symbol ``quotes_full.json`` behind it lives in the VPS state dir
+#: and is deliberately NOT web-addressable (app/deploy/Caddyfile only exempts
+#: /live/quotes.json, /live/breadth.json and /live/release_publications.json from the
+#: @reg_asset default-deny route). So this source CANNOT rescue a single-name gate,
+#: and a consumer that needs coverage must still fetch its own tape. Merged, NEVER
+#: substituted: prophet_live learned that the served file read alone evaluates ~0 of
+#: ~1,700 armed names (scripts/prophet_live_evaluator.LOCAL_QUOTE_PATHS).
+PUBLIC_QUOTES_URL = "https://www.mastermind-x.com/live/quotes.json"
+
+#: Seconds any one remote fetch may take. Deliberately small: this runs on the hot
+#: path of a lane that fires ~81 times a session, and a source whose whole point is
+#: being seconds fresh has nothing to offer once it has cost us four.
+REMOTE_TIMEOUT_S = 4.0
 
 _CASHTAG_RE = re.compile(r"\$([A-Z]{1,5})\b")
 
@@ -141,6 +175,57 @@ def _read_json(path: Path) -> dict | None:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception as exc:  # noqa: BLE001
         log.warning("live_verify: unreadable %s: %s", path, exc)
+        return None
+
+
+def remote_quote_urls(cfg: dict | None) -> tuple[str, ...]:
+    """Resolve ``live.public_quotes_url`` from a config dict, else the default.
+
+    Mirrors ``prophet_live_evaluator.local_quote_paths``: a module constant is the
+    default, config overrides it, and an EMPTY value turns the remote source off
+    entirely without a code change (the operator lever). Accepts a string or a list
+    of strings. Never raises — a malformed key falls back to the default rather than
+    taking the tape down.
+    """
+    try:
+        raw = ((cfg or {}).get("live") or {}).get("public_quotes_url", None)
+    except Exception:  # noqa: BLE001
+        return (PUBLIC_QUOTES_URL,)
+    if raw is None:
+        return (PUBLIC_QUOTES_URL,)
+    if isinstance(raw, str):
+        raw = [raw] if raw.strip() else []
+    if not isinstance(raw, (list, tuple)):
+        return (PUBLIC_QUOTES_URL,)
+    return tuple(str(u).strip() for u in raw if str(u or "").strip())
+
+
+def _fetch_json(url: str, timeout_s: float) -> dict | None:
+    """GET one JSON artifact. None on ANY failure — never raises, never blocks long.
+
+    stdlib ``urllib`` on purpose, not ``requests``: this module sits in the import
+    closure of scripts/prophet_live_evaluator.py, whose workflow installs ``pyyaml
+    boto3`` and nothing else. A hard ``requests`` import here would break that lane
+    at import time, which is a far worse failure than a quote source being absent.
+
+    Redirects are followed by urllib's default opener — load-bearing, because the
+    apex host 301s to ``www.`` (measured 2026-07-30).
+    """
+    try:
+        from urllib.request import Request, urlopen  # noqa: PLC0415
+
+        req = Request(url, headers={"User-Agent": "macro-live-verify/1.0",
+                                    "Accept": "application/json"})
+        with urlopen(req, timeout=timeout_s) as resp:  # noqa: S310 - configured URL
+            if getattr(resp, "status", 200) != 200:
+                log.warning("live_verify: %s returned HTTP %s", url, resp.status)
+                return None
+            obj = json.loads(resp.read().decode("utf-8"))
+        return obj if isinstance(obj, dict) else None
+    except Exception as exc:  # noqa: BLE001
+        # Fail-soft is the whole contract: an unreachable host degrades this lane to
+        # exactly its repo-local behaviour, it does not stand a publisher down.
+        log.warning("live_verify: remote quotes unavailable (%s): %s", url, exc)
         return None
 
 
@@ -264,7 +349,12 @@ def _merge_quotes(dest: dict[str, dict], incoming: dict[str, dict],
                 dest[tkr]["_artifact_ms"] = incoming_ms
 
 
-def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
+def load_live_quotes(
+    root: Path | str | None = None,
+    *,
+    remote_urls: "tuple[str, ...] | list[str] | None" = None,
+    remote_timeout_s: float = REMOTE_TIMEOUT_S,
+) -> dict[str, Any]:
     """Load the freshest available quote view.
 
     Returns {"quotes": {ticker: {price, prev_close, change_pct, ts_ms, source}},
@@ -277,6 +367,19 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
     never applied here: a consumer decides whether its own freshness budget is
     measuring observation lag (and so must allow for the feed's delay) or
     absolute market time (and so must not).
+
+    ``remote_urls`` is OPT-IN and defaults to None, which keeps this function
+    exactly what it has always been: repo-local files, no network, no new failure
+    mode for the callers that did not ask (the publisher's post-time gate, every
+    test fixture, prophet_live's VPS lane — which reads a LOCAL plane that is
+    strictly better than this one and must not spend a round trip on it). Pass
+    :func:`remote_quote_urls`'s output to opt in.
+
+    Adding a fresher source to a freshest-wins merge is safe by construction: a
+    remote artifact can only DISPLACE a quote it is newer than, and it is merged
+    LAST so it never gets precedence by source order alone. It cannot narrow the
+    book either — merging only ever adds tickers. The honest limit is coverage,
+    not safety: see :data:`PUBLIC_QUOTES_URL`.
 
     Never raises; empty quotes dict when nothing is readable.
     """
@@ -312,6 +415,35 @@ def load_live_quotes(root: Path | str | None = None) -> dict[str, Any]:
                     asof, asof_ms = obj.get("asof"), obj_ms
                 elif asof is None:
                     asof = obj.get("asof") or asof
+
+    # The remote plane goes LAST so precedence-by-source-order can never hand it a
+    # tie it did not win on timestamp — it earns its entries in _merge_quotes or it
+    # does not get them. An unreachable host adds nothing and says so in the log;
+    # `source` names it only when it actually contributed quotes, so the string
+    # stays evidence of what was read rather than of what was attempted.
+    for url in (remote_urls or ()):
+        obj = _fetch_json(url, remote_timeout_s)
+        if not obj:
+            continue
+        q = _quotes_from_snapshot(obj)
+        if not q:
+            continue
+        obj_ms = _artifact_ms(obj)
+        _merge_quotes(quotes, q, obj_ms)
+        src_used.append("vps")
+        feed_delay = max(feed_delay, _feed_delay_min(obj))
+        # DELIBERATELY DOES NOT TOUCH `asof`, unlike the local sources above.
+        # `asof` is not a label, it is the fallback AGE for every quote carrying no
+        # ts_ms of its own — the heatmap's pct-only tiles. This source is seconds
+        # old by design, so publishing its asof as the view's asof would re-date the
+        # entire untimed book to now and hand a half-hour-old heatmap pct to the
+        # publisher's same-day move gate as if it were live. That is the 2026-07-28
+        # tape-gate incident with the sign flipped: there a stale artifact displaced
+        # fresh quotes, here a fresh artifact would launder stale ones.
+        # Nothing is lost by skipping it: every symbol this source carries brings its
+        # own `ts` (measured 2026-07-30, all 34), so it is judged on its own
+        # timestamp. One that somehow arrived untimed falls back to the older local
+        # asof and is dropped by a tight ceiling — the safe direction.
 
     return {"quotes": quotes, "asof": asof, "source": "+".join(src_used) or "none",
             "feed_delay_min": feed_delay}
