@@ -263,11 +263,18 @@ This ledger is the entire evidence base for §6 promotion and for the operator's
 cross". Both were wrong, and the P0 live verification is what caught it. Measured on
 2026-07-30 (all four facts independently checked, not inferred):
 
-- **GH cron is throttled far past the documented 15–45 min.** `marketing-hot-tape.yml`
-  is `*/5` in RTH and actually ran at 09:07 then 12:19 — ~3h 12m apart.
-  `live-quotes.yml` (`*/15`, never gated) ran 06:04, 08:46, 09:06, 10:50, 12:17 —
-  ~90 min apart. This repo carries ~58 workflows; GitHub deprioritises frequent
-  schedules accordingly. A `*/5` product cadence is NOT purchasable here at any price.
+- **GH does not run scheduled instances LATE — it DROPS them.** This lane's own first day
+  is the cleanest measurement in the estate, because it started from zero: `prophet-live.yml`
+  landed on main ~10:57Z; between its first slot (13:25Z) and 15:29Z roughly **25** `*/5`
+  slots were due; **exactly ONE scheduled run fired** (15:29:18Z, itself only ~4 min after
+  its 15:25 slot). That is **~4% of declared passes**, and the one that ran was punctual —
+  so the failure mode is dropped instances, NOT accumulated lateness. Corroborating:
+  `marketing-hot-tape.yml` (`*/5`) ran 09:07 then 12:19 — ~3h 12m apart; `live-quotes.yml`
+  (`*/15`, never gated) ran 06:04 / 08:46 / 09:06 / 10:50 / 12:17.
+  **Consequence for anyone tempted to "fix" this with cron:** tightening the interval buys
+  nothing — GitHub is discarding instances, so `*/1` would deliver the same ~1 run per
+  ~2 h. This repo carries ~58 workflows and GitHub deprioritises frequent schedules
+  accordingly. A `*/5` product cadence is NOT purchasable here at any price.
 - **The quote source the GH lanes read is starved.** Since the VPS cutover
   (`VPS_LIVE_PRIMARY=true`, 2026-07-27) the `*/5` legs of `live-quotes.yml` and
   `intraday-fastpath.yml` self-disable, so the `live-data` branch — which BOTH this lane
