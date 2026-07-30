@@ -1519,6 +1519,22 @@ selection:
   # re-baking intraday; a 7-day perishable queue cannot be made fresh by a knob.
   perishable_kinds: [signal, chart, macro, event, mover, theme_list]
   perishable_max_day: 1
+
+  # ── Which live-gate failures may still become a post (operator 2026-07-30) ──
+  # A planned signal whose entry the live gate cannot stand behind used to be
+  # RE-TYPED into a watchlist post. Measured on the live plan: 168 of 335
+  # watchlist posts were demoted signals — 39 of 57 on the shipping day — and
+  # 125 of those had failed for AGE alone (12 to 20 days old against a 10-day
+  # ceiling). They all came out in the same proximity copy ("$X is close",
+  # "Watching $X, not buying yet", "$X is past me"), which is where the batch
+  # auditor's "mechanically uniform" verdict came from.
+  #
+  # `runaway` and `underwater` are real states with something true to say, so
+  # they still demote. `stale` and `unverified` leave: there is nothing honest
+  # to post about a three-week-old idea or a name we cannot price. This is the
+  # rule apply_reuse_budget already states — "never re-typed into filler,
+  # because supply-honest volume means an empty rung stays empty".
+  demotable_gate_reasons: [runaway, underwater]
   # Sessions a name is off the board for coverage kinds (watchlist/chart/receipt).
   ticker_cooldown_days: 3
   # Longer for a directional call: a repeat inside a week reads as the same

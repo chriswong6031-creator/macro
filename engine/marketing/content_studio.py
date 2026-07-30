@@ -3426,6 +3426,20 @@ def content_plan(
         # 07-29 batch shipped (one fact, five outfits, jaccard 0.467).
         _sibling_texts: dict[str, list[str]] = {}
 
+        # Which live-gate failures may still become a watchlist post. Default:
+        # runaway + underwater only — both are real, sayable states. `stale` and
+        # `unverified` leave instead (see the gate branch below for the measured
+        # reason). Config: selection.demotable_gate_reasons.
+        _demotable = frozenset(
+            str(r).strip().lower()
+            for r in ((cfg or {}).get("selection") or {}).get(
+                "demotable_gate_reasons", ["runaway", "underwater"])
+            if str(r or "").strip()
+        )
+        from collections import Counter as _Ctr  # noqa: PLC0415
+        _signal_gate_drops: dict[str, int] = {}
+        _signal_gate_reasons = _Ctr()
+
         for acct_row in account_rows:
             acct_id = acct_row.get("id", "")
             acct_cfg = _acct_cfg_by_id.get(acct_id, {})
@@ -3453,7 +3467,30 @@ def content_plan(
                     closes_result = closes_loader(ticker)
                     ok, reason = verify_signal_live(_plan, closes_result, today=today)
                     if not ok:
-                        # Demote to watchlist — dead/runaway/stale signal
+                        # NOT every failure earns a post (operator 2026-07-30).
+                        # Measured: 168 of 335 watchlist posts in the live plan
+                        # were demoted signals, 39 of 57 on the shipping day, and
+                        # 125 of those failed for AGE — signals 12 to 20 days old
+                        # against a 10-day ceiling. They all came out wearing the
+                        # same proximity copy ("$X is close", "Watching $X, not
+                        # buying yet", "$X is past me"), which is where the
+                        # feed's "mechanically uniform" reading came from.
+                        #
+                        # A stale idea is not a watch, and a name we cannot price
+                        # is not a watch either — there is nothing honest to say
+                        # about them, so they leave. Runaway and underwater are
+                        # REAL states with something true to say ("the entry I
+                        # wanted is behind the tape"), so those still demote.
+                        #
+                        # This restores the rule apply_reuse_budget already
+                        # states and this branch was breaking: "never re-typed
+                        # into filler, because supply-honest volume means an
+                        # empty rung stays empty."
+                        _watch_cls = watch_reason_from_gate(reason)
+                        if _watch_cls not in _demotable:
+                            item_dict["_drop_stale_signal"] = reason
+                            continue
+                        # Demote to watchlist — runaway / underwater signal
                         item_dict["type"] = "watchlist"
                         item_dict["_live_gate_fail"] = reason
                         # WHY it failed decides what the copy may claim. The
@@ -3484,6 +3521,20 @@ def content_plan(
                 _plan = _plan_by_ticker.get(ticker) or {}
                 item_dict["_plan"] = _plan
                 item_dict["_receipt"] = _receipt
+
+            # Drop the signals that failed for a reason no post can honestly
+            # carry. Done HERE — after the gate, before Phase 2 builds a context
+            # and long before the writer runs — so a dead idea never costs a
+            # model call.
+            _stale_dropped = [d for d in queue if d.get("_drop_stale_signal")]
+            if _stale_dropped:
+                queue = [d for d in queue if not d.get("_drop_stale_signal")]
+                acct_row["queue"] = queue
+                _signal_gate_drops[acct_id] = len(_stale_dropped)
+                for _d in _stale_dropped:
+                    _signal_gate_reasons[
+                        watch_reason_from_gate(str(_d.get("_drop_stale_signal")))
+                    ] += 1
 
             # Phase 2: build all contexts for this account (preserves type counter ordering)
             # Pre-compute market/sector/breadth/event facts once per account (not per item).
@@ -3860,6 +3911,15 @@ def content_plan(
                 "n_fallback": _copy_n_fallback,
                 "violations_fixed": _copy_violations_fixed,
                 "signals_killed_by_gate": _copy_signal_killed,
+                # Of the signals the live gate failed, how many were DROPPED
+                # outright rather than recycled into a watchlist post — and for
+                # what. Before this split, every failure became filler and the
+                # count above was the only trace; the feed then read uniform
+                # because half of all watchlist posts were dead signals wearing
+                # proximity copy (operator 2026-07-30).
+                "signals_dropped_not_demoted": sum(_signal_gate_drops.values()),
+                "signals_dropped_by_reason": dict(_signal_gate_reasons),
+                "demotable_gate_reasons": sorted(_demotable),
                 "graded_receipts": _copy_n_receipts,
                 # W1 (§0 gate 8): the proof surface. `written` counts model-
                 # authored posts, `modes` is the per-mode census (the gate reads

@@ -958,3 +958,60 @@ class TestPerishableForwardBookings:
         assert {"signal", "chart", "macro", "event"} <= perishable_kinds(cfg)
         # evergreen kinds must NOT be in the perishable set
         assert not ({"watchlist", "education", "receipt"} & perishable_kinds(cfg))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Failed-signal disposal (operator 2026-07-30)
+# A planned signal whose entry the live gate cannot stand behind used to be
+# RE-TYPED into a watchlist post. Measured on the live plan: 168 of 335
+# watchlist posts were demoted signals (39 of 57 on the shipping day) and 125
+# had failed for AGE alone. They all wore the same proximity copy, which is
+# where the batch auditor's "mechanically uniform" verdict came from.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestFailedSignalDisposal:
+    def test_the_shipped_rule_demotes_only_real_states(self):
+        import yaml, pathlib
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        allowed = set((cfg.get("selection") or {}).get("demotable_gate_reasons") or [])
+        assert allowed == {"runaway", "underwater"}, (
+            "stale and unverified must NOT demote — there is nothing honest to "
+            "post about a three-week-old idea or a name we cannot price")
+
+    def test_gate_reasons_classify_as_expected(self):
+        """The disposal rule keys on this classifier; pin its buckets."""
+        from engine.marketing.copywriter import watch_reason_from_gate
+        assert watch_reason_from_gate("signal is 13d old (max 10d)") == "stale"
+        assert watch_reason_from_gate(
+            "ran away +14.9% — no longer actionable (last=283.87, entry=247.10)") == "runaway"
+        assert watch_reason_from_gate(
+            "underwater -2.2% (last=393.35, entry=402.30)") == "underwater"
+        assert watch_reason_from_gate("no close data — cannot verify") == "unverified"
+
+    def test_unrecognised_prose_falls_to_stale_and_is_therefore_dropped(self):
+        """Fail-safe direction: an unknown failure drops rather than becoming
+        filler, because we cannot say what would be true about it."""
+        import yaml, pathlib
+        from engine.marketing.copywriter import watch_reason_from_gate
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        allowed = set((cfg.get("selection") or {}).get("demotable_gate_reasons") or [])
+        assert watch_reason_from_gate("something nobody has seen before") == "stale"
+        assert "stale" not in allowed
+
+    def test_the_report_records_what_was_dropped_and_why(self):
+        """Supply-honest volume is only auditable if the plan prints the loss."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert '"signals_dropped_not_demoted"' in src
+        assert '"signals_dropped_by_reason"' in src
+        assert '"demotable_gate_reasons"' in src
+
+    def test_dropped_signals_never_reach_the_writer(self):
+        """A dead idea must not cost a model call: the drop happens after the
+        gate and before Phase 2 builds a context."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        drop_at = src.index("_stale_dropped = [d for d in queue")
+        phase2_at = src.index("# Phase 2: build all contexts")
+        assert drop_at < phase2_at, "the drop must precede context building"
