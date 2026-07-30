@@ -263,18 +263,25 @@ This ledger is the entire evidence base for §6 promotion and for the operator's
 cross". Both were wrong, and the P0 live verification is what caught it. Measured on
 2026-07-30 (all four facts independently checked, not inferred):
 
-- **GH does not run scheduled instances LATE — it DROPS them.** This lane's own first day
-  is the cleanest measurement in the estate, because it started from zero: `prophet-live.yml`
-  landed on main ~10:57Z; between its first slot (13:25Z) and 15:29Z roughly **25** `*/5`
-  slots were due; **exactly ONE scheduled run fired** (15:29:18Z, itself only ~4 min after
-  its 15:25 slot). That is **~4% of declared passes**, and the one that ran was punctual —
-  so the failure mode is dropped instances, NOT accumulated lateness. Corroborating:
+- **GH does not run scheduled instances LATE — it DROPS them, erratically.** This lane's
+  own first day is the cleanest measurement in the estate because it started from zero:
+  `prophet-live.yml` landed on main ~10:57Z; its first slot was 13:25Z. Through 15:52Z
+  (~29 `*/5` slots due) **two scheduled runs fired** — 15:29:18Z and 15:52:06Z — i.e.
+  **~7% of declared passes, ~93% dropped**. Both that ran were PUNCTUAL (the first ~4 min
+  after its 15:25 slot), so the failure mode is dropped instances, not accumulated
+  lateness.
+  **The delivered cadence is erratic, not a slower fixed rate** — observed gaps span ~23
+  min (15:29→15:52) to >2 h (nothing at all across 13:25–15:25). Do not size anything
+  against an average; there is no interval you can rely on. Corroborating:
   `marketing-hot-tape.yml` (`*/5`) ran 09:07 then 12:19 — ~3h 12m apart; `live-quotes.yml`
   (`*/15`, never gated) ran 06:04 / 08:46 / 09:06 / 10:50 / 12:17.
   **Consequence for anyone tempted to "fix" this with cron:** tightening the interval buys
-  nothing — GitHub is discarding instances, so `*/1` would deliver the same ~1 run per
-  ~2 h. This repo carries ~58 workflows and GitHub deprioritises frequent schedules
-  accordingly. A `*/5` product cadence is NOT purchasable here at any price.
+  nothing, because GitHub discards instances rather than queueing them — `*/1` would be
+  dropped at the same rate. This repo carries ~58 workflows and GitHub deprioritises
+  frequent schedules accordingly. A `*/5` product cadence is NOT purchasable here at any
+  price. (Sampling note: these are first-day counts on a growing sample. The 90%+ drop
+  rate is robust across three independent lanes; the exact percentage is not, and no
+  claim here depends on it.)
 - **The quote source the GH lanes read is starved.** Since the VPS cutover
   (`VPS_LIVE_PRIMARY=true`, 2026-07-27) the `*/5` legs of `live-quotes.yml` and
   `intraday-fastpath.yml` self-disable, so the `live-data` branch — which BOTH this lane
