@@ -276,6 +276,34 @@ jobs:
           else S="$DIRTY"; echo "::notice::dirty since last covering renders -> scope=$S"
           fi
           echo "scope=$S" >> "$GITHUB_OUTPUT"
+      # ── FD-EXP: flow_desk express-lane coverage (2026-07-30) ──────────────────
+      # NOTE ON LENGTH: this prose is a YAML comment ABOVE the step, not inside `run:`.
+      # The scalar has a hard ceiling GitHub enforces by DE-REGISTERING the workflow
+      # (tests/test_render_run_size_cap.py); comments cost it nothing. engine-render.yml's
+      # twin scalar has ~340 chars of headroom — keep new explanation HERE, in both lanes.
+      #
+      # build_flow_desk was the last options-family builder wired in daily.yml ONLY, so
+      # site/flow_desk.html + site/flow_desk.json + site/flowdata/cohorts.json refreshed
+      # once a night while every express render rebuilt the stores around them — the
+      # flow_leaders (#3515) / research_vault (#3487) freeze class. An edit to the builder
+      # or templates/flow_desk.html.j2 sat unbaked until the next nightly.
+      #
+      # ADMISSION PRECONDITION (#4007, merged 2026-07-30): the builder's three data/ write
+      # paths — the broad + sector flow proxies (data/flows/*.parquet) and the cohort
+      # accrual upserts (data/options_flow/cohorts_<key>.parquet, via engine.flow_cohorts)
+      # — are now COLLECT_LANE=nightly-gated in code (HOUSE-U5, the build_leader_radar
+      # pattern). Off-nightly the bake is a pure site/-only function of committed data/:
+      # zero network, ~2.6-2.9s measured. That gate is what makes this admission safe; it
+      # also closed a measured corruption where an off-nightly run appended an all-None
+      # coverage=0 row to all four cohort forward ledgers.
+      # Pinned by tests/test_flow_desk.py::TestProxyLaneGate and
+      # tests/test_flow_cohorts.py::TestCohortAccrualLaneGate.
+      #
+      # PLACEMENT: inside cl_gex, immediately AFTER build_options_flow — the desk reads
+      # site/flow/index.json, which build_options_flow rewrites in this same band, so it
+      # must read THIS run's manifest. Mirrors daily.yml's cl_gex order exactly. The narrow
+      # `gex)` case gets it in the same position.
+      # Anti-rot: tests/test_render_flow_desk_scope.py.
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
         # engine.run, the LLM brains + their scorers/ledgers, the EDGAR special-sits
@@ -421,6 +449,7 @@ jobs:
               brun gex_board    "GEX magnets board (build_gex_board)"        scripts.build_gex_board
               brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
               brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
+              brun flow_desk    "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
               brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
               brun options_entry "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
@@ -476,7 +505,7 @@ jobs:
             # fail silently in the very lanes it added (its own /research/ SEO pages
             # going dark again with no annotation). Band membership without ORDER
             # membership is a builder that runs unwatched.
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow flow_desk options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -549,6 +578,7 @@ jobs:
               run_py "GEX magnets board (build_gex_board)"      scripts.build_gex_board
               run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
               run_py "options flow desk (build_options_flow)"   scripts.build_options_flow
+              run_py "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
               hub; crypto ;;
