@@ -14408,144 +14408,182 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
     {%- endmacro -%}
     {#- Popover source for a SECTOR row (hidden inline, cloned by JS) -#}
-    {#- Conditions popover for a SECTOR row — shared .rp-src payload for theme.js row-pop engine.
-        DO NOT REBUILD LAW #1513: FRESH BUY is the worst state on the board (not a buy edge);
-        the state tag is rendered with a neutral/warn tone — never green/up. -#}
+    {#- Compact decision card for a SECTOR row. Keep this payload intentionally
+        glanceable: one setup read, at most three decision metrics, one visual timing
+        cue, and one short takeaway. Full model prose belongs on the linked detail page.
+        DO NOT REBUILD LAW #1513: FRESH BUY is the worst state on the board (not a buy
+        edge); its state tag is warn, never green/up. -#}
     {%- macro ab_sector_pop(x) -%}
-    <span class="rp-src" hidden>
-      <div class="row-pop-hd">
-        <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
-        <span class="row-pop-kind">{{ x.ticker }}</span>
-        {#- State tag tone: FRESH BUY/BOTTOM WATCH/NEARING A LOW = warn (not-yet-confirmed or worst state per #1513);
-            TOP WATCH/ROLLING OVER/DECLINE/COUNTERTREND BOUNCE = dn; up ONLY for the explicit confirmed-uptrend
-            labels — an unknown future label must fall to the neutral tag, never to green -#}
-        {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
-        {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW'] -%}
-        {%- set _up_labels = ['RALLY ON','TURN SIGNALED','UPTREND','BUY ZONE'] -%}
-        {%- set _lbl = x.get('label', '') -%}
-        {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else ('up' if _lbl in _up_labels else '')) -%}
+    {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
+    {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW','BOTTOMING','BASING','ACCUMULATION'] -%}
+    {%- set _up_labels = ['RALLY ON','TURN SIGNALED','UPTREND','BUY ZONE'] -%}
+    {%- set _lbl = x.get('label', '') -%}
+    {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else ('up' if _lbl in _up_labels else '')) -%}
+    <div class="rp-src row-pop-decision" hidden>
+      <div class="row-pop-decision-hd">
+        <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+        <span class="row-pop-heading">
+          <span class="row-pop-eyebrow"><span class="l-en">Sector pulse</span><span class="l-zh">板块脉搏</span> · {{ x.ticker }}</span>
+          <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
+        </span>
         <span class="row-pop-tag {{ _stag_tone }}">{{ td(x.label) }}</span>
       </div>
-      <div class="row-pop-div"></div>
-      <div class="row-pop-grid">
-        {%- if x.get('age_short') %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">{{ x.age_short }}</span><span class="l-zh">{{ x.get('age_short_zh', x.age_short) }}</span></span></div>
+
+      <div class="row-pop-summary">
+        <span class="row-pop-summary-copy">
+          <span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span>
+          <strong>
+            {%- if _lbl in _up_labels -%}<span class="l-en">Trend confirmed</span><span class="l-zh">趋势已确认</span>
+            {%- elif _lbl in _warn_labels -%}<span class="l-en">Early turn</span><span class="l-zh">早期转向</span>
+            {%- elif _lbl in _reduce_labels -%}<span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span>
+            {%- else -%}<span class="l-en">Wait for clarity</span><span class="l-zh">等待明朗</span>{%- endif -%}
+          </strong>
+          <span class="row-pop-sub">
+            {%- if x.get('age_short') -%}<span class="l-en">Signal {{ x.age_short }}</span><span class="l-zh">信号 {{ x.get('age_short_zh', x.age_short) }}</span>{%- endif -%}
+            {%- if x.get('age_short') and x.get('dc_day') is not none and x.get('dc_day') is defined %} · {% endif -%}
+            {%- if x.get('dc_day') is not none and x.get('dc_day') is defined -%}<span class="l-en">cycle day {{ x.dc_day }}</span><span class="l-zh">周期第 {{ x.dc_day }} 日</span>{%- endif -%}
+          </span>
+        </span>
+        {%- if x.get('rsi_3d') is not none and x.get('rsi_3d') is defined and x.get('stoch_3d') is not none and x.get('stoch_3d') is defined %}
+        <span class="row-pop-bars" aria-label="3-day momentum">
+          <span><em>RSI</em><i><b style="--bar:{{ '%.0f'|format(x.rsi_3d) }}%"></b></i><strong>{{ '%.0f'|format(x.rsi_3d) }}</strong></span>
+          <span><em>STO</em><i><b style="--bar:{{ '%.0f'|format(x.stoch_3d) }}%"></b></i><strong>{{ '%.0f'|format(x.stoch_3d) }}</strong></span>
+        </span>
+        {%- endif %}
+      </div>
+
+      {%- if (x.get('rs_60d') is not none and x.get('rs_60d') is defined) or x.get('eq_badge') or (x.get('buy_zone') is not none and x.get('n_holdings')) %}
+      <div class="row-pop-stats">
+        {%- if x.get('rs_60d') is not none and x.get('rs_60d') is defined %}
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">60d lead</span><span class="l-zh">60日领先</span></span>
+          <strong class="{{ 'up' if x.rs_60d >= 0 else 'dn' }}">{{ '%+.1f'|format(x.rs_60d) }}%</strong>
+          <small><span class="l-en">vs SPY</span><span class="l-zh">相对SPY</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('eq_badge') %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="{{ 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else '') }}">{{ x.eq_badge }}</span><span class="mut"> · <span class="l-en">{{ x.eq_tip }}</span><span class="l-zh">{{ x.get('eq_tip_zh', x.eq_tip) }}</span></span></span></div>
-        {%- endif %}
-        {%- if x.get('rs_60d') is not none and x.get('rs_60d') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="{{ 'up' if x.rs_60d >= 0 else 'dn' }}">{{ '%+.1f'|format(x.rs_60d) }}%</span></span></div>
-        {%- endif %}
-        {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day {{ x.dc_day }} of cycle</span><span class="l-zh">周期第 {{ x.dc_day }} 日</span></span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+          <strong class="{{ 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else '') }}">{{ x.eq_badge }}</strong>
+          <small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('buy_zone') is not none and x.get('n_holdings') %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
-          <span class="row-pop-val">{{ x.buy_zone }} / {{ x.n_holdings }}</span></div>
-        {%- endif %}
-        {%- if x.get('rsi_3d') is not none and x.get('rsi_3d') is defined and x.get('stoch_3d') is not none and x.get('stoch_3d') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI {{ '%.0f'|format(x.rsi_3d) }} · Stoch {{ '%.0f'|format(x.stoch_3d) }}</span></div>
-        {%- endif %}
-        {%- if x.get('rate_str') is not none and x.get('rate_str') is defined %}
-        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val {{ 'up' if x.get('rate_pos') else ('dn' if x.get('rate_pos') is not none and not x.get('rate_pos') else '') }}">{{ x.rate_str }}</span></div>
-        {%- endif %}
-        {%- if x.get('season_str') is not none and x.get('season_str') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
-          <span class="row-pop-val">{{ x.season_str }}</span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
+          <strong>{{ x.buy_zone }}/{{ x.n_holdings }}</strong>
+          <small><span class="l-en">in buy zone</span><span class="l-zh">处于买入区</span></small>
+        </span>
         {%- endif %}
       </div>
-      {%- if x.get('text') or x.get('text_zh') or x.get('two_reads_chip') or x.get('ew_two_reads') or x.get('conflict_reason_en') %}
-      <ul class="row-pop-why">
-        {%- if x.get('text') or x.get('text_zh') %}
-        <li><span class="l-en">{{ x.get('text', '')|e }}</span><span class="l-zh">{{ x.get('text_zh', '')|e }}</span></li>
-        {%- endif %}
-        {%- if x.get('two_reads_chip') %}
-        {%- set _tr2 = x.two_reads_chip %}
-        <li><span class="l-en">Two reads: cycle <b>{{ _tr2.cycle_label_en }}</b> vs setup <b>{{ _tr2.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _tr2.get('cycle_label_zh', _tr2.cycle_label_en) }}</b> vs 形态 <b>{{ _tr2.get('setup_label_zh', _tr2.setup_label_en) }}</b></span></li>
-        {%- endif %}
-        {%- if x.get('ew_two_reads') %}
-        {%- set _ewtr2 = x.ew_two_reads %}
-        <li><span class="l-en">Two reads: cycle <b>{{ _ewtr2.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr2.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr2.get('cycle_label_zh', _ewtr2.cycle_label_en) }}</b> vs 等权 <b>{{ _ewtr2.get('ew_label_zh', _ewtr2.ew_label_en) }}</b></span></li>
-        {%- endif %}
-        {%- if x.get('conflict_reason_en') %}
-        <li><span class="l-en">{{ x.conflict_reason_en|e }}</span><span class="l-zh">{{ x.get('conflict_reason_zh', x.conflict_reason_en)|e }}</span></li>
-        {%- endif %}
-      </ul>
       {%- endif %}
-      <div class="row-pop-ft">
-        <span>{{ x.ticker }}</span>
+
+      <div class="row-pop-takeaway {{ _stag_tone }}">
+        <span aria-hidden="true">→</span>
+        <span>
+          <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+          <span>
+            {%- if x.get('two_reads_chip') or x.get('ew_two_reads') or x.get('conflict_reason_en') -%}<span class="l-en">Signals disagree. Keep size small until they align.</span><span class="l-zh">信号不一致，等待同步前保持小仓位。</span>
+            {%- elif _lbl in _up_labels -%}<span class="l-en">Trend confirmed — use pullbacks instead of chasing.</span><span class="l-zh">趋势已确认 — 等回调，不追高。</span>
+            {%- elif _lbl in _warn_labels -%}<span class="l-en">Early turn — keep size measured while the weekly trend catches up.</span><span class="l-zh">早期转向 — 周线趋势确认前控制仓位。</span>
+            {%- elif _lbl in _reduce_labels -%}<span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span>
+            {%- else -%}<span class="l-en">No clean edge yet — wait for the signals to align.</span><span class="l-zh">暂无清晰优势 — 等待信号同步。</span>{%- endif -%}
+          </span>
+        </span>
       </div>
-    </span>
+      <div class="row-pop-decision-ft">
+        <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span>
+        <b>{{ x.ticker }} ↗</b>
+      </div>
+    </div>
     {%- endmacro -%}
-    {#- Conditions popover for a THEME (narrative basket) row — shared .rp-src payload. -#}
+    {#- Compact decision card for a THEME (narrative basket) row. Opaque diagnostics
+        (flip distance, duplicate percentiles, full engine prose) stay on the detail page. -#}
     {%- macro ab_theme_pop(x) -%}
-    <span class="rp-src" hidden>
-      <div class="row-pop-hd">
-        <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
-        <span class="row-pop-kind"><span class="l-en">BASKET</span><span class="l-zh">篮子</span></span>
-        {%- set _rtone = 'dn' if x.get('reco') in ('trim','avoid') else ('up' if x.get('reco') in ('accumulate','enter') else 'warn') -%}
-        <span class="row-pop-tag {{ _rtone }}"><span class="l-en">{{ x.get('label', x.get('reco', '')) }}</span><span class="l-zh">{{ x.get('label_zh', x.get('label', '')) }}</span></span>
+    {%- set _reco = x.get('reco', '') -%}
+    {%- set _rtone = 'dn' if _reco in ('trim','avoid') else ('up' if _reco in ('accumulate','enter') else 'warn') -%}
+    {%- set _score = x.get('score') if x.get('score') is not none and x.get('score') is defined else 0 -%}
+    <div class="rp-src row-pop-decision" hidden>
+      <div class="row-pop-decision-hd">
+        <span class="row-pop-mark row-pop-mark--theme" aria-hidden="true">◆</span>
+        <span class="row-pop-heading">
+          <span class="row-pop-eyebrow"><span class="l-en">Theme basket</span><span class="l-zh">主题篮子</span></span>
+          <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
+        </span>
+        <span class="row-pop-tag {{ _rtone }}"><span class="l-en">{{ x.get('label') or _reco }}</span><span class="l-zh">{{ x.get('label_zh') or x.get('label') or _reco }}</span></span>
       </div>
-      <div class="row-pop-div"></div>
-      <div class="row-pop-grid">
-        {%- if x.get('score') is not none and x.get('score') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
-          <span class="row-pop-val">{{ '%.0f'|format(x.score) }}</span></div>
-        {%- endif %}
-        {%- if x.get('book_wt') is not none and x.get('book_wt') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Model book</span><span class="l-zh">模型组合</span></span>
-          <span class="row-pop-val up">{{ '%.0f'|format(x.book_wt*100) }}%</span></div>
-        {%- endif %}
+
+      <div class="row-pop-theme-hero">
+        <span class="row-pop-score-ring {{ 'up' if _score >= 60 else ('warn' if _score >= 40 else 'dn') }}" style="--score:{{ '%.0f'|format(_score) }}">
+          <strong>{% if x.get('score') is not none and x.get('score') is defined %}{{ '%.0f'|format(x.score) }}{% else %}—{% endif %}</strong>
+          <small><span class="l-en">score</span><span class="l-zh">评分</span></small>
+        </span>
+        <span class="row-pop-summary-copy">
+          <span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span>
+          <strong>
+            {%- if _reco in ('accumulate','enter') -%}<span class="l-en">Broad and leading</span><span class="l-zh">广泛领先</span>
+            {%- elif _reco == 'trim' -%}<span class="l-en">Late and extended</span><span class="l-zh">后期且延伸</span>
+            {%- elif _reco == 'avoid' -%}<span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span>
+            {%- else -%}<span class="l-en">Trend intact</span><span class="l-zh">趋势完好</span>{%- endif -%}
+          </strong>
+          <span class="row-pop-trust">
+            {%- if x.get('book_wt') is not none and x.get('book_wt') is defined %}<span class="up">★ <span class="l-en">Model {{ '%.0f'|format(x.book_wt*100) }}%</span><span class="l-zh">模型 {{ '%.0f'|format(x.book_wt*100) }}%</span></span>{% endif -%}
+            {%- if x.validated %}<span class="up">✓ <span class="l-en">Risk gate</span><span class="l-zh">风险门槛</span></span>{% endif -%}
+          </span>
+        </span>
+      </div>
+
+      {%- if (x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined) or (x.get('breadth_pct50') is not none and x.get('breadth_pct50') is defined) or (x.get('rollover_band') is not none and x.get('rollover_band') is defined) %}
+      <div class="row-pop-stats">
         {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
-          <span class="row-pop-val"><span class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</span></span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">20d lead</span><span class="l-zh">20日领先</span></span>
+          <strong class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</strong>
+          <small><span class="l-en">vs market</span><span class="l-zh">相对市场</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('breadth_pct50') is not none and x.get('breadth_pct50') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Breadth &gt;50d</span><span class="l-zh">广度&gt;50日</span></span>
-          <span class="row-pop-val">{{ '%.0f'|format(x.breadth_pct50 * 100) }}%</span></div>
-        {%- endif %}
-        {%- if x.get('rs_pctile') is not none and x.get('rs_pctile') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">RS分位</span></span>
-          <span class="row-pop-val">{{ '%.0f'|format(x.rs_pctile * 100) }}</span></div>
-        {%- endif %}
-        {%- if x.get('flip_distance') is not none and x.get('flip_distance') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Flip distance</span><span class="l-zh">翻转距离</span></span>
-          <span class="row-pop-val">{{ '%.1f'|format(x.flip_distance) }}%</span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
+          <strong>{{ '%.0f'|format(x.breadth_pct50 * 100) }}%</strong>
+          <small><span class="l-en">above 50d</span><span class="l-zh">高于50日线</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('rollover_band') is not none and x.get('rollover_band') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Rollover risk</span><span class="l-zh">回落风险</span></span>
-          <span class="row-pop-val {{ 'warn' if x.rollover_band != 'low' else '' }}"><span class="l-en">{{ x.rollover_band }}</span><span class="l-zh">{{ x.get('rollover_band_zh', x.rollover_band) }}</span></span></div>
-        {%- endif %}
-        {%- if x.get('top_members') %}
-        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Leaders</span><span class="l-zh">龙头</span></span>
-          <span class="row-pop-val">{{ x.top_members | join(' · ') }}</span></div>
-        {%- endif %}
-        {%- if x.validated %}
-        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Gate</span><span class="l-zh">门槛</span></span>
-          <span class="row-pop-val up"><span class="l-en">&#10003; Backtested absolute-trend gate</span><span class="l-zh">&#10003; 经回测绝对趋势门槛</span></span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Rollover</span><span class="l-zh">回落风险</span></span>
+          <strong class="{{ 'up' if x.rollover_band == 'low' else 'warn' }}"><span class="l-en">{{ x.rollover_band|title }}</span><span class="l-zh">{{ x.get('rollover_band_zh', x.rollover_band) }}</span></strong>
+          <small><span class="l-en">risk</span><span class="l-zh">风险</span></small>
+        </span>
         {%- endif %}
       </div>
-      {%- if x.get('reco_why_en') or x.get('run_reason_en') or x.get('conflict_reason_en') %}
-      <ul class="row-pop-why">
-        {%- if x.get('reco_why_en') %}
-        <li><span class="l-en">{{ x.reco_why_en|e }}</span><span class="l-zh">{{ x.get('reco_why_zh', x.reco_why_en)|e }}</span></li>
-        {%- endif %}
-        {%- if x.get('run_reason_en') and not x.get('conflict_reason_en') %}
-        <li><span class="l-en">{{ x.run_reason_en|e }}</span><span class="l-zh">{{ x.get('run_reason_zh', x.run_reason_en)|e }}</span></li>
-        {%- endif %}
-        {%- if x.get('conflict_reason_en') %}
-        <li><span class="l-en">&#9888; {{ x.conflict_reason_en|e }}</span><span class="l-zh">&#9888; {{ x.get('conflict_reason_zh', x.conflict_reason_en)|e }}</span></li>
-        {%- endif %}
-      </ul>
       {%- endif %}
-    </span>
+
+      {%- if x.get('top_members') %}
+      <div class="row-pop-leaders">
+        <span><span class="l-en">Leaders</span><span class="l-zh">龙头</span></span>
+        <strong>{{ x.top_members[:3] | join(' · ') }}</strong>
+      </div>
+      {%- endif %}
+
+      <div class="row-pop-takeaway {{ _rtone }}">
+        <span aria-hidden="true">→</span>
+        <span>
+          <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+          <span>
+            {%- if x.get('conflict_reason_en') -%}<span class="l-en">Signals disagree. Wait for breadth and price to align.</span><span class="l-zh">信号不一致，等待广度与价格同步。</span>
+            {%- elif _reco in ('accumulate','enter') -%}<span class="l-en">Leadership is broad — add on pullbacks, not strength.</span><span class="l-zh">领先面广 — 回调时加仓，不追强势。</span>
+            {%- elif _reco == 'trim' -%}<span class="l-en">Momentum is extended — protect gains into strength.</span><span class="l-zh">动能已延伸 — 逢强保护利润。</span>
+            {%- elif _reco == 'avoid' -%}<span class="l-en">Breadth is fading — stand aside until a fresh turn.</span><span class="l-zh">广度转弱 — 等待新转向前观望。</span>
+            {%- else -%}<span class="l-en">Trend is intact — wait for a cleaner entry.</span><span class="l-zh">趋势完好 — 等待更干净的入场。</span>{%- endif -%}
+          </span>
+        </span>
+      </div>
+      <div class="row-pop-decision-ft">
+        <span><span class="l-en">Click row for holdings and full history</span><span class="l-zh">点击查看持仓与完整历史</span></span>
+        <b><span class="l-en">Open ↗</span><span class="l-zh">打开 ↗</span></b>
+      </div>
+    </div>
     {%- endmacro -%}
     {#- V2 sector row macro — anv2-row anatomy (name row / chips row / stat line) -#}
     {%- macro ab_sector_row(x) -%}
