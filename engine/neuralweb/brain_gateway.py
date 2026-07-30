@@ -269,6 +269,10 @@ _BRAIN_TOOLS = frozenset({
     # never authored effect chains — TI-R5)
     "get_market_events",
     "search_research",
+    # Analyst OS W2 — depth retrieval: dated historical episodes (display-tier,
+    # China-analog idiom) and the full curve read (pure slice of yield_curve snapshot)
+    "get_historical_analogues",
+    "get_curve_detail",
     # Inline chart rendering (all pages — renders SVG inside the chat reply)
     "render_inline_chart",
     # Chart-command bus (W6b): client-executed, terminal page only
@@ -313,6 +317,9 @@ _BRAIN_ONLY_TOOLS = frozenset({
     # Analyst OS P0
     "get_market_events",
     "search_research",
+    # Analyst OS W2
+    "get_historical_analogues",
+    "get_curve_detail",
     # Inline chart rendering (all pages)
     "render_inline_chart",
     # Chart-command bus (W6b)
@@ -3281,7 +3288,33 @@ def _dispatch_brain_tool(
                 root,
                 query=str(tool_params.get("query") or ""),
                 limit=tool_params.get("limit", 5),
+                mode=str(tool_params.get("mode") or "search"),
             )
+        if tool_name == "get_historical_analogues":
+            # Analyst OS W2 — dated episodes whose measured state rhymed with today
+            # (display-tier, China-analog idiom). Depth capability → Insider/Pro,
+            # same execution-time gate shape as search_research.
+            if not user_id:
+                return {"error": "insider_required", "note": (
+                    "Historical analogues need a signed-in Insider or Pro account — "
+                    "explain the gate and answer from the current desk reads.")}
+            _ent = _resolve_tier(user_id, root=root)
+            _tier = _ent.get("tier") or "free"
+            _status = _ent.get("status") or "active"
+            if not (_tier in ("insider", "pro", "unlimited")
+                    and _status in ("active", "trialing")):
+                return {"error": "insider_required", "tier": _tier, "note": (
+                    "Historical analogues are an Insider/Pro capability. This user is "
+                    f"on the '{_tier}' tier — explain the gate; never invent episodes.")}
+            from engine.neuralweb import brain_analogues as _ban  # noqa: PLC0415
+            return _ban.get_historical_analogues(
+                root, limit=tool_params.get("limit", 8),
+            )
+        if tool_name == "get_curve_detail":
+            # Analyst OS W2 — the full curve read (pure slice of the yield_curve
+            # snapshot the site already publishes). Open to every tier.
+            from engine.neuralweb import brain_curve as _bcv  # noqa: PLC0415
+            return _bcv.get_curve_detail(root)
         if tool_name == "render_inline_chart":
             return _tool_render_inline_chart(tool_params, root)
         # Chart-command bus (W6b)
@@ -3339,6 +3372,19 @@ def _all_brain_tool_schemas(root: Path, page: str = "", internals_allowed: bool 
     try:
         from engine.neuralweb import brain_market_intel as _bmi  # noqa: PLC0415
         schemas = schemas + [_bmi.EVENTS_TOOL_SCHEMA, _bmi.RESEARCH_TOOL_SCHEMA]
+    except Exception:  # noqa: BLE001
+        pass
+    # Analyst OS W2: depth retrieval — historical analogues (Insider/Pro at execution)
+    # and the on-demand curve read. Separate try-blocks: one missing module never
+    # drops the other's schema.
+    try:
+        from engine.neuralweb import brain_analogues as _ban  # noqa: PLC0415
+        schemas = schemas + [_ban.ANALOGUES_TOOL_SCHEMA]
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from engine.neuralweb import brain_curve as _bcv  # noqa: PLC0415
+        schemas = schemas + [_bcv.CURVE_TOOL_SCHEMA]
     except Exception:  # noqa: BLE001
         pass
     if page == "terminal":
@@ -3438,6 +3484,18 @@ _SEED_EVENT_TERMS: tuple[str, ...] = (
 _SEED_RESEARCH_TERMS: tuple[str, ...] = (
     "analyst", "analysts", "street", "research", "institutions", "研报", "机构", "大行",
 )
+# Analyst OS W2 — the two depth tools get their own nudges. Curve terms route to the
+# dedicated curve read (world_state's rates lobe is a down-selected projection); analogue
+# terms route to the history-books tool instead of the model reaching for backtests.
+_SEED_CURVE_TERMS: tuple[str, ...] = (
+    "yield curve", "curve", "steepener", "steepening", "flattener", "inversion",
+    "2s10s", "duration", "term premium", "breakeven", "real yield", "real rates",
+    "收益率曲线", "期限溢价", "实际利率",
+)
+_SEED_ANALOGUE_TERMS: tuple[str, ...] = (
+    "historical", "history", "analog", "analogue", "precedent", "similar to",
+    "last time", "happened before", "rhyme", "历史上", "上一次", "类似",
+)
 
 _SEED_PLAN_LINE = (
     "\n\nTOOL PLAN for this question shape: start with {tools}; spend any remaining calls "
@@ -3467,6 +3525,10 @@ def _seed_tool_plan(message: str) -> str:
             nudges.append("get_market_events")
         if any(_trigger_matches(t, msg_lc) for t in _SEED_RESEARCH_TERMS):
             nudges.append("search_research")
+        if any(_trigger_matches(t, msg_lc) for t in _SEED_CURVE_TERMS):
+            nudges.append("get_curve_detail")
+        if any(_trigger_matches(t, msg_lc) for t in _SEED_ANALOGUE_TERMS):
+            nudges.append("get_historical_analogues")
         ordered: list[str] = []
         for name in nudges + list(seeds or []):
             if name and name not in ordered:
@@ -4988,6 +5050,8 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "get_portfolio_brief":    ("Reviewing your portfolio",      "查看您的组合"),
     "get_market_events":      ("Scanning the news wire",        "扫描新闻快讯"),
     "search_research":        ("Searching institutional research", "检索机构研报"),
+    "get_historical_analogues": ("Searching the desk's history books", "检索历史相似情景"),
+    "get_curve_detail":       ("Reading the yield curve",       "解读收益率曲线"),
     "render_inline_chart":    ("Drawing a chart",               "绘制图表"),
     "annotate_chart":         ("Marking key levels",            "标记关键位置"),
     "chart_digest":           ("Reading your chart",            "读取您的图表"),
@@ -5561,9 +5625,19 @@ def _language_directive(lang: str) -> str:
     fallback model drifts to Chinese on the reply's tail — the [NEXT] block — even when
     the body is English."""
     name = _LANG_NAMES.get(lang) or _LANG_NAMES["en"]
-    return (f"\n\nLANGUAGE FOR THIS TURN: {name}. Write the entire reply in {name} — the body, "
-            f"the stance word, and all three [NEXT] follow-up questions. Do not switch language "
-            f"part-way, and do not follow the language of earlier turns.")
+    out = (f"\n\nLANGUAGE FOR THIS TURN: {name}. Write the entire reply in {name} — the body, "
+           f"the stance word, and all three [NEXT] follow-up questions. Do not switch language "
+           f"part-way, and do not follow the language of earlier turns.")
+    if lang == "zh":
+        # The stance enum reads as fixed English tokens, and on live zh turns the model kept
+        # them in English (W1 live probe, 2026-07-30). Hand it the desk's own bilingual
+        # doctrine forms (engine/i18n.py — canonical "for this and every future surface").
+        out += ("\nThe STANCE line uses the Chinese doctrine forms: Act=立即行动 · "
+                "Get ready=做好准备 · Watch — don't chase=观察—勿追高 · Protect gains=保护利润 · "
+                "Stand aside=暂时观望 · Ignore=忽略. English state words get the desk's own "
+                "Chinese label too — Goldilocks=理想增长, Reflation=再通胀, CAUTION=谨慎 — "
+                "never the bare English token.")
+    return out
 
 
 def _screen_suggestions(items: list[str], lang: str) -> list[str]:

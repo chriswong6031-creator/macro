@@ -9222,7 +9222,14 @@ async function mmlLoad() {
   if (f.error) qs.set("error", "1");
   if (f.thinking) qs.set("thinking", "1");
   if (f.contra) qs.set("contra", "1");
-  const d = await api("/api/mastermind_ai/response_logs?" + qs.toString());
+  /* Two independent reads, one round trip: the row list, and the weekly
+     answer-quality summary the brain-eval workflow leaves behind. The summary is
+     a small static file — awaiting it serially would add a needless hop, and it
+     must never be able to stop the row list rendering, hence the catch. */
+  const [d, evs] = await Promise.all([
+    api("/api/mastermind_ai/response_logs?" + qs.toString()),
+    api("/api/mastermind_ai/response_logs/eval_summary").catch(() => ({ ok: false })),
+  ]);
   if (CURRENT !== "mastermind_logs") return;
   if (!d || d.error) {
     v.innerHTML = `<div class="banner show" style="position:static;display:block">Could not read the response log${d && d.error ? ": " + esc(d.error) : ""}.</div>`;
@@ -9295,8 +9302,46 @@ async function mmlLoad() {
     <th style="width:120px">Model</th><th class="r" style="width:70px">Tokens</th><th style="width:130px">Eval</th>
   </tr></thead><tbody>${rowsHtml}</tbody></table>`;
 
-  v.innerHTML = heroHtml + darkHtml + filterHtml + tableHtml;
+  v.innerHTML = heroHtml + darkHtml + mmlEvalSummaryHtml(evs) + filterHtml + tableHtml;
   mmlWire();
+}
+
+/* Weekly answer-quality summary (W2 harness). scripts/run_brain_eval.py grades a
+   sample of the week's answers on the §9 rubric with an LLM judge, plus the frozen
+   operator benchmark case, and writes data/mastermind/eval_summary_latest.json.
+
+   These are INTERNAL QA SCORES and this panel is where they stop — nothing here may
+   be copied to a user-facing surface. The card prints the DENOMINATOR next to every
+   rate on purpose: "80% pass" over 4 judged rows of a 90-row sample is not a pass
+   rate, and an unjudged row means the judge failed, not that the answer did. */
+function mmlEvalSummaryHtml(s) {
+  if (!s || !s.ok) {
+    return `<div class="section" style="margin-top:14px">Weekly answer quality (auto-eval)</div>
+      <div class="card"><div class="sub muted">No weekly eval has run yet${s && s.error && s.error !== "absent" ? ` (${esc(String(s.error))})` : ""}. The brain-eval workflow runs Sundays 13:00 UTC; run it by hand with <span class="mono">python scripts/run_brain_eval.py</span> (add <span class="mono">--dry-run</span> for the mechanical checks only, no LLM spend).</div></div>`;
+  }
+  const pct = r => (r == null ? "—" : Math.round(100 * r) + "%");
+  const lanes = Object.entries(s.by_lane || {}).sort();
+  const laneRows = lanes.length ? lanes.map(([lane, r]) => `
+    <div class="kv"><span>${esc(lane)} lane</span><b>${pct(r.pass_rate)}
+      <span class="sub muted">${r.passed || 0}/${r.judged || 0} judged${(r.n || 0) !== (r.judged || 0) ? ` of ${r.n} sampled` : ""}${r.mean_total == null ? "" : ` · mean ${r.mean_total}`}</span></b></div>`
+  ).join("") : `<div class="kv"><span>Per lane</span><b class="sub muted">no rows in the window</b></div>`;
+  const b = s.benchmark || {};
+  const benchHtml = b.total == null
+    ? `<span class="statpill s-mut" title="the frozen operator case was not scored this run">benchmark ${esc(b.error || "not scored")}</span>`
+    : `<span class="statpill ${b.passed ? "s-ok" : "s-bad"}" title="frozen operator case ${esc(b.benchmark_id || "")} — pass is ${s.pass_threshold || 80}/100">benchmark ${b.total}/100 ${b.passed ? "pass" : "fail"}</span>`;
+  const tagHtml = (s.top_tags || []).length
+    ? (s.top_tags || []).map(t => `<span class="statpill s-warn">${esc(t.tag)} ×${t.n}</span>`).join(" ")
+    : `<span class="statpill s-ok">no failure tags</span>`;
+  return `<div class="section" style="margin-top:14px">Weekly answer quality (auto-eval) ${s.dry_run ? `<span class="statpill s-warn">dry run — mechanical checks only</span>` : ""}</div>
+    <div class="card">
+      <div class="kv"><span>Last run</span><b>${esc(s.iso_week || "?")} <span class="sub muted mono">${esc(String(s.run_at || "").replace("T", " ").slice(0, 16))} · ${s.window_days || 7}d window</span></b></div>
+      <div class="kv"><span>Overall pass rate</span><b>${pct(s.pass_rate)} <span class="sub muted">${s.passed || 0}/${s.judged || 0} judged of ${s.sampled || 0} sampled · pass is ≥${s.pass_threshold || 80}/100${s.mean_total == null ? "" : ` · mean ${s.mean_total}`}</span></b></div>
+      ${laneRows}
+      ${(s.judged || 0) < (s.sampled || 0) ? `<div class="kv"><span>Unjudged</span><b class="sub" style="color:var(--warn)">${(s.sampled || 0) - (s.judged || 0)} row(s) — the judge failed on these, they are NOT counted as failures</b></div>` : ""}
+      ${s.hard_fails ? `<div class="kv"><span>Hard fails</span><b style="color:var(--bad)">${s.hard_fails} — a leaked internal guide or a refusal; these cannot pass on score</b></div>` : ""}
+      <div class="mb-hero-chips" style="margin-top:8px">${benchHtml} ${tagHtml}</div>
+      <div class="note muted" style="margin-top:6px">Internal QA telemetry only — these scores never appear in product copy. An LLM judge grades the eight rubric axes; the leak / invented-odds / refusal / language checks are deterministic and outrank it.</div>
+    </div>`;
 }
 
 function mmlRowHtml(r) {

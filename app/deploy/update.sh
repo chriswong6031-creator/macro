@@ -204,8 +204,26 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|analyst_doctrine|market_packet|brain_market_intel|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
-	systemctl is-enabled macro-api >/dev/null 2>&1 && systemctl restart macro-api || true
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log)\.py)$'; then
+	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
+	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
+	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
+	# Log the PID transition, and retry once when the restart failed or the PID
+	# provably did not change — all output lands in macro-update.log.
+	if systemctl is-enabled macro-api >/dev/null 2>&1; then
+		PRE_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+		API_RESTART_RC=0
+		systemctl restart macro-api || API_RESTART_RC=$?
+		POST_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+		if [ "$API_RESTART_RC" -ne 0 ] || { [ "$POST_PID" = "$PRE_PID" ] && [ "$POST_PID" != "?" ]; }; then
+			echo "macro-api restart ANOMALY rc=$API_RESTART_RC pid $PRE_PID -> $POST_PID; retrying once"
+			sleep 2
+			systemctl restart macro-api || echo "macro-api restart RETRY FAILED rc=$?"
+			echo "macro-api post-retry pid $(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
+		else
+			echo "macro-api restarted pid $PRE_PID -> $POST_PID"
+		fi
+	fi
 fi
 
 # Live-plane systemd definitions are installed by live-setup.sh. Once that setup

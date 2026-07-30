@@ -638,6 +638,11 @@ class Handler(BaseHTTPRequestHandler):
             # the list response carries only thinking_meta (see mastermind_logs.logs).
             if path == "/api/mastermind_ai/response_logs/thinking":
                 return self._json(mastermind_logs.thinking_trace((q.get("id") or [""])[0]))
+            # W2 answer-quality harness: the latest weekly LLM-judge summary
+            # (scripts/run_brain_eval.py → data/mastermind/eval_summary_latest.json).
+            # Read-only, no params; absent file answers 200 with {ok: false}.
+            if path == "/api/mastermind_ai/response_logs/eval_summary":
+                return self._json(mastermind_logs.eval_summary())
             if path in mastermind_proxy.GET_PATHS:
                 payload, code = mastermind_proxy.forward_get(path, u.query)
                 return self._json(payload, code)
