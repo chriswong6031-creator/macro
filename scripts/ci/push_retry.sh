@@ -52,9 +52,9 @@
 #
 # The deadline is a HARD ceiling: no loop can outlive its job's timeout-minutes waiting
 # for a ref. When it expires the caller's existing give-up path runs unchanged. Nothing
-# here touches the RENDER_OK/`from=` watermark contract, the `-X theirs` semantics, or
-# scripts/rebase_autoresolve_hashed_css.sh — a run that pushes a partial render still
-# must not stamp `from=`.
+# here changes the caller's completion gate, `-X theirs` semantics, or
+# scripts/rebase_autoresolve_hashed_css.sh. Render invokes this library only after its
+# builders and guards complete, so an incomplete tree never enters the push loop.
 #
 # Tunables (plain shell assignments, set BEFORE push_retry_init — the library is
 # SOURCED into the step's own shell, so no export is needed; each has a working
@@ -108,7 +108,7 @@ push_attempt() {
 # Pure (no git calls) so tests can drive the table directly.
 push_classify() {
   local rc="$1" out="$2"
-  if [ "$rc" -ge 128 ]; then
+  if [ "$rc" -eq 142 ]; then
     PUSH_FAIL_CLASS="push-timeout"
     return 0
   fi

@@ -103,6 +103,12 @@ def test_signal_death_classifies_as_push_timeout():
     assert r.stdout.strip() == "push-timeout"
 
 
+def test_git_exit_128_without_sigalrm_is_not_misclassified_as_timeout():
+    out = "fatal: could not read Username for 'https://github.com': No such device or address"
+    r = run_sh(f'push_retry_init "t"; push_classify 128 {out!r}; echo "$PUSH_FAIL_CLASS"')
+    assert r.stdout.strip() == "push-error"
+
+
 def test_every_class_has_a_plain_word_reason():
     r = run_sh(
         """
@@ -706,21 +712,15 @@ def test_render_lane_block_survives_seven_ref_lock_losses(tmp_path):
     assert "rebase conflicts=0" in text, text
 
 
-def test_render_lane_block_does_not_stamp_from_on_a_partial_render(tmp_path):
-    """The watermark contract: a run that did not complete its render (no RENDER_OK)
-    must not become the `from=` watermark the NEXT run diffs against, or the pages it
-    skipped are silently marked rendered."""
-    block = _lane_block("render.yml", RENDER_STEP,
-                        {"steps.pick.outputs.scope": "all",
-                         "steps.pick.outputs.rendered_from": "deadbeef"})
-    bare, lane, stub = _lane_fixture(tmp_path)
-    summary = tmp_path / "summary.md"; summary.touch()
-    r = _run_lane(block, lane, stub, summary, render_ok=False)
-    assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
-    log = subprocess.run(["git", "-C", str(bare), "log", "--oneline", "-5", "main"],
-                         capture_output=True, text=True, check=True).stdout
-    assert "render: site re-render" in log, "the partial render never landed"
-    assert "from=" not in log, f"partial render STAMPED from= — contract broken:\n{log}"
+def test_render_lane_never_invokes_publish_on_a_partial_render():
+    """A cancelled, timed-out, or guard-failed render must keep last-good main live."""
+    doc = yaml.safe_load((REPO_ROOT / ".github" / "workflows" / "render.yml").read_text())
+    steps = doc["jobs"]["render"]["steps"]
+    publish = next(step for step in steps if step.get("name") == RENDER_STEP)
+
+    assert publish["if"] == "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
+    assert "(scope=$SCOPE, from=$FROM)" in publish["run"]
+    assert '(scope=$SCOPE)"' not in publish["run"]
 
 
 # ---------------------------------------------------------------------------

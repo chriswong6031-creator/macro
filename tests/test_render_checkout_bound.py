@@ -61,6 +61,35 @@ def test_render_checkout_uses_a_shallow_blobless_partial_clone():
     )
 
 
+def test_render_publish_commits_from_index_to_avoid_promisor_blob_materialization():
+    publish = next(
+        step for step in _steps() if step.get("name", "").startswith("commit rendered site")
+    )
+    script = publish["run"]
+
+    assert publish["if"] == "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
+    assert publish["env"]["GITHUB_TOKEN"] == "${{ github.token }}"
+    assert "GIT_CONFIG_KEY_0=http.https://github.com/.extraheader" in script
+    assert 'GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH"' in script
+    assert "tree=$(git write-tree --missing-ok)" in script
+    assert 'git commit-tree "$tree" -p "$parent"' in script
+    assert 'git update-ref HEAD "$commit" "$parent"' in script
+    assert script.count('commit_index "render') == 2
+    assert "git commit " not in script
+
+
+def test_cancelled_or_guard_failed_render_never_normalizes_or_publishes():
+    steps = _steps()
+    render = next(step for step in steps if step.get("id") == "render_pages")
+    normalize = next(
+        step for step in steps if step.get("name", "").startswith("inject data-base shim")
+    )
+
+    assert 'echo "complete=true" >> "$GITHUB_OUTPUT"' in render["run"]
+    gate = "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
+    assert normalize["if"] == gate
+
+
 def test_quarantine_cleanup_is_exact_and_runs_even_after_failure():
     cleanup = next(
         step
@@ -241,3 +270,33 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     assert github_env.read_text(encoding="utf-8") == ""
     assert github_output.read_text(encoding="utf-8").strip() == "checkout_ready=true"
     assert not _object_is_local(workspace, stable_blob)
+
+    # Publishing from the managed partial clone must not undo compaction. The
+    # porcelain commit path inspects old content even with --quiet, so construct
+    # the commit directly from the staged index and atomically advance HEAD.
+    (workspace / "site" / "new-render.html").write_text(
+        "<html>new render</html>\n", encoding="utf-8"
+    )
+    _git(workspace, "config", "user.name", "render-test")
+    _git(workspace, "config", "user.email", "render-test@example.com")
+    _git(workspace, "add", "site/new-render.html")
+    assert not _object_is_local(workspace, stable_blob)
+    parent = _git(workspace, "rev-parse", "HEAD")
+    assert not _object_is_local(workspace, stable_blob)
+    tree = _git(workspace, "write-tree", "--missing-ok")
+    assert not _object_is_local(workspace, stable_blob)
+    commit = subprocess.run(
+        ["git", "commit-tree", tree, "-p", parent],
+        cwd=workspace,
+        check=True,
+        text=True,
+        input="publish render\n",
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ).stdout.strip()
+    assert not _object_is_local(workspace, stable_blob)
+    _git(workspace, "update-ref", "HEAD", commit, parent)
+    assert not _object_is_local(workspace, stable_blob)
+    _git(workspace, "push", "origin", "HEAD:main")
+    assert not _object_is_local(workspace, stable_blob)
+    assert _git(remote, "rev-parse", "refs/heads/main") == commit

@@ -526,6 +526,7 @@ jobs:
       # `gex)` case gets it in the same position.
       # Anti-rot: tests/test_render_flow_desk_scope.py.
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
+        id: render_pages
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
         # engine.run, the LLM brains + their scorers/ledgers, the EDGAR special-sits
         # sweep, notify and archive_signals. Each builder is individually resilient
@@ -818,11 +819,12 @@ jobs:
           # Watermark gate: only a render that ran every scoped builder to the end may stamp
           # from= on its commit (see commit step) — a cancelled/timed-out job skips this line.
           echo "RENDER_OK=1" >> "$GITHUB_ENV"
+          echo "complete=true" >> "$GITHUB_OUTPUT"
           exit 0
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
-        # WITHOUT node, so this guard failed on every render there 07-18 — and because the
-        # commit step is if: always(), unverified JS shipped to main (the VPS serves main).
+        # WITHOUT node, so this guard failed on every render there 07-18; the old
+        # always-publish path still shipped that unverified JS. Publication is now gated.
         # setup-node installs into the runner tool cache: works on Linux AND a Mac fallback.
         uses: actions/setup-node@v4
         with:
@@ -891,16 +893,9 @@ jobs:
           echo "::error title=render stockdata publish failed::R2 sync failed after 3 attempts"
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
-        # always(), NOT !cancelled(): the commit below is if: always(), so a CANCELLED
-        # render still pushes site/ to main — but !cancelled() skipped this normalization
-        # first, shipping raw un-externalized pages (macro.html 1.02MB vs 570KB, china
-        # 400KB vs 234KB) on a 60s-TTL document. With renders cancelled ~24/25 on a
-        # merge-spree day, main oscillated in/out of the optimized state all day
-        # (2026-07-25: 4e78c8a891e pushed raw from cancelled run 30172913675). These are
-        # idempotent normalizers, not gates — a no-op when nothing is inline, ~5s over
-        # 237 pages, so running them in the cancellation window costs nothing and keeps
-        # "whatever we ship, we ship optimized". Guards above stay !cancelled().
-        if: always()
+        # Never normalize/publish a cancelled, timed-out, or guard-failed tree. The
+        # next render's watermark union keeps every unfinished scope dirty.
+        if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
@@ -910,11 +905,26 @@ jobs:
           # bytes for a year (#3617/#3624), which is exactly the state we cannot see.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
-        if: always()
+        if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            GIT_AUTH=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\r\n')
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH"
+          fi
+          commit_index() {
+            local message="$1" parent tree commit
+            parent=$(git rev-parse HEAD)
+            tree=$(git write-tree --missing-ok)
+            commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$parent")
+            git update-ref HEAD "$commit" "$parent"
+          }
           # ONLY site/ — never data/ or reports/. The render may touch data/ as a build
           # side-effect (cache writes, alert appends), but committing none of it keeps the
           # nightly the single source of truth for every forward-accountability ledger.
@@ -948,16 +958,11 @@ jobs:
           # render as "all" — an audit-trail lie) plus from= = the main SHA this run actually
           # rendered (captured post-pull in the pick step). The NEXT run's scope union diffs
           # against from=, so merges that landed DURING this render are correctly seen as
-          # un-rendered. from= is stamped ONLY when the render step ran to completion
-          # (RENDER_OK): a cancelled/timed-out run commits without it and never becomes a
-          # watermark, so any pages it skipped stay dirty for the next run.
+          # un-rendered. The step-level completion+success gate above excludes cancelled,
+          # timed-out, and guard-failed trees, so every commit is a valid watermark.
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
           FROM="${{ steps.pick.outputs.rendered_from }}"
-          if [ "${RENDER_OK:-0}" = "1" ] && [ -n "$FROM" ]; then
-            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
-          else
-            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE)"
-          fi
+          commit_index "render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
           # This push is now the ONLY way the render reaches the live site (the VPS serves
           # committed main; there is no Pages-artifact fallback), so it MUST land.
           # --autostash parks the render's throwaway data/ writes (we commit site/ ONLY) so
@@ -1023,7 +1028,7 @@ jobs:
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
               if ! git diff --quiet -- site/ templates/; then
-                git add site/ templates/ && git commit -m "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
+                git add site/ templates/ && commit_index "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
               if push_do; then echo "pushed rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
