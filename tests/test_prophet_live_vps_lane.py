@@ -280,6 +280,104 @@ def test_the_default_paths_are_the_vps_live_plane():
         == list(E.LOCAL_QUOTE_PATHS)
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# The freshness ceiling is DERIVED (P0 fix, operator ruling 2026-07-30)
+#
+# quote_max_age_min = live.delayed_min + prophet_live.quote_slack_min. The shipped 12
+# was the hot-tape convention copied without the second term of "quote age = polling
+# gap + feed delay": under a contractually 15-min-delayed feed it is not a gate, it is
+# an off switch. Derived rather than a bigger constant so a real-time entitlement
+# tightens it automatically instead of rotting open.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_ceiling_is_derived_from_the_feeds_declared_delay():
+    """The shipped resolution today: 15 + 10 = 25, and config.yml pins no number."""
+    cfg = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8"))
+    block = cfg["prophet_live"]
+    assert "quote_max_age_min" not in block, \
+        "config.yml pins the ceiling again — it must be derived (see live_cfg)"
+    assert block["quote_slack_min"] == 10
+    assert LS.live_cfg(cfg)["quote_max_age_min"] == cfg["live"]["delayed_min"] + 10 == 25
+    # The old value is now unreachable from config alone, which is the point: 12 is
+    # below the feed floor and darks every US single name at any polling speed.
+    assert LS.live_cfg(cfg)["quote_max_age_min"] > cfg["live"]["delayed_min"]
+
+
+def test_a_real_time_entitlement_tightens_the_gate_by_itself():
+    """The reason it is DERIVED and not just a bigger magic number.
+
+    The day the feed goes real-time, ``live.delayed_min`` drops to 0 and the ceiling
+    becomes the slack alone. A hardcoded 25 would keep accepting 25-minute-old prints
+    on a real-time feed forever — the stale-config rot this estate keeps re-learning.
+    """
+    delayed = LS.live_cfg({"live": {"delayed_min": 15}, "prophet_live": {}})
+    realtime = LS.live_cfg({"live": {"delayed_min": 0}, "prophet_live": {}})
+    assert delayed["quote_max_age_min"] == 25
+    assert realtime["quote_max_age_min"] == 10        # not 25 — it followed the feed
+    # Halfway house: a 5-minute delayed plan lands at 15, with no code change.
+    assert LS.live_cfg({"live": {"delayed_min": 5},
+                        "prophet_live": {}})["quote_max_age_min"] == 15
+
+
+def test_an_explicit_ceiling_still_wins_and_the_slack_is_its_own_lever():
+    """The operator lever survives the derivation, both ways round."""
+    pinned = LS.live_cfg({"live": {"delayed_min": 15},
+                          "prophet_live": {"quote_max_age_min": 12}})
+    assert pinned["quote_max_age_min"] == 12          # explicit beats derived
+    tighter = LS.live_cfg({"live": {"delayed_min": 15},
+                           "prophet_live": {"quote_slack_min": 3}})
+    assert tighter["quote_max_age_min"] == 18         # "poll faster" is the slack knob
+    # No config at all resolves to the SAME ceiling production uses, so a test-shaped
+    # call and the deployed lane cannot disagree.
+    assert LS.live_cfg(None)["quote_max_age_min"] == 25
+    # And an unparseable override falls back to the derived default rather than to a
+    # number nobody chose.
+    assert LS.live_cfg({"prophet_live": {"quote_max_age_min": "abc"}})[
+        "quote_max_age_min"] == 25
+
+
+def test_the_derived_ceiling_actually_admits_the_local_planes_quotes(lane, monkeypatch):
+    """End to end, not just arithmetic: the same quote darks at 12 and evaluates at the
+    derived ceiling, through the real evaluate() path."""
+    monkeypatch.setattr(E.LV, "load_live_quotes", lambda root: {
+        "quotes": {"AAA": {"price": 100.0, "ts_ms": None, "source": "quotes"}},
+        "asof": "x", "source": "snapshot", "feed_delay_min": 15.0})
+    monkeypatch.setattr(E, "quote_ager", lambda live, now: (lambda q: 17.6))  # measured
+
+    cfg = lane.cfg(paths=[])
+    cfg["prophet_live"]["quote_max_age_min"] = 12
+    E.run(lane.served.parent, now=NOW, cfg=cfg)
+    assert lane.r2[r2io.LIVE_KEY]["states"]["AAA"] == {"state": "dark",
+                                                       "reason": "stale_quote",
+                                                       "quote_age_min": 17.6}
+    cfg["prophet_live"].pop("quote_max_age_min")
+    E.run(lane.served.parent, now=NOW.replace(minute=5), cfg=cfg)
+    st = lane.r2[r2io.LIVE_KEY]["states"]["AAA"]
+    assert st["state"] == "forming" and st["quote_age_min"] == 17.6
+
+
+def test_the_served_copy_carries_the_per_name_age_unchanged(lane, monkeypatch):
+    """The honesty consequence of a 25-minute ceiling: a row's own print can be older
+    than the feed-level "15-min delayed" pill implies. The pill is about the FEED; the
+    ROW's truth is ``quote_age_min``, and it must reach the page unrounded and per name
+    so a P1 surface can show worst-row age. (Surfacing it is that P1's job, not this
+    lane's — the pill's wording is a design surface with committed refs.)"""
+    monkeypatch.setattr(E.LV, "load_live_quotes", lambda root: {
+        "quotes": {"AAA": {"price": 100.0, "ts_ms": None, "source": "quotes"},
+                   "BBB": {"price": 100.0, "ts_ms": None, "source": "quotes"}},
+        "asof": "x", "source": "snapshot", "feed_delay_min": 15.0})
+    ages = {100.0: 3.2}
+    monkeypatch.setattr(E, "quote_ager", lambda live, now: (lambda q: ages[q["price"]]))
+    lane.s["pack"] = pack({"AAA": buyable(), "BBB": buyable()})
+
+    assert lane.run(paths=[]) == 0
+    served = json.loads(lane.served.read_text(encoding="utf-8"))
+    for tkr in ("AAA", "BBB"):
+        assert served["states"][tkr]["quote_age_min"] == 3.2
+        assert served["states"][tkr] == lane.r2[r2io.LIVE_KEY]["states"][tkr]
+    assert served["meta"]["delay_min"] == 15          # the FEED's floor, alongside it
+
+
 def test_a_ceiling_below_the_feeds_own_delay_is_announced(lane, monkeypatch, capsys):
     """The unsatisfiable-gate tripwire (measured 2026-07-30).
 

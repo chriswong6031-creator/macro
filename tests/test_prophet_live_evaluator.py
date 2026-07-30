@@ -1042,9 +1042,14 @@ def test_config_block_defaults_resolve_from_config_yml():
     block = cfg["prophet_live"]
     resolved = LS.live_cfg(cfg)
     assert resolved["debounce_passes"] == block["debounce_passes"] == 2
-    assert resolved["quote_max_age_min"] == block["quote_max_age_min"] == 12
     assert resolved["window_et"] == {"start": "09:25", "end": "16:15"}
     assert resolved["confirm_window_start"] == "15:30"
+    # THE FRESHNESS CEILING IS DERIVED (P0 fix 2026-07-30), so config.yml must NOT pin
+    # it: quote_max_age_min = live.delayed_min + quote_slack_min. A fixed number under
+    # a delayed feed is an off switch, not a gate — see live_cfg's docstring.
+    assert "quote_max_age_min" not in block
+    assert resolved["quote_max_age_min"] == cfg["live"]["delayed_min"] + block["quote_slack_min"]
+    assert resolved["quote_max_age_min"] == 25
     # A partial override must not drop the sibling keys of a nested block.
     part = LS.live_cfg({"prophet_live": {"window_et": {"end": "16:00"}}})
     assert part["window_et"] == {"start": "09:25", "end": "16:00"}

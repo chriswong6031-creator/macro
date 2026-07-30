@@ -757,18 +757,24 @@ prophet_live:
   debounce_passes: 2
   fade_buffer_pct: 0.5          # hysteresis below the trigger before a forming name FADES
   confirm_window_start: "15:30"  # from here on, conditions still met => confirming_into_close
-  # Hot-tape convention; older => that NAME is dark, not guessed.
+  # THE FRESHNESS CEILING IS DERIVED, not pinned here (P0 fix, operator ruling
+  # 2026-07-30). A quote's age is measured from its OWN timestamp, so it is
+  # (polling gap) + (feed delay), and the second term is a property of the DATA PLAN:
+  # US single names arrive ~15-min delayed by contract (live.delayed_min; measured
+  # 16.7m on QQQ/SPY off the VPS plane at 14:10Z). The old fixed 12 was the hot-tape
+  # convention copied without that second term — under a ~15-minute floor it is not a
+  # gate, it is an off switch, and it darked every US name on every pass while the lane
+  # reported success.
   #
-  # MEASURED 2026-07-30, unresolved: the US single-name feed is contractually ~15-min
-  # delayed (live.delayed_min below, and every quote carries its own delayMin — measured
-  # 16.7m on QQQ/SPY off the VPS plane at 14:10Z). Per-quote age is measured from the
-  # quote's OWN timestamp, so it is (polling gap) + (feed delay) and cannot go below the
-  # feed delay at any cadence. A 12-minute ceiling under a ~15-minute floor therefore
-  # darks every US single name on every pass, on the freshest plane there is. The
-  # evaluator now prints a line-start warning whenever this number is at or below the
-  # declared feed delay; re-basing it is an operator ruling, not a lane fix, so the
-  # number is left exactly as pre-registered.
-  quote_max_age_min: 12
+  #   quote_max_age_min = live.delayed_min + quote_slack_min      (15 + 10 = 25 today)
+  #
+  # quote_slack_min is the OBSERVATION lag we tolerate — one 5-minute polling gap plus
+  # jitter — and it is the only half of the budget we control. Derived rather than a
+  # bigger constant so a future real-time entitlement (live.delayed_min -> 0) tightens
+  # this gate to 10 automatically instead of accepting 25-minute-old prints forever.
+  # Setting `quote_max_age_min:` explicitly still wins (the operator lever), and the
+  # evaluator warns on every pass when a ceiling sits at or below the declared delay.
+  quote_slack_min: 10
   # ── host wiring (VPS lane, masterplan §4.2a/§4.4a) ──
   # Quote files to try BEFORE the live_verify merge, in order, freshest-wins per ticker.
   # These are the local twins of the merge's inputs, published by atomic rename by the

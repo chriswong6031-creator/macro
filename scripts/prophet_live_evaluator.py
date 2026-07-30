@@ -32,6 +32,14 @@ The ONE filesystem write on this path is the served copy (``served_path``), whic
 to the VPS live plane — outside the git work-tree, outside ``site.served``, and never
 under ``data/``.
 
+QUOTE AGE = FEED DELAY + POLLING GAP. Per-quote age is measured from the quote's own
+timestamp, so it carries the vendor's contractual delay (~15 min for US single names)
+before this lane has done anything at all. ``quote_max_age_min`` is therefore DERIVED —
+``live.delayed_min + prophet_live.quote_slack_min`` — and only the slack half is about
+our cadence (see :func:`engine.prophet_live.live_states.live_cfg`). Do not "tighten" it
+back toward 12: that number cannot be met by a delayed feed at any polling speed, and
+the resulting all-dark artifact looks exactly like a healthy lane.
+
 HONEST DEGRADATION (G0.3). Three independent ways to be dark, all named:
   * pack missing            → whole artifact ``status:"dark" reason:"no_pack"``
   * pack ``as_of`` is not the last completed session → ``"stale_pack"``; yesterday's
@@ -75,6 +83,12 @@ LOCAL_SOURCE = "vps_local"
 
 #: The VPS live plane, preference order, both published by atomic rename by
 #: ``scripts/vps_live_orchestrator.py`` (docs/VPS_LIVE_ORCHESTRATION.md §Runtime layout).
+#:
+#: A LIST OF TWO, RATIFIED 2026-07-30 — do NOT "simplify" it back to the single served
+#: ``live/quotes.json``. The spec said "read the local plane"; read literally as the
+#: served file alone it evaluates ~0 of ~1,700 armed names, because that file is the
+#: 34-symbol DISPLAY set (measured, see below). Both files, merged freshest-wins.
+#:
 #: BOTH, not just the served one, and the order is load-bearing:
 #:   quotes_full.json  the ~2,100-symbol universe the 5-minute ``snapshot`` lane pulls
 #:                     (state dir, root-readable, not web-addressable). This is the
@@ -321,22 +335,24 @@ def run(root: Path, *, now: datetime | None = None, dry_run: bool = False,
     except (TypeError, ValueError):
         delay_min = None
 
-    # THE CEILING MUST CLEAR THE FLOOR, and it is not this lane's place to move either.
-    # A quote's age is (how long since we looked) PLUS (how far behind real-time the
-    # tape is) — live_verify._feed_delay_min states the rule. The per-name gate measures
-    # the sum against `quote_max_age_min`, so a ceiling below the feed's own declared
-    # delay is unsatisfiable by construction: every US single name darks `stale_quote`
-    # on every pass, on the freshest plane there is, while the lane reports success.
-    # Say so out loud rather than silently darking a universe. Fresher input is what
-    # this lane can fix; the ceiling is a config ruling that belongs to the operator.
+    # THE CEILING MUST CLEAR THE FLOOR. A quote's age is (how long since we looked)
+    # PLUS (how far behind real-time the tape is) — live_verify._feed_delay_min states
+    # the rule — and the per-name gate measures the sum. A ceiling at or below the feed's
+    # own declared delay is unsatisfiable by construction: every US single name darks
+    # `stale_quote` on every pass, on the freshest plane there is, while the lane reports
+    # success. live_cfg now DERIVES the ceiling from that floor, so this can no longer
+    # be true of the default — it guards an explicit `quote_max_age_min` override and the
+    # case where the ARTIFACT declares a longer delay than config.yml admits, which no
+    # derivation from config can see.
     try:
-        ceiling = float(lc.get("quote_max_age_min", 12))
+        ceiling = float(lc.get("quote_max_age_min", LS._FALLBACK_MAX_AGE_MIN))  # noqa: SLF001
         floor = max(float(live.get("feed_delay_min") or 0.0), float(delay_min or 0))
         if floor and ceiling <= floor:
             print(f"::warning title=prophet-live::quote_max_age_min={ceiling:g}m is at "
                   f"or below the feed's declared {floor:g}m delay — names cannot pass "
-                  "the per-quote freshness gate at any polling speed (config.yml "
-                  "prophet_live.quote_max_age_min)", flush=True)
+                  "the per-quote freshness gate at any polling speed (unset "
+                  "prophet_live.quote_max_age_min to derive it, or raise "
+                  "prophet_live.quote_slack_min)", flush=True)
     except (TypeError, ValueError):
         pass
 

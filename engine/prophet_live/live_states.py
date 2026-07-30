@@ -145,15 +145,53 @@ _DEFAULTS: dict[str, Any] = {
     # price oscillating on the threshold does not flap the public state.
     "fade_buffer_pct": 0.5,
     "confirm_window_start": "15:30",
-    # Hot-tape convention: a quote older than this cannot describe the current tape.
-    "quote_max_age_min": 12,
+    # How much OBSERVATION lag the freshness gate tolerates ON TOP of the feed's own
+    # contractual delay — one polling gap (5 min) plus jitter. See the derivation of
+    # `quote_max_age_min` below; this is the only half of that budget we control.
+    "quote_slack_min": 10,
 }
+
+#: The feed delay assumed when the caller hands us no ``live`` block at all (tests,
+#: ``live_cfg(None)``). Matches config.yml ``live.delayed_min`` so a config-less call
+#: resolves to the SAME ceiling production does. It is a fallback, never an override:
+#: whenever a ``live.delayed_min`` exists it wins, including when it is 0.
+_FEED_DELAY_FALLBACK_MIN = 15.0
+
+#: The ceiling a ``cfg`` dict that never went through :func:`live_cfg` falls back to.
+#: One number, derived once, so an ad-hoc dict cannot silently gate differently.
+_FALLBACK_MAX_AGE_MIN = _FEED_DELAY_FALLBACK_MIN + _DEFAULTS["quote_slack_min"]
 
 
 def live_cfg(cfg: dict | None) -> dict[str, Any]:
-    """Resolve the evaluator config: ``config.yml prophet_live`` over in-code defaults."""
+    """Resolve the evaluator config: ``config.yml prophet_live`` over in-code defaults.
+
+    ``quote_max_age_min`` IS DERIVED, not a constant (P0 fix, 2026-07-30). A quote's
+    age is measured from the quote's OWN timestamp, so it is
+
+        (how long since we polled)  +  (how far behind real-time the tape is)
+
+    and the second term is a property of the DATA PLAN, not of our lane's health
+    (``live_verify._feed_delay_min`` states the same rule). The shipped 12 was copied
+    from the hot-tape convention without that second term: against a contractually
+    15-minute-delayed feed it is not a freshness gate at all, it is an off switch —
+    measured 2026-07-30, US single-name quotes arrive 17.6 min old at source, so every
+    name darked ``stale_quote`` on the freshest plane in the estate, forever, while the
+    lane reported success.
+
+    So the ceiling resolves to ``live.delayed_min + prophet_live.quote_slack_min``
+    (15 + 10 = 25 today) unless ``prophet_live.quote_max_age_min`` is set explicitly,
+    which still wins — the operator lever survives.
+
+    DERIVED, NOT A BIGGER MAGIC NUMBER, on purpose: the day a real-time entitlement
+    lands, ``live.delayed_min`` goes to 0 and this gate tightens to 10 by itself. A
+    hardcoded 25 would keep accepting 25-minute-old prints on a real-time feed forever.
+    Do NOT "tighten" it back toward 12 — that number cannot be met by a delayed feed at
+    any polling speed, and tightening the SLACK is the lever that actually means
+    "poll faster".
+    """
     out: dict[str, Any] = {k: (dict(v) if isinstance(v, dict) else v)
                            for k, v in _DEFAULTS.items()}
+    feed_delay = _FEED_DELAY_FALLBACK_MIN
     try:
         block = (cfg or {}).get("prophet_live") or {}
         for k, dv in _DEFAULTS.items():
@@ -163,8 +201,16 @@ def live_cfg(cfg: dict | None) -> dict[str, Any]:
                 out[k] = {**dv, **(block[k] or {})}
             else:
                 out[k] = type(dv)(block[k])
+        declared = ((cfg or {}).get("live") or {}).get("delayed_min")
+        if declared is not None:
+            feed_delay = max(0.0, float(declared))
+        out["quote_max_age_min"] = (float(block["quote_max_age_min"])
+                                    if block.get("quote_max_age_min") is not None
+                                    else feed_delay + float(out["quote_slack_min"]))
     except Exception as exc:  # noqa: BLE001
         log.warning("live_states: bad prophet_live config (%s) — using defaults", exc)
+        out = {k: (dict(v) if isinstance(v, dict) else v) for k, v in _DEFAULTS.items()}
+        out["quote_max_age_min"] = _FALLBACK_MAX_AGE_MIN
     return out
 
 
@@ -330,7 +376,7 @@ def _resolve_state(entry: dict[str, Any], *, price: float | None, quote_age_min:
             return _dark("irregular_gate")
         if price is None:
             return _dark("no_quote")
-        max_age = float(cfg.get("quote_max_age_min", 12))
+        max_age = float(cfg.get("quote_max_age_min", _FALLBACK_MAX_AGE_MIN))
         if quote_age_min is None or float(quote_age_min) > max_age:
             return _dark("stale_quote", quote_age_min=(round(float(quote_age_min), 1)
                                                        if quote_age_min is not None else None))
