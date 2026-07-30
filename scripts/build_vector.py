@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -26,6 +27,7 @@ from plotly.subplots import make_subplots
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config, store  # noqa: E402
+from lib.illus import illus, regime_tape  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -239,6 +241,8 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             )
             primary = {
                 "key": primary_key,
+                "label_en": "Leverage pressure",
+                "label_zh": "杠杆压力",
                 "source": "regime.context_legs.leverage.cascade_risk",
                 "state_en": state_en,
                 "state_zh": state_zh,
@@ -249,6 +253,8 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             row = board_rows.get(primary_key) or {}
             primary = {
                 "key": primary_key,
+                "label_en": row.get("label_en", primary_key.replace("_", " ").title()),
+                "label_zh": row.get("label_zh", primary_key),
                 "source": f"master.board.{primary_key}",
                 "state_en": row.get("state_en", "Unavailable"),
                 "state_zh": row.get("state_zh", "暂无"),
@@ -261,6 +267,8 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             row = board_rows.get(key) or {}
             receipts.append({
                 "key": key,
+                "label_en": row.get("label_en", key.replace("_", " ").title()),
+                "label_zh": row.get("label_zh", key),
                 "source": f"master.board.{key}",
                 "state_en": row.get("state_en", "Unavailable"),
                 "state_zh": row.get("state_zh", "暂无"),
@@ -276,6 +284,361 @@ def _cockpit_axis_rows(master: dict, regime: dict) -> list[dict]:
             "receipt_members": receipts,
         })
     return axes
+
+
+def _series_payload(series: pd.Series | None, days: int | None = None) -> dict:
+    """Small ilx payload with calendar dates and finite numeric values."""
+    if series is None:
+        return {"dates": [], "vals": []}
+    s = pd.to_numeric(series, errors="coerce").dropna().sort_index()
+    if days and len(s):
+        s = s.loc[s.index >= s.index.max() - pd.Timedelta(days=days)]
+    return {
+        "dates": [pd.Timestamp(d).strftime("%Y-%m-%d") for d in s.index],
+        "vals": [float(v) for v in s],
+    }
+
+
+def _spark_points(series: pd.Series | None, days: int = 90, w: int = 150, h: int = 34) -> str:
+    """Theme-aware Tier-1 spark geometry; normalization is visual only."""
+    if series is None:
+        return ""
+    s = pd.to_numeric(series, errors="coerce").dropna().sort_index()
+    if len(s):
+        s = s.loc[s.index >= s.index.max() - pd.Timedelta(days=days)]
+    if len(s) < 3:
+        return ""
+    lo, hi = float(s.min()), float(s.max())
+    span = hi - lo
+    return " ".join(
+        f"{w * i / max(len(s) - 1, 1):.1f},{h - (h * (float(v) - lo) / span) if span else h / 2:.1f}"
+        for i, v in enumerate(s.to_numpy())
+    )
+
+
+def _plain_watch_conditions(cycle_thesis: dict) -> list[dict]:
+    """Translate the cycle monitor into calm, banned-vocabulary-free watch rows."""
+    copy = {
+        "timing": (
+            "Cycle window",
+            "周期窗口",
+            "The projected timing window is being updated from the latest close.",
+            "预测时间窗口会依据最新收盘持续更新。",
+        ),
+        "structure": (
+            "Price structure",
+            "价格结构",
+            "The cycle read needs price structure to keep holding.",
+            "周期判断需要价格结构继续保持。",
+        ),
+        "dampening": (
+            "Drawdown shape",
+            "回撤形态",
+            "A shallower sell-off would point to a less distinct cycle low.",
+            "若回撤更浅，本轮周期低点可能不再清晰。",
+        ),
+        "desync": (
+            "Cycle alignment",
+            "周期对齐",
+            "The halving clock and calendar window need to stay aligned.",
+            "减半时钟与日历窗口需要继续保持一致。",
+        ),
+        "pivot_staleness": (
+            "Cycle anchors",
+            "周期锚点",
+            "New price extremes can require the cycle anchors to be refreshed.",
+            "新的价格极值可能需要更新周期锚点。",
+        ),
+    }
+    level_words = {
+        "ok": ("On track", "按计划"),
+        "watch": ("Watch", "留意"),
+        "alert": ("Needs review", "需复核"),
+    }
+    rows = []
+    for flag in (cycle_thesis or {}).get("flags") or []:
+        if flag.get("key") not in copy:
+            continue
+        title_en, title_zh, body_en, body_zh = copy[flag["key"]]
+        state_en, state_zh = level_words.get(flag.get("level"), ("Updating", "更新中"))
+        rows.append({
+            "key": flag["key"],
+            "level": flag.get("level", "ok"),
+            "title_en": title_en,
+            "title_zh": title_zh,
+            "state_en": state_en,
+            "state_zh": state_zh,
+            "body_en": body_en,
+            "body_zh": body_zh,
+        })
+    return rows[:3]
+
+
+def _vector_presentations(
+    sig: pd.DataFrame,
+    master: dict,
+    regime: dict,
+    cycle_thesis: dict,
+) -> dict:
+    """Build Wave-1 display objects from existing engine series only."""
+    last = sig.iloc[-1]
+    close = sig["close"]
+    cutoff = close.index.max() - pd.Timedelta(days=730)
+    price = close.loc[close.index >= cutoff]
+    alloc = sig["alloc_optimal"].reindex(price.index)
+    comp = sig.get("composite_state", pd.Series("NEUTRAL", index=sig.index)).reindex(price.index)
+    tone_map = {
+        "ACCUMULATE": "bull",
+        "RISK-ON": "bull",
+        "NEUTRAL": "neutral",
+        "DISTRIBUTE": "bear",
+        "RISK-OFF": "bear",
+    }
+    regimes = [
+        {
+            "start": pd.Timestamp(start).strftime("%Y-%m-%d"),
+            "end": pd.Timestamp(end).strftime("%Y-%m-%d"),
+            "tone": tone_map.get(str(state), "neutral"),
+        }
+        for start, end, state in _runs(comp)
+    ]
+
+    vcfg = config.load().get("vector", {})
+    events = []
+    for raw in (vcfg.get("cycle_clock") or {}).get("halving_dates") or []:
+        events.append({
+            "date": str(raw)[:10],
+            "label_en": "Bitcoin halving",
+            "label_zh": "比特币减半",
+        })
+    phase_cfg = vcfg.get("cycle_phase_clock") or {}
+    for raw in phase_cfg.get("tops") or []:
+        events.append({
+            "date": str(raw)[:10],
+            "label_en": "Recorded cycle high",
+            "label_zh": "记录周期高点",
+        })
+    for raw in phase_cfg.get("bottoms") or []:
+        events.append({
+            "date": str(raw)[:10],
+            "label_en": "Recorded cycle low",
+            "label_zh": "记录周期低点",
+        })
+    projection = None
+    if (cycle_thesis or {}).get("window_start") and (cycle_thesis or {}).get("window_end"):
+        projection = {
+            "start": cycle_thesis["window_start"],
+            "end": cycle_thesis["window_end"],
+            "label_en": "Cycle watch window",
+            "label_zh": "周期观察窗口",
+        }
+
+    axes = _cockpit_axis_rows(master, regime)
+    micro = {
+        "trend_momentum": (
+            f"{float(last.get('momentum')):+.2f}" if pd.notna(last.get("momentum")) else "—",
+            "momentum",
+            "动量",
+        ),
+        "cycle_valuation": (
+            f"{round(100 * float(last.get('cycle_position')))}%" if pd.notna(last.get("cycle_position")) else "—",
+            "cycle",
+            "周期",
+        ),
+        "liquidity_flows": (
+            f"{float(last.get('stbl_growth')):+.1f}%" if pd.notna(last.get("stbl_growth")) else "—",
+            "stablecoin growth",
+            "稳定币增长",
+        ),
+        "leverage_derivatives": (
+            f"{round(float(last.get('leverage_stress')))}/100" if pd.notna(last.get("leverage_stress")) else "—",
+            "pressure",
+            "压力",
+        ),
+        "network_miners": (
+            f"{round(float(last.get('bfi')))}/100" if pd.notna(last.get("bfi")) else "—",
+            "BFI",
+            "BFI",
+        ),
+        "macro_backdrop": (
+            f"{float(last.get('global_m2_yoy')):+.1f}%" if pd.notna(last.get("global_m2_yoy")) else "—",
+            "global M2",
+            "全球 M2",
+        ),
+    }
+    for row, spec in zip(axes, COCKPIT_AXIS_PRESENTATION):
+        source_col = spec["spark_source"].split(".", 1)[-1]
+        row["spark"] = _spark_points(sig[source_col] if source_col in sig else None)
+        row["micro"], row["micro_en"], row["micro_zh"] = micro[row["id"]]
+        all_receipts = [row["primary"], *row["receipt_members"]]
+        row["receipt_en"] = (
+            "Primary: "
+            + " — ".join((all_receipts[0]["label_en"], all_receipts[0]["state_en"]))
+            + ". Also watching: "
+            + "; ".join(f"{r['label_en']} — {r['state_en']}" for r in all_receipts[1:])
+            + ". Display context only; position size comes from the final allocation."
+        )
+        row["receipt_zh"] = (
+            "主读数："
+            + " — ".join((all_receipts[0]["label_zh"], all_receipts[0]["state_zh"]))
+            + "。同时观察："
+            + "；".join(f"{r['label_zh']} — {r['state_zh']}" for r in all_receipts[1:])
+            + "。仅作展示背景；仓位取自最终配置。"
+        )
+
+    def _close_series(group: str, name: str) -> pd.Series | None:
+        try:
+            frame = store.read(group, name)
+            if frame is None or frame.empty:
+                return None
+            col = "close" if "close" in frame else ("close_price" if "close_price" in frame else frame.columns[0])
+            return pd.to_numeric(frame[col], errors="coerce").dropna()
+        except Exception:
+            return None
+
+    eth = _close_series("yahoo", "ETH-USD")
+    sol = _close_series("yahoo", "SOL-USD")
+    try:
+        global_market = store.read("coingecko", "global_market")
+    except Exception:
+        global_market = None
+
+    def _relative(series: pd.Series | None, benchmark: pd.Series, days: int = 56) -> tuple[str, str]:
+        if series is None:
+            return "History unavailable", "暂无历史"
+        joined = pd.concat(
+            [series.rename("asset"), benchmark.rename("btc")],
+            axis=1,
+            sort=True,
+        ).dropna()
+        if len(joined) <= days:
+            return "Building relative history", "正在积累相对历史"
+        rel = (joined["asset"].iloc[-1] / joined["asset"].iloc[-days - 1]) / (
+            joined["btc"].iloc[-1] / joined["btc"].iloc[-days - 1]
+        ) - 1
+        if rel >= 0:
+            return f"Leading BTC by {rel:+.1%} over 8 weeks", f"近 8 周领先 BTC {rel:+.1%}"
+        return f"Lagging BTC by {abs(rel):.1%} over 8 weeks", f"近 8 周落后 BTC {abs(rel):.1%}"
+
+    btc_rel = ("Benchmark asset", "基准资产")
+    eth_rel = _relative(eth, close)
+    sol_rel = _relative(sol, close)
+    dom = (
+        pd.to_numeric(global_market["btc_dominance_pct"], errors="coerce").dropna()
+        if global_market is not None and "btc_dominance_pct" in global_market
+        else None
+    )
+    total = (
+        pd.to_numeric(global_market["total_mcap_usd"], errors="coerce").dropna()
+        if global_market is not None and "total_mcap_usd" in global_market
+        else None
+    )
+    complex_cards = [
+        {
+            "id": "btc",
+            "symbol": "BTC",
+            "name_en": "Bitcoin",
+            "name_zh": "比特币",
+            "value": f"${float(close.iloc[-1]):,.0f}",
+            "context_en": btc_rel[0],
+            "context_zh": btc_rel[1],
+            "tone": "accent",
+            "chart": illus(_series_payload(close, 90), kind="line", accent="var(--btc)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Bitcoin price over 90 days"),
+        },
+        {
+            "id": "eth",
+            "symbol": "ETH",
+            "name_en": "Ethereum",
+            "name_zh": "以太坊",
+            "value": f"${float(eth.iloc[-1]):,.0f}" if eth is not None and len(eth) else "—",
+            "context_en": eth_rel[0],
+            "context_zh": eth_rel[1],
+            "tone": "up" if "Leading" in eth_rel[0] else "down",
+            "chart": illus(_series_payload(eth, 90), kind="line", accent="var(--info)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Ethereum price over 90 days"),
+        },
+        {
+            "id": "sol",
+            "symbol": "SOL",
+            "name_en": "Solana",
+            "name_zh": "索拉纳",
+            "value": f"${float(sol.iloc[-1]):,.0f}" if sol is not None and len(sol) else "—",
+            "context_en": sol_rel[0],
+            "context_zh": sol_rel[1],
+            "tone": "up" if "Leading" in sol_rel[0] else "down",
+            "chart": illus(_series_payload(sol, 90), kind="line", accent="var(--warn)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Solana price over 90 days"),
+        },
+        {
+            "id": "dominance",
+            "symbol": "BTC.D",
+            "name_en": "BTC share",
+            "name_zh": "BTC 占比",
+            "value": f"{float(dom.iloc[-1]):.1f}%" if dom is not None and len(dom) else "—",
+            "context_en": "Market leadership",
+            "context_zh": "市场主导度",
+            "tone": "neutral",
+            "chart": illus(_series_payload(dom), kind="line", accent="var(--muted)",
+                           height=72, max_points=90, value_fmt="{:,.1f}%",
+                           aria_en="Bitcoin market share history"),
+        },
+        {
+            "id": "market",
+            "symbol": "TOTAL",
+            "name_en": "Crypto market",
+            "name_zh": "加密市场",
+            "value": f"${float(total.iloc[-1]) / 1e12:.2f}T" if total is not None and len(total) else "—",
+            "context_en": "Total market value",
+            "context_zh": "市场总市值",
+            "tone": "neutral",
+            "chart": illus(_series_payload(total), kind="area", accent="var(--info)",
+                           height=72, max_points=90, value_fmt="${:,.0f}",
+                           aria_en="Total crypto market value history"),
+        },
+    ]
+
+    return {
+        "tape": regime_tape(
+            _series_payload(price),
+            allocation=_series_payload(alloc),
+            regimes=regimes,
+            events=events,
+            projection=projection,
+            height=270,
+            max_points=280,
+            aria_en="Bitcoin price, market regime and final model exposure over two years",
+            aria_zh="比特币价格、市场状态与最终模型仓位，两年视图",
+        ),
+        "axes": axes,
+        "watch": _plain_watch_conditions(cycle_thesis),
+        "complex": complex_cards,
+        "charts": {
+            "momentum": illus(
+                _series_payload(sig.get("momentum"), 365),
+                kind="baseline", baseline=0, height=180, max_points=180,
+                value_fmt="{:+.2f}", aria_en="Bitcoin momentum over one year",
+            ),
+            "structure": illus(
+                _series_payload(sig.get("structure"), 365),
+                kind="baseline", baseline=0, height=180, max_points=180,
+                value_fmt="{:+.2f}", aria_en="Bitcoin market structure over one year",
+            ),
+            "bfi": illus(
+                _series_payload(sig.get("bfi"), 365),
+                kind="line", accent="var(--info)", height=180, max_points=180,
+                value_fmt="{:,.0f}", aria_en="Bitcoin fundamentals index over one year",
+            ),
+            "etf_flow": illus(
+                _series_payload(sig.get("etf_flow_btc"), 365),
+                kind="bars", baseline=0, height=180, max_points=120,
+                value_fmt="{:+,.0f}", aria_en="Bitcoin ETF net flow over one year",
+            ),
+        },
+    }
 
 
 def emit_crypto_cockpit_json(
@@ -3776,6 +4139,32 @@ def main() -> int:
         },
     }
 
+    # Wave 1: the Strategy & Track Record fold and the live verdict now share
+    # the same close series and as-of.  The standalone page remains a renderer
+    # over this exact function until its URL retires in Wave 2.
+    try:
+        from scripts.build_btc_strategy import build_context as build_btc_strategy_context
+        # The fold is a compact receipt, not a second strategy page.  A leaner
+        # curve sample preserves the exact figures while keeping the flagship
+        # HTML below the Wave 1 payload budget.  The standalone URL retains its
+        # original 240-point curves.
+        strategy = build_btc_strategy_context(close, chart_points=140)
+    except Exception as e:  # noqa: BLE001 — strategy receipt must not kill the flagship
+        log.warning("shared BTC strategy context failed (%s)", e)
+        strategy = {"strategies": [], "hodl": {}, "phase": {}, "gate": gate}
+
+    try:
+        presentation = _vector_presentations(sig, master, regime, cycle_thesis)
+    except Exception as e:  # noqa: BLE001 — preserve a plain null page if a display leg fails
+        log.warning("vector Wave-1 presentation build failed (%s)", e)
+        presentation = {
+            "tape": regime_tape(_series_payload(close, 730), height=270),
+            "axes": _cockpit_axis_rows(master, regime),
+            "watch": [],
+            "complex": [],
+            "charts": {},
+        }
+
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -4007,6 +4396,8 @@ def main() -> int:
         "cones": cones,
         "rec": recommendation,
         "newf": newf,
+        "presentation": presentation,
+        "strategy": strategy,
         "env": envd,
         "scn": scnd,
         "sizing": sizing,
@@ -4017,12 +4408,9 @@ def main() -> int:
         "timeline": timeline,
         "timeline_days": acfg["timeline_days"],
         "n_alerts": sum(len(d["events"]) for d in timeline),
-        "charts": {
-            "momentum": chart_oscillator(sig["momentum"], close, "Momentum"),
-            "structure": chart_oscillator(sig["structure"], close, "Structure Shift"),
-            "bfi": chart_bfi(sig),
-            "etf_flow": chart_etf_flow(sig) if "etf_flow_btc" in sig.columns else "",
-        },
+        # All static flagship illustrations are ilx SSR fragments. Plotly is
+        # retained only for the separate allocation page until Wave 2.
+        "charts": presentation.get("charts", {}),
     }
 
     env = Environment(loader=FileSystemLoader(str(Path(__file__).resolve().parent.parent / "templates")),
@@ -4038,9 +4426,13 @@ def main() -> int:
     env.filters["money"] = lambda v: f"${v:,.0f}" if pd.notna(v) else "—"
     env.filters["money1"] = lambda v: f"${v/1000:,.1f}K" if pd.notna(v) else "—"
     html = env.get_template("vector.html.j2").render(**vm, C=C)
+    # The bilingual cockpit contains CJK text, so character count understates
+    # transfer weight.  Collapse formatting-only gaps between tags while
+    # preserving one separating space for adjacent inline elements.
+    html = re.sub(r">\s+<", "> <", html)
     site = Path(config.load()["storage"]["site_dir"])
     write_page(site / "vector.html", html)
-    log.info("wrote %s/vector.html (%d KB)", site, len(html) // 1024)
+    log.info("wrote %s/vector.html (%d KB)", site, len(html.encode("utf-8")) // 1024)
     try:  # interactive Lightweight-Charts backtest feed — never break the build
         emit_risk_strategy_json(site, sig)
     except Exception as e:  # noqa: BLE001
