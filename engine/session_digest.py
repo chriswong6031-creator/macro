@@ -85,21 +85,33 @@ BURST_WINDOW_STAMPS = 10
 #: both separately so neither can be misread as the other.
 BURST_EFFECT_SIGMA = 2.0
 
-#: Significance floor on the honest TWO-SAMPLE statistic (the #217 idiom: the difference in
-#: means over `baseline_sigma · sqrt(1/w + 1/baseline_n)`).  Derivation: the effect gate above
-#: is the interpretable cut, and this floor exists so a THIN baseline cannot manufacture one.
-#: At the smallest baseline the family will accept (BURST_MIN_BASELINE = 10, window 10) a
-#: 2.0-sigma effect yields t = 2·sqrt(1/(1/10+1/10)) = 4.47.  Setting the floor there means the
-#: test is never LOOSER than it is at the earliest bookable moment, while later in the session
-#: — where t for the same effect climbs toward 6.2 — the interpretable effect gate is what
-#: binds.  A single fixed t with no effect gate would have drifted the other way: the same
-#: t would mean a 0.9-sigma effect by the close.
-BURST_T_MIN = 4.47
-
 #: Minimum baseline increments before a burst can be booked.  The statistic divides by the
 #: BASELINE's sigma, which is unbounded from below — three quiet opening stamps would make any
 #: fourth stamp a 40-sigma event.  10 keeps the earliest bookable burst honest.
 BURST_MIN_BASELINE = 10
+
+
+def _burst_t_floor(effect: float = BURST_EFFECT_SIGMA,
+                   window: int = BURST_WINDOW_STAMPS,
+                   baseline: int = BURST_MIN_BASELINE) -> float:
+    """The two-sample t that `effect` sigmas produce at the smallest baseline the family accepts.
+
+    DERIVED, not typed: the earlier hardcoded 4.47 sat 0.0021 BELOW the true 4.472136, so the
+    floor was a hair looser than the value it claimed to be, and any edit to the window or the
+    minimum baseline would have silently decoupled the two.  Computing it keeps the three
+    constants in one relationship.
+    """
+    return effect * math.sqrt(1.0 / (1.0 / max(1, window) + 1.0 / max(1, baseline)))
+
+
+#: Significance floor on the honest TWO-SAMPLE statistic (the #217 idiom: the difference in means
+#: over `baseline_sigma · sqrt(1/w + 1/baseline_n)`).  The effect gate above is the interpretable
+#: cut; this floor exists so a THIN baseline cannot manufacture one.  Pinned to the strictness at
+#: the earliest bookable moment (see `_burst_t_floor`), so the test is never LOOSER than it is
+#: there, while later in the session — where t for the same effect climbs toward 6.2 — the
+#: interpretable effect gate is what binds.  A fixed t with no effect gate would drift the other
+#: way: the same t would mean a 0.9-sigma effect by the close.
+BURST_T_MIN = _burst_t_floor()
 
 #: Re-arm margin for the burst family, in effect sigmas below BURST_EFFECT_SIGMA.  A single
 #: sustained pace change ramps the effect across the cut and books twice without it (measured),
@@ -262,12 +274,13 @@ def session_window_label(session_date: str | date) -> str:
 
 # ── clock-label normalization (the archived labels cannot be taken on trust) ──────
 
-#: The only clock offsets the known defect can produce, in minutes.  `_minute_key` localizes a
-#: naive ET timestamp as UTC, so the error is exactly the ET↔UTC offset: 4 hours under EDT and
-#: 5 hours under EST.  0 means the labels are already exchange time (the post-fix state, and
-#: the surface archive's state today).  Nothing else is a candidate — an offset outside this
-#: set is not this defect, and the digest will not invent a correction for it.
-CLOCK_CANDIDATE_OFFSETS = (0, 240, 300)
+#: Label families, which differ in how much the digest may assume about their clock.
+#:   "surface" — `scripts/build_flow_surface.stamp_hhmm` receives an AWARE UTC datetime and
+#:               calls `.astimezone(ET)`, so its stamps are exchange time BY CONSTRUCTION.
+#:   "tide"    — `engine/live_flow._minute_key` localizes a NAIVE exchange timestamp as UTC,
+#:               so this family carries the defect.
+CLOCK_FAMILY_SURFACE = "surface"
+CLOCK_FAMILY_TIDE = "tide"
 
 #: Residual deficit (minutes) below which no timezone correction is even considered.  A late
 #: poller start produces a POSITIVE residual and must never be "corrected".
@@ -290,11 +303,31 @@ class ClockRead:
         return not self.ambiguous
 
 
+def defect_offset_minutes(session_date: str | date) -> int:
+    """The exact minutes `_minute_key` shifts a label on this session date.
+
+    The defect localizes a naive ET timestamp as UTC and converts back to ET, so the error is
+    precisely the ET↔UTC offset ON THAT DATE — 240 minutes under EDT, 300 under EST.  The
+    exchange calendar already knows which, so the candidate set is TWO values (0 or this one),
+    never a guess between 4 and 5 hours.  That is what lets a truncated SKEWED session resolve:
+    with only one non-zero candidate there is nothing to be ambiguous between.
+    """
+    open_dt, _ = session_window_et(session_date)
+    off = open_dt.utcoffset()
+    return int(-off.total_seconds() // 60) if off else 0
+
+
+def clock_candidates(session_date: str | date) -> tuple[int, ...]:
+    """(0, defect offset) — the only two clocks an archived label can be on."""
+    return (0, defect_offset_minutes(session_date))
+
+
 def clock_read(
     session_date: str | date,
     labels: Sequence[str],
     *,
     cadence_sec: int | None = None,
+    family: str = CLOCK_FAMILY_TIDE,
 ) -> ClockRead:
     """Pin the archive's clock onto exchange time using EVERY label, not just the earliest.
 
@@ -305,37 +338,45 @@ def clock_read(
     UTC datetime through `stamp_hhmm`'s `astimezone(ET)`.  The correction runs over both anyway
     and is a no-op wherever the labels are already right.)
 
-    HOW: score each candidate in CLOCK_CANDIDATE_OFFSETS by how many labels it would place
-    OUTSIDE the session window, and take the candidate that fits.  Using the distribution
-    rather than one label is what makes it robust — an earliest-label rule breaks on a single
-    off-grid print.  Two measured failures of that earlier rule, both now covered:
+    HOW: score each of the two candidates (0, or this date's defect offset) by how many labels
+    it would place OUTSIDE the session window, and take the one that fits.  Using the
+    distribution rather than one label is what makes it robust — an earliest-label rule breaks
+    on a single off-grid print.  Two measured failures of that earlier rule, both now covered:
       * a 09:25 ET print (before the open) made the rule "correct" a clean session;
       * a skewed session whose last label sat 3 minutes past the close at the configured
         cadence made the rule refuse a correction the whole session needed, silently stamping
         every event 4 hours early.
 
-    AMBIGUITY IS DECLARED, NOT GUESSED AWAY: when two candidates both fit — a truncated
-    morning session fits at 0 AND at +240, because 09:30–11:00 and 13:30–15:00 are both inside
-    the window — the read is marked ambiguous and `trusted` goes False.  The caller must then
-    suppress time-stamped output rather than pick a story.  The anchor-closest-to-the-open
-    candidate is still reported so the arc (whose shape does not depend on the offset) can be
-    drawn.
+    THE `surface` FAMILY IS DISPOSITIVE AT ZERO.  `stamp_hhmm` converts an AWARE UTC datetime
+    with `.astimezone(ET)`, so a surface label cannot carry the defect.  Whenever 0 fits, 0 is
+    the answer and the read is trusted — no ambiguity verdict.  This is not a convenience: the
+    two-candidate scoring alone declared a CLEAN truncated session ambiguous (09:30–11:00 fits
+    at 0, and also at +240 as 13:30–15:00), which dropped every event for a poller that died at
+    11:00 ET.  The defect is one-directional — localize-as-UTC only ever shifts labels EARLIER —
+    so for a family that cannot be skewed, a fit at 0 settles it.  If 0 does NOT fit, something
+    unmodelled is wrong and the general path below still applies, ambiguity included.
 
-    THE RESIDUAL RECEIPT: `residual_median_min` is the median of
-    `label − (open + i·cadence)` across the labels — a diagnostic, reported so a reader can
-    see what the clock looked like, and used for one assertion: a deficit beyond
-    CLOCK_RESIDUAL_MIN_DEFICIT must round to a whole hour in the candidate set, or the read is
-    ambiguous.  It is NOT the selection mechanism, because gaps in the tape shift index
-    positions and would bias it.
+    AMBIGUITY IS DECLARED, NOT GUESSED AWAY, for the `tide` family: when both candidates fit,
+    the read is marked ambiguous and `trusted` goes False, and the caller must suppress
+    time-stamped output rather than pick a story.  A candidate is still reported so the arc
+    (whose shape does not depend on the offset) can be drawn.
 
-    KNOWN CONFLATION, stated rather than papered over: a genuinely late poller start UNDER the
-    bug adds to the deficit.  A start late enough to push the shifted labels past the close
-    (roughly 13:30 or later under a 4-hour skew) is indistinguishable from a different offset,
-    and the read reports itself ambiguous instead of choosing.
+    THE RESIDUAL RECEIPT: `residual_median_min` is the median of `label − (open + i·cadence)`
+    across the labels — a diagnostic, reported so a reader can see what the clock looked like,
+    and used for one assertion: a deficit beyond CLOCK_RESIDUAL_MIN_DEFICIT must round to a
+    whole hour matching a candidate, or the read is ambiguous.  It is NOT the selection
+    mechanism, because gaps in the tape shift index positions and would bias it.
+
+    KNOWN CONFLATION, stated rather than papered over: a tide archive whose SKEWED labels
+    happen to land wholly inside the window is indistinguishable from a clean late start.
+    Measured example — labels 10:00–12:00 fit at 0 (a clean late morning) and at +240 (a skewed
+    record of 14:00–16:00), so the read reports itself ambiguous instead of choosing.  It takes
+    a real start at or after roughly 13:30 to produce that.
 
     SELF-DISARMING: once `_minute_key` is repaired every label is exchange time, candidate 0 is
     the unique fit, and this function stops touching anything.
     """
+    candidates = clock_candidates(session_date)
     mins = [m for m in (_stamp_minutes(x) for x in labels) if m is not None]
     if not mins:
         return ClockRead(0, False, 0, (0,), None, "", "")
@@ -345,15 +386,21 @@ def clock_read(
     close_min = close_dt.hour * 60 + close_dt.minute
 
     outside = {c: sum(1 for m in mins if not (open_min <= m + c <= close_min))
-               for c in CLOCK_CANDIDATE_OFFSETS}
-    fitting = tuple(c for c in CLOCK_CANDIDATE_OFFSETS if outside[c] == 0)
+               for c in candidates}
+    fitting = tuple(c for c in candidates if outside[c] == 0)
 
+    # The residual receipt is computed on EVERY path, including the surface fast path below: it is
+    # a diagnostic a reader is entitled to see even when the decision did not need it.
     cad_min = max(1, int((cadence_sec or 0) // 60)) if cadence_sec else None
     residual: float | None = None
     if cad_min:
         res = sorted(m - (open_min + i * cad_min) for i, m in enumerate(mins))
         mid = len(res) // 2
         residual = float(res[mid] if len(res) % 2 else (res[mid - 1] + res[mid]) / 2.0)
+        residual = round(residual, 1)
+
+    if family == CLOCK_FAMILY_SURFACE and 0 in fitting:
+        return ClockRead(0, False, 0, fitting, residual, "", "")
 
     def anchor_pick(cands: Sequence[int]) -> int:
         return min(cands, key=lambda c: (abs((mins[0] + c) - open_min), c))
@@ -363,15 +410,15 @@ def clock_read(
     elif len(fitting) > 1:
         offset, ambiguous, n_out = anchor_pick(fitting), True, 0
     else:
-        best = min(CLOCK_CANDIDATE_OFFSETS, key=lambda c: (outside[c], c))
-        runner = sorted(CLOCK_CANDIDATE_OFFSETS, key=lambda c: (outside[c], c))[1]
+        ranked = sorted(candidates, key=lambda c: (outside[c], c))
+        best = ranked[0]
         offset, n_out = best, outside[best]
-        ambiguous = outside[runner] == outside[best]
+        ambiguous = len(ranked) > 1 and outside[ranked[1]] == outside[best]
 
     # Whole-hour assertion on the residual deficit (diagnostic → ambiguity, never selection).
     if residual is not None and residual <= -CLOCK_RESIDUAL_MIN_DEFICIT:
         implied = int(round(-residual / 60.0)) * 60
-        if implied not in CLOCK_CANDIDATE_OFFSETS:
+        if implied not in candidates:
             ambiguous = True
 
     if ambiguous:
@@ -384,8 +431,7 @@ def clock_read(
         zh = "存档的时间标签整体偏早一个时区，已校正为交易所时间后再标注"
     else:
         en = zh = ""
-    return ClockRead(offset, ambiguous, n_out, fitting,
-                     round(residual, 1) if residual is not None else None, en, zh)
+    return ClockRead(offset, ambiguous, n_out, fitting, residual, en, zh)
 
 
 def shift_label(label: str | None, offset_min: int) -> str:
@@ -681,10 +727,21 @@ EVENT_WORDS: dict[str, tuple[str, str]] = {
 }
 
 
-def _event(t: str, etype: str, **extra) -> dict:
+#: Keys an event owns.  A receipt may not use them — `t` is the event's TIME, and a burst
+#: receipt passing `t=<statistic>` silently overwrote it (caught by a replay test asserting the
+#: stamp was still in the time axis).  Hence the reserved list and the raise: a shadowing field
+#: is a programming error, not something to resolve by last-writer-wins.
+_EVENT_RESERVED = ("t", "type", "label_en", "label_zh")
+
+
+def _event(stamp: str, etype: str, **extra) -> dict:
+    """Build one event: `t` is the corrected timestamp, plus the receipt fields for its family."""
     en, zh = EVENT_WORDS[etype]
-    ev = {"t": t, "type": etype, "label_en": en, "label_zh": zh}
+    ev = {"t": stamp, "type": etype, "label_en": en, "label_zh": zh}
     for k, v in extra.items():
+        if k in _EVENT_RESERVED:
+            raise ValueError(
+                f"receipt field {k!r} would shadow an event's own key {_EVENT_RESERVED}")
         if v is not None:
             ev[k] = v
     return ev
@@ -908,8 +965,12 @@ def premium_bursts(
     not several.  A stretch with no read (flat baseline, too little tape) re-arms, so a later
     genuine run is never swallowed by an earlier one.
 
-    The receipt carries `effect_sigma` and `z` (the two-sample statistic) as separate fields
-    because they differ by a session-drifting factor — see `window_vs_baseline`.
+    The receipt carries `effect_sigma` and `t_stat` as separate fields because they differ by a
+    session-drifting factor — see `window_vs_baseline`.  APPENDIX-B DEVIATION, deliberate: the
+    contract sketch names an optional `z` on events, and this family publishes neither a `z` nor
+    a bare `t`.  Not `z`, because the quantity IS a two-sample t and a field named `z` holding a
+    t would misstate every event's strength by `sqrt(w·b/(w+b))`.  Not `t`, because an event's
+    `t` is its TIMESTAMP — see _EVENT_RESERVED.
     """
     vals = [float(v) for v in cumulative]
     events: list[dict] = []
@@ -924,7 +985,7 @@ def premium_bursts(
         if not fired and abs(st.effect_sigma) >= effect_thresh and abs(st.t) >= BURST_T_MIN:
             events.append(_event(times[i] if i < len(times) else "", "premium_burst",
                                  effect_sigma=round(st.effect_sigma, 2),
-                                 z=round(st.t, 2),
+                                 t_stat=round(st.t, 2),
                                  window_stamps=st.window_n,
                                  baseline_stamps=st.baseline_n))
             fired = True
@@ -1098,7 +1159,8 @@ def zero_dte_read(
     # this block emits is corrected onto ET.  The cross-bucket alignment above uses the RAW
     # labels (they are internally consistent) — only what leaves the block is corrected.
     ordered = sorted(common)
-    ck = clock_read(session_date, ordered, cadence_sec=cadence_sec)
+    ck = clock_read(session_date, ordered, cadence_sec=cadence_sec,
+                    family=CLOCK_FAMILY_TIDE)
     offset = ck.offset_min
 
     peak_share, peak_at = None, None
@@ -1130,10 +1192,27 @@ def zero_dte_read(
                                  share=round(share, 1)))
         prior_inside = inside
 
+    # N2: the tide clock governs THIS block.  When it cannot be pinned, the magnitudes still
+    # publish (a share is not a moment) but every stamp goes null and the spike events — which
+    # are nothing but stamps — are dropped, with the reason in plain words.
+    if not ck.trusted:
+        events = []
+        peak_at = open_at = None
+
+    # N7: how much of the session the cross-section actually rested on.  The empty-bucket veto is
+    # fixed, but a bucket carrying 1 stamp out of 196 still collapses the intersection to that one
+    # stamp — a "session peak" measured on a single minute.  Printing both numbers makes that
+    # visible instead of leaving a reader to assume the peak spans the day.
+    longest = max((len(buckets[k]) for k in keys), default=0)
+    thin = bool(longest) and len(ordered) < max(2, longest // 2)
+
     block = {
         "peak_share": round(peak_share, 1) if peak_share is not None else None,
         "at": shift_label(peak_at, offset) if peak_at else None,
+        "stamps_used": len(ordered),
+        "stamps_in_longest_bucket": longest,
         "clock_offset_min": offset,
+        "clock_ambiguous": bool(ck.ambiguous),
         # Standing state at the first stamp that carried tape: a day already over the threshold
         # when the tape starts books no ENTER event, and without this the peak and the empty
         # event list together read as a contradiction.  The stamp is printed so a reader can see
@@ -1146,6 +1225,18 @@ def zero_dte_read(
         "note_en": "share of the whole market's running premium total, not this one name",
         "note_zh": "为全市场累计口径，并非该单一标的",
     }
+    if ck.ambiguous:
+        block["clock_note_en"] = (
+            "the tape's own clock could not be matched to exchange time, so this share is "
+            "reported without a time of day")
+        block["clock_note_zh"] = "成交记录的时间无法对应交易所时间，因此该比重不标注具体时点"
+    if thin:
+        block["thin_note_en"] = (
+            f"measured on {len(ordered)} minute(s) where the fullest expiry bucket has "
+            f"{longest} — the buckets only overlap for part of the session")
+        block["thin_note_zh"] = (
+            f"仅基于 {len(ordered)} 分钟计算，而最完整的到期分组有 {longest} 分钟 —— "
+            "各分组仅在部分时段重叠")
     return block, events
 
 
@@ -1362,7 +1453,8 @@ def build_session_record(
     # One clock read for this root's archive, over EVERY label (the surface frame's time_steps
     # and the index's stamps are the same clock).  A no-op when the labels are already exchange
     # time — see clock_read.
-    ck = clock_read(session_date, stamp_list or raw_times, cadence_sec=cadence_sec)
+    ck = clock_read(session_date, stamp_list or raw_times, cadence_sec=cadence_sec,
+                    family=CLOCK_FAMILY_SURFACE)
     offset = ck.offset_min
     times = [shift_label(t, offset) for t in raw_times]
 
@@ -1403,24 +1495,42 @@ def build_session_record(
     zero_dte, dte_events = zero_dte_read(dte_doc, session_date=session_date,
                                          cadence_sec=cadence_sec)
 
-    events = sorted(fr.events + wr.events + burst_events + pk.events + dte_events,
-                    key=lambda e: (str(e.get("t") or ""), str(e.get("type"))))
-
     # M1/M2: nothing time-stamped may ship when the clock could not be pinned, and any event
-    # whose corrected label lands outside the session window is dropped rather than published
-    # at an impossible time.  Both are counted so the drop is visible, never silent.
+    # whose corrected label lands outside the session window is dropped rather than published at
+    # an impossible time.  Both are counted so the drop is visible, never silent.
+    #
+    # The surface clock governs the surface-derived families ONLY.  `zero_dte_read` runs its own
+    # clock read over the tide archive's own labels and has already suppressed its own events if
+    # that read was untrusted — a surface archive nobody can date must not delete a tide finding
+    # that was perfectly datable, and vice versa.
+    surface_events = fr.events + wr.events + burst_events + pk.events
     events_dropped_clock = 0
-    events_dropped_window = 0
     if not ck.trusted:
-        events_dropped_clock, events = len(events), []
-    else:
-        kept = [e for e in events if _label_in_session(e.get("t"), session_date)]
-        events_dropped_window = len(events) - len(kept)
-        events = kept
+        events_dropped_clock, surface_events = len(surface_events), []
+    events = sorted(surface_events + dte_events,
+                    key=lambda e: (str(e.get("t") or ""), str(e.get("type"))))
+    kept = [e for e in events if _label_in_session(e.get("t"), session_date)]
+    events_dropped_window = len(events) - len(kept)
+    events = kept
 
     counts: dict[str, int] = {}
     for e in events:
         counts[e["type"]] = counts.get(e["type"], 0) + 1
+
+    # N2: every time-derived fact is now read back OUT of the final events list, so a row of this
+    # record can never disagree with itself.  A dropped crossing that still left `crosses: 1`
+    # beside an empty event list — and `flip_crosses=1` beside `events_flip_cross=0` in the
+    # ledger — was exactly that contradiction, frozen into a schema.  When a family loses events
+    # its standing-state fields go null too: publishing "it ended above the flip" while
+    # withholding the crossing that got it there is the same half-truth in a different field.
+    kept_flip = [e for e in events if e["type"] == "flip_cross"]
+    kept_wall = [e for e in events if e["type"] in ("call_wall_touch", "put_wall_touch")]
+    flip_lost = len(fr.events) - len(kept_flip)
+    wall_lost = len(wr.events) - len(kept_wall)
+    flip_crosses = len(kept_flip)
+    flip_last_side = None if flip_lost else fr.last_side
+    flip_side_at_open = None if flip_lost else fr.side_at_open
+    wall_inside_at_open = ({"call": None, "put": None} if wall_lost else wr.inside_at_open)
 
     market = _market_block(tide_doc, root=root, session_date=session_date,
                            cadence_sec=cadence_sec)
@@ -1480,7 +1590,9 @@ def build_session_record(
         close_source=("intraday archive" if _walls_from_frame(close_frame_walls)
                       else (lv.get("source") if eod_walls else None)),
     )
-    walls["inside_at_open"] = wr.inside_at_open
+    walls["inside_at_open"] = wall_inside_at_open
+    # closest_pct is a pure extremum over the price walk and asserts no moment, so it survives a
+    # drop; inside_at_open is an "at the open" claim and does not.
     walls["closest_pct"] = wr.closest_pct
     walls["within_pct"] = WALL_WITHIN_PCT
     # Greek coverage is the honest qualifier on any intraday wall: the archive's `coverage`
@@ -1508,9 +1620,10 @@ def build_session_record(
                         "session, so crossings are not read against it")
         flip_note_zh = f"在档的 gamma 翻转价位取自 {vintage}（其他交易日），因此不用于判断穿越"
     flip_block = {
-        "crosses": int(fr.crosses),
-        "last_side": fr.last_side,
-        "side_at_open": fr.side_at_open,
+        # N2: derived from the FINAL events list, never from the pre-drop walk.
+        "crosses": int(flip_crosses),
+        "last_side": flip_last_side,
+        "side_at_open": flip_side_at_open,
         "level": flip_level,
         "level_vintage": vintage,
         "level_is_this_session": levels_same_session,
@@ -1616,7 +1729,8 @@ def _market_block(tide_doc: dict | None, *, root: str, session_date: str,
     if isinstance(minutes, list) and minutes:
         labels = [str(m.get("t") or "") for m in minutes if isinstance(m, dict)]
         if labels:
-            offset = clock_read(session_date, labels, cadence_sec=cadence_sec).offset_min
+            offset = clock_read(session_date, labels, cadence_sec=cadence_sec,
+                                family=CLOCK_FAMILY_TIDE).offset_min
         last = minutes[-1] if isinstance(minutes[-1], dict) else {}
         close = {"t": shift_label(last.get("t"), offset),
                  "ncp": _num(last.get("ncp")),

@@ -115,7 +115,13 @@ HEAD_RANGE_BYTES = 256
 
 # `"spot": <number|null>` inside the head bytes.  Byte-level so no decode is needed on a range
 # read that may end mid-character.
-_SPOT_HEAD_RE = re.compile(rb'"spot"\s*:\s*(null|-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)')
+#
+# The trailing lookahead is load-bearing: without it a head that stopped mid-number matched the
+# PREFIX and reported it as the value — b'{"spot":73' yielded 73 for a spot of 735.05, silently
+# wrong by an order of magnitude and never falling back.  Requiring a JSON terminator means a
+# truncated number simply does not match, and the full-fetch fallback runs instead.
+_SPOT_HEAD_RE = re.compile(
+    rb'"spot"\s*:\s*(null|-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?)(?=[,}\s\]])')
 
 # Exactly a YYYY-MM-DD directory name.  The record prune only ever considers these, so a stray
 # file under data/options_session/ can never be deleted by it.
@@ -239,7 +245,7 @@ class ArchiveReader:
             log.debug("session_digest: get %s failed: %s", key, e)
             return None
 
-    def get_head_bytes(self, key: str, n: int = HEAD_RANGE_BYTES) -> bytes | None:
+    def get_head_bytes(self, key: str, n: int | None = None) -> bytes | None:
         """First `n` bytes of an object, via an HTTP Range request.  None on any failure.
 
         Why ranges exist in this builder: a per-stamp surface frame is the session TRUNCATED to
@@ -249,6 +255,7 @@ class ArchiveReader:
         `spot`, which `frame_for_stamp` writes FIRST, so a few hundred bytes per stamp replaces
         the whole file and the same scan costs ~50 KB per root.
         """
+        n = int(n or HEAD_RANGE_BYTES)
         self.gets += 1
         if self.from_dir is not None:
             p = self.from_dir / key
@@ -781,6 +788,42 @@ def append_ledger(data: Path, rows: list[dict]) -> int:
 
 # ── main ─────────────────────────────────────────────────────────────────────────
 
+def _summary(*, session_date: str, reader: "ArchiveReader | None" = None,
+             t0: float, budget_seconds: float, records: list[dict] | None = None,
+             written: list[str] | None = None, data_written: list[str] | None = None,
+             pruned: list[str] | None = None, budget_skipped: list[str] | None = None,
+             ledger_rows: int = -1, ok: bool = True, reason: str | None = None) -> dict:
+    """One shape for EVERY return path.
+
+    The early-exit paths used to omit keys the happy path published (`over_budget`,
+    `budget_skipped`, `r2_mb`), so a consumer reading the summary hit KeyError on exactly the
+    degraded nights it most needed to inspect.  Every field is present on every path, and
+    `over_budget` is measured against the budget this run was GIVEN — not the module constant,
+    which an operator override would have made a lie.
+    """
+    recs = records or []
+    elapsed = _time.monotonic() - t0
+    secs = round(elapsed, 2)
+    return {
+        "ok": ok,
+        "reason": reason,
+        "session_date": session_date,
+        "roots": [r["root"] for r in recs],
+        "written": written or [],
+        "data_written": data_written or [],
+        "pruned_sessions": pruned or [],
+        "budget_skipped": budget_skipped or [],
+        "ledger_rows": ledger_rows,
+        "r2_gets": reader.gets if reader else 0,
+        "r2_misses": reader.misses if reader else 0,
+        "r2_mb": round(reader.bytes_read / 1e6, 3) if reader else 0.0,
+        "range_fallbacks": reader.range_fallbacks if reader else 0,
+        "seconds": secs,
+        "over_budget": elapsed > float(budget_seconds),
+        "coverage": {r["root"]: r["coverage"]["quality_en"] for r in recs},
+    }
+
+
 def default_session_date(now: datetime | None = None) -> str:
     """The last completed NYSE session, exchange-calendar-derived.
 
@@ -830,11 +873,13 @@ def run(
         d = sd.as_session_date(sess)
     except Exception:  # noqa: BLE001
         _warn("session_digest", f"unparseable --date {sess!r} — nothing digested")
-        return {"ok": False, "session_date": sess, "roots": [], "reason": "bad_date"}
+        return _summary(session_date=sess, t0=t0, budget_seconds=budget_seconds,
+                        ok=False, reason="bad_date")
     if not nyse_calendar.is_session(d):
         _warn("session_digest",
               f"{sess} is not an NYSE session — nothing digested (weekend/holiday guard)")
-        return {"ok": True, "session_date": sess, "roots": [], "reason": "not_a_session"}
+        return _summary(session_date=sess, t0=t0, budget_seconds=budget_seconds,
+                        reason="not_a_session")
 
     reader = ArchiveReader(s3=_r2_client() if from_dir is None else None,
                            bucket=os.environ.get("R2_BUCKET"),
@@ -844,7 +889,8 @@ def run(
               "no archive source available (R2_ENDPOINT/R2_ACCESS_KEY_ID/"
               "R2_SECRET_ACCESS_KEY/R2_BUCKET absent and no --from-dir) — "
               f"no session record written for {sess}")
-        return {"ok": True, "session_date": sess, "roots": [], "reason": "no_archive_source"}
+        return _summary(session_date=sess, t0=t0, budget_seconds=budget_seconds,
+                        reason="no_archive_source")
 
     tide_doc = reader.tide(sess)
     dte_doc = reader.dte_tide(sess)
@@ -886,11 +932,9 @@ def run(
         _warn("session_digest",
               f"{sess}: no root had a readable intraday archive (tried "
               f"{', '.join(candidates) or 'none'}) — nothing written")
-        return {"ok": True, "session_date": sess, "roots": [],
-                "reason": "no_archived_roots", "r2_gets": reader.gets,
-                "r2_mb": round(reader.bytes_read / 1e6, 3),
-                "budget_skipped": budget_skipped,
-                "seconds": round(_time.monotonic() - t0, 2)}
+        return _summary(session_date=sess, reader=reader, t0=t0,
+                        budget_seconds=budget_seconds, budget_skipped=budget_skipped,
+                        reason="no_archived_roots")
 
     # Lane law (§0.9): `data/` belongs to the nightly lane ALONE — both the dated records and
     # the forward ledger.  An off-lane run (intraday probe, replay, fastpath) still refreshes
@@ -914,33 +958,18 @@ def run(
     if nightly and not dry_run:
         pruned = prune_records(data)
 
-    secs = round(_time.monotonic() - t0, 2)
-    over_budget = secs > BUDGET_SECONDS
-    if over_budget:
+    out = _summary(session_date=sess, reader=reader, t0=t0, budget_seconds=budget_seconds,
+                   records=records, written=written, data_written=data_written,
+                   pruned=pruned, budget_skipped=budget_skipped, ledger_rows=ledger_rows)
+    if out["over_budget"]:
         _warn("session_digest",
-              f"{sess}: read budget of {BUDGET_SECONDS:.0f}s was spent ({secs:.0f}s) — records "
-              "written from the tape that had arrived, with the shortfall printed in their "
-              "coverage")
+              f"{sess}: read budget of {float(budget_seconds):.0f}s was spent "
+              f"({out['seconds']:.0f}s) — records written from the tape that had arrived, with "
+              "the shortfall printed in their coverage")
     log.info("session_digest: %s — %d root(s) %s, %d read(s) / %.2f MB, %.2fs",
              sess, len(records), ",".join(r["root"] for r in records), reader.gets,
-             reader.bytes_read / 1e6, secs)
-    return {
-        "ok": True,
-        "session_date": sess,
-        "roots": [r["root"] for r in records],
-        "written": written,
-        "data_written": data_written,
-        "pruned_sessions": pruned,
-        "ledger_rows": ledger_rows,
-        "r2_gets": reader.gets,
-        "r2_misses": reader.misses,
-        "r2_mb": round(reader.bytes_read / 1e6, 3),
-        "range_fallbacks": reader.range_fallbacks,
-        "seconds": secs,
-        "over_budget": over_budget,
-        "budget_skipped": budget_skipped,
-        "coverage": {r["root"]: r["coverage"]["quality_en"] for r in records},
-    }
+             reader.bytes_read / 1e6, out["seconds"])
+    return out
 
 
 def _selftest() -> int:

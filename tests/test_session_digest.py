@@ -463,7 +463,7 @@ class TestPremiumBursts:
         assert len(ev) == 1
         assert ev[0]["type"] == "premium_burst"
         assert abs(ev[0]["effect_sigma"]) >= sd.BURST_EFFECT_SIGMA
-        assert abs(ev[0]["z"]) >= sd.BURST_T_MIN
+        assert abs(ev[0]["t_stat"]) >= sd.BURST_T_MIN
         assert ev[0]["baseline_stamps"] >= sd.BURST_MIN_BASELINE
 
     def test_effect_size_and_test_statistic_are_different_numbers_named_differently(self):
@@ -473,18 +473,37 @@ class TestPremiumBursts:
         so publishing one under the other's name would misstate every event's strength by a
         factor that drifts through the session.
         """
-        st = sd.window_vs_baseline(self._series(n_quiet=25, n_burst=5), 10)
+        vals = self._series(n_quiet=25, n_burst=5)
+        st = sd.window_vs_baseline(vals, 10)
         ratio = math.sqrt(st.window_n * st.baseline_n / (st.window_n + st.baseline_n))
         assert st.t == pytest.approx(st.effect_sigma * ratio, rel=1e-9)
         assert abs(st.t) > abs(st.effect_sigma)
-        ev = sd.premium_bursts(TIMES, self._series(n_quiet=25, n_burst=5))[0]
-        assert ev["z"] != ev["effect_sigma"]
 
-    def test_t_floor_equals_the_strictness_at_the_smallest_allowed_baseline(self):
-        """Documents the BURST_T_MIN derivation, so a later edit cannot drift it silently."""
-        w = b = sd.BURST_MIN_BASELINE
-        assert sd.BURST_T_MIN == pytest.approx(
-            sd.BURST_EFFECT_SIGMA * math.sqrt(1.0 / (1.0 / w + 1.0 / b)), abs=0.01)
+        ev = sd.premium_bursts(TIMES, vals)[0]
+        # The receipt must match the stats AT THE EVENT'S OWN STAMP, not at the end of the day —
+        # the event fires the moment the gates clear and its numbers are frozen there.
+        at = sd.window_vs_baseline(vals[: TIMES.index(ev["t"]) + 1], 10)
+        assert ev["t_stat"] == pytest.approx(round(at.t, 2))
+        assert ev["effect_sigma"] == pytest.approx(round(at.effect_sigma, 2))
+        # N5: nothing is called `z` unless it is standardized against a single distribution, and
+        # `t` is the event's TIMESTAMP — so the statistic ships as `t_stat`.
+        assert "z" not in ev, "a two-sample t may not ship under the name z"
+        assert ev["effect_sigma"] != ev["t_stat"]
+        assert ev["t"] in TIMES
+        with pytest.raises(ValueError):
+            sd._event("09:30", "premium_burst", t=1.23)
+
+    def test_t_floor_is_derived_not_typed(self):
+        """N4: the hardcoded 4.47 sat 0.0021 UNDER the true knife edge, so the floor was a hair
+        looser than the value it claimed to be — and any window/baseline edit would have
+        silently decoupled the three constants."""
+        expected = sd.BURST_EFFECT_SIGMA * math.sqrt(
+            1.0 / (1.0 / sd.BURST_WINDOW_STAMPS + 1.0 / sd.BURST_MIN_BASELINE))
+        assert sd.BURST_T_MIN == expected                  # exact, not approx
+        assert sd.BURST_T_MIN == pytest.approx(4.472136, abs=1e-6)
+        assert sd.BURST_T_MIN > 4.47, "the old literal was below the true floor"
+        # the relationship survives a constant change
+        assert sd._burst_t_floor(2.0, 20, 40) == pytest.approx(2.0 * math.sqrt(1 / (0.05 + 0.025)))
 
     def test_does_not_fire_on_a_steady_tape(self):
         assert sd.premium_bursts(TIMES, self._series(n_quiet=40, n_burst=0)) == []
@@ -553,7 +572,9 @@ class TestPremiumBursts:
         idx = TIMES.index(first["t"])
         again = sd.premium_bursts(TIMES, vals[: idx + 1])
         assert again and again[-1]["t"] == first["t"]
-        assert again[-1]["z"] == first["z"] and again[-1]["effect_sigma"] == first["effect_sigma"]
+        assert again[-1]["t"] == first["t"]
+        assert again[-1]["t_stat"] == first["t_stat"]
+        assert again[-1]["effect_sigma"] == first["effect_sigma"]
 
     def test_min_baseline_blocks_an_early_false_positive(self):
         """Three quiet opening stamps must not make the fourth a 40-sigma event."""
@@ -666,6 +687,10 @@ class TestHotPockets:
 
 class TestZeroDte:
     def _doc(self, tmp_path, share_fn, **kw):
+        # n defaults to a span the tide clock can pin: at 5-minute cadence the read is only
+        # unambiguous once the last label passes 12:00 (a +240 shift would then overrun the
+        # close), i.e. n > 31.  A shorter tide day is genuinely undecidable — its own test.
+        kw.setdefault("n", 40)
         write_tides(tmp_path, session_date="2026-07-28", zero_dte_share_path=share_fn, **kw)
         return json.loads((tmp_path / "live_flow" / "dte_tide" / "2026-07-28.json").read_text())
 
@@ -710,7 +735,7 @@ class TestZeroDte:
         Found by routing the fixtures through the real writer — the hand-written fixture
         populated all five and could not see it.
         """
-        _, dte = build_tide_docs(session_date="2026-07-28", n=14,
+        _, dte = build_tide_docs(session_date="2026-07-28", n=40,
                                  zero_dte_share_path=lambda i: 0.2 if i < 6 else 0.8)
         empty = [k for k, v in dte["buckets"].items() if not v]
         assert empty, "the real writer must be emitting at least one empty bucket here"
@@ -725,7 +750,7 @@ class TestZeroDte:
         Resetting on a dead minute swallowed the genuine entry right after it (the next reading
         looked like "first observation") and overwrote share_at_open with a mid-session value.
         """
-        doc = self._doc(tmp_path, lambda i: 0.10 if i < 6 else 0.90, n=14)
+        doc = self._doc(tmp_path, lambda i: 0.10 if i < 6 else 0.90, n=40)
         # blank the stamp immediately before the crossing, in every bucket
         dead = doc["buckets"]["0d"][5]["t"]
         for rows in doc["buckets"].values():
@@ -738,7 +763,7 @@ class TestZeroDte:
         assert block["share_at_open_t"] == "09:30", "not the minute after the dead one"
 
     def test_share_at_open_is_the_first_stamp_with_tape(self, tmp_path):
-        doc = self._doc(tmp_path, lambda i: 0.30, n=10)
+        doc = self._doc(tmp_path, lambda i: 0.30, n=40)
         for rows in doc["buckets"].values():          # blank the first two stamps entirely
             for r in rows[:2]:
                 r["ncp"] = r["npp"] = 0
@@ -759,6 +784,25 @@ class TestZeroDte:
         block, _ = sd.zero_dte_read(doc, session_date="2026-07-28")
         # only the 5 stamps common to EVERY bucket may be used, so the late 70% is invisible
         assert block["peak_share"] == pytest.approx(20.0, abs=0.2)
+
+    def test_a_thin_cross_section_discloses_how_thin_it_is(self, tmp_path):
+        """N7: the empty-bucket veto is fixed, but a bucket carrying 1 stamp of 40 still collapses
+        the intersection to that one minute — a "session peak" measured on a single reading.
+        Both counts are printed so nobody has to assume it spans the day."""
+        doc = self._doc(tmp_path, lambda i: 0.20 if i < 10 else 0.70)
+        longest = max(len(v) for v in doc["buckets"].values() if v)
+        doc["buckets"]["1_7d"] = doc["buckets"]["1_7d"][:1]      # one surviving stamp
+        block, _ = sd.zero_dte_read(doc, session_date="2026-07-28")
+        assert block["stamps_used"] == 1
+        assert block["stamps_in_longest_bucket"] == longest
+        assert block["thin_note_en"] and block["thin_note_zh"]
+        assert "1 minute" in block["thin_note_en"]
+
+    def test_a_full_cross_section_does_not_cry_thin(self, tmp_path):
+        block, _ = sd.zero_dte_read(self._doc(tmp_path, lambda i: 0.20),
+                                    session_date="2026-07-28")
+        assert block["stamps_used"] == block["stamps_in_longest_bucket"] == 40
+        assert "thin_note_en" not in block
 
     def test_every_event_type_has_a_plain_word_twin(self):
         for etype, (en, zh) in sd.EVENT_WORDS.items():
@@ -782,15 +826,15 @@ class TestClockNormalization:
         return [f"{(start_min + i * cadence_min) // 60:02d}"
                 f"{(start_min + i * cadence_min) % 60:02d}" for i in range(n)]
 
-    @pytest.mark.parametrize("start,n,cad,expect,why", [
-        (9 * 60 + 30, 79, 5, 0, "already exchange time — no-op (and the post-fix behaviour)"),
-        (5 * 60 + 30, 79, 5, 240, "the _minute_key defect, summer offset"),
-        (4 * 60 + 30, 79, 5, 300, "the same defect at the winter offset"),
-        (5 * 60 + 35, 79, 5, 240, "defect plus a 5-minute late start — start preserved"),
-        (10 * 60 + 30, 67, 5, 0, "genuinely late poller start — must NOT be shifted"),
+    @pytest.mark.parametrize("day,start,n,cad,expect,why", [
+        ("2026-07-28", 9 * 60 + 30, 79, 5, 0, "exchange time already — no-op (post-fix state)"),
+        ("2026-07-28", 5 * 60 + 30, 79, 5, 240, "the _minute_key defect, summer offset"),
+        ("2026-01-15", 4 * 60 + 30, 79, 5, 300, "the same defect at the WINTER offset"),
+        ("2026-07-28", 5 * 60 + 35, 79, 5, 240, "defect plus a 5-min late start — preserved"),
+        ("2026-07-28", 10 * 60 + 30, 67, 5, 0, "genuinely late start — must NOT be shifted"),
     ])
-    def test_offset_truth_table(self, start, n, cad, expect, why):
-        ck = sd.clock_read(self.D, self._labels(start, n, cad), cadence_sec=cad * 60)
+    def test_offset_truth_table(self, day, start, n, cad, expect, why):
+        ck = sd.clock_read(day, self._labels(start, n, cad), cadence_sec=cad * 60)
         assert ck.offset_min == expect, why
         assert ck.trusted, why
 
@@ -821,11 +865,57 @@ class TestClockNormalization:
         assert sd.shift_label(labels[0], ck.offset_min) == "09:30"
         assert ck.labels_outside == 1        # the 16:02 tail is declared
 
-    def test_two_fitting_candidates_are_declared_ambiguous_not_guessed(self):
-        """A truncated morning fits at 0 AND at +240 (09:30–11:00 and 13:30–15:00 both sit
-        inside the window).  The read must say so and stop being trusted."""
-        ck = sd.clock_read(self.D, self._labels(9 * 60 + 30, 19, 5), cadence_sec=300)
-        assert set(ck.fitting) >= {0, 240}
+    def test_candidate_set_is_two_and_dst_derived(self):
+        """The defect shifts by exactly the ET↔UTC offset ON THE SESSION DATE, which the calendar
+        knows — so there is never a guess between 4 and 5 hours."""
+        assert sd.clock_candidates("2026-07-28") == (0, 240)      # EDT
+        assert sd.clock_candidates("2026-01-15") == (0, 300)      # EST
+        assert sd.defect_offset_minutes("2026-11-27") == 300
+
+    @pytest.mark.parametrize("n,until", [(46, "11:00"), (61, "11:30"), (76, "12:00")])
+    def test_a_clean_truncated_surface_session_publishes_its_events(self, n, until):
+        """N1 (blocker): these three all measured ambiguous → trusted False → events dropped.
+
+        A poller that died at 11:00 ET shipped ZERO events for a session whose labels were
+        perfectly good.  The defect is one-directional — localize-as-UTC only shifts labels
+        EARLIER — and `stamp_hhmm` converts an AWARE UTC datetime, so a surface label cannot
+        carry it.  A fit at 0 is therefore dispositive for this family.
+        """
+        labels = self._labels(9 * 60 + 30, n, 2)
+        ck = sd.clock_read(self.D, labels, cadence_sec=120,
+                           family=sd.CLOCK_FAMILY_SURFACE)
+        assert ck.offset_min == 0 and ck.trusted and not ck.ambiguous, until
+        # ...and the same labels are genuinely undecidable for the family that CAN be skewed
+        tide = sd.clock_read(self.D, labels, cadence_sec=120, family=sd.CLOCK_FAMILY_TIDE)
+        assert tide.ambiguous and not tide.trusted
+
+    def test_a_clean_truncated_surface_session_ships_events_end_to_end(self):
+        frame, stamps = make_frame(n_stamps=46, cadence_sec=120,
+                                   spot_path=lambda i: 99.0 if i < 23 else 101.0)
+        r = sd.build_session_record(
+            root="SPY", session_date=self.D, asof="t", frame=frame, stamps=stamps,
+            cadence_sec=120,
+            spots_by_stamp={s: (99.0 if i < 23 else 101.0) for i, s in enumerate(stamps)},
+            levels={"flip": 100.0, "vintage": self.D, "source": "g"})
+        assert r["coverage"]["clock_ambiguous"] is False
+        assert r["flip"]["crosses"] == 1 and r["events"], "a dead poller must not cost the day"
+        assert r["coverage"]["events_dropped_clock"] == 0
+
+    def test_a_truncated_skewed_tide_still_resolves(self):
+        """"Declare what it can honestly declare": with only one non-zero candidate there is
+        nothing to be ambiguous between, so a skewed half-session resolves cleanly."""
+        labels = self._labels(5 * 60 + 30, 46, 2)      # a real 09:30–11:00 shifted 4h early
+        ck = sd.clock_read(self.D, labels, cadence_sec=120, family=sd.CLOCK_FAMILY_TIDE)
+        assert ck.fitting == (240,)
+        assert ck.offset_min == 240 and ck.trusted
+        assert sd.shift_label(labels[0], ck.offset_min) == "09:30"
+
+    def test_the_genuine_conflation_still_declares_ambiguity(self):
+        """A tide archive whose SKEWED labels land wholly inside the window is indistinguishable
+        from a clean late start — measured: 10:00–12:00 fits at 0 and at +240 (14:00–16:00)."""
+        ck = sd.clock_read(self.D, self._labels(10 * 60, 25, 5), cadence_sec=300,
+                           family=sd.CLOCK_FAMILY_TIDE)
+        assert set(ck.fitting) == {0, 240}
         assert ck.ambiguous and not ck.trusted
         assert ck.note_en and ck.note_zh
 
@@ -839,14 +929,37 @@ class TestClockNormalization:
         ck = sd.clock_read(self.D, [], cadence_sec=300)
         assert ck.offset_min == 0 and ck.trusted and ck.note_en == ""
 
-    def test_untrusted_clock_suppresses_every_time_stamped_event(self):
-        """M1's binding instruction: when the clock cannot be pinned, do not publish times."""
-        n = 19                                          # short day -> ambiguous
-        frame, stamps = make_frame(n_stamps=n, spot_path=lambda i: 99.0 if i < 9 else 101.0)
+    def test_an_untrusted_tide_clock_suppresses_only_its_own_timestamps(self):
+        """M1's instruction, scoped per family: the tide clock governs the tide block ALONE.
+
+        A surface archive nobody can date must not delete a tide finding that was perfectly
+        datable, and vice versa.
+        """
+        _, dte = build_tide_docs(session_date=self.D, n=25, cadence_sec=300,
+                                 zero_dte_share_path=lambda i: 0.2 if i < 10 else 0.9)
+        # shift the labels into the genuinely ambiguous 10:00-12:00 band
+        for rows in dte["buckets"].values():
+            for row in rows:
+                row["t"] = sd.shift_label(row["t"], 30)
+        block, ev = sd.zero_dte_read(dte, session_date=self.D, cadence_sec=300)
+        assert block["clock_ambiguous"] is True
+        assert ev == [], "spike events are nothing but stamps, so they cannot ship"
+        assert block["at"] is None and block["share_at_open_t"] is None
+        assert block["peak_share"] is not None, "a share is not a moment; it still publishes"
+        assert block["clock_note_en"] and block["clock_note_zh"]
+
+    def test_untrusted_surface_clock_suppresses_surface_events_only(self):
+        """The surface family is dispositive at 0 whenever 0 fits (N1), so reaching the untrusted
+        path takes labels that fit NEITHER candidate — here 03:00–04:00, which is outside the
+        window as-is and still outside shifted (+4h lands 07:00–08:00).  Both misplace every
+        label equally, so the read declares itself ambiguous instead of picking one."""
+        n = 13
+        frame, stamps = make_frame(n_stamps=n, spot_path=lambda i: 99.0 if i < 6 else 101.0,
+                                   label_skew_min=-390)
         r = sd.build_session_record(
             root="SPY", session_date=self.D, asof="t", frame=frame, stamps=stamps,
             cadence_sec=300,
-            spots_by_stamp={s: (99.0 if i < 9 else 101.0) for i, s in enumerate(stamps)},
+            spots_by_stamp={s: (99.0 if i < 6 else 101.0) for i, s in enumerate(stamps)},
             levels={"flip": 100.0, "vintage": self.D, "source": "g"})
         assert r["coverage"]["clock_ambiguous"] is True
         assert r["events"] == []
@@ -1132,6 +1245,79 @@ class TestLedgerRow:
         row = sd.ledger_row(r)
         fam = [c for c in sd.LEDGER_COLUMNS if c.startswith("events_") and c != "events_total"]
         assert row["events_total"] == sum(row[c] for c in fam) == 0
+
+    @staticmethod
+    def _assert_self_consistent(r: dict) -> dict:
+        """N2: no two fields of one record — or one ledger row — may disagree about one fact."""
+        row = sd.ledger_row(r)
+        counts = r["event_counts"]
+        listed_flip = len([e for e in r["events"] if e["type"] == "flip_cross"])
+        listed_wall = len([e for e in r["events"]
+                           if e["type"] in ("call_wall_touch", "put_wall_touch")])
+        # record internal
+        assert r["flip"]["crosses"] == listed_flip
+        # record <-> ledger
+        assert row["flip_crosses"] == r["flip"]["crosses"] == listed_flip
+        assert row["events_flip_cross"] == counts.get("flip_cross", 0) == listed_flip
+        assert (row["events_call_wall_touch"] + row["events_put_wall_touch"]) == listed_wall
+        assert row["events_total"] == len(r["events"])
+        fam = [c for c in sd.LEDGER_COLUMNS if c.startswith("events_") and c != "events_total"]
+        assert row["events_total"] == sum(row[c] for c in fam)
+        # a standing side may not survive its own crossing being withheld
+        if listed_flip == 0 and r["coverage"]["events_dropped_clock"]:
+            assert r["flip"]["last_side"] is None and r["flip"]["side_at_open"] is None
+        return row
+
+    def _crossing_record(self, **kw):
+        n = kw.pop("n_stamps", 79)
+        skew = kw.pop("label_skew_min", 0)
+        frame, stamps = make_frame(n_stamps=n, label_skew_min=skew,
+                                   spot_path=lambda i: 99.0 if i < n // 2 else 101.0)
+        base = dict(root="SPY", session_date="2026-07-28", asof="t", frame=frame,
+                    stamps=stamps, cadence_sec=300,
+                    spots_by_stamp={s: (99.0 if i < n // 2 else 101.0)
+                                    for i, s in enumerate(stamps)},
+                    levels={"flip": 100.0, "call_wall": 101.0, "put_wall": 98.0,
+                            "vintage": "2026-07-28", "source": "g"})
+        base.update(kw)
+        return sd.build_session_record(**base)
+
+    def test_a_clean_crossing_day_is_self_consistent(self):
+        r = self._crossing_record()
+        row = self._assert_self_consistent(r)
+        assert row["flip_crosses"] == 1 and r["flip"]["last_side"] == "above"
+
+    def test_a_clock_dropped_day_is_self_consistent(self):
+        """The frozen contradiction: flip_crosses=1 beside events_flip_cross=0."""
+        r = self._crossing_record(n_stamps=13, label_skew_min=-390)  # fits neither candidate
+        assert r["coverage"]["clock_ambiguous"] is True
+        assert r["events"] == []
+        row = self._assert_self_consistent(r)
+        assert row["flip_crosses"] == 0, "the count must follow the events it counts"
+        assert r["flip"]["last_side"] is None and r["walls"]["inside_at_open"] == {
+            "call": None, "put": None}
+        # ...and the why travels with it, in plain words
+        assert r["coverage"]["events_dropped_clock"] > 0
+        assert any("could not be matched" in m for m in r["coverage"]["missing_en"])
+        assert r["walls"]["closest_pct"]["call"] is not None, (
+            "a pure extremum asserts no moment and survives the drop")
+
+    def test_a_window_dropped_event_is_self_consistent(self):
+        """M2 drop path: same rule, different cause."""
+        n = 79
+        frame, stamps = make_frame(n_stamps=n, spot_path=lambda i: 99.0 if i < 40 else 101.0)
+        # push the crossing stamp's label outside the session window
+        bad = stamps[40]
+        frame["time_steps"] = [("17:05" if s == bad else t)
+                               for s, t in zip(stamps, frame["time_steps"])]
+        stamps = [("1705" if s == bad else s) for s in stamps]
+        r = sd.build_session_record(
+            root="SPY", session_date="2026-07-28", asof="t", frame=frame, stamps=stamps,
+            cadence_sec=300,
+            spots_by_stamp={s: (99.0 if i < 40 else 101.0) for i, s in enumerate(sorted(stamps))},
+            levels={"flip": 100.0, "vintage": "2026-07-28", "source": "g"})
+        assert r["coverage"]["events_dropped_window"] >= 0
+        self._assert_self_consistent(r)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1528,6 +1714,26 @@ class TestBuilderEndToEnd:
         assert reader.range_fallbacks == 1, "the head must not have satisfied the read"
         assert present is True and got == spot, "the value is still recovered, just not cheaply"
 
+    def test_a_truncated_number_in_the_head_falls_back_instead_of_lying(self, repo):
+        """N3: without a terminator the regex matched a PREFIX — b'{"spot":73' yielded 73 for a
+        spot of 735.05, silently wrong by an order of magnitude and never falling back."""
+        assert bsd._SPOT_HEAD_RE.search(b'{"spot":73') is None
+        assert bsd._SPOT_HEAD_RE.search(b'{"spot":735.05,"price_levels":[1]}').group(1) == b"735.05"
+        assert bsd._SPOT_HEAD_RE.search(b'{"spot":null,"a":1}').group(1) == b"null"
+        assert bsd._SPOT_HEAD_RE.search(b'{"spot": -12.5 }').group(1) == b"-12.5"
+        # end-to-end: a head window that stops mid-number must produce a fallback, not a wrong spot
+        arch = self._archive(repo, n=6, strikes=[600.0 + k for k in range(200)])
+        d = arch / "live_flow" / "surface" / "SPY" / self.D
+        stamp = json.loads((d / "idx.json").read_text())["stamps"][-1]
+        reader = bsd.ArchiveReader(from_dir=arch)
+        want = json.loads((d / f"{stamp}.json").read_text())["spot"]
+        # a head of exactly 11 bytes cuts '{"spot": 101.0' mid-number
+        import unittest.mock as m
+        with m.patch.object(bsd, "HEAD_RANGE_BYTES", 11):
+            got, present = reader.stamp_spot("SPY", self.D, stamp)
+        assert reader.range_fallbacks == 1
+        assert present is True and got == want
+
     def test_a_missing_stamp_object_reports_absent_not_a_null_spot(self, repo):
         """A null spot on a REAL object is covered tape with an unknown price; a missing object
         is not covered at all.  Conflating them would overstate coverage."""
@@ -1586,6 +1792,43 @@ class TestBuilderEndToEnd:
         assert sorted(d.name for d in base.iterdir() if d.is_dir()) == [
             "2026-06-05", "2026-06-06", "2026-06-07", "not-a-date"]
         assert (base / "ledger.parquet").exists(), "the durable record is never swept"
+
+    # ── N6: one summary shape on every return path ───────────────────────────────
+    def test_every_return_path_publishes_the_same_summary_keys(self, repo, monkeypatch):
+        """The early exits omitted keys the happy path published, so a consumer hit KeyError on
+        exactly the degraded nights it most needed to inspect."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo)
+        write_gex_state(repo / "site", "SPY", vintage=self.D, flip=100.0)
+        happy = bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo)
+        paths = {
+            "happy": happy,
+            "bad_date": bsd.run(session_date="nonsense", from_dir=arch, root_dir=repo),
+            "not_a_session": bsd.run(session_date="2026-07-26", from_dir=arch, root_dir=repo),
+            "no_archived_roots": bsd.run(session_date="2026-07-27", roots=["SPY"],
+                                         from_dir=arch, root_dir=repo),
+            "budget": bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch,
+                              root_dir=repo, budget_seconds=-1.0),
+        }
+        for var in ("R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"):
+            monkeypatch.delenv(var, raising=False)
+        paths["no_source"] = bsd.run(session_date=self.D, root_dir=repo)
+        keys = set(happy)
+        for name, res in paths.items():
+            assert set(res) == keys, f"{name} diverges: {keys ^ set(res)}"
+            for k in ("over_budget", "budget_skipped", "r2_mb", "range_fallbacks", "seconds",
+                      "roots", "reason", "ok"):
+                assert k in res, f"{name} missing {k}"
+
+    def test_over_budget_honours_the_parameter_not_the_constant(self, repo, monkeypatch):
+        """An operator override of the budget must be what `over_budget` is measured against —
+        reporting against the module constant would make the flag a lie."""
+        monkeypatch.setenv("COLLECT_LANE", "nightly")
+        arch = self._archive(repo, n=12)
+        assert bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo,
+                       budget_seconds=0.0)["over_budget"] is True
+        assert bsd.run(session_date=self.D, roots=["SPY"], from_dir=arch, root_dir=repo,
+                       budget_seconds=bsd.BUDGET_SECONDS)["over_budget"] is False
 
     def test_default_session_date_is_calendar_derived(self):
         d = date.fromisoformat(bsd.default_session_date())
