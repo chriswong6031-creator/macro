@@ -1267,6 +1267,10 @@ on:
       # dry-run workflow is listed because the suite's live-config assertions
       # are the only thing pinning that lane's arming keys.
       - "tests/test_marketing_selection.py"
+      # Batch auditor (operator 2026-07-30): the only gate that reads a whole
+      # day at once, so it is the only one that can see cross-post monotony.
+      - "tests/test_marketing_copy_auditor.py"
+      - "engine/marketing/copy_auditor.py"
       - ".github/workflows/marketing-copy-dryrun.yml"
       # chart coverage (#3895, 2026-07-28): every ticker-bearing post carries an
       # illustration; the live gate picks the card VARIANT rather than vetoing it;
