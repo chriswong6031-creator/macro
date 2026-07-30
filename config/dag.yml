@@ -570,6 +570,22 @@ lanes:
           scores, no fused composites. Absent stores degrade one section each to
           an honest empty state; always exits 0. DISPLAY-ONLY.
           outputs: [site/options.html]
+      - id: build_session_digest
+        module: scripts.build_session_digest
+        note: >
+          OIP E1 session digest — the Terminal→EOD bridge. Reads the intraday options
+          plane's R2 archives (live_flow/surface/{ROOT}/{DATE}/ per-minute stamps, plus
+          the dated live_flow/tide + live_flow/dte_tide archives) and the EOD
+          site/options_structure/gex_state/{ROOT}.json level map, and writes one settled
+          session record per root. DATA ONLY — renders no page, touches no template.
+          Must run AFTER the band barrier because gex_state is written by build_gex_board
+          inside the cl_gex cluster (same cross-phase reasoning as build_options_command
+          immediately above). All data/ writes and the forward-ledger append are gated on
+          COLLECT_LANE=nightly via engine.ledger_lane.nightly_advance_enabled(); dedup on
+          (date, root) keeps FIRST so replays never rewrite a graded row. DISPLAY-ONLY;
+          no direction claims, no fused scores. Non-fatal (always exits 0).
+          Artifacts: data/options_session/{DATE}/{ROOT}.json,
+          site/session/{ROOT}.json, data/options_session/ledger.parquet.
       - id: build_us_sector_rotation
         module: scripts.build_us_sector_rotation
         note: >
