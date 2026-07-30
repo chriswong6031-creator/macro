@@ -140,6 +140,35 @@ def test_render_empty_page_ok() -> None:
     assert inj._MARKER in html
 
 
+def test_render_page_emits_current_asset_stamps() -> None:
+    # The hourly sentinel (whitehouse-sentinel.yml) commits this page straight to
+    # main with NO post-render optimize_assets pass, so the render itself must
+    # carry the ?v= stamps: before 2026-07-29 every alert update regressed the
+    # page to bare refs — the edge re-validated theme.css & co on every nav, and
+    # the page sat dirty under `python -m scripts.optimize_assets` in every clean
+    # checkout. Asserted against the real site/ tree, same as the render tests
+    # above use the real templates/ dir.
+    import re
+    html = bw._render_page(config.ROOT, [_rec("wh-stamp", 0, 5, 80)])
+    for asset in ("theme.css", "theme.js", "wh_banner.js"):
+        assert re.search(re.escape(asset) + r"\?v=[0-9a-f]{8}", html), (
+            f"{asset} rendered without a ?v= stamp — the sentinel would commit it bare")
+
+
+def test_render_page_is_a_fixpoint_of_the_sitewide_sweep() -> None:
+    # Builder-side stamping and the render lanes' site-wide sweep must produce
+    # the SAME bytes, or the two lanes rewrite each other's output and
+    # site/whitehouse.html oscillates on main (hourly sentinel vs daily sweep).
+    # NOTE deliberately NOT a fixpoint test over the COMMITTED page: committed
+    # stamps go legitimately stale whenever a shared asset changes in a PR that
+    # doesn't re-render this page (the sweep lanes re-hash them post-merge), so
+    # that variant reds unrelated PRs. The render-time contract is the invariant.
+    from scripts.optimize_assets import make_optimizer
+    site = config.ROOT / "site"
+    html = bw._render_page(config.ROOT, [_rec("wh-fix", 0, 5, 80)])
+    assert make_optimizer(site)(html, site) == html
+
+
 def test_sector_mixed_not_rendered_as_headwind() -> None:
     # a sector normalised to 'mixed' (or any non-binary impact) must show a neutral
     # label, NOT a red Headwind that misrepresents the read

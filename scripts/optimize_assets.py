@@ -87,14 +87,17 @@ def paired_html_pages(site_dir: Path):
             yield tpl, site_copy
 
 
-def optimize(site_dir: Path) -> int:
-    """Version + defer local assets in every page under site_dir, plus the
-    templates/ side of every plain-copy HTML pair. Returns the number of files
-    modified. Never raises."""
-    site_dir = Path(site_dir)
-    if not site_dir.is_dir():
-        return 0
-    root = site_dir.resolve()
+def make_optimizer(site_root: Path):
+    """The two rewrite passes (?v= stamping, then CSS preload hints) closed over
+    one shared hash/@import cache: returns ``optimized(text, page_dir) -> str``,
+    refs resolved from ``page_dir`` and never reaching outside ``site_root``.
+
+    Factored out of ``optimize()`` so a builder whose lane runs NO site-wide
+    sweep can emit already-stamped pages: the hourly whitehouse sentinel commits
+    site/whitehouse.html straight to main, and an unstamped render there
+    regressed the page to bare refs on every alert update
+    (scripts.build_whitehouse._render_page is the consumer)."""
+    root = Path(site_root).resolve()
     cache: Dict[Path, Optional[str]] = {}  # resolved asset path -> hash (once per process)
     imports: Dict[Path, list] = {}         # resolved css path -> its @import urls
 
@@ -132,6 +135,19 @@ def optimize(site_dir: Path) -> int:
         # ?v= stamping FIRST: preload hints must carry the same final URL as the
         # stylesheet they warm, or the two are separate cache keys and double-fetch.
         return preload_css_text(optimize_assets_text(text, hash_for), imports_for)
+
+    return optimized
+
+
+def optimize(site_dir: Path) -> int:
+    """Version + defer local assets in every page under site_dir, plus the
+    templates/ side of every plain-copy HTML pair. Returns the number of files
+    modified. Never raises."""
+    site_dir = Path(site_dir)
+    if not site_dir.is_dir():
+        return 0
+    root = site_dir.resolve()
+    optimized = make_optimizer(root)
 
     n = 0
     # Plain-copy HTML pairs FIRST — this ordering is load-bearing, not cosmetic.
