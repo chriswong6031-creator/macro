@@ -1,12 +1,12 @@
 {
   "schema": "risk_radar_scorecard.v1",
-  "generated_at": "2026-07-30T04:15:36+00:00",
+  "generated_at": "2026-07-30T06:11:45+00:00",
   "markets": {
     "us": {
       "asof_last_row": "2026-07-29",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 14,
         "graded_n": 5
       },
@@ -61,7 +61,7 @@
       "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 13,
+        "last_logged_days_ago": 14,
         "ungraded_backlog": 12,
         "graded_n": 0
       },
@@ -116,7 +116,7 @@
       "asof_last_row": "2026-07-16",
       "monitoring": {
         "log_fresh": false,
-        "last_logged_days_ago": 13,
+        "last_logged_days_ago": 14,
         "ungraded_backlog": 11,
         "graded_n": 0
       },
@@ -171,7 +171,7 @@
       "asof_last_row": "2026-07-29",
       "monitoring": {
         "log_fresh": true,
-        "last_logged_days_ago": 0,
+        "last_logged_days_ago": 1,
         "ungraded_backlog": 10,
         "graded_n": 2
       },
@@ -223,7 +223,7 @@
       }
     },
     "kr": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
@@ -278,7 +278,7 @@
       }
     },
     "jp": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
@@ -333,7 +333,7 @@
       }
     },
     "tw": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
@@ -388,7 +388,7 @@
       }
     },
     "in": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
@@ -443,7 +443,7 @@
       }
     },
     "au": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
@@ -498,7 +498,7 @@
       }
     },
     "gb": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
@@ -553,7 +553,7 @@
       }
     },
     "ez": {
-      "asof_last_row": "2026-07-27",
+      "asof_last_row": "2026-07-28",
       "monitoring": {
         "log_fresh": true,
         "last_logged_days_ago": 2,
