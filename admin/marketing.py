@@ -997,6 +997,34 @@ def lobes(root=None) -> dict:
         return {"ok": False, "error": str(exc)}
 
 
+def _intelligence_snapshot(repo: Path, *, allow_live: bool) -> dict | None:
+    """The RAW Intelligence Desk snapshot, read from the canonical path list.
+
+    ONE reader for two callers. ``content()`` renders it; ``intelligence_approve``
+    re-reads it server-side so an approval is always against the desk's own copy
+    of the draft and never against text the browser sent back. Both must resolve
+    the same file or the review gate is reviewing something else.
+
+    On the VPS the desk lives in the external live plane; tests and dev runs use
+    the gitignored repo fallback. ``allow_live`` is False whenever the caller
+    pinned an explicit ``root=`` — a seeded fixture tree must never silently read
+    the host's live snapshot. Fail-soft: None when nothing on the list parses as
+    the desk schema.
+    """
+    paths: list[Path] = []
+    if allow_live:
+        paths.append(_INTELLIGENCE_LIVE)
+    paths.append(repo / _INTELLIGENCE_REL)
+    for path in paths:
+        candidate = _read_json(path)
+        if (
+            isinstance(candidate, dict)
+            and candidate.get("schema") == "intelligence.desk/v1"
+        ):
+            return candidate
+    return None
+
+
 def content(root=None) -> dict:
     """Content Studio panel: reads data/marketing/content_plan.json.
 
@@ -1006,30 +1034,20 @@ def content(root=None) -> dict:
     repo = Path(root) if root is not None else _default_root()
     try:
         # The intraday Intelligence Desk is independent of the nightly content
-        # plan. On the VPS it lives in the external live plane; tests/dev use the
-        # gitignored repo fallback. Only the already-public story contract is
-        # exposed, capped again for the operator console.
+        # plan. Only the already-public story contract is exposed, capped again
+        # for the operator console.
         intelligence = None
-        _intel_paths = []
-        if root is None:
-            _intel_paths.append(_INTELLIGENCE_LIVE)
-        _intel_paths.append(repo / _INTELLIGENCE_REL)
-        for _intel_path in _intel_paths:
-            _candidate = _read_json(_intel_path)
-            if (
-                isinstance(_candidate, dict)
-                and _candidate.get("schema") == "intelligence.desk/v1"
-            ):
-                intelligence = {
-                    "schema": _candidate.get("schema"),
-                    "updated_at": _candidate.get("updated_at"),
-                    "health": _candidate.get("health") or {},
-                    "stories": [
-                        row for row in (_candidate.get("stories") or [])[:24]
-                        if isinstance(row, dict)
-                    ],
-                }
-                break
+        _candidate = _intelligence_snapshot(repo, allow_live=(root is None))
+        if _candidate is not None:
+            intelligence = {
+                "schema": _candidate.get("schema"),
+                "updated_at": _candidate.get("updated_at"),
+                "health": _candidate.get("health") or {},
+                "stories": [
+                    row for row in (_candidate.get("stories") or [])[:24]
+                    if isinstance(row, dict)
+                ],
+            }
         cp = _read_json(repo / _CONTENT_REL)
         if cp is None:
             return {
@@ -2304,8 +2322,494 @@ def decide_outbox_batch(item_ids: list, decision: str, note: str | None = None,
 
 
 # ---------------------------------------------------------------------------
-# Operator write actions (this admin owns exactly two writes into data/marketing)
+# Operator write actions (the three writes this admin owns into data/marketing:
+# the sentinel exception ledger, the account override file, and the Intelligence
+# Desk approve click that appends ONE canonical item to the outbox)
 # ---------------------------------------------------------------------------
+
+#: Provenance + source.lane stamped on every item this approve path enqueues.
+#: One string, so a query for "what did the desk queue" is exact rather than a
+#: guess at which producer wrote a row.
+_INTEL_LANE = "intelligence_desk"
+
+#: Plain-word detail per non-"queued" enqueue verdict. Keyed by the exact string
+#: outbox.enqueue returns so a new verdict shows up as its own slug rather than
+#: being folded into a neighbour's sentence.
+_INTEL_ENQUEUE_DETAIL: dict[str, str] = {
+    "duplicate": ("this draft is already in the outbox; the second click "
+                  "queued nothing"),
+    "cross_account_duplicate": ("another desk already has near-identical copy "
+                                "in the queue"),
+    "cap_exceeded": ("that desk has used its posts for the day; the cap is a "
+                     "sentinel setting, not a bug"),
+}
+
+
+#: The one file a queued item MUST reach for the publisher to post it. An item
+#: with no transition rows folds as `queued`, so this row alone is postable —
+#: which is what makes the single-file API delivery below sufficient.
+_INTEL_ITEMS_REL = "data/marketing/outbox/items.jsonl"
+
+#: Review N6: `outbox.enqueue` writes ONLY items.jsonl — the earlier three-ledger
+#: tuple here rested on a false premise and its scoped commit would have SWEPT
+#: whatever unrelated dirt other lanes had left on the status/activity ledgers
+#: of a shared checkout onto main. Delivery commits exactly the one file the
+#: enqueue wrote. (gitops._ALLOWED_PATHS keeps all three outbox ledgers listed —
+#: harmless, and a future path that really writes them can opt in explicitly.)
+_INTEL_OUTBOX_LEDGERS = (_INTEL_ITEMS_REL,)
+
+#: Plain-word sentence per failed API-delivery step (github_api's ``step`` key).
+#: Keyed by step rather than by parsing the error so a new failure mode reads as
+#: itself instead of being folded into a neighbour's sentence.
+_INTEL_API_STEP_WHY: dict[str, str] = {
+    "unavailable": "this machine has no working link to the shared queue",
+    "read": "the step that reads the shared queue on main failed",
+    "too_large": "the shared queue file on main is too big to update this way",
+    "write": "the step that writes the row to main failed",
+}
+
+
+def _intel_refuse(reason: str, detail: str, **extra) -> dict:
+    """The ONE refusal shape for the approve path: {ok:false, reason, detail}.
+
+    ``reason`` is a stable machine slug naming the gate that fired (the UI keys
+    its message off it); ``detail`` is the plain-word sentence an operator reads.
+    Every early return below goes through here so no caller has to guess whether
+    a refusal carries ``error`` or ``reason``.
+    """
+    return {"ok": False, "reason": reason, "detail": detail, **extra}
+
+
+def _intel_deliver(item: dict) -> tuple[bool, str]:
+    """Get a queued item OUT of this checkout and onto main, however this host can.
+
+    The queue the operator just wrote to is NOT the queue the publisher reads.
+    The publisher runs in GitHub Actions off the git-tracked outbox ON MAIN; the
+    admin writes to whatever checkout it is running in. A row that never leaves
+    that disk is a post that never happens, and — worse — it looks queued in the
+    panel the whole time.
+
+    Two hosts, two mechanisms, chosen by ``settings.deployed()`` — the same
+    predicate the account toggle switches on, so the two write paths can't
+    disagree about which machine they are:
+
+    * DEPLOYED VPS -> the GitHub Contents API (``_intel_deliver_via_api``). git
+      is not an option there at all: the checkout has no authenticated remote,
+      and ``app/deploy/update.sh`` resets it ``--hard`` to origin/main every few
+      minutes, so a local commit is not slow delivery — it is DELETED delivery,
+      taking the row with it.
+    * Authenticated local checkout -> scoped commit + ONE plain push
+      (``gitops.commit_paths``): no rebase retry, because this checkout may be
+      occupied by other agents and a rebase rewrites it under them (review N6).
+      A push refused by a racing press-wire commit is reported, not forced.
+
+    Exactly one is attempted per call. Never both: a fallback would either write
+    the same row twice or spend a doomed git shell-out on every VPS approval.
+    (A ``root=``-pinned call never gets here — see the call site.)
+
+    Returns ``(delivered, note)``. ``delivered`` is True ONLY when the row is on
+    main. Every other outcome returns False plus a plain-word sentence — this
+    never raises and never un-queues: the item is on disk and real either way,
+    and the honest thing to tell the operator is "queued here, not delivered".
+    """
+    item_id = str(item.get("id") or "")
+    try:
+        from . import settings  # noqa: PLC0415
+        is_deployed = settings.deployed()
+    except Exception as exc:  # noqa: BLE001
+        # Unreadable deploy mode falls to git, which refuses honestly on a host
+        # that can't push — a wrong guess here costs a note, never a bad write.
+        log.warning("intelligence_approve: could not read deploy mode: %s", exc)
+        is_deployed = False
+    if is_deployed:
+        return _intel_deliver_via_api(item, item_id)
+    return _intel_deliver_via_git(item_id)
+
+
+def _intel_deliver_via_api(item: dict, item_id: str) -> tuple[bool, str]:
+    """Deployed-VPS delivery: append this item's row to items.jsonl ON main.
+
+    Only the ITEMS row is delivered, not the three ledgers the git path commits.
+    That is sufficient, not a shortcut: the publisher folds an item carrying no
+    transition rows as ``queued``, so the row alone is postable — and one file is
+    one atomic commit, where three would be three chances to half-land.
+
+    The row is serialized EXACTLY as ``engine/marketing/ledgers.append_jsonl``
+    wrote it locally (compact separators, ensure_ascii=False). Byte-identical
+    matters: main's copy and this checkout's copy are the same append-only file,
+    and a re-serialized row would show up as a diff in a file whose merge driver
+    is union. A test pins this against the line the local enqueue actually wrote.
+
+    Idempotency is the on-main id check, not the local one. A re-click after a
+    slow response is the ordinary case; a re-click after the 3-minute deploy pull
+    reset the checkout is the dangerous one, because the local duplicate guard's
+    memory went with it — and the item id is a content hash, so the second click
+    rebuilds the SAME id. Asking main is the only question that survives a reset.
+    """
+    try:
+        from . import github_api  # noqa: PLC0415
+        line = json.dumps(item, ensure_ascii=False, separators=(",", ":"))
+        res = github_api.append_jsonl_line(
+            _INTEL_ITEMS_REL, line,
+            f"admin: intelligence desk approve {item_id}",
+            # Compact-form id field: items.jsonl is written only by
+            # ledgers.append_jsonl (and by this line), so the spacing is exact.
+            if_absent=f'"id":{json.dumps(item_id)}')
+    except Exception as exc:  # noqa: BLE001
+        log.warning("intelligence_approve: API delivery step failed: %s", exc)
+        return False, ("It has NOT reached the publisher, so it will not post "
+                       f"until it does: the delivery step failed ({exc}). It is "
+                       "still queued on this machine, so you can approve it "
+                       "again later.")
+    if res.get("ok") and res.get("appended"):
+        return True, ("It has reached the shared queue on main, so the publisher "
+                      "will see it on its next sweep.")
+    if res.get("ok"):
+        # already_present: the row is on main, which is the only thing the word
+        # "delivered" claims. Say it was already there rather than let a second
+        # click read as a second post.
+        return True, ("It was already on the shared queue on main, so the "
+                      "publisher will see it on its next sweep — this click "
+                      "queued nothing twice.")
+    step = str(res.get("step") or "")
+    why = _INTEL_API_STEP_WHY.get(step, "the delivery step reported no result")
+    err = str(res.get("error") or "").strip().rstrip(".")
+    if err:
+        why = f"{why} ({err})"
+    # A too-large ledger is the one failure a retry cannot clear: rotation is a
+    # different job. Don't send the operator back to a button that can't work.
+    tail = (" Rotating the shared queue is what fixes this — approving again "
+            "will not."
+            if step == "too_large" else
+            " It is still queued on this machine until the next deploy pull "
+            "resets the checkout, and you can approve it again later.")
+    return False, (f"It has NOT reached the publisher, so it will not post "
+                   f"until it does: {why}.{tail}")
+
+
+def _intel_deliver_via_git(item_id: str) -> tuple[bool, str]:
+    """Local authenticated checkout: scoped commit of items.jsonl + ONE push.
+
+    Review N6: no fetch/rebase retry loop here, deliberately. This branch runs
+    only on a non-deployed checkout — which per repo law is often OCCUPIED by
+    other agents mid-work — and a rebase rewrites the WHOLE checkout's history
+    out from under them to win a push race over one ledger row. A single plain
+    push either lands or refuses; a refusal is reported honestly and the row
+    stays committed locally for the operator (or the checkout's owner) to push
+    when the tree is theirs. The deployed VPS never takes this branch at all
+    (Contents API), so the retry loop bought robustness exactly where it could
+    do the most collateral damage.
+    """
+    try:
+        from . import gitops  # noqa: PLC0415
+        res = gitops.commit_paths(
+            list(_INTEL_OUTBOX_LEDGERS),
+            message=f"admin: intelligence desk approve {item_id}",
+            push=True,
+            confirm=True)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("intelligence_approve: delivery step failed: %s", exc)
+        return False, ("It is queued on this machine, but the step that sends it "
+                       f"to the publisher failed ({exc}), so it has not been "
+                       "delivered yet.")
+    if res.get("pushed"):
+        return True, "It has reached the shared queue, so the publisher will see it."
+    # NOT "it will go out later". A non-delivery is not a delay: the publisher
+    # reads main and only main, and nothing re-tries this write afterwards. Say
+    # that it will not post, and name the step that stopped it.
+    why = str(res.get("warning") or res.get("error")
+              or "the delivery step reported no result").strip().rstrip(".")
+    return False, ("It has NOT reached the publisher, so it will not post until "
+                   f"it does: {why}.")
+
+
+def intelligence_approve(story_id, draft_id, root=None, *, now=None) -> dict:
+    """Queue ONE Intelligence Desk draft into the outbox. The click IS the gate.
+
+    Nothing on this path auto-approves: the endpoint only runs because an
+    operator pressed a button on a draft they were looking at. What it does NOT
+    do is trust that button. The story and the draft are re-read from the desk
+    snapshot server-side and the text that reaches the outbox is the desk's own,
+    so a tampered or merely stale browser payload cannot post copy no gate saw.
+
+    The chain is the CANONICAL one ``engine/marketing/press_lane.py`` runs, in
+    its order, because a second emission path with its own gate order is how a
+    lane quietly ends up with weaker guards than the one it copied:
+
+        language law -> value gate stamp -> make_item -> validate_item
+        -> one-owner story lock -> enqueue (id / text / near-dup / cap guards)
+
+    A successful enqueue is then DELIVERED (``_intel_deliver``): the outbox the
+    publisher reads is the one on MAIN, not this checkout, so the approve click
+    owns getting the row there — by commit+push on an authenticated checkout, or
+    by the GitHub Contents API on the deployed VPS, which has no git credentials
+    and whose checkout is reset --hard every few minutes. Delivery is reported,
+    never enforced — a failure leaves the item queued and returns
+    ``delivered: False`` with a plain-word note, because the item is real on disk
+    either way and un-queueing it would be the actual data loss. A ``root=``
+    pinned call attempts no delivery and carries no ``delivered`` key.
+
+    GATES REFUSE WHEN THEY CANNOT RUN. This is publish-adjacent, so the polarity
+    is the opposite of the display-tier panels above: a gate whose import or read
+    fails returns a refusal, never a pass. That is a deliberate divergence from
+    press_lane, which proceeds when the story lock cannot be consulted so an
+    automated wire is never silently stopped. Here there is a human at the other
+    end of the click who can be told, and told is better than posted.
+
+    Returns {"ok": True, item_id, account, note, delivered?} or the
+    ``_intel_refuse`` shape. Never raises.
+    """
+    try:
+        sid = str(story_id or "").strip()
+        did = str(draft_id or "").strip()
+        if not sid or not did:
+            return _intel_refuse("bad_request",
+                                 "story_id and draft_id are both required")
+
+        repo = Path(root) if root is not None else _default_root()
+
+        # ── 1. Re-read the desk snapshot SERVER-SIDE ──────────────────────────
+        snapshot = _intelligence_snapshot(repo, allow_live=(root is None))
+        if snapshot is None:
+            return _intel_refuse(
+                "no_snapshot",
+                "the Intelligence Desk snapshot is not readable right now, so "
+                "there is nothing to approve against")
+
+        story = next(
+            (row for row in (snapshot.get("stories") or [])
+             if isinstance(row, dict) and str(row.get("id") or "") == sid),
+            None)
+        if story is None:
+            return _intel_refuse(
+                "story_not_found",
+                f"story {sid} is no longer in the desk snapshot; it may have "
+                f"aged out since the page loaded")
+
+        draft = next(
+            (row for row in (story.get("drafts") or [])
+             if isinstance(row, dict) and str(row.get("id") or "") == did),
+            None)
+        if draft is None:
+            return _intel_refuse(
+                "draft_not_found",
+                f"draft {did} is no longer on that story; the desk replaces a "
+                f"draft when the copy changes, so reload the queue")
+
+        # ── 2. Review-only. needs_edit is NOT approvable ──────────────────────
+        status = str(draft.get("status") or "").strip()
+        if status != "review":
+            return _intel_refuse(
+                "not_reviewable",
+                f"this draft is marked {status or 'unset'}, not ready for "
+                f"review; only a review draft may be queued")
+
+        text = str(draft.get("text") or "").strip()
+        if not text:
+            return _intel_refuse("empty_draft", "the draft carries no text")
+
+        headline = str(story.get("headline") or "").strip()
+        source_url = str(draft.get("source_url") or "").strip()
+
+        # ── 3. House language law (doctrine v3 §9a) ───────────────────────────
+        try:
+            from engine.marketing.copywriter import (  # noqa: PLC0415
+                banned_language as _banned_language,
+            )
+            violations = list(_banned_language(text))
+        except Exception as exc:  # noqa: BLE001 — a gate that cannot run REFUSES
+            log.warning("intelligence_approve: language gate unavailable: %s", exc)
+            return _intel_refuse(
+                "gate_unavailable",
+                f"the house language gate could not run ({exc}); nothing was queued")
+        if violations:
+            return _intel_refuse(
+                "banned_language",
+                "the house language law refused this copy: "
+                + ", ".join(str(v) for v in violations[:4]),
+                violations=[str(v) for v in violations])
+
+        cfg = _read_yaml(repo / _CONFIG_REL)
+
+        # ── 4. Which desk owns this emission (XG-W2 config routing) ───────────
+        # A story that carries no machine event_class routes to the module's own
+        # fallback rather than to the string "none": an unclassified story is not
+        # a class, and routing it as one would let a future config row silently
+        # capture everything the classifier could not label.
+        event_class = str(story.get("event_class") or "").strip()
+        try:
+            from engine.marketing import wire_routing as _wr  # noqa: PLC0415
+            account = str(
+                _wr.route(event_class, cfg=cfg, root=repo) if event_class
+                else _wr.default_account(cfg)
+            ).strip()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("intelligence_approve: routing unavailable: %s", exc)
+            return _intel_refuse(
+                "routing_unavailable",
+                f"could not resolve which desk owns this post ({exc})")
+        if not account:
+            return _intel_refuse("routing_unavailable",
+                                 "the wire routing table resolved no account")
+
+        try:
+            from engine.marketing import outbox as _ob  # noqa: PLC0415
+            from engine.marketing import story_lock as _sl  # noqa: PLC0415
+        except Exception as exc:  # noqa: BLE001
+            log.warning("intelligence_approve: outbox path unavailable: %s", exc)
+            return _intel_refuse(
+                "outbox_unavailable",
+                f"the canonical outbox path could not be loaded ({exc})")
+
+        ts = now if now is not None else datetime.now(timezone.utc)
+        as_of = ts.astimezone(timezone.utc).strftime("%Y-%m-%d")
+
+        # ── 5. Build the item through the canonical path ──────────────────────
+        # story_key rides on `source` because that is where the one-owner lock
+        # reads it back from (story_lock.item_story_key) — an item enqueued
+        # without it locks nothing, and the next desk to draw the same story
+        # would be waved through.
+        lock_key = _sl.story_key(cluster_key=sid, event_id=did, headline=headline)
+        source: dict = {
+            "lane": _INTEL_LANE,
+            "story_id": sid,
+            "draft_id": did,
+            "url": source_url or None,
+            "story_key": lock_key,
+        }
+
+        # Gift-Grip-Proof verdict rides on every emission (charter §0). The gate
+        # must score the STRING THAT SHIPS (review N4): make_item posts `text`
+        # alone — there is no headline+body composition on this lane — so
+        # `headline` is empty here or the verdict is measured on copy that never
+        # reaches X. The STORY headline still goes in as `source_headline`, which
+        # is the upstream wire line the informational-surplus test compares
+        # against ("we rewrote the headline" is not an answer).
+        would_block = _ob.stamp_value_gate(
+            source,
+            headline="",
+            body=text,
+            kind="breaking",
+            has_media=False,
+            source_headline=headline,
+            citation=source_url,
+            cfg=cfg,
+        )
+        verdict = source.get("value_gate") or {}
+        if _ob._value_gate_enforced(cfg):
+            # stamp_value_gate is fail-soft by design (a downed gate must not
+            # silence the automated desks). With enforcement ARMED that softness
+            # is wrong here: an unevaluated gate is not a passed gate.
+            if str(verdict.get("verdict") or "") == "error":
+                return _intel_refuse(
+                    "gate_unavailable",
+                    "the value gate is armed to block but could not evaluate "
+                    f"this post ({verdict.get('error')})")
+            if would_block:
+                return _intel_refuse(
+                    "value_gate",
+                    "the value gate abstained: "
+                    + (", ".join(str(r) for r in (verdict.get("reasons") or []))
+                       or "no reason recorded"),
+                    violations=[str(r) for r in (verdict.get("reasons") or [])])
+
+        try:
+            item = _ob.make_item(
+                account=account,
+                kind="breaking",
+                text=text,
+                as_of=as_of,
+                media=[],
+                scheduled_at="immediate",
+                priority=1,
+                provenance=_INTEL_LANE,
+                source=source,
+                now=ts,
+            )
+        except ValueError as exc:
+            return _intel_refuse("item_invalid", str(exc))
+
+        errors = _ob.validate_item(item)
+        if errors:
+            return _intel_refuse("item_invalid", str(errors[0]))
+
+        # ── 6. One conversation, one owner (cross-account lock) ───────────────
+        try:
+            lock = _sl.check(account, lock_key, _ob.read_items_all(repo),
+                             now=ts, cfg=cfg)
+        except Exception as exc:  # noqa: BLE001 — see the polarity note above
+            log.warning("intelligence_approve: story lock unavailable: %s", exc)
+            return _intel_refuse(
+                "gate_unavailable",
+                f"the one-owner story lock could not run ({exc}); nothing was queued")
+        if not lock.allowed:
+            return _intel_refuse(
+                "story_locked",
+                f"{lock.owner} already has this story inside the one-owner "
+                f"window; two desks may not post the same conversation",
+                owner=lock.owner)
+
+        # ── 7. Enqueue (id dedup, text dedup, near-dup radar, daily cap) ──────
+        # `duplicate` is NOT a dead end (review N5): the row already exists on
+        # THIS disk, but the first click's DELIVERY may have failed — returning
+        # here made that failure permanent, because every retry the note invited
+        # refused as duplicate before ever reaching delivery again. Both delivery
+        # paths are idempotent (the API append checks main for the id; the git
+        # path's scoped commit no-ops on a clean file), so a duplicate falls
+        # through to delivery instead of returning.
+        result = str(_ob.enqueue(item, repo, cfg=cfg))
+        duplicate_requeue = result == "duplicate"
+        if result != "queued" and not duplicate_requeue:
+            if result.startswith("invalid:"):
+                return _intel_refuse("item_invalid", result.split(":", 1)[1])
+            return _intel_refuse(result, _INTEL_ENQUEUE_DETAIL.get(
+                result, f"the outbox refused this item ({result})"))
+
+        # The note says what happens NEXT. Naming the item and the desk is the
+        # caller's job (the admin card prints both), so this does not repeat it.
+        note = ("Nothing posts now: it waits for the publisher's own gates "
+                "exactly like every other outbox item.")
+        if duplicate_requeue:
+            note = ("This draft was already queued on this machine, so the "
+                    "click queued nothing twice; delivery was re-checked. "
+                    + note)
+        # HONEST ABOUT THE PICTURE. `breaking` sits OUTSIDE the publisher's
+        # _CHART_BEARING_KINDS, so a ticker-bearing item on this lane is not
+        # deferred for a missing chart the way a signal/watchlist post is — it
+        # ships bare. Say so rather than let the operator assume the
+        # every-ticker-post-is-charted law covers this queue.
+        if [t for t in (story.get("tickers") or []) if str(t or "").strip()]:
+            note += (" This one names tickers and will go out as text only: "
+                     "breaking sits outside the publisher's chart-bearing "
+                     "kinds, so no chart is attached.")
+
+        payload = {
+            "ok": True,
+            "item_id": item["id"],
+            "account": account,
+            "story_id": sid,
+            "draft_id": did,
+        }
+        if duplicate_requeue:
+            payload["reason"] = "duplicate"
+
+        # ── 8. DELIVERY: the enqueue above wrote to THIS disk, not to main ────
+        # Only the default repo root is a real checkout the publisher's copy of
+        # the outbox descends from. A root=-pinned call is a test or a dev tool
+        # writing into a scratch tree git knows nothing about, so it must never
+        # shell out to git — and it gets no `delivered` key at all, because a
+        # delivery that was never attempted is not a delivery that failed.
+        if root is None:
+            delivered, delivery_note = _intel_deliver(item)
+            payload["delivered"] = delivered
+            note += " " + delivery_note
+
+        payload["note"] = note
+        return payload
+    except Exception as exc:  # noqa: BLE001
+        log.warning("marketing.intelligence_approve failed: %s", exc)
+        return _intel_refuse("error", str(exc))
+
 
 def sentinel_allow(item_id, reason, root=None) -> dict:
     """Record an operator exception: "let this held post through at the next gate".

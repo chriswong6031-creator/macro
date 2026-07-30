@@ -277,6 +277,25 @@ def get_file(path: str, ref: str = "main") -> dict:
         j = resp.json()
         import base64  # noqa: PLC0415
         raw = base64.b64decode(j.get("content", "") or "").decode("utf-8")
+        # THE 1 MB INLINE CEILING IS A TRUNCATION TRAP. Past ~1 MB the Contents
+        # API still answers 200 with the real sha, but `content` comes back EMPTY
+        # and `encoding: "none"` (the blob has to be fetched through the Blob or
+        # raw media API instead). Returning that as an ok-but-empty read is
+        # fail-OPEN for any caller that rebuilds the file from it:
+        # `append_jsonl_line` would PUT a single row over the whole ledger under
+        # a sha the API happily accepts, replacing the live outbox queue on main.
+        # Its own size guard cannot catch it — the size it measures is 0. An
+        # unreadable file is recoverable; a truncated ledger is not.
+        encoding = str(j.get("encoding") or "base64")
+        try:
+            reported = int(j.get("size") or 0)
+        except (TypeError, ValueError):
+            reported = 0
+        if encoding != "base64" or (reported > 0 and not raw):
+            return {"ok": False, "error": (
+                f"{path} was not inlined by the Contents API "
+                f"(encoding={encoding!r}, size={reported}) — it is over the 1 MB "
+                f"inline ceiling and needs rotating")}
         return {"ok": True, "content": raw, "sha": j.get("sha")}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": str(exc)}
@@ -322,6 +341,107 @@ def put_file(path: str, content: str, message: str, *, sha: str | None = None,
         return {"ok": False, "error": f"HTTP {resp.status_code}: {resp.text[:200]}"}
     except Exception as exc:  # noqa: BLE001
         return {"ok": False, "error": str(exc)}
+
+
+#: Refuse a Contents-API append once the file we would have to re-upload gets
+#: near the endpoint's 1 MB ceiling. The API rejects the whole write above that,
+#: so an append that squeaks past today fails outright a few rows later; better
+#: to stop early and say the file needs rotating. Not a tunable: it is a
+#: headroom margin under a GitHub limit, not a policy.
+CONTENTS_APPEND_MAX_BYTES = 900_000
+
+#: Error fragments that mean "the file moved under us between the read and the
+#: write" — the one failure a retry can actually fix. GitHub answers a stale sha
+#: with 409 on some paths and 422 ("does not match") on others.
+_CONFLICT_MARKERS = ("409", "422", "conflict", "does not match")
+
+
+def _is_sha_conflict(error: str) -> bool:
+    low = (error or "").lower()
+    return any(m in low for m in _CONFLICT_MARKERS)
+
+
+def append_jsonl_line(path: str, line: str, message: str, *,
+                      branch: str = "main", if_absent: str | None = None,
+                      attempts: int = 3) -> dict:
+    """Append ONE line to an append-only file on *branch* via the Contents API.
+
+    GET the file, optionally skip when *if_absent* already appears in it, append
+    *line*, PUT it back under the sha we just read. This is the deployed-admin
+    write path for the git-tracked ledgers: that host has no authenticated git
+    working tree, and its checkout is reset --hard to origin/main every few
+    minutes, so anything committed locally is discarded before it can be read.
+
+    Concurrency: several lanes append to these ledgers, so origin moves often. A
+    stale-sha rejection re-reads and re-appends (up to *attempts* times) rather
+    than force-writing — the retry rebuilds the body from the file as it now is,
+    so no one else's row is ever dropped.
+
+    if_absent: a substring whose presence means "already delivered" — the
+    idempotency guard for a re-click after a slow response. Checked against the
+    file ON *branch*, so it also covers the case where the local copy was reset
+    away between the two clicks.
+
+    Returns one of:
+      {ok: True,  appended: True,  commit_sha, attempts}   — the line is on branch
+      {ok: True,  appended: False, reason: "already_present", attempts}
+      {ok: False, step, error, attempts}
+
+    *step* names the part that failed — "unavailable" (no token/library/repo),
+    "read", "too_large", "write" — so a caller can tell an operator which step
+    stopped, in its own words, without parsing the error string. Never raises.
+    """
+    av = available()
+    if not av.get("ok"):
+        missing = ("requests unavailable" if not av.get("lib")
+                   else "repo not resolved")
+        return {"ok": False, "step": "unavailable", "error": missing, "attempts": 0}
+    if not av.get("has_token"):
+        return {"ok": False, "step": "unavailable", "attempts": 0,
+                "error": "no GH_TOKEN / GITHUB_TOKEN set (needs Contents: Read & write)"}
+    try:
+        attempts = max(1, int(attempts))
+    except (TypeError, ValueError):
+        attempts = 1
+    row = line if line.endswith("\n") else line + "\n"
+
+    last_error = "the write step reported no result"
+    for attempt in range(1, attempts + 1):
+        try:
+            gf = get_file(path, ref=branch)
+        except Exception as exc:  # noqa: BLE001 — get_file is fail-soft, belt and braces
+            return {"ok": False, "step": "read", "error": str(exc), "attempts": attempt}
+        if not gf.get("ok"):
+            return {"ok": False, "step": "read", "attempts": attempt,
+                    "error": str(gf.get("error") or "read failed")}
+        current = gf.get("content") or ""
+        if if_absent and if_absent in current:
+            return {"ok": True, "appended": False, "reason": "already_present",
+                    "attempts": attempt}
+        size = len(current.encode("utf-8"))
+        if size > CONTENTS_APPEND_MAX_BYTES:
+            return {"ok": False, "step": "too_large", "attempts": attempt,
+                    "error": (f"{path} is {size} bytes on {branch}; this write path "
+                              f"stops at {CONTENTS_APPEND_MAX_BYTES} (the API ceiling "
+                              f"is 1 MB) — the file needs rotating")}
+        body = current
+        if body and not body.endswith("\n"):
+            body += "\n"
+        body += row
+        try:
+            pf = put_file(path, body, message, sha=gf.get("sha"), branch=branch)
+        except Exception as exc:  # noqa: BLE001
+            return {"ok": False, "step": "write", "error": str(exc), "attempts": attempt}
+        if pf.get("ok"):
+            return {"ok": True, "appended": True, "attempts": attempt,
+                    "commit_sha": pf.get("commit_sha")}
+        last_error = str(pf.get("error") or "write failed")
+        if not _is_sha_conflict(last_error):
+            # 403, 404, transport — retrying re-reads and fails the same way.
+            return {"ok": False, "step": "write", "error": last_error,
+                    "attempts": attempt}
+    return {"ok": False, "step": "write", "attempts": attempts, "conflict": True,
+            "error": f"{last_error} (still conflicting after {attempts} attempts)"}
 
 
 def _slim_pr(p: dict) -> dict:

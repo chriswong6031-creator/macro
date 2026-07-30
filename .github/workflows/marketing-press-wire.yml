@@ -155,6 +155,14 @@ jobs:
           # for it) and the lane runs on the free RSS + mirror tiers alone.
           TWITTERAPI_IO_KEY: ${{ secrets.TWITTERAPI_IO_KEY }}
 
+          # ── ALPACA/BENZINGA NEWS (free REST lane, IS-W1) ────────────────────
+          # Same arming contract as every provider: BOTH env vars present or the
+          # poller is a total no-op with one preflight notice. Unconfigured repo
+          # secrets resolve to "", which the provider treats as absent — adding
+          # these lines is inert until the secrets land.
+          ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID }}
+          ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY }}
+
           # ── THE LLM WATERFALL ───────────────────────────────────────────────
           # breaking_summary is double-gated (config breaking.llm.enabled AND this
           # env flag) and THE FLAG ALONE IS A LIE WITHOUT THE CREDENTIALS UNDER

@@ -1802,6 +1802,227 @@ class TestGitopsCommitPaths:
         assert r.get("committed") in (False, None)
 
 
+class _FakeGit:
+    """A scripted stand-in for ``gitops._git``: records argv, answers by verb.
+
+    Real git is never invoked. The whole point of commit_paths_synced is the
+    CHOREOGRAPHY around a refused push (push -> fetch -> rebase -> push, abort on
+    a conflict, and never a force), and choreography is asserted from the
+    recorded call list — a temp repo would test git, not this function.
+
+    ``pushes`` is the rc sequence; the LAST value repeats, so ``(1,)`` is "always
+    refused" and ``(1, 0)`` is "refused once, then lands".
+    """
+
+    def __init__(self, *, branch="main", upstream="origin/main", dirty=True,
+                 pushes=(0,), fetch_rc=0, rebase_rc=0, abort_rc=0):
+        self.branch, self.upstream, self.dirty = branch, upstream, dirty
+        self.pushes = list(pushes)
+        self.fetch_rc, self.rebase_rc, self.abort_rc = fetch_rc, rebase_rc, abort_rc
+        self.calls: list[tuple] = []
+
+    def __call__(self, *args, timeout=20):
+        self.calls.append(args)
+        verb = args[0]
+        if verb == "rev-parse":
+            if "@{u}" in args:
+                return (0, self.upstream, "") if self.upstream else (1, "", "no upstream")
+            return 0, self.branch, ""
+        if verb == "rev-list":
+            return 0, "0\t1", ""
+        if verb == "status":
+            return (0, f" M {args[-1]}", "") if self.dirty else (0, "", "")
+        if verb == "add":
+            return 0, "", ""
+        if verb == "commit":
+            return 0, "[main 1a2b3c4] 3 files changed", ""
+        if verb == "fetch":
+            return ((0, "", "") if self.fetch_rc == 0
+                    else (self.fetch_rc, "", "could not read from remote repository"))
+        if verb == "rebase":
+            if args[1:2] == ("--abort",):
+                return (self.abort_rc, "",
+                        "" if self.abort_rc == 0 else "no rebase in progress")
+            if self.rebase_rc == 0:
+                return 0, f"Successfully rebased onto {self.upstream}", ""
+            return (self.rebase_rc, "",
+                    "CONFLICT (content): Merge conflict in "
+                    "data/marketing/outbox/items.jsonl")
+        if verb == "push":
+            rc = self.pushes.pop(0) if len(self.pushes) > 1 else self.pushes[0]
+            return ((0, "", "abc..def  main -> main") if rc == 0
+                    else (rc, "", "! [rejected] main -> main (fetch first)"))
+        raise AssertionError(f"unscripted git call: {args}")
+
+    @property
+    def verbs(self) -> list[str]:
+        """Compact call trace; a rebase keeps its first argument so the retry
+        rebase and the abort do not read as the same step."""
+        return [" ".join(c[:2]) if c[0] == "rebase" else c[0] for c in self.calls]
+
+    @property
+    def tokens(self) -> list[str]:
+        return [t for c in self.calls for t in c]
+
+
+class TestGitopsCommitPathsSynced:
+    """The delivery primitive behind the Intelligence Desk approve click.
+
+    ``commit_paths`` fires ONE push, and on this repo that is not enough: the
+    press wire commits every few minutes, so a push racing it is refused about as
+    often as it lands, and a refused push strands the operator's queued item on
+    the VPS disk where no publisher will ever read it.
+    """
+
+    OUTBOX = ["data/marketing/outbox/items.jsonl",
+              "data/marketing/outbox/status_ledger.jsonl",
+              "data/marketing/outbox/activity.jsonl"]
+
+    def test_the_three_outbox_ledgers_are_allowlisted(self):
+        from admin import gitops
+        assert set(self.OUTBOX) <= set(gitops._ALLOWED_PATHS)
+        # Review N6: the approve path commits ONLY the file its enqueue wrote.
+        # `outbox.enqueue` appends items.jsonl alone, and a wider scoped commit
+        # would sweep other lanes' dirt on the status/activity ledgers of a
+        # shared checkout onto main. The allowlist keeps all three (harmless);
+        # the delivery tuple must not.
+        assert set(marketing._INTEL_OUTBOX_LEDGERS) == {
+            "data/marketing/outbox/items.jsonl"}
+
+    def test_requires_confirm_and_shells_out_to_nothing_without_it(self, monkeypatch):
+        from admin import gitops
+        fake = _FakeGit()
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(self.OUTBOX)
+        assert r["ok"] is False and "confirm" in r["error"].lower()
+        assert fake.calls == []
+
+    def test_refuses_a_non_allowlisted_path_before_touching_git(self, monkeypatch):
+        from admin import gitops
+        fake = _FakeGit()
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(["site/evil.html"], confirm=True)
+        assert r["ok"] is False and "allowlist" in r["error"].lower()
+        # One bad path poisons the whole set: committing "the good ones anyway"
+        # would let an unreviewed file ride a live-main push.
+        r = gitops.commit_paths_synced([*self.OUTBOX, "site/evil.html"],
+                                       confirm=True)
+        assert r["ok"] is False and "allowlist" in r["error"].lower()
+        assert fake.calls == []
+
+    def test_a_refused_push_is_rebased_and_retried_until_it_lands(self, monkeypatch):
+        from admin import gitops
+        fake = _FakeGit(pushes=(1, 0))
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(
+            self.OUTBOX, message="admin: intelligence desk approve post-x-1",
+            confirm=True)
+        assert r["ok"] is True and r["committed"] is True and r["pushed"] is True
+        assert r["attempts"] == 2
+        # the choreography, in order
+        assert ["push", "fetch", "rebase origin/main", "push"] == [
+            v for v in fake.verbs if v.split()[0] in ("push", "fetch", "rebase")]
+        # the commit is SCOPED to the three ledgers and carries the caller's message
+        assert ("commit", "-m", "admin: intelligence desk approve post-x-1",
+                "--", *self.OUTBOX) in fake.calls
+
+    def test_a_conflicted_rebase_aborts_and_says_so(self, monkeypatch):
+        """A conflict is not a race to retry through. Leaving the checkout
+        mid-rebase would wedge every later admin write AND the VPS's own pull."""
+        from admin import gitops
+        fake = _FakeGit(pushes=(1,), rebase_rc=1)
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(self.OUTBOX, confirm=True, attempts=3)
+        assert r["ok"] is False
+        assert r["committed"] is True and r["pushed"] is False
+        assert "conflicted" in r["error"] and "aborted" in r["error"]
+        assert ("rebase", "--abort") in fake.calls
+        # and it stops: no blind re-push into a conflict it could not resolve
+        assert fake.verbs.count("push") == 1
+
+    def test_a_rebase_that_never_started_is_not_called_a_conflict(self, monkeypatch):
+        """A failing abort means there was no rebase to abort — git REFUSED to
+        start one, and on the VPS a dirty working tree is the everyday cause.
+        Reporting that as a conflict sends the operator hunting for a merge
+        conflict that never existed, and claiming a clean rollback is worse."""
+        from admin import gitops
+        fake = _FakeGit(pushes=(1,), rebase_rc=1, abort_rc=1)
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(self.OUTBOX, confirm=True)
+        assert r["ok"] is False and r["committed"] is True
+        assert "abort did not succeed" in r["error"], r["error"]
+        assert "never started" in r["error"]
+        assert "back as it was" not in r["error"]
+
+    def test_exhausted_attempts_is_committed_only_not_a_failure(self, monkeypatch):
+        """The commit is real. Union-merge ledgers mean it rides the next
+        successful sync cleanly, so this reports ok:True with a warning rather
+        than an error the caller would surface as 'your click did nothing'."""
+        from admin import gitops
+        fake = _FakeGit(pushes=(1,))
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(self.OUTBOX, confirm=True, attempts=3)
+        assert r["ok"] is True
+        assert r["committed"] is True and r["pushed"] is False
+        assert r["attempts"] == 3
+        assert "committed locally" in r["warning"]
+        assert "3 push attempt" in r["warning"]
+        assert fake.verbs.count("push") == 3
+        # no pointless catch-up after the final push
+        assert fake.verbs.count("fetch") == 2
+        assert fake.verbs.count("rebase origin/main") == 2
+
+    def test_a_failed_fetch_stops_the_loop_and_keeps_the_commit(self, monkeypatch):
+        """It must blame the step that actually failed. Reporting an unreachable
+        remote as 'push did not land in 3 attempts' names the wrong command and
+        claims two retries that never ran."""
+        from admin import gitops
+        fake = _FakeGit(pushes=(1,), fetch_rc=1)
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(self.OUTBOX, confirm=True, attempts=3)
+        assert r["ok"] is True and r["committed"] is True and r["pushed"] is False
+        assert "fetch" in r["warning"]
+        assert "1 push attempt" in r["warning"]
+        assert r["attempts"] == 1
+        assert fake.verbs.count("push") == 1
+        assert "rebase origin/main" not in fake.verbs
+
+    def test_a_dev_checkout_commits_and_never_pushes(self, monkeypatch):
+        """can_push_live stays the outer guard: a feature branch (this worktree,
+        for one) must never push admin state at main."""
+        from admin import gitops
+        fake = _FakeGit(branch="claude/news-intelligence-upgrade",
+                        upstream="origin/claude/news-intelligence-upgrade")
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(self.OUTBOX, confirm=True)
+        assert r["ok"] is True and r["committed"] is True and r["pushed"] is False
+        assert "not on a main tracking branch" in r["warning"]
+        assert "push" not in fake.verbs and "fetch" not in fake.verbs
+
+    def test_a_clean_tree_commits_nothing(self, monkeypatch):
+        from admin import gitops
+        fake = _FakeGit(dirty=False)
+        monkeypatch.setattr(gitops, "_git", fake)
+        r = gitops.commit_paths_synced(self.OUTBOX, confirm=True)
+        assert r["ok"] is True and r["committed"] is False and r["pushed"] is False
+        assert "commit" not in fake.verbs and "push" not in fake.verbs
+
+    def test_it_never_force_pushes_and_never_resets(self, monkeypatch):
+        """The standing law this function must not break: it may lose no one
+        else's commit. Every branch of the retry loop is checked, not just the
+        happy one."""
+        from admin import gitops
+        for kw in ({"pushes": (1, 0)}, {"pushes": (1,)},
+                   {"pushes": (1,), "rebase_rc": 1}, {"pushes": (1,), "fetch_rc": 1}):
+            fake = _FakeGit(**kw)
+            monkeypatch.setattr(gitops, "_git", fake)
+            gitops.commit_paths_synced(self.OUTBOX, confirm=True, attempts=3)
+            assert "reset" not in fake.tokens, kw
+            assert "--force" not in fake.tokens, kw
+            assert "-f" not in fake.tokens, kw
+            assert "--force-with-lease" not in fake.tokens, kw
+
+
 class TestSentinelPassedPassthrough:
     _SENTINEL_WITH_PASSED = {
         "schema_version": 1,
@@ -2174,3 +2395,1112 @@ class TestPostNow:
         self._wire(monkeypatch, dispatch={"ok": False, "error": "HTTP 403 — Actions: write"})
         r = marketing.post_now("ob-x")
         assert r["ok"] is False and "403" in r["error"]
+
+
+# ---------------------------------------------------------------------------
+# Intelligence Desk approve flow (V2 wave B) — admin.marketing.intelligence_approve
+#
+# The operator click is the review gate, so these tests are about the GATES: what
+# gets refused, what the refusal is called, and that a success writes exactly one
+# canonical outbox item. Everything is tmp-rooted and monkeypatched; nothing here
+# reaches the network, the live plane, or the real repo.
+# ---------------------------------------------------------------------------
+
+_INTEL_WIRE_TEXT = (
+    "Regulators cleared the Aldon Systems takeover this morning after a nine "
+    "month review, and the buyer now has until October to close. Reuters."
+)
+
+INTEL_SNAPSHOT = {
+    "schema": "intelligence.desk/v1",
+    "updated_at": "2026-07-29T14:05:00Z",
+    "health": {"active_stories": 3, "draft_ready": 2},
+    "stories": [
+        {
+            # Builder A's machine field present. Carries tickers, so the success
+            # note must be honest about shipping without a chart.
+            "id": "story-alpha",
+            "stage": "confirmed",
+            "lane": "wire",
+            "event_class": "policy",
+            "headline": "Regulator clears the Aldon Systems takeover",
+            "tickers": ["ALD"],
+            "content_routes": ["breaking"],
+            "evidence": [
+                {"event_id": "ev-1", "name": "Reuters",
+                 "url": "https://example.com/reuters/aldon",
+                 "published_at": "2026-07-29T13:50:00Z"},
+                {"event_id": "ev-2", "name": "AP",
+                 "url": "https://example.com/ap/aldon",
+                 "published_at": "2026-07-29T13:58:00Z"},
+            ],
+            "drafts": [
+                {"id": "draft-wire-1", "shape": "wire", "status": "review",
+                 "text": _INTEL_WIRE_TEXT, "characters": len(_INTEL_WIRE_TEXT),
+                 "requires_review": True,
+                 "source_url": "https://example.com/reuters/aldon"},
+                {"id": "draft-analysis-1", "shape": "analysis",
+                 "status": "needs_edit",
+                 "text": "Second look at the clearance and what it changes.",
+                 "characters": 49, "requires_review": True,
+                 "source_url": "https://example.com/reuters/aldon"},
+            ],
+        },
+        {
+            # event_class ABSENT (pre-Builder-A snapshot, or a story the
+            # classifier could not label) and no tickers.
+            "id": "story-beta",
+            "stage": "developing",
+            "lane": "wire",
+            "headline": "Port strike talks resume in Rotterdam",
+            "tickers": [],
+            "drafts": [
+                {"id": "draft-beta-1", "shape": "wire", "status": "review",
+                 "text": ("Talks to end the Rotterdam port strike resumed on "
+                          "Tuesday with a mediator in the room for the first "
+                          "time since June. AP."),
+                 "characters": 148, "requires_review": True,
+                 "source_url": "https://example.com/ap/rotterdam"},
+                {"id": "draft-beta-cheese", "shape": "wire", "status": "review",
+                 # "guaranteed" is in copywriter._BANNED_VOCAB.
+                 "text": ("Rotterdam talks resumed Tuesday and a deal is "
+                          "guaranteed before the weekend, say the mediators "
+                          "who have been in the room since June."),
+                 "characters": 141, "requires_review": True,
+                 "source_url": "https://example.com/ap/rotterdam"},
+            ],
+        },
+        {
+            # Too thin for the value gate's gift test (< 6 body words).
+            "id": "story-thin",
+            "stage": "developing",
+            "lane": "wire",
+            "headline": "Aldon cleared",
+            "tickers": [],
+            "drafts": [
+                {"id": "draft-thin-1", "shape": "wire", "status": "review",
+                 "text": "Aldon cleared.", "characters": 14,
+                 "requires_review": True, "source_url": ""},
+            ],
+        },
+    ],
+}
+
+_INTEL_CFG = """\
+sentinel:
+  max_posts_per_account_per_day: -1
+wire_routing:
+  default: flagship
+  classes:
+    policy: mastermind_news
+"""
+
+
+def _write_intel_root(tmp_path, snapshot=None, cfg: str = _INTEL_CFG):
+    """A repo root carrying the desk snapshot + a minimal marketing config.
+
+    The cap is set unlimited on purpose: these tests are about the approve
+    gates, and a Sentinel default of 2/account/day would otherwise turn a later
+    assertion into a cap refusal that looks like a bug in this lane.
+    """
+    p = tmp_path / "data" / "marketing" / "press"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "intelligence.json").write_text(
+        json.dumps(snapshot if snapshot is not None else INTEL_SNAPSHOT),
+        encoding="utf-8")
+    (tmp_path / "config").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "config" / "marketing.yml").write_text(cfg, encoding="utf-8")
+    return tmp_path
+
+
+def _intel_items(root) -> list[dict]:
+    p = pathlib.Path(root) / "data" / "marketing" / "outbox" / "items.jsonl"
+    if not p.exists():
+        return []
+    return [json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines()
+            if ln.strip()]
+
+
+@pytest.fixture()
+def intel_root(tmp_path):
+    return _write_intel_root(tmp_path)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_dark_route_warnings(monkeypatch):
+    """Give every test in this file its OWN dark-route warning set.
+
+    ``wire_routing._WARNED_DARK`` is a once-per-PROCESS set: the first route onto
+    a dark desk prints the ``::warning wire-routing-dark`` annotation and every
+    later one is silent, so the Actions summary is not buried. The approve tests
+    below route ``policy`` onto the (deliberately dark) ``mastermind_news`` desk,
+    which SPENDS that one warning — and
+    ``tests/test_marketing_cadence_spine.py::test_routing_to_a_dark_account_falls_back_and_says_so``
+    then finds nothing on stdout and fails, but only when the two files share a
+    process (they do: the pack runs them together). The bug is cross-suite state,
+    not either test, so it is fixed by isolation rather than by ordering.
+
+    Module-wide rather than per-class on purpose: any future admin test that
+    routes would re-open the same hole. ImportError is a no-op (packs that
+    install minimal deps have no engine to isolate); a RENAMED attribute is not —
+    monkeypatch raises, loudly, instead of quietly creating a decoy set that
+    isolates nothing.
+    """
+    try:
+        from engine.marketing import wire_routing
+    except ImportError:
+        return
+    monkeypatch.setattr(wire_routing, "_WARNED_DARK", set())
+
+
+class TestIntelligenceApproveSuccess:
+    def test_enqueues_exactly_one_canonical_item(self, intel_root):
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                           root=intel_root)
+        assert r["ok"] is True, r
+        items = _intel_items(intel_root)
+        assert len(items) == 1
+        it = items[0]
+        assert it["schema"] == "marketing.outbox/v1"
+        assert it["kind"] == "breaking"
+        assert it["provenance"] == "intelligence_desk"
+        assert it["status"] == "queued"
+        assert it["scheduled_at"] == "immediate"
+        assert it["priority"] == 1
+        assert it["media"] == []
+        assert it["id"] == r["item_id"]
+        assert it["account"] == r["account"]
+        # The text is the DESK's, not anything a browser could have sent.
+        assert it["text"] == _INTEL_WIRE_TEXT
+
+    def test_source_carries_the_backlink_and_the_lock_key(self, intel_root):
+        marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                       root=intel_root)
+        src = _intel_items(intel_root)[0]["source"]
+        assert src["lane"] == "intelligence_desk"
+        assert src["story_id"] == "story-alpha"
+        assert src["draft_id"] == "draft-wire-1"
+        assert src["url"] == "https://example.com/reuters/aldon"
+        # Without a story_key on the item the one-owner lock has nothing to read
+        # back, and the next desk to draw this story would be waved through.
+        assert src["story_key"]
+        # Every emission carries its Gift-Grip-Proof verdict (charter §0).
+        assert "value_gate" in src
+
+    def test_success_note_is_honest_about_the_missing_chart(self, intel_root):
+        """`breaking` sits outside the publisher's _CHART_BEARING_KINDS, so a
+        ticker-bearing item on this lane ships bare instead of deferring. The
+        operator is told, not left to assume the every-ticker-post-is-charted
+        law covers this queue."""
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                           root=intel_root)
+        assert "text only" in r["note"]
+        assert "nothing posts now" in r["note"].lower()
+        # A story with no tickers gets the plain note, no chart sentence.
+        r2 = marketing.intelligence_approve("story-beta", "draft-beta-1",
+                                            root=intel_root)
+        assert r2["ok"] is True
+        assert "text only" not in r2["note"]
+
+    def test_event_class_is_routed_through_wire_routing(self, intel_root,
+                                                        monkeypatch):
+        from engine.marketing import wire_routing as wr
+        seen: dict = {}
+
+        def fake_route(event_class, *, cfg, root=None):
+            seen["event_class"] = event_class
+            return "mastermind_news"
+
+        monkeypatch.setattr(wr, "route", fake_route)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                           root=intel_root)
+        assert r["ok"] is True
+        assert seen["event_class"] == "policy"
+        assert r["account"] == "mastermind_news"
+        assert _intel_items(intel_root)[0]["account"] == "mastermind_news"
+
+    def test_story_without_event_class_uses_the_fallback_account(self, intel_root):
+        """Builder A's machine field may be absent. An unlabelled story routes
+        to wire_routing's own default, never to the literal class "none"."""
+        r = marketing.intelligence_approve("story-beta", "draft-beta-1",
+                                           root=intel_root)
+        assert r["ok"] is True
+        assert r["account"] == "flagship"
+
+
+class TestIntelligenceApproveRefusals:
+    def test_needs_edit_draft_is_refused(self, intel_root):
+        r = marketing.intelligence_approve("story-alpha", "draft-analysis-1",
+                                           root=intel_root)
+        assert r["ok"] is False
+        assert r["reason"] == "not_reviewable"
+        assert "needs_edit" in r["detail"]
+        assert _intel_items(intel_root) == []
+
+    def test_banned_language_is_refused_with_the_violation_list(self, intel_root):
+        r = marketing.intelligence_approve("story-beta", "draft-beta-cheese",
+                                           root=intel_root)
+        assert r["ok"] is False
+        assert r["reason"] == "banned_language"
+        assert any("guaranteed" in v for v in r["violations"])
+        assert _intel_items(intel_root) == []
+
+    def test_unknown_story_is_refused(self, intel_root):
+        r = marketing.intelligence_approve("story-nope", "draft-wire-1",
+                                           root=intel_root)
+        assert r["ok"] is False and r["reason"] == "story_not_found"
+        assert _intel_items(intel_root) == []
+
+    def test_unknown_draft_is_refused(self, intel_root):
+        r = marketing.intelligence_approve("story-alpha", "draft-nope",
+                                           root=intel_root)
+        assert r["ok"] is False and r["reason"] == "draft_not_found"
+        assert _intel_items(intel_root) == []
+
+    def test_missing_ids_are_refused(self, intel_root):
+        assert marketing.intelligence_approve("", "draft-wire-1",
+                                              root=intel_root)["reason"] == "bad_request"
+        assert marketing.intelligence_approve("story-alpha", None,
+                                              root=intel_root)["reason"] == "bad_request"
+        assert _intel_items(intel_root) == []
+
+    def test_absent_snapshot_is_refused(self, tmp_path):
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                           root=tmp_path)
+        assert r["ok"] is False and r["reason"] == "no_snapshot"
+
+    def test_second_click_is_a_duplicate_not_a_second_post(self, intel_root):
+        """Outbox id-dedup makes a double-click safe. It must SAY so — and it
+        must not be a dead end (review N5): the row exists, so ok stays True
+        with reason "duplicate", nothing is queued twice, and on a deployed
+        host delivery would be re-attempted (root-pinned calls attempt none)."""
+        first = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                               root=intel_root)
+        assert first["ok"] is True
+        second = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                                root=intel_root)
+        assert second["ok"] is True
+        assert second["reason"] == "duplicate"
+        assert "queued nothing twice" in second["note"]
+        assert "delivered" not in second  # root-pinned: no delivery attempted
+        assert len(_intel_items(intel_root)) == 1
+
+    def test_story_owned_by_another_desk_is_refused(self, intel_root):
+        """One conversation, one owner. The refusal names the holder so the
+        operator knows which desk to look at rather than just being blocked."""
+        from datetime import datetime, timedelta, timezone
+
+        from engine.marketing import story_lock as sl
+
+        now = datetime(2026, 7, 29, 14, 30, tzinfo=timezone.utc)
+        key = sl.story_key(cluster_key="story-alpha", event_id="draft-wire-1",
+                           headline="Regulator clears the Aldon Systems takeover")
+        prior = {
+            "schema": "marketing.outbox/v1",
+            "id": "ob-2026-07-29-priorabc1",
+            "as_of": "2026-07-29",
+            "account": "mastermind_news",
+            "kind": "breaking",
+            "text": "Rotterdam mediators return to the table on Tuesday.",
+            "media": [], "scheduled_at": "immediate", "slot": None,
+            "priority": 1, "provenance": "press_lane",
+            "source": {"lane": "press", "story_key": key},
+            "status": "queued",
+            "created_at": (now - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        out = intel_root / "data" / "marketing" / "outbox"
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "items.jsonl").write_text(json.dumps(prior) + "\n", encoding="utf-8")
+
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                           root=intel_root, now=now)
+        assert r["ok"] is False
+        assert r["reason"] == "story_locked"
+        assert r["owner"] == "mastermind_news"
+        assert len(_intel_items(intel_root)) == 1  # nothing appended
+
+    def test_armed_value_gate_refuses_a_thin_draft(self, tmp_path):
+        """value_gate.enforce ships false (record-only). When an operator arms
+        it, an abstention must STOP this lane, not just be stamped."""
+        root = _write_intel_root(
+            tmp_path,
+            cfg=_INTEL_CFG + "value_gate:\n  enforce: true\n")
+        r = marketing.intelligence_approve("story-thin", "draft-thin-1", root=root)
+        assert r["ok"] is False
+        assert r["reason"] == "value_gate"
+        assert r["violations"]
+        assert _intel_items(root) == []
+        # Record-only (the shipped default) lets the same draft through.
+        root2 = _write_intel_root(tmp_path / "recordonly")
+        r2 = marketing.intelligence_approve("story-thin", "draft-thin-1", root=root2)
+        assert r2["ok"] is True
+
+    def test_a_gate_that_cannot_run_refuses(self, intel_root, monkeypatch):
+        """Publish-adjacent polarity: the display panels above fail OPEN, this
+        path fails CLOSED. A language screen that raises must not be read as a
+        clean screen."""
+        from engine.marketing import copywriter
+
+        def boom(_text):
+            raise RuntimeError("lexicon unreadable")
+
+        monkeypatch.setattr(copywriter, "banned_language", boom)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                           root=intel_root)
+        assert r["ok"] is False
+        assert r["reason"] == "gate_unavailable"
+        assert "lexicon unreadable" in r["detail"]
+        assert _intel_items(intel_root) == []
+
+
+class TestIntelligenceApproveReadsTheServerSideSnapshot:
+    def test_a_pinned_root_never_reads_the_host_live_plane(self, intel_root,
+                                                           tmp_path, monkeypatch):
+        """content() and this path share _intelligence_snapshot. A seeded/test
+        root must resolve the fixture tree only, or an approval on a dev box
+        could act on the production desk."""
+        live = tmp_path / "live-intelligence.json"
+        live.write_text(json.dumps({
+            "schema": "intelligence.desk/v1",
+            "updated_at": "2026-07-29T14:00:00Z",
+            "health": {},
+            "stories": [{"id": "live-only-story", "headline": "Live plane story",
+                         "drafts": [{"id": "live-draft", "status": "review",
+                                     "text": "Live plane copy that must not post.",
+                                     "source_url": ""}]}],
+        }), encoding="utf-8")
+        monkeypatch.setattr(marketing, "_INTELLIGENCE_LIVE", live)
+        r = marketing.intelligence_approve("live-only-story", "live-draft",
+                                           root=intel_root)
+        assert r["ok"] is False and r["reason"] == "story_not_found"
+        assert _intel_items(intel_root) == []
+
+    def test_content_panel_still_serves_the_desk(self, intel_root):
+        """Regression on the shared reader: content() kept its payload shape
+        when the snapshot read was lifted into _intelligence_snapshot."""
+        r = marketing.content(intel_root)
+        assert r["ok"] is True
+        intel = r["intelligence"]
+        assert intel["schema"] == "intelligence.desk/v1"
+        assert [s["id"] for s in intel["stories"]] == [
+            "story-alpha", "story-beta", "story-thin"]
+        assert intel["health"]["draft_ready"] == 2
+
+
+class TestIntelligenceApproveDelivery:
+    """Queued is not delivered.
+
+    The publisher runs in GitHub Actions off the git-tracked outbox ON MAIN; the
+    admin writes to the VPS checkout. Before this step the approve click wrote a
+    row that looked queued in the panel forever and was read by nobody. Delivery
+    is therefore attempted on every real approval, REPORTED honestly, and never
+    allowed to un-queue the item it failed to deliver.
+    """
+
+    @pytest.fixture()
+    def deployed_root(self, intel_root, monkeypatch):
+        """The deployed shape — root=None — aimed at the fixture tree.
+
+        root=None is what the HTTP route passes, and it is the ONLY shape that
+        touches git, so it cannot be tested by passing a root. The live-plane
+        snapshot path is stubbed to a nonexistent file so a host that happens to
+        have one cannot leak into the fixture.
+        """
+        monkeypatch.setattr(marketing, "_default_root", lambda: intel_root)
+        monkeypatch.setattr(marketing, "_INTELLIGENCE_LIVE",
+                            intel_root / "no-live-plane" / "intelligence.json")
+        return intel_root
+
+    @staticmethod
+    def _stub_delivery(monkeypatch, result):
+        """Stub the N6 delivery primitive: plain ``commit_paths`` (ONE push, no
+        rebase — this branch may run on a checkout other agents occupy)."""
+        from admin import gitops
+        seen: dict = {}
+
+        def fake(paths, message="", push=False, confirm=False):
+            seen.update(paths=list(paths), message=message, confirm=confirm,
+                        push=push)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        monkeypatch.setattr(gitops, "commit_paths", fake)
+        return seen
+
+    # ---- the dev/test shape: git is never in the picture --------------------
+
+    def test_a_root_pinned_approve_never_reaches_git(self, intel_root, monkeypatch):
+        """A pinned root is a scratch tree git knows nothing about. Committing
+        from one would either fail noisily or, worse, commit the REAL repo's
+        working tree from under whatever else is running in it."""
+        from admin import gitops
+        called: list = []
+        for name in ("commit_paths_synced", "commit_paths", "commit", "_git"):
+            monkeypatch.setattr(
+                gitops, name,
+                lambda *a, _n=name, **kw: called.append(_n) or {"ok": True})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1",
+                                           root=intel_root)
+        assert r["ok"] is True
+        assert called == [], f"a root-pinned approve called git: {called}"
+        # No `delivered` key at all: a delivery nobody attempted is not a failed
+        # one, and reporting delivered:false here would read as a real refusal.
+        assert "delivered" not in r
+
+    # ---- the deployed shape --------------------------------------------------
+
+    def test_a_landed_push_reports_delivered_true(self, deployed_root, monkeypatch):
+        seen = self._stub_delivery(monkeypatch, {
+            "ok": True, "committed": True, "pushed": True})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["ok"] is True and r["delivered"] is True
+        # ONLY items.jsonl (review N6 — enqueue writes nothing else), pushed,
+        # confirmed, under the item's own message
+        assert seen["paths"] == ["data/marketing/outbox/items.jsonl"]
+        assert seen["message"] == f"admin: intelligence desk approve {r['item_id']}"
+        assert seen["confirm"] is True and seen["push"] is True
+        assert "publisher will see it" in r["note"]
+        # the pre-existing note survives — delivery appends, it does not replace
+        assert "nothing posts now" in r["note"].lower()
+
+    def test_a_stranded_commit_is_delivered_false_and_keeps_the_item(
+            self, deployed_root, monkeypatch):
+        """A push refused by a racing press-wire commit is the routine outcome,
+        and there is deliberately NO rebase retry (review N6: this branch can
+        run on a checkout other agents occupy). The item is real, so ok stays
+        True and only `delivered` goes false."""
+        self._stub_delivery(monkeypatch, {
+            "ok": False, "committed": True, "pushed": False,
+            "error": "the push was refused (! [rejected] main -> main)"})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["ok"] is True
+        assert r["delivered"] is False
+        assert "NOT reached the publisher" in r["note"]
+        assert "will not post" in r["note"]
+        assert "refused" in r["note"]
+        # NEVER un-queued: the row the operator queued is still on disk
+        items = _intel_items(deployed_root)
+        assert len(items) == 1 and items[0]["id"] == r["item_id"]
+
+    def test_a_gitops_refusal_is_named_not_swallowed(self, deployed_root,
+                                                     monkeypatch):
+        """The dev-checkout case: gitops refuses to push off a main-tracking
+        branch. That is correct behaviour and a non-delivery, and the operator is
+        told which it is."""
+        self._stub_delivery(monkeypatch, {
+            "ok": True, "committed": True, "pushed": False,
+            "warning": ("committed locally; refused to push (not on a main "
+                        "tracking branch)")})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["ok"] is True and r["delivered"] is False
+        assert "not on a main tracking branch" in r["note"]
+
+    def test_a_named_push_error_is_folded_into_the_note(self, deployed_root,
+                                                        monkeypatch):
+        self._stub_delivery(monkeypatch, {
+            "ok": False, "committed": True, "pushed": False,
+            "error": "git push failed (network unreachable)"})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["ok"] is True and r["delivered"] is False
+        assert "network unreachable" in r["note"]
+
+    def test_a_thrown_delivery_error_never_un_queues_the_item(
+            self, deployed_root, monkeypatch):
+        self._stub_delivery(monkeypatch, RuntimeError("git binary missing"))
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["ok"] is True and r["delivered"] is False
+        assert "git binary missing" in r["note"]
+        assert len(_intel_items(deployed_root)) == 1
+
+    def test_a_refused_approval_never_attempts_delivery(self, deployed_root,
+                                                        monkeypatch):
+        """Nothing was enqueued, so there is nothing to deliver — and a commit
+        here would sweep up whatever else is dirty in the checkout."""
+        seen = self._stub_delivery(monkeypatch, {"ok": True, "pushed": True})
+        r = marketing.intelligence_approve("story-beta", "draft-beta-cheese")
+        assert r["ok"] is False and r["reason"] == "banned_language"
+        assert seen == {}
+
+
+class _FakeContents:
+    """The file on main, behind a stand-in Contents API.
+
+    Records every GET and PUT so a test can assert the read-append-write ORDER —
+    a retry that does not re-read would overwrite whichever lane appended in
+    between. ``conflicts`` scripts the first N PUTs to answer "stale sha" AND
+    moves the file underneath us, which is what actually happens on this repo:
+    the press wire appends to these ledgers every few minutes.
+    """
+
+    def __init__(self, content: str = "", sha: str = "sha-main-0",
+                 conflicts: int = 0):
+        self.content = content
+        self.sha = sha
+        self.conflicts = conflicts
+        self.gets: list[str] = []
+        self.puts: list[dict] = []
+
+    def install(self, monkeypatch, *, has_token: bool = True):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available", lambda: {
+            "ok": True, "has_token": has_token, "lib": True,
+            "owner": "o", "repo": "r"})
+        monkeypatch.setattr(github_api, "get_file", self._get)
+        monkeypatch.setattr(github_api, "put_file", self._put)
+        return self
+
+    def _get(self, path, ref="main"):
+        self.gets.append(path)
+        return {"ok": True, "content": self.content, "sha": self.sha}
+
+    def _put(self, path, content, message, *, sha=None, branch="main"):
+        self.puts.append({"path": path, "content": content, "message": message,
+                          "sha": sha, "branch": branch})
+        if self.conflicts > 0:
+            self.conflicts -= 1
+            self.content += '{"id":"another-lane-got-there-first"}\n'
+            self.sha = self.sha + "-moved"
+            return {"ok": False,
+                    "error": "HTTP 409 — sha conflict (file changed under us); retry"}
+        self.content = content
+        self.sha = "sha-main-after"
+        return {"ok": True, "commit_sha": "c0ffee"}
+
+
+class TestIntelligenceApproveDeliveryDeployed:
+    """On the DEPLOYED admin, commit+push cannot deliver — at all.
+
+    That checkout has no authenticated git remote, and app/deploy/update.sh
+    resets it ``--hard`` to origin/main every ~3 minutes. A local commit there is
+    not slow delivery, it is DELETED delivery: the reset discards the commit and
+    takes the operator's queued row with it, while the panel showed "queued" the
+    whole time. So the deployed host writes the item straight to main through the
+    GitHub Contents API — the same tokened path the account toggle uses.
+    """
+
+    @pytest.fixture()
+    def deployed_vps(self, intel_root, monkeypatch):
+        """The real deployed shape: root=None AND ADMIN_DEPLOYED=1."""
+        monkeypatch.setattr(marketing, "_default_root", lambda: intel_root)
+        monkeypatch.setattr(marketing, "_INTELLIGENCE_LIVE",
+                            intel_root / "no-live-plane" / "intelligence.json")
+        monkeypatch.setenv("ADMIN_DEPLOYED", "1")
+        return intel_root
+
+    @staticmethod
+    def _local_line(root) -> str:
+        """The last line of the LOCAL items.jsonl, verbatim (no trailing \\n)."""
+        p = pathlib.Path(root) / "data" / "marketing" / "outbox" / "items.jsonl"
+        return p.read_text(encoding="utf-8").splitlines()[-1]
+
+    @staticmethod
+    def _no_git(monkeypatch) -> list:
+        """Trip-wire on every gitops write: the deployed path must call none."""
+        from admin import gitops
+        called: list = []
+        for name in ("commit_paths_synced", "commit_paths", "commit", "_git"):
+            monkeypatch.setattr(
+                gitops, name,
+                lambda *a, _n=name, **kw: called.append(_n) or {"ok": True})
+        return called
+
+    # ---- (a) the happy path --------------------------------------------------
+
+    def test_the_appended_line_is_byte_identical_to_the_local_row(
+            self, deployed_vps, monkeypatch):
+        """The row PUT to main must be the row ledgers.append_jsonl wrote here.
+
+        main's copy and this checkout's copy are the same append-only file under
+        a union merge driver. A re-serialized row (different key order, spaced
+        separators, \\u-escaped CJK) is a different line for the same item — it
+        would survive the fold as a second row and show up as a diff forever.
+        Comparing against the file the engine actually wrote pins the format to
+        its real writer, so a change in ledgers.append_jsonl fails HERE.
+        """
+        self._no_git(monkeypatch)
+        gh = _FakeContents(content='{"id":"older-row"}\n').install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["ok"] is True and r["delivered"] is True
+        assert len(gh.puts) == 1
+        put = gh.puts[0]
+        assert put["path"] == "data/marketing/outbox/items.jsonl"
+        assert put["branch"] == "main"
+        assert put["sha"] == "sha-main-0"          # threaded from the GET
+        assert put["message"] == (
+            f"admin: intelligence desk approve {r['item_id']}")
+        # append, not replace: the pre-existing row survives byte-for-byte
+        assert put["content"] == (
+            '{"id":"older-row"}\n' + self._local_line(deployed_vps) + "\n")
+        assert "publisher will see it" in r["note"]
+        assert "nothing posts now" in r["note"].lower()
+
+    def test_the_idempotency_marker_matches_the_engines_own_serialization(
+            self, deployed_vps, monkeypatch):
+        """The guard looks for the compact ``"id":"…"`` field. If the writer's
+        separators ever change, the marker stops matching and the guard silently
+        stops guarding — so assert the marker against the real written line."""
+        self._no_git(monkeypatch)
+        _FakeContents().install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert f'"id":"{r["item_id"]}"' in self._local_line(deployed_vps)
+
+    # ---- (b) + (c) the file moves under us -----------------------------------
+
+    def test_a_stale_sha_re_reads_and_retries_without_dropping_the_other_row(
+            self, deployed_vps, monkeypatch):
+        self._no_git(monkeypatch)
+        gh = _FakeContents(conflicts=1).install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["delivered"] is True
+        # TWO reads: the retry re-read the file rather than re-PUT a body built
+        # from the stale copy, which is the only reason the other lane's row is
+        # still there afterwards.
+        assert len(gh.gets) == 2 and len(gh.puts) == 2
+        assert gh.puts[1]["sha"] == "sha-main-0-moved"
+        assert '"id":"another-lane-got-there-first"' in gh.puts[1]["content"]
+        assert gh.puts[1]["content"].endswith(
+            self._local_line(deployed_vps) + "\n")
+
+    def test_exhausted_retries_report_delivered_false_and_keep_the_item(
+            self, deployed_vps, monkeypatch):
+        self._no_git(monkeypatch)
+        gh = _FakeContents(conflicts=99).install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["ok"] is True and r["delivered"] is False
+        assert len(gh.gets) == 3 and len(gh.puts) == 3   # bounded, not infinite
+        assert "NOT reached the publisher" in r["note"]
+        assert "will not post" in r["note"]
+        assert "writes the row to main" in r["note"]     # the step is NAMED
+        assert "approve it again later" in r["note"]
+        # never un-queued: the row is real on this disk either way
+        items = _intel_items(deployed_vps)
+        assert len(items) == 1 and items[0]["id"] == r["item_id"]
+
+    def test_a_retry_whose_re_read_finds_our_own_id_stops_without_a_second_put(
+            self, deployed_vps, monkeypatch):
+        """Review N12: the idempotency check must live INSIDE the retry loop.
+
+        The race this pins: our PUT is rejected as a stale sha, and the write
+        that beat us carried the SAME item row (a twin admin worker, or our own
+        first PUT that half-landed). The re-read now contains our id — a loop
+        whose marker check ran only on the FIRST read would append the row a
+        second time. Hoisting the check above the loop passes every other test
+        in this class; this one fails it.
+        """
+        self._no_git(monkeypatch)
+
+        class _SelfRaced(_FakeContents):
+            def _put(self, path, content, message, *, sha=None, branch="main"):
+                self.puts.append({"path": path, "content": content,
+                                  "message": message, "sha": sha,
+                                  "branch": branch})
+                if self.conflicts > 0:
+                    self.conflicts -= 1
+                    # The competing write carried OUR row: the body this PUT
+                    # tried to write becomes main's content.
+                    self.content = content
+                    self.sha = self.sha + "-moved"
+                    return {"ok": False,
+                            "error": "HTTP 409 — sha conflict; retry"}
+                return {"ok": True, "commit_sha": "c0ffee"}
+
+        gh = _SelfRaced(conflicts=1).install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["ok"] is True and r["delivered"] is True
+        assert "already" in r["note"], "a found-on-main row must say so"
+        # Two reads (the retry re-read), but only ONE put — the rejected one.
+        # A second PUT here is the double-append this test exists to forbid.
+        assert len(gh.gets) == 2
+        assert len(gh.puts) == 1
+        assert gh.content.count(f'"id":"{r["item_id"]}"') == 1
+
+    # ---- (d) idempotency ------------------------------------------------------
+
+    def test_an_id_already_on_main_is_never_appended_twice(
+            self, deployed_vps, monkeypatch):
+        """The dangerous re-click is the one AFTER the deploy pull.
+
+        The 3-minute reset takes the local row with it, so the local duplicate
+        guard has no memory of the first click — and the item id is a content
+        hash, so the second click rebuilds the SAME id. Only main can answer
+        "already delivered?" in a way that survives that reset.
+        """
+        self._no_git(monkeypatch)
+        first = _FakeContents().install(monkeypatch)
+        r1 = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r1["delivered"] is True and len(first.puts) == 1
+        on_main = first.content
+
+        (pathlib.Path(deployed_vps) / "data" / "marketing" / "outbox"
+         / "items.jsonl").unlink()                       # the deploy pull
+        second = _FakeContents(content=on_main, sha="sha-main-9").install(monkeypatch)
+        r2 = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r2["item_id"] == r1["item_id"]            # deterministic id
+        assert second.puts == [], "the row was appended to main twice"
+        assert r2["delivered"] is True                   # it IS on main
+        assert "already on the shared queue" in r2["note"]
+        assert "queued nothing twice" in r2["note"]
+
+    def test_another_items_row_on_main_does_not_look_like_this_one(
+            self, deployed_vps, monkeypatch):
+        """The guard must key on THIS id, not on anything an outbox row happens
+        to carry.
+
+        A marker keyed on a shared field ("status":"queued", the schema id, the
+        account) matches on the first sweep and every sweep after it, so the
+        append quietly no-ops and the click reports delivered — the exact silent
+        non-delivery this whole path exists to end. The seeded row here is a byte
+        copy of a real one with only the id changed, so nothing BUT the id can
+        distinguish them.
+        """
+        self._no_git(monkeypatch)
+        _FakeContents().install(monkeypatch)
+        r1 = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        mine = self._local_line(deployed_vps)
+        someone_else = mine.replace(r1["item_id"], "post-a-different-item-0001")
+        assert someone_else != mine
+
+        (pathlib.Path(deployed_vps) / "data" / "marketing" / "outbox"
+         / "items.jsonl").unlink()
+        gh = _FakeContents(content=someone_else + "\n").install(monkeypatch)
+        r2 = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r2["delivered"] is True
+        assert len(gh.puts) == 1, "a different item's row was read as this one"
+        assert gh.puts[0]["content"] == someone_else + "\n" + mine + "\n"
+        assert "already" not in r2["note"]
+
+    # ---- (e) the size ceiling -------------------------------------------------
+
+    def test_a_ledger_near_the_api_ceiling_is_refused_honestly(
+            self, deployed_vps, monkeypatch):
+        """Over ~1 MB the Contents API rejects the whole write. Refuse early and
+        say the fix is rotation — do NOT send the operator back to a button that
+        cannot work."""
+        from admin import github_api
+        self._no_git(monkeypatch)
+        big = "z" * (github_api.CONTENTS_APPEND_MAX_BYTES + 1)
+        gh = _FakeContents(content=big).install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["ok"] is True and r["delivered"] is False
+        assert gh.puts == []                             # refused BEFORE the write
+        assert "too big" in r["note"]
+        assert "Rotating the shared queue" in r["note"]
+        assert "approve it again later" not in r["note"]
+        assert len(_intel_items(deployed_vps)) == 1
+
+    # ---- (f) the switch -------------------------------------------------------
+
+    def test_deployed_delivery_never_shells_out_to_git(self, deployed_vps,
+                                                        monkeypatch):
+        """A git commit on the VPS is worse than useless: it cannot push, and the
+        next `reset --hard` deletes it. One mechanism per host, never both."""
+        called = self._no_git(monkeypatch)
+        gh = _FakeContents().install(monkeypatch)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["delivered"] is True and len(gh.puts) == 1
+        assert called == [], f"the deployed path called git: {called}"
+
+    def test_a_local_checkout_never_calls_the_contents_api(self, intel_root,
+                                                            monkeypatch):
+        """And the mirror image: an authenticated local checkout keeps B2's
+        commit+push. Writing to main through the API from a machine that can push
+        would bypass the branch the operator is actually working on."""
+        monkeypatch.setattr(marketing, "_default_root", lambda: intel_root)
+        monkeypatch.setattr(marketing, "_INTELLIGENCE_LIVE",
+                            intel_root / "no-live-plane" / "intelligence.json")
+        monkeypatch.delenv("ADMIN_DEPLOYED", raising=False)
+        gh = _FakeContents().install(monkeypatch)
+        seen = TestIntelligenceApproveDelivery._stub_delivery(
+            monkeypatch, {"ok": True, "committed": True, "pushed": True})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["delivered"] is True
+        assert seen["paths"] == list(marketing._INTEL_OUTBOX_LEDGERS)
+        assert gh.gets == [] and gh.puts == []
+
+    # ---- (g) no way to reach the API ------------------------------------------
+
+    def test_a_missing_token_is_named_not_swallowed(self, deployed_vps,
+                                                     monkeypatch):
+        """No token = no delivery, and the operator is told which step is
+        missing. Reporting delivered:true here would be the worst outcome: the
+        row is on a disk that gets wiped in three minutes."""
+        self._no_git(monkeypatch)
+        gh = _FakeContents().install(monkeypatch, has_token=False)
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+
+        assert r["ok"] is True and r["delivered"] is False
+        assert gh.gets == [] and gh.puts == []           # refused before any call
+        assert "NOT reached the publisher" in r["note"]
+        assert "no working link to the shared queue" in r["note"]
+        assert "GH_TOKEN" in r["note"]
+        assert len(_intel_items(deployed_vps)) == 1
+
+    def test_an_unreadable_ledger_on_main_names_the_read_step(
+            self, deployed_vps, monkeypatch):
+        from admin import github_api
+        self._no_git(monkeypatch)
+        monkeypatch.setattr(github_api, "available", lambda: {
+            "ok": True, "has_token": True, "lib": True, "owner": "o", "repo": "r"})
+        monkeypatch.setattr(github_api, "get_file", lambda *a, **k: {
+            "ok": False, "error": "HTTP 404 — the token cannot see this repository"})
+        puts: list = []
+        monkeypatch.setattr(github_api, "put_file",
+                            lambda *a, **k: puts.append(a) or {"ok": True})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["delivered"] is False and puts == []
+        assert "reads the shared queue on main" in r["note"]
+        assert "404" in r["note"]
+
+    def test_a_permission_error_on_the_write_does_not_retry(
+            self, deployed_vps, monkeypatch):
+        """403 is not a race. Re-reading and re-PUTting spends three round trips
+        to be refused three times and tells the operator nothing new."""
+        from admin import github_api
+        self._no_git(monkeypatch)
+        gets: list = []
+        monkeypatch.setattr(github_api, "available", lambda: {
+            "ok": True, "has_token": True, "lib": True, "owner": "o", "repo": "r"})
+        monkeypatch.setattr(github_api, "get_file", lambda *a, **k: gets.append(a) or {
+            "ok": True, "content": "", "sha": "s0"})
+        monkeypatch.setattr(github_api, "put_file", lambda *a, **k: {
+            "ok": False, "error": "HTTP 403 — the GitHub token can't write repo contents."})
+        r = marketing.intelligence_approve("story-alpha", "draft-wire-1")
+        assert r["delivered"] is False
+        assert len(gets) == 1, "a 403 was retried as if it were a sha conflict"
+        assert "403" in r["note"] and "writes the row to main" in r["note"]
+
+
+class TestAppendJsonlLine:
+    """The Contents-API append primitive itself, at the seams the caller can't
+    reach: a file that does not exist yet, and one whose last line has no
+    newline. Both would corrupt an append-only ledger by fusing two rows into
+    one — and a fused row is TWO items the publisher can no longer read."""
+
+    @staticmethod
+    def _api(monkeypatch, content, sha="s0"):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available", lambda: {
+            "ok": True, "has_token": True, "lib": True, "owner": "o", "repo": "r"})
+        monkeypatch.setattr(github_api, "get_file",
+                            lambda *a, **k: {"ok": True, "content": content, "sha": sha})
+        seen: dict = {}
+        monkeypatch.setattr(github_api, "put_file",
+                            lambda p, c, m, sha=None, branch="main":
+                            seen.update(content=c, sha=sha) or {"ok": True, "commit_sha": "c1"})
+        return seen
+
+    def test_a_missing_file_is_created_with_just_the_row(self, monkeypatch):
+        from admin import github_api
+        seen = self._api(monkeypatch, None, sha=None)     # 404 shape from get_file
+        r = github_api.append_jsonl_line("x.jsonl", '{"id":"a"}', "msg")
+        assert r["ok"] is True and r["appended"] is True
+        assert seen["content"] == '{"id":"a"}\n' and seen["sha"] is None
+
+    def test_a_file_with_no_trailing_newline_does_not_fuse_two_rows(
+            self, monkeypatch):
+        from admin import github_api
+        seen = self._api(monkeypatch, '{"id":"a"}')       # truncated last line
+        github_api.append_jsonl_line("x.jsonl", '{"id":"b"}', "msg")
+        assert seen["content"] == '{"id":"a"}\n{"id":"b"}\n'
+
+    def test_the_marker_check_happens_before_any_write(self, monkeypatch):
+        from admin import github_api
+        seen = self._api(monkeypatch, '{"id":"a"}\n')
+        r = github_api.append_jsonl_line("x.jsonl", '{"id":"a"}', "msg",
+                                         if_absent='"id":"a"')
+        assert r == {"ok": True, "appended": False, "reason": "already_present",
+                     "attempts": 1}
+        assert seen == {}
+
+
+class TestIntelligenceApproveAuthWiring:
+    """The approve endpoint carries NO auth of its own, by design: admin/server.py
+    do_POST refuses every write with 401 (no session) / 403 (no double-submit
+    CSRF token) BEFORE it dispatches on the path, so a per-route check would be a
+    second source of truth that can drift. What must stay true is the ORDERING —
+    a marketing POST route registered above that block would be reachable
+    unauthenticated."""
+
+    @staticmethod
+    def _do_post_source() -> str:
+        server = pathlib.Path(marketing.__file__).resolve().parent / "server.py"
+        return server.read_text(encoding="utf-8").split("def do_POST", 1)[1]
+
+    def test_marketing_post_routes_are_registered_after_the_auth_gate(self):
+        body = self._do_post_source()
+        assert body.index('"authentication required"') < body.index('"/api/marketing/')
+        assert body.index("CSRF token missing/invalid") < body.index('"/api/marketing/')
+
+    def test_the_approve_route_sits_behind_that_gate(self):
+        """ARMED (the route landed). This used to skip while the handler existed
+        and the route did not; a conditional skip that outlives its condition is
+        a test that reports green on a route nobody registered, so the absence of
+        the route is now a FAILURE, not a skip."""
+        body = self._do_post_source()
+        at = body.find("/api/marketing/intelligence/approve")
+        assert at > 0, ("POST /api/marketing/intelligence/approve is not "
+                        "registered in admin/server.py — the admin panel's "
+                        "approve button posts into the void")
+        assert at > body.index('"authentication required"')
+        assert at > body.index("CSRF token missing/invalid")
+
+    def test_the_handler_the_route_will_call_exists(self):
+        assert callable(getattr(marketing, "intelligence_approve", None))
+
+
+# ---------------------------------------------------------------------------
+# POST /api/marketing/intelligence/approve — the live HTTP contract.
+#
+# The class above reads the source for ORDERING; these ride the real socket, so
+# they see what a browser sees: status codes, and whether the refusal shape the
+# panel keys its message off survives the trip.
+# ---------------------------------------------------------------------------
+
+def _admin_server():
+    from http.server import ThreadingHTTPServer  # noqa: PLC0415
+    import threading  # noqa: PLC0415
+
+    from admin.server import Handler  # noqa: PLC0415
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    return httpd, httpd.server_address[1]
+
+
+def _approve_post(port, body, cookies=None, headers=None):
+    """POST the approve route. Returns (status, payload) for BOTH success and
+    error responses — an HTTPError carries the JSON body the panel reads, so
+    swallowing it would hide the very contract under test."""
+    import urllib.error  # noqa: PLC0415
+    import urllib.request  # noqa: PLC0415
+
+    h = {"Content-Type": "application/json"}
+    if cookies:
+        h["Cookie"] = "; ".join(f"{k}={v}" for k, v in cookies.items())
+    if headers:
+        h.update(headers)
+    req = urllib.request.Request(
+        f"http://127.0.0.1:{port}/api/marketing/intelligence/approve",
+        data=json.dumps(body).encode(), headers=h, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.status, json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+@pytest.fixture()
+def approve_server(monkeypatch):
+    """A live admin server whose approve handler is a recording stub.
+
+    The handler itself is tested exhaustively above against a fixture root; what
+    these tests own is the ROUTE, so the handler is replaced by a spy. That also
+    keeps the socket tests from writing an outbox row anywhere.
+    """
+    calls: list[tuple] = []
+    reply: dict = {"ok": True, "item_id": "post-x-1", "account": "flagship",
+                   "note": "queued", "delivered": True}
+
+    def spy(story_id, draft_id, *a, **kw):
+        calls.append((story_id, draft_id))
+        return reply
+
+    monkeypatch.setattr(marketing, "intelligence_approve", spy)
+    httpd, port = _admin_server()
+    try:
+        yield port, calls, reply
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
+class TestIntelligenceApproveRoute:
+    def test_missing_or_blank_ids_are_400_and_never_reach_the_handler(
+            self, approve_server):
+        """Shape is the ROUTE's job. A blank id must not become a handler call
+        that refuses for some deeper-sounding reason — the operator would read
+        'story not found' for a bug in the card's data attributes."""
+        port, calls, _ = approve_server
+        for body, want in (
+            ({}, "story_id"),
+            ({"draft_id": "d1"}, "story_id"),
+            ({"story_id": "s1"}, "draft_id"),
+            ({"story_id": "   ", "draft_id": "d1"}, "story_id"),
+            ({"story_id": "s1", "draft_id": ""}, "draft_id"),
+            ({"story_id": 7, "draft_id": "d1"}, "story_id"),
+            ({"story_id": "s1", "draft_id": ["d1"]}, "draft_id"),
+        ):
+            code, payload = _approve_post(port, body)
+            assert code == 400, (body, payload)
+            assert payload["ok"] is False
+            assert want in payload["error"], (body, payload)
+        assert calls == [], "a malformed request reached the approve handler"
+
+    def test_a_queued_approval_is_200_and_carries_the_item(self, approve_server):
+        port, calls, _ = approve_server
+        code, payload = _approve_post(port, {"story_id": "story-alpha",
+                                             "draft_id": "draft-wire-1"})
+        assert code == 200, payload
+        assert payload["ok"] is True
+        assert payload["item_id"] == "post-x-1"
+        assert payload["account"] == "flagship"
+        assert calls == [("story-alpha", "draft-wire-1")]
+
+    def test_a_refusal_is_400_with_reason_and_detail_intact(self, approve_server):
+        """The panel prints `reason`/`detail`; the shared route guards print
+        `error`. Flattening one into the other is how a named gate turns into
+        'Not queued: no detail given' in the UI."""
+        port, _, reply = approve_server
+        reply.clear()
+        reply.update({"ok": False, "reason": "story_locked",
+                      "detail": "flagship already has this story",
+                      "owner": "flagship"})
+        code, payload = _approve_post(port, {"story_id": "s1", "draft_id": "d1"})
+        assert code == 400
+        assert payload["reason"] == "story_locked"
+        assert payload["detail"] == "flagship already has this story"
+        assert payload["owner"] == "flagship"
+
+    def test_auth_and_csrf_are_refused_before_the_handler_runs(self, monkeypatch):
+        """401 (no session) and 403 (no double-submit CSRF) come from the shared
+        do_POST gate ABOVE path dispatch. Asserted over the socket as well as in
+        source order, because 'registered after the gate' is only protective if
+        the gate actually fires for this path."""
+        from admin import auth  # noqa: PLC0415
+
+        calls: list[tuple] = []
+        monkeypatch.setattr(marketing, "intelligence_approve",
+                            lambda *a, **kw: calls.append(a) or {"ok": True})
+        monkeypatch.setenv("ADMIN_PASSWORD", "s3cret")
+        monkeypatch.setenv("ADMIN_SESSION_SECRET", "route-test-secret")
+        httpd, port = _admin_server()
+        try:
+            body = {"story_id": "s1", "draft_id": "d1"}
+            code, payload = _approve_post(port, body)
+            assert code == 401 and "authentication" in payload["error"]
+
+            # a valid session is not enough: the write still needs the CSRF header
+            csrf = auth.new_csrf()
+            jar = {auth.SESSION_COOKIE: auth.mint_session(),
+                   auth.CSRF_COOKIE: csrf}
+            code, payload = _approve_post(port, body, cookies=jar)
+            assert code == 403 and "CSRF" in payload["error"]
+
+            assert calls == [], "an unauthenticated request reached the handler"
+
+            # with both, the route dispatches normally
+            code, payload = _approve_post(port, body, cookies=jar,
+                                          headers={auth.CSRF_HEADER: csrf})
+            assert code == 200, payload
+            assert calls == [("s1", "d1")]
+        finally:
+            httpd.shutdown()
+            httpd.server_close()
