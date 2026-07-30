@@ -3426,7 +3426,59 @@ def _analyst_block_for(message: str, lane: str) -> str:
         return ""
 
 
-def _grounding_digest(root: Path) -> str:
+# Gateway-layer seed nudges (W1-A) — ADDITIVE to the ask_brain classifier, never a
+# replacement. Two question shapes that classifier predates: "what happened today" needs
+# the live events wire before any nightly board, and "what does the street think" needs the
+# research vault. Matched with doctrine's trigger rule, so short ASCII tokens get word
+# boundaries ('news' must not fire inside 'Newsroom') and CJK stays plain substring.
+_SEED_EVENT_TERMS: tuple[str, ...] = (
+    "today", "right now", "just", "breaking", "news", "headline", "why is", "why are",
+    "今天", "刚刚", "突发", "为什么",
+)
+_SEED_RESEARCH_TERMS: tuple[str, ...] = (
+    "analyst", "analysts", "street", "research", "institutions", "研报", "机构", "大行",
+)
+
+_SEED_PLAN_LINE = (
+    "\n\nTOOL PLAN for this question shape: start with {tools}; spend any remaining calls "
+    "only on what discriminates between your candidate explanations."
+)
+
+
+def _seed_tool_plan(message: str) -> str:
+    """ONE line of opening tool order for the fast lane (W1-A) — GUIDANCE, never enforcement:
+    the model still chooses every call it makes, and nothing here caps or blocks a tool.
+
+    ask_brain already owns a deterministic question→seed-tools classifier
+    (`_classify_question`), while the gateway's fast lane (DeepSeek under tool_budget 5)
+    picks freely and often burns the budget before reaching the tool that answers the
+    question. So the same seeds ride in as a prompt nudge, plus the two nudges above.
+    Shows at most 3 tools — a longer list reads as a script, not a starting point.
+    Never raises: any classifier/matcher failure degrades to "" and the turn is unchanged."""
+    try:
+        from engine.neuralweb.ask_brain import _classify_question  # noqa: PLC0415
+        from engine.neuralweb.doctrine import _trigger_matches  # noqa: PLC0415
+        _budget, seeds = _classify_question(message or "", None)
+        msg_lc = (message or "").lower()
+        # Events first when both fire: "what did the street say about today's drop" is
+        # still a today question — the tape leads, the research vault confirms.
+        nudges: list[str] = []
+        if any(_trigger_matches(t, msg_lc) for t in _SEED_EVENT_TERMS):
+            nudges.append("get_market_events")
+        if any(_trigger_matches(t, msg_lc) for t in _SEED_RESEARCH_TERMS):
+            nudges.append("search_research")
+        ordered: list[str] = []
+        for name in nudges + list(seeds or []):
+            if name and name not in ordered:
+                ordered.append(name)  # dedupe, preserving order
+        if not ordered:
+            return ""
+        return _SEED_PLAN_LINE.format(tools=", ".join(ordered[:3]))
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _grounding_digest(root: Path, lang: str = "en") -> str:
     """A compact plain-text snapshot of the current calibrated dashboard state, prepended to
     the user's turn so the model always answers from REAL data — not memory — even when a
     weaker (Fast/DeepSeek) model doesn't reliably call a read tool. Never raises.
@@ -3437,7 +3489,11 @@ def _grounding_digest(root: Path) -> str:
     survives as the fail-soft fallback so a broken packet can never blank the grounding."""
     try:
         from engine.neuralweb import market_packet as _mp  # noqa: PLC0415
-        s = _mp.digest(root)
+        # lang='zh' switches only the desk-precomputed Chinese fields (drivers
+        # labels, wire zh, curve label) so zh answers reuse canonical desk
+        # vocabulary instead of re-translating it. Everything else stays EN and
+        # the LANGUAGE directive governs the reply.
+        s = _mp.digest(root, lang=lang)
         if s:
             return s
     except Exception:  # noqa: BLE001
@@ -4710,6 +4766,10 @@ def _run_brain_loop(
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
     system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
+    # W1-A seed plan: fast lane only (pro/research get tool autonomy by design), chat mode
+    # only, and never the Terminal — a chart turn follows the technician protocol's read order.
+    if lane == "fast" and mode == "chat" and safe_page != "terminal":
+        system_prompt = system_prompt + _seed_tool_plan(message)
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
     turn_lang = _expected_lang(message, context)
     system_prompt = system_prompt + _language_directive(turn_lang)
@@ -4733,7 +4793,7 @@ def _run_brain_loop(
     # data even if it doesn't call a read tool (robustness for the weaker Fast lane).
     _digests = [
         digest for digest in (
-            _grounding_digest(root),
+            _grounding_digest(root, lang=turn_lang),
             _symbol_grounding_digest(safe_sym, root),
         ) if digest
     ]
@@ -5142,6 +5202,10 @@ def _run_brain_loop_stream(
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
     system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
+    # W1-A seed plan: fast lane only (pro/research get tool autonomy by design), chat mode
+    # only, and never the Terminal — a chart turn follows the technician protocol's read order.
+    if lane == "fast" and mode == "chat" and safe_page != "terminal":
+        system_prompt = system_prompt + _seed_tool_plan(message)
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
     turn_lang = _expected_lang(message, context)
     system_prompt = system_prompt + _language_directive(turn_lang)
@@ -5164,7 +5228,7 @@ def _run_brain_loop_stream(
     # data even if it doesn't call a read tool (robustness for the weaker Fast lane).
     _digests = [
         digest for digest in (
-            _grounding_digest(root),
+            _grounding_digest(root, lang=turn_lang),
             _symbol_grounding_digest(safe_sym, root),
         ) if digest
     ]

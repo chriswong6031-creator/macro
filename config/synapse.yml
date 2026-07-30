@@ -4584,6 +4584,7 @@ artifacts:
       - engine/chronicle/state_log.py
     external_consumers:
       - mastermind:context
+      - mastermind:packet
     notes: >
       Composed one-page truth (Neural Web N1 masterplan). Reads data/market_state/latest.json
       (post-radar resolved verdict), data/regime/latest.json (regime quad, vol_regime,
@@ -4596,6 +4597,9 @@ artifacts:
       embedded verbatim (deep copy) so build_feeds migration preserves the 2026-07-02
       incident contract. First producer adoption of the envelope stamp (produced_at = build
       timestamp; per-block asofs live in sources). Consumers migrate in PR2.
+      Analyst OS: mastermind:packet reads the regime label at chat request time for
+      the DESK READ line of the Live Market State Packet
+      (engine/neuralweb/market_packet.py) — read-only, no new arithmetic.
 
   # --- Neural Web W4: confluence graph ---
   confluence-graph:
@@ -5487,6 +5491,7 @@ artifacts:
       - scripts/build_stock_library.py
     external_consumers:
       - mastermind:context
+      - mastermind:packet
     notes: >
       RIC W3 OPEXRISK. OPEX window risk snapshot embedded as regime.json['opex_risk'].
       Schema opex_risk.v1: n_hot, n_applicable, level (quiet/elevated/heavy), glance
@@ -5495,6 +5500,9 @@ artifacts:
       or gates anything (RIC-R2/R3). Sole writer: scripts/build_vol_regime.py (nightly).
       Partial/absent surface data degrades gracefully (n_applicable shrinks).
       CONST-ART2 authority: false. authority.may_rank/gate/size/escalate=false.
+      Analyst OS: mastermind:packet reads regime.json['snapshot'] at chat request
+      time for the VOL line of the Live Market State Packet
+      (engine/neuralweb/market_packet.py) — read-only, no new arithmetic.
 
   opex-windows-forward-log:
     path: data/opex_windows/forward_log.jsonl
@@ -11051,6 +11059,7 @@ artifacts:
       - engine/neuralweb/world_state.py
     external_consumers:
       - mastermind:context
+      - mastermind:packet
     notes: >
       Forward Path board (RIC W7 P5). Deterministic join of fed_path (bond_health),
       transmission context, ZQ rate futures, release_forecast, market_state, commodity,
@@ -11059,6 +11068,9 @@ artifacts:
       policy board rows, conditions block, and a deterministic stance sentence.
       Nightly-gated forward_log.jsonl stamps divergence flags for improvement-loop
       accrual. Display/context only — no score or ranking authority.
+      Analyst OS: mastermind:packet reads the rate-path / inflation / risk rows at
+      chat request time for the RATES DESK line of the Live Market State Packet
+      (engine/neuralweb/market_packet.py) — read-only, no new arithmetic.
 
   stage-analysis-context-latest:
     path: data/stage_analysis/context/latest.json
@@ -11484,7 +11496,8 @@ artifacts:
     consumers:
       - engine/neuralweb/world_state.py
       - scripts/build_vector.py
-    external_consumers: []
+    external_consumers:
+      - mastermind:packet
     notes: >
       R6 NW Cross-Asset Depth — cross-asset flows snapshot (TSMOM regime, correlation
       concentration, intermarket ratios, carry, lead/lag, global liquidity, funding
@@ -11496,6 +11509,9 @@ artifacts:
       crossasset_shadow/latest.json and regime/latest.json["cross_asset"] instead; it is
       NOT a consumer of this artifact.
       Producer: scripts/build_crossasset.py (outdir/"latest.json").write_text(...).
+      Analyst OS: mastermind:packet reads the five legacy keys at chat request time
+      for the CROSS-ASSET line of the Live Market State Packet
+      (engine/neuralweb/market_packet.py) — read-only, no new arithmetic.
 
   crossasset-history:
     path: data/crossasset/history.jsonl
@@ -11798,6 +11814,8 @@ artifacts:
       - templates/subsector_rotation.html.j2
       - templates/sector.html.j2
       - templates/dashboard.html.j2
+    external_consumers:
+      - mastermind:packet
     notes: >
       Cross-cutting shock de-escalation flag. Schema: {active, score, since,
       expires, reason, reason_zh, trigger_reason, primary_driver, note, note_zh,
@@ -11805,6 +11823,9 @@ artifacts:
       no reordering, no sizing. Written nightly by build_nightly() and intraday
       by build_intraday() (PS-R7: intraday writes site/ only). Staged by the
       daily.yml engine job commit and the intraday-fastpath.yml commit step.
+      Analyst OS: mastermind:packet reads the ACTIVE window only at chat request
+      time for the SHOCK WINDOW line of the Live Market State Packet
+      (engine/neuralweb/market_packet.py) — read-only, no new arithmetic.
 
   # --- Pick Lab (spec PICK_LAB_MASTERPLAN_BY_FABLE.md §4/§5) ---
   pick-lab-snapshots:

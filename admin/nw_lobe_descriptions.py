@@ -162,6 +162,11 @@ LOBE_DESCRIPTIONS = {
         "full": "The cycle pattern state builder compacts the latest cycle phase per entity, hazard gate verdicts for the six up/down by horizon cells, and active truth-registry counts into one governed display artifact. Hazard gate verdicts are read from the model epoch files at runtime, never hardcoded. Cells where the verdict is PRIOR carry family-stratified survival base rates; every surfaced probability carries its cell verdict badge — no naked probabilities. Read by the world state engine, the mastermind context builder, and the cortex ask tool. The artifact may de-escalate a calibrated key as context but may never originate, score, or escalate any decision.",
         "src_fp": "76104926fef20113",
     },
+    "darkpool-context-latest": {
+        "short": "",
+        "full": "",
+        "src_fp": "c5aa57d102a33e84",
+    },
     "dt-contra-state": {
         "short": "Per-ticker momentum-contra chip states aggregated from stock data into a governed Neural Web artifact — display only.",
         "full": "The contra-state builder exposes the already-computed per-ticker contra-chip field (state, band, score percentile, whale size, and whale change) aggregated from the stock data files. The caveat string is sourced from the chip module so there is a single source of truth. Ordering is deterministic (alphabetical by ticker) for stable diffs. On CI runners where the stock data directory is absent, the artifact degrades gracefully to an empty states list with an explanatory note. No Neural Web consumer is wired to this artifact yet (2026-07-17 audit) — it accrues display-only; any future cortex use would be citation-to-de-escalate only, never originate, score, or escalate. The momentum-dilution law forbids blending this artifact into any momentum ranker.",
@@ -335,7 +340,7 @@ LOBE_DESCRIPTIONS = {
     "opex-risk-snapshot": {
         "short": "Options-expiration window risk read embedded in the vol regime page payload — plain-word level, display only.",
         "full": "The vol regime builder embeds a nightly options-expiration risk snapshot in the site regime payload: how many risk states are running hot out of those applicable, a plain-word level (quiet, elevated, or heavy), bilingual glance copy, the per-state stack, and where we are in the expiration window. It is context only — it is never read by the risk computation, never feeds any scare channel, and never sizes or gates anything, per the standing rates-and-inflation program rulings. Sole writer is the nightly vol regime builder.",
-        "src_fp": "a7a507365de425c3",
+        "src_fp": "0bd8361b96db2409",
     },
     "ops-push-basket-freeze": {
         "short": "Deduplication log for basket-freeze churn alerts, preventing repeat notifications for the same event.",
@@ -385,7 +390,7 @@ LOBE_DESCRIPTIONS = {
     "rates-command-latest": {
         "short": "",
         "full": "",
-        "src_fp": "25b9a58f1a1147cb",
+        "src_fp": "debd67e5f428b15a",
     },
     "reflex-firings-commodity-shock": {
         "short": "Log of commodity shock events detected by the automated sentinel, graded over short horizons.",
@@ -637,6 +642,11 @@ LOBE_DESCRIPTIONS = {
         "full": "The thematic state builder compiles this ledger from the curated thesis registry. Records are versioned and re-emitted only when the content hash changes. The ledger covers class-level winner and loser taxonomy only — per-stock thesis records are forbidden by design. Falsifier tripwires are evaluated via a domain-specific language embedded in the registry. Read by the thematic state builder to derive the latest thesis per theme for the site projection.",
         "src_fp": "cc07bd7fe36f547a",
     },
+    "transmission-chains-state": {
+        "short": "",
+        "full": "",
+        "src_fp": "ee1aa8fabce4d2fc",
+    },
     "treasury-watch": {
         "short": "Intraday TGA cash-flow detector with episode state — written each time the TGA moves, display only.",
         "full": "The White House pipeline builder wraps the treasury watch engine to detect the current TGA release or rebuild episode, using a quarter-end-preferred anchor to keep the episode ID stable across hourly sentinel runs. Sources: the TGA data store for level data (converted from millions to billions), the liquidity plumbing artifact and regime latest for context. Each missing input yields nulls and a gaps entry rather than an exception. Written idempotently — a quiet hour is a no-op. Rendered on the Treasury Watch panel of the White House page. Also read fail-soft by the Mastermind bot's treasury context layer, dark-shipped by default. The Treasury DTS API publishes each business day around 20:00 UTC the following day, so the inner as_of is structurally one to two calendar days back at morning build time; the sentinel advances it each evening after publication. SLA is 48 hours to accommodate this structural lag.",
@@ -645,6 +655,6 @@ LOBE_DESCRIPTIONS = {
     "world-state": {
         "short": "A daily one-page snapshot of the full market state: regime, risk, breadth, alerts, and data health.",
         "full": "Each day this feed assembles the current market regime, risk-radar verdict, breadth conditions, sector-rotation summary, data-health status, and alert census into one unified snapshot. Any unavailable source leaves that section null rather than fabricated — gaps are listed explicitly. Ten other parts of the system read this feed. A planned qualitative-intelligence section is currently null, pending a cross-team ruling.",
-        "src_fp": "280c564245a5e3d4",
+        "src_fp": "fd1e20c555b68d9e",
     },
 }

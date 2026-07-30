@@ -148,3 +148,19 @@ def test_search_research_serves_insider_and_pro(tmp_path, monkeypatch):
         out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="u1")
         assert out.get("results"), f"tier {tier} should get results"
         assert out["results"][0]["title"] == "Oil shock playbook"
+
+
+# ── 7. Grounding digest threads the turn language into the packet ───────────
+
+def test_grounding_digest_threads_lang(tmp_path, monkeypatch):
+    from engine.neuralweb import market_packet as mp
+    seen = {}
+
+    def _capture(root, char_budget=4200, lang="en"):
+        seen["lang"] = lang
+        return "[CURRENT DASHBOARD STATE] stub"
+
+    monkeypatch.setattr(mp, "digest", _capture)
+    out = gw._grounding_digest(tmp_path, lang="zh")
+    assert seen["lang"] == "zh"
+    assert out.startswith("[CURRENT DASHBOARD STATE]")
