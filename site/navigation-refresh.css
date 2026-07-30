@@ -100,6 +100,33 @@ html[data-theme="light"] {
   }
 }
 
+/* Keep right-edge standard menus inside compact desktop viewports. China is
+   right-aligned so its own nested research flyouts have room; International
+   and Other Assets are the final standard menus before Research. The asset
+   flyouts then open inward instead of pushing another 420px panel off-screen.
+   Structural positions remain stable when profile-selected markets are hidden. */
+@media (min-width: 701px) {
+  .site-nav .nav-links > .nav-dd:nth-last-of-type(6) > .nav-dd-menu:not(.nav-mega),
+  .topbar .nav-links > .nav-dd:nth-last-of-type(6) > .nav-dd-menu:not(.nav-mega),
+  .site-nav .nav-links > .nav-dd:nth-last-of-type(-n + 3) > .nav-dd-menu:not(.nav-mega),
+  .topbar .nav-links > .nav-dd:nth-last-of-type(-n + 3) > .nav-dd-menu:not(.nav-mega) {
+    left: auto;
+    right: 0;
+  }
+
+  .site-nav .nav-links > .nav-dd:nth-last-of-type(2) .nav-sub > .nav-dd-menu,
+  .topbar .nav-links > .nav-dd:nth-last-of-type(2) .nav-sub > .nav-dd-menu {
+    left: auto;
+    right: 100%;
+  }
+
+  .site-nav .nav-links > .nav-dd:nth-last-of-type(2) .nav-sub::after,
+  .topbar .nav-links > .nav-dd:nth-last-of-type(2) .nav-sub::after {
+    left: auto;
+    right: 100%;
+  }
+}
+
 /* Research overview */
 @media (min-width: 701px) {
   .site-nav .nav-links,
@@ -1280,4 +1307,49 @@ html:not([data-theme="light"]) .signal-status.status-bounce { color: #ffc47c; ba
   .fan-grid { grid-template-columns: 1fr; }
   .fan-card { min-height: 58px; }
   .ticker-dropdown { max-height: calc(100dvh - 150px); }
+}
+
+/* `visibility:hidden` panels still contribute their absolutely positioned
+   descendants to document scroll width. These rules intentionally live last
+   so the desktop closed state wins over the mega menu's grid declaration.
+   Mobile keeps its JS-driven accordion at <=900px. */
+@media (min-width: 901px) {
+  .site-nav .nav-dd > .nav-dd-menu,
+  .topbar .nav-dd > .nav-dd-menu {
+    display: none;
+  }
+
+  .site-nav .nav-dd:hover > .nav-dd-menu,
+  .site-nav .nav-dd:focus-within > .nav-dd-menu,
+  .topbar .nav-dd:hover > .nav-dd-menu,
+  .topbar .nav-dd:focus-within > .nav-dd-menu {
+    display: block;
+  }
+
+  .site-nav .nav-dd:hover > .nav-dd-menu.nav-mega,
+  .site-nav .nav-dd:focus-within > .nav-dd-menu.nav-mega,
+  .topbar .nav-dd:hover > .nav-dd-menu.nav-mega,
+  .topbar .nav-dd:focus-within > .nav-dd-menu.nav-mega {
+    display: grid;
+  }
+}
+
+/* In the content-aware two-row state, an icon-only brand recovers enough room
+   for every opted-in market at compact desktop/iPad widths. One- and two-market
+   profiles stay in the single-row state and retain the full wordmark. */
+@media (min-width: 901px) and (max-width: 1100px) {
+  .site-nav[data-nav-layout="stacked"] .nav-brand .brand-word,
+  .topbar[data-nav-layout="stacked"] .nav-brand .brand-word {
+    display: none;
+  }
+
+  .site-nav[data-nav-layout="stacked"] .nav-links,
+  .topbar[data-nav-layout="stacked"] .nav-links {
+    gap: 1px;
+  }
+
+  .site-nav[data-nav-layout="stacked"] a.nav-link,
+  .topbar[data-nav-layout="stacked"] a.nav-link {
+    padding-inline: 8px;
+  }
 }
