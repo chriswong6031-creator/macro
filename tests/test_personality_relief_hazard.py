@@ -344,7 +344,7 @@ def test_registration_is_fully_hash_bound_and_drift_fails_inert(
     assert not (tmp_path / "personality_timing" / "relief_hazard.jsonl").exists()
 
 
-def test_committed_launch_is_zero_event_and_has_absolute_authority_fences():
+def test_committed_ledger_preserves_launch_and_absolute_authority_fences():
     rows = [
         json.loads(line)
         for line in Path(
@@ -352,17 +352,27 @@ def test_committed_launch_is_zero_event_and_has_absolute_authority_fences():
         ).read_text(encoding="utf-8").splitlines()
         if line and not line.startswith("#")
     ]
-    assert len(rows) == 1 and rows[0]["kind"] == "registration"
-    assert rows[0]["event_rows_at_launch"] == 0
-    assert rows[0]["not_before_session"] == prh.NOT_BEFORE_SESSION
-    assert rows[0]["authority"] == prh.AUTHORITY
+    assert rows and rows[0]["kind"] == "registration"
+    registration, events = rows[0], rows[1:]
+    assert registration["event_rows_at_launch"] == 0
+    assert registration["not_before_session"] == prh.NOT_BEFORE_SESSION
+    assert registration["authority"] == prh.AUTHORITY
+    assert all(row["kind"] == "event" for row in events)
+    assert all(row["action_date"] > prh.NOT_BEFORE_SESSION for row in events)
+    assert all(row["authority"] == prh.AUTHORITY for row in events)
 
     state = json.loads(
         Path(
             "data/personality_timing/relief_hazard_state.json"
         ).read_text(encoding="utf-8")
     )
-    assert state["ledger"]["events"] == 0
+    assert state["ledger"]["events"] == len(events)
+    assert state["ledger"]["primary_events"] == sum(
+        row["group"] in {"relief_hazard", "level_control"} for row in events
+    )
+    assert state["ledger"]["matured"] == sum(
+        row["grade"] is not None for row in events
+    )
     assert state["consumers"] == []
     assert state["authority"] == prh.AUTHORITY
     assert state["decision_read"]["sole_read_executed"] is False
