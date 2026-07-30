@@ -549,3 +549,12 @@ data/mastermind/response_eval.jsonl
 # mastermind_response_evals/summary/<ISO-year>-W<week>.json (private data plane).
 data/mastermind/eval_summary_latest.json
 data/mastermind/*.json.tmp
+
+# Agent worktree roots. Parallel Claude/Codex sessions create linked git worktrees
+# under these paths; they are checkouts, never content, and must never be committed.
+# `.claude/worktrees/` has historically been excluded per-clone via .git/info/exclude,
+# which every fresh clone and every new session has to rediscover — and the codex root
+# had no rule at all, so it surfaced as an untracked directory in every session's
+# `git status` and tripped the ship-loop guard on work belonging to another session.
+.claude/worktrees/
+.codex-worktrees/
