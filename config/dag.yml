@@ -1720,6 +1720,13 @@ lanes:
           cl_gex:
             - scripts.build_vol_regime
             - scripts.build_options_flow
+            # FD-EXP (2026-07-30): flow_desk.html/json had NO express coverage in either
+            # intraday lane (the #3515 freeze class). Admitted once all three of the
+            # builder's data/ write paths became COLLECT_LANE=nightly-gated in code
+            # (HOUSE-U5, #4007), making the express bake site/-only: zero network, ~2.6s.
+            # AFTER build_options_flow — the desk reads THIS run's site/flow/index.json
+            # manifest, which that builder rewrites (daily.yml cl_gex order mirrored).
+            - scripts.build_flow_desk
             - scripts.build_options_skew
             - scripts.build_options_ivspread
             - scripts.build_options_entry_state
@@ -1892,6 +1899,13 @@ lanes:
             - scripts.build_gex_board
             - scripts.build_vol_regime
             - scripts.build_options_flow
+            # FD-EXP (2026-07-30): flow_desk.html/json had NO express coverage in either
+            # intraday lane (the #3515 freeze class). Admitted once all three of the
+            # builder's data/ write paths became COLLECT_LANE=nightly-gated in code
+            # (HOUSE-U5, #4007), making the express bake site/-only: zero network, ~2.6s.
+            # AFTER build_options_flow — the desk reads THIS run's site/flow/index.json
+            # manifest, which that builder rewrites (daily.yml cl_gex order mirrored).
+            - scripts.build_flow_desk
             - scripts.build_options_skew
             - scripts.build_options_ivspread
             - scripts.build_options_entry_state
