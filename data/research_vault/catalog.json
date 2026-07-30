@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T10:49:37.163569+00:00",
-  "count": 383,
+  "generated_at": "2026-07-30T10:55:17.629740+00:00",
+  "count": 384,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -132,6 +132,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pisepzynhgz-e9b49d",
+      "title": "US Daily Lowering Our Q2 GDP Growth Forecast",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:38Z",
+      "summary_points": [
+        "**GDP Forecast Revised Down**: Goldman Sachs cuts Q2 GDP growth forecast to +1.8% (0.8pp lower), driven by SPR drawdowns (federal spending -3.5%) and trade/inventories data (net exports -1.4pp, inventories +0.3pp), not captured in GDPNow model.",
+        "**Consumer Spending Resilience**: Q2 consumer spending grew 2.3% annualized despite energy price headwinds, fueled by tax refunds, election spending, and weather rebound.",
+        "**SPR Distortion in DFS**: SPR oil releases skew federal spending (DFS) growth relative to GDP, as SPR drawdowns (not production) impact DFS but aren't offset by net exports.",
+        "**AI Investment Divergence**: AI-related business investment boosts DFS but imported value subtracts from GDP, creating a structural DFS-GDP discrepancy for portfolio assessment."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
