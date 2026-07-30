@@ -620,6 +620,10 @@ on:
       - "tests/test_market_packet.py"
       - "tests/test_brain_market_intel.py"
       - "tests/test_brain_seed_router.py"
+      # Analyst OS W2: analogue engine + curve-detail tool + offline eval harness.
+      - "tests/test_brain_analogues.py"
+      - "tests/test_brain_curve.py"
+      - "tests/test_response_eval.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it
