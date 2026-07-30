@@ -131,6 +131,16 @@
   .panel.dislo-strip .dlx-mg { white-space: nowrap; }
   .panel.dislo-strip .dlx-mg.on { color: var(--lit); font-weight: 650; }
   .panel.dislo-strip .dlx-dis { color: var(--warn); font-weight: 650; }
+  /* series VINTAGE, parenthetical to its reading — Sahm is a monthly reference month
+     carried forward, not a same-day print, and the strip must be able to say so
+     without shouting. Regular numerals: a date is a figure, the words around it
+     are not, so only the reading itself keeps the tabular alignment above. */
+  .panel.dislo-strip .dlx-vint { color: var(--ink-3, var(--muted)); white-space: nowrap; }
+  /* policy divergence — amber CONTEXT, never the red of a verdict: the engine attaches
+     it explicitly as context that does not change the call, so it must not read redder
+     than the gate does. */
+  .jarg.dlx-more .dlx-pdiv { color: var(--warn); }
+  .jarg.dlx-more .dlx-pdiv b { color: var(--warn); }
   /* the fold keeps ONLY long-form prose + the measured record */
   .jarg.dlx-more { margin-top: 10px; }
   .jarg.dlx-more .jrow { align-items: baseline; }
