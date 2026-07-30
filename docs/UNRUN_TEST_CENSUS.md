@@ -229,11 +229,11 @@ below the strictly-dark set. 144 are now wired across thirteen lanes (138 in the
 | `unrun-intl-collectors` | 11 | 198 / 30s |
 | `unrun-russell-breadth` | 1 | 11 / 12s |
 | `unrun-macro-panels` | 19 | 739 / 63s |
-| `unrun-market-plumbing` | 28 (22 + 3 GEX core + 3 OIP E3) | 682 / 25s + 42 / 3s + 136 / 5s |
+| `unrun-market-plumbing` | 28 (22 + 3 GEX core + 3 OIP E3) | 682 / 25s + 42 / 3s + 188 / 11s |
 | `unrun-publish-ops` | 19 | 507 / 27s |
 | `unrun-inline-js-guard` | 1 | 14 / 2s |
 | `unrun-import-hygiene` | 1 | 4 / 48s |
-| **total** | **144** | **3945 / 332s** |
+| **total** | **144** | **3997 / 338s** |
 
 Twelve of the thirteen repeat the nine P0 lanes' `pip install` line **byte-for-byte**, so
 `run_ci_pack.py` still builds ONE venv across all twenty-two `unrun-*` jobs. The dependency set
@@ -268,7 +268,9 @@ the gex_state emitter and index dealer-gamma reconstruction suites, both of whic
 the **strictly dark** class — named by no `run:` step and matched by no path pattern, so
 no possible edit could start `ci.yml` for them. The E3 wave edits both, so shipping the
 edits unverified would have rebuilt the exact hole this census exists to close. Measured
-136 tests / 5s serial; import closure re-derived against the lane's existing install line
+188 tests / 11s serial (re-measured 2026-07-30 on the rebased head — the 136/5s in the
+first draft of this amendment predated the review round, which added tests to all three
+suites); import closure re-derived against the lane's existing install line
 with scipy, sklearn, jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and
 fastapi all blocked — `pytest pandas numpy pyarrow pyyaml` suffices, so the shared venv is
 unchanged. The three follow-up suites this wave flagged (the gex model layer, the gex

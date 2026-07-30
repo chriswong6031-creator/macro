@@ -126,9 +126,10 @@ Three properties are load-bearing and tested:
   2026-06-15 and 2026-06-16). Two identical vintages make the window unmeasurable, not
   flat — so the lists come back empty with `same_vintage: true` and a note. The guard is
   per NAME because one root can repeat while the rest of the file advances.
-* **Session filtering first.** The store contains weekend and holiday files (11 of 39).
-  Every dated read goes through `lib.nyse_calendar.is_session` before any delta or
-  percentile.
+* **Session filtering first.** The store contains weekend and holiday files (11 of the 40
+  on disk at 2026-07-30 — the store grows one file per calendar day, so read the ratio as a
+  dated snapshot, not a constant). Every dated read goes through
+  `lib.nyse_calendar.is_session` before any delta or percentile.
 
 `reliability.oi_delta` marks the open-interest change as the one **signing-free reliable**
 field in this schema — it is a count of contracts and carries no dealer-sign assumption.
