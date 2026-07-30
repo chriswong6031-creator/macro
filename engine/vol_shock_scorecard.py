@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import date
 from pathlib import Path
 
 log = logging.getLogger(__name__)
@@ -123,6 +124,77 @@ def _read_json(path: Path):
     return None
 
 
+def _as_date(v):
+    """Leading ISO date of `v` as a `date`, else None. Never raises."""
+    try:
+        return date.fromisoformat(str(v).strip()[:10])
+    except (TypeError, ValueError):
+        return None
+
+
+def _src_asof(src) -> str | None:
+    """The as-of DATE stamped on a dealer-gamma source dict — wherever its producer put it.
+
+    The tiers stamp it in three DIFFERENT places, and `summary.asof` (the shape you would
+    guess from the summary being what we normalize) is NOT one of them on the real artifact:
+    engine.market_gamma.view stamps the top level, and the GEX board writes
+    site/gex/<KEY>.json with the date under `meta` while `summary` carries none. Look in all
+    three rather than trusting one shape — an as-of that resolves to None discloses nothing.
+
+    Returns a bare YYYY-MM-DD when the stamp parses as a date, else the raw string (a
+    present-but-odd stamp is still worth disclosing), else None."""
+    if not isinstance(src, dict):
+        return None
+    for holder in (src, src.get("summary"), src.get("meta")):
+        if not isinstance(holder, dict):
+            continue
+        v = holder.get("asof")
+        if v in (None, ""):
+            continue
+        s = str(v).strip()
+        d = _as_date(s)
+        return str(d) if d is not None else s
+    return None
+
+
+def _gex_age_days(src_asof, snap_asof) -> int | None:
+    """Whole days the dealer-gamma read sits BEFORE the snapshot it is fused into
+    (positive = the read is older; negative = the read is from a later session than the
+    snapshot, which happens when the site board has already been rewritten for the next day).
+    None when either side carries no parseable date."""
+    a, b = _as_date(src_asof), _as_date(snap_asof)
+    if a is None or b is None:
+        return None
+    return (b - a).days
+
+
+def _gex_read_note(gx: dict, snap_asof: str | None) -> tuple[str, str]:
+    """PLAIN-WORD staleness disclosure for the dealer-gamma read, EN + ZH.
+
+    DESIGN_DOCTRINE Law 2/5: a calm window statement in the factor's own words — never an
+    alarm, no internal vocabulary, and the machine receipt (`source` / `source_asof` /
+    `source_age_days` + the passport) carries the precision. Returns ("", "") when there is
+    nothing to disclose, i.e. the read and the snapshot are the same session.
+
+    WHY: the tier-3 site/gex/SPX.json fallback is written by a PREVIOUS build and can be
+    arbitrarily old — not "one build stale" as this module used to claim. With no date on the
+    row, a month-old board reads exactly like a live contract."""
+    a = (gx or {}).get("asof")
+    if not a:
+        return ("gamma read carries no date, so its age is unknown",
+                "Gamma 读数没有日期，无法判断其新旧")
+    age = _gex_age_days(a, snap_asof)
+    if age is None:
+        return (f"gamma read is dated {a}", f"Gamma 读数日期为 {a}")
+    if age == 0:
+        return ("", "")
+    n = abs(age)
+    unit = "day" if n == 1 else "days"
+    side_en, side_zh = ("before", "早") if age > 0 else ("after", "晚")
+    return (f"gamma read is from {a}, {n} {unit} {side_en} this update",
+            f"Gamma 读数取自 {a}，比本次更新{side_zh} {n} 天")
+
+
 def _gex_gate_scored() -> bool:
     """The dealer-gamma regime may carry NON-ZERO weight in the fused gauge only after
     scripts/validate_gex.py writes data/gex/gate.json with scored=true (the gamma regime beat
@@ -153,7 +225,9 @@ def _products_disagree() -> dict | None:
         if not isinstance(d, dict):
             return None, None
         summ = d.get("summary") or d
-        return (summ.get("gamma_regime") or summ.get("regime")), (d.get("asof") or summ.get("asof"))
+        # _src_asof, not d['asof']: these boards stamp the date under `meta`, so the old
+        # top-level-or-summary read left both dates permanently None on the real artifacts.
+        return (summ.get("gamma_regime") or summ.get("regime")), _src_asof(d)
     spy_r, spy_a = _reg("SPY")
     spx_r, spx_a = _reg("SPX")
     if spy_r is None or spx_r is None:
@@ -184,10 +258,16 @@ def _resolve_vol_sentiment(vs: dict | None) -> dict:
 
 def _resolve_gex(latest: dict, gex: dict | None) -> dict:
     """Normalize the dealer-gamma read to {regime, gamma_flip, net_gex_bn,
-    spot_vs_flip_pct}. Priority: injected gex -> latest['market_gamma'] (sibling
-    S2's first-class field) -> site/gex/SPX.json summary (one build stale, OK for a
-    display gauge — staleness shows in asof)."""
-    def _norm(src: dict) -> dict:
+    spot_vs_flip_pct, asof, source}. Priority: injected gex -> latest['market_gamma']
+    (sibling S2's first-class field) -> site/gex/SPX.json summary.
+
+    `asof` + `source` are carried through from EVERY tier because the tier-3 site JSON is
+    written by a PREVIOUS build and can be arbitrarily old — this docstring used to promise
+    "one build stale ... staleness shows in asof" while returning no asof at all, so a
+    month-old board fed the factor indistinguishably from a live contract. The producers
+    stamp their date in three different places (see `_src_asof`), and the site board's
+    `summary` — the sub-dict we normalize — is not one of them, so read the PARENT."""
+    def _norm(src: dict, source: str, asof: str | None) -> dict:
         if not isinstance(src, dict):
             return {}
         return {
@@ -197,19 +277,22 @@ def _resolve_gex(latest: dict, gex: dict | None) -> dict:
             "spot_vs_flip_pct": _num(src.get("spot_vs_flip_pct")
                                      if src.get("spot_vs_flip_pct") is not None
                                      else src.get("dist_to_flip_pct")),
+            "asof": asof,
+            "source": source,
         }
     if isinstance(gex, dict) and gex:
-        n = _norm(gex)
+        n = _norm(gex, "injected", _src_asof(gex))
         if n.get("regime") is not None:
             return n
     mg = (latest or {}).get("market_gamma")
     if isinstance(mg, dict) and mg.get("regime") is not None:
-        return _norm(mg)
+        return _norm(mg, "contract", _src_asof(mg))
     sd = _site_dir()
     if sd is not None:
         spx = _read_json(sd / "gex" / "SPX.json")
         if isinstance(spx, dict):
-            return _norm(spx.get("summary") or spx)
+            # asof off the PARENT: the board stamps `meta.asof`, never `summary.asof`.
+            return _norm(spx.get("summary") or spx, "site_board", _src_asof(spx))
     return {}
 
 
@@ -449,6 +532,13 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
     ``{key, label, label_zh, value, points, weight, available, sub, color, note,
     note_zh}`` and active-factor `points` SUM to `score`.
 
+    The dealer_gamma row additionally carries its READ PROVENANCE — `source`
+    (injected / contract / site_board), `source_asof`, `source_age_days`, the same triple
+    under `passport.read`, and a plain-word window statement appended to `note`/`note_zh`.
+    Mirrored top-level as `gex_source` / `gex_asof` / `gex_age_days`. The site-board tier is
+    a previous build's file and can be arbitrarily old, so a row with no date on it cannot be
+    told apart from a live contract read.
+
     `vol_sentiment` / `etf_pulse` / `gex` / `event_risk` come from separate
     builders — injected when available, else read leak-free from their side-cars.
     NEVER raises (degrade-never-raise)."""
@@ -467,6 +557,10 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
     # score on an unobservable sign.
     gex_scored = _gex_gate_scored()
     products = _products_disagree()
+    # Resolved BEFORE the factor loop: the dealer-gamma row discloses its read's age against
+    # this snapshot's own as-of, so both dates have to be in hand while the row is built.
+    asof = _asof(latest)
+    gex_age = _gex_age_days(gx.get("asof"), asof)
 
     # (sub, value, note, base_weight, weight_factor) per factor — each guarded.
     specs: list[tuple] = []
@@ -518,11 +612,27 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
         }
         if key == "dealer_gamma":
             entry["gated_out"] = gated_out
+            # WHICH tier answered and WHEN it was stamped. Without these the tier-3
+            # site-board fallback (written by a previous build, arbitrarily old) is
+            # indistinguishable from a live contract on the row.
+            entry["source"] = gx.get("source")
+            entry["source_asof"] = gx.get("asof")
+            entry["source_age_days"] = gex_age
+            if sub is not None:
+                read_en, read_zh = _gex_read_note(gx, asof)
+                if read_en:
+                    # " · " (the house separator, as in this factor's own `value`) rather than
+                    # an em dash: the base notes already carry one, and ZH carries "——".
+                    entry["note"] = f"{note} · {read_en}" if note else read_en
+                    entry["note_zh"] = (f"{entry['note_zh']} · {read_zh}"
+                                        if entry["note_zh"] else read_zh)
             entry["passport"] = {
                 "basis": "assumption",
                 "verdict": ("scored" if gex_scored else "display-only"),
                 "structurally_constant": True,     # single-name regimes are product attributes
                 "validation": {"artifact": "data/gex/gate.json", "scored": gex_scored},
+                "read": {"source": gx.get("source"), "asof": gx.get("asof"),
+                         "age_days": gex_age, "snapshot_asof": asof},
                 "note": ("dealer long-call/short-put SIGN is unobservable from OI alone; "
                          "single-name regimes are near-constant product attributes and the "
                          "validator's MIN_PER_BUCKET is structurally unreachable for them. "
@@ -539,11 +649,13 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
     if n_available == 0 or den <= 0:
         # No leading factor present — hide the card, but still return a shell so the
         # contract key exists (run.py sets latest['vol_shock']).
-        asof = _asof(latest)
         return {"score": None, "band": None, "band_zh": None, "asof": asof,
                 "factors": entries, "why": None, "why_zh": None,
                 "n_available": 0, "gex_gate_scored": gex_scored,
-                "gex_products_disagree": products, "disclaimer": _DISCLAIMER_EN,
+                "gex_products_disagree": products,
+                "gex_source": gx.get("source"), "gex_asof": gx.get("asof"),
+                "gex_age_days": gex_age,
+                "disclaimer": _DISCLAIMER_EN,
                 "disclaimer_zh": _DISCLAIMER_ZH}
 
     score = num / den
@@ -552,7 +664,6 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
             e["points"] = round(e["weight"] * float(e["sub"]) / den, 1)
 
     band, band_zh = _band(score, cfg)
-    asof = _asof(latest)
 
     # "why" — the top 2 contributing factors (by points).
     active = sorted([e for e in entries if e["available"]],
@@ -571,6 +682,9 @@ def snapshot(latest: dict | None, vol_sentiment: dict | None = None,
         "why": why, "why_zh": why_zh,
         "gex_gate_scored": gex_scored,          # audit #29: dealer_gamma weight is 0 when False
         "gex_products_disagree": products,      # explicit SPY-vs-SPX contradiction flag
+        "gex_source": gx.get("source"),         # WHICH tier answered: injected/contract/site_board
+        "gex_asof": gx.get("asof"),             # WHEN that read was stamped (None = undated)
+        "gex_age_days": gex_age,                # days the read sits before this snapshot
         "horizon_d": cfg["outcome_horizon_d"],
         "outcome_label_en": (f"realized SPY drawdown ≤ −{cfg['outcome_spy_move_pct']:.0f}% "
                              f"OR VIX intraday-high ≥ {cfg['outcome_vix_jump_mult']:.2g}× "
