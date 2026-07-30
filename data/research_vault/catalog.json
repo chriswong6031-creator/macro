@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T16:40:48.642294+00:00",
-  "count": 401,
+  "generated_at": "2026-07-30T17:10:52.356036+00:00",
+  "count": 402,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -595,6 +595,25 @@
         "current 2.6% undershoot), driven by easing services inflation, labor market slack, and Trump election-driven oil price caution.",
         "**Geopolitical Risk Mitigation**: Iran conflict/energy prices act as BOE \"insurance\" but slack labor market and fading energy shock prevent second-round inflation, reducing near-term hawkish pressure.",
         "**Policy Shift Catalyst**: Hawkish members (Greene, Pill) likely abandon hikes as inflation squeeze fades, enabling earlier rate cuts despite geopolitical volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ozavidpzlpz-10ce35",
+      "title": "Fed hawkish hold Warsh ing away all clarity",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:34:38Z",
+      "summary_points": [
+        "**Policy Fragmentation**: Fed held rates at 3.50%-3.75% (9-3 vote), but regional presidents (Hammack, Kashkari, Logan) advocated 25bp hike; no forward guidance despite Warsh's hawkish inflation warning.",
+        "**Inflation Outlook Risk**: Warsh stressed inflation above 2% for >5 years, signaling prolonged tightening risk despite current hold, conflicting with market pricing.",
+        "**Market Confusion**: Markets price 30% hike chance amid unclear Fed path; Warsh's \"beginning of the story\" comment fuels uncertainty on future rate trajectory."
       ],
       "tags": [],
       "tickers": [],
