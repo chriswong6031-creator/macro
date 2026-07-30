@@ -14,9 +14,17 @@ cache untouched rather than spend the run hammering a wall. Best-effort, resumab
 (surprise history dripped + capped), never fatal to the build.
 
 Writes data/earnings/earnings.parquet (ticker-indexed: next_date, next_time,
-eps_forecast, surprises_json, as_of). engine/stock_fundamentals reads it for the
-Earnings panel (countdown + beat/miss table). Honest caveat (on the page): dates are
-estimated and can move; data is community/Nasdaq-sourced, not official guidance.
+eps_forecast, surprises_json, surprises_as_of, as_of). engine/stock_fundamentals reads
+it for the Earnings panel (countdown + beat/miss table). Honest caveat (on the page):
+dates are estimated and can move; data is community/Nasdaq-sourced, not official
+guidance.
+
+ENTRY POINT — `python -m collectors.equity_earnings` (the nightly line in daily.yml's
+collect_tail job) sweeps the WHOLE breadth universe. Named tickers are a smoke-test
+opt-in and must be passed explicitly: `--tickers AAPL NVDA JPM`. This is load-bearing:
+the no-arg path used to fall through to a 3-name demo default, which pinned the nightly
+to a 3-ticker universe for six weeks (1361 of 1364 rows frozen at as_of 2026-06-19)
+while the store-level freshness tripwire read green off the 3 fresh rows.
 """
 from __future__ import annotations
 
@@ -41,6 +49,11 @@ HEADERS = {
 }
 SWEEP_DAYS = 66           # weekdays (~a full quarter) so every name's next report lands
 REFRESH_DAYS = 7
+#: A ~quarter-long sweep should place nearly every universe name (1363 of 1506 on the
+#: last known-good full run, 2026-06-19). Below this share of the universe the sweep is
+#: broken, not quiet — every name it missed keeps its previous as_of, so the store rots
+#: silently. Deliberately loose: it fires on a break, not on a slow earnings week.
+MIN_SWEEP_COVERAGE = 0.50
 
 
 def _cache_path():
@@ -123,6 +136,29 @@ def _surprises(session, sym: str) -> list[dict]:
     return out
 
 
+def _emit_coverage_annotation(total: int, universe_n: int, swept_n: int,
+                              blocked: bool = False) -> None:
+    """Emit a GitHub annotation when the sweep did not refresh most of the universe.
+
+    House law: `::warning` must START the line, so this is a BARE `print(..., flush=True)`
+    and never `log.warning(...)` — every builder here logs with a level-prefixing format,
+    which would emit "WARNING ::warning ..." and GitHub would silently drop it. `flush` is
+    load-bearing because stdout is block-buffered when piped in CI.
+    """
+    if blocked:
+        print(f"::warning title=earnings-calendar-stale::Nasdaq calendar bot-walled "
+              f"(likely CI IP) — cache kept untouched at {total} rows; 0 of {universe_n} "
+              f"universe names refreshed this run", flush=True)
+        return
+    cov = (swept_n / universe_n) if universe_n else 0.0
+    if cov < MIN_SWEEP_COVERAGE:
+        print(f"::warning title=earnings-calendar-stale::calendar sweep refreshed only "
+              f"{swept_n} of {universe_n} universe names ({cov:.1%} < "
+              f"{MIN_SWEEP_COVERAGE:.0%} floor) — the other rows in the {total}-row store "
+              f"keep their previous as_of and will age out of downstream freshness "
+              f"ceilings", flush=True)
+
+
 def fetch_earnings(force: bool = False, max_new: int = 120,
                    tickers: list[str] | None = None) -> pd.DataFrame:
     """Sweep the calendar (cheap, whole universe) + drip surprise history (capped).
@@ -140,29 +176,56 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
     cal, blocked = _calendar_sweep(session, universe)
     if blocked:
         log.warning("equity_earnings: Nasdaq calendar bot-walled (likely CI IP) — keeping cache")
+        _emit_coverage_annotation(len(existing), len(universe), 0, blocked=True)
         return existing
-    log.info("equity_earnings: calendar sweep found next dates for %d names", len(cal))
-
-    # surprise history: refresh stale/uncached names, capped
-    def stale(t: str) -> bool:
-        if force or existing.empty or t not in existing.index:
-            return True
-        ts = existing.loc[t].get("as_of")
-        try:
-            return (datetime.now(timezone.utc) - pd.to_datetime(ts)).days > REFRESH_DAYS
-        except Exception:  # noqa: BLE001
-            return True
+    log.info("equity_earnings: calendar sweep found next dates for %d of %d universe names",
+             len(cal), len(universe))
+    _emit_coverage_annotation(max(len(existing), len(cal)), len(universe), len(cal))
 
     now = datetime.now(timezone.utc).isoformat()
     have_surp = (existing["surprises_json"] if (not existing.empty and "surprises_json" in existing.columns)
                  else pd.Series(dtype=object))
+
+    # surprise history: refresh stale/uncached names, capped.
+    # Keyed on surprises_as_of, NOT as_of. `as_of` is re-stamped for every name the CHEAP
+    # calendar sweep touches, so gating the EXPENSIVE surprise drip on it would freeze
+    # surprise history the moment a full-universe sweep works: ~70-90% of names would look
+    # "fresh" every night and the drip would never pick anyone up again.
+    prev_surp_asof = (existing["surprises_as_of"]
+                      if (not existing.empty and "surprises_as_of" in existing.columns)
+                      else pd.Series(dtype=object))
+
+    def _held_surprises(t: str) -> bool:
+        """True when the store already holds a non-empty surprise history for t."""
+        try:
+            return bool(json.loads((have_surp.get(t) if t in have_surp.index else None) or "[]"))
+        except (TypeError, ValueError):
+            return False
+
+    def stale(t: str) -> bool:
+        if force or existing.empty or t not in existing.index:
+            return True
+        ts = prev_surp_asof.get(t) if t in prev_surp_asof.index else None
+        if ts is None or ts != ts:            # absent column or NaN → no surprise stamp
+            # Never dripped if we hold no history either — a fresh calendar as_of says
+            # nothing about surprises. Only a store that predates surprises_as_of AND
+            # already carries history may fall back to as_of as a proxy clock.
+            if not _held_surprises(t):
+                return True
+            ts = existing.loc[t].get("as_of")
+        try:
+            return (datetime.now(timezone.utc) - pd.to_datetime(ts)).days > REFRESH_DAYS
+        except Exception:  # noqa: BLE001
+            return True
     # PERSIST the cheap calendar next_date for EVERY name the sweep found — not only the capped
     # surprise-drip batch (the bug: a 1363-name sweep wrote 4). Carry forward existing surprise
     # history so the per-name drip below only adds detail, never drops the calendar.
     out = pd.DataFrame([
         {"ticker": t, "next_date": cc.get("next_date"), "next_time": cc.get("next_time"),
          "eps_forecast": cc.get("eps_forecast"),
-         "surprises_json": (have_surp.get(t) if t in have_surp.index else "[]"), "as_of": now}
+         "surprises_json": (have_surp.get(t) if t in have_surp.index else "[]"),
+         "surprises_as_of": (prev_surp_asof.get(t) if t in prev_surp_asof.index else None),
+         "as_of": now}
         for t, cc in cal.items()
     ]).set_index("ticker") if cal else pd.DataFrame()
     # keep any previously-cached names this sweep didn't cover
@@ -174,6 +237,7 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
     todo = [t for t in (tickers or sorted(cal) or list(universe)) if stale(t) and t in out.index][:max_new]
     for t in todo:
         out.loc[t, "surprises_json"] = json.dumps(_surprises(session, t))
+        out.loc[t, "surprises_as_of"] = now
         out.loc[t, "as_of"] = now
         time.sleep(0.25)
     if not out.empty:
@@ -183,15 +247,41 @@ def fetch_earnings(force: bool = False, max_new: int = 120,
     return out
 
 
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> int:
+    """CLI. NO ARGS = the nightly production sweep over the WHOLE breadth universe.
+
+    A named-ticker run is a smoke test and must opt in via `--tickers`. Never restore a
+    default ticker list here: `daily.yml` invokes this module bare, so any fallback
+    universe silently becomes the nightly's universe (the 2026-06-19 freeze).
+    """
+    import argparse
+    parser = argparse.ArgumentParser(description="Nasdaq earnings calendar + surprise sweep")
+    parser.add_argument("--tickers", nargs="+", metavar="SYM",
+                        help="Smoke test: sweep ONLY these tickers (default: whole universe)")
+    parser.add_argument("--max-new", type=int, default=120,
+                        help="Cap on surprise-history fetches this run (default: 120)")
+    parser.add_argument("--force", action="store_true",
+                        help="Re-fetch surprise history regardless of age")
+    args = parser.parse_args(argv)
+
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+    ts = [t.upper() for t in args.tickers] if args.tickers else None
+    max_new = len(ts) if ts else args.max_new
+    df = fetch_earnings(force=args.force or bool(ts), max_new=max_new, tickers=ts)
+
+    if ts:                                  # smoke test: print the per-name detail
+        for t in ts:
+            if t in df.index:
+                r = df.loc[t]
+                surp = json.loads(r.get("surprises_json") or "[]")
+                print(f"\n{t}: next={r.get('next_date')} ({r.get('next_time')}) "
+                      f"est={r.get('eps_forecast')}")
+                for s in surp:
+                    print(f"   {s['qtr']}: actual {s['eps']} vs est {s['consensus']} "
+                          f"→ {s['surprise_pct']}%")
+    return 0
+
+
+if __name__ == "__main__":
     import sys
-    ts = sys.argv[1:] or ["AAPL", "NVDA", "JPM"]
-    df = fetch_earnings(force=True, max_new=len(ts), tickers=ts)
-    for t in ts:
-        if t in df.index:
-            r = df.loc[t]
-            surp = json.loads(r.get("surprises_json") or "[]")
-            print(f"\n{t}: next={r.get('next_date')} ({r.get('next_time')}) est={r.get('eps_forecast')}")
-            for s in surp:
-                print(f"   {s['qtr']}: actual {s['eps']} vs est {s['consensus']} → {s['surprise_pct']}%")
+    sys.exit(main())
