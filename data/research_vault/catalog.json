@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T10:55:17.629740+00:00",
-  "count": 384,
+  "generated_at": "2026-07-30T11:25:22.897570+00:00",
+  "count": 385,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -685,6 +685,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vwg1ovqjqjt-bc7953",
+      "title": "JPM Credit Strategy Week",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T12:54:02Z",
+      "summary_points": [
+        "**Geopolitical & Policy Drivers**: Middle East tensions and central bank meetings (Fed/BoJ/BoE on hold) pushed high-yield spreads to 4-month high (26bp), with IG AI hyperscalers widening 55bp and Brent Oil surging $20 amid rate expectations.",
+        "**CCC-Rated Debt Overweight**: HY funds hold 52.91% CCC exposure vs.",
+        "96% index (550bp below decade average), signaling extreme risk concentration in lowest-rated debt.",
+        "**Leveraged Loan Exposure & Liquidity**: HY fund loan allocation at 10-quarter low (3.37%), while leveraged loan trading volume hit 6-month low ($76.4bn), contrasting with rising HY bond volume ($223.5bn, +2% m/m)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 47,
       "language": "en",
       "needs_metadata": false
     },
