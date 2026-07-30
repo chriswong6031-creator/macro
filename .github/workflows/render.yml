@@ -227,6 +227,7 @@ jobs:
     timeout-minutes: 115
     steps:
       - name: bound persisted render checkout
+        id: bound
         # Self-hosted workspaces persist between jobs. The generated site history made
         # their .git directories grow without bound (measured 2026-07-30: 4.5–26 GB
         # across the local Mac pool; run 30530156302 then spent >20m in checkout's
@@ -267,7 +268,13 @@ jobs:
             exit 1
           }
           REMOTE_URL=$(git remote get-url origin)
-          SEED_SHA=$(git rev-parse HEAD)
+          # Update with the complete old store BEFORE replacing its metadata. Running
+          # actions/checkout against a blobless index invokes `checkout --detach`,
+          # which lazy-fetches every tracked blob even when the retained files match
+          # (live validation 30543197076 requested 48,877 objects). The old store
+          # already owns nearly every blob, so this fetch/reset downloads only deltas.
+          git fetch --no-tags --depth=1 origin main
+          SEED_SHA=$(git rev-parse FETCH_HEAD)
           echo "::notice::compacting oversized persisted checkout ($((GIT_KIB / 1024)) MiB) at $SEED_SHA"
           # A timed-out render can leave tracked and ignored builder outputs dirty.
           # Restore the retained tree while its complete old object store is available.
@@ -287,8 +294,14 @@ jobs:
           # (and therefore without lazy-fetching) all ~49.7k current-tree blobs.
           git reset --mixed HEAD
           git update-index --refresh
+          echo "compacted=true" >> "$GITHUB_OUTPUT"
           echo "::notice::retained current tree with a $(du -sh .git | awk '{print $1}') shallow metadata store"
       - uses: actions/checkout@v4
+        # checkout@v4 unconditionally detaches an existing branch before fetching its
+        # requested ref. On a freshly blobless metadata transplant that operation asks
+        # the promisor remote for the entire 2.85 GB current tree. The bound step already
+        # updated and cleaned main with the complete old store, so skip only in that case.
+        if: steps.bound.outputs.compacted != 'true'
         with:
           ref: main
           # Keep the complete current tree (all builders need committed data + site),
