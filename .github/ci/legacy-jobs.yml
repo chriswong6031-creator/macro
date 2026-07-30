@@ -883,15 +883,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      # jinja2 (2026-07-30): the options-workspace suite's RUNTIME probe below imports
-      # scripts.build_options_command, whose module scope does `from jinja2 import
-      # Environment` — so pytest+pyyaml alone made that ONE test red while its 30
-      # siblings passed (ci-pack-1 on #3977). Verified minimal: pytest+pyyaml+jinja2
-      # runs the whole file green in a clean venv. NOT fixed with importorskip — that
-      # is the skip-only class check_skip_only_suites.py below exists to catch, and it
-      # would disarm the very guard the probe is.
+      # Deps grew 2026-07-30 (#3977). This job was `pytest pyyaml` — right for the
+      # workflow-YAML steps — but OIP E8 attached five options suites whose assertions are
+      # DATA-layer: they build DataFrames, round-trip parquet, and drive builders that
+      # render templates and fetch over HTTP. Only the first added step ran before ci-pack-1
+      # died, so its `No module named 'jinja2'` hid four more steps that would have failed
+      # the same way on pandas/jinja2/requests. Verified minimal by installing one package
+      # at a time in a clean venv (2026-07-30): pytest+pyyaml alone collects none of the
+      # four; +pandas leaves parquet writes failing; +pyarrow leaves 15 jinja2 and 11
+      # requests failures; the set below runs all five green (31+52+38+33+23 = 177 tests).
+      # numpy is transitive via pandas and named for the record, as causal-factory does.
+      # NOT patched with importorskip anywhere — a suite that skips in the only job naming
+      # it executes NOWHERE while reading green, which is the class the
+      # check_skip_only_suites.py steps below exist to catch.
       - name: install minimal deps
-        run: pip install pytest pyyaml jinja2
+        run: pip install pytest pyyaml pandas numpy pyarrow jinja2 requests
       - name: check_workflow_yaml selftest
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
@@ -943,9 +949,10 @@ jobs:
       # options-workspace suite appeared only in a render.yml YAML COMMENT, which is
       # enough to satisfy audit_unrun_tests.py's text matcher (tightened in the same
       # commit to read `run:` steps only, so a comment can no longer fake coverage).
-      # Deps: stdlib + pytest + pyyaml, plus jinja2 for the runtime probe (see the install
-      # step's note); the express-lane suite also shells out to bash to execute render.yml's
-      # `region_of` for real.
+      # Deps: see the install step's note — these five need the data stack, not just
+      # pytest+pyyaml. The express-lane suite itself is stdlib + bash (it shells out to
+      # execute render.yml's `region_of` for real) and its one RUNTIME probe stubs jinja2
+      # when absent rather than skipping, so it stays runnable in a thin env too.
       - name: options express-lane coverage contract (workspace + screener must stay wired)
         run: python -m pytest tests/test_render_options_workspace_scope.py -q
       # #3721 weekend-row class. The options stores accrue non-session rows that RECOMPUTE

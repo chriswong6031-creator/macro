@@ -34,8 +34,11 @@ Run: .venv/bin/python -m pytest tests/test_render_options_workspace_scope.py -q
 
 from __future__ import annotations
 
+import importlib
 import re
 import subprocess
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -244,11 +247,57 @@ def _store_paths_read_by_load_stores() -> set[str]:
     return found
 
 
+def _import_builder():
+    """Import the builder for the RUNTIME probe — in the THIN pack env too.
+
+    CI packs install a minimal dep set, not requirements.txt: the job that owns this
+    suite (`workflow-yaml` in .github/ci/legacy-jobs.yml) installs `pytest pyyaml`, and
+    scripts/build_options_command.py does `from jinja2 import Environment,
+    FileSystemLoader` at module scope.  A bare import therefore died with
+    ModuleNotFoundError before the probe ran — green in every dev venv, red only in
+    ci-pack-1 (#3977).
+
+    NOT `importorskip`.  A suite that skips in the only job naming it executes NOWHERE
+    while reading green — the class scripts/check_skip_only_suites.py runs in this very
+    job to catch — and this probe is the only guard that sees an f-string-built store
+    path.  So the missing dependency is STUBBED and the probe genuinely executes:
+    load_stores() and _load() are pure stdlib (json + pathlib), and jinja2 is touched
+    only by render()'s `Environment(...)` (build_options_command.py:863), which this
+    test never calls.
+
+    Two properties keep the stub honest:
+      * installed ONLY when jinja2 is genuinely absent, so a dev/fat venv always probes
+        against the real module;
+      * its attributes RAISE when called, so nothing can quietly render an empty page
+        through it, and it is removed from sys.modules immediately after the import so a
+        later `import jinja2` in the same session still fails loudly.
+    """
+    if "jinja2" not in sys.modules:
+        try:
+            importlib.import_module("jinja2")
+        except ModuleNotFoundError:
+            def _no_jinja(*_args, **_kwargs):
+                raise RuntimeError(
+                    "jinja2 is absent and only STUBBED for load_stores' runtime probe — "
+                    "rendering is unavailable in this environment"
+                )
+
+            stub = types.ModuleType("jinja2")
+            stub.Environment = _no_jinja
+            stub.FileSystemLoader = _no_jinja
+            sys.modules["jinja2"] = stub
+            try:
+                return importlib.import_module("scripts.build_options_command")
+            finally:
+                sys.modules.pop("jinja2", None)
+    return importlib.import_module("scripts.build_options_command")
+
+
 def test_load_stores_probes_exactly_the_documented_paths_at_RUNTIME():
     """MINOR 12: the source-regex above cannot see a path built purely by f-string — it
     only caught `site/gex` from the INDEX_KEYS loop and would miss a whole new store added
     the same way. Record what load_stores actually asks for, which is f-string-proof."""
-    import scripts.build_options_command as boc
+    boc = _import_builder()
 
     probed: list[str] = []
     real_load = boc._load
