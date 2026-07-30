@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T11:40:21.805396+00:00",
-  "count": 386,
+  "generated_at": "2026-07-30T12:10:25.551265+00:00",
+  "count": 387,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -230,6 +230,27 @@
         "Street 37.1%), driven by DRAM momentum, NAND spending, and systems/service revenue beats ($4.25bn/$2.37bn vs.",
         "Street).",
         "**Geopolitical Policy Risk**: US export restrictions on NAND suppliers and potential pause in NAND upgrade spending pose critical near-term industry disruption risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-s1uhlwhymlo-f6d45a",
+      "title": "Meta Platforms Inc. (META) Q2 '26 Earnings First Take",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:34Z",
+      "summary_points": [
+        "**Meta Q2 Results & Guidance**: Q2 revenue $60.80bn (+28% YoY), GAAP op margin 31%; FY26 capex narrowed to $130-145bn, but $2.4bn legal charge revised GAAP expense guidance to $165-169bn, impacting near-term outlook.",
+        "**Valuation Upside**: $815 target (EV/GAAP EBIT + DCF) significantly above current price ($603.12), indicating strong bullish sentiment and potential 35%+ upside.",
+        "**Key Risks**: Competition for ad/user growth, regulatory scrutiny, long-tail initiatives depressing margins, and low incremental shareholder returns.",
+        "**Institutional Support**: 50% Global Buy rating (vs.",
+        "34% Hold, 16% Sell); 65% Buy from investment banking relationships, signaling robust institutional confidence."
       ],
       "tags": [],
       "tickers": [],
