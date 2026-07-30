@@ -4020,6 +4020,26 @@ jobs:
       # nine blocked wheels are confirmed unused. All 42 green on main at wiring time.
       - name: GEX modeling core — walls/surface model, greeks + dealer-sign engine, polygon per-strike accrual
         run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
+      # OIP E3 positioning persistence (2026-07-29). Three suites, ~11 s serial.
+      #
+      # test_gex_state.py and test_index_gex_history.py were BOTH dark: named by no
+      # `run:` step in any of the workflows, so the gex_state emitter and the index
+      # dealer-gamma reconstruction had no CI at all. This wave edits both, so leaving
+      # them unwired would ship the edits unverified — the unrun-suite rot class.
+      # test_positioning_persistence.py is new with the wave and is wired at birth.
+      #
+      # Import closure verified against THIS job's install line with scipy, sklearn,
+      # jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and fastapi all
+      # blocked: pytest + pandas + numpy + pyarrow + pyyaml is sufficient. engine/
+      # gex_state.py deliberately keeps a pandas-free import (the positioning reads are
+      # lazy-imported inside the functions), and that property is itself asserted.
+      #
+      # The three remaining dark suites in this family that this wave flagged as the
+      # follow-up (the gex model layer, the gex engine math, and the polygon accrual
+      # collector) are now wired by the GEX modeling-core step directly above, which
+      # landed on main before this branch rebased. Nothing in the family is dark.
+      - name: OIP E3 positioning persistence — oi_delta clusters, wall persistence, index-GEX rebuild routing
+        run: python -m pytest tests/test_positioning_persistence.py tests/test_gex_state.py tests/test_index_gex_history.py -q
 
   unrun-publish-ops:
     # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.

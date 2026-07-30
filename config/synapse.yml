@@ -5252,7 +5252,7 @@ artifacts:
       - engine/market_gamma.py
     owner_program: options-alpha
     cadence: weekly
-    storage: git
+    storage: git+r2
     asof_field: null
     freshness_sla_hours: 200
     schema: implicit
@@ -5262,8 +5262,29 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/market_gamma.py
+      - engine/positioning_persistence.py
       - scripts/build_gex_board.py
     external_consumers: []
+    ops:
+      # OIP E3c (2026-07-29). This artifact is HOST-BOUND: the reconstruction joins the
+      # ThetaData greeks + oi stores (~60 GB) that exist only on the M1 ops host, so CI
+      # and the nightly render can never produce it — they read the git-committed
+      # parquets. Before E3c there was no scheduled producer at all: the store was built
+      # by hand once (#1374) and then froze at 2026-07-02 for 18 trading sessions while
+      # engine/market_gamma kept computing percentiles off the stale distribution with
+      # nothing in the artifact saying how old the window was.
+      producer_lane: ops/launchd/com.macro.indexgexhistory.plist
+      producer_runner: ops/launchd/run_index_gex_history.sh
+      schedule: Sunday 20:00 local on the M1 ops host (weekly, off-peak)
+      store_resolution: engine.thetadata_store.resolve_thetadata_store (THETADATA_STORE
+        env -> lib.config data_dir()/thetadata_eod -> ops-host worktree; content-checked,
+        so an empty stub directory never resolves)
+      offsite: scripts/publish_r2.py --dirs index_gex_history (_DATA_DIRS member with a
+        store-sized 4-file floor; NOT in DEFAULT_DIRS — the nightly must never sync it)
+      staleness_disclosure: engine/market_gamma._history_context emits window bounds,
+        sessions_behind and a plain-word EN/ZH note; stale above 7 sessions, which is
+        the right threshold for a weekly job (~5 sessions of lag is the steady state)
+      ci_invariant: no CI or nightly step reads the ThetaData store for this artifact
     provenance:
       reconstructed: true
       method: >
@@ -5326,6 +5347,27 @@ artifacts:
       Display-only: net-GEX percentile-vs-own-history context surface for the
       market_gamma engine; MUST NOT feed any scored or arithmetic weight path.
       Companion live store: data/polygon_gex/summary_*.parquet (short window ~2026-06-15+).
+      OIP E3d: engine/positioning_persistence.deep_history_context reads this store for
+      the four covered index ETFs and emits the WINDOW plus the distribution spread
+      (min/p10/median/p90/max) into the per-symbol gex_state payload — deliberately NOT a
+      percentile of today's value against it. Today's payload value comes from the Cboe
+      delayed chain and this series is a ThetaData reconstruction, so placing one inside
+      the other would be the cross-source comparison the market_gamma SCALE NOTE already
+      refuses.
+      Measured against the ACTUAL pair that refusal is about — this reconstruction vs
+      data/cboe/gex_<ROOT> (scripts.build_index_gex_history.audit_overlap, 2026-07-29,
+      12 shared dates per root; the audit block higher up this entry is the separate
+      reconstruction-vs-polygon_gex comparison and must not be read as this one):
+        SPY  raw corr 0.9329, same-spot corr 0.9956 (n=8), mean abs diff 2.0585 $bn
+        QQQ  raw corr 0.7618, same-spot corr 0.9933 (n=7), mean abs diff 1.2896 $bn
+        IWM  raw corr 0.4850, same-spot corr 0.9655 (n=8), mean abs diff 0.3366 $bn
+        DIA  no cboe/gex_DIA store exists, so no comparison is possible for that root.
+      The two series track each other closely once the settlement-timing lag is filtered
+      out, and still differ by ~2 $bn on SPY at the raw level — close enough to be
+      comparable CONTEXT, not close enough to place one value inside the other's
+      distribution as a percentile. The refusal stands; these are its numbers.
+      Session-filter note: the rebuild carries one non-session row per root
+      (2019-02-02, a Saturday); deep_history_context filters before it quantiles.
 
   # --- W2 SURFACE: whole-market dealer-surface history (RIC program) ---
   # Three entries — one per root_class (small committed aggregates, ~single-digit MB each)
@@ -5656,6 +5698,95 @@ artifacts:
       (deferred; iv_surface upgrade wave not yet started). Display-only: iv30
       consumed via options_stamp for stock-card overlay and gex_board; no
       scored arithmetic path currently reads this store.
+      Its per-strike companion is registered separately below (polygon-gex-chains) as of
+      OIP E3 — it became a first-class payload input, not just an accrual byproduct.
+
+  # --- OIP E3: per-strike chain snapshots (promoted to a registered nerve 2026-07-29) ---
+  polygon-gex-chains:
+    path: data/polygon_gex/chains/<DATE>.parquet
+    format: parquet
+    producer: scripts/build_polygon_gex.py
+    known_extra_writers: []
+    owner_program: options-alpha
+    cadence: collect
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/options_stamp.py
+      - engine/positioning_persistence.py
+      - scripts/build_flow_leaders.py
+    external_consumers: []
+    provenance:
+      # These two facts are load-bearing for every reader — both are measured, not
+      # assumed, and both have already produced silent-wrong reads elsewhere.
+      non_session_files: >
+        The store contains NON-SESSION files: weekend runs re-fetch the Friday reading
+        and holidays get a file too (re-measured 2026-07-30: 11 of the 40 files on disk are
+        non-sessions — Saturdays, Sundays and Juneteenth 2026-06-19; the store grows one
+        file per calendar day, so treat the ratio as a dated snapshot). Every reader MUST
+        session-filter through lib.nyse_calendar.is_session before any delta, iloc[-1]
+        or percentile (the #3721 weekend-row class).
+        CONSUMER COMPLIANCE (re-checked 2026-07-30, one line per listed consumer — this
+        block records the state of each reader, so do not read a listing below as a
+        compliance claim):
+          engine/positioning_persistence.py — COMPLIANT. Session-filters before every
+            delta, wall count and quantile, and additionally fingerprints each snapshot
+            per underlying so an unmeasurable window is refused rather than read as flat.
+          scripts/build_flow_leaders.py — COMPLIANT since #4018. It previously took the
+            last two FILES unfiltered (sorted(glob)[-2:]), so on a weekend or Monday run
+            it picked a byte-identical pair and its day-over-day OI confirmation returned
+            a definitive-looking False for every ticker (measured 370/370 roots identical
+            on 2026-07-25->26 and 2026-07-26->27). _load_two_chain_days now skips
+            non-session files by ISO filename stem through lib.nyse_calendar.is_session
+            before taking the newest two.
+          engine/options_stamp.py — NOT COMPLIANT, tracked as follow-up, deliberately NOT
+            fixed in the E3 wave (it is a separate PIT-stamp lane with its own suite).
+            _default_chain_dates() enumerates every filename with no session filter, and
+            both readers then slice that list positionally: _voi_flag_stamp compares
+            usable[-1] against usable[-2], the exact shape #4018 repaired, and
+            _doi_slope_5d fits an OLS slope over usable[-6:]. Measured on the store at
+            2026-07-30, that 6-point window is 2026-07-25..30 and carries the Saturday
+            2026-07-25 / Sunday 2026-07-26 pair, which are ONE vintage (identical row
+            count 163,564 and identical total open interest 117,303,840) — so a sixth of
+            the fit is a duplicated point and the normalised slope is biased toward zero.
+            A session-filtered reader would fit 07-23, 07-24, 07-27, 07-28, 07-29, 07-30.
+      filename_is_not_the_vintage: >
+        The filename date is a RUN stamp, not the open-interest vintage. Consecutive
+        snapshots can carry byte-identical open interest (measured: 2026-07-25 / 26 / 27
+        are all one reading; 7 of 10 names repeat between 2026-06-15 and 2026-06-16).
+        A delta across two identical vintages is an UNMEASURABLE window, not "no
+        change" — engine/positioning_persistence fingerprints each snapshot per
+        underlying (contract count + total open interest + underlying price) and refuses
+        the delta for any name whose two sides agree. The guard is per NAME because one
+        root can repeat while the rest of the file advances.
+      units: >
+        oi is a COUNT of contracts (integral, >= 0). Readers assert that at ingestion —
+        a normalised or non-integral column is refused rather than silently rescaling
+        every downstream delta.
+    notes: >
+      Raw per-strike option-chain snapshot, one file per run date, append-only and
+      never rewritten (open interest is point-in-time only and CANNOT be backfilled —
+      this is the per-strike history the Cboe path discards). Columns: underlying,
+      strike_ticker (OCC contract id, unique within a file), expiry, K, T, is_call, oi,
+      iv, gamma, delta, volume, spot, asof. ~370 underlyings, ~165k rows, ~4.6 MB/day.
+      OIP E3a: matched-contract day-over-day open-interest change derived from the two
+      newest SESSION snapshots is the sanctioned RELIABLE read (signing-free), and lights
+      oi_delta_clusters in the per-symbol gex_state payload. OIP E3b: the same snapshots
+      over a bounded 6-session window give open-interest wall persistence. Display-only;
+      no scored path reads either.
+      STANDING-KILL NOTE: DO_NOT_REBUILD carries "DOI (options delta-OI family) DEAD"
+      from the Options->NW entry-intelligence W-E1 gauntlet. That is a PROMOTION verdict
+      (no rank / size / gate authority for the family), not a build gate — display-tier
+      context ships freely per CLAUDE.md §Epistemics, and the OIP masterplan §8 lists
+      matched-contract day-over-day ΔOI among the estate's two RELIABLE instruments.
+      What stays closed: any scored path, and sector-level ΔOI aggregation (the specific
+      construction the W-E1 census killed). Neither may be reintroduced here.
 
   # --- W-A Options Entry State (options-nw-entry-intelligence, 2026-07-05) ---
 
@@ -10448,12 +10579,15 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/options_structure.py
+      - engine/positioning_persistence.py
     external_consumers:
       - terminal:gex-tab
+      - crypto-cockpit:coin-mstr-shelf
     notes: >
       Per-symbol dealer gamma structure state (Package C, MomoEdge parity).
       Emitted by scripts/build_gex_board.py via engine/gex_state.compute_gex_state()
-      after each name's board payload is computed — ZERO new network calls, derived only.
+      after each name's board payload is computed — ZERO new network calls for the
+      gamma fields, derived only.
       6-state gamma_regime (PIN|DRIFT|RANGE|TRANSITION|TREND|CASCADE), stability_pct,
       flip, walls, magnet, max_pain, pin_probability, gravity, oi_delta_clusters.
       DISPLAY-ONLY until GEX→forward-vol gate (~Sept 2026). Single-name regime is a
@@ -10461,6 +10595,37 @@ artifacts:
       regime_passport preserved in all consumers. authority_tier=display; reliability
       flags assumption-signed on all GEX/gamma fields.
       Thin-chain / no_options names emit nothing (compute_gex_state returns None).
+      OIP E3 (2026-07-29) — ADDITIVE ONLY, back-compat law: every pre-E3 top-level key
+      keeps its name, position and type (pinned by tests/test_gex_state.py
+      TestE3BackCompat), so the terminal gex tab and the crypto-cockpit COIN/MSTR shelf
+      are unaffected.
+        * oi_delta_clusters.new_oi / .exit_oi — LIT (they were structurally empty until
+          this wave). Matched-contract day-over-day open-interest build / unwind strikes
+          from data/polygon_gex/chains, top 4 per side, each row carrying K, right,
+          oi_prior, oi_now, oi_delta, oi_delta_pct (a PERCENT), dist_pct and the number
+          of matched contracts. Siblings added in the same block: prior_snapshot,
+          latest_snapshot, matched_contracts, same_vintage, note_en, note_zh.
+        * wall_persistence — how long the heaviest open-interest strike either side of
+          the price has held, over a bounded 6-session window. Signing-free (a count of
+          contracts). NOT the same reading as call_wall / put_wall, which are dollar-gamma
+          walls from the Cboe chain: no wall LEVEL history exists in any store, so a
+          same-source persistence count for those is not computable today.
+        * net_gex_pctile — today's net dealer gamma inside the name's OWN accrued daily
+          record (session-filtered; the Cboe summary store carries weekend rows that
+          repeat the previous close — 13 of 36 for SPY). low_confidence under 60 sessions.
+          COVERAGE IS NARROW and stated here so nobody reads its absence as a bug: the
+          block needs >=5 session rows in data/cboe/gex_<KEY>.parquet, and that store
+          exists for only 10 roots on disk — measured 2026-07-29, the field is present on
+          10 of 555 emitted payloads. Every other root omits it rather than inventing a
+          percentile from a record it does not have.
+        * deep_history — window + spread of the multi-year index rebuild, index ETFs only.
+      Each additive block is OMITTED, never null-filled, when its source does not cover
+      the root — absence must not read as a measured zero. Coverage is partial by
+      construction: the chain store holds ~370 names against the board's ~691, so SPX,
+      NDX, RUT, GLD, TLT, HYG, ARKK, NFLX, BABA, UBER and GME get the honest empty plus a
+      plain-word note. reliability.oi_delta marks the open-interest change as the one
+      signing-free reliable field in this schema. No fused score, no direction language
+      beyond build/unwind facts, and no sector-level ΔOI aggregation (standing kill).
 
   # --- options-flow.chain_heat: contract-day accumulation campaigns ---
   options-flow-chain-heat:

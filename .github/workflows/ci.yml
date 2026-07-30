@@ -2017,6 +2017,21 @@ on:
       - "tests/test_gex_engine.py"
       - "tests/test_gex_model.py"
       - "tests/test_polygon_gex.py"
+      # OIP E3 positioning persistence (2026-07-29), wired into unrun-market-plumbing.
+      # engine/** already covers engine/positioning_persistence.py, engine/gex_state.py
+      # and engine/market_gamma.py, and scripts/build_index_gex_history.py rides the
+      # scripts/*.py catch-all — so these three entries are the OTHER half: a suite-only
+      # edit (a re-pin of the back-compat key snapshot, a new truth-table case) must
+      # still be able to START ci.yml. Both suites below existed BEFORE this wave and
+      # were reachable from no path pattern at all.
+      - "tests/test_positioning_persistence.py"
+      - "tests/test_gex_state.py"
+      - "tests/test_index_gex_history.py"
+      # The launchd lane that produces data/index_gex_history off the render path. A
+      # plist/runner-only edit changes the artifact's cadence and its push tail, so it
+      # must reach the suite that pins the resolver routing and the R2 registration.
+      - "ops/launchd/com.macro.indexgexhistory.plist"
+      - "ops/launchd/run_index_gex_history.sh"
       - "scripts/backtest_event_priors.py"
       - "scripts/build_attention_deterministic.py"
       - "scripts/build_discovery_confluence.py"
