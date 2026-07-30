@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T22:11:18.737677+00:00",
-  "count": 417,
+  "generated_at": "2026-07-30T22:41:28.575109+00:00",
+  "count": 418,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1580,6 +1580,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-60yjajeklu5-07eaa6",
+      "title": "Philips (PHG)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:19Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
