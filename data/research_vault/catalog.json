@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T01:54:42.638158+00:00",
-  "count": 358,
+  "generated_at": "2026-07-30T02:24:38.754786+00:00",
+  "count": 359,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -697,6 +697,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lu0o3wxnfdr-c945d7",
+      "title": "Weekly fixed income commentary Oil price shock reshapes Fed rate expectations",
+      "institution": "Nuveen",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T23:30:03Z",
+      "summary_points": [
+        "**Oil price surge & Fed rate expectations**: Middle East tensions triggered 9% oil jump, pushing Treasury yields higher and increasing Fed rate hike probability to 38% this week (up from prior), reversing yield curve bear-flattening.",
+        "**Credit fundamentals remain solid**: Fixed income negative returns stem solely from rate moves (not credit deterioration), with spread widening driven by technicals, not credit quality issues.",
+        "**Rate sell-off dominates fixed income**: All segments (munis, corporates, preferreds) declined due to rate-driven selloffs; senior loans held firm amid supply-demand imbalance, while hyperscalers pressured by AI uncertainty."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
