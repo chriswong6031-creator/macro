@@ -1576,10 +1576,41 @@
   },
   {
    "match": "经验证的领先前兆突破",
-   "backing": "BTC impulse de-risk alert (engine/btc_alerts, impulse_warn_down / impulse_trigger_down — fired ONLY by the act-tier legs d2/d3 of engine/btc_impulse_radar). Backing: research/VECTOR_IMPULSE_PREDICTION.md — D2 (DVOL intraday-range jolt) base 0.0614 / cond 0.1538, lift 2.507, and the 2024+ HOLDOUT STRENGTHENS to lift 3.277 (n_fire 49, block-bootstrap p=0.0015, leak-free verified, cross-threshold monotonic); D3 (SOPR profit-take spike) also clears the holdout bar and is coincidence-clean. D1 (cbp_z90), the leg that FAILED that bar (lift 0.90 full / 1.12 holdout), is deliberately NOT wired to this alert — it ships context-only. The same sentence discloses the blind spot ('did NOT lead the 2026-06-24 cascade') and the ~2-4 day decay.",
+   "backing": "BTC impulse de-risk alert (engine/btc_alerts, impulse_warn_down / impulse_trigger_down — fired ONLY by the act-tier legs d2/d3 of engine/btc_impulse_radar). Backing: research/VECTOR_IMPULSE_PREDICTION.md — D2 (DVOL intraday-range jolt) base 0.0614 / cond 0.1538, lift 2.507, and the 2024+ HOLDOUT STRENGTHENS to lift 3.277 (n_fire 49, block-bootstrap p=0.0015, leak-free verified, cross-threshold monotonic); D3 (SOPR profit-take spike) also clears the holdout bar and is coincidence-clean. D1 (cbp_z90), the leg that FAILED that bar (lift 0.90 full / 1.12 holdout), is deliberately NOT wired to this alert — it ships context-only. The same sentence discloses the blind spot ('did NOT lead the 2026-06-24 cascade') and the ~2-4 day decay. Surface `alerts` is the rendered form of that same alert (engine.alert_triage -> templates/alerts.html.j2 -> site/alerts.html), where this zh half shares its line with the EN half covered by the 'Holdout-validated, leak-free' entry — the SAME backing, not a new page borrowing a justification.",
    "surfaces": [
     "btc_alerts",
-    "vector"
+    "vector",
+    "alerts"
+   ]
+  },
+  {
+   "match": "Holdout-validated, leak-free",
+   "backing": "EN half of the SAME BTC impulse de-risk sentence the '经验证的领先前兆突破' entry backs (engine/btc_alerts._conviction, impulse_warn_down / impulse_trigger_down — fired ONLY by the act-tier legs d2/d3 of engine/btc_impulse_radar); the two halves sit on one line once alert_triage renders them. Backing: research/VECTOR_IMPULSE_PREDICTION.md — D2 (DVOL intraday-range jolt) base 0.0614 / cond 0.1538, lift 2.507, and the 2024+ HOLDOUT STRENGTHENS to lift 3.277 (n_fire 49, block-bootstrap p=0.0015, leak-free verified, cross-threshold monotonic); D3 (SOPR profit-take spike) also clears the holdout bar and is coincidence-clean (fires into +9.95%/5d strength, only 6.8% already down >3%/3d). D1 (cbp_z90), the leg that FAILED that bar (lift 0.90 full / 1.12 holdout, materially coincident), is deliberately NOT wired to this alert — it ships context-only. 'leak-free' is the doc's own verified property of D2 (forward-min label with .shift(1)/90d trailing z). The same sentence discloses the blind spot ('did NOT lead the 2026-06-24 cascade') and the ~2-4 day decay. Surface `btc_alerts` is the ENGINE MODULE that authors the string; `alerts` is the rendered form of that same alert (scripts/build_site.py -> engine.alert_triage -> templates/alerts.html.j2 -> site/alerts.html) — one claim of record, two places the identical sentence appears.",
+   "surfaces": [
+    "btc_alerts",
+    "alerts"
+   ]
+  },
+  {
+   "match": "backtest-validated OOS; live cohort accruing",
+   "backing": "W4.2 turn-hazard gate — shown ONLY on hazard cells whose cell_verdict is PASS (the PRIOR branch of the same tooltip says the opposite in as many words: 'did NOT pass the W4.2 gate; this is the historical family-stratified base rate, not a validated model output'). Pre-registration + results: research/cycle_masterplan/PREREGISTRATION.md §2 (HZ-up/dn-1m/3m/6m, criteria frozen before the run) and research/cycle_masterplan/W42_HAZARD_VERDICT.md; fit artifact data/hazard/model_price_c4414dcb.json. Scored on leak-free out-of-fold calibrated predictions vs the correctly-specified family-stratified KM baseline, month-block bootstrap 90% CI on paired ΔBrier excluding 0, BH-FDR at q=0.10 across the 6-cell family: 4 of 6 cells PASS (up-1m ΔBrier +0.0140 p=0.0012; dn-1m +0.0141 p=0.018; dn-3m +0.0078 p=0.036; dn-6m +0.0042 p=0.024), 2 ship PRIOR. 'live cohort accruing' is ruling A6, not a hedge for a weak backtest: BACKTEST (backfilled) and LIVE (prospective) cohorts never blend in one number, and a LIVE cohort needs n_eff >= 40 per cell before it is read (research/cycle_masterplan/W24_FIRST_SCORECARDS.md §intro, W48_REGISTRY_AUDIT.md maturation row) — which is exactly the come-back condition the cycle_app form of the sentence prints inline. Both surfaces render the same hazard tooltip from the same ledger: `sector_cycles` (templates/sector_cycles.js and its byte-paired site copy) and `cycle_app` (site/cycle_app.js, plus the block comment documenting that tooltip).",
+   "surfaces": [
+    "sector_cycles",
+    "cycle_app"
+   ]
+  },
+  {
+   "match": "FDR-validated bounce ALERT",
+   "backing": "Signal Lab row 'Capitulation bounce overlay (Fed-put gated)' (engine/signal_lab.py _row why=). Backing: reports/capitulation-overlay-phase0.md (harness scripts/capitulation_overlay_phase0.py) — the capitulation ALERT (capitulation_score>=2: VRP %ile>0.90 + VIX>30 + COT ES net-spec washout) is FDR-validated as an alert at q=0.0, and the row states its numbers inline: 63d gated P(up) 75% vs 72% base, book-minus-base +0.658 bps/day, NW t=2.437, p=0.0148, split-half OOS beats B&H in both halves plus leave-one-fire. The claim is scoped to the ALERT and the same sentence refuses the promotion the reader would infer next: the TIMED +0.5x/63d Fed-put-gated SPY overweight FAILS the scored bar (marginal-stream DSR 0.737 < 0.90, ties a dumb buy-VIX>30 leg at paired p=0.52, and the gate LOWERS timed CAGR 12.5->12.0), so it ships as a confirmer feeding the dislocation gate, not as a scored allocation leg.",
+   "surfaces": [
+    "signal_lab"
+   ]
+  },
+  {
+   "match": "wave-2-validated cohort-washout ranking bonus",
+   "backing": "CSS comment naming the study the .nb-coiled chip's styling exists for. Backing: research/entry_timing/WAVE2_REPORT.md — 'Out-of-Sample Confirmation of the COILED Ranking Bonus', gates G1-G4 pre-registered in wave 1 and graded as written: G1 fold stability PASS (4/5 folds spread>0, pooled +6.69pp), G2 basket replication PASS on the decisive OOS panel (2,336 names, sector-cohort +7.54pp, both time halves same sign, n_COILED=6,842, per-name majority 65.24%), G3 robustness PASS (clean10/15/20/30 all positive on both panels), G4 ranking PASS (Spearman 1.0, Q4-Q1 +10.19pp). The pre-committed ship rule was G1 AND G2 AND G3 -> ship, and it shipped at the scope the comment states and no wider: a RANKING BONUS / surfacing tier, display-only, never a hard gate (T8 recall showed a hard gate would gut the watchlist).",
+   "surfaces": [
+    "dashboard"
    ]
   }
  ]
