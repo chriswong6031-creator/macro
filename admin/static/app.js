@@ -211,6 +211,12 @@ const ICONS = {
   /* Email Center: an envelope — the body, and the flap folded down over it. */
   email_center: NAV_ICO('<rect x="2.6" y="5" width="18.8" height="14" rx="2.2"/><path d="M3.2 7.2l8.8 5.9 8.8-5.9"/>'),
   /* Marketing lobe icons */
+  /* Floor = a production line: material entering, stations, the drop-off at the
+     end. Model desk = a stack of rungs (the provider waterfall). Lanes = three
+     parallel tracks, one of them short (a dark lane). */
+  marketing_floor:       NAV_ICO('<path d="M3 19h18"/><path d="M4 19V9l4-3v13M10 19V6l4 3v10M16 19v-6l4 2.5V19"/>'),
+  marketing_models:      NAV_ICO('<path d="M4 6h11M4 11h8M4 16h5"/><path d="M18.5 5.5v13"/><path d="M16.5 16.5l2 2 2-2"/>'),
+  marketing_lanes:       NAV_ICO('<path d="M3 6h18M3 12h12M3 18h7"/><circle cx="20.4" cy="12" r="1.3"/><circle cx="15.4" cy="18" r="1.3"/>'),
   marketing_overview:    NAV_ICO('<path d="M3 17V8l5-3 4 2 5-3v9l-5 3-4-2-5 3Z"/><path d="M8 5v9M12 7v9M17 4v9"/>'),
   marketing_departments: NAV_ICO('<rect x="9" y="3" width="6" height="4" rx="1"/><rect x="2" y="15" width="5" height="4" rx="1"/><rect x="9" y="15" width="5" height="4" rx="1"/><rect x="17" y="15" width="5" height="4" rx="1"/><path d="M12 7v4M4.5 15v-3h15v3"/>'),
   marketing_channels:    NAV_ICO('<path d="M5.5 14.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M18.5 9.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M18.5 19.5a2 2 0 1 0 0-5 2 2 0 0 0 0 5z"/><path d="M7.4 13.4l9.1-3.9M7.4 10.6l9.1 3.9"/>'),
@@ -239,7 +245,15 @@ const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
   { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
   { label: "Research", items: [["research_tools", "Research Tools"]] },
-  { label: "Marketing", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_radar", "Radar"], ["marketing_seo", "SEO"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_reply_queue", "Reply Queue"], ["marketing_health", "Desk Health"], ["marketing_learning", "Learning"], ["marketing_publish", "Publisher"], ["marketing_sentinel", "Sentinel"], ["marketing_allies", "Allies"], ["marketing_lab", "Lab"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"], ["marketing_lobes", "Engines"]] },
+  /* Marketing was one flat 19-item list — "SUPER messy" (operator, 2026-07-29).
+     Split along the operator's actual loops: the nightly production line he
+     walks first, the lanes that feed it, the engine room he opens when a number
+     looks wrong, and the strategy surfaces he reads occasionally. Floor leads
+     because it is the only page that answers "is it working" without clicking. */
+  { label: "Marketing · Floor", items: [["marketing_floor", "Floor"], ["marketing_content", "Content Studio"], ["marketing_outbox", "Outbox"], ["marketing_sentinel", "Sentinel"], ["marketing_publish", "Publisher"]] },
+  { label: "Marketing · Lanes", items: [["marketing_lanes", "X Lanes"], ["marketing_radar", "Radar"], ["marketing_reply_queue", "Reply Queue"], ["marketing_seo", "SEO"]] },
+  { label: "Marketing · Engine room", items: [["marketing_models", "Model Desk"], ["marketing_health", "Desk Health"], ["marketing_learning", "Learning"], ["marketing_lab", "Lab"], ["marketing_lobes", "Engines"]] },
+  { label: "Marketing · Strategy", items: [["marketing_overview", "CMO Office"], ["marketing_departments", "Departments"], ["marketing_campaigns", "Campaigns"], ["marketing_channels", "Channels & Desks"], ["personas", "Persona Roster"], ["marketing_allies", "Allies"], ["marketing_ads", "Ad Central"], ["marketing_experiments", "Experiments"]] },
   { label: "Growth", items: [["analytics", "Analytics"], ["users", "Users"], ["revenue", "Revenue"], ["experiments", "Experiments"], ["site_gate", "Site Access"]] },
   { label: "Support", items: [["support_tickets", "Support Tickets"], ["email_center", "Email Center"]] },
   { label: "System", items: [["system", "System"], ["health", "Health"], ["deploy", "Build & Deploy"], ["metabolism", "Metabolism"], ["codex", "Codex Research"], ["cost", "AI Cost"], ["content", "Content"]] },
@@ -4272,9 +4286,10 @@ RENDER.marketing_overview = async () => {
         ${mktStack("First paid job", mandate.first_paid_job)}
         <div class="note muted" style="margin-top:6px">${esc(mandate.proof || "")}</div>`)}
       ${card("North star", `
-        <div class="big" style="color:var(--accent-cyan)">${esc(ns.metric || "—")}</div>
-        <div class="sub">${ns.value != null ? String(ns.value) : "—"}</div>
+        <div class="big" style="color:var(--accent-cyan)">${ns.value != null ? esc(String(ns.value)) : "No reading yet"}</div>
+        <div class="sub">${esc(mktNorthStarPlain(ns.metric))}</div>
         <div class="kv"><span>State</span><span class="statpill ${ns.state === "accruing" ? "s-mut" : "s-ok"}">${esc(ns.state || "accruing")}</span></div>
+        ${ns.metric ? `<div class="note muted" style="margin-top:6px"><b>Full definition:</b> ${esc(ns.metric)}</div>` : ""}
         ${ns.note ? `<div class="note muted">${esc(ns.note)}</div>` : ""}`)}
       ${card("Portfolio", `
         <div class="kv"><span>Envelope</span><b>$${Number(port.total_envelope_usd || 0).toLocaleString()}</b></div>
@@ -4380,6 +4395,511 @@ function conStartCountdowns() {
   tick();
   CON_CD_TIMER = setInterval(tick, 30000);
 }
+
+/* ==========================================================================
+   MARKETING FLOOR / MODEL DESK / X LANES
+   Operator brief 2026-07-29: the console was showing what succeeded and hiding
+   what leaked, so a jammed factory read as a quiet one. These three views draw
+   the leaks. Every number here already existed in data/ — none of it is new
+   truth, it was simply never surfaced.
+   ========================================================================== */
+
+/* The north-star metric name is a formal definition, not a label — rendered at
+   display size it was the biggest and least readable text in the console, which
+   the design doctrine bans from a glance tier. Plain sentence up front, formal
+   wording demoted to a note beneath it. */
+function mktNorthStarPlain(metric) {
+  const m = String(metric || "");
+  if (!m) return "not set";
+  if (/contribution profit/i.test(m) && /90/.test(m)) {
+    return "Profit that marketing brought in, measured 90 days after someone signs up";
+  }
+  /* Unknown metric: keep the real wording rather than inventing a translation. */
+  return m;
+}
+
+/* Whole numbers with thousands separators; an honest em dash for null. */
+function flrN(n) { return (n == null) ? "—" : Number(n).toLocaleString(); }
+function flrPct(x) { return (x == null) ? "—" : (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%"; }
+
+/* ---- 1 · THE LINE -------------------------------------------------------- */
+/* One station cell. The loss figure outranks the throughput figure in weight
+   because the operator's job is finding the leak, not admiring the output. */
+function flrStation(st, breakAt, cold) {
+  const zero = (st.out === 0) ? " is-zero" : "";
+  const cls = [
+    "flr-stn",
+    cold ? "is-cold" : "",
+    st.id === breakAt ? "is-break" : "",
+  ].filter(Boolean).join(" ");
+
+  /* Inverted yield bar: the filled portion is what died here. */
+  const lossShare = (st.in && st.lost != null && st.in > 0)
+    ? Math.min(1, st.lost / st.in) : 0;
+  const bar = (st.in != null && st.lost != null)
+    ? `<div class="flr-yield" role="img" aria-label="${flrPct(lossShare)} of arriving posts stopped here"><i style="width:${(lossShare * 100).toFixed(1)}%"></i></div>`
+    : `<div class="flr-yield" aria-hidden="true"></div>`;
+
+  const loss = (st.lost == null)
+    ? `<div class="flr-stn-loss-none">start of the line</div>`
+    : (st.lost === 0
+      ? `<div class="flr-stn-loss-none">nothing lost here</div>`
+      : `<div class="flr-stn-loss">−${flrN(st.lost)}</div>
+         <div class="flr-stn-loss-word">${esc(st.loss_word || "lost here")}</div>`);
+
+  const tag = (st.id === breakAt)
+    ? `<div class="flr-break-tag">biggest leak</div>` : "";
+
+  const title = st.detail
+    ? ` title="${esc(st.detail)}"` : "";
+
+  return `<button class="${cls}" onclick="go('${esc(st.goto || "marketing_content")}')"${title}>
+    <div class="flr-stn-name">${esc(st.name)}</div>
+    <div class="flr-stn-n${zero}">${flrN(st.out)}</div>
+    <div class="flr-stn-what">${esc(st.what)}</div>
+    ${bar}
+    ${loss}
+    ${tag}
+  </button>`;
+}
+
+function flrLine(d) {
+  const line = d.line || [];
+  const breakAt = d.break_at;
+  /* Everything downstream of the break runs cold — dashed rail, so the plant
+     visibly goes dark past the leak. */
+  let seenBreak = false;
+  const cells = line.map((st) => {
+    const cold = seenBreak;
+    if (st.id === breakAt) seenBreak = true;
+    return flrStation(st, breakAt, cold);
+  }).join("");
+
+  const first = line[0] || {};
+  const last = line[line.length - 1] || {};
+  const kept = (first.out && last.out != null)
+    ? (last.out / first.out) : null;
+
+  let verdict;
+  if (last.out === 0 && first.out) {
+    verdict = `<b>Nothing reached X tonight.</b> ${flrN(first.out)} posts were planned and every one of them stopped somewhere on this line. The biggest single leak is marked above — start there.`;
+  } else if (kept != null) {
+    verdict = `<b>${flrN(last.out)} of ${flrN(first.out)} planned posts reached X</b> — ${flrPct(kept)} of the plan. Each station's second number is what stopped there.`;
+  } else {
+    verdict = `The line is still filling in. Stations without a number have not run on this host yet.`;
+  }
+
+  const drift = (d.plan_claimed_total != null && first.out != null
+                 && d.plan_claimed_total !== first.out)
+    ? ` <span class="faint">The plan file's own header claims ${flrN(d.plan_claimed_total)} posts; the queue actually holds ${flrN(first.out)}. The queue is the truth.</span>`
+    : "";
+
+  return `<div class="flr-line-card">
+    <div class="flr-line">${cells}</div>
+    <div class="flr-line-foot">${verdict}${drift}</div>
+  </div>`;
+}
+
+/* ---- 2 · BLOCKERS ------------------------------------------------------- */
+/* Ranked by what they cost in posts. Each row names the exact next action —
+   a blocker with no operator action says so rather than inventing one. */
+function flrBlocker(b) {
+  const cost = (b.cost != null)
+    ? `<div class="flr-blk-cost">${flrN(b.cost)}<small>posts</small></div>`
+    : `<div class="flr-blk-cost is-none">—</div>`;
+  const goWord = {
+    marketing_publish: "Open the Publisher",
+    marketing_sentinel: "Open the gate",
+    marketing_outbox: "Open the Outbox",
+    marketing_content: "Open the Studio",
+    marketing_models: "Open the Model Desk",
+    marketing_channels: "Open Channels & Desks",
+    marketing_lanes: "Open X Lanes",
+  }[b.goto] || "Open";
+  const go = b.goto
+    ? `<button class="flr-blk-go" onclick="go('${esc(b.goto)}')">${esc(goWord)} →</button>` : "";
+  return `<div class="flr-blk flr-blk-${esc(b.severity)}">
+    ${cost}
+    <div class="flr-blk-body">
+      <div class="flr-blk-title">${esc(b.title)}</div>
+      <div class="flr-blk-why">${esc(b.why)}</div>
+      <div class="flr-blk-fix">${esc(b.fix)}</div>
+      ${go}
+    </div>
+  </div>`;
+}
+
+/* ---- 3 · AUTHORSHIP ---------------------------------------------------- */
+/* The operator ordered ChatGPT-first authorship on 2026-07-29. This strip is
+   how he checks it happened: model-written, template-written, and never-written
+   as three shares of one bar. Template on a planned kind is a defect. */
+function flrAuthorship(a) {
+  if (!a || !a.total) {
+    return nwEmpty("No plan to attribute", "Authorship shows up once a plan is on disk.");
+  }
+  const modes = a.by_mode || {};
+  const tmpl = (modes.deterministic || 0) + (modes.template || 0);
+  const none = modes["no writer reached"] || 0;
+  const model = a.total - tmpl - none;
+  const seg = (n, cls, label) => {
+    if (!n) return "";
+    const w = (n / a.total) * 100;
+    return `<div class="flr-auth-seg ${cls}" style="width:${w.toFixed(2)}%" title="${esc(label)}: ${flrN(n)}">${w > 9 ? flrN(n) : ""}</div>`;
+  };
+
+  const modelNames = Object.keys(modes).filter(
+    m => m !== "deterministic" && m !== "template" && m !== "no writer reached");
+
+  let stance;
+  if (model === 0 && tmpl > 0) {
+    stance = `<span style="color:var(--loss)">No model wrote anything tonight.</span> Every post carries house-template copy — the word-salad shape the operator called out. The model desk is where to look.`;
+  } else if (a.template_on_planned_kind) {
+    stance = `<span style="color:var(--loss)">${flrN(a.template_on_planned_kind)} planned posts were written by a template, not a model.</span> That is a defect, not a fallback.`;
+  } else {
+    stance = `Every planned post was written by a model. That is the law holding.`;
+  }
+
+  return `<div class="card">
+    <h3>Who wrote tonight's words</h3>
+    <div class="flr-auth-bar">
+      ${seg(model, "is-model", modelNames.join(", ") || "model")}
+      ${seg(tmpl, "is-tmpl", "house template")}
+      ${seg(none, "is-none", "never reached a writer")}
+    </div>
+    <div class="flr-auth-key">
+      <span><i style="background:var(--accent-cyan)"></i>${flrN(model)} written by a model${modelNames.length ? " (" + esc(modelNames.join(", ")) + ")" : ""}</span>
+      <span><i style="background:var(--loss)"></i>${flrN(tmpl)} written by a house template</span>
+      <span><i style="background:var(--faint)"></i>${flrN(none)} never reached a writer</span>
+    </div>
+    <div class="note" style="margin-top:9px">${stance}</div>
+    <div class="note muted" style="margin-top:6px">${esc(a.law || "")}</div>
+    <button class="flr-blk-go" onclick="go('marketing_models')">See which model is on each lane →</button>
+  </div>`;
+}
+
+/* ---- 4 · DISPATCH LEDGER ---------------------------------------------- */
+/* The publisher writes ~25 counters per run and the console used to render
+   five. Every counter renders here, zeroes included and dimmed: a zero on
+   "went out to X" is the most important number on the page. A counter this
+   view has no plain word for still renders, under its raw name — a new engine
+   gate must never ship invisible. */
+function flrLedger(led) {
+  if (!led || !led.present) {
+    return `<div class="card"><div class="note muted">${esc((led && led.note) || "No publish run logged yet.")}</div></div>`;
+  }
+  const rows = (led.lines || []).map(ln => {
+    /* "posted" is never dimmed. A zero there is the headline of the night, so it
+       carries the loss treatment rather than receding with the other zeroes. */
+    const isHead = ln.key === "posted";
+    const cls = ["flr-led-row",
+      (ln.is_loss && ln.n > 0) || (isHead && ln.n === 0) ? "is-loss" : "",
+      isHead && ln.n > 0 ? "is-good" : "",
+      ln.n === 0 && !isHead ? "is-zero" : ""].filter(Boolean).join(" ");
+    const raw = ln.mapped ? "" : `<span class="flr-led-raw">${esc(ln.key)}</span>`;
+    return `<div class="${cls}">
+      <div class="flr-led-n">${flrN(ln.n)}</div>
+      <div class="flr-led-w">${esc(ln.word)}${raw}</div>
+    </div>`;
+  }).join("");
+
+  const halted = (led.halted_accounts || []).length
+    ? `<div class="note" style="margin-top:8px;color:var(--bad)">Halted desks: ${esc((led.halted_accounts || []).join(", "))}</div>`
+    : "";
+
+  return `<div class="card">
+    <h3>Where tonight's posts went
+      <span class="cnt">last sweep ${esc(led.at || "—")} · ${esc(led.backend || "—")}</span></h3>
+    <div class="note muted" style="margin-bottom:10px">Every counter the publisher wrote on its last run. Zeroes are kept and dimmed — a zero next to “went out to X” is the whole story.</div>
+    <div class="flr-led">${rows}</div>
+    ${halted}
+  </div>`;
+}
+
+/* ---- 5 · WHY POSTS WERE HELD ------------------------------------------ */
+/* The gate walks desks in order and holds anything reading too close to a post
+   already cleared, recording near_dup:<winner>. One flagship post can quietly
+   kill dozens of satellite posts. This ranking is the lever on desk yield and
+   it has never been shown. */
+function flrCollisions(loss) {
+  const att = (loss && loss.attractors) || [];
+  if (!att.length) {
+    return `<div class="card"><h3>Duplicate collisions</h3>
+      <div class="note muted">No post was held as a near-duplicate of another. The desks are writing distinctly.</div></div>`;
+  }
+  const rows = att.map(a => `<tr>
+    <td class="flr-kill">${flrN(a.killed)}</td>
+    <td class="sub"><b>${esc(a.headline || a.post_id)}</b>
+      <div class="note muted">${esc(a.account || "?")} · ${esc(a.kind || "?")} · ${esc(a.post_id)}</div></td>
+    <td class="sub">${esc((a.victim_desks || []).join(", ") || "—")}</td>
+  </tr>`).join("");
+
+  const top = att[0];
+  return `<div class="card">
+    <h3>Duplicate collisions <span class="cnt">which post killed how many</span></h3>
+    <div class="note muted" style="margin-bottom:10px">The gate reads desks in a fixed order. The first desk keeps its post; every later desk writing the same fact collides against it and is held. A big number here is a fact-supply problem, not a gate problem — six desks were handed one fact and told to say it six ways.</div>
+    <table><thead><tr><th>Held</th><th>The post they all collided with</th><th>Desks that lost posts</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <div class="note" style="margin-top:9px">Worst single case: <b>${esc(top.headline || top.post_id)}</b> held ${flrN(top.killed)} sibling posts.</div>
+  </div>`;
+}
+
+function flrDeskYield(loss) {
+  const rows = (loss && loss.by_desk) || [];
+  if (!rows.length) return "";
+  const body = rows.map(r => {
+    const y = r.yield == null ? 0 : r.yield;
+    const low = y < 0.6 ? " is-low" : "";
+    return `<tr>
+      <td class="sub"><b>${esc(r.account || "?")}</b></td>
+      <td class="mono">${flrN(r.planned)}</td>
+      <td class="mono" style="color:var(--ok)">${flrN(r.passed)}</td>
+      <td class="mono" style="color:var(--loss)">${flrN(r.held)}</td>
+      <td class="mono">${flrN(r.held_near_dup)}</td>
+      <td class="mono">${flrN(r.held_cap)}</td>
+      <td style="width:120px"><span class="flr-yt-bar${low}" style="width:${(y * 100).toFixed(0)}%" title="${flrPct(y)} cleared"></span></td>
+      <td class="mono">${flrPct(r.yield)}</td>
+    </tr>`;
+  }).join("");
+  const worst = rows[0], best = rows[rows.length - 1];
+  const spread = (worst && best && worst.yield != null && best.yield != null)
+    ? `<div class="note" style="margin-top:9px"><b>${esc(best.account)}</b> clears ${flrPct(best.yield)} of its planned posts; <b>${esc(worst.account)}</b> clears ${flrPct(worst.yield)}. That gap is the reading order, not the writing quality — whichever desk the gate reads first keeps its posts.</div>`
+    : "";
+  return `<div class="card">
+    <h3>Desk yield <span class="cnt">worst first</span></h3>
+    <div class="note muted" style="margin-bottom:10px">How much of each desk's planned output survived the gate.</div>
+    <table><thead><tr><th>Desk</th><th>Planned</th><th>Cleared</th><th>Held</th><th>Duplicate</th><th>Over cap</th><th>Yield</th><th></th></tr></thead>
+      <tbody>${body}</tbody></table>
+    ${spread}
+  </div>`;
+}
+
+function flrGateReasons(loss) {
+  const rows = (loss && loss.gate_reasons) || [];
+  if (!rows.length) return "";
+  const body = rows.map(r => `<div class="flr-led-row ${r.n ? "is-loss" : "is-zero"}">
+    <div class="flr-led-n">${flrN(r.n)}</div>
+    <div class="flr-led-w">${esc(r.word)}</div>
+  </div>`).join("");
+  return `<div class="card">
+    <h3>Why the gate held posts</h3>
+    <div class="flr-led">${body}</div>
+  </div>`;
+}
+
+/* ---- THE FLOOR PAGE --------------------------------------------------- */
+RENDER.marketing_floor = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/floor");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Floor unavailable", (d && d.error) || "panel error");
+    return;
+  }
+
+  const stale = d.plan_stale
+    ? `<span class="statpill s-warn">plan dated ${esc(d.as_of || "—")}</span>`
+    : `<span class="statpill s-ok">fresh ${esc(d.as_of || "—")}</span>`;
+
+  const blockers = (d.blockers || []);
+  const stops = blockers.filter(b => b.severity === "stop" || b.severity === "high");
+  const watch = blockers.filter(b => b.severity === "watch");
+
+  const blockHtml = blockers.length
+    ? `<div class="section">What is stopping the line
+         <span class="cnt">${stops.length} blocking · ${watch.length} to watch</span></div>
+       ${stops.map(flrBlocker).join("")}
+       ${watch.length ? `<details style="margin-top:4px"><summary class="sub" style="cursor:pointer;padding:6px 0">${watch.length} more worth watching</summary>
+         <div style="margin-top:8px">${watch.map(flrBlocker).join("")}</div></details>` : ""}`
+    : `<div class="section">What is stopping the line</div>
+       <div class="card"><div class="note">Nothing is blocking the line. Posts are flowing from plan to X.</div></div>`;
+
+  v.innerHTML = `<div class="section">Tonight's line ${stale}
+      <span class="cnt">built ${esc(d.produced_at || "—")}</span></div>
+    ${flrLine(d)}
+    ${blockHtml}
+    <div class="section">Authorship &amp; dispatch</div>
+    ${flrAuthorship(d.authorship)}
+    ${flrLedger(d.dispatch_ledger)}
+    <div class="section">Why posts were held</div>
+    ${flrGateReasons(d.loss)}
+    ${flrCollisions(d.loss)}
+    ${flrDeskYield(d.loss)}`;
+};
+
+/* ---- MODEL DESK ------------------------------------------------------- */
+/* Answers the operator's 2026-07-29 question directly: is the load balancer
+   actually being used for the OAuth tokens, and is ChatGPT the default. */
+RENDER.marketing_models = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/models");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Model desk unavailable", (d && d.error) || "panel error");
+    return;
+  }
+
+  /* Waterfall — rung order is the information. */
+  const first = (d.lanes || []).map(l => l.first_choice);
+  const allCodex = first.length && first.every(f => f === "codex");
+  const fall = `<div class="flr-fall">${(d.waterfall || []).map((r, i) => {
+    const isFirst = (d.waterfall || [])[0] === r;
+    return `<div class="flr-rung ${isFirst ? "is-first" : ""}">
+      <div class="flr-rung-i">${i + 1}</div>
+      <div class="flr-rung-n">${esc(r.name)}</div>
+      <div class="flr-rung-w">${esc(r.what)}</div>
+    </div>`;
+  }).join("")}</div>`;
+
+  const routeVerdict = allCodex
+    ? `<span style="color:var(--ok)">All ${first.length} marketing lanes try ChatGPT first.</span> Claude is fallback depth, drawn only when ChatGPT refuses.`
+    : `<span style="color:var(--loss)">Not every lane leads with ChatGPT.</span> Lanes below whose first choice is not “codex” are still spending Claude tokens first.`;
+
+  /* Per-lane routing table. */
+  const laneRows = (d.lanes || []).map(l => {
+    const tierCls = l.codex_tier === "Sol" ? "s-ok" : l.codex_tier === "Luna" ? "s-bad" : "s-mut";
+    const firstCls = l.first_choice === "codex" ? "s-ok" : "s-warn";
+    return `<tr>
+      <td class="sub"><b>${esc(l.name)}</b><div class="note muted">${esc(l.job)}</div></td>
+      <td><span class="statpill ${firstCls}">${esc(l.first_choice || "—")}</span></td>
+      <td><span class="statpill ${tierCls}">${esc(l.codex_tier)}</span>
+        <div class="note muted">${esc(l.codex_tier_word || "")}</div></td>
+      <td class="mono">${esc(l.effort)}</td>
+      <td class="mono sub">${esc(l.pool_lane)}</td>
+      <td class="note muted">${esc(l.source)}</td>
+    </tr>`;
+  }).join("");
+
+  /* Balancer. */
+  const pool = d.pool || {};
+  let poolHtml;
+  if (!pool.available) {
+    poolHtml = `<div class="card"><h3>Claude key pool</h3>
+      <div class="note muted">${esc(pool.note || "unavailable")}</div></div>`;
+  } else {
+    const keyRow = (k) => {
+      const load = [
+        k.window_5h_est_tokens != null ? `${flrN(k.window_5h_est_tokens)} tokens this 5h window` : null,
+        k.weekly_est_tokens != null ? `${flrN(k.weekly_est_tokens)} this week` : null,
+      ].filter(Boolean).join("<br>");
+      const sub = [
+        k.state_word,
+        k.cooling && k.reset_hint ? `frees up ${esc(String(k.reset_hint).slice(0, 16).replace("T", " "))}` : null,
+        k.last_outcome ? `last call: ${esc(k.last_outcome)}` : null,
+      ].filter(Boolean).join(" · ");
+      return `<div class="flr-key s-${esc(k.state)}">
+        <div><div class="flr-key-id">${esc(k.key_id)}</div>
+          <div class="flr-key-sub">${sub}</div></div>
+        <div class="flr-key-load">${load || "&mdash;"}</div>
+        <div><span class="statpill ${k.state === "ready" ? "s-ok" : k.state === "cooling" ? "s-warn" : "s-mut"}">${esc(k.state)}</span></div>
+      </div>`;
+    };
+    /* Only the pool rows are load-balanced. The single-key providers get their
+       own card so "1 of 10 ready" always counts the same kind of thing. */
+    const provs = (pool.providers || []).length
+      ? `<div class="card">
+          <h3>Single-key providers <span class="cnt">not balanced</span></h3>
+          <div class="note muted" style="margin-bottom:10px">One key each, used directly rather than spread. ChatGPT sits here — it is the primary rung, so its state is what decides whether the marketing lanes write anything tonight.</div>
+          ${(pool.providers || []).map(keyRow).join("")}
+        </div>`
+      : "";
+    poolHtml = `<div class="card">
+      <h3>Claude key pool <span class="cnt">${flrN(pool.ready)} of ${flrN(pool.total)} ready</span></h3>
+      <div class="note muted" style="margin-bottom:10px">The balancer spreads fallback calls across these keys, resting any key that hits a rate limit until its window reopens. Names and load only — no token value is ever read into this console.</div>
+      ${(pool.keys || []).map(keyRow).join("")}
+      <div class="note" style="margin-top:9px">${esc(pool.verdict || "")}</div>
+    </div>${provs}`;
+  }
+
+  /* Ledger — proof the spread is real. */
+  const led = d.ledger || {};
+  let ledHtml;
+  if (!led.present) {
+    ledHtml = `<div class="card"><h3>Balancer decisions</h3>
+      <div class="note muted">${esc(led.note || "nothing recorded yet")}</div></div>`;
+  } else {
+    const byKey = Object.entries(led.by_key || {});
+    const maxN = byKey.reduce((m, [, n]) => Math.max(m, n), 0) || 1;
+    const spread = byKey.map(([k, n]) => `<tr>
+      <td class="mono sub">${esc(k)}</td>
+      <td class="mono">${flrN(n)}</td>
+      <td style="width:170px"><span class="flr-yt-bar${n / maxN > 0.6 ? " is-low" : ""}" style="width:${((n / maxN) * 100).toFixed(0)}%"></span></td>
+    </tr>`).join("");
+    const outcomes = Object.entries(led.by_outcome || {}).map(([k, n]) =>
+      `<div class="flr-led-row ${k === "ok" ? "is-good" : "is-loss"}">
+        <div class="flr-led-n">${flrN(n)}</div>
+        <div class="flr-led-w">${esc(k === "ok" ? "call served" : k.replace(/_/g, " "))}</div>
+      </div>`).join("");
+    ledHtml = `<div class="card">
+      <h3>Balancer decisions <span class="cnt">${flrN(led.rows)} recorded · last ${esc(String(led.last_at || "").slice(0, 16).replace("T", " "))}</span></h3>
+      <div class="note muted" style="margin-bottom:10px">One row per accepted call or rate-limit rest. This is how you check the load is actually spread rather than hammering one key.</div>
+      <div class="flr-led" style="margin-bottom:12px">${outcomes}</div>
+      <table><thead><tr><th>Key</th><th>Calls</th><th>Share</th></tr></thead><tbody>${spread}</tbody></table>
+    </div>`;
+  }
+
+  v.innerHTML = `<div class="section">Model desk <span class="cnt">who writes the words</span></div>
+    <div class="card">
+      <h3>Provider order</h3>
+      <div class="note muted" style="margin-bottom:11px">Each lane walks these rungs in order until one answers.</div>
+      ${fall}
+      <div class="note" style="margin-top:11px">${routeVerdict}</div>
+      <div class="note muted" style="margin-top:6px">${esc(d.law || "")}</div>
+    </div>
+    <div class="section">Per-lane routing <span class="cnt">${(d.lanes || []).length} lanes</span></div>
+    <table><thead><tr><th>Lane</th><th>First choice</th><th>ChatGPT tier</th><th>Effort</th><th>Pool lane</th><th>Set in</th></tr></thead>
+      <tbody>${laneRows}</tbody></table>
+    <div class="section">Claude fallback — the load balancer</div>
+    ${poolHtml}
+    ${ledHtml}`;
+};
+
+/* ---- X LANES ---------------------------------------------------------- */
+/* The growth lanes shipped across the E-waves with no console surface at all:
+   the operator could not tell a live lane from a dead one. */
+RENDER.marketing_lanes = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="spin">loading…</div>`;
+  const d = await api("/api/marketing/lanes");
+  if (!d || !d.ok) {
+    v.innerHTML = nwEmpty("Lanes unavailable", (d && d.error) || "panel error");
+    return;
+  }
+
+  const rows = (d.lanes || []).map(l => {
+    /* Drop any figure the detail sentence already states — "997 posts planned
+       for 07-29" followed by "997 posts" is the same fact twice, and repetition
+       reads as two findings. */
+    const detail = String(l.detail || "");
+    const nums = Object.entries(l.numbers || {})
+      .filter(([, n]) => n != null
+        && !detail.includes(String(n))
+        && !detail.includes(Number(n).toLocaleString()))
+      .map(([k, n]) => `${flrN(n)} ${esc(k.replace(/_/g, " "))}`).join(" · ");
+    const go = l.goto
+      ? `<button class="flr-blk-go" onclick="go('${esc(l.goto)}')">open →</button>` : "";
+    return `<div class="flr-lane">
+      <div class="flr-lane-dot s-${esc(l.state)}" title="${esc(l.state)}"></div>
+      <div>
+        <div class="flr-lane-name">${esc(l.name)}</div>
+        <div class="flr-lane-what">${esc(l.what)}</div>
+        ${l.detail ? `<div class="flr-lane-detail">${esc(l.detail)}</div>` : ""}
+        ${nums ? `<div class="flr-lane-detail mono">${nums}</div>` : ""}
+      </div>
+      <div class="flr-lane-state"><b>${esc(l.state_word)}</b>
+        ${l.fresh ? `<div class="note muted">as of ${esc(l.fresh)}</div>` : ""}
+        ${go}</div>
+    </div>`;
+  }).join("");
+
+  const c = d.counts || {};
+  const chips = Object.entries(c).map(([state, n]) =>
+    `<span class="statpill ${state === "live" ? "s-ok" : state === "dark" || state === "tripped" ? "s-bad" : "s-mut"}">${flrN(n)} ${esc(state)}</span>`
+  ).join(" ");
+
+  v.innerHTML = `<div class="section">X lanes ${chips}</div>
+    <div class="note muted" style="margin:0 0 12px">Every lane that can produce a post, and whether it is actually running. A dark lane is built and idle — either it has no input tonight or something upstream of it stopped.</div>
+    ${rows}`;
+};
 
 /* ---- DEPARTMENTS ---------------------------------------------------------- */
 RENDER.marketing_departments = async () => {
@@ -7015,7 +7535,7 @@ RENDER.marketing_sentinel = async () => {
   const trip = `<div class="sent-trip">
     <div class="sent-trip-cell"><div class="sent-trip-n sent-n-ok">${counts.passed != null ? counts.passed : "—"}</div><div class="sent-trip-l">cleared to post</div></div>
     <div class="sent-trip-div"></div>
-    <div class="sent-trip-cell"><div class="sent-trip-n ${policyQ.length ? "sent-n-warn" : "sent-n-mut"}">${counts.quarantined_policy != null ? counts.quarantined_policy : policyQ.length}</div><div class="sent-trip-l">held to review</div></div>
+    <div class="sent-trip-cell"><div class="sent-trip-n ${policyQ.length ? "sent-n-warn" : "sent-n-mut"}">${counts.quarantined_policy != null ? counts.quarantined_policy : policyQ.length}</div><div class="sent-trip-l">held to review<br><button class="flr-blk-go" onclick="go('marketing_floor')" style="margin-top:2px">see what held them →</button></div></div>
     <div class="sent-trip-div"></div>
     <div class="sent-trip-cell"><div class="sent-trip-n sent-n-mut">${counts.quarantined_overflow != null ? counts.quarantined_overflow : overQ.length}</div><div class="sent-trip-l">trimmed by caps</div></div>
   </div>`;

@@ -38,6 +38,7 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                flags, ga4, github_api, github_config, gitops, health, long_hold,
                live_runs,
                marketing,
+               marketing_floor,
                mastermind_logs,
                mastermind_proxy,
                metabolism_history,
@@ -669,6 +670,15 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/prophet/trade-memory":
                 return self._json(trade_memory.panel())
             # Marketing lobe admin pages
+            # The floor/model-desk/lanes trio is the operator's view INSIDE the
+            # factory: per-station yield with every loss named, model routing +
+            # key-pool balancer, and the X-growth lanes' live/dark state.
+            if path == "/api/marketing/floor":
+                return self._json(marketing_floor.floor())
+            if path == "/api/marketing/models":
+                return self._json(marketing_floor.models())
+            if path == "/api/marketing/lanes":
+                return self._json(marketing_floor.lanes())
             if path == "/api/marketing/overview":
                 return self._json(marketing.overview())
             if path == "/api/marketing/departments":

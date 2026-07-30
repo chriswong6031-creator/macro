@@ -1251,6 +1251,13 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # Marketing floor / model desk / X lanes (2026-07-29): the operator's view
+      # inside the factory — per-station yield with every loss named, model
+      # routing + the OAuth key-pool balancer, and the E-wave lanes' live/dark
+      # state. Listed so a PR touching only the panel or only its suite still
+      # reaches the marketing-engine lane.
+      - "tests/test_admin_marketing_floor.py"
+      - "admin/marketing_floor.py"
       # Content Studio W1 selection layer (LLM-first masterplan §0, 2026-07-29):
       # cross-day cooldowns, the fact-reuse budget, the degenerate-stat gate,
       # the shape mixer, the emit-time no-fallback refusal, stale-queued expiry
