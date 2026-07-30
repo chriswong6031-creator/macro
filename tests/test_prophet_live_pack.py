@@ -405,13 +405,109 @@ def test_state_and_field_shapes(label, last, lo, hi, state, has_trigger, has_fad
     assert AP.self_check(p["names"]) == []
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# The class-split probe budget (operator ruling 2026-07-29)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_cross_class_floor_holds_however_long_the_board_takes():
+    """THE INVARIANT. Ordering alone could not fund both classes.
+
+    Every board name outranks every cross candidate in probe_priority, so a saturating
+    board population consumed the whole budget: 106 fade levels armed against 4
+    triggers, on a program whose core evidence is the cross ledger. The floor cannot
+    depend on how the board slice went, because a running gate call is not interruptible
+    and the board slice can overshoot its window by up to one call.
+    """
+    budget, share = 200.0, 0.4
+    board_win, floor = AP.class_windows(budget, share)
+    assert board_win == pytest.approx(80.0)
+    assert floor == pytest.approx(120.0)
+    # Board finishes early -> the cross class inherits the slack.
+    assert AP.cross_window(budget, share, 10.0) == pytest.approx(190.0)
+    # Board spends exactly its window -> the cross class gets precisely its floor.
+    assert AP.cross_window(budget, share, board_win) == pytest.approx(120.0)
+    # Board OVERRUNS, even absurdly -> the floor still holds. This is the invariant.
+    for overrun in (100.0, 200.0, 5_000.0):
+        assert AP.cross_window(budget, share, overrun) == pytest.approx(floor)
+
+
+@pytest.mark.parametrize("share,board,cross", [(0.0, 0.0, 100.0), (1.0, 100.0, 0.0),
+                                               (0.5, 50.0, 50.0),
+                                               (-1.0, 0.0, 100.0), (9.0, 100.0, 0.0)])
+def test_class_windows_clamps_a_nonsense_share(share, board, cross):
+    assert AP.class_windows(100.0, share) == (pytest.approx(board), pytest.approx(cross))
+
+
+def test_the_name_cap_is_split_on_the_same_share_as_the_clock():
+    """Capping names globally would leave the hole the split exists to close: the board
+    class takes every slot and the cross class has wall clock but nothing to spend it on.
+    """
+    recs = {}
+    for i in range(40):
+        recs[f"B{i:02d}"] = {"ticker": f"B{i:02d}", "wants_probe": True,
+                             "center_buyable": True, "center_verdict": {"bars_to_cross": 1}}
+    for i in range(40):
+        recs[f"C{i:02d}"] = {"ticker": f"C{i:02d}", "wants_probe": True,
+                             "center_buyable": False, "center_verdict": {"bars_to_cross": 1}}
+    skipped: dict[str, int] = {}
+    split = AP.split_probes(recs, AP.pack_cfg({"prophet_live": {"max_probe": 10,
+                                                               "board_probe_share": 0.4}}),
+                            skipped)
+    assert len(split["board"]) == 4 and len(split["cross"]) == 6
+    assert all(t.startswith("B") for t in split["board"])
+    assert all(t.startswith("C") for t in split["cross"])
+    # Both cuts are disclosed, per class.
+    assert skipped == {"probe_cap_board": 36, "probe_cap_cross": 34}
+    # order_probes spends board first, then cross.
+    flat = AP.order_probes(recs, AP.pack_cfg({"prophet_live": {"max_probe": 10,
+                                                              "board_probe_share": 0.4}}),
+                           {})
+    assert [t[0] for t in flat] == ["B"] * 4 + ["C"] * 6
+
+
+def test_a_saturating_board_population_still_leaves_cross_names_queued():
+    """The end-to-end shape of the ruling: crosses are never starved to zero."""
+    recs = {f"B{i:03d}": {"ticker": f"B{i:03d}", "wants_probe": True,
+                          "center_buyable": True, "center_verdict": {}}
+            for i in range(500)}
+    recs["C1"] = {"ticker": "C1", "wants_probe": True, "center_buyable": False,
+                  "center_verdict": {}}
+    split = AP.split_probes(recs, AP.pack_cfg(None), {})
+    assert split["cross"] == ["C1"]
+    assert len(split["board"]) == round(180 * 0.4)
+
+
+def test_per_class_counts_land_in_meta(pack):
+    """A single armed_n cannot show the split working — 106+4 and 55+55 both read 110."""
+    by = pack["meta"]["by_class"]
+    assert set(by) == {"board", "cross"}
+    for cls, cc in by.items():
+        for key in ("candidates_n", "probed_n", "armed_n", "probe_seconds"):
+            assert key in cc, (cls, key)
+        assert cc["probed_n"] <= cc["candidates_n"]
+        assert cc["armed_n"] <= cc["probed_n"]
+    assert sum(cc["candidates_n"] for cc in by.values()) == pack["meta"]["universe_n"]
+    assert sum(cc["armed_n"] for cc in by.values()) == pack["meta"]["armed_n"]
+    assert sum(cc["probed_n"] for cc in by.values()) == pack["meta"]["probed_n"]
+    assert pack["meta"]["board_probe_share"] == 0.4
+    # The seeded fixtures carry both classes, so neither column is vacuous.
+    assert by["board"]["armed_n"] >= 1 and by["cross"]["armed_n"] >= 1
+
+
 def test_probe_cap_is_disclosed_not_silent():
+    """Pinned change: the cap key is now PER CLASS (``probe_cap_board`` /
+    ``probe_cap_cross``), because the name cap is split on the same share as the wall
+    clock — a single global key could not say which class was cut."""
     entries = [(f"N{i:02d}", _flat(95.0)) for i in range(6)]
-    p = AP.build_pack(entries, now=NOW, cfg={"max_probe": 2},
+    p = AP.build_pack(entries, now=NOW, cfg={"max_probe": 4, "board_probe_share": 0.5},
                       gate_fn=_synth_gate(100.0, 105.0))
-    assert p["meta"]["skipped"]["probe_cap"] == 4
+    # All six are cross candidates (not buyable at 95), so only the cross slice binds:
+    # cap 4 x 0.5 = 2 names, 4 cut.
+    assert p["meta"]["skipped"]["probe_cap_cross"] == 4
+    assert "probe_cap_board" not in p["meta"]["skipped"]
     assert p["meta"]["wanted_probe_n"] == 6
     assert p["meta"]["probed_n"] == 2
+    assert p["meta"]["by_class"]["cross"]["probed_n"] == 2
     unprobed = [e for e in p["names"].values() if not e["probed"]]
     assert len(unprobed) == 4
     # An unprobed name carries NO threshold and answers None — never "dormant" as a

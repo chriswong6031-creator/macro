@@ -181,6 +181,7 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
     bad: list[str] = []
     checks: dict[str, list] = {}
     verified: set[str] = set()
+    probe_seconds: dict[str, float] = {}
     # ONE budget for all three phases. Sizing each separately is how a step creeps:
     # the engine job's cap is what silently skips the nightly commit, so what matters
     # is the total, and every phase reports how much of it is left.
@@ -205,33 +206,57 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
                 skipped[rec["skip"]] = skipped.get(rec["skip"], 0) + 1
         centre_s = time.time() - t_centre
         wanted = sum(1 for r in recs.values() if r.get("wants_probe"))
-        order = AP.order_probes(recs, c, skipped)
+        split = AP.split_probes(recs, c, skipped)
         print(f"prophet-live pack: centre census {len(fresh)} names in {centre_s:.1f}s "
               f"({gate_calls} gate calls, {nw} workers) — wants_probe={wanted} "
-              f"queued={len(order)}", flush=True)
+              f"queued board={len(split['board'])} cross={len(split['cross'])}",
+              flush=True)
 
         # DEADLINE, not just a count. Gate cost swings ~10x with history depth, so a
         # name cap alone cannot bound the step; whatever does not finish in time is
         # cancelled and disclosed rather than allowed to eat the render budget.
+        #
+        # RESERVE budget for verification instead of handing it the leftovers: an
+        # unverified level is withheld, so letting the probe phase eat everything would
+        # silently shrink the armed set instead of trading coverage for proof.
         t_probe = time.time()
-        payloads = [(t, {"span": recs[t]["span"], "known": recs[t].get("known") or {}})
-                    for t in order]
-        futs = {ex.submit(_probe, p): p[0] for p in payloads}
-        # RESERVE budget for verification instead of handing it the leftovers. An
-        # unverified level must not ship, so letting the probe phase eat the whole
-        # budget would mean either refusing the pack or publishing prices nothing
-        # checked — the probe phase gets PROBE_SHARE and verification keeps the rest.
-        left = deadline * PROBE_SHARE - (time.time() - t_centre)
-        for res, timed_out in _drain(futs, left, "probe phase"):
-            if timed_out:
-                unfinished = len(futs) - len(probes)
-                skipped["deadline"] = skipped.get("deadline", 0) + unfinished
-                break
-            tkr, r = res
-            probes[tkr] = r
-            gate_calls += r["gate_calls"]
-            if r.get("irregular"):
-                skipped["irregular"] = skipped.get("irregular", 0) + 1
+        probe_budget = deadline * PROBE_SHARE - (time.time() - t_centre)
+        board_win, cross_floor = AP.class_windows(probe_budget, c["board_probe_share"])
+        print(f"prophet-live pack: probe budget {probe_budget:.0f}s -> board "
+              f"{board_win:.0f}s, cross floor {cross_floor:.0f}s "
+              f"(board_probe_share={c['board_probe_share']})", flush=True)
+
+        # BOARD SLICE FIRST, then cross under a floor that does not depend on how the
+        # board slice went. Board names outrank every cross candidate on priority, so
+        # without the split they consume the whole budget — measured: 106 fade levels
+        # armed against 4 triggers, on a program whose core evidence is the cross ledger.
+        for cls, window in (("board", board_win), ("cross", None)):
+            names_for = split[cls]
+            if not names_for:
+                probe_seconds[cls] = 0.0
+                continue
+            t_cls = time.time()
+            win = window if window is not None else AP.cross_window(
+                probe_budget, c["board_probe_share"], time.time() - t_probe)
+            payloads = [(t, {"span": recs[t]["span"], "known": recs[t].get("known") or {}})
+                        for t in names_for]
+            futs = {ex.submit(_probe, p): p[0] for p in payloads}
+            done_before = len(probes)
+            for res, timed_out in _drain(futs, win, f"{cls} probe slice"):
+                if timed_out:
+                    unfinished = len(futs) - (len(probes) - done_before)
+                    key = f"deadline_{cls}"
+                    skipped[key] = skipped.get(key, 0) + unfinished
+                    break
+                tkr, r = res
+                probes[tkr] = r
+                gate_calls += r["gate_calls"]
+                if r.get("irregular"):
+                    skipped["irregular"] = skipped.get("irregular", 0) + 1
+            probe_seconds[cls] = time.time() - t_cls
+            print(f"prophet-live pack: {cls} slice {len(probes) - done_before}/"
+                  f"{len(futs)} probed in {probe_seconds[cls]:.1f}s (window {win:.0f}s)",
+                  flush=True)
         probe_s = time.time() - t_probe
 
         # PHASE 3 — the independent parity gate (G0.1). Re-runs the REAL gate at every
@@ -273,6 +298,7 @@ def build(*, cfg: dict[str, Any] | None = None, now: datetime | None = None,
     names = {t: AP.name_entry(r, probes.get(t)) for t, r in recs.items()}
     payload = AP.assemble(names, as_of=tip or "", cfg=c, universe_n=len(uni),
                           wanted_n=wanted, gate_calls=gate_calls, edges_checked=edges,
+                          probe_seconds=probe_seconds,
                           build_seconds=time.time() - t0, skipped=skipped, now=now)
     payload["meta"]["phase_seconds"] = {"load": round(t_centre - t0, 1),
                                         "centre": round(centre_s, 1),
@@ -330,6 +356,10 @@ def main(argv: list[str] | None = None) -> int:
           f"gate_calls={m['gate_calls']} build_seconds={m['build_seconds']} "
           f"phases={m.get('phase_seconds')} states={m['states']} skipped={m['skipped']}",
           flush=True)
+    for cls, cc in (m.get("by_class") or {}).items():
+        print(f"prophet-live pack: class {cls}: candidates={cc['candidates_n']} "
+              f"probed={cc['probed_n']} armed={cc['armed_n']} "
+              f"probe_seconds={cc['probe_seconds']}", flush=True)
 
     if not payload["as_of"]:
         print("::error title=prophet-live-pack::no as_of — the close stores produced "

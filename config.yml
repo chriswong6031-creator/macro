@@ -691,14 +691,27 @@ prophet_live:
   # names and verification then withheld the rest. 180 fits with margin.
   #
   # This is a real coverage ceiling, not a formality: ~350 of the universe have a
-  # trigger inside the band, so 180 arms about half of them, and the priority order
-  # (buyable -> eligible -> nearest-to-cross) spends the first ~138 on names already on
-  # tonight's board. Whatever the caps cut is counted in meta.skipped (probe_cap /
-  # deadline / unverified) — never silently dropped, never re-labelled "dormant".
-  # Raising max_seconds is the lever with the least downside if coverage matters more
-  # than the 7-minute step; it trades directly against the nightly render budget.
+  # trigger inside the band, so 180 arms about half of them. Whatever the caps cut is
+  # counted in meta.skipped (probe_cap_* / deadline_* / unverified) — never silently
+  # dropped, never re-labelled "dormant". Raising max_seconds is the lever if coverage
+  # matters more than the ~6.5-minute step; it trades against the render budget.
   max_probe: 180
   max_seconds: 420
+  # Share of the probe budget — BOTH the wall clock and the name cap — reserved for
+  # BOARD names (the two-sided sweep yielding fade_px, the at-risk read). CROSS
+  # candidates (the up-only sweep yielding trigger_px) get the remainder.
+  #
+  # Operator ruling 2026-07-29. Ordering alone could not fund both: every board name
+  # outranks every cross candidate in probe_priority, so the first 4-worker pass spent
+  # the whole budget on the board and armed 106 fade levels against 4 triggers. P0's
+  # core evidence is the CROSS ledger (confirm rate + entry advantage, masterplan
+  # §5-P0), so crosses must always be funded — but a global reorder would only invert
+  # the starvation onto the at-risk read. The split makes the cross floor an INVARIANT:
+  # the board slice is spent first under its own window, then the cross slice gets
+  # max(floor, remaining), so however long the board took the cross class still gets
+  # (1 - board_probe_share) x budget. Verification still covers every published price
+  # from both classes. Per-class probed/armed/seconds land in meta.by_class.
+  board_probe_share: 0.4
   # A name whose own last bar trails the store tip by more than this is probed
   # against a stale close — the mixed-asof fabrication trap. It ships its centre
   # state unprobed, marked stale.

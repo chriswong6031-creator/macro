@@ -106,6 +106,17 @@ _DEFAULTS: dict[str, Any] = {
     # Whatever it cuts is counted in meta.skipped.probe_cap and ships probed=False,
     # so the evaluator excludes it from coverage instead of calling it dormant.
     "max_probe": 180,
+    # Share of the probe budget — BOTH the wall clock and the name cap — reserved for
+    # BOARD names (the two-sided sweep that yields fade_px, the at-risk read). Cross
+    # candidates (the up-only sweep that yields trigger_px) get the remainder.
+    #
+    # Operator ruling: P0's core evidence is the CROSS ledger, so crosses must always
+    # be funded — but the at-risk read must not starve either, which a global reorder
+    # would simply invert. Ordering alone was not enough: the board class outranks
+    # every cross candidate in probe_priority, so on a 4-worker pass it consumed the
+    # entire budget and armed 106 fade levels against 4 triggers. The split makes the
+    # cross floor an invariant rather than a hope (see class_windows / cross_window).
+    "board_probe_share": 0.4,
     # Wall-clock ceiling on the WHOLE pass (census + probe + verification), seconds.
     # The render budget is law and gate cost per name varies ~10x with history depth,
     # so a name count alone cannot bound the step. Whichever binds first is disclosed.
@@ -531,10 +542,34 @@ def probe_priority(rec: dict[str, Any]) -> tuple[int, int, float, str]:
         return (tier, 2, float("inf"), str(rec.get("ticker") or ""))
 
 
+def _is_armed(entry: dict[str, Any]) -> bool:
+    return entry.get("trigger_px") is not None or entry.get("fade_px") is not None
+
+
+def class_counts(names: dict[str, dict[str, Any]],
+                 probe_seconds: dict[str, float] | None = None) -> dict[str, dict[str, Any]]:
+    """Per-class probed/armed/eligible counts (+ measured probe seconds).
+
+    The nightly log needs to SHOW the split working. A single armed_n cannot: the run
+    that armed 106 fade levels and 4 triggers reported ``armed_n: 110`` and looked fine.
+    """
+    out: dict[str, dict[str, Any]] = {}
+    for cls in CLASSES:
+        rows = [e for e in names.values()
+                if ("board" if e.get("center_buyable") else "cross") == cls]
+        out[cls] = {
+            "candidates_n": len(rows),
+            "probed_n": sum(1 for e in rows if e.get("probed")),
+            "armed_n": sum(1 for e in rows if _is_armed(e)),
+            "probe_seconds": round(float((probe_seconds or {}).get(cls, 0.0)), 1),
+        }
+    return out
+
+
 def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any],
              universe_n: int, wanted_n: int, gate_calls: int,
              build_seconds: float, skipped: dict[str, int],
-             edges_checked: int = 0,
+             edges_checked: int = 0, probe_seconds: dict[str, float] | None = None,
              now: datetime | None = None) -> dict[str, Any]:
     """The published ``prophet_live.armed/v1`` payload."""
     ts = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -542,8 +577,7 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
     for e in names.values():
         states[e.get("state", "dormant")] = states.get(e.get("state", "dormant"), 0) + 1
     probed_n = sum(1 for e in names.values() if e.get("probed"))
-    armed_n = sum(1 for e in names.values()
-                  if e.get("trigger_px") is not None or e.get("fade_px") is not None)
+    armed_n = sum(1 for e in names.values() if _is_armed(e))
     return {
         "schema": SCHEMA,
         "as_of": as_of,
@@ -559,6 +593,11 @@ def assemble(names: dict[str, dict[str, Any]], *, as_of: str, cfg: dict[str, Any
             # that reads probed_n as universe_n is claiming arming it does not have.
             "probed_n": int(probed_n),
             "armed_n": int(armed_n),
+            # PER CLASS, because the aggregate hides the thing that matters: a pack that
+            # armed only fade levels and a pack that armed a healthy mix report the same
+            # armed_n. board = two-sided fade sweeps, cross = up-only trigger sweeps.
+            "by_class": class_counts(names, probe_seconds),
+            "board_probe_share": float(cfg.get("board_probe_share", 0.4)),
             "wanted_probe_n": int(wanted_n),
             "gate_calls": int(gate_calls),
             # Published prices re-verified against the real gate before publishing
@@ -627,16 +666,74 @@ def stale_record(ticker: str, close: pd.Series, lag: int) -> dict[str, Any]:
             "skip": "stale_series", "stale_sessions": int(lag)}
 
 
+#: The two probe classes. A BOARD name is buyable at the as-of close and gets the
+#: two-sided sweep that yields ``fade_px`` (the at-risk read); a CROSS candidate is not,
+#: and gets the up-only sweep that yields ``trigger_px`` (the intraday cross).
+CLASSES: tuple[str, str] = ("board", "cross")
+
+
+def probe_class(rec: dict[str, Any]) -> str:
+    return "board" if rec.get("center_buyable") else "cross"
+
+
+def class_windows(probe_budget: float, board_share: float) -> tuple[float, float]:
+    """``(board wall-clock window, GUARANTEED cross floor)`` for the probe phase.
+
+    Splitting the budget by class is what makes the cross floor an invariant instead of
+    a hope. Ordering alone could not do it: every board name outranks every cross
+    candidate in :func:`probe_priority`, so a 4-worker pass spent the entire budget on
+    the board and armed 106 fade levels against 4 triggers. P0's core evidence is the
+    cross ledger, so crosses must always be funded — and a global reorder would just
+    invert the starvation onto the at-risk read.
+    """
+    s = min(max(float(board_share), 0.0), 1.0)
+    board = float(probe_budget) * s
+    return board, float(probe_budget) - board
+
+
+def cross_window(probe_budget: float, board_share: float, board_elapsed: float) -> float:
+    """The cross class's wall clock, never less than its floor.
+
+    A running gate call cannot be interrupted, so the board phase can overshoot its
+    window by up to one call. The ``max`` is the invariant: however long the board class
+    actually took, the cross class still gets ``(1 - board_share) * probe_budget``.
+    """
+    _, floor = class_windows(probe_budget, board_share)
+    return max(floor, float(probe_budget) - float(board_elapsed))
+
+
+def split_probes(recs: dict[str, dict[str, Any]], cfg: dict[str, Any],
+                 skipped: dict[str, int]) -> dict[str, list[str]]:
+    """Per-class probe orders, best first, with each class's cut recorded in ``skipped``.
+
+    The name cap is split on the SAME share as the wall clock. Capping globally would
+    leave the hole the split exists to close: the board class would take all 180 slots
+    and the cross class would have wall clock but no names to spend it on.
+    """
+    share = min(max(float(cfg.get("board_probe_share", 0.4)), 0.0), 1.0)
+    cap = int(cfg["max_probe"])
+    caps = {"board": int(round(cap * share))}
+    caps["cross"] = max(0, cap - caps["board"])
+
+    out: dict[str, list[str]] = {}
+    for cls in CLASSES:
+        wants = sorted((t for t, r in recs.items()
+                        if r.get("wants_probe") and probe_class(r) == cls),
+                       key=lambda t: probe_priority(recs[t]))
+        limit = caps[cls]
+        if len(wants) > limit:
+            key = f"probe_cap_{cls}"
+            skipped[key] = skipped.get(key, 0) + (len(wants) - limit)
+            wants = wants[:limit]
+        out[cls] = wants
+    return out
+
+
 def order_probes(recs: dict[str, dict[str, Any]], cfg: dict[str, Any],
                  skipped: dict[str, int]) -> list[str]:
-    """Which names get probe budget, best first, with the cut recorded in ``skipped``."""
-    wants = sorted((t for t, r in recs.items() if r.get("wants_probe")),
-                   key=lambda t: probe_priority(recs[t]))
-    cap = int(cfg["max_probe"])
-    if len(wants) > cap:
-        skipped["probe_cap"] = skipped.get("probe_cap", 0) + (len(wants) - cap)
-        wants = wants[:cap]
-    return wants
+    """Flattened :func:`split_probes` — board slice then cross slice, in spend order."""
+    split = split_probes(recs, cfg, skipped)
+    return [t for cls in CLASSES for t in split[cls]]
 
 
 def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None = None,
@@ -682,12 +779,17 @@ def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None
 
     wanted = sum(1 for r in recs.values() if r.get("wants_probe"))
     probes: dict[str, dict[str, Any]] = {}
-    for tkr in order_probes(recs, c, skipped):
-        p = probe_name(tkr, series[tkr], recs[tkr], cfg=c, gate_fn=gate_fn)
-        gate_calls += p["gate_calls"]
-        probes[tkr] = p
-        if p.get("irregular"):
-            skipped["irregular"] = skipped.get("irregular", 0) + 1
+    probe_seconds: dict[str, float] = {}
+    split = split_probes(recs, c, skipped)
+    for cls in CLASSES:
+        t_cls = _time.time()
+        for tkr in split[cls]:
+            p = probe_name(tkr, series[tkr], recs[tkr], cfg=c, gate_fn=gate_fn)
+            gate_calls += p["gate_calls"]
+            probes[tkr] = p
+            if p.get("irregular"):
+                skipped["irregular"] = skipped.get("irregular", 0) + 1
+        probe_seconds[cls] = _time.time() - t_cls
 
     names = {t: name_entry(r, probes.get(t)) for t, r in recs.items()}
 
@@ -709,6 +811,7 @@ def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None
 
     pack = assemble(names, as_of=tip or "", cfg=c, universe_n=len(entries),
                     wanted_n=wanted, gate_calls=gate_calls, edges_checked=edges,
+                    probe_seconds=probe_seconds,
                     build_seconds=_time.time() - t0, skipped=skipped, now=now)
     pack["meta"]["edge_mismatches"] = bad
     return pack
