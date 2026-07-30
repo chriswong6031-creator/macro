@@ -5,11 +5,12 @@ import re
 from pathlib import Path
 
 import pandas as pd
+from jinja2 import Environment, FileSystemLoader
 
 from collectors.crypto_misc import CryptoUniverseAdapter
 from engine.crypto_market_state import build_market_state
 from engine.crypto_universe import breadth_read, load_universe
-from scripts import build_crypto
+from scripts import build_crypto, build_vector
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -158,10 +159,24 @@ def test_allocation_and_strategy_legacy_urls_are_durable_redirects():
     assert '<nav class="site-nav">' not in allocation
     assert 'href="https://www.mastermind-x.com/vector.html"' in strategy
     assert "vector.html#strategy-track-record" in strategy
-    assert not (ROOT / "templates" / "vector_allocation.html.j2").exists()
+    template = (ROOT / "templates" / "vector_allocation.html.j2").read_text(
+        encoding="utf-8"
+    )
+    assert '"_seo_head.html.j2"' in template
+    assert '"crypto" ~ ".html"' in template
+    assert "crypto.html#allocation" in template
 
     vector_builder = (ROOT / "scripts" / "build_vector.py").read_text(encoding="utf-8")
-    assert re.search(r"^\s+build_allocation_page\(", vector_builder, re.MULTILINE) is None
+    assert re.search(r"^\s+build_allocation_page\(", vector_builder, re.MULTILINE)
+
+
+def test_vector_builder_regenerates_allocation_redirect(tmp_path):
+    env = Environment(loader=FileSystemLoader(str(ROOT / "templates")))
+    build_vector.build_allocation_page(env, tmp_path, None, {}, {}, {})
+    allocation = (tmp_path / "vector_allocation.html").read_text(encoding="utf-8")
+    assert 'href="https://www.mastermind-x.com/crypto.html"' in allocation
+    assert "crypto.html#allocation" in allocation
+    assert "Bitcoin Vector — Allocation Strategy" not in allocation
 
 
 def test_crypto_is_first_class_in_navigation_workflows_and_products():
