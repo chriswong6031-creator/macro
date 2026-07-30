@@ -193,6 +193,14 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
 body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
+/* Historical base rate — deliberately quieter than the glance line above it, because it
+   answers a different (and slower) question than today's drift and must never be read as
+   a competing forecast. */
+body.page-macro .mxqm-hist{margin:-4px 0 6px;font-size:11px;line-height:1.45;
+  color:var(--ink-3,rgba(255,255,255,.42))}
+body.page-macro .mxqm-hist b{color:var(--ink-2,rgba(255,255,255,.72));font-weight:650;
+  font-variant-numeric:tabular-nums}
+[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.44)}
 /* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
    replacing the deleted flip-strip section; + one-line footer. */
 body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;

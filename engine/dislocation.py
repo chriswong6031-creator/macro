@@ -3,15 +3,28 @@ gauge (the missing veto from the narrative-shock research).
 
 ADDITIVE / LEAF module. It never touches the split-half-validated quad and nothing
 in the scoring path imports it. engine.run writes its snapshot to
-latest.json["dislocation"]; a missing input degrades to verdict="unknown", never
-crashes the run.
+latest.json["dislocation"]; it never crashes the run.
+
+DEGRADE CONTRACT (corrected 2026-07-29 — the previous docstring claimed "a missing
+input degrades to verdict=unknown", which was FALSE for the two verdict-deciding
+legs). The verdict turns on exactly two readings: real-time Sahm and the smoothed
+10y breakeven. A missing or STALE leg used to read as "leg not firing" -> put
+present -> buyable_washout, i.e. a data outage failed OPEN toward the permissive
+verdict. Each leg now carries a staleness budget measured against its OWN last
+carried stamp (`sahm_max_stale_bd`, `breakeven_max_stale_bd`); on absence or breach
+`put_state` becomes "unknown", `stale_inputs` names the offending legs, and — when a
+dislocation is actually live, so the verdict really does depend on the dead leg —
+`verdict` becomes "unknown" instead of "buyable_washout". A CALM read is unaffected
+by design: `dislocation_active` is a pure OR of VIX / drawdown / VRP /
+term-structure readings and never consults either put leg, so "calm" stays honest
+with both legs dead.
 
 WHY IT EXISTS. engine.conditions already detects capitulation (VRP extreme + VIX
 panic + COT washout) and advertises a measured "+9.3%/86% bounce". The dislocation
 research (scripts/research_dislocation.py, research/DISLOCATION_VALIDATION.md)
 showed on SPY 1997-2026 that this UNCONDITIONAL read is survivorship-inflated: the
-AQR null holds (panic-buying alone does not beat staying invested), and the SAME
-capitulation signals caught the 2000/2008/2022 falling knives. What separates a
+AQR null holds (panic-buying alone does not beat staying invested), and the same
+capitulation signals fired into the 2000/2008/2022 declines. What separates a
 buyable washout from a knife — out-of-sample, in BOTH split-halves — is the
 FED-PUT MASTER SWITCH:
 
@@ -27,6 +40,16 @@ the same way but their CIs span zero at this effective sample, so they are carri
 by SIGN-CONSISTENCY (leave-one-year-out 26/28, both split-halves), NOT by
 significance. This is a RISK / DRAWDOWN FILTER, not a return signal — surfaced
 with that honesty, never as alpha.
+
+WHAT THE DECLUSTERED REPLAY ACTUALLY SHOWS (do not overclaim the veto). The gate
+REFUSED the 2008 crash — put_absent from 2008-04 through the trough. It did NOT
+refuse everything: it printed buyable_washout three times early in the 2000-02
+bear (first on 2000-09-06 at a −2.4% drawdown, fwd252 −25.1%) and twice inside 2022
+(2022-01-21 and 2022-07-12), both 2022 prints with the 21d breakeven within 0.02pp
+of the 2.5% cutoff — i.e. on the wrong side of a knife-edge, not comfortably clear
+of it. So the honest claim is "refused 2008; printed buyable early in 2000 and twice
+in 2022 within 0.02pp of the threshold", NEVER "the whole edge is in refusing the
+2000/2008/2022 falling knife".
 """
 from __future__ import annotations
 
@@ -56,7 +79,23 @@ DEFAULTS = {
     # VIX thin-quote sanitizer (front VX future cross-check; cboe/vix_futures collector):
     "vix_spot_future_max_ratio": 1.8,   # spot/front-future above this => likely a fictitious print
     "vix_future_max_stale_d": 7,        # ignore the futures cross-check if the print is older than this
+    # PER-LEG STALENESS BUDGETS for the two verdict-deciding legs (the fail-open fix;
+    # see the DEGRADE CONTRACT in the module docstring). Measured in BUSINESS DAYS
+    # from each leg's own last CARRIED stamp in the feature frame — the frame already
+    # ffills sahm at limit=70 and breakeven_10y at limit=5 (engine/inputs.py), so the
+    # column goes NaN once its own print ages past that carry, and this budget bounds
+    # how long a NaN tail may be tolerated on top. These are HONESTY budgets, not gate
+    # thresholds: breaching one nulls the verdict, it never flips it.
+    "sahm_max_stale_bd": 70,            # monthly reference-month series (carried 70bd)
+    "breakeven_max_stale_bd": 5,        # daily series — a week dark is a real outage
 }
+
+# Stable machine keys for the four stress triggers. `inputs.triggers` carries the
+# HUMAN display strings (with the live reading interpolated) and is the authoritative
+# fired-trigger list every surface renders; `inputs.trigger_keys` is the same set as
+# stable slugs, for code that needs to branch on WHICH trigger fired without parsing
+# display prose. Keep the two in lockstep.
+TRIGGER_KEYS = ("vix_panic", "drawdown", "vrp_extreme", "backwardation")
 
 EVIDENCE = {
     "robust": ("Put-present washouts had ~4pp shallower MEDIAN 3-month drawdown than "
@@ -65,12 +104,58 @@ EVIDENCE = {
     "sign_consistent": ("Higher hit-rate and a shallower 1-year tail point the same way but "
                         "their CIs span zero at ~10 effective crises — carried by "
                         "leave-one-year-out (26/28 years) and BOTH split-halves, not significance."),
-    "caveat": ("A drawdown / risk filter, not a return signal. In a Fed-put regime even "
-               "knife-looking dips often recover; in a put-absent regime (recession or "
-               "inflation-locked) the same capitulation signals caught the 2000/2008/2022 "
-               "falling knife."),
+    "caveat": ("A drawdown / risk filter, not a return signal. It refused the 2008 crash "
+               "(put-absent from 2008-04), but it printed buyable early in the 2000-02 bear "
+               "and twice in 2022 with the breakeven within 0.02pp of its cutoff — the veto "
+               "is a filter with known misses, not a knife-proof shield."),
     "source": "scripts/research_dislocation.py · research/DISLOCATION_VALIDATION.md",
 }
+
+# WHICH firing the composite CI actually covers (item: scope the evidence to the
+# trigger that fired). The [+0.3, +6.3] bootstrap was measured on the RESEARCH
+# composite `VIX>30 | drawdown<=-12% | VRP pctile>0.90` (scripts/
+# research_dislocation.py:103) — it EXCLUDES backwardation and uses -12%, while this
+# engine fires on a wider OR-set that adds backwardation and loosens the dip to -10%.
+# Backwardation was measured SEPARATELY and showed NO put-present/absent separation
+# (research/DISLOCATION_VALIDATION.md, [VIX backwardation] block: 63d medDD -2.6% vs
+# -3.0%, hit 69.0% vs 66.7%). So a backwardation-only firing is OUTSIDE the CI's
+# support and must say so.
+_CI_COVERED_KEYS = frozenset({"vix_panic", "drawdown", "vrp_extreme"})
+_EVIDENCE_SCOPE_NOTE = {
+    "covered": ("The [+0.3, +6.3] drawdown CI was measured on the research composite "
+                "(VIX>30 · drawdown ≤ −12% · variance-premium pctile > 0.90) — the "
+                "trigger firing now is inside that composite."),
+    "partial": ("Mixed coverage: the [+0.3, +6.3] drawdown CI was measured on the research "
+                "composite (VIX>30 · drawdown ≤ −12% · variance-premium pctile > 0.90), which "
+                "does NOT include VIX backwardation. The CI covers the other trigger(s) firing, "
+                "not the backwardation leg."),
+    "uncovered": ("Backwardation is the ONLY trigger firing, and the [+0.3, +6.3] drawdown CI "
+                  "does NOT cover it: that CI was measured on the research composite (VIX>30 · "
+                  "drawdown ≤ −12% · variance-premium pctile > 0.90). Backwardation was measured "
+                  "separately and showed NO put-present/absent separation. Treat this firing as "
+                  "un-evidenced by the composite study."),
+    "loosened_dip": ("Note: this gate fires on a −10% drawdown while the composite CI was "
+                     "measured at −12% — a −10% to −12% firing sits just outside the studied set."),
+}
+
+
+def evidence_scope(trigger_keys: list[str] | tuple[str, ...],
+                   dd_pct: float | None = None) -> dict:
+    """Scope the composite-bootstrap evidence to the trigger(s) that ACTUALLY fired.
+    PURE. `coverage` ∈ covered | partial | uncovered | none."""
+    keys = set(trigger_keys or ())
+    if not keys:
+        return {"coverage": "none", "covered_by_ci": [], "not_covered_by_ci": [], "note": None}
+    inside = sorted(keys & _CI_COVERED_KEYS)
+    outside = sorted(keys - _CI_COVERED_KEYS)
+    coverage = "covered" if not outside else ("uncovered" if not inside else "partial")
+    note = _EVIDENCE_SCOPE_NOTE[coverage]
+    # the engine's dip is -10%, the study's was -12%: a firing between the two is a
+    # LOOSER trigger than anything the CI was measured on.
+    if "drawdown" in inside and dd_pct is not None and dd_pct > -12.0:
+        note = note + " " + _EVIDENCE_SCOPE_NOTE["loosened_dip"]
+    return {"coverage": coverage, "covered_by_ci": inside,
+            "not_covered_by_ci": outside, "note": note}
 
 
 def _cfg() -> dict:
@@ -88,6 +173,87 @@ def _col(f: pd.DataFrame, name: str) -> pd.Series | None:
     if name not in f.columns or f[name].isna().all():
         return None
     return f[name]
+
+
+def _fred_sid_for(col: str) -> str | None:
+    """The FRED series id whose configured column name is `col` (config.fred.series).
+    Resolved from config rather than hardcoded so a series swap cannot silently
+    orphan the vintage stamp. None when unmapped."""
+    try:
+        for grp in (config.load().get("fred", {}).get("series", {}) or {}).values():
+            for sid, name in (grp or {}).items():
+                if name == col:
+                    return str(sid)
+    except Exception:  # noqa: BLE001 — vintage stamping is additive
+        pass
+    return None
+
+
+def _series_asof(f: pd.DataFrame, col: str) -> tuple[str | None, str]:
+    """The leg's OWN last stamp as (iso_date, basis).
+
+    basis="source": the true last PRINT, read from the collector store. This is the
+        number a surface must show — the feature frame ffills `sahm` for 70 business
+        days, so the frame column's last index is TODAY even when the underlying print
+        is a reference month from six weeks ago. Stamping off the frame would have
+        re-dated a June reference month as a same-day read.
+    basis="carried": store lookup unavailable — the frame column's own last valid
+        index, i.e. the end of the ffill carry. Still correct for the staleness budget
+        (the budget equals the column's ffill_limit, so a non-NaN column at asof
+        already proves the print is inside the carry) but imprecise as a vintage.
+    """
+    sid = _fred_sid_for(col)
+    if sid:
+        try:
+            df = store.read("fred", sid)
+            if df is not None and not df.empty:
+                idx = df.iloc[:, 0].last_valid_index()
+                if idx is not None:
+                    return str(pd.Timestamp(idx).date()), "source"
+        except Exception:  # noqa: BLE001 — fall through to the carried stamp
+            pass
+    stamp = _frame_asof(f, col)
+    return (stamp, "carried") if stamp else (None, "absent")
+
+
+def _frame_asof(f: pd.DataFrame, col: str) -> str | None:
+    """Last valid index of the FRAME column (the end of the ffill carry)."""
+    s = f[col] if col in getattr(f, "columns", ()) else None
+    idx = s.last_valid_index() if s is not None else None
+    if idx is None:
+        return None
+    try:
+        return str(pd.Timestamp(idx).date())
+    except (TypeError, ValueError):
+        return None
+
+
+def _leg_vintage(f: pd.DataFrame, col: str, asof) -> dict:
+    """Vintage + staleness for one master-switch leg.
+
+    `asof` is the leg's own last PRINT (what a surface shows). `stale_bd` is the WORST
+    of the source-print age and the frame-carry age: a healthy store read must not mask
+    a frame-level outage (the PIT/override path can blank a column the store still has,
+    and that is the frame the gate actually reads), and a healthy frame must not mask a
+    dead upstream feed. Whichever is more stale is the one the budget is judged on."""
+    src, basis = _series_asof(f, col)
+    frame_stamp = _frame_asof(f, col)
+    ages = [a for a in (_bd_age(src, asof), _bd_age(frame_stamp, asof)) if a is not None]
+    return {"asof": src, "basis": basis, "frame_asof": frame_stamp,
+            "stale_bd": (max(ages) if ages else None)}
+
+
+def _bd_age(stamp: str | None, asof) -> int | None:
+    """Business days from `stamp` to `asof` (0 = same day). None when unresolvable."""
+    if stamp is None or asof is None:
+        return None
+    try:
+        a, b = pd.Timestamp(stamp), pd.Timestamp(asof)
+    except (TypeError, ValueError):
+        return None
+    if pd.isna(a) or pd.isna(b) or b < a:
+        return 0
+    return max(int(len(pd.bdate_range(a, b))) - 1, 0)
 
 
 def master_switch_frame(f: pd.DataFrame) -> pd.DataFrame:
@@ -121,12 +287,24 @@ def _gate2(f: pd.DataFrame, verdict: str, vix_term: float | None, c: dict) -> di
     measured = ("Matched buyable washouts (2006+): waiting for the term un-inversion lifted hit "
                 "61→67%, median 63d return +2.2→+4.6%, median drawdown −4.5→−2.9%; the 1-in-10 tail "
                 "was marginally worse. A confirm, not a bottom-caller.")
+
+    def _term(d: dict) -> dict:
+        """Attach the term-structure distance reading to any gate2 state, so a
+        no_signal / dormant read is legible as 'how far from an armed timer'."""
+        if vix_term is not None:
+            thr = float(c["backwardation_ratio"])
+            d["vix_term"] = round(float(vix_term), 3)
+            d["backwardation_ratio"] = thr
+            d["distance_to_backwardation"] = round(thr - float(vix_term), 3)
+        return d
+
     if verdict != "buyable_washout":
-        return {"state": "dormant", "label": "Entry timer arms only inside a buyable washout.",
-                "measured": measured}
+        return _term({"state": "dormant",
+                      "label": "Entry timer arms only inside a buyable washout.",
+                      "measured": measured})
     vr = _col(f, "vix_ratio")
     if vr is None:
-        return {"state": "unknown", "measured": measured}
+        return _term({"state": "unknown", "measured": measured})
     n = int(c["confirm_lookback_d"])
     hook = (vr < 1.0) & (vr.shift(1) < 1.0) & (vr.shift(2) >= c["backwardation_ratio"])
     recent_hook = bool(hook.tail(n).any())
@@ -155,11 +333,24 @@ def _gate2(f: pd.DataFrame, verdict: str, vix_term: float | None, c: dict) -> di
         state = "confirmed"
         label = "Breadth thrust fired — re-entry confirm."
     else:
+        # NOT an implied go. The Gate-2 confirm study covers BACKWARDATION episodes
+        # only, so on a non-backwardated firing there is simply no measured timer —
+        # which is the absence of a signal, not a green light. The old copy ("rely on
+        # Gate-1") converted an armed state into an implied entry.
         state = "no_signal"
-        label = "No backwardation to un-invert — the term-structure timer does not apply; rely on Gate-1."
-    return {"state": state, "label": label, "term_backwardated": backwardated,
-            "recent_hook": recent_hook, "hook_days_ago": hook_days_ago,
-            "recent_thrust": recent_thrust, "measured": measured}
+        label = ("No measured entry timer applies to this trigger — the confirm study covers "
+                 "backwardation episodes only. Do NOT treat Gate-1 alone as an entry signal: "
+                 "Gate-1 is a risk filter that says which washouts are refusable, never when "
+                 "to enter.")
+        label_zh = ("此触发条件下没有实测的入场时机器 —— 确认研究仅覆盖 VIX 倒挂情形。"
+                    "切勿将一道闸单独视为入场信号：一道闸是判断哪些错杀应当回避的风险过滤器，"
+                    "而非入场时点。")
+    out = {"state": state, "label": label, "term_backwardated": backwardated,
+           "recent_hook": recent_hook, "hook_days_ago": hook_days_ago,
+           "recent_thrust": recent_thrust, "measured": measured}
+    if state == "no_signal":
+        out["label_zh"] = label_zh
+    return _term(out)
 
 
 def _vix_sanitizer(vix: float | None, vix_high: float | None, asof, c: dict) -> dict:
@@ -237,16 +428,16 @@ def _catalyst_narrative(verdict: str, catalyst: dict | None) -> dict | None:
                    f"（{_vd_zh[verdict]}）。")
     elif verdict == "buyable_washout":               # gate constructive, narrative cautious
         note = ("Divergence — the Fed-put switch reads BUYABLE WASHOUT, but the catalyst text "
-                "reads PERSISTENT (structural). The validated gate governs; treat the narrative "
+                "reads PERSISTENT (structural). The measured gate governs; treat the narrative "
                 "as a caution flag worth a look.")
         note_zh = ("背离 —— 美联储托底开关判定为「可买入错杀」，但催化文本解读为「结构性（持续）」。"
-                   "以经验证的一道闸为准；将该叙述视为值得留意的警示信号。")
+                   "以实测的一道闸为准；将该叙述视为值得留意的警示信号。")
     else:                                            # stand_aside, narrative constructive
         note = ("Divergence — the Fed-put switch reads STAND ASIDE (knife), but the catalyst text "
-                "reads REVERSIBLE. The validated gate governs; the narrative is a watch-for-"
+                "reads REVERSIBLE. The measured gate governs; the narrative is a watch-for-"
                 "stabilization hint, not a green light.")
         note_zh = ("背离 —— 美联储托底开关判定为「观望（接飞刀）」，但催化文本解读为「可逆」。"
-                   "以经验证的一道闸为准；该叙述仅为等待企稳的提示，并非买入许可。")
+                   "以实测的一道闸为准；该叙述仅为等待企稳的提示，并非买入许可。")
     return {
         "shock_reversible": sr,
         "shock_reversible_zh": _sr_zh.get(sr),
@@ -324,16 +515,16 @@ def _geopolitical_reversibility(verdict: str, gpr: dict | None) -> dict | None:
         note_zh = f"地缘风险结构印证一道闸 —— {basis_zh}（{rev_zh}），与美联储托底开关一致。"
     elif verdict == "buyable_washout":
         note = (f"Divergence — the Fed-put switch reads BUYABLE WASHOUT, but {basis} "
-                "(acts persist → leans structural). The validated gate governs; treat "
+                "(acts persist → leans structural). The measured gate governs; treat "
                 "the act-driven geopolitics as a caution flag worth a look.")
         note_zh = (f"背离 —— 美联储托底开关判定为「可买入错杀」，但{basis_zh}（行动更持久→偏结构性）。"
-                   "以经验证的一道闸为准；将以行动驱动的地缘风险视为值得留意的警示。")
+                   "以实测的一道闸为准；将以行动驱动的地缘风险视为值得留意的警示。")
     else:
         note = (f"Divergence — the Fed-put switch reads STAND ASIDE (knife), but {basis} "
-                f"({rev_txt}). The validated gate governs; the threat-driven reversibility "
+                f"({rev_txt}). The measured gate governs; the threat-driven reversibility "
                 "is a watch-for-stabilization hint, not a green light.")
         note_zh = (f"背离 —— 美联储托底开关判定为「观望（接飞刀）」，但{basis_zh}（{rev_zh}）。"
-                   "以经验证的一道闸为准；以威胁驱动的可逆性仅为等待企稳的提示，并非买入许可。")
+                   "以实测的一道闸为准；以威胁驱动的可逆性仅为等待企稳的提示，并非买入许可。")
     return {
         "reversibility": geo_says,
         "reversibility_zh": _zh.get(geo_says),
@@ -359,16 +550,45 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
     c = _cfg()
     spy = _col(f, "SPY")
     if spy is None:
-        return {"verdict": "unknown", "headline": "no price data", "evidence": EVIDENCE}
+        # Carry the same honesty keys as the ruled paths: a consumer deriving
+        # `put_absent = put_state == "put-absent"` must not read a missing payload as
+        # put-present (the fail-open shape this module was audited for).
+        return {"verdict": "unknown", "headline": "no price data",
+                "put_state": "unknown", "put_state_reliable": False, "fed_put": None,
+                "stale_inputs": ["SPY: absent (no price data)"],
+                "dislocation_active": False, "evidence": EVIDENCE}
     asof = spy.last_valid_index()
 
     # --- Fed-put master switch (point-in-time) -------------------------------
-    sahm = _last(_col(f, "sahm"))
+    sahm_s = _col(f, "sahm")
     be_s = _col(f, "breakeven_10y")
+    sahm = _last(sahm_s)
     be21 = _last(be_s.rolling(c["fedput_smooth_d"], min_periods=10).mean()) if be_s is not None else None
     recession = sahm is not None and sahm >= c["sahm_trigger"]
     fedput_off = be21 is not None and be21 >= c["fedput_breakeven"]
     put_absent = bool(recession or fedput_off)
+
+    # PER-LEG STALENESS / ABSENCE GUARD (the fail-open fix — see DEGRADE CONTRACT in
+    # the module docstring). Both legs decide the verdict by their ABSENCE of firing,
+    # so a dead feed silently voted "not firing" -> put-present -> buyable_washout.
+    sahm_v = _leg_vintage(f, "sahm", asof)
+    be_v = _leg_vintage(f, "breakeven_10y", asof)
+    stale_inputs: list[str] = []
+    for name, val, v, budget in (
+        ("sahm", sahm, sahm_v, int(c["sahm_max_stale_bd"])),
+        ("breakeven_10y", be21, be_v, int(c["breakeven_max_stale_bd"])),
+    ):
+        age = v["stale_bd"]
+        if val is None or v["asof"] is None:
+            stale_inputs.append(f"{name}: absent (no usable print) — cannot rule the leg out")
+        elif age is not None and age > budget:
+            # Name the BINDING stamp: the upstream print and the frame's carried value
+            # can age independently, and saying "last print <fresh date> — 30bd stale"
+            # reads as a contradiction.
+            where = (f"last print {v['asof']}" if v["frame_asof"] in (None, v["asof"])
+                     else f"last print {v['asof']}, last value in the frame {v['frame_asof']}")
+            stale_inputs.append(
+                f"{name}: {where} — {age} business days stale (budget {budget}bd)")
 
     reasons = []
     if recession:
@@ -401,26 +621,55 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
     price_dip = dd is not None and dd <= -c["dip_pct"]
     vrp_extreme = vrp_pctile is not None and vrp_pctile > c["vrp_pctile_extreme"]
     backwardation = vix_term is not None and vix_term >= c["backwardation_ratio"]
-    trigs = [t for t, on in ((f"VIX panic ({vix:.0f})" if vix is not None else "VIX panic", vix_panic),
-                             (f"drawdown {abs(dd)*100:.0f}%" if dd is not None else "drawdown", price_dip),
-                             ("VRP extreme", vrp_extreme),
-                             ("VIX backwardation", backwardation)) if on]
+    # `trigs` = the AUTHORITATIVE fired-trigger list. Every surface renders THIS list
+    # (latest.json dislocation.inputs.triggers) and must never re-derive the firings
+    # from the rounded display readings: `vrp_pctile` ships rounded to 2dp for display,
+    # so a template re-testing `vrp_pctile > 0.90` reads 0.9027 as 0.9 and prints an
+    # EMPTY chip row under a "stress triggers firing" heading. `vrp_pctile_raw` (4dp)
+    # exists for anyone who needs the unrounded number; the gate itself always uses the
+    # full-precision value below. `trigger_keys` is the stable-slug mirror (TRIGGER_KEYS).
+    _trig_spec = (
+        ("vix_panic", f"VIX panic ({vix:.0f})" if vix is not None else "VIX panic", vix_panic),
+        ("drawdown", f"drawdown {abs(dd)*100:.0f}%" if dd is not None else "drawdown", price_dip),
+        ("vrp_extreme", "VRP extreme", vrp_extreme),
+        ("backwardation", "VIX backwardation", backwardation),
+    )
+    trigs = [label for _k, label, on in _trig_spec if on]
+    trig_keys = [k for k, _label, on in _trig_spec if on]
     dislocation_active = bool(trigs)
 
     # --- the verdict (Gate-1) -----------------------------------------------
     if not dislocation_active:
+        # NOTE: `calm` never consults either put leg, so it stays honest even when
+        # stale_inputs is non-empty (see the DEGRADE CONTRACT docstring).
         verdict = "calm"
         headline = "No acute dislocation — markets are not in a stress washout."
+    elif stale_inputs:
+        # The verdict would otherwise be decided by a leg we cannot read. Refuse to
+        # rule rather than fail open to the permissive read.
+        verdict = "unknown"
+        headline = ("Cannot rule on this dislocation — the Fed-put switch is unreadable ("
+                    + "; ".join(stale_inputs) + "). A missing leg is NOT a leg that isn't "
+                    "firing, so no buyable/stand-aside call is made.")
     elif put_absent:
         verdict = "stand_aside"
         headline = ("Stand aside — knife regime: a stress dislocation with the Fed put ABSENT ("
-                    + "; ".join(reasons) + "). This is the 2000/2008/2022 setup where the same "
-                    "capitulation signals kept falling.")
+                    + "; ".join(reasons) + "). This is the 2008-style setup the gate refused "
+                    "from 2008-04, where the same capitulation signals kept firing into the fall.")
     else:
         verdict = "buyable_washout"
+        # HONEST test statement (not a policy conclusion): the leg tests the 10y
+        # breakeven against 2.5%, it does not observe whether the Fed will ease. The
+        # policy-divergence note is attached separately (policy_divergence, wired in
+        # engine/run.py once fed_stance exists) because fed_stance can read HAWKISH on
+        # the very same day this leg passes.
+        _be_txt = (f"10y breakeven {be21:.2f}% < {c['fedput_breakeven']:.1f}%"
+                   if be21 is not None else "10y breakeven below its cutoff")
         headline = ("Buyable-washout regime: a stress dislocation with the Fed put intact "
-                    "(no recession, inflation not blocking easing). Historically these mean-revert "
-                    "with shallower median drawdown — confirm into stabilization, don't anticipate.")
+                    f"(no recession trigger, {_be_txt}). Historically these mean-revert "
+                    "with shallower median drawdown — confirm into stabilization, don't "
+                    "anticipate. The gate has known misses: it printed buyable early in the "
+                    "2000-02 bear and twice in 2022 within 0.02pp of this cutoff.")
 
     # capitulation INTENSITY enriches the headline (only when a real dislocation is on)
     if dislocation_active and cap_strong:
@@ -443,8 +692,14 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
         # gauges over this for timing.
         "lead_lag": "coincident",
         "headline": headline,
-        "fed_put": not put_absent,
-        "put_state": "put-absent" if put_absent else "put-present",
+        "fed_put": (None if stale_inputs else not put_absent),
+        # "unknown" is a THIRD state, not a synonym for put-present. Consumers that
+        # derive a boolean as `put_state == "put-absent"` read unknown as present and
+        # so still fail OPEN — `put_state_reliable` is the flag to fail closed on.
+        "put_state": ("unknown" if stale_inputs
+                      else ("put-absent" if put_absent else "put-present")),
+        "put_state_reliable": not stale_inputs,
+        "stale_inputs": stale_inputs,
         "put_reasons": reasons,
         "dislocation_active": dislocation_active,
         "gate2": _gate2(f, verdict, vix_term, c),
@@ -452,7 +707,17 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
         "geo_reversibility": _geopolitical_reversibility(verdict, _gpr_reading()),  # context-only GPR threat/act cross-check
         "inputs": {
             "sahm": sahm,
+            # VINTAGES for the two master-switch sub-readings. Sahm is a MONTHLY
+            # reference-month series with a ~6-week publication lag carried forward by
+            # ffill, so its own stamp is materially older than the row it sits on —
+            # surfaces must be able to show that instead of implying a same-day read.
+            "sahm_asof": sahm_v["asof"],
+            "sahm_asof_basis": sahm_v["basis"],   # source | carried | absent
+            "sahm_stale_bd": sahm_v["stale_bd"],
             "breakeven_10y_1m": None if be21 is None else round(be21, 2),
+            "breakeven_asof": be_v["asof"],
+            "breakeven_asof_basis": be_v["basis"],
+            "breakeven_stale_bd": be_v["stale_bd"],
             "primary_trend": primary_trend,
             "spy_drawdown_pct": None if dd is None else round(dd * 100, 1),
             "vix": None if vix is None else round(vix, 1),
@@ -462,17 +727,62 @@ def snapshot(f: pd.DataFrame, conditions: dict | None = None,
             "vix_reliable": san["reliable"],
             "vix_intraday_high": san["intraday_high"],
             "vix_wick_pct": san["wick_pct"],
+            # DISPLAY value (2dp) — never re-test a threshold against it (see the
+            # `trigs` comment above); `vrp_pctile_raw` carries 4dp for that.
             "vrp_pctile": None if vrp_pctile is None else round(vrp_pctile, 2),
+            "vrp_pctile_raw": None if vrp_pctile is None else round(float(vrp_pctile), 4),
             "capitulation_active": cap_active,
             "capitulation_strong": cap_strong,
             "capitulation_signals": cap.get("signals_firing") or [],
+            # AUTHORITATIVE fired-trigger list — the render source of truth.
             "triggers": trigs,
+            "trigger_keys": trig_keys,
         },
         "capitulation_caveat": cap_caveat,
         "vix_caveat": san["note"],
         "vix_wick_note": san["intraday_note"],
         "evidence": EVIDENCE,
+        # WHICH of the fired triggers the composite bootstrap CI actually covers.
+        "evidence_scope": evidence_scope(trig_keys, dd_pct=(None if dd is None else dd * 100)),
     }
+
+
+def attach_policy_divergence(snap: dict | None, fed_stance: dict | None) -> dict | None:
+    """POST-HOC leg (engine/run.py calls it once fed_stance exists, which is computed
+    after the dislocation snapshot). The fedput_off leg tests the 10y BREAKEVEN against
+    2.5% — a market-priced inflation expectation. It does NOT observe monetary policy,
+    so `buyable_washout` can and does coexist with fed_stance.stance == "hawkish" on the
+    same artifact. Surfacing that as a divergence keeps the copy from reading as a
+    policy conclusion ("inflation not blocking easing") drawn from an inflation test.
+    CONTEXT ONLY — never changes the verdict. Mutates and returns `snap`. Never raises."""
+    if not isinstance(snap, dict):
+        return snap
+    try:
+        snap["policy_divergence"] = None
+        stance = ((fed_stance or {}).get("stance") or "").lower()
+        if snap.get("verdict") != "buyable_washout" or stance != "hawkish":
+            return snap
+        be = ((snap.get("inputs") or {}).get("breakeven_10y_1m"))
+        be_txt = f"{be:.2f}%" if isinstance(be, (int, float)) else "below its cutoff"
+        snap["policy_divergence"] = {
+            "stance": "hawkish",
+            "stance_zh": "鹰派",
+            "note": (
+                "What the leg actually tested: the 21-day 10y breakeven is "
+                f"{be_txt} — under the 2.5% cutoff — and no recession trigger is firing. "
+                "That is a market-priced INFLATION reading, not a policy read. The Fed's own "
+                "stance on this same artifact reads HAWKISH, so do not take this leg as "
+                "evidence the Fed is ready to ease."),
+            "note_zh": (
+                "该腿实际检验的是：21 日十年期盈亏平衡通胀率为 "
+                f"{be_txt}，低于 2.5% 阈值，且衰退触发条件未激活。"
+                "这是市场定价的通胀读数，而非货币政策读数。同一份数据中美联储自身立场为"
+                "「鹰派」，因此不应将该腿视为美联储即将宽松的证据。"),
+            "is_context_only": True,
+        }
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("dislocation policy-divergence attach failed (%s)", e)
+    return snap
 
 
 # --------------------------------------------------------------------------- #
