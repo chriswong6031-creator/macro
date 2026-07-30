@@ -119,3 +119,50 @@ def test_perf_from_close_thin_series_none():
     import pandas as pd
     idx = pd.bdate_range("2026-01-02", periods=100)
     assert sr.perf_from_close(pd.Series(100.0, index=idx)) is None
+
+
+# ── turn read wiring (engine.subsector_turn) ───────────────────────────────────
+def test_turn_read_is_attached_and_incumbent_fields_untouched():
+    """The turn read is ADDITIVE: every incumbent field must be byte-identical."""
+    before = sr.compute_rotation(_tree(), _perf())
+    after = sr.compute_rotation(_tree(), _perf(), history=[
+        {"asof": "2026-07-2%d" % d, "subsectors": _perf()} for d in range(1, 8)])
+    keep = ("rs_ratio", "rs_mom", "accel", "z_accel", "quadrant", "emerging_score",
+            "rank", "perf", "rs")
+    b = {s["key"]: s for s in before["subsectors"]}
+    for s in after["subsectors"]:
+        for f in keep:
+            assert s[f] == b[s["key"]][f], f"incumbent field {f} changed on {s['key']}"
+    assert before["highlights"] == after["highlights"]
+    # and the turn block landed
+    assert after["turn"]["counts"] and "turn_state" in after["subsectors"][0]
+    assert after["turn_themes"]["counts"]
+
+
+def test_turn_read_survives_a_missing_archive():
+    out = sr.compute_rotation(_tree(), _perf(), history=None)
+    assert out["turn"].get("counts")            # runs on today alone
+    row = out["subsectors"][0]
+    assert row["vol_cold"] is True              # ...and cannot confirm
+    assert row["turn_state"] not in ("turn_up", "turn_down")
+
+
+def test_live_snapshot_wins_over_a_same_day_archive_row():
+    """The archive appends once per asof, so an intraday re-fetch leaves it stale.
+
+    If the archive won, the turn read would run on a different vintage than the incumbent
+    metrics sitting in the same payload.
+    """
+    stale = {"a1": {"1W": -99.0, "1M": -99.0}}
+    fresh = {"a1": {"1W": 9.0, "1M": 10.0}}
+    rows = sr._history_with_today([{"asof": "2026-07-30", "subsectors": stale}],
+                                  fresh, "2026-07-30")
+    assert len(rows) == 1
+    assert rows[0]["subsectors"]["a1"]["1W"] == 9.0
+
+
+def test_history_with_today_appends_a_missing_session_and_folds_synthetics():
+    rows = sr._history_with_today([{"asof": "2026-07-29", "subsectors": {"a1": {"1W": 1.0}}}],
+                                  {"a1": {"1W": 2.0}, "synthetic": {"1W": 3.0}}, "2026-07-30")
+    assert [r["asof"] for r in rows] == ["2026-07-29", "2026-07-30"]
+    assert "synthetic" in rows[-1]["subsectors"]

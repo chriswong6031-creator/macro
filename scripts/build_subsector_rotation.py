@@ -54,6 +54,187 @@ def _inject_megacap_node(tree: list, snap: dict) -> None:
     snap.setdefault("subsector_perf", {})["megacapgenerals"] = perf
 
 
+def _load_history(limit: int = 40) -> list[dict]:
+    """Tail of the append-only PIT archive (``subsector_perf_history.jsonl``).
+
+    Feeds the turn engine's realised volatility, cross-session confirmation and rotation
+    tails. Missing or malformed → an empty list; the turn read then runs on today alone and
+    every node stays ``vol_cold`` (armable, never confirmable), which is the honest degrade.
+    """
+    p = _data("themes_heatmap", "subsector_perf_history.jsonl")
+    if not p.exists():
+        log.warning("subsector_perf_history.jsonl missing — turn read runs cold")
+        return []
+    rows = []
+    for line in p.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            r = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if r.get("asof") and (r.get("subsectors") or {}):
+            rows.append(r)
+    return rows[-limit:]
+
+
+def _sector_history(yahoo_dir: Path, sessions: int = 40) -> list[dict]:
+    """Synthesise archive-shaped rows for the 11 SPDR sector ETFs from local parquets.
+
+    The sector cross-section has real daily prices, so its history is *computed* as-of each
+    of the last N sessions rather than read from the Finviz archive — the same
+    ``perf_from_close`` the synthetic Mag-7 node uses, walked backwards. That gives the
+    sector turn read a genuine volatility estimate and real confirmation counts on the very
+    first run.
+    """
+    import pandas as pd
+
+    closes: dict[str, "pd.Series"] = {}
+    for ticker, _n, _zh in sr.SECTOR_ETFS:
+        p = yahoo_dir / f"{ticker}.parquet"
+        if not p.exists():
+            continue
+        try:
+            s = pd.read_parquet(p, columns=["close"])["close"].sort_index().dropna()
+            if len(s) >= 260:
+                closes[ticker] = s
+        except Exception as e:  # noqa: BLE001
+            log.warning("sector history read failed for %s: %s", ticker, e)
+    if not closes:
+        return []
+    # Session calendar = the union of dates, so a ticker with a short gap still lines up.
+    cal = sorted(set().union(*[set(s.index) for s in closes.values()]))[-sessions:]
+    rows = []
+    for day in cal:
+        asof = pd.Timestamp(day).strftime("%Y-%m-%d")
+        per = {}
+        for ticker, s in closes.items():
+            perf = sr.perf_from_close(s, asof=asof)
+            if perf:
+                per[ticker] = perf
+        if per:
+            rows.append({"asof": asof, "subsectors": per})
+    return rows
+
+
+def _append_jsonl_dedup(path: Path, rows: list[dict], id_of) -> int:
+    """Append rows whose id is not already in the file. APPEND-ONLY — never rewrites.
+
+    Rotation Command RC-R2's law: a marker, once written, may be superseded by a later row
+    but never re-dated or deleted, or every ledger downstream becomes unfalsifiable. A
+    re-run of the same session is therefore a no-op rather than a rewrite.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    seen = set()
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                seen.add(id_of(json.loads(line)))
+            except Exception:  # noqa: BLE001
+                continue
+    fresh = [r for r in rows if id_of(r) not in seen]
+    if fresh:
+        with path.open("a") as fh:
+            for r in fresh:
+                fh.write(json.dumps(r, separators=(",", ":"), ensure_ascii=False) + "\n")
+    return len(fresh)
+
+
+_BUCKETS = ("turned_up", "bottoming", "turned_down", "topping")
+
+
+def _bucket_view(summary: dict | None) -> dict:
+    """Just the buckets + counts from a turn summary (keys only, no duplicated rows)."""
+    s = summary or {}
+    return {k: s.get(k) for k in (*_BUCKETS, "counts")}
+
+
+def _write_turn_artifacts(site: Path, payload: dict) -> None:
+    """``site/marketdata/subsector_turns.json`` + the PIT turn/nomination ledgers.
+
+    The artifact is the desk's turn lane AND the rotation-universe **nomination** feed.
+    ``config/rotation_universe.json`` stays frozen: it is pre-registered under
+    ``research/ROTATION_UNIVERSE_EXTENSION_PREREG.md`` (registered 2026-07-18, registry hash
+    in the doc) and adding series to a pre-registered detector universe would void its
+    accrual clock. Nominations accrue their own census here instead, so a future extension
+    can adopt a candidate that already has history on the board.
+    """
+    asof = payload.get("asof") or ""
+    tn = payload.get("turn") or {}
+    rows_by_key = {s["key"]: s for s in payload.get("subsectors") or []}
+
+    def _slim(k: str) -> dict:
+        s = rows_by_key.get(k) or {}
+        return {"key": k, "name": s.get("name"), "name_zh": s.get("name_zh"),
+                "theme": s.get("theme"), "theme_zh": s.get("theme_zh"),
+                "n_members": s.get("n_members"),
+                "state": s.get("turn_state"), "since": s.get("turn_since"),
+                "label": s.get("turn_label"), "label_zh": s.get("turn_label_zh"),
+                "say": s.get("turn_say"), "say_zh": s.get("turn_say_zh"),
+                "score": s.get("turn_score"),
+                "bottom_score": s.get("bottom_score"), "top_score": s.get("top_score"),
+                "persist_up": s.get("persist_up"), "persist_dn": s.get("persist_dn"),
+                "legs_up": s.get("legs_up"), "legs_dn": s.get("legs_dn"),
+                "breadth": s.get("breadth"),
+                "pos_in_range": s.get("pos_in_range"),
+                "dd_from_peak": s.get("dd_from_peak"),
+                "up_from_trough": s.get("up_from_trough"),
+                "rs_pos_in_range": s.get("rs_pos_in_range"),
+                "rs_dd_from_peak": s.get("rs_dd_from_peak"),
+                "pace": s.get("pace"), "pace_rel": s.get("pace_rel"),
+                "rank_v2": s.get("rank_v2"), "rank_score_v2": s.get("rank_score_v2"),
+                "perf": s.get("perf")}
+
+    buckets = {b: [_slim(k) for k in (tn.get(b) or [])] for b in _BUCKETS}
+    noms = tn.get("nominations") or []
+    artifact = {
+        "schema": tn.get("schema") or "subsector_rotation.turn.v1",
+        "asof": asof, "generated_utc": payload.get("generated_utc"),
+        "n_sessions": tn.get("n_sessions"), "warm": tn.get("warm"),
+        "counts": tn.get("counts"), "params": tn.get("params"),
+        "leg_weights": tn.get("leg_weights"), "market": tn.get("market"),
+        "is_context_only": True,
+        "universe_note": ("Nominations are candidates raised by this desk's turn read. The "
+                          "pre-registered rotation-events universe (config/rotation_universe.json, "
+                          "frozen 2026-07-18) is NOT modified by them."),
+        "universe_note_zh": ("提名为本轮动台转向研判提出的候选，并不修改已预注册的轮动事件"
+                             "标的池（config/rotation_universe.json，2026-07-18 冻结）。"),
+        **buckets,
+        "nominations": noms,
+        "themes": _bucket_view(payload.get("turn_themes")),
+        "sectors": _bucket_view(payload.get("turn_sectors")),
+    }
+    outdir = site / "marketdata"
+    outdir.mkdir(parents=True, exist_ok=True)
+    (outdir / "subsector_turns.json").write_text(
+        json.dumps(artifact, separators=(",", ":"), ensure_ascii=False))
+
+    if not asof:
+        return
+    # PIT ledgers — one row per CONFIRMED turn and per nomination, append-only.
+    turn_rows = [{"date": asof, "key": r["key"], "name": r.get("name"),
+                  "theme": r.get("theme"), "state": r.get("state"),
+                  "since": r.get("since"), "score": r.get("score"),
+                  "n_members": r.get("n_members"),
+                  "breadth": (r.get("breadth") or {}).get("turn_up" if r.get("state") == "turn_up"
+                                                          else "turn_dn"),
+                  "dd_from_peak": r.get("dd_from_peak"),
+                  "up_from_trough": r.get("up_from_trough")}
+                 for b in ("turned_up", "turned_down") for r in buckets[b]]
+    n_t = _append_jsonl_dedup(_data("subsector_rotation", "turns.jsonl"), turn_rows,
+                              lambda r: f"{r.get('date')}|{r.get('key')}|{r.get('state')}")
+    nom_rows = [{"date": asof, "theme": n.get("theme"),
+                 "donor": (n.get("donor") or {}).get("key"),
+                 "receiver": (n.get("receiver") or {}).get("key"),
+                 "confidence": n.get("confidence"),
+                 "both_confirmed": n.get("both_confirmed")} for n in noms]
+    n_n = _append_jsonl_dedup(_data("subsector_rotation", "universe_nominations.jsonl"),
+                              nom_rows,
+                              lambda r: f"{r.get('date')}|{r.get('donor')}|{r.get('receiver')}")
+    log.info("turn ledgers: +%d turns, +%d nominations (append-only)", n_t, n_n)
+
+
 def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict:
     site = site or (config.ROOT / config.load()["storage"]["site_dir"])
     tree = json.loads(_data("themes_heatmap", "themes_tree.json").read_text())
@@ -73,7 +254,17 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
         snap.get("member_perf") or {},
         generated_utc=generated_utc,
         asof=snap.get("asof") or "",
+        history=_load_history(),
     )
+    tn = payload.get("turn") or {}
+    if tn.get("counts"):
+        log.info("turn read: %d sessions (warm=%s) — up %d/%d, down %d/%d, %d nominations",
+                 tn.get("n_sessions") or 0, tn.get("warm"),
+                 tn["counts"].get("turn_up", 0), tn["counts"].get("bottoming", 0),
+                 tn["counts"].get("turn_down", 0), tn["counts"].get("topping", 0),
+                 len(tn.get("nominations") or []))
+    else:
+        log.warning("turn read produced no states — desk falls back to the incumbent read")
 
     # Forward TRACK-RECORD (additive, degrade-safe): log today's calls with their
     # FROZEN member baskets, then grade every matured past call. The read becomes
@@ -98,15 +289,28 @@ def build(site: Path | None = None, *, generated_utc: str | None = None) -> dict
         if sector_perf:
             sector_metrics = sr._rotation_metrics(sector_perf)
             sectors_array = sr.build_sectors_array(sector_metrics)
+            # Sector turn read off REAL daily prices (see _sector_history).
+            payload["turn_sectors"] = sr.attach_turn(
+                sectors_array, sector_perf,
+                history=_sector_history(_data("yahoo")),
+                asof=payload.get("asof"), min_members=1)
             payload["sectors"] = sectors_array
             payload["n_sectors"] = len(sectors_array)
-            log.info("sector ETFs: %d rows, quadrants=%s",
+            st_counts = (payload["turn_sectors"] or {}).get("counts") or {}
+            log.info("sector ETFs: %d rows, quadrants=%s, turn=%s",
                      len(sectors_array),
-                     {s["quadrant"] for s in sectors_array})
+                     {s["quadrant"] for s in sectors_array},
+                     {k: v for k, v in st_counts.items() if v})
         else:
             log.warning("sector ETF perf empty — omitting sectors from payload")
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.warning("sector ETF build failed: %s", e)
+
+    # Turn artifact + append-only PIT ledger (additive, degrade-safe).
+    try:
+        _write_turn_artifacts(site, payload)
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.warning("turn artifacts failed: %s", e)
 
     outdir = site / "marketdata"
     outdir.mkdir(parents=True, exist_ok=True)
