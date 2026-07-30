@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T10:55:17.629740+00:00",
-  "count": 384,
+  "generated_at": "2026-07-30T11:40:21.805396+00:00",
+  "count": 386,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -113,6 +113,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eg6cax7eumy-b5838b",
+      "title": "MediaAlpha Inc. (MAX) Q2'26 Earnings Review P&C Momentum Supports Broadening Carrier Demand",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:47Z",
+      "summary_points": [
+        "**Q2’26 Earnings Themes**: Carrier demand broadening (top #3-5 advertisers’ spend nearly quadrupled vs 1H25), AI as traffic-acquisition tool, resilient margins despite partner investments; management confident in recovery durability.",
+        "**Health Vertical Risk**: Revenue down 85% YoY (strategic decision to limit U-65 marketplace participation) – critical risk factor for portfolio managers.",
+        "**Valuation & Performance**: Forward P/E (9.0x) and EV/EBITDA (4.9x) indicate undervaluation; 12-month price performance outperformed S&P 500 by 37.5%.",
+        "**Price Target Adjustment**: Raised to $14.00 (from $10.00) based on 4.0x EV/Gross Profit multiple and DCF, reflecting secular growth themes (insurance digital ad market, DTC carrier model shift)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
@@ -685,6 +705,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vwg1ovqjqjt-bc7953",
+      "title": "JPM Credit Strategy Week",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T12:54:02Z",
+      "summary_points": [
+        "**Geopolitical & Policy Drivers**: Middle East tensions and central bank meetings (Fed/BoJ/BoE on hold) pushed high-yield spreads to 4-month high (26bp), with IG AI hyperscalers widening 55bp and Brent Oil surging $20 amid rate expectations.",
+        "**CCC-Rated Debt Overweight**: HY funds hold 52.91% CCC exposure vs.",
+        "96% index (550bp below decade average), signaling extreme risk concentration in lowest-rated debt.",
+        "**Leveraged Loan Exposure & Liquidity**: HY fund loan allocation at 10-quarter low (3.37%), while leveraged loan trading volume hit 6-month low ($76.4bn), contrasting with rising HY bond volume ($223.5bn, +2% m/m)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 47,
       "language": "en",
       "needs_metadata": false
     },
