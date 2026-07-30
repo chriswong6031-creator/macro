@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T18:11:02.413855+00:00",
-  "count": 405,
+  "generated_at": "2026-07-30T18:26:03.947726+00:00",
+  "count": 406,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -49,6 +49,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vgijm8nvktt-5b3a5e",
+      "title": "Microsoft July 30",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T17:32:18Z",
+      "summary_points": [
+        "**Azure Monetization Surge**: Azure revenue +43% y/y (3.5pts above guidance) driven by efficiency gains, GitHub Copilot (30mn seats), and strong new capacity monetization; F1Q guidance +45% y/y implies 2pt acceleration.",
+        "**Margin Outperformance**: Operating margin 45.1% (+1.1pts above guidance) and gross margin 67.2% (exceeding guidance) fueled by revenue beat and AI investments, offsetting higher component costs.",
+        "**Revenue & Bookings Beat**: F4Q revenue $90bn (3.2% above midpoint), Commercial Bookings +11% y/y, Commercial RPO $678bn (+37% y/y), backing $550 target (25x CY27E EPS).",
+        "**FY27 Guidance Resilience**: Reiterated double-digit top-line/EBIT growth; FY27 gross margin eased slightly (-10bps to 65.8%) due to mix shift but no change to CY26 investment plans.",
+        "**Cloud Momentum Anchor**: Azure growth accelerating to 43% y/y (2026 TE) with operating margin expanding to 49% guidance, signaling sustained cloud business strength."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
