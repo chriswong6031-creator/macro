@@ -115,9 +115,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 515 |
+| git | 516 |
 | git+r2 | 1 |
-| gitignored-local | 15 |
+| gitignored-local | 14 |
 | r2 | 11 |
 
 ## Artifacts by owner_program
