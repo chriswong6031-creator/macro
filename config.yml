@@ -1881,9 +1881,11 @@ bgeo:
 
 coinbase:
   spot_url: https://api.coinbase.com/v2/prices/BTC-USD/spot
-  candles_url: https://api.exchange.coinbase.com/products/BTC-USD/candles
+  candles_url: https://api.exchange.coinbase.com/products/{product}/candles
   earliest: "2015-07-20"          # BTC-USD on Coinbase Exchange
   hourly_earliest: "2016-01-01"   # hourly backfill floor (~92k rows)
+  eth_earliest: "2016-06-01"      # ETH-USD listing-era daily OHLCV
+  sol_earliest: "2021-06-17"      # SOL-USD listing-era daily OHLCV
   pace_seconds: 0.25              # public limit ~10 req/s; stay well under
   retries: 3
 
@@ -5327,6 +5329,7 @@ vector:
     scrape_enabled: false         # Farside per-fund scrape OFF by default (read-only otherwise)
     url: "https://farside.co.uk/bitcoin-etf-flow-all-data/"
   btc_dat:
+    enabled: false                # retired until a maintained, reproducible source is commissioned
     json_path: "data/dat_holdings.json"   # manual 8-K-sourced MSTR/DAT drop (NOT 13F)
     margin_haircut: 0.78          # forced-sell trigger ~ avg_cost x this (≈ -22%)
     stale_after_days: 14          # asof older than this → stale flag (manual feed; ~weekly 8-K cadence)

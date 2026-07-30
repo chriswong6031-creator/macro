@@ -462,8 +462,12 @@ a{color:var(--link)}
         <summary><span class="fold-title">{{ t('Derivatives Desk','衍生品台') }}</span><span class="fold-hint">{{ t('Volatility, leverage and positioning receipts','波动、杠杆与持仓明细') }}</span><span class="fold-stat">{{ options.dvol if options.dvol is not none else '—' }} DVOL · {{ leverage.funding_annual if leverage.funding_annual is not none else '—' }}%</span></summary>
         <div class="study-body">
           <div class="fact-grid">
-            <div class="fact"><div class="k">{{ t('Implied volatility','隐含波动率') }}</div><div class="v">{{ options.dvol if options.dvol is not none else '—' }}</div></div>
-            <div class="fact"><div class="k">{{ t('Gamma flip','Gamma 翻转位') }}</div><div class="v">{% if options.gamma_flip %}${{ "{:,.0f}".format(options.gamma_flip) }}{% else %}—{% endif %}</div></div>
+            <div class="fact"><div class="k">{{ t('Implied volatility','隐含波动率') }}</div><div class="v">{{ "%.1f"|format(btc_options.volatility.atm_iv_30d) if btc_options.volatility.atm_iv_30d is not none else (options.dvol if options.dvol is not none else '—') }}</div></div>
+            <div class="fact"><div class="k">{{ t('Gamma flip','Gamma 翻转位') }}</div><div class="v">{% if btc_options.gamma.flip is not none %}${{ "{:,.0f}".format(btc_options.gamma.flip) }}{% elif options.gamma_flip %}${{ "{:,.0f}".format(options.gamma_flip) }}{% else %}—{% endif %}</div></div>
+            <div class="fact"><div class="k">{{ t('Distance to flip','距翻转位') }}</div><div class="v">{{ "%+.1f%%"|format(btc_options.gamma.distance_pct) if btc_options.gamma.distance_pct is not none else '—' }}</div></div>
+            <div class="fact"><div class="k">{{ t('Put / call OI','看跌/看涨持仓') }}</div><div class="v">{{ "%.2f×"|format(btc_options.positioning.put_call_oi_ratio) if btc_options.positioning.put_call_oi_ratio is not none else '—' }}</div></div>
+            <div class="fact"><div class="k">{{ t('Max pain','最大痛点') }}</div><div class="v">{% if btc_options.positioning.max_pain is not none %}${{ "{:,.0f}".format(btc_options.positioning.max_pain) }}{% else %}—{% endif %}</div></div>
+            <div class="fact"><div class="k">{{ t('Futures basis','期货基差') }}</div><div class="v">{{ "%+.1f%%"|format(btc_options.basis.annualized_pct) if btc_options.basis.annualized_pct is not none else '—' }}</div></div>
             <div class="fact"><div class="k">{{ t('Funding, annualized','资金费率年化') }}</div><div class="v">{{ leverage.funding_annual if leverage.funding_annual is not none else '—' }}%</div></div>
             <div class="fact"><div class="k">{{ t('Open interest','未平仓量') }}</div><div class="v">{% if leverage.oi_total %}${{ "{:,.0f}".format(leverage.oi_total/1e9) }}B{% else %}—{% endif %}</div></div>
             {% if leverage.okx_ls_ratio is not none %}
@@ -474,6 +478,7 @@ a{color:var(--link)}
             {% endif %}
           </div>
           {% if charts.etf_flow %}<div class="chart-card" style="margin-top:14px"><div class="chart-title">{{ t('ETF net flow','ETF 净流量') }}</div>{{ charts.etf_flow|safe }}</div>{% endif %}
+          <div class="receipt-line">{{ t(btc_options.coverage.note_en,btc_options.coverage.note_zh) }} {{ t(btc_options.gamma.assumption_en,btc_options.gamma.assumption_zh) }}</div>
           <div class="receipt-line">{{ t('Positioning describes pressure, not direction. It never changes the verdict by itself.','持仓数据描述压力，不直接判断方向，也不会单独改变结论。') }}</div>
         </div>
       </details>
@@ -492,6 +497,9 @@ a{color:var(--link)}
             <div class="chart-card"><div class="chart-title">{{ t('Market structure','市场结构') }}</div>{{ charts.structure|safe }}</div>
             <div class="chart-card"><div class="chart-title">{{ t('Fundamentals','基本面') }}</div>{{ charts.bfi|safe }}</div>
           </div>
+          {% if cycle_vintage.reserve_risk_asof or cycle_vintage.vdd_asof %}
+          <div class="receipt-line">{{ t('Reserve Risk and VDD use backfill vintages only: Reserve Risk through ' ~ (cycle_vintage.reserve_risk_asof or 'unavailable') ~ '; VDD through ' ~ (cycle_vintage.vdd_asof or 'unavailable') ~ '. No daily scrape or quota expansion is used.','储备风险与 VDD 仅使用历史回填版本：储备风险截至 ' ~ (cycle_vintage.reserve_risk_asof or '暂无') ~ '；VDD 截至 ' ~ (cycle_vintage.vdd_asof or '暂无') ~ '。未使用每日抓取或扩大配额。') }}</div>
+          {% endif %}
           <div class="receipt-line">{{ t('These are supporting receipts. The final position remains governed by the allocation engine.','这些是支撑性明细。最终仓位仍由配置引擎决定。') }}</div>
         </div>
       </details>
