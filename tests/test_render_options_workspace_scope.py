@@ -250,24 +250,27 @@ def _store_paths_read_by_load_stores() -> set[str]:
 def _import_builder():
     """Import the builder for the RUNTIME probe — in the THIN pack env too.
 
-    CI packs install a minimal dep set, not requirements.txt: the job that owns this
-    suite (`workflow-yaml` in .github/ci/legacy-jobs.yml) installs `pytest pyyaml`, and
-    scripts/build_options_command.py does `from jinja2 import Environment,
-    FileSystemLoader` at module scope.  A bare import therefore died with
-    ModuleNotFoundError before the probe ran — green in every dev venv, red only in
-    ci-pack-1 (#3977).
+    CI packs install a minimal dep set, not requirements.txt.  When the owning job
+    (`workflow-yaml` in .github/ci/legacy-jobs.yml) installed only `pytest pyyaml`, a bare
+    `import scripts.build_options_command` died with ModuleNotFoundError before the probe
+    ran — that module does `from jinja2 import Environment, FileSystemLoader` at module
+    scope — so this ONE test was green in every dev venv and red only in ci-pack-1 (#3977).
 
-    NOT `importorskip`.  A suite that skips in the only job naming it executes NOWHERE
-    while reading green — the class scripts/check_skip_only_suites.py runs in this very
-    job to catch — and this probe is the only guard that sees an f-string-built store
-    path.  So the missing dependency is STUBBED and the probe genuinely executes:
-    load_stores() and _load() are pure stdlib (json + pathlib), and jinja2 is touched
-    only by render()'s `Environment(...)` (build_options_command.py:863), which this
-    test never calls.
+    That job's install line now carries jinja2 for this suite's four siblings, whose
+    assertions genuinely need it.  This helper stays anyway, and deliberately: it is what
+    lets the express-lane suite run on nothing but pytest + bash, which is the dependency
+    tier its OTHER 30 tests actually sit at (they read workflow YAML and shell out to
+    render.yml's `region_of`).  Do not replace it with `importorskip` if the deps move
+    again — a suite that skips in the only job naming it executes NOWHERE while reading
+    green, the class scripts/check_skip_only_suites.py runs in this very job to catch, and
+    this probe is the only guard that sees an f-string-built store path.
 
-    Two properties keep the stub honest:
-      * installed ONLY when jinja2 is genuinely absent, so a dev/fat venv always probes
-        against the real module;
+    Stubbing is safe here because load_stores() and _load() are pure stdlib (json +
+    pathlib); jinja2 is touched only by render()'s `Environment(...)`
+    (build_options_command.py:863), which this test never calls.  Two properties keep the
+    stub honest:
+      * installed ONLY when jinja2 is genuinely absent, so any env that has it — CI
+        included, today — probes against the real module;
       * its attributes RAISE when called, so nothing can quietly render an empty page
         through it, and it is removed from sys.modules immediately after the import so a
         later `import jinja2` in the same session still fails loudly.
