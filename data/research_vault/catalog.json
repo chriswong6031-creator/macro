@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T17:13:13.145234+00:00",
-  "count": 402,
+  "generated_at": "2026-07-30T17:25:56.929579+00:00",
+  "count": 403,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -153,6 +153,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fhhot1laoaa-f9b9c0",
+      "title": "JPM Asia Pacific Equity Derivs",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:29:23Z",
+      "summary_points": [
+        "**USDJPY Reversal Catalyst**: Near 164, rising JGB yields (BoJ policy normalization/fiscal uncertainty) and GPIF holdings release 7 Aug signal strong yen risk; prefer zero-cost call spread collars on JPBSYEN/JPBIMPO for USDJPY decline.",
+        "**GPIF Holdings as Tail-Risk Signal**: June holdings scrutiny may indicate yen strengthening (up to 15% vs USD), a key tail-risk catalyst despite not being central expectation.",
+        "**Korea Buyback Momentum**: KRW 6.8tn buybacks executed (KRW 8.5tn announced) and treasury cancellations (KRW 42.5tn ytd) drive Value Up program resilience, with financials (40% weight) leading shareholder yield gains.",
+        "**Strong Yen Hedge Resilience**: JPBSYEN outperforms during de-risking (e.g., Aug 2024 carry unwind), showing negative USDJPY beta and defensive profile amid equity weakness.",
+        "**Importer-Exporter Rotation**: Importers (JPBIMPO) outperform exporters during yen strength due to lower USDJPY sensitivity and domestic revenue focus (78% vs 33% for exporters)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 27,
       "language": "en",
       "needs_metadata": false
     },
