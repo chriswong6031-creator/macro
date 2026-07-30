@@ -629,6 +629,9 @@ on:
       - "tests/test_brain_analogues.py"
       - "tests/test_brain_curve.py"
       - "tests/test_response_eval.py"
+      # Analyst OS W3: per-user memory tools + prefs plumbing.
+      - "tests/test_brain_user_memory.py"
+      - "tests/test_user_prefs.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it
