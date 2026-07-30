@@ -257,6 +257,51 @@ This ledger is the entire evidence base for §6 promotion and for the operator's
   delayed" only where the rail is actually live (honest by construction).
 - **prophet page + showcase untouched** (delayed-winners contract stays; DNR-compliant).
 
+### 4.4a Delivery path — RULED 2026-07-30, binding on the P1 wiring task
+
+The P1 build (#4088) ships the surface but NOT the transport: with the artifact absent
+the strip stays hidden, which is what makes merging it safe. The transport is its own
+task and this is its spec. Three options were considered; two are rejected on the record
+so they are not re-proposed.
+
+- **REJECTED — mirror into `site/live/` on the `*/30` `intraday-fastpath` lane.** The
+  product is a 5-minute read; a 30-minute mirror means the page can sit half an hour
+  behind the artifact while displaying an "intraday · 15-min delayed" pill. The pill
+  would be false by up to 30 min, which is the freshness lie G0.3 exists to prevent.
+  Raising that lane to `*/5` is worse: ~80 Pages deploys a day, which
+  `intraday-fastpath.yml` itself names as the thing to avoid at high cadence.
+- **REJECTED — the browser fetches the R2 public base directly.** It is anonymously
+  readable (verified: `live_flow/prophet_marks.json` → 200 on
+  `pub-…r2.dev`), so this would add a NEW public read path for per-name trigger levels
+  and pre-publication board membership — against the standing "don't show the real board
+  free" ruling (#3391) that regwalled `/factordata/*` (#3393). The payload being
+  self-timestamping makes staleness honest, but it does not make the exposure acceptable.
+- **CHOSEN — VPS live plane, served same-origin behind the existing gate.** A resource-
+  capped systemd oneshot+timer in `app/deploy/` pulls the R2 states key and writes
+  `/var/lib/macro-live/public/live/prophet_live.json` atomically (the
+  `macro-live-fast/snapshot/bars` pattern; `macro-update` auto-installs the unit on merge,
+  so go-live is a REPO COMMIT, not an SSH edit). Caddy already routes `/live/*` through
+  `@reg_asset` — `quotes.json`/`breadth.json` are the explicitly-public exceptions, and
+  `prophet_live.json` must NOT join that list. The page then fetches a same-origin, gated,
+  60–120s-fresh copy: cadence matches the product, no Pages churn, no new anonymous path,
+  China-safe by same-origin precedent.
+
+**Acceptance for the wiring task:** anonymous `curl` of `/live/prophet_live.json` returns
+the regwall response (NOT 200 with a payload); an entitled session gets 200; the served
+copy's `meta.pass_ts` tracks the R2 artifact within one timer period; the strip lights up
+only once all three hold. VPS headroom is thin (2 vCPU, measured burst ~90–95% on the
+existing 5-min lane) — size the unit's `CPUQuota`/`MemoryMax` like its siblings and state
+the measured cost in the PR.
+
+**Inherited exposure, not introduced by this program (own adjudication in flight):** the
+repo is public, so `site/factordata/us_standouts.json` — the graded board itself — already
+returns 200 from `raw.githubusercontent.com`, i.e. the Caddy regwall gates the served path
+while the git mirror serves the same payload anonymously. The armed pack at R2
+`live_flow/prophet_live_armed.json` inherits that condition and adds an increment (trigger
+levels for names not yet on the board). This is a product/pricing exposure decision for the
+operator, tracked separately in `research/PAYWALL_GIT_MIRROR_EXPOSURE_ADJUDICATION.md`;
+do NOT resolve it inside this program, and do not widen it — hence the CHOSEN option above.
+
 ### 4.5 Alerts (P2)
 
 - Reuse `CA/ingest/alerts_engine.py` (already 5-min cron): new condition kinds
