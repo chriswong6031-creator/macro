@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import logging
 import os
 import re
@@ -386,7 +387,11 @@ _CHART_BEARING_KINDS: frozenset[str] = frozenset({
 # number: one is an upload race, the other a misconfiguration).
 _MEDIA_DEFER_MAX_AGE_DAYS = 3
 
-_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}\b")
+#: Cashtags in post copy. `$ALL` / `$ERIE` / `$BRK.B` — 1-5 letters with an
+#: optional class suffix. Deliberately not anchored to the item's
+#: `source.ticker`: the posts the bare-cashtag gate catches carry their tickers
+#: ONLY in the text.
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
 
 
 def _item_age_days(it: dict, now: datetime) -> int:
@@ -426,10 +431,95 @@ def _item_ticker(it: dict) -> str:
     return hit.group(0).lstrip("$") if hit else ""
 
 
-#: Cashtags in post copy. `$ALL`/`$ERIE` style — 1-5 letters, optional class
-#: suffix. Deliberately not anchored to the item's `source.ticker`, because the
-#: posts this catches carry their tickers ONLY in the text.
-_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
+#: (path, mtime) -> symbols. The membership store is rewritten nightly; a
+#: publisher run must not re-read a 3,500-row parquet per item.
+_SYMBOL_UNIVERSE_CACHE: dict[str, tuple[float, frozenset[str]]] = {}
+
+#: Below this the universe is not credible enough to refuse a post on — a
+#: truncated or half-written parquet must not silently quarantine the night.
+_SYMBOL_UNIVERSE_MIN = 500
+
+
+def _symbol_universe(root: Path | str = ".") -> frozenset[str]:
+    """Every symbol we can prove exists. Empty frozenset = "could not tell".
+
+    Union of three stores that are already maintained for other reasons, so
+    this adds no new data dependency:
+      * ``data/universe/membership.parquet`` — sp500/sp400/sp600/r2000 with an
+        ``active`` flag, the only source that knows a listing DIED;
+      * ``data/earnings/earnings.parquet`` — the reporting calendar;
+      * ``site/marketdata/sp500_heatmap.json`` — the rendered board.
+
+    Returns EMPTY (not a partial set) when the stores are missing or too small
+    to trust, because a half-loaded universe would read as "these symbols do
+    not exist" and quarantine a whole night's posts.
+    """
+    root = Path(root)
+    membership = root / "data" / "universe" / "membership.parquet"
+    try:
+        mtime = membership.stat().st_mtime if membership.exists() else 0.0
+    except OSError:
+        mtime = 0.0
+    cache_key = str(membership)
+    hit = _SYMBOL_UNIVERSE_CACHE.get(cache_key)
+    if hit is not None and hit[0] == mtime:
+        return hit[1]
+
+    symbols: set[str] = set()
+    try:
+        import pandas as pd  # noqa: PLC0415
+        if membership.exists():
+            df = pd.read_parquet(membership, columns=["ticker", "active"])
+            # ACTIVE only. A delisted row is exactly the $N case: the ticker is
+            # in the file, it just does not trade any more.
+            live = df[df["active"].astype(bool)]
+            symbols |= {str(t).upper() for t in live["ticker"].tolist()}
+        earnings = root / "data" / "earnings" / "earnings.parquet"
+        if earnings.exists():
+            symbols |= {
+                str(t).upper()
+                for t in pd.read_parquet(earnings, columns=[]).index.tolist()
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[publisher] symbol universe load failed: %s", exc)
+    try:
+        heatmap = root / "site" / "marketdata" / "sp500_heatmap.json"
+        if heatmap.exists():
+            data = json.loads(heatmap.read_text(encoding="utf-8"))
+            symbols |= {
+                str(t.get("t", "")).upper()
+                for t in (data.get("tiles") or []) if t.get("t")
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[publisher] heatmap universe load failed: %s", exc)
+
+    out = frozenset(symbols) if len(symbols) >= _SYMBOL_UNIVERSE_MIN else frozenset()
+    _SYMBOL_UNIVERSE_CACHE[cache_key] = (mtime, out)
+    return out
+
+
+def _unknown_cashtags(it: dict, root: Path | str = ".") -> list[str]:
+    """Cashtags in the copy that no live store can vouch for. [] = all fine.
+
+    Operator 2026-07-30, on a filing post that shipped `$N`: "Wtf is N? Theres
+    no ticker called N. This post also makes zero sense." N is in the
+    membership file with ``active=False`` — it has not traded in years, and the
+    filing lane never checked.
+
+    Returns [] when the universe is unavailable: a post is never refused on the
+    strength of a store we could not read. The check has to be able to say "I
+    looked it up and it is not there", not "I do not know".
+    """
+    universe = _symbol_universe(root)
+    if not universe:
+        return []
+    found = _CASHTAG_RE.findall(str(it.get("text") or ""))
+    seen: list[str] = []
+    for tag in found:
+        sym = tag.lstrip("$").upper()
+        if sym not in universe and sym not in seen:
+            seen.append(sym)
+    return seen
 
 
 def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
@@ -1902,6 +1992,23 @@ def main(argv: list[str] | None = None) -> int:
                           note=f"bare cashtag post: names {_bare} with no chart")
             counters["quarantined_bare_cashtag"] = counters.get(
                 "quarantined_bare_cashtag", 0) + 1
+            continue
+
+        # A cashtag no live store can vouch for is a factual error, not a
+        # styling problem, so it is quarantined outright — the copy cannot be
+        # repaired by waiting. Silent when the universe is unreadable.
+        _unknown = _unknown_cashtags(it)
+        if _unknown:
+            print(f"::warning title=marketing-unknown-cashtag::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — "
+                  f"{', '.join('$' + s for s in _unknown)} not in any live "
+                  f"symbol store (delisted or never existed).", flush=True)
+            log.warning("item %s (%s/%s) quarantined — unknown cashtags %s",
+                        iid, account, it.get("kind"), _unknown)
+            OB.transition(iid, "quarantined", actor="publisher",
+                          note=f"unknown cashtag(s): {', '.join(_unknown)}")
+            counters["quarantined_unknown_cashtag"] = counters.get(
+                "quarantined_unknown_cashtag", 0) + 1
             continue
 
         if _missing_required_media(it, pub_cfg, media_paths):
