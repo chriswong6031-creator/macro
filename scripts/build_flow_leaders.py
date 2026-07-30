@@ -4,7 +4,8 @@ Inputs (all absent-safe — honest nulls on miss):
   data/options_flow/summary_*.parquet      soft-spine: gross premium, net_premium_mn,
                                             zerodte_share, fresh_contracts
   data/tape_flow/daily/<ROOT>.parquet      tape-spine per name when present
-  data/polygon_gex/chains/<date>.parquet   OI-confirmation (2 most-recent chain days)
+  data/polygon_gex/chains/<date>.parquet   OI-confirmation (2 most-recent SESSION days;
+                                            weekend/holiday byte-copies are skipped)
   data/options_entry/state.parquet         gamma_regime per name
   site/stockdata/<T>.json                  tech/rs/high52w/rel_volume/obv/earnings/profile/valuation
   site/factordata/stock_personality.json   failed_breakout_trap, stair_step_leader
@@ -38,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
 from lib import config
-from lib.nyse_calendar import sessions_behind  # noqa: E402
+from lib.nyse_calendar import is_session, sessions_behind  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 log = logging.getLogger(__name__)
@@ -178,14 +179,30 @@ def _tape_ex0dte_net(tape_row: pd.Series | None) -> float | None:
 # ── Polygon GEX chain loaders ─────────────────────────────────────────────────
 
 def _load_two_chain_days(data_root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Return (chain_day_t, chain_day_t1) — the 2 most recent chain parquets.
+    """Return (chain_day_t, chain_day_t1) — the 2 most recent SESSION chain parquets.
 
     chain_day_t  = older of the two (flow day d)
     chain_day_t1 = newer (next day d+1 for OI confirmation)
-    Returns (empty, empty) when fewer than 2 chain files exist.
+    Returns (empty, empty) when fewer than 2 session files exist.
+
+    Non-session files are skipped by filename date: the collector writes one file per
+    CALENDAR day, and a Sat/Sun/holiday file is a byte-copy of the prior session
+    (measured 2026-07-29: 370/370 underlyings identical across each weekend pair).
+    Comparing two of them zeroes ΔOI at every dominant strike, so oi_confirm emits a
+    definitive-looking oi_confirmed=False for EVERY name — and this builder runs
+    7 days/week, so every Sunday run (and every Monday run before Monday's collect
+    lands) shipped that to a live surface.
     """
     pattern = str(data_root / "polygon_gex" / "chains" / "*.parquet")
-    paths = sorted(glob.glob(pattern))
+    paths: list[str] = []  # ISO stems sort chronologically → lexicographic == date order
+    for p in sorted(glob.glob(pattern)):
+        try:
+            stem_date = date.fromisoformat(Path(p).stem)
+        except ValueError:
+            log.debug("build_flow_leaders: chain file %s has no ISO date stem — skipped", p)
+            continue
+        if is_session(stem_date):
+            paths.append(p)
     if len(paths) < 2:
         return pd.DataFrame(), pd.DataFrame()
     try:

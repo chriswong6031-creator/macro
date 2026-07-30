@@ -2,6 +2,7 @@
 
 Covers:
   - cold_start honesty (< RECUR_MIN_HISTORY sessions → cold_start=True)
+  - chain-day pair is 2 real NYSE sessions (weekend byte-copies zero ΔOI)
   - ETF routing (ETFs land in etf_strip, not board_a/board_b)
   - kill-switch (flow_leaders.enabled: false → noindex stub, no JSON written)
   - leaders.json schema keys (schema, as_of, stale, cold_start, board_a, board_b, etf_strip)
@@ -34,11 +35,17 @@ from scripts.build_flow_leaders import (
     _tape_ex0dte_net,
     _personality_flags,
     _load_daily_close,
+    _load_two_chain_days,
     _build_membership_df,
     build,
     _ETF_SET,
 )
-from engine.flow_leaders import RECUR_MIN_HISTORY
+from engine.flow_leaders import (
+    DOMINANT_K,
+    OI_CONFIRM_VOL_MULT,
+    RECUR_MIN_HISTORY,
+    oi_confirm,
+)
 
 
 # ─────────────────────────────────────────────────────────────────── helpers ──
@@ -213,6 +220,132 @@ class TestCheckStale:
     def test_unreadable_session_is_stale(self):
         """An unverifiable store must never be stamped fresh."""
         assert _check_stale("not-a-date", now=self.NOW) is True
+
+
+# ──────────────────────────────────────────────── _load_two_chain_days ──
+
+# Verified against lib.nyse_calendar: 07-23/07-24/07-27 are sessions, 07-25/07-26 is
+# the weekend, and that week carries no NYSE holiday.
+_THU, _FRI, _SAT, _SUN, _MON = (
+    "2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26", "2026-07-27",
+)
+# Exactly DOMINANT_K strikes → every row is a dominant strike, so the confirm math
+# never depends on which rows the top-k cut happens to keep.
+_CHAIN_STRIKES = [150.0, 155.0, 160.0]
+
+
+def _confirming_volume(oi: int) -> float:
+    """Flow-day volume that clears the OI_CONFIRM_VOL_MULT × prior-OI gate."""
+    return OI_CONFIRM_VOL_MULT * oi + 1.0
+
+
+def _write_chain_day(
+    tmp: Path, day: str, ois: list[int], volumes: list[float] | None = None
+) -> pd.DataFrame:
+    """Write data/polygon_gex/chains/<day>.parquet for one underlying; return the frame.
+
+    Schema per engine.flow_leaders.oi_confirm: underlying, K, is_call, volume, oi.
+    `oi` is the fixture's fingerprint — each session day gets distinguishable values
+    so the pair the loader chose is provable from the returned frames.
+    """
+    assert len(_CHAIN_STRIKES) == DOMINANT_K, "fixture must not straddle the top-k cut"
+    out_dir = tmp / "data" / "polygon_gex" / "chains"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame(
+        {
+            "underlying": ["AAPL"] * len(_CHAIN_STRIKES),
+            "K": _CHAIN_STRIKES,
+            "is_call": [True] * len(_CHAIN_STRIKES),
+            "volume": volumes if volumes is not None else [_confirming_volume(o) for o in ois],
+            "oi": ois,
+        }
+    )
+    df.to_parquet(str(out_dir / f"{day}.parquet"))
+    return df
+
+
+class TestLoadTwoChainDays:
+    """The chain pair must be 2 real NYSE SESSIONS (measured 2026-07-29).
+
+    The chains collector writes one file per CALENDAR day, so Saturday/Sunday/holiday
+    files are byte-copies of the prior session (measured: 370/370 underlyings identical
+    on the 07-18→07-19, 07-25→07-26 and 06-27→06-28 pairs). An unfiltered
+    `sorted(glob)[-2:]` therefore hands oi_confirm two IDENTICAL frames on every Sunday
+    run — and on a Monday run before Monday's collect lands — so ΔOI is 0 at every
+    dominant strike and every underlying gets a definitive-looking `oi_confirmed=False`
+    on a live surface. The builder runs 7 days/week (daily.yml).
+    """
+
+    def test_weekend_copies_skipped_when_monday_landed(self, tmp_path):
+        """{Fri, Sat=copy, Sun=copy, Mon} → (Fri, Mon), and that pair confirms True."""
+        fri = _write_chain_day(tmp_path, _FRI, [1000, 1000, 1000])
+        _write_chain_day(tmp_path, _SAT, list(fri["oi"]), list(fri["volume"]))
+        _write_chain_day(tmp_path, _SUN, list(fri["oi"]), list(fri["volume"]))
+        _write_chain_day(tmp_path, _MON, [1500, 1600, 1700], volumes=[10.0] * 3)
+
+        d_t, d_t1 = _load_two_chain_days(tmp_path / "data")
+
+        assert set(d_t["oi"]) == {1000}, f"flow day is not Friday: {d_t['oi'].tolist()}"
+        assert d_t1["oi"].tolist() == [1500, 1600, 1700], (
+            f"next day is not Monday: {d_t1['oi'].tolist()}"
+        )
+        # Real ΔOI at the dominant strikes → the tri-state flag is a genuine True.
+        assert oi_confirm(d_t, d_t1).get("AAPL") is True
+
+    def test_sunday_run_reaches_back_past_the_weekend(self, tmp_path):
+        """{Thu, Fri, Sat=copy, Sun=copy} — the shape that shipped all-False.
+
+        Unfiltered, the 2 newest are Sat+Sun: the same Friday frame twice.
+        """
+        _write_chain_day(tmp_path, _THU, [700, 700, 700])
+        fri = _write_chain_day(tmp_path, _FRI, [1000, 1000, 1000])
+        _write_chain_day(tmp_path, _SAT, list(fri["oi"]), list(fri["volume"]))
+        _write_chain_day(tmp_path, _SUN, list(fri["oi"]), list(fri["volume"]))
+
+        d_t, d_t1 = _load_two_chain_days(tmp_path / "data")
+
+        assert set(d_t["oi"]) == {700}, f"flow day is not Thursday: {d_t['oi'].tolist()}"
+        assert set(d_t1["oi"]) == {1000}, f"next day is not Friday: {d_t1['oi'].tolist()}"
+        assert oi_confirm(d_t, d_t1).get("AAPL") is True
+
+        # The defect mechanism itself: a weekend pair is one frame twice → ΔOI=0 →
+        # a definitive False, indistinguishable on the page from a real refutation.
+        assert oi_confirm(fri, fri.copy()).get("AAPL") is False
+
+    def test_fewer_than_two_sessions_returns_empty_pair(self, tmp_path):
+        """{Sat, Sun} only → honest (empty, empty), exactly as with < 2 files."""
+        _write_chain_day(tmp_path, _SAT, [1000, 1000, 1000])
+        _write_chain_day(tmp_path, _SUN, [1000, 1000, 1000])
+
+        d_t, d_t1 = _load_two_chain_days(tmp_path / "data")
+
+        assert d_t.empty
+        assert d_t1.empty
+
+    def test_weekday_pair_is_unchanged(self, tmp_path):
+        """{Thu, Fri, Mon} — all sessions: the filter picks the same newest two."""
+        _write_chain_day(tmp_path, _THU, [700, 700, 700])
+        _write_chain_day(tmp_path, _FRI, [1000, 1000, 1000])
+        _write_chain_day(tmp_path, _MON, [1500, 1600, 1700], volumes=[10.0] * 3)
+
+        d_t, d_t1 = _load_two_chain_days(tmp_path / "data")
+
+        assert set(d_t["oi"]) == {1000}, f"flow day is not Friday: {d_t['oi'].tolist()}"
+        assert d_t1["oi"].tolist() == [1500, 1600, 1700], (
+            f"next day is not Monday: {d_t1['oi'].tolist()}"
+        )
+
+    def test_non_date_stem_is_skipped(self, tmp_path):
+        """A stem that is not an ISO date cannot be session-checked, so it is skipped
+        rather than crashing the loader — and `latest` sorts AFTER every 2026-* stem."""
+        _write_chain_day(tmp_path, _THU, [700, 700, 700])
+        _write_chain_day(tmp_path, _FRI, [1000, 1000, 1000])
+        _write_chain_day(tmp_path, "latest", [1500, 1600, 1700], volumes=[10.0] * 3)
+
+        d_t, d_t1 = _load_two_chain_days(tmp_path / "data")
+
+        assert set(d_t["oi"]) == {700}, f"flow day is not Thursday: {d_t['oi'].tolist()}"
+        assert set(d_t1["oi"]) == {1000}, f"next day is not Friday: {d_t1['oi'].tolist()}"
 
 
 # ──────────────────────────────────────────────────── ETF routing ──
