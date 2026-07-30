@@ -226,7 +226,12 @@
 /* ======================= INTELLIGENCE DESK =======================
    The durable story layer above the arrival wire: clustered developments,
    evidence receipts, market context, and review-only X drafts. */
-.nxi{ --nxi-accent:var(--info); margin:0 0 18px; border-radius:20px; overflow:hidden;
+.nxi{ --nxi-accent:var(--info);
+  /* the fold's hairline spine. --nx-hair is mixed off --line and all but
+     vanishes on the dark panel, so the timeline rule is --text-derived (the
+     same fix the wire's spine needed) and holds its weight in both themes. */
+  --nxi-spine:color-mix(in srgb,var(--text) 15%,transparent);
+  margin:0 0 18px; border-radius:20px; overflow:hidden;
   background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 93%,transparent),
     color-mix(in srgb,var(--panel2) 82%,transparent));
   border:1px solid color-mix(in srgb,var(--nxi-accent) 24%,var(--nx-brd));
@@ -286,6 +291,16 @@
   border:1px solid var(--nx-hair); font-size:9.5px; }
 .nxi-chip.market{ color:var(--text); font-family:var(--num); }
 .nxi-chip.ticker{ color:var(--link); font-family:var(--num); font-weight:750; }
+/* A story losing attention should READ quieter than one gaining it — but not in
+   colour: red/green inverts under the zh convention, and the market chip beside
+   it is deliberately neutral. The dashed edge is the same "less" grammar the
+   wire uses on a single-report node, and the chip's own words already say it. */
+.nxi-chip.pace-cooling{ border-style:dashed; }
+/* zh only: this card is still showing the English original because no cached
+   twin has been attached yet. ONE marker per card (Law 4 — a constant belongs
+   once), set in the topline with the card's other provenance, italic like the
+   wire's original-source marker. */
+.nxi-orig{ color:var(--muted); font-size:9.5px; font-style:italic; }
 .nxi-more{ border-top:1px solid var(--nx-hair); }
 .nxi-more>summary{ list-style:none; cursor:pointer; padding:9px 14px; display:flex; gap:8px;
   align-items:center; color:var(--muted); font-size:11px; font-weight:650; }
@@ -299,9 +314,73 @@
   background:var(--nx-card2); font-size:10.5px; }
 .nxi-source a{ color:var(--link); font-weight:650; }
 .nxi-source span{ color:var(--muted); }
+
+/* ---- the fold's two quiet receipt groups ----
+   Source receipts above are filled pills (someone else published something).
+   These two are drawn instead — a hairline spine and a left rule — so the three
+   groups are told apart peripherally, and both stay visibly subordinate to the
+   headline and the links. No hue, no motion: the wire below owns this page's
+   one moving part, and every colour here would be a second one. */
+.nxi-track{ display:grid; }
+.nxi-tick{ position:relative; display:grid; grid-template-columns:32px 13px minmax(0,1fr);
+  align-items:start; padding:3px 0; font-size:10.5px; line-height:1.5; }
+.nxi-tick::before{ content:""; position:absolute; left:35px; top:0; bottom:0; width:1px;
+  background:var(--nxi-spine); }
+.nxi-tick:first-child::before{ top:10px; }
+.nxi-tick:last-child::before{ bottom:auto; height:11px; }
+/* A spine that STOPS at the last node claims that node is where the story
+   began. When rows are clipped it is not, so the rule runs on and fades out —
+   the wire's own way of saying the cut is depth, not the end of the thread. */
+.nxi-track.is-clipped .nxi-tick:last-child::before{ bottom:-7px; height:auto;
+  -webkit-mask-image:linear-gradient(to bottom,#000 38%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 38%,transparent 100%); }
+.nxi-tick-age{ text-align:right; padding-right:9px; color:var(--muted);
+  font:10px/1.6 var(--num); font-variant-numeric:tabular-nums;
+  white-space:nowrap; overflow:hidden; }
+.nxi-tick-node{ position:relative; }
+/* FORM carries the kind, the label carries the meaning: a ROUND node is an
+   arrival (the first report, a masthead joining), a SQUARE node is a change of
+   state. Nothing here is load-bearing — every row says it in words too. */
+.nxi-tick-node::after{ content:""; position:absolute; left:0; top:7px; width:7px; height:7px;
+  box-sizing:border-box; border-radius:50%; z-index:1; background:var(--nx-card-solid);
+  border:1.5px solid color-mix(in srgb,var(--text) 34%,transparent); }
+.nxi-tick[data-kind="first_report"] .nxi-tick-node::after{
+  background:color-mix(in srgb,var(--text) 52%,transparent);
+  border-color:color-mix(in srgb,var(--text) 52%,transparent); }
+.nxi-tick[data-kind="stage"] .nxi-tick-node::after{ border-radius:1px; }
+.nxi-tick-label{ min-width:0; color:color-mix(in srgb,var(--text) 74%,transparent);
+  overflow-wrap:anywhere; }
+.nxi-tick-src{ color:var(--muted); }
+.nxi-track-rest{ margin:3px 0 0 45px; color:var(--muted); font-size:10px; }
+/* zh time units are two glyphs where English uses one letter ("28分钟" measures
+   41px against "28m"), so the gutter is sized per language rather than clipped.
+   Higher specificity than the 560px rule below on purpose: the string does not
+   get shorter on a narrow screen.
+   The track carries the age cell's own 9px padding-right (box-sizing is border-
+   box repo-wide), so the 41px string needs 41+9 before any slack: at 46 the
+   content box was 37px and the row silently clipped its LEADING glyph — an age
+   that reads "8分钟" when the story is 28 minutes old, which is a wrong figure
+   rather than a visibly cut one. 55/58/68 restores the intended 5px slack and
+   keeps the spine and rest offsets on the same arithmetic (track + 3.5, +13). */
+html[data-lang="zh"] .nxi-tick{ grid-template-columns:55px 13px minmax(0,1fr); }
+html[data-lang="zh"] .nxi-tick::before{ left:58px; }
+html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
+.nxi-facts{ display:flex; flex-direction:column; gap:6px; }
+.nxi-fact{ padding-left:9px; border-left:2px solid color-mix(in srgb,var(--muted) 34%,transparent);
+  font-size:10.5px; line-height:1.55; color:color-mix(in srgb,var(--text) 76%,transparent); }
+/* house law: the mono face carries FIGURES, never words — "as of" stays in the
+   text face and only the date crosses over. */
+.nxi-asof{ color:var(--muted); font-size:9.5px; white-space:nowrap; }
+.nxi-stampnum{ font-family:var(--num); font-variant-numeric:tabular-nums; }
+
 .nxi-draft{ padding:10px; border-radius:10px; background:color-mix(in srgb,var(--nxi-accent) 6%,var(--nx-card2));
   border:1px solid color-mix(in srgb,var(--nxi-accent) 18%,var(--nx-hair)); }
 .nxi-draft p{ margin:0; white-space:pre-wrap; font-size:11.5px; line-height:1.48; }
+/* Which post this draft IS, in the same micro-caps voice as the group labels —
+   read before the text, because a 280-character wire and a long post ask for
+   very different review. */
+.nxi-shape{ display:block; margin:0 0 5px; color:var(--muted); font-size:9px;
+  font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
 .nxi-draftbar{ display:flex; gap:7px; align-items:center; margin-top:8px; color:var(--muted); font-size:9.5px; }
 .nxi-copy{ appearance:none; margin-left:auto; cursor:pointer; border:1px solid color-mix(in srgb,var(--nxi-accent) 32%,transparent);
   background:transparent; color:var(--nxi-accent); border-radius:100px; padding:4px 9px; font:700 10px/1 inherit; }
@@ -323,6 +402,10 @@
   .nxi-metric:nth-child(2){ border-right:0; }
   .nxi-metric:nth-child(-n+2){ border-bottom:1px solid var(--nx-hair); }
   .nxi-toolbar-note{ width:100%; margin-left:0; }
+  /* narrow the timeline's age gutter so the label column keeps its measure */
+  .nxi-tick{ grid-template-columns:27px 13px minmax(0,1fr); }
+  .nxi-tick::before{ left:30px; }
+  .nxi-track-rest{ margin-left:40px; }
 }
 
 /* ======================= LIVE WIRE (B4b) =======================
@@ -482,3 +565,4 @@
 /* motion / perf gates (mobile-perf law: opacity-only, killed on reduce/touch) */
 @media(prefers-reduced-motion:reduce){ .nx-aurora::before,.nx-aurora::after,.nx-lead::after{ animation:none; } }
 @media(pointer:coarse){ .nx-aurora::before,.nx-aurora::after,.nx-lead::after{ animation:none; } }
+
