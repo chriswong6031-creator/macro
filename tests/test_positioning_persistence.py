@@ -681,3 +681,358 @@ class TestMatchesBoardWall:
         """A name the chain store does not cover gets NO block — the payload must not
         grow a wall_persistence key whose only content is the board wall echoed back."""
         assert self._block(5000.0, 4000.0, root="SPX") is None
+
+
+# ── 13. B1 — cross-source price is emitted and disclosed, never mixed ────────
+
+class TestSnapshotSpotDisclosure:
+    """dist_pct and the wall split are measured against the SNAPSHOT's price while the
+    payload's own `spot` is the board's. Both must be visible, and a material gap said."""
+
+    def test_both_blocks_emit_the_price_they_used(self):
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        # latest snapshot's AAA spot is 101.0 (prior was 100.0) — the latest wins
+        assert st.clusters("AAA")["snapshot_spot"] == 101.0
+        assert st.wall_persistence("AAA")["snapshot_spot"] == 101.0
+
+    def test_dist_pct_uses_the_snapshot_price_not_the_board_price(self):
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        row = st.clusters("AAA")["new_oi"][0]
+        # K=110 against the snapshot's 101.0 -> +8.9%. Against a board spot of, say,
+        # 120 it would be NEGATIVE — which is exactly why the price is published.
+        assert row["dist_pct"] == pytest.approx(8.9, abs=0.05)
+
+    def test_divergence_note_fires_above_the_threshold(self):
+        note = pp.spot_divergence_note(197.01, 192.32)      # 2.4% apart
+        assert note is not None
+        assert "197.01" in note[0] and "2.4%" in note[0]
+        assert "197.01" in note[1] and "2.4%" in note[1]
+
+    def test_divergence_note_silent_inside_the_threshold(self):
+        assert pp.spot_divergence_note(740.86, 735.05) is None   # 0.79% apart
+        assert pp.spot_divergence_note(100.0, 100.0) is None
+
+    def test_divergence_note_null_safe(self):
+        assert pp.spot_divergence_note(None, 100.0) is None
+        assert pp.spot_divergence_note(100.0, None) is None
+        assert pp.spot_divergence_note(100.0, 0.0) is None
+        assert pp.spot_divergence_note(float("nan"), 100.0) is None
+
+    def test_wall_block_states_the_comparison_basis(self):
+        """matches_board_wall is a cross-source, exact-strike comparison and False is the
+        common case — the block must explain that rather than leaving it as a bare flag."""
+        dates, read = _two_day_store()
+        st = pp.load(chain_dates=dates, read_chain=read, use_cache=False)
+        w = st.wall_persistence("AAA")
+        assert w["basis_en"] and w["basis_zh"]
+        assert "different chain source" in w["basis_en"]
+        assert "different strikes" in w["basis_en"]
+
+
+# ── 14. B2 — snapshots on both dates, zero shared contracts ──────────────────
+
+class TestNoMatchedContracts:
+    def _store(self):
+        """DDD is listed on both dates but every contract id turned over."""
+        prior = _chain([
+            _row("DDD", "O:DDD260731C00100000", 100.0, True, 500, 100.0),
+            _row("DDD", "O:DDD260731P00090000", 90.0, False, 400, 100.0),
+        ])
+        latest = _chain([
+            _row("DDD", "O:DDD260821C00100000", 100.0, True, 700, 101.0),
+            _row("DDD", "O:DDD260821P00090000", 90.0, False, 300, 101.0),
+        ])
+        frames = {D_FRI: prior, D_MON: latest}
+        return pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                       use_cache=False)
+
+    def test_state_is_distinct_from_absent(self):
+        c = self._store().clusters("DDD")
+        assert c["new_oi"] == [] and c["exit_oi"] == []
+        assert c["matched_contracts"] == 0
+        assert c["same_vintage"] is False
+        # the two dates ARE known, so the copy must not claim nothing is stored
+        assert c["prior_snapshot"] == D_FRI.isoformat()
+        assert c["latest_snapshot"] == D_MON.isoformat()
+        assert "No per-strike chain snapshots are stored" not in c["note_en"]
+        assert "exist for this name on both" in c["note_en"]
+        assert "turned over" in c["note_en"]
+        assert "完全更替" in c["note_zh"]
+
+    def test_absent_root_still_gets_the_absent_copy(self):
+        c = self._store().clusters("ZZZZ")
+        assert "No per-strike chain snapshots are stored" in c["note_en"]
+        assert c["prior_snapshot"] is None
+
+    def test_reachable_on_the_real_store(self):
+        """2026-07-02 -> 2026-07-07 in the committed store: CRWD is listed on both dates
+        with zero shared contract ids (1 of 350 shared roots)."""
+        import datetime as _d
+        a, b = _d.date(2026, 7, 2), _d.date(2026, 7, 7)
+        if not all((pp._chains_dir() / f"{d.isoformat()}.parquet").exists() for d in (a, b)):
+            pytest.skip("that vintage pair is not in this checkout")
+        st = pp.load(chain_dates=lambda: [a, b], read_chain=pp.default_read_chain,
+                     window_sessions=2, use_cache=False)
+        c = st.clusters("CRWD")
+        assert c["matched_contracts"] == 0
+        assert c["prior_snapshot"] == a.isoformat()
+        assert "turned over" in c["note_en"], c["note_en"]
+
+
+# ── 15. M1 — pair gap and store staleness are disclosed ──────────────────────
+
+class TestGapAndStaleness:
+    def _straddling_store(self, prior_d, latest_d):
+        prior = _chain([_row("AAA", "t1", 110.0, True, 1000, 100.0),
+                        _row("AAA", "p1", 90.0, False, 1000, 100.0)])
+        latest = _chain([_row("AAA", "t1", 110.0, True, 1600, 100.0),
+                         _row("AAA", "p1", 90.0, False, 1000, 100.0)])
+        frames = {prior_d: prior, latest_d: latest}
+        return pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                       window_sessions=2, use_cache=False)
+
+    def test_consecutive_pair_says_nothing_about_a_gap(self):
+        st = self._straddling_store(D_FRI, D_MON)     # Fri -> Mon IS consecutive
+        c = st.clusters("AAA")
+        assert c["sessions_apart"] == 1
+        assert "sessions apart" not in c["note_en"]
+
+    def test_pair_straddling_a_gap_says_how_far(self):
+        st = self._straddling_store(dt.date(2026, 6, 15), dt.date(2026, 7, 27))
+        c = st.clusters("AAA")
+        assert c["sessions_apart"] and c["sessions_apart"] > 20
+        assert f"{c['sessions_apart']} trading sessions apart" in c["note_en"]
+        assert "not consecutive" in c["note_en"]
+        assert "并不相邻" in c["note_zh"]
+
+    def test_stalled_collector_is_disclosed_in_both_blocks(self):
+        st = self._straddling_store(dt.date(2026, 6, 15), dt.date(2026, 6, 16))
+        c = st.clusters("AAA")
+        w = st.wall_persistence("AAA")
+        assert c["stale"] is True and c["sessions_behind"] > pp.CHAIN_STALE_SESSIONS
+        assert "behind the latest close" in c["note_en"]
+        assert w["stale"] is True and w["sessions_behind"] == c["sessions_behind"]
+        assert "behind the latest close" in w["call_side"]["note_en"]
+        assert "落后" in w["put_side"]["note_zh"]
+
+    def test_current_store_adds_no_staleness_noise(self):
+        st = pp.load(use_cache=False)
+        if st.meta["sessions_available"] < 2:
+            pytest.skip("chain store too short in this checkout")
+        c = st.clusters("SPY")
+        if c["stale"]:
+            pytest.skip("the committed chain store is genuinely behind in this checkout")
+        assert "behind the latest close" not in c["note_en"]
+
+    def test_staleness_copy_is_calm(self):
+        st = self._straddling_store(dt.date(2026, 6, 15), dt.date(2026, 6, 16))
+        low = st.clusters("AAA")["note_en"].lower()
+        for banned in ("error", "failed", "broken", "alert", "warning", "stale"):
+            assert banned not in low, f"alarm word {banned!r} in the disclosure"
+
+
+# ── 16. M2 — a failed build is memoised, not retried per root ────────────────
+
+class TestFailureMemoisation:
+    def test_build_failure_is_cached_and_warned_once(self, monkeypatch, capsys):
+        calls = {"n": 0}
+
+        def boom(*a, **k):
+            calls["n"] += 1
+            raise RuntimeError("synthetic pandas failure")
+
+        pp.reset_cache()
+        monkeypatch.setattr(pp, "_build", boom)
+        first = pp.load()
+        for _ in range(20):
+            assert pp.load() is first
+        assert calls["n"] == 1, (
+            "each load() re-ran the failing build — at board scale gex_state calls this "
+            "3x per root, so 555 roots would mean 1,665 rebuilds")
+        out = capsys.readouterr().out
+        warns = [ln for ln in out.splitlines() if "positioning-persistence-degraded" in ln]
+        assert len(warns) == 1
+        assert warns[0].startswith("::warning")
+
+    def test_degraded_store_answers_every_root_honestly(self, monkeypatch):
+        pp.reset_cache()
+        monkeypatch.setattr(pp, "_build",
+                            lambda *a, **k: (_ for _ in ()).throw(RuntimeError("nope")))
+        st = pp.load()
+        assert st.meta["degraded"] is True
+        assert "nope" in st.meta["degraded_reason"]
+        c = st.clusters("SPY")
+        assert c["new_oi"] == [] and c["exit_oi"] == []
+        assert "No per-strike chain snapshots are stored" in c["note_en"]
+        assert st.wall_persistence("SPY") is None
+
+
+# ── 17. M5 — the join-key invariant holds before the merge ───────────────────
+
+class TestJoinKeyInvariant:
+    def test_null_shaped_keys_are_dropped(self):
+        df = pd.DataFrame([
+            {"underlying": "AAA", "strike_ticker": "t1", "K": 100.0,
+             "is_call": True, "oi": 100, "spot": 100.0},
+            {"underlying": "AAA", "strike_ticker": "nan", "K": 100.0,
+             "is_call": True, "oi": 100, "spot": 100.0},
+            {"underlying": "AAA", "strike_ticker": None, "K": 100.0,
+             "is_call": True, "oi": 100, "spot": 100.0},
+            {"underlying": "AAA", "strike_ticker": "", "K": 100.0,
+             "is_call": True, "oi": 100, "spot": 100.0},
+        ])
+        out = pp._normalise_chain(df)
+        assert list(out["strike_ticker"]) == ["t1"]
+        assert out.attrs["dropped_bad_join_keys"] == 3
+
+    def test_duplicate_keys_are_dropped_on_both_sides(self):
+        df = pd.DataFrame([
+            {"underlying": "AAA", "strike_ticker": "dup", "K": 100.0,
+             "is_call": True, "oi": 100, "spot": 100.0},
+            {"underlying": "AAA", "strike_ticker": "dup", "K": 100.0,
+             "is_call": True, "oi": 200, "spot": 100.0},
+            {"underlying": "AAA", "strike_ticker": "ok", "K": 105.0,
+             "is_call": True, "oi": 300, "spot": 100.0},
+        ])
+        out = pp._normalise_chain(df)
+        assert list(out["strike_ticker"]) == ["ok"], "a duplicated id must not survive"
+        assert out.attrs["dropped_bad_join_keys"] == 2
+
+    def test_cartesian_blowup_cannot_happen(self):
+        """2 nulls x 2 nulls would be 4 invented contract pairs feeding the OI sums."""
+        def side(oi_a, oi_b):
+            return pd.DataFrame([
+                {"underlying": "AAA", "strike_ticker": None, "K": 100.0,
+                 "is_call": True, "oi": oi_a, "spot": 100.0},
+                {"underlying": "AAA", "strike_ticker": "nan", "K": 100.0,
+                 "is_call": True, "oi": oi_a, "spot": 100.0},
+                {"underlying": "AAA", "strike_ticker": "real", "K": 110.0,
+                 "is_call": True, "oi": oi_b, "spot": 100.0},
+            ])
+        prior = pp._normalise_chain(side(1000, 500))
+        latest = pp._normalise_chain(side(9999, 800))
+        d = pp.matched_oi_delta(prior, latest)
+        assert len(d) == 1 and int(d["contracts"].iloc[0]) == 1
+        assert int(d["oi_delta"].iloc[0]) == 300
+
+    def test_loud_when_it_fires_and_counted_in_meta(self, capsys):
+        bad = pd.DataFrame([
+            {"underlying": "AAA", "strike_ticker": "t1", "K": 110.0,
+             "is_call": True, "oi": 100, "spot": 100.0},
+            {"underlying": "AAA", "strike_ticker": None, "K": 110.0,
+             "is_call": True, "oi": 100, "spot": 100.0},
+            {"underlying": "AAA", "strike_ticker": "p1", "K": 90.0,
+             "is_call": False, "oi": 100, "spot": 100.0},
+        ])
+        frames = {D_FRI: bad, D_MON: bad}
+        st = pp.load(chain_dates=lambda: sorted(frames), read_chain=frames.get,
+                     use_cache=False)
+        out = capsys.readouterr().out
+        line = next((ln for ln in out.splitlines() if "oi-chain-join-keys" in ln), "")
+        assert line.startswith("::warning"), out
+        assert "1 row(s)" in line
+        assert st.meta["dropped_bad_join_keys"] == 2      # one per snapshot
+
+    def test_clean_real_store_reports_zero(self):
+        st = pp.load(use_cache=False)
+        assert st.meta["dropped_bad_join_keys"] == 0, (
+            "the committed store should have no null/duplicate contract ids")
+
+
+# ── 18. m8 — vintage equality is exact, not tolerant ────────────────────────
+
+def test_vintage_match_is_exact_not_within_a_tolerance():
+    """np.isclose's rtol=1e-5 on a liquid root's ~1e8 total open interest is a
+    ~1,000-contract tolerance — it would call a real thousand-contract day 'the same
+    vintage' and suppress the delta."""
+    a = pd.DataFrame({"contracts": [10], "oi_total": [100_000_000.0], "spot": [500.0]},
+                     index=pd.Index(["X"]))
+    b = pd.DataFrame({"contracts": [10], "oi_total": [100_000_500.0], "spot": [500.0]},
+                     index=pd.Index(["X"]))
+    assert bool(pp.same_vintage_mask(a, b)["X"]) is False
+    same = pd.DataFrame({"contracts": [10], "oi_total": [100_000_000.0], "spot": [500.0]},
+                        index=pd.Index(["X"]))
+    assert bool(pp.same_vintage_mask(a, same)["X"]) is True
+
+
+# ── 19. m10 — the ends of the percentile range read as sentences ─────────────
+
+def test_percentile_ends_are_plain_words():
+    hist = [{"date": d.isoformat(), "net_gex_bn": 5.0} for d in _sessions(10)]
+    bottom = pp.net_gex_percentile(hist, -100.0)
+    assert bottom["pctile"] == 0
+    assert "above 0%" not in bottom["note_en"]
+    assert "at or below every one" in bottom["note_en"]
+    assert "不高于" in bottom["note_zh"]
+    top = pp.net_gex_percentile(hist, 100.0)
+    assert top["pctile"] == 100
+    assert "above 100%" not in top["note_en"]
+    assert "above every one" in top["note_en"]
+    middle = pp.net_gex_percentile(
+        [{"date": d.isoformat(), "net_gex_bn": float(i)} for i, d in enumerate(_sessions(10))],
+        4.5)
+    assert 0 < middle["pctile"] < 100
+    assert f"above {middle['pctile']}%" in middle["note_en"]
+
+
+# ── 20. m2 — deep_history quantiles are session-filtered ────────────────────
+
+def test_deep_history_quantiles_exclude_non_session_rows():
+    """The real rebuild carries a 2019-02-02 Saturday row in every root; n_sessions and
+    the spread must be computed after the filter, as the docstring claims."""
+    idx = pd.to_datetime(["2020-01-02", "2020-01-03", "2019-02-02", "2020-01-06"])
+    hist = pd.DataFrame({"net_gex_bn": [1.0, 2.0, 999.0, 3.0]}, index=idx)
+    got = pp.deep_history_context("SPY", reader=lambda g, n: hist)
+    assert got["n_sessions"] == 3, "the Saturday row leaked into the denominator"
+    assert got["net_gex_bn_max"] == 3.0, "the Saturday row leaked into the spread"
+    assert got["window_end"] == "2020-01-06"
+
+
+# ── 21. B1 residual — a sign flip triggers the note at ANY magnitude ─────────
+
+class TestSignFlipTrigger:
+    """Adjudication: the note fires on divergence > 2% OR when sign(K - snapshot_spot)
+    != sign(K - board_spot). Direction is what breaks the reader's model, not distance —
+    the distance threshold alone left 27 of 104 flipped rows undisclosed."""
+
+    def test_detects_a_strike_between_the_two_prices(self):
+        # prices only 0.5% apart (well under the threshold) but K sits between them
+        assert pp.rows_cross_the_board_price([{"K": 100.2}], 100.0, 100.5) is True
+        assert pp.rows_cross_the_board_price([{"K": 100.5}], 100.0, 100.5) is True
+        assert pp.rows_cross_the_board_price([{"K": 100.0}], 100.0, 100.5) is False
+
+    def test_ignores_strikes_on_the_same_side_of_both(self):
+        assert pp.rows_cross_the_board_price([{"K": 120.0}], 100.0, 100.5) is False
+        assert pp.rows_cross_the_board_price([{"K": 90.0}], 100.0, 100.5) is False
+
+    def test_any_one_row_is_enough(self):
+        rows = [{"K": 90.0}, {"K": 120.0}, {"K": 100.2}]
+        assert pp.rows_cross_the_board_price(rows, 100.0, 100.5) is True
+
+    def test_null_safe(self):
+        assert pp.rows_cross_the_board_price(None, 100.0, 100.5) is False
+        assert pp.rows_cross_the_board_price([], 100.0, 100.5) is False
+        assert pp.rows_cross_the_board_price([{"K": None}], 100.0, 100.5) is False
+        assert pp.rows_cross_the_board_price([{"K": 100.2}], None, 100.5) is False
+        assert pp.rows_cross_the_board_price([{"K": 100.2}], 100.0, None) is False
+
+    def test_identical_prices_never_flip(self):
+        """5 of the reviewer's 104 apparent flips are this shape: the two prices agree
+        exactly and dist_pct merely rounds to 0.0. There is nothing to disclose."""
+        assert pp.rows_cross_the_board_price([{"K": 212.5}], 212.41, 212.41) is False
+
+    def test_note_fires_below_the_threshold_when_forced(self):
+        assert pp.spot_divergence_note(100.0, 100.5) is None          # 0.5%, no flip
+        forced = pp.spot_divergence_note(100.0, 100.5, force=True)
+        assert forced is not None
+        assert "the other way round" in forced[0]
+        assert "方向会相反" in forced[1]
+
+    def test_distance_trigger_does_not_add_the_direction_sentence(self):
+        """Above the threshold the note names distance; the direction clause is reserved
+        for the case a reader would otherwise get backwards."""
+        note = pp.spot_divergence_note(197.01, 192.32)   # 2.4%
+        assert "the other way round" not in note[0]
+        assert "2.4%" in note[0]

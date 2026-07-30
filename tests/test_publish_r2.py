@@ -324,17 +324,37 @@ def test_index_gex_history_in_data_dirs_not_default():
 
 def test_index_gex_history_uses_a_store_sized_min_files_floor():
     """The 100-file default would refuse this store forever — it is exactly 4 root
-    parquets plus a manifest. The override floor is still a real guard: a tree with
-    fewer than all four roots is refused."""
+    parquets plus a manifest. The floor is 5, i.e. ALL FOUR ROOTS AND the manifest: a
+    floor of 4 would have passed a three-roots-plus-manifest tree, which is exactly the
+    partial rebuild this guard exists to refuse."""
     from scripts.publish_r2 import _DATA_DIR_MIN_FILES, _DATA_DIR_MIN_FILES_OVERRIDE
-    assert _DATA_DIR_MIN_FILES_OVERRIDE["index_gex_history"] == 4
+    assert _DATA_DIR_MIN_FILES_OVERRIDE["index_gex_history"] == 5
     assert _DATA_DIR_MIN_FILES_OVERRIDE["index_gex_history"] < _DATA_DIR_MIN_FILES
     # a real store (4 roots + manifest) syncs
-    assert _data_dir_syncable("index_gex_history", 5)[0]
-    assert _data_dir_syncable("index_gex_history", 4)[0]
-    # a partial rebuild (one root) or a manifest-only tree does not
-    ok, why = _data_dir_syncable("index_gex_history", 2)
+    assert _data_dir_syncable("index_gex_history", 5, total_bytes=846_000)[0]
+    # three roots + manifest is a PARTIAL rebuild and must not
+    ok, why = _data_dir_syncable("index_gex_history", 4, total_bytes=846_000)
     assert not ok and "partial checkout" in why
+    ok, why = _data_dir_syncable("index_gex_history", 2, total_bytes=846_000)
+    assert not ok and "partial checkout" in why
+
+
+def test_index_gex_history_has_the_deep_history_fences():
+    """Same shape as `attention`: a host-bound deep-history store whose R2 copy is the
+    only offsite one. A truncated rebuild is valid-but-short, so file-count alone cannot
+    catch it — it needs the append-only per-file guard and the per-dir bytes floor."""
+    from scripts.publish_r2 import (_APPEND_ONLY_DIRS, _DATA_DIR_MIN_BYTES,
+                                    _append_only_guarded)
+    assert "index_gex_history" in _APPEND_ONLY_DIRS
+    assert _DATA_DIR_MIN_BYTES["index_gex_history"] == 600_000
+    # a one-root rebuild (~210 KB + manifest) is under the floor even with 5 files
+    ok, why = _data_dir_syncable("index_gex_history", 5, total_bytes=220_000)
+    assert not ok and "shallow rebuild" in why
+    # the real store clears it
+    assert _data_dir_syncable("index_gex_history", 5, total_bytes=846_000)[0]
+    # per-file: a shorter local parquet must never clobber the R2 object
+    assert _append_only_guarded("index_gex_history", 60_000, 210_000)
+    assert not _append_only_guarded("index_gex_history", 212_000, 210_000)
 
 
 def test_min_files_override_does_not_loosen_the_other_data_dirs():

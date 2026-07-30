@@ -441,9 +441,35 @@ def _oi_delta_clusters(key: str) -> dict:
         log.warning("gex_state: oi_delta_clusters unavailable for %s: %s", key, e)
         return {"new_oi": [], "exit_oi": [],
                 "prior_snapshot": None, "latest_snapshot": None,
-                "matched_contracts": 0, "same_vintage": False,
+                "sessions_apart": None, "sessions_behind": None, "stale": False,
+                "matched_contracts": 0, "same_vintage": False, "snapshot_spot": None,
                 "note_en": _OI_DELTA_UNAVAILABLE_EN,
                 "note_zh": _OI_DELTA_UNAVAILABLE_ZH}
+
+
+def _spot_divergence(snapshot_spot: float | None, board_spot: float | None,
+                     rows: list | None = None) -> tuple[str, str] | None:
+    """EN/ZH disclosure when the snapshot source's price differs from the board's.
+
+    Only the payload layer can compute this: the positioning module has the snapshot
+    price, this function has the board's `spot`.
+
+    TWO trigger conditions, per the review adjudication:
+      * DISTANCE — the two prices differ by more than SPOT_DIVERGENCE_PCT (measured
+        2026-07-29: 112 of 358 shared roots, worst 23.3%);
+      * DIRECTION — a listed strike falls BETWEEN the two prices, so sign(K - snapshot)
+        != sign(K - board) and above/below reads the opposite way against the payload's
+        own spot. This fires at ANY magnitude: a sign flip breaks the reader's mental
+        model regardless of how small the gap is. Measured 104 of 2,259 cluster rows are
+        sign-flipped, and the distance threshold alone caught only 77 of them.
+    """
+    try:
+        from engine import positioning_persistence as pp  # noqa: PLC0415
+        flip = pp.rows_cross_the_board_price(rows, snapshot_spot, board_spot)
+        return pp.spot_divergence_note(snapshot_spot, board_spot, force=flip)
+    except Exception as e:  # noqa: BLE001
+        log.warning("gex_state: spot divergence note unavailable: %s", e)
+        return None
 
 
 def _wall_persistence(key: str, call_wall: float | None,
@@ -478,6 +504,7 @@ def _wall_persistence(key: str, call_wall: float | None,
         s["matches_board_wall"] = (
             None if (oi_level is None or board_level is None)
             else bool(abs(float(oi_level) - float(board_level)) < 1e-6))
+        s["board_wall"] = (float(board_level) if board_level is not None else None)
         block[side] = s
     return block
 
@@ -642,8 +669,14 @@ def compute_gex_state(
             "exit_oi": oi_delta_clusters.get("exit_oi", []),
             "prior_snapshot": oi_delta_clusters.get("prior_snapshot"),
             "latest_snapshot": oi_delta_clusters.get("latest_snapshot"),
+            "sessions_apart": oi_delta_clusters.get("sessions_apart"),
+            "sessions_behind": oi_delta_clusters.get("sessions_behind"),
+            "stale": bool(oi_delta_clusters.get("stale", False)),
             "matched_contracts": oi_delta_clusters.get("matched_contracts", 0),
             "same_vintage": bool(oi_delta_clusters.get("same_vintage", False)),
+            # The price the row-level dist_pct values are measured against — the snapshot
+            # source's own, NOT this payload's `spot` (which comes from the Cboe chain).
+            "snapshot_spot": oi_delta_clusters.get("snapshot_spot"),
             "note_en": oi_delta_clusters.get("note_en"),
             "note_zh": oi_delta_clusters.get("note_zh"),
         },
@@ -664,8 +697,29 @@ def compute_gex_state(
         },
     }
 
+    # ── cross-source price disclosure (B1b) ──────────────────────────────────
+    # Both positioning blocks measure strike distance and the above/below-price split
+    # against the SNAPSHOT source's price (single-source internal consistency), while
+    # this payload's top-level `spot` is the Cboe one. When the two diverge materially
+    # the block says so in plain words rather than leaving a reader to discover that
+    # dist_pct's sign disagrees with (K - spot).
+    cluster_rows = (payload["oi_delta_clusters"]["new_oi"]
+                    + payload["oi_delta_clusters"]["exit_oi"])
+    div = _spot_divergence(oi_delta_clusters.get("snapshot_spot"), spot, cluster_rows)
+    if div is not None:
+        payload["oi_delta_clusters"]["spot_note_en"] = div[0]
+        payload["oi_delta_clusters"]["spot_note_zh"] = div[1]
+
     # Additive, absent rather than faked when the source does not cover the name.
     if wall_persistence is not None:
+        wall_rows = [s for s in (wall_persistence.get("call_side"),
+                                 wall_persistence.get("put_side"))
+                     if isinstance(s, dict) and s.get("level") is not None]
+        wdiv = _spot_divergence(wall_persistence.get("snapshot_spot"), spot,
+                                [{"K": s["level"]} for s in wall_rows])
+        if wdiv is not None:
+            wall_persistence["spot_note_en"] = wdiv[0]
+            wall_persistence["spot_note_zh"] = wdiv[1]
         payload["wall_persistence"] = wall_persistence
     if net_gex_pctile is not None:
         payload["net_gex_pctile"] = net_gex_pctile

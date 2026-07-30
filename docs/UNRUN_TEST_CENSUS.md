@@ -216,7 +216,7 @@ between) that no workflow ran even though `ci.yml` *could* be triggered by a cha
 or their subject. Blast radius is the same as P0 — these guard
 `build_site`, `build_release_forecast`, `neuralweb/cortex`, `build_vector`, `grade_us_board`
 and 70 further publish-path modules — but a signal was at least *possible*, so they ranked
-below the strictly-dark set. 138 are now wired across thirteen lanes; two are held back.
+below the strictly-dark set. 144 are now wired across thirteen lanes (138 in the original census plus the three added by the GEX modeling-core amendment and the three added by the OIP E3 amendment below); two are held back.
 
 | job | suites | measured (clean venv) |
 |---|---|---|
@@ -229,11 +229,11 @@ below the strictly-dark set. 138 are now wired across thirteen lanes; two are he
 | `unrun-intl-collectors` | 11 | 198 / 30s |
 | `unrun-russell-breadth` | 1 | 11 / 12s |
 | `unrun-macro-panels` | 19 | 739 / 63s |
-| `unrun-market-plumbing` | 22 (+3 GEX core, +3 OIP E3) | 682 / 25s (+42 / 3s, +136 / 5s) |
+| `unrun-market-plumbing` | 28 (22 + 3 GEX core + 3 OIP E3) | 682 / 25s + 42 / 3s + 136 / 5s |
 | `unrun-publish-ops` | 19 | 507 / 27s |
 | `unrun-inline-js-guard` | 1 | 14 / 2s |
 | `unrun-import-hygiene` | 1 | 4 / 48s |
-| **total** | **138** | **3767 / 324s** |
+| **total** | **144** | **3945 / 332s** |
 
 Twelve of the thirteen repeat the nine P0 lanes' `pip install` line **byte-for-byte**, so
 `run_ci_pack.py` still builds ONE venv across all twenty-two `unrun-*` jobs. The dependency set

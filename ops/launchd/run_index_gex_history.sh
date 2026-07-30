@@ -75,11 +75,44 @@ else
     fi
 fi
 
-# All four roots plus the manifest must exist, or this is a partial rebuild and the
-# committed store must keep its previous (older but COMPLETE) vintage.
+# ── completeness gate ────────────────────────────────────────────────────────
+# File EXISTENCE is NOT the gate. The parquets are git-tracked, so all four are on disk
+# from the checkout even when this run wrote none of them — an existence check would
+# happily push a stale or partially-refreshed store as if it were a fresh rebuild. The
+# gate is the manifest's roots_read from THIS run: build_index_gex_history records a root
+# there only after it actually wrote that root's parquet, and the shrink guard
+# deliberately omits a refused root. Also fails when the run refused any root.
+if [ "${INDEXGEX_SKIP_ENGINE:-0}" != "1" ]; then
+    if ! "$PYTHON" - "$REPO/$ART_DIR/_manifest.json" <<'PYGATE'
+import json, sys
+required = {"SPY", "QQQ", "IWM", "DIA"}
+try:
+    m = json.load(open(sys.argv[1]))
+except Exception as e:
+    print(f"[index_gex_history] ERROR: manifest unreadable: {e}")
+    raise SystemExit(1)
+read = {r for r, yrs in (m.get("roots_read") or {}).items() if yrs}
+refused = m.get("roots_refused_shrink") or {}
+missing = sorted(required - read)
+if missing:
+    print(f"[index_gex_history] ERROR: this run wrote no rows for {missing} "
+          f"(roots_read={sorted(read)}) — partial rebuild, nothing to push")
+    raise SystemExit(1)
+if refused:
+    print(f"[index_gex_history] ERROR: shrink guard refused {sorted(refused)} "
+          f"— {refused} — nothing to push")
+    raise SystemExit(1)
+print(f"[index_gex_history] manifest gate OK: roots_read={sorted(read)}")
+PYGATE
+    then
+        exit 1
+    fi
+fi
+
+# The files must also be present on disk (a torn write, a cleaned worktree).
 for f in SPY.parquet QQQ.parquet IWM.parquet DIA.parquet _manifest.json; do
     if [ ! -f "$REPO/$ART_DIR/$f" ]; then
-        echo "[index_gex_history] ERROR: $ART_DIR/$f missing in $REPO — partial rebuild, nothing to push"
+        echo "[index_gex_history] ERROR: $ART_DIR/$f missing in $REPO — nothing to push"
         exit 1
     fi
 done

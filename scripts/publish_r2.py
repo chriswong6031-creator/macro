@@ -110,9 +110,10 @@ _DATA_DIR_MIN_FILES = 100
 # Per-dir floor overrides for SMALL data-dir stores. The 100-file default is calibrated
 # for the per-ticker parquet stores; a whole-store dir with a fixed, tiny file count
 # would be refused forever. index_gex_history is exactly 4 root parquets + the manifest,
-# so its floor is "all four roots present" — still a real guard (a run that produced one
-# root, or a tree holding only the manifest, is refused), just sized to the store.
-_DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 4}
+# so the floor is 5 — "all four roots AND the manifest". 4 would have passed a
+# three-roots-plus-manifest tree, which is precisely the partial rebuild this guard is
+# for; the count is a whole-store floor, not a parquet count.
+_DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 5}
 # History-append stores whose R2 objects hold DEEP history (data/attention/*.parquet:
 # backfilled 2015-07→ SLF-048 2026-07-06; gitignored since same day). The nightly
 # collect job materialises the store via scripts/fetch_r2 BEFORE the wiki_pageviews
@@ -127,8 +128,17 @@ _DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 4}
 #    this also covers the empty-remote case the per-file guard can't compare against.
 # Deliberately NOT in DEFAULT_DIRS: only the collect job's gated lane (or a host-side
 # ATTENTION_STORE publish) touches it.
-_APPEND_ONLY_DIRS = {"attention"}
-_DATA_DIR_MIN_BYTES = {"attention": 15_000_000}
+# index_gex_history is the SAME shape as attention: a deep-history store (2017->, one
+# parquet per index root) whose only producer is a host-bound job, so R2 holds the sole
+# offsite copy of ~10 years of reconstruction. A truncated rebuild (a mid-write
+# _backfill_state.json, one unreadable year) yields a valid-but-short parquet, so it gets
+# both of attention's fences as well: per FILE, refuse an upload smaller than the R2
+# object; per DIR, refuse a tree under the bytes floor. The four parquets measure ~210 KB
+# each (~846 KB with the manifest), so 600 KB is the floor a genuine store clears and a
+# one-or-two-root rebuild does not. The builder's own shrink guard is the first fence;
+# these are the ones that survive a builder bypass.
+_APPEND_ONLY_DIRS = {"attention", "index_gex_history"}
+_DATA_DIR_MIN_BYTES = {"attention": 15_000_000, "index_gex_history": 600_000}
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 

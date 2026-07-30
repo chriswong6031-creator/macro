@@ -5343,10 +5343,23 @@ artifacts:
       the four covered index ETFs and emits the WINDOW plus the distribution spread
       (min/p10/median/p90/max) into the per-symbol gex_state payload — deliberately NOT a
       percentile of today's value against it. Today's payload value comes from the Cboe
-      delayed chain and this series is a ThetaData reconstruction (measured same-spot
-      correlation 0.91-0.97, mean absolute difference 1.59 $bn for SPY), so placing one
-      inside the other would be the cross-source comparison the market_gamma SCALE NOTE
-      already refuses. See ops.staleness_disclosure above for the freshness contract.
+      delayed chain and this series is a ThetaData reconstruction, so placing one inside
+      the other would be the cross-source comparison the market_gamma SCALE NOTE already
+      refuses.
+      Measured against the ACTUAL pair that refusal is about — this reconstruction vs
+      data/cboe/gex_<ROOT> (scripts.build_index_gex_history.audit_overlap, 2026-07-29,
+      12 shared dates per root; the audit block higher up this entry is the separate
+      reconstruction-vs-polygon_gex comparison and must not be read as this one):
+        SPY  raw corr 0.9329, same-spot corr 0.9956 (n=8), mean abs diff 2.0585 $bn
+        QQQ  raw corr 0.7618, same-spot corr 0.9933 (n=7), mean abs diff 1.2896 $bn
+        IWM  raw corr 0.4850, same-spot corr 0.9655 (n=8), mean abs diff 0.3366 $bn
+        DIA  no cboe/gex_DIA store exists, so no comparison is possible for that root.
+      The two series track each other closely once the settlement-timing lag is filtered
+      out, and still differ by ~2 $bn on SPY at the raw level — close enough to be
+      comparable CONTEXT, not close enough to place one value inside the other's
+      distribution as a percentile. The refusal stands; these are its numbers.
+      Session-filter note: the rebuild carries one non-session row per root
+      (2019-02-02, a Saturday); deep_history_context filters before it quantiles.
 
   # --- W2 SURFACE: whole-market dealer-surface history (RIC program) ---
   # Three entries — one per root_class (small committed aggregates, ~single-digit MB each)
@@ -5706,6 +5719,12 @@ artifacts:
         non-sessions — Saturdays, Sundays and Juneteenth 2026-06-19). Every reader MUST
         session-filter through lib.nyse_calendar.is_session before any delta, iloc[-1]
         or percentile (the #3721 weekend-row class).
+        KNOWN CONSUMER IN VIOLATION (2026-07-29, tracked separately — a sibling W0 lane
+        owns that file): scripts/build_flow_leaders._load_two_chain_days takes the last
+        two FILES unfiltered (sorted(glob)[-2:]). On a weekend or Monday run that picks a
+        byte-identical pair, so its day-over-day OI confirmation returns False for every
+        ticker: measured 370/370 roots identical on 2026-07-25->26 and 2026-07-26->27.
+        Listing it as a consumer below records the dependency, NOT compliance.
       filename_is_not_the_vintage: >
         The filename date is a RUN stamp, not the open-interest vintage. Consecutive
         snapshots can carry byte-identical open interest (measured: 2026-07-25 / 26 / 27
@@ -10559,6 +10578,11 @@ artifacts:
         * net_gex_pctile — today's net dealer gamma inside the name's OWN accrued daily
           record (session-filtered; the Cboe summary store carries weekend rows that
           repeat the previous close — 13 of 36 for SPY). low_confidence under 60 sessions.
+          COVERAGE IS NARROW and stated here so nobody reads its absence as a bug: the
+          block needs >=5 session rows in data/cboe/gex_<KEY>.parquet, and that store
+          exists for only 10 roots on disk — measured 2026-07-29, the field is present on
+          10 of 555 emitted payloads. Every other root omits it rather than inventing a
+          percentile from a record it does not have.
         * deep_history — window + spread of the multi-year index rebuild, index ETFs only.
       Each additive block is OMITTED, never null-filled, when its source does not cover
       the root — absence must not read as a measured zero. Coverage is partial by

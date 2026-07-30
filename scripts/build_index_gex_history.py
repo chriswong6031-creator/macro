@@ -318,11 +318,53 @@ def run_audit(outdir: Path, roots: list[str]) -> dict:
     return reports
 
 
+def shrink_verdict(new: pd.DataFrame, existing_path: Path) -> tuple[bool, str]:
+    """May `new` overwrite the parquet already at `existing_path`?
+
+    WHY THIS FENCE EXISTS. The years a run reads come from `_backfill_state.json` in a
+    LIVE-MUTATING worktree, and `build_root` skips an absent/empty year with only a
+    log.warning. So a mid-write state file, a moved store, or a single unreadable year
+    parquet yields a shorter-but-perfectly-valid frame that `to_parquet` used to write
+    straight over ~10 years of committed history — the truncation would then be pushed by
+    the weekly lane and mirrored to R2, destroying every copy at once.
+
+    Refuses when the new frame has FEWER rows than the existing one, or when its latest
+    date REGRESSES (a rebuild that lost the recent end is the worse shape: the staleness
+    disclosure downstream keys off exactly that endpoint). `--allow-shrink` is the
+    deliberate-re-export escape hatch.
+
+    Returns (ok, reason). A missing/unreadable existing file is always writable.
+    """
+    if not existing_path.exists():
+        return True, "no existing file"
+    try:
+        old = pd.read_parquet(existing_path)
+    except Exception as e:  # noqa: BLE001 — an unreadable existing file is replaceable
+        return True, f"existing file unreadable ({e})"
+    if not len(old):
+        return True, "existing file empty"
+    if len(new) < len(old):
+        return False, (f"would shrink {len(old)} -> {len(new)} rows; pass --allow-shrink "
+                       f"for a deliberate re-export")
+    try:
+        old_end = pd.Timestamp(old.index.max())
+        new_end = pd.Timestamp(new.index.max())
+    except Exception:  # noqa: BLE001
+        return True, "index endpoints not comparable"
+    if new_end < old_end:
+        return False, (f"latest date regresses {old_end.date()} -> {new_end.date()}; "
+                       f"pass --allow-shrink for a deliberate re-export")
+    return True, f"{len(old)} -> {len(new)} rows, through {new_end.date()}"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--roots", nargs="*", default=None, help="subset override (testing)")
     ap.add_argument("--min-year", type=int, default=MIN_YEAR)
     ap.add_argument("--out", default=None, help="output dir override (testing)")
+    ap.add_argument("--allow-shrink", action="store_true",
+                    help="permit a rebuild that has fewer rows or an earlier end date "
+                         "than the committed parquet (deliberate re-export only)")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
@@ -353,15 +395,31 @@ def main() -> None:
                                           "pct_move", "contract_multiplier", "r", "q")},
     }
 
+    refused: dict[str, str] = {}
     for root in build:
         df, years_read = build_root(root, completed, args.min_year)
         if df.empty:
             log.warning("%s: no rows produced", root)
             continue
-        df.to_parquet(outdir / f"{root}.parquet")
+        target = outdir / f"{root}.parquet"
+        ok, why = shrink_verdict(df, target)
+        if not ok and not args.allow_shrink:
+            # REFUSED, and deliberately NOT recorded in roots_read — the runner gates its
+            # git push on roots_read, so a truncated root cannot reach the commit.
+            print(f"::warning title=index-gex-shrink-guard::{root}: {why} — keeping the "
+                  f"existing parquet", flush=True)
+            log.warning("%s: REFUSED overwrite (%s)", root, why)
+            refused[root] = why
+            continue
+        if not ok:
+            log.warning("%s: shrink allowed by --allow-shrink (%s)", root, why)
+        df.to_parquet(target)
         manifest["roots_read"][root] = years_read
-        log.info("WROTE %s: %d rows %s..%s (years %s)",
-                 root, len(df), df.index.min().date(), df.index.max().date(), years_read)
+        log.info("WROTE %s: %d rows %s..%s (years %s; %s)",
+                 root, len(df), df.index.min().date(), df.index.max().date(),
+                 years_read, why)
+    if refused:
+        manifest["roots_refused_shrink"] = refused
 
     # BLOCKING overlap audit vs the live stores (report, never tune-to-match).
     audit = run_audit(outdir, list(manifest["roots_read"].keys()))

@@ -223,6 +223,8 @@ def test_snapshot_attaches_context_when_history_present(monkeypatch):
 # ============================================================================
 
 import datetime as _dt   # noqa: E402
+import json  # noqa: E402
+import sys  # noqa: E402
 from pathlib import Path as _Path  # noqa: E402
 
 import lib.config as _libconfig  # noqa: E402
@@ -384,3 +386,114 @@ class TestMarketGammaWindowDisclosure:
         assert ctx["net_gex_latest_bn"] == -8.5          # the rebuild's own latest
         assert 0.0 <= ctx["net_gex_pctile"] <= 100.0
         assert "against itself" in ctx["note_en"]
+
+
+class TestShrinkGuard:
+    """The years a run reads come from a LIVE-MUTATING _backfill_state.json and
+    build_root skips an absent/unreadable year with only a log.warning — so a truncated
+    rebuild is valid-but-short and used to overwrite ~10 years of committed history,
+    which the weekly lane would then push and mirror to R2, destroying every copy."""
+
+    def _existing(self, tmp_path, n=100, start="2020-01-01"):
+        p = tmp_path / "SPY.parquet"
+        df = pd.DataFrame({"net_gex_bn": [1.0] * n},
+                          index=pd.date_range(start, periods=n, freq="D"))
+        df.to_parquet(p)
+        return p, df
+
+    def test_fewer_rows_is_refused(self, tmp_path):
+        p, df = self._existing(tmp_path)
+        ok, why = B.shrink_verdict(df.iloc[:50], p)
+        assert not ok and "would shrink 100 -> 50 rows" in why
+        assert "--allow-shrink" in why
+
+    def test_regressed_end_date_is_refused_even_with_more_rows(self, tmp_path):
+        """The worse shape: a rebuild that grew at the old end but lost the recent one.
+        The downstream staleness disclosure keys off exactly that endpoint."""
+        p, _ = self._existing(tmp_path)
+        longer_but_older = pd.DataFrame(
+            {"net_gex_bn": [1.0] * 150},
+            index=pd.date_range("2019-01-01", periods=150, freq="D"))
+        ok, why = B.shrink_verdict(longer_but_older, p)
+        assert not ok and "latest date regresses" in why
+
+    def test_growth_is_allowed(self, tmp_path):
+        p, _ = self._existing(tmp_path)
+        grown = pd.DataFrame({"net_gex_bn": [1.0] * 110},
+                             index=pd.date_range("2020-01-01", periods=110, freq="D"))
+        ok, why = B.shrink_verdict(grown, p)
+        assert ok and "100 -> 110 rows" in why
+
+    def test_equal_size_same_end_is_allowed(self, tmp_path):
+        p, df = self._existing(tmp_path)
+        assert B.shrink_verdict(df, p)[0]
+
+    def test_missing_or_unreadable_existing_file_is_writable(self, tmp_path):
+        df = pd.DataFrame({"net_gex_bn": [1.0]}, index=pd.to_datetime(["2020-01-01"]))
+        assert B.shrink_verdict(df, tmp_path / "nope.parquet")[0]
+        junk = tmp_path / "junk.parquet"
+        junk.write_bytes(b"not a parquet")
+        assert B.shrink_verdict(df, junk)[0]
+
+    def test_refused_root_is_kept_out_of_roots_read(self, tmp_path, monkeypatch, capsys):
+        """The runner gates its git push on manifest roots_read, so a refused root must
+        NOT appear there — otherwise the truncation reaches the commit anyway."""
+        outdir = tmp_path / "out"
+        outdir.mkdir()
+        existing = pd.DataFrame({"net_gex_bn": [1.0] * 100},
+                                index=pd.date_range("2020-01-01", periods=100, freq="D"))
+        existing.to_parquet(outdir / "SPY.parquet")
+        short = existing.iloc[:10]
+
+        monkeypatch.setattr(B, "_completed_map", lambda: {"SPY": ["2020"]})
+        monkeypatch.setattr(B, "build_root", lambda root, c, y: (short, [2020]))
+        monkeypatch.setattr(B, "run_audit", lambda outdir, roots: {})
+        monkeypatch.setattr(B, "_theta_root", lambda: tmp_path)
+        monkeypatch.setattr(sys, "argv", ["x", "--out", str(outdir)])
+        B.main()
+
+        man = json.loads((outdir / "_manifest.json").read_text())
+        assert "SPY" not in (man.get("roots_read") or {})
+        assert "SPY" in (man.get("roots_refused_shrink") or {})
+        # the committed parquet is untouched
+        assert len(pd.read_parquet(outdir / "SPY.parquet")) == 100
+        line = next((ln for ln in capsys.readouterr().out.splitlines()
+                     if "index-gex-shrink-guard" in ln), "")
+        assert line.startswith("::warning"), "annotation must start the line"
+
+    def test_allow_shrink_overrides_it(self, tmp_path, monkeypatch):
+        outdir = tmp_path / "out2"
+        outdir.mkdir()
+        existing = pd.DataFrame({"net_gex_bn": [1.0] * 100},
+                                index=pd.date_range("2020-01-01", periods=100, freq="D"))
+        existing.to_parquet(outdir / "SPY.parquet")
+        short = existing.iloc[:10]
+        monkeypatch.setattr(B, "_completed_map", lambda: {"SPY": ["2020"]})
+        monkeypatch.setattr(B, "build_root", lambda root, c, y: (short, [2020]))
+        monkeypatch.setattr(B, "run_audit", lambda outdir, roots: {})
+        monkeypatch.setattr(B, "_theta_root", lambda: tmp_path)
+        monkeypatch.setattr(sys, "argv", ["x", "--out", str(outdir), "--allow-shrink"])
+        B.main()
+        assert len(pd.read_parquet(outdir / "SPY.parquet")) == 10
+        man = json.loads((outdir / "_manifest.json").read_text())
+        assert man["roots_read"]["SPY"] == [2020]
+
+
+class TestRunnerManifestGate:
+    """The launchd runner must gate its push on the manifest's roots_read from THIS run.
+    File existence cannot be the gate: the parquets are git-tracked, so all four are on
+    disk from the checkout even when the run wrote none of them."""
+
+    RUNNER = _Path(__file__).resolve().parent.parent / "ops/launchd/run_index_gex_history.sh"
+
+    def test_runner_gates_on_roots_read_not_file_existence(self):
+        src = self.RUNNER.read_text(encoding="utf-8")
+        assert "roots_read" in src, "the completeness gate must read the manifest"
+        assert "roots_refused_shrink" in src, "a shrink-refused run must not push"
+        assert "File EXISTENCE is NOT the gate" in src
+
+    def test_runner_publishes_and_pushes_the_whole_store(self):
+        src = self.RUNNER.read_text(encoding="utf-8")
+        assert "--dirs index_gex_history" in src
+        assert "--no-manifest" in src, "a partial-tree publish must not clobber the list"
+        assert "indexgex-push-repo" in src, "its own push repo (TCC law)"

@@ -52,9 +52,26 @@ SESSION + VINTAGE INTEGRITY (§0.11 — the classes that have bitten this repo)
     so `same_vintage` is stamped, the lists come back empty, and the note says so.
     This is the mixed-asof class: the guard is per NAME, because one root can repeat
     while the rest of the file advances.
+  * TWO SNAPSHOTS BEING SELF-CONSISTENT DOES NOT MAKE THEM CURRENT OR ADJACENT. Every
+    block therefore stamps `sessions_apart` (1 = consecutive; more means the pair
+    straddles a collector gap and the "day-over-day" framing would be a lie) and
+    `sessions_behind` + `stale` for the newest snapshot against the latest close. Both
+    are said in plain words. Without them a collector dead for weeks reads as today.
+  * THE SNAPSHOT'S PRICE IS NOT THE BOARD'S PRICE. `dist_pct` and the above/below-price
+    wall split are measured against the SNAPSHOT source's own underlying price — one
+    source on both sides of every derived number — while the payload's top-level `spot`
+    comes from the Cboe chain. They really diverge: measured 2026-07-29 over 358 shared
+    roots, median 0.48%, 112 roots past 2%, worst 23.3% (LII 544.11 vs 441.26). So both
+    blocks emit `snapshot_spot`, and above SPOT_DIVERGENCE_PCT the payload layer adds a
+    plain-word note; a reader must never have to discover that `dist_pct`'s sign
+    disagrees with (K - payload.spot).
   * Open interest is a COUNT of contracts (integral, >= 0). `_normalise_chain` refuses
     a frame whose oi column looks normalised/fractional rather than a count, so a
-    vendor or fixture shape change cannot silently rescale the delta.
+    vendor or fixture shape change cannot silently rescale the delta. It also drops
+    rows with a null-shaped or duplicated `strike_ticker` before the merge, because the
+    inner join would otherwise pair every such row on one side with every one on the
+    other — an m*n cartesian product of invented contracts. Measured 0 nulls and 0
+    duplicates across all 28 session snapshots today: a fence, not a live fix.
   * `oi_delta_pct` is a PERCENT (1000 -> 1500 is 50.0, never 0.5) — the x100 class.
 
 STANDING-KILL COMPLIANCE (checked against research/DO_NOT_REBUILD.md)
@@ -100,6 +117,9 @@ log = logging.getLogger(__name__)
 # accrued history is never scanned (§0.10). 6 sessions is ~1.2 weeks of tape —
 # long enough to separate "this level has been here all week" from "new today",
 # short enough that the read costs ~0.15 s for the full 370-name store.
+# NOTE ON THE READ BUDGET: the CLUSTER derivation reads exactly 2 chain days; the WALL
+# pass reads this many (each released as soon as its levels are extracted). "Reads 2
+# chain days" is a statement about the clusters only — do not quote it for the module.
 WALL_WINDOW_SESSIONS = 6
 # Top-N strikes per side in each cluster list. Keeps the per-name payload bounded.
 CLUSTER_TOP_N = 4
@@ -108,6 +128,12 @@ PCTILE_LOW_CONFIDENCE_SESSIONS = 60
 # The index rebuild is a weekly job; more than a week and a half of sessions behind
 # is worth saying out loud (calmly — see note_en/note_zh, never an alarm).
 DEEP_HISTORY_STALE_SESSIONS = 7
+# The chain store is a DAILY collect step, so it is behind as soon as it misses a day.
+# 2 gives one session of slack for a run that lands before the settle buffer.
+CHAIN_STALE_SESSIONS = 2
+# Above this, the snapshot source's underlying price is far enough from the board's own
+# that a reader comparing dist_pct to payload.spot would be misled — so say it.
+SPOT_DIVERGENCE_PCT = 2.0
 # Index roots the multi-year rebuild covers (scripts/build_index_gex_history.py).
 DEEP_HISTORY_ROOTS = frozenset({"SPY", "QQQ", "IWM", "DIA"})
 _DEEP_HISTORY_GROUP = "index_gex_history"
@@ -229,6 +255,23 @@ def _normalise_chain(df: pd.DataFrame) -> pd.DataFrame:
         out["is_call"] = s.isin({"C", "CALL", "TRUE", "1"}).to_numpy(bool)
 
     out = out.dropna(subset=["K", "oi", "spot"])
+
+    # JOIN-KEY INVARIANT (must hold before the inner merge in matched_oi_delta).
+    # strike_ticker is the OCC contract id and is the SOLE join key. A null-shaped or
+    # duplicated key is not a harmless bad row: pandas' inner merge pairs every left
+    # occurrence with every right occurrence, so m nulls on one side x n on the other is
+    # an m*n CARTESIAN product of invented contract pairs feeding the OI sums. Drop them
+    # here and report the count — silently tolerating them is the fabrication path.
+    # Measured 2026-07-29 across all 28 session snapshots: 0 nulls, 0 duplicates. This is
+    # a FENCE against a vendor/fixture shape change, not a fix for a live defect.
+    before = len(out)
+    bad_key = out["strike_ticker"].isna() | out["strike_ticker"].isin(
+        {"", "nan", "NaN", "None", "<NA>"})
+    out = out[~bad_key]
+    out = out[~out["strike_ticker"].duplicated(keep=False)]
+    dropped = before - len(out)
+    out.attrs["dropped_bad_join_keys"] = int(dropped)
+
     oi = out["oi"]
     if len(oi):
         if (oi < 0).any():
@@ -275,9 +318,13 @@ def same_vintage_mask(prior_fp: pd.DataFrame, latest_fp: pd.DataFrame) -> "pd.Se
     j = prior_fp.join(latest_fp, how="inner", lsuffix="_a", rsuffix="_b")
     if j.empty:
         return pd.Series(dtype=bool)
+    # EXACT equality, not np.isclose. Both sides are float64 sums of integral contract
+    # counts, so they are exact — while isclose's default rtol=1e-5 on a liquid root's
+    # ~1e8 total is a ~1,000-contract tolerance, i.e. it would call a genuine
+    # thousand-contract day "the same vintage" and suppress a real delta.
     return ((j["contracts_a"] == j["contracts_b"])
-            & np.isclose(j["oi_total_a"], j["oi_total_b"])
-            & np.isclose(j["spot_a"], j["spot_b"]))
+            & (j["oi_total_a"] == j["oi_total_b"])
+            & (j["spot_a"] == j["spot_b"]))
 
 
 # ── (a) matched-contract open-interest delta ─────────────────────────────────
@@ -458,18 +505,30 @@ def net_gex_percentile(history: list[dict] | None, today_net_gex_bn: float | Non
     tail_en = (" The record is short, so read it as a rough placement."
                if low_conf else "")
     tail_zh = "记录较短，只能作为粗略定位。" if low_conf else ""
+    # "sits above 0% of" is not a sentence a reader can use, and "above 100%" is worse.
+    # The ends of the range get their own plain wording.
+    span = f"{len(xs)} trading days, {start} to {end}"
+    span_zh = f"{len(xs)} 个交易日，{start} 至 {end}"
+    if pct <= 0:
+        head_en = ("Today's net dealer gamma is at or below every one of this name's own "
+                   f"stored daily readings ({span}).")
+        head_zh = (f"今日净做市商 Gamma 不高于该标的自身任何一天的记录（{span_zh}）。")
+    elif pct >= 100:
+        head_en = ("Today's net dealer gamma is above every one of this name's own stored "
+                   f"daily readings ({span}).")
+        head_zh = (f"今日净做市商 Gamma 高于该标的自身每一天的记录（{span_zh}）。")
+    else:
+        head_en = (f"Today's net dealer gamma sits above {pct}% of this name's own stored "
+                   f"daily readings ({span}).")
+        head_zh = (f"今日净做市商 Gamma 高于该标的自身 {pct}% 的每日记录（{span_zh}）。")
     return {
         "pctile": pct,
         "n_sessions": len(xs),
         "low_confidence": low_conf,
         "window_start": start,
         "window_end": end,
-        "note_en": (
-            f"Today's net dealer gamma sits above {pct}% of this name's own stored "
-            f"daily readings ({len(xs)} trading days, {start} to {end})." + tail_en),
-        "note_zh": (
-            f"今日净做市商 Gamma 高于该标的自身 {pct}% 的每日记录"
-            f"（{len(xs)} 个交易日，{start} 至 {end}）。" + tail_zh),
+        "note_en": head_en + tail_en,
+        "note_zh": head_zh + tail_zh,
     }
 
 
@@ -482,6 +541,11 @@ def deep_history_context(root: str, reader: Callable[[str, str], Any] | None = N
     one inside the other is the cross-source comparison engine/market_gamma refuses
     for exactly this reason (its SCALE NOTE), so this block reports the window and
     the spread and says plainly that today's reading is not placed inside it.
+
+    Measured on the ACTUAL pair (reconstruction vs data/cboe/gex_<ROOT>, 12 shared dates,
+    2026-07-29): SPY raw corr 0.9329 / same-spot 0.9956 n=8 / mean abs diff 2.0585 $bn;
+    QQQ 0.7618 / 0.9933 n=7 / 1.2896; IWM 0.4850 / 0.9655 n=8 / 0.3366; DIA has no cboe
+    store to compare against. Comparable context, not one distribution.
 
     Staleness is disclosed calmly in plain words — never as an alarm (§0.7).
     """
@@ -498,11 +562,20 @@ def deep_history_context(root: str, reader: Callable[[str, str], Any] | None = N
         return None
     if hist is None or not len(hist) or "net_gex_bn" not in hist.columns:
         return None
-    ng = pd.to_numeric(hist["net_gex_bn"], errors="coerce").dropna()
+    # SESSION-FILTER FIRST, then quantile. The rebuild really does carry non-session rows
+    # (measured: one 2019-02-02 Saturday row in each of SPY/QQQ/IWM/DIA), and computing
+    # n_sessions and the spread over the unfiltered series contradicted this function's
+    # own contract — the numeric effect is small (SPY median -0.204 -> -0.200) but a
+    # denominator that says "sessions" must count sessions.
+    idx = pd.to_datetime(hist.index, errors="coerce")
+    keep = [bool(pd.notna(d) and nyse_calendar.is_session(d.date())) for d in idx]
+    if not any(keep):
+        return None
+    sub = hist.loc[keep]
+    ng = pd.to_numeric(sub["net_gex_bn"], errors="coerce").dropna()
     if not len(ng):
         return None
-    idx = pd.to_datetime(hist.index, errors="coerce")
-    dates = [d.date() for d in idx if pd.notna(d) and nyse_calendar.is_session(d.date())]
+    dates = [d.date() for d in pd.to_datetime(sub.index, errors="coerce") if pd.notna(d)]
     if not dates:
         return None
     start, end = min(dates), max(dates)
@@ -545,30 +618,164 @@ def _young_window_note(store_start: _dt.date | None) -> tuple[str, str]:
             _STORE_EPOCH_NOTE_ZH.format(start=s))
 
 
+def _gap_note(sessions_apart: int | None) -> tuple[str, str]:
+    """(EN, ZH) tail when the two snapshots are NOT one session apart.
+
+    Without this, a pair straddling a collector outage emits full "day-over-day" lists
+    with nothing saying the two readings are weeks apart. Silent on the normal
+    consecutive-session case so the copy stays short when there is nothing to say.
+    """
+    if sessions_apart is None or sessions_apart <= 1:
+        return "", ""
+    return (f" The two snapshots are {sessions_apart} trading sessions apart, not "
+            "consecutive, so the change covers that whole stretch.",
+            f"两次快照相隔 {sessions_apart} 个交易日，并不相邻，"
+            "因此变化涵盖这整段时间。")
+
+
+def _behind_note(sessions_behind: int | None, stale: bool) -> tuple[str, str]:
+    """(EN, ZH) tail when the newest stored snapshot is behind the latest close.
+
+    Calm, never an alarm (§0.7): a window statement. Silent when current, so a healthy
+    collector adds no noise.
+    """
+    if not stale or sessions_behind is None or sessions_behind <= 0:
+        return "", ""
+    return (f" The newest stored snapshot is {sessions_behind} trading sessions behind "
+            "the latest close.",
+            f"最新的已存储快照比最近收盘落后 {sessions_behind} 个交易日。")
+
+
+def rows_cross_the_board_price(rows: list[dict] | None, snapshot_spot: float | None,
+                              board_spot: float | None) -> bool:
+    """True when any emitted row reads ABOVE one price and NOT-ABOVE the other.
+
+    This is the adjudicated DIRECTION condition, written as the exact sign comparison a
+    reader performs rather than a range test: sign(K - snapshot_spot) != sign(K -
+    board_spot), ties counted as not-above on both sides so the boundary K == spot is
+    handled the same way `dist_pct` handles it (0 is not positive).
+
+    Why it exists alongside the percentage threshold: measured 2026-07-29 across the whole
+    board, 104 of 2,259 cluster rows have a `dist_pct` whose sign disagrees with
+    (K - payload.spot), and the >2% distance threshold alone caught only 77 of them — the
+    rest are strikes wedged between two prices that agree closely. A sign flip breaks the
+    reader's mental model at ANY magnitude, so it triggers the note on its own. (A first
+    pass used a strict `lo < K < hi` range test and left 4 rows uncovered, exactly the
+    K-equals-one-of-the-prices boundary; the sign comparison has no such gap.)
+    """
+    if not rows:
+        return False
+    try:
+        s, b = float(snapshot_spot), float(board_spot)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return False
+    if not (np.isfinite(s) and np.isfinite(b)):
+        return False
+    for r in rows:
+        k = r.get("K")
+        if k is None:
+            continue
+        try:
+            kf = float(k)
+        except (TypeError, ValueError):
+            continue
+        if not np.isfinite(kf):
+            continue
+        if (kf > s) != (kf > b):
+            return True
+    return False
+
+
+def spot_divergence_note(snapshot_spot: float | None,
+                         board_spot: float | None,
+                         force: bool = False) -> tuple[str, str] | None:
+    """(EN, ZH) disclosure when the snapshot source's price differs from the board's.
+
+    The strike distances and the above/below-price split in these blocks are computed
+    against the SNAPSHOT's own underlying price — single-source internal consistency is
+    the whole point, and mixing the board's Cboe price into a Polygon-derived row would
+    be the mixed-source class. But the payload's own top-level `spot` is the Cboe one,
+    and the two really do diverge: measured 2026-07-29 over 358 shared roots, median
+    0.48%, 112 roots above 2%, worst 23.3% (LII 544.11 vs 441.26). A reader comparing
+    `dist_pct` against the payload's `spot` would find the sign contradicted on ~104
+    cluster rows. So say it, above a 2% threshold.
+
+    `force` fires the note below the threshold — used when a row actually straddles the
+    two prices (see rows_cross_the_board_price), which is the case a reader misreads.
+
+    Returns None when there is nothing to disclose (either price missing, or agreement
+    inside the threshold with no straddling row).
+    """
+    try:
+        s, b = float(snapshot_spot), float(board_spot)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return None
+    if not (np.isfinite(s) and np.isfinite(b)) or b <= 0:
+        return None
+    pct = abs(s - b) / b * 100.0
+    if pct <= SPOT_DIVERGENCE_PCT and not force:
+        return None
+    # Name which condition triggered, so a reader knows whether the concern is DISTANCE
+    # (the prices are materially apart) or DIRECTION (a listed strike falls between them,
+    # so above/below reads the opposite way against the board's price). Direction is the
+    # one that actually breaks a mental model, so it gets the explicit sentence.
+    flip_en = (" Some strikes below sit between the two prices, so above-or-below reads "
+               "the other way round against this board's price."
+               if force and pct <= SPOT_DIVERGENCE_PCT else "")
+    flip_zh = ("下方部分行权价正好落在两个价格之间，"
+               "因此以本板块价格衡量时，高于/低于的方向会相反。"
+               if force and pct <= SPOT_DIVERGENCE_PCT else "")
+    return (
+        f"Strike distances here are measured against the snapshot source's price of "
+        f"{_level_text(s)}, which differs from this board's price by {pct:.1f}%."
+        + flip_en,
+        f"此处的行权价距离以快照来源的价格 {_level_text(s)} 为基准，"
+        f"与本板块价格相差 {pct:.1f}%。" + flip_zh,
+    )
+
+
 def _cluster_notes(state: str, prior: _dt.date | None, latest: _dt.date | None,
-                   store_start: _dt.date | None) -> tuple[str, str]:
-    """Plain-word EN/ZH pair for one of the four cluster states."""
+                   store_start: _dt.date | None, sessions_apart: int | None = None,
+                   sessions_behind: int | None = None,
+                   stale: bool = False) -> tuple[str, str]:
+    """Plain-word EN/ZH pair for one of the five cluster states."""
     young_en, young_zh = _young_window_note(store_start)
+    gap_en, gap_zh = _gap_note(sessions_apart)
+    beh_en, beh_zh = _behind_note(sessions_behind, stale)
+    tail_en, tail_zh = gap_en + beh_en + young_en, gap_zh + beh_zh + young_zh
     if state == "lit":
         return (
             f"Contract-by-contract open-interest change between the {prior} and {latest} "
             "chain snapshots. Counts of contracts added or closed at each strike — not a "
-            "direction call." + young_en,
+            "direction call." + tail_en,
             f"{prior} 与 {latest} 两次期权链快照之间逐张合约的未平仓量变化，"
-            "显示各行权价新增或平掉的合约数量，不代表方向判断。" + young_zh,
+            "显示各行权价新增或平掉的合约数量，不代表方向判断。" + tail_zh,
         )
     if state == "same_vintage":
         return (
             f"The {prior} and {latest} chain snapshots report identical open interest for "
-            "this name, so no change can be measured yet." + young_en,
+            "this name, so no change can be measured yet." + tail_en,
             f"本标的在 {prior} 与 {latest} 两次期权链快照中的未平仓量完全相同，"
-            "因此暂时测不出变化。" + young_zh,
+            "因此暂时测不出变化。" + tail_zh,
+        )
+    if state == "no_matched_contracts":
+        # A root present in BOTH snapshots whose listed contracts do not overlap at all.
+        # Reachable on the real store (2026-07-02 -> 2026-07-07: CRWD, 1 of 350 shared
+        # roots). Falling through to the "absent" copy claimed no snapshots were stored
+        # while the two snapshot dates sat non-null right beside it in the same block.
+        return (
+            f"Chain snapshots exist for this name on both {prior} and {latest}, but no "
+            "single contract appears in both — the listed contracts turned over, so no "
+            "open-interest change can be measured across them." + tail_en,
+            f"本标的在 {prior} 与 {latest} 两次快照中都有期权链数据，"
+            "但没有任何一张合约同时出现在两次快照中——挂牌合约已完全更替，"
+            "因此无法测量两者之间的未平仓量变化。" + tail_zh,
         )
     if state == "one_snapshot":
         return (
             "Only one stored chain snapshot covers this name so far, so a day-over-day "
-            "open-interest change cannot be measured yet." + young_en,
-            "目前只有一次期权链快照覆盖本标的，因此还无法测量隔日未平仓量变化。" + young_zh,
+            "open-interest change cannot be measured yet." + tail_en,
+            "目前只有一次期权链快照覆盖本标的，因此还无法测量隔日未平仓量变化。" + tail_zh,
         )
     return (
         "No per-strike chain snapshots are stored for this name, so open-interest change "
@@ -585,14 +792,32 @@ def _level_text(level: float | None) -> str:
     return str(int(v)) if float(v).is_integer() else str(v)
 
 
+# Basis of the wall comparison, stated once per block (B1c). The two walls are
+# DIFFERENT constructions from DIFFERENT sources, so a False match is definitional, not
+# a fault — measured 2026-07-29, False is the majority on both sides.
+_WALL_BASIS_EN = (
+    "This level is the heaviest open interest in the snapshot source's full contract "
+    "list. The board's own call and put walls are dollar-gamma levels taken from a "
+    "narrower window of a different chain source, so the two often land on different "
+    "strikes.")
+_WALL_BASIS_ZH = (
+    "此水平取自快照来源完整合约列表中未平仓量最重的行权价。"
+    "本板块自身的看涨/看跌墙是另一个期权链来源、在更窄区间内计算的美元 Gamma 水平，"
+    "因此两者经常落在不同的行权价上。")
+
+
 def _wall_notes(side_en: str, side_zh: str, level: float | None, held: int,
-                covered: int, store_start: _dt.date | None) -> tuple[str, str]:
+                covered: int, store_start: _dt.date | None,
+                sessions_behind: int | None = None,
+                stale: bool = False) -> tuple[str, str]:
     """(EN, ZH) for one wall side.
 
     Deliberately does NOT repeat the store-epoch sentence the cluster note carries:
     "N of M stored chain snapshots" plus the block's own window_start / window_end
     already state the window, and repeating the epoch three times per payload was
-    ~250 wasted bytes x 622 files a night for no added honesty.
+    ~250 wasted bytes x 622 files a night for no added honesty. It DOES carry the
+    behind-the-close tail, because a reader of this block alone would otherwise read a
+    stalled collector's last window as current.
     """
     if level is None or held <= 0:
         return (
@@ -611,9 +836,11 @@ def _wall_notes(side_en: str, side_zh: str, level: float | None, held: int,
                    f"{held} of {covered} stored chain snapshots.")
         head_zh = (f"{side_zh}未平仓量最重的行权价，在已存储的 {covered} 次期权链快照中，"
                    f"最近 {held} 次落在 {lvl}。")
+    beh_en, beh_zh = _behind_note(sessions_behind, stale)
     return (
-        head_en + " Open-interest size is a count of contracts, not a dealer position.",
-        head_zh + "未平仓量是合约数量，不是做市商持仓。",
+        head_en + " Open-interest size is a count of contracts, not a dealer position."
+        + beh_en,
+        head_zh + "未平仓量是合约数量，不是做市商持仓。" + beh_zh,
     )
 
 
@@ -622,10 +849,20 @@ def _wall_notes(side_en: str, side_zh: str, level: float | None, held: int,
 class PositioningStore:
     """Derived, per-underlying positioning-persistence reads for one process.
 
-    Built ONCE from a bounded set of chain snapshots and then held as small dicts —
-    the frames are dropped, so steady-state memory is a few hundred kilobytes.
+    Built ONCE from a bounded set of chain snapshots, then held as small dicts.
     build_gex_board fans ~691 names across a ThreadPoolExecutor, so construction is
     guarded by a lock and every accessor is read-only afterwards.
+
+    MEMORY, stated both ways because only one of them is the number that matters to the
+    render box (measured 2026-07-29, 6-snapshot window, full 370-name store):
+      * the DERIVED store is genuinely tiny — 0.73 MB pickled, ~5 MB of live Python
+        objects after a gc.collect();
+      * but the process RSS high-water rises ~+230-300 MB during the build and does NOT
+        come back down (381 MB still resident after gc). pandas/pyarrow return freed
+        arenas to their own allocator, not to the OS. So "the frames are dropped" is true
+        about object lifetime and false about resident footprint — for the rest of the
+        board run this module costs a few hundred MB of RSS, not a few hundred KB.
+    WALL_WINDOW_SESSIONS is the lever: window 2 measured +171 MB, 6 +237 MB, 10 +243 MB.
     """
 
     def __init__(self, clusters: dict[str, dict], walls: dict[str, dict],
@@ -643,13 +880,25 @@ class PositioningStore:
         state = "one_snapshot" if self.meta.get("snapshots_compared") == 1 else "absent"
         en, zh = _cluster_notes(state, self.meta.get("prior_snapshot"),
                                 self.meta.get("latest_snapshot"),
-                                self.meta.get("store_start"))
+                                self.meta.get("store_start"),
+                                self.meta.get("sessions_apart"),
+                                self.meta.get("sessions_behind"),
+                                bool(self.meta.get("stale")))
+        # prior/latest_snapshot are NULL here on purpose. These fields describe the pair
+        # THIS root's delta was computed from, and for a root the store does not cover
+        # there is no such pair. Stamping the store-wide dates next to copy that says
+        # "no snapshots are stored for this name" is the same self-contradiction the
+        # no_matched_contracts state exists to fix — the window lives in meta.
         return {
             "new_oi": [], "exit_oi": [],
-            "prior_snapshot": _iso(self.meta.get("prior_snapshot")),
-            "latest_snapshot": _iso(self.meta.get("latest_snapshot")),
+            "prior_snapshot": None,
+            "latest_snapshot": None,
+            "sessions_apart": None,
+            "sessions_behind": self.meta.get("sessions_behind"),
+            "stale": bool(self.meta.get("stale")),
             "matched_contracts": 0,
             "same_vintage": False,
+            "snapshot_spot": None,
             "note_en": en, "note_zh": zh,
         }
 
@@ -685,6 +934,13 @@ def load(chain_dates: Callable[[], list[_dt.date]] | None = None,
     Degrades honestly at every step: no chains dir, one snapshot only, a corrupt
     file, or a name absent from the store all yield empty lists plus a plain-word
     note — never an exception into the caller and never a fabricated zero.
+
+    FAILURE IS MEMOISED TOO. gex_state calls this three times per root from three
+    separate try/excepts, so at board scale (~555 emitted payloads) an exception out of
+    _build used to mean ~1,665 full rebuilds — roughly +33 min on the render band, from
+    a path that only ever produces the empty degraded answer. A raise now caches a
+    DEGRADED store (the same honest-absence answer, with the reason stamped in meta) and
+    every later call returns it instantly. Exactly one ::warning per process.
     """
     global _CACHE
     if use_cache and _CACHE is not None:
@@ -692,12 +948,42 @@ def load(chain_dates: Callable[[], list[_dt.date]] | None = None,
     with _LOCK:
         if use_cache and _CACHE is not None:
             return _CACHE
-        built = _build(chain_dates or default_chain_dates,
-                       read_chain or default_read_chain,
-                       window_sessions, top_n)
+        try:
+            built = _build(chain_dates or default_chain_dates,
+                           read_chain or default_read_chain,
+                           window_sessions, top_n)
+        except Exception as e:  # noqa: BLE001 — degrade once, never per-root
+            print(f"::warning title=positioning-persistence-degraded::chain positioning "
+                  f"reads unavailable this run ({type(e).__name__}: {e}) — open-interest "
+                  f"clusters and wall persistence ship empty with a note", flush=True)
+            log.warning("positioning_persistence: build failed, serving degraded store "
+                        "for the rest of this process: %s", e, exc_info=True)
+            built = _degraded_store(f"{type(e).__name__}: {e}", window_sessions)
         if use_cache:
             _CACHE = built
         return built
+
+
+def _degraded_store(reason: str, window_sessions: int) -> PositioningStore:
+    """An empty store that answers every root with the honest-absence copy."""
+    return PositioningStore({}, {}, {
+        "source": "polygon_gex/chains",
+        "store_start": None,
+        "sessions_available": 0,
+        "window_sessions": int(window_sessions),
+        "sessions_covered": 0,
+        "prior_snapshot": None,
+        "latest_snapshot": None,
+        "snapshots_compared": 0,
+        "sessions_apart": None,
+        "sessions_behind": None,
+        "stale": False,
+        "roots_with_clusters": 0,
+        "roots_with_walls": 0,
+        "dropped_bad_join_keys": 0,
+        "degraded": True,
+        "degraded_reason": reason,
+    })
 
 
 def _build(chain_dates: Callable[[], list[_dt.date]],
@@ -714,12 +1000,13 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
 
     # Per-date open-interest wall LEVELS (a few tuples per root), plus the two NEWEST
     # whole frames — all the delta needs. Every older frame is released as soon as its
-    # walls are extracted: keeping the whole window resident measured ~180 MB against
-    # ~60 MB for the rolling pair, and the derived output is a few hundred kilobytes
-    # either way. WALL_WINDOW_SESSIONS is the lever if the peak ever needs to come down.
+    # walls are extracted, which bounds how many are LIVE at once; it does not shrink the
+    # process RSS afterwards (see PositioningStore's MEMORY note — the allocator keeps
+    # ~230-300 MB for the rest of the run). WALL_WINDOW_SESSIONS is the lever.
     wall_rows: dict[str, dict[_dt.date, tuple]] = {}
     kept: list[_dt.date] = []
     recent: list[tuple[_dt.date, pd.DataFrame]] = []
+    dropped_keys = 0
     for d in window:
         raw = read_chain(d)
         if raw is None or raw.empty:
@@ -735,6 +1022,12 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
             del raw           # release the vendor-shaped frame before the wall pass
         if norm.empty:
             continue
+        bad = int(norm.attrs.get("dropped_bad_join_keys", 0) or 0)
+        if bad:
+            dropped_keys += bad
+            print(f"::warning title=oi-chain-join-keys::{d.isoformat()} chain snapshot "
+                  f"dropped {bad} row(s) with a missing or duplicated contract id before "
+                  f"the open-interest match", flush=True)
         kept.append(d)
         for r in oi_walls(norm).itertuples():
             wall_rows.setdefault(str(r.underlying), {})[d] = (
@@ -749,6 +1042,19 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
         # open interest to matched_oi_delta, but vintage_fingerprints ALSO needs its
         # underlying and spot, so the droppable columns are just K + is_call (~1 MB).
         del norm
+    # ── freshness of the store itself (M1) ────────────────────────────────
+    # The chain store is a DAILY collect step. A dead collector leaves a perfectly
+    # self-consistent pair whose newest side is weeks old, and nothing in the block said
+    # so — the same shape that let index_gex_history read as current for 18 sessions.
+    latest_kept = kept[-1] if kept else None
+    behind: int | None = None
+    if latest_kept is not None:
+        try:
+            behind = int(nyse_calendar.sessions_behind(latest_kept))
+        except Exception:  # noqa: BLE001 — a calendar hiccup must not drop the block
+            behind = None
+    stale = behind is not None and behind >= CHAIN_STALE_SESSIONS
+
     meta: dict[str, Any] = {
         "source": "polygon_gex/chains",
         "store_start": store_start,
@@ -758,6 +1064,11 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
         "prior_snapshot": None,
         "latest_snapshot": None,
         "snapshots_compared": len(kept),
+        "sessions_apart": None,
+        "sessions_behind": behind,
+        "stale": bool(stale),
+        "dropped_bad_join_keys": dropped_keys,
+        "degraded": False,
     }
 
     # ── (a) clusters from the two newest SESSION snapshots ────────────────
@@ -766,33 +1077,65 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
         (prior_d, prior), (latest_d, latest) = recent[0], recent[1]
         meta["prior_snapshot"], meta["latest_snapshot"] = prior_d, latest_d
         meta["snapshots_compared"] = 2
-        same = same_vintage_mask(vintage_fingerprints(prior), vintage_fingerprints(latest))
+        # How far apart the two readings actually are. 1 = consecutive sessions (the
+        # normal case, disclosed silently); more means the pair straddles a gap and the
+        # "day-over-day" framing would otherwise be a lie.
+        apart = max(0, len(nyse_calendar.sessions_between(prior_d, latest_d)) - 1) or None
+        meta["sessions_apart"] = apart
+        prior_fp = vintage_fingerprints(prior)
+        latest_fp = vintage_fingerprints(latest)
+        same = same_vintage_mask(prior_fp, latest_fp)
+        # The snapshot's OWN underlying price per root — the price dist_pct and the
+        # above/below-price wall split are actually measured against. It was computed and
+        # thrown away before; a reader had no way to know which price the row used.
+        snap_spot = {str(k): _f(v) for k, v in latest_fp["spot"].items()}
         delta = matched_oi_delta(prior, latest)
         by_root = {str(u): g for u, g in delta.groupby("underlying", observed=True)} \
             if not delta.empty else {}
         roots = set(by_root) | {str(u) for u in same.index}
+        common = set(same.index.astype(str))
+
+        def _stamp(root: str) -> dict:
+            return {
+                "prior_snapshot": prior_d.isoformat(),
+                "latest_snapshot": latest_d.isoformat(),
+                "sessions_apart": apart,
+                "sessions_behind": behind,
+                "stale": bool(stale),
+                "snapshot_spot": snap_spot.get(root),
+            }
+
         for root in roots:
-            is_same = bool(same.get(root, False))
-            if is_same:
-                en, zh = _cluster_notes("same_vintage", prior_d, latest_d, store_start)
+            if bool(same.get(root, False)):
+                en, zh = _cluster_notes("same_vintage", prior_d, latest_d, store_start,
+                                        apart, behind, stale)
                 clusters[root.upper()] = {
-                    "new_oi": [], "exit_oi": [],
-                    "prior_snapshot": prior_d.isoformat(),
-                    "latest_snapshot": latest_d.isoformat(),
-                    "matched_contracts": 0,
-                    "same_vintage": True,
+                    "new_oi": [], "exit_oi": [], **_stamp(root),
+                    "matched_contracts": 0, "same_vintage": True,
                     "note_en": en, "note_zh": zh,
                 }
                 continue
             g = by_root.get(root)
             if g is None or g.empty:
+                # Present in BOTH snapshots (so it IS in the fingerprint intersection)
+                # yet sharing no contract id — the listed universe turned over. This used
+                # to fall through to the store-level "no snapshots are stored for this
+                # name" copy while the two snapshot dates sat non-null beside it.
+                # Reachable on the real store: 2026-07-02 -> 2026-07-07, CRWD (1 of 350).
+                if root in common:
+                    en, zh = _cluster_notes("no_matched_contracts", prior_d, latest_d,
+                                            store_start, apart, behind, stale)
+                    clusters[root.upper()] = {
+                        "new_oi": [], "exit_oi": [], **_stamp(root),
+                        "matched_contracts": 0, "same_vintage": False,
+                        "note_en": en, "note_zh": zh,
+                    }
                 continue
             body = clusters_for_underlying(g, top_n)
-            en, zh = _cluster_notes("lit", prior_d, latest_d, store_start)
+            en, zh = _cluster_notes("lit", prior_d, latest_d, store_start,
+                                    apart, behind, stale)
             clusters[root.upper()] = {
-                **body,
-                "prior_snapshot": prior_d.isoformat(),
-                "latest_snapshot": latest_d.isoformat(),
+                **body, **_stamp(root),
                 "matched_contracts": int(g["contracts"].sum()),
                 "same_vintage": False,
                 "note_en": en, "note_zh": zh,
@@ -813,13 +1156,24 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
             c_held = sessions_at_level(calls)
             p_held = sessions_at_level(puts)
             c_lvl, p_lvl = calls[-1], puts[-1]
-            c_en, c_zh = _wall_notes("call-side", "看涨", c_lvl, c_held, covered, store_start)
-            p_en, p_zh = _wall_notes("put-side", "看跌", p_lvl, p_held, covered, store_start)
+            c_en, c_zh = _wall_notes("call-side", "看涨", c_lvl, c_held, covered,
+                                     store_start, behind, stale)
+            p_en, p_zh = _wall_notes("put-side", "看跌", p_lvl, p_held, covered,
+                                     store_start, behind, stale)
             walls[root.upper()] = {
                 "window_sessions": int(window_sessions),
                 "sessions_covered": covered,
                 "window_start": kept[0].isoformat(),
                 "window_end": kept[-1].isoformat(),
+                "sessions_behind": behind,
+                "stale": bool(stale),
+                # The price the above/below-price split was actually taken against — the
+                # snapshot source's own, not the board's. Newest snapshot that covered
+                # this root.
+                "snapshot_spot": next(
+                    (by_date[d][2] for d in reversed(kept) if d in by_date), None),
+                "basis_en": _WALL_BASIS_EN,
+                "basis_zh": _WALL_BASIS_ZH,
                 "call_side": {"level": c_lvl, "sessions_at_level": c_held,
                               "note_en": c_en, "note_zh": c_zh},
                 "put_side": {"level": p_lvl, "sessions_at_level": p_held,
@@ -829,8 +1183,10 @@ def _build(chain_dates: Callable[[], list[_dt.date]],
     meta["roots_with_clusters"] = len(clusters)
     meta["roots_with_walls"] = len(walls)
     meta["store_start"] = store_start
-    log.info("positioning_persistence: %d session snapshots (%s..%s), clusters for %d "
-             "roots, wall window %d snapshots for %d roots",
+    log.info("positioning_persistence: %d session snapshots (%s..%s, %s apart, %s behind), "
+             "clusters for %d roots, wall window %d snapshots for %d roots, "
+             "%d bad join keys dropped",
              len(dates), meta["prior_snapshot"], meta["latest_snapshot"],
-             len(clusters), len(kept), len(walls))
+             meta["sessions_apart"], behind, len(clusters), len(kept), len(walls),
+             dropped_keys)
     return PositioningStore(clusters, walls, meta)

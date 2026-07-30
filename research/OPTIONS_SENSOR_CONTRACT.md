@@ -155,7 +155,12 @@ other.
 `deep_history` reports the rebuild's window and distribution spread but **no percentile of
 today's value**: the rebuild is a ThetaData reconstruction while today's value comes from
 the Cboe chain, and placing one inside the other is the cross-source comparison
-`engine/market_gamma`'s SCALE NOTE already refuses.
+`engine/market_gamma`'s SCALE NOTE already refuses. Measured against that exact pair
+(reconstruction vs `data/cboe/gex_<ROOT>`, `audit_overlap`, 2026-07-29, 12 shared dates):
+SPY raw corr 0.9329 / same-spot 0.9956 (n=8) / mean abs diff **2.0585 $bn**; QQQ 0.7618 /
+0.9933 (n=7) / 1.2896; IWM 0.4850 / 0.9655 (n=8) / 0.3366; DIA has no `cboe/gex_DIA`
+store at all. Close enough to be comparable context, not close enough to be one
+distribution.
 
 ---
 
