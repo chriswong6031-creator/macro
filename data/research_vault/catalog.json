@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T21:11:10.514977+00:00",
-  "count": 414,
+  "generated_at": "2026-07-30T21:26:13.301623+00:00",
+  "count": 415,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1444,6 +1444,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4ieflsaoxoe-456389",
+      "title": "BASF SE (BASFn.DE) 2Q26 full release highlights structural transformation, focus on cash returns deleveraging, and rising pr...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T08:04:49Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
