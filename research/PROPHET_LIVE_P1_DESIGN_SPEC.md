@@ -607,6 +607,22 @@ applied through the real JS path.
 | Bilingual parity | Every string has a real ZH twin; no EN state names dropped into ZH; no translated text in `title=`. |
 | zh 红涨绿跌 | Complied **by construction**: the component uses no directional encoding at all. State hues come from the direction-stable `--plv`/`--pv-*` family; fade direction is carried by words + story hue (grey "fell back" vs amber "ran past"), never by up/down colour. Do not "fix" this by adding `--up`/`--down`. |
 
+### 8.1 One adjacent-copy tension, flagged and deliberately not fixed here
+
+The existing nightly trigger chip reads **`⚡ Triggered` / `⚡ 已触发`** (`_prophet_card.html.j2`), and
+`triggered` as a past fact is exactly the word G0.6 bans. On its own terms the chip is defensible —
+it describes a signal the nightly build *did* confirm, which is a settled fact, not a provisional
+claim. But after P1 it sits **one chip away** from `◐ Below range` on the same card, and a reader
+scanning two adjacent chips will not naturally infer that one is a settled verdict and the other is
+an unsettled read.
+
+Not fixed here, on purpose: it is graded-board copy, outside this commission, and re-wording a
+ratified chip mid-flight would collide with the Top-setups presentation merge. Mitigations already in
+this design: different glyph (⚡ nightly vs ◐ live), different hue family, and the live chip's tip
+always naming tonight's close. **Recommendation for the orchestrator:** consider a small follow-up
+that re-words the nightly chip to a settled-tense phrase (e.g. `⚡ Entry signal` / `⚡ 入场信号`),
+adjudicated with the Top-setups owner rather than folded into P1.
+
 ---
 
 ## §9 What this spec deliberately does NOT design (scope fences for the builder)
