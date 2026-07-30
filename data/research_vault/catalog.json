@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T17:25:56.929579+00:00",
-  "count": 403,
+  "generated_at": "2026-07-30T17:41:02.114925+00:00",
+  "count": 404,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -174,6 +174,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 27,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fmndtyvkl6s-e01b68",
+      "title": "JPM Emerging Markets EQ",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:29:12Z",
+      "summary_points": [
+        "**EM Drawdown Drivers**: MSCI EM down 15% from June peak driven by Korea (-37%) and Taiwan (-18%) semiconductor weakness; historical avg correction 21% implies ~6% further downside; Middle East conflict amplifies energy price pressures.",
+        "**EM Valuation Signal**: 12m forward PE at 10.2x (1 std dev below historic avg), signaling mean reversion opportunity; critical for timing EM equity entries.",
+        "**EM Growth Advantage**: EM EPS growth forecasts (+2.5%/3.2% for 2026/27) significantly exceed DM (flat), driven by tech sector revisions despite market worries.",
+        "**Key Risk Factors**: Hawkish Fed policy, geopolitical uncertainty (Middle East, US-China tensions), stronger USD, higher global yields, and AI silicon supply/demand deficits.",
+        "**Correction Triggers**: Historical EM corrections linked to Fed tightening (1990, 2000, 2007), US-China trade wars (2018), Ukraine war (2022), and pandemics (2020), with declines 13-34% over 17-57 days."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
