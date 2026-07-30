@@ -56,3 +56,47 @@ def test_snapshot_roundtrip():
     p = _payload([_sub("a", "A", "improving", 1.5, 4.0, 2.0)])
     snap = A._snapshot(p)
     assert snap["a"]["emerging"] is True and snap["a"]["quadrant"] == "improving"
+
+
+# ── turn-lane events (engine.subsector_turn) ───────────────────────────────────
+def _turn_sub(key, state, **kw):
+    s = _sub(key, key.upper(), "improving", 1.0, 2.0, 1.5)
+    s.update({"turn_state": state, "turn_since": "2026-06-28", "n_members": 8,
+              "bottom_score": 0.8, "top_score": 0.8, "turn_score": 0.8,
+              "dd_from_peak": -14.0, "up_from_trough": 30.0,
+              "breadth": {"n": 8, "turn_up": 0.9, "turn_dn": 0.9, "concentrated": False},
+              "pace_mkt": {"w1": -1.0}, "legs_up": {}, "legs_dn": {}})
+    s.update(kw)
+    return s
+
+
+def test_turn_up_fires_once_on_the_transition():
+    p = _payload([_turn_sub("a", "turn_up")])
+    prior = {"a": {"name": "A", "theme": "T", "quadrant": "improving", "emerging": True,
+                   "turn_state": "bottoming"}}
+    evs = [e for e in A.compute_events(p, prior) if e["type"] == "rotation_turn_up"]
+    assert len(evs) == 1 and evs[0]["severity"] == "high"
+    # already in the state → no re-fire
+    prior2 = {"a": {**prior["a"], "turn_state": "turn_up"}}
+    assert [e for e in A.compute_events(p, prior2) if e["type"].startswith("rotation_turn")] == []
+
+
+def test_turn_lane_seeds_silently_when_prior_predates_the_field():
+    """A state file written before the turn engine shipped must not fire 11 turns at once."""
+    p = _payload([_turn_sub("a", "turn_up"), _turn_sub("b", "turn_down")])
+    prior = {"a": {"name": "A", "theme": "T", "quadrant": "improving", "emerging": True},
+             "b": {"name": "B", "theme": "T", "quadrant": "weakening", "emerging": False}}
+    assert [e for e in A.compute_events(p, prior) if e["type"].startswith("rotation_turn")] == []
+
+
+def test_turn_severity_needs_size_and_breadth():
+    """RC-R5: a one-name move cannot print `high` however violent its score."""
+    thin = _turn_sub("t", "turn_up", n_members=2,
+                     breadth={"n": 2, "turn_up": 1.0, "turn_dn": 0.0, "concentrated": True})
+    assert A._turn_severity(thin, up=True) == "minor"
+    narrow = _turn_sub("n", "turn_up", n_members=8,
+                       breadth={"n": 8, "turn_up": 0.25, "turn_dn": 0.0, "concentrated": True})
+    assert A._turn_severity(narrow, up=True) == "medium"
+    assert A._turn_severity(_turn_sub("g", "turn_up"), up=True) == "high"
+    # an unconfirmed candidate never reaches high
+    assert A._turn_severity(_turn_sub("c", "topping"), up=False) == "minor"

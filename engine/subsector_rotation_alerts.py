@@ -128,7 +128,14 @@ def compute_events(payload: dict, prior: dict | None) -> list[dict]:
         # ── TURN events (engine/subsector_turn.py): a confirmed cycle turn, fired once on
         # the transition into the confirmed state. These lead the triage; the quadrant-flow
         # events below stay as they were.
+        # Seed the turn lane silently when the prior snapshot has no `turn_state` at all —
+        # a state file written before the turn engine shipped, or a node's first ever
+        # appearance. Without this, the first run after deploy fires every already-confirmed
+        # turn at once (11 on the 2026-07-30 cross-section), which is the alert storm the
+        # seed-silent rule exists to prevent, not a set of transitions that happened today.
         st_now, st_was = s.get("turn_state"), was.get("turn_state")
+        if "turn_state" not in was:
+            st_now = None
         if st_now in ("turn_up", "turn_down") and st_now != st_was:
             up = st_now == "turn_up"
             sev = _turn_severity(s, up)
