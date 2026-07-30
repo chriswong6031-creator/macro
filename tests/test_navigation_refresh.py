@@ -72,6 +72,23 @@ def test_search_is_profile_aware_animated_and_status_rich() -> None:
     assert "@media (prefers-reduced-motion: reduce)" in REFRESH_CSS
 
 
+def test_search_waits_for_refresh_css_on_stale_rendered_pages() -> None:
+    """Static assets deploy before the full HTML render; that skew must stay safe."""
+    for marker in (
+        "ensureNavSearchCss",
+        "navigation-refresh.css",
+        "data-nav-css-wait",
+        "if (!ensureNavSearchCss(box)) return",
+        "data-ticker-search-ready",
+        "ensureNavLogoAssets",
+        "stock-logos.js",
+        "logo_config.js",
+    ):
+        assert marker in THEME_JS
+    assert "box.style.visibility = 'hidden'" in THEME_JS
+    assert "if (loaded) initNavSearch()" in THEME_JS
+
+
 def test_neural_web_public_view_exists_and_hides_proprietary_details() -> None:
     page = (ROOT / "templates" / "neural_web.html.j2").read_text(encoding="utf-8")
     assert "Signals do not arrive" in page
