@@ -1552,8 +1552,9 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
     margin-top: 13px;
   }
   .nav-market-grid { grid-template-columns: 1fr; gap: 2px; }
-  .nav-market-item {
+  .has-nav-toggle .nav-links .nav-dd-menu.nav-market-menu .nav-market-item {
     min-height: 68px;
+    display: grid;
     grid-template-columns: 52px minmax(0, 1fr);
     gap: 12px;
     padding: 8px 7px;
@@ -1573,8 +1574,10 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
     border-left: 0;
     background: transparent;
   }
-  .nav-market-rail-item {
+  .has-nav-toggle .nav-links .nav-dd-menu.nav-market-menu .nav-market-rail-item {
     min-height: 48px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding-inline: 7px;
   }
   .nav-market-note { margin: 14px 7px 0; }
