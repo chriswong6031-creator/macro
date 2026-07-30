@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T16:25:46.879882+00:00",
-  "count": 400,
+  "generated_at": "2026-07-30T16:40:48.642294+00:00",
+  "count": 401,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -517,6 +517,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-btftdaz3dq2-e537b6",
+      "title": "GM Market Rhythm Focus 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:42:00Z",
+      "summary_points": [
+        "**Broad Market Breadth**: 66% of NYSE components above 200dma confirms robust trend sustainability and reduces reversal risk.",
+        "**Russell 1000 Rotation Signal**: Head-and-shoulders neckline break indicates imminent growth-to-value rotation, requiring strategic equity rebalancing.",
+        "**SOX Reversal Risk**: Hammer pattern suggests potential reversal; requires follow-through validation with RSI showing no momentum shift and critical support at 10,270.",
+        "**Uptrend Confirmation**: Marubozu candle closing above 200dma validates sustained momentum, supported by rising RSI without overbought conditions.",
+        "**Key Support Levels**: FTSE 100 immediate support at 10,650 (50dma) with 200dma providing longer-term trend context."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
