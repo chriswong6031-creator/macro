@@ -364,6 +364,192 @@ def test_the_flag_fires_once_not_on_every_later_pass():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# since_ts — the P1 SINCE column (design spec §6.6)
+#
+# The column answers ONE question: when did this name enter the state it is in now?
+# So the field is carried while the PUBLIC state persists and re-stamped when it
+# changes, and it is read off the pass clock rather than multiplied out of `passes`
+# (a late cron and a board name's day-first counter both make that arithmetic lie).
+# Every pass below therefore pins its own clock — two passes sharing NOW could not
+# tell a carry from a re-stamp.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_since_ts_is_the_pass_that_established_the_state_not_a_derived_duration():
+    """The establishing pass's own `pass_ts`, to the second, on both entry paths."""
+    board = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), now=_at(10, 0))
+    assert board["states"]["BBB"]["since_ts"] == board["meta"]["pass_ts"]
+    one = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), now=_at(10, 0))
+    two = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), one, now=_at(10, 5))
+    assert two["states"]["AAA"]["state"] == "forming"
+    assert two["states"]["AAA"]["since_ts"] == two["meta"]["pass_ts"]
+    assert two["states"]["AAA"]["since_ts"].endswith("Z")
+
+
+def test_since_ts_is_carried_forward_while_the_public_state_is_unchanged():
+    """Three passes of an unchanged `forming` keep the FIRST one's stamp."""
+    a = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), now=_at(10, 0))
+    b = _run(pack({"BBB": buyable()}), quotes(BBB=100.5), a, now=_at(10, 5))
+    c = _run(pack({"BBB": buyable()}), quotes(BBB=101.0), b, now=_at(10, 11))
+    since = a["states"]["BBB"]["since_ts"]
+    assert b["states"]["BBB"]["since_ts"] == since
+    assert c["states"]["BBB"]["since_ts"] == since
+    # And it is NOT passes x 5 min: this cron landed 6 minutes late on the third pass,
+    # so the derived duration (3 passes => 15 min) would have been a fabricated clock.
+    assert c["states"]["BBB"]["passes"] == 3
+    assert since == a["meta"]["pass_ts"] != c["meta"]["pass_ts"]
+
+
+def test_since_ts_resets_when_the_public_state_changes():
+    """near -> forming -> faded: each published state owns its own clock."""
+    one = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), now=_at(10, 0))
+    two = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), one, now=_at(10, 5))
+    three = _run(pack({"AAA": near(100.0)}), quotes(AAA=99.0), two, now=_at(10, 10))
+    assert [one["states"]["AAA"]["state"], two["states"]["AAA"]["state"],
+            three["states"]["AAA"]["state"]] == ["near", "forming", "faded"]
+    # near -> forming IS a public change even though it is the debounce landing: the
+    # reader is being told something new, so the SINCE clock restarts with it.
+    assert two["states"]["AAA"]["since_ts"] != one["states"]["AAA"]["since_ts"]
+    assert two["states"]["AAA"]["since_ts"] == two["meta"]["pass_ts"]
+    assert three["states"]["AAA"]["since_ts"] == three["meta"]["pass_ts"]
+
+
+def test_since_ts_survives_an_internals_only_change():
+    """passes 1 -> 2 under an unchanged public `near` is not a state change.
+
+    A 105.0 print with fade_hi 105.0 holds, so the cross debounce banks a pass and the
+    internal marker moves, while the published state stays `near` both times.
+    """
+    entry = near(100.0, hi=105.0)
+    cfg3 = LS.live_cfg({"prophet_live": {"debounce_passes": 3, "fade_buffer_pct": 0.5,
+                                         "quote_max_age_min": 12,
+                                         "confirm_window_start": "15:30"}})
+
+    def run3(prev, now):
+        return LS.evaluate(pack({"AAA": entry}), quotes(AAA=101.0), prev, now=now,
+                           cfg=cfg3, quote_asof="x", delay_min=15,
+                           quote_age_of=lambda _q: 1.0)
+
+    a = run3(None, _at(10, 0))
+    b = run3(a, _at(10, 5))
+    for art in (a, b):
+        st = art["states"]["AAA"]
+        assert st["state"] == "near" and st["internal"] == LS.CROSSING_UNCONFIRMED
+    assert a["states"]["AAA"]["passes"] == 1 and b["states"]["AAA"]["passes"] == 2
+    assert b["states"]["AAA"]["since_ts"] == a["states"]["AAA"]["since_ts"]
+
+
+def test_the_confirming_flag_does_not_reset_since_ts():
+    """`confirming_into_close` is a flag on `forming`, not a state — the clock holds."""
+    a = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), now=_at(15, 20))
+    b = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), a, now=_at(15, 35))
+    assert "confirming_into_close" not in a["states"]["BBB"]
+    assert b["states"]["BBB"]["confirming_into_close"] is True
+    assert b["states"]["BBB"]["state"] == a["states"]["BBB"]["state"] == "forming"
+    assert b["states"]["BBB"]["since_ts"] == a["states"]["BBB"]["since_ts"]
+
+
+def test_a_new_session_restamps_since_ts():
+    """Same public state across the day boundary, new clock — yesterday's entry time
+    describes yesterday's tape. Free: `prev_states` resolves only within the session."""
+    a = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), now=_at(10, 0))
+    tomorrow = NOW + timedelta(days=1)
+    fresh = _run(pack({"BBB": buyable()}, as_of=LS.last_completed_session(tomorrow)),
+                 quotes(BBB=100.0), a, now=tomorrow)
+    assert fresh["meta"]["session_et"] != a["meta"]["session_et"]
+    assert fresh["states"]["BBB"]["state"] == a["states"]["BBB"]["state"] == "forming"
+    assert fresh["states"]["BBB"]["since_ts"] == fresh["meta"]["pass_ts"]
+    assert fresh["states"]["BBB"]["since_ts"] != a["states"]["BBB"]["since_ts"]
+
+
+def test_a_dark_row_publishes_no_since_ts_of_its_own():
+    """Dark is not a public state, so there is nothing to time — and a dark row with a
+    since_ts would be the guess G0.3 forbids. It carries its predecessor's, labelled."""
+    a = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), now=_at(10, 0))
+    dark = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), a, now=_at(10, 5), age=99.0)
+    st = dark["states"]["BBB"]
+    assert st["state"] == "dark" and st["reason"] == "stale_quote"
+    assert "since_ts" not in st
+    assert st["prior_public"] == "forming"
+    assert st["prior_since_ts"] == a["states"]["BBB"]["since_ts"]
+    # With no history at all a dark row stays the minimal {state, reason} dict.
+    cold = _run(pack({"IRR": {"state": "irregular", "center_buyable": True,
+                              "as_of_close": 10.0, "probed": True,
+                              "buyable_in_band": None}}), quotes(IRR=10.0))
+    assert cold["states"]["IRR"] == {"state": "dark", "reason": "irregular_gate"}
+
+
+def test_a_quote_hiccup_does_not_restart_the_since_clock():
+    """The chosen dark-pass rule: back in the SAME public state => the ORIGINAL stamp.
+
+    The per-name twin of dark_artifact's whole-artifact carry — a missing quote must not
+    cost the session its history, and a re-stamp here would print "entered forming at
+    10:15" for a name that entered it at 10:00. Two dark passes chain the carry.
+    """
+    a = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), now=_at(10, 0))
+    d1 = _run(pack({"BBB": buyable()}), {}, a, now=_at(10, 5))
+    d2 = _run(pack({"BBB": buyable()}), {}, d1, now=_at(10, 10))
+    assert d1["states"]["BBB"]["reason"] == "no_quote"
+    assert d2["states"]["BBB"]["prior_since_ts"] == a["states"]["BBB"]["since_ts"]
+    back = _run(pack({"BBB": buyable()}), quotes(BBB=100.0), d2, now=_at(10, 15))
+    assert back["states"]["BBB"]["state"] == "forming"
+    assert back["states"]["BBB"]["since_ts"] == a["states"]["BBB"]["since_ts"]
+
+
+def test_coming_back_from_dark_into_a_different_state_restamps():
+    """The honest half of the same rule: we did not see the transition, so the clock
+    starts at the pass that actually published this state."""
+    a = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=100.0), now=_at(10, 0))
+    dark = _run(pack({"BBB": buyable(fade=90.0)}), {}, a, now=_at(10, 5))
+    assert dark["states"]["BBB"]["prior_public"] == "forming"
+    back = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=86.0), dark, now=_at(10, 10))
+    assert back["states"]["BBB"]["state"] == "at_risk"          # decisive breach
+    assert back["states"]["BBB"]["since_ts"] == back["meta"]["pass_ts"]
+    assert back["states"]["BBB"]["since_ts"] != a["states"]["BBB"]["since_ts"]
+
+
+def test_every_non_dark_state_carries_a_since_ts():
+    """One law, no per-state exceptions — the display picks its rows, not the payload."""
+    p = pack({"AAA": near(100.0), "BBB": buyable(), "CCC": dormant()})
+    art = _run(p, quotes(AAA=101.0, BBB=100.0, CCC=50.0), now=_at(10, 0))
+    seen = set()
+    for tkr, st in art["states"].items():
+        assert st["state"] != "dark", tkr
+        assert st["since_ts"] == art["meta"]["pass_ts"], tkr
+        seen.add(st["state"])
+    assert seen == {"near", "forming", "dormant"}
+
+
+def test_since_ts_rides_through_a_whole_artifact_dark_pass(monkeypatch, tmp_path):
+    """A stale PACK carries `states` into `prev_states` verbatim, so the stamp survives
+    a whole-artifact dark exactly as the debounce counter does."""
+    import scripts.prophet_live_evaluator as E
+    from engine.prophet_live import r2io
+
+    store: dict[str, dict] = {}
+    packs = {"good": pack({"BBB": buyable()}),
+             "stale": pack({"BBB": buyable()}, as_of="2026-01-02")}
+    which = {"k": "good"}
+    monkeypatch.setattr(E.r2io, "client", lambda: object())
+    monkeypatch.setattr(E.r2io, "get_json", lambda key, **kw:
+                        packs[which["k"]] if key == r2io.PACK_KEY else store.get(key))
+    monkeypatch.setattr(E.r2io, "put_json",
+                        lambda key, payload, **kw: store.__setitem__(key, payload) or True)
+    monkeypatch.setattr(E.LV, "load_live_quotes",
+                        lambda root: {"quotes": quotes(BBB=100.0), "asof": "x",
+                                      "source": "t"})
+    monkeypatch.setattr(E, "quote_ager", lambda live, now: (lambda q: 1.0))
+
+    E.run(tmp_path, now=_at(10, 0), cfg={"prophet_live": {}})
+    since = store[r2io.LIVE_KEY]["states"]["BBB"]["since_ts"]
+    which["k"] = "stale"
+    E.run(tmp_path, now=_at(10, 5), cfg={"prophet_live": {}})
+    assert store[r2io.LIVE_KEY]["prev_states"]["BBB"]["since_ts"] == since
+    which["k"] = "good"
+    E.run(tmp_path, now=_at(10, 10), cfg={"prophet_live": {}})
+    assert store[r2io.LIVE_KEY]["states"]["BBB"]["since_ts"] == since
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # G0.3 — honest degradation
 # ─────────────────────────────────────────────────────────────────────────────
 

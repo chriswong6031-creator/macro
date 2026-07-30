@@ -364,10 +364,10 @@
       <div id="composer-top">
         <div id="lane-toggle" role="group">
           <button class="lane-btn active" data-lane="fast" type="button">
-            ⚡ <span class="l-en">Fast</span><span class="l-zh">快速</span>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M13.9 2 5 13.6h4.9L8.6 22l8.8-11.9h-4.9z"/></svg> <span class="l-en">Fast</span><span class="l-zh">快速</span>
           </button>
           <button class="lane-btn" data-lane="pro" type="button">
-            ◈ <span class="l-en">Pro</span><span class="l-zh">专业</span>
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M12 2.3 20.5 9 12 21.7 3.5 9z"/><path d="M3.5 9h17M12 2.3 9.1 9 12 21.7 14.9 9z" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".4"/></svg> <span class="l-en">Pro</span><span class="l-zh">专业</span>
           </button>
         </div>
         <div id="quota-info">
@@ -377,7 +377,7 @@
         <!-- Deep Research toggle (W6b) — shown only when pro quota limit > 0 -->
         <div id="research-toggle" role="group" aria-label="Deep Research mode">
           <button id="research-btn" type="button" aria-pressed="false">
-            🔬 <span class="l-en">Deep Research</span><span class="l-zh">深度研究</span>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.8 5.2h14.4"/><path d="M8 10.1 12 13.9l4-3.8"/><path d="M8 15.3 12 19.1l4-3.8"/></svg> <span class="l-en">Deep Research</span><span class="l-zh">深度研究</span>
           </button>
           <span id="research-progress">
             <span class="l-en">researching…</span><span class="l-zh">深度研究中…</span>
@@ -456,6 +456,13 @@
   var researchToggle = document.getElementById('research-toggle');
   var researchBtn = document.getElementById('research-btn');
   var researchProgress = document.getElementById('research-progress');
+
+  /* Lane marks for script-written chrome (the meters). Same drawing as the composer's
+     buttons above and as the widget's — one depth family across both surfaces. */
+  var LANE_MARK = {
+    fast: '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M13.9 2 5 13.6h4.9L8.6 22l8.8-11.9h-4.9z"/></svg>',
+    pro: '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" aria-hidden="true" style="vertical-align:-1px;margin-right:1px"><path d="M12 2.3 20.5 9 12 21.7 3.5 9z"/><path d="M3.5 9h17M12 2.3 9.1 9 12 21.7 14.9 9z" fill="none" stroke="currentColor" stroke-width="1.25" opacity=".4"/></svg>'
+  };
 
   /* ── helpers ────────────────────────────────────────────────────────────── */
   function lang() { return document.documentElement.getAttribute('data-lang') || 'en'; }
@@ -607,12 +614,12 @@
       return 'quota-chip';
     }
     if (quotas.fast) {
-      quotaFast.textContent = '⚡ ' + chipText(quotas.fast);
+      quotaFast.innerHTML = LANE_MARK.fast + ' ' + esc(chipText(quotas.fast));
       quotaFast.className = chipClass(quotas.fast);
       quotaFast.style.display = '';
     }
     if (quotas.pro) {
-      quotaPro.textContent = '◈ ' + chipText(quotas.pro);
+      quotaPro.innerHTML = LANE_MARK.pro + ' ' + esc(chipText(quotas.pro));
       quotaPro.className = chipClass(quotas.pro);
       quotaPro.style.display = '';
     }

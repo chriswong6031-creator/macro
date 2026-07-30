@@ -1217,8 +1217,9 @@ def test_the_committed_artifacts_render_a_packet_inside_the_budget():
 
 # ── zh render branch (Analyst OS W1): desk-precomputed Chinese only ──────────
 # Narrow by design (audit 2026-07-30): only fields whose zh the DESK already
-# computed switch — drivers labels, wire item zh, the curve-regime label. All
-# other text stays EN; the gateway LANGUAGE directive governs the reply.
+# computed switch — drivers labels, wire item zh, the curve-regime label — plus the
+# finite quad STATE NAMES in the prose sections (W2.1 fix 2, tests further down).
+# All other text stays EN; the gateway LANGUAGE directive governs the reply.
 
 def test_zh_drivers_render_uses_desk_translations(tmp_path):
     root = make_root(tmp_path)
@@ -1265,3 +1266,93 @@ def test_zh_and_en_cached_separately(tmp_path):
     # Second reads hit the cache and stay language-correct.
     assert mp.digest(root, lang="zh") == zh
     assert mp.digest(root, lang="en") == en
+
+
+# ── zh quad-state names in the English-prose sections (W2.1 fix 2) ───────────
+# Live zh probe 2026-07-30 answered with a bare "Goldilocks" ×3 because the zh
+# digest itself fed the model "Cross-asset regime: Goldilocks" / "…flip us into
+# Reflation": the model copies its own input over the language directive. The
+# prose stays English (the directive owns that) — only the finite quad state
+# NAMES switch, to the desk-canonical forms (see mp._ZH_STATE_TOKENS).
+
+def test_zh_prose_sections_carry_canonical_state_words(tmp_path):
+    """No bare English quad name survives a zh render; 理想增长 / 再通胀 appear instead."""
+    mb = master_brief_payload()
+    mb["regime_read"] = ("We are still in Goldilocks, but one nudge lower flips us "
+                         "into Reflation.")
+    mb["watch_items"] = ["Small caps: a break lower flips the macro regime to Reflation."]
+    root = make_root(tmp_path, master_brief=mb)
+    zh = mp.digest(root, lang="zh")
+
+    assert "Goldilocks" not in zh
+    assert "Reflation" not in zh
+    assert "理想增长" in zh          # DESK READ  (Regime line)
+    assert "再通胀" in zh            # DESK READ + WATCH
+    # The world_state line is the one the live probe copied — it must switch too.
+    assert "Cross-asset regime: 理想增长" in zh
+    assert "理想增长" in _line(zh, "WATCH (") or "再通胀" in _line(zh, "WATCH (")
+
+
+def test_en_digest_is_byte_identical_to_before_the_zh_substitution(tmp_path):
+    """The EN render never sees the map: same fixture, English state words intact."""
+    mb = master_brief_payload()
+    mb["regime_read"] = ("We are still in Goldilocks, but one nudge lower flips us "
+                         "into Reflation.")
+    root = make_root(tmp_path, master_brief=mb)
+    en = mp.digest(root, lang="en")
+    assert "Goldilocks" in en and "Reflation" in en
+    assert "理想增长" not in en and "再通胀" not in en
+    # The EN path is untouched by lang= plumbing at all.
+    assert mp.digest(root) == en
+
+
+def test_zh_state_substitution_is_whole_token_only():
+    """A state name inside a longer word is NOT replaced; one against punctuation is."""
+    # Never a substring: the trailing letters make it a different word.
+    assert mp._zh_state_words("Reflationary pressures") == "Reflationary pressures"
+    assert mp._zh_state_words("Deflationary spiral") == "Deflationary spiral"
+    # Case-sensitive: the generic lowercase noun is prose, not a state name.
+    assert mp._zh_state_words("confirms if inflation is truly cooling") == (
+        "confirms if inflation is truly cooling")
+    # Whole tokens do switch, including against punctuation and at the edges.
+    assert mp._zh_state_words("Goldilocks") == "理想增长"
+    assert mp._zh_state_words("regime: Goldilocks.") == "regime: 理想增长."
+    assert mp._zh_state_words("flips to Reflation, then Stagflation") == (
+        "flips to 再通胀, then 滞胀")
+    # Longest form wins over its own prefix (leftmost-first alternation order).
+    assert mp._zh_state_words("Growth-scare/Deflation") == "增长恐慌／通缩"
+    assert mp._zh_state_words("") == ""
+
+
+def test_zh_state_map_is_the_desk_canonical_vocabulary():
+    """Goldilocks → 理想增长: engine/master_brain.py::_ZH_LEXICON_FIXUPS normalizes
+    translated 中文 TO this form (金发姑娘 is the retired variant it replaces), and
+    engine/i18n.py::LEX agrees. alert_triage._QUAD_ZH's 金发经济 is overruled."""
+    from engine import i18n
+
+    assert mp._ZH_STATE_MAP["Goldilocks"] == i18n.LEX["Goldilocks"] == "理想增长"
+    assert mp._ZH_STATE_MAP["Reflation"] == i18n.LEX["Reflation"]
+    assert mp._ZH_STATE_MAP["Stagflation"] == i18n.LEX["Stagflation"]
+    assert mp._ZH_STATE_MAP["Deflation"] == i18n.LEX["Deflation"]
+    assert mp._ZH_STATE_MAP["Growth-scare/Deflation"] == i18n.LEX["Growth-scare/Deflation"]
+    assert mp._ZH_STATE_MAP["Growth scare"] == i18n.LEX["Growth scare"]
+    # Inflation / Disinflation have no LEX key — alert_triage is the house source.
+    from engine import alert_triage
+
+    assert mp._ZH_STATE_MAP["Inflation"] == alert_triage._QUAD_ZH["Inflation"]
+    assert mp._ZH_STATE_MAP["Disinflation"] == alert_triage._QUAD_ZH["Disinflation"]
+    # FROZEN + FINITE: generic macro nouns are deliberately NOT in the map.
+    for word in ("Growth", "Slowdown", "Recovery", "Contraction"):
+        assert word not in mp._ZH_STATE_MAP
+
+
+def test_zh_desk_precomputed_paths_are_untouched_by_the_substitution(tmp_path):
+    """The already-working zh fields (drivers _zh, curve_regime_zh, wire zh) still
+    render exactly as before — this fix is additive on the remaining English prose."""
+    rp = rates_payload()
+    rp["board"]["risk_row"]["curve_regime_label_zh"] = "熊市变陡"
+    root = make_root(tmp_path, rates=rp)
+    zh = mp.digest(root, lang="zh")
+    assert "美联储重定价" in zh and "置信度: 中" in zh and "归因: 明确" in zh
+    assert "curve: 熊市变陡" in zh
+    assert "美联储维持利率" in zh

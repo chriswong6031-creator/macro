@@ -485,3 +485,74 @@ def test_import_only_sheet_is_not_an_orphan(tmp_path):
     (tmp_path / "site" / "p.html").write_text(
         '<html><head><link rel="stylesheet" href="theme.css"></head></html>', encoding="utf-8")
     assert _orphaned_paired_stylesheets(tmp_path) == []
+
+
+# ── prune must respect pages this checkout cannot see ─────────────────────────
+# _prune_orphans reads orphanhood off the pages on disk. In a partial checkout
+# (sparse cone, scoped render, interrupted sync) that set is smaller than what
+# actually ships, so a stylesheet a missing page still links looks unreferenced
+# and is deleted — the page keeps its <link> and 404s. That is the shape behind
+# us_stocks.html -> 21f5c251.css (#3988) and the start-page panel sheet (#4042).
+
+
+def _git(repo, *args):
+    import subprocess
+    subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+
+def _init_repo(tmp_path):
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.email", "t@t.t")
+    _git(tmp_path, "config", "user.name", "t")
+    return tmp_path / "site"
+
+
+def test_prune_spares_a_sheet_only_an_absent_committed_page_links(tmp_path):
+    site = _init_repo(tmp_path)
+    css = site / "assets" / "css"
+    css.mkdir(parents=True)
+    (css / "abcd1234.css").write_text("/* linked by the absent page */", encoding="utf-8")
+    (site / "gone.html").write_text(
+        '<html><head><link rel="stylesheet" href="assets/css/abcd1234.css?v=abcd1234">'
+        "</head></html>", encoding="utf-8")
+    (site / "here.html").write_text("<html><head></head><body></body></html>", encoding="utf-8")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "-c", "commit.gpgsign=false", "commit", "-qm", "seed")
+
+    (site / "gone.html").unlink()  # simulate the partial checkout
+    externalize(site)
+
+    assert (css / "abcd1234.css").exists(), (
+        "pruned a stylesheet that a committed-but-absent page still links")
+
+
+def test_prune_still_reclaims_a_truly_unreferenced_sheet_in_a_repo(tmp_path):
+    """The guard must not disable pruning wholesale — no page links this one."""
+    site = _init_repo(tmp_path)
+    css = site / "assets" / "css"
+    css.mkdir(parents=True)
+    orphan = css / "00000000.css"
+    orphan.write_text("/* nobody links me */", encoding="utf-8")
+    (site / "macro.html").write_text("<html><head></head><body></body></html>", encoding="utf-8")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "-c", "commit.gpgsign=false", "commit", "-qm", "seed")
+
+    externalize(site)
+    assert not orphan.exists()
+
+
+def test_absent_page_that_dropped_its_link_does_not_pin_the_sheet_forever(tmp_path):
+    """Refs come from the COMMITTED bytes, so a sheet stays only while some
+    committed page still links it — reclaim lags a partial checkout by one
+    render, it does not stall."""
+    site = _init_repo(tmp_path)
+    css = site / "assets" / "css"
+    css.mkdir(parents=True)
+    (css / "abcd1234.css").write_text("/* stale */", encoding="utf-8")
+    (site / "gone.html").write_text("<html><head></head><body></body></html>", encoding="utf-8")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "-c", "commit.gpgsign=false", "commit", "-qm", "seed")
+
+    (site / "gone.html").unlink()
+    externalize(site)
+    assert not (css / "abcd1234.css").exists()

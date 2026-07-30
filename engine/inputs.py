@@ -59,12 +59,56 @@ def _yahoo_close(name: str, basis: str = "tr") -> pd.Series | None:
     return s
 
 
+def flatten_fred_aliases(series_cfg: dict[str, dict[str, str]]) -> dict[str, str]:
+    """Flatten config ``fred.series`` groups into one series_id -> alias map.
+
+    Raises ValueError when two DIFFERENT series ids claim the same alias. Without
+    that check the flattening resolves the clash by config order — the last group to
+    register the alias wins, the other series is silently absent from the feature
+    frame, and the surviving one answers to a name that was meant for its neighbour.
+    Nothing raises and nothing logs, so the only symptom is a plausible wrong number:
+    the 3m curve node was sourced from the discount-basis bill (DTB3) instead of the
+    constant-maturity yield (DGS3MO) this way until 2026-07-30.
+
+    Re-registering the SAME id in several groups is legal and common (a series may
+    feed several engines); it must simply use one alias everywhere, which
+    tests/test_fred_series_alias_conflicts.py enforces from the other side.
+    """
+    out: dict[str, str] = {}
+    owner: dict[str, str] = {}
+    for group_name, group in (series_cfg or {}).items():
+        if not isinstance(group, dict):
+            continue
+        for sid, alias in group.items():
+            prior = owner.get(alias)
+            if prior is not None and prior != sid:
+                raise ValueError(
+                    f"FRED alias {alias!r} is claimed by two series ids: {prior} and "
+                    f"{sid} (group {group_name}). Flattening resolves that by config "
+                    f"order and serves whichever lands last, so one series would go "
+                    f"silently missing. Give each series its own alias under "
+                    f"fred.series in config.yml."
+                )
+            owner[alias] = sid
+            out[sid] = alias
+    return out
+
+
 def _fred(col_by_sid: dict[str, str]) -> dict[str, pd.Series]:
+    """Read each configured FRED series into its alias.
+
+    Prefer the column that MATCHES the alias, positional only as the fallback. The
+    collector names a parquet's column after the alias, so renaming one leaves the
+    stored file carrying the old name until the next collect rewrites it, and a
+    re-aliased series that has been collected once holds both. Selecting by name
+    keeps the alias authoritative through that window instead of depending on
+    column order (same fail-soft idiom as forex_inputs._col / equity_alloc.bill_yield).
+    """
     out = {}
     for sid, col in col_by_sid.items():
         df = store.read("fred", sid)
         if df is not None and not df.empty:
-            out[col] = df.iloc[:, 0]
+            out[col] = df[col] if col in df.columns else df.iloc[:, 0]
     return out
 
 
@@ -205,10 +249,10 @@ def build_features(pit_basis: str | None = None,
     f["infl_basket"] = ib_long / ib_short
 
     # --- FRED ------------------------------------------------------------------
-    fred_map = {}
-    for grp in cfg["fred"]["series"].values():
-        fred_map.update(grp)
-    series = _fred(fred_map)
+    # flatten_fred_aliases raises on an alias claimed by two ids rather than letting
+    # config order decide it in silence. tests/test_fred_alias_collision.py gates the
+    # committed config; this catches a hand-edited one before it mis-sources a leg.
+    series = _fred(flatten_fred_aliases(cfg["fred"]["series"]))
     for col in ["us2y", "us10y", "spread_2s10s", "us10y_real", "breakeven_10y",
                 "breakeven_5y5y", "fed_funds", "hy_oas", "ig_oas", "vix_close"]:
         put(col, series.get(col))
@@ -269,9 +313,13 @@ def build_features(pit_basis: str | None = None,
         o = store.read("ofr_fsi", sid)
         put(col, o.iloc[:, 0] if o is not None and not o.empty else None, ffill_limit=7)
     # Commercial-paper spreads (daily): A2/P2 = credit-quality stress, CP-bill = funding
-    # stress. The bill leg (us3m) is loaded with the fuller curve below.
+    # stress. The bill leg is us3m_bill (DTB3), NOT the us3m curve node: the Fed quotes
+    # CP as annual discount yields, so the discount-basis bill is the basis-matched
+    # comparator and the bond-equivalent CMT would shave ~13bp off the spread by
+    # convention alone.
     put("aa_cp_90d", series.get("aa_cp_90d"), ffill_limit=7)
     put("a2p2_cp_90d", series.get("a2p2_cp_90d"), ffill_limit=7)
+    put("us3m_bill", series.get("us3m_bill"))
     # Recession reads: Sahm + smoothed prob (monthly, ~6wk publication lag), ACM
     # term premium (daily). 70 bdays carries a monthly print until its successor.
     put("sahm", series.get("sahm"), ffill_limit=70)

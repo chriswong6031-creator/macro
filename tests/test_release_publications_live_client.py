@@ -263,6 +263,234 @@ if (api.freshness() !== "stale") {{
     assert result.returncode == 0, result.stderr
 
 
+ACTION_PLAN_DRIVER = r"""
+const fs = require("fs");
+const vm = require("vm");
+
+// Minimal DOM. Only class-compound selectors resolve; every other selector
+// matches nothing, which is exactly how the other patch helpers behave on a page
+// that lacks those surfaces (they no-op instead of throwing).
+function TextNode(value) {
+  this.nodeValue = String(value);
+  this.childNodes = [];
+  this.parentNode = null;
+}
+Object.defineProperty(TextNode.prototype, "textContent", {
+  get: function () { return this.nodeValue; },
+  set: function (value) { this.nodeValue = String(value); }
+});
+
+function El(tag) {
+  this.tagName = String(tag).toUpperCase();
+  this.childNodes = [];
+  this.parentNode = null;
+  this.attributes = {};
+  this.className = "";
+  var self = this;
+  this.classList = {
+    add: function () {
+      Array.prototype.slice.call(arguments).forEach(function (name) {
+        if (self._classes().indexOf(name) < 0) {
+          self.className = self.className ? self.className + " " + name : name;
+        }
+      });
+    },
+    remove: function () {
+      var drop = Array.prototype.slice.call(arguments);
+      self.className = self._classes().filter(function (name) {
+        return drop.indexOf(name) < 0;
+      }).join(" ");
+    },
+    contains: function (name) { return self._classes().indexOf(name) >= 0; }
+  };
+}
+El.prototype._classes = function () {
+  return String(this.className || "").split(/\s+/).filter(Boolean);
+};
+El.prototype.appendChild = function (node) {
+  node.parentNode = this;
+  this.childNodes.push(node);
+  return node;
+};
+El.prototype.getAttribute = function (name) {
+  if (name === "class") return this.className;
+  return Object.prototype.hasOwnProperty.call(this.attributes, name) ?
+    this.attributes[name] : null;
+};
+El.prototype.setAttribute = function (name, value) {
+  if (name === "class") { this.className = String(value); return; }
+  this.attributes[name] = String(value);
+};
+Object.defineProperty(El.prototype, "textContent", {
+  get: function () {
+    return this.childNodes.map(function (node) { return node.textContent; }).join("");
+  },
+  set: function (value) {
+    this.childNodes = [];
+    if (String(value) !== "") this.appendChild(new TextNode(value));
+  }
+});
+El.prototype._descendants = function () {
+  var found = [];
+  this.childNodes.forEach(function (node) {
+    if (node instanceof El) {
+      found.push(node);
+      found = found.concat(node._descendants());
+    }
+  });
+  return found;
+};
+function selectorMatches(el, selector) {
+  if (!/^(\.[A-Za-z0-9_-]+)+$/.test(selector)) return false;
+  return selector.split(".").filter(Boolean).every(function (name) {
+    return el.classList.contains(name);
+  });
+}
+El.prototype.querySelectorAll = function (selector) {
+  return this._descendants().filter(function (el) {
+    return selectorMatches(el, selector);
+  });
+};
+El.prototype.querySelector = function (selector) {
+  return this.querySelectorAll(selector)[0] || null;
+};
+
+const root = new El("div");
+global.window = { location: { href: "https://www.mastermind-x.com/macro.html" } };
+global.document = {
+  readyState: "loading",
+  addEventListener: function () {},
+  createElement: function (tag) { return new El(tag); },
+  createTextNode: function (value) { return new TextNode(value); },
+  getElementById: function () { return null; },
+  querySelector: function (selector) { return root.querySelector(selector); },
+  querySelectorAll: function (selector) { return root.querySelectorAll(selector); }
+};
+
+vm.runInThisContext(fs.readFileSync(__TEMPLATE_PATH__, "utf8"));
+const api = window.__mmReleasePublicationTest;
+if (!api) throw new Error("test API missing");
+
+function freshActionRow() {
+  root.childNodes = [];
+  const label = new El("div");
+  label.className = "mx5-action-label";
+  const english = new El("span");
+  english.className = "l-en";
+  english.textContent = "GDP release today: expect noise; ignore the first move.";
+  const chinese = new El("span");
+  chinese.className = "l-zh";
+  chinese.textContent = "GDP 发布今日：波动会放大，忽略初动。";
+  label.appendChild(english);
+  label.appendChild(chinese);
+  root.appendChild(label);
+  return label;
+}
+function readPair(label) {
+  return {
+    en: label.querySelector(".l-en").textContent,
+    zh: label.querySelector(".l-zh").textContent
+  };
+}
+function check(actualValue, expected, what) {
+  if (actualValue !== expected) {
+    throw new Error(what + "\n  expected: " + expected + "\n  actual:   " + actualValue);
+  }
+}
+
+// A summary carrying a prospective word ("today") is the case that proves the
+// generic .l-en sweep still leaves this row alone now that the sentinel span is
+// gone: the sweep's isProspective test matches this text.
+const verifiedRow = {
+  event_id: "GDP:2026-07-30:08:30",
+  type: "GDP",
+  label: "GDP release",
+  label_zh: "GDP 发布",
+  date: "2026-07-30",
+  data_ready: true,
+  actual: { summary_en: "GDP rose 2.1% today.", summary_zh: "GDP 今日上升 2.1%。" }
+};
+
+let label = freshActionRow();
+api.patchProspectiveCopy(verifiedRow, true);
+let pair = readPair(label);
+check(pair.en, "Result: GDP rose 2.1% today.", "verified row lost its stance word");
+check(pair.zh, "结果：GDP 今日上升 2.1%。", "verified zh row lost its stance word");
+if (label.querySelector(".mx5-action-verb")) {
+  throw new Error("the CSS-less .mx5-action-verb chip came back");
+}
+if (/(Result|Status)[^:\s]/.test(pair.en)) {
+  throw new Error("stance word is jammed against the sentence: " + pair.en);
+}
+if (/(结果|状态)[^：]/.test(pair.zh)) {
+  throw new Error("zh stance word is jammed against the sentence: " + pair.zh);
+}
+
+// Re-poll: the row must survive its own second pass unchanged, and the spans are
+// rebuilt each time so the nodes have to be re-read.
+api.patchProspectiveCopy(verifiedRow, true);
+pair = readPair(label);
+check(pair.en, "Result: GDP rose 2.1% today.",
+  "a second poll flattened the row to the generic fallback");
+check(pair.zh, "结果：GDP 今日上升 2.1%。",
+  "a second poll flattened the zh row to the generic fallback");
+
+// Awaiting verification: the same sentence shape, no chip.
+label = freshActionRow();
+api.patchProspectiveCopy({
+  event_id: "GDP:2026-07-30:08:30",
+  type: "GDP",
+  label: "GDP release",
+  label_zh: "GDP 发布",
+  date: "2026-07-30",
+  data_ready: false,
+  actual: {}
+}, true);
+pair = readPair(label);
+check(pair.en,
+  "Status: GDP release publication detected — verified facts are being extracted.",
+  "awaiting row copy changed");
+check(pair.zh, "状态：GDP 发布官方发布已检测 — 正在提取核验信息。",
+  "awaiting zh row copy changed");
+
+// Verified with no extracted summary must not claim a result and deny it in the
+// same breath ("Result: … facts are being extracted").
+label = freshActionRow();
+api.patchProspectiveCopy({
+  event_id: "GDP:2026-07-30:08:30",
+  type: "GDP",
+  label: "GDP release",
+  label_zh: "GDP 发布",
+  date: "2026-07-30",
+  data_ready: true,
+  actual: {}
+}, true);
+pair = readPair(label);
+check(pair.en, "Result: GDP release released — see verified outcome.",
+  "verified fallback copy changed");
+check(pair.zh, "结果：GDP 发布已发布 — 查看核验结果。",
+  "verified zh fallback copy changed");
+"""
+
+
+def test_action_plan_row_reads_as_a_sentence_not_a_styleless_chip():
+    """The stance word is sentence text; `.mx5-action-verb` had no CSS anywhere.
+
+    Drives the real client against a synthetic release row: the retired span was
+    also the sentinel that kept the generic `.l-en` sweep off these rows, so this
+    pins both the rendered copy and the sweep's hands-off behaviour.
+    """
+    driver = ACTION_PLAN_DRIVER.replace("__TEMPLATE_PATH__", json.dumps(str(TEMPLATE)))
+    result = subprocess.run(
+        ["node", "-e", driver],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
 def test_release_publication_client_patches_all_event_surfaces():
     source = TEMPLATE.read_text()
     for contract in (
@@ -284,6 +512,7 @@ def test_release_publication_client_patches_all_event_surfaces():
         "publication detected — verified facts are being extracted",
         'data-live-event-id',
         "FOMC (?:decision|statement)",
+        "data-live-action-plan",
         "activeReleaseGroup",
         "patchEventsFaceGroup",
         "patchWhereNextGroup",

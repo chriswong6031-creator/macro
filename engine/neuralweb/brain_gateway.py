@@ -69,6 +69,15 @@ def _brain_quota_dir() -> Path:
 _BRAIN_CONFIG_CACHE: dict | None = None
 _BRAIN_CONFIG_MTIME: float = 0.0
 
+# Last-resort output ceiling for a Fast turn when config/brain.yml is unreadable or
+# carries no lanes.fast.max_tokens. Tracks config/brain.yml (which is the operator's
+# knob and the authority) — see the headroom note there: DeepSeek v4 thinks by default
+# and the thinking spends THIS budget, so a 2000 ceiling let a turn burn the whole cap
+# on reasoning and ship no text (live 2026-07-30). One kwarg feeds every round of the
+# turn (tool rounds and the synthesis call alike).
+_FAST_MAX_TOKENS = 4000
+_PRO_MAX_TOKENS_FALLBACK = 4000   # unchanged; brain.yml's pro lane runs 8000
+
 
 def _load_brain_config(root: Path | None = None) -> dict:
     """Load config/brain.yml with in-process caching; hardcoded fallbacks if absent.
@@ -99,7 +108,8 @@ def _load_brain_config(root: Path | None = None) -> dict:
                 "deepseek_key_env": "DEEPSEEK_API_KEY",
                 "deepseek_base_url": "https://api.deepseek.com/anthropic",
                 "fallback_model": "claude-haiku-4-5",
-                "max_tokens": 2000,
+                # Thinking shares this budget — see the note in config/brain.yml.
+                "max_tokens": _FAST_MAX_TOKENS,
                 "tool_budget": 5,
                 "usage_lane": "brain-fast",
             },
@@ -5426,6 +5436,7 @@ def _run_brain_loop_stream(
     # Buffer the full answer before emitting (post-filter must run on complete text)
     full_answer = ""
     usage_dict: dict = {}
+    _synth_stop: str | None = None   # synthesis stop_reason, for the degraded-stub log
 
     need_synthesis = last_stop == "tool_use"
     if need_synthesis:
@@ -5472,6 +5483,9 @@ def _run_brain_loop_stream(
                 _cand_thinking = _thinking_segments(
                     getattr(final_resp, "content", None), tool_call_count + 1,
                     "synthesis", _p.get("model"))
+                # Held for the degraded-stub log below: "why was the answer empty" is
+                # answered by the stop reason, and only this scope ever sees it.
+                _synth_stop = getattr(final_resp, "stop_reason", None)
                 u = getattr(final_resp, "usage", None)
                 if u:
                     usage_dict = {
@@ -5544,16 +5558,37 @@ def _run_brain_loop_stream(
     # turn or logged to the eval corpus. A legitimately advice-FILTERED-to-empty answer
     # keeps its own handling (the `filtered` flag drives the probation chip).
     display_answer = filtered_answer
+    stub_shipped = False
     if not (filtered_answer or "").strip() and not was_filtered:
         display_answer = _DEGRADED_USER_MSG
+        stub_shipped = True
+        # The _DEGRADED_USER_MSG comment promises "the real cause is logged
+        # server-side". THIS is that log — before it existed, this path was the one
+        # dead end that printed nothing anywhere: a live zh guest turn spent exactly
+        # the configured cap in output tokens on thinking, wrote no text, and left no
+        # trace at all (2026-07-30). Everything needed to separate "the cap was
+        # exhausted" from "the provider returned nothing" is on this one line, which
+        # is why max_tokens and the stop reason are on it. Request path (not an
+        # Actions step) — module logger, per the annotation-law exemption list.
+        log.warning(
+            "brain_gateway: EMPTY answer → degraded stub shipped (lane=%s model=%s "
+            "phase=%s stop=%s input_tokens=%s output_tokens=%s max_tokens=%s)",
+            lane, model, "synthesis" if need_synthesis else "tool-round",
+            _synth_stop or last_stop,
+            usage_dict.get("input_tokens"), usage_dict.get("output_tokens"), max_tokens)
     yield f"data: {json.dumps({'type': 'delta', 'text': display_answer})}\n\n"
 
     # Emit suggestions (W6d) — between delta and done, only when non-empty
     if suggestions:
         yield f"data: {json.dumps({'type': 'suggest', 'items': suggestions})}\n\n"
 
-    # Emit done
-    yield f"data: {json.dumps({'type': 'done', 'citations': citations, 'quota': meta_event.get('quota', {}), 'usage': usage_dict, 'filtered': was_filtered, 'degraded': False, 'is_context_only': True})}\n\n"
+    # Emit done. `degraded` means "what shipped is not a real answer" — so it is TRUE
+    # exactly when the stub above replaced an empty answer. It used to hardcode False
+    # here, which is how a live dead turn reported itself as healthy (2026-07-30). No
+    # consumer contradicts this: mm_brain.js's finalizeDone reads only `citations` and
+    # `quota`, and the response log never sees this turn (_log_brain_response drops
+    # empty answers, and answer_out below still carries the REAL empty answer).
+    yield f"data: {json.dumps({'type': 'done', 'citations': citations, 'quota': meta_event.get('quota', {}), 'usage': usage_dict, 'filtered': was_filtered, 'degraded': stub_shipped, 'is_context_only': True})}\n\n"
 
     # Side-channel: hand real usage back to the caller (fix #1)
     if usage_out is not None:
@@ -5941,7 +5976,8 @@ def chat(
         lane = "pro"
 
     lane_cfg = lanes_cfg.get(lane) or {}
-    max_tokens = int(lane_cfg.get("max_tokens") or (2000 if lane == "fast" else 4000))
+    max_tokens = int(lane_cfg.get("max_tokens")
+                     or (_FAST_MAX_TOKENS if lane == "fast" else _PRO_MAX_TOKENS_FALLBACK))
     tool_budget = int(lane_cfg.get("tool_budget") or (5 if lane == "fast" else 10))
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
     effort = lane_cfg.get("effort")
@@ -6258,7 +6294,8 @@ def chat_stream(
         lane = "pro"
 
     lane_cfg = lanes_cfg.get(lane) or {}
-    max_tokens = int(lane_cfg.get("max_tokens") or (2000 if lane == "fast" else 4000))
+    max_tokens = int(lane_cfg.get("max_tokens")
+                     or (_FAST_MAX_TOKENS if lane == "fast" else _PRO_MAX_TOKENS_FALLBACK))
     tool_budget = int(lane_cfg.get("tool_budget") or (5 if lane == "fast" else 10))
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
     # High-intensity intent (per-lane): effort + thinking mode, applied Claude-path-only.

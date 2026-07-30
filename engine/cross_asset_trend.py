@@ -213,8 +213,11 @@ def carry_panel(cfg: dict | None = None) -> dict:
     rows = []
     d10 = store.read("fred", "DGS10")
     d3 = store.read("fred", "DTB3")
-    if d10 is not None and d3 is not None and "us10y" in d10 and "us3m" in d3:
-        sp = float(d10["us10y"].dropna().iloc[-1] - d3["us3m"].dropna().iloc[-1])
+    # Read the bill positionally: DTB3's column follows its config alias (us3m ->
+    # us3m_bill, 2026-07-30), and a hard `"us3m" in d3` gate would not fail loudly —
+    # it would just drop this row from the panel on the rename.
+    if d10 is not None and d3 is not None and "us10y" in d10 and not d3.empty:
+        sp = float(d10["us10y"].dropna().iloc[-1] - d3.iloc[:, 0].dropna().iloc[-1])
         rows.append({"key": "rates_term", "label_en": "Rates term-spread (10y-3m)",
                      "label_zh": "利率期限利差 (10年-3月)", "value": round(sp, 2), "unit": "%",
                      "state": "positive carry" if sp > 0 else "inverted (negative carry)"})

@@ -7,6 +7,10 @@ this is CHANGE-DETECTION across runs: it diffs each subsector's rotation *state*
 against the prior snapshot in data/subsector_rotation/state.json and emits one
 event when a subsector crosses a boundary —
 
+  rotation_turn_up    a subsector's CYCLE turn up is confirmed across sessions — it fell,
+                      then turned, and held (engine.subsector_turn). Severity carries a
+                      size + breadth term, so a one-name move cannot print `high`.
+  rotation_turn_down  the mirror: it ran, then rolled over, confirmed.
   rotation_emerging   a subsector newly enters the Improving/Leading quadrant
                       with positive acceleration (a rotate-IN early signal).
   rotation_fading     a former leader newly flips to Weakening (rotate-OUT).
@@ -71,8 +75,29 @@ def _is_emerging(s: dict) -> bool:
 def _snapshot(payload: dict) -> dict:
     """Per-subsector fields we diff against next run."""
     return {s["key"]: {"name": s["name"], "theme": s.get("theme", ""),
-                       "quadrant": s.get("quadrant"), "emerging": _is_emerging(s)}
+                       "quadrant": s.get("quadrant"), "emerging": _is_emerging(s),
+                       "turn_state": s.get("turn_state")}
             for s in payload.get("subsectors", []) if s.get("key")}
+
+
+def _turn_severity(s: dict, up: bool) -> str:
+    """Severity from SIZE and BREADTH, not from how excited the copy is.
+
+    RC-R5 (Rotation Command §3) recorded the failure this addresses: the desk fired 21
+    alerts a run, all at `minor`, so the one that mattered was indistinguishable from the
+    other twenty. A confirmed turn earns `high` only when the node is broad enough to be a
+    rotation and its members actually participated — a single-name move stays `minor`
+    however violent its z-score.
+    """
+    confirmed = s.get("turn_state") in ("turn_up", "turn_down")
+    n = int(s.get("n_members") or 0)
+    brd = (s.get("breadth") or {}).get("turn_up" if up else "turn_dn")
+    score = float(s.get("bottom_score" if up else "top_score") or 0.0)
+    if confirmed and n >= 6 and (brd or 0) >= 0.7 and score >= 0.70:
+        return "high"
+    if confirmed and n >= 4:
+        return "medium"
+    return "minor"
 
 
 def _ev(key, ts, type_, severity, headline, detail, context, headline_zh="", detail_zh=""):
@@ -100,6 +125,66 @@ def compute_events(payload: dict, prior: dict | None) -> list[dict]:
         emerging_now = _is_emerging(s)
         nm, th = s["name"], s.get("theme", "")
         qd = s.get("quadrant")
+        # ── TURN events (engine/subsector_turn.py): a confirmed cycle turn, fired once on
+        # the transition into the confirmed state. These lead the triage; the quadrant-flow
+        # events below stay as they were.
+        # Seed the turn lane silently when the prior snapshot has no `turn_state` at all —
+        # a state file written before the turn engine shipped, or a node's first ever
+        # appearance. Without this, the first run after deploy fires every already-confirmed
+        # turn at once (11 on the 2026-07-30 cross-section), which is the alert storm the
+        # seed-silent rule exists to prevent, not a set of transitions that happened today.
+        st_now, st_was = s.get("turn_state"), was.get("turn_state")
+        if "turn_state" not in was:
+            st_now = None
+        if st_now in ("turn_up", "turn_down") and st_now != st_was:
+            up = st_now == "turn_up"
+            sev = _turn_severity(s, up)
+            brd = (s.get("breadth") or {}).get("turn_up" if up else "turn_dn")
+            brd_txt = f"{round((brd or 0) * 100)}% of members" if brd is not None else "breadth n/a"
+            brd_zh = f"{round((brd or 0) * 100)}% 成分股" if brd is not None else "成分股数据不足"
+            conc = " · carried by one name" if (s.get("breadth") or {}).get("concentrated") else ""
+            conc_zh = " · 主要由单一成分股带动" if (s.get("breadth") or {}).get("concentrated") else ""
+            # The verb carries the direction, so the magnitude is absolute — "fell -40.5%"
+            # is a double negative. And the engine publishes WHICH path qualified the node:
+            # one that qualified on its RS line would otherwise read "fell 0%" while sitting
+            # at its price high.
+            mkt_w = _f((s.get("pace_mkt") or {}).get("w1"))
+            lead = (s.get("basis_up") if up else s.get("basis_dn")) == "leadership"
+            src = (s.get("rs_dd_from_peak") if up else s.get("rs_up_from_trough")) if lead \
+                else (s.get("dd_from_peak") if up else s.get("up_from_trough"))
+            mag = f"{abs(src):.1f}" if src is not None else "—"   # magnitude, unsigned
+            if up:
+                hl = f"🔄 Turned up — {nm} ({th})"
+                hl_zh = f"🔄 转为上行 — {nm}（{th}）"
+                fromwhat = (f"gave up {mag}% of its lead over the market" if lead
+                            else f"fell {mag}% from its 1-year high")
+                fromwhat_zh = (f"领先度自最佳水平回落 {mag}%" if lead
+                               else f"自一年高点回落 {mag}%")
+                det = (f"{nm} {fromwhat} and has now turned up on confirmed sessions — this week "
+                       f"{_pc(s, '1W')} vs the market's {mkt_w}%/wk, {brd_txt} turning with it{conc}. "
+                       f"Context, not a buy list.")
+                det_zh = (f"{nm} {fromwhat_zh}，现已连续多个交易日确认转为上行"
+                          f"——本周 {_pc(s, '1W')}，市场为 {mkt_w}%/周，"
+                          f"{brd_zh}同步转向{conc_zh}。仅作参考，非买入清单。")
+            else:
+                hl = f"🔄 Turned down — {nm} ({th})"
+                hl_zh = f"🔄 转为下行 — {nm}（{th}）"
+                fromwhat = (f"built {mag}% of lead over the market" if lead
+                            else f"ran {mag}% off its 1-year low")
+                fromwhat_zh = (f"领先度累计扩大 {mag}%" if lead
+                               else f"自一年低点上涨 {mag}%")
+                det = (f"{nm} {fromwhat} and has now rolled over on confirmed sessions — this week "
+                       f"{_pc(s, '1W')} vs the market's {mkt_w}%/wk, {brd_txt} rolling with it{conc}. "
+                       f"Context, not a sell list.")
+                det_zh = (f"{nm} {fromwhat_zh}，现已连续多个交易日确认转为下行"
+                          f"——本周 {_pc(s, '1W')}，市场为 {mkt_w}%/周，"
+                          f"{brd_zh}同步走弱{conc_zh}。仅作参考，非卖出清单。")
+            out.append(_ev(key, ts, f"rotation_{st_now}", sev, hl, det,
+                           {"turn_state": st_now, "since": s.get("turn_since"),
+                            "score": s.get("turn_score"), "n_members": s.get("n_members"),
+                            "breadth": brd, "legs": s.get("legs_up" if up else "legs_dn"),
+                            "dd_from_peak": s.get("dd_from_peak"),
+                            "up_from_trough": s.get("up_from_trough")}, hl_zh, det_zh))
         # rotate-IN: newly emerging (was not in the accelerating set).
         if emerging_now and not was.get("emerging"):
             sev = "high" if (s.get("emerging_score") or 0) >= 1.8 else "minor"

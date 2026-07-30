@@ -29,7 +29,7 @@ TRADING_YEAR = 252  # equities trade ~252 days/yr (vs the BTC vector's 365)
 # data loaders (everything is already on disk — pure wiring)
 # --------------------------------------------------------------------------- #
 def bill_yield(prefer: tuple[tuple[str, str, str], ...] = (
-        ("fred", "DTB3", "us3m"),       # 3-mo T-bill, daily 1954-> (deepest)
+        ("fred", "DTB3", "us3m_bill"),  # 3-mo T-bill, daily 1954-> (deepest)
         ("fred", "DGS3MO", "us3m"),     # modern 3-mo CMT, 1981->
         ("fred", "DFF", "fed_funds"))) -> pd.Series:
     """Prevailing short bill yield (annualized %) — the cash-leg rate. Tries the

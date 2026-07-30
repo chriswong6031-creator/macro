@@ -28,6 +28,10 @@ on:
       - "config.yml"
       - "site/**"
       - "scripts/check_inline_js.py"
+      # dead-reference guard: a page linking a file that isn't in the tree is a
+      # silent 404 (pruned stylesheet #3988/#4042; the 605-page ../baskets/ typo).
+      - "scripts/check_site_asset_refs.py"
+      - "tests/test_check_site_asset_refs.py"
       - "scripts/check_site_js.py"
       - "scripts/check_nav_gap.py"
       - "scripts/check_nav_mega.py"
@@ -2041,6 +2045,8 @@ on:
       - "scripts/signal_sanity.py"
       # unrun-inline-js-guard
       - "tests/test_check_inline_js.py"
+      # unrun-dead-reference-guard
+      - "tests/test_check_site_asset_refs.py"
       # unrun-import-hygiene — the ratchet AST-scans engine/, lib/, scripts/ and
       # research/ for import-time process-global state.  engine/** and lib/** are
       # already broad catch-alls above; scripts/ and research/ were only covered

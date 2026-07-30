@@ -239,7 +239,10 @@ def _term_spread() -> pd.Series:
     if d10 is None or d3 is None:
         return pd.Series(dtype=float)
     a = d10["us10y"].astype(float) if "us10y" in d10 else d10.iloc[:, 0].astype(float)
-    b = d3["us3m"].astype(float) if "us3m" in d3 else d3.iloc[:, 0].astype(float)
+    # DTB3's column follows its config alias (us3m -> us3m_bill, 2026-07-30). The
+    # SERIES choice is deliberately unchanged here — this spread is a scored strategy
+    # input, so re-basing it to the CMT node is a signal change, not a plumbing fix.
+    b = (d3["us3m_bill"] if "us3m_bill" in d3 else d3.iloc[:, 0]).astype(float)
     idx = a.index.union(b.index)
     return (a.reindex(idx).ffill() - b.reindex(idx).ffill()).dropna()
 

@@ -295,6 +295,13 @@ fred:
       UMCSENT: umich_sentiment    # UMich consumer sentiment (monthly)
       MICH: umich_infl_exp        # UMich 1y inflation expectations (%)
     curve:                        # fuller Treasury curve (engine only sampled 2y/10y)
+      # SOLE owner of the us3m alias. Constant-maturity, quoted on an INVESTMENT
+      # (bond-equivalent) basis — the same basis as every other DGS* node here, so
+      # the curve in engine/yield_curve.NODES is internally consistent. FRED's
+      # T10Y3M is exactly DGS10 - DGS3MO (verified to 4e-16 on 11,142 of 11,144
+      # shared dates), so the spread_10y3m fallback in engine/inputs reconciles
+      # with the published spread instead of contradicting it.
+      # NOT to be confused with DTB3 (discount-basis bill) -> us3m_bill, below.
       DGS3MO: us3m                # the short leg of the NY Fed recession spread
       DGS6MO: us6m
       DGS5: us5y
@@ -382,7 +389,17 @@ fred:
       DTWEXAFEGS: broad_dollar_afe
       DTWEXEMEGS: broad_dollar_eme
     fx_rates_short:               # short/policy rates -> carry differential vs US (DFF).
-      DTB3: us3m                  # piecewise-constant => monthly cadence + ffill is correct
+      # 3m T-bill SECONDARY MARKET rate on a DISCOUNT basis (360-day) — structurally
+      # ~13bp BELOW the bond-equivalent CMT (DGS3MO -> us3m) and not interchangeable
+      # with it. Until 2026-07-30 this was ALSO aliased us3m; being the later group it
+      # won the flattened dict-merge in engine/inputs.build_features, so the entire CMT
+      # curve read its 3m node off a discount-basis bill (the two constructions disagree
+      # on whether 3m10y is inverted on 99 of the last 1260 sessions). Consumers:
+      # the CP-bill funding spread (engine/conditions.py — basis-matched, since the Fed
+      # quotes CP as annual discount yields too), equity_alloc's deep cash leg (1954->,
+      # read by series id), and the scripts/*_phase0.py studies (read the parquet direct).
+      # No FX carry leg reads it — the US leg is DFF (forex.drivers.us_short).
+      DTB3: us3m_bill
       SOFR: sofr
       ECBDFR: ez_short            # ECB deposit facility (daily, current)
       ECBMRRFR: ez_mrr
@@ -3264,9 +3281,17 @@ healthcheck:
 
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-  anchors: [stockdata, chinastockdata, feeds]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
+  anchors: [stockdata, chinastockdata, feeds, thetadata_eod]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
+                      # thetadata_eod (2026-07-30): the ~60 GB ThetaData EOD store's SOLE offsite backup —
+                      # per ops/THETADATA_R2_SYNC_RUNBOOK.md the store "exists only on the ops Mac". It had NO
+                      # tripwire, so a 3-night manifest freeze went unnoticed until a human read the log.
+                      # This list REPLACES audit_r2.DEFAULT_ANCHORS wholesale, so the anchor must be here to
+                      # take effect; tests/test_audit_r2.py pins it against a silent drop.
   max_age_hours: 26   # both lanes republish daily, landing ~05-10 UTC; the 14:30 UTC heartbeat sees ~5-9h
                       # fresh vs ~29-33h on the FIRST missed day — 26 trips on the first miss, ~30 can slide to day 2
+                      # thetadata_eod fits the same envelope: launchd 22:00 PT = ~05:00 UTC, so ~9.5h healthy
+                      # and ~33.5h on the first missed night. Only the heartbeat uses this list — daily.yml and
+                      # asia-close.yml pass their own --anchors, so their --max-age-hours 2/26 never reach it.
   asof_max_days: 6    # stockdata/SPY.json `asof` (content-level): last bar date; 3-day weekend + a holiday tolerated
 
 validation:
