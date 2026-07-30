@@ -41,10 +41,12 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=9a2599d0">
+<link rel="stylesheet" href="theme.css?v=720475f3">
 <link rel="stylesheet" href="assets/css/e9b6f992.css?v=e9b6f992">
+<link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
+<link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
 <link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
-<link rel="preload" as="style" href="navigation-refresh.css?v=6607344b">
+<link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
 </head>
 <body class="page-flow-desk">
 <div class="fd-aurora" aria-hidden="true"><i class="a1"></i><i class="a2"></i><i class="a3"></i></div>
@@ -53,7 +55,7 @@
   
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=6607344b">
+    <link rel="stylesheet" href="navigation-refresh.css?v=f38c6288">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -205,51 +207,59 @@
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-feat">
-          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
-          <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
-          <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
-          <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal is challenged</span><span class="l-zh">查看每个信号如何经过审议</span></span></span></a>
-        </div>
-        <div class="nav-mega-grid">
-          <div class="nav-mega-col">
-            <div class="nav-mega-h"><span class="l-en">Find Edge</span><span class="l-zh">寻找边际</span></div>
-            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Catch important themes early</span><span class="l-zh">提前捕捉重要主题</span></span></span></a>
-            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">See every theme in motion</span><span class="l-zh">查看所有主题的变化</span></span></span></a>
-            <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Find gaps between price and reality</span><span class="l-zh">寻找价格与现实的差距</span></span></span></a>
-            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Find signals lining up now</span><span class="l-zh">寻找当前共振信号</span></span></span></a>
-          </div>
-          <div class="nav-mega-col">
+        <div class="nav-mega-main">
+          <section class="nav-mega-section">
+            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
+            <div class="nav-mega-item-grid">
+              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
+              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+            </div>
+          </section>
+          <section class="nav-mega-section">
+            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
+            <div class="nav-mega-item-grid">
+              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+            </div>
+          </section>
+          <section class="nav-mega-section">
             <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">Track proven investor positioning</span><span class="l-zh">追踪优秀投资者的仓位</span></span></span></a>
-            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">See where conviction is building</span><span class="l-zh">观察资金信念正在形成</span></span></span></a>
-            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand where the cycle sits</span><span class="l-zh">理解周期所处位置</span></span></span></a>
-            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read the global regime quickly</span><span class="l-zh">快速读取全球宏观环境</span></span></span></a>
-          </div>
-          <div class="nav-mega-col nav-mega-explore">
-            <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Follow policy and capital rotation</span><span class="l-zh">追踪政策与资本轮动</span></span></span></a>
-            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Connect signals beyond price</span><span class="l-zh">连接价格之外的信号</span></span></span></a>
-            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Track event-driven opportunities</span><span class="l-zh">追踪事件驱动机会</span></span></span></a>
-            <div class="nav-drill" data-nav-drill>
-              <button class="nav-mega-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-                <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-                <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Explore markets and sectors</span><span class="l-zh">探索市场与行业周期</span></span></span>
-                <span class="nav-drill-arrow" aria-hidden="true">›</span>
-              </button>
-              <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
-                <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
-                <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
-                <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
-                <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Track countries and regions</span><span class="l-zh">追踪国家与区域</span></span></span></a>
-                <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">U.S. Sector Cycles</span><span class="l-zh">美国行业周期</span></span><span class="d"><span class="l-en">See every sector clock</span><span class="l-zh">查看所有行业周期</span></span></span></a>
-                <a class="nav-mega-item" href="sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">China Sector Cycles</span><span class="l-zh">中国行业周期</span></span><span class="d"><span class="l-en">Read China sector rotation</span><span class="l-zh">查看中国行业轮动</span></span></span></a>
-                <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand the full cycle</span><span class="l-zh">理解完整经济周期</span></span></span></a>
-                <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
-              </div>
+            <div class="nav-mega-item-grid">
+              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+            </div>
+          </section>
+        </div>
+        <aside class="nav-mega-rail">
+          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
+          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <div class="nav-drill" data-nav-drill>
+            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
+              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
+              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            </button>
+            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+              <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
+              <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
+              <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
+              <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Track countries and regions</span><span class="l-zh">追踪国家与区域</span></span></span></a>
+              <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">U.S. Sector Cycles</span><span class="l-zh">美国行业周期</span></span><span class="d"><span class="l-en">See every sector clock</span><span class="l-zh">查看所有行业周期</span></span></span></a>
+              <a class="nav-mega-item" href="sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">China Sector Cycles</span><span class="l-zh">中国行业周期</span></span><span class="d"><span class="l-en">Read China sector rotation</span><span class="l-zh">查看中国行业轮动</span></span></span></a>
+              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand the full cycle</span><span class="l-zh">理解完整经济周期</span></span></span></a>
+              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-        </div>
+          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+        </aside>
       </div>
     </div>
   </div>
@@ -1069,84 +1079,84 @@ html[data-theme="light"] .oew-legacy a{ color:#4c55a8; }
       <span class="help">?<span class="tip"><span class="l-en">Money moving in and out of the 11 sector SPDR ETFs, estimated from the daily change in shares outstanding × NAV. This is a proxy, not a direct flow measurement. Green = money in, red = money out. 5D / 21D are the rolling sums.</span><span class="l-zh">11只板块SPDR ETF的资金进出，按流通份额日变化×净值估算。此为代理指标，非直接资金流。绿=流入，红=流出。5D/21D为滚动合计。</span></span></span>
     </div>
     
-    <p class="xs muted" style="margin:-4px 0 10px"><span class="l-en">Creation / redemption proxy · SSGA</span><span class="l-zh">申购/赎回代理 · SSGA</span> · 29<span class="l-en">-session history</span><span class="l-zh">个交易日</span></p>
+    <p class="xs muted" style="margin:-4px 0 10px"><span class="l-en">Creation / redemption proxy · SSGA</span><span class="l-zh">申购/赎回代理 · SSGA</span> · 30<span class="l-en">-session history</span><span class="l-zh">个交易日</span></p>
     <div class="etf-grid">
       
       <div class="etf-cell">
-        <div class="e-tk">XLY</div>
+        <div class="e-tk">XLF</div>
         <div class="e-1d num pos">
-          +$145M</div>
-        <div class="e-hist">5D −$206M · 21D +$159M</div>
+          +$1.7B</div>
+        <div class="e-hist">5D +$1.9B · 21D +$4.1B</div>
       </div>
       
       <div class="etf-cell">
         <div class="e-tk">XLK</div>
         <div class="e-1d num pos">
-          +$81M</div>
-        <div class="e-hist">5D +$389M · 21D −$8.4B</div>
+          +$49M</div>
+        <div class="e-hist">5D +$308M · 21D +$932M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLU</div>
+        <div class="e-tk">XLP</div>
         <div class="e-1d num pos">
-          +$54M</div>
-        <div class="e-hist">5D −$116M · 21D +$457M</div>
+          +$35M</div>
+        <div class="e-hist">5D +$195M · 21D +$487M</div>
+      </div>
+      
+      <div class="etf-cell">
+        <div class="e-tk">XLY</div>
+        <div class="e-1d num pos">
+          +$12M</div>
+        <div class="e-hist">5D −$138M · 21D +$385M</div>
       </div>
       
       <div class="etf-cell">
         <div class="e-tk">XLRE</div>
         <div class="e-1d num pos">
-          +$3M</div>
-        <div class="e-hist">5D +$33M · 21D +$458M</div>
-      </div>
-      
-      <div class="etf-cell">
-        <div class="e-tk">XLC</div>
-        <div class="e-1d num neg">
-          −$6M</div>
-        <div class="e-hist">5D −$306M · 21D −$879M</div>
+          +$11M</div>
+        <div class="e-hist">5D +$48M · 21D +$393M</div>
       </div>
       
       <div class="etf-cell">
         <div class="e-tk">XLB</div>
-        <div class="e-1d num neg">
-          −$63M</div>
-        <div class="e-hist">5D +$90M · 21D +$368M</div>
+        <div class="e-1d num pos">
+          +$11M</div>
+        <div class="e-hist">5D +$90M · 21D +$332M</div>
       </div>
       
       <div class="etf-cell">
         <div class="e-tk">XLE</div>
         <div class="e-1d num neg">
-          −$81M</div>
-        <div class="e-hist">5D +$114M · 21D −$437M</div>
+          −$5M</div>
+        <div class="e-hist">5D −$90M · 21D −$491M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLI</div>
+        <div class="e-tk">XLU</div>
         <div class="e-1d num neg">
-          −$110M</div>
-        <div class="e-hist">5D −$215M · 21D +$165M</div>
+          −$8M</div>
+        <div class="e-hist">5D −$28M · 21D +$408M</div>
       </div>
       
       <div class="etf-cell">
-        <div class="e-tk">XLP</div>
+        <div class="e-tk">XLC</div>
         <div class="e-1d num neg">
-          −$274M</div>
-        <div class="e-hist">5D +$22M · 21D +$528M</div>
-      </div>
-      
-      <div class="etf-cell">
-        <div class="e-tk">XLF</div>
-        <div class="e-1d num neg">
-          −$317M</div>
-        <div class="e-hist">5D −$241M · 21D +$1.5B</div>
+          −$55M</div>
+        <div class="e-hist">5D −$228M · 21D −$849M</div>
       </div>
       
       <div class="etf-cell">
         <div class="e-tk">XLV</div>
         <div class="e-1d num neg">
-          −$612M</div>
-        <div class="e-hist">5D −$400M · 21D +$525M</div>
+          −$77M</div>
+        <div class="e-hist">5D −$477M · 21D +$986M</div>
+      </div>
+      
+      <div class="etf-cell">
+        <div class="e-tk">XLI</div>
+        <div class="e-1d num neg">
+          −$255M</div>
+        <div class="e-hist">5D −$255M · 21D +$82M</div>
       </div>
       
     </div>
@@ -1410,6 +1420,7 @@ html[data-theme="light"] .oew-legacy a{ color:#4c55a8; }
   document.addEventListener('langchange', function () { setTimeout(draw, 0); });
 })();
 </script>
-<script src="theme.js?v=d490b492" defer></script>
+<script src="theme.js?v=8bf865d2" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

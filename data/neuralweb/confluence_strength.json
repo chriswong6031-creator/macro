@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_strength.v1",
   "artifact_id": "confluence-strength",
-  "asof": "2026-07-25",
+  "asof": "2026-07-29",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -1728,6 +1728,19 @@
       "as_of": "2026-07-07",
       "direction": 1,
       "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "track_record"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "SBUX",
+      "as_of": "2026-07-07",
+      "direction": 1,
+      "horizon": "21.0",
       "n_confirming_raw": 2,
       "n_independent_confirming": 2.0,
       "engines": [
@@ -3988,6 +4001,19 @@
       "regime_bucket": "Q1"
     },
     {
+      "subject": "CBOE",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
       "subject": "CVX",
       "as_of": "2026-07-20",
       "direction": 1,
@@ -4001,6 +4027,32 @@
       "regime_bucket": "Q1"
     },
     {
+      "subject": "FOX",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "FOXA",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
       "subject": "KEY",
       "as_of": "2026-07-20",
       "direction": 1,
@@ -4010,6 +4062,19 @@
       "engines": [
         "altdata",
         "radar"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "KMT",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "intel_hub",
+        "us_board"
       ],
       "regime_bucket": "Q1"
     },
@@ -4352,10 +4417,10 @@
       "regime_bucket": "Q1"
     },
     {
-      "subject": "MSFT",
+      "subject": "VZ",
       "as_of": "2026-07-23",
       "direction": 1,
-      "horizon": "21.0",
+      "horizon": "5.0",
       "n_confirming_raw": 2,
       "n_independent_confirming": 2.0,
       "engines": [
@@ -4413,6 +4478,19 @@
       "engines": [
         "altdata",
         "radar"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "PG",
+      "as_of": "2026-07-29",
+      "direction": 1,
+      "horizon": "21.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "altdata_conv",
+        "intel_hub"
       ],
       "regime_bucket": "Q1"
     },
@@ -4519,6 +4597,71 @@
         "track_record"
       ],
       "regime_bucket": "Q1"
+    },
+    {
+      "subject": "DVN",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "track_record",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "FANG",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "track_record",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "MO",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "track_record",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "MSFT",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "track_record",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
+    },
+    {
+      "subject": "PLD",
+      "as_of": "2026-07-20",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "track_record",
+        "us_board"
+      ],
+      "regime_bucket": "Q1"
     }
   ],
   "redundancy_discount": {
@@ -4530,6 +4673,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-07-29T03:02:22Z",
+  "produced_at": "2026-07-30T03:44:57Z",
   "authority_check": []
 }

@@ -25,6 +25,19 @@ remaining half of the tier-aware cadence contract; it needs the resolver to take
 an account age, which is a design decision rather than a patch, so it is named
 here instead of being half-built.
 
+WHY THE SPEC FLOORS SIT BELOW THE RAMP'S 30 MINUTES (2026-07-28). Because of the
+above, a spec floor is not a wall-clock cadence — the LADDER paces (28 rungs at
+30-minute steps) and this floor only stops a burst. The publisher sweeps on that
+same 30-minute grid and books each post at ``now + jitter`` (up to
+``publish.post_jitter_max_min``), while the check below measures elapsed time
+from that BOOKED stamp at the next sweep. So the gap it can ever see is one step
+minus the send jitter, 23 minutes on today's grid. A floor at 30 — merely MATCHING
+the ramp's stated ``min_minutes_between_posts`` — therefore refuses the next rung
+every time and the desk runs at half cadence, ~15 posts/day against a 20/day tier,
+with every number in both configs still reading correctly. The committed specs sit
+at 20 + 3 jitter for exactly this reason.
+``tests/test_marketing_cadence_ramp_coherence.py`` pins the relation.
+
 DOCTRINE (constitution §13.8 "Adaptive cadence" — the requirements spec).
 Cadence should reflect market opportunity, account territory, time zone, recent
 topic load, relationship follow-ups, profile needs and output quality. v1 ships

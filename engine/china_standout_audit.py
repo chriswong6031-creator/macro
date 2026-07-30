@@ -523,6 +523,11 @@ def _compute_attribution(df: pd.DataFrame, bench: pd.Series | None) -> pd.DataFr
         rows.append({
             "date": date,
             "ticker": ticker,
+            "board_definition": (
+                str(row.get("board_definition"))
+                if pd.notna(row.get("board_definition"))
+                else "legacy"
+            ),
             "horizon": _GRADE_HORIZON,
             "taxonomy_version": _TAXONOMY_VERSION,
             "outcome_cause": outcome_cause,
@@ -567,11 +572,16 @@ def _build_scoreboard(attribution: pd.DataFrame, board: pd.DataFrame) -> dict:
     - Wilson CI on the cluster unit
     - cells with effective_n < _EFFECTIVE_N_FLOOR → ACCRUING, no CI
     """
+    board_definition = None
+    if not board.empty and "board_definition" in board.columns:
+        defs = board["board_definition"].dropna().astype(str)
+        board_definition = defs.iloc[-1] if not defs.empty else None
     if attribution.empty:
         return {
             "as_of": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
             "schema": "cn_audit_scoreboard.v1",
             "taxonomy_version": _TAXONOMY_VERSION,
+            "board_definition": board_definition,
             "note": "no matured rows yet — accruing",
             "cells": [],
             "outcome_cause_mix": {},
@@ -641,6 +651,7 @@ def _build_scoreboard(attribution: pd.DataFrame, board: pd.DataFrame) -> dict:
         "as_of": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "schema": "cn_audit_scoreboard.v1",
         "taxonomy_version": _TAXONOMY_VERSION,
+        "board_definition": board_definition,
         "total_matured": len(attribution),
         "cells": cells,
         "outcome_cause_mix": {str(k): int(v) for k, v in outcome_mix.items()},
@@ -900,9 +911,15 @@ def _write_evidence(
     p = _evidence_path(root)
     p.parent.mkdir(parents=True, exist_ok=True)
 
-    # Identify new rows: (date, ticker) not already in evidence file
+    # Identify new rows by board instrument as well as date/ticker.
     new_rows = attribution[
-        ~attribution.apply(lambda r: (str(r["date"]) + "_" + str(r["ticker"])) in prior_evidence_tickers, axis=1)
+        ~attribution.apply(
+            lambda r: (
+                str(r.get("board_definition") or "legacy")
+                + "_" + str(r["date"]) + "_" + str(r["ticker"])
+            ) in prior_evidence_tickers,
+            axis=1,
+        )
     ]
     if new_rows.empty:
         return 0
@@ -913,6 +930,9 @@ def _write_evidence(
                 pack = {
                     "date": str(row["date"]),
                     "ticker": str(row["ticker"]),
+                    "board_definition": str(
+                        row.get("board_definition") or "legacy"
+                    ),
                     "horizon": int(row["horizon"]),
                     "taxonomy_version": str(row["taxonomy_version"]),
                     "species_id": row["species_id"] if pd.notna(row.get("species_id", None)) else None,
@@ -947,6 +967,7 @@ def run_attribution(
     root: Path | None = None,
     lane: str | None = None,
     fwd_excess_map: dict | None = None,
+    board_definition: str | None = None,
 ) -> dict:
     """Run CN two-axis attribution and write all output artifacts.
 
@@ -960,6 +981,8 @@ def run_attribution(
     fwd_excess_map: optional {(ticker, date_str): excess_float} pre-computed from
         grade() to avoid double price-store I/O. When provided, _attach_fwd_excess
         skips the per-ticker loop and uses this map directly.
+    board_definition: optional exact selection-instrument version. When supplied,
+        refuse attribution rather than falling back to a different historical board.
     """
     try:
         effective_lane = lane if lane is not None else os.environ.get("CN_LANE", "")
@@ -983,6 +1006,41 @@ def run_attribution(
         if board.empty:
             return {"written": False, "reason": "board is empty"}
 
+        # A board definition is a different selection instrument.  Keep the
+        # legacy wide cascade/setup board out of China Prophet v2's attribution
+        # and scoreboard even when both definitions share the same parquet.
+        from engine import china_standout_track as cst  # noqa: PLC0415
+
+        requested_definition = board_definition
+        if requested_definition:
+            if "board_definition" in board.columns:
+                exact = board[
+                    board["board_definition"].fillna("legacy").astype(str)
+                    == str(requested_definition)
+                ].copy()
+            else:
+                exact = (
+                    board.copy()
+                    if requested_definition == "legacy"
+                    else pd.DataFrame()
+                )
+            if exact.empty:
+                return {
+                    "written": False,
+                    "board_definition": requested_definition,
+                    "reason": (
+                        "no board rows for requested definition "
+                        f"{requested_definition}"
+                    ),
+                }
+            board = exact
+            board_definition = str(requested_definition)
+        else:
+            board, detected_definition = cst._latest_definition_frame(board)  # noqa: SLF001
+            board_definition = detected_definition or "legacy"
+        board = board.copy()
+        board["board_definition"] = board_definition
+
         # Ensure fwd_21d_excess column exists (comes from grade()).
         # grade() does NOT write fwd_21d_excess back to parquet; we compute it here.
         # If fwd_excess_map is provided (e.g. from the grade() call), use it directly
@@ -999,6 +1057,7 @@ def run_attribution(
             _update_state_attribution(root)
             return {
                 "written": True,
+                "board_definition": board_definition,
                 "n_matured": 0,
                 "note": "no matured rows yet — wrote accruing scoreboard and fitness card",
             }
@@ -1010,15 +1069,34 @@ def run_attribution(
         if attr_path.exists():
             try:
                 prior_attr = pd.read_parquet(attr_path)
+                if "board_definition" not in prior_attr.columns:
+                    prior_attr = prior_attr.copy()
+                    prior_attr["board_definition"] = "legacy"
+                else:
+                    prior_attr["board_definition"] = (
+                        prior_attr["board_definition"].fillna("legacy").astype(str)
+                    )
                 for _, r in prior_attr.iterrows():
-                    prior_keys.add((str(r["date"]), str(r["ticker"]), int(r["horizon"]), str(r["taxonomy_version"])))
+                    prior_keys.add((
+                        str(r["board_definition"]),
+                        str(r["date"]),
+                        str(r["ticker"]),
+                        int(r["horizon"]),
+                        str(r["taxonomy_version"]),
+                    ))
             except Exception as exc:  # noqa: BLE001
                 log.warning("china_standout_audit: cannot read prior attribution: %s", exc)
 
         # Keep-first: only append truly new rows
         if prior_keys:
             new_mask = ~attribution.apply(
-                lambda r: (str(r["date"]), str(r["ticker"]), int(r["horizon"]), str(r["taxonomy_version"])) in prior_keys,
+                lambda r: (
+                    str(r.get("board_definition") or "legacy"),
+                    str(r["date"]),
+                    str(r["ticker"]),
+                    int(r["horizon"]),
+                    str(r["taxonomy_version"]),
+                ) in prior_keys,
                 axis=1,
             )
             new_attribution = attribution[new_mask]
@@ -1030,6 +1108,13 @@ def run_attribution(
             try:
                 if attr_path.exists() and not new_attribution.empty:
                     prior_df = pd.read_parquet(attr_path)
+                    if "board_definition" not in prior_df.columns:
+                        prior_df = prior_df.copy()
+                        prior_df["board_definition"] = "legacy"
+                    else:
+                        prior_df["board_definition"] = (
+                            prior_df["board_definition"].fillna("legacy").astype(str)
+                        )
                     combined = pd.concat([prior_df, new_attribution], ignore_index=True)
                 else:
                     combined = attribution
@@ -1042,6 +1127,16 @@ def run_attribution(
             full_attribution = pd.read_parquet(attr_path) if attr_path.exists() else attribution
         except Exception:  # noqa: BLE001
             full_attribution = attribution
+        if "board_definition" not in full_attribution.columns:
+            full_attribution = full_attribution.copy()
+            full_attribution["board_definition"] = "legacy"
+        else:
+            full_attribution["board_definition"] = (
+                full_attribution["board_definition"].fillna("legacy").astype(str)
+            )
+        full_attribution = full_attribution[
+            full_attribution["board_definition"].astype(str) == board_definition
+        ].copy()
 
         # Write evidence JSONL
         prior_evidence: set[str] = set()
@@ -1053,7 +1148,11 @@ def run_attribution(
                     if not line:
                         continue
                     obj = json.loads(line)
-                    prior_evidence.add(str(obj.get("date", "")) + "_" + str(obj.get("ticker", "")))
+                    prior_evidence.add(
+                        str(obj.get("board_definition") or "legacy")
+                        + "_" + str(obj.get("date", ""))
+                        + "_" + str(obj.get("ticker", ""))
+                    )
             except Exception as exc:  # noqa: BLE001
                 log.warning("china_standout_audit: cannot read prior evidence: %s", exc)
         n_new_evidence = _write_evidence(new_attribution, prior_evidence, root)
@@ -1069,6 +1168,7 @@ def run_attribution(
 
         return {
             "written": True,
+            "board_definition": board_definition,
             "n_matured": len(full_attribution),
             "n_new_this_run": len(new_attribution),
             "n_new_evidence": n_new_evidence,

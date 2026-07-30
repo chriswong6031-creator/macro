@@ -56,7 +56,7 @@ def test_glance_is_capped_at_three_rendered_rows():
 def test_active_policy_takes_the_third_priority_slot():
     html = _render_glance(policy_state="ARMED")
     assert html.count('class="mx5-action-item') == 3
-    assert "Watch for repricing." in html
+    assert "Watch for policy repricing." in html
     assert "Avoid chasing extended leaders." not in html
 
 
@@ -79,3 +79,19 @@ def test_primary_copy_is_short_and_live_patchable():
     glance = _glance_source()
     assert "Trade small. Stay selective." in glance
     assert "{{ MS.label_en }} &middot; {{ MS.score }}/100" in glance
+
+
+def test_glance_uses_the_dashboard_typography_without_alert_labels():
+    """The compact face should read like the surrounding cards, not an alert feed."""
+    source = DASH.read_text(encoding="utf-8")
+    start = source.index("/* ── WHAT TO DO (three-priority glance")
+    end = source.index("/* ── UPCOMING EVENTS", start)
+    css = source[start:end]
+    html = _render_glance()
+
+    assert "font-weight:500" in css
+    assert "font-weight:560" not in css
+    assert "font-weight:720" not in css
+    assert "font-weight:760" not in css
+    assert "text-transform:uppercase" not in css
+    assert "mx5-action-verb" not in html

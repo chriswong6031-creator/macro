@@ -1,7 +1,7 @@
 {
  "schema": "validated_allowlist.v1",
  "purpose": "W4.6 / BC-2 (PREREGISTRATION.md §4). Each entry justifies an AFFIRMATIVE use of the word 'validated'/'已验证' in a user-facing surface by naming the backing evidence artifact or the reason the use is legitimate. scripts/check_validated_claims.py fails CI on any affirmative 'validated' claim that matches NO entry here (negated/hedged uses — 'no validated edge', 'not a validated', 'unvalidated', '未验证' — are ignored automatically). Keep entries phrase-scoped, not file:line-scoped, so they survive page regeneration. Adding an entry is a claim of record: it must cite an artifact or a documented study.",
- "notes": "The `match` field is a case-insensitive substring that must appear on the same line as the token. `backing` names the artifact/doc that earns it. Order does not matter. DO NOT add entries for quoted third-party research: verbatim text mirrored from syndicated institutional notes (site/research/*.html, site/research/index.html, the baked catalog in site/research_vault.html) is skipped STRUCTURALLY by _THIRD_PARTY_PAGES in scripts/check_validated_claims.py, because reported speech from a named external author is not a platform claim and has no artifact to cite. An entry here is a claim of record; a third-party quote is not ours to make one about. If such a quote reds the gate, the sink is unmapped — extend _THIRD_PARTY_PAGES (and tests/test_validated_claims_thirdparty.py) rather than allowlisting the sentence.",
+ "notes": "The `match` field is a case-insensitive substring that must appear on the same line as the token. `surfaces` is ENFORCED (2026-07-29): it lists the page/module surfaces the justification was written for, and a claim is backed only when the claiming file's surface is in the list — a phrase justified for one page never licenses another (scripts/check_validated_claims._surfaces_of maps file -> surface; the derivation is basename-minus-suffix, with site/<dir>/ item pages folded into their family and one-template-many-pages renders folded together). An entry with a missing or empty `surfaces` list backs NOTHING, so a new entry must always declare where it applies; when a claim moves to a new page, extend the entry only if the SAME backing covers that page, else write a new entry naming the study that does. `backing` names the artifact/doc that earns it. Order does not matter. DO NOT add entries for quoted third-party research: verbatim text mirrored from syndicated institutional notes (site/research/*.html, site/research/index.html, the baked catalog in site/research_vault.html) is skipped STRUCTURALLY by _THIRD_PARTY_PAGES in scripts/check_validated_claims.py, because reported speech from a named external author is not a platform claim and has no artifact to cite. An entry here is a claim of record; a third-party quote is not ours to make one about. If such a quote reds the gate, the sink is unmapped — extend _THIRD_PARTY_PAGES (and tests/test_validated_claims_thirdparty.py) rather than allowlisting the sentence.",
  "allow": [
   {
    "match": "validated absolute-trend drawdown gate",
@@ -20,9 +20,10 @@
   },
   {
    "match": "validated edge = drawdown control",
-   "backing": "allocation_scorecard: the allocation algorithm's only validated edge is drawdown control (sector backtest panel 04).",
+   "backing": "allocation_scorecard: the allocation algorithm's only validated edge is drawdown control (sector backtest panel 04). allocation_scorecard.js is the allocation page's paired script that emits this line.",
    "surfaces": [
-    "allocation"
+    "allocation",
+    "allocation_scorecard"
    ]
   },
   {
@@ -48,11 +49,12 @@
   },
   {
    "match": "validated MACD-2D",
-   "backing": "research/SECTOR_CONFLUENCE.md — the MACD-2D x StochRSI-3D confluence gate (signal_gate T1/T2/T3); the buy gate guarding setups.json.",
+   "backing": "research/SECTOR_CONFLUENCE.md — the MACD-2D x StochRSI-3D confluence gate (signal_gate T1/T2/T3); the buy gate guarding setups.json. The dashboard/us_stocks Top-setups board is gated by the SAME signal_gate confluence (engine/signal_gate) the entry already covers on us_stocks_v2 / subsectors / discovery.",
    "surfaces": [
     "us_stocks_v2",
     "subsectors",
-    "discovery"
+    "discovery",
+    "dashboard"
    ]
   },
   {
@@ -86,9 +88,10 @@
   },
   {
    "match": "phase-0 validated",
-   "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — residual momentum phase-0 validated as a modest, regime-decayed edge (context, not a buy list).",
+   "backing": "research/RESIDUAL_ALPHA_MOMENTUM.md — residual momentum phase-0 validated as a modest, regime-decayed edge (context, not a buy list). The per-name page carries the same residual-momentum phase-0 sentence as the sector desk (engine/residual_alpha; research/RESIDUAL_ALPHA_MOMENTUM.md).",
    "surfaces": [
-    "sector"
+    "sector",
+    "stock"
    ]
   },
   {
@@ -214,9 +217,10 @@
   },
   {
    "match": "within the validated regime",
-   "backing": "HK desk — SIZING within the live risk regime (the vol/risk regime read is the validated overlay); NEVER a validated alpha.",
+   "backing": "HK desk — SIZING within the live risk regime (the vol/risk regime read is the validated overlay); NEVER a validated alpha. The per-name HK lookup states the same sizing-within-the-regime rule.",
    "surfaces": [
-    "hk"
+    "hk",
+    "hk_lookup"
    ]
   },
   {
@@ -314,11 +318,12 @@
   },
   {
    "match": "validated a-share",
-   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated A-share effects: within-sector 3M reversal (Sharpe 0.58) and low-vol defensive tilt (Sharpe 0.98). MEASURED, ~35y.",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated A-share effects: within-sector 3M reversal (Sharpe 0.58) and low-vol defensive tilt (Sharpe 0.98). MEASURED, ~35y. The Reversal Sleeve product page names the same within-sector 3M reversal edge.",
    "surfaces": [
     "china",
     "china_lookup",
-    "subsectors_china"
+    "subsectors_china",
+    "cn_reversal_sleeve"
    ]
   },
   {
@@ -338,9 +343,10 @@
   },
   {
    "match": "validated effect",
-   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — A-share mean-reversion entry, the validated effect (momentum is NOT).",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — A-share mean-reversion entry, the validated effect (momentum is NOT). The per-name CN lookup explains the same A-share mean-reversion effect.",
    "surfaces": [
-    "china"
+    "china",
+    "china_lookup"
    ]
   },
   {
@@ -366,9 +372,10 @@
   },
   {
    "match": "validated construction saw",
-   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated reversal construction's historical single-name drawdowns (deep by design).",
+   "backing": "research/CHINA_HK_STOCK_SIGNALS.md — the validated reversal construction's historical single-name drawdowns (deep by design). The Reversal Sleeve page carries the same deep-drawdown caveat for that construction.",
    "surfaces": [
-    "china"
+    "china",
+    "cn_reversal_sleeve"
    ]
   },
   {
@@ -388,10 +395,11 @@
   },
   {
    "match": "validated credit/vol/margin regime",
-   "backing": "the credit/vol/margin regime gate (vol_regime + credit/liquidity overlays) — the validated conditioning regime; gated-confluence read.",
+   "backing": "the credit/vol/margin regime gate (vol_regime + credit/liquidity overlays) — the validated conditioning regime; gated-confluence read. The CN sector desk uses the SAME conditioning-regime object as a gate; the claim is that the regime read is validated (vol_regime + credit/liquidity overlays), NOT that a CN-specific application was validated — the copy gates with it, never ranks on it.",
    "surfaces": [
     "stock",
-    "us_stocks"
+    "us_stocks",
+    "sector_central_china"
    ]
   },
   {
@@ -405,16 +413,19 @@
   },
   {
    "match": "validated de-risk score",
-   "backing": "engine.regime macro de-risk score — the validated overlay (reused).",
+   "backing": "engine.regime macro de-risk score — the validated overlay (reused). engine/ipo_radar reuses the same engine.regime de-risk score for its macro-backdrop row and the copy says so inline ('reused, not new').",
    "surfaces": [
-    "hk"
+    "hk",
+    "ipo"
    ]
   },
   {
    "match": "validated condition gauges",
-   "backing": "dashboard condition gauges — the validated macro tilt (recession & drawdown-risk de-risk; vol_regime + macro_risk_score).",
+   "backing": "dashboard condition gauges — the validated macro tilt (recession & drawdown-risk de-risk; vol_regime + macro_risk_score). engine/masterminds.py authors the sleeve description and mastermind_detail.html.j2 renders it onto the three strategy_mm_<profile> pages; the zh twin '已验证状态计的宏观倾斜' was already scoped to masterminds.",
    "surfaces": [
-    "dashboard"
+    "dashboard",
+    "masterminds",
+    "mastermind_detail"
    ]
   },
   {
@@ -427,9 +438,10 @@
   },
   {
    "match": "validated at the index level",
-   "backing": "engine/gex — GEX validated at the INDEX level (per-name is display-only).",
+   "backing": "engine/gex — GEX validated at the INDEX level (per-name is display-only). Restated in the signal-lab registry row for the GEX family (same engine/gex backing).",
    "surfaces": [
-    "gex"
+    "gex",
+    "signal_lab"
    ]
   },
   {
@@ -441,10 +453,11 @@
   },
   {
    "match": "validated signal",
-   "backing": "alerts / anticipation — 'backed by a validated signal' surfaces a hit-rate/IC/DSR ONLY where engine.signal_lab already validated that family (recession composite, quad, BTC risk regime, commodity risk index, etc.).",
+   "backing": "alerts / anticipation — 'backed by a validated signal' surfaces a hit-rate/IC/DSR ONLY where engine.signal_lab already validated that family (recession composite, quad, BTC risk regime, commodity risk index, etc.). The per-name alert why-line is the same engine.signal_lab-gated string as alerts.",
    "surfaces": [
     "alerts",
-    "anticipation"
+    "anticipation",
+    "stock"
    ]
   },
   {
@@ -463,28 +476,31 @@
   },
   {
    "match": "validated read",
-   "backing": "anticipation/impulse — the RISK cone is the validated read (empirical forward distribution); direction is a measured coin-flip.",
+   "backing": "anticipation/impulse — the RISK cone is the validated read (empirical forward distribution); direction is a measured coin-flip. The per-name page carries the same anticipation RISK-cone sentence.",
    "surfaces": [
     "anticipation",
     "impulse",
-    "china_lookup"
+    "china_lookup",
+    "stock"
    ]
   },
   {
    "match": "validated out-of-sample",
-   "backing": "data/regime/anticipation_gate.json — direction shown only where OOS-validated; the lean is a validated out-of-sample read.",
+   "backing": "data/regime/anticipation_gate.json — direction shown only where OOS-validated; the lean is a validated out-of-sample read. The per-name page shows the same anticipation direction lean, coloured only where data/regime/anticipation_gate.json marks the leg OOS-validated.",
    "surfaces": [
     "anticipation",
     "intl_stock",
-    "canada_stock"
+    "canada_stock",
+    "stock"
    ]
   },
   {
    "match": "validated label",
-   "backing": "baskets lifecycle — the slow, validated lifecycle label (the consolidated basket state machine); flagged when faster textures disagree.",
+   "backing": "baskets lifecycle — the slow, validated lifecycle label (the consolidated basket state machine); flagged when faster textures disagree. baskets_desk.js emits the same contested-lifecycle title as the baskets pages.",
    "surfaces": [
     "baskets",
-    "basket_detail"
+    "basket_detail",
+    "baskets_desk"
    ]
   },
   {
@@ -556,10 +572,11 @@
   },
   {
    "match": "validated channel",
-   "backing": "allocation — trend (drawdown control) is the one validated channel; also LVMUY contemporaneous co-move (altdata_quiver).",
+   "backing": "allocation — trend (drawdown control) is the one validated channel; also LVMUY contemporaneous co-move (altdata_quiver). Restated in the signal-lab W4-C7 registry row (the zh twin '已验证渠道为同期共动' was already scoped to signal_lab).",
    "surfaces": [
     "allocation",
-    "china_altdata"
+    "china_altdata",
+    "signal_lab"
    ]
   },
   {
@@ -571,11 +588,12 @@
   },
   {
    "match": "validated drawdown / sharpe engine",
-   "backing": "spvector — the validated drawdown/Sharpe engine (leave-one-crisis-out + AQR permutation null).",
+   "backing": "spvector — the validated drawdown/Sharpe engine (leave-one-crisis-out + AQR permutation null). The dashboard S&P↔T-bills card links the spvector engine and describes it.",
    "surfaces": [
     "spvector",
     "china",
-    "bonds"
+    "bonds",
+    "dashboard"
    ]
   },
   {
@@ -608,19 +626,21 @@
   },
   {
    "match": "validated 1998-2026",
-   "backing": "research/SECTOR_CONFLUENCE.md — the sector confluence engine validated 1998-2026.",
+   "backing": "research/SECTOR_CONFLUENCE.md — the sector confluence engine validated 1998-2026. The dashboard/us_stocks setups strip states the same base-rate window as the sector desk (same engine, research/SECTOR_CONFLUENCE.md).",
    "surfaces": [
     "sector",
-    "discovery"
+    "discovery",
+    "dashboard"
    ]
   },
   {
    "match": "validated point-in-time",
-   "backing": "reports / factor phase-0 — validated point-in-time (leak-free; e.g. insider Form-4 over S&P 1500, profitability/low-vol).",
+   "backing": "reports / factor phase-0 — validated point-in-time (leak-free; e.g. insider Form-4 over S&P 1500, profitability/low-vol). The discovery Top-Pick column describes the same PIT-validated conviction blend (engine/top_picks over the S&P 1500).",
    "surfaces": [
     "report",
     "us_stocks",
-    "factors"
+    "factors",
+    "discovery"
    ]
   },
   {
@@ -653,17 +673,19 @@
   },
   {
    "match": "validated blow-off tail",
-   "backing": "the parabolic (>2σ from 200d) blow-off / bubble-pullback flag (research/ bubble-pullback study).",
+   "backing": "the parabolic (>2σ from 200d) blow-off / bubble-pullback flag (research/ bubble-pullback study). The discovery board renders the SAME per-name parabolic chip as us_stocks / stock.",
    "surfaces": [
     "us_stocks",
-    "stock"
+    "stock",
+    "discovery"
    ]
   },
   {
    "match": "validated bubble-pullback",
-   "backing": "the >2σ parabolic bubble-pullback flag (bubble-pullback study).",
+   "backing": "the >2σ parabolic bubble-pullback flag (bubble-pullback study). The discovery stretch column explains the same >2σ parabolic flag.",
    "surfaces": [
-    "stock"
+    "stock",
+    "discovery"
    ]
   },
   {
@@ -676,32 +698,36 @@
   },
   {
    "match": "validated vs nber",
-   "backing": "leading-legs — jobless-claims leg validated vs NBER 1967-2026.",
+   "backing": "leading-legs — jobless-claims leg validated vs NBER 1967-2026. Restated in the signal-lab recession-composite registry row.",
    "surfaces": [
-    "dashboard"
+    "dashboard",
+    "signal_lab"
    ]
   },
   {
    "match": "strongest validated object",
-   "backing": "dashboard — the strongest validated object in the system (the vol/macro de-risk overlay), engine-scored.",
+   "backing": "dashboard — the strongest validated object in the system (the vol/macro de-risk overlay), engine-scored. signal_lab is the registry page that RESTATES each family's own scorecard verbatim (per-row `source` field) — same claim, same backing, quoted in the lab.",
    "surfaces": [
-    "dashboard"
+    "dashboard",
+    "signal_lab"
    ]
   },
   {
    "match": "validated, served masterminds gtaa",
-   "backing": "cross-asset trend is the validated, live masterminds GTAA primary factor (W_REGIME 0.45; china-masterminds).",
+   "backing": "cross-asset trend is the validated, live masterminds GTAA primary factor (W_REGIME 0.45; china-masterminds). Restated in the signal-lab cross-asset TSMOM registry row (its zh twin '已验证、已上线的 masterminds GTAA' was already scoped to signal_lab).",
    "surfaces": [
     "vector",
-    "dashboard"
+    "dashboard",
+    "signal_lab"
    ]
   },
   {
    "match": "validated china external-driver radar",
-   "backing": "engine/risk_radar_intl — the validated China external-driver radar (breadth collapse, US-rate shock, US-CN spread, USD). china-drawdown-edge-validated.",
+   "backing": "engine/risk_radar_intl — the validated China external-driver radar (breadth collapse, US-rate shock, US-CN spread, USD). china-drawdown-edge-validated. Restated in the signal-lab C3 registry row (its zh twin was already scoped there).",
    "surfaces": [
     "china",
-    "measurement"
+    "measurement",
+    "signal_lab"
    ]
   },
   {
@@ -812,9 +838,10 @@
   },
   {
    "match": "validated against the live index",
-   "backing": "empty-state starter chips validated against the live index membership (data check).",
+   "backing": "empty-state starter chips validated against the live index membership (data check). The watchlist empty-state uses the same live-membership existence check (data check, not a signal claim).",
    "surfaces": [
-    "subsectors"
+    "subsectors",
+    "watchlist"
    ]
   },
   {
@@ -826,16 +853,18 @@
   },
   {
    "match": "validated by this quarter",
-   "backing": "report — a Factor Watch addition validated by this quarter's trade (report prose about a realized event).",
+   "backing": "report — a Factor Watch addition validated by this quarter's trade (report prose about a realized event). The Factor-Watch sentence appears in the Second Act report as well; report prose about a realized trade.",
    "surfaces": [
-    "report_bessent"
+    "report_bessent",
+    "report_second_act"
    ]
   },
   {
    "match": "reaction function is being",
-   "backing": "report_second_act — 'the reaction function is being validated, not faded' (report prose about a policy episode).",
+   "backing": "report_second_act — 'the reaction function is being validated, not faded' (report prose about a policy episode). The same sentence appears in the Bessent report that the episode is about; both are report prose on a realized policy episode, not a live signal.",
    "surfaces": [
-    "report_second_act"
+    "report_second_act",
+    "report_bessent_jun24"
    ]
   },
   {
@@ -848,10 +877,11 @@
   },
   {
    "match": "validated stats live in the cave",
-   "backing": "display-only cluster whose validated stats live in the caveat/help (rigorously validated to have NO forward edge — an honest anti-claim surfaced as measurement).",
+   "backing": "display-only cluster whose validated stats live in the caveat/help (rigorously validated to have NO forward edge — an honest anti-claim surfaced as measurement). The per-name page carries the same display-only cluster comment.",
    "surfaces": [
     "factors",
-    "discovery"
+    "discovery",
+    "stock"
    ]
   },
   {
@@ -1038,10 +1068,11 @@
   },
   {
    "match": "确认/背景 — 已验证",
-   "backing": "zh — a validated confirmer/context leg (not a standalone signal).",
+   "backing": "zh — a validated confirmer/context leg (not a standalone signal). engine/signal_lab authors the tier label and signal_lab.html renders it — the page the label actually lives on.",
    "surfaces": [
     "dashboard",
-    "macro"
+    "macro",
+    "signal_lab"
    ]
   },
   {
@@ -1151,10 +1182,12 @@
   },
   {
    "match": "note\":\"validated forward-drawdown",
-   "backing": "engine-stamped data note — the China external-driver radar registry entry ('Validated forward-drawdown component'; engine/risk_radar_intl). Display-only metadata.",
+   "backing": "engine-stamped data note — the China external-driver radar registry entry ('Validated forward-drawdown component'; engine/risk_radar_intl). Display-only metadata. The same engine-stamped note rides the CN basket payload (site/baskets_china.html const BASKETS) and the CN sector-cycles payload (window.SECTOR_CYCLES) — one minified line each, same display-only metadata.",
    "surfaces": [
     "china",
-    "measurement"
+    "measurement",
+    "baskets_china",
+    "sector_cycles_china_data"
    ]
   },
   {
@@ -1187,9 +1220,10 @@
   },
   {
    "match": "均已验证",
-   "backing": "generated SECTOR_NARR body prose — an analog/narrative note that a pattern held at listed historical dates (descriptive cycle-DNA, not a live scored claim).",
+   "backing": "generated SECTOR_NARR body prose — an analog/narrative note that a pattern held at listed historical dates (descriptive cycle-DNA, not a live scored claim). window.SECTOR_DNA is the sector_cycles page's generated payload carrying that prose.",
    "surfaces": [
-    "sector_cycles"
+    "sector_cycles",
+    "sector_cycles_dna_data"
    ]
   },
   {
@@ -1281,10 +1315,12 @@
   },
   {
    "match": "已验证\"门槛",
-   "backing": "desk-grader fine-print zh span — quotes the grader's own 'proven' (zh 已验证) tier THRESHOLD: engine/desk_grader.py _proven_status needs n>=40 matured obs + significant Newey-West HAC t of the right sign, and the daily HAC IC needs MIN_DATES_IC=6 grading dates. A statement of the gate's mechanics (doctrine-quote, like the measurement.html entries); the EN twin span on the adjacent line says 'the \"proven\" gate'.",
+   "backing": "desk-grader fine-print zh span — quotes the grader's own 'proven' (zh 已验证) tier THRESHOLD: engine/desk_grader.py _proven_status needs n>=40 matured obs + significant Newey-West HAC t of the right sign, and the daily HAC IC needs MIN_DATES_IC=6 grading dates. A statement of the gate's mechanics (doctrine-quote, like the measurement.html entries); the EN twin span on the adjacent line says 'the \"proven\" gate'. Scope is the PARTIAL (templates/_desk_grader_panel.html.j2) plus every page that includes it — alt_data, congress_trades, intelligence_hub; a new include site must be added here, which is the point of naming surfaces.",
    "surfaces": [
-    "desk_grader",
-    "intelligence_hub"
+    "desk_grader_panel",
+    "intelligence_hub",
+    "alt_data",
+    "congress_trades"
    ]
   },
   {
@@ -1324,45 +1360,50 @@
   },
   {
    "match": "Validated but modest: China drawdowns are led by",
-   "backing": "engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted.",
+   "backing": "engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted. Surface `risk_radar_intl` is the ENGINE MODULE that authors this string (the rendered forms live on the china / market_state_board surfaces already listed).",
    "surfaces": [
     "risk_radar",
     "china",
-    "market_state_board"
+    "market_state_board",
+    "risk_radar_intl"
    ]
   },
   {
    "match": "已验证但偏温和：A股回撤由美债利率冲击",
-   "backing": "ZH counterpart of 'Validated but modest: China drawdowns are led by'. engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted.",
+   "backing": "ZH counterpart of 'Validated but modest: China drawdowns are led by'. engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted. Surface `risk_radar_intl` is the ENGINE MODULE that authors this string.",
    "surfaces": [
     "risk_radar",
     "china",
-    "market_state_board"
+    "market_state_board",
+    "risk_radar_intl"
    ]
   },
   {
    "match": "Validated forward-drawdown composite on external drivers",
-   "backing": "Signal-passport note for the same CN radar, carried in the sleeve chip's passport (engine/risk_radar_intl.cn_sleeve_chip). The prose states its own numbers inline and the passport's `validation` field names the ledger on the line above. The existing 'note\":\"validated forward-drawdown' entry covers the MINIFIED rendered form only. engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted.",
+   "backing": "Signal-passport note for the same CN radar, carried in the sleeve chip's passport (engine/risk_radar_intl.cn_sleeve_chip). The prose states its own numbers inline and the passport's `validation` field names the ledger on the line above. The existing 'note\":\"validated forward-drawdown' entry covers the MINIFIED rendered form only. engine/risk_radar_intl.CN_PROFILE — the China external-driver forward-drawdown composite. Ledger: data/risk_radar_intl/cn_forward_log.jsonl (named by the module's own passport `validation` field). Measured lift: caution 1.97-3.13x, composite 2.07x p=0.01, 2016+ era; legs are US rate shocks, USD/CNH, the US-CN yield gap and A-share breadth, with the internal froth legs excluded because they mean-revert. Same claim of record as the existing 'validated china external-driver radar' entry, which covers the RENDERED form; this covers the ENGINE SOURCE the render is built from. Scope is deliberately CN-only: the sibling HK_PROFILE makes a weaker claim ('Lighter than the China read and recent-era only ... Context, not a forecast'), has no validated:true artifact, and its over-claiming copy was de-escalated in #3790 rather than allowlisted. Surface `risk_radar_intl` is the ENGINE MODULE that authors this passport note.",
    "surfaces": [
     "china",
     "measurement",
-    "baskets_desk"
+    "baskets_desk",
+    "risk_radar_intl"
    ]
   },
   {
    "match": "validated per-name extension brake",
-   "backing": "engine/stock_score._STRETCH_BLOCK — the absolute trend-extension brake. Deep+PIT 18y top-momentum-decile study (forward 5/10/21d, returns clipped; engine/stock_score.py L423-435): names <25% above their 200dma are healthy, while the >~35% cohort has the WORST median forward return AND the deepest drawdown at every horizon. Independently re-tested and upheld by research/LEADER_STARTER_SIZE_PHASE0.md (VERDICT: NO-GO on relaxing it — WAIT_FULL is risk-adjusted best at ret/DD 0.49 vs 0.34 for the chase). The word attaches ONLY to that pre-existing brake: the cohort layer this disclaimer introduces is explicitly display-only and says so in the same sentence ('it is not a new return or drawdown edge').",
+   "backing": "engine/stock_score._STRETCH_BLOCK — the absolute trend-extension brake. Deep+PIT 18y top-momentum-decile study (forward 5/10/21d, returns clipped; engine/stock_score.py L423-435): names <25% above their 200dma are healthy, while the >~35% cohort has the WORST median forward return AND the deepest drawdown at every horizon. Independently re-tested and upheld by research/LEADER_STARTER_SIZE_PHASE0.md (VERDICT: NO-GO on relaxing it — WAIT_FULL is risk-adjusted best at ret/DD 0.49 vs 0.34 for the chase). The word attaches ONLY to that pre-existing brake: the cohort layer this disclaimer introduces is explicitly display-only and says so in the same sentence ('it is not a new return or drawdown edge'). Surface `basket_member_context` is the ENGINE MODULE authoring the disclaimer.",
    "surfaces": [
     "baskets_desk",
-    "china_intel"
+    "china_intel",
+    "basket_member_context"
    ]
   },
   {
    "match": "已验证的个股延展刹车",
-   "backing": "ZH counterpart of 'validated per-name extension brake'. engine/stock_score._STRETCH_BLOCK — the absolute trend-extension brake. Deep+PIT 18y top-momentum-decile study (forward 5/10/21d, returns clipped; engine/stock_score.py L423-435): names <25% above their 200dma are healthy, while the >~35% cohort has the WORST median forward return AND the deepest drawdown at every horizon. Independently re-tested and upheld by research/LEADER_STARTER_SIZE_PHASE0.md (VERDICT: NO-GO on relaxing it — WAIT_FULL is risk-adjusted best at ret/DD 0.49 vs 0.34 for the chase). The word attaches ONLY to that pre-existing brake: the cohort layer this disclaimer introduces is explicitly display-only and says so in the same sentence ('it is not a new return or drawdown edge').",
+   "backing": "ZH counterpart of 'validated per-name extension brake'. engine/stock_score._STRETCH_BLOCK — the absolute trend-extension brake. Deep+PIT 18y top-momentum-decile study (forward 5/10/21d, returns clipped; engine/stock_score.py L423-435): names <25% above their 200dma are healthy, while the >~35% cohort has the WORST median forward return AND the deepest drawdown at every horizon. Independently re-tested and upheld by research/LEADER_STARTER_SIZE_PHASE0.md (VERDICT: NO-GO on relaxing it — WAIT_FULL is risk-adjusted best at ret/DD 0.49 vs 0.34 for the chase). The word attaches ONLY to that pre-existing brake: the cohort layer this disclaimer introduces is explicitly display-only and says so in the same sentence ('it is not a new return or drawdown edge'). Surface `basket_member_context` is the ENGINE MODULE authoring the disclaimer.",
    "surfaces": [
     "baskets_desk",
-    "china_intel"
+    "china_intel",
+    "basket_member_context"
    ]
   },
   {
@@ -1389,10 +1430,203 @@
   },
   {
    "match": "validated macro-stress drawdown gauge",
-   "backing": "engine/conditions.drawdown_risk — the macro-stress drawdown gauge. Backing study: scripts/validate_drawdown_risk_pit.py, a PIT-frame re-measurement of the gauge's forward-drawdown hit rate that reports per-band rates with Wilson CIs on three frames including a leak-free `release` PIT frame (revision-prone econ legs carry only what was knowable at initial release; market legs are never revised). Measured: P(>=10% drawdown in 63d) ~49% in this band vs ~19% base (engine/alerts.py L355, engine/conditions.py L332/L611). Already the house term for this layer — engine/bonds.py L10 calls it the 'validated conditions layer'.",
+   "backing": "engine/conditions.drawdown_risk — the macro-stress drawdown gauge. Backing study: scripts/validate_drawdown_risk_pit.py, a PIT-frame re-measurement of the gauge's forward-drawdown hit rate that reports per-band rates with Wilson CIs on three frames including a leak-free `release` PIT frame (revision-prone econ legs carry only what was knowable at initial release; market legs are never revised). Measured: P(>=10% drawdown in 63d) ~49% in this band vs ~19% base (engine/alerts.py L355, engine/conditions.py L332/L611). Already the house term for this layer — engine/bonds.py L10 calls it the 'validated conditions layer'. Surface `vol_shock_scorecard` is the ENGINE MODULE authoring the note.",
    "surfaces": [
     "dashboard",
-    "macro"
+    "macro",
+    "vol_shock_scorecard"
+   ]
+  },
+  {
+   "match": "validated gate governs",
+   "backing": "research/DISLOCATION_VALIDATION.md — the hardened Phase-0 validation of the Fed-put master switch (PUT-ABSENT = recession(Sahm>=0.5) OR sustained 10y breakeven>=2.5%), SPY 1997-2026: stress episodes split by put state, honest lens (hit-rate AND conditional max-drawdown), episode-declustered, bootstrap CI, split-half + LOYO. Measured on the composite STRESS set at 252d: PUT-PRESENT 76.5% hit / medRet +16.9% vs PUT-ABSENT 40.0% / -3.4%, with the stand-aside side ~2x deeper p10 drawdown. THIS is the gate the dislocation panel means by 'the validated gate' — NOT sector_central's absolute-trend gate and NOT the spvector re-deploy overlay, whose entries this claim rode until the `surfaces` list became enforceable (2026-07-29). The panel's own copy keeps the AI/GPR cross-checks CONTEXT-ONLY ('it never changes the verdict').",
+   "surfaces": [
+    "dashboard",
+    "dislocation"
+   ]
+  },
+  {
+   "match": "validated fed-put gate governs",
+   "backing": "research/DISLOCATION_VALIDATION.md — the hardened Phase-0 validation of the Fed-put master switch (PUT-ABSENT = recession(Sahm>=0.5) OR sustained 10y breakeven>=2.5%), SPY 1997-2026: stress episodes split by put state, honest lens (hit-rate AND conditional max-drawdown), episode-declustered, bootstrap CI, split-half + LOYO. Measured on the composite STRESS set at 252d: PUT-PRESENT 76.5% hit / medRet +16.9% vs PUT-ABSENT 40.0% / -3.4%, with the stand-aside side ~2x deeper p10 drawdown. THIS is the gate the dislocation panel means by 'the validated gate' — NOT sector_central's absolute-trend gate and NOT the spvector re-deploy overlay, whose entries this claim rode until the `surfaces` list became enforceable (2026-07-29). The panel's own copy keeps the AI/GPR cross-checks CONTEXT-ONLY ('it never changes the verdict'). (Fed-put-named form of the same sentence, GPR cross-check row.)",
+   "surfaces": [
+    "dashboard",
+    "dislocation"
+   ]
+  },
+  {
+   "match": "以经验证的一道闸为准",
+   "backing": "ZH counterpart of 'validated gate governs'. research/DISLOCATION_VALIDATION.md — the hardened Phase-0 validation of the Fed-put master switch (PUT-ABSENT = recession(Sahm>=0.5) OR sustained 10y breakeven>=2.5%), SPY 1997-2026: stress episodes split by put state, honest lens (hit-rate AND conditional max-drawdown), episode-declustered, bootstrap CI, split-half + LOYO. Measured on the composite STRESS set at 252d: PUT-PRESENT 76.5% hit / medRet +16.9% vs PUT-ABSENT 40.0% / -3.4%, with the stand-aside side ~2x deeper p10 drawdown. THIS is the gate the dislocation panel means by 'the validated gate' — NOT sector_central's absolute-trend gate and NOT the spvector re-deploy overlay, whose entries this claim rode until the `surfaces` list became enforceable (2026-07-29). The panel's own copy keeps the AI/GPR cross-checks CONTEXT-ONLY ('it never changes the verdict').",
+   "surfaces": [
+    "dashboard",
+    "dislocation"
+   ]
+  },
+  {
+   "match": "以经验证的美联储托底闸为准",
+   "backing": "ZH counterpart of 'validated fed-put gate governs'. research/DISLOCATION_VALIDATION.md — the hardened Phase-0 validation of the Fed-put master switch (PUT-ABSENT = recession(Sahm>=0.5) OR sustained 10y breakeven>=2.5%), SPY 1997-2026: stress episodes split by put state, honest lens (hit-rate AND conditional max-drawdown), episode-declustered, bootstrap CI, split-half + LOYO. Measured on the composite STRESS set at 252d: PUT-PRESENT 76.5% hit / medRet +16.9% vs PUT-ABSENT 40.0% / -3.4%, with the stand-aside side ~2x deeper p10 drawdown. THIS is the gate the dislocation panel means by 'the validated gate' — NOT sector_central's absolute-trend gate and NOT the spvector re-deploy overlay, whose entries this claim rode until the `surfaces` list became enforceable (2026-07-29). The panel's own copy keeps the AI/GPR cross-checks CONTEXT-ONLY ('it never changes the verdict').",
+   "surfaces": [
+    "dashboard",
+    "dislocation"
+   ]
+  },
+  {
+   "match": "dg-badge dg-proven",
+   "backing": "Desk-grader 'proven' / 已验证 BADGE label pair (templates/_desk_grader_panel.html.j2, included by alt_data / congress_trades / intelligence_hub). The badge renders ONLY where engine/desk_grader._proven_status returns 'proven', which needs n>=MIN_PROVEN_N(40) matured observations, |Newey-West HAC t|>=2 of the RIGHT sign, and MIN_DATES_IC(6) grading dates for the daily IC summary. Engine-gated label, hidden otherwise — same family as the SCORED-chip pairs. The sibling entry '已验证\"门槛' allowlists the fine-print that states this threshold; this one covers the badge it gates.",
+   "surfaces": [
+    "desk_grader_panel",
+    "alt_data",
+    "congress_trades",
+    "intelligence_hub"
+   ]
+  },
+  {
+   "match": "该周期已通过预登记的显著性检验",
+   "backing": "Intelligence-hub track-record 'proven' / 已验证 pill + its tooltip ('Cleared the pre-registered significance bar at this horizon'). Rendered only where TR.proven[horizon] is set by the desk-grader track record — the same engine-gated status as the dg-proven badge (n>=40 matured, significant HAC t of the right sign). The tooltip literal is on the pill's own line in both the template and the render, so one entry covers both vintages.",
+   "surfaces": [
+    "intelligence_hub"
+   ]
+  },
+  {
+   "match": "surfaced as a desk panel + validated",
+   "backing": "china_altdata lab row for the Tushare 业绩预告 guidance-surprise family — the same claim of record as the existing 'validated as the guidance family' entry (forward IC finds a real ~3-month post-announcement drift, correct sign; display/measure, accruing toward the grader's 'proven' bar, never scored). engine/china_signal_lab.py authors the sentence; the line carries its EN and zh halves together.",
+   "surfaces": [
+    "china_altdata"
+   ]
+  },
+  {
+   "match": "window.sector_narr=",
+   "backing": "Generated sector-narrative payload (one minified line per file). 'validated' / 'proven' appear inside DESCRIPTIVE analog-narrative bodies about realized historical episodes — 'Microsoft's ~$10bn OpenAI investment validated enterprise AI spending', 'validated nuclear as the AI-baseload answer', 'monetization still being proven' — never as a scored field or a live signal claim. Same construction (and same bargain: one match covers the whole minified line) as the existing 'window.sector_cycles=' and 'window.sector_dna=' payload entries.",
+   "surfaces": [
+    "sector_cycles_narr_data",
+    "sector_cycles_china_narr_data"
+   ]
+  },
+  {
+   "match": "经验证的周度方向确认",
+   "backing": "ZH counterpart of 'validated weekly directional confirmer' (the EN twin is allowlisted for the same page). engine.cn_ai_semis_confirmer / china_narrative_radar (#773): global AI-semis (SMH+SOXX+TSM) 4w log-momentum → next-week CPO basket return, t=3.27 univariate, horse-race stable (SPY + CN controls), pre-2024 split survives; validation script scripts/china_global_theme_backtest.py. The zh sentence scopes the claim to the CPO basket exactly as the EN does, and the same line's other use is the negated disclaimer 非经验证的超额收益.",
+   "surfaces": [
+    "china_narrative_radar",
+    "narrative_radar"
+   ]
+  },
+  {
+   "match": "经验证的以阿尔法为主的混合",
+   "backing": "ZH twin of the discovery two-axes help text, whose EN half is covered by 'validated point-in-time' / 'validated MACD-2D'. CONVICTION = the PIT-validated alpha-led blend (engine/residual_alpha sector-neutral residual momentum — the only individually positive-IC leg, research/RESIDUAL_ALPHA_MOMENTUM.md — plus light multi-factor confirmation); BUY = the signal_gate MACD-2D × StochRSI-3D confluence (research/SECTOR_CONFLUENCE.md). Both tokens on that line belong to those two studies; nothing new is claimed.",
+   "surfaces": [
+    "discovery"
+   ]
+  },
+  {
+   "match": "经验证的绝对趋势回撤门控",
+   "backing": "ZH counterpart of 'validated absolute-trend drawdown gate'. research/SECTOR_CONFLUENCE.md + allocation panel 04 (multi-decade sector-ETF backtest; the edge is drawdown / shake-out control via the absolute-trend gate). engine.sector_central _trend_gates. Needed separately because `match` is a case-insensitive substring, so the EN entry can never cover its zh twin.",
+   "surfaces": [
+    "sector_central"
+   ]
+  },
+  {
+   "match": "经验证的信用/波动率/融资体制",
+   "backing": "ZH counterpart of 'validated credit/vol/margin regime' on the CN sector desk: the credit/vol/margin regime gate (vol_regime + credit/liquidity overlays) is the validated conditioning regime that GATES the gated -confluence read. The CN board reuses that same regime object; no CN-specific validation is claimed and the regime never ranks names.",
+   "surfaces": [
+    "sector_central_china"
+   ]
+  },
+  {
+   "match": "经验证的核心",
+   "backing": "ZH counterpart of 'validated core': the anticipation RISK cone is the always-shown empirical forward distribution (the validated core), while DIRECTION is coloured only where data/regime/anticipation_gate.json marks the leg OOS-validated — the same sentence's second clause says exactly that, and everything else is 'the coin-flip it measurably is'.",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "经验证的 GO 因子",
+   "backing": "ZH counterpart of 'the validated GO legs' /'validated OOS': data/regime/anticipation_gate.json — the cone is calibrated point-in-time on the OOS-validated GO legs ONLY; display-only legs are shown as context and never score. Method + evidence: research/ANTICIPATION_ENGINE.md, research/ANTICIPATION_PHASE0.md (both named on the same line).",
+   "surfaces": [
+    "anticipation"
+   ]
+  },
+  {
+   "match": "故为经验证的领先因子",
+   "backing": "ZH counterpart of 'validated leading leg' for the CREDIT leg: cycle_cause / leading-legs — a leg validated against NBER/equities and re-checked by .github/workflows/validate-leading-legs.yml. Credit (HY OAS widening + junk underperforming Treasuries) is a leading leg of the cycle read, which is what the sentence claims; it is not a standalone sizer.",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "本页唯一经过验证",
+   "backing": "ZH counterpart of 'one read on this page that is validated' (gex.html): engine/vol_regime — VIX/VIX3M term-structure slope + bond vol (MOVE) + vol-risk premium, 1990+ history, DSR 0.9998, HAC t~-10; predicts forward realized vol and improves risk-adjusted returns as a subtract-only sizing overlay. The sentence's whole point is that it is the ONLY validated read on the page — the honest scoping the doctrine asks for.",
+   "surfaces": [
+    "gex"
+   ]
+  },
+  {
+   "match": "经验证的策略输出",
+   "backing": "BTC override-release alert (engine/btc_alerts._conviction, type override_release) — sizing returns to the engine's validated strategy output. Backing artifact: reports/btc-vector-optimal-phase0.md — the optimal BTC vector beats buy-and-hold on both axes (MaxDD -32.3% vs -83.8%, CAGR 70.3% vs 57.7%), block-bootstrap Sharpe CI [0.81, 1.44, 2.04] with P(Sharpe>0)=1.0 and the lower CI above zero, split-half stable (pre 1.86 vs 1.39; post 0.85 vs 0.51) and leave-one-crisis-out stable (drop 2018_bear / 2020_covid / 2021_may all keep the Sharpe and ~+42pp of drawdown). Same evidence shape as the spvector entries. Covers the EN `edge` and zh `edge_zh` halves of the same sentence.",
+   "surfaces": [
+    "btc_alerts",
+    "vector"
+   ]
+  },
+  {
+   "match": "validated strategy output",
+   "backing": "EN twin of '经验证的策略输出' (BTC override-release alert). Backing artifact: reports/btc-vector-optimal-phase0.md — MaxDD -32.3% vs -83.8% buy-and-hold, CAGR 70.3% vs 57.7%, block-bootstrap Sharpe CI lower bound above zero, split-half and leave-one-crisis-out stable. The EN half became gateable only when `edge` joined the scanned display-copy fields (2026-07-29).",
+   "surfaces": [
+    "btc_alerts",
+    "vector"
+   ]
+  },
+  {
+   "match": "经验证的领先前兆突破",
+   "backing": "BTC impulse de-risk alert (engine/btc_alerts, impulse_warn_down / impulse_trigger_down — fired ONLY by the act-tier legs d2/d3 of engine/btc_impulse_radar). Backing: research/VECTOR_IMPULSE_PREDICTION.md — D2 (DVOL intraday-range jolt) base 0.0614 / cond 0.1538, lift 2.507, and the 2024+ HOLDOUT STRENGTHENS to lift 3.277 (n_fire 49, block-bootstrap p=0.0015, leak-free verified, cross-threshold monotonic); D3 (SOPR profit-take spike) also clears the holdout bar and is coincidence-clean. D1 (cbp_z90), the leg that FAILED that bar (lift 0.90 full / 1.12 holdout), is deliberately NOT wired to this alert — it ships context-only. The same sentence discloses the blind spot ('did NOT lead the 2026-06-24 cascade') and the ~2-4 day decay. Surface `alerts` is the rendered form of that same alert (engine.alert_triage -> templates/alerts.html.j2 -> site/alerts.html), where this zh half shares its line with the EN half covered by the 'Holdout-validated, leak-free' entry — the SAME backing, not a new page borrowing a justification.",
+   "surfaces": [
+    "btc_alerts",
+    "vector",
+    "alerts"
+   ]
+  },
+  {
+   "match": "Holdout-validated, leak-free",
+   "backing": "EN half of the SAME BTC impulse de-risk sentence the '经验证的领先前兆突破' entry backs (engine/btc_alerts._conviction, impulse_warn_down / impulse_trigger_down — fired ONLY by the act-tier legs d2/d3 of engine/btc_impulse_radar); the two halves sit on one line once alert_triage renders them. Backing: research/VECTOR_IMPULSE_PREDICTION.md — D2 (DVOL intraday-range jolt) base 0.0614 / cond 0.1538, lift 2.507, and the 2024+ HOLDOUT STRENGTHENS to lift 3.277 (n_fire 49, block-bootstrap p=0.0015, leak-free verified, cross-threshold monotonic); D3 (SOPR profit-take spike) also clears the holdout bar and is coincidence-clean (fires into +9.95%/5d strength, only 6.8% already down >3%/3d). D1 (cbp_z90), the leg that FAILED that bar (lift 0.90 full / 1.12 holdout, materially coincident), is deliberately NOT wired to this alert — it ships context-only. 'leak-free' is the doc's own verified property of D2 (forward-min label with .shift(1)/90d trailing z). The same sentence discloses the blind spot ('did NOT lead the 2026-06-24 cascade') and the ~2-4 day decay. Surface `btc_alerts` is the ENGINE MODULE that authors the string; `alerts` is the rendered form of that same alert (scripts/build_site.py -> engine.alert_triage -> templates/alerts.html.j2 -> site/alerts.html) — one claim of record, two places the identical sentence appears.",
+   "surfaces": [
+    "btc_alerts",
+    "alerts"
+   ]
+  },
+  {
+   "match": "backtest-validated OOS; live cohort accruing",
+   "backing": "W4.2 turn-hazard gate — shown ONLY on hazard cells whose cell_verdict is PASS (the PRIOR branch of the same tooltip says the opposite in as many words: 'did NOT pass the W4.2 gate; this is the historical family-stratified base rate, not a validated model output'). Pre-registration + results: research/cycle_masterplan/PREREGISTRATION.md §2 (HZ-up/dn-1m/3m/6m, criteria frozen before the run) and research/cycle_masterplan/W42_HAZARD_VERDICT.md; fit artifact data/hazard/model_price_c4414dcb.json. Scored on leak-free out-of-fold calibrated predictions vs the correctly-specified family-stratified KM baseline, month-block bootstrap 90% CI on paired ΔBrier excluding 0, BH-FDR at q=0.10 across the 6-cell family: 4 of 6 cells PASS (up-1m ΔBrier +0.0140 p=0.0012; dn-1m +0.0141 p=0.018; dn-3m +0.0078 p=0.036; dn-6m +0.0042 p=0.024), 2 ship PRIOR. 'live cohort accruing' is ruling A6, not a hedge for a weak backtest: BACKTEST (backfilled) and LIVE (prospective) cohorts never blend in one number, and a LIVE cohort needs n_eff >= 40 per cell before it is read (research/cycle_masterplan/W24_FIRST_SCORECARDS.md §intro, W48_REGISTRY_AUDIT.md maturation row) — which is exactly the come-back condition the cycle_app form of the sentence prints inline. Both surfaces render the same hazard tooltip from the same ledger: `sector_cycles` (templates/sector_cycles.js and its byte-paired site copy) and `cycle_app` (site/cycle_app.js, plus the block comment documenting that tooltip).",
+   "surfaces": [
+    "sector_cycles",
+    "cycle_app"
+   ]
+  },
+  {
+   "match": "FDR-validated bounce ALERT",
+   "backing": "Signal Lab row 'Capitulation bounce overlay (Fed-put gated)' (engine/signal_lab.py _row why=). Backing: reports/capitulation-overlay-phase0.md (harness scripts/capitulation_overlay_phase0.py) — the capitulation ALERT (capitulation_score>=2: VRP %ile>0.90 + VIX>30 + COT ES net-spec washout) is FDR-validated as an alert at q=0.0, and the row states its numbers inline: 63d gated P(up) 75% vs 72% base, book-minus-base +0.658 bps/day, NW t=2.437, p=0.0148, split-half OOS beats B&H in both halves plus leave-one-fire. The claim is scoped to the ALERT and the same sentence refuses the promotion the reader would infer next: the TIMED +0.5x/63d Fed-put-gated SPY overweight FAILS the scored bar (marginal-stream DSR 0.737 < 0.90, ties a dumb buy-VIX>30 leg at paired p=0.52, and the gate LOWERS timed CAGR 12.5->12.0), so it ships as a confirmer feeding the dislocation gate, not as a scored allocation leg.",
+   "surfaces": [
+    "signal_lab"
+   ]
+  },
+  {
+   "match": "wave-2-validated cohort-washout ranking bonus",
+   "backing": "CSS comment naming the study the .nb-coiled chip's styling exists for. Backing: research/entry_timing/WAVE2_REPORT.md — 'Out-of-Sample Confirmation of the COILED Ranking Bonus', gates G1-G4 pre-registered in wave 1 and graded as written: G1 fold stability PASS (4/5 folds spread>0, pooled +6.69pp), G2 basket replication PASS on the decisive OOS panel (2,336 names, sector-cohort +7.54pp, both time halves same sign, n_COILED=6,842, per-name majority 65.24%), G3 robustness PASS (clean10/15/20/30 all positive on both panels), G4 ranking PASS (Spearman 1.0, Q4-Q1 +10.19pp). The pre-committed ship rule was G1 AND G2 AND G3 -> ship, and it shipped at the scope the comment states and no wider: a RANKING BONUS / surfacing tier, display-only, never a hard gate (T8 recall showed a hard gate would gut the watchlist).",
+   "surfaces": [
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated gate governs",
+   "backing": "research/DISLOCATION_VALIDATION.md — the dislocation Gate-1 Fed-put switch (engine/dislocation.py). HONEST SCOPE: of the four measured separations only the MEDIAN 3-month drawdown clears its bootstrap CI (+3.9pp, 95% CI [+0.3, +6.3], episode block bootstrap, ~10 put-absent crises). Hit-rate (+30.3pp, CI [-5.1, +63.0]) and median 63d return (+7.4pp, CI [-2.7, +12.3]) SPAN ZERO and are indistinguishable from the unconditional base at this effective sample — they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not by significance. So 'validated' here means validated AS A DRAWDOWN/RISK FILTER only, never as return alpha, and the phrase exists solely to rank the deterministic gate ABOVE an LLM/GPR narrative cross-check. The composite CI was measured on VIX>30 | drawdown<=-12% | VRP>0.90 and does NOT cover a backwardation-only firing (engine/dislocation.evidence_scope emits that scoping per firing). Engine copy was reworded to 'measured gate governs' on 2026-07-29; this entry backs the remaining hardcoded template copy. Previously this phrase passed only via the sector_central/gex 'validated gate' entry, whose backing cites a different study and whose surfaces do not include this page.",
+   "surfaces": [
+    "macro",
+    "dashboard"
+   ]
+  },
+  {
+   "match": "validated fed-put gate governs",
+   "backing": "same dislocation Gate-1 artifact and the same honest scope as 'validated gate governs' above (research/DISLOCATION_VALIDATION.md): validated as a DRAWDOWN filter only — the hit-rate and median-return CIs span zero. Distinct from the spvector 'validated fed-put gate' entry, whose re-deploy overlay study does not cover this surface.",
+   "surfaces": [
+    "macro",
+    "dashboard"
    ]
   }
  ]

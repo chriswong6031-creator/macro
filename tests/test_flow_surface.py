@@ -958,6 +958,44 @@ def test_prune_is_fail_soft_on_r2_error():
     assert res["deleted_dates"] == [] and res["deleted_objects"] == 0
 
 
+def test_prune_honors_per_key_delete_errors():
+    """R2 reports a refused delete in the response BODY, never as an exception.
+
+    Counting the batch length regardless fabricated the deleted count and left retention
+    BELIEVED-enforced while the objects survived — retention has to be measured, not assumed.
+    Twin of tests/test_flow_archive.py::test_prune_honors_per_key_delete_errors.
+    """
+    dates = [f"2026-07-{d:02d}" for d in range(1, 13)]      # 12 sessions, keep 10
+    s3 = _FakeS3(_store_keys(dates=dates))
+    refused = f"{R2_SURFACE_PREFIX}SPY/2026-07-01/0941.json"
+    real_delete = s3.delete_objects
+
+    def partial(Bucket=None, Delete=None):  # noqa: N803 — boto3 kwarg casing
+        objs = (Delete or {}).get("Objects", [])
+        kept = [o for o in objs if o["Key"] != refused]
+        real_delete(Bucket=Bucket, Delete={"Objects": kept})
+        errors = [{"Key": refused, "Code": "AccessDenied", "Message": "nope"}
+                  for o in objs if o["Key"] == refused]
+        return {"Deleted": [{"Key": o["Key"]} for o in kept], "Errors": errors}
+
+    s3.delete_objects = partial
+    res = prune_surface_dates(s3, "bkt", "SPY", keep=10)
+
+    assert res["ok"] is False                 # retention is NOT verified this session
+    # 2 stale sessions × 3 objects = 6, minus the one R2 refused.
+    assert res["deleted_objects"] == 5
+    # The date that did not fully delete is NOT claimed as deleted…
+    assert res["deleted_dates"] == ["2026-07-02"]
+    assert "2026-07-01" not in res["deleted_dates"]
+    # …and the refused object really did survive, while its siblings went.
+    assert refused in s3.keys
+    assert f"{R2_SURFACE_PREFIX}SPY/2026-07-01/0931.json" not in s3.keys
+    assert not any("/2026-07-02/" in k for k in s3.keys)
+    # The live today-paths are untouched, as always.
+    for legacy in ("idx.json", "dates.json", "0931.json"):
+        assert f"{R2_SURFACE_PREFIX}SPY/{legacy}" in s3.keys
+
+
 def test_list_session_dates_ignores_legacy_and_junk_prefixes():
     s3 = _FakeS3(
         _store_keys(dates=["2026-07-05", "2026-07-06"])

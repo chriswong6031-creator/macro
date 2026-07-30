@@ -360,6 +360,8 @@ def test_generated_data_is_not_accidentally_public():
         "/brand-facts.json",
         "/live/quotes.json",
         "/live/breadth.json",
+        # Official agency publication lifecycle and verified factual outcomes.
+        "/live/release_publications.json",
         "/prophet/showcase.json",
         "/factordata/tech_lab.json",
     }

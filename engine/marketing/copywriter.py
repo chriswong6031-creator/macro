@@ -4161,11 +4161,25 @@ def write_posts_llm(
             for i, ctx in enumerate(batch)
         ]
 
-        # House LLM path: llm_auth provider waterfall (OAuth pool -> API key ->
-        # deepseek), same as cortex/metabolism — NOT a bare Anthropic() client.
+        # House LLM path: llm_auth provider waterfall — NOT a bare Anthropic()
+        # client. CHATGPT-FIRST (operator directive 2026-07-29, recorded on
+        # config/marketing.yml copywriter.llm): the attached Codex account leads,
+        # Claude follows as the balanced fallback drawn through the key_pool load
+        # balancer (oauth_pool_lane), because Claude subscription tokens are
+        # reserved for website-building sessions. Sol writes; a host without the
+        # Codex CLI omits that rung and the lane degrades to the pool.
         from engine import llm_auth  # noqa: PLC0415
         providers = llm_auth.build_providers(
-            {"usage_lane": "marketing-copywriter"}, opus_model=model_id)
+            {
+                "usage_lane": llm_cfg.get("usage_lane", "marketing-copywriter"),
+                "oauth_pool_lane": llm_cfg.get("oauth_pool_lane", "marketing-copywriter"),
+                "provider_order": llm_cfg.get("provider_order")
+                or ["codex", "oauth", "anthropic", "deepseek"],
+                "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
+                "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
+            },
+            opus_model=model_id,
+        )
         if not providers:
             # ARMED BUT MUTE. Reaching here means the operator switched the voice
             # lane ON (config copywriter.llm.enabled AND MARKETING_LLM_ENABLED)
@@ -4873,9 +4887,18 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
         # else, so a module-level import here reddens it at COLLECTION.
         from engine import llm_auth  # noqa: PLC0415
 
+        # CHATGPT-FIRST (operator directive 2026-07-29) — see the note on
+        # config/marketing.yml copywriter.llm. Codex leads, the key_pool-balanced
+        # Claude oauth rung is the fallback, anthropic/deepseek are the metered
+        # floor. Sol is the writing tier.
         providers = llm_auth.build_providers(
             {
                 "usage_lane": llm_cfg.get("usage_lane", "marketing-copywriter"),
+                "oauth_pool_lane": llm_cfg.get("oauth_pool_lane", "marketing-copywriter"),
+                "provider_order": llm_cfg.get("provider_order")
+                or ["codex", "oauth", "anthropic", "deepseek"],
+                "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
+                "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
                 "client_max_retries": llm_cfg.get("client_max_retries", 0),
                 "client_timeout_s": llm_cfg.get("client_timeout_s", 60.0),
             },

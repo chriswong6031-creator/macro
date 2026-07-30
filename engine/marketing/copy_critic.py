@@ -328,15 +328,29 @@ def _providers(critic_cfg: dict) -> list:
     """The provider waterfall for this critic config. Built ONCE per process.
 
     Keyed on everything that changes the waterfall (lane, model, transport
-    settings) so a config change still rebuilds. Built inside the lock rather
-    than around a check-then-build, because two writer workers racing here is
-    exactly how the duplicate clients appeared in the first place.
+    settings, the codex tier) so a config change still rebuilds. Built inside the
+    lock rather than around a check-then-build, because two writer workers racing
+    here is exactly how the duplicate clients appeared in the first place.
+
+    CHATGPT-FIRST (operator directive 2026-07-29, recorded on config/marketing.yml
+    copywriter.llm): codex leads, the key_pool-balanced Claude oauth rung is the
+    fallback. TERRA, not Sol — the critic reads and judges, it never writes.
     """
+    _order = list(
+        critic_cfg.get("provider_order") or ["codex", "oauth", "anthropic", "deepseek"]
+    )
+    _codex_model = str(critic_cfg.get("codex_source_model", "gpt-5.6-terra"))
+    _codex_effort = str(critic_cfg.get("codex_reasoning_effort", "medium"))
+    _pool_lane = str(critic_cfg.get("oauth_pool_lane", "marketing-critic"))
     key = (
         str(critic_cfg.get("usage_lane", "marketing-critic")),
         _model_id(critic_cfg),
         str(critic_cfg.get("client_max_retries", DEFAULT_CLIENT_MAX_RETRIES)),
         str(critic_cfg.get("client_timeout_s", DEFAULT_CLIENT_TIMEOUT_S)),
+        ",".join(_order),
+        _codex_model,
+        _codex_effort,
+        _pool_lane,
     )
     with _PROVIDER_LOCK:
         if key in _PROVIDER_CACHE:
@@ -346,6 +360,10 @@ def _providers(critic_cfg: dict) -> list:
         providers = llm_auth.build_providers(
             {
                 "usage_lane": key[0],
+                "oauth_pool_lane": _pool_lane,
+                "provider_order": _order,
+                "codex_source_model": _codex_model,
+                "codex_reasoning_effort": _codex_effort,
                 "client_max_retries": critic_cfg.get(
                     "client_max_retries", DEFAULT_CLIENT_MAX_RETRIES),
                 "client_timeout_s": critic_cfg.get(

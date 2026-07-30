@@ -5,6 +5,27 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
+{# The quad the MEMORYLESS sign rule reads on today's axes, or '' when it cannot be
+   resolved. `quad` is the sticky hysteresis label and disagreed with this rule on ~44%
+   of post-2000 sessions, so a surface that signs "supporting evidence" against the raw
+   axes while displaying the sticky label presents evidence AGAINST the call as the
+   evidence behind it (engine/regime.flip_condition, fixed 2026-07-29).
+   Engine-published first (flip_condition.raw_quad, then run.py's raw_quad); the last
+   resort derives it exactly as engine/playbook.quad_meaning_for() does when the column
+   is missing, so this can never disagree with the engine's own fallback. Used by every
+   surface that has to decide whether the label still has its own axes behind it. #}
+{% macro raw_quad_of(latest) -%}
+{%- set _fc = (latest.get('flip_condition') or {}) if latest is mapping else {} -%}
+{%- set _rq = _fc.get('raw_quad') or (latest.get('raw_quad') if latest is mapping else none) -%}
+{%- if _rq in ('Q1', 'Q2', 'Q3', 'Q4') %}{{ _rq }}
+{%- else -%}
+  {%- set _g = latest.get('growth_score') if latest is mapping else none -%}
+  {%- set _i = latest.get('inflation_score') if latest is mapping else none -%}
+  {%- if _g is not none and _g is number and _i is not none and _i is number -%}
+    {{ ('Q1' if _i < 0 else 'Q2') if _g >= 0 else ('Q4' if _i < 0 else 'Q3') }}
+  {%- endif -%}
+{%- endif -%}
+{%- endmacro %}
 {# Compact display label for a GICS sector / narrative-basket name on the standout cards
    (declutter). Maps the long names to short forms and strips the "(Equal-Weight)" /
    "（等权）" tag; unknown names fall through (minus the EW tag). DISPLAY-ONLY — never
@@ -256,27 +277,96 @@
     100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
   }
   .panel.flash { animation: panelflash 2.4s ease-out 1; border-color: var(--link); }
-  /* Dislocation Gate-1 "lit" state: when a real stress dislocation is live the
-     whole panel glows in the verdict colour carried on --lit (green = buyable
-     washout, red = falling knife). Dormant/calm = no glow. engine/dislocation.py */
-  /* Perf: the glow pulse lives on a pseudo animating ONLY opacity (compositor);
-     animating box-shadow on the panel repainted it every frame (2026-07-21
-     mobile audit). Base = old 0% state, pseudo = old 50% state fading in/out. */
-  .panel.dislo-lit { border-color: color-mix(in srgb, var(--lit) 60%, var(--line));
-    background: color-mix(in srgb, var(--lit) 7%, var(--panel));
-    position: relative;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 32%, transparent),
-                0 0 17px 1px color-mix(in srgb, var(--lit) 17%, transparent); }
-  .panel.dislo-lit::after { content: ""; position: absolute; inset: 0;
-    border-radius: inherit; pointer-events: none;
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 58%, transparent),
-                0 0 30px 5px color-mix(in srgb, var(--lit) 38%, transparent);
-    opacity: 0; animation: mmGlowBreathe 3.6s ease-in-out infinite; }
-  @media (prefers-reduced-motion: reduce) {
-    .panel.dislo-lit::after { animation: none; opacity: 0; }
-    .panel.dislo-lit {
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--lit) 50%, transparent),
-                  0 0 22px 2px color-mix(in srgb, var(--lit) 30%, transparent); } }
+  /* ── Dislocation stress filter, ACTIVE state (engine/dislocation.py) ─────────
+     OPERATOR RULING 2026-07-29 — the active panel must not hijack the page. The
+     old presentation used a negative flex `order` to float it above the entire
+     board as a full-width card of eight nested sub-cards behind a breathing glow: "cannot
+     take up 70% of the viewport … not good UX to disrupt with pop-up boards."
+
+     It is now a READOUT STRIP that sits in normal flow inside the risk section:
+     one head line (state + Fed-put switch + trigger count), one stance line,
+     and every receipt behind the page's inner `.jarg` fold. The ANNOUNCEMENT
+     lives where the operator put it — the alerts-pane entry, the master-switch
+     chip, and the "What To Do Now" row; this panel is the receipt those three
+     jump to. Verdict colour still arrives on --lit (green = buyable washout,
+     red = falling knife) and the Fed-put colour on --dlp, but they are spent on
+     a STATIC left rail plus a soft corner wash — nothing animates here any more,
+     so there is no pseudo-element motion left to kill under reduced-motion. */
+  .panel.dislo-strip { border-left: 3px solid var(--lit);
+    background-image: linear-gradient(107deg,
+      color-mix(in srgb, var(--lit) 9%, transparent) 0%,
+      color-mix(in srgb, var(--lit) 2%, transparent) 34%, transparent 62%); }
+  /* NOTE on specificity: `body.page-macro h2` (0,1,2) out-ranks a bare
+     `h2.dlx-verdict` (0,1,1) and would take back font-size + colour, so every rule
+     below is anchored on `.panel.dislo-strip` / `.jarg.dlx-more`. Same reason for
+     the fold rows: `.jarg .jrow .jk` ships LATER in this stylesheet, so a plain
+     `.dlx-more .jrow .jk` would lose the 96px key column on a specificity tie. */
+  .panel.dislo-strip .dlx-head { display: flex; align-items: baseline; flex-wrap: wrap;
+    column-gap: 11px; row-gap: 7px; }
+  .panel.dislo-strip .dlx-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .11em;
+    text-transform: uppercase; color: var(--muted); }
+  .panel.dislo-strip h2.dlx-verdict { margin: 0; font-size: 17px; line-height: 1.2;
+    font-weight: 750; letter-spacing: -.005em; color: var(--lit); }
+  .panel.dislo-strip .dlx-put { font-size: 11px; font-weight: 700; letter-spacing: .015em;
+    padding: 2px 9px; border-radius: 5px; white-space: nowrap; color: var(--dlp);
+    background: color-mix(in srgb, var(--dlp) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--dlp) 36%, transparent); }
+  .panel.dislo-strip .dlx-count { font-size: 11.5px; color: var(--muted);
+    font-variant-numeric: tabular-nums; }
+  .panel.dislo-strip .dlx-stance { margin: 9px 0 0; font-size: 13px; line-height: 1.45;
+    max-width: 96ch; color: var(--text); }
+  .panel.dislo-strip .dlx-stance b { color: var(--lit); font-weight: 700; }
+  .panel.dislo-strip .dlx-hon { color: var(--muted); }
+  .panel.dislo-strip .dlx-warn { margin: 7px 0 0; font-size: 12px; line-height: 1.45;
+    color: var(--down); max-width: 96ch; }
+  /* ── readout rows: label / value pairs, no nested card chrome. This is where the
+     eight sub-cards went. Everything that DISAGREES with the verdict stays here, in
+     the open — the margin each stress trigger clears, the Fed-put sub-readings, the
+     entry timer, and the geopolitical/catalyst cross-checks (audit order 2026-07-29:
+     never fold the dissent). Only the long-form prose + the measured record fold. */
+  .panel.dislo-strip .dlx-rows { margin: 9px 0 0; padding-top: 7px;
+    border-top: var(--rule, 1px) solid var(--line); }
+  .panel.dislo-strip .dlx-row { display: flex; align-items: baseline; gap: 9px;
+    padding: 3px 0; font-size: 12px; line-height: 1.4; }
+  .panel.dislo-strip .dlx-cap { color: var(--muted); font-size: 11px; }
+  .panel.dislo-strip .dlx-row + .dlx-row { border-top: 1px solid
+    color-mix(in srgb, var(--line) 55%, transparent); }
+  .panel.dislo-strip .dlx-lbl { flex: none; width: 132px; color: var(--muted);
+    font-weight: 600; }
+  .panel.dislo-strip .dlx-val { flex: 1; min-width: 0; }
+  .panel.dislo-strip .dlx-val b { font-variant-numeric: tabular-nums; }
+  .panel.dislo-strip .dlx-chips { display: inline-flex; flex-wrap: wrap; gap: 5px;
+    vertical-align: middle; }
+  /* margin line — every trigger's live reading against its own limit, firing or not.
+     Mono numerals so the four readings line up as a scale, not as prose. */
+  .panel.dislo-strip .dlx-margins { display: block; margin-top: 3px; font-size: 11px;
+    color: var(--muted); font-variant-numeric: tabular-nums; }
+  .panel.dislo-strip .dlx-mg { white-space: nowrap; }
+  .panel.dislo-strip .dlx-mg.on { color: var(--lit); font-weight: 650; }
+  .panel.dislo-strip .dlx-dis { color: var(--warn); font-weight: 650; }
+  /* series VINTAGE, parenthetical to its reading — Sahm is a monthly reference month
+     carried forward, not a same-day print, and the strip must be able to say so
+     without shouting. Regular numerals: a date is a figure, the words around it
+     are not, so only the reading itself keeps the tabular alignment above. */
+  .panel.dislo-strip .dlx-vint { color: var(--ink-3, var(--muted)); white-space: nowrap; }
+  /* policy divergence — amber CONTEXT, never the red of a verdict: the engine attaches
+     it explicitly as context that does not change the call, so it must not read redder
+     than the gate does. */
+  .jarg.dlx-more .dlx-pdiv { color: var(--warn); }
+  .jarg.dlx-more .dlx-pdiv b { color: var(--warn); }
+  /* the fold keeps ONLY long-form prose + the measured record */
+  .jarg.dlx-more { margin-top: 10px; }
+  .jarg.dlx-more .jrow { align-items: baseline; }
+  .jarg.dlx-more .jrow .jk { width: 132px; font-weight: 600; }
+  .jarg.dlx-more .dlx-para { margin: 0 0 7px; font-size: 11.5px; line-height: 1.55; }
+  @media (max-width: 700px) {
+    .panel.dislo-strip .dlx-row,
+    .jarg.dlx-more .jrow { flex-direction: column; gap: 2px; }
+    .panel.dislo-strip .dlx-lbl,
+    .jarg.dlx-more .jrow .jk { width: auto; }
+    .panel.dislo-strip h2.dlx-verdict { font-size: 15.5px; }
+    .panel.dislo-strip .dlx-cap { display: block; margin-top: 3px; }
+  }
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
@@ -1581,15 +1671,20 @@
   body.page-macro .cb-sub a { margin-left: auto; }
   /* dislocation surfaced into the alerts pane when active */
   body.page-macro .alert.alert-dislocation { border-left-color: var(--act); }
-  /* when a dislocation is active its panel renders (only then) and floats to the very
-     top of the page — a rare, urgent risk banner above the regime hero. Hidden (not
-     rendered at all) when dormant, so it never occupies prime space on normal days. */
-  body.page-macro #dislocation { order: -2; scroll-margin-top: 16px; }
+  /* When a dislocation is active its panel renders (only then) and stays in NORMAL
+     PAGE FLOW, in its authored slot inside the risk / nowcast section beside the
+     risk-state banner. It used to carry a negative flex `order` override that floated
+     it above the whole board — operator ruling 2026-07-29 killed that: a fired gate announces
+     itself through the alerts pane, the master-switch chip and the "What To Do Now"
+     row, and the panel itself is only the compact receipt they jump to (see
+     .panel.dislo-strip above). Dormant = not rendered at all. */
+  body.page-macro #dislocation { scroll-margin-top: 16px; }
   /* fused equity-internal RISK STATE banner (engine/risk_state.py). When the state is
-     elevated+ (alert) it FLOATS just below the acute dislocation filter and above the
-     regime hero and pulses loudly; at 'caution' it renders inline in the risk section
-     (informative, not dominating). The early-warning that LEADS the credit gauge; the
-     dislocation banner is the late, falling-knife filter. */
+     elevated+ (alert) it FLOATS above the regime hero and pulses loudly; at 'caution'
+     it renders inline in the risk section (informative, not dominating). It is now the
+     only floating risk surface on the page — the acute dislocation filter above no
+     longer floats. The early-warning that LEADS the credit gauge; the dislocation
+     strip is the late, falling-knife filter. */
   body.page-macro #risk-state { scroll-margin-top: 16px; border-left: 4px solid var(--rs); }
   body.page-macro #risk-state.rs-float { order: -1; }
   /* Perf: loud-state pulse = pseudo animating ONLY opacity (compositor); the old
@@ -2519,6 +2614,14 @@ body.page-macro .mxqm-eyebrow-chip{margin-left:auto;font-size:9.5px;font-weight:
 body.page-macro #mx5FlipCtxPop .mxfs-badge{display:none}
 body.page-macro .mxqm-glance{font-size:12.5px;line-height:1.5;color:var(--ink-2,rgba(255,255,255,.78));margin:2px 0 10px}
 body.page-macro .mxqm-glance b{color:var(--warn,#f59e0b);font-weight:700}
+/* Historical base rate — deliberately quieter than the glance line above it, because it
+   answers a different (and slower) question than today's drift and must never be read as
+   a competing forecast. */
+body.page-macro .mxqm-hist{margin:-4px 0 6px;font-size:11px;line-height:1.45;
+  color:var(--ink-3,rgba(255,255,255,.42))}
+body.page-macro .mxqm-hist b{color:var(--ink-2,rgba(255,255,255,.72));font-weight:650;
+  font-variant-numeric:tabular-nums}
+[data-theme="light"] body.page-macro .mxqm-hist{color:rgba(0,0,0,.44)}
 /* Goldilocks trim (2026-07-20): ONE quiet compressed line (grip + weakest support)
    replacing the deleted flip-strip section; + one-line footer. */
 body.page-macro .mxqm-hold{display:flex;align-items:baseline;gap:6px;margin:2px 0 4px;
@@ -3690,6 +3793,37 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
+/* Ghost mark = where the six-signal BLEND sits before the cap. A single quiet tick, no
+   glow and no second hue: the whole point is that this number was overridden, so it
+   must never compete with the needle. It sits inside the `g[stroke]` light-mode rule's
+   sibling space, hence its own explicit stroke in both themes. */
+body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(255,255,255,.40);}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(10,16,24,.34);}
+/* caption + its legend glyph (the same tick, inline, so the mark on the arc is
+   self-explaining without a legend box) */
+body.page-macro.mx4-grid .mx5-score-prov{
+  margin-top:5px;font-size:10.5px;line-height:1.45;
+  color:var(--ink-3,rgba(255,255,255,.36));
+}
+body.page-macro.mx4-grid .mx5-score-prov b{color:var(--text);font-variant-numeric:tabular-nums;}
+/* inline-block, never a flex child: as a flex item the legend tick wrapped onto its own
+   line above the sentence it belongs to */
+body.page-macro.mx4-grid .mx5-ghost-key{
+  display:inline-block;width:2px;height:10px;border-radius:1px;margin-right:5px;
+  background:rgba(255,255,255,.40);vertical-align:-1px;
+}
+[data-theme="light"] body.page-macro.mx4-grid .mx5-ghost-key{background:rgba(10,16,24,.34);}
+
+/* ── Chip receipts (chipn-*) — the three things the two chips above cannot say ──
+   Quiet by construction: same ink as the provenance caption, so the chips stay the
+   loud element and these read as the fine print under them. */
+body.page-macro.mx4-grid .mx5-chipn{
+  display:flex;flex-direction:column;gap:3px;margin-top:8px;
+  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.36));
+}
+body.page-macro.mx4-grid .mx5-chipn-row b{color:var(--text);font-variant-numeric:tabular-nums;}
+body.page-macro.mx4-grid .mx5-chipn-row.warn{color:var(--mx5-warn-ink,var(--warn));}
+body.page-macro.mx4-grid .mx5-chipn-row.warn b{color:var(--mx5-warn-ink,var(--warn));}
 
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
@@ -3723,6 +3857,52 @@ body.page-macro.mx4-grid .mx5-regime-pill.rp-red .mx5-dot{
 body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
+}
+
+/* ── Regime reality rows (rgx-*) — what the chip's label is actually worth ──────
+   Operator escalation 2026-07-29: a label with 0.04% model probability and its own
+   axes reading the other way was presentable as a calm green chip because every
+   qualifier lived behind the ⓘ hover. These rows put the qualifiers on the chip's own
+   line. Deliberately QUIET typography — a 10px uppercase key column against 11.5px
+   body — so the pill above stays the loudest thing in the cluster and the rows read as
+   its footnotes, not as four competing headlines. Amber (never red) is the only accent:
+   these rows report that a call is weakly held, which is a caution, not a verdict. */
+body.page-macro.mx4-grid .mx5-rgx{
+  display:flex;flex-direction:column;gap:3px;margin:-4px 0 10px;
+  padding-left:11px;border-left:2px solid var(--line);
+}
+body.page-macro.mx4-grid .mx5-rgx-row{
+  display:flex;align-items:baseline;gap:9px;font-size:11.5px;line-height:1.42;
+}
+body.page-macro.mx4-grid .mx5-rgx-k{
+  flex:none;width:88px;font-size:9.5px;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));
+  padding-top:1px;
+}
+body.page-macro.mx4-grid .mx5-rgx-v{flex:1;min-width:0;color:var(--text);}
+/* mono numerals for FIGURES only — the words around them stay in the body face */
+body.page-macro.mx4-grid .mx5-rgx-v b{font-variant-numeric:tabular-nums;font-weight:700;}
+body.page-macro.mx4-grid .mx5-rgx-v.warn{color:var(--mx5-warn-ink,var(--warn));}
+body.page-macro.mx4-grid .mx5-rgx-note{
+  margin-top:3px;font-size:10.5px;line-height:1.45;
+  color:var(--ink-3,rgba(255,255,255,.36));
+}
+/* Confirmation meter — N of M sessions as filled bars. Non-verbal by design: it needs
+   no vocabulary in either language, and it is the one place on this cluster where a
+   regime change in progress is visible without reading a sentence. */
+body.page-macro.mx4-grid .mx5-rgx-meter{
+  display:inline-flex;gap:2px;vertical-align:baseline;margin-right:7px;
+  position:relative;top:1px;
+}
+body.page-macro.mx4-grid .mx5-rgx-meter i{
+  width:5px;height:10px;border-radius:1.5px;display:inline-block;
+  background:color-mix(in srgb,var(--line) 80%,transparent);
+}
+body.page-macro.mx4-grid .mx5-rgx-meter i.on{background:var(--mx5-warn,#f59e0b);}
+@media(max-width:700px){
+  body.page-macro.mx4-grid .mx5-rgx{padding-left:9px;margin:-2px 0 10px;}
+  body.page-macro.mx4-grid .mx5-rgx-row{flex-direction:column;gap:0;}
+  body.page-macro.mx4-grid .mx5-rgx-k{width:auto;padding-top:2px;}
 }
 
 /* Score + verdict beside gauge */
@@ -3893,13 +4073,23 @@ html[data-lang="zh"] body.page-macro.mx4-grid .mx5-pl-zone.off{color:rgba(34,217
    carry these classes so the zh mirror below can re-tint them (their fill/stroke
    presentation attrs remain as no-CSS fallbacks; CSS wins over attrs). */
 body.page-macro.mx4-grid .mx5-ph-zone-on{fill:rgba(34,217,122,.045);}
-body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(239,68,68,.045);}
+/* the risk-off zone carries 2× the tint of the other two, on purpose: it is the band a
+   reader must be able to see the line ENTER, and at .045 it was invisible — which is
+   part of why a window containing five risk-off prints read as calm. */
+body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(239,68,68,.08);}
 body.page-macro.mx4-grid .mx5-ph-hair-on{stroke:rgba(34,217,122,.22);}
-body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(239,68,68,.20);}
+body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(239,68,68,.34);}
 html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-zone-on{fill:rgba(239,68,68,.045);}
-html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(34,217,122,.045);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-zone-off{fill:rgba(34,217,122,.08);}
 html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-hair-on{stroke:rgba(239,68,68,.20);}
-html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(34,217,122,.22);}
+html[data-lang="zh"] body.page-macro.mx4-grid .mx5-ph-hair-off{stroke:rgba(34,217,122,.34);}
+/* Band gradient stops for the score path (mx5PathBandGrad). Tokens, not baked hex, so
+   the line follows the theme and flips with --up/--down under zh 红涨绿跌 exactly like
+   the zone tints above. */
+body.page-macro.mx4-grid .mx5-ph-line{opacity:.95;}
+body.page-macro.mx4-grid #mx5PathBandGrad stop.b-on{stop-color:var(--up);}
+body.page-macro.mx4-grid #mx5PathBandGrad stop.b-mid{stop-color:var(--warn);}
+body.page-macro.mx4-grid #mx5PathBandGrad stop.b-off{stop-color:var(--down);}
 body.page-macro.mx4-grid .mx5-pl-x{
   top:96.4%;color:var(--ink-3,rgba(255,255,255,.34));
 }
@@ -4675,18 +4865,18 @@ body.page-macro .rsx-dlg-footer{
 .mx5-dlg-cal-card.hot{border-color:rgba(245,158,11,.25);background:rgba(245,158,11,.04);}
 [data-theme="light"] .mx5-dlg-cal-card{background:rgba(0,0,0,.03);border-color:rgba(0,0,0,.07);}
 [data-theme="light"] .mx5-dlg-cal-card.hot{background:rgba(245,158,11,.04);}
-/* ── Calendar card = Release Radar selector (rr-inline, 2026-07) ──────────────
-   Every card is a selector for the inline panel below. Covered dates carry a
-   subtle radar dot; the selected card holds an --info accent ring. FOMC cards
-   route to the Fed Path board instead of selecting (chip affordance). */
+/* ── Calendar date = Release Radar selector (rr-inline, 2026-07) ─────────────
+   Every non-FOMC card selects its date for the inline panel below. Covered
+   dates carry a subtle radar dot; every selector sharing the selected date
+   receives the same --info accent ring. FOMC cards route to Fed Path instead. */
 .mx5-dlg-cal-card.rr-select{cursor:pointer;transition:border-color .16s ease,box-shadow .22s ease,background .16s ease;}
 .mx5-dlg-cal-card.rr-select:hover{border-color:color-mix(in srgb,var(--info,#60a5fa) 40%,transparent);box-shadow:0 2px 12px color-mix(in srgb,var(--info,#60a5fa) 8%,transparent);}
 .mx5-dlg-cal-card.rr-select:focus-visible{outline:2px solid var(--info,#60a5fa);outline-offset:2px;}
-/* active (selected) card — accent ring + faint info tint, coherent with .gbtn glass */
+/* Selected date — outer blue ring survives green/amber live-status fills. */
 .mx5-dlg-cal-card.rr-active{
   border-color:color-mix(in srgb,var(--info,#60a5fa) 58%,transparent);
   background:color-mix(in srgb,var(--info,#60a5fa) 8%,rgba(255,255,255,.04));
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--info,#60a5fa) 40%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
+  box-shadow:0 0 0 2px color-mix(in srgb,var(--info,#60a5fa) 72%,transparent),0 6px 18px -10px color-mix(in srgb,var(--info,#60a5fa) 60%,transparent);
 }
 [data-theme="light"] .mx5-dlg-cal-card.rr-active{background:color-mix(in srgb,var(--info,#60a5fa) 9%,rgba(0,0,0,.03));}
 /* covered-date indicator — small radar dot chip (replaces the old "Release Radar ▸" text link) */
@@ -5134,26 +5324,19 @@ body.page-macro.mx4-grid .mx5-ai-gray{background:rgba(255,255,255,.06);color:var
 body.page-macro.mx4-grid .mx5-action-text{flex:1;}
 body.page-macro.mx4-grid .mx5-action-label{
   font-size:13px;color:var(--ink-1,rgba(255,255,255,.92));
-  line-height:1.35;font-weight:560;
+  line-height:1.45;font-weight:500;
 }
 body.page-macro.mx4-grid .mx5-action-sub{
-  font-size:11px;color:var(--ink-3,rgba(255,255,255,.42));margin-top:2px;
+  font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
 }
-body.page-macro.mx4-grid .mx5-action-primary{
-  align-items:center;padding:2px 0 13px;
+/* in-row jump to an anchored panel (today: the active dislocation strip). The card
+   FACE is itself a button that opens the Evidence dialog, so the anchor stops click
+   and Enter/Space from bubbling — see the inline handlers on the link. */
+body.page-macro.mx4-grid .mx5-wtd-jump{
+  margin-left:6px;font-size:11.5px;font-weight:650;white-space:nowrap;
+  color:var(--link);text-decoration:none;
 }
-body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon{
-  width:36px;height:36px;border-radius:10px;
-}
-body.page-macro.mx4-grid .mx5-action-primary .mx5-action-icon svg{width:16px;height:16px;}
-body.page-macro.mx4-grid .mx5-action-primary .mx5-action-label{
-  font-size:15px;line-height:1.3;font-weight:720;letter-spacing:-.01em;
-}
-body.page-macro.mx4-grid .mx5-action-verb{
-  display:inline-block;margin-right:5px;
-  font-size:10px;font-weight:760;letter-spacing:.05em;text-transform:uppercase;
-  color:var(--ink-3,rgba(255,255,255,.42));
-}
+body.page-macro.mx4-grid .mx5-wtd-jump:hover{text-decoration:underline;}
 
 /* ── UPCOMING EVENTS (mini week timeline inside sx-events-v2 face) — Wave E ─────────
    Impact = node size + colour + small label; a single connecting rail threads the week
@@ -5688,6 +5871,16 @@ body.page-macro.mx4-grid .mx5-fed-policy-note strong{color:var(--ink-1,rgba(255,
 .rkc-ov-name{font:600 11px/1.25 var(--font-ui,inherit);color:var(--ink-2,rgba(255,255,255,.66));text-align:center;
   max-width:100%;overflow-wrap:anywhere;}
 [data-theme="light"] .rkc-ov-name{color:rgba(0,0,0,.62);}
+/* state word — in the ring's own band colour, so the tile says what its colour means
+   (the three markets with no hover profile had a coloured ring and no word at all) */
+.rkc-ov-state{margin-top:-3px;font:700 9px/1.2 var(--font-ui,inherit);letter-spacing:.08em;
+  text-transform:uppercase;text-align:center;color:var(--rkc-c,var(--muted,#8a93a3));}
+/* this ring's own grading date, shown ONLY when it predates the board — the dialog's
+   single footer stamp is the board's date, and a ring can be days behind it */
+.rkc-ov-age{margin-top:-4px;font:600 9px/1.2 var(--font-ui,inherit);text-align:center;
+  color:var(--ink-3,rgba(255,255,255,.34));}
+[data-theme="light"] .rkc-ov-age{color:rgba(0,0,0,.36);}
+.row-pop-why li.row-pop-stale{color:var(--warn,#f59e0b);}
 @media(prefers-reduced-motion:no-preference){
   #dlg-risk .rkc-ov-ring{--rkc-anim:0;
     background:conic-gradient(var(--rkc-c,var(--isle-risk,#e05c5c)) calc(var(--rkc-anim,0) * 1%),
@@ -6308,7 +6501,23 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="mxfs-badge">{{ t('Context — not a forecast','情景参考 — 非预测') }}</span>
       </div>
       <div class="mxfs-subtitle">{{ t('About the regime label — not the 0-100 risk score.','指上方周期标签——并非 0-100 风险评分。') }}</div>
-      {% if _fc.get('component') %}
+      {# When the label's own axes no longer support it there IS no supporting component
+         to name, and naming one presents anti-evidence as support (the defect the engine
+         fixed in flip_condition — it now returns component=None + label_unsupported).
+         An older latest.json still carries a component here, so the same state is
+         detected from the published axes via raw_quad_of(). #}
+      {% set _fs_raw = raw_quad_of(latest) | trim %}
+      {% set _fs_unsup = (_fc.get('label_unsupported') is sameas true)
+                         or (latest.get('quad') and _fs_raw and _fs_raw != latest.get('quad')) %}
+      {% if _fs_unsup %}
+      <div class="mxfs-row">
+        <span class="mxfs-k">{{ t('Today’s axes','今日两轴') }}</span>
+        <span class="mxfs-v">
+          <span class="l-en">read <b>{{ _fs_quad.get(_fs_raw, [_fs_raw, _fs_raw])[0] }}</b> — the label’s own axes no longer support it. Treat the name as history, not as today’s read.</span>
+          <span class="l-zh">读数为<b>{{ _fs_quad.get(_fs_raw, [_fs_raw, _fs_raw])[1] }}</b> — 该标签自身的两轴已不再支持它。请把这个名称视为历史，而非今日读数。</span>
+        </span>
+      </div>
+      {% elif _fc.get('component') %}
       {% set _fcl = _fs_short.get(_fc.component, [(_fc.component | replace('_',' ')), (_fc.component | replace('_',' '))]) %}
       {% set _fax_en = 'growth' if _fc.get('axis') == 'growth' else 'inflation' %}
       {% set _fax_zh = '增长' if _fc.get('axis') == 'growth' else '通胀' %}
@@ -6477,7 +6686,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   {% if latest.dislocation and latest.dislocation.dislocation_active %}
                   <a class="ms-sig sev-act" data-ms-jump href="#dislocation">
                     <div class="ms-sig-head"><span class="ms-sig-ico">🚦</span><span class="ms-sig-title">{{ t('Dislocation Gate-1 is ACTIVE','错位一道闸已激活') }}</span><span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span></div>
-                    <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the 2000/2008/2022 falling-knife regime).','压力抛售且美联储托底缺失 — 观望（2000／2008／2022 接飞刀情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
+                    <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the put-absent setup the gate refused from April 2008).','压力抛售且美联储托底缺失 — 观望（一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
                   </a>
                   {% endif %}
                   {# C-01 + v5: `anchor` is either an id on THIS page (plain id → in-page
@@ -6530,6 +6739,31 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _mx5_filled = (_mx5_score / 100 * _mx5_arc_len) | round(1) %}
     {% set _mx5_gap = (_mx5_arc_len - _mx5_filled) | round(1) %}
     {% set _mx5_needle_deg = (_mx5_score / 100 * 180 - 90) | round(1) %}
+    {# ── SCORE PROVENANCE: is the dial showing a measurement, or a constant? ────────
+       Audit 2026-07-29: on every radar-capped session the number on this dial is the
+       amplified CEILING CONSTANT, not a reading of the tape — across 21 logged sessions
+       the six-leg blend never printed below 61 while the displayed score never rose
+       above 56. `raw_score` was always in the payload but nothing on the page said
+       WHICH of the two the needle was pointing at, so a constant read as a measurement.
+       The engine now publishes score_source / capped / score_ceiling / score_gap; older
+       payloads carry raw_score + radar.ceiling, which is enough to show the same thing,
+       so this lights up either way. Nothing here changes a cap, a band or a verdict. #}
+    {% set _mx5_raw = MS.raw_score if (MS.raw_score is defined and MS.raw_score is not none and MS.raw_score is number) else none %}
+    {% set _mx5_ceil = MS.score_ceiling if (MS.score_ceiling is defined and MS.score_ceiling is not none)
+                       else ((MS.radar.ceiling if (MS.radar and MS.radar.ceiling is defined and MS.radar.ceiling is not none) else none)) %}
+    {% set _mx5_src = MS.score_source if (MS.score_source is defined and MS.score_source) else none %}
+    {# the ghost tick draws ONLY when the blend and the shown score actually differ —
+       an unbinding cap must not paint a second mark on top of the needle #}
+    {% set _mx5_ghost = _mx5_raw is not none and _mx5_raw != _mx5_score %}
+    {% set _mx5_ghost_deg = ((_mx5_raw / 100 * 180 - 90) | round(1)) if _mx5_ghost else none %}
+    {# what is actually holding the dial down. score_source names it outright; on an
+       older payload the radar ceiling is identifiable because it equals the shown score. #}
+    {% set _mx5_capw = {'radar_ceiling': ['the Risk Radar’s cap', '风险雷达的上限'],
+                        'hard_force': ['an override that forces the Risk-off band', '强制进入「避险」区间的覆盖规则'],
+                        'verdict_cap': ['an override that caps the Mixed band', '封顶于「混合」区间的覆盖规则']}.get(_mx5_src)
+                       or ((['the Risk Radar’s cap', '风险雷达的上限']
+                            if (_mx5_ceil is not none and _mx5_ceil == _mx5_score)
+                            else ['an override on the market-state call', '市场状态判定上的覆盖规则']) if _mx5_ghost else none) %}
     {# Score color variable class #}
     {% set _mx5_sc_cls = 'mx5-score-green' if MS.color == 'green' else ('mx5-score-yellow' if MS.color == 'yellow' else 'mx5-score-red') %}
     {# state colour as a TOKEN so it flips in zh (红涨绿跌); var() only resolves in
@@ -6559,6 +6793,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
        undefined here, which rendered "0 signals aligned" + an empty factor popover #}
     {% set _mx5_comps = MS.components if (MS and MS.components is defined and MS.components) else [] %}
     {% set _mx5_n_good = (_mx5_comps | selectattr('tone','equalto','good') | list | length) %}
+    {# every leg that is NOT supportive — warn, bad, or an unrecognised tone. Counting
+       the complement (never just 'warn') means a new tone can never disappear from the
+       chip and turn dissent into an implied all-clear. #}
+    {% set _mx5_n_warn = (_mx5_comps | length) - _mx5_n_good %}
     {# Weakest leg #}
     {% set _mx5_weakest = _mx5_comps | sort(attribute='score') | first if _mx5_comps else none %}
     {# 60-session path from ms_history VM key #}
@@ -6577,6 +6815,134 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="l-zh">{{ td(latest.quad_name) if latest.quad_name is defined else '周期' }}{% if _mx5_ts_zh %} &nbsp;&middot;&nbsp; {{ _mx5_ts_zh }}{% endif %}</span>
         <span class="mx5-pill-info">ⓘ</span>
       </div>
+      {# ── REGIME REALITY (rgx-*) — the chip's own lines, never a hover ──────────
+         Operator escalation 2026-07-29: the chip printed "Goldilocks" while the engine's
+         own filtered model gave that label 0.04% and the memoryless sign rule had read
+         Stagflation for ten sessions. A near-zero probability on the HEADLINE label is a
+         statement about the headline, not a technical detail, so per the design doctrine
+         it cannot sit behind the ⓘ hover — it belongs on the chip's own line, with the
+         countdown that would resolve the disagreement and the stance that follows from
+         the regime's age.
+
+         Every value here is engine-published, and every one is guarded: quad_vector.p
+         (model odds), the hysteresis countdown (run.py raw_quad / pending_* once it
+         reaches the payload, else the playbook's own countdown sentence), playbook
+         .progress (phase + its stance note), and the rate/inflation transmission LEVEL
+         read. An older latest.json simply prints fewer rows; with nothing to say the
+         block does not render at all. No threshold, gate or verdict is computed here. #}
+      {%- set _rgx_fc = latest.get('flip_condition') or {} %}
+      {%- set _rgx_q = {'Q1':['Goldilocks','理想增长'],'Q2':['Reflation','再通胀'],
+                        'Q3':['Stagflation','滞胀'],'Q4':['Growth scare','增长恐慌']} %}
+      {%- set _rgx_disp = _rgx_fc.get('displayed_quad') or latest.get('quad') %}
+      {%- set _rgx_gs = latest.get('growth_score') %}
+      {%- set _rgx_is = latest.get('inflation_score') %}
+      {#- raw = the memoryless sign rule on today's axes. Engine-published first
+          (flip_condition.raw_quad, then run.py's raw_quad); the last resort derives it
+          the SAME way engine/playbook.quad_meaning_for() does when the column is absent,
+          so the page can never disagree with the engine's own fallback. -#}
+      {%- set _rgx_raw = _rgx_fc.get('raw_quad') or latest.get('raw_quad')
+                         or ((('Q1' if _rgx_is < 0 else 'Q2') if _rgx_gs >= 0
+                              else ('Q4' if _rgx_is < 0 else 'Q3'))
+                             if (_rgx_gs is not none and _rgx_gs is number
+                                 and _rgx_is is not none and _rgx_is is number) else none) %}
+      {%- set _rgx_unsup = (_rgx_fc.get('label_unsupported') is sameas true)
+                           or (_rgx_disp and _rgx_raw and _rgx_raw != _rgx_disp) %}
+      {%- set _rgx_qv = latest.get('quad_vector') if latest.get('quad_vector') is mapping else {} %}
+      {%- set _rgx_p = (_rgx_qv.get('p') or {}) if not _rgx_qv.get('degraded', true) else {} %}
+      {%- set _rgx_pl = _rgx_p.get(_rgx_disp) if (_rgx_p and _rgx_disp) else none %}
+      {%- set _rgx_rivals = [] %}
+      {%- for _rk, _rv in (_rgx_p.items() | sort(attribute='1', reverse=true)) %}
+        {%- if _rk != _rgx_disp and _rgx_rivals | length < 2 and _rv %}{% if _rgx_rivals.append([_rk, _rv]) %}{% endif %}{% endif %}
+      {%- endfor %}
+      {%- set _rgx_pq = _rgx_fc.get('pending_quad') or latest.get('pending_quad') %}
+      {%- set _rgx_pd = _rgx_fc.get('pending_days') if _rgx_fc.get('pending_days') is not none else latest.get('pending_days') %}
+      {%- set _rgx_pn = _rgx_fc.get('pending_need') if _rgx_fc.get('pending_need') is not none else latest.get('pending_need') %}
+      {#- the playbook's own bilingual countdown sentence, used verbatim when the
+          structured keys above are not in the payload yet -#}
+      {%- set _rgx_cd = [] %}
+      {%- for _tp in (pb.triggers if (pb is defined and pb and pb.triggers) else []) %}
+        {%- if _rgx_cd | length < 1 and 'counting down' in (_tp[0] | string) %}{% if _rgx_cd.append(_tp) %}{% endif %}{% endif %}
+      {%- endfor %}
+      {#- meter = [days, need]. Structured keys first; otherwise read the two integers
+          out of the engine's own sentence ("… counting down: 3 of 7 confirmation days
+          done."). Bounds-checked and FAIL-CLOSED: an unparsable sentence simply draws no
+          meter, and the sentence beside it is rendered verbatim either way, so no claim
+          on this page depends on the parse. -#}
+      {%- set _rgx_meter = [] %}
+      {%- if _rgx_pd is not none and _rgx_pn %}
+        {%- if _rgx_meter.append(_rgx_pd | int) %}{% endif %}{% if _rgx_meter.append(_rgx_pn | int) %}{% endif %}
+      {%- elif _rgx_cd %}
+        {%- set _rgx_tail = (_rgx_cd[0][0] | string).split('counting down: ') %}
+        {%- if _rgx_tail | length > 1 %}
+          {%- set _rgx_bits = _rgx_tail[1].split(' of ') %}
+          {%- if _rgx_bits | length > 1 %}
+            {%- set _rgx_d = _rgx_bits[0] | trim | int %}
+            {%- set _rgx_n = (_rgx_bits[1] | trim).split(' ')[0] | int %}
+            {%- if _rgx_n > 0 and _rgx_n <= 14 and _rgx_d > 0 and _rgx_d <= _rgx_n %}
+              {%- if _rgx_meter.append(_rgx_d) %}{% endif %}{% if _rgx_meter.append(_rgx_n) %}{% endif %}
+            {%- endif %}
+          {%- endif %}
+        {%- endif %}
+      {%- endif %}
+      {%- set _rgx_prog = (pb.progress if (pb is defined and pb and pb.progress is mapping) else {}) %}
+      {%- set _rgx_infl = ((latest.get('rate_inflation_transmission') or {}).get('state') or {}).get('inflation') or {} %}
+      {%- set _rgx_pce = _rgx_infl.get('core_pce_yoy') %}
+      {%- set _rgx_pce_w = {'above target':['above target','高于目标'],
+                            'at target':['at target','接近目标'],
+                            'below target':['below target','低于目标']}.get(_rgx_infl.get('regime')) %}
+      {% if _rgx_pl is not none or (_rgx_unsup and _rgx_raw) or _rgx_cd or (_rgx_pq and _rgx_pd is not none) or _rgx_prog.get('phase_note') %}
+      <div class="mx5-rgx">
+        {% if _rgx_pl is not none %}
+        <div class="mx5-rgx-row">
+          <span class="mx5-rgx-k">{{ t('Model odds','模型概率') }}</span>
+          <span class="mx5-rgx-v{{ ' warn' if _rgx_pl < 0.10 }}">
+            <span class="l-en"><b>{% if _rgx_pl < 0.01 %}Under 1{% else %}{{ (_rgx_pl * 100) | round | int }}{% endif %} in 100</b> on {{ _rgx_q.get(_rgx_disp, [_rgx_disp, _rgx_disp])[0] }}{% if _rgx_rivals %} — {% for _r in _rgx_rivals %}{{ _rgx_q.get(_r[0], [_r[0], _r[0]])[0] }} <b>{{ (_r[1] * 100) | round | int }}</b>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>
+            <span class="l-zh"><b>100 中{% if _rgx_pl < 0.01 %}不足 1{% else %}约 {{ (_rgx_pl * 100) | round | int }}{% endif %}</b>落在{{ _rgx_q.get(_rgx_disp, [_rgx_disp, _rgx_disp])[1] }}{% if _rgx_rivals %} — {% for _r in _rgx_rivals %}{{ _rgx_q.get(_r[0], [_r[0], _r[0]])[1] }} <b>{{ (_r[1] * 100) | round | int }}</b>{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}</span>
+          </span>
+        </div>
+        {% endif %}
+        {% if _rgx_unsup and _rgx_raw %}
+        <div class="mx5-rgx-row">
+          <span class="mx5-rgx-k">{{ t('Today’s axes','今日两轴') }}</span>
+          <span class="mx5-rgx-v warn">
+            <span class="l-en"><b>{{ _rgx_q.get(_rgx_raw, [_rgx_raw, _rgx_raw])[0] }}</b> — the label’s own axes no longer support it{% if _rgx_gs is not none and _rgx_gs is number and _rgx_is is not none and _rgx_is is number %} (growth <b>{{ '%+.2f'|format(_rgx_gs) }}</b>, inflation <b>{{ '%+.2f'|format(_rgx_is) }}</b>){% endif %}</span>
+            <span class="l-zh"><b>{{ _rgx_q.get(_rgx_raw, [_rgx_raw, _rgx_raw])[1] }}</b> — 该标签自身的两轴已不再支持它{% if _rgx_gs is not none and _rgx_gs is number and _rgx_is is not none and _rgx_is is number %}（增长 <b>{{ '%+.2f'|format(_rgx_gs) }}</b>、通胀 <b>{{ '%+.2f'|format(_rgx_is) }}</b>）{% endif %}</span>
+          </span>
+        </div>
+        {% endif %}
+        {% if _rgx_cd or (_rgx_pq and _rgx_pd is not none and _rgx_pn) %}
+        <div class="mx5-rgx-row">
+          <span class="mx5-rgx-k">{{ t('Counting down','倒计时') }}</span>
+          <span class="mx5-rgx-v">
+            {%- if _rgx_meter | length == 2 %}<span class="mx5-rgx-meter" aria-hidden="true">{% for _i in range(_rgx_meter[1]) %}<i{% if _i < _rgx_meter[0] %} class="on"{% endif %}></i>{% endfor %}</span>{% endif %}
+            {%- if _rgx_pq and _rgx_pd is not none and _rgx_pn %}
+            <span class="l-en">A change to <b>{{ _rgx_q.get(_rgx_pq, [_rgx_pq, _rgx_pq])[0] }}</b> is counting down — <b>{{ _rgx_pd }} of {{ _rgx_pn }}</b> confirmation days done</span>
+            <span class="l-zh">转向<b>{{ _rgx_q.get(_rgx_pq, [_rgx_pq, _rgx_pq])[1] }}</b>的切换正在倒计时 — 已完成 <b>{{ _rgx_pd }}/{{ _rgx_pn }}</b> 个确认交易日</span>
+            {%- else %}
+            <span class="l-en">{{ _rgx_cd[0][0] }}</span><span class="l-zh">{{ _rgx_cd[0][1] }}</span>
+            {%- endif %}
+          </span>
+        </div>
+        {% endif %}
+        {% if _rgx_prog.get('phase_note') %}
+        <div class="mx5-rgx-row">
+          <span class="mx5-rgx-k">{{ t('Regime age','周期已运行') }}</span>
+          <span class="mx5-rgx-v">
+            {%- if _rgx_prog.get('age_days') is not none %}<b>{{ _rgx_prog.age_days }}</b><span class="l-en"> days{% if _rgx_prog.get('median_days') %} (typical <b>{{ _rgx_prog.median_days }}</b>){% endif %} — </span><span class="l-zh"> 天{% if _rgx_prog.get('median_days') %}（通常 <b>{{ _rgx_prog.median_days }}</b> 天）{% endif %} — </span>{% endif %}
+            <span class="l-en">{{ _rgx_prog.phase_note }}</span><span class="l-zh">{{ _rgx_prog.phase_note_zh or _rgx_prog.phase_note }}</span>
+          </span>
+        </div>
+        {% endif %}
+        {# What the two axes actually measure. They are built from the DIRECTION OF
+           CHANGE in market proxies, so "inflation cooling" on the label is never a claim
+           that the price level is low — core PCE is printed beside it so the two cannot
+           be confused. Level read comes from rate_inflation_transmission.state. #}
+        <div class="mx5-rgx-note">
+          <span class="l-en">These two axes read the direction of change in market proxies, not levels{% if _rgx_pce is not none and _rgx_pce is number %} — core PCE is {{ '%.1f'|format(_rgx_pce) }}%{% if _rgx_pce_w %}, {{ _rgx_pce_w[0] }}{% endif %}{% endif %}.</span>
+          <span class="l-zh">这两轴读的是市场代理指标的变化方向，而非水平值{% if _rgx_pce is not none and _rgx_pce is number %} — 核心 PCE 为 {{ '%.1f'|format(_rgx_pce) }}%{% if _rgx_pce_w %}，{{ _rgx_pce_w[1] }}{% endif %}{% endif %}。</span>
+        </div>
+      </div>
+      {% endif %}
       <div class="mx5-sc-gauge-row {{ _mx5_sc_cls }}">
         {# Compact semicircle gauge; data-* attrs for risk_state_live.js patchMacro #}
         <svg class="mx5-gauge-svg" viewBox="0 -4 140 101" fill="none"
@@ -6612,6 +6978,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text x="14"  y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">0</text>
           <text x="70"  y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
           <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
+          {# Ghost mark — where the six-leg BLEND sits, drawn under the needle so the
+             two marks read as "measured" vs "shown". Quiet ink, never a second hue:
+             this is the number that was overridden, so it must stay subordinate to the
+             needle. No id and no data-* — risk_state_live.js patches the needle by id
+             and leaves this alone, which is right: the blend is a nightly composite. #}
+          {% if _mx5_ghost %}
+          <g class="mx5-gauge-ghost" transform="rotate({{ _mx5_ghost_deg }} 70 75)">
+            <line x1="70" y1="16" x2="70" y2="31" stroke-width="2.6" stroke-linecap="round"/>
+          </g>
+          {% endif %}
           {# Needle — rotation baked by Jinja; JS patches via data attr #}
           <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
@@ -6640,6 +7016,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             <span class="l-en">{{ {'green':'GREEN','yellow':'YELLOW','red':'RED'}.get(MS.color,'—') }} &mdash; {{ {'green':'Trend-following supported','yellow':'Trade with caution','red':'Defend capital first'}.get(MS.color,'') }}</span>
             <span class="l-zh">{{ {'green':'偏多 — 顺势而为受支撑','yellow':'谨慎操作','red':'优先保住本金'}.get(MS.color,'') }}</span>
           </div>
+          {# The dial's second mark, in words. Deliberately does NOT restate the shown
+             score: risk_state_live.js moves the needle intraday, and a baked "56" here
+             would go stale the moment it does. The blend is a nightly composite, so it
+             is safe to print — and the ghost tick on the arc is its legend. #}
+          {% if _mx5_ghost and _mx5_capw %}
+          <div class="mx5-score-prov">
+            <i class="mx5-ghost-key" aria-hidden="true"></i>
+            <span class="l-en">Six-signal blend <b>{{ _mx5_raw }}</b> — the dial is held below it by {{ _mx5_capw[0] }}.</span>
+            <span class="l-zh">六项信号合成 <b>{{ _mx5_raw }}</b> — 刻度盘受{{ _mx5_capw[1] }}压制在其下方。</span>
+            {{ help('The dial shows the LOWER of two numbers: the blend of the six signals below, and a cap. Today the cap binds, so the number you see is the cap' ~ ((' (' ~ _mx5_ceil ~ ')') if _mx5_ceil is not none else '') ~ ', not a measurement of the tape — the blend reads ' ~ _mx5_raw ~ '. A cap can only pull the dial down, never up.',
+                     '刻度盘显示两个数中较低的一个：下方六项信号的合成值，以及一个上限。今日上限起作用，因此你看到的数字是上限' ~ ((' ' ~ _mx5_ceil) if _mx5_ceil is not none else '') ~ '，而非对行情的测量 —— 合成值为 ' ~ _mx5_raw ~ '。上限只能把刻度盘压低，不会抬高。') }}
+          </div>
+          {% endif %}
         </div>
       </div>{# /mx5-sc-gauge-row #}
 
@@ -6681,12 +7070,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <span class="l-zh"><b>{{ _qm_hard_zh }}</b> — 读数稳定。以周期标签为背景，关注风险评分。</span>
           {% else %}
           {% set _qm_gain_names = _qm_quad.get(_qm_gain, [_qm_gain, _qm_gain]) %}
+          {# "today's odds" is load-bearing wording: the historical base rate below
+             answers a DIFFERENT question and points somewhere else, and without the
+             two being named apart they read as one self-contradicting claim. #}
           {% if _qm_gain == _qm_hard %}
-          <span class="l-en"><b>{{ _qm_hard_en }}</b> now, odds firming — treat the label as backdrop, watch the risk score.</span>
-          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期，概率正向巩固 — 以标签为背景，关注风险评分。</span>
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> now; today’s odds are firming behind it — treat the label as backdrop, watch the risk score.</span>
+          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期；今日概率正在向其巩固 — 以标签为背景，关注风险评分。</span>
           {% else %}
-          <span class="l-en"><b>{{ _qm_hard_en }}</b> now, but drifting toward <b>{{ _qm_gain_names[0] }}</b> — treat the label as backdrop, watch the risk score.</span>
-          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期，但正向<b>{{ _qm_gain_names[1] }}</b>漂移 — 以标签为背景，关注风险评分。</span>
+          <span class="l-en"><b>{{ _qm_hard_en }}</b> now; today’s odds are drifting toward <b>{{ _qm_gain_names[0] }}</b> — treat the label as backdrop, watch the risk score.</span>
+          <span class="l-zh"><b>{{ _qm_hard_zh }}</b>当前周期；今日概率正向<b>{{ _qm_gain_names[1] }}</b>漂移 — 以标签为背景，关注风险评分。</span>
           {% endif %}
           {% endif %}
         </div>
@@ -6797,6 +7189,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
             </svg>
           </div>
         </div>
+        {# ── TWO DIFFERENT "next quad" READINGS, named apart ────────────────────────
+           quad_vector.transition_momentum (the glance line + the arrow above) is where
+           TODAY's model odds are moving. playbook.next_quad / next_list is a HISTORICAL
+           BASE RATE — which quad followed this one in the past — and it routinely points
+           the other way. Unlabelled, side by side, they read as one contradictory claim,
+           so each names the question it answers. Guarded: no playbook, no row. #}
+        {% set _qm_nx = (pb.next_list if (pb is defined and pb and pb.next_list) else []) %}
+        {% if _qm_nx %}
+        <div class="mxqm-hist">
+          <span class="l-en">Historically after {{ _qm_hard_en }}: {% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[0] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}, {% endif %}{% endfor %} — a base rate from past regimes, not today’s odds.</span>
+          <span class="l-zh">历史上{{ _qm_hard_zh }}之后：{% for _n in _qm_nx[:3] %}{{ _qm_quad.get(_n.code, [_n.name, _n.name])[1] }} <b>{{ _n.prob_pct }}</b>{% if not loop.last %}、{% endif %}{% endfor %} — 这是过去周期的基准比例，并非今日概率。</span>
+        </div>
+        {% endif %}
         {% endif %}{# /_qm_hard #}
         {# ── Goldilocks trim (Fable ruling 2026-07-20): a hover popup must never scroll.
            The old "WHAT COULD CHANGE THE REGIME CALL" section (regime_flip_strip) + its
@@ -6820,7 +7225,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'energy_rs':['the energy sector','能源板块'],'oil_trend':['oil','原油'],
           'inflation_beta_basket':['the inflation-winners basket','通胀受益篮子'],
           'tips_nominal_momentum':['the TIPS spread','TIPS 利差'] } %}
-        {%- set _gk_comp = _gk_fc.get('component') %}
+        {#- the weakest-support clause is SUPPRESSED when the label's own axes no longer
+            support it: there is no supporting component to name, and the glance rows
+            above already say what the axes read (see raw_quad_of + the mx5-rgx block).
+            The engine returns component=None in that state; an older payload does not,
+            so the same check runs here. -#}
+        {%- set _gk_raw = raw_quad_of(latest) | trim %}
+        {%- set _gk_unsup = (_gk_fc.get('label_unsupported') is sameas true)
+                            or (latest.get('quad') and _gk_raw and _gk_raw != latest.get('quad')) %}
+        {%- set _gk_comp = none if _gk_unsup else _gk_fc.get('component') %}
         {%- set _gk_cname = _gk_short.get(_gk_comp, [(_gk_comp | replace('_',' ')), (_gk_comp | replace('_',' '))]) if _gk_comp else none %}
         {#- grip word from confidence (matches regime_flip_strip mapping) -#}
         {%- set _gk_has_conf = (_gk_conf is not none and _gk_conf is number) %}
@@ -6871,8 +7284,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>
-          <span class="l-en">{{ _mx5_n_good }} signal{{ 's' if _mx5_n_good != 1 else '' }} aligned</span>
-          <span class="l-zh">{{ _mx5_n_good }} 项信号一致</span>
+          {# "4 signals aligned" printed the supporters and hid the dissenters — with 6
+             legs and 2 warning, the same button read as a 4-of-4 all-clear. Both counts
+             now, and the denominator, so the reader can see what the 4 is out of. #}
+          <span class="l-en">{{ _mx5_n_good }} of {{ _mx5_comps | length }} supportive{% if _mx5_n_warn > 0 %} &middot; {{ _mx5_n_warn }} warning{% endif %}</span>
+          <span class="l-zh">{{ _mx5_comps | length }} 项中 {{ _mx5_n_good }} 项支持{% if _mx5_n_warn > 0 %} &middot; {{ _mx5_n_warn }} 项警示{% endif %}</span>
           <svg width="9" height="9" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M1 1l4 4 4-4"/></svg>
         </button>
 
@@ -6951,16 +7367,73 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>{# /mx5PopFactors #}
 
       </div>{# /mx5-btn-row #}
+
+      {# ── Receipts for the two chips above (chipn-*) ────────────────────────────
+         Three things a reader cannot get from the chips alone, in the order they are
+         likely to be misread. All engine-sourced, all individually guarded. #}
+      {% set _mx5_ddb = (_mx5_rdr.dd_base if (_mx5_rdr and _mx5_rdr.dd_base is mapping) else {}) %}
+      {% set _mx5_dd21 = _mx5_rdr.dd21 if (_mx5_rdr and _mx5_rdr.dd21 is defined and _mx5_rdr.dd21 is not none) else none %}
+      {% set _mx5_ddbase21 = _mx5_ddb.get('h21') %}
+      {% set _mx5_ddlift = _mx5_rdr.dd_lift if (_mx5_rdr and _mx5_rdr.dd_lift is defined and _mx5_rdr.dd_lift is not none) else none %}
+      {% set _mx5_unav = _mx5_rdr.amp_unavailable if (_mx5_rdr and _mx5_rdr.amp_unavailable is defined and _mx5_rdr.amp_unavailable) else [] %}
+      {% set _mx5_unav_n = _mx5_rdr.amp_n_checked if (_mx5_rdr and _mx5_rdr.amp_n_checked is defined and _mx5_rdr.amp_n_checked) else none %}
+      {% if (_mx5_risk_elevated and _mx5_radar_top > 0) or _mx5_dd21 is not none or _mx5_unav %}
+      <div class="mx5-chipn">
+        {# 1. THE TWO NUMBERS RUN OPPOSITE WAYS. The dial beside this reads 0-100 toward
+              Risk-on; the radar chip reads 0-100 toward more risk. Printed next to each
+              other with no scale, "56" and "77" invite the reader to compare them. #}
+        {% if _mx5_risk_elevated and _mx5_radar_top > 0 %}
+        <div class="mx5-chipn-row">
+          <span class="l-en">Opposite scales — dial: 100 = Risk-on (now <b>{{ _mx5_score }}</b>). Radar: 100 = most risk (now <b>{{ _mx5_radar_top }}</b>).</span>
+          <span class="l-zh">两把尺方向相反 — 刻度盘：100＝偏多（现 <b>{{ _mx5_score }}</b>）；雷达：100＝风险最高（现 <b>{{ _mx5_radar_top }}</b>）。</span>
+        </div>
+        {% endif %}
+        {# 2. WHAT THE STATE HAS ACTUALLY MEASURED. "Elevated Risk" is a state name, not
+              an edge: the quiet tiers measure at or below the unconditional base rate.
+              The engine now composes this sentence itself (lift_note_en/zh) — render
+              that verbatim when present; otherwise say the same thing from the three
+              numbers it already publishes, and only claim a lift when there is one. #}
+        {% if _mx5_rdr.lift_note_en is defined and _mx5_rdr.lift_note_en %}
+        <div class="mx5-chipn-row"><span class="l-en">{{ _mx5_rdr.lift_note_en }}</span><span class="l-zh">{{ _mx5_rdr.lift_note_zh or _mx5_rdr.lift_note_en }}</span></div>
+        {% elif _mx5_dd21 is not none and _mx5_ddbase21 %}
+        <div class="mx5-chipn-row">
+          <span class="l-en">Measured at this state: a <b>{{ (_mx5_dd21 * 100) | round | int }}%</b> chance of a 5%-or-worse pullback within 21 sessions, against a <b>{{ (_mx5_ddbase21 * 100) | round(1) }}%</b> long-run rate{% if _mx5_ddlift is not none %} — {% if _mx5_ddlift <= 1.0 %}no lift above that base, so treat it as an early flag, not an edge{% else %}a <b>{{ _mx5_ddlift }}&times;</b> lift{% endif %}{% endif %}.</span>
+          <span class="l-zh">该等级实测：21 个交易日内出现 5% 或以上回撤的概率为 <b>{{ (_mx5_dd21 * 100) | round | int }}%</b>，长期基准为 <b>{{ (_mx5_ddbase21 * 100) | round(1) }}%</b>{% if _mx5_ddlift is not none %} — {% if _mx5_ddlift <= 1.0 %}并未高于基准，属早期提示而非优势{% else %}倍数 <b>{{ _mx5_ddlift }}</b>{% endif %}{% endif %}。</span>
+        </div>
+        {% endif %}
+        {# 3. SILENT BY CONSTRUCTION ≠ ALL-CLEAR. Two of the cross-check gauges need a
+              CALM tape to fire at all, so they disarm in exactly the decline they would
+              be wanted for. Without this line, "no corroborators firing" reads as "the
+              cross-checks agree there is nothing here". #}
+        {% if _mx5_unav %}
+        <div class="mx5-chipn-row warn">
+          <span class="l-en"><b>{{ _mx5_unav | length }}</b>{% if _mx5_unav_n %} of <b>{{ _mx5_unav_n }}</b>{% endif %} cross-check gauges cannot fire on this tape — silent by construction, not an all-clear.</span>
+          <span class="l-zh">{% if _mx5_unav_n %}<b>{{ _mx5_unav_n }}</b> 项交叉验证指标中有 {% endif %}<b>{{ _mx5_unav | length }}</b> 项在当前行情下无法触发 — 属结构性沉默，并非安全信号。</span>
+          {{ help((_mx5_unav | map(attribute='note_en') | select | join(' ')) or 'These gauges are defined only on a calm tape, so they cannot corroborate a decline.',
+                  (_mx5_unav | map(attribute='note_zh') | select | join(' ')) or '这些指标仅在平静行情下才成立，因此无法在下跌中提供确认。') }}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
     </div>{# /mx5-sc-left #}
 
     {# 60-session path panel (right, hidden ≤700px per spec §0 via CSS) #}
+    {# month names are needed by the header stamp below as well as by the axis ticks,
+       so they are set before the chart's own {% if %} rather than inside it #}
+    {% set _mx5_mos_en = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
     <div class="mx5-sc-right">
       <div class="mx5-path-header">
         <span class="mx5-path-title">
           <span class="l-en">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}{{ _mx5_hist_n }}-session path{% else %}60-session path{% endif %}</span>
           <span class="l-zh">{% if _mx5_hist_n > 0 and _mx5_hist_n < 60 %}近 {{ _mx5_hist_n }} 交易日走势{% else %}60 交易日走势{% endif %}</span>
         </span>
-        <span class="mx5-path-meta"><span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span></span>
+        {# The last point is the NIGHTLY ledger's last graded session — normally
+           yesterday, never "today's score". Stamped with its own date so the end of the
+           line cannot be read as a live reading. Phrased as "last graded" on purpose:
+           risk_state_live.js may append a PROVISIONAL intraday point beyond it, and
+           "last graded <date>" stays true when it does. #}
+        {% set _ph_last_d = _mx5_hist[-1].asof if (_mx5_hist and _mx5_hist[-1].asof is defined and _mx5_hist[-1].asof and _mx5_hist[-1].asof | length >= 10) else none %}
+        <span class="mx5-path-meta">{% if _ph_last_d %}<span class="l-en">Score vs time &middot; last graded {{ _mx5_mos_en[_ph_last_d[5:7]|int] }} {{ _ph_last_d[8:10]|int }}</span><span class="l-zh">综合评分 · 时序 &middot; 最后评级 {{ _ph_last_d[5:7]|int }}月{{ _ph_last_d[8:10]|int }}日</span>{% else %}<span class="l-en">Score vs time</span><span class="l-zh">综合评分 · 时序</span>{% endif %}</span>
       </div>
       {% if _mx5_hist %}
       {# ── Legit chart geometry (Order 1) ──────────────────────────────────
@@ -6971,7 +7444,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
          x-axis label strip lives BELOW PYB (y≈216). #}
       {% set _ph_n = _mx5_hist | length %}
       {% set PX0 = 44 %}{% set PXW = 944 %}{% set PY0 = 10 %}{% set PYB = 194 %}
-      {% set _mx5_mos_en = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
       {# score → verdict word (matches engine band thresholds) #}
       {% set _ph_yfor = PYB - PY0 %}
       {# y for each score-band boundary #}
@@ -6985,15 +7457,44 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       {# build point list: viewBox x,y baked so the hover JS stays in perfect sync #}
       {% set _ph_pts_line = [] %}
       {% set _ph_json = [] %}
+      {# PER-POINT BAND + its position along the line, for the segment colouring below.
+         The path used to be drawn in ONE colour — today's band — so five genuine
+         Risk-off sessions in this window rendered amber, and the chart said the radar
+         had never left Mixed. Each point's own verdict is already computed here for the
+         tooltip (_rv); it now also drives the stroke. #}
+      {% set _ph_bands = [] %}
+      {% set _ph_offs = [] %}
       {% for row in _mx5_hist %}
         {% set _ph_x = (PX0 + (loop.index0 / (_ph_n - 1) * PXW if _ph_n > 1 else PXW / 2)) | round(2) %}
         {% set _row_s = row.score if (row.score is defined and row.score is not none) else 50 %}
         {% set _ph_y = (PY0 + (100 - _row_s) / 100 * _ph_yfor) | round(2) %}
         {% set _rv = 'Risk-on' if _row_s >= 60 else ('Mixed' if _row_s >= 42 else 'Risk-off') %}
         {% set _rvz = '偏多' if _row_s >= 60 else ('中性' if _row_s >= 42 else '偏空') %}
+        {% if _ph_bands.append('b-on' if _row_s >= 60 else ('b-mid' if _row_s >= 42 else 'b-off')) %}{% endif %}
+        {% if _ph_offs.append(((_ph_x - PX0) / PXW) | round(5)) %}{% endif %}
         {% if _ph_pts_line.append(_ph_x ~ ',' ~ _ph_y) %}{% endif %}
         {% if _ph_json.append({'d': row.asof, 'md': (_mx5_mos_en[row.asof[5:7]|int] ~ ' ' ~ (row.asof[8:10]|int)) if (row.asof and row.asof|length >= 10) else '', 'mz': ((row.asof[5:7]|int)|string ~ '月' ~ (row.asof[8:10]|int)|string) if (row.asof and row.asof|length >= 10) else '', 's': row.score, 'v': _rv, 'vz': _rvz, 'x': _ph_x, 'y': _ph_y}) %}{% endif %}
       {% endfor %}
+      {# ── SEGMENT COLOUR as a hard-stop gradient along the line ──────────────────
+         One <polyline> is kept deliberately (risk_state_live.js patches it by tag to
+         extend the path with the live session, so splitting it into 19 elements would
+         leave the intraday tail undrawn). Colour instead comes from a baked gradient in
+         objectBoundingBox space — the bbox spans exactly [PX0, PX0+PXW], so a stop at
+         (x−PX0)/PXW lands on its own point. Each SEGMENT takes the band of the point it
+         ARRIVES at, and a colour change emits two stops at the same offset, so the
+         transition is a hard edge exactly where the path enters the new band.
+         Stop colours come from CSS classes, not baked hex, so they follow the theme and
+         flip under zh 红涨绿跌 with --up/--down like every other directional mark. #}
+      {% set _ph_stops = [] %}
+      {% for k in range(_ph_n - 1) %}
+        {% set _sc = _ph_bands[k + 1] %}
+        {% if k == 0 %}{% if _ph_stops.append([0, _sc]) %}{% endif %}
+        {% elif _sc != _ph_bands[k] %}
+          {% if _ph_stops.append([_ph_offs[k], _ph_bands[k]]) %}{% endif %}
+          {% if _ph_stops.append([_ph_offs[k], _sc]) %}{% endif %}
+        {% endif %}
+      {% endfor %}
+      {% if _ph_n > 1 and _ph_stops.append([1, _ph_bands[_ph_n - 1]]) %}{% endif %}
       {# x-axis date ticks: pick up to 6 evenly-spaced indices (always first + last) #}
       {% set _ph_nticks = [_ph_n, 5] | min %}
       {% set _ph_tick_idx = [] %}
@@ -7009,10 +7510,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            data-vbw="1000" data-vbh="224"
            role="img" aria-label="{{ _mx5_hist_n }}-session macro score path, {{ _mx5_hist[0].score }} to {{ _mx5_hist[-1].score }}">
         <defs>
-          <linearGradient id="mx5PathAreaGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   style="stop-color:{{ _mx5_sc_col }}" stop-opacity=".40"/>
-            <stop offset="62%"  style="stop-color:{{ _mx5_sc_col }}" stop-opacity=".07"/>
-            <stop offset="100%" style="stop-color:{{ _mx5_sc_col }}" stop-opacity="0"/>
+          {# band gradient (see the stop build above). The area-fill gradient it replaces
+             washed the WHOLE 20-session area in today's colour — a single-band claim over
+             a window that changed band five times — and with the line now carrying the
+             bands honestly the wash was also fighting the tinted zones behind it. Removed
+             rather than recoloured: one accessory fewer. #}
+          <linearGradient id="mx5PathBandGrad" x1="0" y1="0" x2="1" y2="0">
+            {%- for _st in _ph_stops %}
+            <stop offset="{{ _st[0] }}" class="{{ _st[1] }}"/>
+            {%- endfor %}
           </linearGradient>
         </defs>
         {# ── Verdict-band tinted zones (subtle, 4%) ──
@@ -7020,7 +7526,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
            red risk-off: 0–42 → _y42.._y0 . #}
         <rect class="mx5-ph-zone-on" x="0" y="{{ _y100 }}" width="1000" height="{{ (_y60 - _y100) | round(2) }}" fill="rgba(34,217,122,.045)"/>
         <rect x="0" y="{{ _y60 }}"  width="1000" height="{{ (_y42 - _y60) | round(2) }}" fill="rgba(245,158,11,.045)"/>
-        <rect class="mx5-ph-zone-off" x="0" y="{{ _y42 }}"  width="1000" height="{{ (_y0 - _y42) | round(2) }}" fill="rgba(239,68,68,.045)"/>
+        <rect class="mx5-ph-zone-off" x="0" y="{{ _y42 }}"  width="1000" height="{{ (_y0 - _y42) | round(2) }}" fill="rgba(239,68,68,.08)"/>
         {# zone boundary hairlines at 42 / 60 #}
         <line class="mx5-ph-hair-on" x1="0" y1="{{ _y60 }}" x2="1000" y2="{{ _y60 }}" stroke="rgba(34,217,122,.22)" stroke-width="1" stroke-dasharray="2,5"/>
         <line class="mx5-ph-hair-off" x1="0" y1="{{ _y42 }}" x2="1000" y2="{{ _y42 }}" stroke="rgba(239,68,68,.20)" stroke-width="1" stroke-dasharray="2,5"/>
@@ -7037,9 +7543,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <line x1="{{ PX0 }}" y1="{{ _y25 }}"  x2="988" y2="{{ _y25 }}"/>
         </g>
         {# y-axis number labels → HTML overlay (see .mx5-path-labels below) #}
-        {# ── Area fill + line ── #}
-        <path d="M{{ _ph_pts_line | join(' L') }} L{{ (PX0 + PXW) | round(2) }},{{ PYB }} L{{ PX0 }},{{ PYB }} Z" fill="url(#mx5PathAreaGrad)" stroke="none"/>
-        <polyline points="{{ _ph_pts_line | join(' ') }}" fill="none" style="stroke:{{ _mx5_sc_col }}" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>
+        {# ── The line, coloured by each point's OWN band (mx5PathBandGrad) ──
+             The gradient is referenced through the `stroke` ATTRIBUTE, never a CSS
+             rule: an externalised stylesheet resolves url(#id) against the CSS file in
+             some engines, and this SVG lives in the document. #}
+        <polyline class="mx5-ph-line" points="{{ _ph_pts_line | join(' ') }}" fill="none" stroke="url(#mx5PathBandGrad)" stroke-width="2.2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>
         {# ── X-axis baseline hairline ── #}
         <line x1="{{ PX0 }}" y1="{{ PYB }}" x2="988" y2="{{ PYB }}" stroke="rgba(255,255,255,.16)" stroke-width="1"/>
         {# ── X-axis tick marks (date labels live in the HTML overlay below) ── #}
@@ -7068,7 +7576,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="mx5-pl-y" style="top:{{ (_y0   / 224 * 100) | round(2) }}%">0</span>
         {# plain-word verdict-zone labels (right-aligned) #}
         <span class="mx5-pl-zone on"  style="top:{{ ((_y100 + 13) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-on</span><span class="l-zh">偏多</span></span>
-        <span class="mx5-pl-zone mid" style="top:{{ (((_y60 + _y42) / 2) / 224 * 100) | round(2) }}%"><span class="l-en">Mixed</span><span class="l-zh">中性</span></span>
+        <span class="mx5-pl-zone mid" style="top:{{ ((_y60 + 13) / 224 * 100) | round(2) }}%"><span class="l-en">Mixed</span><span class="l-zh">中性</span></span>
         <span class="mx5-pl-zone off" style="top:{{ ((_y0 - 7) / 224 * 100) | round(2) }}%"><span class="l-en">Risk-off</span><span class="l-zh">偏空</span></span>
         {# x-axis date ticks (bilingual; anchored start / middle / end) #}
         {% for _ti in _ph_tick_idx %}
@@ -7365,7 +7873,41 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {% endif %}
 
-        {# 2. Nearest high-impact event; otherwise show the weakest leg. #}
+        {# 2. ACTIVE stress dislocation — the operator-ordered home for a fired gate
+           (2026-07-29). The panel itself no longer floats above the board; this row
+           plus the alerts-pane entry are how a live dislocation announces itself, and
+           both jump to #dislocation. Amber, not the verdict colour: whatever the
+           verdict, the stance here is caution, and amber makes no directional claim
+           that would have to flip under zh 红涨绿跌. Copy is the calibrated verdict
+           wording, compressed to one line — claims unchanged. #}
+        {# `latest is defined` is load-bearing, not defensive noise:
+           tests/test_macro_what_to_do_glance.py renders THIS fragment in isolation
+           (marker-delimited) against a hand-built context that supplies market_state /
+           macro_catalysts but no `latest`, and a bare `latest.dislocation` raises
+           UndefinedError there — the row is fine on the page and the whole glance goes
+           blank in the test. Guard the lookup, keep the row where the operator put it. #}
+        {% set _wtd_dislo = (latest is defined and latest and latest.dislocation
+                             and latest.dislocation.dislocation_active) %}
+        {% if _wtd_dislo %}
+        <div class="mx5-action-item">
+          <div class="mx5-action-icon mx5-ai-yellow">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+          </div>
+          <div class="mx5-action-text">
+            <div class="mx5-action-label">
+              <span class="mx5-action-verb"><span class="l-en">Stress</span><span class="l-zh">压力</span></span>
+              {%- if latest.dislocation.verdict == 'buyable_washout' %}<span class="l-en">Buyable washout: confirm into stabilization, do not anticipate.</span><span class="l-zh">可买入的错杀：在企稳中确认，勿提前抢跑。</span>
+              {%- elif latest.dislocation.verdict == 'stand_aside' %}<span class="l-en">Falling-knife risk: stand aside.</span><span class="l-zh">接飞刀风险：观望。</span>
+              {%- else %}<span class="l-en">An acute stress dislocation is firing.</span><span class="l-zh">急性压力错位正在触发。</span>{% endif %}
+              <a class="mx5-wtd-jump" href="#dislocation" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'||event.key===' ')event.stopPropagation();">{{ t('View ↓','查看 ↓') }}</a>
+            </div>
+          </div>
+        </div>
+        {% endif %}
+
+        {# 3. Nearest high-impact event; otherwise show the weakest leg. #}
         {% if macro_catalysts %}
         {% set _wtd_ev = macro_catalysts | selectattr('impact','equalto','high') | list | first if (macro_catalysts | selectattr('impact','equalto','high') | list) else macro_catalysts[0] %}
         {% set _wtd_ev_zh = _wtd_ev.get('label_zh') or _wtd_ev.label %}
@@ -7379,8 +7921,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Event</span>{{ _wtd_ev.label }}: expect noise; ignore the first move.</span>
-              <span class="l-zh"><span class="mx5-action-verb">事件</span>{{ _wtd_ev_zh }}：波动会放大，忽略初动。</span>
+              <span class="l-en">{{ _wtd_ev.label }}: expect noise; ignore the first move.</span>
+              <span class="l-zh">{{ _wtd_ev_zh }}：波动会放大，忽略初动。</span>
             </div>
           </div>
         </div>
@@ -7394,14 +7936,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Watch</span>{{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
-              <span class="l-zh"><span class="mx5-action-verb">关注</span>{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
+              <span class="l-en">Watch {{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
+              <span class="l-zh">关注{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
             </div>
           </div>
         </div>
         {% endif %}
 
-        {# 3. Active policy supersedes the radar; quiet/non-actionable policy is omitted. #}
+        {# 4. Active policy supersedes the radar; quiet/non-actionable policy is omitted.
+           The generic risk / weakest-leg fallbacks stand down while a dislocation row is
+           on the card — "conditions are weakening" would only restate the stress line
+           above, and the card stays a three-priority glance. Live policy still shows:
+           that is a different story (the Fed's calendar, not the tape's stress). #}
         {% set _wtd_pl_active = PL and PL.get('state') in ('ARMED','ELEVATED') %}
         {% if _wtd_pl_active %}
         <div class="mx5-action-item">
@@ -7414,12 +7960,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Policy</span>Watch for repricing.</span>
-              <span class="l-zh"><span class="mx5-action-verb">政策</span>留意重定价。</span>
+              <span class="l-en">Watch for policy repricing.</span>
+              <span class="l-zh">留意政策重定价。</span>
             </div>
           </div>
         </div>
-        {% elif market_state and MS.radar and MS.radar.state and _mx5_risk_elevated %}
+        {% elif market_state and MS.radar and MS.radar.state and _mx5_risk_elevated and not _wtd_dislo %}
         <div class="mx5-action-item">
           <div class="mx5-action-icon mx5-ai-yellow">
             <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
@@ -7431,16 +7977,16 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-action-text">
             <div class="mx5-action-label">
               {% if MS.radar.do_en %}
-              <span class="l-en"><span class="mx5-action-verb">Risk</span>{{ MS.radar.do_en }}</span>
-              <span class="l-zh"><span class="mx5-action-verb">风险</span>{{ MS.radar.do_zh or MS.radar.do_en }}</span>
+              <span class="l-en">{{ MS.radar.do_en }}</span>
+              <span class="l-zh">{{ MS.radar.do_zh or MS.radar.do_en }}</span>
               {% else %}
-              <span class="l-en"><span class="mx5-action-verb">Risk</span>Stay alert; conditions are weakening.</span>
-              <span class="l-zh"><span class="mx5-action-verb">风险</span>保持警觉，环境正在走弱。</span>
+              <span class="l-en">Stay alert; conditions are weakening.</span>
+              <span class="l-zh">保持警觉，环境正在走弱。</span>
               {% endif %}
             </div>
           </div>
         </div>
-        {% elif macro_catalysts and _weakest %}
+        {% elif macro_catalysts and _weakest and not _wtd_dislo %}
         <div class="mx5-action-item">
           <div class="mx5-action-icon mx5-ai-yellow">
             <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round">
@@ -7450,8 +7996,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           </div>
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="l-en"><span class="mx5-action-verb">Watch</span>{{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
-              <span class="l-zh"><span class="mx5-action-verb">关注</span>{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
+              <span class="l-en">Watch {{ _weakest.label_en }} ({{ _weakest.score }}/100).</span>
+              <span class="l-zh">关注{{ _weakest.label_zh or _weakest.label_en }}（{{ _weakest.score }}/100）。</span>
             </div>
           </div>
         </div>
@@ -7870,6 +8416,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     function _rrInlineBody(){ return document.getElementById('rr-inline-body'); }
     function _rrInlineDateEl(){ return document.getElementById('rr-inline-date'); }
     var _rrInlineDate = null;           /* currently-selected date string */
+    var _rrInlineSignature = null;      /* selected date + current forecast payload */
+    var _rrInlineSwapToken = 0;         /* invalidates delayed paints after rapid clicks */
+    var _rrInlineSwapTimer = null;
     /* INT-03: focus management — track invoker for restore on close */
     var _rrModalInvoker = null;
 
@@ -9291,8 +9840,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       }
       return dates[0] || null;
     }
-    /* honest empty-state body for a calendar date with no model coverage. Pulls the
-       event's own time/impact off the card DOM — no fake coverage, no dead card. */
+    /* Honest empty state for a calendar date with no model coverage. */
     function _inlineEmptyHTML(card){
       var timeEl = card ? card.querySelector('.mx5-dlg-cal-time') : null;
       var badgeEl = card ? card.querySelector('.mx5-dlg-cal-badge') : null;
@@ -9303,8 +9851,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       if (impactHTML) metaBits += impactHTML;
       return '<div class="rr-inline-empty">'
         +'<div class="rr-inline-empty-line">'
-        +'<span class="l-en">No model projections for this event — event risk only.</span>'
-        +'<span class="l-zh">该事件无模型预测 — 仅为事件风险提示。</span>'
+        +'<span class="l-en">No model projections for this date — event risk only.</span>'
+        +'<span class="l-zh">该日期无模型预测 — 仅为事件风险提示。</span>'
         +'</div>'
         +(metaBits ? '<div class="rr-inline-empty-meta">'+metaBits+'</div>' : '')
         +'</div>';
@@ -9324,19 +9872,33 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         +'<span class="l-en">'+esc(RR_MOS_EN[mo]||'')+' '+dy+'</span>'
         +'<span class="l-zh">'+mo+'月'+dy+'日</span>';
     }
+    function _inlineItemsSignature(dateStr, items){
+      try{ return dateStr+'|'+JSON.stringify(items || []); }
+      catch(e){ return dateStr+'|'+String((items || []).length); }
+    }
+    function _syncInlineDateSelection(dateStr){
+      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-select').forEach(function(card){
+        var active = card.getAttribute('data-cal-date') === dateStr;
+        card.classList.toggle('rr-active', active);
+        card.setAttribute('aria-pressed', active ? 'true' : 'false');
+        if (active) card.setAttribute('aria-current','date');
+        else card.removeAttribute('aria-current');
+      });
+    }
     /* Select a calendar date into the inline panel. Covered → print cards (reuse
        renderCard + openModal); non-covered → honest empty state. Short cross-fade,
        reduced-motion-guarded. Focus is restored to the source card, never a popup. */
     function selectInlineDate(dateStr, sourceCard, immediate){
       var body = _rrInlineBody();
       if (!body) return;
-      _rrInlineDate = dateStr;
-      /* active ring: move it to the source card */
-      document.querySelectorAll('#dlg-events .mx5-dlg-cal-card.rr-active').forEach(function(c){
-        c.classList.remove('rr-active'); c.removeAttribute('aria-pressed');
-      });
-      if (sourceCard){ sourceCard.classList.add('rr-active'); sourceCard.setAttribute('aria-pressed','true'); }
       var items = _itemsForDate(dateStr);
+      var signature = _inlineItemsSignature(dateStr, items);
+      var unchanged = _rrInlineDate === dateStr && _rrInlineSignature === signature;
+      _rrInlineDate = dateStr;
+      _syncInlineDateSelection(dateStr);
+      /* GDP → PCE → claims on one date is one selection, not three fake refreshes.
+         The payload signature still allows a future intraday forecast refresh. */
+      if (!immediate && unchanged) return;
       var covered = items.length > 0;
       var bodyHTML;
       if (covered){
@@ -9345,8 +9907,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         bodyHTML = _inlineEmptyHTML(sourceCard);
       }
       var swap = !immediate && !_prefReducedRR();
+      var token = ++_rrInlineSwapToken;
+      if (_rrInlineSwapTimer !== null){
+        clearTimeout(_rrInlineSwapTimer);
+        _rrInlineSwapTimer = null;
+      }
       var paint = function(){
+        if (token !== _rrInlineSwapToken) return;
         body.innerHTML = bodyHTML;
+        _rrInlineSignature = signature;
         _setInlineHeader(dateStr, covered);
         if (covered){
           body.querySelectorAll('.rr-card').forEach(function(el, idx){
@@ -9370,7 +9939,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       };
       if (swap){
         body.classList.add('rr-inline-swap');
-        setTimeout(paint, 130);
+        _rrInlineSwapTimer = setTimeout(function(){
+          _rrInlineSwapTimer = null;
+          paint();
+        }, 130);
       } else {
         paint();
       }
@@ -9411,6 +9983,8 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         card.classList.add('rr-select');
         card.setAttribute('role','button');
         card.setAttribute('tabindex','0');
+        card.setAttribute('aria-controls','rr-inline-body');
+        card.setAttribute('aria-pressed','false');
         var hasCoverage = _itemsForDate(dateStr).length > 0;
         if (hasCoverage){
           var dot = document.createElement('div');
@@ -10761,12 +11335,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow"><span class="l-en">Release Radar</span><span class="l-zh">数据发布雷达</span></div>
         <div style="margin:-4px 0 14px;font-size:12px;color:var(--ink-2,rgba(255,255,255,.6));line-height:1.5">
-          <span class="l-en">What our model expects for the print you pick above. Tap a card for the full read.</span>
-          <span class="l-zh">上方选中日期，模型对该日数据的预测如下。点击卡片查看完整解读。</span>
+          <span class="l-en">Select a date above to see all modeled releases for that day. Tap a projection card for the full read.</span>
+          <span class="l-zh">选择上方日期，查看当天所有已建模数据；点击预测卡片查看完整解读。</span>
         </div>
-        <div id="rr-inline">
+        <div id="rr-inline" role="region" aria-labelledby="rr-inline-date">
           <div class="rr-inline-head">
-            <span class="rr-inline-date" id="rr-inline-date"></span>
+            <span class="rr-inline-date" id="rr-inline-date" aria-live="polite" aria-atomic="true"></span>
             <span class="rr-inline-sub" id="rr-inline-sub">
               <span class="l-en">our projection vs benchmarks</span>
               <span class="l-zh">本方预测 vs 基准</span>
@@ -11544,12 +12118,21 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow">
           {{ t('Overseas','海外') }}
-          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色。') }}
+          {{ help('Context only — does not move the US score. Tiles link to the full International page. Ring = each market\'s pullback-risk score (0-100), coloured by band — the odds a fresh drop is brewing, not a grade of today\'s trend. The hover card carries the trend read, which can point the other way: a market already deep in a selloff can sit beside a mid ring.','仅供背景参考——不影响美国评分。点击卡片可进入完整国际页面。环形为各市场回撤风险评分（0-100），按等级着色——衡量的是新一轮下跌酝酿的可能，而非当前趋势的评级。悬停卡片显示趋势解读，两者方向可能相反：已深度下跌的市场也可能配上中等的环形。') }}
           {# as-of merged into the single dialog footer (one stamp per dialog) #}
         </div>
         {# ── plain-word maps reused from intl.html turn cards ── #}
         {% set _OV_RD_STATE_EN = {'calm': 'Calm', 'watch': 'Watch', 'caution': 'Caution', 'elevated': 'Elevated', 'risk-off': 'Risk-off'} %}
         {% set _OV_RD_STATE_ZH = {'calm': '平静', 'watch': '留意', 'caution': '谨慎', 'elevated': '偏高', 'risk-off': '避险'} %}
+        {# Board date + a month map for the PER-RING as-of stamp below. Each ring is drawn
+           from its own ledger's last row, and those rows do NOT share a date — on
+           2026-07-29 the China and Hong Kong rings were 9 business days old. The dialog's
+           single footer stamp is the BOARD's date, so a stale ring inherited a freshness
+           it never had. Each tile now carries its own date whenever it differs, and the
+           hover row says what that means. Stating the date is a fact, not a threshold:
+           nothing here suppresses a ring, re-bands one, or drops an alert. #}
+        {% set _ov_board = latest.date if (latest is defined and latest and latest.date) else none %}
+        {% set _ov_mos = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'] %}
         {# Market grid from intl_cascade.rows — alert first #}
         {% if intl_cascade is defined and intl_cascade %}
           {# alert-first, then the calm markets — rows arrive in fixed dict order, only
@@ -11577,6 +12160,22 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                 <span class="l-en">{{ row.name_en if row.name_en is defined else (row.name if row.name is defined else row.ticker) }}</span>
                 <span class="l-zh">{{ row.name_zh if (row.name_zh is defined and row.name_zh) else (row.name_en if row.name_en is defined else (row.name if row.name is defined else row.ticker)) }}</span>
               </span>
+              {# STATE WORD ON EVERY RING. The band colour and the number were the only
+                 read on the tile face, and the plain-word state existed solely inside the
+                 hover profile — which China, Hong Kong and Canada do not have (separate
+                 systems), so those three shipped a red circle with nothing saying what red
+                 means. Engine's own state_en/state_zh first, else the plain-word map above. #}
+              {% set _ov_st_en = (row.state_en if (row.state_en is defined and row.state_en) else _OV_RD_STATE_EN.get(row.state if row.state is defined else '', '')) %}
+              {% set _ov_st_zh = (row.state_zh if (row.state_zh is defined and row.state_zh) else _OV_RD_STATE_ZH.get(row.state if row.state is defined else '', '')) %}
+              {% if _ov_st_en %}
+              <span class="rkc-ov-state"><span class="l-en">{{ _ov_st_en }}</span><span class="l-zh">{{ _ov_st_zh or _ov_st_en }}</span></span>
+              {% endif %}
+              {# this ring's OWN date, shown only when it is not the board's date #}
+              {% set _ov_asof = row.asof if (row.asof is defined and row.asof and row.asof|length >= 10) else none %}
+              {% set _ov_old = (_ov_asof and _ov_board and _ov_asof[:10] < _ov_board[:10]) %}
+              {% if _ov_old %}
+              <span class="rkc-ov-age"><span class="l-en">graded {{ _ov_mos[_ov_asof[5:7]|int] }} {{ _ov_asof[8:10]|int }}</span><span class="l-zh">评级于 {{ _ov_asof[5:7]|int }}月{{ _ov_asof[8:10]|int }}日</span></span>
+              {% endif %}
               {# — .rp-src payload cloned by theme.js row-pop engine on hover — #}
               <span class="rp-src" hidden>
                 {# header: country name + risk-radar score #}
@@ -11586,18 +12185,39 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                     <span class="l-zh">{{ row.name_zh if (row.name_zh is defined and row.name_zh) else (row.name_en if row.name_en is defined else '') }}</span>
                   </span>
                   {% if row.score is defined and row.score is not none %}
-                  <span class="row-pop-kind">{{ t('Risk score','风险评分') }} {{ row.score|round|int }}/100</span>
+                  <span class="row-pop-kind">{{ t('Pullback risk','回撤风险') }} {{ row.score|round|int }}/100</span>
                   {% endif %}
                 </div>
                 <div class="row-pop-div"></div>
-                {% if _ov_prof %}
-                {# turn state word + stance line from market_states() profile #}
+                {# AS-OF, for EVERY ring — profiled or not. Prefer the engine's own stale
+                   note (it carries the business-day age); otherwise name both dates and
+                   let the reader see the gap. #}
+                {% if _ov_asof %}
                 <ul class="row-pop-why">
-                  <li>
-                    <span class="l-en"><b>{{ _ov_prof.state_en or '—' }}</b>{% if _ov_prof.stance_en %} — {{ _ov_prof.stance_en }}{% endif %}</span>
-                    <span class="l-zh"><b>{{ _ov_prof.state_zh or '—' }}</b>{% if _ov_prof.stance_zh %} — {{ _ov_prof.stance_zh }}{% endif %}</span>
+                  <li{% if _ov_old %} class="row-pop-stale"{% endif %}>
+                    {% if row.stale_note_en is defined and row.stale_note_en %}
+                    <span class="l-en">{{ row.stale_note_en }}</span><span class="l-zh">{{ row.stale_note_zh or row.stale_note_en }}</span>
+                    {% elif _ov_old %}
+                    <span class="l-en">Last graded {{ _ov_asof }}, before this board’s date{% if _ov_board %} ({{ _ov_board }}){% endif %} — treat it as last known, not current.</span>
+                    <span class="l-zh">最后评级于 {{ _ov_asof }}，早于本页日期{% if _ov_board %}（{{ _ov_board }}）{% endif %} — 仅代表最后已知状态，非当前读数。</span>
+                    {% else %}
+                    <span class="l-en">Graded {{ _ov_asof }}.</span><span class="l-zh">评级日期 {{ _ov_asof }}。</span>
+                    {% endif %}
                   </li>
                 </ul>
+                {% endif %}
+                {% if _ov_prof or _ov_st_en %}
+                {# turn state word + stance line — from the market_states() profile where one
+                   exists, else the engine's per-row plain-word pair (CN/HK/CA have no
+                   profile, and used to fall through with no state word at all) #}
+                <ul class="row-pop-why">
+                  <li>
+                    <span class="l-en"><b>{{ (_ov_prof.state_en if _ov_prof else none) or _ov_st_en or '—' }}</b>{% if _ov_prof and _ov_prof.stance_en %} — {{ _ov_prof.stance_en }}{% elif row.stance_en is defined and row.stance_en %} — {{ row.stance_en }}{% endif %}</span>
+                    <span class="l-zh"><b>{{ (_ov_prof.state_zh if _ov_prof else none) or _ov_st_zh or '—' }}</b>{% if _ov_prof and _ov_prof.stance_zh %} — {{ _ov_prof.stance_zh }}{% elif row.stance_zh is defined and row.stance_zh %} — {{ row.stance_zh }}{% endif %}</span>
+                  </li>
+                </ul>
+                {% endif %}
+                {% if _ov_prof %}
                 {# 20d momentum + off-high metrics #}
                 <div class="row-pop-grid">
                   {% if _ov_prof.mom20_pct is not none %}
@@ -14022,9 +14642,18 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           {{ help('A SLOW macro/credit composite (recession risk, NFCI, EBP, HY OAS) over a 63-day horizon — it LAGS price, so a low read here is NOT a near-term all-clear: the probability is measured point-in-time against the base rate (low band ~10% vs base ~19%), but it moves slowly and after price. For the leading, near-term (≤21d) drawdown-odds read, trust the Risk Radar at the top of the Market State board above. The two answer different questions and can legitimately disagree.', '慢速的宏观/信用综合指标（衰退风险、NFCI、EBP、高收益利差），观察窗口为63日 — 它滞后于价格，因此此处读数偏低并不代表近端“安全”：该概率为时点法实测值（低区间约10%，基准约19%），但变化缓慢且滞后于价格。近端（≤21日）的领先回撤概率，请以上方市场状态板顶部的风险雷达为准。两者回答的是不同问题，出现分歧属正常。') }}
         </div>
         <div class="idx-gv">{{ dr.score|round|int if dr and dr.score is not none else '—' }}<small>/100{% if dr and dr.lead_lag %} · {{ t('lagging', '滞后') }}{% endif %}</small></div>
+        {# is_base_rate branch retired with #887 — every band is a measured PIT prob.
+           "P(≥10% / 63d) 10%" was a statistic, not information: notation at glance tier
+           with no scale and no horizon in words. And when the engine WITHHOLDS the number
+           because the composite is running on fewer legs than it was measured on (NFCI
+           has been dark since 2026-07-17, so `stat_passport.basis` degrades to "partial"),
+           the row simply vanished — a silence that reads as "no risk to report". Both
+           states are now stated in plain words. #}
+        {% set _drp = dr.stat_passport if (dr and dr.stat_passport is mapping) else {} %}
         {% if dr and dr.dd10_prob_pct is not none and dr.dd10_prob_informative %}
-        {# is_base_rate branch retired with #887 — every band is a measured PIT prob #}
-        <div class="muted" style="font-size:11px">{{ t('P(≥10% / 63d)', '概率(≥10%/63日)') }} <b>{{ dr.dd10_prob_pct }}%</b></div>
+        <div class="muted" style="font-size:11px"><span class="l-en">about <b>{{ dr.dd10_prob_pct }} in 100</b> odds of a 10%-or-worse fall within 3 months</span><span class="l-zh">未来三个月出现 10% 或以上下跌的概率约为 <b>{{ dr.dd10_prob_pct }}/100</b></span></div>
+        {% elif dr and dr.score is not none and _drp.get('basis') == 'partial' %}
+        <div class="muted" style="font-size:11px" data-dr-partial><span class="l-en">Odds withheld — one of this gauge’s inputs is dark, so the measured number no longer covers today’s mix.</span><span class="l-zh">概率暂不给出 — 本指标的一项输入当前无数据，实测概率已不适用于今日的组合。</span></div>
         {% endif %}
       </div>
       <div class="idx-gauge">
@@ -14168,120 +14797,263 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   {% set DL = latest.dislocation %}
   {% set DI = DL.inputs %}
   {% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
-  {% if DL.dislocation_active %}{# only renders when a real dislocation is firing; CSS floats it to the very top #}
-  <div class="panel span12 dislo-lit" id="dislocation" style="--lit:{{ vcolor }}">
-    <div class="mx-panel-hdr">
-      <span class="mx-panel-eyebrow">{{ t('Dislocation','错位') }}</span>
+  {% if DL.dislocation_active %}
+  {# ── ACTIVE dislocation = a compact READOUT STRIP in normal page flow. ─────────
+     Operator ruling 2026-07-29: the old presentation floated this to the very top of
+     the board (via a negative flex `order`, since removed) as eight nested sub-cards behind a
+     breathing glow — measured at 627px on a 1440x900 viewport, i.e. "70% of the
+     viewport … not good UX to disrupt with pop-up boards". The announcement now
+     rides the three lightweight affordances the operator named: the alerts-pane
+     entry, the master-switch chip, and the "What To Do Now" row — all three jump
+     here. This panel is their receipt.
+
+     Audit order (same day): the strip must NOT bury anything that disagrees with the
+     verdict. So the visible rows carry every trigger's live reading against its own
+     limit, the Fed-put sub-readings, the entry-timer state and both cross-checks
+     (including a geopolitical DIVERGENCE) — only long-form prose and the measured
+     record sit behind the fold.
+
+     PRESENTATION ONLY — every claim is the calibrated engine copy, re-housed and
+     re-ordered, not reworded. #}
+  {# THE FED-PUT SWITCH IS TRI-STATE, not a boolean (engine/dislocation.py DEGRADE
+     CONTRACT, 2026-07-29). A missing or stale Sahm / breakeven leg used to read as
+     "leg not firing" -> put present -> buyable washout: a data outage failed OPEN
+     toward the permissive verdict. The engine now degrades `put_state` to "unknown"
+     with `put_state_reliable: false` and a `stale_inputs` list. Rendering that third
+     state through `DL.fed_put` alone would print "Fed put ABSENT" for "we cannot
+     read the switch" — the opposite reading. Older payloads carry NEITHER key, so
+     the tri-state falls back to the boolean and this whole branch stays dark. #}
+  {% set _put_unknown = ((DL.put_state is defined and DL.put_state == 'unknown')
+                         or (DL.put_state_reliable is defined and not DL.put_state_reliable)
+                         or (DL.fed_put is defined and DL.fed_put is none)) %}
+  {% set _put_stale = DL.stale_inputs if (DL.stale_inputs is defined and DL.stale_inputs) else [] %}
+  {% set dlp = 'var(--muted)' if _put_unknown else ('var(--up)' if DL.fed_put else 'var(--down)') %}
+  {# Stress triggers come from the ENGINE's authoritative list (DI.triggers), never
+     re-derived here. The template used to re-test the thresholds in Jinja, and
+     `DI.vrp_pctile > 0.9` is False against a value the engine already ROUNDED to 2dp
+     (0.9027 -> 0.9) — so on a live variance-premium-only dislocation the page printed
+     "Stress triggers firing" above an EMPTY chip row. Loosening the comparison would
+     have moved the gate; reading the engine's list cannot. #}
+  {% set _trigs = DI.triggers or [] %}
+  {% set _TRIG_ZH = {'VIX panic': 'VIX 恐慌', 'drawdown': '回撤',
+                     'VRP extreme': '方差溢价极端', 'VIX backwardation': 'VIX 倒挂'} %}
+  {# EN display names for engine slugs that read as acronym soup at a glance (the
+     gate's own help text calls it "a variance-premium extreme"). #}
+  {% set _TRIG_EN = {'VRP extreme': 'variance-premium extreme'} %}
+  {# The capitulation gauge is an INTENSITY confirm, not a fifth trigger, and today it
+     fires on the SAME underlying reading — so it is never added to the trigger count. #}
+  {% set _tgj = _trigs | join('|') %}
+  {% set _cap_extra = [] %}
+  {% for _s in (DI.capitulation_signals or []) %}{% if _s not in _trigs %}{% set _ = _cap_extra.append(_s) %}{% endif %}{% endfor %}
+  {# Trigger limits mirror engine/dislocation.py DEFAULTS — vix_panic 30.0,
+     dip_pct 0.10, vrp_pctile_extreme 0.90, backwardation_ratio 1.0, sahm_trigger
+     0.50, fedput_breakeven 2.5. Display-only copies (the payload carries readings,
+     not limits); grep this comment if those constants ever move. #}
+  <div class="panel span12 dislo-strip" id="dislocation" style="--lit:{{ vcolor }};--dlp:{{ dlp }}">
+    <div class="dlx-head">
+      <span class="dlx-eyebrow">{{ t('Dislocation','错位') }}</span>
+      <h2 class="dlx-verdict">{% if DL.verdict=='buyable_washout' %}{{ t('Buyable washout', '可买入的错杀') }}
+        {%- elif DL.verdict=='stand_aside' %}{{ t('Stand aside — falling knife', '观望 — 接飞刀风险') }}
+        {%- else %}{{ t('Acute dislocation', '急性错位') }}{% endif %}</h2>
+      <span class="dlx-put">{% if _put_unknown %}{{ t('Fed-put switch unreadable', '美联储托底开关无法判读') }}{% elif DL.fed_put %}{{ t('Fed put intact', '美联储托底在位') }}{% else %}{{ t('Fed put ABSENT', '美联储托底缺失') }}{% endif %}</span>
+      <span class="dlx-count">{% if _trigs|length == 1 %}{{ t('only 1 of 4 stress triggers', '4 项压力信号中仅 1 项触发') }}{% else %}{{ t(_trigs|length ~ ' of 4 stress triggers', '4 项压力信号中 ' ~ _trigs|length ~ ' 项触发') }}{% endif %}</span>
+      {# The old help tip claimed "the whole edge is in REFUSING the falling knife
+         (2000/2008/2022)". The declustered replay disproves that for two of the three
+         episodes: the gate refused 2008 (put-absent from 2008-04 through the trough)
+         but printed buyable early in the 2000-02 bear and twice inside 2022, both 2022
+         prints within 0.02pp of the breakeven cutoff. Copy below mirrors the corrected
+         engine/dislocation.py EVIDENCE["caveat"] + module docstring verbatim in
+         substance, so the page and the engine can never disagree again. #}
+      {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). What the replay actually shows: it REFUSED the 2008 crash (put-absent from 2008-04), but it printed buyable early in the 2000-02 bear and twice in 2022 with the breakeven within 0.02pp of the cutoff. So this is a drawdown filter with known misses, not a knife-proof shield, and not a bounce-catcher — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。回放实际显示：它拒绝了 2008 年的崩盘（自 2008-04 起判定托底缺失），但在 2000-02 熊市早期给出过「可买入」，2022 年内亦有两次，且这两次盈亏平衡率距阈值均在 0.02 个百分点以内。因此这是一个存在已知漏判的回撤过滤器，既非防飞刀的护盾，也不是抄反弹的工具 — 基于标普 1997-2026 实测。") }}
     </div>
-    <h2 style="margin-top:0">{{ t('Dislocation Gate-1 · buyable washout vs falling knife', '错位一道闸 · 可买入错杀 对 接飞刀') }}
-      {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). The whole edge is in REFUSING the falling knife (2000/2008/2022), not in catching the bounce — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。全部优势在于拒绝接飞刀（2000／2008／2022），而非抄到反弹 — 基于标普 1997-2026 实测。") }}
-    </h2>
-    <p class="muted sm" style="margin:-4px 0 10px">{{ t('A risk filter, not a buy signal. The edge is in refusing the knife, not catching the bounce — judged on drawdown, not return.', '这是风险过滤器而非买入信号。优势在于拒绝接飞刀，而非抄到反弹 — 以回撤而非回报衡量。') }}</p>
-    <div class="grid">
 
-      <!-- verdict hero -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ vcolor }};border-radius:8px;padding:12px 14px">
-        <div style="font-size:20px;font-weight:700;color:{{ vcolor }}">
-          {% if DL.verdict=='buyable_washout' %}{{ t('Buyable washout', '可买入的错杀') }}
-          {% elif DL.verdict=='stand_aside' %}{{ t('Stand aside — falling knife', '观望 — 接飞刀风险') }}
-          {% else %}{{ t('No acute dislocation', '无急性错位') }}{% endif %}
-        </div>
-        <div class="muted sm" style="margin-top:6px">
-          {% if DL.verdict=='buyable_washout' %}{{ t('A stress dislocation with the Fed put intact (no recession, inflation not blocking easing). Historically these mean-revert with shallower median drawdown — confirm into stabilization, do not anticipate.', '压力错位且美联储托底在位（无衰退、通胀不阻碍宽松）。历史上此类回归均值且中位回撤更浅 — 在企稳中确认，勿提前抢跑。') }}
-          {% elif DL.verdict=='stand_aside' %}{{ t('A stress dislocation with the Fed put ABSENT. This is the 2000/2008/2022 regime where the same capitulation signals kept falling.', '压力错位且美联储托底缺失。这是 2000／2008／2022 情形，同样的恐慌信号仍持续下跌。') }}
-          {% else %}{{ t('Markets are not in a stress washout — the filter is dormant and lights up only on a real dislocation.', '市场未处于压力抛售 — 过滤器休眠，仅在真正错位时点亮。') }}{% endif %}
-        </div>
+    {# STANCE — the one plain-word line that answers "so what do I do". Bold clause and
+       honesty clause are both verbatim from the previous verdict hero + subtitle. #}
+    <p class="dlx-stance">
+      {% if DL.verdict=='buyable_washout' %}<b>{{ t('Confirm into stabilization, do not anticipate.', '在企稳中确认，勿提前抢跑。') }}</b>
+      {% elif DL.verdict=='stand_aside' %}<b>{{ t('Stand aside.', '观望。') }}</b> {{ t('This is the put-absent setup the gate refused from April 2008, where the same capitulation signals kept firing into the fall.', '这是一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形，同样的恐慌信号在下跌途中不断触发。') }}
+      {% elif _put_unknown %}<b>{{ t('Watch — do not chase.', '观察 — 不要追。') }}</b> {{ t('No buyable or stand-aside call is made while the switch cannot be read: a missing reading is not a reading that says all-clear.', '在开关无法判读期间不作「可买入」或「观望」的判定：读不到，不等于读到了安全。') }}
+      {% else %}<b>{{ t('An acute stress dislocation is firing.', '急性压力错位正在触发。') }}</b>{% endif %}
+      <span class="dlx-hon">{{ t('A risk filter, not a buy signal.', '这是风险过滤器而非买入信号。') }}</span>
+    </p>
+    {% if DL.capitulation_caveat %}
+    <p class="dlx-warn">⚠ {{ t('The capitulation gauge is firing, but the Fed put is absent — its measured bounce does NOT apply here (the falling-knife regime).', '恐慌触底指标在触发，但美联储托底缺失 — 其实测反弹在此不适用（接飞刀情形）。') }}</p>
+    {% endif %}
+
+    <div class="dlx-rows">
+
+      {# What is firing, and by how much. The margin line prints all four stress
+         readings against their own limits — firing or not — so a one-trigger state
+         reads as a one-trigger state instead of as a broad washout. #}
+      <div class="dlx-row">
+        <span class="dlx-lbl">{{ t('Stress triggers', '压力信号') }}</span>
+        <span class="dlx-val"><span class="dlx-chips">
+            {%- for tg in _trigs %}
+            {%- set _stem = 'VIX panic' if tg.startswith('VIX panic') else ('drawdown' if tg.startswith('drawdown') else tg) %}
+            {%- set _tail = tg | replace(_stem, '') %}
+            <span class="badge" style="font-size:11px;color:{{ vcolor }}">{{ t(_TRIG_EN.get(tg, tg), _TRIG_ZH.get(_stem, _stem) ~ _tail) }}</span>
+            {%- endfor %}
+          </span>
+          {%- if DI.capitulation_active %}<span class="dlx-cap">{% if _cap_extra %}— {{ t('capitulation gauge also firing on ', '恐慌触底指标同时触发：') }}{% for s in _cap_extra %}{{ t(_TRIG_EN.get(s, s), _TRIG_ZH.get(s, s)) }}{% if not loop.last %} · {% endif %}{% endfor %}{% if DI.capitulation_strong %} ⚑{% endif %}{% else %}— {{ t('capitulation gauge firing on the same reading, not a second signal', '恐慌触底指标基于同一读数触发，并非第二个信号') }}{% endif %}</span>{% endif %}
+          {# MARGIN LINE — every stress reading against its own limit, firing or not.
+             The variance-premium reading now prints its TRUE margin: the engine emits
+             `vrp_pctile_raw` at 4dp precisely because the 2dp display copy (0.9027 ->
+             0.9) made a firing trigger read as a tie against its own 90 limit. With
+             the raw value present the "rounded for display" hedge is retired; on an
+             older payload that lacks it the 2dp reading + the hedge are kept, because
+             then the tie really is a rounding artefact we cannot resolve here. #}
+          {% set _vrp_raw = DI.vrp_pctile_raw if (DI.vrp_pctile_raw is defined and DI.vrp_pctile_raw is not none) else none %}
+          <span class="dlx-margins">
+            {%- if _vrp_raw is not none %}<span class="dlx-mg{{ ' on' if 'VRP extreme' in _trigs }}">{{ t('variance premium', '方差溢价') }} {{ '%.1f'|format(_vrp_raw * 100) }}{{ t('th pct vs 90th', ' 百分位 对 90 百分位') }}</span> · {% elif DI.vrp_pctile is not none %}<span class="dlx-mg{{ ' on' if 'VRP extreme' in _trigs }}">{{ t('variance premium', '方差溢价') }} {{ '%.0f'|format(DI.vrp_pctile * 100) }}{{ t('th pct vs 90', ' 百分位 对 90') }}</span> · {% endif %}
+            {%- if DI.vix is not none %}<span class="dlx-mg{{ ' on' if 'VIX panic' in _tgj }}">{{ t('VIX', 'VIX') }} {{ DI.vix }} {{ t('vs 30', '对 30') }}</span> · {% endif %}
+            {%- if DI.spy_drawdown_pct is not none %}<span class="dlx-mg{{ ' on' if 'drawdown' in _tgj }}">{{ t('drawdown', '回撤') }} {{ DI.spy_drawdown_pct }}% {{ t('vs -10%', '对 -10%') }}</span> · {% endif %}
+            {%- if DI.vix_term is not none %}<span class="dlx-mg{{ ' on' if 'VIX backwardation' in _trigs }}">{{ t('VIX term', 'VIX 期限') }} {{ '%.2f'|format(DI.vix_term) }} {{ t('vs 1.00', '对 1.00') }}</span>{% endif %}
+            {%- if _vrp_raw is none %} · {{ t('readings rounded for display; the gate uses full precision', '读数为展示用四舍五入；闸门使用完整精度') }}{% endif %}
+          </span>
+        </span>
       </div>
 
-      <!-- Fed-put master switch -->
-      <div class="span6" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:12px 14px">
-        {% set pcolor = 'var(--up)' if DL.fed_put else 'var(--down)' %}
-        <div style="font-weight:700;margin-bottom:6px">{{ t('Fed-put master switch', '美联储托底主开关') }}
+      {# The master switch, with both of its sub-readings against their own limits —
+         this is the discriminator the whole verdict turns on, so it stays visible. #}
+      <div class="dlx-row">
+        <span class="dlx-lbl">{{ t('Fed-put switch', '美联储托底开关') }}
           {{ help("The one out-of-sample-stable discriminator (holds in BOTH 1997-2011 and 2012-2025). PUT-ABSENT = recession underway (Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). Primary trend is shown as context but adds little on top of the switch.", "唯一在样本外稳定的判别器（1997-2011 与 2012-2025 两半区均成立）。托底缺失＝衰退进行中（Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。主趋势作为背景显示，但在开关之上增益有限。") }}
-        </div>
-        <div style="font-size:18px;font-weight:700;color:{{ pcolor }}">
-          {% if DL.fed_put %}{{ t('Put present', '托底在位') }}{% else %}{{ t('Put ABSENT', '托底缺失') }}{% endif %}</div>
-        <div class="muted sm" style="margin-top:5px">Sahm <b>{{ '%.2f'|format(DI.sahm) if DI.sahm is not none else '—' }}</b>
-          · {{ t('10y breakeven', '十年盈亏平衡') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) if DI.breakeven_10y_1m is not none else '—' }}%</b>
-          · {{ t('trend', '趋势') }} <b>{{ t('up', '上行') if DI.primary_trend=='up' else t('down', '下行') }}</b></div>
-        {% if not DL.fed_put %}
-        <div class="sm" style="margin-top:5px;color:var(--down)">
-          {% if DI.sahm is not none and DI.sahm >= 0.5 %}⚑ {{ t('recession underway (Sahm)', '衰退进行中（Sahm）') }}{% endif %}
-          {% if DI.breakeven_10y_1m is not none and DI.breakeven_10y_1m >= 2.5 %}{% if DI.sahm is not none and DI.sahm >= 0.5 %} · {% endif %}⚑ {{ t('inflation locks the Fed', '通胀锁住美联储') }}{% endif %}
-        </div>
-        {% endif %}
+        </span>
+        {# Which legs the engine could not read (stable keys, so the ZH lane can name
+           them in Chinese instead of echoing the engine's English receipt). #}
+        {% set _stale_j = _put_stale | join(' ') %}
+        <span class="dlx-val"><b style="color:{{ dlp }}">{% if _put_unknown %}{{ t('Switch unreadable', '开关无法判读') }}{% elif DL.fed_put %}{{ t('Put present', '托底在位') }}{% else %}{{ t('Put ABSENT', '托底缺失') }}{% endif %}</b>
+          {%- if _put_unknown %}<span class="dlx-dis"> · ⚠ {{ t('inputs stale or missing — no ruling', '输入过期或缺失 — 不作判定') }}</span>
+          {%- elif not DL.fed_put %}<span style="color:var(--down)">
+          {%- if DI.sahm is not none and DI.sahm >= 0.5 %} · ⚑ {{ t('recession underway (Sahm)', '衰退进行中（Sahm）') }}{% endif %}
+          {%- if DI.breakeven_10y_1m is not none and DI.breakeven_10y_1m >= 2.5 %} · ⚑ {{ t('inflation locks the Fed', '通胀锁住美联储') }}{% endif %}</span>{% endif %}
+          {%- if _put_unknown %}
+          <span class="dlx-margins dlx-dis">{{ t('Cannot read:', '无法读取：') }}
+            {%- if 'sahm' in _stale_j %} {{ t('the real-time recession trigger', '实时衰退触发指标') }}{% endif %}
+            {%- if 'sahm' in _stale_j and 'breakeven' in _stale_j %} ·{% endif %}
+            {%- if 'breakeven' in _stale_j %} {{ t('the 10-year breakeven', '十年期盈亏平衡通胀率') }}{% endif %}
+            {%- if not _put_stale %} {{ t('one of the two switch legs', '开关两条腿中的一条') }}{% endif %}
+            {{ help(('Engine staleness receipt — ' ~ (_put_stale | join('; '))) if _put_stale else 'The Fed-put switch reported itself unreadable; no per-leg receipt was published with this reading.', '引擎过期回执（英文原文见英文版）：该腿的最后印刷日期已超出其过期预算，因此引擎拒绝以「未触发」来解读一个读不到的读数。') }}</span>
+          {%- endif %}
+          {# VINTAGES (item: a monthly reference month is not a same-day read). Sahm is a
+             monthly reference-month series with a ~6-week publication lag, carried
+             forward by ffill, so its own stamp is materially older than the row it sits
+             on — that is true of the construction whether or not the engine has shipped
+             `sahm_asof` yet, so the nature is stated always and the date is added when
+             the payload carries it. #}
+          <span class="dlx-margins">Sahm <b>{{ '%.2f'|format(DI.sahm) if DI.sahm is not none else '—' }}</b> {{ t('vs 0.50', '对 0.50') }}
+            <span class="dlx-vint">({{ t('monthly reference month, carried forward', '月度参考月数据，向前沿用') }}{% if DI.sahm_asof is defined and DI.sahm_asof %} · {{ DI.sahm_asof }}{% endif %})</span>
+            · {{ t('10y breakeven', '十年盈亏平衡') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) if DI.breakeven_10y_1m is not none else '—' }}%</b> {{ t('vs 2.50%', '对 2.50%') }}
+            <span class="dlx-vint">({{ t('21-day average', '21 日均值') }}{% if DI.breakeven_asof is defined and DI.breakeven_asof %} · {{ DI.breakeven_asof }}{% endif %})</span>
+            · {{ t('trend', '趋势') }} <b>{{ t('up', '上行') if DI.primary_trend=='up' else t('down', '下行') }}</b></span>
+        </span>
       </div>
 
-      {% if DL.dislocation_active %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 14px">
-        <div style="font-weight:700;margin-bottom:4px">{{ t('Stress triggers firing', '触发的压力信号') }}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          {% if DI.vix is not none and DI.vix > 30 %}<span class="badge" style="font-size:11px">{{ t('VIX panic', 'VIX 恐慌') }} {{ DI.vix }}</span>{% endif %}
-          {% if DI.spy_drawdown_pct is not none and DI.spy_drawdown_pct <= -10 %}<span class="badge" style="font-size:11px">{{ t('drawdown', '回撤') }} {{ DI.spy_drawdown_pct }}%</span>{% endif %}
-          {% if DI.vrp_pctile is not none and DI.vrp_pctile > 0.9 %}<span class="badge" style="font-size:11px">{{ t('VRP extreme', 'VRP 极端') }}</span>{% endif %}
-          {% if DI.vix_term is not none and DI.vix_term >= 1 %}<span class="badge" style="font-size:11px">{{ t('VIX backwardation', 'VIX 倒挂') }} {{ '%.2f'|format(DI.vix_term) }}</span>{% endif %}
-          {% if DI.capitulation_active %}<span class="badge" style="font-size:11px;color:var(--up)">{{ t('capitulation', '恐慌触底') }} {{ DI.capitulation_signals|length }}{% if DI.capitulation_strong %} ⚑{% endif %}</span>{% endif %}
-        </div>
-        {% if DL.capitulation_caveat %}
-        <div class="sm" style="margin-top:7px;color:var(--down)">⚠ {{ t('The capitulation gauge is firing, but the Fed put is absent — its measured bounce does NOT apply here (the falling-knife regime).', '恐慌触底指标在触发，但美联储托底缺失 — 其实测反弹在此不适用（接飞刀情形）。') }}</div>
-        {% endif %}
+      {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
+      {% set g2 = DL.gate2 %}
+      {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('var(--warn)' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
+      <div class="dlx-row">
+        <span class="dlx-lbl">{{ t('Gate-2 entry timer', '二道闸 · 入场时机') }}
+          {{ help("The entry TIMER — it arms ONLY once Gate-1 says buyable, and it is a coincident CONFIRM, never anticipation: it waits for the VIX term structure to un-invert (backwardation back to contango), which historically lags the VIX peak by ~13 sessions. MEASURED on matched buyable washouts (2006+): waiting for the un-inversion lifted hit-rate 61->67%, median 3-month return +2.2->+4.6% and shallowed median drawdown -4.5->-2.9% — but the 1-in-10 tail was marginally worse. A confirm, not a bottom-caller.", "入场时机器 — 仅在一道闸判定可买入后才启动，且是同步确认而非提前预判：它等待 VIX 期限结构回正（由倒挂转为正向），历史上滞后 VIX 峰值约 13 个交易日。基于匹配的可买入错杀样本（2006+）实测：等待回正将胜率由 61% 提升至 67%，三月中位回报 +2.2% 升至 +4.6%，中位回撤由 −4.5% 收窄至 −2.9% — 但 1/10 尾部略差。这是确认，而非抄底。") }}
+        </span>
+        {# TERM-STRUCTURE DISTANCE — how far the timer is from arming, so the state's
+           flip is visible before it happens. Prefer the engine's own
+           `distance_to_backwardation`; on an older payload derive it from the same two
+           display numbers already printed in the trigger-margin line above (the 1.00
+           limit is the display copy of backwardation_ratio noted at the top of this
+           panel). Presentation subtraction only — it decides nothing. #}
+        {% set _g2d = g2.distance_to_backwardation if (g2.distance_to_backwardation is defined and g2.distance_to_backwardation is not none)
+                      else ((1.0 - DI.vix_term) if DI.vix_term is not none else none) %}
+        <span class="dlx-val"><b style="color:{{ g2color }}">
+          {%- if g2.state=='confirmed' %}{{ t('Re-entry confirmed', '入场已确认') }}
+          {%- elif g2.state=='awaiting_confirm' %}{{ t('Awaiting confirm', '等待确认') }}
+          {%- else %}{{ t('No timer signal', '无时机信号') }}{% endif %}</b><span class="muted"> —
+          {%- if g2.state=='confirmed' %} {{ t('term structure un-inverted', '期限结构已回正') }}{% if g2.hook_days_ago is not none %} ({{ g2.hook_days_ago }} {{ t('sessions ago', '个交易日前') }}){% endif %}{{ t('; the mean-reversion confirm — wait for it, do not anticipate.', '；均值回归确认 — 等待它，勿提前抢跑。') }}
+          {%- elif g2.state=='awaiting_confirm' %} {{ t('term structure still backwardated; wait for the un-inversion (historically ~13 sessions after the VIX peak), do not anticipate.', '期限结构仍倒挂；等待回正（历史上约在 VIX 峰值后 13 个交易日），勿提前抢跑。') }}
+          {%- else %} {{ t('no measured entry timer applies to this trigger.', '此触发条件下没有实测的入场时机器。') }}{% endif %}</span>
+          {# The no_signal branch used to hardcode "rely on Gate-1" — which converted the
+             ABSENCE of a measured timer into an implied entry. The engine rewrote its own
+             copy, so render the engine's string (label / label_zh) and it can never drift
+             from the gate again. Older payloads ship the retired sentence and carry no
+             label_zh, so the corrected wording is mirrored here for them; the ZH twin is
+             the tell that a payload has the new copy. #}
+          <span class="dlx-margins">
+            {%- if g2.state=='no_signal' %}{% if g2.label_zh is defined and g2.label_zh %}<span class="l-en">{{ g2.label }}</span><span class="l-zh">{{ g2.label_zh }}</span>{% else %}{{ t('The confirm study covers VIX-backwardation episodes only, so there is no measured timer for this trigger. Do NOT treat Gate-1 alone as an entry signal: Gate-1 is a risk filter that says which washouts are refusable, never when to enter.', '确认研究仅覆盖 VIX 倒挂情形，因此此触发条件下没有实测的时机器。切勿将一道闸单独视为入场信号：一道闸是判断哪些错杀应当回避的风险过滤器，而非入场时点。') }}{% endif %}
+            {%- endif %}
+            {%- if DI.vix_term is not none %}{% if g2.state=='no_signal' %}<br>{% endif %}{{ t('VIX term', 'VIX 期限') }} <b>{{ '%.2f'|format(DI.vix_term) }}</b> {{ t('vs 1.00', '对 1.00') }}{% if _g2d is not none and _g2d > 0 %} — <span class="l-en">still <b>{{ '%.2f'|format(_g2d) }}</b> from the level that arms this timer</span><span class="l-zh">距启动该时机器还差 <b>{{ '%.2f'|format(_g2d) }}</b></span>{% endif %}{% endif %}
+          </span>
+        </span>
       </div>
       {% endif %}
 
       {% if DL.catalyst_narrative %}
       {% set CN = DL.catalyst_narrative %}
       {% set cncolor = 'var(--up)' if CN.agreement=='corroborates' else 'var(--warn)' %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ cncolor }};border-radius:8px;padding:10px 14px">
-        <div style="font-weight:700;margin-bottom:4px">🧠 {{ t('Catalyst cross-check', '催化交叉验证') }}
+      <div class="dlx-row">
+        <span class="dlx-lbl">{{ t('Catalyst cross-check', '催化交叉验证') }}
           {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供背景 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
-        </div>
-        <div style="margin-bottom:5px;display:flex;flex-wrap:wrap;gap:6px">
-          <span class="badge" style="font-size:11px;color:{{ cncolor }}">{% if CN.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
-          <span class="badge" style="font-size:11px">{{ t('catalyst reads', '催化解读') }}: <span class="l-en">{{ CN.shock_reversible }}</span><span class="l-zh">{{ CN.shock_reversible_zh or CN.shock_reversible }}</span></span>
-        </div>
-        <div class="muted sm"><span class="l-en">{{ CN.note }}</span><span class="l-zh">{{ CN.note_zh or CN.note }}</span></div>
+        </span>
+        <span class="dlx-val"><span class="{{ 'dlx-dis' if CN.agreement != 'corroborates' }}">{% if CN.agreement != 'corroborates' %}⚠ {% endif %}{% if CN.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
+          · {{ t('catalyst reads', '催化解读') }} <b><span class="l-en">{{ CN.shock_reversible }}</span><span class="l-zh">{{ CN.shock_reversible_zh or CN.shock_reversible }}</span></b>
+          <span class="dlx-margins"><span class="l-en">{{ CN.note }}</span><span class="l-zh">{{ CN.note_zh or CN.note }}</span></span>
+        </span>
       </div>
       {% endif %}
 
       {% if DL.geo_reversibility %}
       {% set GR = DL.geo_reversibility %}
-      {% set grcolor = 'var(--up)' if GR.agreement=='corroborates' else 'var(--warn)' %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ grcolor }};border-radius:8px;padding:10px 14px">
-        <div style="font-weight:700;margin-bottom:4px">🌍 {{ t('Geopolitical reversibility', '地缘可逆性') }}
+      <div class="dlx-row">
+        <span class="dlx-lbl">{{ t('Geopolitical read', '地缘解读') }}
           {{ help("A DETERMINISTIC reversibility cross-check from the GPR threat/act split (Caldara-Iacoviello, AER 2022): the THREAT component of geopolitical risk historically reverts (~3 months) while realized ACTS persist. The free, always-available complement to the AI catalyst cross-check above — shown only on an active dislocation when geopolitical risk is elevated (≥80th pct) and the threat/act mix has a clear lean. CONTEXT ONLY — it never changes the verdict; the validated Fed-put gate governs.", "基于 GPR 威胁／行动分量的确定性可逆性交叉验证（Caldara-Iacoviello，AER 2022）：地缘风险的「威胁」分量历史上往往回落（约3个月），而已发生的「行动」更持久。这是上方 AI 催化交叉验证的免费、始终可用的补充 —— 仅在活跃错位、地缘风险偏高（≥80百分位）且威胁／行动结构有明确倾向时显示。仅供背景 —— 绝不改变判定，以经验证的美联储托底闸为准。") }}
-        </div>
-        <div style="margin-bottom:5px;display:flex;flex-wrap:wrap;gap:6px">
-          <span class="badge" style="font-size:11px;color:{{ grcolor }}">{% if GR.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
-          <span class="badge" style="font-size:11px">{{ t('GPR reads', '地缘解读') }}: <span class="l-en">{{ GR.reversibility }}</span><span class="l-zh">{{ GR.reversibility_zh or GR.reversibility }}</span> ({{ t('led by', '主导') }} {{ t('threats', '威胁') if GR.lean=='threat' else t('acts', '行动') }}{% if GR.gpr_pct is not none %}, {{ GR.gpr_pct }}{{ t('th pct', '百分位') }}{% endif %})</span>
-        </div>
-        <div class="muted sm"><span class="l-en">{{ GR.note }}</span><span class="l-zh">{{ GR.note_zh or GR.note }}</span></div>
+        </span>
+        <span class="dlx-val"><span class="{{ 'dlx-dis' if GR.agreement != 'corroborates' }}">{% if GR.agreement != 'corroborates' %}⚠ {% endif %}{% if GR.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
+          · {{ t('reads', '解读为') }} <b><span class="l-en">{{ GR.reversibility }}</span><span class="l-zh">{{ GR.reversibility_zh or GR.reversibility }}</span></b>
+          ({{ t('led by', '主导') }} {{ t('threats', '威胁') if GR.lean=='threat' else t('acts', '行动') }}{% if GR.gpr_pct is not none %}, {{ GR.gpr_pct }}{{ t('th pct', '百分位') }}{% endif %})
+          <span class="dlx-margins"><span class="l-en">{{ GR.note }}</span><span class="l-zh">{{ GR.note_zh or GR.note }}</span></span>
+        </span>
       </div>
       {% endif %}
 
-      {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
-      {% set g2 = DL.gate2 %}
-      {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('var(--warn)' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
-      <div class="span12" style="background:var(--panel2);border:1px solid var(--line);border-left:3px solid {{ g2color }};border-radius:8px;padding:10px 14px">
-        <div style="font-weight:700;margin-bottom:4px">{{ t('Gate-2 entry timer', '二道闸 · 入场时机') }}
-          {{ help("The entry TIMER — it arms ONLY once Gate-1 says buyable, and it is a coincident CONFIRM, never anticipation: it waits for the VIX term structure to un-invert (backwardation back to contango), which historically lags the VIX peak by ~13 sessions. MEASURED on matched buyable washouts (2006+): waiting for the un-inversion lifted hit-rate 61->67%, median 3-month return +2.2->+4.6% and shallowed median drawdown -4.5->-2.9% — but the 1-in-10 tail was marginally worse. A confirm, not a bottom-caller.", "入场时机器 — 仅在一道闸判定可买入后才启动，且是同步确认而非提前预判：它等待 VIX 期限结构回正（由倒挂转为正向），历史上滞后 VIX 峰值约 13 个交易日。基于匹配的可买入错杀样本（2006+）实测：等待回正将胜率由 61% 提升至 67%，三月中位回报 +2.2% 升至 +4.6%，中位回撤由 −4.5% 收窄至 −2.9% — 但 1/10 尾部略差。这是确认，而非抄底。") }}
+    </div>{# /dlx-rows #}
+
+    {# The fold holds ONLY long-form prose and the measured record — nothing that
+       argues against the verdict, and no reading a user needs to act. #}
+    <details class="jarg dlx-more">
+      <summary>{{ t('How the gate reads it, and the measured record', '闸门如何判读及实测记录') }}</summary>
+      <div class="jbody">
+        {# WHAT THE LEG ACTUALLY TESTED. The old paragraph said "inflation not blocking
+           easing" — a POLICY conclusion drawn from an INFLATION test. The leg compares
+           the 21-day 10y breakeven with a 2.5% cutoff and checks that no recession
+           trigger fires; it never observes what the Fed will do, and `fed_stance` can
+           read hawkish on the very same artifact (which is why the engine now attaches
+           `policy_divergence`). Cutoff below is the display copy of fedput_breakeven
+           noted at the top of this panel. #}
+        <p class="dlx-para">
+          {% if DL.verdict=='buyable_washout' %}{{ t('A stress dislocation with the Fed put intact — no recession trigger firing, and the 21-day 10-year breakeven', '压力错位且美联储托底在位 — 衰退触发条件未激活，且 21 日十年期盈亏平衡通胀率') }}
+            {%- if DI.breakeven_10y_1m is not none %} {{ t('is', '为') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) }}%</b>{{ t(', under its 2.50% cutoff', '，低于 2.50% 阈值') }}{% else %} {{ t('is under its 2.50% cutoff', '低于 2.50% 阈值') }}{% endif %}.
+            {{ t('That is a market-priced inflation reading, not a reading of what the Fed will do. Historically these mean-revert with shallower median drawdown — confirm into stabilization, do not anticipate.', '这是市场定价的通胀读数，而非对美联储行动的判断。历史上此类情形回归均值且中位回撤更浅 — 在企稳中确认，勿提前抢跑。') }}
+          {% elif DL.verdict=='stand_aside' %}{{ t('A stress dislocation with the Fed put ABSENT — the put-absent setup the gate refused from April 2008, where the same capitulation signals kept firing into the fall.', '压力错位且美联储托底缺失 — 这是一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形，同样的恐慌信号在下跌途中不断触发。') }}
+          {% elif _put_unknown %}{{ t('A stress dislocation is live, but the Fed-put switch cannot be read, so the gate refuses to rule. A leg it cannot read is NOT a leg that is quiet — treating it as quiet is what would push this toward the permissive call.', '压力错位正在发生，但美联储托底开关无法判读，因此一道闸拒绝作出判定。读不到的一条腿并不等于安静的一条腿 —— 若当作安静处理，正会把判定推向宽松的一侧。') }}
+          {% else %}{{ t('Markets are not in a stress washout — the filter is dormant and lights up only on a real dislocation.', '市场未处于压力抛售 — 过滤器休眠，仅在真正错位时点亮。') }}{% endif %}
+        </p>
+        {# POLICY DIVERGENCE — engine-attached context (never changes the verdict): the
+           breakeven leg can pass on a day the Fed's own stance reads hawkish. Bilingual
+           pair comes from the payload; absent on older payloads, so this stays dark. #}
+        {% if DL.policy_divergence is defined and DL.policy_divergence %}
+        {% set PD = DL.policy_divergence %}
+        <p class="dlx-para dlx-pdiv">⚠ <b>{{ t('Policy divergence', '政策背离') }}</b>{{ t(' — the Fed’s own stance on this same data reads ', ' — 同一份数据中美联储自身立场为') }}<b><span class="l-en">{{ PD.stance }}</span><span class="l-zh">{{ PD.stance_zh or PD.stance }}</span></b>.
+          <span class="l-en">{{ PD.note }}</span><span class="l-zh">{{ PD.note_zh or PD.note }}</span></p>
+        {% endif %}
+        {# The retired line claimed "the edge is in refusing the knife". A declustered
+           replay refuses 2008 and MISSES twice in 2022 plus early 2000 — so the claim
+           below is the one engine/dislocation.py EVIDENCE["caveat"] now makes. #}
+        <p class="dlx-para muted">{{ t('Known misses: the gate refused the 2008 crash from April 2008, but it printed buyable early in the 2000-02 bear and twice in 2022, both 2022 prints within 0.02pp of this cutoff. A drawdown filter with known misses, not a knife-proof shield — judged on drawdown, not return.', '已知漏判：一道闸自 2008 年 4 月起拒绝了 2008 年崩盘，但在 2000-02 熊市早期给出过「可买入」，2022 年内亦有两次，且这两次距上述阈值均在 0.02 个百分点以内。这是一个存在已知漏判的回撤过滤器，而非防飞刀的护盾 — 以回撤而非回报衡量。') }}</p>
+        <div class="jrow">
+          <span class="jk">{{ t('Measured (SPY 1997-2026)', '实测（标普 1997-2026）') }}</span>
+          <span class="jv muted">{{ t('put-present washouts had ~4pp shallower median 3-month drawdown than put-absent (95% CI [+0.3, +6.3]) — the one effect whose CI excludes zero. The larger hit-rate and 1-year-tail gaps point the same way, but their CIs span zero at ~10 effective crises, so they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not significance. A drawdown filter, never alpha.', '托底在位的错杀其中位三月回撤比托底缺失浅约 4 个百分点（95% 置信区间 [+0.3, +6.3]）— 唯一置信区间不含零的效应。更大的胜率与一年尾部差异方向一致，但在约 10 个有效危机样本下置信区间跨零，故由符号一致性支撑（留一年法 26/28、两个样本半区），而非统计显著性。这是回撤过滤器，绝非超额收益。') }}</span>
         </div>
-        <b style="color:{{ g2color }}">
-          {% if g2.state=='confirmed' %}{{ t('Re-entry confirmed', '入场已确认') }}
-          {% elif g2.state=='awaiting_confirm' %}{{ t('Awaiting confirm', '等待确认') }}
-          {% else %}{{ t('No timer signal', '无时机信号') }}{% endif %}</b>
-        <span class="muted sm"> —
-          {% if g2.state=='confirmed' %}{{ t('term structure un-inverted', '期限结构已回正') }}{% if g2.hook_days_ago is not none %} ({{ g2.hook_days_ago }} {{ t('sessions ago', '个交易日前') }}){% endif %}{{ t('; the mean-reversion confirm — wait for it, do not anticipate.', '；均值回归确认 — 等待它，勿提前抢跑。') }}
-          {% elif g2.state=='awaiting_confirm' %}{{ t('term structure still backwardated; wait for the un-inversion (historically ~13 sessions after the VIX peak), do not anticipate.', '期限结构仍倒挂；等待回正（历史上约在 VIX 峰值后 13 个交易日），勿提前抢跑。') }}
-          {% else %}{{ t('no backwardation to un-invert — the term-structure timer does not apply; rely on Gate-1.', '无倒挂可回正 — 期限结构时机器不适用；以一道闸为准。') }}{% endif %}</span>
       </div>
-      {% endif %}
-
-      <!-- measured record (honest) -->
-      <div class="span12 muted sm" style="border-top:1px solid var(--line);padding-top:8px;margin-top:2px">
-        <b>{{ t('Measured (SPY 1997-2026):', '实测（标普 1997-2026）：') }}</b> {{ t('put-present washouts had ~4pp shallower median 3-month drawdown than put-absent (95% CI [+0.3, +6.3]) — the one effect whose CI excludes zero. The larger hit-rate and 1-year-tail gaps point the same way, but their CIs span zero at ~10 effective crises, so they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not significance. A drawdown filter, never alpha.', '托底在位的错杀其中位三月回撤比托底缺失浅约 4 个百分点（95% 置信区间 [+0.3, +6.3]）— 唯一置信区间不含零的效应。更大的胜率与一年尾部差异方向一致，但在约 10 个有效危机样本下置信区间跨零，故由符号一致性支撑（留一年法 26/28、两个样本半区），而非统计显著性。这是回撤过滤器，绝非超额收益。') }}
-      </div>
-
-    </div>
+    </details>
   </div>
   {% endif %}{# /dislocation panel — only when active #}
   {% endif %}{# /latest.dislocation — DL/DI/vcolor stay set for the Fear↔Euphoria read #}
@@ -14297,6 +15069,164 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
   <!-- ======================= ACTION BOARD ======================= -->
   {% if mode != 'macro' %}
+  {# Page-local by design: changing the global theme asset invalidates the cache
+     fingerprint on every page for a component only the stock action board owns. #}
+  <style id="action-card-css">
+  .row-pop:has(> .row-pop-decision){
+    z-index:2147483001;width:344px;max-width:calc(100vw - 20px);
+    max-height:calc(100dvh - 20px);overflow:auto;overscroll-behavior:contain;
+    scrollbar-width:thin;border-color:color-mix(in srgb,var(--line) 76%,var(--text) 10%);
+    border-radius:16px;
+    background:
+      radial-gradient(circle at 0 0,color-mix(in srgb,var(--link) 7%,transparent),transparent 42%),
+      var(--panel);
+    box-shadow:0 22px 64px rgba(0,0,0,.34),0 3px 12px rgba(0,0,0,.18);
+  }
+  .row-pop:has(> .row-pop-decision)::before{
+    content:"";display:block;height:3px;position:sticky;top:0;z-index:2;
+    background:linear-gradient(90deg,var(--link),color-mix(in srgb,var(--link) 12%,transparent));
+  }
+  .row-pop-decision{display:block}
+  .row-pop-decision-hd{
+    display:grid;grid-template-columns:36px minmax(0,1fr) auto;align-items:center;
+    gap:10px;padding:12px 14px 10px;
+  }
+  .row-pop-mark{
+    width:34px;height:34px;display:grid;place-items:center;flex:none;border-radius:11px;
+    font-size:15px;line-height:1;color:var(--link);
+    border:1px solid color-mix(in srgb,var(--link) 24%,var(--line));
+    background:color-mix(in srgb,var(--link) 9%,var(--panel2));
+  }
+  .row-pop-mark--theme{
+    color:var(--up);border-color:color-mix(in srgb,var(--up) 24%,var(--line));
+    background:color-mix(in srgb,var(--up) 9%,var(--panel2));
+  }
+  .row-pop-heading{display:flex;min-width:0;flex-direction:column;gap:2px}
+  .row-pop-eyebrow{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;font-weight:700;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  }
+  .row-pop-decision .row-pop-name{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;line-height:1.25;
+  }
+  .row-pop-decision .row-pop-tag{
+    margin-left:0;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    padding:3px 7px;border-radius:7px;font-size:9px;
+  }
+  .row-pop-summary,.row-pop-theme-hero{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 14px;
+    padding:12px;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+    border-radius:12px;background:color-mix(in srgb,var(--panel2) 78%,transparent);
+  }
+  .row-pop-summary-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:3px}
+  .row-pop-kicker{
+    font-size:9px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);
+  }
+  .row-pop-summary-copy>strong{font-size:15px;line-height:1.15;color:var(--text)}
+  .row-pop-sub{min-height:13px;font-size:10px;color:var(--muted)}
+  .row-pop-bars{display:flex;width:118px;flex-direction:column;gap:6px}
+  .row-pop-bars>span{
+    display:grid;grid-template-columns:24px minmax(38px,1fr) 23px;align-items:center;gap:5px;
+  }
+  .row-pop-bars em{
+    font-style:normal;font-size:8px;font-weight:700;letter-spacing:.05em;color:var(--muted);
+  }
+  .row-pop-bars i{
+    height:5px;position:relative;overflow:hidden;border-radius:999px;
+    background:color-mix(in srgb,var(--muted) 15%,transparent);
+  }
+  .row-pop-bars i b{
+    position:absolute;inset:0 auto 0 0;width:clamp(0%,var(--bar),100%);border-radius:inherit;
+    background:linear-gradient(90deg,var(--link),var(--up));
+  }
+  .row-pop-bars strong{
+    text-align:right;font-size:9px;font-variant-numeric:tabular-nums;color:var(--text);
+  }
+  .row-pop-stats{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:1px;
+    margin:11px 14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
+    border-radius:11px;background:color-mix(in srgb,var(--line) 75%,transparent);
+  }
+  .row-pop-stat{
+    display:flex;min-width:0;min-height:64px;flex-direction:column;justify-content:center;
+    padding:9px 10px;background:var(--panel);
+  }
+  .row-pop-stat>strong{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;font-size:15px;
+    line-height:1.1;font-variant-numeric:tabular-nums;color:var(--text);
+  }
+  .row-pop-stat>strong.up,.row-pop-stat>strong .up{color:var(--up)}
+  .row-pop-stat>strong.dn,.row-pop-stat>strong .dn{color:var(--down)}
+  .row-pop-stat>strong.warn{color:var(--warn)}
+  .row-pop-stat small{margin-top:3px;font-size:9px;color:var(--muted)}
+  .row-pop-score-ring{
+    --ring-color:var(--muted);width:64px;height:64px;position:relative;isolation:isolate;
+    flex:none;display:grid;place-content:center;text-align:center;border-radius:50%;
+    background:conic-gradient(var(--ring-color) calc(var(--score) * 1%),color-mix(in srgb,var(--muted) 13%,transparent) 0);
+  }
+  .row-pop-score-ring::before{
+    content:"";position:absolute;inset:5px;z-index:0;border-radius:50%;background:var(--panel);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 80%,transparent);
+  }
+  .row-pop-score-ring.up{--ring-color:var(--up)}
+  .row-pop-score-ring.warn{--ring-color:var(--warn)}
+  .row-pop-score-ring.dn{--ring-color:var(--down)}
+  .row-pop-score-ring strong,.row-pop-score-ring small{position:relative;z-index:1}
+  .row-pop-score-ring strong{font-size:17px;line-height:1;color:var(--text)}
+  .row-pop-score-ring small{
+    margin-top:2px;font-size:8px;color:var(--muted);text-transform:uppercase;
+  }
+  .row-pop-trust{display:flex;min-height:18px;flex-wrap:wrap;gap:5px;margin-top:2px}
+  .row-pop-trust>span{
+    padding:2px 6px;border-radius:999px;font-size:8.5px;font-weight:700;
+    background:color-mix(in srgb,currentColor 9%,transparent);
+  }
+  .row-pop-leaders{display:flex;align-items:center;gap:10px;margin:0 14px 11px;padding:0 2px}
+  .row-pop-leaders>span{
+    flex:none;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .row-pop-leaders strong{
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;
+    font-variant-numeric:tabular-nums;color:var(--text);
+  }
+  .row-pop-takeaway{
+    --takeaway:var(--muted);display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;
+    margin:0 14px 12px;padding:9px 10px;border-radius:10px;
+    border:1px solid color-mix(in srgb,var(--takeaway) 22%,var(--line));
+    background:color-mix(in srgb,var(--takeaway) 7%,var(--panel2));
+  }
+  .row-pop-takeaway.up{--takeaway:var(--up)}
+  .row-pop-takeaway.warn{--takeaway:var(--warn)}
+  .row-pop-takeaway.dn{--takeaway:var(--down)}
+  .row-pop-takeaway>span:first-child{
+    width:22px;height:22px;display:grid;place-items:center;border-radius:7px;
+    color:var(--takeaway);background:color-mix(in srgb,var(--takeaway) 12%,transparent);
+    font-size:13px;font-weight:800;
+  }
+  .row-pop-takeaway>span:last-child{display:flex;min-width:0;flex-direction:column;gap:2px}
+  .row-pop-takeaway b{
+    font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--takeaway);
+  }
+  .row-pop-takeaway b+span{font-size:10.5px;line-height:1.35;color:var(--text)}
+  .row-pop-decision-ft{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 14px 11px;
+    border-top:1px solid color-mix(in srgb,var(--line) 75%,transparent);
+    font-size:9px;color:var(--muted);
+  }
+  .row-pop-decision-ft b{
+    flex:none;color:var(--link);font-size:9px;letter-spacing:.04em;text-transform:uppercase;
+  }
+  [data-theme="light"] .row-pop:has(> .row-pop-decision){
+    box-shadow:0 18px 48px rgba(31,41,55,.18),0 2px 8px rgba(31,41,55,.1);
+  }
+  @media(max-width:380px){
+    .row-pop-decision-hd{grid-template-columns:34px minmax(0,1fr)}
+    .row-pop-decision .row-pop-tag{grid-column:2;justify-self:start}
+    .row-pop-summary{align-items:flex-start;flex-direction:column;gap:9px}
+    .row-pop-bars{width:100%}
+  }
+  </style>
   {# B4: market-state context strip for stocks mode — one-line banner, never a veto #}
   {% if market_state is defined and market_state %}
   {# scx-css lives HERE (inside mode!='macro') so it actually ships to us_stocks — the old
@@ -14423,144 +15353,182 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {%- if x.get('gate_override') %}<span class="ab-chip--gate" data-tip-en="Backtested drawdown-control gate fired — overrides the raw cycle read. Equal-weight basket: {{ x.get('ew', {}).get('label', '') }}" data-tip-zh="经回测的回撤控制门槛触发 — 覆盖原始周期判读。等权篮子：{{ x.get('ew', {}).get('label_zh', '') or x.get('ew', {}).get('label', '') }}">&#10003;</span>{% endif -%}
     {%- endmacro -%}
     {#- Popover source for a SECTOR row (hidden inline, cloned by JS) -#}
-    {#- Conditions popover for a SECTOR row — shared .rp-src payload for theme.js row-pop engine.
-        DO NOT REBUILD LAW #1513: FRESH BUY is the worst state on the board (not a buy edge);
-        the state tag is rendered with a neutral/warn tone — never green/up. -#}
+    {#- Compact decision card for a SECTOR row. Keep this payload intentionally
+        glanceable: one setup read, at most three decision metrics, one visual timing
+        cue, and one short takeaway. Full model prose belongs on the linked detail page.
+        DO NOT REBUILD LAW #1513: FRESH BUY is the worst state on the board (not a buy
+        edge); its state tag is warn, never green/up. -#}
     {%- macro ab_sector_pop(x) -%}
-    <span class="rp-src" hidden>
-      <div class="row-pop-hd">
-        <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
-        <span class="row-pop-kind">{{ x.ticker }}</span>
-        {#- State tag tone: FRESH BUY/BOTTOM WATCH/NEARING A LOW = warn (not-yet-confirmed or worst state per #1513);
-            TOP WATCH/ROLLING OVER/DECLINE/COUNTERTREND BOUNCE = dn; up ONLY for the explicit confirmed-uptrend
-            labels — an unknown future label must fall to the neutral tag, never to green -#}
-        {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
-        {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW'] -%}
-        {%- set _up_labels = ['RALLY ON','TURN SIGNALED','UPTREND','BUY ZONE'] -%}
-        {%- set _lbl = x.get('label', '') -%}
-        {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else ('up' if _lbl in _up_labels else '')) -%}
+    {%- set _reduce_labels = ['TOP WATCH','ROLLING OVER','DECLINE','COUNTERTREND BOUNCE'] -%}
+    {%- set _warn_labels = ['FRESH BUY','BOTTOM WATCH','NEARING A LOW','BOTTOMING','BASING','ACCUMULATION'] -%}
+    {%- set _up_labels = ['RALLY ON','TURN SIGNALED','UPTREND','BUY ZONE'] -%}
+    {%- set _lbl = x.get('label', '') -%}
+    {%- set _stag_tone = 'dn' if _lbl in _reduce_labels else ('warn' if _lbl in _warn_labels else ('up' if _lbl in _up_labels else '')) -%}
+    <div class="rp-src row-pop-decision" hidden>
+      <div class="row-pop-decision-hd">
+        <span class="row-pop-mark row-pop-mark--sector" aria-hidden="true">🏛</span>
+        <span class="row-pop-heading">
+          <span class="row-pop-eyebrow"><span class="l-en">Sector pulse</span><span class="l-zh">板块脉搏</span> · {{ x.ticker }}</span>
+          <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ tr(x.name)|e }}</span></span>
+        </span>
         <span class="row-pop-tag {{ _stag_tone }}">{{ td(x.label) }}</span>
       </div>
-      <div class="row-pop-div"></div>
-      <div class="row-pop-grid">
-        {%- if x.get('age_short') %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal age</span><span class="l-zh">信号龄</span></span>
-          <span class="row-pop-val"><span class="l-en">{{ x.age_short }}</span><span class="l-zh">{{ x.get('age_short_zh', x.age_short) }}</span></span></div>
+
+      <div class="row-pop-summary">
+        <span class="row-pop-summary-copy">
+          <span class="row-pop-kicker"><span class="l-en">Current setup</span><span class="l-zh">当前形态</span></span>
+          <strong>
+            {%- if _lbl in _up_labels -%}<span class="l-en">Trend confirmed</span><span class="l-zh">趋势已确认</span>
+            {%- elif _lbl in _warn_labels -%}<span class="l-en">Early turn</span><span class="l-zh">早期转向</span>
+            {%- elif _lbl in _reduce_labels -%}<span class="l-en">Momentum fading</span><span class="l-zh">动能转弱</span>
+            {%- else -%}<span class="l-en">Wait for clarity</span><span class="l-zh">等待明朗</span>{%- endif -%}
+          </strong>
+          <span class="row-pop-sub">
+            {%- if x.get('age_short') -%}<span class="l-en">Signal {{ x.age_short }}</span><span class="l-zh">信号 {{ x.get('age_short_zh', x.age_short) }}</span>{%- endif -%}
+            {%- if x.get('age_short') and x.get('dc_day') is not none and x.get('dc_day') is defined %} · {% endif -%}
+            {%- if x.get('dc_day') is not none and x.get('dc_day') is defined -%}<span class="l-en">cycle day {{ x.dc_day }}</span><span class="l-zh">周期第 {{ x.dc_day }} 日</span>{%- endif -%}
+          </span>
+        </span>
+        {%- if x.get('rsi_3d') is not none and x.get('rsi_3d') is defined and x.get('stoch_3d') is not none and x.get('stoch_3d') is defined %}
+        <span class="row-pop-bars" aria-label="3-day momentum">
+          <span><em>RSI</em><i><b style="--bar:{{ '%.0f'|format(x.rsi_3d) }}%"></b></i><strong>{{ '%.0f'|format(x.rsi_3d) }}</strong></span>
+          <span><em>STO</em><i><b style="--bar:{{ '%.0f'|format(x.stoch_3d) }}%"></b></i><strong>{{ '%.0f'|format(x.stoch_3d) }}</strong></span>
+        </span>
+        {%- endif %}
+      </div>
+
+      {%- if (x.get('rs_60d') is not none and x.get('rs_60d') is defined) or x.get('eq_badge') or (x.get('buy_zone') is not none and x.get('n_holdings')) %}
+      <div class="row-pop-stats">
+        {%- if x.get('rs_60d') is not none and x.get('rs_60d') is defined %}
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">60d lead</span><span class="l-zh">60日领先</span></span>
+          <strong class="{{ 'up' if x.rs_60d >= 0 else 'dn' }}">{{ '%+.1f'|format(x.rs_60d) }}%</strong>
+          <small><span class="l-en">vs SPY</span><span class="l-zh">相对SPY</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('eq_badge') %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Entry quality</span><span class="l-zh">入场质量</span></span>
-          <span class="row-pop-val"><span class="{{ 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else '') }}">{{ x.eq_badge }}</span><span class="mut"> · <span class="l-en">{{ x.eq_tip }}</span><span class="l-zh">{{ x.get('eq_tip_zh', x.eq_tip) }}</span></span></span></div>
-        {%- endif %}
-        {%- if x.get('rs_60d') is not none and x.get('rs_60d') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d RS vs SPY</span><span class="l-zh">60日RS对SPY</span></span>
-          <span class="row-pop-val"><span class="{{ 'up' if x.rs_60d >= 0 else 'dn' }}">{{ '%+.1f'|format(x.rs_60d) }}%</span></span></div>
-        {%- endif %}
-        {%- if x.get('dc_day') is not none and x.get('dc_day') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle position</span><span class="l-zh">周期位置</span></span>
-          <span class="row-pop-val"><span class="l-en">day {{ x.dc_day }} of cycle</span><span class="l-zh">周期第 {{ x.dc_day }} 日</span></span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Entry</span><span class="l-zh">入场</span></span>
+          <strong class="{{ 'up' if x.eq_dir == 'up' else ('dn' if x.eq_dir == 'down' else '') }}">{{ x.eq_badge }}</strong>
+          <small><span class="l-en">timing quality</span><span class="l-zh">时机质量</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('buy_zone') is not none and x.get('n_holdings') %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Holdings in buy zone</span><span class="l-zh">买入区持仓</span></span>
-          <span class="row-pop-val">{{ x.buy_zone }} / {{ x.n_holdings }}</span></div>
-        {%- endif %}
-        {%- if x.get('rsi_3d') is not none and x.get('rsi_3d') is defined and x.get('stoch_3d') is not none and x.get('stoch_3d') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">3D oscillators</span><span class="l-zh">3日摆动</span></span>
-          <span class="row-pop-val">RSI {{ '%.0f'|format(x.rsi_3d) }} · Stoch {{ '%.0f'|format(x.stoch_3d) }}</span></div>
-        {%- endif %}
-        {%- if x.get('rate_str') is not none and x.get('rate_str') is defined %}
-        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Fwd 63d base rate</span><span class="l-zh">63日基础胜率</span></span>
-          <span class="row-pop-val {{ 'up' if x.get('rate_pos') else ('dn' if x.get('rate_pos') is not none and not x.get('rate_pos') else '') }}">{{ x.rate_str }}</span></div>
-        {%- endif %}
-        {%- if x.get('season_str') is not none and x.get('season_str') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Seasonality</span><span class="l-zh">季节性</span></span>
-          <span class="row-pop-val">{{ x.season_str }}</span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
+          <strong>{{ x.buy_zone }}/{{ x.n_holdings }}</strong>
+          <small><span class="l-en">in buy zone</span><span class="l-zh">处于买入区</span></small>
+        </span>
         {%- endif %}
       </div>
-      {%- if x.get('text') or x.get('text_zh') or x.get('two_reads_chip') or x.get('ew_two_reads') or x.get('conflict_reason_en') %}
-      <ul class="row-pop-why">
-        {%- if x.get('text') or x.get('text_zh') %}
-        <li><span class="l-en">{{ x.get('text', '')|e }}</span><span class="l-zh">{{ x.get('text_zh', '')|e }}</span></li>
-        {%- endif %}
-        {%- if x.get('two_reads_chip') %}
-        {%- set _tr2 = x.two_reads_chip %}
-        <li><span class="l-en">Two reads: cycle <b>{{ _tr2.cycle_label_en }}</b> vs setup <b>{{ _tr2.setup_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _tr2.get('cycle_label_zh', _tr2.cycle_label_en) }}</b> vs 形态 <b>{{ _tr2.get('setup_label_zh', _tr2.setup_label_en) }}</b></span></li>
-        {%- endif %}
-        {%- if x.get('ew_two_reads') %}
-        {%- set _ewtr2 = x.ew_two_reads %}
-        <li><span class="l-en">Two reads: cycle <b>{{ _ewtr2.cycle_label_en }}</b> vs equal-weight <b>{{ _ewtr2.ew_label_en }}</b></span><span class="l-zh">两个读数：周期 <b>{{ _ewtr2.get('cycle_label_zh', _ewtr2.cycle_label_en) }}</b> vs 等权 <b>{{ _ewtr2.get('ew_label_zh', _ewtr2.ew_label_en) }}</b></span></li>
-        {%- endif %}
-        {%- if x.get('conflict_reason_en') %}
-        <li><span class="l-en">{{ x.conflict_reason_en|e }}</span><span class="l-zh">{{ x.get('conflict_reason_zh', x.conflict_reason_en)|e }}</span></li>
-        {%- endif %}
-      </ul>
       {%- endif %}
-      <div class="row-pop-ft">
-        <span>{{ x.ticker }}</span>
+
+      <div class="row-pop-takeaway {{ _stag_tone }}">
+        <span aria-hidden="true">→</span>
+        <span>
+          <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+          <span>
+            {%- if x.get('two_reads_chip') or x.get('ew_two_reads') or x.get('conflict_reason_en') -%}<span class="l-en">Signals disagree. Keep size small until they align.</span><span class="l-zh">信号不一致，等待同步前保持小仓位。</span>
+            {%- elif _lbl in _up_labels -%}<span class="l-en">Trend confirmed — use pullbacks instead of chasing.</span><span class="l-zh">趋势已确认 — 等回调，不追高。</span>
+            {%- elif _lbl in _warn_labels -%}<span class="l-en">Early turn — keep size measured while the weekly trend catches up.</span><span class="l-zh">早期转向 — 周线趋势确认前控制仓位。</span>
+            {%- elif _lbl in _reduce_labels -%}<span class="l-en">Momentum is fading — protect gains and avoid fresh adds.</span><span class="l-zh">动能转弱 — 保护利润，避免加仓。</span>
+            {%- else -%}<span class="l-en">No clean edge yet — wait for the signals to align.</span><span class="l-zh">暂无清晰优势 — 等待信号同步。</span>{%- endif -%}
+          </span>
+        </span>
       </div>
-    </span>
+      <div class="row-pop-decision-ft">
+        <span><span class="l-en">Click row for the full sector view</span><span class="l-zh">点击查看完整板块详情</span></span>
+        <b>{{ x.ticker }} ↗</b>
+      </div>
+    </div>
     {%- endmacro -%}
-    {#- Conditions popover for a THEME (narrative basket) row — shared .rp-src payload. -#}
+    {#- Compact decision card for a THEME (narrative basket) row. Opaque diagnostics
+        (flip distance, duplicate percentiles, full engine prose) stay on the detail page. -#}
     {%- macro ab_theme_pop(x) -%}
-    <span class="rp-src" hidden>
-      <div class="row-pop-hd">
-        <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
-        <span class="row-pop-kind"><span class="l-en">BASKET</span><span class="l-zh">篮子</span></span>
-        {%- set _rtone = 'dn' if x.get('reco') in ('trim','avoid') else ('up' if x.get('reco') in ('accumulate','enter') else 'warn') -%}
-        <span class="row-pop-tag {{ _rtone }}"><span class="l-en">{{ x.get('label', x.get('reco', '')) }}</span><span class="l-zh">{{ x.get('label_zh', x.get('label', '')) }}</span></span>
+    {%- set _reco = x.get('reco', '') -%}
+    {%- set _rtone = 'dn' if _reco in ('trim','avoid') else ('up' if _reco in ('accumulate','enter') else 'warn') -%}
+    {%- set _score = x.get('score') if x.get('score') is not none and x.get('score') is defined else 0 -%}
+    <div class="rp-src row-pop-decision" hidden>
+      <div class="row-pop-decision-hd">
+        <span class="row-pop-mark row-pop-mark--theme" aria-hidden="true">◆</span>
+        <span class="row-pop-heading">
+          <span class="row-pop-eyebrow"><span class="l-en">Theme basket</span><span class="l-zh">主题篮子</span></span>
+          <span class="row-pop-name"><span class="l-en">{{ x.name|e }}</span><span class="l-zh">{{ (x.name_zh or x.name)|e }}</span></span>
+        </span>
+        <span class="row-pop-tag {{ _rtone }}"><span class="l-en">{{ x.get('label') or _reco }}</span><span class="l-zh">{{ x.get('label_zh') or x.get('label') or _reco }}</span></span>
       </div>
-      <div class="row-pop-div"></div>
-      <div class="row-pop-grid">
-        {%- if x.get('score') is not none and x.get('score') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Composite score</span><span class="l-zh">综合评分</span></span>
-          <span class="row-pop-val">{{ '%.0f'|format(x.score) }}</span></div>
-        {%- endif %}
-        {%- if x.get('book_wt') is not none and x.get('book_wt') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Model book</span><span class="l-zh">模型组合</span></span>
-          <span class="row-pop-val up">{{ '%.0f'|format(x.book_wt*100) }}%</span></div>
-        {%- endif %}
+
+      <div class="row-pop-theme-hero">
+        <span class="row-pop-score-ring {{ 'up' if _score >= 60 else ('warn' if _score >= 40 else 'dn') }}" style="--score:{{ '%.0f'|format(_score) }}">
+          <strong>{% if x.get('score') is not none and x.get('score') is defined %}{{ '%.0f'|format(x.score) }}{% else %}—{% endif %}</strong>
+          <small><span class="l-en">score</span><span class="l-zh">评分</span></small>
+        </span>
+        <span class="row-pop-summary-copy">
+          <span class="row-pop-kicker"><span class="l-en">Leadership read</span><span class="l-zh">领先度判断</span></span>
+          <strong>
+            {%- if _reco in ('accumulate','enter') -%}<span class="l-en">Broad and leading</span><span class="l-zh">广泛领先</span>
+            {%- elif _reco == 'trim' -%}<span class="l-en">Late and extended</span><span class="l-zh">后期且延伸</span>
+            {%- elif _reco == 'avoid' -%}<span class="l-en">Breadth weakening</span><span class="l-zh">广度转弱</span>
+            {%- else -%}<span class="l-en">Trend intact</span><span class="l-zh">趋势完好</span>{%- endif -%}
+          </strong>
+          <span class="row-pop-trust">
+            {%- if x.get('book_wt') is not none and x.get('book_wt') is defined %}<span class="up">★ <span class="l-en">Model {{ '%.0f'|format(x.book_wt*100) }}%</span><span class="l-zh">模型 {{ '%.0f'|format(x.book_wt*100) }}%</span></span>{% endif -%}
+            {%- if x.validated %}<span class="up">✓ <span class="l-en">Risk gate</span><span class="l-zh">风险门槛</span></span>{% endif -%}
+          </span>
+        </span>
+      </div>
+
+      {%- if (x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined) or (x.get('breadth_pct50') is not none and x.get('breadth_pct50') is defined) or (x.get('rollover_band') is not none and x.get('rollover_band') is defined) %}
+      <div class="row-pop-stats">
         {%- if x.get('perf_20d_rel') is not none and x.get('perf_20d_rel') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d vs market</span><span class="l-zh">20日对比市场</span></span>
-          <span class="row-pop-val"><span class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</span></span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">20d lead</span><span class="l-zh">20日领先</span></span>
+          <strong class="{{ 'up' if x.perf_20d_rel >= 0 else 'dn' }}">{{ '%+.1f'|format(x.perf_20d_rel * 100) }}%</strong>
+          <small><span class="l-en">vs market</span><span class="l-zh">相对市场</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('breadth_pct50') is not none and x.get('breadth_pct50') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Breadth &gt;50d</span><span class="l-zh">广度&gt;50日</span></span>
-          <span class="row-pop-val">{{ '%.0f'|format(x.breadth_pct50 * 100) }}%</span></div>
-        {%- endif %}
-        {%- if x.get('rs_pctile') is not none and x.get('rs_pctile') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">RS分位</span></span>
-          <span class="row-pop-val">{{ '%.0f'|format(x.rs_pctile * 100) }}</span></div>
-        {%- endif %}
-        {%- if x.get('flip_distance') is not none and x.get('flip_distance') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Flip distance</span><span class="l-zh">翻转距离</span></span>
-          <span class="row-pop-val">{{ '%.1f'|format(x.flip_distance) }}%</span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Breadth</span><span class="l-zh">广度</span></span>
+          <strong>{{ '%.0f'|format(x.breadth_pct50 * 100) }}%</strong>
+          <small><span class="l-en">above 50d</span><span class="l-zh">高于50日线</span></small>
+        </span>
         {%- endif %}
         {%- if x.get('rollover_band') is not none and x.get('rollover_band') is defined %}
-        <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Rollover risk</span><span class="l-zh">回落风险</span></span>
-          <span class="row-pop-val {{ 'warn' if x.rollover_band != 'low' else '' }}"><span class="l-en">{{ x.rollover_band }}</span><span class="l-zh">{{ x.get('rollover_band_zh', x.rollover_band) }}</span></span></div>
-        {%- endif %}
-        {%- if x.get('top_members') %}
-        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Leaders</span><span class="l-zh">龙头</span></span>
-          <span class="row-pop-val">{{ x.top_members | join(' · ') }}</span></div>
-        {%- endif %}
-        {%- if x.validated %}
-        <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Gate</span><span class="l-zh">门槛</span></span>
-          <span class="row-pop-val up"><span class="l-en">&#10003; Backtested absolute-trend gate</span><span class="l-zh">&#10003; 经回测绝对趋势门槛</span></span></div>
+        <span class="row-pop-stat">
+          <span class="row-pop-lbl"><span class="l-en">Rollover</span><span class="l-zh">回落风险</span></span>
+          <strong class="{{ 'up' if x.rollover_band == 'low' else 'warn' }}"><span class="l-en">{{ x.rollover_band|title }}</span><span class="l-zh">{{ x.get('rollover_band_zh', x.rollover_band) }}</span></strong>
+          <small><span class="l-en">risk</span><span class="l-zh">风险</span></small>
+        </span>
         {%- endif %}
       </div>
-      {%- if x.get('reco_why_en') or x.get('run_reason_en') or x.get('conflict_reason_en') %}
-      <ul class="row-pop-why">
-        {%- if x.get('reco_why_en') %}
-        <li><span class="l-en">{{ x.reco_why_en|e }}</span><span class="l-zh">{{ x.get('reco_why_zh', x.reco_why_en)|e }}</span></li>
-        {%- endif %}
-        {%- if x.get('run_reason_en') and not x.get('conflict_reason_en') %}
-        <li><span class="l-en">{{ x.run_reason_en|e }}</span><span class="l-zh">{{ x.get('run_reason_zh', x.run_reason_en)|e }}</span></li>
-        {%- endif %}
-        {%- if x.get('conflict_reason_en') %}
-        <li><span class="l-en">&#9888; {{ x.conflict_reason_en|e }}</span><span class="l-zh">&#9888; {{ x.get('conflict_reason_zh', x.conflict_reason_en)|e }}</span></li>
-        {%- endif %}
-      </ul>
       {%- endif %}
-    </span>
+
+      {%- if x.get('top_members') %}
+      <div class="row-pop-leaders">
+        <span><span class="l-en">Leaders</span><span class="l-zh">龙头</span></span>
+        <strong>{{ x.top_members[:3] | join(' · ') }}</strong>
+      </div>
+      {%- endif %}
+
+      <div class="row-pop-takeaway {{ _rtone }}">
+        <span aria-hidden="true">→</span>
+        <span>
+          <b><span class="l-en">What matters</span><span class="l-zh">要点</span></b>
+          <span>
+            {%- if x.get('conflict_reason_en') -%}<span class="l-en">Signals disagree. Wait for breadth and price to align.</span><span class="l-zh">信号不一致，等待广度与价格同步。</span>
+            {%- elif _reco in ('accumulate','enter') -%}<span class="l-en">Leadership is broad — add on pullbacks, not strength.</span><span class="l-zh">领先面广 — 回调时加仓，不追强势。</span>
+            {%- elif _reco == 'trim' -%}<span class="l-en">Momentum is extended — protect gains into strength.</span><span class="l-zh">动能已延伸 — 逢强保护利润。</span>
+            {%- elif _reco == 'avoid' -%}<span class="l-en">Breadth is fading — stand aside until a fresh turn.</span><span class="l-zh">广度转弱 — 等待新转向前观望。</span>
+            {%- else -%}<span class="l-en">Trend is intact — wait for a cleaner entry.</span><span class="l-zh">趋势完好 — 等待更干净的入场。</span>{%- endif -%}
+          </span>
+        </span>
+      </div>
+      <div class="row-pop-decision-ft">
+        <span><span class="l-en">Click row for holdings and full history</span><span class="l-zh">点击查看持仓与完整历史</span></span>
+        <b><span class="l-en">Open ↗</span><span class="l-zh">打开 ↗</span></b>
+      </div>
+    </div>
     {%- endmacro -%}
     {#- V2 sector row macro — anv2-row anatomy (name row / chips row / stat line) -#}
     {%- macro ab_sector_row(x) -%}
@@ -15000,10 +15968,15 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <span class="nb-ev nb-ev-conf" data-tip-en="Confluence+: {{ _cp.get('k') }} independent evidence groups converging ({{ (_cp.get('groups') or [])|join(' · ') }}). Each group contributes at most 1 vote — same-signal pairs never double-count. Context display; forward IC accruing; no return claim." data-tip-zh="多元共振：{{ _cp.get('k') }} 个独立证据组同时共振（{{ (_cp.get('groups') or [])|join(' · ') }}）。每组最多贡献1票——同源信号不重复计算。情境展示，前瞻IC累积中，不作收益承诺。"><span class="l-en">conf+ {{ _cp.get('k') }}</span><span class="l-zh">多元共振 {{ _cp.get('k') }}</span></span>
             {% endif %}
           </div>
-          {# W3 stop-budget guidance line: anticipation drawdown-validated stop width (display-only). #}
+          {# W3 stop-budget guidance line: anticipation drawdown-MEASURED stop width (display-only).
+             MEASURED, not the stronger word this used to carry: anticipation_gate.json scores the
+             GO legs' DIRECTION out of sample, never a stop width, and this number is dd_avg — a
+             descriptive average close-path adverse excursion. The unscored branch falls back to any
+             horizon carrying dd_avg (build_stock_library.py "if not _scored_h"), so the old wording
+             asserted a study for the very horizon the same parenthesis called unscored. #}
           {% if n.stop_guidance %}{% set _sg = n.stop_guidance %}
           <div class="nb-stop">
-            <span class="{{ '' if _sg.get('scored') else 'stop-unscored' }}" data-tip-en="Anticipation stop-width (drawdown-validated{{ ' — GO legs only' if _sg.get('scored') else '; unscored horizon' }}): avg close-path adverse excursion {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail {{ _sg.get('tail_pct') }}%{% endif %} over the {{ _sg.get('horizon','?') }}-day horizon. DISPLAY-ONLY context — not a hard stop, not a sizing input." data-tip-zh="预期止损宽度（回撤验证{{ '，仅限GO腿' if _sg.get('scored') else '；未评分区间' }}）：平均收盘路径不利偏移 {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 {{ _sg.get('tail_pct') }}%{% endif %}。仅供展示，非硬止损，不作为仓位依据。"><span class="l-en">Avg stop: −{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail −{{ _sg.get('tail_pct') }}%{% endif %}</span><span class="l-zh">均值止损：−{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 −{{ _sg.get('tail_pct') }}%{% endif %}</span></span>
+            <span class="{{ '' if _sg.get('scored') else 'stop-unscored' }}" data-tip-en="Anticipation stop-width (drawdown-measured{{ ' — GO legs only' if _sg.get('scored') else '; unscored horizon' }}): avg close-path adverse excursion {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail {{ _sg.get('tail_pct') }}%{% endif %} over the {{ _sg.get('horizon','?') }}-day horizon. DISPLAY-ONLY context — not a hard stop, not a sizing input." data-tip-zh="预期止损宽度（回撤实测{{ '，仅限GO腿' if _sg.get('scored') else '；未评分区间' }}）：平均收盘路径不利偏移 {{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 {{ _sg.get('tail_pct') }}%{% endif %}。仅供展示，非硬止损，不作为仓位依据。"><span class="l-en">Avg stop: −{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · tail −{{ _sg.get('tail_pct') }}%{% endif %}</span><span class="l-zh">均值止损：−{{ _sg.get('pct','?') }}%{% if _sg.get('tail_pct') %} · 尾部 −{{ _sg.get('tail_pct') }}%{% endif %}</span></span>
           </div>
           {% endif %}
           {% endif %}

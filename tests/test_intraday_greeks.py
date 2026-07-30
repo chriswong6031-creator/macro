@@ -327,5 +327,86 @@ def test_compute_grids_empty_on_no_usable_contracts():
     assert gg.n_contracts == 0
 
 
+# ── (9) the Newton step never divides by a zero vega (live M1 RuntimeWarning, 2026-07-29) ──
+# `engine/intraday_greeks.py` raised `RuntimeWarning: divide by zero encountered in divide`
+# on the M1 poller during RTH. Cause: the Newton step is written
+# `np.where(step_ok, sigma - diff / vega, sigma)`, and np.where evaluates BOTH branches — so
+# `diff / vega` runs even for elements the step_ok mask discards. vega is EXACTLY 0.0
+# whenever _pdf(d1) underflows (|d1| > ~38.6 → exp(-d1²/2) == 0.0 in float64), which a
+# late-day 0DTE wing reaches easily: T floored at MIN_T (1 minute) gives σ·√T ≈ 4e-4, so a
+# strike ~2% OTM already has |d1| ≈ 49. The fix masks the DENOMINATOR; it must not change
+# any solved value.
+
+def _late_day_0dte_wing():
+    """A 2¢ SPY-like wing, ~2% OTM, one minute from expiry — the live warning's input."""
+    from engine.intraday_greeks import MIN_T
+
+    S = 640.0
+    K = np.array([653.0])
+    T = np.array([MIN_T])
+    mid = np.array([0.02])
+    isc = np.array([True])
+    return mid, S, K, T, isc
+
+
+def test_zero_vega_underflow_is_the_documented_case():
+    """Pin the mechanism, so a future refactor can't silently break the reasoning."""
+    from engine.intraday_greeks import IV_SEED, _d1_d2, _pdf, bs_vega
+
+    _, S, K, T, _ = _late_day_0dte_wing()
+    sig = np.array([IV_SEED])
+    d1, _, _ = _d1_d2(S, K, T, sig)
+    assert abs(float(d1[0])) > 38.6           # past the float64 underflow threshold
+    assert float(_pdf(d1)[0]) == 0.0          # exactly zero, not merely small
+    assert float(bs_vega(S, K, T, sig)[0]) == 0.0
+
+
+def test_newton_step_emits_no_divide_warning_on_zero_vega():
+    import warnings
+
+    mid, S, K, T, isc = _late_day_0dte_wing()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        iv = implied_vol_vec(mid, S, K, T, isc, R, Q)
+    divides = [w for w in caught
+               if issubclass(w.category, RuntimeWarning) and "divide" in str(w.message)]
+    assert not divides, f"zero-vega Newton step still warns: {[str(w.message) for w in divides]}"
+    # Unchanged semantics: this quote is genuinely unpriceable → honest NaN, never a fake IV.
+    assert np.isnan(iv[0])
+
+
+def test_zero_vega_element_does_not_poison_its_neighbours():
+    """A mixed batch: the pathological wing must not disturb the solvable contracts."""
+    import warnings
+
+    from engine.intraday_greeks import MIN_T
+
+    S = 640.0
+    K = np.array([653.0, 640.0, 630.0, 650.0])
+    T = np.array([MIN_T, 30 / 365.0, 30 / 365.0, 7 / 365.0])
+    sig = np.array([0.0, 0.18, 0.24, 0.31])           # element 0 is the unpriceable wing
+    isc = np.array([True, True, False, True])
+    mid = bs_price(S, K, T, np.where(sig > 0, sig, 0.2), isc, R, Q).copy()
+    mid[0] = 0.02
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", RuntimeWarning)  # any RuntimeWarning fails the test
+        iv = implied_vol_vec(mid, S, K, T, isc, R, Q)
+    assert np.isnan(iv[0])
+    assert np.max(np.abs(iv[1:] - sig[1:])) < 1e-4, f"neighbour IVs drifted: {iv}"
+
+
+def test_iv_solve_is_unchanged_by_the_guard():
+    """Guard parity: masking the denominator changes no solved value anywhere on the grid."""
+    K = np.array([560.0, 580.0, 600.0, 620.0, 640.0])
+    T = np.array([0.01, 0.05, 0.10, 0.30, 0.75])
+    sig = np.array([0.35, 0.24, 0.20, 0.26, 0.33])
+    for isc_v in (True, False):
+        isc = np.full(K.shape, isc_v)
+        px = bs_price(S0, K, T, sig, isc, R, Q)
+        iv = implied_vol_vec(px, S0, K, T, isc, R, Q)
+        assert np.all(np.isfinite(iv))
+        assert np.max(np.abs(iv - sig)) < 1e-4
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

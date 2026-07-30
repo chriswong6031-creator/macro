@@ -315,19 +315,16 @@ def main() -> int:
             except Exception as _hk_qe:  # noqa: BLE001 — qualifier/context must fail open
                 log.warning("world_risk: HK recovery-quality context failed (fail-open): %s", _hk_qe)
 
-        # Apply the same conservative naming law to every recovery state. Markets
-        # without breadth confirmation remain a "repair attempt"; they cannot be
-        # promoted to recovery merely because the price-only ruler improved.
+        # Apply the same conservative naming law to every recovery state via the
+        # SHARED view-model step (engine.intl_recovery_quality.apply_recovery_naming,
+        # also consumed by build_site's world-board profile) so every surface renders
+        # one set of words per market per day. Markets without breadth confirmation
+        # remain a "repair attempt"; they cannot be promoted to recovery merely
+        # because the price-only ruler improved.
         try:
-            from engine.intl_recovery_quality import assess_recovery as _wr_assess_any_recovery
+            from engine.intl_recovery_quality import apply_recovery_naming as _wr_apply_naming
 
-            for _wr_state in _world_states.values():
-                if _wr_state.get("state") == "recovery" and not _wr_state.get("recovery_assessment"):
-                    _wr_state["recovery_assessment"] = _wr_assess_any_recovery(
-                        _wr_state,
-                        _wr_state.get("confirmation"),
-                        _wr_state.get("risk_radar"),
-                    )
+            _wr_apply_naming(_world_states)
         except Exception as _wr_qe:  # noqa: BLE001 — naming qualifier must fail open
             log.warning("world_risk: recovery-quality naming failed (fail-open): %s", _wr_qe)
 
@@ -725,6 +722,12 @@ def main() -> int:
                 _itr_states = _itr_ms(_itr_closes, bench=_itr_bench)
             except Exception as _e:
                 log.warning("intl_market_state.market_states failed (fail-open): %s", _e)
+            try:
+                from engine.intl_recovery_quality import apply_recovery_naming as _itr_apply_naming
+
+                _itr_apply_naming(_itr_states)
+            except Exception as _e:  # noqa: BLE001 — naming qualifier must fail open
+                log.warning("ITR recovery-quality naming failed (fail-open): %s", _e)
 
         # Compute rotation ranks
         try:

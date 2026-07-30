@@ -65,6 +65,128 @@ class CoinGeckoAdapter(Adapter):
         return {"global_market": row}
 
 
+class CryptoUniverseAdapter(Adapter):
+    """CoinGecko top-50 market snapshot, accrued one asset/day.
+
+    Each coin has its own parquet so the repository's date-indexed store can
+    append one observation per day without collapsing a cross-section onto a
+    single date.  This is intentionally a snapshot accrual, not a synthetic
+    backfill: the Crypto Cockpit labels short histories as "building".
+    """
+    name = "crypto_universe"
+    group = "crypto_universe"
+    stale_after_days = 3
+
+    def __init__(self) -> None:
+        self.cfg = config.load()["coingecko"]
+
+    def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
+        params = {
+            "vs_currency": "usd",
+            "order": "market_cap_desc",
+            "per_page": 50,
+            "page": 1,
+            "sparkline": "false",
+            "price_change_percentage": "24h,7d,30d,200d,1y",
+        }
+        source = "CoinGecko"
+        try:
+            rows = self.http_get(
+                self.cfg["markets_url"],
+                retries=self.cfg["retries"],
+                timeout=45,
+                params=params,
+            ).json()
+            if not isinstance(rows, list) or len(rows) < 20:
+                raise ValueError("coingecko: unexpected /coins/markets schema")
+        except Exception as exc:
+            # CoinGecko intermittently geo-blocks otherwise healthy runners.
+            # CoinPaprika is a free, keyless fallback with the same observable
+            # fields.  Source is persisted per row and disclosed in the UI.
+            log.warning("coingecko universe unavailable (%s); using CoinPaprika", exc)
+            source = "CoinPaprika"
+            rows = self.http_get(
+                self.cfg["markets_fallback_url"],
+                retries=self.cfg["retries"],
+                timeout=45,
+                params={"quotes": "USD"},
+            ).json()
+            if not isinstance(rows, list) or len(rows) < 20:
+                raise ValueError("coinpaprika: unexpected /tickers schema")
+            normalized = []
+            for raw in rows[:50]:
+                quote = (raw.get("quotes") or {}).get("USD") or {}
+                normalized.append(
+                    {
+                        "id": raw.get("id"),
+                        "symbol": raw.get("symbol"),
+                        "name": raw.get("name"),
+                        "market_cap_rank": raw.get("rank"),
+                        "current_price": quote.get("price"),
+                        "market_cap": quote.get("market_cap"),
+                        "fully_diluted_valuation": (
+                            float(raw["max_supply"]) * float(quote["price"])
+                            if raw.get("max_supply") and quote.get("price")
+                            else None
+                        ),
+                        "total_volume": quote.get("volume_24h"),
+                        "high_24h": None,
+                        "low_24h": None,
+                        "price_change_percentage_24h": quote.get("percent_change_24h"),
+                        "price_change_percentage_7d_in_currency": quote.get("percent_change_7d"),
+                        "price_change_percentage_30d_in_currency": quote.get("percent_change_30d"),
+                        "price_change_percentage_200d_in_currency": None,
+                        "price_change_percentage_1y_in_currency": quote.get("percent_change_1y"),
+                        "ath_change_percentage": None,
+                        "last_updated": raw.get("last_updated"),
+                    }
+                )
+            rows = normalized
+
+        today = pd.Timestamp(datetime.now(timezone.utc).date())
+        out: dict[str, pd.DataFrame] = {}
+        for raw in rows:
+            coin_id = str(raw.get("id") or "").strip().lower()
+            symbol = str(raw.get("symbol") or "").strip().upper()
+            if not coin_id or not symbol:
+                continue
+            key = f"market_{symbol.lower()}"
+            out[key] = pd.DataFrame(
+                {
+                    "source": [source],
+                    "coin_id": [coin_id],
+                    "symbol": [symbol],
+                    "name": [str(raw.get("name") or symbol)],
+                    "market_cap_rank": [raw.get("market_cap_rank")],
+                    "current_price": [raw.get("current_price")],
+                    "market_cap": [raw.get("market_cap")],
+                    "fully_diluted_valuation": [raw.get("fully_diluted_valuation")],
+                    "total_volume": [raw.get("total_volume")],
+                    "high_24h": [raw.get("high_24h")],
+                    "low_24h": [raw.get("low_24h")],
+                    "change_24h_pct": [raw.get("price_change_percentage_24h")],
+                    "change_7d_pct": [
+                        raw.get("price_change_percentage_7d_in_currency")
+                    ],
+                    "change_30d_pct": [
+                        raw.get("price_change_percentage_30d_in_currency")
+                    ],
+                    "change_200d_pct": [
+                        raw.get("price_change_percentage_200d_in_currency")
+                    ],
+                    "change_1y_pct": [
+                        raw.get("price_change_percentage_1y_in_currency")
+                    ],
+                    "ath_change_pct": [raw.get("ath_change_percentage")],
+                    "source_updated_at": [raw.get("last_updated")],
+                },
+                index=[today],
+            )
+        if len(out) < 20:
+            raise ValueError("coingecko: fewer than 20 usable market rows")
+        return out
+
+
 class DefiLlamaAdapter(Adapter):
     """DefiLlama aggregate stablecoin circulating supply, full daily history
     each run (free, keyless). Replaces a bgeo quota slot; SSR is derived in the

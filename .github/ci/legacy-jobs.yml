@@ -627,6 +627,7 @@ jobs:
           tests/test_aibrief_w4_panels.py
           tests/test_validated_claims_thirdparty.py
           tests/test_validated_claims_engine.py
+          tests/test_validated_claims_surfaces.py
           tests/test_intl_recovery_quality.py
           tests/test_sa_w5_v2_grader_hook.py
           tests/test_w8b_macro_prior_entries.py
@@ -847,8 +848,8 @@ jobs:
         #    `try: import requests / except: requests = None`. Drop the dep and the lane silently
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
-      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py -q
+      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0)
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -3005,7 +3006,19 @@ jobs:
         # LIVE config/marketing.yml arming keys (copywriter.llm.required,
         # publish.auto_approve_scope) — a code default cannot be the whole story
         # when the config file is the operator surface.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py -q
+        # test_marketing_cadence_ramp_coherence (2026-07-28) joins the same lane:
+        # the persona cadence blocks and the D08 ramp are ANDed at post time, and
+        # nothing kept them in the same units — the specs' W1 numbers (3-4/day at a
+        # 120-180 MINUTE floor) would have cut the network from 70 posts/day to 20
+        # the moment the resolver armed. It pins posts_per_day against every ramp
+        # tier the desk ages into, the spacing floor against the ladder window AND
+        # against one publisher sweep minus the send jitter, the session fence
+        # against the sweep grid, and the weekend shape against the operator's
+        # 10/day floor. Reads committed config + the publish workflow's cron only;
+        # import closure is stdlib + pyyaml (cadence_resolver, personas, accounts,
+        # outbox and sentinel all stay on those two in the lanes above), and
+        # nothing is importorskip-gated.
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a
@@ -3502,11 +3515,19 @@ jobs:
       # job red at collection, which is the point.
       #
       # NOTHING IN THE SUITE IS importorskip-GATED. The near-dup pass's optional
-      # `datasketch` dependency is exercised through its DOCUMENTED DEGRADED
-      # STATE (`cluster_density` reports `exact-only` and declares the value a
-      # floor) rather than by requiring the wheel — so the suite cannot decay
-      # into a skip-only one, and the production workflow installs datasketch
-      # so the lane itself does not ship the degraded read.
+      # `datasketch` dependency is exercised through its DOCUMENTED STATES
+      # (`cluster_density` reports `exact-only` and declares the value a floor
+      # without the wheel, `measured-alone` with it) rather than by requiring
+      # the wheel — so the suite cannot decay into a skip-only one, and the
+      # production workflow installs datasketch so the lane itself does not
+      # ship the degraded read.
+      #
+      # BOTH dependency states are FORCED at the availability seam, so the
+      # result does not depend on whether THIS env has the wheel (2026-07-29).
+      # The earlier assertion took a union of both branches, which passed here —
+      # where the pack installs `pytest pyyaml jinja2` and nothing else — and
+      # failed on every dev machine with datasketch installed. An env-shaped
+      # pass is not a pass; it just moves the red somewhere nobody runs.
       #
       # The veto pass is exercised through its injected `call` seam, so this
       # step makes no network call and needs no credential.
@@ -3751,7 +3772,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships
-        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_wiki_pageviews.py -q
+        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_vol_shock_scorecard.py tests/test_wiki_pageviews.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
@@ -3905,6 +3926,24 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
         run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_stage_tilt.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
+      # GEX modeling-core wiring (2026-07-29). Three suites, 42 tests, ~3 s serial.
+      #
+      # These were the three remaining strictly-dark suites in the GEX family — named by
+      # no `run:` step in any workflow AND matched by no ci.yml path pattern, so no
+      # possible edit could even start CI for them: the walls/surface/smile/term model
+      # layer, the finite-difference-verified greeks + dealer-sign engine math, and the
+      # Polygon per-strike chain accrual every options read now depends on. The OIP E3
+      # wave wired its own three and flagged this family as the follow-up; this closes it.
+      #
+      # Import closure verified empirically against THIS job's install line: with scipy,
+      # sklearn, jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and
+      # fastapi ALL blocked via a builtins.__import__ shim, the only miss is `requests` —
+      # it enters at module scope through collectors/base, which the accrual collector
+      # rides. pytest + pandas + numpy + pyarrow + pyyaml + requests is the full closure;
+      # all six sit in the line above, so the shared venv is unchanged, and the other
+      # nine blocked wheels are confirmed unused. All 42 green on main at wiring time.
+      - name: GEX modeling core — walls/surface model, greeks + dealer-sign engine, polygon per-strike accrual
+        run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
 
   unrun-publish-ops:
     # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.

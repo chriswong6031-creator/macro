@@ -936,9 +936,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--post-now", default=None, metavar="ID[,ID…]",
                         help="BREAKING DISPATCH: restrict this run to these outbox item "
                              "ids, approve them regardless of the auto-approve config, "
-                             "and send them immediately (ignoring their ladder slot). "
-                             "Every safety gate still runs — validation, tape gate, "
-                             "channel, cap, and the global min-spacing floor.")
+                             "and send them immediately. SKIPS ONLY PACING: the ladder "
+                             "slot, the per-account daily cap, the cadence resolver, the "
+                             "global min-spacing floor and the send-time jitter. Every "
+                             "SAFETY gate still runs — validation, banned language, the "
+                             "chart-required law, repeat/near-dup, the live tape gate, "
+                             "channel, account halts and the global kill switch. It "
+                             "cannot arm the publisher: without --live and "
+                             "MARKETING_PUBLISH_ENABLED this is still a dry run.")
     args = parser.parse_args(argv)
 
     # Operator/breaking override: a non-empty set switches the run into
@@ -1323,6 +1328,53 @@ def main(argv: list[str] | None = None) -> int:
     posted_text_keys = _outbox.recent_posted_text_keys(state, _ref_day)
     posted_texts_by_account = _outbox.recent_posted_texts(state, _ref_day)
 
+    # ── Post-time frame / filler / substance gates (ported from #3928) ───────
+    # THE DEFECT CLASS. On 2026-07-28 the founder desk shipped "$TEL close to
+    # going", "$CBOE close to going" and "$FDS close to going" in one day, two of
+    # them sharing a byte-identical tail. Every dedup gate above compares raw
+    # TOKENS, the tickers and prices differ, so three renders of one template
+    # score 0.3-0.4 and all three went out. Blanking tickers and numbers leaves
+    # the frame, and a repeated frame on one account in one day is the templated-
+    # content fingerprint accounts get purged for.
+    #
+    # SAME-DAY, PER-ACCOUNT, LANE-BLIND. The nightly plan, the wire lanes, the
+    # press bridge, publish-time movers and an operator "post now" all land in one
+    # desk's day and never share a plan, so the copywriter's plan-side batch-stem
+    # validators cannot see the pair. This loop is the only place that can.
+    #
+    # Fully fail-soft: a broken sentinel must never wedge the queue, so any
+    # failure here leaves the pre-port behaviour intact.
+    _sentinel_gates = None
+    _frames_by_account: dict[str, list[tuple[str, frozenset]]] = {}
+    _filler_today: dict[str, int] = {}
+    _frame_threshold = 0.0
+    _max_filler: int | None = None
+    _substance_armed = False
+    try:
+        from engine.marketing import sentinel as _sentinel_gates  # noqa: PLC0415
+        _frame_threshold = _sentinel_gates.frame_similarity_threshold(cfg)
+        _max_filler = _sentinel_gates.max_filler_per_account_per_day(cfg)
+        _substance_armed = _sentinel_gates.require_ticker_and_number(cfg)
+        for _acct, _rows in _outbox.posted_today_rows_by_account(state, today).items():
+            _frames_by_account[_acct] = [
+                (_rid, _sentinel_gates.skeleton_tokens(_rtext))
+                for _rid, _rtext, _rkind in _rows]
+            _filler_today[_acct] = sum(
+                1 for _rid, _rtext, _rkind in _rows
+                if _sentinel_gates.is_filler_kind(_rkind))
+        log.info("post-time gates | frame>=%.2f filler<=%s substance_floor=%s",
+                 _frame_threshold,
+                 "unlimited" if _max_filler is None else _max_filler,
+                 "ARMED" if _substance_armed else "shadow")
+    except Exception as _pg_exc:  # noqa: BLE001
+        log.warning("post-time frame/filler gates unavailable (%s) — the near-dup "
+                    "and cap gates still run", _pg_exc)
+        _sentinel_gates = None
+    quarantined_frame = 0
+    skipped_filler = 0
+    quarantined_substance = 0
+    shadow_substance = 0
+
     # ── Cross-account near-dup bar (XG-W2) ───────────────────────────────────
     # The gate above is strictly per-account. With seven live accounts the
     # failure that matters is TWO of ours posting near-identical text — the
@@ -1367,6 +1419,48 @@ def main(argv: list[str] | None = None) -> int:
     shadow_cadence = 0
     deferred_xa = 0
 
+    # ── Hot-tape orphan-brief gate context (fail-soft) ───────────────────────
+    # The publisher half of the two-step recall cascade (#3983 closed the radar
+    # half). A context brief rides only while the alert it explains is still
+    # "posted", and the radar re-checks that at its own dispatch — but that
+    # sweep runs only when the radar runs. An operator recall after the last
+    # radar pass of the day (end of ET window, weekend, workflow disabled)
+    # leaves the booked brief on its scheduled_at, and THIS sweep would send
+    # it. Re-checked here, at the last gate before the network, against the
+    # outbox ledger itself. Fail-soft in the publisher's usual shape: if this
+    # context cannot be built the gate stands down and the send path is
+    # unchanged — a broken check must never wedge the queue, and "unresolved"
+    # must mean "the ledger answered: no such alert", never "the check broke".
+    # This module is in the Hot Tape program's READ-ONLY safety stack (gate
+    # 0.5, class TestSafetyStack in the radar's suite), so the reach is ONE
+    # sanctioned symbol, recorded by name in that test's allowance. It earns
+    # the allowance the same way the copywriter's does: the gate can only
+    # REFUSE a brief, and there is no argument to it that lets a post through
+    # that would otherwise be refused.
+    _ht_orphan_status = None
+    _ht_lane = ""
+    _ht_alert_ids: dict[str, str] = {}
+    try:
+        from engine.marketing.hot_tape import LANE, BRIEF_TRIGGER, orphaned_brief_status  # noqa: PLC0415
+        _ht_lane = LANE
+        for _hid, _hit in (state.get("items") or {}).items():
+            _hsrc = _hit.get("source")
+            if not isinstance(_hsrc, dict) or _hsrc.get("lane") != _ht_lane:
+                continue
+            if str(_hsrc.get("trigger") or "") == BRIEF_TRIGGER:
+                continue
+            _hk = str(_hsrc.get("story_key") or "")
+            # Prefer a posted duplicate: the question is "is the post this
+            # brief explains live", so any posted holder of the key answers it.
+            if _hk and (_hk not in _ht_alert_ids
+                        or statuses.get(_ht_alert_ids[_hk]) != "posted"):
+                _ht_alert_ids[_hk] = str(_hid)
+        _ht_orphan_status = orphaned_brief_status
+    except Exception as _ht_exc:  # noqa: BLE001
+        log.warning("hot-tape orphan gate unavailable (%s) — briefs post "
+                    "ungated this run", _ht_exc)
+        _ht_orphan_status = None
+
     for it in approved_due:
         iid = it["id"]
         account = it.get("account", "")
@@ -1400,6 +1494,42 @@ def main(argv: list[str] | None = None) -> int:
                 _warn_dark_park(account)
             _parked_post.append(iid)
             continue
+
+        # -- hot-tape orphan gate: a brief never outlives its alert -----------
+        # The second half of a two-step publish must not ship if the first
+        # half is gone: a context brief whose parent alert is recalled,
+        # quarantined, or absent from this ledger would explain a post nobody
+        # can see. Same predicate as the radar's dispatch re-check
+        # (orphaned_brief_status), stricter policy on "unresolved": here the
+        # map comes from the outbox ledger itself, so a parent it cannot name
+        # is positive evidence, not a fold hiccup (see the predicate's
+        # docstring). Runs for post_now/immediate items too — an operator
+        # click buys timing, never a waiver on a safety gate (#3983).
+        if _ht_orphan_status is not None:
+            try:
+                _bsrc = it.get("source")
+                _orphan = None
+                if isinstance(_bsrc, dict) and _bsrc.get("lane") == _ht_lane:
+                    _orphan = _ht_orphan_status(
+                        _bsrc.get("story_key"), _bsrc.get("trigger"),
+                        _ht_alert_ids, statuses)
+                if _orphan is not None:
+                    reason = f"orphaned context brief: alert is {_orphan}"
+                    print(f"::warning title=hot-tape-orphan-brief::context brief "
+                          f"{iid} is not published: the alert it explains is "
+                          f"{_orphan}, not posted - a brief is the second half "
+                          "of a two-step publish and never ships alone",
+                          flush=True)
+                    log.warning("item %s (%s) QUARANTINED as an orphaned context "
+                                "brief (alert is %s)", iid, account, _orphan)
+                    if live:
+                        _outbox.transition(iid, "quarantined", actor="publisher",
+                                           root=root, note=reason)
+                    quarantined += 1
+                    continue
+            except Exception as _ob_exc:  # noqa: BLE001
+                log.warning("hot-tape orphan gate failed for %s (%s) — item "
+                            "proceeds", iid, _ob_exc)
 
         links_allowed = _links_allowed_for(pub_cfg, account)
         # Items carry no separate link field today; the link (if any) is inline
@@ -1490,6 +1620,31 @@ def main(argv: list[str] | None = None) -> int:
             deferred_xa += 1
             continue
 
+        # -- template-frame gate: one template wearing two tickers ------------
+        # The defect the two near-dup gates above structurally cannot see (they
+        # compare raw tokens; the tickers and prices differ). BINDS IMMEDIATES,
+        # matching every similarity gate above it — a coordinated-looking set of
+        # renders is worse when it is fast — and it QUARANTINES rather than
+        # defers, because unlike the cross-account collision this is a defect in
+        # the item on its own terms: your desk already published this frame today.
+        if _sentinel_gates is not None:
+            _frame_hit = _sentinel_gates.frame_repeat_of(
+                _sentinel_gates.skeleton_tokens(text),
+                _frames_by_account.get(account, ()),
+                threshold=_frame_threshold)
+            if _frame_hit is not None:
+                _fid, _fscore = _frame_hit
+                reason = (f"frame repeat (skeleton jaccard={_fscore:.2f}) of {_fid} "
+                          f"posted today; same template, different ticker")
+                log.warning("item %s (%s) QUARANTINED as a template-frame repeat "
+                            "of %s (skeleton jaccard=%.2f)", iid, account, _fid, _fscore)
+                if live:
+                    _outbox.transition(iid, "quarantined", actor="publisher",
+                                       root=root, note=reason)
+                quarantined += 1
+                quarantined_frame += 1
+                continue
+
         # -- language gate: the queue is not a bypass around the copy bar ----
         # Generation-time validators cannot reach copy already sitting in the
         # queue: the 2026-07-27 $AVGO "POC held" post was enqueued by an older
@@ -1526,6 +1681,36 @@ def main(argv: list[str] | None = None) -> int:
                 quarantined += 1
                 continue
 
+        # -- substance floor: name a cashtag, state a quantity ----------------
+        # THE BAR (operator 2026-07-28): "a post must name a ticker, state a dated
+        # fact with its numbers, and then say something that FOLLOWS from that
+        # fact." Clauses one and two, at the last gate, over every lane and
+        # vintage — the same reasoning as the language gate above.
+        #
+        # LANDS DARK. Arming it drops macro/event/education and the ticker-free
+        # watchlist slot outright: none of them can name a cashtag. That is a
+        # product ruling about whether those lanes exist, not a bug fix, so the
+        # verdict is computed in full every sweep and only COUNTED until
+        # sentinel.require_ticker_and_number flips true (the shape
+        # cadence_resolver.enabled uses). Replies are exempt — a reply is a
+        # conversation, and a ticker requirement there is a category error.
+        if _sentinel_gates is not None and not _sentinel_gates.is_reply_item(it):
+            _gap = _sentinel_gates.substance_gap(text, ticker=_item_ticker(it))
+            if _gap is not None and _substance_armed:
+                reason = f"no substance: post states no {_gap}"
+                log.warning("item %s (%s) QUARANTINED by the substance floor: "
+                            "no %s", iid, account, _gap)
+                if live:
+                    _outbox.transition(iid, "quarantined", actor="publisher",
+                                       root=root, note=reason)
+                quarantined += 1
+                quarantined_substance += 1
+                continue
+            if _gap is not None:
+                log.info("item %s (%s, %s) substance floor SHADOW — would refuse: "
+                         "no %s", iid, account, it.get("kind"), _gap)
+                shadow_substance += 1
+
         # -- live tape gate: never post yesterday's read against today's tape --
         if _live_verify is not None:
             verdict = _live_verify.verify_item(
@@ -1554,6 +1739,30 @@ def main(argv: list[str] | None = None) -> int:
             log.info("item %s (%s) skipped — account at daily cap (%d/day, "
                      "ramp-narrowed from base %d)", iid, account, _acct_cap, cap)
             skipped_cap += 1
+            continue
+
+        # -- filler cap: the no-ticker kinds are seasoning, not a meal --------
+        # Kelly's ENTIRE 2026-07-28 output was four macro/education posts, each a
+        # different way to say "I post my results", so after the operator's review
+        # she shipped nothing. One a day per desk.
+        #
+        # A VOLUME cap, so IMMEDIATE/breaking is exempt — the same standing ruling
+        # ("breaking has no limits", operator 2026-07-27) that exempts them from
+        # the daily cap above and the cadence resolver below. A breaking `event`
+        # post is the exact case that ruling protects. It SKIPS rather than
+        # quarantines: the item is fine, the day is full, and it can post tomorrow.
+        #
+        # content_studio.apply_reuse_budget trims the emitted plan to this same key
+        # (one reader, two seams), so this fires on what the plan could not see:
+        # queue vintage, the wire lanes, the press bridge, operator injections.
+        if (_sentinel_gates is not None and not is_immediate
+                and _max_filler is not None
+                and _sentinel_gates.is_filler_kind(it.get("kind"))
+                and _filler_today.get(account, 0) >= _max_filler):
+            log.info("item %s (%s, %s) skipped — account at its daily filler cap "
+                     "(%d/day of macro/event/education)", iid, account,
+                     it.get("kind"), _max_filler)
+            skipped_filler += 1
             continue
 
         # -- per-account cadence resolver (XG-W2) ----------------------------
@@ -1626,10 +1835,17 @@ def main(argv: list[str] | None = None) -> int:
         # the spacing window or a forward-book slot, the same reason the tape,
         # cap and channel gates run first.
         media_paths = _media_paths_for(it, pub_cfg, _media_sidecar)
-        # An operator "post now" click is explicit intent and outranks the hold:
-        # they asked for this item, on this tape, now. Everything else waits for
-        # its picture.
-        if iid not in post_now and _missing_required_media(it, pub_cfg, media_paths):
+        # `post_now` BUYS A SLOT, NOT A WAIVER (#3960 minor). This used to read
+        # `iid not in post_now and _missing_required_media(...)`, on the reasoning
+        # that an operator click is explicit intent that outranks the hold. It is
+        # explicit intent about the TIMING; it is not consent to break the
+        # standing chart law (#3921, "every ticker post carries a chart"), and a
+        # bare ticker post is exactly what that law forbids. The operator clicking
+        # "post now" cannot see that the chart's R2 URL never resolved, so the
+        # waiver silently converted a charted entry-timing read into a naked call
+        # — the one failure mode the gate exists for. A deferred item is not
+        # refused, it retries the moment the media backfill lands.
+        if _missing_required_media(it, pub_cfg, media_paths):
             _charts = _chart_ids_for(it)
             _age_days = _item_age_days(it, now)
             if _age_days > _MEDIA_DEFER_MAX_AGE_DAYS:
@@ -1773,6 +1989,15 @@ def main(argv: list[str] | None = None) -> int:
             # both go out (the enqueue guard should prevent that pair existing,
             # but the last gate assumes nothing upstream).
             posted_text_keys.add(_outbox.text_key(account, text))
+            # Same reason for the ported gates: the folded state was read before
+            # the loop, so without these two lines the frame gate and the filler
+            # cap would both be blind to what THIS run already sent — and one run
+            # is exactly how the three "$X close to going" renders shipped.
+            if _sentinel_gates is not None:
+                _frames_by_account.setdefault(account, []).append(
+                    (iid, _sentinel_gates.skeleton_tokens(text)))
+                if _sentinel_gates.is_filler_kind(it.get("kind")):
+                    _filler_today[account] = _filler_today.get(account, 0) + 1
             # Advance the global floor to the time this post was BOOKED for —
             # NOW for an immediate item, NOW + jitter for a ladder item — so the
             # next post budges from when this one actually goes out.
@@ -1832,17 +2057,51 @@ def main(argv: list[str] | None = None) -> int:
             "health panel once the cause is understood.",
             flush=True,
         )
+    # The filler cap firing means the plan side did NOT trim what it should have
+    # (content_studio.apply_reuse_budget reads the same key), or a lane the plan
+    # never saw filled the day. Either way it is a fact about the pipeline, not a
+    # routine skip, so it is loud. Bare print at line start — a logger prefixes
+    # the annotation and GitHub silently drops it (house law).
+    if skipped_filler:
+        print(
+            f"::warning title=publisher-filler-cap::{skipped_filler} no-ticker post(s) "
+            f"(macro/event/education) held — desk already at its daily filler cap. "
+            f"content_studio.apply_reuse_budget trims the nightly plan to the same "
+            f"sentinel.max_filler_per_account_per_day, so a hit here means a lane "
+            f"outside the plan filled the day, or the plan-side trim did not run.",
+            flush=True,
+        )
+    if quarantined_frame:
+        print(
+            f"::warning title=publisher-frame-repeat::{quarantined_frame} post(s) "
+            f"quarantined as template-frame repeats — one desk published the same "
+            f"skeleton (tickers and numbers blanked) twice in one day at jaccard "
+            f">= {_frame_threshold:.2f}. Check the producing lane's copy variety.",
+            flush=True,
+        )
+    if shadow_substance:
+        print(
+            f"::notice title=publisher-substance-shadow::{shadow_substance} post(s) "
+            f"state no cashtag or no number. The substance floor is DARK "
+            f"(sentinel.require_ticker_and_number: false) so all of them posted; "
+            f"arming it would have dropped every one.",
+            flush=True,
+        )
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
+        "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
+        "substance_shadow=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
-        skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
+        skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
+        quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
+        skipped_channel,
         skipped_halt, parked_dark,
         len(stuck_posting),
         len(auto_approved),
@@ -1867,6 +2126,10 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_cadence": skipped_cadence,
             "cadence_shadow": shadow_cadence,
             "deferred_cross_account": deferred_xa,
+            "quarantined_frame": quarantined_frame,
+            "skipped_filler": skipped_filler,
+            "quarantined_substance": quarantined_substance,
+            "substance_shadow": shadow_substance,
             "skipped_no_channel": skipped_channel,
             "skipped_halt": skipped_halt,
             "halted_accounts": sorted(_halts),

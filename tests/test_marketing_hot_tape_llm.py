@@ -531,3 +531,69 @@ def test_fallback_stats_shape_and_reset():
 
 if __name__ == "__main__":  # pragma: no cover
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 18. CHATGPT-FIRST ROUTING (operator directive 2026-07-29)
+#
+# "The marketing content LLM lanes must default to the attached ChatGPT/Codex
+# account (Claude subscription tokens are being reserved for website-building
+# sessions), with Claude as fallback drawn through the key_pool OAuth load
+# balancer."
+#
+# Ruled tier for the wire desk: gpt-5.6-terra at LOW effort. Terra because the
+# wire register is not persona writing; low because this lane runs on a 5-second
+# per-provider budget and a reasoning pass it cannot wait for is spend with no
+# product. The full ruling table lives in tests/test_marketing_copy_v2.py.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _capture_provider_cfg(monkeypatch) -> list[dict]:
+    """Recorder in place of build_providers. Returning [] mutes the lane, which
+    is the shortest path that still proves what the lane ASKED for."""
+    seen: list[dict] = []
+
+    def _rec(cfg, **kwargs):  # noqa: ANN001
+        seen.append(dict(cfg))
+        return []
+
+    monkeypatch.setattr(llm_auth, "build_providers", _rec)
+    return seen
+
+
+def test_the_wire_desk_asks_for_codex_first_on_terra_at_low_effort(monkeypatch, capsys):
+    seen = _capture_provider_cfg(monkeypatch)
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    htl.reset_stats()
+    entry = BY_ID["P1"]
+    out = htl.phrase_or_fallback(entry["packet"], entry["trigger"],
+                                 entry["fallback_text"], cfg=ARMED_CFG)
+    capsys.readouterr()
+    assert out["mode"] == "fallback_provider"
+
+    assert seen, "the wire desk never reached the provider waterfall"
+    cfg = seen[0]
+    assert cfg["provider_order"] == ["codex", "oauth", "anthropic", "deepseek"]
+    assert cfg["codex_source_model"] == "gpt-5.6-terra"
+    assert cfg["codex_reasoning_effort"] == "low"
+    assert cfg["oauth_pool_lane"] == "hot-tape-wire"
+    assert cfg["usage_lane"] == "hot-tape-wire"
+
+
+def test_the_shipped_hot_tape_block_carries_the_ruling():
+    cfg = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8")) or {}
+    block = (cfg.get("hot_tape") or {}).get("llm") or {}
+    assert block.get("provider_order") == ["codex", "oauth", "anthropic", "deepseek"]
+    assert block.get("codex_source_model") == "gpt-5.6-terra"
+    assert block.get("codex_reasoning_effort") == "low"
+    assert block.get("oauth_pool_lane") == "hot-tape-wire"
+    # Luna never touches a user-facing word.
+    assert "luna" not in str(block).lower()
+
+
+def test_the_source_default_is_codex_first_too():
+    """The config file is the operator surface; this literal is what runs when a
+    caller hands the module a bare cfg. They must not disagree."""
+    src = MODULE_PATH.read_text(encoding="utf-8")
+    assert '["codex", "oauth", "anthropic", "deepseek"]' in src
+    assert '"gpt-5.6-terra"' in src
+    assert '"gpt-5.6-luna"' not in src

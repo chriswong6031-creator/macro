@@ -918,17 +918,37 @@ def posted_today_by_account(state: dict, today: str) -> dict[str, int]:
 
     `state` is a fold_state() dict; `today` is "YYYY-MM-DD".
     """
+    return {acct: len(rows)
+            for acct, rows in posted_today_rows_by_account(state, today).items()}
+
+
+def posted_today_rows_by_account(
+    state: dict, today: str,
+) -> dict[str, list[tuple[str, str, str]]]:
+    """account → [(item_id, text, kind), ...] for items that POSTED today.
+
+    The richer sibling of :func:`posted_today_by_account`, which is now a count
+    over this — ONE predicate decides "did this consume a posting slot today", so
+    the cap counter and the post-time gates below can never disagree about which
+    posts make up an account's day. Read the docstring above for why the day comes
+    from the last ledger row's `at` and not from `as_of`.
+
+    Feeds the publisher's ported #3928 gates: the per-account template-FRAME
+    similarity check needs the day's texts, and the filler cap needs their kinds.
+    Deliberately SAME-DAY where recent_posted_texts is 7-day — one desk reusing a
+    frame next week is cadence, not spam, and a filler cap is a daily budget.
+    """
     items = state.get("items") or {}
     last = state.get("last") or {}
     status = state.get("status") or {}
-    out: dict[str, int] = {}
+    out: dict[str, list[tuple[str, str, str]]] = {}
     for iid, it in items.items():
         if status.get(iid, "queued") not in {"posted", "posting"}:
             continue
         at = str((last.get(iid) or {}).get("at") or "")
         if at[:10] == today:
-            acct = it.get("account", "")
-            out[acct] = out.get(acct, 0) + 1
+            out.setdefault(it.get("account", ""), []).append(
+                (str(iid), str(it.get("text") or ""), str(it.get("kind") or "")))
     return out
 
 

@@ -293,6 +293,50 @@ class TestFirePass:
                 f"sealed_up ticker {sealed_ticker} appeared in fires.jsonl — CNPL-R4 violation"
             )
 
+    def test_flagship2_mirror_uses_snapshot_fillability(self, monkeypatch):
+        """The Reversion Desk mirror cannot bypass the fire-time execution screen."""
+        from engine.pick_lab.registry_cn import FLAGSHIP2_MIRROR_ID
+        import scripts.build_china_pick_lab as runner
+
+        asof = "2026-02-04"
+        snap = _make_sealed_cn_snap(asof=asof)
+        # Parquet/pandas represents missing scalar evidence as NaN. It must not
+        # satisfy either the fillability or non-sealed inference.
+        snap.loc["000003.SZ"] = snap.loc["000002.SZ"].copy()
+        snap.at["000003.SZ", "close"] = 12.0
+        snap.at["000003.SZ", "limit_state"] = float("nan")
+        snap["fillable"] = snap["fillable"].astype(object)
+        snap.at["000003.SZ", "fillable"] = float("nan")
+        reversion_rows = [
+            {
+                "ticker": ticker,
+                "close": float(snap.at[ticker, "close"]),
+                "sector": snap.at[ticker, "sector"],
+                "score": 1.0,
+            }
+            for ticker in snap.index
+        ]
+        monkeypatch.setattr(runner, "_IS_ASIA_LANE", True)
+
+        fires, skipped = runner._fire_all_cn_books(
+            snap,
+            asof,
+            [],
+            pd.DatetimeIndex(pd.date_range("2025-01-01", periods=300, freq="B")),
+            reversion_rows,
+        )
+        flagship = [
+            fire for fire in fires
+            if fire.get("engine_id") == FLAGSHIP2_MIRROR_ID
+        ]
+
+        assert [fire["ticker"] for fire in flagship] == ["000002.SZ"]
+        assert flagship[0]["fillable"] is True
+        assert flagship[0]["config_hash"] == (
+            "cn_f2_reversion_v2_exact_exec_star_stack"
+        )
+        assert skipped >= 2
+
 
 # ---------------------------------------------------------------------------
 # 4. Idempotent on second run
@@ -749,14 +793,50 @@ class TestCNHaltSemantics:
 # ---------------------------------------------------------------------------
 
 class TestEnrichmentHelpers:
+    def test_context_documents_cannot_backfill_an_older_snapshot(self):
+        from scripts.build_china_pick_lab import (
+            _exact_pit_context,
+            _pit_context,
+        )
+
+        past = {"asof": "2026-07-28", "value": 1}
+        current = {"as_of": "2026-07-29", "value": 2}
+        future = {"date": "2026-07-30", "value": 3}
+        undated = {"value": 4}
+
+        assert _pit_context(past, "2026-07-29") == past
+        assert _pit_context(current, "2026-07-29") == current
+        assert _pit_context(future, "2026-07-29") == {}
+        assert _pit_context(undated, "2026-07-29") == {}
+        assert _exact_pit_context(current, "2026-07-29") == current
+        assert _exact_pit_context(past, "2026-07-29") == {}
+
+    def test_microstructure_producer_stamps_each_tickers_actual_session(self):
+        """A current batch date cannot make a stale per-name packet current."""
+        from scripts.build_china_microstructure import _packet_frame_asof
+
+        frame = pd.DataFrame(
+            {"close": [10.0, 11.0]},
+            index=pd.to_datetime(["2026-07-28", "2026-07-30"]),
+        )
+        packet_frame, packet_asof = _packet_frame_asof(
+            frame,
+            cutoff=pd.Timestamp("2026-07-29"),
+        )
+
+        assert list(packet_frame.index.strftime("%Y-%m-%d")) == ["2026-07-28"]
+        assert packet_asof == "2026-07-28"
+
     def test_build_microstructure_by_ticker(self):
         """_build_microstructure_by_ticker extracts limit_state and fillable per ticker."""
         from scripts.build_china_pick_lab import _build_microstructure_by_ticker
 
+        asof = "2026-07-29"
         ms = {
             "name_packets": [
                 {
                     "ticker": "000001.SZ",
+                    "as_of": asof,
                     "limit_state": "sealed_up",
                     "fillable": False,
                     "chase_veto": {"flag": True, "reason": "limit_up"},
@@ -764,6 +844,7 @@ class TestEnrichmentHelpers:
                 },
                 {
                     "ticker": "000002.SZ",
+                    "as_of": asof,
                     "limit_state": "open",
                     "fillable": True,
                     "chase_veto": {"flag": False, "reason": None},
@@ -771,7 +852,7 @@ class TestEnrichmentHelpers:
                 },
             ]
         }
-        result = _build_microstructure_by_ticker(ms)
+        result = _build_microstructure_by_ticker(ms, asof)
         assert "000001.SZ" in result
         assert result["000001.SZ"]["limit_state"] == "sealed_up"
         assert result["000001.SZ"]["fillable"] is False
@@ -779,6 +860,50 @@ class TestEnrichmentHelpers:
         assert "000002.SZ" in result
         assert result["000002.SZ"]["fillable"] is True
         assert result["000002.SZ"]["chase_veto"] is False
+
+    def test_microstructure_enrichment_requires_exact_packet_date(self):
+        """Stale/undated packets cannot become today's execution evidence."""
+        from scripts.build_china_pick_lab import _build_microstructure_by_ticker
+
+        asof = "2026-07-29"
+        ms = {
+            # A misleading top-level date must not freshen stale/undated names.
+            "as_of": asof,
+            "name_packets": [
+                {
+                    "ticker": "FRESH.SZ",
+                    "as_of": asof,
+                    "limit_state": "open",
+                    "fillable": True,
+                    "chase_veto": {"flag": False},
+                },
+                {
+                    "ticker": "STALE.SZ",
+                    "as_of": "2026-07-28",
+                    "limit_state": "open",
+                    "fillable": True,
+                    "chase_veto": {"flag": False},
+                },
+                {
+                    "ticker": "UNDATED.SZ",
+                    "limit_state": "sealed_up",
+                    "fillable": False,
+                    "chase_veto": {"flag": True},
+                },
+                {
+                    "ticker": "INCOMPLETE.SZ",
+                    "as_of": asof,
+                    "limit_state": "open",
+                    "fillable": True,
+                },
+            ],
+        }
+
+        result = _build_microstructure_by_ticker(ms, asof)
+
+        assert set(result) == {"FRESH.SZ", "INCOMPLETE.SZ"}
+        assert result["FRESH.SZ"]["chase_veto"] is False
+        assert result["INCOMPLETE.SZ"]["chase_veto"] is None
 
     def test_build_ths_membership_basic(self):
         """_build_ths_membership returns theme_basket for member tickers."""

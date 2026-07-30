@@ -197,6 +197,54 @@ _DEFAULT_MAX_NEW_FOLLOWS_PER_ACCOUNT_PER_DAY = 0   # follow churn = fastest ban 
 # always bans reckless phrasing ("guaranteed", "can't lose", "to the moon", …).
 _DEFAULT_REQUIRE_SIGNAL_DISCLOSURE = True
 
+# ── Post-time gates (ported from #3928, adapted 2026-07-29) ──────────────────
+# These three knobs govern gates that run at PUBLISH time, not plan time, over
+# the same-day posted history of one account. They are deliberately lane-blind:
+# the nightly plan, the wire lanes, the press bridge and an operator "post now"
+# all land in one account's day, and only the last gate before the network sees
+# all of them at once. See the "Post-time gates" section below for the
+# functions, and scripts/marketing_publisher.py for the call sites.
+#
+# Per-account TEMPLATE-FRAME similarity. Two posts by one account on one day
+# whose skeletons (tickers and numbers blanked) score at or above this are the
+# same post wearing two tickers. Measured over the live outbox on 2026-07-29:
+# 124 same-(account, day) pairs among approved/posted items, exactly ONE at or
+# over 0.60 — flagship's "$PLTR into the week" / "$MSFT into the week" pair from
+# 2026-07-25, at 0.778, which is precisely the defect. The next-highest pair
+# scores 0.500, so 0.60 sits in a real gap rather than on a slope.
+_DEFAULT_FRAME_SIMILARITY = 0.60
+# Per-account daily cap on the no-ticker, no-chart kinds. Kelly's ENTIRE
+# 2026-07-28 output was four macro/education posts, each a different way to say
+# "I post my results", so after the operator's review she shipped nothing. One a
+# day per desk: they are seasoning, not a meal.
+#
+# THE PLAN SIDE HONOURS THE SAME NUMBER. content_studio.apply_reuse_budget reads
+# this key too (see filler_budget_for) and trims the emitted day down to it, so
+# this cap is a cross-lane BACKSTOP rather than a publish-time scythe through
+# work the allocator planned. Without that, arming this at 1 would have
+# quarantined 6 of flagship's 6 planned filler posts every night (measured on
+# the 2026-07-28/29 plans) with nothing upstream saying so.
+_DEFAULT_MAX_FILLER_PER_ACCOUNT_PER_DAY = 1
+#: The kinds the filler cap covers: no ticker, no chart, no per-name evidence.
+FILLER_KINDS: frozenset[str] = frozenset({"macro", "event", "education"})
+# The substance floor: an ORIGINATED post names a cashtag and states a quantity.
+#
+# SHIPS DARK (false here and in config/marketing.yml). Arming it drops the
+# no-ticker kinds outright — macro/event/education and the planner's ticker-free
+# watchlist slot cannot name a cashtag by construction — which is a product
+# ruling about whether those lanes exist at all, not a bug fix. So the gate is
+# built, tested and CALLED every sweep, but only counts and annotates what it
+# WOULD refuse until the operator flips the key. That is the same land-dark
+# shape cadence_resolver.enabled uses, and for the same reason: reading one
+# cycle of the verdict is the precondition for the arming decision.
+_DEFAULT_REQUIRE_TICKER_AND_NUMBER = False
+_CASHTAG_IN_TEXT_RE = re.compile(r"\$[A-Z]{1,5}\b")
+# Deliberately looser than copywriter._NUMBER_RE, which skips bare 1-2 digit
+# integers so "T1" and "3 weeks" do not read as invented prices. Here ANY digit
+# counts: the question is "does this post state a quantity at all", not "is
+# every quantity whitelisted".
+_SUBSTANCE_NUMBER_RE = re.compile(r"\d")
+
 # ── Reply desk send cap (XG-W4) ──────────────────────────────────────────────
 # A SEPARATE rail from _DEFAULT_MAX_REPLIES_PER_ACCOUNT_PER_DAY above: that key
 # governs engine-originated reply items on the content-plan/outbox rail, while
@@ -443,6 +491,124 @@ def _flag(block: dict, key: str, default: bool) -> bool:
     if isinstance(v, bool):
         return v
     return str(v).strip().lower() in {"1", "true", "yes"}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Post-time gates (ported from #3928)
+#
+# WHY THESE ARE NOT IN gate_plan. gate_plan screens ONE nightly plan. The defects
+# below are properties of an ACCOUNT'S DAY, and an account's day is assembled
+# from lanes that never share a plan: the nightly content plan, the wire/breaking
+# lanes, the press bridge, publish-time movers, and an operator "post now" click.
+# The publisher's loop is the only place all of them are visible at once, which is
+# the same reasoning that put the banned-language and headline-shape gates there
+# (a queued item from an older vintage walks around every generation-time check).
+#
+# Everything here is a PURE function over text the caller already has. The
+# publisher owns the state read; this module stays free of an outbox import so
+# minimal-env CI keeps importing it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# A cashtag with or without its "$", so "$TEL close to going" and "TEL closed
+# above 41" blank to the same frame.
+_SKELETON_TICKER_RE = re.compile(r"\$?[A-Z]{2,5}\b")
+_SKELETON_NUMBER_RE = re.compile(r"[\d.,%$-]+")
+
+
+def skeleton(text: str) -> str:
+    """The copy with every ticker and number blanked. What is left is the frame.
+
+    THE DEFECT THIS MEASURES. On 2026-07-28 the founder desk shipped "$TEL close
+    to going", "$CBOE close to going" and "$FDS close to going" in one day, two
+    of them sharing the byte-identical tail "Almost there. Haven't touched it.
+    Watching live." Every same-account dedup gate in the tree missed it, and
+    always would: they compare TOKEN sets, the tickers and prices differ, so
+    three renders of ONE template read as three different posts (token Jaccard
+    measured 0.3-0.4). Blank the tickers and the numbers and the template is
+    what remains.
+    """
+    out = _SKELETON_TICKER_RE.sub("X", text or "")
+    return _SKELETON_NUMBER_RE.sub("N", out)
+
+
+def skeleton_tokens(text: str) -> frozenset[str]:
+    """Token set of :func:`skeleton` — the comparable form the gate caches."""
+    return _token_set(skeleton(text))
+
+
+def skeleton_similarity(a: str, b: str) -> float:
+    """Token Jaccard over the two skeletons. 1.0 = the same template."""
+    return _jaccard_sets(skeleton_tokens(a), skeleton_tokens(b))
+
+
+def frame_similarity_threshold(cfg: dict) -> float:
+    """``sentinel.frame_similarity`` (bad values fall back to the code default)."""
+    try:
+        return float(_get(_cfg_sentinel(cfg), "frame_similarity",
+                          _DEFAULT_FRAME_SIMILARITY))
+    except (TypeError, ValueError):
+        return _DEFAULT_FRAME_SIMILARITY
+
+
+def frame_repeat_of(
+    tokens: frozenset[str],
+    prior: "list[tuple[str, frozenset[str]]] | tuple[tuple[str, frozenset[str]], ...]",
+    *,
+    threshold: float = _DEFAULT_FRAME_SIMILARITY,
+) -> "tuple[str, float] | None":
+    """First (prior_id, score) whose frame matches ``tokens``, else None.
+
+    ``prior`` is (id, skeleton_tokens) for the SAME account's SAME day. Both
+    scopings are deliberate: two desks may legitimately share a house frame (they
+    are different voices to different audiences), and one desk reusing a frame
+    next week is cadence, not spam.
+    """
+    for prev_id, prev_tokens in prior or ():
+        score = _jaccard_sets(tokens, prev_tokens)
+        if score >= threshold:
+            return (str(prev_id), score)
+    return None
+
+
+def is_filler_kind(kind: Any) -> bool:
+    """Is this one of the no-ticker, no-chart kinds the filler cap covers?"""
+    return str(kind or "").strip().lower() in FILLER_KINDS
+
+
+def max_filler_per_account_per_day(cfg: dict) -> int | None:
+    """``sentinel.max_filler_per_account_per_day``; None means unlimited (-1)."""
+    return _cap_unlimited(_cfg_sentinel(cfg), "max_filler_per_account_per_day",
+                          _DEFAULT_MAX_FILLER_PER_ACCOUNT_PER_DAY)
+
+
+def require_ticker_and_number(cfg: dict) -> bool:
+    """Is the substance floor ARMED? (``sentinel.require_ticker_and_number``)
+
+    False (the shipped default) does not mean "do not evaluate": the publisher
+    still computes :func:`substance_gap` for every originated post and annotates
+    what arming would refuse. See _DEFAULT_REQUIRE_TICKER_AND_NUMBER.
+    """
+    return _flag(_cfg_sentinel(cfg), "require_ticker_and_number",
+                 _DEFAULT_REQUIRE_TICKER_AND_NUMBER)
+
+
+def substance_gap(text: str, *, ticker: str = "") -> str | None:
+    """Which half of the substance floor a post fails: "ticker", "number", None.
+
+    THE BAR (operator 2026-07-28): "a post must name a ticker, state a dated fact
+    with its numbers, and then say something that FOLLOWS from that fact." This
+    covers the first two clauses. ``ticker`` is whatever the caller already
+    resolved (outbox items carry it on ``source.ticker``, content-plan items on
+    ``cashtag``/``ticker``); the copy's own cashtag is the fallback, so a lane
+    that stamps no ticker field is still judged on what the reader sees.
+    """
+    body = text or ""
+    has_tag = bool(str(ticker or "").strip()) or bool(_CASHTAG_IN_TEXT_RE.search(body))
+    if not has_tag:
+        return "ticker"
+    if not _SUBSTANCE_NUMBER_RE.search(body):
+        return "number"
+    return None
 
 
 def _parse_iso_date(raw: Any) -> "date | None":

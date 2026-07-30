@@ -106,6 +106,12 @@ _REGIME_MAP_LAW = (
     "on the map, but growth has cooled to the edge — one more soft month tips it "
     "into Reflation.' When the state says the regime is transitioning or a flip is "
     "pending, that drift IS the story — lead with it.\n"
+    "TRANSITION DIRECTION comes ONLY from regime_path.transition_momentum (`gaining` "
+    "is the quad gaining probability mass). Never infer which regime we could tip into "
+    "from the label, the axis signs, or a historical next-quad table — naming a "
+    "different quad than `gaining` contradicts the deterministic transition row on the "
+    "same page. When that block is absent or degraded, say the direction is unclear "
+    "rather than picking a quad.\n"
 )
 
 _STANCE_LAW = (
@@ -554,6 +560,13 @@ def _regime_path_drift(history_path) -> dict:
 
     Reads last row + rows 5 and 20 positions back.
     Fail-open: returns {} on ANY exception (file absent, corrupt, column mismatch).
+
+    VINTAGE STAMP (added 2026-07-29): the drift is computed from the PARQUET TAIL,
+    which lags the brief. On 2026-07-29 the brief was stamped 07-29 while the
+    parquet's last row was 07-28, and the drift dict carried no as-of at all — so
+    "growth −0.13 now" read as today's number when it was yesterday's. The returned
+    dict now carries `asof` (the parquet's own last index) plus the two comparison
+    stamps, so a stale history is legible instead of silently re-dated.
     """
     try:
         import pandas as pd  # lazy — master_brain avoids pandas at import
@@ -591,6 +604,22 @@ def _regime_path_drift(history_path) -> dict:
             out["growth"] = growth_drift
         if inflation_drift:
             out["inflation"] = inflation_drift
+        if out:
+            # Stamp with the PARQUET's own vintage, never the brief's date.
+            def _stamp(n: int):
+                if len(df) <= n:
+                    return None
+                try:
+                    return str(pd.Timestamp(df.index[-(n + 1)]).date())
+                except (TypeError, ValueError):
+                    return None
+            out["asof"] = _stamp(0)
+            out["vs_5d_asof"] = _stamp(5)
+            out["vs_20d_asof"] = _stamp(20)
+            out["_asof_note"] = (
+                "Drift is read off data/regime/regime_history.parquet, whose last row "
+                "may lag the brief by a session — the readings above are as of "
+                f"{out['asof']}, not necessarily the brief date.")
         return out
     except Exception:  # noqa: BLE001
         return {}
@@ -625,6 +654,35 @@ def _build_regime_path(m: dict, root=None) -> dict:
             active = [k for k, v in tf.items() if v][:4]
             if active:
                 out["transition_flags"] = active
+
+        # TRANSITION DIRECTION (added 2026-07-29). The brief context used to carry
+        # quad/axes/flip_condition but NOT quad_vector, so the LLM had no read on WHICH
+        # quad is gaining probability mass and invented one from the label: it wrote
+        # "could tip into Reflation" on a day the deterministic transition row had the
+        # odds drifting toward Stagflation. quad_vector.transition_momentum is the only
+        # producer of that direction (d(p)/dt over the causal filtered posterior), so it
+        # goes into the context with an explicit instruction to source direction ONLY
+        # from here. Hard labels, not prose — the LLM never recomputes it.
+        qv = m.get("quad_vector")
+        if isinstance(qv, dict):
+            tm = qv.get("transition_momentum")
+            if isinstance(tm, dict) and tm.get("gaining"):
+                out["transition_momentum"] = {
+                    "gaining": tm.get("gaining"),
+                    "gaining_rate": tm.get("gaining_rate"),
+                    "losing": tm.get("losing"),
+                    "losing_rate": tm.get("losing_rate"),
+                    "window_sessions": tm.get("window_sessions"),
+                    "degraded": bool(qv.get("degraded")),
+                    "_instruction": (
+                        "TRANSITION DIRECTION MUST COME FROM HERE. `gaining` is the quad "
+                        "gaining probability mass and `losing` the one shedding it, per "
+                        "session over the stated window. Any sentence about which regime "
+                        "this could tip into must name `gaining` — never infer a "
+                        "direction from the current label, the historical next-quad "
+                        "table, or the axis signs. If `degraded` is true, say the "
+                        "direction read is degraded rather than naming a quad."),
+                }
 
         # Drift block from history parquet — fail-open on any exception
         if root is not None:
@@ -1855,9 +1913,12 @@ def _prettify(s) -> str:
     return str(s).replace("_", " ").title() if s is not None else ""
 
 
-# quad_name → (EN display, ZH display)
+# quad_name → (EN display, ZH display). ZH values are the HOUSE LEXICON terms
+# (engine/i18n.py LEX) — the chip and the glossary-rendered labels elsewhere on the
+# page must read identically. "金发姑娘"/"金发姑娘(不冷不热)" was a second, competing
+# translation of Goldilocks and is retired (see _ZH_LEXICON_FIXUPS).
 _QUAD_NAME_MAP: dict[str, tuple[str, str]] = {
-    "goldilocks":  ("Goldilocks",      "金发姑娘(不冷不热)"),
+    "goldilocks":  ("Goldilocks",      "理想增长"),
     "reflation":   ("Reflation",       "再通胀"),
     "stagflation": ("Stagflation",     "滞胀"),
     "deflation":   ("Deflation",       "通缩/放缓"),
@@ -2295,6 +2356,46 @@ def render_markdown(brief: dict) -> str:
 _ZH_SCALARS = ("summary", "regime_read", "rotation_check")
 _ZH_LISTS = ("conflicts", "transmission", "watch_items", "tldr")
 
+# --------------------------------------------------------------------------- #
+# ZH LEXICON NORMALIZER (bilingual law, 2026-07-29). The brief's 中文 comes from a
+# generic Flash translator with no glossary hook, so it renders the regime vocabulary
+# its own way: "金发姑娘" / "金发姑娘(不冷不热)" for Goldilocks (house term: 理想增长)
+# and "制度" / "整体机制" for regime (house term: 周期). The page then shows two names
+# for the same object — the deterministic chip rail says one thing and the prose next
+# to it says another. This is a deterministic post-process that routes every translated
+# string through the SAME canonical names the chips use (engine/i18n.py LEX).
+#
+# Order matters: longer/more-specific forms are replaced first so a short form cannot
+# eat the tail of a long one.
+# --------------------------------------------------------------------------- #
+_ZH_LEXICON_FIXUPS: tuple[tuple[str, str], ...] = (
+    # Goldilocks -> 理想增长 (LEX)
+    ("金发姑娘（不冷不热）", "理想增长"),
+    ("金发姑娘(不冷不热)", "理想增长"),
+    ("金发姑娘式", "理想增长"),
+    ("金发姑娘", "理想增长"),
+    # regime -> 周期 (the house word for the quad object; 制度 is "institution" and
+    # 整体机制 is "overall mechanism" — both are mistranslations here)
+    ("整体机制", "周期"),
+    ("宏观制度", "宏观周期"),
+    ("市场制度", "市场周期"),
+    ("制度转换", "周期转换"),
+    ("制度状态", "周期状态"),
+    ("制度标签", "周期标签"),
+    ("该制度", "该周期"),
+    ("当前制度", "当前周期"),
+)
+
+
+def _normalize_zh_lexicon(s: str | None) -> str | None:
+    """Route a translated 中文 string through the house regime lexicon. PURE."""
+    if not isinstance(s, str) or not s:
+        return s
+    for bad, good in _ZH_LEXICON_FIXUPS:
+        if bad in s:
+            s = s.replace(bad, good)
+    return s
+
 
 def _translate_brief(brief: dict, cfg: dict) -> None:
     """Attach a Chinese version (brief['zh']) via the shared DeepSeek translator
@@ -2341,6 +2442,7 @@ def _translate_brief(brief: dict, cfg: dict) -> None:
         for (k, i), t in zip(layout, zh_list):
             if t is None:
                 continue
+            t = _normalize_zh_lexicon(t)   # house regime lexicon, not the translator's
             if i is None:
                 zh[k] = t
             else:

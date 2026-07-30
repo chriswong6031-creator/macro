@@ -41,6 +41,7 @@ import hashlib
 import logging
 from datetime import date, datetime, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -58,7 +59,14 @@ log = logging.getLogger(__name__)
 # Caveat for full_day mode: the full day is re-accumulated from zero so nothing
 # is lost.  For time_window mode, watermarks are also reset (one cycle of
 # full-day pull follows before windowed increments resume).
-DAY_STATE_VERSION = 2  # bumped: seen_sequences key now includes root
+DAY_STATE_VERSION = 4  # bumped: event "ts" now localizes naive stamps to ET before UTC — old day_state all_events carry ET-wall-clock-labeled-Z stamps
+
+# ── Exchange time ─────────────────────────────────────────────────────────────
+# ThetaData v3 trade/quote timestamps arrive as NAIVE exchange-local wall clock
+# (America/New_York) — see collectors.thetadata, whose v3 trade_quote endpoint
+# documents start_time/end_time as "HH:MM:SS.mmm" ET.  ONE rule for this module:
+# a naive stamp means exchange time and is localized to _ET_TZ, never UTC.
+_ET_TZ = ZoneInfo("America/New_York")
 
 # ── notability gate defaults ──────────────────────────────────────────────────
 DEFAULT_ETF_FLOOR    = 1_000_000   # $ gross premium floor for ETF anchors
@@ -657,16 +665,7 @@ def process_batch(
                                        prev_close=prev_close)
         dte_val  = enrich["dte"]
         ts_val   = str(row.get("ts", batch_ts)) or batch_ts
-
-        # Timestamp normalisation
-        try:
-            ts_parsed = pd.Timestamp(ts_val)
-            if ts_parsed.tzinfo is None:
-                ts_str = ts_parsed.strftime("%Y-%m-%dT%H:%M:%S") + "Z"
-            else:
-                ts_str = ts_parsed.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        except Exception:  # noqa: BLE001
-            ts_str = batch_ts
+        ts_str   = _event_ts_utc(ts_val, batch_ts)
 
         # Sweep-like heuristic flag (labeled — never described as "institutional")
         sweep_key = (exp_str, strike, right)
@@ -867,6 +866,38 @@ def aggregate_heat(heat_rows: list[dict]) -> list[dict]:
     return result
 
 
+# ── Event timestamp normalisation ─────────────────────────────────────────────
+
+def _event_ts_utc(ts_val: Any, batch_ts: str) -> str:
+    """Return a genuine-UTC ISO8601Z stamp from a trade_timestamp value.
+
+    Same exchange-time rule as _minute_key: ThetaData v3 trade timestamps are
+    NAIVE America/New_York wall clock, so a naive input is localized to ET and
+    THEN converted to UTC.  Appending a bare "Z" to the naive wall clock (what
+    this did before) mislabels a 09:30 ET print as 09:30Z — 4h early under EDT,
+    5h under EST.
+
+    That mislabeling is load-bearing downstream: this value is the event "ts"
+    shipped in feed_current.json and live_flow/archive/*.json, and the
+    charting-app flowdesk renderers (FlowCard.tsx, InspectorPane.tsx) do
+    `new Date(ts).toLocaleTimeString(..., {timeZone: "America/New_York"})` —
+    i.e. they parse it as an absolute instant and convert it to ET for display.
+    An ET stamp labeled Z therefore double-converts and prints the wrong wall
+    clock on every event card.
+
+    A tz-aware input (e.g. the ISO8601Z batch_ts fallback) just converts.
+    Falls back to batch_ts — itself UTC ISO8601Z from the poller — on any
+    parse failure.
+    """
+    try:
+        ts = pd.Timestamp(ts_val)
+        if ts.tzinfo is None:
+            ts = ts.tz_localize(_ET_TZ)
+        return ts.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception:  # noqa: BLE001
+        return batch_ts
+
+
 # ── Tide accumulation helpers ─────────────────────────────────────────────────
 
 # DTE bucket order for dte_tide
@@ -876,23 +907,27 @@ _DTE_BUCKETS = ("0d", "1_7d", "8_30d", "31_90d", "90p")
 def _minute_key(ts_val: Any, batch_ts: str) -> str:
     """Return America/New_York "HH:MM" string from a trade_timestamp value.
 
+    ThetaData v3 trade timestamps arrive as NAIVE exchange-local
+    (America/New_York) wall-clock strings — e.g. "2026-07-02T14:30:00" is
+    14:30 ET, not 14:30Z.  So a naive input is localized to ET, never UTC; a
+    tz-aware input (e.g. the ISO8601Z batch_ts fallback) converts.  One rule
+    for the whole function: naive means exchange time.
+
     Falls back to batch_ts on any parse failure.  All minute keys are in ET to
     align with the 9:30–16:00 RTH axis.
     """
-    from zoneinfo import ZoneInfo
-    _ET = ZoneInfo("America/New_York")
     try:
         ts = pd.Timestamp(ts_val)
         if ts.tzinfo is None:
-            ts = ts.tz_localize("UTC")
-        return ts.astimezone(_ET).strftime("%H:%M")
+            return ts.tz_localize(_ET_TZ).strftime("%H:%M")
+        return ts.astimezone(_ET_TZ).strftime("%H:%M")
     except Exception:  # noqa: BLE001
         pass
     try:
         ts = pd.Timestamp(batch_ts)
         if ts.tzinfo is None:
-            ts = ts.tz_localize("UTC")
-        return ts.astimezone(_ET).strftime("%H:%M")
+            return ts.tz_localize(_ET_TZ).strftime("%H:%M")
+        return ts.astimezone(_ET_TZ).strftime("%H:%M")
     except Exception:  # noqa: BLE001
         return "00:00"
 

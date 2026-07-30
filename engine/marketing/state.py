@@ -340,8 +340,8 @@ def build_state(root: Path | str | None = None, cfg: dict | None = None) -> dict
                 "value": None,
                 "state": "accruing",
                 "note": (
-                    "Accruing — requires two mature cohorts and holdout-validated "
-                    "incrementality. No data yet (wave0)."
+                    "Accruing — requires two mature cohorts and a holdout measurement "
+                    "of incrementality. No data yet (wave0)."
                 ),
             },
             "cmo": {

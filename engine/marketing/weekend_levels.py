@@ -465,6 +465,13 @@ def write_copy(
 
     Gating is the copywriter's own (config copywriter.llm.enabled AND the
     MARKETING_LLM_ENABLED env var), so tests and local runs never hit the network.
+
+    The PROVIDER WATERFALL is the copywriter's too, and deliberately so: the whole
+    `copywriter` block (its `llm` sub-block included) is handed to
+    write_posts_llm below, so weekend levels inherits the marketing-copywriter
+    lane's ChatGPT-first routing (codex/Sol leading, the key_pool-balanced Claude
+    oauth rung behind it — operator directive 2026-07-29) with no second copy of
+    those keys to drift. There is no separate weekend-levels usage lane.
     """
     floor = [(str(s.get("headline") or ""), str(s.get("body") or "")) for s in specs]
     if not specs:

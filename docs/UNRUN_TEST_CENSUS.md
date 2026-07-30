@@ -229,7 +229,7 @@ below the strictly-dark set. 138 are now wired across thirteen lanes; two are he
 | `unrun-intl-collectors` | 11 | 198 / 30s |
 | `unrun-russell-breadth` | 1 | 11 / 12s |
 | `unrun-macro-panels` | 19 | 739 / 63s |
-| `unrun-market-plumbing` | 22 | 682 / 25s |
+| `unrun-market-plumbing` | 22 (+3, GEX core) | 682 / 25s (+42 / 3s) |
 | `unrun-publish-ops` | 19 | 507 / 27s |
 | `unrun-inline-js-guard` | 1 | 14 / 2s |
 | `unrun-import-hygiene` | 1 | 4 / 48s |
@@ -242,6 +242,25 @@ and nothing else — which turned up **one** gap: `collectors/russell_breadth` i
 `yfinance` at module scope. That suite gets its own lane with `yfinance` appended rather
 than adding the wheel to all twenty-two; `execute_pack` sorts jobs by install string, so a
 second dependency set costs exactly one extra venv per pack.
+
+**GEX modeling-core amendment (2026-07-29).** `unrun-market-plumbing` gained a second
+`run:` step carrying the three remaining **strictly dark** suites in the GEX family:
+`tests/test_gex_model.py` (the walls/surface/smile/term model layer),
+`tests/test_gex_engine.py` (finite-difference-verified greeks + dealer-sign engine math),
+and `tests/test_polygon_gex.py` (the Polygon per-strike chain accrual every options read
+now depends on). All three were named by no `run:` step in any workflow AND matched by no
+path pattern, so no possible edit could start `ci.yml` for them; the OIP E3 wave wired its
+own three and flagged this family as the follow-up, without naming the filenames per this
+file's rule. Measured 42 tests / 3s serial, all green on main at wiring time; the lane's
+6-minute timeout comfortably holds 25s + 3s. Import closure re-derived empirically with
+scipy, sklearn, jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and
+fastapi all blocked via a `builtins.__import__` shim: the only miss is `requests`
+(module-scope through `collectors/base`, which the accrual collector rides), so the
+closure is `pytest pandas numpy pyarrow pyyaml requests` — all inside the lane's existing
+install line, shared venv unchanged, other nine wheels confirmed unused. Subject modules
+were already path-covered (`engine/**`, `collectors/**`, the `scripts/*.py` catch-all);
+the three test paths are the other half of the #3488 rule, added so a suite-only edit can
+still start the workflow.
 
 Budget: ci-pack goes 109 → 121 legacy jobs and the balancing weight 1978 → 2280
 (+302, +15%), splitting 6/6 across the packs at `[1140, 1140]`. Weight is the pack

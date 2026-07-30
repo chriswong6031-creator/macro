@@ -18,6 +18,9 @@ deterministic checks:
      hole; LPR prints monthly; sparse 1980s EIA), so a gap is "look at this", NOT an abort-the-build
      failure. The hard-fail integrity teeth are the revision check; gaps are surfaced, not fatal.
   D) STALE (FLAG, log only) — last observation older than ``macro_stale_days`` (+cadence).
+     Weekly series get a second, tighter tier: a full missed release cycle (age >
+     max(2*cadence, 14d)) flags ``stale_cycle`` AND emits a ::warning annotation, because
+     the engine's ffill budgets null weekly gauge inputs within ~2 sessions of a missed print.
   E) Z-OUTLIER (FLAG, log only) — the latest first-difference is an extreme move vs the series' own
      change distribution.
 
@@ -165,13 +168,32 @@ def _check_gaps(u: ac.Universe, series: str, idx: pd.DatetimeIndex, lab: str, as
 def _check_stale(u: ac.Universe, series: str, idx: pd.DatetimeIndex, cadence: float,
                  lab: str, asof: date, cfg: dict) -> None:
     """Last observation too old (FLAG only). Threshold widens by the cadence so a quarterly
-    series is not flagged just for being quarterly."""
+    series is not flagged just for being quarterly.
+
+    Weekly series additionally get a much tighter tripwire: one FULL missed release
+    cycle. The weekly macro series here (NFCI family, STLFSI4, claims, WEI) are
+    Friday/Saturday-dated and published up to 6 days later, so their normal worst-case
+    age at collect time is <=13 days; age > max(2*cadence, 14) means a release week
+    passed with no new print — an upstream delay or a dead fetch lane. The generic
+    ``macro_stale_days`` flag (45d + cadence) is far too slow for a weekly gauge input
+    (engine ffill budgets null these columns within ~2 sessions of a missed print), so
+    this tier also emits a GitHub ::warning annotation. Never a fail — collection of
+    everything else must still land."""
     last = idx.max()
     thresh = float(cfg["macro_stale_days"]) + (cadence if np.isfinite(cadence) else 0.0)
     age = (asof - last.date()).days
     if age > thresh:
         c = f"{cadence:.0f}" if np.isfinite(cadence) else "?"
         u.flag(series, "stale", f"last {last.date()}, {age}d old (cadence ~{c}d, {lab})")
+    if lab == "weekly" and age > max(2.0 * cadence, 14.0):
+        u.flag(series, "stale_cycle",
+               f"last {last.date()}, {age}d old — >=1 weekly release cycle missed")
+        # bare print, never log.warning: GitHub parses '::' only at line start and
+        # every builder logger prefixes (tests/test_gh_annotation_line_start.py)
+        print(f"::warning title=macro-weekly-stale::{u.name}/{series} last obs "
+              f"{last.date()} is {age}d old (~{cadence:.0f}d cadence) — a weekly "
+              f"release cycle was missed; check the fetch lane and the upstream "
+              f"release calendar", flush=True)
 
 
 def _check_inf(u: ac.Universe, series: str, num: pd.DataFrame) -> None:

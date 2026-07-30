@@ -64,6 +64,7 @@ import urllib.request
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
@@ -575,10 +576,64 @@ def status() -> dict:
                         }
                     )
                 elif key == "release_publications":
+                    event_status: dict[str, int] = {}
+                    max_lag_min = 0.0
+                    now_utc = datetime.fromtimestamp(now, tz=timezone.utc)
+                    for event in data.get("events") or []:
+                        state = str(event.get("status") or "unknown")
+                        event_status[state] = event_status.get(state, 0) + 1
+                        if state not in (
+                            "awaiting_publication",
+                            "published_unparsed",
+                            "verification_delayed",
+                        ):
+                            continue
+                        try:
+                            scheduled = datetime.fromisoformat(
+                                f"{event['date']}T{event['time_et']}:00"
+                            ).replace(tzinfo=ZoneInfo("America/New_York"))
+                            max_lag_min = max(
+                                max_lag_min,
+                                (now_utc - scheduled.astimezone(timezone.utc))
+                                .total_seconds()
+                                / 60,
+                            )
+                        except (KeyError, TypeError, ValueError):
+                            pass
                     checks[key].update(
                         {
                             "due": len(data.get("due") or []),
                             "published": len(data.get("publications") or []),
+                            "verified_publications": sum(
+                                1
+                                for publication in (data.get("publications") or [])
+                                if publication.get("data_ready") is True
+                            ),
+                            "unparsed_publications": sum(
+                                1
+                                for publication in (data.get("publications") or [])
+                                if publication.get("status") == "published_unparsed"
+                                or (
+                                    publication.get("data_ready") is False
+                                    and publication.get("parser")
+                                )
+                            ),
+                            "event_status": event_status,
+                            "source_errors": sum(
+                                1
+                                for source in (data.get("source_health") or [])
+                                if source.get("status") == "error"
+                            ),
+                            "max_publication_lag_min": round(max_lag_min, 1),
+                            "schedule_status": (
+                                (data.get("schedule_coverage") or {}).get("status")
+                            ),
+                            "missing_schedule_types": (
+                                (data.get("schedule_coverage") or {}).get(
+                                    "missing_or_too_distant"
+                                )
+                                or []
+                            ),
                         }
                     )
                 elif key == "orchestrator":

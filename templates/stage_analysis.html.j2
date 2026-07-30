@@ -41,9 +41,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 {% include "_interfonts.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="theme.css">
 <title>Stage Analysis</title>
 {% set seo_title = 'Stage Analysis — the market by stage, in plain words | Mastermind' %}
@@ -62,7 +59,9 @@
   --s2:var(--up);           /* advance — green */
   --s3:#d9a441;             /* top — amber / ripe */
   --s4:var(--down);         /* decline — red */
-  --font-display:'Space Grotesk',Inter,-apple-system,'Segoe UI',sans-serif;
+  /* Canonical Mastermind face: San Francisco on Apple platforms, with the
+     self-hosted Inter family as the consistent cross-platform fallback. */
+  --font-display:-apple-system,BlinkMacSystemFont,'SF Pro Display',Inter,system-ui,'Segoe UI',Roboto,sans-serif;
   --hair:color-mix(in srgb,var(--text) 8%,transparent);
   /* sentence-level secondary copy — clears the 7:1 body gate in BOTH themes
      (dark 8.26:1 / light 8.73:1 on the worst panel). --muted stays reserved
@@ -76,8 +75,8 @@ html[data-theme="light"]{
 html:not([data-lang="zh"]) .l-zh{display:none}
 html[data-lang="zh"] .l-en{display:none}
 html[data-lang="zh"] body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",Inter,sans-serif}
-body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
-  font:14px/1.5 Inter,-apple-system,'Segoe UI',Roboto,sans-serif;
+html body{margin:0;padding-top:24px;background:var(--bg);color:var(--text);
+  font:14px/1.5 var(--font-display);
   -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
 a{color:var(--link);text-decoration:none}
 .tnum{font-variant-numeric:tabular-nums}
@@ -2168,7 +2167,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     Object.keys(centres).forEach(function(k){
       var px=padX+centres[k]*(W-2*padX);
       labs+='<circle cx="'+px.toFixed(1)+'" cy="'+(baseY+30)+'" r="9" fill="none" stroke="'+scol[k]+'" stroke-width="1.4" opacity="0.7"/>'+
-            '<text x="'+px.toFixed(1)+'" y="'+(baseY+34)+'" text-anchor="middle" font-family="Space Grotesk,Inter,sans-serif" font-size="10.5" font-weight="700" fill="'+scol[k]+'">'+lnames[k]+'</text>';
+            '<text x="'+px.toFixed(1)+'" y="'+(baseY+34)+'" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,Inter,sans-serif" font-size="10.5" font-weight="700" fill="'+scol[k]+'">'+lnames[k]+'</text>';
     });
     var arcLabel=isZH()
       ? '市场阶段曲线：'+raw.s2+' 只上升，'+raw.s1+' 只筑底，'+raw.s3+' 只见顶，'+raw.s4+' 只下行。'

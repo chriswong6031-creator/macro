@@ -184,6 +184,53 @@ def test_macro_idempotent_second_run_clean(tmp_path):
     assert a["n_failed"] == b["n_failed"] == 0
 
 
+# --- audit_macro: weekly missed-cycle tripwire (stale_cycle + ::warning) -----
+
+def _weekly(n=120, end="2025-02-14", col="val") -> pd.DataFrame:
+    idx = pd.date_range(end=end, periods=n, freq="W-FRI")
+    df = pd.DataFrame({col: np.linspace(-0.6, -0.4, n)}, index=idx)
+    df.index.name = "date"
+    return df
+
+
+def test_macro_weekly_missed_cycle_flags_and_annotates(tmp_path, capsys):
+    data, base = tmp_path / "data", tmp_path / "baselines"
+    _write(_weekly(end="2025-02-14"), data / "fred" / "NFCI.parquet")
+    # 16 days after the last Friday obs: a release Wednesday passed with no print
+    doc = audit_macro.run(groups=["fred"], data_dir=data, baseline_dir=base,
+                          out_dir=tmp_path / "q", asof=date(2025, 3, 2))
+    flags = _u(doc, "fred")["flags"]
+    assert any(f["kind"] == "stale_cycle" and f["name"] == "NFCI" for f in flags)
+    out = capsys.readouterr().out
+    line = next(ln for ln in out.splitlines() if "macro-weekly-stale" in ln)
+    # the annotation must START the line — a logger prefix would kill it (house law)
+    assert line.startswith("::warning title=macro-weekly-stale::fred/NFCI")
+    assert doc["n_failed"] == 0  # tripwire is a flag + annotation, never a fail
+
+
+def test_macro_weekly_normal_release_edge_is_quiet(tmp_path, capsys):
+    data, base = tmp_path / "data", tmp_path / "baselines"
+    _write(_weekly(end="2025-02-21"), data / "fred" / "NFCI.parquet")
+    # 13 days old = the worst NORMAL pre-release age (Thu-published series on
+    # release morning) — must not flag or annotate
+    doc = audit_macro.run(groups=["fred"], data_dir=data, baseline_dir=base,
+                          out_dir=tmp_path / "q", asof=date(2025, 3, 6))
+    assert not any(f["kind"] == "stale_cycle" for f in _u(doc, "fred")["flags"])
+    assert "macro-weekly-stale" not in capsys.readouterr().out
+
+
+def test_macro_monthly_never_hits_weekly_tripwire(tmp_path, capsys):
+    data, base = tmp_path / "data", tmp_path / "baselines"
+    # last obs 2025-01-01, asof 60d later: far beyond a "weekly cycle" but normal
+    # for a lagged monthly print — the weekly tripwire must not apply
+    _write(_monthly(np.linspace(100.0, 200.0, 120), start="2015-02-01"),
+           data / "fred" / "INDPRO.parquet")
+    doc = audit_macro.run(groups=["fred"], data_dir=data, baseline_dir=base,
+                          out_dir=tmp_path / "q", asof=date(2025, 3, 2))
+    assert not any(f["kind"] == "stale_cycle" for f in _u(doc, "fred")["flags"])
+    assert "macro-weekly-stale" not in capsys.readouterr().out
+
+
 # --- audit_universe: missing ticker -----------------------------------------
 
 def test_universe_catches_missing_and_short_ticker(tmp_path):

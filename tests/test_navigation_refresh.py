@@ -72,6 +72,86 @@ def test_search_is_profile_aware_animated_and_status_rich() -> None:
     assert "@media (prefers-reduced-motion: reduce)" in REFRESH_CSS
 
 
+def test_search_waits_for_refresh_css_on_stale_rendered_pages() -> None:
+    """Static assets deploy before the full HTML render; that skew must stay safe."""
+    for marker in (
+        "ensureNavSearchCss",
+        "navigation-refresh.css",
+        "data-nav-css-wait",
+        "if (!ensureNavSearchCss(box)) return",
+        "data-ticker-search-ready",
+        "ensureNavLogoAssets",
+        "stock-logos.js",
+        "logo_config.js",
+    ):
+        assert marker in THEME_JS
+    assert 'link[rel="stylesheet"][href*="navigation-refresh.css"]' in THEME_JS
+    assert "!link.hasAttribute('data-nav-refresh-runtime')" in THEME_JS
+    assert "box.style.visibility = 'hidden'" in THEME_JS
+    assert "if (loaded) initNavSearch()" in THEME_JS
+
+
+def test_navigation_is_content_aware_and_mastermind_moved_into_research() -> None:
+    for marker in (
+        "initAdaptiveNav",
+        "data-nav-layout",
+        "directChildrenWidth",
+        "mmx-markets-change",
+        "needed <= bar.clientWidth ? 'single' : 'stacked'",
+    ):
+        assert marker in THEME_JS
+
+    assert 'class="nav-mastermind-cta"' in NAV
+    assert 'href="https://bot.mastermind-x.com"' in NAV
+    shared_chrome = (ROOT / "templates" / "_site_nav.html.j2").read_text(encoding="utf-8")
+    assert "mastermind-link" not in shared_chrome
+    assert '.nav-ctrls a[href*="bot.mastermind-x.com"]' in REFRESH_CSS
+
+
+def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -> None:
+    for marker in (
+        "@media (max-width: 900px)",
+        "height: 100dvh",
+        "position: fixed",
+        ".site-nav.has-nav-toggle .nav-search",
+        "width: 100%",
+        ".nav-mega-item-grid { grid-template-columns: 1fr;",
+        ".has-nav-toggle .nav-links .nav-mega.nav-mega .nm-feat",
+    ):
+        assert marker in REFRESH_CSS
+
+    assert "@media (max-width:900px)" in THEME_JS
+    assert "window.innerWidth > 900" in THEME_JS
+
+
+def test_right_edge_asset_flyouts_open_inward_without_desktop_overflow() -> None:
+    assert (
+        ".site-nav .nav-links > .nav-dd:nth-last-of-type(6) "
+        "> .nav-dd-menu:not(.nav-mega)"
+    ) in REFRESH_CSS
+    edge_selector = (
+        ".site-nav .nav-links > .nav-dd:nth-last-of-type(-n + 3) "
+        "> .nav-dd-menu:not(.nav-mega)"
+    )
+    assert edge_selector in REFRESH_CSS
+    edge_rule = REFRESH_CSS.split(edge_selector, 1)[1].split("}", 1)[0]
+    assert "left: auto;" in edge_rule
+    assert "right: 0;" in edge_rule
+
+    selector = (
+        ".site-nav .nav-links > .nav-dd:nth-last-of-type(2) "
+        ".nav-sub > .nav-dd-menu"
+    )
+    assert selector in REFRESH_CSS
+    rule = REFRESH_CSS.split(selector, 1)[1].split("}", 1)[0]
+    assert "left: auto;" in rule
+    assert "right: 100%;" in rule
+    assert ".site-nav .nav-dd > .nav-dd-menu,\n" in REFRESH_CSS
+    assert "display: none;" in REFRESH_CSS.split(
+        ".site-nav .nav-dd > .nav-dd-menu,", 1
+    )[1].split("}", 1)[0]
+
+
 def test_neural_web_public_view_exists_and_hides_proprietary_details() -> None:
     page = (ROOT / "templates" / "neural_web.html.j2").read_text(encoding="utf-8")
     assert "Signals do not arrive" in page

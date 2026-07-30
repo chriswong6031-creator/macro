@@ -189,12 +189,16 @@ def test_ladder_state_emits_additive_field_without_changing_score():
 
 def test_grep_gate_fires_on_synthetic_en_and_zh():
     allow = GATE._load_allowlist()
+    # An unlisted surface: allowlist entries are surface-scoped, so a synthetic line must be
+    # judged as a page no entry names — otherwise a coincidental phrase match could pass it.
+    surfs = frozenset({"_synthetic_ladder_probe"})
 
     def _fires(line):
         for m in GATE.TOKEN.finditer(line):
             if GATE._is_negated(line, m.start()):
                 continue
-            if GATE._allow_match(line, allow) is None and not GATE._artifact_backed(line):
+            if (GATE._allow_match(line, allow, surfs) is None
+                    and not GATE._artifact_backed(line)):
                 return True
         return False
 

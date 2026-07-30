@@ -94,6 +94,7 @@ _URL_MAP: frozenset[str] = frozenset({
     "/products/market-terminal.html",
     "/products/mastermind-ai.html",
     "/products/market-dashboards.html",
+    "/products/crypto-intelligence.html",
     "/tools/index.html",
     "/tools/calculators/position-size.html",
     "/tools/calculators/risk-reward.html",

@@ -1,14 +1,14 @@
 {
-  "ts": "2026-07-29T21:19:57+00:00",
-  "main_sha": "f4e9c76002eaf1d44c905a5b73bf6c4cd0dbe610",
+  "ts": "2026-07-30T06:49:39+00:00",
+  "main_sha": "b9f1f338b9206a6da36ba7a01da35fdc176843bc",
   "red_required": [
     {
       "name": "Supabase Preview",
       "conclusion": "failure",
       "status": "completed",
-      "url": "https://github.com/chriswong6031-creator/macro/runs/90710918577"
+      "url": "https://github.com/chriswong6031-creator/macro/runs/90799583579"
     }
   ],
   "green": false,
-  "consecutive_failures": 5
+  "consecutive_failures": 8
 }

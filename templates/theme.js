@@ -644,9 +644,104 @@
     });
   }
 
+  /* A theme.js update reaches the VPS before the slow full-site renderer can
+     rebake every HTML page. During that window an older page has .nav-search
+     but no navigation-refresh.css / stock-logo scripts. Never upgrade that
+     legacy search into the new SVG-rich DOM until its stylesheet is ready:
+     otherwise the browser paints the raw <svg> at its 300×150 default (the
+     giant black-circle regression). The fallback keeps the legacy search
+     hidden only while the same-origin CSS is loading, then restores it intact
+     if the asset cannot be loaded. */
+  function navRefreshAssetUrl(name) {
+    try {
+      return new URL(name, _mmThemeScript && _mmThemeScript.src
+        ? _mmThemeScript.src : location.href).href;
+    } catch (e) { return name; }
+  }
+
+  function ensureNavSearchCss(box) {
+    // Prefer the applied stylesheet over an earlier preload for the same URL.
+    // Querying the preload first meant its (correctly absent) CSSStyleSheet
+    // object could keep the enhanced search dormant.
+    var link = document.querySelector('link[rel="stylesheet"][href*="navigation-refresh.css"]')
+      || document.querySelector('link[href*="navigation-refresh.css"]');
+    // A stylesheet emitted directly by the renderer is authoritative. Some
+    // privacy-hardened browsers intentionally withhold link.sheet even after
+    // the CSS has applied; treating that as "not loaded" left the new search
+    // dormant on otherwise current pages. DOMContentLoaded follows deferred
+    // theme.js and the page stylesheet, so an authored stylesheet link is safe
+    // to trust. Only runtime-injected links need the load/error handshake below.
+    if (link && link.rel === 'stylesheet' && !link.hasAttribute('data-nav-refresh-runtime')) return true;
+    try { if (link && link.sheet) return true; } catch (e) {}
+    if (box.getAttribute('data-nav-css-wait') === '1') return false;
+
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = navRefreshAssetUrl('navigation-refresh.css');
+      link.setAttribute('data-nav-refresh-runtime', '1');
+    }
+
+    var settled = false;
+    var priorVisibility = box.style.visibility;
+    box.setAttribute('data-nav-css-wait', '1');
+    box.style.visibility = 'hidden';
+
+    function finish(loaded) {
+      if (settled) return;
+      settled = true;
+      box.removeAttribute('data-nav-css-wait');
+      box.style.visibility = priorVisibility;
+      if (loaded) initNavSearch();
+    }
+
+    link.addEventListener('load', function () { finish(true); }, { once: true });
+    link.addEventListener('error', function () { finish(false); }, { once: true });
+    if (!link.parentNode) (document.head || docEl).appendChild(link);
+    window.setTimeout(function () {
+      var loaded = false;
+      try { loaded = !!link.sheet; } catch (e) {}
+      finish(loaded);
+    }, 4000);
+    return false;
+  }
+
+  function ensureNavScript(name, ready) {
+    var script = document.querySelector('script[src*="' + name + '"]');
+    if (script) {
+      if (ready) script.addEventListener('load', ready, { once: true });
+      return;
+    }
+    script = document.createElement('script');
+    script.src = navRefreshAssetUrl(name);
+    script.async = true;
+    if (ready) script.addEventListener('load', ready, { once: true });
+    (document.head || docEl).appendChild(script);
+  }
+
+  function ensureNavLogoAssets(box) {
+    function enhance() {
+      if (window.MMXStockLogo && window.MMXStockLogo.enhance) {
+        window.MMXStockLogo.enhance(box);
+      }
+    }
+    function loadLogoSystem() {
+      if (window.MMXStockLogo) { enhance(); return; }
+      ensureNavScript('stock-logos.js', enhance);
+    }
+    if (window.MMX_LOGO_DEV_TOKEN || document.querySelector('script[src*="logo_config.js"]')) {
+      loadLogoSystem();
+    } else {
+      ensureNavScript('logo_config.js', loadLogoSystem);
+    }
+  }
+
   function initNavSearch() {
     var box = document.querySelector('.nav-search');
     if (!box) return;
+    if (box.getAttribute('data-ticker-search-ready') === '1') return;
+    if (!ensureNavSearchCss(box)) return;
+    box.setAttribute('data-ticker-search-ready', '1');
     var phEn = 'Ticker or company';
     var phZh = '股票代码或公司';
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
@@ -661,6 +756,7 @@
         '<button class="search-esc" type="button" aria-label="Close ticker search">Esc</button>' +
       '</div>' +
       '<div class="ticker-dropdown" id="ticker-search-dropdown" role="listbox" aria-label="Ticker search results"></div>';
+    ensureNavLogoAssets(box);
 
     var trigger = box.querySelector('.search-trigger');
     var input = box.querySelector('.ticker-input');
@@ -974,7 +1070,7 @@
      on the vector / commodities / forex / bonds family) packs ~17 links plus
      the theme + language toggles onto one row. On a phone that wrapped into a
      wall of pills that ate half the viewport. We progressively enhance: inject
-     a hamburger button + a scoped stylesheet that, below 1260px, collapses the
+     a hamburger button + a scoped stylesheet that, below 901px, collapses the
      links into a tap-to-open dropdown while the toggles stay on one compact
      bar. With JS off the original wrapping nav remains (every link reachable).
      The CSS is injected here — not in theme.css — because the .topbar pages are
@@ -993,7 +1089,7 @@
     ".nav-totop.is-live svg{animation:nav-totop-bob 2.4s ease-in-out .8s infinite}",
     /* extra specificity so the tap-flight beats the idle bob above */
     "button.nav-totop.launch svg{animation:nav-totop-launch .5s cubic-bezier(.5,0,.6,1)}",
-    "@media (max-width:1259px){",
+    "@media (max-width:900px){",
       ".nav-toggle{display:inline-flex;align-items:center;justify-content:center;width:42px;height:34px;padding:0;flex:none;cursor:pointer;border-radius:10px;border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--text,var(--ink));-webkit-tap-highlight-color:transparent}",
       ".nav-toggle-bars,.nav-toggle-bars::before,.nav-toggle-bars::after{content:'';display:block;width:18px;height:2px;border-radius:2px;background:currentColor;transition:transform .22s ease,opacity .2s ease}",
       ".nav-toggle-bars{position:relative}",
@@ -1120,7 +1216,7 @@
       var trigger = dd.querySelector(':scope > a');   // .nav-link OR .nav-sub-trig
       if (!trigger) return;
       trigger.addEventListener('click', function(e) {
-        if (window.innerWidth > 1259) return;
+        if (window.innerWidth > 900) return;
         e.preventDefault(); e.stopPropagation();
         var wasOpen = dd.classList.contains('open');
         dd.parentElement.querySelectorAll(':scope > .nav-dd.open').forEach(function(d) {
@@ -1173,7 +1269,70 @@
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeNav(); });
     document.addEventListener('click', function (e) { if (!nav.contains(e.target)) closeNav(); });
-    window.addEventListener('resize', function () { if (window.innerWidth > 1259) closeNav(); });
+    window.addEventListener('resize', function () { if (window.innerWidth > 900) closeNav(); });
+  }
+
+  /* ---- content-aware desktop nav ------------------------------------------
+     The market rail is personalized after auth: one user may see only US while
+     another keeps four country menus. Measuring the actual, post-fold DOM lets
+     the same navigation choose one row when it fits and a composed second row
+     when it does not. This is intentionally content-driven rather than a set of
+     profile-specific breakpoints, so new menu entries inherit the behavior. */
+  function initAdaptiveNav() {
+    var nav = document.querySelector('.site-nav, .topbar');
+    if (!nav || nav.getAttribute('data-adaptive-nav-ready') === '1') return;
+    var links = nav.querySelector('.nav-links');
+    if (!links) return;
+    nav.setAttribute('data-adaptive-nav-ready', '1');
+
+    // Mastermind is now a purpose-built Research-menu callout. Remove old pills
+    // from both freshly rendered and still-cached pages before measuring.
+    nav.querySelectorAll('.nav-ctrls .mastermind-link, .nav-ctrls a[href*="bot.mastermind-x.com"]').forEach(function (a) {
+      a.remove();
+    });
+
+    var raf = 0;
+    function directChildrenWidth() {
+      var total = 0, count = 0;
+      [].slice.call(links.children).forEach(function (node) {
+        if (!node.getBoundingClientRect || node.classList.contains('nav-totop')) return;
+        var style = window.getComputedStyle(node);
+        if (style.display === 'none' || style.position === 'fixed') return;
+        total += node.getBoundingClientRect().width;
+        count += 1;
+      });
+      return total + Math.max(0, count - 1) * 3;
+    }
+
+    function paint() {
+      raf = 0;
+      if (window.innerWidth <= 900) {
+        nav.removeAttribute('data-nav-layout');
+        return;
+      }
+      var bar = nav.classList.contains('topbar') ? (nav.querySelector('.wrap') || nav) : nav;
+      var search = nav.querySelector('.nav-search');
+      var controls = nav.querySelector('.nav-ctrls');
+      // Set stacked first so the link children receive their natural width
+      // instead of being squeezed by a stale single-row grid.
+      nav.setAttribute('data-nav-layout', 'stacked');
+      var needed = directChildrenWidth()
+        + (search ? 124 : 0)
+        + (controls ? controls.getBoundingClientRect().width : 0)
+        + 34;
+      nav.setAttribute('data-nav-layout', needed <= bar.clientWidth ? 'single' : 'stacked');
+    }
+
+    function schedule() {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(paint);
+    }
+
+    window.addEventListener('resize', schedule, { passive: true });
+    document.addEventListener('mmx-markets-change', schedule);
+    document.addEventListener('langchange', schedule);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(schedule);
+    schedule();
   }
 
   /* ---- settings modal (theme + language + future account) -----------------
@@ -4428,6 +4587,7 @@
     initNavSearch();
     initActiveNav();
     initMobileNav();
+    initAdaptiveNav();
     initShowMore();
     pinBoardTrackToggle();
     initListCollapse();

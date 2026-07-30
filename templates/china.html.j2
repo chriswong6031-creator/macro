@@ -8,6 +8,55 @@
 {% macro nm(name) -%}
 {% set p = (name or '').split(' / ') %}<span class="l-en">{{ p[0] }}</span><span class="l-zh">{{ p[1] if p|length > 1 else p[0] }}</span>
 {%- endmacro %}
+{% macro cn_lane_reason(code) -%}
+{% if code == 'featured_cap' %}{{ t('featured shelf full','精选区已满') }}
+{% elif code == 'sector_cap' %}{{ t('sector exposure cap','行业集中度上限') }}
+{% elif code == 'liquidity_unknown' %}{{ t('liquidity not verified','流动性未验证') }}
+{% elif code == 'liquidity_below_floor' %}{{ t('liquidity below floor','流动性低于门槛') }}
+{% elif code == 'micro_missing' %}{{ t('execution data missing','成交数据缺失') }}
+{% elif code == 'micro_stale' %}{{ t('execution data stale','成交数据过期') }}
+{% elif code == 'micro_fillability_unknown' %}{{ t('fillability not verified','可成交性未验证') }}
+{% elif code == 'micro_chase_status_unknown' %}{{ t('chase check not verified','追涨检查未验证') }}
+{% elif code == 'unfillable' %}{{ t('not fillable now','当前无法成交') }}
+{% elif code == 'chase_veto' %}{{ t('do-not-chase veto','勿追涨否决') }}
+{% elif code == 'extended' %}{{ t('price already extended','价格已经延伸') }}
+{% elif code == 'extension_unknown' %}{{ t('extension check not verified','延伸检查未验证') }}
+{% elif code == 'non_entry_stage' %}{{ t('outside entry lifecycle','不在入场生命周期') }}
+{% elif code == 'tier_t4_not_actionable' %}{{ t('T4 early warning — not actionable','T4早期预警 — 不可操作') }}
+{% elif code == 'no_buyable_tier' %}{{ t('no actionable T1–T3 tier','无可操作T1–T3层级') }}
+{% elif code == 'raw_gate_ineligible' %}{{ t('broad screen only','仅通过广泛筛选') }}
+{% elif code.startswith('entry_status_') %}{{ t('entry gauge: ' ~ (code|replace('entry_status_','')|replace('_',' ')),'入场量表：' ~ (code|replace('entry_status_','')|replace('_',' '))) }}
+{% else %}{{ code|replace('_',' ') }}
+{% endif %}
+{%- endmacro %}
+{% macro cn_depth_grid(rows) -%}
+<div class="cn-depth-grid">
+  {% for r in rows %}
+  {% set _pr = r.get('prophet') or {} %}
+  {% set _pc = _pr.get('components') or {} %}
+  {% set _sig = r.get('signal') or {} %}
+  {% set _es = r.get('entry_signal') or {} %}
+  <a class="cn-depth-card" href="china_lookup.html#{{ r.get('ticker','') }}">
+    <div class="cn-depth-id">
+      <div class="cn-depth-tk">{{ r.get('ticker','') }}</div>
+      <div class="cn-depth-name">{{ nm(r.get('name','')) }}</div>
+    </div>
+    <div class="cn-depth-score">{{ t('Priority','优先级') }} {{ '%.0f'|format(_pr.get('score')) if _pr.get('score') is not none else '—' }}</div>
+    <div class="cn-depth-metrics">
+      {% if _sig.get('tier_cascade') %}<span class="cn-depth-chip">{{ _sig.get('tier_cascade') }}</span>{% endif %}
+      {% if _es.get('status') %}<span class="cn-depth-chip">{{ _es.get('status')|replace('_',' ') }}</span>{% endif %}
+      {% if _pc.get('signal') is not none %}<span class="cn-depth-chip">{{ t('Signal','信号') }} {{ '%.0f'|format(_pc.get('signal') * 100) }}</span>{% endif %}
+      {% if _pc.get('entry') is not none %}<span class="cn-depth-chip">{{ t('Entry','入场') }} {{ '%.0f'|format(_pc.get('entry') * 100) }}</span>{% endif %}
+      {% if _pc.get('runway') is not none %}<span class="cn-depth-chip">{{ t('Runway','空间') }} {{ '%.0f'|format(_pc.get('runway') * 100) }}</span>{% endif %}
+      {% if _pc.get('reversal_member') %}<span class="cn-depth-chip">{{ t('reversal sleeve','反转组合') }}</span>{% endif %}
+      {% if r.get('adv_yi') is not none %}<span class="cn-depth-chip">ADV {{ '%.1f'|format(r.get('adv_yi')) }}亿</span>{% endif %}
+    </div>
+    {% set _reasons = r.get('lane_reasons') or [] %}
+    {% if _reasons %}<div class="cn-depth-reason">{% for _reason in _reasons %}{{ cn_lane_reason(_reason) }}{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}{% endfor %}</div>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{%- endmacro %}
 {% import "_aibrief_body.html.j2" as aib %}{# ABX v2 — the ONE shared AI-brief body renderer #}
 <!DOCTYPE html>
 <html lang="en">
@@ -15,7 +64,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% if mode == 'stocks' %}China A-Share Stock Dashboard{% else %}China A-Share Regime{% endif %} — {{ latest.date }}</title>
-{% if mode == 'stocks' %}{% set seo_title = 'China A-Share Stock Dashboard — Washout · Base · Fresh Turn | Mastermind' %}{% set seo_desc = 'China A-share washout-to-base entry board: names forming a durable low, with fresh 3D/2D confluence turns (T1–T4 cascade). Ranked by buy-readiness, updated daily.' %}{% set seo_path = 'china_stocks.html' %}{% else %}{% set seo_title = 'China A-Share Market Dashboard — Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the China A-share market regime — sector rotation, capital-flow velocity, drawdown risk and cycle position on the mainland market.' %}{% set seo_path = 'china.html' %}{% endif %}
+{% if mode == 'stocks' %}{% set seo_title = 'China A-Share Stock Dashboard — Washout · Base · Fresh Turn | Mastermind' %}{% set seo_desc = 'Selective A-share entry shelf: actionable and anticipatory T1–T3 signals, verified liquidity and fillability, anti-chase controls, and transparent China-native readiness ranking. Broader setups remain available on demand.' %}{% set seo_path = 'china_stocks.html' %}{% else %}{% set seo_title = 'China A-Share Market Dashboard — Regime, Sectors and Flows | Mastermind' %}{% set seo_desc = 'Track the China A-share market regime — sector rotation, capital-flow velocity, drawdown risk and cycle position on the mainland market.' %}{% set seo_path = 'china.html' %}{% endif %}
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
@@ -121,6 +170,16 @@
   /* mobile: 2-up (paired with the 3-row cap via data-showmore-rows + theme.js). */
   @media (max-width:680px){
     .nbgrid[data-showmore-rows]{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+    /* Prophet v2's honest "Priority" label is wider than the old "Edge".
+       Keep the full ticker legible on 2-up phone cards and compact only the
+       label; the score tooltip still carries the complete definition. */
+    #standouts .nbgrid[data-showmore-rows] .pv-tk{ flex:none; }
+    #standouts .nbgrid[data-showmore-rows] .pv-edl .l-en,
+    #standouts .nbgrid[data-showmore-rows] .pv-edl .l-zh{ display:none!important; }
+    #standouts .nbgrid[data-showmore-rows] .pv-edl::after{
+      content:"Rank"; font-size:9px; font-weight:700; letter-spacing:.04em;
+    }
+    html[data-lang="zh"] #standouts .nbgrid[data-showmore-rows] .pv-edl::after{ content:"序"; }
     .nbgrid[data-showmore-rows] .nbcard{ padding:0; gap:0; }
     .nbgrid[data-showmore-rows] .nb-tk{ font-size:14px; }
     .nbgrid[data-showmore-rows] .nb-px{ font-size:12px; }
@@ -600,6 +659,47 @@
   /* the ripening shelf is shared by two facets — split its zones */
   #standouts[data-stfacet="rip"] .rip-zone:not(.rz-ready) { display:none; }
   #standouts[data-stfacet="early"] .rip-zone.rz-ready { display:none; }
+
+  /* China Prophet v2 depth lanes.  The featured shelf keeps full decision
+     cards; the much wider discovery population uses compact, collapsed cards
+     so breadth remains inspectable without masquerading as another buy board. */
+  .cn-depth { margin-top:12px; border:1px solid var(--line); border-radius:10px;
+    background:color-mix(in srgb,var(--muted) 3%,var(--panel)); overflow:hidden; }
+  .cn-depth > summary { list-style:none; cursor:pointer; display:flex; align-items:center;
+    gap:9px; padding:10px 12px; color:var(--text); font-size:12px; font-weight:750;
+    user-select:none; }
+  .cn-depth > summary::-webkit-details-marker { display:none; }
+  .cn-depth > summary::before { content:"›"; font-size:17px; line-height:1;
+    color:var(--muted); transform:rotate(0deg); transition:transform .13s; }
+  .cn-depth[open] > summary::before { transform:rotate(90deg); }
+  .cn-depth > summary .cn-depth-n { margin-left:auto; border-radius:999px;
+    padding:1px 8px; color:var(--muted); background:color-mix(in srgb,var(--muted) 12%,transparent);
+    font-size:10px; font-variant-numeric:tabular-nums; }
+  .cn-depth-sub { display:block; color:var(--muted); font-size:10.5px; font-weight:500; }
+  .cn-depth-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(245px,1fr));
+    gap:7px; padding:0 10px 11px; }
+  .cn-depth-card { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:5px 10px;
+    padding:8px 10px; border:1px solid var(--line); border-radius:8px;
+    background:var(--panel); color:inherit; min-width:0; }
+  .cn-depth-card:hover { border-color:var(--link); }
+  .cn-depth-id { min-width:0; }
+  .cn-depth-tk { color:var(--text); font-weight:800; font-size:11.5px; }
+  .cn-depth-name { color:var(--muted); font-size:10.5px; white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; }
+  .cn-depth-score { color:var(--text); font-size:11.5px; font-weight:850;
+    font-variant-numeric:tabular-nums; text-align:right; }
+  .cn-depth-metrics { grid-column:1/-1; display:flex; flex-wrap:wrap; gap:4px; }
+  .cn-depth-chip { border:1px solid var(--line); border-radius:999px; padding:1px 6px;
+    color:var(--muted); font-size:10px; line-height:1.45; white-space:nowrap; }
+  .cn-depth-reason { grid-column:1/-1; color:var(--muted); font-size:10.5px; line-height:1.4; }
+  .cn-depth.late > summary { color:var(--warn); }
+  .cn-depth.forming > summary { color:var(--muted); }
+  @media(max-width:560px) {
+    .cn-depth-grid { grid-template-columns:1fr; }
+    .cn-depth > summary { align-items:flex-start; }
+    .cn-depth-name,.cn-depth-reason { font-size:11px; }
+    .cn-depth-chip { font-size:10.5px; }
+  }
 
   /* filter row */
   /* filter-row + column-chooser chrome (.stf-*) is injected by stocktable.js since v3 */
@@ -2989,27 +3089,35 @@
   {% set SECZH = {'Technology':'科技','Industrials':'工业','Basic Materials':'原材料','Financial Services':'金融','Consumer Cyclical':'可选消费','Healthcare':'医疗保健','Utilities':'公用事业','Consumer Defensive':'必需消费','Energy':'能源','Communication Services':'通信服务','Real Estate':'房地产'} %}
 
   {% if mode != 'macro' %}
-  <!-- ===================== STANDOUT STOCKS (washout → base → fresh turn · T1–T4 cascade) ===================== -->
-  {% if setups and setups.buy %}
+  <!-- ===================== CHINA PROPHET V2 (selective featured shelf + lossless depth lanes) ===================== -->
+  {% if setups and (setups.get('buy') or setups.get('more_actionable') or setups.get('late_or_unfillable') or setups.get('forming') or setups.get('watch') or setups.get('ripening') or setups.get('ran') or setups.get('data_outage')) %}
   {# ── W8-E: JSON data block — feeds StockTable.init(); one block covers all arrays ─── #}
   {% set _st_buy_rows = [] %}
-  {% for _nr in setups.buy %}
+  {% set _st_board_rows = (setups.get('buy') or []) + (setups.get('more_actionable') or []) + (setups.get('late_or_unfillable') or []) + (setups.get('forming') or []) %}
+  {% for _nr in _st_board_rows %}
     {% set _st_sig = _nr.get('signal') or {} %}
     {% set _st_narr = _nr.get('narrative') or {} %}
     {% set _st_conv = _nr.get('conviction') or {} %}
+    {% set _st_prophet = _nr.get('prophet') or {} %}
     {% set _st_ext = _nr.get('extension') or {} %}
+    {% set _st_lane = _nr.get('lane') or 'featured' %}
+    {% set _st_stage = _nr.get('stage') or '' %}
     {% set _st_macd_d = none %}
     {% set _st_row = {
       'ticker':           _nr.ticker,
       'name':             _nr.name,
       'sector':           _nr.sector or '',
-      'stage':            _nr.get('stage') or 'ENTRY',
-      '_stage':           _nr.get('stage') or 'ENTRY',
+      'stage':            _st_stage,
+      '_stage':           _st_stage,
       'zone':             none,
+      'lane':             _st_lane,
+      'lane_reasons':     _nr.get('lane_reasons') or [],
       'tier':             _st_sig.get('tier_cascade') or '',
       'price':            _nr.get('price'),
       'off_high':         _nr.get('off_high'),
       'spot_pct_in_range': none,
+      'prophet_score':    _st_prophet.get('score'),
+      'score_rank':       _nr.get('score_rank'),
       'conviction':       _st_conv.get('score'),
       'mcap':             _nr.get('mcap'),
       'cap_bucket':       _nr.get('cap_bucket'),
@@ -3041,6 +3149,8 @@
       'stage':            'RIPENING',
       '_stage':           'RIPENING',
       'zone':             _rr.get('zone') or 'BASING',
+      'lane':             'ripening',
+      'prophet_score':    none,
       'tier':             '',
       'price':            _rr.get('price'),
       'off_high':         none,
@@ -3076,6 +3186,8 @@
       'stage':            'RIPENING',
       '_stage':           'RIPENING',
       'zone':             'FALLING',
+      'lane':             'falling',
+      'prophet_score':    none,
       'tier':             '',
       'price':            _fr.get('price'),
       'off_high':         none,
@@ -3110,6 +3222,8 @@
       'stage':            'RAN_LATE',
       '_stage':           'RAN_LATE',
       'zone':             none,
+      'lane':             'ran',
+      'prophet_score':    none,
       'tier':             '',
       'price':            none,
       'off_high':         none,
@@ -3155,27 +3269,30 @@
   {% set _rip_basing = (_rip | selectattr('zone','equalto','BASING') | list) if _rip else [] %}
   {% set _rip_fall   = setups.get('ripening_falling') or [] %}
   {% set _ran = setups.get('ran') or [] %}
-  {% set _n_entry = _entry_rows | length %}
+  {% set _n_more_lane = (setups.get('more_actionable') or []) | length %}
+  {% set _n_late_lane = (setups.get('late_or_unfillable') or []) | length %}
+  {% set _n_forming_lane = (setups.get('forming') or []) | length %}
+  {% set _n_entry = (_entry_rows | length) + _n_more_lane %}
   {% set _n_rip = _rip_ready | length %}
-  {% set _n_early = (_rip_basing | length) + (_rip_fall | length) %}
-  {% set _n_ran = (_ran_late_rows | length) + (_ran | length) %}
+  {% set _n_early = (_rip_basing | length) + (_rip_fall | length) + _n_forming_lane %}
+  {% set _n_ran = (_ran_late_rows | length) + (_ran | length) + _n_late_lane %}
   {% set _stf_default = 'entry' if _n_entry else 'all' %}
   <div class="panel span12" id="standouts" data-stfacet="{{ _stf_default }}">
-    <h2>{{ t('⚡ Prophet Stock Signals', '⚡ 先知选股') }}
-      {{ help("How to read this board. Each card is an A-share name that sold off hard, settled, and just turned back up (the system grades that washout → base → fresh-turn sequence, T1–T4). Score 0–100 = buy-readiness: how ready it looks to buy, not a win-rate or a guarantee. Rank puts the cleanest setups first. Two gauges show setup quality and entry timing (buy now vs wait for a pullback). It is a research shortlist, not a buy list — and its track record is still accruing.", "如何看这个榜单。每张卡片都是一只大幅回调、企稳后刚刚回升的A股（系统按 洗盘→筑底→新转向 顺序分级，T1–T4）。评分0–100＝买入就绪度：该股离买点有多近，并非胜率或保证。排序把形态最干净的排在前面。两个量表显示形态质量与入场时机（现在买还是等回调）。这是研究备选清单，而非买入清单——其成绩仍在累积。") }}
+    <h2>{{ t('⚡ China Prophet — Featured Entries', '⚡ 中国先知 — 精选入场') }}
+      {{ help("The featured shelf is deliberately selective: an actionable T1–T3 confluence (T3 is anticipatory), ENTRY lifecycle, an open/partial entry gauge, known liquidity, same-session fillability, no chase veto, and no extension flag. Priority 0–100 is a transparent readiness rank: signal 35%, entry 25%, runway 20%, bottom quality 10%, and deepest-quintile within-sector reversal membership 10%. Residual momentum, sector stories and fundamentals do not move the live rank because China tests have not proven an incremental edge from them. The score is not a win probability or return forecast; the new definition's forward record is accruing. Broader and blocked names remain below on demand.", "精选区刻意保持严格：必须具备可操作的T1–T3共振（T3为前瞻信号）、处于ENTRY生命周期、入场量表已开启/部分开启、流动性已知、当日可成交、无追涨否决且未过度延伸。优先级0–100采用透明的就绪度排序：信号35%、入场25%、上行空间20%、底部质量10%、行业内3个月跌幅最深五分位成员10%。残差动量、板块叙事与基本面不会影响实时排名，因为中国市场测试尚未证明它们具有增量优势。该分数不是胜率或收益预测；新定义的前瞻记录仍在积累。更多候选与受阻标的可在下方按需展开。") }}
       {# W8-E: grid/table view toggle #}
       <span class="st-view-toggle" id="st-view-toggle" role="group" data-tip-en="Switch between grid and table view" data-tip-zh="切换卡片视图与表格视图">
         <button id="st-btn-grid" aria-selected="true" onclick="StockTable._setView('grid')">⊞ <span class="l-en">Grid</span><span class="l-zh">卡片</span></button>
         <button id="st-btn-table" aria-selected="false" onclick="StockTable._setView('table')">☰ <span class="l-en">Table</span><span class="l-zh">表格</span></button>
       </span>
     </h2>
-    {# W0.7 DATA OUTAGE BANNER — rendered when the board-width guard stamps data_outage.flag=true
-       (buy-count dropped >40% day-over-day). Never rendered on a normal board. Dual-span i18n. #}
+    {# W0.7 DATA OUTAGE BANNER — raw/actionable/featured width or same-day
+       execution coverage degraded. Never rendered on a normal board. #}
     {% set _do = setups.get('data_outage') %}
     {% if _do and _do.get('flag') %}
     <div style="margin:6px 0 10px;padding:9px 13px;border-radius:9px;font-size:12px;line-height:1.5;border:1.5px solid var(--down);background:color-mix(in srgb,var(--down) 10%,var(--panel));color:var(--down)">
       ⚠ <b><span class="l-en">data coverage degraded — board incomplete today</span><span class="l-zh">数据覆盖下降 — 今日看板不完整</span></b>
-      <span class="muted" style="font-size:10.5px;display:block;margin-top:2px"><span class="l-en">{{ _do.get('reason','') }}</span><span class="l-zh">买入数量从 {{ _do.get('prev_n') }} 降至 {{ _do.get('new_n') }}（下降 {{ _do.get('drop_pct') }}%），超过40%阈值。可能原因：数据缺口/采集中断。本看板不完整，请谨慎参考。</span></span>
+      <span class="muted" style="font-size:10.5px;display:block;margin-top:2px"><span class="l-en">{{ _do.get('reason','') }}</span><span class="l-zh">{{ _do.get('reason_zh', _do.get('reason','')) }}</span></span>
     </div>
     {% endif %}
     {# ── W8-E: count chips row (live-updated by JS when in table mode) ── #}
@@ -3191,10 +3308,10 @@
        stage filter). Chips render only for non-empty shelves; Entry is the default
        (falls back to All when the entry shelf is empty today). #}
     <div class="sb-seg stgf-bar" id="st-facet-bar" role="tablist" aria-label="stage filter">
-      <button role="tab" data-facet="entry" aria-selected="{{ 'true' if _stf_default == 'entry' else 'false' }}" data-tip-en="Fresh turns that look buyable now — the main board." data-tip-zh="刚完成转向、当前最接近买点的主榜单。">🎯 {{ t('Entry', '入场') }}<span class="stgf-n">{{ _n_entry }}</span></button>
+      <button role="tab" data-facet="entry" aria-selected="{{ 'true' if _stf_default == 'entry' else 'false' }}" data-tip-en="Featured entries plus broader actionable T1–T3 signals. Only the full cards cleared every buy-now check." data-tip-zh="精选入场加上更广泛的可操作T1–T3信号。只有完整卡片通过了全部即时入场检查。">🎯 {{ t('Live signals', '实时信号') }}<span class="stgf-n">{{ _n_entry }}</span></button>
       {% if _n_rip %}<button role="tab" data-facet="rip" aria-selected="false" data-tip-en="The turn is forming — nearest to entry, but not buyable yet." data-tip-zh="转向形成中——最接近入场，但尚不可买。">🌱 {{ t('Ripening', '蓄势中') }}<span class="stgf-n">{{ _n_rip }}</span></button>{% endif %}
       {% if _n_early %}<button role="tab" data-facet="early" aria-selected="false" data-tip-en="Still basing or still falling — no turn yet. Watch, don't touch." data-tip-zh="仍在筑底或下跌——尚未转向。只看不动。">⏳ {{ t('Too early', '为时尚早') }}<span class="stgf-n">{{ _n_early }}</span></button>{% endif %}
-      {% if _n_ran %}<button role="tab" data-facet="ran" aria-selected="false" data-tip-en="Signal fired and the entry window passed — shown for honesty. Do not chase." data-tip-zh="信号已触发、入场窗口已过——出于诚实展示，不要追涨。">🏁 {{ t('Already ran', '信号已过') }}<span class="stgf-n">{{ _n_ran }}</span></button>{% endif %}
+      {% if _n_ran %}<button role="tab" data-facet="ran" aria-selected="false" data-tip-en="Execution-blocked or late: unfillable, chase-vetoed, illiquid, extended, or past the entry lifecycle. Inspect the reason; do not chase." data-tip-zh="执行受阻或已晚：不可成交、追涨否决、流动性不足、过度延伸或已过入场周期。请查看原因，勿追涨。">⛔ {{ t('Blocked / late', '受阻 / 已晚') }}<span class="stgf-n">{{ _n_ran }}</span></button>{% endif %}
       <button role="tab" data-facet="all" aria-selected="{{ 'true' if _stf_default == 'all' else 'false' }}">{{ t('All', '全部') }}<span class="stgf-n">{{ _n_entry + _n_rip + _n_early + _n_ran }}</span></button>
     </div>
     {# ── W1-C: ENTRY SHELF ────────────────────────────────────────────────────
@@ -3203,6 +3320,11 @@
        Row partition (_entry_rows / _ran_late_rows sets) hoisted above the panel div — W-FCT. #}
     {{ pv.pv_css() }}
     <div class="stgf-grp" data-stf="entry">
+    {% if not _entry_rows %}
+    <div style="padding:12px;border:1px dashed var(--line);border-radius:9px;color:var(--muted);font-size:11.5px">
+      {{ t('No name cleared every featured-entry check today. That is a valid selective result; broader live signals and early warnings remain available below.', '今日没有个股通过全部精选入场检查。这是严格筛选下的正常结果；更广泛的实时信号与早期预警仍可在下方查看。') }}
+    </div>
+    {% endif %}
     <div class="nbgrid" data-showmore-rows="3">
     {% for n in _entry_rows %}
       {# ═══ PROPHET CARD (flagship redesign 2026-07-21) — ENTRY shelf. Old nbcard retired;
@@ -3211,18 +3333,21 @@
          cycle-day + window + tier/sig detail → china_lookup analyzer (one click). #}
       {% set c = n.conviction %}
       {% set es = n.entry_signal %}
+      {% set _pr = n.get('prophet') or {} %}
+      {% set _pc = _pr.get('components') or {} %}
       {% set _st = es.status if es else none %}
       {% set _verb = 'buy' if _st in ('buy_now','partial')
                else ('near' if _st in ('buy_soon','await_confluence')
                else ('hold' if _st in ('hold','topping')
                else ('avoid' if _st in ('exit','avoid') else 'near'))) %}
       {% set _nmp = (n.name or n.ticker).split(' / ') %}
-      {% set _mpkt = cn_micro_by_ticker.get(n.ticker) if cn_micro_by_ticker else none %}
+      {% set _mpkt = n.get('microstructure') or (cn_micro_by_ticker.get(n.ticker) if cn_micro_by_ticker else none) %}
       {% set _fl = namespace(rows=[]) %}
       {% if c %}{% for cau in (c.cautions or []) %}{% set _z = c.cautions_zh[loop.index0] if (c.cautions_zh and c.cautions_zh|length > loop.index0) else cau %}{% set _fl.rows = _fl.rows + [(cau, _z)] %}{% endfor %}{% endif %}
       {% if n.extension and n.extension.extended %}{% set _fl.rows = _fl.rows + [('Already ran a lot — chase risk', '已经大涨 — 追高风险')] %}{% endif %}
       {% if _mpkt and (_mpkt.get('chase_veto') or {}).get('flag') %}{% set _fl.rows = _fl.rows + [('Chase veto — recent spike (CN-SYS-R3)', '追涨否决 — 近期涨幅过大（CN-SYS-R3）')] %}{% endif %}
       {% if _mpkt and _mpkt.get('limit_state') and _mpkt.get('limit_state') != 'open' %}{% set _fl.rows = _fl.rows + [('Limit state: ' ~ _mpkt.limit_state, '涨跌停状态：' ~ tr(_mpkt.limit_state)) ] %}{% endif %}
+      {% if _pc.get('reversal_member') %}{% set _fl.rows = _fl.rows + [('Validated reversal sleeve member — deepest within-sector 3-month quintile', '已验证反转组合成员 — 行业内3个月跌幅最深五分位')] %}{% endif %}
       {% set _ctx_en = (' · washed out (2W)' if n.washout_2w else '') ~ (' · coiled' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
       {% set _ctx_zh = (' · 2周洗盘' if n.washout_2w else '') ~ (' · 蓄势' if (n.get('coiled') and n.get('coiled').get('coiled')) else '') %}
       {% set _tip_en = ((c.verdict if c else '') ~ (' · ' if (c and es) else '') ~ (es.headline if es else '')) ~ _ctx_en %}
@@ -3234,9 +3359,10 @@
         'name': _nmp[0], 'name_zh': _nmp[-1], 'sec': n.sector, 'sec_zh': SECZH.get(n.sector, n.sector),
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
         'verb': _verb, 'tip_en': _tip_en, 'tip_zh': _tip_zh,
-        'edge': (c.score if (c and c.score is not none) else none),
-        'edge_tip_en': 'Buy-readiness 0–100 — how ready the setup looks to buy; not a win-rate and not a conviction rank.',
-        'edge_tip_zh': '买入就绪度0–100 — 看起来离买点有多近；并非胜率，也非信念排名。',
+        'edge': (_pr.get('score') if _pr.get('score') is not none else (c.score if (c and c.score is not none) else none)),
+        'edge_label_en': 'Priority', 'edge_label_zh': '优先级',
+        'edge_tip_en': 'China Prophet priority 0–100 — signal 35% · entry 25% · runway 20% · bottom quality 10% · reversal-sleeve membership 10%. Transparent readiness rank; not a win probability or return forecast.',
+        'edge_tip_zh': '中国先知优先级0–100 — 信号35% · 入场25% · 上行空间20% · 底部质量10% · 反转组合成员10%。透明就绪度排序；不是胜率或收益预测。',
         'stage': 3, 'spark': n.get('spark_svg'),
         'zone_kind': _zk,
         'zone_lo': ('%.2f'|format(_bz.low)) if (_bz and _bz.low is not none) else none,
@@ -3282,6 +3408,7 @@
         'price_txt': ('%.2f'|format(n.price)) if n.price is not none else none,
         'verb': 'wait', 'tip_en': _tip_en, 'tip_zh': _tip_zh,
         'edge': (c.score if (c and c.score is not none) else none),
+        'edge_label_en': 'Readiness', 'edge_label_zh': '就绪度',
         'edge_tip_en': 'Buy-readiness 0–100, muted — this name is on the RAN/LATE shelf: entry timing passed.',
         'edge_tip_zh': '买入就绪度0–100（已淡化）— 此股处于信号已过板块，入场时机已过。',
         'stage': 4, 'spark': n.get('spark_svg'),
@@ -3574,22 +3701,61 @@
     </div>{# /stgf-ran2 #}
     {% endif %}
 
-    {# ── Watch overflow strip (2026-07-28): gate-eligible names ranked below the
-       board's buy slots. The cap is page width, not a quality bar — these cleared the
-       same screen today and are listed so nothing is silently dropped (US watch-lane
-       parity). Compact chips on purpose: full cards stay reserved for the top board.
-       No data-stf tag → visible on every facet; absent `watch` key (pre-rebuild
-       artifact fallback) renders nothing. #}
-    {% if setups.get('watch') %}
-    <p class="note" style="margin:13px 0 5px;text-transform:none;font-weight:700"
-       data-tip-en="The board shows the top {{ setups.buy|length }} by buy-readiness rank — a page-width cap, not a quality bar. These names cleared the same screen today and ranked just below the cut; nothing is dropped. Click a name to open the analyzer."
-       data-tip-zh="榜单按买入就绪度排序展示前{{ setups.buy|length }}名——这是版面宽度上限，并非质量门槛。以下名单今日通过了同一筛选，仅排名略低；不会有任何遗漏。点击名称可打开个股分析。">
-      ▸ {{ t('Also cleared today\'s screen — beyond the board\'s ' ~ (setups.buy|length|string) ~ ' slots:', '同样通过今日筛选 — 超出榜单' ~ (setups.buy|length|string) ~ '个名额：') }}
-      <span style="font-weight:400">{{ setups.get('watch')|length }}{{ t(' names, ranked below the cut', ' 只，排名居后') }}</span>
-    </p>
-    <p style="margin:0;display:flex;flex-wrap:wrap;gap:4px 0;align-items:center">
-      {% for r in setups.get('watch') %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span>{% if r.get('conviction') and r.conviction.score is not none %} <span class="note">{{ r.conviction.score }}</span>{% endif %}</a>{% endfor %}
-    </p>
+    {# ── China Prophet v2 depth lanes.  Every raw eligible row remains visible,
+       but each lane states what actually stopped it from the featured shelf.
+       Pre-v2 fallback artifacts are collapsed into an explicitly unclassified
+       legacy lane; they never return to the old flat-name spam. #}
+    {% set _more = setups.get('more_actionable') or [] %}
+    {% set _late = setups.get('late_or_unfillable') or [] %}
+    {% set _forming = setups.get('forming') or [] %}
+    {% set _legacy_depth = (setups.get('watch') or []) if not (_more or _late or _forming) else [] %}
+
+    {% if _more %}
+    <details class="cn-depth" data-stf="entry">
+      <summary>
+        <span>＋ {{ t('More live setups', '更多实时形态') }}
+          <span class="cn-depth-sub">{{ t('real T1–T3 confluence, but entry is not fully open or it missed a featured verification/cap check', '真实T1–T3共振，但入场尚未完全开启，或未通过精选验证/数量上限') }}</span>
+        </span>
+        <span class="cn-depth-n">{{ _more|length }}</span>
+      </summary>
+      {{ cn_depth_grid(_more) }}
+    </details>
+    {% endif %}
+
+    {% if _late %}
+    <details class="cn-depth late" data-stf="ran">
+      <summary>
+        <span>⚠ {{ t('Wait / unfillable / do not chase', '等待 / 无法成交 / 勿追涨') }}
+          <span class="cn-depth-sub">{{ t('the signal exists, but lifecycle, extension or A-share execution checks block a featured entry', '信号存在，但生命周期、过度延伸或A股成交检查阻止其进入精选区') }}</span>
+        </span>
+        <span class="cn-depth-n">{{ _late|length }}</span>
+      </summary>
+      {{ cn_depth_grid(_late) }}
+    </details>
+    {% endif %}
+
+    {% if _forming %}
+    <details class="cn-depth forming" data-stf="early">
+      <summary>
+        <span>◌ {{ t('Early warnings — not confirmed', '早期预警 — 尚未确认') }}
+          <span class="cn-depth-sub">{{ t('legacy early/T4/null-tier observations; useful for discovery, never counted as actionable buys', '旧版早期/T4/空层级观察；可用于发现机会，但绝不计为可操作买入') }}</span>
+        </span>
+        <span class="cn-depth-n">{{ _forming|length }}</span>
+      </summary>
+      {{ cn_depth_grid(_forming) }}
+    </details>
+    {% endif %}
+
+    {% if _legacy_depth %}
+    <details class="cn-depth forming" data-stf="early">
+      <summary>
+        <span>◌ {{ t('Legacy depth — classification pending', '旧版扩展名单 — 等待重新分类') }}
+          <span class="cn-depth-sub">{{ t('persisted fallback data from the former board definition; collapsed and not represented as confirmed', '旧版榜单定义的持久化回退数据；已折叠，且不再表示为已确认') }}</span>
+        </span>
+        <span class="cn-depth-n">{{ _legacy_depth|length }}</span>
+      </summary>
+      {{ cn_depth_grid(_legacy_depth) }}
+    </details>
     {% endif %}
 
     {% if setups.laggards %}
@@ -3598,7 +3764,7 @@
       {% for r in setups.laggards %}<a href="china_lookup.html#{{ r.ticker }}" style="margin-right:14px;white-space:normal;overflow-wrap:anywhere"><b>{{ r.ticker }}</b> <span class="note">{{ nm(r.name) }}</span> <span class="neg">{{ '%+.2f'|format(r.alpha) }}</span></a>{% endfor %}
     </p>
     {% endif %}
-    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Setup path: washout &rarr; base &rarr; fresh turn. Score = buy-readiness; forward grades are still accruing.</span><span class="l-zh">设置路径：洗盘 &rarr; 筑底 &rarr; 新转向。评分＝买入就绪度；前瞻成绩仍在累积。</span></p>
+    <p class="note" style="margin:8px 0 0;font-size:11px"><span class="l-en">Priority = signal 35% + entry 25% + runway 20% + bottom quality 10% + reversal-sleeve membership 10%. It is a readiness rank, not a win probability. The cn_prophet_v2 forward cohort is accruing separately.</span><span class="l-zh">优先级＝信号35%＋入场25%＋上行空间20%＋底部质量10%＋反转组合成员10%。这是就绪度排序，并非胜率。cn_prophet_v2前瞻样本将单独积累。</span></p>
     </div>{# /nb-grid-section #}
 
     {# ── BOARD TRACK RECORD — receipt chip + popup (shared partial, 2026-07-20) ──
@@ -3607,11 +3773,11 @@
        h21.n≥8 → 'scored' (hit vs CSI300 is the win basis; median excess is the avg basis);
        else interim n≥8 → 'interim' (unrealized mark-to-latest); else 'accruing'. The old
        always-open inline panel is re-homed inside the dialog. #}
-    {% set bt = setups.board_track %}
-    {% if bt and bt.available %}
-    {% set cov = setups.coverage %}
-    {% set h21 = bt.by_horizon['21d'] if (bt.by_horizon and '21d' in bt.by_horizon) else none %}
-    {% set itm = bt.interim %}
+    {% set _cl_raw = setups.track_ledger if (setups.track_ledger is defined and setups.track_ledger) else none %}
+    {% set _cl_meta = (_cl_raw.get('meta') or {}) if _cl_raw else {} %}
+    {% set _cl = _cl_raw if (_cl_raw and _cl_meta.get('board_definition') == setups.get('board_definition')) else none %}
+    {% if _cl %}
+    {% set cov = setups.coverage if setups.coverage is defined else none %}
     {% set _partial = (cov.partial_session if cov else none) %}
     {# Chip stats come from the SAME artifact the popup's table fetches
        (setups.track_ledger = cn_track_ledger.json, built by
@@ -3621,23 +3787,14 @@
        scores CSI300 excess at a forced 10-session verdict on EPISODE grain, with a
        date-blocked interval; see engine/track_scoring.py.
        Falls back to the accruing shell when the ledger hasn't been built yet. #}
-    {% set _cl = setups.track_ledger if (setups.track_ledger is defined and setups.track_ledger) else none %}
-    {% if _cl and _cl.get('state') == 'scored' %}
-      {% set _cn_state = 'scored' %}
-      {% set _cn_stats = _cl.get('summary') or {} %}
-    {% else %}
-      {% set _cn_state = 'accruing' %}
-      {% set _cn_stats = {
-        'n_calls': bt.n_rows, 'first_write': (bt.dates[0] if bt.dates else none),
-        'first_read_est': '2026-07-29', 'n_suspended': none,
-      } %}
-    {% endif %}
+    {% set _cn_state = _cl.get('state') or 'accruing' %}
+    {% set _cn_stats = _cl.get('summary') or {} %}
     {% set trd = {
       'market': 'cn', 'state': _cn_state, 'stats': _cn_stats,
       'data_url': 'factordata/cn_track_ledger.json',
       'eyebrow_en': 'China board · vs CSI300', 'eyebrow_zh': '中国榜单 · 对比沪深300',
       'bench_en': 'CSI300', 'bench_zh': '沪深300',
-      'series': none, 'as_of': (cov.data_through if cov else none),
+      'series': none, 'as_of': ((_cl.get('as_of') if _cl else none) or (cov.data_through if cov else none)),
       'deep_link': none, 'up_class': 'pos', 'dn_class': 'neg',
       'note_en': 'Scored against the CSI 300, not on its own — in A-shares most of a move is the market. Bought at the next morning\'s open, sold ' ~ (_cn_stats.get('horizon') or 10) ~ ' sessions later. Days a stock was locked limit-up can\'t be bought and are left out.' ~ (' Today\'s session not yet logged.' if _partial else ''),
       'note_zh': '以沪深300为基准计分，而非绝对涨跌——A股个股走势多半来自大盘。次日开盘买入，持有 ' ~ (_cn_stats.get('horizon') or 10) ~ ' 个交易日后卖出。一字涨停日无法买入，已剔除。' ~ ('盘中未收——今日未记录。' if _partial else ''),
@@ -4219,13 +4376,21 @@ function initStockTableView(){
   var SECZH = {"Technology":"科技","Industrials":"工业","Basic Materials":"原材料","Financial Services":"金融","Consumer Cyclical":"可选消费","Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费","Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产"};
   var STAGE_LABELS = {"ENTRY":["ENTRY","入场"],"RAN_LATE":["RAN/LATE","信号已过"],"RIPENING":["RIPENING","蓄势中"]};
   var ZONE_LABELS = {"READY":["READY","就绪"],"BASING":["BASING","筑底"],"FALLING":["FALLING","下跌"]};
+  var LANE_LABELS = {
+    "featured":["Featured","精选入场"],
+    "more_actionable":["More live","更多实时"],
+    "late_or_unfillable":["Blocked / late","受阻 / 已晚"],
+    "forming":["Early warning","早期预警"],
+    "ripening":["Ripening","蓄势中"],
+    "falling":["Falling","下跌中"],
+    "ran":["Already ran","信号已过"]
+  };
   var TIER_ZH = {"PRIME":"极佳","CONFIRMED":"确认","CONFIRMING":"确认中","APPROACHING":"临近","FIRST SPARK":"首信号"};
   var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum, mg = StockTable._macdGlyph;
 
-  function setupRank(r) {
-    /* Setup strength (display context): blends stage, buy-readiness, washout depth and
-       turn signals from fields already shipped on the row. Client-side ordering only —
-       board shelves and production rank weights untouched (CN-SYS-R7). */
+  function legacyContextRank(r) {
+    /* Context-only ordering for the older ripening/ran shelves. Prophet board
+       rows never enter this heuristic. */
     var st = r.stage || r._stage, zone = r.zone, v;
     if (st === 'ENTRY') {
       v = (r.conviction != null ? parseFloat(r.conviction) : 45);
@@ -4253,6 +4418,30 @@ function initStockTableView(){
     return Math.max(0, Math.min(100, v));
   }
 
+  function prophetTableRank(r) {
+    /* Preserve semantic lanes first, then the server-issued Prophet priority.
+       This keeps execution-blocked and early-warning rows from sorting above
+       featured entries because of an unrelated client-side heuristic. */
+    var laneOrder = {
+      featured:7, more_actionable:6, late_or_unfillable:5,
+      ripening:4, forming:3, falling:2, ran:1
+    };
+    var bucket = laneOrder[r.lane] || 0;
+    var score = r.prophet_score == null ? legacyContextRank(r) : parseFloat(r.prophet_score);
+    if (isNaN(score)) score = 0;
+    var tie = r.score_rank == null ? 0 : Math.max(0, 10000 - parseInt(r.score_rank,10)) / 100000;
+    return bucket * 1000 + score + tie;
+  }
+
+  function laneBadge(lane) {
+    if (!lane) return '<span class="st-muted">—</span>';
+    var pair = LANE_LABELS[lane] || [lane.replace(/_/g,' '),lane.replace(/_/g,' ')];
+    var cls = lane === 'featured' ? 'st-chip-entry' :
+      lane === 'late_or_unfillable' || lane === 'ran' ? 'st-chip-ran' :
+      lane === 'forming' || lane === 'falling' ? 'st-chip-knife' : 'st-chip-rip';
+    return '<span class="st-chip ' + cls + '">' + b(esc(pair[0]),esc(pair[1])) + '</span>';
+  }
+
   function stageBadge(stage, zone) {
     if (!stage) return '<span class="st-muted">—</span>';
     var cls = stage === 'ENTRY' ? 'st-chip-entry' : stage === 'RAN_LATE' ? 'st-chip-ran' : zone === 'FALLING' ? 'st-chip-knife' : 'st-chip-rip';
@@ -4266,7 +4455,10 @@ function initStockTableView(){
      scroll (operator request 2026-07-10). Specialist columns (tier, theme,
      2W stoch, MACD, imminence, range%…) stay available via the Columns chooser. */
   var cols = [
-    { key:'_stage_zone', labelEn:'Stage', labelZh:'阶段', default:true, sortable:false,
+    { key:'lane', labelEn:'Lane', labelZh:'通道', default:true, sortable:true,
+      fmt:function(v){ return laneBadge(v); },
+      tip:{en:'Prophet admission lane. Featured cleared every execution check; depth lanes state why a name did not.',zh:'先知准入通道。精选标的通过全部成交检查；扩展通道说明未入选原因。'} },
+    { key:'_stage_zone', labelEn:'Stage', labelZh:'阶段', default:false, sortable:false,
       fmt:function(v,r){ return stageBadge(r.stage||r._stage, r.zone); },
       tip:{en:'Signal stage and zone (rows are pre-ranked by system)',zh:'信号阶段与区域（行已按系统排序）'} },
     { key:'ticker', labelEn:'Ticker', labelZh:'代码', default:true, sortable:true,
@@ -4294,16 +4486,14 @@ function initStockTableView(){
       }},
     { key:'price', labelEn:'Price', labelZh:'价格', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fn(v,2); }},
-    { key:'conviction', labelEn:'Score', labelZh:'评分', default:true, sortable:true, right:true,
+    { key:'prophet_score', labelEn:'Priority', labelZh:'优先级', default:true, sortable:true, right:true,
       fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
-        var n = parseInt(v); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
+        var n = Math.round(parseFloat(v)); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
         return '<span class="' + cls + '">' + n + '</span>'; },
-      tip:{en:'Buy-readiness 0–100 (ENTRY rows only)',zh:'买入就绪度0–100（仅入场行）'} },
-    { key:'_rank', labelEn:'Setup', labelZh:'形态', default:true, sortable:true, right:true,
-      fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
-        var n = Math.round(v); var cls = n>=70?'st-pos':n>=40?'':'st-muted';
-        return '<span class="' + cls + '">' + n + '</span>'; },
-      tip:{en:'Setup strength 0–100 — blends stage, buy-readiness score, washout depth and turn signals (context ordering, evidence accruing). Rows sort by this by default; click Reset to restore board order',zh:'形态强度0–100——综合阶段、买入就绪度、洗盘深度与转向信号（情境排序，证据积累中）。默认按此排序；点击重置恢复榜单顺序'} },
+      tip:{en:'China Prophet priority 0–100. Readiness rank, not a win probability or return forecast.',zh:'中国先知优先级0–100。就绪度排序，不是胜率或收益预测。'} },
+    { key:'conviction', labelEn:'Context score', labelZh:'情境评分', default:false, sortable:true, right:true,
+      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': String(Math.round(parseFloat(v))); },
+      tip:{en:'Legacy profile score shown only as context; it does not control Prophet v2 order.',zh:'旧版画像评分仅作情境参考；不影响先知v2排序。'} },
     { key:'mcap', labelEn:'Mkt cap', labelZh:'市值(亿)', default:true, sortable:true, right:true, cls:'st-hide-sm',
       fmt:function(v,r){ if(v==null) return '<span class="st-muted">—</span>';
         var b2 = r.cap_bucket; var cls = b2==='large'?'st-pos':b2==='small'?'st-neg':'';
@@ -4355,12 +4545,14 @@ function initStockTableView(){
              'RIPENING':['Ripening','蓄势中'], 'KNIFE':['Falling knife','下跌中'] },
     zone:  { 'READY':['Ready','就绪'], 'BASING':['Basing','筑底'], 'FALLING':['Falling','下跌'] },
     capBucket: { 'large':['Large cap','大盘'], 'mid':['Mid cap','中盘'], 'small':['Small cap','小盘'] },
+    lane: LANE_LABELS,
     sector: SECTOR_LABELS,
   };
 
   // Set the internal key for the stage+zone column to something that won't collide
-  // with a real row field
-  cols[0].key = '_stage_zone_display';
+  // with a real row field (Lane is now the first visible column).
+  var stageCol = cols.find(function(c){ return c.key === '_stage_zone'; });
+  if (stageCol) stageCol.key = '_stage_zone_display';
 
   /* ── view persistence ── */
   var LS_VIEW = 'mdx_stocktable_cn_view';
@@ -4398,7 +4590,7 @@ function initStockTableView(){
     columns: cols,
     optionLabels: OPTION_LABELS,
     searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
-    rankFn: setupRank,
+    rankFn: prophetTableRank,
     pageSize: 25,   // paginate the long board (165+ rows) — footer "Show more / all"
   });
 

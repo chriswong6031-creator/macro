@@ -493,6 +493,18 @@ class TwitterApiIoProvider:
             last_poll[handle] = now_ts
             raw = self._request(api_key, handle)
             if raw is None:
+                # A FAILED CALL IS STILL A BILLED CALL (#3960 minor). ``_request``
+                # collapses a network error, a timeout AND an HTTP 4xx/5xx into
+                # None, and the vendor's floor is per REQUEST, not per successful
+                # request: "Minimum charge: $0.00015 per request". Skipping the
+                # accounting here made every failure free in our ledger, so a
+                # handle that 401s or times out on all 288 ticks a day burned real
+                # money the cap could not see -- and the cap is the only thing
+                # standing between this lane and the shared $75 account bucket.
+                # Bill the floor, then move on.
+                month_spend["requests"] = int(month_spend.get("requests", 0)) + 1
+                month_spend["usd"] = round(
+                    float(month_spend.get("usd", 0.0)) + _TW_MIN_CHARGE, 6)
                 continue
 
             # Account the request (min charge floor + per-tweet price).

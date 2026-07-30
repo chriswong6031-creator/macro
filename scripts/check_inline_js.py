@@ -205,8 +205,20 @@ def _check_block(body: str, is_module: bool):
 
 
 def _walk_files(dirs: list[str], exts: tuple[str, ...]) -> list[str]:
+    """Return matching files beneath directories or named explicitly.
+
+    Accepting explicit files lets a post-rebase deploy retry re-check only the
+    pages it deterministically rebuilt. The old directory-only walk forced the
+    public fast lane to parse all ~3,263 pages after every lost main-ref race;
+    each retry spent roughly 2m30s validating already-proven files, then lost
+    the ref again before it could push.
+    """
     found = set()
     for d in dirs:
+        if os.path.isfile(d):
+            if d.endswith(exts):
+                found.add(d)
+            continue
         for root, _dirs, names in os.walk(d):
             for name in names:
                 if name.endswith(exts):

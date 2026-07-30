@@ -291,9 +291,16 @@ def test_rrx_internals_label_bilingual():
 # --- unit tests for series builders on synthetic data -------------------------
 
 def test_build_nh_contraction_near_high_masking():
-    """Near-high mask: nh_contraction must be 0.0 on days when SPY is NOT near its 252d high.
+    """Near-high mask: nh_contraction must be NaN on days when SPY is NOT near its 252d high.
 
-    The mask zeros the percentile output on non-near-high days. The 252d rolling max is causal
+    UPDATED 2026-07-29 (radar audit item 4). This test previously pinned `== 0.0`, which was the
+    DEFECT: 0.0 is notna, so subscore_series counted the structurally-inapplicable leg at full
+    weight and diluted the 'internals' sub-score toward zero — with the sibling leg confirmed at
+    pctile 1.0 the scare printed 50.0 "calm" and could never reach the watch band off near-high.
+    Structurally inapplicable must be NaN so the renormalisation drops the leg. The near-high
+    masking BEHAVIOUR being asserted is unchanged; only the sentinel it produces changed.
+
+    The mask blanks the percentile output on non-near-high days. The 252d rolling max is causal
     so SPY must stay below 0.98 * (rolling 252d max) for the mask to be False. We construct
     a sustained decline long enough that the prior peak leaves the 252d window.
     """
@@ -314,15 +321,21 @@ def test_build_nh_contraction_near_high_masking():
 
     leg = build_nh_contraction(spy, breadth)
     # In the window 350..550 (in the sustained decline), SPY is dropping and the 252d max
-    # is still from the 100-level era, so near_high=False and the leg should be 0.0.
+    # is still from the 100-level era, so near_high=False and the leg must be NaN (not 0.0 —
+    # a notna 0.0 is a reading the construction cannot make).
     check_window = leg.iloc[350:550]
-    assert (check_window == 0.0).all(), (
-        f"nh_contraction non-zero during sustained decline (near_high=False):\n"
-        f"{check_window[check_window != 0.0]}")
+    assert check_window.isna().all(), (
+        f"nh_contraction not NaN during sustained decline (near_high=False):\n"
+        f"{check_window[check_window.notna()]}")
+    assert not (check_window == 0.0).any(), (
+        "nh_contraction emitted a notna 0.0 off near-high — that is the diluting defect")
 
 
 def test_build_nh_contraction_zero_on_regime_off():
-    """nh_contraction produces 0.0 values when the near-high mask is False."""
+    """nh_contraction produces NaN (not 0.0) when the near-high mask is False.
+
+    UPDATED 2026-07-29 (radar audit item 4) — see test_build_nh_contraction_near_high_masking
+    for why the 0.0 sentinel was the defect."""
     from engine.risk_radar import build_nh_contraction
     n = 600
     idx = pd.date_range("2020-01-02", periods=n, freq="B")
@@ -330,8 +343,8 @@ def test_build_nh_contraction_zero_on_regime_off():
     spy = pd.Series(list(range(n, 0, -1)), index=idx, dtype=float)
     breadth = pd.DataFrame({"nh": [10.0] * n, "n_members": [500.0] * n}, index=idx)
     leg = build_nh_contraction(spy, breadth)
-    # After warmup, all should be 0 (price well below 252d max)
-    assert (leg.iloc[300:] == 0.0).all(), "nh_contraction non-zero during sustained decline"
+    # After warmup, all should be NaN (price well below 252d max -> leg inapplicable)
+    assert leg.iloc[300:].isna().all(), "nh_contraction not NaN during sustained decline"
 
 
 def test_build_jpy_carry_zeros_off_regime():

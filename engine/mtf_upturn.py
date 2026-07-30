@@ -973,10 +973,10 @@ def _cn_load_close(
 def _build_cn_universe(
     data_root: Path | None = None,
 ) -> dict[str, list[str]]:
-    """Assemble the CN universe: board buy + ripening + THS act-now theme members.
+    """Assemble the CN universe: surfaced Prophet lanes + ripening + THS themes.
 
     Priority order (deduped, capped at CN_UNIVERSE_CAP):
-    1. Board buy tickers (ENTRY + RAN_LATE from china_standouts.json)
+    1. Prophet v2 surfaced lanes, featured first
     2. Ripening tickers (READY + BASING from ripening shelf)
     3. THS theme members of act-now themes (from baskets.json theme_intel.act_now.buy)
 
@@ -998,7 +998,7 @@ def _build_cn_universe(
             if tag not in ticker_sources[t]:
                 ticker_sources[t].append(tag)
 
-    # 1. Board buy + ripening from china_standouts.json
+    # 1. Prophet board lanes + ripening from china_standouts.json
     # Primary path: site/factordata/china_standouts.json (written by build_china_library.main())
     # Fallback: site/chinastockdata/china_standouts.json (legacy path compatibility)
     standouts_path = site_dir / "factordata" / "china_standouts.json"
@@ -1007,8 +1007,21 @@ def _build_cn_universe(
     if standouts_path.exists():
         try:
             sd = json.loads(standouts_path.read_text())
-            buy_tickers = [r.get("ticker") for r in (sd.get("buy") or []) if r.get("ticker")]
-            _add([t for t in buy_tickers if t], "board_buy")
+            if sd.get("schema_version") == "2.0.0":
+                board_lanes = (
+                    ("buy", "board_featured"),
+                    ("more_actionable", "board_more_actionable"),
+                    ("late_or_unfillable", "board_late_or_unfillable"),
+                    ("forming", "board_forming"),
+                )
+            else:
+                board_lanes = (("buy", "board_buy"), ("watch", "board_watch"))
+            for key, tag in board_lanes:
+                tickers = [
+                    r.get("ticker") for r in (sd.get(key) or [])
+                    if isinstance(r, dict) and r.get("ticker")
+                ]
+                _add([t for t in tickers if t], tag)
             rip_tickers = [r.get("ticker") for r in (sd.get("ripening") or []) if r.get("ticker")]
             _add([t for t in rip_tickers if t], "ripening")
             rip_fall = [r.get("ticker") for r in (sd.get("ripening_falling") or []) if r.get("ticker")]
@@ -1051,16 +1064,18 @@ def _build_cn_universe(
         except Exception as e:
             log.warning("_build_cn_universe: baskets read failed: %s", e)
 
-    # Cap at CN_UNIVERSE_CAP (priority: board_buy first, then ripening, then theme)
+    # Cap at CN_UNIVERSE_CAP (in insertion priority: Prophet lanes, ripening, theme).
     if len(ticker_sources) > CN_UNIVERSE_CAP:
-        # Sort by priority: board_buy first, ripening second, theme third
+        # Sort by priority: featured, other surfaced board lanes, ripening, theme.
         def _priority(item: tuple) -> int:
             tags = item[1]
-            if "board_buy" in tags:
+            if "board_featured" in tags or "board_buy" in tags:
                 return 0
-            if "ripening" in tags or "ripening_falling" in tags:
+            if any(str(tag).startswith("board_") for tag in tags):
                 return 1
-            return 2
+            if "ripening" in tags or "ripening_falling" in tags:
+                return 2
+            return 3
         sorted_items = sorted(ticker_sources.items(), key=_priority)
         ticker_sources = dict(sorted_items[:CN_UNIVERSE_CAP])
 
