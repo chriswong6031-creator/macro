@@ -593,6 +593,23 @@
 
   function patchActionPlan(row, verified) {
     var actual = row.actual || {};
+    // The stance word belongs to the SENTENCE, not to a chip. It used to ship in
+    // a `.mx5-action-verb` span that has no CSS rule anywhere in the repo, so the
+    // span was an inline no-op with no trailing space and the row rendered
+    // "ResultGDP released — see verified outcome." / "结果GDP…". Every other
+    // "What To Do Now" row is a plain one-line sentence, so fold the word in and
+    // drop the span rather than inventing a chip style for one live row.
+    var stanceEn = verified ? "Result: " : "Status: ";
+    var stanceZh = verified ? "结果：" : "状态：";
+    // Only the FALLBACK differs by state; a supplied summary is used either way,
+    // as before. The verified fallback now matches the wording the generic .l-en
+    // sweep below already uses — "Result: … facts are being extracted" asserted
+    // a result and then denied having one.
+    var bodyEn = actual.summary_en || ((row.label || row.type) + (verified ?
+      " released — see verified outcome." :
+      " publication detected — verified facts are being extracted."));
+    var bodyZh = actual.summary_zh || ((row.label_zh || row.label || row.type) +
+      (verified ? "已发布 — 查看核验结果。" : "官方发布已检测 — 正在提取核验信息。"));
     list(document.querySelectorAll(".mx5-action-label")).forEach(function (label) {
       var text = String(label.textContent || "").toLowerCase();
       if (text.indexOf(String(row.type || "").toLowerCase()) < 0 &&
@@ -600,26 +617,18 @@
       label.textContent = "";
       var english = document.createElement("span");
       english.className = "l-en";
-      var verbEn = document.createElement("span");
-      verbEn.className = "mx5-action-verb";
-      verbEn.textContent = verified ? "Result" : "Status";
-      english.appendChild(verbEn);
-      english.appendChild(document.createTextNode(
-        actual.summary_en || ((row.label || row.type) +
-          " publication detected — verified facts are being extracted.")
-      ));
+      english.appendChild(document.createTextNode(stanceEn + bodyEn));
       var chinese = document.createElement("span");
       chinese.className = "l-zh";
-      var verbZh = document.createElement("span");
-      verbZh.className = "mx5-action-verb";
-      verbZh.textContent = verified ? "结果" : "状态";
-      chinese.appendChild(verbZh);
-      chinese.appendChild(document.createTextNode(
-        actual.summary_zh || ((row.label_zh || row.label || row.type) +
-          "官方发布已检测 — 正在提取核验信息。")
-      ));
+      chinese.appendChild(document.createTextNode(stanceZh + bodyZh));
       label.appendChild(english);
       label.appendChild(chinese);
+      // Ownership sentinel for the generic .l-en sweep in patchProspectiveCopy.
+      // The retired span was load-bearing there — it was how that sweep knew to
+      // leave these rows alone. Without a replacement, any summary carrying a
+      // prospective word ("GDP rose 2.1% today") makes the sweep overwrite this
+      // row with its own generic fallback, on this poll and every later one.
+      label.setAttribute("data-live-action-plan", "1");
       label.classList.add("mx-live-resolved");
     });
   }
@@ -845,8 +854,14 @@
       var parent = english.parentNode;
       var isTagged = parent && parent.getAttribute &&
         parent.getAttribute("data-live-event-id") === String(row.event_id || "");
-      if (!namesEvent || (!isProspective && !isTagged) ||
-          english.querySelector(".mx5-action-verb")) return;
+      // patchActionPlan owns the "What To Do Now" rows and has already written a
+      // stance line there; this sweep must not flatten it back to the generic
+      // fallback. The signal used to be the presence of the row's
+      // `.mx5-action-verb` span — retired with the CSS-less chip, so the marker
+      // patchActionPlan sets on the label carries it instead.
+      var ownedByActionPlan = parent && parent.getAttribute &&
+        parent.getAttribute("data-live-action-plan") === "1";
+      if (!namesEvent || (!isProspective && !isTagged) || ownedByActionPlan) return;
       english.textContent = verified ?
         (actual.summary_en ||
           ((row.label || row.type) + " released — see verified outcome.")) :
@@ -1201,6 +1216,8 @@
     releaseGroupSummary: releaseGroupSummary,
     radarState: radarState,
     trackPrimaryState: trackPrimaryState,
+    patchActionPlan: patchActionPlan,
+    patchProspectiveCopy: patchProspectiveCopy,
     notePollFailure: notePollFailure,
     freshness: function () { return feedFreshness; },
     render: render
