@@ -257,6 +257,131 @@ This ledger is the entire evidence base for §6 promotion and for the operator's
   delayed" only where the rail is actually live (honest by construction).
 - **prophet page + showcase untouched** (delayed-winners contract stays; DNR-compliant).
 
+### 4.2a MEASURED 2026-07-30 — the GH `*/5` lane premise is FALSIFIED; the evaluator moves to the VPS
+
+§4.2 placed the evaluator on a `*/5` ubuntu cron and §1 promised "~15–20 min after the
+cross". Both were wrong, and the P0 live verification is what caught it. Measured on
+2026-07-30 (all four facts independently checked, not inferred):
+
+- **GH does not run scheduled instances LATE — it DROPS them, erratically.** This lane's
+  own first day is the cleanest measurement in the estate because it started from zero:
+  `prophet-live.yml` landed on main ~10:57Z; its first slot was 13:25Z. Through 15:52Z
+  (~29 `*/5` slots due) **two scheduled runs fired** — 15:29:18Z and 15:52:06Z — i.e.
+  **~7% of declared passes, ~93% dropped**. Both that ran were PUNCTUAL (the first ~4 min
+  after its 15:25 slot), so the failure mode is dropped instances, not accumulated
+  lateness.
+  **The delivered cadence is erratic, not a slower fixed rate** — observed gaps span ~23
+  min (15:29→15:52) to >2 h (nothing at all across 13:25–15:25). Do not size anything
+  against an average; there is no interval you can rely on. Corroborating:
+  `marketing-hot-tape.yml` (`*/5`) ran 09:07 then 12:19 — ~3h 12m apart; `live-quotes.yml`
+  (`*/15`, never gated) ran 06:04 / 08:46 / 09:06 / 10:50 / 12:17.
+  **Consequence for anyone tempted to "fix" this with cron:** tightening the interval buys
+  nothing, because GitHub discards instances rather than queueing them — `*/1` would be
+  dropped at the same rate. This repo carries ~58 workflows and GitHub deprioritises
+  frequent schedules accordingly. A `*/5` product cadence is NOT purchasable here at any
+  price. (Sampling note: these are first-day counts on a growing sample. The 90%+ drop
+  rate is robust across three independent lanes; the exact percentage is not, and no
+  claim here depends on it.)
+- **The quote source the GH lanes read is starved.** Since the VPS cutover
+  (`VPS_LIVE_PRIMARY=true`, 2026-07-27) the `*/5` legs of `live-quotes.yml` and
+  `intraday-fastpath.yml` self-disable, so the `live-data` branch — which BOTH this lane
+  and the hot-tape radar fetch — is refreshed only by the throttled `*/15` leg. Measured
+  at 13:41Z: `live-data` `quotes.json` `asof` 12:18:07Z (**83 min old**) against the
+  evaluator's `quote_max_age_min: 12`. Every name would have darked `stale_quote` on
+  every pass, forever, while the lane reported success.
+- **The VPS plane is fine — it is the consumers that were cut off.**
+  `www.mastermind-x.com/live/quotes.json` measured `asof` 13:41:18Z at 13:41:49Z —
+  **31 seconds old**.
+- **The P0 dry run proved the code correct while the data path was dead.** The lane read
+  the merged quote view, found no pack, emitted `artifact dark (no_pack)`, wrote nothing,
+  exited 0 — a green run that would have been green every day with nothing behind it.
+
+**RULING.** The evaluator moves to the VPS as a resource-capped systemd oneshot+timer
+(the `macro-live-fast/snapshot/bars` pattern; `docs/live_breadth_runbook.md` already
+states the GH backstop "cannot hold a 1–2 min cadence — that's why the host loop is
+primary"). Three problems collapse into one fix:
+1. **Cadence becomes real** — a timer fires on time; GitHub's scheduler does not.
+2. **Quotes come from the local plane** — read `/var/lib/macro-live/public/live/quotes.json`
+   off disk (~30 s old, no network, no auth, no rate limit) instead of a throttled git
+   branch. Keep the existing merge as the fallback so a missing local file degrades
+   rather than darks.
+3. **§4.4a's delivery path becomes trivial** — the evaluator already runs on the box that
+   serves `/live/`, so it writes the served copy directly and the prefix bridge is a
+   local path, not a puller.
+
+The lane's CODE does not change: same `scripts/prophet_live_evaluator.py`, same states,
+same gates. Only its HOST and its quote source move. `prophet-live.yml` stays as a
+self-disabling backstop on the `VPS_LIVE_PRIMARY` idiom its siblings already use — a
+backstop that fires every ~90 min is worth having and worth labelling as such, never
+worth calling the product.
+
+**Latency, restated honestly.** P1 delivers **~1–5 min** behind the tape on the VPS
+(bounded by the 15-min vendor delay floor, which is unchanged), not the ~15–20 min §1
+claimed — and NOT the ~90 min the GH placement would actually have shipped. §6's
+tick-by-tick verdict is unaffected: the binding constraint was never the evaluator's
+cadence.
+
+**Cross-program (surfaced, not owned here):** the hot-tape radar reads the same starved
+`live-data` branch through the same 12-minute gate on the same throttled schedule, so
+the intraday content program shipped 2026-07-29 is likely emitting far less than
+designed. Raised to the marketing program; do not fix it inside this one.
+
+### 4.4a Delivery path — RULED 2026-07-30, binding on the P1 wiring task
+
+The P1 build (#4088) ships the surface but NOT the transport: with the artifact absent
+the strip stays hidden, which is what makes merging it safe. The transport is its own
+task and this is its spec. Three options were considered; two are rejected on the record
+so they are not re-proposed.
+
+- **REJECTED — mirror into `site/live/` on the `*/30` `intraday-fastpath` lane.** The
+  product is a 5-minute read; a 30-minute mirror means the page can sit half an hour
+  behind the artifact while displaying an "intraday · 15-min delayed" pill. The pill
+  would be false by up to 30 min, which is the freshness lie G0.3 exists to prevent.
+  Raising that lane to `*/5` is worse: ~80 Pages deploys a day, which
+  `intraday-fastpath.yml` itself names as the thing to avoid at high cadence.
+- **REJECTED — the browser fetches the R2 public base directly.** It is anonymously
+  readable (verified: `live_flow/prophet_marks.json` → 200 on
+  `pub-…r2.dev`), so this would add a NEW public read path for per-name trigger levels
+  and pre-publication board membership — against the standing "don't show the real board
+  free" ruling (#3391) that regwalled `/factordata/*` (#3393). The payload being
+  self-timestamping makes staleness honest, but it does not make the exposure acceptable.
+- **CHOSEN — VPS live plane, served same-origin behind the existing gate.** A resource-
+  capped systemd oneshot+timer in `app/deploy/` pulls the R2 states key and writes
+  `/var/lib/macro-live/public/live/prophet_live.json` atomically (the
+  `macro-live-fast/snapshot/bars` pattern; `macro-update` auto-installs the unit on merge,
+  so go-live is a REPO COMMIT, not an SSH edit). Caddy already routes `/live/*` through
+  `@reg_asset` — `quotes.json`/`breadth.json` are the explicitly-public exceptions, and
+  `prophet_live.json` must NOT join that list. The page then fetches a same-origin, gated,
+  60–120s-fresh copy: cadence matches the product, no Pages churn, no new anonymous path,
+  China-safe by same-origin precedent.
+
+**Acceptance for the wiring task:** anonymous `curl` of `/live/prophet_live.json` returns
+the regwall response (NOT 200 with a payload); an entitled session gets 200; the served
+copy's `meta.pass_ts` tracks the R2 artifact within one timer period; the strip lights up
+only once all three hold. VPS headroom is thin (2 vCPU, measured burst ~90–95% on the
+existing 5-min lane) — size the unit's `CPUQuota`/`MemoryMax` like its siblings and state
+the measured cost in the PR.
+
+**Two mechanical facts the wiring task owns** (found in the P1 review, 2026-07-30):
+- **The prefix does not match and must be bridged deliberately.** The producer writes R2
+  `live_flow/prophet_live.json` (`engine/prophet_live/r2io.py` `LIVE_KEY`); the page reads
+  the served `live/prophet_live.json`. The puller maps one to the other — do NOT "fix" this
+  by renaming the R2 key (the reconciler and the spool prefix key off it) and do NOT change
+  the served path (P1's consumer is tested against it).
+- **A new served `live/` file is the three-file asset change**, not one: the artifact, the
+  Caddy/access entry (gated — never the public exceptions list), and the access-config test.
+  The estate default-denies unknown site asset paths, so a file that exists but is not
+  declared serves nothing.
+
+**Inherited exposure, not introduced by this program (own adjudication in flight):** the
+repo is public, so `site/factordata/us_standouts.json` — the graded board itself — already
+returns 200 from `raw.githubusercontent.com`, i.e. the Caddy regwall gates the served path
+while the git mirror serves the same payload anonymously. The armed pack at R2
+`live_flow/prophet_live_armed.json` inherits that condition and adds an increment (trigger
+levels for names not yet on the board). This is a product/pricing exposure decision for the
+operator, tracked separately in `research/PAYWALL_GIT_MIRROR_EXPOSURE_ADJUDICATION.md`;
+do NOT resolve it inside this program, and do not widen it — hence the CHOSEN option above.
+
 ### 4.5 Alerts (P2)
 
 - Reuse `CA/ingest/alerts_engine.py` (already 5-min cron): new condition kinds
