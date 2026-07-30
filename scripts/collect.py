@@ -850,6 +850,18 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
             log.warning("cor/vol freshness tripwire crashed (non-fatal): %s", e)
 
+    # 2026-07-27 whole-family miss (CBOE CDN 429s through the retry window): store-level
+    # SESSION-COVERAGE tripwire for the delayed-chain family (putcall + gex + gex_<SYM>).
+    # Membership over the last N sessions, not tail age — a one-day hole goes green to
+    # every tail check the very next evening, which is how that miss stayed silent.
+    # Emits line-start ::warning/::error annotations; warn-only, never fails the lane.
+    if "cboe_gex" in registry or "cboe_putcall" in registry:
+        try:
+            from collectors.cboe import check_chain_session_coverage
+            check_chain_session_coverage()
+        except Exception as e:  # noqa: BLE001 — a tripwire's crash must not abort the run
+            log.warning("chain session-coverage tripwire crashed (non-fatal): %s", e)
+
     # ^GSPC incident (frozen 2026-06-12→07-16): same store-level tripwire for the
     # pinned engine-critical yahoo names (collectors.yahoo.ENGINE_CRITICAL_SERIES).
     # A series no adapter fetches — never in a config ticker group, dropped from
