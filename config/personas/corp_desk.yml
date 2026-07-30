@@ -28,12 +28,12 @@ voice_codex:
 beat: "cross-asset market structure, read like an institutional morning note"
 tilt:
   signal: 0.30
-  chart: 0.12
+  chart: 0.22
   mover: 0.08
   theme_list: 0.05
   receipt: 0.12
   event: 0.10
-  education: 0.10
+  education: 0.00  # OFF 2026-07-30 (was 0.10)
   macro: 0.08
   watchlist: 0.05
 pipeline: hybrid

@@ -107,10 +107,31 @@ _TYPE_IDS = [t["id"] for t in CONTENT_TYPES]
 # Default tilt when config is absent.
 # mover + theme_list get REACH weight (0.10 each); shaved from education/receipt
 # so signal stays the largest and all weights sum to 1.0.
+#
+# EDUCATION IS OFF AT 0.00 (operator 2026-07-30). The kind contradicts its own
+# copy law and cannot be written out of it:
+#   * the law says "education posts show YOUR OWN working on something real from
+#     today, never a definition, a lesson, or a rule for the reader";
+#   * education items are built with NO market facts on purpose (see the
+#     fact-cache branch below: "education posts: no market facts (conceptual,
+#     not data-driven)").
+# A post with no fact from today can only BE a definition. So the whole bank
+# reads as a lecture, and a guard sweep of the 252 deterministic templates found
+# 9 of the 10 lecture-register violations sitting in this one family ("Plain
+# English: what's a 'setup'?", "The part most people skip"). The operator, on the
+# 44 that shipped: "past education posts have all been terrible and useless" and
+# "so far none of the education ones are good".
+# The weight moves to CHART (0.13 -> 0.23), not into filler and not spread
+# thinly across everything: a chart post is anchored to a real fact AND ships an
+# illustration, which is the half of the plan the operator wants more of. Tilts
+# are validated to sum to 1.0 (personas.PersonaSpecError), so the weight has to
+# land somewhere explicit rather than being dropped.
+# Re-enable education only when its items are anchored to a real same-day fact
+# and LLM-written; the deterministic bank cannot get there.
 _DEFAULT_TILT: dict[str, float] = {
     "signal": 0.30,
-    "chart": 0.13,
-    "education": 0.10,
+    "chart": 0.23,
+    "education": 0.00,
     "macro": 0.11,
     "receipt": 0.08,
     "watchlist": 0.06,

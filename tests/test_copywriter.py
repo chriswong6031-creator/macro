@@ -243,30 +243,56 @@ def test_validate_invented_number():
     assert number_v, f"Expected number violation for 226.50, got: {violations}"
 
 
-def test_validate_signal_missing_invalidation():
+# These two tests used to pin the OPPOSITE law: that a signal post is REJECTED
+# unless it carries an invalidation phrase and an honesty caveat. That mandate is
+# what produced the machine voice — "37.1 is my trigger, 30.9 proves me wrong.
+# One pattern isn't a guarantee" is what you get when both are compulsory inside
+# 275 chars. The operator graded a batch built under it F and quoted both halves
+# back ("no human will ever say that"). The mandate is gone; these now pin the
+# ban. See memory marketing-voice-fact-plus-cost.
+
+
+def test_signal_post_without_an_invalidation_phrase_is_fine_now():
+    """The mandate is gone: no invalidation line is no longer a violation."""
     from engine.marketing.copywriter import validate_copy
     ctx = {
         "ticker": "PLTR", "type": "signal", "emoji_budget": 0,
         "numbers_whitelist": ["120.00", "150.00"],
     }
-    headline = "$PLTR at 120.00"
-    body = "Buy $PLTR today. Target 150.00. Great setup."
-    violations = validate_copy(headline, body, ctx)
+    violations = validate_copy(
+        "$PLTR at 120.00",
+        "Held 120.00 for three weeks. I passed on this shape last quarter and "
+        "regretted it, so I'm not being clever about it twice.",
+        ctx,
+    )
     inv_v = [v for v in violations if "invalidat" in v.lower() or "what would change" in v.lower()]
-    assert inv_v, f"Expected invalidation violation, got: {violations}"
+    assert not inv_v, f"invalidation mandate should be retired, got: {violations}"
 
 
-def test_validate_signal_missing_disclosure():
-    from engine.marketing.copywriter import validate_copy
-    ctx = {
-        "ticker": "NVDA", "type": "signal", "emoji_budget": 0,
-        "numbers_whitelist": ["500.00", "400.00", "600.00"],
-    }
-    headline = "$NVDA at 500.00"
-    body = "Entry 500.00. Below 400.00 kills it. Target 600.00."
-    violations = validate_copy(headline, body, ctx)
-    disc_v = [v for v in violations if "disclosure" in v.lower() or "honesty" in v.lower()]
-    assert disc_v, f"Expected disclosure violation, got: {violations}"
+def test_risk_stated_against_the_authors_ego_is_rejected():
+    """'I'm wrong below X' / 'proves me wrong' — operator: no human says this."""
+    from engine.marketing.copywriter import machine_risk_violations
+    for text in (
+        "$PLTR held 120.00. I'm wrong below 118.",
+        "37.1 is my trigger, 30.9 proves me wrong.",
+        "Entry 45. What would prove me wrong: a close under 41.",
+    ):
+        assert machine_risk_violations(text), f"should be rejected: {text!r}"
+
+
+def test_boilerplate_caveats_are_rejected():
+    """The compliance-desk forms are banned; a caveat that COSTS you passes."""
+    from engine.marketing.copywriter import machine_risk_violations
+    for text in (
+        "$COHR is there now. Historical, not a guarantee.",
+        "One pattern isn't a guarantee.",
+        "Past performance says otherwise.",
+        "Size appropriately.",
+    ):
+        assert machine_risk_violations(text), f"should be rejected: {text!r}"
+    assert machine_risk_violations(
+        "If it loses 33.8 the whole thing was noise. I've been early twice already."
+    ) == [], "a human caveat that costs the author something must pass"
 
 
 def test_validate_duplicate_headline():

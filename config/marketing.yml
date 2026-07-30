@@ -826,12 +826,12 @@ desk_network:
       # Flagship: signals-first flagship; operator law: signal is highest weight on every account
       tilt:
         signal: 0.40
-        chart: 0.12
+        chart: 0.17
         mover: 0.10
         theme_list: 0.09
         receipt: 0.08
         event: 0.06
-        education: 0.05
+        education: 0.00  # OFF 2026-07-30 (was 0.05) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.05
         watchlist: 0.05
 
@@ -847,12 +847,12 @@ desk_network:
       # Receipts: signals-first; receipt + chart secondary; accountability desk
       tilt:
         signal: 0.38
-        chart: 0.12
+        chart: 0.17
         mover: 0.10
         theme_list: 0.10
         receipt: 0.10
         event: 0.05
-        education: 0.05
+        education: 0.00  # OFF 2026-07-30 (was 0.05) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.04
         watchlist: 0.06
 
@@ -868,12 +868,12 @@ desk_network:
       # Theme: signals-first; theme_list + mover boost for group reach
       tilt:
         signal: 0.39
-        chart: 0.11
+        chart: 0.17
         mover: 0.11
         theme_list: 0.12
         receipt: 0.06
         event: 0.07
-        education: 0.06
+        education: 0.00  # OFF 2026-07-30 (was 0.06) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.04
         watchlist: 0.04
 
@@ -889,12 +889,12 @@ desk_network:
       # Research A: signals-first; education secondary; chart-rich explainer desk
       tilt:
         signal: 0.36
-        chart: 0.14
+        chart: 0.22
         mover: 0.10
         theme_list: 0.09
         receipt: 0.08
         event: 0.07
-        education: 0.08
+        education: 0.00  # OFF 2026-07-30 (was 0.08) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.04
         watchlist: 0.04
 
@@ -910,12 +910,12 @@ desk_network:
       # Research B: highest signal weight; max mover + theme_list for reach
       tilt:
         signal: 0.42
-        chart: 0.10
+        chart: 0.14
         mover: 0.12
         theme_list: 0.12
         receipt: 0.05
         event: 0.08
-        education: 0.04
+        education: 0.00  # OFF 2026-07-30 (was 0.04) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.03
         watchlist: 0.04
 
@@ -931,12 +931,12 @@ desk_network:
       # Research C: signals-first; chart + watchlist secondary; pattern context desk
       tilt:
         signal: 0.37
-        chart: 0.13
+        chart: 0.20
         mover: 0.09
         theme_list: 0.08
         receipt: 0.09
         event: 0.05
-        education: 0.07
+        education: 0.00  # OFF 2026-07-30 (was 0.07) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.05
         watchlist: 0.07
 
@@ -954,12 +954,12 @@ desk_network:
       # register lives in copywriter.personas.founder below.
       tilt:
         signal: 0.34
-        chart: 0.10
+        chart: 0.15
         mover: 0.12
         theme_list: 0.10
         receipt: 0.07
         event: 0.09
-        education: 0.05
+        education: 0.00  # OFF 2026-07-30 (was 0.05) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.08
         watchlist: 0.05
 
@@ -1017,13 +1017,16 @@ desk_network:
       enabled: true
       created: "2026-07-28"       # Buffer attach date — drives ramp tier lookup (D02)
       tilt:
-        signal: 0.30
-        chart: 0.14
+        # education's 0.16 went to chart, which pushed chart level with signal
+        # and broke the "signal is strictly the largest weight" invariant. The
+        # surplus lands on signal instead; both are chart-bearing kinds.
+        signal: 0.38
+        chart: 0.22
         mover: 0.00
         theme_list: 0.06
         receipt: 0.08
         event: 0.00
-        education: 0.16
+        education: 0.00  # OFF 2026-07-30 (was 0.16) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.16
         watchlist: 0.10
 
@@ -1039,12 +1042,12 @@ desk_network:
       created: "2026-07-28"
       tilt:
         signal: 0.30
-        chart: 0.13
+        chart: 0.28
         mover: 0.00
         theme_list: 0.07
         receipt: 0.08
         event: 0.00
-        education: 0.15
+        education: 0.00  # OFF 2026-07-30 (was 0.15) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.18
         watchlist: 0.09
 
@@ -1057,12 +1060,12 @@ desk_network:
       created: "2026-07-28"
       tilt:
         signal: 0.32
-        chart: 0.18
+        chart: 0.30
         mover: 0.00
         theme_list: 0.05
         receipt: 0.12
         event: 0.00
-        education: 0.12
+        education: 0.00  # OFF 2026-07-30 (was 0.12) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.14
         watchlist: 0.07
 
@@ -1081,12 +1084,12 @@ desk_network:
       zh: true
       tilt:
         signal: 0.29
-        chart: 0.15
+        chart: 0.27
         mover: 0.00
         theme_list: 0.09
         receipt: 0.07
         event: 0.00
-        education: 0.12
+        education: 0.00  # OFF 2026-07-30 (was 0.12) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.20
         watchlist: 0.08
 
@@ -1126,10 +1129,10 @@ desk_network:
         event: 0.24
         mover: 0.14
         macro: 0.10
-        chart: 0.08
+        chart: 0.11
         theme_list: 0.06
         receipt: 0.04
-        education: 0.03
+        education: 0.00  # OFF 2026-07-30 (was 0.03) — see _DEFAULT_TILT note in content_studio.py
         watchlist: 0.03
 
     - id: mastermind_research
@@ -1165,11 +1168,11 @@ desk_network:
       # (engine/press/research_lane.py — no new outbox kinds).
       tilt:
         signal: 0.28
-        education: 0.16
+        education: 0.00  # OFF 2026-07-30 (was 0.16) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.14
         receipt: 0.12
         event: 0.08
-        chart: 0.08
+        chart: 0.24
         theme_list: 0.08
         mover: 0.03
         watchlist: 0.03
@@ -1209,7 +1212,28 @@ copywriter:
     - 'avoid model tells: "here''s what it means for X", "let''s break it down", colon-as-drama openers, the repeated "That''s the [noun]." cadence, triads everywhere, kickers like "without the noise"'
     - never repeat a headline or signature phrase across posts in the same plan
     - cashtag on every ticker post; max 275 chars; at most 1 emoji unless the persona budget says 0
-    - signal posts carry an invalidation or "what would prove me wrong" line and an honest caveat ("historical, not a guarantee")
+    # THE post law (operator 2026-07-30, after grading a full batch F). The two
+    # posts they approved and the two they hated separate on exactly one axis:
+    # whether the reaction COST the author something. "Hershey's closed green
+    # eight days in a row. I don't have a clever explanation and I'm not going to
+    # invent one." (refuses to fake insight) and "Ares is up about 12% in a
+    # month. I looked at it twice and passed both times." (admits being wrong)
+    # both cost. "EQT is back at the price where buyers kept showing up... that's
+    # the whole observation" does not, and drew "why even post, shut up then?"
+    - 'every post is a FACT plus a reaction that COSTS you something: an admission you were wrong, a pass you regret, a thing you do not understand, a position that hurt. Never a fact plus a note ABOUT the fact ("that''s the whole observation") and never a fact plus a hedge that resolves to nothing ("either it''s a floor or nobody cares, I don''t know which"). If the reaction costs you nothing, you have no post'
+    # This law used to MANDATE the machine voice: signal posts were REQUIRED to
+    # carry an invalidation phrase and an honesty caveat. Stack those into 275
+    # chars alongside a level and a stance and you produce "37.1 is my trigger,
+    # 30.9 proves me wrong. One pattern isn't a guarantee" BY CONSTRUCTION —
+    # which the operator called cringe, and which no human says. The 167
+    # validate-stage drops in the 2026-07-30 build were the writer reaching for
+    # human phrasing and being rejected for it. Risk still gets stated; it is
+    # stated the way a person states it, and it is no longer compulsory.
+    - 'never write that a number proves YOU wrong. "I''m wrong below 33.8", "30.9 proves me wrong", "X is my trigger, Y invalidates" — banned outright, no human talks like this. Risk belongs to the SETUP, not to your ego, and only when it is the point of the post: "if it loses 33.8 the whole thing was noise" is a person; "I''m wrong below 33.8" is a machine'
+    - 'ONE number per post, and only when the number IS the point. Two prices in a sentence is number soup ("I want 151 before leaning toward 190, then 228") and reads as AI on sight. A post with zero numbers and one honest reaction beats a post with four numbers and none'
+    - 'no motto cadence. Terse symmetrical two-beat lines ("37.1 is my trigger, 30.9 proves me wrong", "the sequence matters more than the streak") read like fortune cookies. Write sentences a person would text, not aphorisms'
+    - 'no numbered lists of your own process ("1. I write down the market''s story. 2. I note the fact that would make me reconsider"). A numbered list of things the market DID is fine; a numbered list of how you think is not'
+    - 'an honesty caveat is welcome when it is yours and costs you something ("I''ve been early on this twice already"). The boilerplate forms are banned: "historical, not a guarantee", "one pattern isn''t a guarantee", "past performance", "size appropriately"'
     - never name MACD / RSI / Stochastic / Ichimoku / Bollinger / VWAP / AVWAP / POC / point of control / value area / volume profile in public copy (visible chart labels are fine); say what the level IS ("the average price paid since the Jun 26 spike", "the price where the most shares changed hands")
     # Quoted: an unquoted "word: text" scalar parses as a MAPPING, and the law
     # would reach the prompt as a dict repr instead of a sentence.

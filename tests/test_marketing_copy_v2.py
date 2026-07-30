@@ -1125,12 +1125,43 @@ def test_a_two_digit_level_in_a_price_slot_must_be_licensed():
 
 
 @pytest.mark.parametrize("text,expect_tokens", [
-    ("Entry 34.4, first target 41.2, out below 31.8.", []),
+    # The three-level form ("Entry 34.4, first target 41.2, out below 31.8")
+    # used to live here as a PASSING case. It is licensed by the slot rule and
+    # still is — but it is now number soup on its own count, so it moved to the
+    # test below. These cases keep the slot rule pinned at a human number budget.
     ("In at 45. T1 41.2.", []),
     ("$ARES at 45 near 34.4", []),
 ])
 def test_price_slot_rule_passes_the_packet_levels(text, expect_tokens):
     assert cw.validate_copy_v2(text, _levels_ctx()) == expect_tokens
+
+
+def test_a_licensed_level_triple_is_still_number_soup():
+    """Every level is in the packet and it STILL does not ship.
+
+    Operator 2026-07-30 on exactly this shape: "190 here, 228 there, and then
+    125, shut up with all of these numbers, its literally so AI like". The
+    whitelist rule answers "is this number true"; the number budget answers "is
+    this a post a person would write". Both have to pass.
+    """
+    violations = cw.validate_copy_v2(
+        "Entry 34.4, first target 41.2, out below 31.8.", _levels_ctx())
+    assert any("number soup" in v for v in violations), violations
+    # ...and it is ONLY the budget complaining — the levels are licensed.
+    assert not [v for v in violations if "whitelist" in v.lower()], violations
+
+
+def test_a_receipt_may_carry_its_entry_exit_and_result():
+    """A receipt's numbers ARE its content, so it gets a wider budget.
+
+    The house Scorekeeper exemplar the operator kept reads "$QCOM: T1 hit
+    +9.6%, runner stopped at 177" — three numbers, and correct. The "shut up
+    with all of these numbers" ruling was aimed at speculative level stacks on
+    forward-looking posts, so the budget is per-kind.
+    """
+    text = "Entry 34.4. First target hit at 41.2, up 9.6%."
+    assert cw.number_soup_violations(text, kind="receipt") == []
+    assert cw.number_soup_violations(text, kind="signal"), "signal budget is tighter"
 
 
 @pytest.mark.parametrize("text", [

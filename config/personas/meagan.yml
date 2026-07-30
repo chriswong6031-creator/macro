@@ -81,13 +81,13 @@ beat: "Crowd translator — market psychology, mood vs positioning, consumer and
 ## blocked on the XG-W2 cadence resolver, so the weight moves to the analysis and
 ## chart formats she can post today. signal stays strictly the largest (house law).
 tilt:
-  signal: 0.30
-  chart: 0.14
+  signal: 0.38
+  chart: 0.22
   mover: 0.00
   theme_list: 0.06
   receipt: 0.08
   event: 0.00
-  education: 0.16
+  education: 0.00  # OFF 2026-07-30 (was 0.16)
   macro: 0.16
   watchlist: 0.10
 pipeline: hybrid

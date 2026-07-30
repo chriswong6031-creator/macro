@@ -24,12 +24,12 @@ voice_codex:
 beat: "Visual evidence + public report card"
 tilt:
   signal: 0.38
-  chart: 0.12
+  chart: 0.17
   mover: 0.10
   theme_list: 0.10
   receipt: 0.10
   event: 0.05
-  education: 0.05
+  education: 0.00  # OFF 2026-07-30 (was 0.05)
   macro: 0.04
   watchlist: 0.06
 pipeline: hybrid

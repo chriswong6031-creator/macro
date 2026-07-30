@@ -36,12 +36,12 @@ voice_codex:
 beat: "What changed and why it matters"
 tilt:
   signal: 0.40
-  chart: 0.12
+  chart: 0.17
   mover: 0.10
   theme_list: 0.09
   receipt: 0.08
   event: 0.06
-  education: 0.05
+  education: 0.00  # OFF 2026-07-30 (was 0.05)
   macro: 0.05
   watchlist: 0.05
 pipeline: hybrid

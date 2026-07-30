@@ -36,10 +36,10 @@ tilt:
   event: 0.22
   mover: 0.15
   macro: 0.10
-  chart: 0.08
+  chart: 0.11
   theme_list: 0.06
   receipt: 0.05
-  education: 0.03
+  education: 0.00  # OFF 2026-07-30 (was 0.03)
   watchlist: 0.03
 pipeline: engine
 model_tier: default
