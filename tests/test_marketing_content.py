@@ -202,7 +202,12 @@ def test_all_types_present_in_every_account():
     # their queues when no heatmap is present (tests run without real data).
     _MOVERS_DESK_TYPES = {"mover", "theme_list"}
     for acct in plan["accounts"]:
-        mix = acct["mix_observed"]
+        # `mix_allocated`, not `mix_observed`: the largest-remainder >=1 guarantee
+        # is a property of what the ALLOCATOR emits. `mix_observed` is recomputed
+        # from the surviving queue after the perishability cut (operator
+        # 2026-07-30) drops perishable kinds booked past D1, so it describes the
+        # shipping plan and a low-tilt kind can legitimately round to zero there.
+        mix = acct["mix_allocated"]
         # All types must have at least 1 slot out of 21 (largest-remainder guarantees this),
         # EXCEPT mover/theme_list on non-flagship accounts (heatmap-only; not in test env).
         for type_id in all_type_ids:
@@ -218,7 +223,11 @@ def test_signal_is_largest_type_in_every_account():
     cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
     plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None)
     for acct in plan["accounts"]:
-        mix = acct["mix_observed"]
+        # Allocator property (see the note in test_all_types_present_in_every_account):
+        # the tilt makes signal the biggest share of what is ALLOCATED. After the
+        # perishability cut, signal is D1-only while watchlist spans the week, so
+        # the shipping mix is deliberately not signal-led.
+        mix = acct["mix_allocated"]
         signal_count = mix.get("signal", 0)
         for type_id, count in mix.items():
             if type_id != "signal":

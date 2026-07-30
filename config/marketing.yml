@@ -165,6 +165,7 @@ sentinel:
   # publish-time half would have quarantined 5 of 6 every night with nothing
   # upstream saying so. -1 = unlimited.
   max_filler_per_account_per_day: 1
+
   # THE BAR (operator 2026-07-28): "a post must name a ticker, state a dated
   # fact with its numbers, and then say something that FOLLOWS from that fact."
   # This gate covers the first two clauses over every ORIGINATED post from every
@@ -1482,6 +1483,20 @@ copywriter:
 # lead with that fact.
 # ─────────────────────────────────────────────────────────────────────────────
 selection:
+  # ── Perishability (operator 2026-07-30) ────────────────────────────────────
+  # The planner books a SEVEN-day forward queue. Copy that makes a claim about
+  # the current tape ("closed green 3 sessions in a row") is false by the time a
+  # D5 slot arrives, so the publisher's live-tape gate refused it and logged
+  # `tape_skipped` — that counter fired on every sweep of 2026-07-29 and is why
+  # ZERO posts went out that day. The gate was right; pre-writing perishable
+  # copy a week ahead was the bug.
+  #
+  # Perishable kinds are D1-only. Evergreen kinds (watchlist levels, receipts,
+  # education) keep the full horizon — a level that has held 23 sessions still
+  # reads true on Friday. Raise perishable_max_day only if the plan starts
+  # re-baking intraday; a 7-day perishable queue cannot be made fresh by a knob.
+  perishable_kinds: [signal, chart, macro, event, mover, theme_list]
+  perishable_max_day: 1
   # Sessions a name is off the board for coverage kinds (watchlist/chart/receipt).
   ticker_cooldown_days: 3
   # Longer for a directional call: a repeat inside a week reads as the same

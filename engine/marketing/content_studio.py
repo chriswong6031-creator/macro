@@ -883,6 +883,96 @@ def _slot_day(slot: object) -> str:
     return head if len(head) >= 2 and head[0] == "D" and head[1:].isdigit() else ""
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PERISHABILITY
+# ─────────────────────────────────────────────────────────────────────────────
+# Kinds whose copy makes a claim about the CURRENT tape. "Closed green 3 sessions
+# in a row" is true tonight and false by Friday; "held 245 for 23 straight
+# sessions" is a level that survives the week.
+_DEFAULT_PERISHABLE_KINDS = frozenset({
+    "signal", "chart", "macro", "event", "mover", "theme_list",
+})
+_DEFAULT_PERISHABLE_MAX_DAY = 1
+
+
+def perishable_kinds(cfg: dict | None) -> frozenset[str]:
+    raw = ((cfg or {}).get("selection") or {}).get("perishable_kinds")
+    if isinstance(raw, (list, tuple, set)) and raw:
+        return frozenset(str(k).strip() for k in raw if str(k or "").strip())
+    return _DEFAULT_PERISHABLE_KINDS
+
+
+def perishable_max_day(cfg: dict | None) -> int:
+    raw = ((cfg or {}).get("selection") or {}).get("perishable_max_day")
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_PERISHABLE_MAX_DAY
+    return n if n >= 1 else _DEFAULT_PERISHABLE_MAX_DAY
+
+
+def _slot_day_num(slot: Any) -> int | None:
+    """Day NUMBER out of a ``D<n>-S<m>`` ladder label. None when unparseable.
+
+    Distinct from :func:`_slot_day` above, which returns the ``"D1"`` STRING the
+    fact-reuse budget keys its per-day maps on. Naming this one `_slot_day`
+    shadowed that function and silently disabled the whole reuse budget — the
+    ARES x5 guard — because its `day_prefix="D1"` comparison started meeting an
+    int. 28 tests went red. Keep the two names apart.
+    """
+    m = re.match(r"^D(\d+)-", str(slot or ""))
+    return int(m.group(1)) if m else None
+
+
+def drop_stale_forward_bookings(
+    account_rows: list[dict],
+    *,
+    cfg: dict | None = None,
+) -> dict[str, Any]:
+    """Drop perishable copy booked beyond day N. Mutates queues.
+
+    THE STALE-QUEUE FIX (operator, 2026-07-30: "these posts are things that
+    happened yesterday and are stale, we should be posting intraday live
+    content; overnight content is usually for stuff that is more evergreen and
+    doesn't matter if it's 1 day old").
+
+    The planner books a SEVEN-DAY forward queue, and ~150 cleared posts per plan
+    made a decaying market claim scheduled D2-D7. By the time one of those posts
+    reached its slot the tape had moved, so the publisher's live-tape gate
+    refused it — correctly — and logged `tape_skipped`. That counter fired on
+    every sweep of 2026-07-29 and was the reason ZERO posts went out that day.
+
+    The tape gate was never the bug. Pre-writing perishable copy a week ahead
+    was. This removes the supply the gate was going to reject anyway, which also
+    stops us spending two model calls apiece writing it.
+
+    Evergreen kinds (watchlist levels, receipts, education) keep the full
+    horizon: a level that has held 23 sessions still reads true on Friday.
+    """
+    perish = perishable_kinds(cfg)
+    max_day = perishable_max_day(cfg)
+    counts: dict[str, Any] = {"dropped_perishable_forward": 0, "by_kind": {}}
+
+    for row in account_rows or []:
+        queue = row.get("queue")
+        if not isinstance(queue, list):
+            continue
+        keep = []
+        for item in queue:
+            kind = str((item or {}).get("type") or "")
+            day = _slot_day_num((item or {}).get("slot"))
+            # An unparseable slot is NOT assumed fresh — it is left alone, since
+            # dropping on a parse failure would silently empty the queue if the
+            # ladder label format ever changed.
+            if kind in perish and day is not None and day > max_day:
+                counts["dropped_perishable_forward"] += 1
+                counts["by_kind"][kind] = counts["by_kind"].get(kind, 0) + 1
+                continue
+            keep.append(item)
+        row["queue"] = keep
+    return counts
+
+
 def apply_reuse_budget(
     account_rows: list[dict],
     *,
@@ -2044,6 +2134,14 @@ def content_plan(
             "voice": voice,
             "tilt": eff_tilt,
             "mix_observed": mix,
+            # What the ALLOCATOR produced, before any downstream filter touches
+            # the queue. `mix_observed` is recomputed later from the surviving
+            # queue, so once the perishability cut and the writer's drops land it
+            # describes the SHIPPING plan — which is what that name should mean.
+            # The allocator's own guarantees (largest-remainder gives every type
+            # at least one slot; the tilt makes signal the biggest share) are
+            # properties of THIS number and are asserted against it.
+            "mix_allocated": dict(mix),
             "queue": [item.as_dict() for item in items],
         })
 
@@ -3230,6 +3328,15 @@ def content_plan(
     # place. Confluence and movers items are inside the budget on purpose
     # (contract §Selection: "count confluence + movers items toward budgets") —
     # they are the same fact reaching a reader, whatever lane produced them.
+    # Perishable copy booked past D1 goes first — before the budget, before the
+    # mixer, and before any model call. It is supply the publisher's live-tape
+    # gate was going to reject on the day (operator 2026-07-30); writing it costs
+    # two model calls apiece to produce a post that cannot legally ship.
+    _perish_counts = drop_stale_forward_bookings(account_rows, cfg=cfg)
+    _sel_report["dropped_perishable_forward"] = _perish_counts.get(
+        "dropped_perishable_forward", 0)
+    _sel_report["dropped_perishable_by_kind"] = _perish_counts.get("by_kind", {})
+
     _budget_counts = apply_reuse_budget(account_rows, cfg=cfg, day_prefix="D1")
     _sel_report["dropped_ticker_budget"] = _budget_counts.get("dropped_ticker_budget", 0)
     _sel_report["dropped_signal_budget"] = _budget_counts.get("dropped_signal_budget", 0)
