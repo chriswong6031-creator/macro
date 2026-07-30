@@ -1,0 +1,27 @@
+# Prophet Live evaluator cadence. systemd calendars have no ET, so the window is
+# expressed as the UTC SPAN that covers 09:25-16:25 ET (window + cron grace) in BOTH
+# DST regimes — 13:2xZ..20:2xZ under EDT, 14:2xZ..21:2xZ under EST — and the pass
+# itself stands down on the EASTERN clock via engine/prophet_live/live_states.in_window
+# (which also consults the NYSE calendar, so holidays cost nothing). One schedule, one
+# window definition, no second copy of "when is the market open".
+#
+# The ~24 out-of-window ticks a day are a Python start that exits at in_window in well
+# under a second; the cost of getting a UTC-pinned window wrong is a dark hour every
+# session for five months of the year.
+#
+# :03/5 rather than :00/5 — macro-live-snapshot fires on the 5-minute boundary and
+# takes up to ~230s to publish the full-universe quote file this lane reads. Three
+# minutes of head start is the difference between reading this cycle's snapshot and the
+# previous one. Publication is an atomic rename either way, so a read is never partial.
+[Unit]
+Description=Run the Prophet Live evaluator every five minutes across the US session
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 13..21:03/5:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=10s
+Persistent=false
+Unit=macro-live-prophet.service
+
+[Install]
+WantedBy=timers.target

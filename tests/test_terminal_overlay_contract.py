@@ -81,6 +81,17 @@ def test_mobile_animation_avoids_transformed_or_clipped_iframe_ancestors():
     assert ".mmto-frame{opacity:1!important;transform:none!important;transition:none!important}" in code
 
 
+def test_close_reveals_dashboard_immediately_without_an_opaque_exit_frame():
+    code = _read("templates/terminal_overlay.js")
+    assert "var CLOSE_ANIMATION_MS = 300;" in code
+    assert "#mm-terminal-overlay.is-closing{visibility:visible;pointer-events:none;background:transparent}" in code
+    assert "if (remount) {" in code
+    assert "destroyFrame();\n      unlockDashboard();\n      return;" in code
+    assert "transition-duration:.16s,.28s,.28s" in code
+    assert "}, CLOSE_ANIMATION_MS);" in code
+    assert "}, 650);" not in code
+
+
 def test_loader_is_medium_on_first_open_and_visual_ready_on_repeats():
     code = _read("templates/terminal_overlay.js")
     assert "var FIRST_LOADER_MS = 900;" in code

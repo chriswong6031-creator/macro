@@ -6,7 +6,7 @@ Covers:
   - Data-theme-id wrappers present in hold/avoid fold
   - No new 'validated' word in TS-U3 additions
   - Macro page unaffected (mode guard)
-  - Turn watch strip JS rendered only in stocks mode
+  - Removed early-turn strip stays absent while the per-stock turn table remains
 """
 from __future__ import annotations
 
@@ -159,8 +159,7 @@ class TestTemplateParse:
         content = tpl_path.read_text()
         # Find our new sections
         new_sections = []
-        for marker in ["TS-U3", "dash-tape-band", "dash-tw-strip", "dash-mtf",
-                        "two-reads-chip", "Turn Watch strip"]:
+        for marker in ["TS-U3", "dash-tape-band", "dash-mtf", "two-reads-chip"]:
             idx = content.find(marker)
             if idx != -1:
                 new_sections.append((marker, content[idx:idx+500]))
@@ -331,32 +330,6 @@ class TestActionBoardTwoReadsChipWiring:
 
 
 # ---------------------------------------------------------------------------
-# 2c. JS disagreement gate (A1 fix: WATCH/IGNITION + buy reco must not appear)
-# ---------------------------------------------------------------------------
-
-class TestDisagreementGate:
-    """JS gate: WATCH/IGNITION baskets must not enter the strip when slow_reco is buy/accumulate."""
-
-    TPL_SRC = (TPL_DIR / "dashboard.html.j2").read_text()
-
-    def test_disagree_gate_variable_present_in_template(self):
-        """DISAGREE_RECOS variable must be present in JS."""
-        assert "DISAGREE_RECOS" in self.TPL_SRC, "JS disagreement gate variable missing from template"
-
-    def test_gate_allows_hold_reco(self):
-        """Template JS gate source includes hold in the DISAGREE_RECOS set."""
-        assert "'hold':1" in self.TPL_SRC or '"hold":1' in self.TPL_SRC
-
-    def test_gate_allows_avoid_reco(self):
-        """Template JS gate source includes avoid in the DISAGREE_RECOS set."""
-        assert "'avoid':1" in self.TPL_SRC or '"avoid":1' in self.TPL_SRC
-
-    def test_gate_skips_active_buy_reco(self):
-        """The gate return statement is present and only skips when isActive AND reco known AND NOT in DISAGREE_RECOS."""
-        assert "DISAGREE_RECOS[reco]" in self.TPL_SRC, "gate must check DISAGREE_RECOS[reco]"
-
-
-# ---------------------------------------------------------------------------
 # 3. Template mode-gating: stocks vs macro
 # ---------------------------------------------------------------------------
 
@@ -395,8 +368,14 @@ class TestModeGating:
             "id=dash-tape-band must appear inside a {% if mode == 'stocks' %} block"
         )
 
-    def test_dash_tw_strip_present_in_source(self):
-        assert self._marker_in_source("dash-tw-strip"), "dash-tw-strip must exist in template"
+    def test_removed_early_turn_strip_and_fetch_stay_absent(self):
+        assert "dash-tw-strip" not in self.TPL_SRC
+        assert "dash-tw-row" not in self.TPL_SRC
+        assert "basketdata/turn_watch.json" not in self.TPL_SRC
+        rendered = (TPL_DIR.parent / "site" / "us_stocks.html").read_text()
+        assert "Early turn signs" not in rendered
+        assert 'id="dash-tw-strip"' not in rendered
+        assert "basketdata/turn_watch.json" not in rendered
 
     def test_mtf_section_present_in_source(self):
         assert self._marker_in_source("dash-mtf-section"), "dash-mtf-section must exist in template"

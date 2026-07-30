@@ -336,8 +336,14 @@ def _render_risk_state_banner(risk_state):
     from jinja2 import Environment, FileSystemLoader
     src = (TEMPLATES / "dashboard.html.j2").read_text()
     macros = src[: src.index("{# coloured")]
+    # Bound the slice with the banner's OWN markers. This used to end on the next
+    # section's header ("<!-- ==== MACRO NOWCAST"), a neighbour this test does not
+    # own — so demoting the dislocation panel off the board on 2026-07-30 deleted
+    # that header and raised ValueError here, reddening ci-pack-0 on a change that
+    # never touched the risk-state banner. The closing marker is commented as
+    # load-bearing in the template; keep both ends anchored on this banner.
     start = src.index("<!-- ============ EARLY RISK-STATE BANNER")
-    end = src.index("<!-- ============ MACRO NOWCAST")
+    end = src.index("<!-- ============ /EARLY RISK-STATE BANNER")
     env = Environment(loader=FileSystemLoader(str(TEMPLATES)))
     env.globals.update(td=i18n.td, tr=i18n.tr, zip=zip)
     return env.from_string(macros + src[start:end]).render(

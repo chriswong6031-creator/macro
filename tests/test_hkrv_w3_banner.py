@@ -63,11 +63,22 @@ def _make_leadership(state: str = "leaders_participating",
 
 
 def _banner_block(html: str) -> str:
-    """Slice out the rendered banner block (banner start → action grid)."""
+    """Slice out the rendered banner block (banner start → action board).
+
+    The end sentinel must be a LIVE marker. It was `act-grid` until the
+    2026-07-30 asia render deleted the legacy pre-lane-split grid; after that
+    `find` returned -1 on every call and the old `end if end != -1 else None`
+    fallback silently widened this slice from ~2.9KB (the banner) to 22.9KB
+    (the whole rest of the page). Nothing went red — every `assert X in block`
+    below simply stopped being scoped to the banner and would have passed on a
+    match anywhere downstream. A missing sentinel now fails loudly instead of
+    degrading into a vacuous pass.
+    """
     start = html.find("hkrv-banner-a")
-    end = html.find("act-grid", start)
     assert start != -1, "banner block not found in rendered HTML"
-    return html[start:end if end != -1 else None]
+    end = html.find("anv2-lane", start)
+    assert end != -1, "action-board end sentinel 'anv2-lane' not found after banner"
+    return html[start:end]
 
 
 def _make_actions(with_confirming: bool = False) -> dict:

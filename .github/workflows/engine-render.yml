@@ -214,6 +214,38 @@ jobs:
         # Must run AFTER build world state so world_state.json is fresh.
         # Resilient: fail-open; kept last committed context on error; never blocks the render.
         run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      # ── FD-EXP: flow_desk express-lane coverage (2026-07-30) ──────────────────
+      # NOTE ON LENGTH: this prose is a YAML comment ABOVE the step, not inside `run:`.
+      # The scalar has a hard ceiling GitHub enforces by DE-REGISTERING the workflow
+      # (tests/test_render_run_size_cap.py); comments cost it nothing. engine-render.yml's
+      # twin scalar has ~340 chars of headroom — keep new explanation HERE, in both lanes.
+      #
+      # build_flow_desk was the last options-family builder wired in daily.yml ONLY, so
+      # site/flow_desk.html + site/flow_desk.json + site/flowdata/cohorts.json refreshed
+      # once a night while every express render rebuilt the stores around them — the
+      # flow_leaders (#3515) / research_vault (#3487) freeze class. An edit to the builder
+      # or templates/flow_desk.html.j2 sat unbaked until the next nightly.
+      #
+      # ADMISSION PRECONDITION (#4007, merged 2026-07-30): the builder's three data/ write
+      # paths — the broad + sector flow proxies (data/flows/*.parquet) and the cohort
+      # accrual upserts (data/options_flow/cohorts_<key>.parquet, via engine.flow_cohorts)
+      # — are now COLLECT_LANE=nightly-gated in code (HOUSE-U5, the build_leader_radar
+      # pattern). Off-nightly the bake is a pure site/-only function of committed data/:
+      # zero network, ~2.6-2.9s measured. That gate is what makes this admission safe; it
+      # also closed a measured corruption where an off-nightly run appended an all-None
+      # coverage=0 row to all four cohort forward ledgers.
+      # Pinned by tests/test_flow_desk.py::TestProxyLaneGate and
+      # tests/test_flow_cohorts.py::TestCohortAccrualLaneGate.
+      #
+      # PLACEMENT: inside cl_gex, immediately AFTER build_options_flow — the desk reads
+      # site/flow/index.json, which build_options_flow rewrites in this same band, so it
+      # must read THIS run's manifest. Mirrors daily.yml's cl_gex order exactly. The narrow
+      # `gex)` case gets it in the same position.
+      # The two invocation lines here carry a TERSER label than daily.yml/render.yml use
+      # for the same builder ('flow desk' vs 'group flow heatmap & market tide') purely to
+      # spend fewer characters of this scalar's remaining headroom. The `flow_desk` SLUG —
+      # what ORDER matches and what names the log group — is identical across all lanes.
+      # Anti-rot: tests/test_render_flow_desk_scope.py.
       - name: re-render pages from the freshly recomputed engine output (resilient)
         # IDENTICAL to render.yml's render step — reads the engine output just recomputed above
         # (regime/latest.json + the MTF leaf, now in the working tree) and re-renders every page.
@@ -398,6 +430,7 @@ jobs:
               # them. This also restores the lane's "NO network" invariant. See header comment.
               brun vol_regime   "index vol-regime (build_vol_regime)"        scripts.build_vol_regime
               brun options_flow "options flow desk (build_options_flow)"     scripts.build_options_flow
+              brun flow_desk "flow desk (build_flow_desk)" scripts.build_flow_desk
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
               brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
               # options_entry_state IS a pure function of committed data/ (polygon_gex,
@@ -451,7 +484,7 @@ jobs:
             # research_vault added 2026-07-25 — see the twin note in render.yml: this
             # loop is what surfaces a builder's log + its rc!=0 ::error, so #3487's
             # new brun call was running unwatched in both intraday lanes.
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault policy_watch index_changes stage_analysis_page tech_lab impulse"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow flow_desk options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault policy_watch index_changes stage_analysis_page tech_lab impulse"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -515,6 +548,7 @@ jobs:
               run_py "GEX magnets board (build_gex_board)"      scripts.build_gex_board
               run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
               run_py "options flow desk (build_options_flow)"   scripts.build_options_flow
+              run_py "flow desk (build_flow_desk)" scripts.build_flow_desk
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
               hub ;;
@@ -558,6 +592,8 @@ jobs:
       - name: guard — inline JS must parse
         # Same gate as render.yml/pages.yml: a JS syntax error keeps the last-good site live.
         run: python3 scripts/check_inline_js.py site
+      - name: guard — no dead site references
+        run: python3 scripts/check_site_asset_refs.py site
       - name: guard — market-state board coherence (ui.ms_board_coherence)
         # A freshly rendered board whose verdict/score/thesis/notes disagree means the
         # render itself is broken (engine or template regression) — restore last-good

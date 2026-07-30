@@ -236,6 +236,76 @@
     .panel { animation:none !important; }
     .pulse-dot { animation:none !important; }
   }
+
+  /* ── §5 stress selloff filter (engine/dislocation.py) ──────────────────
+     Demoted here from macro.html on 2026-07-30 (see the §5 block comment).
+     Verdict colour arrives on --lit, the Fed-put colour on --dlp, and both are
+     spent on a static left rail plus a soft corner wash — nothing animates, so
+     there is no pseudo-element motion to kill under reduced-motion. */
+  .dislo-panel { border-left:3px solid var(--lit);
+    background-image:linear-gradient(107deg,
+      color-mix(in srgb, var(--lit) 9%, transparent) 0%,
+      color-mix(in srgb, var(--lit) 2%, transparent) 34%, transparent 62%); }
+  .dislo-panel .dlx-sub { margin:2px 0 0; font-size:12.5px; line-height:1.5;
+    color:var(--muted); max-width:82ch; }
+  .dislo-panel .dlx-dormant { margin:10px 0 0; font-size:13px; line-height:1.5;
+    color:var(--muted); max-width:88ch; }
+  .dislo-panel .dlx-dormant b { color:var(--text); }
+  .dislo-panel .dlx-stance { margin:11px 0 0; font-size:13px; line-height:1.45;
+    max-width:96ch; color:var(--text); }
+  .dislo-panel .dlx-stance b { color:var(--lit); font-weight:700; }
+  .dislo-panel .dlx-hon { color:var(--muted); }
+  .dislo-panel .dlx-warn { margin:7px 0 0; font-size:12px; line-height:1.45;
+    color:var(--down); max-width:96ch; }
+  /* readout rows: label / value pairs, no nested card chrome. Everything that
+     DISAGREES with the verdict stays here, in the open — the margin each stress
+     trigger clears, the Fed-put sub-readings, the entry timer, and the
+     geopolitical/catalyst cross-checks. Only long-form prose + the measured
+     record fold (audit order 2026-07-29: never fold the dissent). */
+  .dislo-panel .dlx-rows { margin:10px 0 0; padding-top:7px;
+    border-top:var(--rule,1px) solid var(--line); }
+  .dislo-panel .dlx-row { display:flex; align-items:baseline; gap:9px;
+    padding:4px 0; font-size:12px; line-height:1.4; }
+  .dislo-panel .dlx-row + .dlx-row { border-top:1px solid
+    color-mix(in srgb, var(--line) 55%, transparent); }
+  .dislo-panel .dlx-lbl { flex:none; width:140px; color:var(--muted); font-weight:600; }
+  .dislo-panel .dlx-val { flex:1; min-width:0; }
+  .dislo-panel .dlx-val b { font-variant-numeric:tabular-nums; }
+  .dislo-panel .dlx-chips { display:inline-flex; flex-wrap:wrap; gap:5px;
+    vertical-align:middle; }
+  .dislo-panel .dlx-cap { color:var(--muted); font-size:11px; }
+  /* margin line — every trigger's live reading against its own limit, firing or
+     not. Mono numerals so the four readings line up as a scale, not as prose. */
+  .dislo-panel .dlx-margins { display:block; margin-top:3px; font-size:11px;
+    color:var(--muted); font-variant-numeric:tabular-nums; }
+  .dislo-panel .dlx-mg { white-space:nowrap; }
+  .dislo-panel .dlx-mg.on { color:var(--lit); font-weight:650; }
+  .dislo-panel .dlx-dis { color:var(--warn); font-weight:650; }
+  /* series VINTAGE, parenthetical to its reading — Sahm is a monthly reference
+     month carried forward, not a same-day print. Regular numerals: a date is a
+     figure, the words around it are not, so only the reading itself keeps the
+     tabular alignment above. */
+  .dislo-panel .dlx-vint { color:var(--ink-3,var(--muted)); white-space:nowrap; }
+  .dislo-panel .dlx-more { margin-top:11px; font-size:12px; }
+  .dislo-panel .dlx-more > summary { cursor:pointer; color:var(--link);
+    font-weight:600; font-size:12px; }
+  .dislo-panel .dlx-mbody { margin-top:8px; padding-top:8px;
+    border-top:1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+  .dislo-panel .dlx-para { margin:0 0 7px; font-size:11.5px; line-height:1.55;
+    max-width:96ch; }
+  /* policy divergence — amber CONTEXT, never the red of a verdict: the engine
+     attaches it explicitly as context that does not change the call, so it must
+     not read redder than the gate does. */
+  .dislo-panel .dlx-pdiv, .dislo-panel .dlx-pdiv b { color:var(--warn); }
+  .dislo-panel .dlx-mrow { display:flex; align-items:baseline; gap:9px;
+    font-size:11.5px; line-height:1.55; }
+  .dislo-panel .dlx-mk { flex:none; width:140px; font-weight:600; color:var(--muted); }
+  .dislo-panel .dlx-mv { flex:1; min-width:0; }
+  @media (max-width:700px) {
+    .dislo-panel .dlx-row, .dislo-panel .dlx-mrow { flex-direction:column; gap:2px; }
+    .dislo-panel .dlx-lbl, .dislo-panel .dlx-mk { width:auto; }
+    .dislo-panel .dlx-cap { display:block; margin-top:3px; }
+  }
 </style>
 </head>
 <body class="page-macro">
@@ -882,6 +952,270 @@
     {% endfor %}
     </tbody>
   </table>
+</div>
+{% endif %}
+
+{# =====================================================================
+   §5  STRESS SELLOFF FILTER  (engine/dislocation.py)
+
+   TIER-3 HOME, operator ruling 2026-07-30. This readout used to render as a
+   standalone container on macro.html — the primary board — where the operator
+   read it as "all machine language … nothing they can remotely understand":
+   an eyebrow reading DISLOCATION, a verdict slug ("Buyable washout"), an
+   internal switch name ("Fed-put switch"), a K-of-N count ("only 1 of 4 stress
+   triggers"), a study ID ("Gate-2 entry timer") and five bare percentile /
+   threshold pairs, every one of them banned from the glance tier by
+   docs/DESIGN_DOCTRINE.md Law 2. It is now demoted here, whole.
+
+   This is the same move the Risk Radar card made (dashboard.html.j2, "full
+   per-scare detail + self-audit are on the Macro Signals data page") and the
+   same cross-page link idiom the Fear/Greed panel already uses
+   (macro_signals.html#fear-greed-detail). macro.html keeps the ANNOUNCEMENT —
+   the alerts-pane entry and the "What To Do Now" row — rewritten in plain
+   words; both link here for the receipts.
+
+   PRESENTATION ONLY — every claim below is the calibrated engine copy,
+   re-housed. Nothing is reworded, softened, or dropped. The panel header
+   follows Tier-1 rules (doctrine §1: "their top-of-page header still follows
+   Tier 1 rules"); everything under it is Tier 3 and may be as technical as the
+   engine is.
+   ===================================================================== #}
+{% if latest and latest.dislocation %}
+{% set DL = latest.dislocation %}
+{% set DI = DL.inputs %}
+{% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
+{# THE FED-PUT SWITCH IS TRI-STATE, not a boolean (engine/dislocation.py DEGRADE
+   CONTRACT, 2026-07-29). A missing or stale Sahm / breakeven leg used to read as
+   "leg not firing" -> put present -> buyable washout: a data outage failed OPEN
+   toward the permissive verdict. The engine now degrades `put_state` to "unknown"
+   with `put_state_reliable: false` and a `stale_inputs` list. Rendering that third
+   state through `DL.fed_put` alone would print "backstop gone" for "we cannot read
+   the switch" — the opposite reading. Older payloads carry NEITHER key, so the
+   tri-state falls back to the boolean and this whole branch stays dark. #}
+{% set _put_unknown = ((DL.put_state is defined and DL.put_state == 'unknown')
+                       or (DL.put_state_reliable is defined and not DL.put_state_reliable)
+                       or (DL.fed_put is defined and DL.fed_put is none)) %}
+{% set _put_stale = DL.stale_inputs if (DL.stale_inputs is defined and DL.stale_inputs) else [] %}
+{% set dlp = 'var(--muted)' if _put_unknown else ('var(--up)' if DL.fed_put else 'var(--down)') %}
+{# Stress triggers come from the ENGINE's authoritative list (DI.triggers), never
+   re-derived here. The template used to re-test the thresholds in Jinja, and
+   `DI.vrp_pctile > 0.9` is False against a value the engine already ROUNDED to 2dp
+   (0.9027 -> 0.9) — so on a live variance-premium-only dislocation the page printed
+   "Stress triggers firing" above an EMPTY chip row. Loosening the comparison would
+   have moved the gate; reading the engine's list cannot. #}
+{% set _trigs = DI.triggers or [] %}
+{% set _TRIG_ZH = {'VIX panic': 'VIX 恐慌', 'drawdown': '回撤',
+                   'VRP extreme': '方差溢价极端', 'VIX backwardation': 'VIX 倒挂'} %}
+{# EN display names for engine slugs that read as acronym soup at a glance. #}
+{% set _TRIG_EN = {'VRP extreme': 'variance-premium extreme'} %}
+{% set _tgj = _trigs | join('|') %}
+{% set _cap_extra = [] %}
+{% for _s in (DI.capitulation_signals or []) %}{% if _s not in _trigs %}{% set _ = _cap_extra.append(_s) %}{% endif %}{% endfor %}
+{# Trigger limits mirror engine/dislocation.py DEFAULTS — vix_panic 30.0,
+   dip_pct 0.10, vrp_pctile_extreme 0.90, backwardation_ratio 1.0, sahm_trigger
+   0.50, fedput_breakeven 2.5. Display-only copies (the payload carries readings,
+   not limits); grep this comment if those constants ever move. #}
+<div class="panel span12 rail-mood anim-d5 dislo-panel" id="dislocation" style="--lit:{{ vcolor }};--dlp:{{ dlp }}">
+  {# HEADER — Tier-1 rules apply here: plain words, a stance, no slugs. #}
+  <h2>{{ t('Stress selloff filter', '压力抛售过滤器') }}
+    {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). What the replay actually shows: it REFUSED the 2008 crash (put-absent from 2008-04), but it printed buyable early in the 2000-02 bear and twice in 2022 with the breakeven within 0.02pp of the cutoff. So this is a drawdown filter with known misses, not a knife-proof shield, and not a bounce-catcher — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。回放实际显示：它拒绝了 2008 年的崩盘（自 2008-04 起判定托底缺失），但在 2000-02 熊市早期给出过「可买入」，2022 年内亦有两次，且这两次盈亏平衡率距阈值均在 0.02 个百分点以内。因此这是一个存在已知漏判的回撤过滤器，既非防飞刀的护盾，也不是抄反弹的工具 — 基于标普 1997-2026 实测。") }}
+  </h2>
+  <p class="dlx-sub">{{ t('One question, asked when selling turns stressed: would the Fed still step in? It filters how deep the damage usually gets — it never says buy.', '当抛售转为压力状态时只问一个问题：美联储是否仍会出手？它过滤的是「通常会跌多深」，而非买入时机。') }}</p>
+
+  {% if not DL.dislocation_active %}
+  {# DORMANT — stated plainly instead of the section vanishing. A data page that
+     silently omits a quiet filter teaches the reader nothing about what quiet
+     looks like, and it is exactly why this readout felt like it "suddenly popped
+     up" when it fired. #}
+  <p class="dlx-dormant"><b>{{ t('Quiet right now.', '当前休眠。') }}</b>
+    {{ t('Markets are not in a stress selloff, so this filter is asleep. It wakes only when one of four stress readings crosses its line — and you will see it on the macro board when it does.', '市场未处于压力抛售，该过滤器处于休眠。仅当四项压力读数之一越线时才会启动 — 届时宏观看板会提示。') }}</p>
+  {% else %}
+
+  {# STANCE — the one plain-word line that answers "so what do I do". #}
+  <p class="dlx-stance">
+    {% if DL.verdict=='buyable_washout' %}<b>{{ t('Watch — don’t chase.', '观察 — 不要追。') }}</b> {{ t('The selling is stressed but the Fed’s backstop still reads intact. Wait for the market to steady; do not try to catch it.', '抛售处于压力状态，但美联储托底仍在位。等待市场企稳，勿提前抢跑。') }}
+    {% elif DL.verdict=='stand_aside' %}<b>{{ t('Stand aside.', '观望。') }}</b> {{ t('This is the put-absent setup the gate refused from April 2008, where the same capitulation signals kept firing into the fall.', '这是一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形，同样的恐慌信号在下跌途中不断触发。') }}
+    {% elif _put_unknown %}<b>{{ t('Watch — don’t chase.', '观察 — 不要追。') }}</b> {{ t('No buyable or stand-aside call is made while the switch cannot be read: a missing reading is not a reading that says all-clear.', '在开关无法判读期间不作「可买入」或「观望」的判定：读不到，不等于读到了安全。') }}
+    {% else %}<b>{{ t('Watch — don’t chase.', '观察 — 不要追。') }}</b> {{ t('An acute stress dislocation is firing.', '急性压力错位正在触发。') }}{% endif %}
+    <span class="dlx-hon">{{ t('A risk filter, not a buy signal.', '这是风险过滤器而非买入信号。') }}</span>
+  </p>
+  {% if DL.capitulation_caveat %}
+  <p class="dlx-warn">⚠ {{ t('The capitulation gauge is firing, but the Fed put is absent — its measured bounce does NOT apply here (the falling-knife regime).', '恐慌触底指标在触发，但美联储托底缺失 — 其实测反弹在此不适用（接飞刀情形）。') }}</p>
+  {% endif %}
+
+  <div class="dlx-rows">
+
+    {# What is firing, and by how much. The margin line prints all four stress
+       readings against their own limits — firing or not — so a one-trigger state
+       reads as a one-trigger state instead of as a broad washout. #}
+    <div class="dlx-row">
+      <span class="dlx-lbl">{{ t('Stress triggers', '压力信号') }}</span>
+      <span class="dlx-val"><span class="dlx-chips">
+          {%- for tg in _trigs %}
+          {%- set _stem = 'VIX panic' if tg.startswith('VIX panic') else ('drawdown' if tg.startswith('drawdown') else tg) %}
+          {%- set _tail = tg | replace(_stem, '') %}
+          <span class="badge" style="font-size:11px;color:{{ vcolor }}">{{ t(_TRIG_EN.get(tg, tg), _TRIG_ZH.get(_stem, _stem) ~ _tail) }}</span>
+          {%- endfor %}
+          {%- if not _trigs %}<span class="muted">{{ t('none firing', '无触发') }}</span>{% endif %}
+        </span>
+        {%- if DI.capitulation_active %}<span class="dlx-cap">{% if _cap_extra %}— {{ t('capitulation gauge also firing on ', '恐慌触底指标同时触发：') }}{% for s in _cap_extra %}{{ t(_TRIG_EN.get(s, s), _TRIG_ZH.get(s, s)) }}{% if not loop.last %} · {% endif %}{% endfor %}{% if DI.capitulation_strong %} ⚑{% endif %}{% else %}— {{ t('capitulation gauge firing on the same reading, not a second signal', '恐慌触底指标基于同一读数触发，并非第二个信号') }}{% endif %}</span>{% endif %}
+        {# MARGIN LINE — every stress reading against its own limit, firing or not.
+           The variance-premium reading prints its TRUE margin: the engine emits
+           `vrp_pctile_raw` at 4dp precisely because the 2dp display copy (0.9027 ->
+           0.9) made a firing trigger read as a tie against its own 90 limit. With
+           the raw value present the "rounded for display" hedge is retired; on an
+           older payload that lacks it the 2dp reading + the hedge are kept, because
+           then the tie really is a rounding artefact we cannot resolve here. #}
+        {% set _vrp_raw = DI.vrp_pctile_raw if (DI.vrp_pctile_raw is defined and DI.vrp_pctile_raw is not none) else none %}
+        <span class="dlx-margins">
+          {%- if _vrp_raw is not none %}<span class="dlx-mg{{ ' on' if 'VRP extreme' in _trigs }}">{{ t('variance premium', '方差溢价') }} {{ '%.1f'|format(_vrp_raw * 100) }}{{ t('th pct vs 90th', ' 百分位 对 90 百分位') }}</span> · {% elif DI.vrp_pctile is not none %}<span class="dlx-mg{{ ' on' if 'VRP extreme' in _trigs }}">{{ t('variance premium', '方差溢价') }} {{ '%.0f'|format(DI.vrp_pctile * 100) }}{{ t('th pct vs 90', ' 百分位 对 90') }}</span> · {% endif %}
+          {%- if DI.vix is not none %}<span class="dlx-mg{{ ' on' if 'VIX panic' in _tgj }}">{{ t('VIX', 'VIX') }} {{ DI.vix }} {{ t('vs 30', '对 30') }}</span> · {% endif %}
+          {%- if DI.spy_drawdown_pct is not none %}<span class="dlx-mg{{ ' on' if 'drawdown' in _tgj }}">{{ t('drawdown', '回撤') }} {{ DI.spy_drawdown_pct }}% {{ t('vs -10%', '对 -10%') }}</span> · {% endif %}
+          {%- if DI.vix_term is not none %}<span class="dlx-mg{{ ' on' if 'VIX backwardation' in _trigs }}">{{ t('VIX term', 'VIX 期限') }} {{ '%.2f'|format(DI.vix_term) }} {{ t('vs 1.00', '对 1.00') }}</span>{% endif %}
+          {%- if _vrp_raw is none %} · {{ t('readings rounded for display; the gate uses full precision', '读数为展示用四舍五入；闸门使用完整精度') }}{% endif %}
+        </span>
+      </span>
+    </div>
+
+    {# The master switch, with both of its sub-readings against their own limits —
+       this is the discriminator the whole verdict turns on, so it stays visible. #}
+    <div class="dlx-row">
+      <span class="dlx-lbl">{{ t('Fed-put switch', '美联储托底开关') }}
+        {{ help("The one out-of-sample-stable discriminator (holds in BOTH 1997-2011 and 2012-2025). PUT-ABSENT = recession underway (Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). Primary trend is shown as context but adds little on top of the switch.", "唯一在样本外稳定的判别器（1997-2011 与 2012-2025 两半区均成立）。托底缺失＝衰退进行中（Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。主趋势作为背景显示，但在开关之上增益有限。") }}
+      </span>
+      {# Which legs the engine could not read (stable keys, so the ZH lane can name
+         them in Chinese instead of echoing the engine's English receipt). #}
+      {% set _stale_j = _put_stale | join(' ') %}
+      <span class="dlx-val"><b style="color:{{ dlp }}">{% if _put_unknown %}{{ t('Switch unreadable', '开关无法判读') }}{% elif DL.fed_put %}{{ t('Put present', '托底在位') }}{% else %}{{ t('Put ABSENT', '托底缺失') }}{% endif %}</b>
+        {%- if _put_unknown %}<span class="dlx-dis"> · ⚠ {{ t('inputs stale or missing — no ruling', '输入过期或缺失 — 不作判定') }}</span>
+        {%- elif not DL.fed_put %}<span style="color:var(--down)">
+        {%- if DI.sahm is not none and DI.sahm >= 0.5 %} · ⚑ {{ t('recession underway (Sahm)', '衰退进行中（Sahm）') }}{% endif %}
+        {%- if DI.breakeven_10y_1m is not none and DI.breakeven_10y_1m >= 2.5 %} · ⚑ {{ t('inflation locks the Fed', '通胀锁住美联储') }}{% endif %}</span>{% endif %}
+        {%- if _put_unknown %}
+        <span class="dlx-margins dlx-dis">{{ t('Cannot read:', '无法读取：') }}
+          {%- if 'sahm' in _stale_j %} {{ t('the real-time recession trigger', '实时衰退触发指标') }}{% endif %}
+          {%- if 'sahm' in _stale_j and 'breakeven' in _stale_j %} ·{% endif %}
+          {%- if 'breakeven' in _stale_j %} {{ t('the 10-year breakeven', '十年期盈亏平衡通胀率') }}{% endif %}
+          {%- if not _put_stale %} {{ t('one of the two switch legs', '开关两条腿中的一条') }}{% endif %}
+          {{ help(('Engine staleness receipt — ' ~ (_put_stale | join('; '))) if _put_stale else 'The Fed-put switch reported itself unreadable; no per-leg receipt was published with this reading.', '引擎过期回执（英文原文见英文版）：该腿的最后印刷日期已超出其过期预算，因此引擎拒绝以「未触发」来解读一个读不到的读数。') }}</span>
+        {%- endif %}
+        {# VINTAGES (a monthly reference month is not a same-day read). Sahm is a
+           monthly reference-month series with a ~6-week publication lag, carried
+           forward by ffill, so its own stamp is materially older than the row it sits
+           on — that is true of the construction whether or not the engine has shipped
+           `sahm_asof` yet, so the nature is stated always and the date is added when
+           the payload carries it. #}
+        <span class="dlx-margins">Sahm <b>{{ '%.2f'|format(DI.sahm) if DI.sahm is not none else '—' }}</b> {{ t('vs 0.50', '对 0.50') }}
+          <span class="dlx-vint">({{ t('monthly reference month, carried forward', '月度参考月数据，向前沿用') }}{% if DI.sahm_asof is defined and DI.sahm_asof %} · {{ DI.sahm_asof }}{% endif %})</span>
+          · {{ t('10y breakeven', '十年盈亏平衡') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) if DI.breakeven_10y_1m is not none else '—' }}%</b> {{ t('vs 2.50%', '对 2.50%') }}
+          <span class="dlx-vint">({{ t('21-day average', '21 日均值') }}{% if DI.breakeven_asof is defined and DI.breakeven_asof %} · {{ DI.breakeven_asof }}{% endif %})</span>
+          · {{ t('trend', '趋势') }} <b>{{ t('up', '上行') if DI.primary_trend=='up' else t('down', '下行') }}</b></span>
+      </span>
+    </div>
+
+    {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
+    {% set g2 = DL.gate2 %}
+    {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('var(--warn)' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
+    <div class="dlx-row">
+      <span class="dlx-lbl">{{ t('Entry timer', '入场时机') }}
+        {{ help("The entry TIMER — it arms ONLY once Gate-1 says buyable, and it is a coincident CONFIRM, never anticipation: it waits for the VIX term structure to un-invert (backwardation back to contango), which historically lags the VIX peak by ~13 sessions. MEASURED on matched buyable washouts (2006+): waiting for the un-inversion lifted hit-rate 61->67%, median 3-month return +2.2->+4.6% and shallowed median drawdown -4.5->-2.9% — but the 1-in-10 tail was marginally worse. A confirm, not a bottom-caller.", "入场时机器 — 仅在一道闸判定可买入后才启动，且是同步确认而非提前预判：它等待 VIX 期限结构回正（由倒挂转为正向），历史上滞后 VIX 峰值约 13 个交易日。基于匹配的可买入错杀样本（2006+）实测：等待回正将胜率由 61% 提升至 67%，三月中位回报 +2.2% 升至 +4.6%，中位回撤由 −4.5% 收窄至 −2.9% — 但 1/10 尾部略差。这是确认，而非抄底。") }}
+      </span>
+      {# TERM-STRUCTURE DISTANCE — how far the timer is from arming, so the state's
+         flip is visible before it happens. Prefer the engine's own
+         `distance_to_backwardation`; on an older payload derive it from the same two
+         display numbers already printed in the trigger-margin line above (the 1.00
+         limit is the display copy of backwardation_ratio noted at the top of this
+         panel). Presentation subtraction only — it decides nothing. #}
+      {% set _g2d = g2.distance_to_backwardation if (g2.distance_to_backwardation is defined and g2.distance_to_backwardation is not none)
+                    else ((1.0 - DI.vix_term) if DI.vix_term is not none else none) %}
+      <span class="dlx-val"><b style="color:{{ g2color }}">
+        {%- if g2.state=='confirmed' %}{{ t('Re-entry confirmed', '入场已确认') }}
+        {%- elif g2.state=='awaiting_confirm' %}{{ t('Awaiting confirm', '等待确认') }}
+        {%- else %}{{ t('No timer signal', '无时机信号') }}{% endif %}</b><span class="muted"> —
+        {%- if g2.state=='confirmed' %} {{ t('term structure un-inverted', '期限结构已回正') }}{% if g2.hook_days_ago is not none %} ({{ g2.hook_days_ago }} {{ t('sessions ago', '个交易日前') }}){% endif %}{{ t('; the mean-reversion confirm — wait for it, do not anticipate.', '；均值回归确认 — 等待它，勿提前抢跑。') }}
+        {%- elif g2.state=='awaiting_confirm' %} {{ t('term structure still backwardated; wait for the un-inversion (historically ~13 sessions after the VIX peak), do not anticipate.', '期限结构仍倒挂；等待回正（历史上约在 VIX 峰值后 13 个交易日），勿提前抢跑。') }}
+        {%- else %} {{ t('no measured entry timer applies to this trigger.', '此触发条件下没有实测的入场时机器。') }}{% endif %}</span>
+        {# The no_signal branch used to hardcode "rely on Gate-1" — which converted the
+           ABSENCE of a measured timer into an implied entry. The engine rewrote its own
+           copy, so render the engine's string (label / label_zh) and it can never drift
+           from the gate again. Older payloads ship the retired sentence and carry no
+           label_zh, so the corrected wording is mirrored here for them; the ZH twin is
+           the tell that a payload has the new copy. #}
+        <span class="dlx-margins">
+          {%- if g2.state=='no_signal' %}{% if g2.label_zh is defined and g2.label_zh %}<span class="l-en">{{ g2.label }}</span><span class="l-zh">{{ g2.label_zh }}</span>{% else %}{{ t('The confirm study covers VIX-backwardation episodes only, so there is no measured timer for this trigger. Do NOT treat Gate-1 alone as an entry signal: Gate-1 is a risk filter that says which washouts are refusable, never when to enter.', '确认研究仅覆盖 VIX 倒挂情形，因此此触发条件下没有实测的时机器。切勿将一道闸单独视为入场信号：一道闸是判断哪些错杀应当回避的风险过滤器，而非入场时点。') }}{% endif %}
+          {%- endif %}
+          {%- if DI.vix_term is not none %}{% if g2.state=='no_signal' %}<br>{% endif %}{{ t('VIX term', 'VIX 期限') }} <b>{{ '%.2f'|format(DI.vix_term) }}</b> {{ t('vs 1.00', '对 1.00') }}{% if _g2d is not none and _g2d > 0 %} — <span class="l-en">still <b>{{ '%.2f'|format(_g2d) }}</b> from the level that arms this timer</span><span class="l-zh">距启动该时机器还差 <b>{{ '%.2f'|format(_g2d) }}</b></span>{% endif %}{% endif %}
+        </span>
+      </span>
+    </div>
+    {% endif %}
+
+    {% if DL.catalyst_narrative %}
+    {% set CN = DL.catalyst_narrative %}
+    <div class="dlx-row">
+      <span class="dlx-lbl">{{ t('Catalyst cross-check', '催化交叉验证') }}
+        {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供背景 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
+      </span>
+      <span class="dlx-val"><span class="{{ 'dlx-dis' if CN.agreement != 'corroborates' }}">{% if CN.agreement != 'corroborates' %}⚠ {% endif %}{% if CN.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
+        · {{ t('catalyst reads', '催化解读') }} <b><span class="l-en">{{ CN.shock_reversible }}</span><span class="l-zh">{{ CN.shock_reversible_zh or CN.shock_reversible }}</span></b>
+        <span class="dlx-margins"><span class="l-en">{{ CN.note }}</span><span class="l-zh">{{ CN.note_zh or CN.note }}</span></span>
+      </span>
+    </div>
+    {% endif %}
+
+    {% if DL.geo_reversibility %}
+    {% set GR = DL.geo_reversibility %}
+    <div class="dlx-row">
+      <span class="dlx-lbl">{{ t('Geopolitical read', '地缘解读') }}
+        {{ help("A DETERMINISTIC reversibility cross-check from the GPR threat/act split (Caldara-Iacoviello, AER 2022): the THREAT component of geopolitical risk historically reverts (~3 months) while realized ACTS persist. The free, always-available complement to the AI catalyst cross-check above — shown only on an active dislocation when geopolitical risk is elevated (≥80th pct) and the threat/act mix has a clear lean. CONTEXT ONLY — it never changes the verdict; the validated Fed-put gate governs.", "基于 GPR 威胁／行动分量的确定性可逆性交叉验证（Caldara-Iacoviello，AER 2022）：地缘风险的「威胁」分量历史上往往回落（约3个月），而已发生的「行动」更持久。这是上方 AI 催化交叉验证的免费、始终可用的补充 —— 仅在活跃错位、地缘风险偏高（≥80百分位）且威胁／行动结构有明确倾向时显示。仅供背景 —— 绝不改变判定，以经验证的美联储托底闸为准。") }}
+      </span>
+      <span class="dlx-val"><span class="{{ 'dlx-dis' if GR.agreement != 'corroborates' }}">{% if GR.agreement != 'corroborates' %}⚠ {% endif %}{% if GR.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
+        · {{ t('reads', '解读为') }} <b><span class="l-en">{{ GR.reversibility }}</span><span class="l-zh">{{ GR.reversibility_zh or GR.reversibility }}</span></b>
+        ({{ t('led by', '主导') }} {{ t('threats', '威胁') if GR.lean=='threat' else t('acts', '行动') }}{% if GR.gpr_pct is not none %}, {{ GR.gpr_pct }}{{ t('th pct', '百分位') }}{% endif %})
+        <span class="dlx-margins"><span class="l-en">{{ GR.note }}</span><span class="l-zh">{{ GR.note_zh or GR.note }}</span></span>
+      </span>
+    </div>
+    {% endif %}
+
+  </div>{# /dlx-rows #}
+
+  <details class="dlx-more">
+    <summary>{{ t('How the gate reads it, and the measured record', '闸门如何判读及实测记录') }}</summary>
+    <div class="dlx-mbody">
+      {# WHAT THE LEG ACTUALLY TESTED. The old paragraph said "inflation not blocking
+         easing" — a POLICY conclusion drawn from an INFLATION test. The leg compares
+         the 21-day 10y breakeven with a 2.5% cutoff and checks that no recession
+         trigger fires; it never observes what the Fed will do, and `fed_stance` can
+         read hawkish on the very same artifact (which is why the engine now attaches
+         `policy_divergence`). Cutoff below is the display copy of fedput_breakeven
+         noted at the top of this panel. #}
+      <p class="dlx-para">
+        {% if DL.verdict=='buyable_washout' %}{{ t('A stress dislocation with the Fed put intact — no recession trigger firing, and the 21-day 10-year breakeven', '压力错位且美联储托底在位 — 衰退触发条件未激活，且 21 日十年期盈亏平衡通胀率') }}
+          {%- if DI.breakeven_10y_1m is not none %} {{ t('is', '为') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) }}%</b>{{ t(', under its 2.50% cutoff', '，低于 2.50% 阈值') }}{% else %} {{ t('is under its 2.50% cutoff', '低于 2.50% 阈值') }}{% endif %}.
+          {{ t('That is a market-priced inflation reading, not a reading of what the Fed will do. Historically these mean-revert with shallower median drawdown — confirm into stabilization, do not anticipate.', '这是市场定价的通胀读数，而非对美联储行动的判断。历史上此类情形回归均值且中位回撤更浅 — 在企稳中确认，勿提前抢跑。') }}
+        {% elif DL.verdict=='stand_aside' %}{{ t('A stress dislocation with the Fed put ABSENT — the put-absent setup the gate refused from April 2008, where the same capitulation signals kept firing into the fall.', '压力错位且美联储托底缺失 — 这是一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形，同样的恐慌信号在下跌途中不断触发。') }}
+        {% elif _put_unknown %}{{ t('A stress dislocation is live, but the Fed-put switch cannot be read, so the gate refuses to rule. A leg it cannot read is NOT a leg that is quiet — treating it as quiet is what would push this toward the permissive call.', '压力错位正在发生，但美联储托底开关无法判读，因此一道闸拒绝作出判定。读不到的一条腿并不等于安静的一条腿 —— 若当作安静处理，正会把判定推向宽松的一侧。') }}
+        {% else %}{{ t('An acute stress dislocation is firing.', '急性压力错位正在触发。') }}{% endif %}
+      </p>
+      {# POLICY DIVERGENCE — engine-attached context (never changes the verdict): the
+         breakeven leg can pass on a day the Fed's own stance reads hawkish. Bilingual
+         pair comes from the payload; absent on older payloads, so this stays dark. #}
+      {% if DL.policy_divergence is defined and DL.policy_divergence %}
+      {% set PD = DL.policy_divergence %}
+      <p class="dlx-para dlx-pdiv">⚠ <b>{{ t('Policy divergence', '政策背离') }}</b>{{ t(' — the Fed’s own stance on this same data reads ', ' — 同一份数据中美联储自身立场为') }}<b><span class="l-en">{{ PD.stance }}</span><span class="l-zh">{{ PD.stance_zh or PD.stance }}</span></b>.
+        <span class="l-en">{{ PD.note }}</span><span class="l-zh">{{ PD.note_zh or PD.note }}</span></p>
+      {% endif %}
+      {# The retired line claimed "the edge is in refusing the knife". A declustered
+         replay refuses 2008 and MISSES twice in 2022 plus early 2000 — so the claim
+         below is the one engine/dislocation.py EVIDENCE["caveat"] now makes. #}
+      <p class="dlx-para muted">{{ t('Known misses: the gate refused the 2008 crash from April 2008, but it printed buyable early in the 2000-02 bear and twice in 2022, both 2022 prints within 0.02pp of this cutoff. A drawdown filter with known misses, not a knife-proof shield — judged on drawdown, not return.', '已知漏判：一道闸自 2008 年 4 月起拒绝了 2008 年崩盘，但在 2000-02 熊市早期给出过「可买入」，2022 年内亦有两次，且这两次距上述阈值均在 0.02 个百分点以内。这是一个存在已知漏判的回撤过滤器，而非防飞刀的护盾 — 以回撤而非回报衡量。') }}</p>
+      <div class="dlx-mrow">
+        <span class="dlx-mk">{{ t('Measured (SPY 1997-2026)', '实测（标普 1997-2026）') }}</span>
+        <span class="dlx-mv muted">{{ t('put-present washouts had ~4pp shallower median 3-month drawdown than put-absent (95% CI [+0.3, +6.3]) — the one effect whose CI excludes zero. The larger hit-rate and 1-year-tail gaps point the same way, but their CIs span zero at ~10 effective crises, so they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not significance. A drawdown filter, never alpha.', '托底在位的错杀其中位三月回撤比托底缺失浅约 4 个百分点（95% 置信区间 [+0.3, +6.3]）— 唯一置信区间不含零的效应。更大的胜率与一年尾部差异方向一致，但在约 10 个有效危机样本下置信区间跨零，故由符号一致性支撑（留一年法 26/28、两个样本半区），而非统计显著性。这是回撤过滤器，绝非超额收益。') }}</span>
+      </div>
+    </div>
+  </details>
+  {% endif %}{# /dislocation_active #}
 </div>
 {% endif %}
 

@@ -284,13 +284,25 @@ reply_discovery:
   max_requests_per_tick: 12
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Alpaca — WS wire slot. Disabled until a key exists (BUILD GATE — no key yet).
+# Alpaca — Benzinga-powered news via the official REST endpoint (IS-W1 free
+# spine). `enabled: true` is harmless without keys: the poller no-ops with one
+# preflight notice when either env var is absent, so arming is decided by env
+# presence on each host, never by this file alone. The WS slot stays recorded
+# for a future streaming adapter; the 75s tick polls REST.
 # ─────────────────────────────────────────────────────────────────────────────
 alpaca:
-  enabled: false
+  enabled: true
+  rest_url: "https://data.alpaca.markets/v1beta1/news"
   ws_url: "wss://stream.data.alpaca.markets/v1beta1/news"
   key_env: "ALPACA_API_KEY_ID"
   secret_env: "ALPACA_API_SECRET_KEY"
+  # Politeness + budget: the free news endpoint is generous, but this lane never
+  # needs more than one page per tick. min_interval_s floors the poll cadence
+  # even if the daemon tick shrinks; limit is the per-request page size.
+  min_interval_s: 60
+  limit: 50
+  # Exclude bodies over this size from body_snippet (headline still ingests).
+  snippet_max_chars: 400
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Wire lane emission policy — flagship interim lane (B1). Only the top-K highest
@@ -338,6 +350,45 @@ wire:
     snapshot_paths:
       - "/var/lib/macro-live/public/live/intelligence.json"
       - "data/marketing/press/intelligence.json"
+    # ── V2 (INTELLIGENCE_DESK_V2_BY_FABLE.md) ────────────────────────────────
+    # Claim-registry aliasing: the deterministic clustering floor when the story
+    # spine's optional backends (datasketch / local encoder) are absent. Same
+    # entity+event_class claim within ttl_h merges IF the headlines share enough
+    # tokens — jaccard_min normally, tight_jaccard_min inside tight_window_min.
+    claims:
+      ttl_h: 24
+      jaccard_min: 0.15
+      # Inside tight_window_min the wording bar LOWERS to this; it is never
+      # bypassed (a bare OR merged two different same-ticker stories 10min apart).
+      tight_jaccard_min: 0.05
+      tight_window_min: 45
+    # Snapshot-time honesty: pace recomputed from evidence timestamps; a market
+    # stamp older than market_stale_min is served as null, never as current.
+    market_stale_min: 30
+    pace:
+      rising_recent_min: 20     # newest evidence within this = candidate Rising
+      rising_sources_60m: 2     # …when ≥2 sources landed inside 60m
+      cooling_h: 6              # no evidence for this long = Cooling
+    timeline_max: 12
+    # Desk zh twins ride the SAME cached translator + fail-soft contract as the
+    # rail's B4c pass (labeled-EN fallback when DEEPSEEK_API_KEY is absent).
+    zh_enabled: true
+    zh_per_tick: 10
+    # LLM draft/why phrasing (D-wave): the #3937 phrase-or-fallback pattern —
+    # engine facts in, model phrases, numeric/call/hedge gates reject, existing
+    # deterministic draft remains the fallback. Spend only on confirmed/high-
+    # impact stories; dark-safe when the model key is unresolvable.
+    llm:
+      enabled: true
+      model_key: "marketing_copy"
+      max_per_tick: 4
+      shapes: ["wire", "analysis"]
+    # Engine-fact context joins (display-tier, engine-originated only). A stale
+    # artifact is SKIPPED, never served as a fresh fact.
+    engine_context:
+      enabled: true
+      max_lines: 3
+      fresh_days: 45
 
   # B4c: give each NEW rail item a Chinese twin via the cached news translator
   # (engine/news_translate.py). The key is the exact text sent, so a headline

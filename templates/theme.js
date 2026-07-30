@@ -433,7 +433,10 @@
     window.MM_API = window.MM_API || 'https://app.mastermind-x.com';
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
     var s = document.createElement('script');
-    s.src = pfx + 'account.js'; s.async = true;
+    // Keep the dynamic dependency cache-safe too. theme.js itself is
+    // content-hashed in every page; this explicit release key prevents a
+    // year-cached account.js from pinning an older navigation loader.
+    s.src = pfx + 'account.js?v=20260730-exact6'; s.async = true;
     document.head.appendChild(s);
   })();
 

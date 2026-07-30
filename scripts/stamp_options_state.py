@@ -54,6 +54,25 @@ NOTE: opt_iv_rank_252 remains always-null (ruling A9). It reads data/thetadata_e
 which is mid-backfill and has a known dedup defect (#1363). That wiring waits for the dedup
 repair and manifest-complete confirmation before being wired here.
 
+REPAIR — ``--restamp-positional`` (2026-07-30, the #3721 weekend-row class):
+the chain/summary readers in engine/options_stamp.py slice their stores POSITIONALLY, and
+until 2026-07-30 neither store was session-filtered, so every value derived from a
+positional window was computed over a window containing fabricated non-session entries
+(``chains/`` was 11 non-session files of 40; ``summary_*`` 26.3% non-session rows). The
+readers are fixed, but the no-overwrite rule means already-stamped rows keep the wrong
+values FOREVER: the retry gate opens only when ALL ``STAMP_COVERAGE_COLS`` are null, and
+on the 241 affected ledger rows ``opt_gamma_regime`` / ``opt_wall_up`` / ``opt_wall_down``
+/ ``opt_iv30`` / ``opt_voi_flag`` are all non-null — nulling just the positional columns
+makes 0 of 241 rows eligible.
+
+``--restamp-positional`` re-opens the options family for rows that already carry a
+``_POSITIONAL_WINDOW_COLS`` value and lets the ORDINARY pass recompute them, so the
+cross-sectional ``opt_vanna_relief`` tercile is rebuilt by the same tested code rather than
+a parallel implementation. It is non-destructive by construction: in this mode a freshly
+computed None NEVER overwrites an existing non-null, so running it on a machine where the
+gitignored stores are absent is a no-op rather than a data loss. Run it once, where the
+stores live, after the session filter lands.
+
 Idempotent, resilient: if the ledger is absent this is a no-op.
 """
 from __future__ import annotations
@@ -82,6 +101,16 @@ LEDGER_PATH = config.data_dir() / "us_board_ledger" / "retro_grades.parquet"
 # Retry eligibility is decided PER FAMILY (see module header), never on this union.
 ALL_STAMP_COLS: list[str] = STAMP_COLS + TAPE_FLOW_STAMP_COLS
 
+# Columns whose value comes from a POSITIONAL window over a dated store (chains files or
+# summary rows) and is therefore invalidated by a non-session entry inside that window.
+# These are the columns --restamp-positional recomputes; see module header REPAIR.
+_POSITIONAL_WINDOW_COLS: list[str] = [
+    "opt_doi_slope_5d",        # OLS over the trailing 6 chain files
+    "opt_voi_flag",            # chains usable[-1] volume vs usable[-2] OI
+    "opt_front7_charm_share",  # chains usable[-1] greeks vs usable[-2] OI
+    "opt_vanna_relief",        # summary iloc[-6] iv30 + cross-sectional tercile
+]
+
 
 def _ensure_stamp_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Schema-union: add any missing stamp column as all-None (legacy rows keep nulls)."""
@@ -103,8 +132,17 @@ def _build_group_members(df: pd.DataFrame, as_of: str, sector: str | None) -> li
     return df.loc[mask, "ticker"].dropna().unique().tolist()
 
 
-def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
+def stamp_ledger(
+    df: pd.DataFrame, *, restamp_positional: bool = False
+) -> tuple[pd.DataFrame, int]:
     """Stamp every eligible row; return (df, n_newly_stamped).
+
+    ``restamp_positional`` (default False) additionally re-opens the options-state family
+    for rows that already carry a ``_POSITIONAL_WINDOW_COLS`` value, so those values are
+    recomputed by this same pass against the now session-filtered stores (module header
+    REPAIR). In that mode a freshly computed None never overwrites an existing non-null,
+    so the repair cannot destroy data when a store is absent. Default behaviour is
+    unchanged: no-overwrite, and a re-run stamps nothing.
 
     Eligibility is per family (see module header):
 
@@ -142,6 +180,13 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
         opts_retry_mask = df[coverage_cols_present].isna().all(axis=1)
     else:
         opts_retry_mask = pd.Series(True, index=df.index)
+
+    # REPAIR mode: also re-open rows that already carry a positional-window value, so the
+    # pre-session-filter values are recomputed. The no-overwrite rule alone can never reach
+    # them — the gate needs ALL coverage cols null, and these rows have several non-null.
+    pos_cols_present = [c for c in _POSITIONAL_WINDOW_COLS if c in df.columns]
+    if restamp_positional and pos_cols_present:
+        opts_retry_mask = opts_retry_mask | df[pos_cols_present].notna().any(axis=1)
     tf_cols_present = [c for c in TAPE_FLOW_STAMP_COLS if c in df.columns]
     if tf_cols_present:
         tf_retry_mask = df[tf_cols_present].isna().all(axis=1)
@@ -208,8 +253,14 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
             coverage_vals = {c: stamp[c] for c in STAMP_COVERAGE_COLS if c in stamp}
             if any(v is not None for v in coverage_vals.values()):
                 for col in STAMP_COVERAGE_COLS:
-                    if col in stamp:
-                        df.at[idx, col] = stamp[col]
+                    if col not in stamp:
+                        continue
+                    # REPAIR mode is non-destructive: a recomputed null never replaces an
+                    # existing value (a store absent on this machine must be a no-op).
+                    if (restamp_positional and stamp[col] is None
+                            and col in df.columns and pd.notna(df.at[idx, col])):
+                        continue
+                    df.at[idx, col] = stamp[col]
                 row_committed = True
 
         # ── tape-flow family (P2.2; own retry gate) ───────────────────────────
@@ -286,6 +337,11 @@ def stamp_ledger(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
                 if iv30_chg is not None:
                     vanna_relief = bool(iv30_chg < 0 and in_top_tercile)
 
+        # Same non-destructive rule as the coverage-col commit above.
+        if (restamp_positional and vanna_relief is None
+                and "opt_vanna_relief" in df.columns
+                and pd.notna(df.at[idx, "opt_vanna_relief"])):
+            continue
         df.at[idx, "opt_vanna_relief"] = vanna_relief
 
     return df, newly_stamped
@@ -333,6 +389,13 @@ def main() -> None:
     ap.add_argument("--quiet", action="store_true")
     ap.add_argument("--ledger", default=str(LEDGER_PATH),
                     help="path to retro_grades.parquet (default: canonical)")
+    ap.add_argument("--restamp-positional", action="store_true",
+                    help="ONE-OFF REPAIR (see module header): recompute the "
+                         "positional-window columns (opt_doi_slope_5d, opt_voi_flag, "
+                         "opt_front7_charm_share, opt_vanna_relief) on rows that already "
+                         "carry them, against the session-filtered stores. Never writes a "
+                         "null over an existing value, so it is a no-op where the "
+                         "gitignored stores are absent. Not part of the nightly pass.")
     args = ap.parse_args()
 
     ledger = Path(args.ledger)
@@ -343,10 +406,32 @@ def main() -> None:
 
     df = pd.read_parquet(ledger)
     n_before = len(df)
-    df, n_newly = stamp_ledger(df)
+    # snapshot the positional columns so the repair can report what it actually CHANGED,
+    # not merely how many rows it touched
+    pre = {c: df[c].copy() for c in _POSITIONAL_WINDOW_COLS if c in df.columns} \
+        if args.restamp_positional else {}
+    df, n_newly = stamp_ledger(df, restamp_positional=args.restamp_positional)
 
     if n_newly > 0:
         df.to_parquet(ledger, index=False)
+
+    if args.restamp_positional and not args.quiet:
+        print(f"[options_stamp] --restamp-positional: {n_newly} rows re-stamped "
+              f"against the session-filtered stores")
+        for col, old in pre.items():
+            new = df[col]
+            both = old.notna() & new.notna()
+            changed = int((both & (old.astype(object) != new.astype(object))).sum())
+            lost = int((old.notna() & new.isna()).sum())
+            gained = int((old.isna() & new.notna()).sum())
+            print(f"  [{col}] was-stamped {int(old.notna().sum())} → "
+                  f"changed {changed}, unchanged {int(both.sum()) - changed}, "
+                  f"newly-filled {gained}, blanked {lost}")
+            if lost:
+                # the non-destructive guard should make this impossible — say so loudly
+                print(f"::warning title=restamp-blanked-values::{col}: {lost} previously "
+                      f"non-null values became null; the non-destructive guard should "
+                      f"prevent this", flush=True)
 
     if not args.quiet:
         # n_unstamped uses STAMP_COVERAGE_COLS so the count reflects retryable rows

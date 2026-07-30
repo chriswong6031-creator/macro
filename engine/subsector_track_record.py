@@ -82,6 +82,20 @@ def _stage_lean(s: dict, emerging: set, fading: set) -> tuple[str, int]:
     return "neutral", 0
 
 
+# Turn states that are directional CLAIMS, mapped onto the incumbent stage vocabulary so
+# both reads are graded by exactly the same rule (hit = emerging up / fading down).
+_V2_STAGE = {"turn_up": "emerging", "bottoming": "emerging",
+             "turn_down": "fading", "topping": "fading"}
+
+
+def _stage_v2(s: dict) -> str | None:
+    """The turn engine's stage for this row, or None when the turn read is absent."""
+    st = s.get("turn_state")
+    if not st:
+        return None
+    return _V2_STAGE.get(st, "neutral")
+
+
 def snapshot(payload: dict, member_map: dict | None = None,
              today: date | str | None = None, root: Path | None = None) -> int:
     """Append today's per-subsector reading. Idempotent by (date, key). Never raises."""
@@ -103,6 +117,14 @@ def snapshot(payload: dict, member_map: dict | None = None,
                         "theme": s.get("theme"), "score": s.get("emerging_score"),
                         "rs_mom": s.get("rs_mom"), "accel": s.get("accel"),
                         "quadrant": s.get("quadrant"), "stage": stage, "lean": lean,
+                        # HEAD-TO-HEAD (engine/subsector_turn.py): the turn engine's own
+                        # rank and stage, logged beside the incumbent so the ledger — not an
+                        # argument about which arithmetic is nicer — decides which read is
+                        # better. Absent on rows logged before the turn engine shipped;
+                        # those rows simply don't accrue to the v2 columns.
+                        "score_v2": s.get("rank_score_v2"),
+                        "stage_v2": _stage_v2(s),
+                        "turn_state": s.get("turn_state"),
                         "members": members})
             existing.add(f"{today_str}|{k}")
         if not new:
@@ -161,16 +183,16 @@ def _matured(rows: list, root: Path, horizon_d: int, today: date) -> list[dict]:
     return out
 
 
-def _daily_ic(rows: list, horizon_d: int) -> dict:
-    """Per-date cross-sectional IC of emerging_score vs forward return → HAC summary.
+def _daily_ic(rows: list, horizon_d: int, field: str = "score") -> dict:
+    """Per-date cross-sectional IC of a score field vs forward return → HAC summary.
     The Newey-West lag is the horizon (overlapping windows autocorrelate at lag h)."""
     by_date: dict[str, list] = {}
     for r in rows:
         by_date.setdefault(r["date"], []).append(r)
     ics = []
     for _, day in sorted(by_date.items()):
-        xs = [r.get("score") for r in day if r.get("score") is not None]
-        fwd = [r["fwd"] for r in day if r.get("score") is not None]
+        xs = [r.get(field) for r in day if r.get(field) is not None]
+        fwd = [r["fwd"] for r in day if r.get(field) is not None]
         if len(xs) < 10 or len(set(xs)) < 2 or len(set(fwd)) < 2:
             continue
         ic = V.rank_ic(xs, fwd)
@@ -179,11 +201,13 @@ def _daily_ic(rows: list, horizon_d: int) -> dict:
     return V.ic_summary(ics, periods_per_year=2 * horizon_d) if len(ics) >= 6 else {"n_days": len(ics)}
 
 
-def _by_stage(rows: list) -> dict:
+def _by_stage(rows: list, field: str = "stage") -> dict:
     out: dict[str, dict] = {}
     by: dict[str, list] = {}
     for r in rows:
-        by.setdefault(r.get("stage") or "?", []).append(r["fwd"])
+        if r.get(field) is None:
+            continue
+        by.setdefault(r.get(field) or "?", []).append(r["fwd"])
     for st, fwds in by.items():
         n = len(fwds)
         mean = sum(fwds) / n if n else 0.0
@@ -214,6 +238,37 @@ def _recent_misses(rows: list, horizon_d: int, k: int = 8) -> list[dict]:
              "horizon_d": horizon_d} for r in miss[:k]]
 
 
+def _head_to_head(out_h: dict) -> dict:
+    """Incumbent rank vs turn-engine rank, per horizon — a scoreboard, not a verdict.
+
+    Deliberately prints both ICs and the gap and stops there. Declaring a winner needs the
+    same bar any promotion needs (matured n plus a Newey-West t), and until a horizon
+    reaches it the honest word is "measuring" — the turn engine ships because its
+    arithmetic is defensible, not because this table already favours it.
+    """
+    rows = {}
+    lead = None
+    for h, e in out_h.items():
+        v2 = e.get("v2") or {}
+        a, b = e.get("score_ic"), v2.get("score_ic")
+        rows[h] = {"n": e.get("n_matured"), "n_v2": v2.get("n_matured"),
+                   "ic": a, "ic_v2": b,
+                   "gap": (round(b - a, 4) if (a is not None and b is not None) else None),
+                   "t_hac": e.get("score_ic_t_hac"), "t_hac_v2": v2.get("score_ic_t_hac")}
+        if (v2.get("n_matured") or 0) >= _MIN_PROVEN_N and b is not None and a is not None:
+            lead = "v2" if b > a else "incumbent"
+    return {"by_horizon": rows, "leader": lead,
+            "note": ("Both ranks graded on the same matured rows and the same rule. No "
+                     "horizon has enough matured turn-engine observations to call a "
+                     "winner yet." if lead is None else
+                     f"At the current matured counts the {lead} rank carries the higher "
+                     "information coefficient — still measuring, not promoted."),
+            "note_zh": ("两套排序在相同到期样本、相同规则下评分。目前尚无周期积累足够的转向"
+                        "引擎观测以判定优劣。" if lead is None else
+                        "在当前到期样本量下，" + ("转向引擎" if lead == "v2" else "原排序")
+                        + "的信息系数更高——仍在测量中，未获提升。")}
+
+
 def compute(today: date | str | None = None, root: Path | None = None,
             horizons=_HORIZONS) -> dict:
     """Grade every matured snapshot across all horizons. Never raises; degrades to 'accruing'."""
@@ -228,12 +283,23 @@ def compute(today: date | str | None = None, root: Path | None = None,
         for h in horizons:
             mat = _matured(rows, root, h, today_dt)
             ic = _daily_ic(mat, h)
+            # HEAD-TO-HEAD: the turn engine's rank graded on the SAME matured rows, same
+            # rule, same HAC lag. Only rows carrying score_v2 accrue, so the two columns can
+            # legitimately disagree on n — that is disclosed, not averaged away.
+            mat_v2 = [r for r in mat if r.get("score_v2") is not None]
+            ic_v2 = _daily_ic(mat_v2, h, field="score_v2")
             out_h[str(h)] = {
                 "n_matured": len(mat),
                 "score_ic": ic.get("mean_ic"),
                 "score_ic_t_hac": ic.get("t_hac"),
                 "score_ic_detail": ic,
                 "by_stage": _by_stage(mat),
+                "v2": {
+                    "n_matured": len(mat_v2),
+                    "score_ic": ic_v2.get("mean_ic"),
+                    "score_ic_t_hac": ic_v2.get("t_hac"),
+                    "by_stage": _by_stage(mat_v2, field="stage_v2"),
+                },
             }
             t, mic = ic.get("t_hac"), ic.get("mean_ic")
             if t is not None and t >= 2.0 and mic is not None and mic > 0 and (peak_ic is None or mic > peak_ic):
@@ -269,6 +335,7 @@ def compute(today: date | str | None = None, root: Path | None = None,
             "proven": proven, "any_matured": any_matured, "verdict": verdict,
             "note": note, "note_zh": note_zh,
             "recent_misses": misses,
+            "head_to_head": _head_to_head(out_h),
             "disclaimer": ("A falsifiable scorecard of the rotation read's own calls — "
                            "emerging_score rank and emerging/fading labels graded against "
                            "realized member-equal-weight SPY-relative forward returns. Until a "

@@ -148,3 +148,78 @@ def test_search_research_serves_insider_and_pro(tmp_path, monkeypatch):
         out = _dispatch("search_research", {"query": "oil shock"}, tmp_path, user_id="u1")
         assert out.get("results"), f"tier {tier} should get results"
         assert out["results"][0]["title"] == "Oil shock playbook"
+
+
+# ── 7. Grounding digest threads the turn language into the packet ───────────
+
+def test_grounding_digest_threads_lang(tmp_path, monkeypatch):
+    from engine.neuralweb import market_packet as mp
+    seen = {}
+
+    def _capture(root, char_budget=4200, lang="en"):
+        seen["lang"] = lang
+        return "[CURRENT DASHBOARD STATE] stub"
+
+    monkeypatch.setattr(mp, "digest", _capture)
+    out = gw._grounding_digest(tmp_path, lang="zh")
+    assert seen["lang"] == "zh"
+    assert out.startswith("[CURRENT DASHBOARD STATE]")
+
+
+# ── 8. Analyst OS W2 — depth tools: analogues (gated) + curve detail (open) ──
+
+def test_w2_tools_in_allowlists():
+    assert "get_historical_analogues" in gw._BRAIN_TOOLS
+    assert "get_curve_detail" in gw._BRAIN_TOOLS
+    assert "get_historical_analogues" in gw._BRAIN_ONLY_TOOLS
+    assert "get_curve_detail" in gw._BRAIN_ONLY_TOOLS
+
+
+def test_w2_tools_in_schemas(tmp_path):
+    names = {s["name"] for s in gw._all_brain_tool_schemas(tmp_path)}
+    assert {"get_historical_analogues", "get_curve_detail"} <= names
+
+
+def test_w2_tool_labels_bilingual():
+    for name in ("get_historical_analogues", "get_curve_detail"):
+        en, zh = gw._TOOL_LABELS[name]
+        assert en and zh and en != zh
+
+
+def test_analogues_gate_guest(tmp_path):
+    out = _dispatch("get_historical_analogues", {}, tmp_path, user_id="")
+    assert out.get("error") == "insider_required"
+
+
+def test_analogues_gate_free_tier(tmp_path, monkeypatch):
+    monkeypatch.setattr(gw, "_resolve_tier",
+                        lambda uid, root=None: {"tier": "free", "status": "active"})
+    out = _dispatch("get_historical_analogues", {}, tmp_path, user_id="u1")
+    assert out.get("error") == "insider_required"
+    assert out.get("tier") == "free"
+
+
+def test_analogues_insider_reaches_module_and_degrades_honestly(tmp_path, monkeypatch):
+    # tmp_path has no parquet estate: the gate passes, the module answers with its
+    # own honest unavailable error instead of raising or fabricating episodes.
+    monkeypatch.setattr(gw, "_resolve_tier",
+                        lambda uid, root=None: {"tier": "insider", "status": "active"})
+    out = _dispatch("get_historical_analogues", {"limit": 3}, tmp_path, user_id="u1")
+    assert isinstance(out, dict)
+    assert out.get("error") == "analogues_unavailable"
+
+
+def test_curve_detail_open_to_guests_and_degrades_honestly(tmp_path):
+    out = _dispatch("get_curve_detail", {}, tmp_path, user_id="")
+    assert isinstance(out, dict)
+    assert out.get("error") == "curve_detail_unavailable"
+
+
+def test_seed_plan_curve_and_analogue_nudges():
+    plan = gw._seed_tool_plan("why is the yield curve steepening today")
+    assert "get_curve_detail" in plan
+    plan = gw._seed_tool_plan("when did something similar to this happen before")
+    assert "get_historical_analogues" in plan
+    # zh triggers ride the same tuples
+    plan = gw._seed_tool_plan("历史上有类似的情况吗")
+    assert "get_historical_analogues" in plan

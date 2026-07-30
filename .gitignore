@@ -2,6 +2,7 @@
 .review_venv/
 __pycache__/
 *.pyc
+.pytest_cache/
 # Local build caches keyed by tool (e.g. scripts/make_launch_card.py caches the
 # Google Fonts woff2 blobs it inlines). Re-downloadable; never a delivery path.
 .cache/
@@ -541,3 +542,10 @@ data/prophet_stage_shadow/ledger.jsonl
 # data plane) on demand via admin/mastermind_logs.refresh(); nothing in git reads it.
 data/mastermind/response_log.jsonl
 data/mastermind/response_eval.jsonl
+# Weekly answer-quality eval summary (scripts/run_brain_eval.py, W2 harness). Derived
+# from the corpus above, so it inherits the same rule — and it carries LLM-judge scores,
+# which are INTERNAL QA TELEMETRY ONLY and must never reach a public artifact or a
+# committed file the site could read. The archive copy lives on R2 under
+# mastermind_response_evals/summary/<ISO-year>-W<week>.json (private data plane).
+data/mastermind/eval_summary_latest.json
+data/mastermind/*.json.tmp

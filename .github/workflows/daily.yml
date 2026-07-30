@@ -1104,6 +1104,86 @@ jobs:
           echo "::endgroup::"
           if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet_stage_shadow::rc=$rc (non-fatal)"; fi
           exit 0
+      - name: Prophet Live arming pass (provisional-close trigger pack -> R2)
+        # AFTER build_site (same close stores the board was built from). Probes the
+        # SAME close-only admission gate (engine/signal_gate.py) with candidate
+        # provisional closes and publishes per-name trigger/fade levels to R2 key
+        # live_flow/prophet_live_armed.json, so the */5 prophet-live.yml lane can
+        # compare a delayed price to a level instead of re-deriving a signal
+        # (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md §4.1).
+        #
+        # WRITES NO data/ PATH — the pack is runtime-tier and lives only in R2.
+        # The local --out copy goes to RUNNER_TEMP so it can feed the reconciler
+        # step below without a network round trip; nothing is committed here.
+        #
+        # BUDGET: one gate call is ~250 ms over the ~1,740-name universe, so the
+        # pass pays a full centre census plus a priority-ordered probe phase and an
+        # edge-verification phase, ALL THREE bounded by one wall-clock budget
+        # (config.yml prophet_live.max_seconds) plus max_probe. Whatever the budget
+        # cuts is disclosed in meta.skipped, never re-labelled dormant. The measured
+        # build_seconds and per-phase timings print on every run — watch them here.
+        #
+        # timeout-minutes AND continue-on-error together: the step timeout bounds a
+        # wedge, continue-on-error keeps the bound non-fatal. Without the step cap a
+        # hung pass eats the ENGINE JOB's 200m cap (worst observed 190m), and that
+        # cap does not fail the job — it skips the commit step, silently losing the
+        # night's engine outputs. Belt (in-script deadline) and braces (this).
+        timeout-minutes: 9
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          # The box is 4-core-bound (asia-close.yml pins the same knob for the same
+          # reason). The stock library's default would take os.cpu_count() capped at
+          # 8 and oversubscribe against whatever else the engine job is running.
+          STOCK_LIB_WORKERS: "4"
+        run: |
+          set +e
+          echo "::group::build_prophet_live_pack (arm the provisional-close triggers)"
+          python -m scripts.build_prophet_live_pack --publish \
+            --out "$RUNNER_TEMP/prophet_live_armed.json" > "$RUNNER_TEMP/prophet_live_pack.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/prophet_live_pack.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_prophet_live_pack::rc=$rc (non-fatal — the intraday lane darks on a missing pack)"; fi
+          exit 0
+      - name: Prophet Live reconciler (intraday event spool -> forward ledger)
+        # AFTER the arming pass, which is what supplies tonight's verdict set. VINTAGE
+        # IS ENFORCED, not assumed: `confirmed` is written only from a verdict whose
+        # basis IS the row's own session — tonight's pack when its as_of matches, else
+        # the gate re-run on the close series truncated through that session — and once
+        # written it is never revised by a later night.
+        #
+        # SOLE WRITER of data/prophet_live/forward.parquet (G0.2 / RUL-P10). The
+        # */5 lane writes R2 only; this step lists the day's event objects, joins
+        # confirmed? + same-day close + the next-session close fill (mirroring
+        # engine.grading.fill_index, the grade_us_board convention), and union-merges
+        # on (date, ticker, kind) so a rebake or a double run is idempotent and can
+        # only ever ADD information. The parquet rides the "commit engine outputs"
+        # git add below (data/ is already covered — no extra add needed).
+        #
+        # MEASURE-DARK: nothing reads this ledger. It exists so the §6 promotion
+        # gauntlet has an evidence base to be pre-registered on. Seconds; non-fatal,
+        # with a step cap for the same reason as the pack step above (a replay over a
+        # long open-row backlog is the one path that could stretch).
+        timeout-minutes: 3
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          STOCK_LIB_WORKERS: "4"
+        run: |
+          set +e
+          echo "::group::reconcile_prophet_live (accrue today's provisional crosses)"
+          python -m scripts.reconcile_prophet_live --nightly \
+            --pack "$RUNNER_TEMP/prophet_live_armed.json" > "$RUNNER_TEMP/prophet_live_reconcile.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/prophet_live_reconcile.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_prophet_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
+          exit 0
       - name: regional + desk builders (parallelised — independent clusters, barrier before the hub)
         # The ~22 builders between build_site and the landing hub split into mutually
         # INDEPENDENT clusters (each internally ordered by its own data deps). They used

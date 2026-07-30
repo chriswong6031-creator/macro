@@ -2,23 +2,102 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-29",
-  "generated_utc": "2026-07-30T05:27:00Z",
+  "generated_utc": "2026-07-30T21:56:49Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 2,
-    "n_eff": 2.0,
+    "n": 11,
+    "n_eff": 3.83,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 2 candidates \u2248 2.0 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 11 candidates \u2248 3.83 independent bets."
   },
-  "same_thesis_groups": [],
-  "earnings_coverage_frac": 1.0,
+  "same_thesis_groups": [
+    {
+      "members": [
+        "LZB",
+        "MOG-A",
+        "RBA",
+        "RCL",
+        "SHW",
+        "STRA",
+        "URBN"
+      ],
+      "size": 7,
+      "basis": "membership-jaccard",
+      "label": "Consumer Discretionary"
+    }
+  ],
+  "earnings_coverage_frac": 0.636,
   "by_ticker": {
+    "PFGC": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.18<0.2",
+      "nearest": [
+        {
+          "ticker": "USFD",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [
+            "sector:Consumer Staples"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "ARLO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "LLY",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-12",
+        "same_week_peers": [],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as USFD \u2014 Consumer Staples (similarity 100%).",
+      "why_zh": "\u4e0e USFD \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Staples\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
     "USFD": {
-      "verdict": "new",
-      "max_similarity": 0.0,
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
       "basis": "membership-only:r2=0.09<0.2",
       "nearest": [
+        {
+          "ticker": "PFGC",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [
+            "sector:Consumer Staples"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "ARLO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.09<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
         {
           "ticker": "LLY",
           "combined": 0.0,
@@ -32,19 +111,31 @@
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
-          "LLY"
+          "ARLO",
+          "LLY",
+          "RBA",
+          "RCL"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer LLY at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 LLY\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+      "why_en": "Same bet as PFGC \u2014 Consumer Staples (similarity 100%).",
+      "why_zh": "\u4e0e PFGC \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Staples\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     },
-    "LLY": {
+    "ARLO": {
       "verdict": "new",
       "max_similarity": 0.0,
-      "basis": "membership-only:r2=0.11<0.2",
+      "basis": "membership-only:r2=0.16<0.2",
       "nearest": [
+        {
+          "ticker": "PFGC",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
         {
           "ticker": "USFD",
           "combined": 0.0,
@@ -53,27 +144,806 @@
           "factor_basis": "beta-read-thin:r2=0.09<0.2",
           "shared_groups": [],
           "same_earnings_week": true
+        },
+        {
+          "ticker": "LLY",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
         "next_date": "2026-08-06",
         "same_week_peers": [
+          "LLY",
+          "RBA",
+          "RCL",
           "USFD"
         ],
         "has_data": true
       },
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Distinct bet \u2014 nearest peer USFD at 0% similarity.",
-      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 USFD\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+      "why_en": "Distinct bet \u2014 nearest peer PFGC at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 PFGC\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+    },
+    "LLY": {
+      "verdict": "new",
+      "max_similarity": 0.0,
+      "basis": "membership-only:r2=0.11<0.2",
+      "nearest": [
+        {
+          "ticker": "PFGC",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.18<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "USFD",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.09<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "ARLO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [],
+          "same_earnings_week": true
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-06",
+        "same_week_peers": [
+          "ARLO",
+          "RBA",
+          "RCL",
+          "USFD"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Distinct bet \u2014 nearest peer PFGC at 0% similarity.",
+      "why_zh": "\u72ec\u7acb\u62bc\u6ce8 \u2014 \u6700\u8fd1\u7684\u5019\u9009\u540d\u79f0 PFGC\uff0c\u76f8\u4f3c\u5ea6 0%\u3002"
+    },
+    "RCL": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9491,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "URBN",
+          "combined": 0.9491,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": 0.9491,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "RBA",
+          "combined": 0.947,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.947,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": true
+        },
+        {
+          "ticker": "MOG-A",
+          "combined": 0.9141,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9141,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-04",
+        "same_week_peers": [
+          "ARLO",
+          "LLY",
+          "RBA",
+          "USFD"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as URBN \u2014 Consumer Discretionary (similarity 95%).",
+      "why_zh": "\u4e0e URBN \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 95%\uff09\u3002"
+    },
+    "URBN": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "STRA",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.07<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "LZB",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "RBA",
+          "combined": 0.9683,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9683,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as STRA \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e STRA \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "STRA": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.07<0.2",
+      "nearest": [
+        {
+          "ticker": "URBN",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.07<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "LZB",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.07<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "RCL",
+          "combined": 0.3333,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.07<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": false
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-07-29",
+        "same_week_peers": [],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as URBN \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e URBN \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "LZB": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership-only:r2=0.19<0.2",
+      "nearest": [
+        {
+          "ticker": "URBN",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "STRA",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.07<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "RCL",
+          "combined": 0.3333,
+          "membership_jaccard": 0.3333,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.19<0.2",
+          "shared_groups": [
+            "sector:Consumer Discretionary"
+          ],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as URBN \u2014 Consumer Discretionary (similarity 100%).",
+      "why_zh": "\u4e0e URBN \u62bc\u6ce8\u76f8\u540c \u2014 Consumer Discretionary\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "SHW": {
+      "verdict": "duplicate",
+      "max_similarity": 0.8809,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "RCL",
+          "combined": 0.8809,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8809,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "RBA",
+          "combined": 0.7696,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7696,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.7605,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7605,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as RCL \u2014 shared factor profile (similarity 88%).",
+      "why_zh": "\u4e0e RCL \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 88%\uff09\u3002"
+    },
+    "MOG-A": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "RBA",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.8573,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.944,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.944,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "RCL",
+          "combined": 0.9141,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9141,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as RBA \u2014 Industrials (similarity 100%).",
+      "why_zh": "\u4e0e RBA \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "RBA": {
+      "verdict": "duplicate",
+      "max_similarity": 1.0,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "MOG-A",
+          "combined": 1.0,
+          "membership_jaccard": 1.0,
+          "factor_cosine": 0.8573,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [
+            "sector:Industrials"
+          ],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.9683,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9683,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
+          "ticker": "RCL",
+          "combined": 0.947,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.947,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": true
+        }
+      ],
+      "earnings_leg": {
+        "next_date": "2026-08-05",
+        "same_week_peers": [
+          "ARLO",
+          "LLY",
+          "RCL",
+          "USFD"
+        ],
+        "has_data": true
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as MOG-A \u2014 Industrials (similarity 100%).",
+      "why_zh": "\u4e0e MOG-A \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
     }
   },
   "pair_basis": {
+    "PFGC__USFD": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": [
+        "sector:Consumer Staples"
+      ]
+    },
+    "PFGC__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__LLY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__STRA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__LZB": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "PFGC__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.18<0.2",
+      "shared_groups": []
+    },
+    "USFD__ARLO": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
     "USFD__LLY": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.09<0.2",
       "shared_groups": []
+    },
+    "USFD__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
+    "USFD__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
+    "USFD__STRA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
+    "USFD__LZB": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
+    "USFD__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
+    "USFD__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
+    "USFD__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.09<0.2",
+      "shared_groups": []
+    },
+    "ARLO__LLY": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ARLO__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ARLO__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ARLO__STRA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ARLO__LZB": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ARLO__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ARLO__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "ARLO__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.16<0.2",
+      "shared_groups": []
+    },
+    "LLY__RCL": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "LLY__URBN": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "LLY__STRA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "LLY__LZB": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "LLY__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "LLY__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "LLY__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.11<0.2",
+      "shared_groups": []
+    },
+    "RCL__URBN": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": 0.9491,
+      "combined": 0.9491,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "RCL__STRA": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": null,
+      "combined": 0.3333,
+      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "RCL__LZB": {
+      "membership_jaccard": 0.3333,
+      "factor_cosine": null,
+      "combined": 0.3333,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "RCL__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8809,
+      "combined": 0.8809,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "RCL__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9141,
+      "combined": 0.9141,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "RCL__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.947,
+      "combined": 0.947,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "URBN__STRA": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "URBN__LZB": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "URBN__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7605,
+      "combined": 0.7605,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "URBN__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.944,
+      "combined": 0.944,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "URBN__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9683,
+      "combined": 0.9683,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "STRA__LZB": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": null,
+      "combined": 1.0,
+      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "shared_groups": [
+        "sector:Consumer Discretionary"
+      ]
+    },
+    "STRA__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "shared_groups": []
+    },
+    "STRA__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "shared_groups": []
+    },
+    "STRA__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.07<0.2",
+      "shared_groups": []
+    },
+    "LZB__SHW": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": []
+    },
+    "LZB__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": []
+    },
+    "LZB__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": []
+    },
+    "SHW__MOG-A": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.6842,
+      "combined": 0.6842,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "SHW__RBA": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7696,
+      "combined": 0.7696,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "MOG-A__RBA": {
+      "membership_jaccard": 1.0,
+      "factor_cosine": 0.8573,
+      "combined": 1.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": [
+        "sector:Industrials"
+      ]
     }
   },
   "verdicts": {
@@ -84,8 +954,8 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 2.0,
-    "setting_up": null
+    "entry_open": 4.0,
+    "setting_up": 2.0
   },
   "source_passport": {
     "factor_betas": {

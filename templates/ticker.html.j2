@@ -342,6 +342,13 @@ html.has-js .rv.in{opacity:1;transform:none;transition:opacity .55s ease,transfo
 .pcard b{font-size:13.5px;font-weight:750;color:var(--link);}
 .pcard span{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pcard small{display:block;font-size:10.5px;color:var(--muted);margin-top:3px;}
+/* Peers come from factors.json, a WIDER universe than the pages we render, so a
+   real same-sector name can have no dossier to open. It keeps its card — the
+   name and the market cap are the point of the grid — but must not advertise a
+   click it cannot honour: no link colour, no hover lift, no pointer. */
+.pcard-off{cursor:default;}
+.pcard-off:hover{transform:none;border-color:var(--hair);background:color-mix(in srgb,var(--panel2) 55%,transparent);}
+.pcard-off b{color:var(--text);}
 
 /* rail CTA + band */
 .railcta{background:linear-gradient(150deg,color-mix(in srgb,var(--link) 14%,var(--panel)),color-mix(in srgb,var(--info) 7%,var(--panel)));
@@ -1019,7 +1026,7 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     {% if themes.baskets %}
     {% for b in themes.baskets %}
     <div class="throw">
-      <a href="../baskets/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
+      <a href="../basket/{{ b.id }}.html">{{ t(b.name_en, b.name_zh) }}</a>
       <span class="tm">{{ b.theme if b.theme else b.rationale }}</span>
       {% if b.band_en %}<span class="okx q" style="font-size:10px;">{{ t(b.band_en, b.band_zh) }}</span>{% endif %}
     </div>
@@ -1039,11 +1046,11 @@ html.dsr-dlg-lock body{overflow:hidden;position:fixed;width:100%;}
     <div class="mod-hd"><h2>{{ t('Peers', '同业比较') }}</h2><span class="hint">{{ t('by size', '按市值') }}</span></div>
     <div class="peers">
       {% for p in peers %}
-      <a class="pcard" href="{{ p.href }}">
+      {% if p.href %}<a class="pcard" href="{{ p.href }}">{% else %}<div class="pcard pcard-off">{% endif %}
         <b>{{ p.ticker }}</b>
         <span>{{ p.name }}</span>
         {% if p.mktcap %}<small class="num">{{ p.mktcap }}</small>{% endif %}
-      </a>
+      {% if p.href %}</a>{% else %}</div>{% endif %}
       {% endfor %}
     </div>
   </section>

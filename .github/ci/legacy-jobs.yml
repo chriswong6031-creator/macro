@@ -640,6 +640,27 @@ jobs:
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+      # PROPHET LIVE P0 gates. This job, not a new one: the parity suite drives the
+      # REAL engine.signal_gate over seeded close series, so it needs pandas + numpy
+      # (present in this job's install line above) and pyarrow for the reconciler's
+      # parquet round-trip. Any importorskip here would be a disarmed test — the deps
+      # are provably installed, so there is none.
+      #   G0.1 parity  tests/test_prophet_live_pack.py       (~25s, real gate calls)
+      #   G0.2/3/5/6   tests/test_prophet_live_evaluator.py
+      #   ledger law   tests/test_prophet_live_reconcile.py
+      #   VPS lane     tests/test_prophet_live_vps_lane.py — quote source, the atomic
+      #                served write, the serving gate (/live/prophet_live.json is NOT
+      #                public), the systemd unit/timer, macro-update's reconciliation
+      #                and the workflow's self-disabling backstop gate (§4.2a/§4.4a).
+      #                Stdlib + pyyaml only, so it rides in this job rather than
+      #                needing one of its own.
+      - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
+        run: >
+          python -m pytest
+          tests/test_prophet_live_pack.py
+          tests/test_prophet_live_evaluator.py
+          tests/test_prophet_live_reconcile.py
+          tests/test_prophet_live_vps_lane.py -q
 
   collector-registry:
     if: ${{ false }}
@@ -848,8 +869,8 @@ jobs:
         #    `try: import requests / except: requests = None`. Drop the dep and the lane silently
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
-      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py -q
+      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -918,9 +939,11 @@ jobs:
       # was dead ~1h. yaml.safe_load, check_workflow_yaml.py and actionlint ALL pass on an
       # over-cap file, and the owning PR's checks stay green — the failure only shows in
       # the BRANCH run list, as a zero-job run titled by PATH instead of by `name:`. This
-      # is the only gate that can catch it pre-merge.
-      - name: "no workflow run: step may exceed GitHub's observed size ceiling"
-        run: python -m pytest tests/test_render_run_size_cap.py -q
+      # is the only gate that can catch it pre-merge. The ownership suite in the
+      # same step pins the positive builder allowlist that keeps unrelated entrypoints
+      # out of the scarce self-hosted render queue.
+      - name: "render workflow size ceiling and builder ownership"
+        run: python -m pytest tests/test_render_run_size_cap.py tests/test_render_builder_ownership.py -q
       # Same class, second instance (2026-07-27). build_canada was invoked by NO
       # workflow at all: site/canada.html existed only as a side effect of a
       # swallowed try/except inside build_vector, so a canada-only fix could ride a
@@ -931,6 +954,15 @@ jobs:
       # so the minimal pytest+pyyaml install above is enough.
       - name: render-lane scope contract (canada must be first-class, not a build_vector hook)
         run: python -m pytest tests/test_render_canada_scope.py -q
+      # FD-EXP (2026-07-30). Third instance of the same class: build_flow_desk was
+      # daily.yml-ONLY, so flow_desk.html/json + flowdata/cohorts.json refreshed once a
+      # night while both express lanes rebuilt the stores around them (#3515 flow_leaders,
+      # #3487 research_vault). Admitted to cl_gex in both lanes once #4007 lane-gated the
+      # builder's three data/ writes; this suite pins the wiring AND that gate, since
+      # deleting the gate would quietly turn every express render into a ledger writer.
+      # stdlib + pytest only (reads workflow/dag/builder text; imports no builder).
+      - name: render-lane scope contract (flow_desk must stay express-wired)
+        run: python -m pytest tests/test_render_flow_desk_scope.py -q
 
   causal-factory:
     if: ${{ false }}
@@ -4065,7 +4097,8 @@ jobs:
   # renamed sentinel silently disarms every absence assertion keyed to the old one;
   # when a presence marker changes, re-point the absence tests in the same edit.
   # Repeats the shared dependency install BYTE-FOR-BYTE so run_ci_pack.py keeps one
-  # venv across the unrun-* set.  Measured locally: 3 suites / 42 tests / ~2s.
+  # venv across the unrun-* set.  The macro-header suite also keeps the glance
+  # layer compact while preserving the click-through detail affordances.
   unrun-template-chips:
     if: ${{ false }}
     timeout-minutes: 4
@@ -4077,6 +4110,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: Macro header — compact glance layer with on-demand detail
+        run: python -m pytest tests/test_macro_header_compact.py -q
       - name: OKX retail chip — bilingual + the contrarian framing survives copy edits
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode

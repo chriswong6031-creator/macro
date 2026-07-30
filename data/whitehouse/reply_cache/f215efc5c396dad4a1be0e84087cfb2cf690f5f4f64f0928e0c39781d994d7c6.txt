@@ -1,0 +1,56 @@
+{
+  "activate": true,
+  "importance": 68,
+  "banner_days": 3,
+  "tone": "tailwind",
+  "banner_title": "DPA invoked for critical mineral recycling — tailwind for US battery scrap & rare-earth reclaimers",
+  "banner_title_zh": "动用《国防生产法》推动关键矿物回收——利好美国电池废料和稀土回收商",
+  "summary": "President Trump authorizes DPA action to boost domestic recovery of critical minerals from black mass, end-of-life magnets, and scrap, aiming to secure defense supply chains. This signals potential subsidies, loans, or purchase commitments for US-based recyclers and processors.",
+  "summary_zh": "特朗普总统授权根据《国防生产法》采取行动，促进从黑粉、报废磁铁和废料中回收关键矿物，以保障国防供应链。这预示着美国回收商和加工商可能获得补贴、贷款或采购承诺。",
+  "analysis": "The determination declares recoverable CMMs 'scarce and critical' and authorizes the Commerce Secretary to deploy DPA tools — such as loans, loan guarantees, purchase commitments, and incentives — to expand domestic recovery capacity. The action explicitly excludes copper scrap, focusing on higher-value streams like battery black mass and rare-earth magnet scrap. \n\nFor markets, this marks a structural boost for the nascent US critical mineral recycling industry. By framing the sector as a national defense priority, it lowers investment risk and could accelerate project financing. Companies with established recycling operations, particularly in lithium-ion battery and rare-earth magnet processing, stand to gain from direct government support or offtake agreements. \n\nThe transmission mechanism: DPA actions can create immediate demand through government purchases or long-term contracts, de-risking private capital. Key uncertainty is the speed and magnitude of implementation — whether Commerce opts for broad-based incentives or targeted support for select facilities. \n\nBroader implications: reduced reliance on Chinese-processed rare earths and battery materials, aligning with trade and industrial policy goals. However, near-term capacity constraints may limit the impact on physical supply balances. Energy transition and defense stocks with recycling exposure could re-rate on this policy tailwind.",
+  "sectors": [
+    {
+      "name": "Critical Mineral Recycling",
+      "impact": "tailwind",
+      "rationale": "Direct beneficiaries of DPA support, including battery black mass and rare-earth magnet recyclers, now deemed essential to national defense."
+    },
+    {
+      "name": "Battery Materials & Processing",
+      "impact": "tailwind",
+      "rationale": "Domestic black mass processors could see subsidies or offtake guarantees, reducing import dependence for lithium, cobalt, nickel."
+    },
+    {
+      "name": "Rare Earth Processing",
+      "impact": "tailwind",
+      "rationale": "End-of-life magnet recycling gets a policy push, potentially benefiting companies that reclaim neodymium and praseodymium."
+    },
+    {
+      "name": "Scrap Metal & Electronics Recycling",
+      "impact": "mixed",
+      "rationale": "Some scrap streams included, but copper scrap excluded; focus on high-value CMMs may divert resources from traditional scrap."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "LICY",
+      "direction": "benefit",
+      "rationale": "Li-Cycle operates US battery recycling facilities producing black mass; DPA support could accelerate its Hub network and offtake."
+    },
+    {
+      "symbol": "GLNCY",
+      "direction": "benefit",
+      "rationale": "Glencore is a major recycler of battery metals and end-of-life electronics; US smelters could receive DPA-linked contracts."
+    },
+    {
+      "symbol": "MP",
+      "direction": "benefit",
+      "rationale": "MP Materials processes rare earths and could expand into magnet recycling; policy tailwind for domestic rare earth supply chain."
+    },
+    {
+      "symbol": "AQMS",
+      "direction": "benefit",
+      "rationale": "Aqua Metals operates lead-acid battery recycling with potential to handle critical materials; DPA focus may broaden its scope."
+    }
+  ],
+  "confidence": "medium"
+}

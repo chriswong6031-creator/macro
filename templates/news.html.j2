@@ -148,6 +148,7 @@
 /* impact ring (rank_score 0-100) */
 .nx-impact{ --v:0; --acc:var(--link); flex:0 0 auto; width:60px; height:60px; border-radius:50%;
   display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative;
+  overflow:hidden;
   background:conic-gradient(var(--acc) calc(var(--v)*1%), color-mix(in srgb,var(--text) 12%,transparent) 0); }
 .nx-impact::before{ content:""; position:absolute; inset:4px; border-radius:50%; background:var(--nx-card-solid); }
 .nx-impact b{ position:relative; font-size:17px; font-weight:800; line-height:1; font-family:var(--num); }
@@ -279,7 +280,12 @@
 /* ======================= INTELLIGENCE DESK =======================
    The durable story layer above the arrival wire: clustered developments,
    evidence receipts, market context, and review-only X drafts. */
-.nxi{ --nxi-accent:var(--info); margin:0 0 18px; border-radius:20px; overflow:hidden;
+.nxi{ --nxi-accent:var(--info);
+  /* the fold's hairline spine. --nx-hair is mixed off --line and all but
+     vanishes on the dark panel, so the timeline rule is --text-derived (the
+     same fix the wire's spine needed) and holds its weight in both themes. */
+  --nxi-spine:color-mix(in srgb,var(--text) 15%,transparent);
+  margin:0 0 18px; border-radius:20px; overflow:hidden;
   background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 93%,transparent),
     color-mix(in srgb,var(--panel2) 82%,transparent));
   border:1px solid color-mix(in srgb,var(--nxi-accent) 24%,var(--nx-brd));
@@ -339,6 +345,16 @@
   border:1px solid var(--nx-hair); font-size:9.5px; }
 .nxi-chip.market{ color:var(--text); font-family:var(--num); }
 .nxi-chip.ticker{ color:var(--link); font-family:var(--num); font-weight:750; }
+/* A story losing attention should READ quieter than one gaining it — but not in
+   colour: red/green inverts under the zh convention, and the market chip beside
+   it is deliberately neutral. The dashed edge is the same "less" grammar the
+   wire uses on a single-report node, and the chip's own words already say it. */
+.nxi-chip.pace-cooling{ border-style:dashed; }
+/* zh only: this card is still showing the English original because no cached
+   twin has been attached yet. ONE marker per card (Law 4 — a constant belongs
+   once), set in the topline with the card's other provenance, italic like the
+   wire's original-source marker. */
+.nxi-orig{ color:var(--muted); font-size:9.5px; font-style:italic; }
 .nxi-more{ border-top:1px solid var(--nx-hair); }
 .nxi-more>summary{ list-style:none; cursor:pointer; padding:9px 14px; display:flex; gap:8px;
   align-items:center; color:var(--muted); font-size:11px; font-weight:650; }
@@ -352,9 +368,73 @@
   background:var(--nx-card2); font-size:10.5px; }
 .nxi-source a{ color:var(--link); font-weight:650; }
 .nxi-source span{ color:var(--muted); }
+
+/* ---- the fold's two quiet receipt groups ----
+   Source receipts above are filled pills (someone else published something).
+   These two are drawn instead — a hairline spine and a left rule — so the three
+   groups are told apart peripherally, and both stay visibly subordinate to the
+   headline and the links. No hue, no motion: the wire below owns this page's
+   one moving part, and every colour here would be a second one. */
+.nxi-track{ display:grid; }
+.nxi-tick{ position:relative; display:grid; grid-template-columns:32px 13px minmax(0,1fr);
+  align-items:start; padding:3px 0; font-size:10.5px; line-height:1.5; }
+.nxi-tick::before{ content:""; position:absolute; left:35px; top:0; bottom:0; width:1px;
+  background:var(--nxi-spine); }
+.nxi-tick:first-child::before{ top:10px; }
+.nxi-tick:last-child::before{ bottom:auto; height:11px; }
+/* A spine that STOPS at the last node claims that node is where the story
+   began. When rows are clipped it is not, so the rule runs on and fades out —
+   the wire's own way of saying the cut is depth, not the end of the thread. */
+.nxi-track.is-clipped .nxi-tick:last-child::before{ bottom:-7px; height:auto;
+  -webkit-mask-image:linear-gradient(to bottom,#000 38%,transparent 100%);
+  mask-image:linear-gradient(to bottom,#000 38%,transparent 100%); }
+.nxi-tick-age{ text-align:right; padding-right:9px; color:var(--muted);
+  font:10px/1.6 var(--num); font-variant-numeric:tabular-nums;
+  white-space:nowrap; overflow:hidden; }
+.nxi-tick-node{ position:relative; }
+/* FORM carries the kind, the label carries the meaning: a ROUND node is an
+   arrival (the first report, a masthead joining), a SQUARE node is a change of
+   state. Nothing here is load-bearing — every row says it in words too. */
+.nxi-tick-node::after{ content:""; position:absolute; left:0; top:7px; width:7px; height:7px;
+  box-sizing:border-box; border-radius:50%; z-index:1; background:var(--nx-card-solid);
+  border:1.5px solid color-mix(in srgb,var(--text) 34%,transparent); }
+.nxi-tick[data-kind="first_report"] .nxi-tick-node::after{
+  background:color-mix(in srgb,var(--text) 52%,transparent);
+  border-color:color-mix(in srgb,var(--text) 52%,transparent); }
+.nxi-tick[data-kind="stage"] .nxi-tick-node::after{ border-radius:1px; }
+.nxi-tick-label{ min-width:0; color:color-mix(in srgb,var(--text) 74%,transparent);
+  overflow-wrap:anywhere; }
+.nxi-tick-src{ color:var(--muted); }
+.nxi-track-rest{ margin:3px 0 0 45px; color:var(--muted); font-size:10px; }
+/* zh time units are two glyphs where English uses one letter ("28分钟" measures
+   41px against "28m"), so the gutter is sized per language rather than clipped.
+   Higher specificity than the 560px rule below on purpose: the string does not
+   get shorter on a narrow screen.
+   The track carries the age cell's own 9px padding-right (box-sizing is border-
+   box repo-wide), so the 41px string needs 41+9 before any slack: at 46 the
+   content box was 37px and the row silently clipped its LEADING glyph — an age
+   that reads "8分钟" when the story is 28 minutes old, which is a wrong figure
+   rather than a visibly cut one. 55/58/68 restores the intended 5px slack and
+   keeps the spine and rest offsets on the same arithmetic (track + 3.5, +13). */
+html[data-lang="zh"] .nxi-tick{ grid-template-columns:55px 13px minmax(0,1fr); }
+html[data-lang="zh"] .nxi-tick::before{ left:58px; }
+html[data-lang="zh"] .nxi-track-rest{ margin-left:68px; }
+.nxi-facts{ display:flex; flex-direction:column; gap:6px; }
+.nxi-fact{ padding-left:9px; border-left:2px solid color-mix(in srgb,var(--muted) 34%,transparent);
+  font-size:10.5px; line-height:1.55; color:color-mix(in srgb,var(--text) 76%,transparent); }
+/* house law: the mono face carries FIGURES, never words — "as of" stays in the
+   text face and only the date crosses over. */
+.nxi-asof{ color:var(--muted); font-size:9.5px; white-space:nowrap; }
+.nxi-stampnum{ font-family:var(--num); font-variant-numeric:tabular-nums; }
+
 .nxi-draft{ padding:10px; border-radius:10px; background:color-mix(in srgb,var(--nxi-accent) 6%,var(--nx-card2));
   border:1px solid color-mix(in srgb,var(--nxi-accent) 18%,var(--nx-hair)); }
 .nxi-draft p{ margin:0; white-space:pre-wrap; font-size:11.5px; line-height:1.48; }
+/* Which post this draft IS, in the same micro-caps voice as the group labels —
+   read before the text, because a 280-character wire and a long post ask for
+   very different review. */
+.nxi-shape{ display:block; margin:0 0 5px; color:var(--muted); font-size:9px;
+  font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
 .nxi-draftbar{ display:flex; gap:7px; align-items:center; margin-top:8px; color:var(--muted); font-size:9.5px; }
 .nxi-copy{ appearance:none; margin-left:auto; cursor:pointer; border:1px solid color-mix(in srgb,var(--nxi-accent) 32%,transparent);
   background:transparent; color:var(--nxi-accent); border-radius:100px; padding:4px 9px; font:700 10px/1 inherit; }
@@ -376,6 +456,10 @@
   .nxi-metric:nth-child(2){ border-right:0; }
   .nxi-metric:nth-child(-n+2){ border-bottom:1px solid var(--nx-hair); }
   .nxi-toolbar-note{ width:100%; margin-left:0; }
+  /* narrow the timeline's age gutter so the label column keeps its measure */
+  .nxi-tick{ grid-template-columns:27px 13px minmax(0,1fr); }
+  .nxi-tick::before{ left:30px; }
+  .nxi-track-rest{ margin-left:40px; }
 }
 
 /* ======================= LIVE WIRE (B4b) =======================
@@ -523,7 +607,13 @@
 }
 @media(max-width:560px){
   .nx-lead{ padding:16px; } .nx-lead-title{ font-size:19px; }
-  .nx-lead-row{ gap:14px; } .nx-impact{ width:50px; height:50px; }
+  .nx-lead{ display:grid; grid-template-columns:minmax(0,1fr) 50px;
+    grid-template-areas:"eyebrow impact" "body body"; column-gap:12px; row-gap:12px; }
+  .nx-lead-eyebrow{ grid-area:eyebrow; align-self:center; margin-bottom:0; }
+  .nx-lead-row{ display:contents; }
+  .nx-impact{ grid-area:impact; width:50px; height:50px; }
+  .nx-lead-body{ grid-area:body; width:100%; }
+  .nx-lead-title{ overflow-wrap:anywhere; }
   .nx-controls{ gap:8px; } .nx-search{ order:3; max-width:none; flex-basis:100%; }
 }
 /* motion / perf gates (mobile-perf law: opacity-only, killed on reduce/touch) */
@@ -899,6 +989,9 @@
     var URL_='live/intelligence.json', POLL=(window.LIVE_POLL_SEC||60)*1000;
     var TIMEOUT=10000, CAP=8, stories=[], health={}, updatedAt='', filter='all';
     var expanded=false, mode='loading', inflight=false, timerId=null;
+    // The payload carries up to 12 timeline rows; the fold shows the newest few
+    // and counts the rest. The receipts above it must stay the bigger group.
+    var TL_SHOWN=6, FACTS_SHOWN=3, SHAPE_ORDER=['wire','analysis','long_post'];
 
     function zh(){ return document.documentElement.getAttribute('data-lang')==='zh'; }
     function tx(en,zv){ return zh() ? zv : en; }
@@ -928,6 +1021,7 @@
         'Multiple reports':tx('Multiple reports','多方报道'),
         'Single report':tx('Single report','单一报道'),
         'Rising':tx('Attention rising','关注升温'),
+        'Cooling':tx('Attention cooling','关注降温'),
         'New':tx('New arrival','新近出现'),
         'Active':tx('Still active','持续跟踪'),
         'Primary / top-tier':tx('Primary / top-tier','一手／顶级来源'),
@@ -936,6 +1030,131 @@
         'Unrated source':tx('Source not yet rated','来源尚未评级')
       };
       return map[String(value||'')] || String(value||'');
+    }
+    // ONE vocabulary for a post's shape, shared by the content-route chips and
+    // the review queue, so the fold can never label the same thing two ways —
+    // and never with the raw slug (a machine slug is prettified, not printed).
+    function shapeLabel(value){
+      var slug=String(value||'');
+      var map={
+        wire:tx('Wire','快讯'),
+        analysis:tx('Analysis','分析'),
+        thread:tx('Long post','长帖'),
+        long_post:tx('Long post','长帖')
+      };
+      return map[slug] || slug.replace(/[_-]+/g,' ')
+        .replace(/^./,function(c){ return c.toUpperCase(); });
+    }
+    // Canonical slots: one draft per shape, the wire first. A payload with no
+    // `shape` on any draft predates the slots — render it exactly as before
+    // (the newest two) rather than inventing an order it never had.
+    function draftSlots(drafts){
+      if(!drafts.some(function(d){ return d.shape; })){
+        return drafts.slice().reverse().slice(0,2);
+      }
+      var seen={}, slots=[];
+      drafts.forEach(function(d){
+        var key=String(d.shape||'');
+        if(seen[key]) return;
+        seen[key]=true; slots.push(d);
+      });
+      slots.sort(function(a,b){
+        var ai=SHAPE_ORDER.indexOf(String(a.shape||''));
+        var bi=SHAPE_ORDER.indexOf(String(b.shape||''));
+        return (ai<0?9:ai)-(bi<0?9:bi);
+      });
+      return slots.slice(0,3);
+    }
+    // zh prefers the cached twin; with no twin the card shows the English
+    // original and says so ONCE, the way an evidence row already does.
+    function readable(story){
+      var enHead=String(story.headline||''), enBrief=String(story.brief||'');
+      if(enBrief===enHead) enBrief='';
+      var headline=enHead, brief=enBrief, original=false;
+      if(zh()){
+        if(story.headline_zh) headline=String(story.headline_zh); else original=true;
+        if(enBrief){
+          if(story.brief_zh) brief=String(story.brief_zh); else original=true;
+        }
+      }
+      if(brief===headline) brief='';
+      return {
+        headline:headline||tx('Untitled development','未命名事件'),
+        brief:brief, original:original
+      };
+    }
+    function tickKind(value){
+      var slug=String(value||'');
+      return (slug==='first_report'||slug==='stage') ? slug : 'new_source';
+    }
+    // In a chronology, an unreadable stamp is not "recent" — saying so would
+    // claim a freshness the row cannot support. It reads as unknown instead.
+    function tickAge(value){
+      return isFinite(Date.parse(String(value||''))) ? age(value) : '—';
+    }
+    // A freshness stamp, not a timestamp: the month-day is enough inside the
+    // current year, and an off-year artifact prints its year rather than lying
+    // about how recent it is. Anything that is not a date is not a figure, so
+    // it is dropped rather than set in the numeral face.
+    function asOf(value){
+      var m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(value||'').trim());
+      if(!m) return '';
+      return (Number(m[1])===new Date().getFullYear()) ? (m[2]+'-'+m[3]) : m[0];
+    }
+    function timelineGroup(story){
+      var rows=(story.timeline||[]).filter(function(r){
+        return r && typeof r==='object' && (r.label_en||r.label_zh);
+      });
+      if(!rows.length) return null;
+      var wrap=el('div','');
+      wrap.appendChild(el('h4','',tx('Development timeline','事件进展')));
+      var track=el('div','nxi-track'+(rows.length>TL_SHOWN?' is-clipped':''));
+      rows.slice(0,TL_SHOWN).forEach(function(row){
+        var tick=el('div','nxi-tick');
+        tick.setAttribute('data-kind',tickKind(row.kind));
+        tick.appendChild(el('div','nxi-tick-age',tickAge(row.ts)));
+        tick.appendChild(el('div','nxi-tick-node'));
+        var label=zh()?(row.label_zh||row.label_en):(row.label_en||row.label_zh);
+        var body=el('div','nxi-tick-label',label);
+        // The engine's label already names the source; append it only if a
+        // future label template stops doing so, never as a repeat.
+        var name=String(row.source_name||'');
+        if(name && String(label||'').indexOf(name)<0){
+          body.appendChild(el('span','nxi-tick-src',' · '+name));
+        }
+        tick.appendChild(body); track.appendChild(tick);
+      });
+      wrap.appendChild(track);
+      var rest=rows.length-TL_SHOWN;
+      if(rest>0){
+        wrap.appendChild(el('p','nxi-track-rest',
+          tx('+'+rest+' earlier','另有 '+rest+' 条更早')));
+      }
+      return wrap;
+    }
+    // Facts our own engines hold about the names in this story — separate
+    // provenance from the press receipts above, so it gets its own group and
+    // its own as-of. The `kind` slug stays machine-side; the line says it.
+    function factsGroup(story){
+      var rows=(story.engine_context||[]).filter(function(r){
+        return r && typeof r==='object' && (r.line_en||r.line_zh);
+      });
+      if(!rows.length) return null;
+      var wrap=el('div','');
+      wrap.appendChild(el('h4','',tx('From our own data','我们的数据')));
+      var list=el('div','nxi-facts');
+      rows.slice(0,FACTS_SHOWN).forEach(function(row){
+        var line=zh()?(row.line_zh||row.line_en):(row.line_en||row.line_zh);
+        var node=el('div','nxi-fact',line);
+        var stamp=asOf(row.as_of);
+        if(stamp){
+          var mark=el('span','nxi-asof',' · '+tx('as of ','数据截至 '));
+          mark.appendChild(el('span','nxi-stampnum',stamp));
+          node.appendChild(mark);
+        }
+        list.appendChild(node);
+      });
+      wrap.appendChild(list); return wrap;
     }
     function draftReady(story){
       return (story.drafts||[]).some(function(d){ return d && d.status==='review'; });
@@ -973,18 +1192,26 @@
       top.appendChild(el('span','nxi-lane',lane||tx('Markets','市场')));
       var n=Math.max(1,Number(story.source_count||1));
       top.appendChild(el('span','nxi-sourcecount',n+' '+tx(n===1?'source':'sources','个来源')));
+      var body=readable(story);
+      if(body.original){
+        top.appendChild(el('span','nxi-orig',tx('English original','英文原文')));
+      }
       top.appendChild(el('span','nxi-time',age(story.updated_at)));
       main.appendChild(top);
-      main.appendChild(el('h3','nxi-headline',story.headline||tx('Untitled development','未命名事件')));
-      if(story.brief && story.brief!==story.headline){
-        main.appendChild(el('p','nxi-brief',story.brief));
-      }
+      main.appendChild(el('h3','nxi-headline',body.headline));
+      if(body.brief) main.appendChild(el('p','nxi-brief',body.brief));
       var why=zh()?(story.why_it_matters_zh||story.why_it_matters_en):story.why_it_matters_en;
       if(why) main.appendChild(el('p','nxi-why',why));
       var chips=el('div','nxi-chips'), ctx=story.context||{};
       ['evidence','pace','source_quality'].forEach(function(k){
-        if(ctx[k]) chips.appendChild(el('span','nxi-chip',knownContext(ctx[k])));
+        if(!ctx[k]) return;
+        var cls='nxi-chip'+
+          ((k==='pace'&&String(ctx[k])==='Cooling') ? ' pace-cooling' : '');
+        chips.appendChild(el('span',cls,knownContext(ctx[k])));
       });
+      // `market` is served null once its stamp goes stale, so the chip simply
+      // does not appear. It stays neutral on purpose: a red/green move flips
+      // meaning under the zh convention, and this is context, not a call.
       if(story.market && story.market.label){
         chips.appendChild(el('span','nxi-chip market',
           story.market.label+' · '+tx('session move','本交易日变动')));
@@ -1006,8 +1233,7 @@
         var routeWrap=el('div',''), routeChips=el('div','nxi-chips');
         routeWrap.appendChild(el('h4','',tx('Content routes','内容路径')));
         routes.forEach(function(route){
-          var names={wire:tx('Wire','快讯'),analysis:tx('Analysis','分析'),thread:tx('Thread','长帖')};
-          routeChips.appendChild(el('span','nxi-chip',names[route]||String(route)));
+          routeChips.appendChild(el('span','nxi-chip',shapeLabel(route)));
         });
         routeWrap.appendChild(routeChips); detail.appendChild(routeWrap);
       }
@@ -1027,14 +1253,25 @@
         });
         evWrap.appendChild(evList); detail.appendChild(evWrap);
       }
+      var track=timelineGroup(story); if(track) detail.appendChild(track);
+      var facts=factsGroup(story); if(facts) detail.appendChild(facts);
       if(drafts.length){
         var drWrap=el('div',''); drWrap.appendChild(el('h4','',tx('Review queue','审核队列')));
-        drafts.slice().reverse().slice(0,2).forEach(function(draft){
+        draftSlots(drafts).forEach(function(draft){
           var dr=el('div','nxi-draft');
+          // `origin` (wire vs llm) is machine provenance for the review tools.
+          // It is deliberately NOT a badge here: who typed the first pass is
+          // not the reader's business, and the review gate is the same either way.
+          if(draft.shape) dr.appendChild(el('div','nxi-shape',shapeLabel(draft.shape)));
           dr.appendChild(el('p','',draft.text));
           var bar=el('div','nxi-draftbar');
           var status=draft.status==='review'?tx('Ready for review','可供审核'):tx('Needs editing','需要编辑');
-          bar.appendChild(el('span','',status+' · '+Number(draft.characters||String(draft.text).length)+'/280'));
+          var chars=Number(draft.characters||String(draft.text).length);
+          // 280 is the WIRE ceiling; printing it against an analysis or a long
+          // post would invent a limit that shape does not have.
+          var size=(!draft.shape||draft.shape==='wire')
+            ? (chars+'/280') : (chars+tx(' chars','字'));
+          bar.appendChild(el('span','',status+' · '+size));
           bar.appendChild(copyButton(draft)); dr.appendChild(bar); drWrap.appendChild(dr);
         });
         detail.appendChild(drWrap);

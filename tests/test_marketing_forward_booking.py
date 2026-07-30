@@ -618,7 +618,10 @@ class TestStaleQuoteSourceNeverWins:
         from engine.marketing.live_verify import load_live_quotes
 
         got = load_live_quotes(tmp_path)
-        assert got == {"quotes": {}, "asof": None, "source": "none"}
+        # feed_delay_min is 0.0 with nothing readable: no artifact, so no artifact
+        # DECLARED a feed delay, so no consumer may allow itself one.
+        assert got == {"quotes": {}, "asof": None, "source": "none",
+                       "feed_delay_min": 0.0}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -659,35 +662,52 @@ class TestPublishLaneCheckout:
                     "workflows" / name).read_text(encoding="utf-8")
             assert "git fetch --depth" in body, f"{name}: bare fetch on a shallow clone"
 
-    def test_live_quotes_keeps_feeding_the_tape_gate_when_the_vps_is_primary(self):
-        """`live-data` has two consumers: the browser (VPS-primary since
-        2026-07-27T22:50Z) and marketing-publish's tape gate, which fetches it
-        every sweep. Gating the whole workflow on VPS_LIVE_PRIMARY starved the
-        second one — the branch froze at 22:31Z and the gate held the entire
-        queue against a 17h-old snapshot. One tick must survive that variable."""
+    def test_live_quotes_outpaces_its_tightest_consumer(self):
+        """`live-data` is written by ONE lane and read by three, so its cadence has
+        to satisfy the strictest reader — not merely exist.
+
+        History, twice over. 2026-07-27T22:50Z: VPS_LIVE_PRIMARY went true, the
+        whole workflow was gated on it, the branch froze at 22:31Z and
+        marketing-publish's tape gate held the entire queue against a 17h-old
+        snapshot. The patch was a */15 tick exempted from the gate — enough for the
+        publisher's 45-minute ceiling, and the test that pinned it asked only that
+        SOME tick survive. 2026-07-29: the Hot Tape radar shipped with a 12-minute
+        budget, a */15 writer cannot satisfy that even at perfect delivery, and the
+        radar fired zero events all day. "One tick survives" was true throughout.
+
+        So this asserts the actual invariant: every scheduled tick must run the job
+        (no cutover gate can skip one — half of GitHub's scarce delivered runs were
+        being burned on `skipped` no-ops), and the cadence must beat the TIGHTEST
+        consumer budget in the repo, not just the loosest.
+        """
+        import re
         from pathlib import Path
         import yaml
 
-        wf = yaml.safe_load((Path(__file__).resolve().parent.parent / ".github" /
-                             "workflows" / "live-quotes.yml").read_text(encoding="utf-8"))
+        root = Path(__file__).resolve().parent.parent
+        wf = yaml.safe_load((root / ".github" / "workflows" /
+                             "live-quotes.yml").read_text(encoding="utf-8"))
         # PyYAML parses the `on:` key as the boolean True.
         crons = [c["cron"] for c in (wf.get("on") or wf.get(True))["schedule"]]
-        cond = str(wf["jobs"]["snapshot"]["if"])
-        ungated = [c for c in crons if c in cond]
-        assert ungated, (
-            "no cron is exempt from the VPS_LIVE_PRIMARY gate; with the variable "
-            "true the tape gate has no fresh quote source at all"
-        )
-        # Must be fresh enough for the gate that consumes it.
-        import re
-        every = min(int(m.group(1)) for c in ungated
-                    if (m := re.match(r"\*/(\d+) ", c)))
-        pub = yaml.safe_load((Path(__file__).resolve().parent.parent / "config" /
-                              "marketing.yml").read_text(encoding="utf-8"))["publish"]
-        assert every < int(pub["live_gate"]["max_quote_age_min"]), (
-            f"the ungated tick runs every {every}m but the gate demands quotes "
-            f"younger than {pub['live_gate']['max_quote_age_min']}m"
-        )
+        assert "if" not in wf["jobs"]["snapshot"], (
+            "the snapshot job carries a condition again: a job-level `if` still "
+            "consumes a delivered cron slot and still enters the workflow-level "
+            "concurrency group, so a skipped tick can cancel a real snapshot")
+
+        every = min(int(m.group(1)) for c in crons if (m := re.match(r"\*/(\d+) ", c)))
+        pub = yaml.safe_load((root / "config" / "marketing.yml")
+                             .read_text(encoding="utf-8"))["publish"]
+        ceilings = {
+            "publish.live_gate.max_quote_age_min":
+                int(pub["live_gate"]["max_quote_age_min"]),
+            "hot_tape.max_quote_age_min":
+                int(yaml.safe_load((root / "config" / "hot_tape.yml")
+                                   .read_text(encoding="utf-8"))["max_quote_age_min"]),
+        }
+        name, tightest = min(ceilings.items(), key=lambda kv: kv[1])
+        assert every < tightest, (
+            f"live-quotes writes every {every}m but {name} demands quotes younger "
+            f"than {tightest}m — the reader cannot be satisfied by this writer")
 
     def test_outbox_ledgers_carry_union_merge(self):
         """The publish sweep and the nightly commit the same append-only JSONL.

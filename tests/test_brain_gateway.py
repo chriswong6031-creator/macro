@@ -23,6 +23,7 @@ Coverage (per contract):
 from __future__ import annotations
 
 import json
+import logging
 import pathlib
 import re
 import sys
@@ -143,7 +144,7 @@ def test_config_fallback_when_absent():
     gw._BRAIN_CONFIG_CACHE = None
     cfg = gw._load_brain_config(empty_root)
     gw._BRAIN_CONFIG_CACHE = None  # reset after test
-    assert cfg.get("lanes", {}).get("fast", {}).get("max_tokens") == 2000
+    assert cfg.get("lanes", {}).get("fast", {}).get("max_tokens") == gw._FAST_MAX_TOKENS == 4000
     assert cfg.get("lanes", {}).get("pro", {}).get("max_tokens") == 8000
 
 
@@ -4811,3 +4812,132 @@ def test_contradiction_doctrine_does_not_tell_the_model_to_pick_a_winner():
         low = prompt.lower()
         assert "lean on the fresher" not in low
         assert "say the data may be off" not in low
+
+
+# ---------------------------------------------------------------------------
+# Silent max_tokens exhaustion on the fast lane (live defect, 2026-07-30)
+# ---------------------------------------------------------------------------
+# A guest zh turn spent EXACTLY the 2000-token fast cap in output tokens and wrote no
+# text — DeepSeek v4 thinks by default and the thinking spends max_tokens — so the user
+# got _DEGRADED_USER_MSG. Two things then made it invisible: the `done` event still said
+# degraded:false, and nothing anywhere was logged, even though the _DEGRADED_USER_MSG
+# comment promises "the real cause is logged server-side".
+
+def test_degraded_stub_reports_degraded_and_logs_the_cause(tmp_path, caplog):
+    """The exact live shape: a round that stops AT the cap carrying only a thinking
+    block. The stub ships (users must never see a blank bubble), `done` says degraded,
+    and one server-side line carries the cause — lane, model, phase, stop reason,
+    both token counts, and the configured cap."""
+    truncated = _MockResponse([_ThinkBlock()], "max_tokens",
+                              usage=_MockUsage(input_tokens=51_500, output_tokens=4000))
+    client = _CaptureClient(responses=[truncated])
+    root = _make_temp_root()
+    with caplog.at_level(logging.WARNING, logger="engine.neuralweb.brain_gateway"):
+        parsed = _stream_events(client, root, tmp_path, lane="fast")
+
+    delta = next(e for e in parsed if e["type"] == "delta")
+    done = next(e for e in parsed if e["type"] == "done")
+    assert "temporarily unavailable" in delta["text"].lower()      # visible, not blank
+    assert done["degraded"] is True, done
+    line = next((r.getMessage() for r in caplog.records
+                 if "degraded stub shipped" in r.getMessage()), None)
+    assert line is not None, [r.getMessage() for r in caplog.records]
+    for frag in ("lane=fast", "model=deepseek-v4-flash", "phase=tool-round",
+                 "stop=max_tokens", "input_tokens=51500", "output_tokens=4000",
+                 f"max_tokens={gw._FAST_MAX_TOKENS}"):
+        assert frag in line, (frag, line)
+
+
+def test_degraded_stub_log_names_the_synthesis_phase_too(tmp_path, caplog):
+    """The other empty-answer route: the SYNTHESIS stream returns no text and there is
+    no candidate left to fail over to. Same stub, same degraded flag, phase=synthesis so
+    the log distinguishes it from a truncated tool round."""
+    class _EmptyStreamCtx(_FakeStreamCtx):
+        @property
+        def text_stream(self):
+            return iter(())
+
+    class _EmptyClient(_CaptureClient):
+        def stream(self, **kwargs):
+            self.stream_kwargs.append(kwargs)
+            return _EmptyStreamCtx("")
+
+    client = _EmptyClient(responses=[
+        _MockResponse([_MockBlock("tool_use", name="get_quote",
+                                  input_={"symbol": "aapl"}, id_="t1")], "tool_use"),
+        # stop_reason tool_use with NO tool_use block ends Phase 1 and forces synthesis;
+        # a thinking-only round leaves nothing for the salvage pass to recover either.
+        _MockResponse([_ThinkBlock()], "tool_use"),
+    ])
+    with caplog.at_level(logging.WARNING, logger="engine.neuralweb.brain_gateway"):
+        parsed = _stream_events(client, _make_temp_root(), tmp_path, lane="fast")
+    done = next(e for e in parsed if e["type"] == "done")
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert "temporarily unavailable" in delta["text"].lower()
+    assert done["degraded"] is True, done
+    line = next((r.getMessage() for r in caplog.records
+                 if "degraded stub shipped" in r.getMessage()), None)
+    assert line is not None, [r.getMessage() for r in caplog.records]
+    assert "phase=synthesis" in line, line
+    assert f"max_tokens={gw._FAST_MAX_TOKENS}" in line, line
+
+
+def test_a_real_answer_is_never_marked_degraded(tmp_path):
+    """The flag means 'what shipped is not a real answer' — a healthy turn keeps False."""
+    parsed = _stream_events(_two_round_client(), root=_make_temp_root(),
+                            tmp_path=tmp_path, lane="fast")
+    delta = next(e for e in parsed if e["type"] == "delta")
+    done = next(e for e in parsed if e["type"] == "done")
+    assert "temporarily unavailable" not in delta["text"].lower()
+    assert done["degraded"] is False, done
+
+
+def test_filtered_to_empty_answer_is_not_marked_degraded(tmp_path):
+    """An advice-FILTERED answer is a different condition with its own flag: `filtered`
+    drives the probation chip, and degraded must not swallow it (the stub is not shown
+    on that path either — see the display-substitution comment)."""
+    root = _make_temp_root()
+    with patch("engine.neuralweb.ask_brain._post_filter_advice", return_value=("", True)):
+        parsed = _stream_events(_two_round_client(), root, tmp_path, lane="fast")
+    done = next(e for e in parsed if e["type"] == "done")
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert done["filtered"] is True and done["degraded"] is False, done
+    assert "temporarily unavailable" not in delta["text"].lower()
+
+
+def test_fast_lane_output_cap_carries_thinking_headroom():
+    """The cap governing the fast lane's final answer call is 4000 in the REAL
+    config/brain.yml, and the hardcoded fallback agrees. The pro lane, research mode and
+    both tool BUDGETS are untouched."""
+    repo = pathlib.Path(__file__).resolve().parent.parent
+    gw._BRAIN_CONFIG_CACHE = None
+    try:
+        cfg = gw._load_brain_config(repo)
+        assert cfg["lanes"]["fast"]["max_tokens"] == 4000
+        assert cfg["lanes"]["pro"]["max_tokens"] == 8000        # unchanged
+        assert cfg["research"]["max_tokens"] == 8000            # unchanged
+        assert cfg["lanes"]["fast"]["tool_budget"] == 5         # unchanged
+        assert cfg["lanes"]["pro"]["tool_budget"] == 10         # unchanged
+        # An unreadable config must not silently drop back to the 2000 that broke.
+        gw._BRAIN_CONFIG_CACHE = None
+        fallback = gw._load_brain_config(pathlib.Path(tempfile.mkdtemp()))
+        assert fallback["lanes"]["fast"]["max_tokens"] == gw._FAST_MAX_TOKENS == 4000
+        assert fallback["lanes"]["pro"]["max_tokens"] == 8000
+    finally:
+        gw._BRAIN_CONFIG_CACHE = None
+
+
+def test_fast_cap_reaches_the_synthesis_call_and_every_tool_round(tmp_path):
+    """Pin the cap AT the call sites. ONE `max_tokens` kwarg feeds both phases of a Fast
+    turn by construction, so the synthesis stream and every tool round carry the same
+    4000 — raising the answer ceiling necessarily raises the tool rounds' ceiling, and a
+    truncated TOOL round is the shape that produced the live dead turn."""
+    client = _CaptureClient(responses=[
+        _MockResponse([_MockBlock("tool_use", name="get_quote",
+                                  input_={"symbol": "aapl"}, id_="t1")], "tool_use"),
+        _MockResponse([_MockBlock("text", "Pulling it together.")], "tool_use"),
+    ])
+    _stream_events(client, _make_temp_root(), tmp_path, lane="fast")
+    assert client.stream_kwargs, "synthesis never ran"
+    assert client.stream_kwargs[0]["max_tokens"] == 4000
+    assert [kw["max_tokens"] for kw in client.create_kwargs] == [4000] * len(client.create_kwargs)

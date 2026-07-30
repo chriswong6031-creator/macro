@@ -304,7 +304,14 @@
     {%- if adj.get('waves') %}
     {%- for w in adj.waves %}
     <span style="display:inline-block;margin:2px 8px 2px 0">
-      <a href="/{{ w.doc }}" style="color:inherit;text-decoration:underline dotted">{{ t('W'~w.wave, 'W'~w.wave) }}</a>
+      {# `w.doc` is a repo path (research/*.md), never a shipped file: site/research/
+          holds published vault entries as .html and is on the PUBLIC side of the
+          Caddy boundary, while this page is @never_site (404 + noindex publicly,
+          reachable only through admin's authenticated /research-tools/). Copying the
+          adjudications there to satisfy the href would publish internal screening
+          documents to every visitor and crawler, so the wave label is plain text and
+          the path stays in data/signal_lab/adjudications.json as provenance. -#}
+      <span title="{{ w.doc }}" style="text-decoration:underline dotted;cursor:help">{{ t('W'~w.wave, 'W'~w.wave) }}</span>
       {{ t(w.screened~' screened / '~w.advanced~' advanced → '~w.result_label,
            w.screened~'筛选 / '~w.advanced~'候选 → '~w.result_label_zh) }};
     </span>

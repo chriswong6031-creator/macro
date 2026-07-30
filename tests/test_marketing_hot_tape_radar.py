@@ -1800,7 +1800,7 @@ class TestCIWiring:
         cone = {line.strip() for line in str(with_["sparse-checkout"]).splitlines()
                 if line.strip()}
         assert cone == {
-            "engine", "scripts", "lib", "config",
+            "app", "engine", "scripts", "lib", "config",
             "data/marketing", "data/earnings",
             "data/baskets/ohlcv", "data/stocks",
             "site/marketdata", "site/live",
@@ -1890,3 +1890,606 @@ class TestShippedConfig:
         shipped = set(_flat(HT.load_config(REPO_ROOT)))
         defaults = set(_flat(HT.DEFAULTS))
         assert shipped - defaults == known_extras, shipped - defaults
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The live tape the radar acts on
+#
+# On 2026-07-29 this lane fired ZERO events. Two stacked causes, both pinned here:
+#
+#   F1  the feed was stale. live-quotes.yml's 5-min tick has been gated off since
+#       2026-07-27T22:50Z (VPS_LIVE_PRIMARY=true), leaving a */15 tape-gate tick
+#       that GitHub's schedule starvation then delivered ~1.4x/hour — 11 of 128
+#       ticks in the 8h RTH window, two of those dying at 8m06s in `git fetch`.
+#       Measured merged-view ages tracked the last successful push exactly:
+#       49.72m at 15:48Z vs a 14:58:23Z push, 21.92m at 18:08Z vs 17:46:53Z.
+#
+#   F2  the gate could not have passed anyway. A quote's ts is Yahoo's
+#       regularMarketTime, a constant ~15.0m behind wall clock for equities
+#       (measured 2026-07-30T03:46Z on names trading at the time), against a
+#       12-minute ceiling.
+#
+# Fixing either alone leaves the lane dark, so both are pinned: the radar fetches
+# its own tape when the shared one is behind, and the ceiling allows for the delay
+# the feed declares while the book-collapse gate keeps a real-time crypto tick
+# from certifying a stale equity book.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _aged_quote(minutes: float, pct: float = -8.2, price: float = 92.0,
+                prev: float = 100.2) -> dict:
+    """A snapshot-shaped quote whose ts is `minutes` behind the fixture clock."""
+    return {"price": price, "prevClose": prev, "changePct": pct,
+            "ts": int((NOW - timedelta(minutes=minutes)).timestamp() * 1000)}
+
+
+def _write_snapshot(root: Path, quotes: dict, *, asof_min_ago: float = 0.0,
+                    delayed_min: int | None = None) -> None:
+    """Overwrite the merge's snapshot artifact, optionally declaring a feed delay."""
+    obj: dict = {
+        "asof": (NOW - timedelta(minutes=asof_min_ago)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "quotes": quotes,
+    }
+    if delayed_min is not None:
+        obj["meta"] = {"delayed_min": delayed_min, "realtime": delayed_min == 0}
+    (root / RADAR.SNAPSHOT_REL).write_text(json.dumps(obj), encoding="utf-8")
+
+
+def _date_stamped_heatmap(root: Path) -> None:
+    """Re-stamp the heatmap's asof DATE-ONLY, the way production writes it.
+
+    site/marketdata/sp500_heatmap.json carries `"asof": "YYYY-MM-DD"`, which
+    _artifact_ms resolves to MIDNIGHT UTC — so intraday its tiles are hours old
+    and the merge's per-ticker freshness rule lets a snapshot quote win. The
+    suite's default fixture stamps a full timestamp instead, which makes every
+    tile permanently fresh and hides exactly the interaction under test here.
+    """
+    path = root / "site" / "marketdata" / "sp500_heatmap.json"
+    obj = json.loads(path.read_text(encoding="utf-8"))
+    obj["asof"] = NOW.date().isoformat()
+    path.write_text(json.dumps(obj), encoding="utf-8")
+
+
+class TestDelayAwareFreshness:
+    """F2: the 12-minute budget vs a feed that is contractually 15 minutes late."""
+
+    def test_a_just_fetched_equity_book_is_actionable(self, tmp_path):
+        """15.0m-old equities + a declared 15m delay = a fresh tape, not a stale one.
+
+        This is the state immediately after a successful fetch, and before this
+        fix it was indistinguishable from a dead feed.
+        """
+        root = _mover_root(tmp_path)
+        _write_snapshot(root, {"MU": _aged_quote(15.0), "XYZ": _aged_quote(15.1, 0.4, 50.0, 49.8)},
+                        delayed_min=15)
+        live, fresh, age = RADAR.load_quotes(root, now=NOW, cfg=HT.load_config(root),
+                                             demo=False)
+        assert fresh, f"a just-fetched tape read as stale at {age}m"
+        assert set(live["quotes"]) >= {"MU", "XYZ"}, (
+            "the equity book must survive its own feed's declared delay")
+
+    def test_a_real_time_tick_cannot_certify_a_stale_equity_book(self, tmp_path):
+        """The 2026-07-29T18:08Z shape: FX at 21.92m over equities at ~37m.
+
+        quotes_fresh gates on min(age), so one live FX print passes a merge whose
+        every equity is half an hour behind. Detecting on what survives the drop
+        would be worse than standing down, because nothing in the log would say
+        the book had been emptied.
+        """
+        root = _mover_root(tmp_path)
+        _date_stamped_heatmap(root)
+        _write_snapshot(root, {
+            "EURUSD=X": _aged_quote(21.92, 0.1, 1.14, 1.139),   # real-time leg
+            "MU": _aged_quote(37.0),                            # 15m delay + 22m lag
+            "XYZ": _aged_quote(37.0, 0.4, 50.0, 49.8),
+        }, delayed_min=15)
+        _, fresh, _ = RADAR.load_quotes(root, now=NOW, cfg=HT.load_config(root),
+                                        demo=False)
+        assert not fresh, (
+            "a merge whose equity book collapses under the ceiling must stand the "
+            "pass down, not detect on the surviving FX print")
+
+    def test_the_stand_down_names_the_writer_lane(self, tmp_path, capsys):
+        root = _mover_root(tmp_path)
+        _date_stamped_heatmap(root)
+        _write_snapshot(root, {"EURUSD=X": _aged_quote(21.92, 0.1, 1.14, 1.139),
+                               "MU": _aged_quote(37.0),
+                               "XYZ": _aged_quote(37.0, 0.4, 50.0, 49.8)},
+                        delayed_min=15)
+        RADAR.load_quotes(root, now=NOW, cfg=HT.load_config(root), demo=False)
+        out = capsys.readouterr().out
+        warn = [ln for ln in out.splitlines() if ln.startswith("::warning")]
+        assert warn, out
+        assert "book collapsed" in warn[0]
+        assert "WRITER-LANE fault" in warn[0], (
+            "the operator must be told this is a feed fault, not a knob to turn")
+
+
+class TestRadarUniverse:
+    """The symbol set a self-fetch covers: what the detectors can actually act on."""
+
+    def test_heatmap_tiles_and_liquid_pack_names_are_in(self):
+        heatmap = {"tiles": [_tile("MU", "Technology", "Semiconductors", -8.2),
+                             _tile("XYZ", "Utilities", "Utilities - Regulated", 0.4)]}
+        pack = {"tickers": {"AAPL": {"adv_rank": 3}, "MU": {"adv_rank": 40}}}
+        got = RADAR.radar_universe(pack, heatmap, cfg=HT.DEFAULTS)
+        assert {"MU", "XYZ", "AAPL"} <= set(got)
+        assert got[:2] == ["MU", "XYZ"], "heatmap tiles lead so the cap never cuts them"
+
+    def test_names_outside_adv_rank_max_are_left_out(self):
+        pack = {"tickers": {"THIN": {"adv_rank": 2999}, "THICK": {"adv_rank": 12}}}
+        got = RADAR.radar_universe(pack, {"tiles": []}, cfg=HT.DEFAULTS)
+        assert "THICK" in got and "THIN" not in got
+
+    def test_the_contrarian_index_proxy_is_always_fetched(self):
+        got = RADAR.radar_universe(None, None, cfg=HT.DEFAULTS)
+        assert got == ["SPY"], got
+
+    def test_earnings_and_signal_names_join(self):
+        got = RADAR.radar_universe(
+            None, None,
+            signals=[{"source": {"ticker": "NVDA"}}],
+            earnings={"tickers": {"CRM": {}}},
+            cfg=HT.DEFAULTS)
+        assert {"NVDA", "CRM"} <= set(got)
+
+    def test_a_junk_shaped_input_degrades_instead_of_raising(self):
+        assert RADAR.radar_universe({"tickers": "nope"}, {"tiles": "nope"},
+                                    cfg=HT.DEFAULTS) == ["SPY"]
+
+    def test_the_universe_is_capped(self):
+        pack = {"tickers": {f"T{i}": {"adv_rank": 1} for i in range(2000)}}
+        got = RADAR.radar_universe(pack, {"tiles": []}, cfg=HT.DEFAULTS)
+        assert len(got) == RADAR.MAX_SELF_FETCH_SYMBOLS
+
+
+class TestSelfFetch:
+    """F1: the radar refuses to inherit another lane's cadence."""
+
+    @staticmethod
+    def _snap(quotes: dict) -> dict:
+        return {"asof": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "ts": 0,
+                "source": "snapshot", "quotes": quotes,
+                "meta": {"delayed_min": 15, "realtime": False}}
+
+    def test_a_good_fetch_is_written_where_the_merge_reads(self, tmp_path):
+        root = _mover_root(tmp_path)
+        built = self._snap({"MU": _aged_quote(15.0), "XYZ": _aged_quote(15.0)})
+        assert RADAR.refresh_live_snapshot(
+            root, universe=["MU", "XYZ"], builder=lambda syms: built)
+        on_disk = json.loads((root / RADAR.SNAPSHOT_REL).read_text(encoding="utf-8"))
+        assert set(on_disk["quotes"]) == {"MU", "XYZ"}
+        assert on_disk["meta"]["delayed_min"] == 15, (
+            "the declared delay must reach the artifact or the ceiling loses it")
+
+    def test_a_thin_fetch_is_discarded_rather_than_written(self, tmp_path):
+        """Coverage floor: a fresh-but-empty snapshot is worse than a stale full one.
+
+        The names that drop out lose their price entirely and fall back to the
+        heatmap's pct-only tiles, which the price-gated detectors cannot use.
+        """
+        root = _mover_root(tmp_path)
+        before = (root / RADAR.SNAPSHOT_REL).read_text(encoding="utf-8")
+        assert not RADAR.refresh_live_snapshot(
+            root, universe=[f"T{i}" for i in range(100)],
+            builder=lambda syms: self._snap({"T1": _aged_quote(15.0)}))
+        assert (root / RADAR.SNAPSHOT_REL).read_text(encoding="utf-8") == before
+
+    def test_a_raising_builder_leaves_the_committed_snapshot_alone(self, tmp_path):
+        root = _mover_root(tmp_path)
+        before = (root / RADAR.SNAPSHOT_REL).read_text(encoding="utf-8")
+
+        def _boom(syms):
+            raise RuntimeError("yahoo said no")
+
+        assert not RADAR.refresh_live_snapshot(root, universe=["MU"], builder=_boom)
+        assert (root / RADAR.SNAPSHOT_REL).read_text(encoding="utf-8") == before
+
+    def test_an_empty_universe_never_calls_the_builder(self, tmp_path):
+        def _never(syms):
+            raise AssertionError("builder must not be called for an empty universe")
+
+        assert not RADAR.refresh_live_snapshot(tmp_path, universe=[], builder=_never)
+
+    def test_the_opt_out_is_announced_not_silent(self, tmp_path, monkeypatch, capsys):
+        """A lane that stopped fetching without saying so is the mute failure shape."""
+        monkeypatch.setenv("HOT_TAPE_NO_LIVE_FETCH", "1")
+
+        def _never(syms):
+            raise AssertionError("opt-out must short-circuit the builder")
+
+        assert not RADAR.refresh_live_snapshot(tmp_path, universe=["MU"],
+                                               builder=_never)
+        assert "self-fetch disabled" in capsys.readouterr().out
+
+
+class TestRunSelfFetchesAStaleTape:
+    """End to end: a stale shared tape is refreshed, not surrendered to."""
+
+    def test_a_stale_shared_tape_is_refetched_and_the_pass_proceeds(self, tmp_path,
+                                                                    capsys):
+        root = _mover_root(tmp_path)
+        # The 2026-07-29 state: the committed snapshot is ~50 minutes behind.
+        _write_snapshot(root, {"MU": _aged_quote(50.0), "XYZ": _aged_quote(50.0, 0.4, 50.0, 49.8)},
+                        asof_min_ago=50.0, delayed_min=15)
+
+        calls: list[list[str]] = []
+
+        def _builder(syms: list[str]) -> dict:
+            calls.append(list(syms))
+            return {"asof": NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "ts": 0,
+                    "source": "snapshot",
+                    "meta": {"delayed_min": 15, "realtime": False},
+                    "quotes": {s: _aged_quote(
+                        15.0, *(( -8.2, 92.0, 100.2) if s == "MU" else (0.4, 50.0, 49.8)))
+                        for s in syms}}
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch, quote_builder=_builder)
+        out = capsys.readouterr().out
+        assert calls, "a stale shared tape must trigger a self-fetch"
+        assert {"MU", "XYZ"} <= set(calls[0])
+        assert "self-fetch wrote" in out, out
+        assert "no events this pass" not in out, (
+            "after a successful refetch the pass must proceed to detection")
+
+    def test_a_healthy_shared_tape_costs_no_fetch(self, tmp_path):
+        """The cheap common case: live-quotes.yml just pushed, so we spend nothing."""
+        root = _mover_root(tmp_path)
+
+        def _never(syms):
+            raise AssertionError("a fresh shared tape must not trigger a fetch")
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch, quote_builder=_never)
+
+    def test_a_failed_refetch_stands_the_pass_down_with_the_reason(self, tmp_path,
+                                                                   capsys):
+        root = _mover_root(tmp_path)
+        _write_snapshot(root, {"MU": _aged_quote(50.0)}, asof_min_ago=50.0,
+                        delayed_min=15)
+        assert RADAR.run(root, now=NOW, fetcher=_no_fetch,
+                         quote_builder=lambda syms: {}) == 0
+        out = capsys.readouterr().out
+        assert "no events this pass" in out
+        assert "WRITER-LANE fault" in out, (
+            "a dark lane must say whose fault it is, in the log, on the pass")
+
+    def test_demo_never_spends_a_live_fetch(self, tmp_path):
+        """Demo exists to run on a quiet tape; its relaxed ceiling already admits it."""
+        root = _mover_root(tmp_path)
+        _write_snapshot(root, {"MU": _aged_quote(50.0)}, asof_min_ago=50.0,
+                        delayed_min=15)
+
+        def _never(syms):
+            raise AssertionError("demo must not fetch")
+
+        RADAR.run(root, now=NOW.replace(hour=6, minute=0), demo=True,
+                  fetcher=_no_fetch, quote_builder=_never)
+
+
+class TestSessionCadence:
+    """One delivered tick must cover the whole session — GitHub will not deliver */5.
+
+    Measured 2026-07-29, the 8h RTH window: GitHub created 104 scheduled runs
+    across ALL 46 scheduled workflows in this repo, of which this lane got 6 of its
+    ~92 ticks (6.5%) — ~1.4 passes an hour against a ~43-minute mean detection gap,
+    while gate 0.1 asks for booked-at-Buffer inside 20 minutes. Starvation is
+    GitHub-side and per-lane, so the lever is not depending on delivery: one
+    bootstrap tick runs a session-long poller at a real 5-minute cadence. Runner
+    minutes are free on this public repo, so the trade is runner time for latency.
+    """
+
+    @staticmethod
+    def _wf() -> dict:
+        import yaml as _yaml
+
+        return _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
+                encoding="utf-8"))
+
+    @classmethod
+    def _radar_step(cls) -> dict:
+        step = [s for s in cls._wf()["jobs"]["radar"]["steps"] if s.get("id") == "radar"]
+        assert len(step) == 1, "the radar step lost its id"
+        return step[0]
+
+    def test_the_session_is_covered_by_serialized_halves(self):
+        """A job caps at 6h; the ET window is 6h50m. Two halves, strictly ordered."""
+        job = self._wf()["jobs"]["radar"]
+        strat = job["strategy"]
+        assert strat["max-parallel"] == 1, (
+            "the halves would run CONCURRENTLY — two radar passes racing the same "
+            "fired ledger is the double-book this lane's concurrency group exists "
+            "to prevent")
+        assert strat["fail-fast"] is False, (
+            "fail-fast would cancel the second half when the first dies, so a crash "
+            "at 14:00Z would leave the rest of the session dark")
+        assert len(strat["matrix"]["half"]) == 2, strat["matrix"]
+
+    def test_two_halves_cover_the_whole_et_window(self):
+        """The arithmetic that would otherwise rot silently."""
+        import yaml as _yaml
+
+        job = self._wf()["jobs"]["radar"]
+        env = self._radar_step()["env"]
+        budget_s = int(env["JOB_BUDGET_S"])
+        timeout_s = int(job["timeout-minutes"]) * 60
+        assert budget_s < timeout_s, (
+            f"budget {budget_s}s exceeds the {timeout_s}s job timeout — the half "
+            "would be killed mid-pass instead of handing over")
+        assert timeout_s < 6 * 3600, (
+            f"timeout {timeout_s}s is at or past GitHub's 6h job cap")
+
+        cfg = _yaml.safe_load((REPO_ROOT / "config/hot_tape.yml").read_text(
+            encoding="utf-8"))
+        h1, m1 = (int(x) for x in str(cfg["window_et"]["start"]).split(":"))
+        h2, m2 = (int(x) for x in str(cfg["window_et"]["end"]).split(":"))
+        window_s = ((h2 * 60 + m2) - (h1 * 60 + m1) + int(cfg["window_grace_min"])) * 60
+        halves = len(self._wf()["jobs"]["radar"]["strategy"]["matrix"]["half"])
+        assert halves * budget_s >= window_s, (
+            f"{halves} halves x {budget_s}s = {halves * budget_s}s cannot cover a "
+            f"{window_s}s window — the close would go uncovered")
+
+    def test_the_backstop_bounds_every_iteration_not_just_passes(self):
+        """A pre-open WAIT must consume the backstop too.
+
+        An earlier draft decremented the counter on a wait ("a wait is not a
+        pass"), which made the cap unreachable: a stuck `--window-status` would
+        spin the loop for the whole budget. Verified by simulation before shipping.
+        """
+        body = self._radar_step()["run"]
+        assert "iter=$(( iter + 1 ))" in body, "the loop no longer counts iterations"
+        assert "pass=$(( pass - 1 ))" not in body, (
+            "the counter is decremented again — the backstop is unreachable")
+        # The cap must allow a full session plus some pre-open waiting.
+        env = self._radar_step()["env"]
+        need = int(env["JOB_BUDGET_S"]) // int(env["PASS_INTERVAL_S"])
+        assert int(env["MAX_PASSES"]) > need, (
+            f"backstop {env['MAX_PASSES']} is below the {need} passes a full half "
+            "performs — it would cut the session short")
+
+    def test_the_loop_asks_the_radar_for_the_window(self):
+        """No second implementation of the DST reasoning in bash."""
+        body = self._radar_step()["run"]
+        assert "--window-status" in body, (
+            "the loop derives the window itself again; a UTC re-derivation in bash "
+            "is how the shipped crons came to describe the wrong window")
+        for token in ("IN_WINDOW=", "WINDOW_END_EPOCH="):
+            assert token in body, token
+
+    def test_pre_open_waits_and_closed_exits(self):
+        """Three states, and pre-open is not closed.
+
+        A run bootstrapped before the bell must wait for it. Treating pre-open as
+        closed would throw away the bootstrap and leave the session uncovered.
+        """
+        body = self._radar_step()["run"]
+        assert "pre-open" in body, "the pre-open wait is gone"
+        assert "window closed" in body, "the closed-window exit is gone"
+
+    def test_every_pass_commits_and_dispatches_on_its_own(self):
+        """Latency is the whole point: a pass must not wait for the session to end.
+
+        A 10:04 cross detected on one pass has to reach Buffer at ~10:07, not when
+        the half finishes hours later. So the commit and the dispatch live INSIDE
+        the loop — which also means the old post-loop `commit`/`dispatch` steps
+        must be gone, not merely bypassed.
+        """
+        names = [str(s.get("name") or "") for s in self._wf()["jobs"]["radar"]["steps"]]
+        assert not [n for n in names if n.startswith("commit radar state")], names
+        assert not [n for n in names if n.startswith("dispatch the publisher")], names
+
+        body = self._radar_step()["run"]
+        head, _, inside = body.partition("while :; do")
+        assert inside, "the session loop is gone"
+        for token in ("python -m scripts.hot_tape_radar", "commit_and_push",
+                      "gh workflow run marketing-publish.yml"):
+            assert token in inside, f"{token} moved out of the per-pass loop"
+        for fn in ("refresh_shared_tape()", "commit_and_push()", "window_status()"):
+            assert fn in head, f"{fn} is used in the loop but defined after it"
+
+    def test_a_booked_pass_that_cannot_push_never_dispatches(self):
+        """The publisher folds items.jsonl from main, so push-then-dispatch."""
+        body = self._radar_step()["run"]
+        assert body.index("if commit_and_push; then") < body.index(
+            "gh workflow run marketing-publish.yml"), (
+            "the dispatch is no longer gated on the push landing — the publisher "
+            "would look for item ids that are not on main yet and post nothing")
+
+    def test_the_ids_channel_is_per_pass_not_github_output(self):
+        """GITHUB_OUTPUT is append-only and collapses to one value per step."""
+        env = self._radar_step()["env"]
+        assert env.get("HOT_TAPE_IDS_FILE"), "no per-pass ids channel"
+        body = self._radar_step()["run"]
+        assert ': > "${HOT_TAPE_IDS_FILE}"' in body, (
+            "the ids file is not truncated before the pass — a pass that books "
+            "nothing would re-dispatch the previous pass's ids")
+        assert "HOT_TAPE_IDS_FILE" in (
+            REPO_ROOT / "scripts/hot_tape_radar.py").read_text(encoding="utf-8"), (
+            "the workflow reads an ids file the script never writes")
+
+
+class TestWindowStatusSeam:
+    """`--window-status` is the loop's only source of truth about the session."""
+
+    def test_it_reports_closed_outside_the_window(self, capsys):
+        assert RADAR.main(["--window-status", "--root", str(REPO_ROOT)]) == 0
+        out = capsys.readouterr().out
+        # 06:00Z on a weekday is 02:00 ET — unambiguously outside any session.
+        assert "IN_WINDOW=" in out and "WINDOW_END_EPOCH=" in out, out
+
+    def test_demo_reports_open_with_a_far_deadline(self, capsys):
+        assert RADAR.main(["--window-status", "--demo", "--root", str(REPO_ROOT)]) == 0
+        out = capsys.readouterr().out
+        assert "IN_WINDOW=1" in out, out
+        end = int([l for l in out.splitlines()
+                   if l.startswith("WINDOW_END_EPOCH=")][0].split("=")[1])
+        assert end > datetime.now(timezone.utc).timestamp() + 3600, (
+            "a demo loop must not stop at the real window end — demo exists to run "
+            "on a closed tape")
+
+    def test_the_deadline_is_the_configured_close_plus_grace(self):
+        import yaml as _yaml
+
+        cfg = _yaml.safe_load((REPO_ROOT / "config/hot_tape.yml").read_text(
+            encoding="utf-8"))
+        end_h, end_m = (int(x) for x in str(cfg["window_et"]["end"]).split(":"))
+        grace = int(cfg["window_grace_min"])
+        epoch = RADAR.window_end_epoch(REPO_ROOT, now=NOW)
+        got = datetime.fromtimestamp(epoch, timezone.utc)
+        et = HT._et_clock(got)
+        assert (et.hour * 60 + et.minute) == end_h * 60 + end_m + grace, (
+            f"deadline {et} is not {end_h:02d}:{end_m:02d} ET + {grace}m grace")
+
+    def test_a_broken_config_keeps_the_loop_and_the_gate_agreeing(self, tmp_path):
+        """The invariant is AGREEMENT, not fail-closed.
+
+        `_parse_hhmm` falls back to the same 16:05 default `in_window` uses, so an
+        unparseable `window_et.end` leaves the loop's deadline and the gate's window
+        describing the same session. That is the property worth having: a loop that
+        stopped at a different time than the gate opens/closes would either drop the
+        close or spin past it. (A genuine exception — an unreadable config — still
+        returns `now`, which stops the loop after one pass rather than holding a
+        runner for the full budget.)
+        """
+        (tmp_path / "config").mkdir()
+        (tmp_path / "config" / "hot_tape.yml").write_text(
+            "window_et:\n  end: nonsense\n", encoding="utf-8")
+        epoch = RADAR.window_end_epoch(tmp_path, now=NOW)
+        cfg = HT.load_config(tmp_path)
+        # One minute inside the deadline the gate must still be open; one minute
+        # past it, shut. Same session, both sides.
+        before = datetime.fromtimestamp(epoch - 60, timezone.utc)
+        after = datetime.fromtimestamp(epoch + 60, timezone.utc)
+        assert HT.in_window(before, cfg), (
+            "the loop would keep passing after the gate had closed")
+        assert not HT.in_window(after, cfg), (
+            "the loop would stop while the gate was still open — dropping the close")
+
+
+class TestSelfFetchImportsResolveInTheCone:
+    """The self-fetch's import graph must fit the sparse checkout it runs in.
+
+    `refresh_live_snapshot` imports `scripts.build_live_quotes` lazily, and that
+    module does `from app.tape_symbols import TAPE_SYMBOLS` at MODULE scope. `app`
+    was not in the radar's cone when the self-fetch shipped: the import raised
+    ModuleNotFoundError, the fail-soft handler swallowed it into a ::warning, and
+    the radar stood down exactly as it had before — a dead primary fix that passed
+    every test, because tests run in a full checkout. Caught by materializing the
+    cone and importing inside it.
+
+    Structural on purpose: it derives the requirement from the source's actual
+    imports, so the NEXT first-party import added to build_live_quotes fails this
+    test instead of dying quietly in production.
+    """
+
+    #: Top-level dirs that are first-party packages rather than stdlib/site-packages.
+    _FIRST_PARTY = {"app", "engine", "lib", "scripts", "collectors", "admin"}
+
+    @staticmethod
+    def _cone() -> set[str]:
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
+                encoding="utf-8"))
+        checkout = [s for s in wf["jobs"]["radar"]["steps"]
+                    if str(s.get("uses", "")).startswith("actions/checkout")][0]
+        return {line.strip()
+                for line in str(checkout["with"]["sparse-checkout"]).splitlines()
+                if line.strip()}
+
+    def _module_scope_first_party_imports(self, rel: str) -> set[str]:
+        import ast
+
+        tree = ast.parse((REPO_ROOT / rel).read_text(encoding="utf-8"))
+        roots: set[str] = set()
+        for node in tree.body:            # MODULE SCOPE ONLY — lazy imports are fine
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                names = [node.module or ""]
+            else:
+                continue
+            for name in names:
+                root = name.split(".")[0]
+                if root in self._FIRST_PARTY:
+                    roots.add(root)
+        return roots
+
+    def test_the_quote_builder_module_graph_is_inside_the_cone(self):
+        cone = self._cone()
+        # The chain the self-fetch actually walks: build_live_quotes -> live_quotes.
+        for rel in ("scripts/build_live_quotes.py", "engine/live_quotes.py"):
+            for root in self._module_scope_first_party_imports(rel):
+                assert root in cone, (
+                    f"{rel} imports `{root}` at module scope but `{root}` is not in "
+                    f"the radar's sparse cone — the self-fetch would raise "
+                    f"ModuleNotFoundError and fail soft into a warning")
+
+    def test_the_radar_module_graph_is_inside_the_cone(self):
+        cone = self._cone()
+        for root in self._module_scope_first_party_imports("scripts/hot_tape_radar.py"):
+            assert root in cone, f"hot_tape_radar imports `{root}`, absent from the cone"
+
+    def test_live_quotes_lane_cone_covers_its_own_graph_too(self):
+        """The same trap, the same day, in the sibling lane this PR also sparsened."""
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/live-quotes.yml").read_text(
+                encoding="utf-8"))
+        checkout = [s for s in wf["jobs"]["snapshot"]["steps"]
+                    if str(s.get("uses", "")).startswith("actions/checkout")][0]
+        cone = {line.strip()
+                for line in str(checkout["with"]["sparse-checkout"]).splitlines()
+                if line.strip()}
+        for rel in ("scripts/build_live_quotes.py", "engine/live_quotes.py"):
+            for root in self._module_scope_first_party_imports(rel):
+                assert root in cone, f"{rel} imports `{root}`, absent from the cone"
+
+
+class TestTheLogReportsTheCeilingItApplied:
+    """A log line must not misreport the threshold it used.
+
+    Observed in run 30529411662 (the PR's own live verification): a demo pass
+    printed `ceiling=27m` while the gate had actually judged against 100015m,
+    because the summary line resolved the ceiling from the raw config and the gate
+    resolved it from the demo-aware one. Harmless to the decision, corrosive to
+    every future diagnosis — this defect took a day to find precisely because the
+    numbers on screen had to be hand-correlated against another lane's push times.
+    """
+
+    def test_demo_prints_the_relaxed_ceiling_not_the_strict_one(self, tmp_path,
+                                                               capsys):
+        root = _mover_root(tmp_path)
+        _date_stamped_heatmap(root)
+        # Old enough that only the demo ceiling can admit it.
+        _write_snapshot(root, {"MU": _aged_quote(600.0), "XYZ": _aged_quote(600.0, 0.4, 50.0, 49.8)},
+                        asof_min_ago=600.0, delayed_min=15)
+        RADAR.run(root, now=NOW.replace(hour=6, minute=0), demo=True,
+                  fetcher=_no_fetch, quote_builder=lambda syms: {})
+        line = [l for l in capsys.readouterr().out.splitlines()
+                if l.startswith("hot-tape quotes ")]
+        assert line, "no quote summary line"
+        assert "demo=1" in line[0]
+        assert "ceiling=27m" not in line[0], (
+            f"demo printed the STRICT ceiling while applying the relaxed one: {line[0]}")
+        assert "budget=100000m" in line[0], line[0]
+
+    def test_a_normal_pass_prints_the_delay_aware_ceiling(self, tmp_path, capsys):
+        root = _mover_root(tmp_path)
+        _write_snapshot(root, {"MU": _aged_quote(15.0), "XYZ": _aged_quote(15.0, 0.4, 50.0, 49.8)},
+                        delayed_min=15)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        line = [l for l in capsys.readouterr().out.splitlines()
+                if l.startswith("hot-tape quotes ")]
+        assert line and "ceiling=27m" in line[0], line
+        assert "budget=12m" in line[0] and "feed_delay=15m" in line[0], line[0]
+
+    def test_the_gate_and_the_log_share_one_resolution(self):
+        """Structural: both must go through freshness_cfg, so they cannot drift."""
+        body = (REPO_ROOT / "scripts/hot_tape_radar.py").read_text(encoding="utf-8")
+        assert body.count("freshness_cfg(cfg, demo=demo)") >= 2, (
+            "the gate and the log no longer share one ceiling resolution")
+        assert "effective_max_quote_age_min(live, cfg)" not in body, (
+            "a raw-config ceiling resolution is back — in demo it prints a "
+            "threshold the gate never applied")

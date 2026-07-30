@@ -402,6 +402,43 @@ def session_phase(now: datetime | None = None) -> str:
         return "after_hours"
 
 
+def effective_max_quote_age_min(live: dict | None, cfg: dict | None = None) -> float:
+    """The freshness ceiling to judge a quote's ``ts_ms`` against, in minutes.
+
+    ``max_quote_age_min`` (12) is a budget on OBSERVATION LAG — "how long since
+    we last looked at the tape". A quote's ``ts_ms`` does not measure that: it is
+    Yahoo's ``regularMarketTime``, which is behind wall clock by the observation
+    lag PLUS the feed's contractual delay. Measured 2026-07-30T03:46Z on symbols
+    trading at the time, that delay is 15.0-15.1 minutes for equities (see
+    ``live_verify._feed_delay_min``).
+
+    So a 12-minute budget compared directly against ``ts_ms`` is arithmetically
+    unsatisfiable for any equity, on any feed we have, no matter how healthy the
+    writer lane is: the freshest US equity quote in a snapshot pushed one second
+    ago is already 15 minutes "old" by that measure. That is what kept the P1
+    radar at zero events even on the passes whose snapshot WAS current — the
+    ``min()`` in :func:`quotes_fresh` passed on a real-time BTC/FX tick, and then
+    the radar's per-quote drop discarded the entire equity book behind it.
+
+    The ceiling therefore allows for the delay the feed DECLARES about itself,
+    and nothing more. This is not a widened gate — writer-lane staleness is still
+    caught with the full 12-minute budget intact on top of the declared delay,
+    and the radar separately stands a pass down when the per-quote drop collapses
+    the book. Fixture and heatmap-only views declare no delay and keep the bare 12.
+    """
+    try:
+        base = float(_c(cfg, "max_quote_age_min", DEFAULTS["max_quote_age_min"]))
+    except (TypeError, ValueError):
+        base = float(DEFAULTS["max_quote_age_min"])
+    delay = 0.0
+    if isinstance(live, dict):
+        try:
+            delay = max(0.0, float(live.get("feed_delay_min") or 0))
+        except (TypeError, ValueError):
+            delay = 0.0
+    return base + delay
+
+
 def quotes_fresh(
     live: dict | None,
     now: datetime | None = None,
@@ -438,7 +475,9 @@ def quotes_fresh(
         if not ages:
             return (False, None)
         age = min(ages)
-        max_age = float(_c(cfg, "max_quote_age_min", DEFAULTS["max_quote_age_min"]))
+        # Delay-aware ceiling: the budget is on observation lag, the age carries
+        # the feed's contractual delay too. See effective_max_quote_age_min.
+        max_age = effective_max_quote_age_min(live, cfg)
         return (age <= max_age, round(age, 2))
     except Exception as exc:  # noqa: BLE001
         log.warning("hot_tape.quotes_fresh failed: %s", exc)
@@ -2052,7 +2091,11 @@ def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:
     so nothing re-checks this figure against the live quote before sending. The
     protection that IS live for this lane is upstream — the freshness gate, the
     bridge/per-record history gates, and the numeric-consistency gate in
-    hot_tape_wire — plus the operator kill switch.
+    hot_tape_wire — plus the operator kill switch, and downstream the publisher's
+    dispatch-time dark-desk park (an item addressed to a desk that is not
+    enabled in desk_network quarantines at dispatch, reason account_disabled,
+    post_now included — severity_account routes by severity alone and never
+    consults liveness).
     """
     try:
         prov = packet.provenance or {}

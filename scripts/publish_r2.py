@@ -14,12 +14,23 @@ builders. Reads: R2_ENDPOINT, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
 A single file's terminal upload failure (after boto's own retries) is logged and
 counted instead of aborting the run — the md5/ETag delta pass self-heals it next
 run; the process still exits 1 (plus a ::warning line) so lanes see the miss.
+The connection pool is SIZED from the worker count (_pool_size): each worker's
+upload_file fans out to _TRANSFER_CONCURRENCY part uploads on GB-class files, so
+a flat pool starves the multipart lanes and the resulting TLS churn fails parts
+outright — which then holds the manifest guard shut night after night.
 
 Partial-tree invocations MUST pass --no-manifest: the manifest is rebuilt from the
 local tree, so a checkout holding only a dir's few git-committed files (the heavy
 store is R2-only) would replace the full ~5000-name manifest with a 2-name one —
 and bulk consumers prune against it. A guard blocks any manifest that shrinks the
 remote list by more than half (--force-manifest overrides for intentional culls).
+
+`<dir>/_manifest.json` is a PUBLISH-SIDE key, written only by that end-of-run put.
+A data-dir store's own collector-written _manifest.json is a DIFFERENT document that
+merely shares the name, so _uploadable keeps it out of the delta pass (it rides to R2
+embedded under "store" instead). Without that exclusion the key held two documents per
+run, --no-manifest silently replaced it anyway, and audit_r2's freshness anchor stayed
+warm on nights the publisher's put never happened.
 
 Append-only stores (_APPEND_ONLY_DIRS, e.g. attention/) additionally refuse per-file
 uploads SMALLER than the R2 object, plus a per-dir total-bytes floor: when the
@@ -142,9 +153,58 @@ _DATA_DIR_MIN_BYTES = {"attention": 15_000_000, "index_gex_history": 600_000}
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 
+# Concurrent part-uploads s3transfer runs per multipart file. This is PINNED into
+# an explicit TransferConfig at upload time (see publish()) rather than inherited
+# from s3transfer's default, because _pool_size() below is derived from it: a
+# future s3transfer default bump would otherwise silently under-provision the
+# connection pool again, exactly as the un-pinned 64 did (see _pool_size).
+_TRANSFER_CONCURRENCY = 10
+# Slack for the non-transfer calls that share this client: list_objects_v2
+# pagination over a dir, and the manifest get/put.
+_POOL_HEADROOM = 8
+# Never drop below the historical pool size, however few workers are requested.
+_POOL_FLOOR = 64
 
-def _client():
-    """S3 client for R2, or None when creds are absent (graceful no-op)."""
+
+def _pool_size(workers: int) -> int:
+    """urllib3 connection-pool size for `workers` upload threads.
+
+    MUST cover the real peak: each of the `workers` outer threads calls
+    upload_file, and every file over the multipart threshold fans out to
+    _TRANSFER_CONCURRENCY concurrent part uploads — so the ceiling is
+    workers x _TRANSFER_CONCURRENCY, not `workers`.
+
+    The flat 64 this replaces sat below that ceiling (32 x 10 = 320) and the
+    thetadata_eod lane paid for it nightly: urllib3 discarded every connection
+    released into a full pool (1,119 "Connection pool is full" warnings in the
+    2026-07-29 run alone), and the resulting TLS churn against R2 killed
+    part uploads mid-flight — "Connection was closed before we received a valid
+    response", 16 terminal failures over three runs, EVERY one of them a
+    `?uploadId=...&partNumber=N` request. Three failures are enough to hold the
+    manifest guard closed, so the offsite index never advanced while the bytes
+    did: a backup whose descriptor is stale is the state you least want it in.
+    Same class of under-provisioning as the EMFILE the plist's 4096-fd
+    SoftResourceLimit fixed one layer down (2026-07-16).
+    """
+    return max(_POOL_FLOOR, workers * _TRANSFER_CONCURRENCY + _POOL_HEADROOM)
+
+
+def _transfer_config(concurrency: int = _TRANSFER_CONCURRENCY):
+    """Explicit s3transfer posture, or None when boto3 is absent (the CI packs
+    that exercise publish() against a fake client install no boto3)."""
+    try:
+        from boto3.s3.transfer import TransferConfig  # noqa: PLC0415
+    except ImportError:
+        return None
+    return TransferConfig(max_concurrency=concurrency)
+
+
+def _client(workers: int = 32):
+    """S3 client for R2, or None when creds are absent (graceful no-op).
+
+    `workers` sizes the connection pool — pass the SAME value handed to
+    publish()'s ThreadPoolExecutor or the pool under-provisions (see _pool_size).
+    """
     ep = os.environ.get("R2_ENDPOINT")
     ak = os.environ.get("R2_ACCESS_KEY_ID")
     sk = os.environ.get("R2_SECRET_ACCESS_KEY")
@@ -158,7 +218,8 @@ def _client():
     # hard-down endpoint costs ~11 x 15s + backoff (~5 min/call), not ~13 min —
     # publish lists its dirs SERIALLY inside daily.yml's 150-min engine job.
     kw = dict(region_name="auto", signature_version="s3v4",
-              max_pool_connections=64, retries={"max_attempts": 10, "mode": "adaptive"},
+              max_pool_connections=_pool_size(workers),
+              retries={"max_attempts": 10, "mode": "adaptive"},
               connect_timeout=15, read_timeout=60)
     try:  # newer botocore: keep R2 happy (it rejects the default CRC32 trailer)
         cfg = Config(**kw, request_checksum_calculation="when_required",
@@ -227,6 +288,35 @@ def _append_only_guarded(d: str, local_size: int, remote_size: int | None) -> bo
     return d in _APPEND_ONLY_DIRS and remote_size is not None and local_size < remote_size
 
 
+def _uploadable(d: str, base: Path, files: list[Path]) -> list[Path]:
+    """The subset of `files` the delta pass may upload.
+
+    A data-dir store's own collector-written `_manifest.json` is EXCLUDED. It is not
+    store content — it is the INPUT `_manifest_doc` embeds under "store", and its R2
+    key (`<dir>/_manifest.json`) is the very key the publish-side file-list doc is put
+    to at the end of the run. Uploading it in the delta pass made that one key hold two
+    different documents in the same run, with three consequences:
+
+      * on any run with an upload failure the publisher's put is skipped, so the RAW
+        collector doc is what remains on R2 — top-level `store`/`n_roots`/`per_root`,
+        not `dir`/`count`/`files`. That is the state observed live on 2026-07-30:
+        `Last-Modified` 05:02:56Z, written by the delta pass 1s after
+        `_backfill_state.json`, while the SPY parquets landed 05:04-05:12Z;
+      * that upload REFRESHED the key's Last-Modified, which is audit_r2's freshness
+        anchor — so a night whose manifest put never happened still read FRESH;
+      * `_remote_manifest` (the shrink guard's input) then read a doc with no `count`,
+        making `_manifest_ok` vacuously true for every data dir.
+
+    Nothing is lost: `_manifest_doc` embeds the collector doc under "store". fetch_r2
+    already skips `_manifest.json` keys on the download leg for the mirror-image reason
+    (it is a publish-side artifact) — this is the upload half of that same contract.
+    Site dirs have no collector manifest and are returned unfiltered."""
+    if d not in _DATA_DIRS:
+        return files
+    store_manifest = base / "_manifest.json"
+    return [p for p in files if p != store_manifest]
+
+
 def _manifest_doc(d: str, base: Path, names: list[str]) -> dict:
     """The manifest object to put for dir `d`.  Data-dir stores keep their own
     collector-written _manifest.json (freshness + coverage/anchor blocks — see
@@ -258,10 +348,14 @@ def _manifest_ok(new_count: int, remote: dict | None, floor: float = 0.5) -> tup
 
 def publish(dirs, dry_run: bool = False, workers: int = 32,
             manifest: bool = True, force_manifest: bool = False) -> int:
-    s3 = _client()
+    s3 = _client(workers)
     if s3 is None:
         log.info("no R2 creds (R2_ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY) — skip")
         return 0
+    # Pin the per-file part concurrency the pool was sized for; without this the
+    # two halves of the invariant drift apart on an s3transfer default bump.
+    _xfer = _transfer_config()
+    _xfer_kw = {} if _xfer is None else {"Config": _xfer}
     from lib import config
     bucket = os.environ["R2_BUCKET"]
     site = config.ROOT / config.load()["storage"]["site_dir"]
@@ -292,7 +386,10 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
         if not base.is_dir():
             log.info("%s: absent — skip", d)
             continue
-        files = [p for p in base.rglob("*") if p.is_file()]
+        # _uploadable drops a data-dir store's own _manifest.json: it is the collector's
+        # doc, embedded under "store" by _manifest_doc, and its key belongs to the
+        # publish-side file-list doc put at the end of the run.
+        files = _uploadable(d, base, [p for p in base.rglob("*") if p.is_file()])
         total = sum(p.stat().st_size for p in files) if d in _DATA_DIRS else None
         ok, why = _data_dir_syncable(d, len(files), total)
         if not ok:
@@ -328,7 +425,8 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
             p, key = pk
             try:
                 s3.upload_file(str(p), bucket, key,
-                               ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")})
+                               ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")},
+                               **_xfer_kw)
                 return None
             except Exception as e:  # noqa: BLE001 — one bad file must not kill the run
                 log.warning("%s: upload failed (%s) — the md5 delta retries it next run",

@@ -2156,12 +2156,15 @@
     </div>
   </div>
 
-  {# Nav links #}
+  {# Nav links. Market-prefixed, like the China strip this was ported from
+     (#2650): the unprefixed `heatmap.html` and `sectors.html` this row shipped
+     with never existed in the tree — HK's heatmap is `hk_heatmap.html`, and the
+     HK sector pages (`sectors/hk-*.html`) are indexed by `hk_stocks.html`,
+     already the first link here, so there is no separate Sector Desk to reach. #}
   <div class="hkx-links">
     <a href="hk_stocks.html">{{ t('HK Stocks','港股看板') }}</a>
-    <a href="heatmap.html">{{ t('Market Heatmap','市场热力图') }}</a>
+    <a href="hk_heatmap.html">{{ t('Market Heatmap','市场热力图') }}</a>
     <a href="china.html">{{ t('China Dashboard','中国看板') }}</a>
-    <a href="sectors.html">{{ t('Sector Desk','板块台') }}</a>
     <a href="aibrief.html">{{ t('AI Brief','AI简报') }}</a>
   </div>
 
@@ -2994,16 +2997,6 @@
   <!-- ===================== WHAT TO ACT ON NOW (sector entry-timing board) ===================== -->
   {% if actions and (actions.buy_now or actions.buy_soon or actions.get('on_the_run') or actions.take_profits or actions.hold or actions.avoid) %}
   <style>
-  .act-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-  .act-col { background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
-  .act-col h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 6px; }
-  .act-item { font-size: 12.5px; padding: 3px 0; border-bottom: 1px solid var(--line); }
-  .act-item:last-child { border-bottom: none; }
-  .act-item .an { font-weight: 600; color: var(--text); }
-  .act-item .at { font-size: 10.5px; color: var(--muted); }
-  .act-now h3 { color: var(--up); } .act-soon h3 { color: var(--info); }
-  .act-run h3 { color: #8b5cf6; }   /* neutral violet — NOT green/buy */
-  .act-tp h3 { color: var(--warn); } .act-avoid h3 { color: var(--down); } .act-hold h3 { color: var(--muted); }
   /* ---- HKRV-W3: leadership banner + turn chip ---- */
   .hkrv-banner { margin: 0 0 10px; padding: 13px 16px; border-radius: 10px;
     border-left: 4px solid var(--warn);
@@ -3041,17 +3034,24 @@
     font-weight: 600; color: var(--muted); padding: 4px 9px; border-radius: 7px;
     background: color-mix(in srgb, var(--muted) 8%, var(--panel2));
     border: 1px solid var(--line); }
-  .act-turn-chip { display: inline-block; font-size: 9.5px; font-weight: 800;
-    padding: 1px 6px; border-radius: 7px; margin-left: 5px; vertical-align: middle;
-    color: var(--warn);
-    background: color-mix(in srgb, var(--warn) 16%, var(--panel2));
-    border: 1px solid color-mix(in srgb, var(--warn) 36%, var(--line));
-    letter-spacing: .03em; }
+  .anv2-board .anv2-name-link { color: inherit; text-decoration: none; }
+  .anv2-board .anv2-name-link:hover .l-en,
+  .anv2-board .anv2-name-link:hover .l-zh { text-decoration: underline; }
+  .anv2-board .anv2-name-link:focus-visible { outline: 2px solid var(--link);
+    outline-offset: 2px; border-radius: 4px; }
+  .anv2-board .anv2-go { font-size: 10px; opacity: .55; margin-left: 3px; }
+  .anv2-board .anv2-empty { padding: 10px 13px; color: var(--muted); font-size: 11px; }
   </style>
-  <div class="panel span12" id="act-now">
-    <h2>⚡ {{ t('What to act on now — sectors', '当前可操作 — 板块') }}
-      {{ help("The HK sector groups bucketed by the cycle ladder's entry-timing call — the same engine as the US action board. A structure / risk map, not an allocation rule: ON THE RUN = in favour but extended (do not chase; add on a pullback); the reduce side (take profits / avoid) is the risk read. HK has no validated single-stock edge — this is sector positioning.", "香港板块按周期阶梯的入场时机分桶 — 与美国操作板同一引擎。这是结构／风险图，而非配置规则：顺势运行 = 看好但已延伸（勿追高；回调加仓）；减仓侧（止盈／回避）是风险判读。香港无经验证的个股优势 — 这是板块定位。") }}
-    </h2>
+  <div class="panel span12 anv2-board" id="act-now">
+    <div class="anv2-hd">
+      <h2>⚡ {{ t('What to Act On Now', '现在行动') }}
+        <span class="anv2-v2pill">v2</span>
+        {{ help("Four lanes, read left to right: Buy Now = a clean HK sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. HK has no validated single-stock edge — this board is sector positioning, not an allocation rule.", "四个分栏从左到右：立即买入＝今天有干净的港股板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。香港无经验证的个股优势 — 本看板用于板块定位，不是配置规则。") }}
+      </h2>
+      <div class="anv2-meta">
+        <span class="muted" style="font-size:11px">{{ t('sectors as of', '板块截至') }} {{ latest.date }}</span>
+      </div>
+    </div>
     {# ===== HKRV-W3: leadership banner — rendered ONLY when leaders are participating ===== #}
     {%- set _ldr = setups.get('leadership') if setups else none -%}
     {%- if _ldr and _ldr.get('state') == 'leaders_participating' -%}
@@ -3144,85 +3144,84 @@
     </div>
     {%- endif -%}
     {# ===== END HKRV-W3 banner ===== #}
-    <div class="act-grid">
-      {% macro sactcol(cls, title_en, title_zh, items) %}
-      {% if items %}
-      <div class="act-col {{ cls }}">
-        <h3>{{ t(title_en, title_zh) }} · {{ items|length }}</h3>
-        {# PR-4: lst-wrap for View-all modal; data-rpop payloads on each act-item #}
-        <div class="lst-wrap">
-        <div class="lst-collapse lst-cap4 is-collapsed">
-        {% for it in items %}
-        {%- set _hk_sc = (sectors_by_ticker.get(it.ticker) if sectors_by_ticker is defined else none) -%}
-        <div class="act-item" data-rpop>
-          {# PR-4: hover payload — cloned by theme.js into a .row-pop overlay #}
-          <span class="rp-src" hidden>
-            <div class="row-pop-hd">
-              <span class="row-pop-name"><span class="l-en">{{ it.name }}</span><span class="l-zh">{{ it.name }}</span></span>
-              <span class="row-pop-kind">SECTOR</span>
-              {%- if it.label -%}
-              <span class="row-pop-tag {{ 'up' if it.dir == 'up' else ('dn' if it.dir == 'dn' else 'warn') }}"><span class="l-en">{{ it.label }}</span><span class="l-zh">{{ it.label }}</span></span>
-              {%- endif -%}
-            </div>
-            <div class="row-pop-div"></div>
-            <div class="row-pop-grid">
-              {%- if _hk_sc is not none -%}
-              {%- if _hk_sc.get('mom20') is not none -%}
-              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span>
-                <span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom20') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom20')) }}%</span></span></div>
-              {%- endif -%}
-              {%- if _hk_sc.get('mom60') is not none -%}
-              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span>
-                <span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom60') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom60')) }}%</span></span></div>
-              {%- endif -%}
-              {%- if _hk_sc.get('pctile') is not none -%}
-              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span>
-                <span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('pctile')) }}p</span></div>
-              {%- endif -%}
-              {%- if _hk_sc.get('above200') is not none -%}
-              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span>
-                <span class="row-pop-val">{% if _hk_sc.get('above200') %}<span class="up">▲</span> <span class="l-en">above 200d</span><span class="l-zh">高于均线</span>{% else %}<span class="mut">—</span> <span class="l-en">below 200d</span><span class="l-zh">低于均线</span>{% endif %}</span></div>
-              {%- endif -%}
-              {%- if _hk_sc.get('dc_day') is not none -%}
-              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span>
-                <span class="row-pop-val">{{ _hk_sc.get('dc_day') }}{% if _hk_sc.get('dc_band') is not none %} <span class="mut">· {{ _hk_sc.get('dc_band') }}</span>{% endif %}</span></div>
-              {%- endif -%}
-              {%- set _hksce = _hk_sc.get('entry') or {} -%}
-              {%- if _hksce.get('text') is not none -%}
-              <div class="row-pop-cell wide"><span class="row-pop-lbl"><span class="l-en">Entry signal</span><span class="l-zh">入场信号</span></span>
-                <span class="row-pop-val"><span class="l-en">{{ _hksce.get('text') or '' }}</span><span class="l-zh">{{ _hksce.get('text_zh') or _hksce.get('text') or '' }}</span>{% if _hk_sc.get('age_short') is not none %} <span class="mut">· <span class="l-en">{{ _hk_sc.get('age_short') }}</span><span class="l-zh">{{ _hk_sc.get('age_short_zh') or _hk_sc.get('age_short') }}</span></span>{% endif %}</span></div>
-              {%- endif -%}
-              {%- if _hk_sc.get('eq_badge') is not none -%}
-              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">EQ</span><span class="l-zh">EQ</span></span>
-                <span class="row-pop-val">{{ _hk_sc.get('eq_badge') }}</span></div>
-              {%- endif -%}
-              {%- endif -%}{# /_hk_sc enrichment #}
-              {%- if it.days is not none -%}
-              <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal days</span><span class="l-zh">信号天数</span></span>
-                <span class="row-pop-val">~{{ it.days }}{{ t('d', '天') }}</span></div>
-              {%- endif -%}
-            </div>
-            <div class="row-pop-ft"><span></span></div>
-          </span>
-          <a class="an" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}</a>
-          {%- if it.get('label') == 'TURN IN PROGRESS' -%}
-          <span class="act-turn-chip"><span class="l-en">turn in progress</span><span class="l-zh">转向进行中</span></span>
-          {%- endif -%}
-          <div class="at">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %}</div>
+    {% set _hk_buy = actions.get('buy_now', []) %}
+    {% set _hk_pull = actions.get('on_the_run', []) + actions.get('hold', []) %}
+    {% set _hk_bot = actions.get('buy_soon', []) %}
+    {% set _hk_red = actions.get('take_profits', []) + actions.get('avoid', []) %}
+    <div class="anv2-grid">
+      {%- macro _hk_anrow(it, lane) -%}
+      {%- set _hk_sc = (sectors_by_ticker.get(it.ticker) if sectors_by_ticker is defined else none) -%}
+      <div class="anv2-row" data-rpop>
+        <span class="rp-src" hidden>
+          <div class="row-pop-hd">
+            <span class="row-pop-name">{{ td(it.name) }}</span>
+            <span class="row-pop-kind">SECTOR</span>
+            {% if it.label %}<span class="row-pop-tag {{ 'up' if it.dir == 'up' else ('dn' if it.dir == 'dn' else 'warn') }}">{{ td(it.label) }}</span>{% endif %}
+          </div>
+          <div class="row-pop-div"></div>
+          <div class="row-pop-grid">
+            {% if _hk_sc is not none and _hk_sc.get('mom20') is not none %}
+            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">20d mom</span><span class="l-zh">20日动能</span></span><span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom20') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom20')) }}%</span></span></div>
+            {% endif %}
+            {% if _hk_sc is not none and _hk_sc.get('mom60') is not none %}
+            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">60d mom</span><span class="l-zh">60日动能</span></span><span class="row-pop-val"><span class="{{ 'up' if _hk_sc.get('mom60') >= 0 else 'dn' }}">{{ '%+.1f'|format(_hk_sc.get('mom60')) }}%</span></span></div>
+            {% endif %}
+            {% if _hk_sc is not none and _hk_sc.get('pctile') is not none %}
+            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">RS percentile</span><span class="l-zh">相对强度百分位</span></span><span class="row-pop-val">{{ '%.0f'|format(_hk_sc.get('pctile')) }}p</span></div>
+            {% endif %}
+            {% if _hk_sc is not none and _hk_sc.get('above200') is not none %}
+            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Above 200d</span><span class="l-zh">高于200日均线</span></span><span class="row-pop-val">{% if _hk_sc.get('above200') %}<span class="up">▲</span> {{ t('above 200d', '高于均线') }}{% else %}<span class="mut">—</span> {{ t('below 200d', '低于均线') }}{% endif %}</span></div>
+            {% endif %}
+            {% if _hk_sc is not none and _hk_sc.get('dc_day') is not none %}
+            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Cycle day · band</span><span class="l-zh">周期日数 · 区间</span></span><span class="row-pop-val">{{ _hk_sc.get('dc_day') }}{% if _hk_sc.get('dc_band') is not none %} <span class="mut">· {{ _hk_sc.get('dc_band') }}</span>{% endif %}</span></div>
+            {% endif %}
+            {% if it.days is not none %}
+            <div class="row-pop-cell"><span class="row-pop-lbl"><span class="l-en">Signal days</span><span class="l-zh">信号天数</span></span><span class="row-pop-val">~{{ it.days }}{{ t('d', '天') }}</span></div>
+            {% endif %}
+          </div>
+          <div class="row-pop-ft"><span>{{ latest.date }}</span></div>
+        </span>
+        <div class="anv2-row-top">
+          <a class="anv2-name anv2-name-link" href="sectors/{{ it.ticker }}.html">{{ td(it.name) }}<span class="anv2-go" aria-hidden="true">↗</span></a>
         </div>
-        {% endfor %}
+        <div class="anv2-chips">
+          {% if lane == 'buy' %}
+          <span class="anv2-chip anv2-chip-reco-enter">{{ t('ENTRY NOW', '现在入场') }}</span>
+          {% elif lane == 'pull' and it in actions.get('on_the_run', []) %}
+          <span class="anv2-chip anv2-chip-tag">{{ t('WAIT FOR DIP', '等待回调') }}</span>
+          {% elif lane == 'pull' %}
+          <span class="anv2-chip anv2-chip-reco-hold">{{ t('HOLD', '持有') }}</span>
+          {% elif lane == 'bot' %}
+          <span class="anv2-chip anv2-chip-trough">{{ t('SETTING UP', '形态形成中') }}</span>
+          {% if it.get('label') == 'TURN IN PROGRESS' %}<span class="act-turn-chip">{{ t('TURN IN PROGRESS', '转向进行中') }}</span>{% endif %}
+          {% elif it in actions.get('avoid', []) %}
+          <span class="anv2-chip anv2-chip-reco-avoid">{{ t('AVOID', '回避') }}</span>
+          {% else %}
+          <span class="anv2-chip anv2-chip-reco-trim">{{ t('TAKE PROFITS', '止盈') }}</span>
+          {% endif %}
         </div>
-        {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
+        <div class="anv2-stat">{{ td(it.label) }}{% if it.days is not none %} · ~{{ it.days }}{{ t('d', '天') }}{% endif %} · {{ it.ticker }}</div>
+      </div>
+      {%- endmacro -%}
+      {%- macro _hk_anlane(lane, cls, title_en, title_zh, sub_en, sub_zh, items, lane_id) -%}
+      <div class="anv2-lane anv2-lane--{{ cls }}" id="{{ lane_id }}">
+        <div class="anv2-lane-hd">
+          <div class="anv2-lane-title"><span class="l-en">{{ title_en }}</span><span class="l-zh">{{ title_zh }}</span><span class="anv2-lane-count">({{ items|length }})</span></div>
+          <div class="anv2-lane-sub"><span class="l-en">{{ sub_en }}</span><span class="l-zh">{{ sub_zh }}</span></div>
+        </div>
+        <div class="anv2-lane-body lst-wrap">
+          <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+            {% for it in items %}{{ _hk_anrow(it, lane) }}{% endfor %}
+            {% if not items %}<div class="anv2-empty">{{ t('No sectors in this lane today.', '今天此栏暂无板块。') }}</div>{% endif %}
+          </div>
+          {% if items|length > 4 %}<button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more', '显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less', '收起') }} ▴</span></button>{% endif %}
         </div>
       </div>
-      {% endif %}
-      {% endmacro %}
-      {{ sactcol('act-now', 'Buy zone', '买入区', actions.buy_now) }}
-      {{ sactcol('act-soon', 'Setting up', '即将到位', actions.buy_soon) }}
-      {{ sactcol('act-run', "ON THE RUN — don't chase", '顺势运行 — 勿追高', actions.get('on_the_run', [])) }}
-      {{ sactcol('act-tp', 'Take profits', '止盈', actions.take_profits) }}
-      {{ sactcol('act-hold', 'Hold', '持有', actions.hold) }}
-      {{ sactcol('act-avoid', 'Avoid', '回避', actions.avoid) }}
+      {%- endmacro -%}
+      {{ _hk_anlane('buy', 'buy', 'Buy Now', '立即买入', 'Clean entry point today', '今日有干净入场点', _hk_buy, 'anv2-buy') }}
+      {{ _hk_anlane('pull', 'pull', 'In Favour', '看好', 'Hold or wait for a dip — do not chase', '持有或等待回调 — 勿追高', _hk_pull, 'anv2-pull') }}
+      {{ _hk_anlane('bot', 'bot', 'Bottoming Watch', '洗盘观察', 'Setting up near a cycle low — watch only', '接近周期低点 — 仅观察', _hk_bot, 'anv2-bot') }}
+      {{ _hk_anlane('red', 'red', 'Reduce / Avoid', '减仓 / 回避', 'Trend weakening — take profits or stay away', '趋势转弱 — 止盈或回避', _hk_red, 'anv2-red') }}
     </div>
   </div>
   {% endif %}

@@ -277,96 +277,9 @@
     100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--link) 0%, transparent); }
   }
   .panel.flash { animation: panelflash 2.4s ease-out 1; border-color: var(--link); }
-  /* ── Dislocation stress filter, ACTIVE state (engine/dislocation.py) ─────────
-     OPERATOR RULING 2026-07-29 — the active panel must not hijack the page. The
-     old presentation used a negative flex `order` to float it above the entire
-     board as a full-width card of eight nested sub-cards behind a breathing glow: "cannot
-     take up 70% of the viewport … not good UX to disrupt with pop-up boards."
-
-     It is now a READOUT STRIP that sits in normal flow inside the risk section:
-     one head line (state + Fed-put switch + trigger count), one stance line,
-     and every receipt behind the page's inner `.jarg` fold. The ANNOUNCEMENT
-     lives where the operator put it — the alerts-pane entry, the master-switch
-     chip, and the "What To Do Now" row; this panel is the receipt those three
-     jump to. Verdict colour still arrives on --lit (green = buyable washout,
-     red = falling knife) and the Fed-put colour on --dlp, but they are spent on
-     a STATIC left rail plus a soft corner wash — nothing animates here any more,
-     so there is no pseudo-element motion left to kill under reduced-motion. */
-  .panel.dislo-strip { border-left: 3px solid var(--lit);
-    background-image: linear-gradient(107deg,
-      color-mix(in srgb, var(--lit) 9%, transparent) 0%,
-      color-mix(in srgb, var(--lit) 2%, transparent) 34%, transparent 62%); }
-  /* NOTE on specificity: `body.page-macro h2` (0,1,2) out-ranks a bare
-     `h2.dlx-verdict` (0,1,1) and would take back font-size + colour, so every rule
-     below is anchored on `.panel.dislo-strip` / `.jarg.dlx-more`. Same reason for
-     the fold rows: `.jarg .jrow .jk` ships LATER in this stylesheet, so a plain
-     `.dlx-more .jrow .jk` would lose the 96px key column on a specificity tie. */
-  .panel.dislo-strip .dlx-head { display: flex; align-items: baseline; flex-wrap: wrap;
-    column-gap: 11px; row-gap: 7px; }
-  .panel.dislo-strip .dlx-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .11em;
-    text-transform: uppercase; color: var(--muted); }
-  .panel.dislo-strip h2.dlx-verdict { margin: 0; font-size: 17px; line-height: 1.2;
-    font-weight: 750; letter-spacing: -.005em; color: var(--lit); }
-  .panel.dislo-strip .dlx-put { font-size: 11px; font-weight: 700; letter-spacing: .015em;
-    padding: 2px 9px; border-radius: 5px; white-space: nowrap; color: var(--dlp);
-    background: color-mix(in srgb, var(--dlp) 13%, transparent);
-    border: 1px solid color-mix(in srgb, var(--dlp) 36%, transparent); }
-  .panel.dislo-strip .dlx-count { font-size: 11.5px; color: var(--muted);
-    font-variant-numeric: tabular-nums; }
-  .panel.dislo-strip .dlx-stance { margin: 9px 0 0; font-size: 13px; line-height: 1.45;
-    max-width: 96ch; color: var(--text); }
-  .panel.dislo-strip .dlx-stance b { color: var(--lit); font-weight: 700; }
-  .panel.dislo-strip .dlx-hon { color: var(--muted); }
-  .panel.dislo-strip .dlx-warn { margin: 7px 0 0; font-size: 12px; line-height: 1.45;
-    color: var(--down); max-width: 96ch; }
-  /* ── readout rows: label / value pairs, no nested card chrome. This is where the
-     eight sub-cards went. Everything that DISAGREES with the verdict stays here, in
-     the open — the margin each stress trigger clears, the Fed-put sub-readings, the
-     entry timer, and the geopolitical/catalyst cross-checks (audit order 2026-07-29:
-     never fold the dissent). Only the long-form prose + the measured record fold. */
-  .panel.dislo-strip .dlx-rows { margin: 9px 0 0; padding-top: 7px;
-    border-top: var(--rule, 1px) solid var(--line); }
-  .panel.dislo-strip .dlx-row { display: flex; align-items: baseline; gap: 9px;
-    padding: 3px 0; font-size: 12px; line-height: 1.4; }
-  .panel.dislo-strip .dlx-cap { color: var(--muted); font-size: 11px; }
-  .panel.dislo-strip .dlx-row + .dlx-row { border-top: 1px solid
-    color-mix(in srgb, var(--line) 55%, transparent); }
-  .panel.dislo-strip .dlx-lbl { flex: none; width: 132px; color: var(--muted);
-    font-weight: 600; }
-  .panel.dislo-strip .dlx-val { flex: 1; min-width: 0; }
-  .panel.dislo-strip .dlx-val b { font-variant-numeric: tabular-nums; }
-  .panel.dislo-strip .dlx-chips { display: inline-flex; flex-wrap: wrap; gap: 5px;
-    vertical-align: middle; }
-  /* margin line — every trigger's live reading against its own limit, firing or not.
-     Mono numerals so the four readings line up as a scale, not as prose. */
-  .panel.dislo-strip .dlx-margins { display: block; margin-top: 3px; font-size: 11px;
-    color: var(--muted); font-variant-numeric: tabular-nums; }
-  .panel.dislo-strip .dlx-mg { white-space: nowrap; }
-  .panel.dislo-strip .dlx-mg.on { color: var(--lit); font-weight: 650; }
-  .panel.dislo-strip .dlx-dis { color: var(--warn); font-weight: 650; }
-  /* series VINTAGE, parenthetical to its reading — Sahm is a monthly reference month
-     carried forward, not a same-day print, and the strip must be able to say so
-     without shouting. Regular numerals: a date is a figure, the words around it
-     are not, so only the reading itself keeps the tabular alignment above. */
-  .panel.dislo-strip .dlx-vint { color: var(--ink-3, var(--muted)); white-space: nowrap; }
-  /* policy divergence — amber CONTEXT, never the red of a verdict: the engine attaches
-     it explicitly as context that does not change the call, so it must not read redder
-     than the gate does. */
-  .jarg.dlx-more .dlx-pdiv { color: var(--warn); }
-  .jarg.dlx-more .dlx-pdiv b { color: var(--warn); }
-  /* the fold keeps ONLY long-form prose + the measured record */
-  .jarg.dlx-more { margin-top: 10px; }
-  .jarg.dlx-more .jrow { align-items: baseline; }
-  .jarg.dlx-more .jrow .jk { width: 132px; font-weight: 600; }
-  .jarg.dlx-more .dlx-para { margin: 0 0 7px; font-size: 11.5px; line-height: 1.55; }
-  @media (max-width: 700px) {
-    .panel.dislo-strip .dlx-row,
-    .jarg.dlx-more .jrow { flex-direction: column; gap: 2px; }
-    .panel.dislo-strip .dlx-lbl,
-    .jarg.dlx-more .jrow .jk { width: auto; }
-    .panel.dislo-strip h2.dlx-verdict { font-size: 15.5px; }
-    .panel.dislo-strip .dlx-cap { display: block; margin-top: 3px; }
-  }
+  /* Dislocation stress-filter CSS removed 2026-07-30 with the panel it styled —
+     the readout now lives on macro_signals.html (its own scoped `.dislo-panel`
+     block). Nothing on this page carries `dislo-strip` / `dlx-*` any more. */
   .muted { color: var(--muted); }
   .chart { width: 100%; }
   .topline { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
@@ -1669,16 +1582,13 @@
   body.page-macro .cb-sub { font-size: 12.5px; font-weight: 700; color: var(--ink-2); margin: 0 0 9px;
     display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
   body.page-macro .cb-sub a { margin-left: auto; }
-  /* dislocation surfaced into the alerts pane when active */
-  body.page-macro .alert.alert-dislocation { border-left-color: var(--act); }
-  /* When a dislocation is active its panel renders (only then) and stays in NORMAL
-     PAGE FLOW, in its authored slot inside the risk / nowcast section beside the
-     risk-state banner. It used to carry a negative flex `order` override that floated
-     it above the whole board — operator ruling 2026-07-29 killed that: a fired gate announces
-     itself through the alerts pane, the master-switch chip and the "What To Do Now"
-     row, and the panel itself is only the compact receipt they jump to (see
-     .panel.dislo-strip above). Dormant = not rendered at all. */
-  body.page-macro #dislocation { scroll-margin-top: 16px; }
+  /* `.alert.alert-dislocation` removed 2026-07-30 — nothing has emitted that class
+     since the alerts pane moved to the `.ms-sig` idiom; it styled an element that no
+     longer exists. The live announcement is the `.ms-sig sev-act` entry in the alerts
+     popover, which takes its colour from `sev-act` like every other alert. */
+  /* No `#dislocation` rule here any more: the stress-filter readout left this page
+     for macro_signals.html on 2026-07-30, so both announcement surfaces below link
+     out cross-page rather than scrolling to an in-page anchor. */
   /* fused equity-internal RISK STATE banner (engine/risk_state.py). When the state is
      elevated+ (alert) it FLOATS above the regime hero and pulses loudly; at 'caution'
      it renders inline in the risk section (informative, not dominating). It is now the
@@ -1751,30 +1661,11 @@
 .actcol:not(:has(.actbody.act-fold > a.actitem:nth-child(4))):not(:has(.actbody.act-fold > div:nth-child(4))):not(:has(.ab-trim-fold > a.actitem:nth-child(4))):not(:has(.ab-trim-fold > div:nth-child(4))) .lst-more.act-more { display: none; }
 .ab-trim-fold.is-collapsed > a.actitem:nth-child(n+4),
 .ab-trim-fold.is-collapsed > div:nth-child(n+4) { display: none; }
-/* Stand-aside keeps its stable id for Turn Watch, but uses the shared cap-3 fold. */
+/* Stand-aside keeps its stable id and uses the shared cap-3 fold. */
 .lst-collapse.lst-cap3.is-collapsed > a.actitem:nth-child(n+4),
 .lst-collapse.lst-cap3.is-collapsed > div:nth-child(n+4) { display: none; }
 /* Sector-setups table (unchanged) */
 #sectors table.act-fold.is-collapsed > tbody > tr:nth-child(n+8), #sectors table.act-fold.is-collapsed > tr:nth-child(n+8) { display:none; }
-
-  /* ── TS-U3: turn watch strip ────────────────────────────────────────────── */
-  .dash-tw-strip { background:color-mix(in srgb,var(--warn) 6%,var(--panel2)); border:1px solid color-mix(in srgb,var(--warn) 28%,var(--line)); border-radius:9px; padding:9px 13px 10px; margin:0 0 12px; display:none; }
-  .dash-tw-strip.visible { display:block; }
-  .dash-tw-hdr { display:flex; align-items:center; gap:8px; margin-bottom:7px; flex-wrap:wrap; }
-  .dash-tw-title { font-size:12px; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.05em; }
-  .dash-tw-asof { font-size:10px; color:var(--muted); margin-left:auto; }
-  .dash-tw-sub { font-size:11.5px; color:var(--text); opacity:.8; margin:-3px 0 7px; }
-  .dash-tw-rows { display:flex; flex-direction:column; gap:5px; }
-  .dash-tw-row { display:flex; align-items:baseline; gap:7px; flex-wrap:wrap; font-size:12px; }
-  .dash-tw-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:12px; font-size:10px; font-weight:800; letter-spacing:.04em; white-space:nowrap; }
-  .dash-tw-badge.ignition { background:color-mix(in srgb,var(--up) 15%,transparent); border:1px solid color-mix(in srgb,var(--up) 38%,transparent); color:var(--up); }
-  .dash-tw-badge.watch { background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 35%,transparent); color:var(--warn); }
-  .dash-tw-badge.member { background:color-mix(in srgb,var(--info) 12%,transparent); border:1px solid color-mix(in srgb,var(--info) 32%,transparent); color:var(--info,var(--link)); }
-  .dash-tw-name { font-weight:600; color:var(--text); }
-  .dash-tw-slow { font-size:11px; color:var(--muted); }
-
-  /* ── TS-U3: salience chip on hold/avoid rows ────────────────────────────── */
-  .dash-turn-chip { display:inline-flex; align-items:center; gap:3px; padding:1px 5px; border-radius:5px; font-size:9px; font-weight:800; letter-spacing:.04em; white-space:nowrap; background:color-mix(in srgb,var(--warn) 12%,transparent); border:1px solid color-mix(in srgb,var(--warn) 32%,transparent); color:var(--warn); margin-left:4px; }
 
   /* ── TS-U3: per-stock turn setups table ─────────────────────────────────── */
   .dash-mtf-section { margin-top:14px; }
@@ -3793,38 +3684,6 @@ body.page-macro.mx4-grid .mx5-gauge-svg{
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg > text{fill:rgba(10,16,24,.42);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg path:first-of-type{stroke:rgba(10,16,24,.10);}
 [data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-svg g[stroke]{stroke:rgba(10,16,24,.20);}
-/* Ghost mark = where the six-signal BLEND sits before the cap. A single quiet tick, no
-   glow and no second hue: the whole point is that this number was overridden, so it
-   must never compete with the needle. It sits inside the `g[stroke]` light-mode rule's
-   sibling space, hence its own explicit stroke in both themes. */
-body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(255,255,255,.40);}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-gauge-ghost line{stroke:rgba(10,16,24,.34);}
-/* caption + its legend glyph (the same tick, inline, so the mark on the arc is
-   self-explaining without a legend box) */
-body.page-macro.mx4-grid .mx5-score-prov{
-  margin-top:5px;font-size:10.5px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.36));
-}
-body.page-macro.mx4-grid .mx5-score-prov b{color:var(--text);font-variant-numeric:tabular-nums;}
-/* inline-block, never a flex child: as a flex item the legend tick wrapped onto its own
-   line above the sentence it belongs to */
-body.page-macro.mx4-grid .mx5-ghost-key{
-  display:inline-block;width:2px;height:10px;border-radius:1px;margin-right:5px;
-  background:rgba(255,255,255,.40);vertical-align:-1px;
-}
-[data-theme="light"] body.page-macro.mx4-grid .mx5-ghost-key{background:rgba(10,16,24,.34);}
-
-/* ── Chip receipts (chipn-*) — the three things the two chips above cannot say ──
-   Quiet by construction: same ink as the provenance caption, so the chips stay the
-   loud element and these read as the fine print under them. */
-body.page-macro.mx4-grid .mx5-chipn{
-  display:flex;flex-direction:column;gap:3px;margin-top:8px;
-  font-size:10.5px;line-height:1.45;color:var(--ink-3,rgba(255,255,255,.36));
-}
-body.page-macro.mx4-grid .mx5-chipn-row b{color:var(--text);font-variant-numeric:tabular-nums;}
-body.page-macro.mx4-grid .mx5-chipn-row.warn{color:var(--mx5-warn-ink,var(--warn));}
-body.page-macro.mx4-grid .mx5-chipn-row.warn b{color:var(--mx5-warn-ink,var(--warn));}
-
 /* Regime pill (Order 3: smaller + never clips — sizes to content, no fixed width) */
 body.page-macro.mx4-grid .mx5-regime-pill{
   display:inline-flex;align-items:center;gap:6px;
@@ -3857,52 +3716,6 @@ body.page-macro.mx4-grid .mx5-regime-pill.rp-red .mx5-dot{
 body.page-macro.mx4-grid .mx5-regime-pill .mx5-dot{
   width:6px;height:6px;border-radius:50%;
   background:var(--mx5-accent);box-shadow:0 0 6px var(--mx5-accent-glow);
-}
-
-/* ── Regime reality rows (rgx-*) — what the chip's label is actually worth ──────
-   Operator escalation 2026-07-29: a label with 0.04% model probability and its own
-   axes reading the other way was presentable as a calm green chip because every
-   qualifier lived behind the ⓘ hover. These rows put the qualifiers on the chip's own
-   line. Deliberately QUIET typography — a 10px uppercase key column against 11.5px
-   body — so the pill above stays the loudest thing in the cluster and the rows read as
-   its footnotes, not as four competing headlines. Amber (never red) is the only accent:
-   these rows report that a call is weakly held, which is a caution, not a verdict. */
-body.page-macro.mx4-grid .mx5-rgx{
-  display:flex;flex-direction:column;gap:3px;margin:-4px 0 10px;
-  padding-left:11px;border-left:2px solid var(--line);
-}
-body.page-macro.mx4-grid .mx5-rgx-row{
-  display:flex;align-items:baseline;gap:9px;font-size:11.5px;line-height:1.42;
-}
-body.page-macro.mx4-grid .mx5-rgx-k{
-  flex:none;width:88px;font-size:9.5px;font-weight:700;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--ink-3,rgba(255,255,255,.36));
-  padding-top:1px;
-}
-body.page-macro.mx4-grid .mx5-rgx-v{flex:1;min-width:0;color:var(--text);}
-/* mono numerals for FIGURES only — the words around them stay in the body face */
-body.page-macro.mx4-grid .mx5-rgx-v b{font-variant-numeric:tabular-nums;font-weight:700;}
-body.page-macro.mx4-grid .mx5-rgx-v.warn{color:var(--mx5-warn-ink,var(--warn));}
-body.page-macro.mx4-grid .mx5-rgx-note{
-  margin-top:3px;font-size:10.5px;line-height:1.45;
-  color:var(--ink-3,rgba(255,255,255,.36));
-}
-/* Confirmation meter — N of M sessions as filled bars. Non-verbal by design: it needs
-   no vocabulary in either language, and it is the one place on this cluster where a
-   regime change in progress is visible without reading a sentence. */
-body.page-macro.mx4-grid .mx5-rgx-meter{
-  display:inline-flex;gap:2px;vertical-align:baseline;margin-right:7px;
-  position:relative;top:1px;
-}
-body.page-macro.mx4-grid .mx5-rgx-meter i{
-  width:5px;height:10px;border-radius:1.5px;display:inline-block;
-  background:color-mix(in srgb,var(--line) 80%,transparent);
-}
-body.page-macro.mx4-grid .mx5-rgx-meter i.on{background:var(--mx5-warn,#f59e0b);}
-@media(max-width:700px){
-  body.page-macro.mx4-grid .mx5-rgx{padding-left:9px;margin:-2px 0 10px;}
-  body.page-macro.mx4-grid .mx5-rgx-row{flex-direction:column;gap:0;}
-  body.page-macro.mx4-grid .mx5-rgx-k{width:auto;padding-top:2px;}
 }
 
 /* Score + verdict beside gauge */
@@ -5329,14 +5142,22 @@ body.page-macro.mx4-grid .mx5-action-label{
 body.page-macro.mx4-grid .mx5-action-sub{
   font-size:11px;color:var(--ink-3,rgba(255,255,255,.36));margin-top:3px;
 }
-/* in-row jump to an anchored panel (today: the active dislocation strip). The card
-   FACE is itself a button that opens the Evidence dialog, so the anchor stops click
-   and Enter/Space from bubbling — see the inline handlers on the link. */
+/* in-row link out to the receipts (today: the stress selloff filter on
+   macro_signals.html). The card FACE is itself a button that opens the Evidence
+   dialog, so the anchor stops click and Enter/Space from bubbling — see the inline
+   handlers on the link. */
 body.page-macro.mx4-grid .mx5-wtd-jump{
   margin-left:6px;font-size:11.5px;font-weight:650;white-space:nowrap;
   color:var(--link);text-decoration:none;
 }
 body.page-macro.mx4-grid .mx5-wtd-jump:hover{text-decoration:underline;}
+/* "Not everything agrees" — the one clause that keeps a fired gate from burying its
+   own dissent now that the readout lives off-page. Muted, never a second alarm
+   colour: the cross-checks are engine CONTEXT that cannot change the verdict, so it
+   must not read louder than the stance it qualifies. */
+body.page-macro.mx4-grid .mx5-wtd-dissent{
+  color:var(--ink-3,rgba(255,255,255,.36));
+}
 
 /* ── UPCOMING EVENTS (mini week timeline inside sx-events-v2 face) — Wave E ─────────
    Impact = node size + colour + small label; a single connecting rail threads the week
@@ -6683,10 +6504,25 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
                   </div>
                 </div>
                 <div class="ms-pop-body">
+                  {# STRESS SELLOFF FILTER — the announcement, in plain words. The
+                     readout itself moved to macro_signals.html on 2026-07-30, so this
+                     links out cross-page ("View →", no data-ms-jump: that attribute is
+                     the in-page scroll handler at the bottom of this file and would
+                     swallow the navigation). Copy is the calibrated verdict, translated
+                     off the glance tier's banned vocabulary — no "Gate-1", no
+                     "dislocation", no "Fed put", no trigger count. Claims unchanged. #}
                   {% if latest.dislocation and latest.dislocation.dislocation_active %}
-                  <a class="ms-sig sev-act" data-ms-jump href="#dislocation">
-                    <div class="ms-sig-head"><span class="ms-sig-ico">🚦</span><span class="ms-sig-title">{{ t('Dislocation Gate-1 is ACTIVE','错位一道闸已激活') }}</span><span class="ms-sig-jump">{{ t('View ↓','查看 ↓') }}</span></div>
-                    <div class="ms-sig-detail">{% if latest.dislocation.verdict == 'buyable_washout' %}{{ t('A stress washout with the Fed put intact — a buyable washout. Confirm into stabilization, do not anticipate.','压力抛售且美联储托底在位 — 可买入错杀。在企稳中确认，勿提前抢跑。') }}{% elif latest.dislocation.verdict == 'stand_aside' %}{{ t('A stress washout with the Fed put ABSENT — stand aside (the put-absent setup the gate refused from April 2008).','压力抛售且美联储托底缺失 — 观望（一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形）。') }}{% else %}{{ t('An acute stress dislocation is firing — see the gate below.','急性压力错位正在触发 — 见下方一道闸。') }}{% endif %}</div>
+                  {% set _dl_a = latest.dislocation %}
+                  {% set _dl_a_unknown = ((_dl_a.put_state is defined and _dl_a.put_state == 'unknown')
+                                          or (_dl_a.put_state_reliable is defined and not _dl_a.put_state_reliable)
+                                          or (_dl_a.fed_put is defined and _dl_a.fed_put is none)) %}
+                  {# Dissent survives the move off-page in plain words (see the twin
+                     comment on the "What To Do Now" row). #}
+                  {% set _dl_a_dissent = ((_dl_a.geo_reversibility and _dl_a.geo_reversibility.agreement != 'corroborates')
+                                          or (_dl_a.catalyst_narrative and _dl_a.catalyst_narrative.agreement != 'corroborates')) %}
+                  <a class="ms-sig sev-act" href="macro_signals.html#dislocation">
+                    <div class="ms-sig-head"><span class="ms-sig-ico">🚦</span><span class="ms-sig-title">{{ t('Selling has turned stressed','抛售已转为压力状态') }}</span><span class="ms-sig-jump">{{ t('View →','查看 →') }}</span></div>
+                    <div class="ms-sig-detail">{% if _dl_a_unknown %}{{ t('We cannot read whether the Fed would step in today, so no call is made. Watch — don’t chase.','今日无法判读美联储是否会出手，因此不作判定。观察 — 不要追。') }}{% elif _dl_a.verdict == 'buyable_washout' %}{{ t('The Fed’s backstop still reads intact, so damage like this has usually stayed shallower. Wait for the market to steady — don’t try to catch it.','美联储托底仍在位，此类下跌历史上通常跌幅更浅。等待市场企稳 — 不要接飞刀。') }}{% elif _dl_a.verdict == 'stand_aside' %}{{ t('The Fed’s backstop is not there. This is the setup that kept falling through 2008 — stand aside.','美联储托底缺失。这正是 2008 年一路下跌的情形 — 观望。') }}{% else %}{{ t('Nothing to do until it steadies. Watch — don’t chase.','企稳前无需行动。观察 — 不要追。') }}{% endif %}{% if _dl_a_dissent %} {{ t('Not everything agrees — the reasons are on the signal board.','并非所有指标一致 — 详见信号看板。') }}{% endif %}</div>
                   </a>
                   {% endif %}
                   {# C-01 + v5: `anchor` is either an id on THIS page (plain id → in-page
@@ -6752,10 +6588,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% set _mx5_ceil = MS.score_ceiling if (MS.score_ceiling is defined and MS.score_ceiling is not none)
                        else ((MS.radar.ceiling if (MS.radar and MS.radar.ceiling is defined and MS.radar.ceiling is not none) else none)) %}
     {% set _mx5_src = MS.score_source if (MS.score_source is defined and MS.score_source) else none %}
-    {# the ghost tick draws ONLY when the blend and the shown score actually differ —
-       an unbinding cap must not paint a second mark on top of the needle #}
+    {# Disclose a binding cap on demand beside the verdict. The mechanics belong
+       behind the existing help affordance, not in the dashboard's glance layer. #}
     {% set _mx5_ghost = _mx5_raw is not none and _mx5_raw != _mx5_score %}
-    {% set _mx5_ghost_deg = ((_mx5_raw / 100 * 180 - 90) | round(1)) if _mx5_ghost else none %}
     {# what is actually holding the dial down. score_source names it outright; on an
        older payload the radar ceiling is identifiable because it equals the shown score. #}
     {% set _mx5_capw = {'radar_ceiling': ['the Risk Radar’s cap', '风险雷达的上限'],
@@ -6815,138 +6650,10 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         <span class="l-zh">{{ td(latest.quad_name) if latest.quad_name is defined else '周期' }}{% if _mx5_ts_zh %} &nbsp;&middot;&nbsp; {{ _mx5_ts_zh }}{% endif %}</span>
         <span class="mx5-pill-info">ⓘ</span>
       </div>
-      {# ── REGIME REALITY (rgx-*) — the chip's own lines, never a hover ──────────
-         Operator escalation 2026-07-29: the chip printed "Goldilocks" while the engine's
-         own filtered model gave that label 0.04% and the memoryless sign rule had read
-         Stagflation for ten sessions. A near-zero probability on the HEADLINE label is a
-         statement about the headline, not a technical detail, so per the design doctrine
-         it cannot sit behind the ⓘ hover — it belongs on the chip's own line, with the
-         countdown that would resolve the disagreement and the stance that follows from
-         the regime's age.
-
-         Every value here is engine-published, and every one is guarded: quad_vector.p
-         (model odds), the hysteresis countdown (run.py raw_quad / pending_* once it
-         reaches the payload, else the playbook's own countdown sentence), playbook
-         .progress (phase + its stance note), and the rate/inflation transmission LEVEL
-         read. An older latest.json simply prints fewer rows; with nothing to say the
-         block does not render at all. No threshold, gate or verdict is computed here. #}
-      {%- set _rgx_fc = latest.get('flip_condition') or {} %}
-      {%- set _rgx_q = {'Q1':['Goldilocks','理想增长'],'Q2':['Reflation','再通胀'],
-                        'Q3':['Stagflation','滞胀'],'Q4':['Growth scare','增长恐慌']} %}
-      {%- set _rgx_disp = _rgx_fc.get('displayed_quad') or latest.get('quad') %}
-      {%- set _rgx_gs = latest.get('growth_score') %}
-      {%- set _rgx_is = latest.get('inflation_score') %}
-      {#- raw = the memoryless sign rule on today's axes. Engine-published first
-          (flip_condition.raw_quad, then run.py's raw_quad); the last resort derives it
-          the SAME way engine/playbook.quad_meaning_for() does when the column is absent,
-          so the page can never disagree with the engine's own fallback. -#}
-      {%- set _rgx_raw = _rgx_fc.get('raw_quad') or latest.get('raw_quad')
-                         or ((('Q1' if _rgx_is < 0 else 'Q2') if _rgx_gs >= 0
-                              else ('Q4' if _rgx_is < 0 else 'Q3'))
-                             if (_rgx_gs is not none and _rgx_gs is number
-                                 and _rgx_is is not none and _rgx_is is number) else none) %}
-      {%- set _rgx_unsup = (_rgx_fc.get('label_unsupported') is sameas true)
-                           or (_rgx_disp and _rgx_raw and _rgx_raw != _rgx_disp) %}
-      {%- set _rgx_qv = latest.get('quad_vector') if latest.get('quad_vector') is mapping else {} %}
-      {%- set _rgx_p = (_rgx_qv.get('p') or {}) if not _rgx_qv.get('degraded', true) else {} %}
-      {%- set _rgx_pl = _rgx_p.get(_rgx_disp) if (_rgx_p and _rgx_disp) else none %}
-      {%- set _rgx_rivals = [] %}
-      {%- for _rk, _rv in (_rgx_p.items() | sort(attribute='1', reverse=true)) %}
-        {%- if _rk != _rgx_disp and _rgx_rivals | length < 2 and _rv %}{% if _rgx_rivals.append([_rk, _rv]) %}{% endif %}{% endif %}
-      {%- endfor %}
-      {%- set _rgx_pq = _rgx_fc.get('pending_quad') or latest.get('pending_quad') %}
-      {%- set _rgx_pd = _rgx_fc.get('pending_days') if _rgx_fc.get('pending_days') is not none else latest.get('pending_days') %}
-      {%- set _rgx_pn = _rgx_fc.get('pending_need') if _rgx_fc.get('pending_need') is not none else latest.get('pending_need') %}
-      {#- the playbook's own bilingual countdown sentence, used verbatim when the
-          structured keys above are not in the payload yet -#}
-      {%- set _rgx_cd = [] %}
-      {%- for _tp in (pb.triggers if (pb is defined and pb and pb.triggers) else []) %}
-        {%- if _rgx_cd | length < 1 and 'counting down' in (_tp[0] | string) %}{% if _rgx_cd.append(_tp) %}{% endif %}{% endif %}
-      {%- endfor %}
-      {#- meter = [days, need]. Structured keys first; otherwise read the two integers
-          out of the engine's own sentence ("… counting down: 3 of 7 confirmation days
-          done."). Bounds-checked and FAIL-CLOSED: an unparsable sentence simply draws no
-          meter, and the sentence beside it is rendered verbatim either way, so no claim
-          on this page depends on the parse. -#}
-      {%- set _rgx_meter = [] %}
-      {%- if _rgx_pd is not none and _rgx_pn %}
-        {%- if _rgx_meter.append(_rgx_pd | int) %}{% endif %}{% if _rgx_meter.append(_rgx_pn | int) %}{% endif %}
-      {%- elif _rgx_cd %}
-        {%- set _rgx_tail = (_rgx_cd[0][0] | string).split('counting down: ') %}
-        {%- if _rgx_tail | length > 1 %}
-          {%- set _rgx_bits = _rgx_tail[1].split(' of ') %}
-          {%- if _rgx_bits | length > 1 %}
-            {%- set _rgx_d = _rgx_bits[0] | trim | int %}
-            {%- set _rgx_n = (_rgx_bits[1] | trim).split(' ')[0] | int %}
-            {%- if _rgx_n > 0 and _rgx_n <= 14 and _rgx_d > 0 and _rgx_d <= _rgx_n %}
-              {%- if _rgx_meter.append(_rgx_d) %}{% endif %}{% if _rgx_meter.append(_rgx_n) %}{% endif %}
-            {%- endif %}
-          {%- endif %}
-        {%- endif %}
-      {%- endif %}
-      {%- set _rgx_prog = (pb.progress if (pb is defined and pb and pb.progress is mapping) else {}) %}
-      {%- set _rgx_infl = ((latest.get('rate_inflation_transmission') or {}).get('state') or {}).get('inflation') or {} %}
-      {%- set _rgx_pce = _rgx_infl.get('core_pce_yoy') %}
-      {%- set _rgx_pce_w = {'above target':['above target','高于目标'],
-                            'at target':['at target','接近目标'],
-                            'below target':['below target','低于目标']}.get(_rgx_infl.get('regime')) %}
-      {% if _rgx_pl is not none or (_rgx_unsup and _rgx_raw) or _rgx_cd or (_rgx_pq and _rgx_pd is not none) or _rgx_prog.get('phase_note') %}
-      <div class="mx5-rgx">
-        {% if _rgx_pl is not none %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Model odds','模型概率') }}</span>
-          <span class="mx5-rgx-v{{ ' warn' if _rgx_pl < 0.10 }}">
-            <span class="l-en"><b>{% if _rgx_pl < 0.01 %}Under 1{% else %}{{ (_rgx_pl * 100) | round | int }}{% endif %} in 100</b> on {{ _rgx_q.get(_rgx_disp, [_rgx_disp, _rgx_disp])[0] }}{% if _rgx_rivals %} — {% for _r in _rgx_rivals %}{{ _rgx_q.get(_r[0], [_r[0], _r[0]])[0] }} <b>{{ (_r[1] * 100) | round | int }}</b>{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</span>
-            <span class="l-zh"><b>100 中{% if _rgx_pl < 0.01 %}不足 1{% else %}约 {{ (_rgx_pl * 100) | round | int }}{% endif %}</b>落在{{ _rgx_q.get(_rgx_disp, [_rgx_disp, _rgx_disp])[1] }}{% if _rgx_rivals %} — {% for _r in _rgx_rivals %}{{ _rgx_q.get(_r[0], [_r[0], _r[0]])[1] }} <b>{{ (_r[1] * 100) | round | int }}</b>{% if not loop.last %}、{% endif %}{% endfor %}{% endif %}</span>
-          </span>
-        </div>
-        {% endif %}
-        {% if _rgx_unsup and _rgx_raw %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Today’s axes','今日两轴') }}</span>
-          <span class="mx5-rgx-v warn">
-            <span class="l-en"><b>{{ _rgx_q.get(_rgx_raw, [_rgx_raw, _rgx_raw])[0] }}</b> — the label’s own axes no longer support it{% if _rgx_gs is not none and _rgx_gs is number and _rgx_is is not none and _rgx_is is number %} (growth <b>{{ '%+.2f'|format(_rgx_gs) }}</b>, inflation <b>{{ '%+.2f'|format(_rgx_is) }}</b>){% endif %}</span>
-            <span class="l-zh"><b>{{ _rgx_q.get(_rgx_raw, [_rgx_raw, _rgx_raw])[1] }}</b> — 该标签自身的两轴已不再支持它{% if _rgx_gs is not none and _rgx_gs is number and _rgx_is is not none and _rgx_is is number %}（增长 <b>{{ '%+.2f'|format(_rgx_gs) }}</b>、通胀 <b>{{ '%+.2f'|format(_rgx_is) }}</b>）{% endif %}</span>
-          </span>
-        </div>
-        {% endif %}
-        {% if _rgx_cd or (_rgx_pq and _rgx_pd is not none and _rgx_pn) %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Counting down','倒计时') }}</span>
-          <span class="mx5-rgx-v">
-            {%- if _rgx_meter | length == 2 %}<span class="mx5-rgx-meter" aria-hidden="true">{% for _i in range(_rgx_meter[1]) %}<i{% if _i < _rgx_meter[0] %} class="on"{% endif %}></i>{% endfor %}</span>{% endif %}
-            {%- if _rgx_pq and _rgx_pd is not none and _rgx_pn %}
-            <span class="l-en">A change to <b>{{ _rgx_q.get(_rgx_pq, [_rgx_pq, _rgx_pq])[0] }}</b> is counting down — <b>{{ _rgx_pd }} of {{ _rgx_pn }}</b> confirmation days done</span>
-            <span class="l-zh">转向<b>{{ _rgx_q.get(_rgx_pq, [_rgx_pq, _rgx_pq])[1] }}</b>的切换正在倒计时 — 已完成 <b>{{ _rgx_pd }}/{{ _rgx_pn }}</b> 个确认交易日</span>
-            {%- else %}
-            <span class="l-en">{{ _rgx_cd[0][0] }}</span><span class="l-zh">{{ _rgx_cd[0][1] }}</span>
-            {%- endif %}
-          </span>
-        </div>
-        {% endif %}
-        {% if _rgx_prog.get('phase_note') %}
-        <div class="mx5-rgx-row">
-          <span class="mx5-rgx-k">{{ t('Regime age','周期已运行') }}</span>
-          <span class="mx5-rgx-v">
-            {%- if _rgx_prog.get('age_days') is not none %}<b>{{ _rgx_prog.age_days }}</b><span class="l-en"> days{% if _rgx_prog.get('median_days') %} (typical <b>{{ _rgx_prog.median_days }}</b>){% endif %} — </span><span class="l-zh"> 天{% if _rgx_prog.get('median_days') %}（通常 <b>{{ _rgx_prog.median_days }}</b> 天）{% endif %} — </span>{% endif %}
-            <span class="l-en">{{ _rgx_prog.phase_note }}</span><span class="l-zh">{{ _rgx_prog.phase_note_zh or _rgx_prog.phase_note }}</span>
-          </span>
-        </div>
-        {% endif %}
-        {# What the two axes actually measure. They are built from the DIRECTION OF
-           CHANGE in market proxies, so "inflation cooling" on the label is never a claim
-           that the price level is low — core PCE is printed beside it so the two cannot
-           be confused. Level read comes from rate_inflation_transmission.state. #}
-        <div class="mx5-rgx-note">
-          <span class="l-en">These two axes read the direction of change in market proxies, not levels{% if _rgx_pce is not none and _rgx_pce is number %} — core PCE is {{ '%.1f'|format(_rgx_pce) }}%{% if _rgx_pce_w %}, {{ _rgx_pce_w[0] }}{% endif %}{% endif %}.</span>
-          <span class="l-zh">这两轴读的是市场代理指标的变化方向，而非水平值{% if _rgx_pce is not none and _rgx_pce is number %} — 核心 PCE 为 {{ '%.1f'|format(_rgx_pce) }}%{% if _rgx_pce_w %}，{{ _rgx_pce_w[1] }}{% endif %}{% endif %}。</span>
-        </div>
-      </div>
-      {% endif %}
       <div class="mx5-sc-gauge-row {{ _mx5_sc_cls }}">
         {# Compact semicircle gauge; data-* attrs for risk_state_live.js patchMacro #}
         <svg class="mx5-gauge-svg" viewBox="0 -4 140 101" fill="none"
-             aria-label="{{ MS.label_en }} — score {{ _mx5_score }}"
+             aria-label="{{ MS.label_en }} — score {{ _mx5_score }}{% if _mx5_ghost %}; capped from six-signal blend {{ _mx5_raw }}{% endif %}"
              data-gauge-arc-len="{{ _mx5_arc_len }}"
              data-gauge-radius="56"
              data-gauge-cx="70" data-gauge-cy="75">
@@ -6978,16 +6685,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <text x="14"  y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">0</text>
           <text x="70"  y="10" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">50</text>
           <text x="126" y="95" fill="rgba(255,255,255,.26)" font-size="11" text-anchor="middle" font-family="Inter,-apple-system,sans-serif">100</text>
-          {# Ghost mark — where the six-leg BLEND sits, drawn under the needle so the
-             two marks read as "measured" vs "shown". Quiet ink, never a second hue:
-             this is the number that was overridden, so it must stay subordinate to the
-             needle. No id and no data-* — risk_state_live.js patches the needle by id
-             and leaves this alone, which is right: the blend is a nightly composite. #}
-          {% if _mx5_ghost %}
-          <g class="mx5-gauge-ghost" transform="rotate({{ _mx5_ghost_deg }} 70 75)">
-            <line x1="70" y1="16" x2="70" y2="31" stroke-width="2.6" stroke-linecap="round"/>
-          </g>
-          {% endif %}
           {# Needle — rotation baked by Jinja; JS patches via data attr #}
           <g id="mx5-gauge-needle" transform="rotate({{ _mx5_needle_deg }} 70 75)" filter="url(#mx5NeedleGlow)">
             <line x1="70" y1="75" x2="70" y2="24" stroke="rgba(255,255,255,.30)" stroke-width="5" stroke-linecap="round"/>
@@ -7015,20 +6712,11 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           <div class="mx5-sub-line">
             <span class="l-en">{{ {'green':'GREEN','yellow':'YELLOW','red':'RED'}.get(MS.color,'—') }} &mdash; {{ {'green':'Trend-following supported','yellow':'Trade with caution','red':'Defend capital first'}.get(MS.color,'') }}</span>
             <span class="l-zh">{{ {'green':'偏多 — 顺势而为受支撑','yellow':'谨慎操作','red':'优先保住本金'}.get(MS.color,'') }}</span>
+            {% if _mx5_ghost and _mx5_capw %}
+            {{ help('The dial is capped at ' ~ _mx5_score ~ '; the six-signal blend is ' ~ _mx5_raw ~ '. The cap can only pull the dial down, never up.',
+                    '刻度盘上限为 ' ~ _mx5_score ~ '；六项信号合成为 ' ~ _mx5_raw ~ '。上限只能压低刻度盘，不会抬高。') }}
+            {% endif %}
           </div>
-          {# The dial's second mark, in words. Deliberately does NOT restate the shown
-             score: risk_state_live.js moves the needle intraday, and a baked "56" here
-             would go stale the moment it does. The blend is a nightly composite, so it
-             is safe to print — and the ghost tick on the arc is its legend. #}
-          {% if _mx5_ghost and _mx5_capw %}
-          <div class="mx5-score-prov">
-            <i class="mx5-ghost-key" aria-hidden="true"></i>
-            <span class="l-en">Six-signal blend <b>{{ _mx5_raw }}</b> — the dial is held below it by {{ _mx5_capw[0] }}.</span>
-            <span class="l-zh">六项信号合成 <b>{{ _mx5_raw }}</b> — 刻度盘受{{ _mx5_capw[1] }}压制在其下方。</span>
-            {{ help('The dial shows the LOWER of two numbers: the blend of the six signals below, and a cap. Today the cap binds, so the number you see is the cap' ~ ((' (' ~ _mx5_ceil ~ ')') if _mx5_ceil is not none else '') ~ ', not a measurement of the tape — the blend reads ' ~ _mx5_raw ~ '. A cap can only pull the dial down, never up.',
-                     '刻度盘显示两个数中较低的一个：下方六项信号的合成值，以及一个上限。今日上限起作用，因此你看到的数字是上限' ~ ((' ' ~ _mx5_ceil) if _mx5_ceil is not none else '') ~ '，而非对行情的测量 —— 合成值为 ' ~ _mx5_raw ~ '。上限只能把刻度盘压低，不会抬高。') }}
-          </div>
-          {% endif %}
         </div>
       </div>{# /mx5-sc-gauge-row #}
 
@@ -7227,7 +6915,7 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
           'tips_nominal_momentum':['the TIPS spread','TIPS 利差'] } %}
         {#- the weakest-support clause is SUPPRESSED when the label's own axes no longer
             support it: there is no supporting component to name, and the glance rows
-            above already say what the axes read (see raw_quad_of + the mx5-rgx block).
+            popup above already says what the axes read (see raw_quad_of()).
             The engine returns component=None in that state; an older payload does not,
             so the same check runs here. -#}
         {%- set _gk_raw = raw_quad_of(latest) | trim %}
@@ -7368,53 +7056,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
 
       </div>{# /mx5-btn-row #}
 
-      {# ── Receipts for the two chips above (chipn-*) ────────────────────────────
-         Three things a reader cannot get from the chips alone, in the order they are
-         likely to be misread. All engine-sourced, all individually guarded. #}
-      {% set _mx5_ddb = (_mx5_rdr.dd_base if (_mx5_rdr and _mx5_rdr.dd_base is mapping) else {}) %}
-      {% set _mx5_dd21 = _mx5_rdr.dd21 if (_mx5_rdr and _mx5_rdr.dd21 is defined and _mx5_rdr.dd21 is not none) else none %}
-      {% set _mx5_ddbase21 = _mx5_ddb.get('h21') %}
-      {% set _mx5_ddlift = _mx5_rdr.dd_lift if (_mx5_rdr and _mx5_rdr.dd_lift is defined and _mx5_rdr.dd_lift is not none) else none %}
-      {% set _mx5_unav = _mx5_rdr.amp_unavailable if (_mx5_rdr and _mx5_rdr.amp_unavailable is defined and _mx5_rdr.amp_unavailable) else [] %}
-      {% set _mx5_unav_n = _mx5_rdr.amp_n_checked if (_mx5_rdr and _mx5_rdr.amp_n_checked is defined and _mx5_rdr.amp_n_checked) else none %}
-      {% if (_mx5_risk_elevated and _mx5_radar_top > 0) or _mx5_dd21 is not none or _mx5_unav %}
-      <div class="mx5-chipn">
-        {# 1. THE TWO NUMBERS RUN OPPOSITE WAYS. The dial beside this reads 0-100 toward
-              Risk-on; the radar chip reads 0-100 toward more risk. Printed next to each
-              other with no scale, "56" and "77" invite the reader to compare them. #}
-        {% if _mx5_risk_elevated and _mx5_radar_top > 0 %}
-        <div class="mx5-chipn-row">
-          <span class="l-en">Opposite scales — dial: 100 = Risk-on (now <b>{{ _mx5_score }}</b>). Radar: 100 = most risk (now <b>{{ _mx5_radar_top }}</b>).</span>
-          <span class="l-zh">两把尺方向相反 — 刻度盘：100＝偏多（现 <b>{{ _mx5_score }}</b>）；雷达：100＝风险最高（现 <b>{{ _mx5_radar_top }}</b>）。</span>
-        </div>
-        {% endif %}
-        {# 2. WHAT THE STATE HAS ACTUALLY MEASURED. "Elevated Risk" is a state name, not
-              an edge: the quiet tiers measure at or below the unconditional base rate.
-              The engine now composes this sentence itself (lift_note_en/zh) — render
-              that verbatim when present; otherwise say the same thing from the three
-              numbers it already publishes, and only claim a lift when there is one. #}
-        {% if _mx5_rdr.lift_note_en is defined and _mx5_rdr.lift_note_en %}
-        <div class="mx5-chipn-row"><span class="l-en">{{ _mx5_rdr.lift_note_en }}</span><span class="l-zh">{{ _mx5_rdr.lift_note_zh or _mx5_rdr.lift_note_en }}</span></div>
-        {% elif _mx5_dd21 is not none and _mx5_ddbase21 %}
-        <div class="mx5-chipn-row">
-          <span class="l-en">Measured at this state: a <b>{{ (_mx5_dd21 * 100) | round | int }}%</b> chance of a 5%-or-worse pullback within 21 sessions, against a <b>{{ (_mx5_ddbase21 * 100) | round(1) }}%</b> long-run rate{% if _mx5_ddlift is not none %} — {% if _mx5_ddlift <= 1.0 %}no lift above that base, so treat it as an early flag, not an edge{% else %}a <b>{{ _mx5_ddlift }}&times;</b> lift{% endif %}{% endif %}.</span>
-          <span class="l-zh">该等级实测：21 个交易日内出现 5% 或以上回撤的概率为 <b>{{ (_mx5_dd21 * 100) | round | int }}%</b>，长期基准为 <b>{{ (_mx5_ddbase21 * 100) | round(1) }}%</b>{% if _mx5_ddlift is not none %} — {% if _mx5_ddlift <= 1.0 %}并未高于基准，属早期提示而非优势{% else %}倍数 <b>{{ _mx5_ddlift }}</b>{% endif %}{% endif %}。</span>
-        </div>
-        {% endif %}
-        {# 3. SILENT BY CONSTRUCTION ≠ ALL-CLEAR. Two of the cross-check gauges need a
-              CALM tape to fire at all, so they disarm in exactly the decline they would
-              be wanted for. Without this line, "no corroborators firing" reads as "the
-              cross-checks agree there is nothing here". #}
-        {% if _mx5_unav %}
-        <div class="mx5-chipn-row warn">
-          <span class="l-en"><b>{{ _mx5_unav | length }}</b>{% if _mx5_unav_n %} of <b>{{ _mx5_unav_n }}</b>{% endif %} cross-check gauges cannot fire on this tape — silent by construction, not an all-clear.</span>
-          <span class="l-zh">{% if _mx5_unav_n %}<b>{{ _mx5_unav_n }}</b> 项交叉验证指标中有 {% endif %}<b>{{ _mx5_unav | length }}</b> 项在当前行情下无法触发 — 属结构性沉默，并非安全信号。</span>
-          {{ help((_mx5_unav | map(attribute='note_en') | select | join(' ')) or 'These gauges are defined only on a calm tape, so they cannot corroborate a decline.',
-                  (_mx5_unav | map(attribute='note_zh') | select | join(' ')) or '这些指标仅在平静行情下才成立，因此无法在下跌中提供确认。') }}
-        </div>
-        {% endif %}
-      </div>
-      {% endif %}
     </div>{# /mx5-sc-left #}
 
     {# 60-session path panel (right, hidden ≤700px per spec §0 via CSS) #}
@@ -7873,13 +7514,19 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {% endif %}
 
-        {# 2. ACTIVE stress dislocation — the operator-ordered home for a fired gate
-           (2026-07-29). The panel itself no longer floats above the board; this row
-           plus the alerts-pane entry are how a live dislocation announces itself, and
-           both jump to #dislocation. Amber, not the verdict colour: whatever the
-           verdict, the stance here is caution, and amber makes no directional claim
-           that would have to flip under zh 红涨绿跌. Copy is the calibrated verdict
-           wording, compressed to one line — claims unchanged. #}
+        {# 2. ACTIVE stress selloff — the operator-ordered home for a fired gate
+           (2026-07-29). This row plus the alerts-pane entry are how it announces
+           itself; the readout they link to moved to macro_signals.html on 2026-07-30
+           (operator: the standalone container was "all machine language"). Amber, not
+           the verdict colour: whatever the verdict, the stance here is caution, and
+           amber makes no directional claim that would have to flip under zh 红涨绿跌.
+
+           GLANCE TIER, so the copy is plain-word: the verb chip carries a stance from
+           the doctrine's own vocabulary (Law 1) and the line says what the reader does,
+           never what the engine is called. "Buyable washout" / "falling-knife risk"
+           were the verdict SLUGS printed raw — banned by Law 2, and "buyable" read as a
+           buy signal on a filter whose own help text says it is not one. Claims are
+           unchanged; the receipts are one click away. #}
         {# `latest is defined` is load-bearing, not defensive noise:
            tests/test_macro_what_to_do_glance.py renders THIS fragment in isolation
            (marker-delimited) against a hand-built context that supplies market_state /
@@ -7895,13 +7542,33 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
             </svg>
           </div>
+          {# Tri-state, not a boolean: an unreadable Fed-put switch must not borrow the
+             permissive line. Mirrors the guard in macro_signals.html.j2 §5. #}
+          {% set _wtd_dl = latest.dislocation %}
+          {% set _wtd_unknown = ((_wtd_dl.put_state is defined and _wtd_dl.put_state == 'unknown')
+                                 or (_wtd_dl.put_state_reliable is defined and not _wtd_dl.put_state_reliable)
+                                 or (_wtd_dl.fed_put is defined and _wtd_dl.fed_put is none)) %}
+          {# The old standalone readout kept every DISAGREEING reading in the open, on
+             the audit order that a fired gate must never bury its own dissent. Moving
+             the readout off this page would have buried it by default, so the fact that
+             a cross-check disagrees survives here in plain words; the reading itself is
+             one click away. Both cross-checks are engine CONTEXT that never changes the
+             verdict, so this qualifies the line — it does not restate it. #}
+          {% set _wtd_dissent = ((_wtd_dl.geo_reversibility and _wtd_dl.geo_reversibility.agreement != 'corroborates')
+                                 or (_wtd_dl.catalyst_narrative and _wtd_dl.catalyst_narrative.agreement != 'corroborates')) %}
           <div class="mx5-action-text">
             <div class="mx5-action-label">
-              <span class="mx5-action-verb"><span class="l-en">Stress</span><span class="l-zh">压力</span></span>
-              {%- if latest.dislocation.verdict == 'buyable_washout' %}<span class="l-en">Buyable washout: confirm into stabilization, do not anticipate.</span><span class="l-zh">可买入的错杀：在企稳中确认，勿提前抢跑。</span>
-              {%- elif latest.dislocation.verdict == 'stand_aside' %}<span class="l-en">Falling-knife risk: stand aside.</span><span class="l-zh">接飞刀风险：观望。</span>
-              {%- else %}<span class="l-en">An acute stress dislocation is firing.</span><span class="l-zh">急性压力错位正在触发。</span>{% endif %}
-              <a class="mx5-wtd-jump" href="#dislocation" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'||event.key===' ')event.stopPropagation();">{{ t('View ↓','查看 ↓') }}</a>
+              {# The stance leads the sentence, exactly like the sibling rows ("Follow the
+                 trend. Add on strength."). It used to sit in a `.mx5-action-verb` span
+                 that NO stylesheet ever matched and that carried no trailing space, so
+                 the row shipped reading "StressBuyable washout:" — the span is retired
+                 rather than restyled, so this row uses the same idiom as its siblings. #}
+              {%- if _wtd_unknown %}<span class="l-en">Don’t chase. Selling is stressed and we can’t read whether the Fed would step in.</span><span class="l-zh">不要追。抛售处于压力状态，且无法判读美联储是否会出手。</span>
+              {%- elif _wtd_dl.verdict == 'buyable_washout' %}<span class="l-en">Don’t chase. Selling is stressed, but the Fed’s backstop holds — wait for it to steady.</span><span class="l-zh">不要追。抛售处于压力状态，但美联储托底仍在 — 等待企稳。</span>
+              {%- elif _wtd_dl.verdict == 'stand_aside' %}<span class="l-en">Stand aside. Selling is stressed with no Fed backstop — the 2008 setup.</span><span class="l-zh">观望。抛售处于压力状态且美联储托底缺失 — 2008 年式情形。</span>
+              {%- else %}<span class="l-en">Don’t chase. Selling is stressed — nothing to do until it steadies.</span><span class="l-zh">不要追。抛售处于压力状态 — 企稳前无需行动。</span>{% endif %}
+              {%- if _wtd_dissent %} <span class="mx5-wtd-dissent"><span class="l-en">Not everything agrees.</span><span class="l-zh">并非所有指标一致。</span></span>{% endif %}
+              <a class="mx5-wtd-jump" href="macro_signals.html#dislocation" onclick="event.stopPropagation()" onkeydown="if(event.key==='Enter'||event.key===' ')event.stopPropagation();">{{ t('Why →','原因 →') }}</a>
             </div>
           </div>
         </div>
@@ -14789,274 +14456,30 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     <div class="muted" style="font-size:11px;margin-top:6px">{{ t(RS.disclaimer, RS.disclaimer) }}</div>
   </div>
   {% endif %}
+  {# CLOSING MARKER — load-bearing, do not delete.
+     tests/test_fear_euphoria.py::_render_risk_state_banner slices this banner out of
+     the template by literal markers and renders it in isolation. It used to end the
+     slice on the NEXT section's header ("<!-- ==== MACRO NOWCAST"), i.e. on a
+     neighbour it does not own — so when the dislocation panel and its header were
+     demoted to macro_signals.html on 2026-07-30, `src.index(...)` raised
+     ValueError and reddened ci-pack-0 on a change that never touched this banner.
+     The banner now delimits ITSELF: the slice is bounded by markers that belong to
+     it, and editing whatever follows can no longer break it. #}
+  <!-- ============ /EARLY RISK-STATE BANNER ============ -->
 
   {# mtf-monitor (Multi-timeframe technical monitor) retired — folded into the Market State command-center #}
 
-  <!-- ============ MACRO NOWCAST · CONDITIONS · RISK APPETITE ============ -->
-  {% if latest.dislocation %}
-  {% set DL = latest.dislocation %}
-  {% set DI = DL.inputs %}
-  {% set vcolor = 'var(--up)' if DL.verdict=='buyable_washout' else ('var(--down)' if DL.verdict=='stand_aside' else 'var(--muted)') %}
-  {% if DL.dislocation_active %}
-  {# ── ACTIVE dislocation = a compact READOUT STRIP in normal page flow. ─────────
-     Operator ruling 2026-07-29: the old presentation floated this to the very top of
-     the board (via a negative flex `order`, since removed) as eight nested sub-cards behind a
-     breathing glow — measured at 627px on a 1440x900 viewport, i.e. "70% of the
-     viewport … not good UX to disrupt with pop-up boards". The announcement now
-     rides the three lightweight affordances the operator named: the alerts-pane
-     entry, the master-switch chip, and the "What To Do Now" row — all three jump
-     here. This panel is their receipt.
+  {# Stress selloff filter (engine/dislocation.py) — the standalone readout that
+     used to render HERE was demoted to templates/macro_signals.html.j2 §5 on
+     2026-07-30 (operator: "all machine language ... nothing they can remotely
+     understand"). It printed a DISLOCATION eyebrow, a verdict slug, an internal
+     switch name, a K-of-N trigger count and five bare percentile/threshold pairs
+     on a primary board — every one of them banned from the glance tier by
+     docs/DESIGN_DOCTRINE.md Law 2, and none of them answerable by a reader.
+     Same demotion the Risk Radar card made just above. macro.html keeps the
+     ANNOUNCEMENT in plain words — the alerts-pane entry and the "What To Do Now"
+     row — and both link to macro_signals.html#dislocation for the receipts. #}
 
-     Audit order (same day): the strip must NOT bury anything that disagrees with the
-     verdict. So the visible rows carry every trigger's live reading against its own
-     limit, the Fed-put sub-readings, the entry-timer state and both cross-checks
-     (including a geopolitical DIVERGENCE) — only long-form prose and the measured
-     record sit behind the fold.
-
-     PRESENTATION ONLY — every claim is the calibrated engine copy, re-housed and
-     re-ordered, not reworded. #}
-  {# THE FED-PUT SWITCH IS TRI-STATE, not a boolean (engine/dislocation.py DEGRADE
-     CONTRACT, 2026-07-29). A missing or stale Sahm / breakeven leg used to read as
-     "leg not firing" -> put present -> buyable washout: a data outage failed OPEN
-     toward the permissive verdict. The engine now degrades `put_state` to "unknown"
-     with `put_state_reliable: false` and a `stale_inputs` list. Rendering that third
-     state through `DL.fed_put` alone would print "Fed put ABSENT" for "we cannot
-     read the switch" — the opposite reading. Older payloads carry NEITHER key, so
-     the tri-state falls back to the boolean and this whole branch stays dark. #}
-  {% set _put_unknown = ((DL.put_state is defined and DL.put_state == 'unknown')
-                         or (DL.put_state_reliable is defined and not DL.put_state_reliable)
-                         or (DL.fed_put is defined and DL.fed_put is none)) %}
-  {% set _put_stale = DL.stale_inputs if (DL.stale_inputs is defined and DL.stale_inputs) else [] %}
-  {% set dlp = 'var(--muted)' if _put_unknown else ('var(--up)' if DL.fed_put else 'var(--down)') %}
-  {# Stress triggers come from the ENGINE's authoritative list (DI.triggers), never
-     re-derived here. The template used to re-test the thresholds in Jinja, and
-     `DI.vrp_pctile > 0.9` is False against a value the engine already ROUNDED to 2dp
-     (0.9027 -> 0.9) — so on a live variance-premium-only dislocation the page printed
-     "Stress triggers firing" above an EMPTY chip row. Loosening the comparison would
-     have moved the gate; reading the engine's list cannot. #}
-  {% set _trigs = DI.triggers or [] %}
-  {% set _TRIG_ZH = {'VIX panic': 'VIX 恐慌', 'drawdown': '回撤',
-                     'VRP extreme': '方差溢价极端', 'VIX backwardation': 'VIX 倒挂'} %}
-  {# EN display names for engine slugs that read as acronym soup at a glance (the
-     gate's own help text calls it "a variance-premium extreme"). #}
-  {% set _TRIG_EN = {'VRP extreme': 'variance-premium extreme'} %}
-  {# The capitulation gauge is an INTENSITY confirm, not a fifth trigger, and today it
-     fires on the SAME underlying reading — so it is never added to the trigger count. #}
-  {% set _tgj = _trigs | join('|') %}
-  {% set _cap_extra = [] %}
-  {% for _s in (DI.capitulation_signals or []) %}{% if _s not in _trigs %}{% set _ = _cap_extra.append(_s) %}{% endif %}{% endfor %}
-  {# Trigger limits mirror engine/dislocation.py DEFAULTS — vix_panic 30.0,
-     dip_pct 0.10, vrp_pctile_extreme 0.90, backwardation_ratio 1.0, sahm_trigger
-     0.50, fedput_breakeven 2.5. Display-only copies (the payload carries readings,
-     not limits); grep this comment if those constants ever move. #}
-  <div class="panel span12 dislo-strip" id="dislocation" style="--lit:{{ vcolor }};--dlp:{{ dlp }}">
-    <div class="dlx-head">
-      <span class="dlx-eyebrow">{{ t('Dislocation','错位') }}</span>
-      <h2 class="dlx-verdict">{% if DL.verdict=='buyable_washout' %}{{ t('Buyable washout', '可买入的错杀') }}
-        {%- elif DL.verdict=='stand_aside' %}{{ t('Stand aside — falling knife', '观望 — 接飞刀风险') }}
-        {%- else %}{{ t('Acute dislocation', '急性错位') }}{% endif %}</h2>
-      <span class="dlx-put">{% if _put_unknown %}{{ t('Fed-put switch unreadable', '美联储托底开关无法判读') }}{% elif DL.fed_put %}{{ t('Fed put intact', '美联储托底在位') }}{% else %}{{ t('Fed put ABSENT', '美联储托底缺失') }}{% endif %}</span>
-      <span class="dlx-count">{% if _trigs|length == 1 %}{{ t('only 1 of 4 stress triggers', '4 项压力信号中仅 1 项触发') }}{% else %}{{ t(_trigs|length ~ ' of 4 stress triggers', '4 项压力信号中 ' ~ _trigs|length ~ ' 项触发') }}{% endif %}</span>
-      {# The old help tip claimed "the whole edge is in REFUSING the falling knife
-         (2000/2008/2022)". The declustered replay disproves that for two of the three
-         episodes: the gate refused 2008 (put-absent from 2008-04 through the trough)
-         but printed buyable early in the 2000-02 bear and twice inside 2022, both 2022
-         prints within 0.02pp of the breakeven cutoff. Copy below mirrors the corrected
-         engine/dislocation.py EVIDENCE["caveat"] + module docstring verbatim in
-         substance, so the page and the engine can never disagree again. #}
-      {{ help("A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a >10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). What the replay actually shows: it REFUSED the 2008 crash (put-absent from 2008-04), but it printed buyable early in the 2000-02 bear and twice in 2022 with the breakeven within 0.02pp of the cutoff. So this is a drawdown filter with known misses, not a knife-proof shield, and not a bounce-catcher — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.", "位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、>10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。回放实际显示：它拒绝了 2008 年的崩盘（自 2008-04 起判定托底缺失），但在 2000-02 熊市早期给出过「可买入」，2022 年内亦有两次，且这两次盈亏平衡率距阈值均在 0.02 个百分点以内。因此这是一个存在已知漏判的回撤过滤器，既非防飞刀的护盾，也不是抄反弹的工具 — 基于标普 1997-2026 实测。") }}
-    </div>
-
-    {# STANCE — the one plain-word line that answers "so what do I do". Bold clause and
-       honesty clause are both verbatim from the previous verdict hero + subtitle. #}
-    <p class="dlx-stance">
-      {% if DL.verdict=='buyable_washout' %}<b>{{ t('Confirm into stabilization, do not anticipate.', '在企稳中确认，勿提前抢跑。') }}</b>
-      {% elif DL.verdict=='stand_aside' %}<b>{{ t('Stand aside.', '观望。') }}</b> {{ t('This is the put-absent setup the gate refused from April 2008, where the same capitulation signals kept firing into the fall.', '这是一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形，同样的恐慌信号在下跌途中不断触发。') }}
-      {% elif _put_unknown %}<b>{{ t('Watch — do not chase.', '观察 — 不要追。') }}</b> {{ t('No buyable or stand-aside call is made while the switch cannot be read: a missing reading is not a reading that says all-clear.', '在开关无法判读期间不作「可买入」或「观望」的判定：读不到，不等于读到了安全。') }}
-      {% else %}<b>{{ t('An acute stress dislocation is firing.', '急性压力错位正在触发。') }}</b>{% endif %}
-      <span class="dlx-hon">{{ t('A risk filter, not a buy signal.', '这是风险过滤器而非买入信号。') }}</span>
-    </p>
-    {% if DL.capitulation_caveat %}
-    <p class="dlx-warn">⚠ {{ t('The capitulation gauge is firing, but the Fed put is absent — its measured bounce does NOT apply here (the falling-knife regime).', '恐慌触底指标在触发，但美联储托底缺失 — 其实测反弹在此不适用（接飞刀情形）。') }}</p>
-    {% endif %}
-
-    <div class="dlx-rows">
-
-      {# What is firing, and by how much. The margin line prints all four stress
-         readings against their own limits — firing or not — so a one-trigger state
-         reads as a one-trigger state instead of as a broad washout. #}
-      <div class="dlx-row">
-        <span class="dlx-lbl">{{ t('Stress triggers', '压力信号') }}</span>
-        <span class="dlx-val"><span class="dlx-chips">
-            {%- for tg in _trigs %}
-            {%- set _stem = 'VIX panic' if tg.startswith('VIX panic') else ('drawdown' if tg.startswith('drawdown') else tg) %}
-            {%- set _tail = tg | replace(_stem, '') %}
-            <span class="badge" style="font-size:11px;color:{{ vcolor }}">{{ t(_TRIG_EN.get(tg, tg), _TRIG_ZH.get(_stem, _stem) ~ _tail) }}</span>
-            {%- endfor %}
-          </span>
-          {%- if DI.capitulation_active %}<span class="dlx-cap">{% if _cap_extra %}— {{ t('capitulation gauge also firing on ', '恐慌触底指标同时触发：') }}{% for s in _cap_extra %}{{ t(_TRIG_EN.get(s, s), _TRIG_ZH.get(s, s)) }}{% if not loop.last %} · {% endif %}{% endfor %}{% if DI.capitulation_strong %} ⚑{% endif %}{% else %}— {{ t('capitulation gauge firing on the same reading, not a second signal', '恐慌触底指标基于同一读数触发，并非第二个信号') }}{% endif %}</span>{% endif %}
-          {# MARGIN LINE — every stress reading against its own limit, firing or not.
-             The variance-premium reading now prints its TRUE margin: the engine emits
-             `vrp_pctile_raw` at 4dp precisely because the 2dp display copy (0.9027 ->
-             0.9) made a firing trigger read as a tie against its own 90 limit. With
-             the raw value present the "rounded for display" hedge is retired; on an
-             older payload that lacks it the 2dp reading + the hedge are kept, because
-             then the tie really is a rounding artefact we cannot resolve here. #}
-          {% set _vrp_raw = DI.vrp_pctile_raw if (DI.vrp_pctile_raw is defined and DI.vrp_pctile_raw is not none) else none %}
-          <span class="dlx-margins">
-            {%- if _vrp_raw is not none %}<span class="dlx-mg{{ ' on' if 'VRP extreme' in _trigs }}">{{ t('variance premium', '方差溢价') }} {{ '%.1f'|format(_vrp_raw * 100) }}{{ t('th pct vs 90th', ' 百分位 对 90 百分位') }}</span> · {% elif DI.vrp_pctile is not none %}<span class="dlx-mg{{ ' on' if 'VRP extreme' in _trigs }}">{{ t('variance premium', '方差溢价') }} {{ '%.0f'|format(DI.vrp_pctile * 100) }}{{ t('th pct vs 90', ' 百分位 对 90') }}</span> · {% endif %}
-            {%- if DI.vix is not none %}<span class="dlx-mg{{ ' on' if 'VIX panic' in _tgj }}">{{ t('VIX', 'VIX') }} {{ DI.vix }} {{ t('vs 30', '对 30') }}</span> · {% endif %}
-            {%- if DI.spy_drawdown_pct is not none %}<span class="dlx-mg{{ ' on' if 'drawdown' in _tgj }}">{{ t('drawdown', '回撤') }} {{ DI.spy_drawdown_pct }}% {{ t('vs -10%', '对 -10%') }}</span> · {% endif %}
-            {%- if DI.vix_term is not none %}<span class="dlx-mg{{ ' on' if 'VIX backwardation' in _trigs }}">{{ t('VIX term', 'VIX 期限') }} {{ '%.2f'|format(DI.vix_term) }} {{ t('vs 1.00', '对 1.00') }}</span>{% endif %}
-            {%- if _vrp_raw is none %} · {{ t('readings rounded for display; the gate uses full precision', '读数为展示用四舍五入；闸门使用完整精度') }}{% endif %}
-          </span>
-        </span>
-      </div>
-
-      {# The master switch, with both of its sub-readings against their own limits —
-         this is the discriminator the whole verdict turns on, so it stays visible. #}
-      <div class="dlx-row">
-        <span class="dlx-lbl">{{ t('Fed-put switch', '美联储托底开关') }}
-          {{ help("The one out-of-sample-stable discriminator (holds in BOTH 1997-2011 and 2012-2025). PUT-ABSENT = recession underway (Sahm >= 0.50) OR inflation locks the Fed (sustained 10y breakeven >= 2.5%). Primary trend is shown as context but adds little on top of the switch.", "唯一在样本外稳定的判别器（1997-2011 与 2012-2025 两半区均成立）。托底缺失＝衰退进行中（Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。主趋势作为背景显示，但在开关之上增益有限。") }}
-        </span>
-        {# Which legs the engine could not read (stable keys, so the ZH lane can name
-           them in Chinese instead of echoing the engine's English receipt). #}
-        {% set _stale_j = _put_stale | join(' ') %}
-        <span class="dlx-val"><b style="color:{{ dlp }}">{% if _put_unknown %}{{ t('Switch unreadable', '开关无法判读') }}{% elif DL.fed_put %}{{ t('Put present', '托底在位') }}{% else %}{{ t('Put ABSENT', '托底缺失') }}{% endif %}</b>
-          {%- if _put_unknown %}<span class="dlx-dis"> · ⚠ {{ t('inputs stale or missing — no ruling', '输入过期或缺失 — 不作判定') }}</span>
-          {%- elif not DL.fed_put %}<span style="color:var(--down)">
-          {%- if DI.sahm is not none and DI.sahm >= 0.5 %} · ⚑ {{ t('recession underway (Sahm)', '衰退进行中（Sahm）') }}{% endif %}
-          {%- if DI.breakeven_10y_1m is not none and DI.breakeven_10y_1m >= 2.5 %} · ⚑ {{ t('inflation locks the Fed', '通胀锁住美联储') }}{% endif %}</span>{% endif %}
-          {%- if _put_unknown %}
-          <span class="dlx-margins dlx-dis">{{ t('Cannot read:', '无法读取：') }}
-            {%- if 'sahm' in _stale_j %} {{ t('the real-time recession trigger', '实时衰退触发指标') }}{% endif %}
-            {%- if 'sahm' in _stale_j and 'breakeven' in _stale_j %} ·{% endif %}
-            {%- if 'breakeven' in _stale_j %} {{ t('the 10-year breakeven', '十年期盈亏平衡通胀率') }}{% endif %}
-            {%- if not _put_stale %} {{ t('one of the two switch legs', '开关两条腿中的一条') }}{% endif %}
-            {{ help(('Engine staleness receipt — ' ~ (_put_stale | join('; '))) if _put_stale else 'The Fed-put switch reported itself unreadable; no per-leg receipt was published with this reading.', '引擎过期回执（英文原文见英文版）：该腿的最后印刷日期已超出其过期预算，因此引擎拒绝以「未触发」来解读一个读不到的读数。') }}</span>
-          {%- endif %}
-          {# VINTAGES (item: a monthly reference month is not a same-day read). Sahm is a
-             monthly reference-month series with a ~6-week publication lag, carried
-             forward by ffill, so its own stamp is materially older than the row it sits
-             on — that is true of the construction whether or not the engine has shipped
-             `sahm_asof` yet, so the nature is stated always and the date is added when
-             the payload carries it. #}
-          <span class="dlx-margins">Sahm <b>{{ '%.2f'|format(DI.sahm) if DI.sahm is not none else '—' }}</b> {{ t('vs 0.50', '对 0.50') }}
-            <span class="dlx-vint">({{ t('monthly reference month, carried forward', '月度参考月数据，向前沿用') }}{% if DI.sahm_asof is defined and DI.sahm_asof %} · {{ DI.sahm_asof }}{% endif %})</span>
-            · {{ t('10y breakeven', '十年盈亏平衡') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) if DI.breakeven_10y_1m is not none else '—' }}%</b> {{ t('vs 2.50%', '对 2.50%') }}
-            <span class="dlx-vint">({{ t('21-day average', '21 日均值') }}{% if DI.breakeven_asof is defined and DI.breakeven_asof %} · {{ DI.breakeven_asof }}{% endif %})</span>
-            · {{ t('trend', '趋势') }} <b>{{ t('up', '上行') if DI.primary_trend=='up' else t('down', '下行') }}</b></span>
-        </span>
-      </div>
-
-      {% if DL.gate2 and DL.gate2.state not in ('dormant', 'unknown') %}
-      {% set g2 = DL.gate2 %}
-      {% set g2color = 'var(--up)' if g2.state=='confirmed' else ('var(--warn)' if g2.state=='awaiting_confirm' else 'var(--muted)') %}
-      <div class="dlx-row">
-        <span class="dlx-lbl">{{ t('Gate-2 entry timer', '二道闸 · 入场时机') }}
-          {{ help("The entry TIMER — it arms ONLY once Gate-1 says buyable, and it is a coincident CONFIRM, never anticipation: it waits for the VIX term structure to un-invert (backwardation back to contango), which historically lags the VIX peak by ~13 sessions. MEASURED on matched buyable washouts (2006+): waiting for the un-inversion lifted hit-rate 61->67%, median 3-month return +2.2->+4.6% and shallowed median drawdown -4.5->-2.9% — but the 1-in-10 tail was marginally worse. A confirm, not a bottom-caller.", "入场时机器 — 仅在一道闸判定可买入后才启动，且是同步确认而非提前预判：它等待 VIX 期限结构回正（由倒挂转为正向），历史上滞后 VIX 峰值约 13 个交易日。基于匹配的可买入错杀样本（2006+）实测：等待回正将胜率由 61% 提升至 67%，三月中位回报 +2.2% 升至 +4.6%，中位回撤由 −4.5% 收窄至 −2.9% — 但 1/10 尾部略差。这是确认，而非抄底。") }}
-        </span>
-        {# TERM-STRUCTURE DISTANCE — how far the timer is from arming, so the state's
-           flip is visible before it happens. Prefer the engine's own
-           `distance_to_backwardation`; on an older payload derive it from the same two
-           display numbers already printed in the trigger-margin line above (the 1.00
-           limit is the display copy of backwardation_ratio noted at the top of this
-           panel). Presentation subtraction only — it decides nothing. #}
-        {% set _g2d = g2.distance_to_backwardation if (g2.distance_to_backwardation is defined and g2.distance_to_backwardation is not none)
-                      else ((1.0 - DI.vix_term) if DI.vix_term is not none else none) %}
-        <span class="dlx-val"><b style="color:{{ g2color }}">
-          {%- if g2.state=='confirmed' %}{{ t('Re-entry confirmed', '入场已确认') }}
-          {%- elif g2.state=='awaiting_confirm' %}{{ t('Awaiting confirm', '等待确认') }}
-          {%- else %}{{ t('No timer signal', '无时机信号') }}{% endif %}</b><span class="muted"> —
-          {%- if g2.state=='confirmed' %} {{ t('term structure un-inverted', '期限结构已回正') }}{% if g2.hook_days_ago is not none %} ({{ g2.hook_days_ago }} {{ t('sessions ago', '个交易日前') }}){% endif %}{{ t('; the mean-reversion confirm — wait for it, do not anticipate.', '；均值回归确认 — 等待它，勿提前抢跑。') }}
-          {%- elif g2.state=='awaiting_confirm' %} {{ t('term structure still backwardated; wait for the un-inversion (historically ~13 sessions after the VIX peak), do not anticipate.', '期限结构仍倒挂；等待回正（历史上约在 VIX 峰值后 13 个交易日），勿提前抢跑。') }}
-          {%- else %} {{ t('no measured entry timer applies to this trigger.', '此触发条件下没有实测的入场时机器。') }}{% endif %}</span>
-          {# The no_signal branch used to hardcode "rely on Gate-1" — which converted the
-             ABSENCE of a measured timer into an implied entry. The engine rewrote its own
-             copy, so render the engine's string (label / label_zh) and it can never drift
-             from the gate again. Older payloads ship the retired sentence and carry no
-             label_zh, so the corrected wording is mirrored here for them; the ZH twin is
-             the tell that a payload has the new copy. #}
-          <span class="dlx-margins">
-            {%- if g2.state=='no_signal' %}{% if g2.label_zh is defined and g2.label_zh %}<span class="l-en">{{ g2.label }}</span><span class="l-zh">{{ g2.label_zh }}</span>{% else %}{{ t('The confirm study covers VIX-backwardation episodes only, so there is no measured timer for this trigger. Do NOT treat Gate-1 alone as an entry signal: Gate-1 is a risk filter that says which washouts are refusable, never when to enter.', '确认研究仅覆盖 VIX 倒挂情形，因此此触发条件下没有实测的时机器。切勿将一道闸单独视为入场信号：一道闸是判断哪些错杀应当回避的风险过滤器，而非入场时点。') }}{% endif %}
-            {%- endif %}
-            {%- if DI.vix_term is not none %}{% if g2.state=='no_signal' %}<br>{% endif %}{{ t('VIX term', 'VIX 期限') }} <b>{{ '%.2f'|format(DI.vix_term) }}</b> {{ t('vs 1.00', '对 1.00') }}{% if _g2d is not none and _g2d > 0 %} — <span class="l-en">still <b>{{ '%.2f'|format(_g2d) }}</b> from the level that arms this timer</span><span class="l-zh">距启动该时机器还差 <b>{{ '%.2f'|format(_g2d) }}</b></span>{% endif %}{% endif %}
-          </span>
-        </span>
-      </div>
-      {% endif %}
-
-      {% if DL.catalyst_narrative %}
-      {% set CN = DL.catalyst_narrative %}
-      {% set cncolor = 'var(--up)' if CN.agreement=='corroborates' else 'var(--warn)' %}
-      <div class="dlx-row">
-        <span class="dlx-lbl">{{ t('Catalyst cross-check', '催化交叉验证') }}
-          {{ help("An AI read of the actual catalyst TEXT (engine/catalyst_tone.py, DeepSeek) cross-checked against the Fed-put switch: does the document read as a reversible washout or a structural break? CONTEXT ONLY — it never changes the verdict; the validated gate governs. Shown only on an active dislocation when the read is confidence-passed and quote-verified.", "对实际催化文本的 AI 解读（engine/catalyst_tone.py，DeepSeek）与美联储托底开关的交叉验证：文档解读为可逆抛售还是结构性断裂？仅供背景 —— 绝不改变判定，以经验证的一道闸为准。仅在活跃错位且解读通过置信度与引文核验时显示。") }}
-        </span>
-        <span class="dlx-val"><span class="{{ 'dlx-dis' if CN.agreement != 'corroborates' }}">{% if CN.agreement != 'corroborates' %}⚠ {% endif %}{% if CN.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
-          · {{ t('catalyst reads', '催化解读') }} <b><span class="l-en">{{ CN.shock_reversible }}</span><span class="l-zh">{{ CN.shock_reversible_zh or CN.shock_reversible }}</span></b>
-          <span class="dlx-margins"><span class="l-en">{{ CN.note }}</span><span class="l-zh">{{ CN.note_zh or CN.note }}</span></span>
-        </span>
-      </div>
-      {% endif %}
-
-      {% if DL.geo_reversibility %}
-      {% set GR = DL.geo_reversibility %}
-      <div class="dlx-row">
-        <span class="dlx-lbl">{{ t('Geopolitical read', '地缘解读') }}
-          {{ help("A DETERMINISTIC reversibility cross-check from the GPR threat/act split (Caldara-Iacoviello, AER 2022): the THREAT component of geopolitical risk historically reverts (~3 months) while realized ACTS persist. The free, always-available complement to the AI catalyst cross-check above — shown only on an active dislocation when geopolitical risk is elevated (≥80th pct) and the threat/act mix has a clear lean. CONTEXT ONLY — it never changes the verdict; the validated Fed-put gate governs.", "基于 GPR 威胁／行动分量的确定性可逆性交叉验证（Caldara-Iacoviello，AER 2022）：地缘风险的「威胁」分量历史上往往回落（约3个月），而已发生的「行动」更持久。这是上方 AI 催化交叉验证的免费、始终可用的补充 —— 仅在活跃错位、地缘风险偏高（≥80百分位）且威胁／行动结构有明确倾向时显示。仅供背景 —— 绝不改变判定，以经验证的美联储托底闸为准。") }}
-        </span>
-        <span class="dlx-val"><span class="{{ 'dlx-dis' if GR.agreement != 'corroborates' }}">{% if GR.agreement != 'corroborates' %}⚠ {% endif %}{% if GR.agreement=='corroborates' %}{{ t('corroborates', '印证') }}{% else %}{{ t('diverges', '背离') }}{% endif %}</span>
-          · {{ t('reads', '解读为') }} <b><span class="l-en">{{ GR.reversibility }}</span><span class="l-zh">{{ GR.reversibility_zh or GR.reversibility }}</span></b>
-          ({{ t('led by', '主导') }} {{ t('threats', '威胁') if GR.lean=='threat' else t('acts', '行动') }}{% if GR.gpr_pct is not none %}, {{ GR.gpr_pct }}{{ t('th pct', '百分位') }}{% endif %})
-          <span class="dlx-margins"><span class="l-en">{{ GR.note }}</span><span class="l-zh">{{ GR.note_zh or GR.note }}</span></span>
-        </span>
-      </div>
-      {% endif %}
-
-    </div>{# /dlx-rows #}
-
-    {# The fold holds ONLY long-form prose and the measured record — nothing that
-       argues against the verdict, and no reading a user needs to act. #}
-    <details class="jarg dlx-more">
-      <summary>{{ t('How the gate reads it, and the measured record', '闸门如何判读及实测记录') }}</summary>
-      <div class="jbody">
-        {# WHAT THE LEG ACTUALLY TESTED. The old paragraph said "inflation not blocking
-           easing" — a POLICY conclusion drawn from an INFLATION test. The leg compares
-           the 21-day 10y breakeven with a 2.5% cutoff and checks that no recession
-           trigger fires; it never observes what the Fed will do, and `fed_stance` can
-           read hawkish on the very same artifact (which is why the engine now attaches
-           `policy_divergence`). Cutoff below is the display copy of fedput_breakeven
-           noted at the top of this panel. #}
-        <p class="dlx-para">
-          {% if DL.verdict=='buyable_washout' %}{{ t('A stress dislocation with the Fed put intact — no recession trigger firing, and the 21-day 10-year breakeven', '压力错位且美联储托底在位 — 衰退触发条件未激活，且 21 日十年期盈亏平衡通胀率') }}
-            {%- if DI.breakeven_10y_1m is not none %} {{ t('is', '为') }} <b>{{ '%.2f'|format(DI.breakeven_10y_1m) }}%</b>{{ t(', under its 2.50% cutoff', '，低于 2.50% 阈值') }}{% else %} {{ t('is under its 2.50% cutoff', '低于 2.50% 阈值') }}{% endif %}.
-            {{ t('That is a market-priced inflation reading, not a reading of what the Fed will do. Historically these mean-revert with shallower median drawdown — confirm into stabilization, do not anticipate.', '这是市场定价的通胀读数，而非对美联储行动的判断。历史上此类情形回归均值且中位回撤更浅 — 在企稳中确认，勿提前抢跑。') }}
-          {% elif DL.verdict=='stand_aside' %}{{ t('A stress dislocation with the Fed put ABSENT — the put-absent setup the gate refused from April 2008, where the same capitulation signals kept firing into the fall.', '压力错位且美联储托底缺失 — 这是一道闸自 2008 年 4 月起持续拒绝的「托底缺失」情形，同样的恐慌信号在下跌途中不断触发。') }}
-          {% elif _put_unknown %}{{ t('A stress dislocation is live, but the Fed-put switch cannot be read, so the gate refuses to rule. A leg it cannot read is NOT a leg that is quiet — treating it as quiet is what would push this toward the permissive call.', '压力错位正在发生，但美联储托底开关无法判读，因此一道闸拒绝作出判定。读不到的一条腿并不等于安静的一条腿 —— 若当作安静处理，正会把判定推向宽松的一侧。') }}
-          {% else %}{{ t('Markets are not in a stress washout — the filter is dormant and lights up only on a real dislocation.', '市场未处于压力抛售 — 过滤器休眠，仅在真正错位时点亮。') }}{% endif %}
-        </p>
-        {# POLICY DIVERGENCE — engine-attached context (never changes the verdict): the
-           breakeven leg can pass on a day the Fed's own stance reads hawkish. Bilingual
-           pair comes from the payload; absent on older payloads, so this stays dark. #}
-        {% if DL.policy_divergence is defined and DL.policy_divergence %}
-        {% set PD = DL.policy_divergence %}
-        <p class="dlx-para dlx-pdiv">⚠ <b>{{ t('Policy divergence', '政策背离') }}</b>{{ t(' — the Fed’s own stance on this same data reads ', ' — 同一份数据中美联储自身立场为') }}<b><span class="l-en">{{ PD.stance }}</span><span class="l-zh">{{ PD.stance_zh or PD.stance }}</span></b>.
-          <span class="l-en">{{ PD.note }}</span><span class="l-zh">{{ PD.note_zh or PD.note }}</span></p>
-        {% endif %}
-        {# The retired line claimed "the edge is in refusing the knife". A declustered
-           replay refuses 2008 and MISSES twice in 2022 plus early 2000 — so the claim
-           below is the one engine/dislocation.py EVIDENCE["caveat"] now makes. #}
-        <p class="dlx-para muted">{{ t('Known misses: the gate refused the 2008 crash from April 2008, but it printed buyable early in the 2000-02 bear and twice in 2022, both 2022 prints within 0.02pp of this cutoff. A drawdown filter with known misses, not a knife-proof shield — judged on drawdown, not return.', '已知漏判：一道闸自 2008 年 4 月起拒绝了 2008 年崩盘，但在 2000-02 熊市早期给出过「可买入」，2022 年内亦有两次，且这两次距上述阈值均在 0.02 个百分点以内。这是一个存在已知漏判的回撤过滤器，而非防飞刀的护盾 — 以回撤而非回报衡量。') }}</p>
-        <div class="jrow">
-          <span class="jk">{{ t('Measured (SPY 1997-2026)', '实测（标普 1997-2026）') }}</span>
-          <span class="jv muted">{{ t('put-present washouts had ~4pp shallower median 3-month drawdown than put-absent (95% CI [+0.3, +6.3]) — the one effect whose CI excludes zero. The larger hit-rate and 1-year-tail gaps point the same way, but their CIs span zero at ~10 effective crises, so they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not significance. A drawdown filter, never alpha.', '托底在位的错杀其中位三月回撤比托底缺失浅约 4 个百分点（95% 置信区间 [+0.3, +6.3]）— 唯一置信区间不含零的效应。更大的胜率与一年尾部差异方向一致，但在约 10 个有效危机样本下置信区间跨零，故由符号一致性支撑（留一年法 26/28、两个样本半区），而非统计显著性。这是回撤过滤器，绝非超额收益。') }}</span>
-        </div>
-      </div>
-    </details>
-  </div>
-  {% endif %}{# /dislocation panel — only when active #}
-  {% endif %}{# /latest.dislocation — DL/DI/vcolor stay set for the Fear↔Euphoria read #}
 
 
 
@@ -15307,23 +14730,6 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
     {% if shock_state is defined and shock_state and shock_state.get('active') %}
     <div style="margin:6px 0 10px;padding:8px 12px;border-radius:8px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2));font-size:13px;font-weight:600">
       ⚠ <span class="l-en">SHOCK active — fresh entries carry extra uncertainty; sector ranks computed on pre-shock data. Context only — no ranks have been changed. Active until {{ shock_state.get('expires', '') }}.</span><span class="l-zh">冲击期间 — 新进场具有额外不确定性；板块排名基于冲击前数据计算。仅供参考，排名未作调整，有效期至 {{ shock_state.get('expires', '') }}。</span>
-    </div>
-    {% endif %}
-    {# TS-U3: Turn Watch strip → "Early turn signs" (user-first copy per docs/DESIGN_DOCTRINE.md;
-       mode=stocks only; client-side).
-       Shown ONLY when data exists: baskets with WATCH/IGNITION or ≥2 UPTURN_CONFIRMED members
-       while slow reco is hold/avoid. Does NOT reorder lanes or change recos.
-       The fade disclosure (26 past cases, ~6 in 10 faded next day) lives in the ? tip —
-       operator order 2026-07-11; the plain-word sentence IS the receipt. #}
-    {% if mode == 'stocks' %}
-    <div id="dash-tw-strip" class="dash-tw-strip">
-      <div class="dash-tw-hdr">
-        <span class="dash-tw-title">{{ t('⚡ Early turn signs','⚡ 早期拐点迹象') }}</span>
-        {{ help('Not a buy signal: in 26 past cases, about 6 in 10 of these early signs faded within a day. If the turn is real, the lanes below upgrade on their own.', '非买入信号：历史26次中约六成的早期迹象在一天内消退。若拐点为真，下方泳道会自行升级。') }}
-        <span class="dash-tw-asof" id="dash-tw-asof"></span>
-      </div>
-      <div class="dash-tw-sub">{{ t("Bounce attempts in groups we still rate Hold / Avoid. Watch — don't chase.","仍评级为「持有／回避」的板块出现反弹尝试。观察为主 — 勿追高。") }}</div>
-      <div class="dash-tw-rows" id="dash-tw-rows"></div>
     </div>
     {% endif %}
     {# Unified board: 🧩 narrative baskets (the AI-buildout-vs-rest resolution) lead each
@@ -15692,6 +15098,241 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
   </div>{# /panel — What to act on now (standouts split into their own panel 2026-07-11) #}
     {% set _su = us_standouts if (us_standouts and us_standouts.buy) else None %}
     {{ pv.pv_css() }}
+{#- ══════════════════════════════════════════════════════════════════════════════════
+    PROPHET LIVE P1 — "Forming today" strip (research/PROPHET_LIVE_P1_DESIGN_SPEC.md).
+
+    ITS OWN panel span12, deliberately NOT a block inside #us-standouts: doctrine Law 4
+    allows one as-of stamp per panel and the two clocks here are different objects — the
+    board is stamped with the nightly close vintage, this strip with an intraday quote
+    age. Two clocks = two panels; merging them would force one stamp to lie.
+
+    PRESENTATION TIER ONLY. Nothing here touches graded-board rows, membership, ordering,
+    us_standouts.json or any ledger (DNR §1). The nightly build remains the ONLY confirmer:
+    every read on this strip settles at tonight's close and the copy says so in both
+    languages. SSR emits the shell only — the panel stays display:none until the JS has a
+    payload, so an absent artifact is silence, not an empty box (FT-R8).
+    ══════════════════════════════════════════════════════════════════════════════════ #}
+    {% if mode == 'stocks' %}
+    {% set _plv_uni = us_standouts.get('universe') if (us_standouts and us_standouts.get('universe')) else none %}
+    <style>
+    /* ── PROPHET LIVE strip (P1, spec §3) ─────────────────────────────────────────
+       The provisional hue is the lane's OWN component-scoped token, chosen against
+       three neighbours — no global token is added and theme.css stays untouched:
+         · not --link / --info  → a chip must never read as clickable
+         · not --up / --down    → must never read directional (and must not flip under
+                                  html[data-lang="zh"] 红涨绿跌)
+         · not any --pv-*       → must never read as a nightly verdict (green = confirmed,
+                                  and only the nightly build confirms)
+       Escalation to the strongest moment (confirming_into_close) is carried by FILL and
+       WEIGHT, never by hue: one hue for the whole live family. There is deliberately no
+       status dot anywhere — a green "live" pulse is unreachable on a 15-min-delayed plane
+       and would encode certainty. The settle rail is the sanctioned proof of life. */
+    /* --plv-rh is THE height contract's single free parameter — see .plv-body below. */
+    #prophet-live{--plv:#62a0e8;--plv-rh:27px;display:none}
+    html[data-theme="light"] #prophet-live{--plv:#2f6fd0}
+    #prophet-live.visible{display:block}
+    /* Every header item takes the token pill's line box, so a SHORTER token ("READ
+       PAUSED") cannot yield a shorter wrapped line than a longer one. Measured: it did,
+       by 2.5px — which is a height change, i.e. a board shove. */
+    .plv-hd{display:flex;align-items:center;gap:8px;row-gap:4px;flex-wrap:wrap}
+    .plv-hd > *{min-height:17px;display:inline-flex;align-items:center}
+    /* gap, not a literal space: `.plv-hd > *` makes the title an inline-flex box and flex
+       layout discards the whitespace-only text node between the ◐ glyph and the label. */
+    .plv-title{margin:0;gap:6px;font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--plv)}
+    .plv-token{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--plv);
+      border:1px solid color-mix(in srgb,var(--plv) 34%,transparent);
+      background:color-mix(in srgb,var(--plv) 9%,transparent);border-radius:999px;padding:1.5px 8px;white-space:nowrap}
+    /* ── WORST-CASE RESERVATION (the general fix for mode-dependent height) ──────
+       Three boxes here hold text that changes with the MODE, and every one of them was
+       an unreserved height variable: a wrapped line count is a function of string
+       length, so the panel measured up to 32.75px taller in one mode than another and
+       shoved the whole board. Reserving a hand-measured min-height per breakpoint would
+       need a magic number per width PER LANGUAGE and would rot the first time a word
+       changed. Instead every variant stays in the DOM, stacked in ONE grid cell, and
+       only the active one is visible: the browser then reserves max(all modes) at
+       whatever width and language it is actually rendering, with no numbers at all.
+       `visibility:hidden` is load-bearing — it keeps the box sized while removing the
+       inactive text from the accessibility tree, so nothing invisible is ever announced
+       or read as a claim. `display:none` would size nothing; `opacity:0` would be read. */
+    .plv-hd > .plv-token{display:inline-grid;justify-items:center;text-align:center}
+    /* The as-of reserves its line even when it has nothing to stamp: at <=340px it sits on
+       header line 2 beside the token, so an empty box collapsed that line and shoved the
+       board 17px on exactly the days there is no read to stamp. `tabular-nums` above is
+       what makes the 12:00 reserver exactly as wide as any real two-digit-hour stamp. */
+    .plv-hd > .plv-asof{display:inline-grid;justify-items:end}
+    .plv-sub,.plv-fn{display:grid}
+    .plv-v{grid-area:1/1;visibility:hidden}
+    .plv-v.is-on{visibility:visible}
+    /* The TOKEN only needs a mode-independent width where the header wraps — above the
+       680px query it sits on one line with room to spare, so drop the reservation there
+       and let the pill hug its own text. Below it the pill keeps a constant width, which
+       is what stops a short token ("READ PAUSED") from fitting beside the title where a
+       long one wraps and taking the as-of onto a line of its own. */
+    @media (min-width:681px){ .plv-token .plv-v:not(.is-on){display:none} }
+    .plv-token.is-dark{color:var(--muted);border-color:color-mix(in srgb,var(--muted) 30%,transparent);background:color-mix(in srgb,var(--muted) 7%,transparent)}
+    .plv-token.is-closed{color:var(--pv-hold);border-color:color-mix(in srgb,var(--pv-hold) 34%,transparent);background:transparent}
+    .plv-more{font-size:10.5px;color:var(--muted);background:none;border:0;padding:0 2px;font-family:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+    .plv-asof{margin-left:auto;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+    .plv-sub{font-size:11.5px;line-height:1.45;color:var(--text);opacity:.82;margin:5px 0 0;min-height:17px}
+    /* SIGNATURE — the settle rail. Fixed height; the only inline style the JS writes
+       anywhere on this page is this fill's width (and the now-tick's left). It encodes the
+       one variable that actually converts "forming" into "confirmed": remaining tape.
+       aria-hidden — the as-of text and the end-cap label carry it in words. */
+    .plv-rail{display:flex;align-items:center;gap:8px;margin:11px 0 10px;height:14px}
+    .plv-rail-track{position:relative;flex:1;height:3px;border-radius:2px;background:var(--line);overflow:visible}
+    .plv-rail-fill{position:absolute;inset:0 auto 0 0;width:0;height:3px;border-radius:2px;background:color-mix(in srgb,var(--plv) 46%,transparent)}
+    .plv-rail-now{position:absolute;top:-3px;left:0;width:1.5px;height:9px;border-radius:1px;background:var(--plv)}
+    .plv-rail-lbl{flex:none;font-size:9.5px;color:var(--muted);white-space:nowrap}
+    #prophet-live.is-dark .plv-rail{opacity:.45}
+    #prophet-live.is-dark .plv-rail-fill,#prophet-live.is-dark .plv-rail-now{display:none}
+    #prophet-live.is-closed .plv-rail-now{display:none}
+    #prophet-live.is-closed .plv-rail-fill{width:100%!important;background:color-mix(in srgb,var(--pv-hold) 30%,transparent)}
+    /* rows: dtp-column discipline — ONE header labels the figure columns, so no row ever
+       repeats a constant (doctrine Law 4) and every figure is self-labelled (Law 3). */
+    .plv-cols,.plv-row{display:grid;grid-template-columns:minmax(96px,auto) 46px 1fr 74px 74px 52px;align-items:baseline;gap:0 10px}
+    .plv-cols{font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+      border-bottom:1px solid var(--line);padding-bottom:4px}
+    .plv-c2,.plv-c3,.plv-c4{text-align:right}
+    /* EVERY cell is pinned to its column, header and row alike. The labels always were;
+       the row cells were auto-placed, and auto-placement RESHUFFLES when a cell in the
+       middle is removed: the ≤560px rule hides .plv-nm (column 3), so `now` slid into
+       that column — which the same rule sets to 0 — and printed on top of `cross level`
+       ("$224260.85" at 375px). Pinning makes any future column demotion a no-op for the
+       cells that stay. */
+    .plv-c1{grid-column:1}.plv-c2{grid-column:4}.plv-c3{grid-column:5}.plv-c4{grid-column:6}
+    .plv-row > .plv-chip{grid-column:1}
+    .plv-tk{grid-column:2}.plv-nm{grid-column:3}
+    .plv-now{grid-column:4}.plv-lvl{grid-column:5}.plv-since{grid-column:6}
+    /* empty modes keep the hairline rule (height invariance) but HIDE rather than collapse
+       the labels — dead column headings over an empty box read as a broken panel. */
+    #prophet-live.is-empty .plv-cols > span{visibility:hidden}
+    /* THE HEIGHT CONTRACT — 3 reserved slots, and the reservation is DERIVED from the row
+       height instead of being a second hand-measured number. The spec (and the mockup)
+       pinned both sides independently at min-height 24.5px / 75.5px; on the real page the
+       row measures 26.06px, because this page inherits line-height:1.5 while the mockup
+       inherited `normal`, and a baseline-aligned grid row is as tall as
+       max(above-baseline) + max(below-baseline) across the chip and the text — not as tall
+       as the chip box. The strip came out 4.69px taller in live than in quiet/dark/closed:
+       a board shove every time the last cross faded. Two independently guessed numbers
+       cannot stay equal, so now `height` (not min-height) fixes the row and the body
+       reserves exactly 3 of them. --plv-rh is the one parameter; it must stay >= the row's
+       natural content height (21.06px content + 5px padding at time of writing). Re-run
+       mockups/refs/prophet_live/verify_p1.py after ANY change to the chip box, the row
+       font sizes, or the inherited line-height. */
+    .plv-body{min-height:calc(var(--plv-rh) * 3 + 2px);display:flex;flex-direction:column;padding-top:2px}
+    .plv-row{padding:2.5px 0;height:var(--plv-rh);box-sizing:border-box;font-size:12.5px;text-decoration:none;color:inherit}
+    .plv-row:hover .plv-nm,.plv-row:hover .plv-tk{color:var(--link)}
+    .plv-tk{font-weight:800;letter-spacing:.01em;white-space:nowrap}
+    .plv-nm{color:var(--muted);font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .plv-now,.plv-lvl,.plv-since{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono,monospace);white-space:nowrap}
+    .plv-now{font-weight:700}
+    .plv-lvl{color:var(--muted)}
+    .plv-since{color:var(--muted);font-size:11px}
+    .plv-chip{display:inline-flex;align-items:center;gap:4px;justify-self:start;font-size:10px;font-weight:800;
+      letter-spacing:.04em;text-transform:uppercase;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;
+      background:color-mix(in srgb,var(--plv) 10%,transparent);color:var(--plv);
+      border:1px solid color-mix(in srgb,var(--plv) 42%,transparent)}
+    /* the strongest moment escalates by FILL + WEIGHT, never by hue */
+    .plv-chip--close{background:var(--plv);color:#fff;border-color:transparent}
+    /* "fell back" (grey, it came back toward you) vs "ran past" (amber, don't chase) —
+       the two fade stories never share a word and never share a hue, and neither uses a
+       directional colour, so 红涨绿跌 holds by construction. Do not add --up/--down. */
+    .plv-chip--drop{background:color-mix(in srgb,var(--pv-hold) 10%,transparent);color:var(--pv-hold);
+      border-color:color-mix(in srgb,var(--pv-hold) 32%,transparent)}
+    .plv-chip--over{background:color-mix(in srgb,var(--pv-wait) 11%,transparent);color:var(--pv-wait);
+      border-color:color-mix(in srgb,var(--pv-wait) 40%,transparent)}
+    .plv-row.is-past .plv-tk,.plv-row.is-past .plv-now{opacity:.72}
+    .plv-none{flex:1;display:flex;flex-direction:column;justify-content:center;gap:3px;font-size:12px;color:var(--muted)}
+    .plv-last{font-size:10.5px;opacity:.8}
+    .plv-fn{border-top:1px solid var(--line);margin-top:7px;padding-top:7px;font-size:10.5px;line-height:1.5;color:var(--muted)}
+    .plv-fig{font-variant-numeric:tabular-nums;font-weight:700;color:var(--text)}  /* figures mono, words never */
+    .plv-row.is-new{animation:plv-in .2s ease-out}
+    @keyframes plv-in{from{opacity:0}to{opacity:1}}
+    @media (prefers-reduced-motion:reduce){.plv-row.is-new{animation:none}}
+    @media (max-width:680px){
+      /* Header pinned to a deterministic TWO lines: [title ? +N] / [token as-of].
+         The reorder alone is not enough. Without it the 44px +N button landed on a THIRD
+         line the moment a 4th row appeared — a 21px shove of the whole board, every 5
+         minutes. With it, WHICH line the token lands on was still a function of its own
+         string length: the short "READ PAUSED" fitted beside the title while
+         "INTRADAY · 15-MIN DELAYED" did not, so the header measured 40.25px in dark
+         against 41.25px in live — a 1px shove on every mode change. The ::before is a
+         zero-content flex item with basis 100%: it consumes the rest of line 1, so the
+         token ALWAYS starts line 2 no matter how long it is, and it carries the 4px the
+         row-gap gave up so the pinned height is unchanged (18 + 4 + 19.25). */
+      .plv-hd{row-gap:0}
+      .plv-hd::before{content:"";order:2;flex:0 0 100%;height:4px}
+      .plv-more{order:1;margin-left:auto}
+      .plv-token{order:3}
+      .plv-asof{order:4;margin-left:auto}
+      .plv-cols,.plv-row{grid-template-columns:minmax(84px,auto) 44px 1fr 68px 68px 0}
+      .plv-c4,.plv-since{display:none}          /* SINCE demoted; it survives in the row tip */
+    }
+    @media (max-width:560px){
+      /* Phone layout: [chip] [ticker] · [now]. Two things had to change here.
+         (1) Column 1 keeps min-content. With minmax(0,auto) the grid handed column 1 ZERO
+             pixels — the 1fr name column outbid it — and the 148px "HOLDING INTO CLOSE"
+             pill printed straight over the ticker at 375px and below.
+         (2) The chip is then allowed to WRAP rather than to shorten. Collapsing it to the
+             bare ◐ glyph (the card-chip idiom) would leave hue as the only carrier of the
+             state, and on the strip the state word IS the content. Wrapping costs row
+             height instead — paid ONCE through --plv-rh, so every mode grows together and
+             the height contract still holds.
+         Cross level is demoted here with the company name (both survive in the row tip);
+         NOW stays, because it is the figure the reader is actually looking for. .plv-c3 is
+         the CROSS LEVEL heading (column 5), so it goes with .plv-lvl — not with .plv-nm,
+         which has no heading of its own. */
+      #prophet-live{--plv-rh:40px}
+      .plv-cols,.plv-row{grid-template-columns:minmax(min-content,auto) 44px minmax(0,1fr) 66px 0 0;
+        gap:0 8px;align-items:center}
+      .plv-nm,.plv-c3,.plv-lvl{display:none}
+      .plv-chip{white-space:normal;text-align:center}
+    }
+    </style>
+    <div class="panel span12" id="prophet-live" hidden{% if _plv_uni %} data-universe="{{ _plv_uni }}"{% endif %}>
+      <div class="plv-hd">
+        <h2 class="plv-title">◐ {{ t('Forming today', '今日正在形成') }}</h2>
+        {#- The Tier-2 receipt (spec §4.6). Tip text is [js]-written and then handed to
+            theme.js's upgradeHelpIcons() for the shared tap-to-toggle popover: the
+            sentence carries the intraday coverage count, which changes every pass, so
+            baking it here would ship a stale receipt. Empty spans keep upgradeOne() from
+            freezing a placeholder into data-tip-en before the fill. #}
+        <span class="help" id="plv-help">?<span class="tip tip-wide"><span class="l-en"></span><span class="l-zh"></span></span></span>
+        <span class="plv-token" id="plv-token"></span>
+        <button class="plv-more" id="plv-more" type="button" aria-expanded="false" hidden></button>
+        <span class="plv-asof" id="plv-asof"></span>
+      </div>
+      <div class="plv-sub" id="plv-sub"></div>
+      <div class="plv-rail" aria-hidden="true">
+        <div class="plv-rail-track"><i class="plv-rail-fill" id="plv-rail-fill"></i><i class="plv-rail-now" id="plv-rail-now"></i></div>
+        <div class="plv-rail-lbl">{{ t('settles 4:00 pm ET', '美东 16:00 结算') }}</div>
+      </div>
+      <div class="plv-cols" id="plv-cols">
+        <span class="plv-c1"></span>
+        <span class="plv-c2">{{ t('Now', '当前') }}</span>
+        <span class="plv-c3">{{ t('Cross level', '上穿价位') }}</span>
+        <span class="plv-c4">{{ t('Since', '起始') }}</span>
+      </div>
+      <div class="plv-body" id="plv-body"></div>
+      <div class="plv-fn" id="plv-fn"></div>
+    </div>
+    {#- ticker → company name for the strip rows. The prophet_live payload carries no
+        names, and the names it needs are by construction NOT on the board below (a
+        strip row is a name that crossed TODAY and was not admitted last night), so
+        the cards cannot supply them. This island is the near-decision population the
+        pack arms from — buy ∪ watch ∪ leaders ∪ laggards, ~150 short strings — which
+        costs one baked object instead of a second network fetch. DISPLAY-ONLY: a
+        label lookup, never a membership or ordering input. #}
+    {%- set _plv_nm = {} -%}
+    {%- if us_standouts -%}
+      {%- for _lst in ['watch', 'buy', 'leaders', 'laggards'] -%}
+        {%- for _r in (us_standouts.get(_lst) or []) -%}
+          {%- if _r.get('ticker') and _r.get('name') -%}{{ _plv_nm.update({_r.ticker: _r.name}) or '' }}{%- endif -%}
+        {%- endfor -%}
+      {%- endfor -%}
+    {%- endif %}
+    <script type="application/json" id="plv-names">{{ _plv_nm | tojson }}</script>
+    {% endif %}
     {% if _su or action_board.notable %}
     <div class="panel span12 notable" id="us-standouts">
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
@@ -16875,7 +16516,7 @@ window.__CHART_SWAP__ = {
 </script>
 {% if mode == 'stocks' %}
 <script>
-/* TS-U3 dash-tape-band + dash-tw-strip + dash-mtf-section JS (mode=stocks only).
+/* TS-U3 dash-tape-band + dash-mtf-section JS (mode=stocks only).
    FT-R1/TS-R5: display-tier only; never mutates slow state; no buy verbs.
    FT-R8: graceful absent-file. TS-R1: honest-delay modes. */
 (function(){
@@ -17103,13 +16744,20 @@ function renderTapeBand(pulse){
       var isG=cx.live_ew_chg_pct>=0;
       var cxTipEn='AI-Capex Complex composite basket.'+(cx.only_green_complex?' Only complex in positive territory this session.':'')+' Context only.';
       var cxTipZh='AI资本开支复合板块。'+(cx.only_green_complex?'本交易时段唯一上涨复合板块。':'')+'仅供参考。';
+      /* Static readout, not a link: `ai_capex` is a COMPLEX id (an aggregate over
+         engine.demand_capex.AI_CAPEX_THEMES), not a basket id, so no
+         basket/<id>.html is ever built for it and the href this row shipped with
+         was a live 404. .dtp-mrow styling is class-driven and the tooltip binds on
+         [data-tip-en] whatever the element, so both survive the <a> -> <div>. The
+         inline colour pins .dtp-mname past `.dtp-mrow:hover .dtp-mname` in
+         theme.css, so a non-clickable row never lights up like a link. */
       colDn+='<div class="dtp-col-lbl cx" style="margin-top:7px">'+L('COMPLEX','复合')+'</div>'
-        +'<a class="dtp-mrow" href="basket/ai_capex.html" data-tip-en="'+esc(cxTipEn)+'" data-tip-zh="'+esc(cxTipZh)+'">'
+        +'<div class="dtp-mrow" style="cursor:default" data-tip-en="'+esc(cxTipEn)+'" data-tip-zh="'+esc(cxTipZh)+'">'
         +'<span class="dtp-rank">·</span>'
-        +'<span class="dtp-mname"><span class="l-en">AI-Capex Complex</span><span class="l-zh">AI资本开支复合板块</span></span>'
+        +'<span class="dtp-mname" style="color:var(--text)"><span class="l-en">AI-Capex Complex</span><span class="l-zh">AI资本开支复合板块</span></span>'
         +'<span class="dtp-mpct '+(isG?'up':'dn')+'">'+fmtPct(cx.live_ew_chg_pct)+'</span>'
         +'<span class="dtp-mtrack'+(isG?'':' dn')+'"><span class="dtp-mbar '+(isG?'up':'dn')+'" style="width:'+Math.max(4,Math.round(Math.abs(cx.live_ew_chg_pct)/maxAbs*56))+'px"></span></span>'
-        +'</a>';
+        +'</div>';
     }
   }
   colDn+='</div>';
@@ -17153,128 +16801,6 @@ function renderTapeBand(pulse){
       /* live re-renders rebuild the columns — carry the open state across */
       setOpen(moreBtn.getAttribute('aria-expanded')==='true');
       moreBtn.onclick=function(){setOpen(moreBtn.getAttribute('aria-expanded')!=='true');};
-    }
-  }
-}
-
-/* ────────────────────────────────────────────────────────────────────────
-   TURN WATCH STRIP + AUTO-EXPAND SALIENCE (TS-R5 / TS-R7)
-   Shows baskets with WATCH/IGNITION state OR ≥2 UPTURN_CONFIRMED members
-   while slow reco is hold/avoid. Removes is-collapsed from hold fold for
-   matched rows (TS-R5); adds ⚡ chip to those rows.
-   ──────────────────────────────────────────────────────────────────────── */
-function renderTurnWatch(turnWatch, mtfUpturn){
-  var stripEl=document.getElementById('dash-tw-strip');
-  var rowsEl=document.getElementById('dash-tw-rows');
-  var asofEl=document.getElementById('dash-tw-asof');
-  if(!stripEl||!rowsEl) return;
-
-  // Build mtfUpturn member-confirmed index: basket_id → confirmed count
-  var mtfBasketConfirmed={};
-  if(mtfUpturn&&mtfUpturn.tickers){
-    Object.keys(mtfUpturn.tickers).forEach(function(sym){
-      var t=mtfUpturn.tickers[sym];
-      if(t.state==='UPTURN_CONFIRMED'){
-        (t.basket_ids||[]).forEach(function(bid){
-          mtfBasketConfirmed[bid]=(mtfBasketConfirmed[bid]||0)+1;
-        });
-      }
-    });
-  }
-
-  // Build candidate list from turn_watch (basket-level)
-  var candidates=[];
-  var twBaskets=(turnWatch&&turnWatch.baskets)||[];
-  var twAsOf=(turnWatch&&turnWatch.as_of)||'';
-  var DISAGREE_RECOS={'hold':1,'avoid':1};  // TS-R5 disagreement gate (A1 fix)
-  twBaskets.forEach(function(tw){
-    var isActive=tw.state==='WATCH'||tw.state==='IGNITION';
-    var memberCount=mtfBasketConfirmed[tw.basket_id]||0;
-    // Show if: active state OR ≥2 members UPTURN_CONFIRMED
-    if(!isActive&&memberCount<2) return;
-    // TS-R5 disagreement gate: for WATCH/IGNITION baskets, only surface when slow_reco
-    // is hold/avoid (turn disagrees with slow read) or when reco is absent (honest null).
-    // A basket already on a buy reco + IGNITION is agreement, not disagreement — omit.
-    var reco=(tw.slow_reco||'').toLowerCase();
-    if(isActive&&reco&&!DISAGREE_RECOS[reco]) return;
-    candidates.push({
-      id: tw.basket_id,
-      name: _dtpNameEn(tw.basket_id),
-      tw_state: isActive?tw.state:null,
-      member_confirmed: memberCount,
-      reco: tw.slow_reco||'',
-      reco_as_of: tw.reco_as_of||'',
-      sort_key: (tw.state==='IGNITION'?0:tw.state==='WATCH'?1:2)*100 - memberCount
-    });
-  });
-  // Also add baskets with ≥2 UPTURN_CONFIRMED members even if NOT in turn_watch baskets
-  Object.keys(mtfBasketConfirmed).forEach(function(bid){
-    var count=mtfBasketConfirmed[bid];
-    if(count>=2&&!candidates.find(function(c){return c.id===bid;})){
-      candidates.push({
-        id:bid, name:_dtpNameEn(bid), tw_state:null, member_confirmed:count,
-        reco:'', reco_as_of:'', sort_key:200-count
-      });
-    }
-  });
-
-  candidates.sort(function(a,b){return a.sort_key-b.sort_key;});
-  candidates=candidates.slice(0,6);
-
-  if(!candidates.length){stripEl.classList.remove('visible');return;}
-  stripEl.classList.add('visible');
-  if(asofEl&&twAsOf){asofEl.innerHTML=L('updated nightly · '+esc(twAsOf),'每晚更新 · '+esc(twAsOf));}
-
-  // Render rows — user-first copy (docs/DESIGN_DOCTRINE.md): plain badges, plain
-  // rating text; the constant fade stat lives in the footer ONCE; the internal
-  // receipt (state names, reco as-of, base rate) moves to a data-tip on the row.
-  var html='';
-  candidates.forEach(function(c){
-    var badgeCls='member', badgeTxt='';
-    if(c.tw_state==='IGNITION'){ badgeCls='ignition'; badgeTxt=L('&#9889; STRONG SIGN','&#9889; 较强迹象'); }
-    else if(c.tw_state==='WATCH'){ badgeCls='watch'; badgeTxt=L('&#9889; EARLY SIGN','&#9889; 初步迹象'); }
-    else { badgeTxt=L(c.member_confirmed+' stocks turning up',c.member_confirmed+'只成分股转强'); }
-    var slowPart='';
-    var reco=(c.reco||'').toLowerCase();
-    if(reco){
-      var recoEn=reco==='hold'?'still rated Hold':reco==='avoid'?'still rated Avoid':'still rated '+esc(c.reco);
-      var recoZh=reco==='hold'?'主评级仍为「持有」':reco==='avoid'?'主评级仍为「回避」':'主评级仍为 '+esc(c.reco);
-      slowPart='<span class="dash-tw-slow">· '+L(recoEn,recoZh)+'</span>';
-    }
-    var tipEn='Receipt: fast state '+(c.tw_state||'none')+' · '+c.member_confirmed+' member(s) multi-timeframe confirmed'+(c.reco?' · slow reco '+c.reco.toUpperCase()+(c.reco_as_of?' as-of '+c.reco_as_of:''):'')+' · T+1 fade base rate 58% (n=26; basket-level turn = null edge in backtest, Oracle P8)';
-    var tipZh='技术说明：快速状态 '+(c.tw_state||'none')+' · '+c.member_confirmed+'只成分多时间框架确认'+(c.reco?' · 慢速评级 '+c.reco.toUpperCase()+(c.reco_as_of?'（截至'+c.reco_as_of+'）':''):'')+' · T+1消退基础概率58%（n=26；篮子级拐点回测为空值，Oracle P8）';
-    html+='<div class="dash-tw-row" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">'
-      +'<span class="dash-tw-badge '+badgeCls+'">'+badgeTxt+'</span>'
-      +'<span class="dash-tw-name">'+esc(c.name)+'</span>'
-      +slowPart
-      +'</div>';
-  });
-  rowsEl.innerHTML=html;
-
-  // TS-R5: auto-expand hold fold for matched theme IDs; add ⚡ chip
-  var matchedIds=new Set(candidates.map(function(c){return c.id;}));
-  var fold=document.getElementById('dash-hold-fold');
-  if(fold&&matchedIds.size){
-    var needExpand=false;
-    fold.querySelectorAll('[data-theme-id]').forEach(function(wrapper){
-      var tid=wrapper.getAttribute('data-theme-id');
-      if(!tid||!matchedIds.has(tid)) return;
-      // Add ⚡ salience chip if not already present
-      if(!wrapper.querySelector('.dash-turn-chip')){
-        var chip=document.createElement('span');
-        chip.className='dash-turn-chip';
-        chip.innerHTML='&#9889; '+L('EARLY TURN','早期拐点');
-        wrapper.appendChild(chip);
-      }
-      // Check if this item is currently hidden (would be after n+7 sibling)
-      // We'll just un-collapse the whole fold when any match is hidden
-      needExpand=true;
-    });
-    if(needExpand&&fold.classList.contains('is-collapsed')){
-      fold.classList.remove('is-collapsed');
-      // Update button state
-      var btn=fold.parentElement&&fold.parentElement.querySelector('.lst-more');
-      if(btn){btn.setAttribute('aria-expanded','true');var sh=btn.querySelector('.lm-show'),hi=btn.querySelector('.lm-hide');if(sh)sh.style.display='none';if(hi)hi.style.display='inline';}
     }
   }
 }
@@ -17445,20 +16971,18 @@ function renderMtfTable(mtfUpturn){
 /* ────────────────────────────────────────────────────────────────────────
    FETCH + ORCHESTRATE
    ──────────────────────────────────────────────────────────────────────── */
-var pulse=null, turnWatch=null, mtfUpturn=null;
-var pulseDone=false, twDone=false, mtfDone=false, namesDone=false;
+var pulse=null, mtfUpturn=null;
+var pulseDone=false, mtfDone=false, namesDone=false;
 
 function tryRender(){
-  if(!pulseDone||!twDone||!mtfDone||!namesDone) return;
+  if(!pulseDone||!mtfDone||!namesDone) return;
   renderTapeBand(pulse);
-  renderTurnWatch(turnWatch, mtfUpturn);
   renderMtfTable(mtfUpturn);
 }
 
 fetchJson('live/basket_pulse.json',function(d){pulse=d;pulseDone=true;tryRender();});
-fetchJson('basketdata/turn_watch.json',function(d){turnWatch=d;twDone=true;tryRender();});
 fetchJson('stockdata/mtf_upturn.json',function(d){mtfUpturn=d;mtfDone=true;tryRender();});
-/* Parallel fetch: display names for chips + turn-watch enrichment (FT-R8: graceful fail).
+/* Parallel fetch: display names for tape and turn-setup rows (FT-R8: graceful fail).
    Unlike the data fetches, a names failure must not stall the band behind the 4s
    backstop — fall through to prettified slugs immediately. */
 fetch('basketdata/baskets.json',{cache:'no-cache'})
@@ -17473,7 +16997,7 @@ fetch('basketdata/baskets.json',{cache:'no-cache'})
   .then(function(){namesDone=true;tryRender();});
 
 // Fail-open: if any fetch doesn't resolve, still render with what we have
-setTimeout(function(){pulseDone=true;twDone=true;mtfDone=true;namesDone=true;tryRender();},4000);
+setTimeout(function(){pulseDone=true;mtfDone=true;namesDone=true;tryRender();},4000);
 
 // See-more folds — V2 action board + sector setups table. Page-scoped;
 // theme.js .lst-wrap handler ignores .act-more buttons.
@@ -17498,6 +17022,704 @@ document.addEventListener('click',function(e){
 // double-toggle into a no-op — deliberately no handler.
 
 // Action-board row popovers handled by theme.js shared row-pop engine ([data-rpop] / .rp-src).
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   PROPHET LIVE P1 — the "Forming today" strip + the ◐ card chips.
+   Contract: research/PROPHET_LIVE_P1_DESIGN_SPEC.md §6. Payload:
+   prophet_live.states/v1 (engine/prophet_live/live_states.py).
+
+   PRESENTATION-TIER FENCE (spec §6.5, DNR §1). This block writes to EXACTLY two
+   places: #prophet-live (its own panel) and .pvcard > .pv-chart > .pv-ov.pv-ovl >
+   .pv-live (the reserved chip slot). It never touches card ordering, card
+   membership, the pv-* hue class, .pv-chip (verb), .pv-edn (Edge), .pv-stp/.pv-stl
+   (stage), .pv-zn (zone), .pv-trg (the nightly ⚡), the table view, or any lane or
+   count on the board. The nightly build is the only confirmer.
+
+   VOCABULARY IS LOAD-BEARING (G0.6 + operator 2026-07-27). Nothing here says fired,
+   confirmed, triggered-as-past-fact, refuted or falsifier, and nothing claims proven
+   statistical standing (the CI claims guard owns that last word). Every
+   state settles at tonight's close and every surface below says so, in both
+   languages. There is no "live" pulse and no status dot: on a 15-minute-delayed
+   plane a green dot is both unreachable and a claim of certainty. The settle rail
+   is the sanctioned proof of life — it advances on a local clock, with no fetch.
+   ══════════════════════════════════════════════════════════════════════════════ */
+var PLV_URL   = 'live/prophet_live.json';
+var PLV_EVERY = 120000;   /* ms between fetches — producer writes every ~5 min, so
+                             120s bounds staleness at ~2 min for ~2.5 GETs/artifact */
+var PLV_FLOOR = 30000;    /* floor on a visibility-triggered refetch */
+var PLV_TICK  = 60000;    /* rail clock — no network */
+var PLV_CAP   = 3;        /* row slots; the height contract reserves exactly this many */
+var PLV_OPEN  = 570;      /* 09:30 ET in minutes — the rail's left edge */
+var PLV_CLOSE = 960;      /* 16:00 ET — the rail's right edge, and what settles a read */
+var PLV_WAKE  = 560;      /* 09:20 ET — before this "Forming today" has nothing to say */
+var PLV_SHUT  = 980;      /* 16:20 ET — past this the strip is CLOSED, never age-dark */
+/* 18:30 ET — the nightly build's own cron (.github/workflows/daily.yml `30 22 * * *`,
+   single-cron by design so it is 18:30 EDT / 17:30 EST). CLOSED asserts a PENDING
+   verdict ("tonight's close settles which ones count"); once the nightly has published,
+   the board immediately below has already answered that question, so from here the strip
+   has nothing left to say and hides. Running closed to midnight left a ~5.5h window in
+   which the strip contradicted the board underneath it. */
+var PLV_SETTLE = 1110;
+var PLV_FIRST = 575;      /* 09:35 ET — window start 09:25 + the producer's 10-min cron
+                             grace. Before this, today's first pass is merely LATE, not a
+                             fault, and the strip must not raise an alarm. */
+var PLV_MAXAGE = 900000;  /* 15 min = 3 missed passes */
+/* CLOSED must not launder a fault that was already disclosed: a producer dead since
+   11:00 read honestly dark at 16:17 and then flipped to a confident "closed" with 11:00
+   rows at 16:21. The frozen rows only describe the close if the last pass actually
+   landed near it, so closed requires a pass within 3 missed passes of 16:00 ET. */
+var PLV_CLOSE_PASS = 945; /* 15:45 ET */
+
+var _plvPanel = document.getElementById('prophet-live');
+/* ticker → company name, SSR-baked (see the #plv-names island): the payload carries
+   no names and a strip row must not be a bare slug on a page that has the name. */
+var _plvNames = (function(){
+  try{ return JSON.parse((document.getElementById('plv-names')||{}).textContent||'{}')||{}; }
+  catch(e){ return {}; }
+})();
+var _plvData = null, _plvFetchedAt = 0, _plvFetching = false;
+var _plvLastMode = null, _plvExpanded = false, _plvClearMin = null;
+var _plvEvalN = null, _plvUnprobed = null;
+var _plvEtFmt = null;
+
+/* ── ET wall clock ───────────────────────────────────────────────────────────
+   Every window in this component is an EASTERN clock window. A UTC-pinned one is
+   an hour wrong for half the year (the same trap the P0 cron comments describe),
+   and the reader's own timezone is irrelevant to when the US tape settles. */
+function _plvEt(d){
+  try{
+    if(!_plvEtFmt){
+      _plvEtFmt = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',
+        hour12:false, weekday:'short', year:'numeric', month:'2-digit', day:'2-digit',
+        hour:'2-digit', minute:'2-digit'});
+    }
+    var parts=_plvEtFmt.formatToParts(d), p={}, i;
+    for(i=0;i<parts.length;i++) p[parts[i].type]=parts[i].value;
+    var h=parseInt(p.hour,10); if(h===24) h=0;   /* en-US hour12:false prints 24 at midnight */
+    return {ymd:p.year+'-'+p.month+'-'+p.day, min:h*60+parseInt(p.minute,10), wd:p.weekday};
+  }catch(e){ return null; }
+}
+/* EN reads a 12-hour clock, ZH a 24-hour one — both are written into the DOM at once
+   (l-en/l-zh) so switching language never needs a re-render or a fresh fetch. */
+function _plvHm12(m){
+  var h=Math.floor(m/60), mm=m%60, ap=h>=12?'pm':'am', h12=h%12;
+  if(h12===0) h12=12;
+  return h12+':'+(mm<10?'0':'')+mm+' '+ap;
+}
+function _plvHm24(m){
+  var h=Math.floor(m/60), mm=m%60;
+  return (h<10?'0':'')+h+':'+(mm<10?'0':'')+mm;
+}
+/* An ISO stamp as ET minutes-of-day, or null. Never throws, never guesses. */
+function _plvTsMin(iso){
+  if(!iso) return null;
+  var ms=Date.parse(iso);
+  if(!isFinite(ms)) return null;
+  var et=_plvEt(new Date(ms));
+  return et?et.min:null;
+}
+/* "as of 3:41 pm ET" / "截至 美东 15:41" — ONE as-of for the whole panel (Law 4). */
+function _plvAsOf(m){
+  return L('as of '+_plvHm12(m)+' ET', '截至 美东 '+_plvHm24(m));
+}
+function _plvNum(v){
+  try{ return Number(v).toLocaleString('en-US'); }catch(e){ return String(v); }
+}
+/* Write every variant into the box and show one. See the WORST-CASE RESERVATION note in
+   the CSS: this is what makes the panel's height independent of which mode is showing,
+   at every width and in both languages, without a single measured constant. `order`
+   fixes the paint order so the DOM is stable pass to pass. */
+function _plvStack(el, order, variants, active){
+  var html='', i, k;
+  for(i=0;i<order.length;i++){
+    k=order[i];
+    if(!variants[k]) continue;
+    html+='<span class="plv-v'+(k===active?' is-on':'')+'"'
+       +(k===active?'':' aria-hidden="true"')+'>'+variants[k]+'</span>';
+  }
+  if(el.innerHTML!==html) el.innerHTML=html;
+}
+function _plvPx(v){
+  if(v===null||v===undefined||!isFinite(Number(v))) return '—';
+  return '$'+Number(v).toFixed(2);
+}
+
+/* ── Copy tables (spec §4) ───────────────────────────────────────────────────
+   Keyed to MODE, never to the row set: a subtitle that rewrites itself every five
+   minutes is its own kind of noise, and holding it stable is also a no-thrash rule. */
+/* The delay disclosure stays in CLOSED too (spec owner's ruling, 2026-07-30): the frozen
+   rows are still printing intraday prices, so the plane they came from must still be
+   named. "settles tonight" moves to the stance line, which already says it. */
+var PLV_TOKEN = {
+  rth:     ['Intraday · {d}-min delayed', '盘中 · {d}分钟延迟'],
+  preopen: ['Pre-open · {d}-min delayed', '盘前 · {d}分钟延迟'],
+  dark:    ['Read paused', '判读暂停'],
+  closed:  ['Closed · {d}-min delayed', '已收盘 · {d}分钟延迟']
+};
+var PLV_SUB = {
+  live:   ["Crossing now — nothing is settled until tonight's close. Get ready; don't chase.",
+           '正在上穿 — 今晚收盘才算数。做好准备，勿追高。'],
+  quiet:  ["Nothing crossing right now. Tonight's board below is the plan.",
+           '当前没有新的上穿。下方的看板即为今日计划。'],
+  dark:   ['The intraday read is paused. The board below is unaffected.',
+           '盘中判读暂停。下方看板不受影响。'],
+  closed: ["These crossed today — tonight's close settles which ones count.",
+           '这些今日已上穿 — 今晚收盘决定哪些成立。']
+};
+/* Dark causes in PLAIN WORDS. "arming pack", "stale_pack", "out_of_band" and every
+   other machine reason stays out of Tier 1 — the reason IS disclosed, in the
+   reader's own language. A per-name dark reason never renders as a guessed state. */
+var PLV_DARK = {
+  no_pack:    ["Today's watch list hasn't loaded, so nothing is being checked.",
+               '今日的追踪清单尚未载入，暂无判读。'],
+  stale_pack: ['The watch list is out of date, so the intraday read is paused.',
+               '追踪清单已过期，盘中判读暂停。'],
+  quotes:     ["Prices aren't updating right now, so the intraday read is paused.",
+               '价格暂未更新，盘中判读暂停。'],
+  /* A cause we DO NOT know. The strip may relay a cause only when the producer attests
+     one (status:"dark" + reason); a date mismatch on its own is not evidence of a stale
+     watch list. It happens every trading morning between 09:20 and the first pass, ALL
+     DAY on every market holiday (no pass runs, so yesterday's file is the newest one),
+     and whenever the lane is down — three different causes, and the browser has no NYSE
+     calendar to tell them apart. Claiming "the watch list is out of date" in all three
+     was a confident wrong cause, so this form names the observable fact instead. */
+  none_today: ["There's no intraday read for today.", '今日暂无盘中判读。']
+};
+/* via selects the word, and "faded" is shown ONLY for via:"drop". An overrun ran
+   PAST the range the gate still admits — the opposite trade from falling through
+   it, so calling that "faded" would lie about direction and pollute the very axis
+   the P0 forward ledger measures. The word "faded" survives in the Tier-2 tip. */
+var PLV_CHIP = {
+  forming: ['Forming', '正在形成', 'plv-chip--forming'],
+  close:   ['Holding into close', '收盘前仍成立', 'plv-chip--close'],
+  drop:    ['Fell back', '回落', 'plv-chip--drop'],
+  over:    ['Ran past', '越过', 'plv-chip--over']
+};
+/* CLOSED freezes the rows, so their labels must freeze in the SETTLED tense too: a row
+   still reading "Forming" / "正在形成" at 17:00 claims a live state on a tape that has
+   stopped. "Crossed" is the sanctioned past tense (the closed stance line already uses
+   it); it is a statement about today's tape and still says nothing about the verdict,
+   which only the nightly build settles. drop/over are already past tense. */
+var PLV_CHIP_PAST = {
+  forming: ['Crossed', '已上穿', 'plv-chip--forming'],
+  close:   ['Held into close', '收盘时仍成立', 'plv-chip--close'],
+  drop:    ['Fell back', '回落', 'plv-chip--drop'],
+  over:    ['Ran past', '越过', 'plv-chip--over']
+};
+var PLV_TIP = {
+  forming: ["The same admission test tonight's build will run already passes at today's price, and has held for two checks in a row. Nothing is confirmed: tonight's close decides, and a board seat is settled only by the nightly build. Price is intraday, {d}-minute delayed.",
+            '今晚生成时要跑的同一套准入判定，在今日价格下已经通过，并且连续两次检查都成立。但这不是确认：今晚收盘才决定，看板席位只由夜间生成敲定。价格为盘中数据，延迟 {d} 分钟。'],
+  close:   ["Still passing with under half an hour of tape left, so today's close is unlikely to move it — but tonight's build is what settles it, and the seat comes with it. Price is intraday, {d}-minute delayed.",
+            '距收盘不足半小时仍然通过，今日收盘价大概率不会推翻它 — 但真正结算的是今晚的生成，席位也随之而定。价格为盘中数据，延迟 {d} 分钟。'],
+  drop:    ['It crossed earlier today and has since traded back below the cross level, so it faded. Nothing to do; if it crosses again it reappears here after two checks.',
+            '今日早前曾上穿，随后回落至上穿价位之下，判读已消退。无需操作；若再次上穿，连续两次检查后会重新出现。'],
+  over:    ["It crossed and then ran above the range where the setup is still admitted — it ran past the entry rather than falling through it. Watch — don't chase.",
+            '上穿后继续冲高，已越过该形态仍被接受的价格区间 — 属于越过入场区，而非跌破。观察为主 — 勿追高。']
+};
+/* Card chips (spec §5.4). "Below range" and NOT "at risk": at_risk is an internal
+   state name, and every verdict-flavoured phrasing of it invites the reader to hear
+   a sell call on an un-graded provisional read, which the watch-don't-chase law
+   forbids. "Below range" is an unimpeachable statement about the tape. */
+var PLV_CARD = {
+  drop:  ['Below range', '低于区间', 'pv-live--drop'],
+  over:  ['Ran past', '越过区间', 'pv-live--over'],
+  close: ['Holding into close', '收盘前仍成立', 'pv-live--close']
+};
+var PLV_CARD_TIP = {
+  drop:  ["Trading below the price range where tonight's close would still admit this setup. Nothing on the board has changed yet — the verdict re-settles at tonight's close and this card updates with it. Watch — don't chase. This is not a sell call. Intraday price, {d}-minute delayed.",
+          '当前价格低于「今晚收盘仍会接受该形态」的价格区间。看板尚未发生任何变化 — 判定将在今晚收盘重新结算，本卡片届时随之更新。观察为主 — 勿追高。这不是卖出建议。盘中价格，延迟 {d} 分钟。'],
+  over:  ["Trading above the range where this setup is still admitted — it ran past the entry rather than falling through it. Tonight's close re-settles the verdict. Don't chase; nothing here says sell. Intraday price, {d}-minute delayed.",
+          '当前价格高于该形态仍被接受的区间 — 属于越过入场区，而非跌破。今晚收盘会重新结算判定。勿追高；此处并未建议卖出。盘中价格，延迟 {d} 分钟。'],
+  close: ["Still passing tonight's admission test with under half an hour of tape left, so today's close is unlikely to change it — but tonight's build is what settles it. Intraday price, {d}-minute delayed.",
+          '距收盘不足半小时仍通过今晚的准入判定，今日收盘价大概率不会改变它 — 但真正结算的是今晚的生成。盘中价格，延迟 {d} 分钟。']
+};
+/* delay_min is the house delayMin convention: the VENDOR FLOOR, not a measured
+   latency. A null delay prints "delayed" with no number — never a guessed 15. */
+function _plvDelay(meta){
+  var d = meta && meta.delay_min;
+  return (d===null||d===undefined||!isFinite(Number(d))) ? null : Number(d);
+}
+function _plvFill(s, d){
+  /* A null delay drops the NUMBER, never the disclosure: "15-min delayed" becomes
+     "delayed" and the sentence still reads. Guessing 15 would be inventing a vendor
+     floor the payload declined to state. */
+  if(d===null){
+    return s.replace('{d}-minute ','').replace('{d}-min ','')
+            .replace('延迟 {d} 分钟','延迟').replace('{d}分钟延迟','延迟');
+  }
+  return s.split('{d}').join(String(d));
+}
+
+/* ── Row selection (spec §6.3) ────────────────────────────────────────────────
+   This is the EDITORIAL FENCE, not a display of `states`. The strip speaks only for
+   names that crossed TODAY and are not on last night's board (entered:"cross").
+   Board names get a card chip and never a strip row — a strip that also listed the
+   ~44 holding board names would be a state dump, and the board below already says
+   it. dormant / near / per-name dark names are counted in the footer's coverage
+   sentence, never listed: a dark name has nothing to say. */
+function _plvPick(states){
+  var out=[], tk, st, kind;
+  for(tk in states){
+    if(!Object.prototype.hasOwnProperty.call(states,tk)) continue;
+    st = states[tk] || {};
+    if(st.entered !== 'cross') continue;
+    if(st.confirming_into_close) kind='close';
+    else if(st.state==='forming') kind='forming';
+    else if(st.state==='faded') kind = (st.via==='overrun') ? 'over' : 'drop';
+    else continue;
+    out.push({tk:tk, kind:kind, st:st,
+              rank:(kind==='close'?0:(kind==='forming'?1:2)),
+              since:_plvTsMin(st.since_ts)});
+  }
+  /* Deterministic and stable, recomputed identically on every pass: group, then the
+     longest-held first (it is the most settled), then ticker — so the order can
+     never depend on object key iteration order. */
+  out.sort(function(a,b){
+    if(a.rank!==b.rank) return a.rank-b.rank;
+    var as=(a.since===null?1e9:a.since), bs=(b.since===null?1e9:b.since);
+    if(as!==bs) return as-bs;
+    return a.tk<b.tk?-1:(a.tk>b.tk?1:0);
+  });
+  return out;
+}
+/* A faded row is NEVER the silent cut: a reader who saw a name forming twenty
+   minutes ago must not find it deleted without a word. "One of these stopped
+   holding" outranks the third concurrent cross. */
+function _plvCapRows(rows, cap){
+  if(rows.length<=cap) return rows.slice();
+  var faded=[], active=[], i;
+  for(i=0;i<rows.length;i++)(rows[i].rank===2?faded:active).push(rows[i]);
+  if(!faded.length) return rows.slice(0,cap);
+  /* "The most recent" means the LATEST since_ts, and it has to be picked by that field.
+     Taking the last element of the group instead read whichever name sorted last, which
+     with no since_ts present is simply the alphabetically last ticker (measured: MSFT out
+     of AAPL/CSCO/LFUS/MRP/MSFT) — a silent ordering claim the code did not honour. When
+     no faded row carries a since_ts there is no "most recent" to be had, and the ticker
+     tiebreak is the honest arbitrary fallback rather than a claim. */
+  var keepFaded=faded[faded.length-1], best=null;
+  for(i=0;i<faded.length;i++){
+    if(faded[i].since===null) continue;
+    if(best===null||faded[i].since>best.since) best=faded[i];
+  }
+  if(best) keepFaded=best;
+  /* With faded rows but NO active ones, active.slice(0, cap-1) is empty and a single row
+     rendered inside a three-row body under a "+4 more" button. Nothing is competing for
+     the slots, so fill them. */
+  if(!active.length) return faded.slice(Math.max(0,faded.length-cap));
+  return active.slice(0,Math.max(0,cap-1)).concat([keepFaded]);
+}
+
+/* The level this row crossed. `cross_level_px` for a cross row, `fade_px` for a board
+   row — the presence of the key IS which quantity it is, so they are read by name and
+   never merged. There is deliberately no `cross_px` here: the forward ledger's `cross_px`
+   is a DIFFERENT quantity (a fill price), and reading it into this column would print one
+   number under another number's label. Absent ⇒ em-dash, never derived. */
+function _plvLevel(st){
+  if(st.cross_level_px!==undefined&&st.cross_level_px!==null) return st.cross_level_px;
+  if(st.fade_px!==undefined&&st.fade_px!==null) return st.fade_px;
+  return null;
+}
+
+function _plvRowHtml(r, delay, past){
+  var c=(past?PLV_CHIP_PAST:PLV_CHIP)[r.kind], tip=PLV_TIP[r.kind], st=r.st;
+  var tipEn=_plvFill(tip[0],delay), tipZh=_plvFill(tip[1],delay);
+  if(r.since!==null){
+    /* SINCE is demoted below 680px (spec §3); it survives here so a narrow reader
+       still learns how long the read has held. */
+    tipEn+=' Since '+_plvHm24(r.since)+' ET.';
+    tipZh+=' 起始 美东 '+_plvHm24(r.since)+'。';
+  }
+  /* Cross level and SINCE both degrade to an em-dash rather than to a derived
+     number: passes × 5 min is not a lawful duration (GitHub cron lands minutes
+     late) and a level this payload does not carry must not be invented. */
+  var lvl=_plvLevel(st);
+  return '<span class="plv-chip '+c[2]+'" data-tip-en="'+esc(tipEn)+'" data-tip-zh="'+esc(tipZh)+'">◐ '+L(esc(c[0]),esc(c[1]))+'</span>'
+    +'<span class="plv-tk">'+esc(r.tk)+'</span>'
+    +'<span class="plv-nm">'+esc(r.name||'')+'</span>'
+    +'<span class="plv-now">'+_plvPx(st.price)+'</span>'
+    +'<span class="plv-lvl">'+_plvPx(lvl)+'</span>'
+    +'<span class="plv-since">'+(r.since===null?'—':_plvHm24(r.since))+'</span>';
+}
+
+/* KEYED RECONCILIATION, never `innerHTML =` on #plv-body (spec §6.4 rule 2).
+   Wholesale replacement flashes every row and kills an open hover tip mid-read, so
+   rows are patched in place by data-plv-tk and only the delta moves. */
+function _plvPaintRows(body, rows, delay, past){
+  var els=[], i, r, el, sig;
+  for(i=0;i<rows.length;i++){
+    r=rows[i];
+    el=body.querySelector('.plv-row[data-plv-tk="'+r.tk+'"]');
+    sig=r.kind+'|'+r.st.price+'|'+r.since+'|'+_plvLevel(r.st)+'|'+(r.name||'')+'|'+(past?'p':'l');
+    if(!el){
+      el=document.createElement('a');
+      el.setAttribute('data-plv-tk', r.tk);
+      el.href='stock.html#'+encodeURIComponent(r.tk);
+      el.innerHTML=_plvRowHtml(r, delay, past);
+      el.className='plv-row is-new'+(r.rank===2?' is-past':'');
+    }else{
+      if(el.getAttribute('data-plv-sig')!==sig) el.innerHTML=_plvRowHtml(r, delay, past);
+      el.className='plv-row'+(r.rank===2?' is-past':'');
+    }
+    el.setAttribute('data-plv-sig', sig);
+    els.push(el);
+  }
+  /* place in order, moving only what is actually out of place */
+  for(i=0;i<els.length;i++){
+    if(body.children[i]!==els[i]) body.insertBefore(els[i], body.children[i]||null);
+  }
+  while(body.children.length>els.length) body.removeChild(body.lastElementChild);
+}
+/* The empty body FILLS the same reserved 75.5px (.plv-none is flex:1) — it never has
+   a height of its own, so quiet / dark / closed measure identical to a 3-row live
+   strip and nothing below the panel ever moves. */
+function _plvPaintNone(body, en, zh, lastMin, isDark){
+  var cls='plv-none'+(isDark?' plv-none--dark':'');
+  var html=L(esc(en),esc(zh));
+  if(lastMin!==null&&lastMin!==undefined){
+    html+='<span class="plv-last">'+L('Last clear read '+_plvHm12(lastMin)+' ET.',
+                                      '最近一次有效判读 美东 '+_plvHm24(lastMin)+'。')+'</span>';
+  }
+  var el=body.firstElementChild;
+  if(!el||body.children.length!==1||el.className!==cls){
+    while(body.firstChild) body.removeChild(body.firstChild);
+    el=document.createElement('div'); el.className=cls; body.appendChild(el);
+  }
+  if(el.innerHTML!==html) el.innerHTML=html;
+}
+
+/* ── Card chips (spec §5) ────────────────────────────────────────────────────
+   The ONLY node this touches on a card is its reserved .pv-live span. Absent state
+   ⇒ hidden + empty ⇒ zero width and zero layout change, so a board with no live
+   state renders byte-equivalent to today's. */
+function _plvPaintCards(states, delay){
+  var slots=document.querySelectorAll('.pvcard[data-ticker] .pv-ov.pv-ovl > .pv-live'), i, el, card, st, kind, c, tip;
+  for(i=0;i<slots.length;i++){
+    el=slots[i]; card=el.closest?el.closest('.pvcard'):null;
+    st=(card&&states)?(states[card.getAttribute('data-ticker')]||null):null;
+    kind=null;
+    if(st&&st.entered==='board'){
+      if(st.confirming_into_close) kind='close';
+      else if(st.state==='at_risk') kind=(st.via==='overrun')?'over':'drop';
+    }
+    if(!kind){
+      if(!el.hidden){ el.hidden=true; el.className='pv-live'; el.innerHTML=''; el.removeAttribute('data-tip-en'); el.removeAttribute('data-tip-zh'); }
+      continue;
+    }
+    c=PLV_CARD[kind]; tip=PLV_CARD_TIP[kind];
+    el.className='pv-live '+c[2];
+    el.setAttribute('data-tip-en', _plvFill(tip[0],delay));
+    el.setAttribute('data-tip-zh', _plvFill(tip[1],delay));
+    var html='◐ '+L(esc(c[0]),esc(c[1]));
+    if(el.innerHTML!==html) el.innerHTML=html;
+    el.hidden=false;
+  }
+}
+
+/* ── The settle rail ────────────────────────────────────────────────────────
+   Filled 09:30 → 16:00 with a now-tick on a local 60-second clock and NO fetch. It
+   encodes the only variable that converts "forming" into "confirmed": remaining
+   tape. The single inline style this whole component writes is this width/left. */
+function _plvRail(){
+  if(!_plvPanel||!_plvPanel.classList.contains('visible')) return;
+  var et=_plvEt(new Date()); if(!et) return;
+  var pct=Math.max(0,Math.min(100,(et.min-PLV_OPEN)/(PLV_CLOSE-PLV_OPEN)*100));
+  var f=document.getElementById('plv-rail-fill'), n=document.getElementById('plv-rail-now');
+  if(f) f.style.width=pct.toFixed(1)+'%';
+  if(n) n.style.left=pct.toFixed(1)+'%';
+}
+
+/* ── Mode resolution (spec §6.2, first match wins) ──────────────────────────── */
+function _plvMode(d, et){
+  /* 1. Weekends, the overnight hours, and everything after the nightly build has
+        settled the day: "Forming today" has nothing to say, so the strip is not
+        rendered at all. The upper bound is the nightly handoff, NOT midnight — past it
+        the board below carries the answer and a pending-verdict strip would contradict
+        it. (The spec's own §6.2 rule 1 upper bound of 16:20 made rule 3 unreachable;
+        this is the bound that keeps rule 3 alive without inventing a false-tense
+        window.) */
+  if(et.wd==='Sat'||et.wd==='Sun') return null;
+  if(et.min<PLV_WAKE||et.min>=PLV_SETTLE) return null;
+  if(!d||!d.meta) return null;
+  /* 2. A frozen file must NEVER present as today — but the strip must not GUESS why.
+        Before today's first pass is even due it is not a fault at all, so say nothing;
+        after that, name the observable fact and not a cause we cannot see (m1). */
+  if(d.meta.session_et&&d.meta.session_et!==et.ymd){
+    if(et.min<PLV_FIRST) return null;
+    return {mode:'dark', why:'none_today'};
+  }
+  /* 3. Post-close. Deliberately AHEAD of the age gates: without this rule the
+        15-minute staleness gate fires every single evening and the strip lies
+        "prices aren't updating" after every close — a nightly lie, not an edge case.
+        But it must not launder a fault either, so the last pass has to have landed
+        near the close for the frozen rows to be describing it (m2). */
+  if(et.min>PLV_SHUT){
+    var cms=_plvTsMin(d.meta.pass_ts);
+    if(d.status!=='dark'&&cms!==null&&cms>=PLV_CLOSE_PASS) return {mode:'closed', why:null};
+    return {mode:'dark', why:(d.reason==='no_pack'?'no_pack':(d.reason==='stale_pack'?'stale_pack':'quotes'))};
+  }
+  /* 4. The producer itself declined to speak — this is the one cause it ATTESTS. */
+  if(d.status==='dark') return {mode:'dark', why:(d.reason==='no_pack'?'no_pack':(d.reason==='stale_pack'?'stale_pack':'quotes'))};
+  /* 5. Three missed passes — the file is no longer describing the current tape. Not
+        before the day's first pass is due, though: late is not broken (m1). */
+  var pms=Date.parse(d.meta.pass_ts||'');
+  if(isFinite(pms)&&(Date.now()-pms)>PLV_MAXAGE&&et.min>=PLV_FIRST) return {mode:'dark', why:'quotes'};
+  /* 6. Speaking a confident "quiet tape" while more than half the armed names are
+        unreadable is degraded-ships-confident. */
+  var dc=d.meta.dark_counts||{}, sum=0, k;
+  for(k in dc){ if(Object.prototype.hasOwnProperty.call(dc,k)) sum+=Number(dc[k])||0; }
+  var ev=Number(d.meta.evaluated_n);
+  if(isFinite(ev)&&ev>0&&(sum/ev)>=0.5) return {mode:'dark', why:'quotes'};
+  return {mode:'live', why:null};   /* refined to 'quiet' once rows are known */
+}
+
+function _plvHide(){
+  if(!_plvPanel) return;
+  _plvPanel.classList.remove('visible');
+  _plvPanel.hidden=true;
+  _plvLastMode=null;
+  /* THE CARD CHIPS GO WITH IT. Hiding the panel alone left a "Below range" chip painted
+     on a card with no as-of stamp, no delay pill and no strip left to explain it — a tab
+     open past the nightly handoff, or across a weekend, showed a stale intraday read
+     presenting as current. Surface 2 has no freshness disclosure of its own; the strip
+     IS its disclosure, so the two must appear and disappear together. */
+  _plvPaintCards(null, null);
+}
+
+function _plvRender(){
+  if(!_plvPanel) return;
+  var et=_plvEt(new Date());
+  if(!et){ _plvHide(); return; }
+  var res=_plvMode(_plvData, et);
+  if(!res){ _plvHide(); return; }
+  var d=_plvData, meta=d.meta||{}, delay=_plvDelay(meta);
+  /* closed/dark keep the SAME SESSION's last per-name states: a dark artifact carries
+     them under prev_states precisely so one bad pass cannot erase the day. */
+  var states=(d.status==='dark')?(d.prev_states||{}):(d.states||{});
+  var rows=(res.mode==='dark')?[]:_plvPick(states);
+  var mode=res.mode;
+  if(mode==='live'&&!rows.length) mode='quiet';
+
+  /* Company names come from the SSR island below the strip (us_standouts buy ∪ watch
+     ∪ leaders ∪ laggards — the near-decision population the pack arms from), so the
+     strip adds no second fetch. Names ship EN-only in both languages, the existing
+     card norm. Absent name ⇒ the ticker alone, which is the identity anyway. */
+  var i;
+  for(i=0;i<rows.length;i++) rows[i].name=_plvNames[rows[i].tk]||'';
+
+  var visRows=_plvCapRows(rows, _plvExpanded?rows.length:PLV_CAP);
+  var hidden=rows.length-visRows.length;
+
+  /* token + as-of: the freshness form, on every live number, always together. Every
+     token variant is stacked so the PILL'S WIDTH is the same in every mode — a short
+     "READ PAUSED" used to fit beside the title where the long one wrapped, which moved
+     the as-of onto its own line and changed the header's height with the mode. */
+  var tokEl=document.getElementById('plv-token'), asEl=document.getElementById('plv-asof');
+  var tkKey=(mode==='dark')?'dark':(mode==='closed')?'closed'
+            :(meta.session_phase==='preopen')?'preopen':'rth';
+  var tkVars={}, tkK;
+  for(tkK in PLV_TOKEN){
+    if(!Object.prototype.hasOwnProperty.call(PLV_TOKEN,tkK)) continue;
+    tkVars[tkK]=L(esc(_plvFill(PLV_TOKEN[tkK][0],delay)), esc(_plvFill(PLV_TOKEN[tkK][1],delay)));
+  }
+  tokEl.className='plv-token'+(mode==='dark'?' is-dark':(mode==='closed'?' is-closed':''));
+  _plvStack(tokEl, ['rth','preopen','dark','closed'], tkVars, tkKey);
+
+  /* The stamp is the ARTIFACT's own clock — meta.quote_asof, falling back to the pass
+     time. Never the browser clock: a local Date.now() would print a fresh-looking time
+     over a stale artifact, which is the exact lie the freshness gate exists to prevent. */
+  var stampMin=_plvTsMin(meta.quote_asof)||_plvTsMin(meta.pass_ts);
+  /* No stamp when the newest artifact is from ANOTHER DAY. The as-of is a bare
+     time-of-day, so a previous session's pass would print "as of 4:15 pm ET" at 11:20 in
+     the morning — a stamp that reads as today's. There is no current read to stamp here,
+     and the body line already says exactly that.
+     BUT THE BOX STILL HAS TO HOLD ITS LINE. This is the fourth mode-varying box and the
+     one the first reservation pass missed: at <=340px the header puts the as-of on line 2
+     beside the token, so emptying it collapsed that line and shoved the board 17.00px —
+     the honesty fix above paying for itself in exactly the layout thrash the reserver
+     exists to prevent. A reader on a 320-340px phone would watch the board jump the
+     instant the day's first pass landed. Same mechanism as the other three: reserve the
+     line, show nothing in it.
+     The reserver is a formatter-built stamp at 12:00 — the widest wall clock this box can
+     render (two-digit hour, and the pass window is 09:20-18:30 ET so nothing exceeds it),
+     exact because .plv-asof is tabular-nums. Built by _plvAsOf itself so it cannot drift
+     from the real thing's markup.
+     'on' is ALWAYS the active key: with no stamp it is the empty string, which _plvStack
+     drops, so the reserver holds the box with nothing visible and nothing announced. The
+     reserver must never be the active variant — a visible 12:00 would be a fabricated
+     stamp, which is the very thing the honesty fix removed. */
+  var stampOn=(stampMin!==null&&res.why!=='none_today');
+  _plvStack(asEl, ['on','rsv'],
+            {on:(stampOn?_plvAsOf(stampMin):''), rsv:_plvAsOf(720)}, 'on');
+
+  /* the stance line changes ONLY on a mode change (spec §6.4 rule 5), and all four
+     stance lines stay stacked so the box reserves the tallest one at this width */
+  if(mode!==_plvLastMode){
+    var subVars={}, subK;
+    for(subK in PLV_SUB){
+      if(!Object.prototype.hasOwnProperty.call(PLV_SUB,subK)) continue;
+      subVars[subK]=L(esc(PLV_SUB[subK][0]),esc(PLV_SUB[subK][1]));
+    }
+    _plvStack(document.getElementById('plv-sub'), ['live','quiet','dark','closed'],
+              subVars, PLV_SUB[mode]?mode:'quiet');
+    _plvLastMode=mode;
+  }
+
+  var body=document.getElementById('plv-body');
+  if(mode==='dark'){
+    var dk=PLV_DARK[res.why]||PLV_DARK.quotes;
+    _plvPaintNone(body, dk[0], dk[1], _plvClearMin, true);
+  }else if(!visRows.length){
+    var lastMin=(stampMin===null)?null:stampMin;
+    if(mode==='closed'){
+      _plvPaintNone(body, 'Nothing crossed today — last checked '+(lastMin===null?'—':_plvHm12(lastMin))+' ET.',
+                          '今日没有出现上穿 — 最近一次检查 美东 '+(lastMin===null?'—':_plvHm24(lastMin))+'。', null, false);
+    }else{
+      _plvPaintNone(body, 'Nothing crossing yet — last checked '+(lastMin===null?'—':_plvHm12(lastMin))+' ET.',
+                          '尚无新的上穿 — 最近一次检查 美东 '+(lastMin===null?'—':_plvHm24(lastMin))+'。', null, false);
+    }
+  }else{
+    _plvPaintRows(body, visRows, delay, mode==='closed');
+  }
+  if(mode!=='dark'&&stampMin!==null) _plvClearMin=stampMin;
+
+  /* +N more: collapsed height stays constant and clicking drops the cap — a
+     USER-initiated reflow, which is the only kind this component allows. */
+  var more=document.getElementById('plv-more');
+  if(hidden>0||_plvExpanded){
+    more.hidden=false;
+    more.setAttribute('aria-expanded', _plvExpanded?'true':'false');
+    more.innerHTML=_plvExpanded?L('Show fewer','收起'):L('+'+hidden+' more','还有 '+hidden+' 只');
+  }else{ more.hidden=true; more.innerHTML=''; more.setAttribute('aria-expanded','false'); }
+
+  /* ONE footer sentence, once: this line owns the coverage bound.
+     WHAT evaluated_n IS. `meta.evaluated_n` is len(states) — the names this pass could
+     actually SPEAK ABOUT, i.e. the PROBED count. It is not the pack's armed_n and it is
+     not the scored census, and `live_states.py` / `armed_pack.py` both warn in so many
+     words against reading it as either. The gap to the universe is also not one cause:
+     `max_probe` (180) means names are dropped for BUDGET as well as for distance from a
+     decision, and those land in `meta.unprobed`/`unprobed_n`. So this line says only what
+     is true — how many were checked — and the Tier-2 receipt splits the gap.
+     evaluated_n is sticky across a dark pass so the figure does not blink; without one
+     ever seen the sentence drops the figure rather than guessing it. */
+  var ev=Number(meta.evaluated_n);
+  if(isFinite(ev)&&ev>0) _plvEvalN=ev;
+  var unpr=Number(meta.unprobed_n);
+  if(isFinite(unpr)&&unpr>=0) _plvUnprobed=unpr;
+  /* How many of the checked names came back unreadable THIS pass. A hard 50% cliff alone
+     shipped a fully confident header at 49% dark; disclosing the count means the reader
+     always knows how much of the check actually landed. */
+  var dcs=0, dck, dcm=meta.dark_counts||{};
+  for(dck in dcm){ if(Object.prototype.hasOwnProperty.call(dcm,dck)) dcs+=Number(dcm[dck])||0; }
+  var fnEl=document.getElementById('plv-fn');
+  /* The sticky count is a claim about a pass that ran. On a day where none did, carrying
+     the previous session's figure would say "62 names were checked intraday" when the
+     answer is none — so that day gets the numberless form. */
+  var cnt=(_plvEvalN&&res.why!=='none_today')?('<b class="plv-fig">'+_plvNum(_plvEvalN)+'</b>'):null;
+  var fnEn=cnt
+    ? 'Only the '+cnt+' names checked intraday can appear here — every read settles at tonight’s close.'
+    : 'Only the names checked intraday can appear here — every read settles at tonight’s close.';
+  var fnZh=cnt
+    ? '盘中只检查了 '+cnt+' 只，只有它们会出现在这里 — 此处所有判读均以今晚收盘为准。'
+    : '盘中只检查了部分标的，只有它们会出现在这里 — 此处所有判读均以今晚收盘为准。';
+  if(dcs>0&&mode!=='dark'){
+    fnEn+=' <b class="plv-fig">'+_plvNum(dcs)+'</b> of them could not be read this pass.';
+    fnZh+='其中 <b class="plv-fig">'+_plvNum(dcs)+'</b> 只本次未能读取。';
+  }
+  /* The reserver is never shown and never read (visibility:hidden takes it out of the
+     accessibility tree) — it exists only so the footer's box is the height of its LONGEST
+     form at this width. Without it the dark mode's shorter sentence wrapped to one line
+     fewer and shoved the board by 15.75px. The four-digit placeholders are a LINE BOX,
+     not a claim: no real count exceeds the 1,578-name scored universe. */
+  var rsvEn='Only the <b class="plv-fig">0,000</b> names checked intraday can appear here — every read settles at tonight’s close. <b class="plv-fig">0,000</b> of them could not be read this pass.';
+  var rsvZh='盘中只检查了 <b class="plv-fig">0,000</b> 只，只有它们会出现在这里 — 此处所有判读均以今晚收盘为准。其中 <b class="plv-fig">0,000</b> 只本次未能读取。';
+  _plvStack(fnEl, ['on','rsv'], {on:L(fnEn,fnZh), rsv:L(rsvEn,rsvZh)}, 'on');
+
+  /* Tier-2 receipt: the debounce mechanic, the delay mechanic, the coverage receipt
+     and the seat-honesty clause (a forming name qualifies on its own signal; the
+     SEAT settles only at the nightly build, so no copy may promise one). */
+  var help=document.getElementById('plv-help');
+  if(help){
+    /* The coverage RECEIPT, and the one place the gap may be broken down. It must not
+       say "armed" (evaluated_n is the probed count, not the pack's armed_n) and it must
+       not blame the whole gap on distance from a decision (max_probe drops names for
+       budget too — that is what unprobed_n counts). So: checked, not-checked, and the two
+       reasons named as two reasons. */
+    var uni=_plvPanel.getAttribute('data-universe');
+    var cov = _plvEvalN
+      ? [_plvNum(_plvEvalN)+' names were checked intraday'
+         +(uni?(' out of '+_plvNum(uni)+' scored'):'')+'.'
+         +(_plvUnprobed
+           ? (' The other '+_plvNum(_plvUnprobed)+' were not checked today — most sit too far'
+              + ' from a decision to matter, and the rest were beyond what one 5-minute pass'
+              + ' can cover.')
+           : ' The rest of the scored list was not checked today.'),
+         '盘中检查了 '+_plvNum(_plvEvalN)+' 只'+(uni?('（全部评分股票 '+_plvNum(uni)+' 只）'):'')+'。'
+         +(_plvUnprobed
+           ? ('其余 '+_plvNum(_plvUnprobed)+' 只今日未检查 — 多数距离临界太远，其余受单次 5 分钟'
+              + '扫描的时间预算所限。')
+           : '评分名单中的其余标的今日未检查。')]
+      : ['Only a subset of the scored list is checked intraday each pass; the rest is not checked at all.',
+         '每次扫描只检查评分名单中的一部分，其余完全未检查。'];
+    var hEn='Forming means the same admission test tonight’s build will run already passes at today’s price — re-checked every 5 minutes on a '+(delay===null?'delayed':delay+'-minute-delayed')+' quote. A level must hold two checks in a row (about 10 minutes) before it appears here. Tonight’s build is the only thing that confirms a signal or hands out a board seat. '+cov[0];
+    var hZh='「正在形成」的含义是：今晚生成时要跑的同一套准入判定，在今日价格下已经通过 — 每 5 分钟用'+(delay===null?'延迟':'延迟 '+delay+' 分钟的')+'报价重跑一次。某个价位必须连续两次检查都成立（约 10 分钟）才会出现在这里。只有今晚的生成才能确认信号、才能给出看板席位。'+cov[1];
+    var hen=help.querySelector('.l-en'), hzh=help.querySelector('.l-zh');
+    if(hen&&hen.textContent!==hEn) hen.textContent=hEn;
+    if(hzh&&hzh.textContent!==hZh) hzh.textContent=hZh;
+    /* the icon may already be upgraded — theme.js reads the ATTRIBUTES after that */
+    if(help.hasAttribute('data-tip-en')){
+      help.setAttribute('data-tip-en',hEn); help.setAttribute('data-tip-zh',hZh);
+    }else if(window.upgradeHelpIcons){ window.upgradeHelpIcons(_plvPanel); }
+  }
+
+  _plvPanel.classList.toggle('is-dark', mode==='dark');
+  _plvPanel.classList.toggle('is-closed', mode==='closed');
+  _plvPanel.classList.toggle('is-empty', !visRows.length);
+  _plvPanel.hidden=false;
+  _plvPanel.classList.add('visible');
+  _plvPaintCards(mode==='dark'?null:states, delay);
+  _plvRail();
+}
+
+function _plvFetch(){
+  if(_plvFetching) return;
+  _plvFetching=true;
+  fetch(PLV_URL,{cache:'no-cache'})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(j){
+      if(j&&typeof j==='object'&&j.schema&&String(j.schema).indexOf('prophet_live.states/')===0){
+        _plvData=j; _plvFetchedAt=Date.now();
+      }
+      _plvFetching=false;
+      _plvRender();
+    })
+    .catch(function(){
+      /* Graceful-absent (FT-R8): no file on first load ⇒ the panel simply never
+         appears. A LATER failure keeps the last good render until the age gate in
+         _plvMode trips it to dark — an old read must never present as current. */
+      _plvFetching=false;
+      if(_plvData) _plvRender();
+    });
+}
+
+if(_plvPanel){
+  /* First fetch is UNCONDITIONAL. Never gate the initial paint on document.hidden:
+     the preview pane renders with visibility:hidden, so a visibility-gated first
+     fetch produces a permanently empty strip in every verification screenshot. */
+  _plvFetch();
+  setInterval(function(){ if(!document.hidden) _plvFetch(); }, PLV_EVERY);
+  setInterval(_plvRail, PLV_TICK);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden&&(Date.now()-_plvFetchedAt)>PLV_FLOOR) _plvFetch();
+  });
+  document.getElementById('plv-more').addEventListener('click', function(e){
+    e.preventDefault();
+    _plvExpanded=!_plvExpanded;
+    _plvRender();
+  });
+  /* language flip: every string is already in the DOM as an l-en/l-zh pair, so the
+     CSS switch is the whole re-render. Only the ET clock format needs a repaint. */
+  window.addEventListener('languagechange', function(){ if(_plvData) _plvRender(); });
+}
 
 })();
 </script>
