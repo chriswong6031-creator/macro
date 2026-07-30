@@ -29,7 +29,7 @@ CYCLES = ("early", "mid", "late")
 
 # The exact top-level key set. `query_lag_note` is the one conditional member —
 # present only when the query fell back off the last row of history.
-BASE_KEYS = {"schema", "asof", "coverage", "n_candidates",
+BASE_KEYS = {"schema", "asof", "tier", "coverage", "n_candidates",
              "query", "episodes", "disclaimer"}
 
 
@@ -150,6 +150,9 @@ def test_happy_path_schema_and_nearest_first(store):
     assert "error" not in out
     assert out["asof"] == str(store["query_date"].date())
     assert out["asof"] == str(store["last_row_date"].date())
+    # Display-tier is declared ON the payload (parity with brain_curve.get_curve_detail):
+    # retrieval is never authority-tier, and the model must see that next to the numbers.
+    assert out["tier"] == "display"
     assert out["disclaimer"] == ba.DISCLAIMER
     assert out["n_candidates"] > 0
     # coverage is "<first>–<last eligible>". The first eligible day is bounded by

@@ -439,6 +439,10 @@ def _build(root: Path, limit: int) -> dict:
     payload: dict = {
         "schema": SCHEMA,
         "asof": str(query_date.date()),
+        # Machine-readable restatement of the module's TIER header, carried on the
+        # payload so the model sees the tier next to the numbers rather than only in
+        # prose. Mirrors brain_curve._build (its payload has always shipped it).
+        "tier": "display",
         "coverage": f"{eligible.index.min().date()}–{eligible.index.max().date()}",
         "n_candidates": n_candidates,
         "query": {
@@ -470,7 +474,7 @@ def get_historical_analogues(root: Path, *, limit: int = 8) -> dict:
 
     Returns (schema ``brain.analogues.v1``)::
 
-        {"schema", "asof", "coverage", "n_candidates",
+        {"schema", "asof", "tier" (always "display"), "coverage", "n_candidates",
          "query":    {date, quad, liquidity, cycle, growth_z, inflation_z,
                       spread_2s10s, spread_10y3m, vix, breadth_pct_above_200},
          "episodes": [{date, distance, quad, liquidity, cycle, spread_2s10s,
