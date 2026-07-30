@@ -32,6 +32,27 @@ _AS_OF = "2026-07-19"
 # Fixtures / helpers (mirrors test_marketing_social_publisher.py)
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Distinct bodies for the multi-item cap / floor fixtures below. They used to be
+#: "First queued post here." / "Second queued post here." / ... — one template
+#: with an ordinal swapped, which the ported template-frame gate (2026-07-29)
+#: scores at exactly 0.60 and quarantines, correctly: blank the numbers and those
+#: three strings differ by one token in five. Varying an ordinal is NOT varying a
+#: post, and that is the whole point of the gate. Each entry here is a different
+#: sentence about a different thing, so these fixtures exercise the CAP and the
+#: FLOOR they were written for instead of dying on a copy gate.
+#:
+#: DELIBERATELY TICKER-FREE. _seed_queued_item builds `kind="signal"` items, and
+#: signal is a price kind: give one a cashtag and the LIVE TAPE GATE holds it for
+#: want of a fresh quote, which is a second way to fail these tests for a reason
+#: they are not about. Max pairwise frame similarity across these four is 0.12.
+_DISTINCT_BODIES: tuple[str, ...] = (
+    "Breadth improved into the close and the laggards finally joined.",
+    "Credit spreads tightened while equity vol kept bleeding lower.",
+    "Volume dried up all afternoon; nobody wanted to press either side.",
+    "Rate expectations shifted again, and the long end took the brunt.",
+)
+
+
 def _seed_queued_item(tmp_path: Path, *, text: str = "$PLTR reclaimed the 50-day. Watching now.",
                       account: str = "flagship", as_of: str = _AS_OF,
                       scheduled_at: str = "immediate", priority: int = 5) -> str:
@@ -320,11 +341,11 @@ def test_auto_approve_respects_daily_cap(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=2)
     ids = [
-        _seed_queued_item(tmp_path, text="First queued post here.",
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0],
                           scheduled_at="2026-07-19T12:00:00Z"),
-        _seed_queued_item(tmp_path, text="Second queued post here.",
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1],
                           scheduled_at="2026-07-19T12:00:00Z"),
-        _seed_queued_item(tmp_path, text="Third queued post here.",
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[2],
                           scheduled_at="2026-07-19T12:00:00Z"),
     ]
 
@@ -351,9 +372,9 @@ def test_auto_approve_unlimited_cap_posts_all(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1)
     ids = [
-        _seed_queued_item(tmp_path, text="First queued post here."),
-        _seed_queued_item(tmp_path, text="Second queued post here."),
-        _seed_queued_item(tmp_path, text="Third queued post here."),
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0]),
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1]),
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[2]),
     ]
 
     fake = _FakePublisher(ok=True)
@@ -639,9 +660,9 @@ def test_floor_posts_one_per_run(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=10)
     ids = [
-        _seed_queued_item(tmp_path, text="First floor post here.",
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0],
                           scheduled_at="2026-07-19T12:00:00Z"),
-        _seed_queued_item(tmp_path, text="Second floor post here.",
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1],
                           scheduled_at="2026-07-19T12:00:00Z"),
     ]
     fake = _FakePublisher(ok=True)
@@ -660,9 +681,9 @@ def test_floor_disabled_posts_all(monkeypatch, tmp_path):
     from engine.marketing.outbox import current_statuses
     _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
     ids = [
-        _seed_queued_item(tmp_path, text="Post one text here.",
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0],
                           scheduled_at="2026-07-19T12:00:00Z"),
-        _seed_queued_item(tmp_path, text="Post two text here.",
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1],
                           scheduled_at="2026-07-19T12:00:00Z"),
     ]
     fake = _FakePublisher(ok=True)

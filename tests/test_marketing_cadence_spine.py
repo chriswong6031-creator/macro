@@ -324,9 +324,17 @@ def _write_quotes(tmp_path: Path, now: datetime) -> None:
 
 def _seed_approved(tmp_path: Path, *, account: str, text: str,
                    scheduled_at: str = "2026-07-22T09:00:00Z",
-                   kind: str = "event") -> str:
+                   kind: str = "watchlist") -> str:
     """Queue + approve one LADDER item (an explicit past slot, so it does not
-    take the immediate/breaking path, which is resolver-exempt by config)."""
+    take the immediate/breaking path, which is resolver-exempt by config).
+
+    The default kind was `event` until 2026-07-29. `event` is one of the three
+    no-ticker FILLER kinds, and the publisher now caps those at one per desk per
+    day (sentinel.max_filler_per_account_per_day, ported from #3928), so a
+    fixture queueing two of them died on the filler cap before it ever reached
+    the CADENCE law these tests are written to exercise. `watchlist` is outside
+    that class and carries no ticker in these fixtures, so the tape and media
+    gates stay open exactly as before. Tests that mean `event` pass it."""
     from engine.marketing.outbox import make_item, enqueue, transition
     item = make_item(account=account, kind=kind, text=text, as_of=_AS_OF,
                      scheduled_at=scheduled_at, provenance="content_studio",
@@ -351,10 +359,14 @@ def _run(monkeypatch, tmp_path: Path, fake, *, now: datetime = _WED_UTC) -> int:
 def _seed_posted_earlier(tmp_path: Path, *, account: str, text: str,
                          hours_ago: int) -> str:
     """One item already POSTED earlier today, its ledger rows stamped with the
-    fixture clock (the resolver counts by ledger `at`, not by as_of)."""
+    fixture clock (the resolver counts by ledger `at`, not by as_of).
+
+    Non-filler kind for the same reason as _seed_approved above: a posted `event`
+    consumes the desk's one daily filler slot, which would hold the pending item
+    for a reason unrelated to the cadence law under test."""
     from engine.marketing.outbox import make_item, enqueue, transition
     when = _WED_UTC - timedelta(hours=hours_ago)
-    item = make_item(account=account, kind="event", text=text, as_of=_AS_OF,
+    item = make_item(account=account, kind="watchlist", text=text, as_of=_AS_OF,
                      scheduled_at="immediate", provenance="content_studio",
                      now=when)
     assert enqueue(item, root=tmp_path, cfg=_UNLIMITED_CFG) == "queued"
@@ -423,11 +435,19 @@ def test_publisher_without_a_spec_is_unchanged(monkeypatch, tmp_path):
 
 
 def _seed_two_breaking(root: Path) -> list[str]:
-    """Two APPROVED immediate/breaking items on a 1-post-per-day desk."""
+    """Two APPROVED immediate/breaking items on a 1-post-per-day desk.
+
+    The two texts were "Breaking one text here today." / "Breaking two text here
+    today." until 2026-07-29 — one template with a word swapped, which the ported
+    template-frame gate correctly scores at 0.67 and quarantines. That gate binds
+    immediates on purpose (every similarity gate above it does), so the fixture
+    now carries two genuinely different headlines: the point here is the VOLUME
+    exemption, and a fixture that dies on a similarity gate never reaches it."""
     from engine.marketing.outbox import make_item, enqueue, transition
 
     ids = []
-    for text in ("Breaking one text here today.", "Breaking two text here today."):
+    for text in ("The jobs print landed hot and the whole curve repriced at once.",
+                 "Chip guidance came in soft; semis gave back the week's gains."):
         item = make_item(account="desk", kind="breaking", text=text, as_of=_AS_OF,
                          scheduled_at="immediate", provenance="press_lane",
                          now=_WED_UTC)
