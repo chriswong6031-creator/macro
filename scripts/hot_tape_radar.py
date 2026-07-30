@@ -1238,18 +1238,19 @@ def dispatch_ids(
         # kill) or quarantined in that gap, the second half of a two-step publish
         # would go out explaining a post nobody ever saw. Re-checked here because
         # this is the last point the radar controls before the send.
-        if str(row.get("trigger") or "") == HT.BRIEF_TRIGGER:
-            parent_id = alert_item_by_key.get(HT.parent_alert_key(row.get("key")) or "")
-            parent_status = statuses.get(parent_id) if parent_id else None
-            if parent_status != "posted":
-                # Fail closed either way, but only DESTROY on positive evidence:
-                # a resolved alert that is no longer posted makes the brief a
-                # permanent orphan (quarantine, so the scheduled sweep cannot
-                # send it either), while an unresolvable parent is merely
-                # withheld -- it ages out of the carryover window on its own and
-                # a fold hiccup must not cost a legitimate brief.
-                orphans.append((item_id, parent_status or "unresolved"))
-                continue
+        # Fail closed either way, but only DESTROY on positive evidence: a
+        # resolved alert that is no longer posted makes the brief a permanent
+        # orphan (quarantine, so the scheduled sweep cannot send it either),
+        # while an unresolvable parent is merely withheld -- it ages out of the
+        # carryover window on its own and a fold hiccup must not cost a
+        # legitimate brief. The predicate is shared with the publisher's
+        # send-time gate (HT.orphaned_brief_status) so the two call sites of
+        # the recall cascade cannot drift.
+        orphan_status = HT.orphaned_brief_status(
+            row.get("key"), row.get("trigger"), alert_item_by_key, statuses)
+        if orphan_status is not None:
+            orphans.append((item_id, orphan_status))
+            continue
         when = _parse_iso(row.get("fired_at"))
         age = (now - when).total_seconds() / 60.0 if when is not None else None
         if age is None or age > CARRYOVER_MAX_AGE_MIN:

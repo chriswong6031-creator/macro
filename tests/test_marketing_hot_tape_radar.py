@@ -882,8 +882,29 @@ class TestSafetyStack:
     #: argument to it that lets a post through that would otherwise be refused.
     #: Scoped to that ONE symbol: any other hot_tape name in a safety module —
     #: the radar, the emit path, a config knob — still fails this test.
+    #:
+    #: The SECOND sanctioned reference, granted on the same reasoning and
+    #: scoped the same way: the publisher's send-time orphan-brief gate imports
+    #: ``hot_tape.orphaned_brief_status`` (plus the two identity constants that
+    #: say which rows it applies to) and can only ever REFUSE a brief whose
+    #: parent alert is no longer posted. There is no argument to it that lets a
+    #: post through that would otherwise be refused, which is the whole test of
+    #: whether a reach into this program has removed a guard or added one.
+    #:
+    #: WHY it must live in the publisher at all: the radar re-checks the parent
+    #: at dispatch, but that sweep only runs when the radar runs. An operator
+    #: recall after the last pass of the day (end of the ET window, a weekend,
+    #: the workflow disabled) leaves an already-booked brief on its
+    #: scheduled_at and the publisher's scheduled sweep is the only thing left
+    #: between it and the network.
+    #:
+    #: Scoped to those THREE symbols on ONE import line: any other hot_tape
+    #: name in the publisher — a posting rule, a cap, a cadence knob — still
+    #: fails this test.
     _SANCTIONED_HOT_TAPE_REFS: dict[str, tuple[str, ...]] = {
         "engine/marketing/copywriter.py": ("hot_tape_llm", "numeric_violations"),
+        "scripts/marketing_publisher.py": (
+            "hot_tape", "LANE", "BRIEF_TRIGGER", "orphaned_brief_status"),
     }
 
     def test_safety_modules_are_not_edited_by_this_program(self):

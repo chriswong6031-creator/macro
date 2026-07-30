@@ -98,6 +98,14 @@ TRIGGERS: tuple[str, ...] = (
     "earnings_reaction", "context_brief",
 )
 
+#: This program's name in an outbox item's ``source["lane"]``. Named once
+#: because it is a CROSS-MODULE contract, not a local string: packet_to_source
+#: stamps it and downstream readers (the radar's carryover sweep, the
+#: publisher's orphan-brief gate) select on it. Two lanes — press_lane and
+#: fastlane — also stamp ``story_key``, so a reader that drops this filter is
+#: reading their rows too.
+LANE = "hot_tape"
+
 #: The follow-up trigger (codex two-step publish, §Strongest controlled
 #: comparisons): the alert wins speed, the brief wins reposts. Filed by the
 #: radar on a LATER tick than the alert it explains, never in the same pass.
@@ -1828,6 +1836,45 @@ def parent_alert_key(key: Any) -> str | None:
     return s[len(_BRIEF_KEY_PREFIX):] or None
 
 
+def orphaned_brief_status(
+    key: Any,
+    trigger: Any,
+    alert_item_by_key: dict[str, str],
+    statuses: dict[str, str],
+) -> str | None:
+    """The parent's not-posted status when (key, trigger) name an orphaned
+    context brief; None when this is not a brief or its alert is "posted".
+
+    THE one predicate for "is this brief orphaned". Two call sites, one truth:
+    the radar's dispatch re-check (scripts/hot_tape_radar.py dispatch_ids) and
+    the publisher's send-time gate (scripts/marketing_publisher.py) both call
+    this, so the two halves of the recall cascade cannot drift apart. A brief
+    is recognised by EITHER its trigger or its brief-shaped key: a row that
+    claims one but not the other is malformed, and a malformed brief must fail
+    CLOSED (checked, and unresolvable) rather than ride out as an alert.
+
+    Returns:
+      * None           - not a context brief, or the parent alert is "posted"
+      * a status string - the parent's folded status ("recalled", "quarantined", ...)
+      * "unresolved"   - no parent can be named from `alert_item_by_key`/`statuses`
+
+    What the caller does with a not-None answer is the caller's policy: the
+    radar only DESTROYS on a resolved status (its same-day fired map is lossy,
+    so "unresolved" is merely withheld), while the publisher quarantines on
+    both (its map is built from the outbox ledger itself, the authority on
+    statuses, so a parent it cannot name is positive evidence).
+    """
+    is_brief = str(trigger or "") == BRIEF_TRIGGER
+    parent_key = parent_alert_key(key)
+    if not is_brief and parent_key is None:
+        return None
+    parent_id = str(alert_item_by_key.get(parent_key) or "") if parent_key else ""
+    status = statuses.get(parent_id) if parent_id else None
+    if status == "posted":
+        return None
+    return str(status or "unresolved")
+
+
 def _group_members(tiles: list[dict], kind: str, label: str) -> list[dict]:
     return [t for t in tiles if str(t.get(kind) or "").strip() == label]
 
@@ -2010,7 +2057,7 @@ def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:
     try:
         prov = packet.provenance or {}
         source: dict[str, Any] = {
-            "lane": "hot_tape",
+            "lane": LANE,
             "trigger": packet.trigger,
             "ticker": packet.ticker,
             "sector": packet.sector,
@@ -2030,4 +2077,4 @@ def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:
         return source
     except Exception as exc:  # noqa: BLE001
         log.warning("hot_tape.packet_to_source failed: %s", exc)
-        return {"lane": "hot_tape", "trigger": getattr(packet, "trigger", None)}
+        return {"lane": LANE, "trigger": getattr(packet, "trigger", None)}

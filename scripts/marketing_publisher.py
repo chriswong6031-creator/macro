@@ -1254,6 +1254,48 @@ def main(argv: list[str] | None = None) -> int:
     shadow_cadence = 0
     deferred_xa = 0
 
+    # ── Hot-tape orphan-brief gate context (fail-soft) ───────────────────────
+    # The publisher half of the two-step recall cascade (#3983 closed the radar
+    # half). A context brief rides only while the alert it explains is still
+    # "posted", and the radar re-checks that at its own dispatch — but that
+    # sweep runs only when the radar runs. An operator recall after the last
+    # radar pass of the day (end of ET window, weekend, workflow disabled)
+    # leaves the booked brief on its scheduled_at, and THIS sweep would send
+    # it. Re-checked here, at the last gate before the network, against the
+    # outbox ledger itself. Fail-soft in the publisher's usual shape: if this
+    # context cannot be built the gate stands down and the send path is
+    # unchanged — a broken check must never wedge the queue, and "unresolved"
+    # must mean "the ledger answered: no such alert", never "the check broke".
+    # This module is in the Hot Tape program's READ-ONLY safety stack (gate
+    # 0.5, class TestSafetyStack in the radar's suite), so the reach is ONE
+    # sanctioned symbol, recorded by name in that test's allowance. It earns
+    # the allowance the same way the copywriter's does: the gate can only
+    # REFUSE a brief, and there is no argument to it that lets a post through
+    # that would otherwise be refused.
+    _ht_orphan_status = None
+    _ht_lane = ""
+    _ht_alert_ids: dict[str, str] = {}
+    try:
+        from engine.marketing.hot_tape import LANE, BRIEF_TRIGGER, orphaned_brief_status  # noqa: PLC0415
+        _ht_lane = LANE
+        for _hid, _hit in (state.get("items") or {}).items():
+            _hsrc = _hit.get("source")
+            if not isinstance(_hsrc, dict) or _hsrc.get("lane") != _ht_lane:
+                continue
+            if str(_hsrc.get("trigger") or "") == BRIEF_TRIGGER:
+                continue
+            _hk = str(_hsrc.get("story_key") or "")
+            # Prefer a posted duplicate: the question is "is the post this
+            # brief explains live", so any posted holder of the key answers it.
+            if _hk and (_hk not in _ht_alert_ids
+                        or statuses.get(_ht_alert_ids[_hk]) != "posted"):
+                _ht_alert_ids[_hk] = str(_hid)
+        _ht_orphan_status = orphaned_brief_status
+    except Exception as _ht_exc:  # noqa: BLE001
+        log.warning("hot-tape orphan gate unavailable (%s) — briefs post "
+                    "ungated this run", _ht_exc)
+        _ht_orphan_status = None
+
     for it in approved_due:
         iid = it["id"]
         account = it.get("account", "")
@@ -1269,6 +1311,42 @@ def main(argv: list[str] | None = None) -> int:
                         (_halts.get(account) or {}).get("reason"))
             skipped_halt += 1
             continue
+
+        # -- hot-tape orphan gate: a brief never outlives its alert -----------
+        # The second half of a two-step publish must not ship if the first
+        # half is gone: a context brief whose parent alert is recalled,
+        # quarantined, or absent from this ledger would explain a post nobody
+        # can see. Same predicate as the radar's dispatch re-check
+        # (orphaned_brief_status), stricter policy on "unresolved": here the
+        # map comes from the outbox ledger itself, so a parent it cannot name
+        # is positive evidence, not a fold hiccup (see the predicate's
+        # docstring). Runs for post_now/immediate items too — an operator
+        # click buys timing, never a waiver on a safety gate (#3983).
+        if _ht_orphan_status is not None:
+            try:
+                _bsrc = it.get("source")
+                _orphan = None
+                if isinstance(_bsrc, dict) and _bsrc.get("lane") == _ht_lane:
+                    _orphan = _ht_orphan_status(
+                        _bsrc.get("story_key"), _bsrc.get("trigger"),
+                        _ht_alert_ids, statuses)
+                if _orphan is not None:
+                    reason = f"orphaned context brief: alert is {_orphan}"
+                    print(f"::warning title=hot-tape-orphan-brief::context brief "
+                          f"{iid} is not published: the alert it explains is "
+                          f"{_orphan}, not posted - a brief is the second half "
+                          "of a two-step publish and never ships alone",
+                          flush=True)
+                    log.warning("item %s (%s) QUARANTINED as an orphaned context "
+                                "brief (alert is %s)", iid, account, _orphan)
+                    if live:
+                        _outbox.transition(iid, "quarantined", actor="publisher",
+                                           root=root, note=reason)
+                    quarantined += 1
+                    continue
+            except Exception as _ob_exc:  # noqa: BLE001
+                log.warning("hot-tape orphan gate failed for %s (%s) — item "
+                            "proceeds", iid, _ob_exc)
 
         links_allowed = _links_allowed_for(pub_cfg, account)
         # Items carry no separate link field today; the link (if any) is inline
