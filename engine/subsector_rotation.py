@@ -146,10 +146,12 @@ def _history_with_today(history: Sequence[Mapping] | None,
     rows = [dict(r) for r in (history or []) if (r or {}).get("subsectors")]
     day = str(asof or "").strip() or "today"
     if rows and str(rows[-1].get("asof") or "") == day:
-        # same session: fold in any key the archive is missing (synthetic nodes)
-        merged = dict(rows[-1].get("subsectors") or {})
-        for k, v in perf_by_key.items():
-            merged.setdefault(k, v)
+        # Same session. The LIVE SNAPSHOT WINS over the archive row for today: the archive is
+        # append-once-per-asof, so an intraday re-fetch leaves it holding the morning's
+        # numbers while perf_snapshot.json carries the latest. Letting the archive win would
+        # compute the turn read on a different vintage than the incumbent metrics in the same
+        # payload. Archive-only keys are kept (same session, nothing to lose).
+        merged = {**(rows[-1].get("subsectors") or {}), **dict(perf_by_key)}
         rows[-1] = {"asof": day, "subsectors": merged}
         return rows
     rows.append({"asof": day, "subsectors": dict(perf_by_key)})
