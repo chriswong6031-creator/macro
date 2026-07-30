@@ -144,25 +144,40 @@ def compute_events(payload: dict, prior: dict | None) -> list[dict]:
             brd_zh = f"{round((brd or 0) * 100)}% 成分股" if brd is not None else "成分股数据不足"
             conc = " · carried by one name" if (s.get("breadth") or {}).get("concentrated") else ""
             conc_zh = " · 主要由单一成分股带动" if (s.get("breadth") or {}).get("concentrated") else ""
+            # The verb carries the direction, so the magnitude is absolute — "fell -40.5%"
+            # is a double negative. And the engine publishes WHICH path qualified the node:
+            # one that qualified on its RS line would otherwise read "fell 0%" while sitting
+            # at its price high.
+            mkt_w = _f((s.get("pace_mkt") or {}).get("w1"))
+            lead = (s.get("basis_up") if up else s.get("basis_dn")) == "leadership"
+            src = (s.get("rs_dd_from_peak") if up else s.get("rs_up_from_trough")) if lead \
+                else (s.get("dd_from_peak") if up else s.get("up_from_trough"))
+            mag = f"{abs(src):.1f}" if src is not None else "—"   # magnitude, unsigned
             if up:
                 hl = f"🔄 Turned up — {nm} ({th})"
                 hl_zh = f"🔄 转为上行 — {nm}（{th}）"
-                det = (f"{nm} fell {_f(s.get('dd_from_peak'))}% from its 1-year high and has now "
-                       f"turned up on confirmed sessions — this week {_pc(s, '1W')} vs the market's "
-                       f"{_f((s.get('pace_mkt') or {}).get('w1'))}%/wk, {brd_txt} turning with it{conc}. "
+                fromwhat = (f"gave up {mag}% of its lead over the market" if lead
+                            else f"fell {mag}% from its 1-year high")
+                fromwhat_zh = (f"领先度自最佳水平回落 {mag}%" if lead
+                               else f"自一年高点回落 {mag}%")
+                det = (f"{nm} {fromwhat} and has now turned up on confirmed sessions — this week "
+                       f"{_pc(s, '1W')} vs the market's {mkt_w}%/wk, {brd_txt} turning with it{conc}. "
                        f"Context, not a buy list.")
-                det_zh = (f"{nm} 自一年高点回落 {_f(s.get('dd_from_peak'))}%，现已连续多个交易日确认转为上行"
-                          f"——本周 {_pc(s, '1W')}，市场为 {_f((s.get('pace_mkt') or {}).get('w1'))}%/周，"
+                det_zh = (f"{nm} {fromwhat_zh}，现已连续多个交易日确认转为上行"
+                          f"——本周 {_pc(s, '1W')}，市场为 {mkt_w}%/周，"
                           f"{brd_zh}同步转向{conc_zh}。仅作参考，非买入清单。")
             else:
                 hl = f"🔄 Turned down — {nm} ({th})"
                 hl_zh = f"🔄 转为下行 — {nm}（{th}）"
-                det = (f"{nm} ran {_f(s.get('up_from_trough'))}% off its 1-year low and has now "
-                       f"rolled over on confirmed sessions — this week {_pc(s, '1W')} vs the market's "
-                       f"{_f((s.get('pace_mkt') or {}).get('w1'))}%/wk, {brd_txt} rolling with it{conc}. "
+                fromwhat = (f"built {mag}% of lead over the market" if lead
+                            else f"ran {mag}% off its 1-year low")
+                fromwhat_zh = (f"领先度累计扩大 {mag}%" if lead
+                               else f"自一年低点上涨 {mag}%")
+                det = (f"{nm} {fromwhat} and has now rolled over on confirmed sessions — this week "
+                       f"{_pc(s, '1W')} vs the market's {mkt_w}%/wk, {brd_txt} rolling with it{conc}. "
                        f"Context, not a sell list.")
-                det_zh = (f"{nm} 自一年低点上涨 {_f(s.get('up_from_trough'))}%，现已连续多个交易日确认转为下行"
-                          f"——本周 {_pc(s, '1W')}，市场为 {_f((s.get('pace_mkt') or {}).get('w1'))}%/周，"
+                det_zh = (f"{nm} {fromwhat_zh}，现已连续多个交易日确认转为下行"
+                          f"——本周 {_pc(s, '1W')}，市场为 {mkt_w}%/周，"
                           f"{brd_zh}同步走弱{conc_zh}。仅作参考，非卖出清单。")
             out.append(_ev(key, ts, f"rotation_{st_now}", sev, hl, det,
                            {"turn_state": st_now, "since": s.get("turn_since"),

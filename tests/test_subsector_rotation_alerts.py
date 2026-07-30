@@ -100,3 +100,19 @@ def test_turn_severity_needs_size_and_breadth():
     assert A._turn_severity(_turn_sub("g", "turn_up"), up=True) == "high"
     # an unconfirmed candidate never reaches high
     assert A._turn_severity(_turn_sub("c", "topping"), up=False) == "minor"
+
+
+def test_turn_alert_copy_has_no_double_negative_and_follows_the_basis():
+    """"fell -40.5%" is a double negative; a leadership-basis node must not say "fell 0%"."""
+    price = _turn_sub("p", "turn_up", dd_from_peak=-40.5, basis_up="price")
+    lead = _turn_sub("l", "turn_up", dd_from_peak=-0.2, rs_dd_from_peak=-10.9,
+                     basis_up="leadership")
+    prior = {k: {"name": k, "theme": "T", "quadrant": "improving", "emerging": True,
+                 "turn_state": "bottoming"} for k in ("p", "l")}
+    evs = {e["asset"]: e for e in A.compute_events(_payload([price, lead]), prior)
+           if e["type"] == "rotation_turn_up"}
+    assert "fell 40.5%" in evs["p"]["detail"] and "-40.5" not in evs["p"]["detail"]
+    assert "gave up 10.9% of its lead" in evs["l"]["detail"]
+    assert "fell 0" not in evs["l"]["detail"]
+    for e in evs.values():                      # ZH parity, no raw EN state names
+        assert "turn_up" not in e["detail_zh"] and "%" in e["detail_zh"]
