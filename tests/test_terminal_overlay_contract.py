@@ -35,11 +35,12 @@ def test_programmatic_stock_rows_use_the_same_portal():
         assert "window.location.href" in code  # resilient no-JS/load-error fallback
 
 
-def test_overlay_has_keyboard_history_accessibility_and_strict_message_guards():
+def test_overlay_has_keyboard_accessibility_and_strict_message_guards():
     code = _read("templates/terminal_overlay.js")
     assert "event.key === 'Escape'" in code
-    assert "history.pushState" in code
-    assert "history.back()" in code
+    assert "history.pushState" not in code
+    assert "history.back()" not in code
+    assert "The Terminal is an overlay, not a navigation" in code
     assert "role', 'dialog'" in code
     assert "aria-modal', 'true'" in code
     assert "event.source !== state.frame.contentWindow" in code
@@ -48,18 +49,36 @@ def test_overlay_has_keyboard_history_accessibility_and_strict_message_guards():
     assert "window.MDXTerminalOverlay" in code
 
 
-def test_overlay_keeps_desktop_warm_but_recycles_hidden_mobile_iframe():
+def test_overlay_keeps_desktop_warm_but_remounts_mobile_with_a_new_iframe_node():
     code = _read("templates/terminal_overlay.js")
     assert "if (!state.booted)" in code
-    assert "state.frame.src = config.url" in code
+    assert "frame.src = config.url" in code
     assert "terminal:set-symbol" in code
-    assert "function shouldRecycleFrame()" in code
+    assert "function shouldRemountFrame()" in code
     assert "window.matchMedia('(max-width: 700px)')" in code
     assert "/iPad|iPhone|iPod/.test(ua)" in code
-    assert "state.recyclePending = shouldRecycleFrame()" in code
-    assert "if (!state.open && state.recyclePending) recycleFrame()" in code
-    assert "state.frame.src = 'about:blank'" in code
-    assert ".removeChild(state.frame)" not in code
+    assert "if (!state.open && shouldRemountFrame() && state.frame) destroyFrame()" in code
+    assert "function createFrame()" in code
+    assert "function destroyFrame()" in code
+    assert "state.frame = null" in code
+    assert "old.parentNode.removeChild(old)" in code
+
+
+def test_overlay_restores_the_exact_dashboard_position_without_smooth_scroll():
+    code = _read("templates/terminal_overlay.js")
+    assert "state.scrollX = window.scrollX" in code
+    assert "state.scrollY = window.scrollY" in code
+    assert "document.documentElement.style.scrollBehavior = 'auto'" in code
+    assert "window.scrollTo(restoreX, restoreY)" in code
+    assert "requestAnimationFrame(restorePosition)" in code
+    assert "focus({ preventScroll: true })" in code
+
+
+def test_mobile_animation_avoids_transformed_or_clipped_iframe_ancestors():
+    code = _read("templates/terminal_overlay.js")
+    assert "@media(max-width:700px)" in code
+    assert "clip-path:none!important;transform:none!important" in code
+    assert ".mmto-frame{opacity:1!important;transform:none!important;transition:none!important}" in code
 
 
 def test_loader_has_a_deliberate_minimum_display_time():

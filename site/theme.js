@@ -5053,7 +5053,7 @@
    Maintained separately and bundled onto the emitted theme.js by site_assets.py;
    it can still load standalone in local/custom builds. The Terminal app remains
    isolated at app.mastermind-x.com; this code owns only the dashboard-side portal,
-   loading state, animation, history and accessibility. */
+   loading state, animation, exact-position restoration and accessibility. */
 (function () {
   'use strict';
 
@@ -5074,15 +5074,15 @@
     targetOrigin: 'https://app.mastermind-x.com',
     directUrl: 'https://app.mastermind-x.com/terminal',
     lastConfig: null,
-    historyToken: '',
-    historyActive: false,
-    recyclePending: false,
     closeTimer: 0,
     readyTimer: 0,
     toastTimer: 0,
     slowTimer: 0,
+    positionTimer: 0,
     loadingStartedAt: 0,
+    scrollX: 0,
     scrollY: 0,
+    rootScrollBehavior: '',
     activeElement: null,
     bodyStyle: null,
     locked: []
@@ -5174,7 +5174,13 @@
       '@keyframes mmtoOrbit{to{transform:rotate(360deg)}}',
       '@keyframes mmtoAura{0%,100%{transform:scale(.92);opacity:.72}50%{transform:scale(1.05);opacity:1}}',
       '@media(max-width:700px){',
-        '.mmto-stage{transform:translate3d(0,18px,0) scale(.965)}',
+        /* Mobile Safari is prone to black cross-origin iframe layers when an
+           ancestor is transformed or clip-pathed. Keep the mobile reveal on
+           the loader/background; desktop retains the full radial/scale transition. */
+        '.mmto-stage{clip-path:none!important;transform:none!important;opacity:1!important;transition:none!important}',
+        '#mm-terminal-overlay.is-open .mmto-stage{clip-path:none!important;transform:none!important;opacity:1!important}',
+        '#mm-terminal-overlay.is-closing .mmto-stage{clip-path:none!important;transform:none!important;opacity:0!important}',
+        '.mmto-frame{opacity:1!important;transform:none!important;transition:none!important}',
         '.mmto-toast{top:max(8px,env(safe-area-inset-top));font-size:11.5px;padding-right:10px}',
         '.mmto-loader-title{font-size:13px}.mmto-loader-sub{max-width:290px;line-height:1.45}',
       '}',
@@ -5200,7 +5206,6 @@
     root.setAttribute('aria-hidden', 'true');
     root.innerHTML =
       '<div class="mmto-stage">' +
-        '<iframe class="mmto-frame" title="Mastermind Terminal" allow="clipboard-read; clipboard-write; fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>' +
         '<div class="mmto-loader" role="status" aria-live="polite">' +
           '<div class="mmto-loader-inner">' +
             '<div class="mmto-mark" aria-hidden="true">' +
@@ -5227,23 +5232,65 @@
     document.body.appendChild(root);
 
     state.overlay = root;
-    state.frame = root.querySelector('.mmto-frame');
+    state.frame = null;
     state.loader = root.querySelector('.mmto-loader');
     state.toast = root.querySelector('.mmto-toast');
     state.slow = root.querySelector('.mmto-slow');
     state.newTab = root.querySelector('.mmto-newtab');
 
     root.querySelector('.mmto-back').addEventListener('click', requestClose);
-    state.frame.addEventListener('load', function () {
-      // The child bridge can post "ready" just before the iframe load event.
-      // Never let the later load event regress that settled state back to a
-      // permanent loader; explicit cross-route symbol switches clear ready first.
-      if (!state.booted || state.ready) return;
-      root.classList.remove('is-ready', 'is-slow');
-      root.classList.add('is-loading');
+    return root;
+  }
+
+  function createFrame() {
+    if (!state.overlay) return null;
+    var stage = state.overlay.querySelector('.mmto-stage');
+    if (!stage) return null;
+    var frame = document.createElement('iframe');
+    frame.className = 'mmto-frame';
+    frame.title = 'Mastermind Terminal';
+    frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
+    frame.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    frame.addEventListener('load', function () {
+      // Ignore a late load from a frame that was already discarded. The child
+      // bridge can also post "ready" just before load; never regress that
+      // settled state back to a permanent loader.
+      if (state.frame !== frame || !state.booted || state.ready) return;
+      state.overlay.classList.remove('is-ready', 'is-slow');
+      state.overlay.classList.add('is-loading');
       startSlowTimer();
     });
-    return root;
+    stage.insertBefore(frame, state.loader || stage.firstChild);
+    state.frame = frame;
+    return frame;
+  }
+
+  function ensureFrame() {
+    if (state.frame && state.frame.isConnected) return state.frame;
+    return createFrame();
+  }
+
+  function resetFrameState() {
+    clearTimeout(state.readyTimer);
+    clearTimeout(state.slowTimer);
+    state.readyTimer = 0;
+    state.ready = false;
+    state.booted = false;
+    state.path = '';
+    state.symbol = '';
+    if (state.overlay) state.overlay.classList.remove('is-ready', 'is-loading', 'is-slow');
+  }
+
+  function destroyFrame() {
+    var old = state.frame;
+    state.frame = null;
+    resetFrameState();
+    if (!old) return;
+    // A new DOM node is required here. Merely pointing the old iframe at
+    // about:blank leaves its WebKit compositor layer alive and can make the
+    // next cross-origin document paint as a permanently black surface.
+    try { old.src = 'about:blank'; } catch (e) {}
+    if (old.parentNode) old.parentNode.removeChild(old);
   }
 
   function setLaunchOrigin(trigger) {
@@ -5261,7 +5308,14 @@
   }
 
   function lockDashboard() {
+    if (state.positionTimer) {
+      clearTimeout(state.positionTimer);
+      document.documentElement.style.scrollBehavior = state.rootScrollBehavior;
+      state.positionTimer = 0;
+    }
+    state.scrollX = window.scrollX || window.pageXOffset || 0;
     state.scrollY = window.scrollY || window.pageYOffset || 0;
+    state.rootScrollBehavior = document.documentElement.style.scrollBehavior;
     state.activeElement = document.activeElement;
     state.bodyStyle = {
       position: document.body.style.position,
@@ -5272,6 +5326,7 @@
       overflow: document.body.style.overflow
     };
     document.documentElement.classList.add('mm-terminal-lock');
+    document.documentElement.style.scrollBehavior = 'auto';
     document.body.style.position = 'fixed';
     document.body.style.top = (-state.scrollY) + 'px';
     document.body.style.left = '0';
@@ -5294,6 +5349,10 @@
 
   function unlockDashboard() {
     if (!state.bodyStyle) return;
+    var restoreX = state.scrollX;
+    var restoreY = state.scrollY;
+    var restoreBehavior = state.rootScrollBehavior;
+    var restoreFocus = state.activeElement;
     state.locked.forEach(function (rec) {
       try { rec.el.inert = rec.inert; } catch (e) {}
       if (rec.aria == null) rec.el.removeAttribute('aria-hidden');
@@ -5307,11 +5366,27 @@
     document.body.style.width = state.bodyStyle.width;
     document.body.style.overflow = state.bodyStyle.overflow;
     document.documentElement.classList.remove('mm-terminal-lock');
-    window.scrollTo(0, state.scrollY);
     state.bodyStyle = null;
-    if (state.activeElement && state.activeElement.focus) {
-      try { state.activeElement.focus({ preventScroll: true }); } catch (e) { try { state.activeElement.focus(); } catch (ignore) {} }
+    state.activeElement = null;
+    if (restoreFocus && restoreFocus.focus) {
+      try { restoreFocus.focus({ preventScroll: true }); } catch (e) { try { restoreFocus.focus(); } catch (ignore) {} }
     }
+    // Safari may ignore the first scrollTo while a fixed body is being
+    // released. Pin the exact dashboard coordinates across the next two paints
+    // and one short task, with smooth scrolling temporarily disabled.
+    function restorePosition() {
+      if (!state.open) window.scrollTo(restoreX, restoreY);
+    }
+    restorePosition();
+    requestAnimationFrame(function () {
+      restorePosition();
+      requestAnimationFrame(restorePosition);
+    });
+    state.positionTimer = setTimeout(function () {
+      restorePosition();
+      document.documentElement.style.scrollBehavior = restoreBehavior;
+      state.positionTimer = 0;
+    }, 90);
   }
 
   function showToast() {
@@ -5371,7 +5446,7 @@
     finishReady(data);
   }
 
-  function shouldRecycleFrame() {
+  function shouldRemountFrame() {
     var compact = false;
     try {
       compact = !!(window.matchMedia && window.matchMedia('(max-width: 700px)').matches);
@@ -5381,35 +5456,7 @@
     return compact || /iPad|iPhone|iPod/.test(ua) || touchMac;
   }
 
-  function recycleFrame() {
-    state.recyclePending = false;
-    clearTimeout(state.readyTimer);
-    clearTimeout(state.slowTimer);
-    state.readyTimer = 0;
-    state.ready = false;
-    state.booted = false;
-    state.path = '';
-    state.symbol = '';
-    if (state.overlay) state.overlay.classList.remove('is-ready', 'is-loading', 'is-slow');
-    if (!state.frame) return;
-    // Mobile WebKit can keep the cross-origin iframe's composited surface black
-    // after its fixed ancestor moves through visibility:hidden. Releasing the
-    // hidden document makes the next launch paint a fresh surface; HTTP/browser
-    // caches still make that second boot much faster than the first.
-    try { state.frame.src = 'about:blank'; }
-    catch (e) { state.frame.removeAttribute('src'); }
-  }
-
-  function pushOverlayHistory() {
-    var base = history.state && typeof history.state === 'object'
-      ? Object.assign({}, history.state) : {};
-    state.historyToken = 'mmto-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-    base.mmTerminalOverlay = state.historyToken;
-    history.pushState(base, '', location.href);
-    state.historyActive = true;
-  }
-
-  function openInternal(config, fromHistory) {
+  function openInternal(config) {
     if (!config || !config.url) return;
     if (!isDashboardHost()) {
       location.href = config.directUrl || config.url;
@@ -5421,8 +5468,15 @@
       return;
     }
 
-    if (!state.open && state.recyclePending) recycleFrame();
     clearTimeout(state.closeTimer);
+    // Every compact/mobile launch gets a genuinely new iframe element. This
+    // also covers a rapid reopen before the 650ms closing animation completed.
+    if (!state.open && shouldRemountFrame() && state.frame) destroyFrame();
+    var frame = ensureFrame();
+    if (!frame) {
+      location.href = config.directUrl || config.url;
+      return;
+    }
     state.lastConfig = config;
     state.symbol = config.symbol || '';
     state.targetOrigin = config.targetOrigin || new URL(config.url).origin;
@@ -5437,8 +5491,6 @@
       void root.offsetWidth;
       root.classList.add('is-open');
       lockDashboard();
-      if (!fromHistory) pushOverlayHistory();
-      else state.historyActive = true;
     }
 
     showToast();
@@ -5446,7 +5498,7 @@
     if (!state.booted) {
       state.booted = true;
       beginLoading(root);
-      state.frame.src = config.url;
+      frame.src = config.url;
       return;
     }
 
@@ -5454,8 +5506,8 @@
       beginLoading(root);
     }
 
-    if (state.frame.contentWindow) {
-      state.frame.contentWindow.postMessage({
+    if (frame.contentWindow) {
+      frame.contentWindow.postMessage({
         source: 'mastermind-dashboard',
         type: 'terminal:set-symbol',
         symbol: state.symbol
@@ -5465,9 +5517,8 @@
 
   function performClose() {
     if (!state.open || !state.overlay) return;
+    var remount = shouldRemountFrame();
     state.open = false;
-    state.historyActive = false;
-    state.recyclePending = shouldRecycleFrame();
     clearTimeout(state.toastTimer);
     clearTimeout(state.slowTimer);
     state.toast.classList.remove('show');
@@ -5478,17 +5529,14 @@
     state.closeTimer = setTimeout(function () {
       if (!state.overlay || state.open) return;
       state.overlay.classList.remove('is-closing');
-      if (state.recyclePending) recycleFrame();
+      if (remount) destroyFrame();
     }, 650);
   }
 
   function requestClose() {
-    if (!state.open) return;
-    var hs = history.state;
-    if (state.historyActive && hs && hs.mmTerminalOverlay === state.historyToken) {
-      history.back();
-      return;
-    }
+    // The Terminal is an overlay, not a navigation. Closing it must never pop
+    // browser history or replace the dashboard document: the exact page, UI
+    // state, scroll coordinates and focused ticker stay where the user left them.
     performClose();
   }
 
@@ -5515,19 +5563,8 @@
     }
   });
 
-  window.addEventListener('popstate', function (event) {
-    var token = event.state && event.state.mmTerminalOverlay;
-    if (state.open && token !== state.historyToken) {
-      performClose();
-      return;
-    }
-    if (!state.open && token && token === state.historyToken && state.lastConfig) {
-      openInternal(state.lastConfig, true);
-    }
-  });
-
   window.MDXTerminalOverlay = {
-    open: function (config) { openInternal(config, false); },
+    open: function (config) { openInternal(config); },
     close: requestClose,
     isOpen: function () { return state.open; }
   };
