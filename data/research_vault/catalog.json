@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T20:53:51.035717+00:00",
-  "count": 406,
+  "generated_at": "2026-07-30T21:11:10.514977+00:00",
+  "count": 414,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -49,6 +49,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zsr1vwz18aq-368ea8",
+      "title": "DB Meta July 30",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T17:34:26Z",
+      "summary_points": [
+        "**Core Revenue Momentum**: Meta's 28% y/y revenue growth ($60.8B, 27% FX-neutral) driven by AI-enhanced engagement (Instagram time + double digits, Facebook video +9%) and advertising (14% impressions, 12% avg price), with AI boosting conversions (15.7%).",
+        "**Compute Monetization Opportunity**: Near-term potential to sell compute capacity at multiples of cost, supported by $31.1B capex vs.",
+        "$31.9B operating cash flow, enabling premium pricing and infrastructure flexibility through 2027.",
+        "**Target Price Adjustment**: Reduced to $750 (from $800) due to lower FY27 capex visibility and peer valuation compression (23x vs.",
+        "24x), with Buy rating maintained amid AI monetization traction."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
@@ -418,6 +439,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-xkao8drhndr-3e50ca",
+      "title": "ANA Holdings (9202)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:54Z",
+      "summary_points": [
+        "**Q1 Results & Drivers**: Q1 operating profits ¥208bn (+44% yoy) beat estimates by ¥29bn, driven by resilient passenger demand, improved international cargo (semiconductors/electronic components), fuel hedging, and fare surcharge pass-through.",
+        "**Undervaluation Metrics**: P/E 7.9, P/B 0.9 (near 15-year low), FCF yield 13.5%, low net debt/equity (5.7%)—signaling strong fundamental undervaluation.",
+        "**Target Price Upside**: Goldman Sachs target ¥3,500 (20.7% above closing price ¥2,920 on 23-Jun-26), with historical targets consistently above closing prices (e.g., ¥3,350 vs.",
+        "¥2,865 on 30-Mar-26)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-qobtqxyc7j1-8220b7",
       "title": "US Daily FOMC Recap No Hike and No Guidance",
       "institution": "Goldman Sachs",
@@ -439,6 +480,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ydxdq9zrh8d-1533d9",
+      "title": "Meta Platforms Inc. (META) Q2'26 Review Core Business Provides Evidence of Near Term ROIC but Lack of Visibility into Long ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:49Z",
+      "summary_points": [
+        "**Q2'26 Earnings Downgrades & Litigation Impact**: GAAP EPS revised down to $6.48 (Q3) and $31.65 (FY2026) from $7.22/$33.28 due to $2.4bn Q2 litigation charge and regulatory risks, with $3.6bn one-time charges distorting metrics.",
+        "**AI Capex Growth vs.",
+        "Monetization Uncertainty**: 14% capex raise for 2027-28 driven by AI compute scaling, but investor concerns persist on monetization path (subscriptions, pricing) and long-term spend clarity, risking moderate '26/'27 capex growth.",
+        "**Price Target Cut to $725 Amid Revised Estimates**: Buy rating maintained but 12-month target lowered from $815 to $725 (current price at ~17x 2027 GAAP EPS), reflecting downward earnings revisions and regulatory headwinds.",
+        "**Critical Regulatory & Competitive Risks**: Antitrust scrutiny altering business model, M&A constraints, intense ad competition, and macro volatility impacting growth stock appetite are top risks depressing margins and growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-eg6cax7eumy-b5838b",
       "title": "MediaAlpha Inc. (MAX) Q2'26 Earnings Review P&C Momentum Supports Broadening Carrier Demand",
       "institution": "Goldman Sachs",
@@ -455,6 +517,67 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kizgyybp97b-11ac06",
+      "title": "Japan July Consumer Sentiment Improves Beyond Market Forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:46Z",
+      "summary_points": [
+        "**Historical Policy Shocks**: Consumption tax hikes (2014/2019), East Japan Earthquake (2011), and GFC (2008) caused sharp consumer confidence declines and inflation expectation spikes.",
+        "**Persistent Inflation Risk**: Post-COVID, 1Y inflation expectations remain elevated above 3% through 2026/27, signaling sustained portfolio inflation risks despite consumer confidence rebound.",
+        "**Forward-Looking Inflation Expectations**: Elevated 1Y inflation expectations (above 3%) persist beyond recovery, requiring proactive portfolio adjustments for long-term inflation exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pnuz6dkoxsz-4f02ed",
+      "title": "G10 Inflation Monitor Core Inflation Surprises to the Downside Outside of the UK",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:46Z",
+      "summary_points": [
+        "**US/Euro Area Cooling**: Core inflation below forecasts (US: 1.7% vs 2.1%, Euro area: 1.1% vs 2.6%), with cumulative 12-month surprises negative (-31bp US, -43bp UK), signaling disinflationary momentum critical for Fed policy timing.",
+        "**Canada Inflation Divergence**: Sole G10 economy with rising core inflation momentum (weighted median core accelerating), contrasting broad deceleration in US, Eurozone, Japan, and UK, indicating potential policy divergence.",
+        "**GS Trimmed Core vs Traditional Core**: GS Trimmed Core (ex-volatile components) consistently lower than traditional core (e.g., US: 1.66% vs 2.06%), signaling more stable inflation measure for policy decisions and asset allocation.",
+        "**US-Iran Deal Impact**: Energy inflation drop to 7% (vs 104% prior) and US-Iran deal lowered 2026 inflation forecasts by 0.4pp (US), 0.3pp (Canada), reflecting geopolitical shift reducing inflation expectations.",
+        "**GS Forecast Below Consensus**: Goldman Sachs’ 2026 core inflation forecasts below Bloomberg consensus (e.g., US PCE 3.0% vs market), indicating more subdued inflation outlook than priced in, affecting rate expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e2yithqm3ja-5363fe",
+      "title": "Fiverr International Ltd",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:44Z",
+      "summary_points": [
+        "**Downgrade & Valuation Shock**: Neutral rating with $13 12m PT (down from $26), driven by reduced growth visibility, EV/EBITDA multiple contraction (7.0x vs 10.0x), and accelerated revenue deterioration.",
+        "**Negative Revenue Growth Forecast**: 12/26E revenue growth projected at -15.9% (vs 10.1% in 12/25), signaling top-line deterioration amid AI-driven compression of low-value transactions (e.g., -22% YoY drop in Annual Active Buyers).",
+        "**Operational Strain**: Net income to fall to $17.5m (12/26E) from $21.0m (12/25), with operating cash flow halving to $54.3m (12/26E) from $104.6m (12/25), reflecting severe margin pressure and liquidity risk.",
+        "**Accelerated Transition Pain**: Q2 results show double-digit revenue declines through 2026, with services revenue growth decelerating to +2% YoY (vs prior acceleration), and key metrics (GMV, revenue, EBITDA margin) deteriorating faster than expected.",
+        "**Critical Execution Risks**: Missed consensus on revenue (-2%), gross margin (-2.5%), and adj."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
@@ -603,6 +726,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-ldth5h8jfxz-5a734d",
+      "title": "General Dynamics Corp. (GD) 2Q26 First Take Solid quarter",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:33Z",
+      "summary_points": [
+        "**Q2 2026 Fundamentals**: Revenue ($14.09bn, +4% vs consensus), EPS ($4.24, +7%), segment EBIT ($1.65bn, +6%); Gulfstream (41 aircraft, +10% yoy) and Marine (10% revenue, 14.5% margin) outperform; aerospace backlog +23% yoy, book-to-bill 1.5x.",
+        "**Critical Risk Exposure**: Business jet market weakness, DoD spending shifts, and capital deployment inefficiencies explicitly cited as primary threats to valuation by GS.",
+        "**Price Target Discrepancy**: Actual revenue/profit beat GS estimates (2.0%/2.5%) yet 12m target ($308) is 21.7% below current price ($393.19), signaling bearish sentiment despite strong fundamentals.",
+        "**Target Price Trend**: Closing prices consistently exceed GS target prices (2023-2026), indicating potential upside or conservative valuation despite minor target declines in 2026."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-btftdaz3dq2-e537b6",
       "title": "GM Market Rhythm Focus 1",
       "institution": "Other",
@@ -722,6 +865,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-y37scmduj29-612c38",
+      "title": "Economic Data 290726 Q226 labour market preview bulletin 29Jul26",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:32:30Z",
+      "summary_points": [
+        "**Unemployment Forecast**: Westpac forecasts June quarter unemployment rising to 5.4% as employment growth (0.1% Q1) lags population growth, with labour market subdued despite Middle East conflict.",
+        "**Labour Market Dynamics**: \"Low-fire, low-hire\" environment persists (0.1% Q2 employment rise, 0.1ppt unemployment increase), long-term unemployment a key risk, and Middle East conflict lingering as jobs lag indicators.",
+        "**RBNZ Policy Dependency**: September policy review hinges on August inflation expectations; OCR hike timing tied to RBNZ's assessment of Labour Cost Index (0.6% forecast) and inflation data."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
