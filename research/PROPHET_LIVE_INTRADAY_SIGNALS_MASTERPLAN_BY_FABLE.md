@@ -257,6 +257,61 @@ This ledger is the entire evidence base for §6 promotion and for the operator's
   delayed" only where the rail is actually live (honest by construction).
 - **prophet page + showcase untouched** (delayed-winners contract stays; DNR-compliant).
 
+### 4.2a MEASURED 2026-07-30 — the GH `*/5` lane premise is FALSIFIED; the evaluator moves to the VPS
+
+§4.2 placed the evaluator on a `*/5` ubuntu cron and §1 promised "~15–20 min after the
+cross". Both were wrong, and the P0 live verification is what caught it. Measured on
+2026-07-30 (all four facts independently checked, not inferred):
+
+- **GH cron is throttled far past the documented 15–45 min.** `marketing-hot-tape.yml`
+  is `*/5` in RTH and actually ran at 09:07 then 12:19 — ~3h 12m apart.
+  `live-quotes.yml` (`*/15`, never gated) ran 06:04, 08:46, 09:06, 10:50, 12:17 —
+  ~90 min apart. This repo carries ~58 workflows; GitHub deprioritises frequent
+  schedules accordingly. A `*/5` product cadence is NOT purchasable here at any price.
+- **The quote source the GH lanes read is starved.** Since the VPS cutover
+  (`VPS_LIVE_PRIMARY=true`, 2026-07-27) the `*/5` legs of `live-quotes.yml` and
+  `intraday-fastpath.yml` self-disable, so the `live-data` branch — which BOTH this lane
+  and the hot-tape radar fetch — is refreshed only by the throttled `*/15` leg. Measured
+  at 13:41Z: `live-data` `quotes.json` `asof` 12:18:07Z (**83 min old**) against the
+  evaluator's `quote_max_age_min: 12`. Every name would have darked `stale_quote` on
+  every pass, forever, while the lane reported success.
+- **The VPS plane is fine — it is the consumers that were cut off.**
+  `www.mastermind-x.com/live/quotes.json` measured `asof` 13:41:18Z at 13:41:49Z —
+  **31 seconds old**.
+- **The P0 dry run proved the code correct while the data path was dead.** The lane read
+  the merged quote view, found no pack, emitted `artifact dark (no_pack)`, wrote nothing,
+  exited 0 — a green run that would have been green every day with nothing behind it.
+
+**RULING.** The evaluator moves to the VPS as a resource-capped systemd oneshot+timer
+(the `macro-live-fast/snapshot/bars` pattern; `docs/live_breadth_runbook.md` already
+states the GH backstop "cannot hold a 1–2 min cadence — that's why the host loop is
+primary"). Three problems collapse into one fix:
+1. **Cadence becomes real** — a timer fires on time; GitHub's scheduler does not.
+2. **Quotes come from the local plane** — read `/var/lib/macro-live/public/live/quotes.json`
+   off disk (~30 s old, no network, no auth, no rate limit) instead of a throttled git
+   branch. Keep the existing merge as the fallback so a missing local file degrades
+   rather than darks.
+3. **§4.4a's delivery path becomes trivial** — the evaluator already runs on the box that
+   serves `/live/`, so it writes the served copy directly and the prefix bridge is a
+   local path, not a puller.
+
+The lane's CODE does not change: same `scripts/prophet_live_evaluator.py`, same states,
+same gates. Only its HOST and its quote source move. `prophet-live.yml` stays as a
+self-disabling backstop on the `VPS_LIVE_PRIMARY` idiom its siblings already use — a
+backstop that fires every ~90 min is worth having and worth labelling as such, never
+worth calling the product.
+
+**Latency, restated honestly.** P1 delivers **~1–5 min** behind the tape on the VPS
+(bounded by the 15-min vendor delay floor, which is unchanged), not the ~15–20 min §1
+claimed — and NOT the ~90 min the GH placement would actually have shipped. §6's
+tick-by-tick verdict is unaffected: the binding constraint was never the evaluator's
+cadence.
+
+**Cross-program (surfaced, not owned here):** the hot-tape radar reads the same starved
+`live-data` branch through the same 12-minute gate on the same throttled schedule, so
+the intraday content program shipped 2026-07-29 is likely emitting far less than
+designed. Raised to the marketing program; do not fix it inside this one.
+
 ### 4.4a Delivery path — RULED 2026-07-30, binding on the P1 wiring task
 
 The P1 build (#4088) ships the surface but NOT the transport: with the artifact absent
