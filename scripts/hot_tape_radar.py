@@ -199,19 +199,43 @@ def load_quotes(root: Path, *, now: datetime, cfg: dict, demo: bool) -> tuple[di
     still carries entries hours old, and a detector cannot tell them apart. A
     quote with no ``ts_ms`` of its own (the heatmap's pct-only tiles) is judged
     by the artifact's asof, so a fresh artifact keeps them all.
+
+    BOTH halves use the SAME ceiling, and it is the delay-aware one
+    (``HT.effective_max_quote_age_min``). They diverged before: the gate passed on
+    a real-time BTC/FX tick while this drop measured the equity book against a
+    bare 12 minutes that a ~15-min-delayed feed can never satisfy, so a pass that
+    cleared the gate went on to discard every equity it existed to detect on. One
+    definition, one ceiling — and a drop that empties the book stands the pass
+    down out loud rather than detecting on what is left.
     """
     live = LV.load_live_quotes(root)
     gate_cfg = cfg
-    max_age = float(_cfg(cfg, "max_quote_age_min", HT.DEFAULTS["max_quote_age_min"]))
     if demo:
         # Demo relaxes ONLY the freshness ceiling, and only through the config's
         # own demo block — never by skipping the check.
         gate_cfg = dict(cfg or {})
         gate_cfg["max_quote_age_min"] = _cfg(cfg, "demo.max_quote_age_min", 100000)
-        max_age = float(gate_cfg["max_quote_age_min"])
+    max_age = HT.effective_max_quote_age_min(live, gate_cfg)
     fresh, age = HT.quotes_fresh(live, now, gate_cfg)
     if fresh:
+        before = len((live.get("quotes") if isinstance(live.get("quotes"), dict) else {}) or {})
         live = _drop_stale_quotes(live, now=now, max_age_min=max_age)
+        after = len((live.get("quotes") if isinstance(live.get("quotes"), dict) else {}) or {})
+        if before and after < before * MIN_LIVE_BOOK_SHARE:
+            # THE HOLE THIS CLOSES. quotes_fresh gates on min(age) across a
+            # MIXED-LATENCY universe, and the merge carries real-time crypto/FX
+            # alongside ~15-min-delayed equities. A single live BTC tick can
+            # therefore certify a merge whose entire equity book is 40 minutes
+            # behind — which is what 2026-07-29T18:08Z actually was: freshest
+            # 21.92m (an FX print) over equities stamped ~17:31 by a push at
+            # 17:46. Passing that gate and then dropping every name the detectors
+            # run on is not a filter, it is a silent outage.
+            print(f"::warning title=hot-tape::live book collapsed under the "
+                  f"{max_age:g}m ceiling ({after}/{before} quotes survived, floor "
+                  f"{MIN_LIVE_BOOK_SHARE:.0%}) - the freshest quote is real-time but "
+                  "the tape behind it is not. No events this pass; this is a "
+                  "WRITER-LANE fault, not a threshold to widen", flush=True)
+            fresh = False
     return live, fresh, age
 
 
@@ -242,6 +266,201 @@ def _drop_stale_quotes(live: dict, *, now: datetime, max_age_min: float) -> dict
     except Exception as exc:  # noqa: BLE001
         log.warning("hot_tape_radar: per-quote staleness filter skipped: %s", exc)
         return live
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Self-refresh of the live tape
+#
+# WHY THE RADAR FETCHES ITS OWN QUOTES. Until 2026-07-30 this lane read only
+# artifacts written by OTHER lanes: the `live-data` branch snapshot
+# (live-quotes.yml) plus site/live + the heatmap. That made a detector's freshness
+# depend on a cadence it does not own, and on 2026-07-29 the dependency went dark:
+#
+#   * live-quotes.yml's 5-minute tick has been disabled since 2026-07-27T22:50Z
+#     (VPS_LIVE_PRIMARY=true gates the job off), leaving only a */15 tape-gate
+#     tick that was sized for the publisher's 45-minute gate, not a 12-minute one.
+#   * GitHub starves this repo's scheduled workflows: 104 scheduled runs delivered
+#     across the WHOLE repo in the 8h RTH window on 2026-07-29 — live-quotes 11 of
+#     128 ticks (8.6%), this radar 6 of 92 (6.5%). The writer fired ~1.4x/hour.
+#   * two of those eleven delivered live-quotes ticks then died at 8m06s inside
+#     `git fetch` — a full-tree checkout against an 8-minute job timeout.
+#
+# Net: the merged view the radar gated on was 20-60 minutes old all day and every
+# sampled pass stood down. Measured directly — age 49.72m at 15:48Z against a last
+# push of 14:58:23Z; age 21.92m at 18:08Z against 17:46:53Z.
+#
+# A radar whose only input is another lane's commit cadence is not a radar. So a
+# pass fetches the tape itself when the shared view is behind, and writes it to
+# the path the merge already reads — no new precedence, no new artifact, and
+# live-quotes.yml stays exactly as valuable as it was (still the browser's
+# fallback, the publisher's tape gate, and this lane's cheap common case).
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Where live_verify's merge reads the full-universe snapshot (its _SNAPSHOT_REL).
+SNAPSHOT_REL = "data/marketing/live_quotes_snapshot.json"
+
+#: Share of the merged book that must SURVIVE the per-quote staleness drop for a
+#: pass to proceed. Guards the mixed-latency hole in a ``min()``-based freshness
+#: gate — see the comment in :func:`load_quotes`.
+MIN_LIVE_BOOK_SHARE = 0.5
+
+#: A self-fetch that resolves less than this share of its universe is DISCARDED
+#: rather than written. Overwriting a complete-but-stale snapshot with a mostly
+#: empty fresh one trades a fixable staleness problem for an unfixable coverage
+#: one: the names that dropped out lose their price entirely and fall back to the
+#: heatmap's pct-only tiles, which the price-gated detectors cannot use at all.
+MIN_SELF_FETCH_COVERAGE = 0.5
+
+#: Hard cap on the self-fetch universe. At the measured ~37 symbols/s Yahoo rate
+#: 900 names is ~24s inside a 12-minute job budget, and the radar's actionable set
+#: (503 heatmap tiles + pack names to adv_rank 300, heavily overlapping) lands
+#: well under it. The cap exists so a pack growth spurt cannot quietly turn a
+#: 25-second step into a timeout.
+MAX_SELF_FETCH_SYMBOLS = 900
+
+
+def radar_universe(
+    pack: dict | None,
+    heatmap: dict | None,
+    *,
+    signals: list[dict] | None = None,
+    earnings: dict | None = None,
+    cfg: dict | None = None,
+) -> list[str]:
+    """Exactly the symbols this pass's detectors can act on. Never raises.
+
+    Ordered by priority so the cap truncates the least useful tail first: the
+    heatmap tiles (every group detector reads them), then the liquid pack names
+    inside ``detectors.mover.adv_rank_max``, then the index proxy the contrarian
+    detector needs, then today's armed plan levels and earnings reporters.
+    """
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def _add(raw: Any) -> None:
+        sym = str(raw or "").strip().upper().lstrip("$")
+        if sym and sym not in seen:
+            seen.add(sym)
+            out.append(sym)
+
+    # Each leg is guarded SEPARATELY. One malformed input must not cost the
+    # others: a junk pack that took the whole assembly down with it would also
+    # drop the contrarian detector's index proxy, so a bad store would silently
+    # narrow the radar instead of just narrowing itself.
+    def _leg(label: str, fn: Callable[[], None]) -> None:
+        try:
+            fn()
+        except Exception as exc:  # noqa: BLE001
+            log.warning("hot_tape_radar: universe leg %s degraded: %s", label, exc)
+
+    def _tiles() -> None:
+        for tile in (heatmap or {}).get("tiles") or []:
+            if isinstance(tile, dict):
+                _add(tile.get("t") or tile.get("ticker"))
+
+    def _pack_names() -> None:
+        try:
+            rank_max = float(_cfg(cfg, "detectors.mover.adv_rank_max", 300))
+        except (TypeError, ValueError):
+            rank_max = 300.0
+        for sym, rec in ((pack or {}).get("tickers") or {}).items():
+            if not isinstance(rec, dict):
+                continue
+            rank = rec.get("adv_rank")
+            try:
+                if rank is not None and float(rank) <= rank_max:
+                    _add(sym)
+            except (TypeError, ValueError):
+                continue
+
+    def _index() -> None:
+        _add(_cfg(cfg, "detectors.contrarian.index_ticker", "SPY"))
+
+    def _signal_names() -> None:
+        for sig in signals or []:
+            if isinstance(sig, dict):
+                src = sig.get("source") if isinstance(sig.get("source"), dict) else {}
+                _add(src.get("ticker") or sig.get("ticker"))
+
+    def _earnings_names() -> None:
+        for sym in ((earnings or {}).get("tickers") or {}):
+            _add(sym)
+
+    _leg("heatmap", _tiles)
+    _leg("pack", _pack_names)
+    _leg("index", _index)
+    _leg("signals", _signal_names)
+    _leg("earnings", _earnings_names)
+
+    if len(out) > MAX_SELF_FETCH_SYMBOLS:
+        print(f"::warning title=hot-tape::self-fetch universe {len(out)} exceeds "
+              f"{MAX_SELF_FETCH_SYMBOLS} - truncating (heatmap tiles are first, "
+              "never dropped)", flush=True)
+        out = out[:MAX_SELF_FETCH_SYMBOLS]
+    return out
+
+
+def refresh_live_snapshot(
+    root: Path,
+    *,
+    universe: list[str],
+    builder: Callable[[list[str]], dict] | None = None,
+) -> bool:
+    """Fetch `universe` live and write it where the merge reads. True when written.
+
+    Fail-soft in every direction: a refused fetch, a partial fetch below
+    ``MIN_SELF_FETCH_COVERAGE``, an unwritable path or any exception all leave the
+    committed snapshot untouched and return False, so the worst case is exactly
+    the behaviour that existed before this function — the freshness gate then
+    stands the pass down on its own, and says so.
+    """
+    if not universe:
+        return False
+    if os.environ.get("HOT_TAPE_NO_LIVE_FETCH", "").strip() == "1":
+        # An explicit operator/CI opt-out. Printed, never silent: a lane that
+        # stopped fetching without saying so is the 2026-07-26 mute shape.
+        print("::notice title=hot-tape::live self-fetch disabled "
+              "(HOT_TAPE_NO_LIVE_FETCH=1) - using the committed snapshot only",
+              flush=True)
+        return False
+    try:
+        if builder is None:
+            from scripts.build_live_quotes import build as _build  # noqa: PLC0415
+
+            def builder(syms: list[str]) -> dict:  # noqa: F811
+                # symbols= takes the EXACT universe (bypassing CORE + the site
+                # scrape + conviction), the same door the btc-live lane uses, so
+                # this needs no built site tree in the sparse checkout.
+                return _build(root / "site", symbols=syms)
+
+        snap = builder(list(universe))
+        quotes = (snap or {}).get("quotes") if isinstance(snap, dict) else None
+        if not isinstance(quotes, dict) or not quotes:
+            print("::warning title=hot-tape::live self-fetch resolved no quotes - "
+                  "keeping the committed snapshot", flush=True)
+            return False
+
+        coverage = len(quotes) / max(1, len(universe))
+        if coverage < MIN_SELF_FETCH_COVERAGE:
+            print(f"::warning title=hot-tape::live self-fetch covered "
+                  f"{len(quotes)}/{len(universe)} ({coverage:.0%} < "
+                  f"{MIN_SELF_FETCH_COVERAGE:.0%}) - discarding it and keeping the "
+                  "committed snapshot", flush=True)
+            return False
+
+        dest = root / SNAPSHOT_REL
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(dest.suffix + ".tmp")
+        tmp.write_text(json.dumps(snap), encoding="utf-8")
+        tmp.replace(dest)
+        print(f"hot-tape self-fetch wrote {len(quotes)}/{len(universe)} quotes "
+              f"asof={snap.get('asof')} "
+              f"delayed_min={((snap.get('meta') or {}).get('delayed_min'))}", flush=True)
+        return True
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=hot-tape::live self-fetch failed ({exc}) - falling "
+              "back to the committed snapshot", flush=True)
+        return False
 
 
 def _cell(value: Any) -> Any:
@@ -1309,8 +1528,14 @@ def run(
     demo: bool = False,
     dry_run: bool = False,
     fetcher: Callable[[str, Path], bool] | None = None,
+    quote_builder: Callable[[list[str]], dict] | None = None,
 ) -> int:
-    """One radar pass. Never raises; 0 unless an invariant is genuinely broken."""
+    """One radar pass. Never raises; 0 unless an invariant is genuinely broken.
+
+    ``quote_builder`` overrides the live self-refresh fetcher (see
+    :func:`refresh_live_snapshot`); it is only consulted when the shared quote
+    view is already too stale to act on, so a healthy tape never reaches it.
+    """
     ts = now or datetime.now(timezone.utc)
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
@@ -1328,23 +1553,49 @@ def run(
               f"weekday window ({ts.strftime('%Y-%m-%dT%H:%MZ')}) - standing down", flush=True)
         return 0
 
-    live, fresh, age = load_quotes(root, now=ts, cfg=cfg, demo=demo)
-    quotes = live.get("quotes") if isinstance(live.get("quotes"), dict) else {}
-    print(f"hot-tape quotes n={len(quotes)} asof={live.get('asof')} "
-          f"age={age}m source={live.get('source')} demo={int(bool(demo))}", flush=True)
-    if not fresh:
-        print(f"::warning title=hot-tape::live quotes are stale (freshest {age}m old) "
-              "- no events this pass", flush=True)
-        return 0
-
     pack = HT.load_pack(root)
     heatmap = _read_json(root / HEATMAP_REL)
+    signals = plan_signals(root, now=ts)
+    earnings = load_earnings(root)
+
+    live, fresh, age = load_quotes(root, now=ts, cfg=cfg, demo=demo)
+    if not fresh and not demo:
+        # The shared tape is behind. Fetch it ourselves rather than stand down on
+        # another lane's cadence — see the self-refresh block above. Demo is
+        # excluded on purpose: its whole point is running against a quiet or
+        # closed tape, and its relaxed ceiling admits the committed snapshot
+        # anyway, so a demo pass must not spend a live fetch to prove nothing.
+        universe = radar_universe(pack, heatmap, signals=signals,
+                                  earnings=earnings, cfg=cfg)
+        print(f"hot-tape shared tape is {age}m old - self-fetching "
+              f"{len(universe)} symbols", flush=True)
+        if refresh_live_snapshot(root, universe=universe, builder=quote_builder):
+            live, fresh, age = load_quotes(root, now=ts, cfg=cfg, demo=demo)
+
+    quotes = live.get("quotes") if isinstance(live.get("quotes"), dict) else {}
+    # Print the ceiling AND its two components. A bare "age=21.92m" reads as a
+    # verdict with no bar to measure it against; the 2026-07-29 dark day was
+    # diagnosed by hand-correlating those numbers against another lane's push
+    # times, which is work the log line should already have done.
+    ceiling = HT.effective_max_quote_age_min(live, cfg)
+    print(f"hot-tape quotes n={len(quotes)} asof={live.get('asof')} "
+          f"age={age}m ceiling={ceiling:g}m "
+          f"(budget={_cfg(cfg, 'max_quote_age_min', HT.DEFAULTS['max_quote_age_min'])}m "
+          f"+ feed_delay={live.get('feed_delay_min') or 0:g}m) "
+          f"source={live.get('source')} demo={int(bool(demo))}", flush=True)
+    if not fresh:
+        print(f"::warning title=hot-tape::live quotes are stale (freshest {age}m old "
+              f"vs {ceiling:g}m ceiling) - no events this pass. The tape is written "
+              "by live-quotes.yml plus this pass's own fetch; a persistent gap here "
+              "is a WRITER-LANE fault, not a threshold to widen", flush=True)
+        return 0
+
+    # pack / heatmap / signals / earnings were read above the freshness gate:
+    # the self-refresh needs them to know which symbols to fetch.
     day = _utc_day(ts)
     as_of = _et_day(ts)
     ring = HT.load_ring(root, RING_KEEP)
     fired_today = HT.load_fired(root, day)
-    signals = plan_signals(root, now=ts)
-    earnings = load_earnings(root)
 
     events = HT.detect_events(
         live,
@@ -1408,6 +1659,18 @@ def run(
                         fh.write(f"post_now_ids={joined}\n")
                 except Exception as exc:  # noqa: BLE001
                     log.warning("hot_tape_radar: GITHUB_OUTPUT write failed: %s", exc)
+            # GITHUB_OUTPUT is APPEND-ONLY and collapses to one value per step, so
+            # it cannot carry per-pass ids when one step runs the radar several
+            # times (the multi-pass loop in marketing-hot-tape.yml). This file is
+            # the per-pass channel: the loop truncates it before each pass and
+            # dispatches exactly what that pass booked. Absent env = unchanged
+            # single-pass behaviour.
+            ids_file = os.environ.get("HOT_TAPE_IDS_FILE", "").strip()
+            if ids_file:
+                try:
+                    Path(ids_file).write_text(joined, encoding="utf-8")
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("hot_tape_radar: ids-file write failed: %s", exc)
     return 0
 
 

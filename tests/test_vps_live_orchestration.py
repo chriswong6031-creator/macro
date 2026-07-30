@@ -877,10 +877,22 @@ def test_status_is_external_and_lane_scoped(tmp_path: Path):
 
 def test_cutover_guards_keep_manual_recovery():
     root = Path(__file__).resolve().parents[1]
-    for name in ("intraday-fastpath.yml", "intraday.yml", "live-quotes.yml", "btc-live.yml"):
+    # live-quotes.yml is NOT in this list (2026-07-30). It is the only writer of
+    # the `live-data` branch, and that branch feeds three consumers the VPS does
+    # not serve: the browser's fallback, marketing-publish's tape gate, and the
+    # Hot Tape radar. Gating it on the cutover variable is what froze the branch on
+    # 2026-07-27 and starved the radar on 2026-07-29, so the gate is gone and the
+    # job always runs — which preserves manual recovery trivially rather than
+    # conditionally. The cadence invariant that replaces this assertion lives in
+    # test_marketing_forward_booking.test_live_quotes_outpaces_its_tightest_consumer.
+    for name in ("intraday-fastpath.yml", "intraday.yml", "btc-live.yml"):
         text = (root / ".github" / "workflows" / name).read_text()
         assert "vars.VPS_LIVE_PRIMARY != 'true'" in text
         assert "github.event_name == 'workflow_dispatch'" in text
+    live_quotes = (root / ".github" / "workflows" / "live-quotes.yml").read_text()
+    assert "vars.VPS_LIVE_PRIMARY" not in live_quotes, (
+        "live-quotes must stay ungated — it is the sole writer of `live-data`, and "
+        "every time it has been gated the tape gate and the radar went dark")
     external = (root / ".github" / "workflows" / "vps-live-heartbeat.yml").read_text()
     assert "runs-on: ubuntu-latest" in external
     assert "vars.VPS_LIVE_PRIMARY == 'true'" in external
@@ -1024,3 +1036,68 @@ def test_caddy_serves_live_store_without_cache():
     assert "rewrite /api/regwall/check" in protected
     assert "rewrite /api/paywall/check" in protected
     assert "handle @vps_external" in protected
+
+
+def test_live_data_orphan_push_clears_the_index_sparse_safely(tmp_path):
+    """`git rm -rf --cached .` does not empty the index under a sparse checkout.
+
+    live-quotes.yml gained a sparse cone on 2026-07-30 to stop its checkout
+    blowing the job timeout. That silently broke the orphan-branch push: `git rm`
+    HONOURS sparse rules and refuses to touch entries outside the cone, so `.`
+    expanded to the few in-cone paths and left the rest staged — measured 30,896
+    surviving entries, turning the single-file `live-data` branch into a full-tree
+    snapshot on every 5-minute push. Nothing would have alerted: quotes.json stays
+    at the top of the tree, so raw.githubusercontent keeps serving it and every
+    consumer looks healthy while the branch grows a whole tree per tick.
+
+    Executable, not a grep: the failure is git BEHAVIOUR under a config, and a
+    text assertion would have passed the broken version just as happily.
+    """
+    import subprocess
+
+    def git(*args, **kw):
+        return subprocess.run(("git",) + args, cwd=repo, capture_output=True,
+                              text=True, **kw)
+
+    repo = tmp_path / "r"
+    repo.mkdir()
+    git("init", "-q", "-b", "main")
+    git("config", "user.name", "t")
+    git("config", "user.email", "t@t")
+    # A tree with in-cone and out-of-cone paths, mirroring the real lane.
+    for rel in ("engine/x.py", "site/stocks/big.json", "data/baskets/ohlcv/a.parquet"):
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-qm", "base")
+    git("sparse-checkout", "set", "engine")          # the cone the lane now uses
+
+    (repo / "quotes.json").write_text('{"quotes":{}}', encoding="utf-8")
+    git("checkout", "--orphan", "live-data-tmp")
+
+    # The OLD line, to prove the trap is real and not folklore.
+    git("rm", "-rf", "--cached", ".")
+    survivors = [l for l in git("ls-files", "--cached").stdout.splitlines() if l]
+    assert survivors, (
+        "`git rm -rf --cached .` emptied the index under a sparse checkout — if "
+        "git changed this, simplify the workflow back and delete this test")
+
+    # The shipped line must clear it regardless.
+    git("read-tree", "--empty")
+    assert not [l for l in git("ls-files", "--cached").stdout.splitlines() if l]
+    git("add", "-f", "quotes.json")
+    git("commit", "-qm", "live quotes")
+    tree = [l for l in git("ls-tree", "-r", "--name-only", "HEAD").stdout.splitlines() if l]
+    assert tree == ["quotes.json"], tree
+
+    # …and the workflow must actually use it.
+    body = (Path(__file__).resolve().parents[1] / ".github" / "workflows" /
+            "live-quotes.yml").read_text(encoding="utf-8")
+    assert "git read-tree --empty" in body, (
+        "the orphan push no longer clears the index sparse-safely")
+    # Comment lines are allowed to NAME the trap — that is how the next reader
+    # learns why read-tree is there. Only a live command line is a regression.
+    commands = [l for l in body.splitlines() if not l.lstrip().startswith("#")]
+    assert not [l for l in commands if "git rm -rf --cached" in l], (
+        "the sparse-unsafe index clear is back in live-quotes.yml")
