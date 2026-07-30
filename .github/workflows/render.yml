@@ -906,10 +906,18 @@ jobs:
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
         if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            GIT_AUTH=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\r\n')
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH"
+          fi
           commit_index() {
             local message="$1" parent tree commit
             parent=$(git rev-parse HEAD)

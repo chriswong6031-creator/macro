@@ -103,6 +103,12 @@ def test_signal_death_classifies_as_push_timeout():
     assert r.stdout.strip() == "push-timeout"
 
 
+def test_git_exit_128_without_sigalrm_is_not_misclassified_as_timeout():
+    out = "fatal: could not read Username for 'https://github.com': No such device or address"
+    r = run_sh(f'push_retry_init "t"; push_classify 128 {out!r}; echo "$PUSH_FAIL_CLASS"')
+    assert r.stdout.strip() == "push-error"
+
+
 def test_every_class_has_a_plain_word_reason():
     r = run_sh(
         """

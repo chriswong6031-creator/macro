@@ -68,6 +68,9 @@ def test_render_publish_commits_from_index_to_avoid_promisor_blob_materializatio
     script = publish["run"]
 
     assert publish["if"] == "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
+    assert publish["env"]["GITHUB_TOKEN"] == "${{ github.token }}"
+    assert "GIT_CONFIG_KEY_0=http.https://github.com/.extraheader" in script
+    assert 'GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH"' in script
     assert "tree=$(git write-tree --missing-ok)" in script
     assert 'git commit-tree "$tree" -p "$parent"' in script
     assert 'git update-ref HEAD "$commit" "$parent"' in script

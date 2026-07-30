@@ -108,7 +108,7 @@ push_attempt() {
 # Pure (no git calls) so tests can drive the table directly.
 push_classify() {
   local rc="$1" out="$2"
-  if [ "$rc" -ge 128 ]; then
+  if [ "$rc" -eq 142 ]; then
     PUSH_FAIL_CLASS="push-timeout"
     return 0
   fi
