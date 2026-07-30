@@ -189,6 +189,26 @@ def _et_day(now: datetime) -> str:
 # Inputs
 # ─────────────────────────────────────────────────────────────────────────────
 
+def freshness_cfg(cfg: dict | None, *, demo: bool) -> dict:
+    """The config the freshness gate ACTUALLY applies.
+
+    Demo relaxes ONLY the ceiling, and only through the config's own demo block —
+    never by skipping the check. Extracted so the GATE and the LOG cannot
+    disagree about it. They did: the stand-down message resolved the ceiling from
+    the demo-aware config while the summary line resolved it from the raw one, so
+    a demo pass printed ``ceiling=27m`` while actually judging against 100015m
+    (observed in run 30529411662). A log line that misreports the threshold it
+    applied is worse than no log line — this whole defect took a day to find
+    because the numbers on screen had to be correlated by hand against another
+    lane's push times.
+    """
+    if not demo:
+        return cfg if isinstance(cfg, dict) else {}
+    out = dict(cfg or {})
+    out["max_quote_age_min"] = _cfg(cfg, "demo.max_quote_age_min", 100000)
+    return out
+
+
 def load_quotes(root: Path, *, now: datetime, cfg: dict, demo: bool) -> tuple[dict, bool, float | None]:
     """(live view, fresh?, freshest age in minutes). Never raises.
 
@@ -209,12 +229,7 @@ def load_quotes(root: Path, *, now: datetime, cfg: dict, demo: bool) -> tuple[di
     down out loud rather than detecting on what is left.
     """
     live = LV.load_live_quotes(root)
-    gate_cfg = cfg
-    if demo:
-        # Demo relaxes ONLY the freshness ceiling, and only through the config's
-        # own demo block — never by skipping the check.
-        gate_cfg = dict(cfg or {})
-        gate_cfg["max_quote_age_min"] = _cfg(cfg, "demo.max_quote_age_min", 100000)
+    gate_cfg = freshness_cfg(cfg, demo=demo)
     max_age = HT.effective_max_quote_age_min(live, gate_cfg)
     fresh, age = HT.quotes_fresh(live, now, gate_cfg)
     if fresh:
@@ -1577,10 +1592,12 @@ def run(
     # verdict with no bar to measure it against; the 2026-07-29 dark day was
     # diagnosed by hand-correlating those numbers against another lane's push
     # times, which is work the log line should already have done.
-    ceiling = HT.effective_max_quote_age_min(live, cfg)
+    # The SAME resolution the gate used — demo included. See freshness_cfg.
+    applied = freshness_cfg(cfg, demo=demo)
+    ceiling = HT.effective_max_quote_age_min(live, applied)
     print(f"hot-tape quotes n={len(quotes)} asof={live.get('asof')} "
           f"age={age}m ceiling={ceiling:g}m "
-          f"(budget={_cfg(cfg, 'max_quote_age_min', HT.DEFAULTS['max_quote_age_min'])}m "
+          f"(budget={_cfg(applied, 'max_quote_age_min', HT.DEFAULTS['max_quote_age_min'])}m "
           f"+ feed_delay={live.get('feed_delay_min') or 0:g}m) "
           f"source={live.get('source')} demo={int(bool(demo))}", flush=True)
     if not fresh:
