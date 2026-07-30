@@ -58,7 +58,7 @@ log = logging.getLogger(__name__)
 # Caveat for full_day mode: the full day is re-accumulated from zero so nothing
 # is lost.  For time_window mode, watermarks are also reset (one cycle of
 # full-day pull follows before windowed increments resume).
-DAY_STATE_VERSION = 2  # bumped: seen_sequences key now includes root
+DAY_STATE_VERSION = 3  # bumped: _minute_key now localizes naive stamps to ET — old day_state carries UTC-shifted minute keys
 
 # ── notability gate defaults ──────────────────────────────────────────────────
 DEFAULT_ETF_FLOOR    = 1_000_000   # $ gross premium floor for ETF anchors
@@ -876,6 +876,12 @@ _DTE_BUCKETS = ("0d", "1_7d", "8_30d", "31_90d", "90p")
 def _minute_key(ts_val: Any, batch_ts: str) -> str:
     """Return America/New_York "HH:MM" string from a trade_timestamp value.
 
+    ThetaData v3 trade timestamps arrive as NAIVE exchange-local
+    (America/New_York) wall-clock strings — e.g. "2026-07-02T14:30:00" is
+    14:30 ET, not 14:30Z.  So a naive input is localized to ET, never UTC; a
+    tz-aware input (e.g. the ISO8601Z batch_ts fallback) converts.  One rule
+    for the whole function: naive means exchange time.
+
     Falls back to batch_ts on any parse failure.  All minute keys are in ET to
     align with the 9:30–16:00 RTH axis.
     """
@@ -884,14 +890,14 @@ def _minute_key(ts_val: Any, batch_ts: str) -> str:
     try:
         ts = pd.Timestamp(ts_val)
         if ts.tzinfo is None:
-            ts = ts.tz_localize("UTC")
+            return ts.tz_localize(_ET).strftime("%H:%M")
         return ts.astimezone(_ET).strftime("%H:%M")
     except Exception:  # noqa: BLE001
         pass
     try:
         ts = pd.Timestamp(batch_ts)
         if ts.tzinfo is None:
-            ts = ts.tz_localize("UTC")
+            return ts.tz_localize(_ET).strftime("%H:%M")
         return ts.astimezone(_ET).strftime("%H:%M")
     except Exception:  # noqa: BLE001
         return "00:00"
