@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "produced_by": "scripts/build_site.py",
-  "produced_at": "2026-07-30T10:14:51Z",
+  "produced_at": "2026-07-30T11:00:07Z",
   "inputs_hash": "sha256:59af5c4fffbeb7215481077bdba31a082a90b82bd8cf76387ba5799cabf3316d",
   "tier": "display",
   "artifact_path": "site/neuralwebdata/governance_recent.json",
