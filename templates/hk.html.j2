@@ -2156,12 +2156,15 @@
     </div>
   </div>
 
-  {# Nav links #}
+  {# Nav links. Market-prefixed, like the China strip this was ported from
+     (#2650): the unprefixed `heatmap.html` and `sectors.html` this row shipped
+     with never existed in the tree — HK's heatmap is `hk_heatmap.html`, and the
+     HK sector pages (`sectors/hk-*.html`) are indexed by `hk_stocks.html`,
+     already the first link here, so there is no separate Sector Desk to reach. #}
   <div class="hkx-links">
     <a href="hk_stocks.html">{{ t('HK Stocks','港股看板') }}</a>
-    <a href="heatmap.html">{{ t('Market Heatmap','市场热力图') }}</a>
+    <a href="hk_heatmap.html">{{ t('Market Heatmap','市场热力图') }}</a>
     <a href="china.html">{{ t('China Dashboard','中国看板') }}</a>
-    <a href="sectors.html">{{ t('Sector Desk','板块台') }}</a>
     <a href="aibrief.html">{{ t('AI Brief','AI简报') }}</a>
   </div>
 
