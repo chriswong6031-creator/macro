@@ -8,6 +8,8 @@ Test list:
 5. Copy-violation event is quarantined (not emitted) with violation strings
 6. daemon main() with MARKETING_FASTLANE_ENABLED unset returns 0 without ticking
 7. --dry-run flag: run_tick with dry_run=True writes nothing to disk
+8. wire_rank.v1 sidecar: numberless payload, position-is-rank, window-only,
+   path ladder, atomicity, dry-run skip, fail-soft, kill switch
 """
 from __future__ import annotations
 
@@ -569,3 +571,341 @@ def test_fmt_rev_unit_suffix_format() -> None:
     assert not comma_numbers, (
         f"Body contains comma-grouped numbers {comma_numbers!r} — use unit suffixes"
     )
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# 8. wire_rank.v1 sidecar — the NON-PUBLIC ranked view of the wires window
+#
+# Contract (frozen): {"schema": "wire_rank.v1", "updated_at": <ISO-8601 UTC>,
+# "ids": [<wire id>, ... best first]} and NOTHING else. Element order is the ONLY
+# expression of rank, so no number exists in the file to leak even at a
+# non-public path. Written by the VPS daemon on the same tick as the wires sink,
+# immediately after it, atomically, fail-soft, never in --dry-run.
+# ═════════════════════════════════════════════════════════════════════════════
+
+_SIDE_NOW = datetime(2026, 7, 29, 18, 0, 0, tzinfo=timezone.utc)
+_SIDE_STAMP = "2026-07-29T18:00:00Z"
+
+
+def _daemon():
+    import scripts.marketing_fastlane_daemon as d
+    return d
+
+
+def _wire(iid: str) -> dict:
+    """One published wires.v1 item (only `id` matters to the sidecar)."""
+    return {"id": iid, "ts": "2026-07-29T17:59:00Z", "en": f"headline {iid}"}
+
+
+def _armed_cfg() -> dict:
+    return {"wire": {"rank_sidecar_enabled": True}}
+
+
+def _numbers(node: object, path: str = "$"):
+    """Every (path, value) pair in a parsed payload whose value is int/float.
+
+    bool is deliberately included (it is an int subclass) — the contract is that
+    NOTHING numeric appears anywhere in this file, at any depth.
+    """
+    if isinstance(node, dict):
+        for key, value in node.items():
+            yield from _numbers(value, f"{path}.{key}")
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            yield from _numbers(value, f"{path}[{index}]")
+    elif isinstance(node, (int, float)):
+        yield path, node
+
+
+def _write_sidecar(monkeypatch, tmp_path, *, window, order, state=None, cfg=None):
+    """Run the sidecar writer against a tmp state dir; return (payload, state)."""
+    d = _daemon()
+    monkeypatch.setenv("MACRO_LIVE_STATE_DIR", str(tmp_path))
+    st = {} if state is None else state
+    d._write_wire_rank_sidecar(window, order, st, cfg or _armed_cfg(), _SIDE_NOW)
+    target = tmp_path / "wire_rank.json"
+    if not target.exists():
+        return None, st
+    return json.loads(target.read_text(encoding="utf-8")), st
+
+
+# (a) exact payload shape — and not one number anywhere in the file
+def test_wire_rank_payload_is_schema_updated_at_ids_and_nothing_else(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    payload, _ = _write_sidecar(
+        monkeypatch, tmp_path,
+        window=[_wire("a"), _wire("b")],
+        order={"a": 41.0, "b": 88.0},
+    )
+    assert set(payload) == {"schema", "updated_at", "ids"}
+    assert payload["schema"] == "wire_rank.v1"
+    assert payload["updated_at"] == _SIDE_STAMP
+    assert payload["ids"] == ["b", "a"]
+
+
+def test_wire_rank_file_contains_no_number_at_any_depth(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The whole point of the sidecar: order carries the rank, so there is no
+    ranking number in the file to leak even though the path is non-public."""
+    payload, _ = _write_sidecar(
+        monkeypatch, tmp_path,
+        window=[_wire("a"), _wire("b"), _wire("c")],
+        order={"a": 41.0, "b": 88.5, "c": 12.0},
+    )
+    leaked = list(_numbers(payload))
+    assert leaked == [], f"numeric value(s) reached the sidecar: {leaked}"
+
+
+# (b) position IS the rank
+def test_position_is_rank_and_unknown_ids_keep_recency_after_the_ranked_ones(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # Window is served newest-first: c, a, b, d. Only a and b are ranked.
+    window = [_wire("c"), _wire("a"), _wire("b"), _wire("d")]
+    payload, _ = _write_sidecar(
+        monkeypatch, tmp_path, window=window, order={"a": 40.0, "b": 90.0},
+    )
+    assert payload["ids"] == ["b", "a", "c", "d"]
+    assert payload["ids"] == list(dict.fromkeys(payload["ids"])), "an id repeated"
+    assert set(payload["ids"]) == {"a", "b", "c", "d"}, "the file must list EVERY window id"
+
+
+def test_equal_ordering_values_keep_their_recency_position(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A stable sort is the tiebreak, so a tie is resolved newest-first rather
+    than arbitrarily — otherwise the rail order would churn between ticks."""
+    payload, _ = _write_sidecar(
+        monkeypatch, tmp_path,
+        window=[_wire("newer"), _wire("older")],
+        order={"newer": 50.0, "older": 50.0},
+    )
+    assert payload["ids"] == ["newer", "older"]
+
+
+def test_a_quiet_tick_still_ranks_the_window_from_the_persisted_map(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The file is rewritten EVERY real tick. A tick whose rail is empty must
+    still publish the ranked window from the folded state map, and re-stamp
+    updated_at — the reader's freshness contract is updated_at-driven."""
+    state = {"wire_rank_order": {"a": 10.0, "b": 90.0}}
+    payload, state = _write_sidecar(
+        monkeypatch, tmp_path,
+        window=[_wire("a"), _wire("b")], order={}, state=state,
+    )
+    assert payload["ids"] == ["b", "a"]
+    assert payload["updated_at"] == _SIDE_STAMP
+
+
+# (c) window-only — never historical
+def test_an_id_that_left_the_window_leaves_the_file_and_the_state_map(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    state = {"wire_rank_order": {"gone": 99.0, "still": 10.0}}
+    payload, state = _write_sidecar(
+        monkeypatch, tmp_path, window=[_wire("still")], order={}, state=state,
+    )
+    assert payload["ids"] == ["still"], "an id outside the window reached the file"
+    assert set(state["wire_rank_order"]) == {"still"}, "the state map was not pruned"
+
+
+def test_the_state_map_folds_this_tick_over_the_persisted_one(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    state = {"wire_rank_order": {"a": 10.0}}
+    payload, state = _write_sidecar(
+        monkeypatch, tmp_path,
+        window=[_wire("a"), _wire("b")], order={"a": 95.0, "b": 20.0}, state=state,
+    )
+    assert state["wire_rank_order"] == {"a": 95.0, "b": 20.0}
+    assert payload["ids"] == ["a", "b"], "the re-scored value did not win"
+
+
+# (d) write-location ladder
+def test_the_state_dir_env_override_wins_the_ladder(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    d = _daemon()
+    monkeypatch.setenv("MACRO_LIVE_STATE_DIR", str(tmp_path))
+    assert d._wire_rank_target() == tmp_path / "wire_rank.json"
+
+
+def test_the_ladder_falls_through_to_the_gitignored_repo_dev_sink(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    d = _daemon()
+    monkeypatch.delenv("MACRO_LIVE_STATE_DIR", raising=False)
+    dev = tmp_path / "dev" / "wire_rank.json"
+    monkeypatch.setattr(
+        d, "_WIRE_RANK_SINK_PATHS",
+        ("/dev/null/no-such-state-dir/wire_rank.json", str(dev)),
+    )
+    assert d._wire_rank_target() == dev
+
+
+def test_the_shipped_ladder_is_the_vps_state_dir_then_the_dev_sink() -> None:
+    """Pinned because the brain-side reader mirrors this ladder. The sidecar must
+    NEVER land in the public live dir — it is non-public by path."""
+    d = _daemon()
+    assert d._WIRE_RANK_SINK_PATHS == (
+        "/var/lib/macro-live/state/wire_rank.json",
+        "data/marketing/press/wire_rank.json",
+    )
+    assert d._WIRE_RANK_STATE_DIR_ENV == "MACRO_LIVE_STATE_DIR"
+    for rung in d._WIRE_RANK_SINK_PATHS:
+        assert "public" not in rung, f"{rung} is a served path"
+
+
+# (e) atomicity idiom
+def test_the_sidecar_write_leaves_no_stray_tmp_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """tmp + os.replace via the house atomic writer — a reader must never see a
+    half-written file, and the tmp must not survive the write."""
+    _write_sidecar(monkeypatch, tmp_path, window=[_wire("a")], order={"a": 1.0})
+    assert [p.name for p in tmp_path.iterdir()] == ["wire_rank.json"]
+
+
+# (h) kill switch
+def test_deleting_the_config_key_disarms_the_sidecar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Code default FALSE: an absent key stops the write (house pattern)."""
+    payload, _ = _write_sidecar(
+        monkeypatch, tmp_path, window=[_wire("a")], order={"a": 1.0},
+        cfg={"wire": {}},
+    )
+    assert payload is None
+    assert not (tmp_path / "wire_rank.json").exists()
+
+
+def test_the_shipped_config_arms_the_sidecar() -> None:
+    import yaml
+    cfg = yaml.safe_load(
+        (ROOT / "config" / "press_sources.yml").read_text(encoding="utf-8")
+    )
+    assert cfg["wire"]["rank_sidecar_enabled"] is True
+
+
+# ── daemon tick wiring: dry-run, fail-soft, no leak into the served rail ──────
+
+def _stub_press_tick(monkeypatch, tmp_path, *, press_cfg):
+    """Wire _run_press_tick to tmp paths with every poller/desk stubbed out."""
+    import engine.marketing.breaking_feed as bf
+    import engine.marketing.intelligence_desk as idesk
+    import engine.marketing.press_providers as pp
+    d = _daemon()
+    monkeypatch.setattr(d, "ROOT", tmp_path)
+    monkeypatch.setattr(d, "_PRESS_STATE_PATH", tmp_path / "press" / "state.json")
+    monkeypatch.setattr(d, "_PRESS_SEEN_PATH", tmp_path / "press" / "seen.json")
+    monkeypatch.setattr(bf, "poll_all", lambda root, cfg: [])
+    monkeypatch.setattr(pp, "poll_all",
+                        lambda root, cfg, state, *, offline=False, now=None: [])
+    monkeypatch.setattr(idesk, "update_intelligence_desk",
+                        lambda *a, **k: {"health": {}})
+    monkeypatch.setattr(d, "_load_yaml", lambda p: press_cfg
+                        if p.name == "press_sources.yml" else {})
+    return d
+
+
+# (f) dry-run writes nothing
+def test_dry_run_writes_no_sidecar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    state_dir = tmp_path / "state"
+    state_dir.mkdir()
+    monkeypatch.setenv("MACRO_LIVE_STATE_DIR", str(state_dir))
+    cfg = {"wire": {"rank_sidecar_enabled": True,
+                    "wires_sink_paths": [str(tmp_path / "live" / "wires.json")]}}
+    d = _stub_press_tick(monkeypatch, tmp_path, press_cfg=cfg)
+    d._run_press_tick(dry_run=True)
+    assert not (state_dir / "wire_rank.json").exists()
+    assert not (tmp_path / "live" / "wires.json").exists()
+
+
+# (g) fail-soft
+def test_a_raising_sidecar_writer_never_costs_the_tick(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog
+) -> None:
+    """The tick's return is what main() logs and heartbeats on — a sink fault
+    that escaped here would present as a DEAD DAEMON, not as a missing file."""
+    cfg = {"wire": {"rank_sidecar_enabled": True,
+                    "wires_sink_paths": [str(tmp_path / "live" / "wires.json")]}}
+    d = _stub_press_tick(monkeypatch, tmp_path, press_cfg=cfg)
+
+    def boom(*a, **k):
+        raise RuntimeError("sidecar exploded")
+
+    monkeypatch.setattr(d, "_write_wire_rank_sidecar", boom)
+    with caplog.at_level("ERROR"):
+        result = d._run_press_tick(dry_run=False)   # must not raise
+    assert isinstance(result, dict)
+    assert result["_emit_allowed"] is False
+    assert "wire_rank sidecar error (continuing)" in caplog.text
+    # The rail the users see published regardless.
+    assert (tmp_path / "live" / "wires.json").exists()
+
+
+# (i) _rail_order never leaks into the served rail
+_RANK_TOKENS = ("_rail_order", "rank_score", "salience", "_components",
+                "wire_rank_order")
+
+
+def test_the_served_wires_payload_carries_no_ranking_token(tmp_path: Path) -> None:
+    d = _daemon()
+    sink = tmp_path / "live" / "wires.json"
+    cfg = {"wire": {"wires_sink_paths": [str(sink)], "rail_max_items": 50}}
+    window = d._write_wires_sink(
+        [{"id": "a", "ts": "2026-07-29T17:59:00Z", "en": "one"}], cfg, _SIDE_NOW
+    )
+    assert [it["id"] for it in window] == ["a"], "the sink must return its window"
+    raw = sink.read_text(encoding="utf-8")
+    for token in _RANK_TOKENS:
+        assert token not in raw, f"wires.json leaked {token}"
+
+
+# (j) the daemon's pinned literals survive this diff
+def test_the_pinned_daemon_literals_survive() -> None:
+    """Re-pinned here so a sidecar edit near the sink block cannot quietly undo
+    them (they are the publish-switch/collection separation, #V2 §0-A)."""
+    daemon = (ROOT / "scripts" / "marketing_fastlane_daemon.py").read_text(
+        encoding="utf-8"
+    )
+    assert "offline=dry_run" in daemon
+    assert "offline=effective_dry" not in daemon
+    assert "update_intelligence_desk" in daemon
+
+
+def test_a_live_tick_persists_the_ordering_map_after_the_sink(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The numbers live ONLY in the daemon's gitignored state.json — and step 5's
+    save runs BEFORE the sink, so the fold has to be persisted by the sidecar
+    step itself or it is silently lost every tick."""
+    import engine.marketing.press_lane as pl
+    state_dir = tmp_path / "state"
+    state_dir.mkdir()
+    monkeypatch.setenv("MACRO_LIVE_STATE_DIR", str(state_dir))
+    cfg = {"wire": {"rank_sidecar_enabled": True,
+                    "wires_sink_paths": [str(tmp_path / "live" / "wires.json")]}}
+    d = _stub_press_tick(monkeypatch, tmp_path, press_cfg=cfg)
+    # A pre-existing state file means this is NOT a cold start, so the tick takes
+    # the full path rather than the prime early-return.
+    d._PRESS_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    d._PRESS_STATE_PATH.write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(pl, "run_press_tick", lambda *a, **k: {
+        "emitted": [], "skipped": [], "digest": [], "blocked": [],
+        "rail": [_wire("hot"), _wire("cold")],
+        "_rail_order": {"hot": 91.0, "cold": 44.0},
+        "intelligence": [], "corpus": [], "_seen": [],
+    })
+
+    d._run_press_tick(dry_run=False)
+
+    payload = json.loads((state_dir / "wire_rank.json").read_text(encoding="utf-8"))
+    assert payload["ids"] == ["hot", "cold"]
+    persisted = json.loads(d._PRESS_STATE_PATH.read_text(encoding="utf-8"))
+    assert persisted["wire_rank_order"] == {"hot": 91.0, "cold": 44.0}

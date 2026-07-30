@@ -1214,6 +1214,43 @@ class TestNoScoreIsUserFacing:
         for banned in ("_components", "rank_score", "salience"):
             assert banned not in builder, f"_build_rail_item references {banned}"
 
+    def test_rail_order_is_returned_internally_and_keyed_to_the_rail(self):
+        """The ranked view the Mastermind brain wants ships as `_rail_order` — an
+        UNDERSCORE key the daemon folds into host-local state and expresses as
+        element order in the non-public wire_rank sidecar. It exists so nothing
+        has to put a number on a rail item; the two tests above stay green."""
+        items = [_item(f"i{i}", f"CPI rises {i}.2% in June",
+                       url=f"https://w.example/{i}") for i in range(3)]
+        result = _run(items, Path("."))
+        order = result["_rail_order"]
+        assert isinstance(order, dict) and order, "the internal order map is missing"
+        assert set(order) == {row["id"] for row in result["rail"]}, (
+            "the map must cover exactly this tick's rail items"
+        )
+        assert all(isinstance(v, float) for v in order.values())
+
+    def test_no_public_return_key_carries_the_ordering_map(self):
+        """`_rail_order` must stay underscore-prefixed: every non-underscore key of
+        the tick result is a candidate for a served payload."""
+        items = [_item("i0", "CPI rises 3.2% in June", url="https://w.example/0")]
+        result = _run(items, Path("."))
+        assert "_rail_order" in result
+        assert "rail_order" not in result
+        for row in result["rail"]:
+            assert "_rail_order" not in row and "rail_order" not in row
+
+    def test_a_primed_cold_start_returns_an_empty_order_map(self):
+        """Shape stability: the prime early-return is a second return statement,
+        and the daemon reads the key unconditionally."""
+        items = [_item("i0", "CPI rises 3.2% in June", url="https://w.example/0")]
+        from engine.marketing.press_lane import run_press_tick
+        result = run_press_tick(
+            items, root=Path("."), now=NOW, cfg=_marketing_cfg(),
+            press_cfg=_press_cfg(), state={}, seen_ids=set(), dry_run=True,
+            prime=True,
+        )
+        assert result["_rail_order"] == {}
+
 
 class TestNoLlmAnywhere:
     @pytest.mark.parametrize("module", [

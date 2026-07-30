@@ -555,10 +555,28 @@ def _run_press_tick(*, dry_run: bool) -> dict:
     #    the tick's rail-eligible items. Written to the VPS public live dir (or a
     #    dev data dir), NEVER the repo/git tree. Skipped in dry-run (non-consuming).
     if not dry_run:
+        window: list[dict] = []
         try:
-            _write_wires_sink(result.get("rail", []), press_cfg, now)
+            window = _write_wires_sink(result.get("rail", []), press_cfg, now)
         except Exception as exc:  # noqa: BLE001
             logger.error("[press] wires.json sink error (continuing): %s", exc)
+        else:
+            # 7b. wire_rank.v1 sidecar — the SAME window, ordered, for the
+            #     Mastermind brain. Non-public and numberless (element order IS
+            #     the rank), written only once the rail above actually published,
+            #     and never in dry-run. Fail-soft like every sink here: a fault
+            #     must not cost the tick, whose return feeds _touch_heartbeat.
+            try:
+                if _write_wire_rank_sidecar(
+                    window, result.get("_rail_order", {}), state, press_cfg, now
+                ):
+                    # Step 5's save already ran, and the fold+prune above can
+                    # only happen once the window exists — so this map is
+                    # persisted here or not at all (a lost fold self-heals on
+                    # the next tick).
+                    _save_press_state(state)
+            except Exception as exc:  # noqa: BLE001
+                logger.error("[press] wire_rank sidecar error (continuing): %s", exc)
 
     result["_emit_allowed"] = emit_allowed
     return result
@@ -1015,7 +1033,7 @@ def _attach_desk_zh(packets: list, intelligence_cfg: dict) -> tuple[int, int]:
     return (filled, len(pending))
 
 
-def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
+def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> list[dict]:
     """Atomically publish the wires.v1 rolling-window rail payload (M1).
 
     Reads the persisted window, MERGES this tick's rail items (merge by id, new
@@ -1025,10 +1043,14 @@ def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
     blanking it. Corrupt/missing existing file => fresh window (fail-soft, logged).
     This is a display-tier live artifact (like site/live/quotes.json), never a
     repo/git write.
+
+    Returns the PUBLISHED window (the exact items list written, in served order),
+    so the caller does not have to read the file back to know what is live. [] on
+    the no-target early return.
     """
     target = _wires_sink_target(press_cfg)
     if target is None:
-        return
+        return []
 
     wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
     try:
@@ -1063,6 +1085,120 @@ def _write_wires_sink(rail_items: list, press_cfg: dict, now: datetime) -> None:
         payload["zh"] = {"translated": zh_filled, "attempted": zh_tried}
     from scripts.vps_live_orchestrator import atomic_write_json  # noqa: PLC0415
     atomic_write_json(target, payload, mode=0o644)
+    return merged
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# wire_rank.v1 sidecar (Mastermind brain coordination, 2026-07-29)
+#
+# The wires.json rail is SERVED and deliberately carries no ranking number. The
+# brain wants the same window ranked, so the ranked view ships as a separate,
+# NON-PUBLIC file whose ONLY expression of rank is ELEMENT ORDER: there is no
+# number in it to leak even at a non-public path. Ladder mirrors the brain-side
+# reader — $MACRO_LIVE_STATE_DIR override, then the VPS state dir (a sibling of
+# the desk's intelligence/ store, NOT the public live dir), then the gitignored
+# repo dev sink. First WRITABLE rung wins.
+# ─────────────────────────────────────────────────────────────────────────────
+_WIRE_RANK_SCHEMA = "wire_rank.v1"
+_WIRE_RANK_BASENAME = "wire_rank.json"
+_WIRE_RANK_STATE_DIR_ENV = "MACRO_LIVE_STATE_DIR"
+_WIRE_RANK_SINK_PATHS: tuple[str, ...] = (
+    "/var/lib/macro-live/state/wire_rank.json",
+    "data/marketing/press/wire_rank.json",
+)
+#: Daemon-local state key holding {wire item id -> ordering value}. The NUMBERS
+#: live here (gitignored data/marketing/press/state.json) and nowhere else; the
+#: Actions lane drops the key from its tracked cursors (see SCORING_KEYS there).
+_WIRE_RANK_STATE_KEY = "wire_rank_order"
+
+
+def _wire_rank_target() -> "Path | None":
+    """First WRITABLE sidecar path on the ladder, else None."""
+    candidates: list[str] = []
+    env_dir = os.environ.get(_WIRE_RANK_STATE_DIR_ENV, "").strip()
+    if env_dir:
+        candidates.append(str(Path(env_dir) / _WIRE_RANK_BASENAME))
+    candidates += list(_WIRE_RANK_SINK_PATHS)
+    for cand in candidates:
+        p = Path(cand)
+        if not p.is_absolute():
+            p = ROOT / cand
+        if p.parent.exists():
+            return p
+        try:
+            p.parent.mkdir(parents=True, exist_ok=True)
+            return p
+        except OSError:
+            continue
+    return None
+
+
+def _write_wire_rank_sidecar(
+    window: list, rail_order: dict, state: dict, press_cfg: dict, now: datetime
+) -> bool:
+    """Publish the non-public wire_rank.v1 sidecar. ORDER IS THE ONLY RANK.
+
+    `window` is the just-published wires.v1 items list, in served (recency)
+    order. This folds the tick's internal `_rail_order` into the daemon-local
+    ordering map, PRUNES that map to the ids the window is currently serving
+    (bounded by construction — the window caps at rail_max_items / rail_max_age_h),
+    and atomic-writes {schema, updated_at, ids}: every window id exactly once,
+    the ones with a known ordering value first (best first, ties keeping their
+    recency position), the rest appended in the window's own order. That tail is
+    also the reader's own fallback, so an unranked id degrades to recency rather
+    than disappearing.
+
+    Rewritten every real tick even when the window is unchanged — the reader's
+    freshness contract is `updated_at`-driven (it ignores the file past 45 min).
+    Mutates `state` and returns True when it published, so the caller only pays
+    for a state write when there is a fold to persist. Callers keep this
+    fail-soft.
+    """
+    wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
+    # Code default FALSE so DELETING the config key disarms the lane (house
+    # pattern); config/press_sources.yml ships the key set true.
+    if not bool(wire_cfg.get("rank_sidecar_enabled", False)):
+        return False
+    target = _wire_rank_target()
+    if target is None:
+        return False
+
+    order = state.get(_WIRE_RANK_STATE_KEY)
+    if not isinstance(order, dict):
+        order = {}
+    for iid, value in (rail_order or {}).items():
+        try:
+            order[str(iid)] = float(value)
+        except (TypeError, ValueError):
+            continue
+
+    window_ids: list[str] = []
+    for item in window or []:
+        iid = str(item.get("id") or "") if isinstance(item, dict) else ""
+        if iid and iid not in window_ids:
+            window_ids.append(iid)
+
+    pruned = {k: v for k, v in order.items() if k in set(window_ids)}
+    state[_WIRE_RANK_STATE_KEY] = pruned
+
+    # Stable sort: reverse=True keeps equal values in their incoming (recency)
+    # order, so a tie is broken by newest-first rather than arbitrarily.
+    ranked = sorted((i for i in window_ids if i in pruned),
+                    key=lambda i: pruned[i], reverse=True)
+    ids = ranked + [i for i in window_ids if i not in pruned]
+
+    payload = {
+        "schema": _WIRE_RANK_SCHEMA,
+        "updated_at": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "ids": ids,
+    }
+    from scripts.vps_live_orchestrator import atomic_write_json  # noqa: PLC0415
+    # 0o644: the co-located brain process reads this. "Non-public" here means
+    # NOT SERVED (it lives outside the public live dir); the contents are wire
+    # ids already published on the rail, so there is nothing to hide behind a
+    # permission bit.
+    atomic_write_json(target, payload, mode=0o644)
+    return True
 
 
 def _snapshot_breaking_ledger() -> dict[str, str | None]:

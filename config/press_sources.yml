@@ -330,6 +330,10 @@ wire:
   # Age bound on the rolling window. The item cap alone lets a quiet feed keep
   # serving days-old items as though they were the live wire.
   rail_max_age_h: 48
+  # Non-public wire_rank.v1 sidecar for the Mastermind brain: the same window,
+  # ranked by ELEMENT ORDER only (the file carries no numbers). Deleting this key
+  # disarms the write — the code default is false.
+  rank_sidecar_enabled: true
 
   # ── Real-time Intelligence Desk ──────────────────────────────────────────
   # The wire is the speed layer; this is the durable story layer. It clusters

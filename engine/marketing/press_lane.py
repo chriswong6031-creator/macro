@@ -819,6 +819,29 @@ def _class_labels(event_class: str) -> tuple[str, str]:
     return _CLASS_LABELS.get(str(event_class), _CLASS_LABEL_FALLBACK)
 
 
+def _rail_order_value(scored_item: dict, *, rank_ordering: bool) -> float:
+    """The value this tick ordered by, for the INTERNAL `_rail_order` return map.
+
+    Mirrors run_press_tick's own sort so a map folded across ticks stays coherent
+    with the lane's ordering: rank_score when the ranker is armed (dark by
+    default), else salience. Ties keep their recency position downstream, which
+    is exactly what a stable sort gives.
+
+    NEVER a payload field. The one consumer is the VPS daemon's non-public
+    wire_rank sidecar, whose only expression of rank is ELEMENT ORDER — no number
+    from here reaches wires.json or any served surface. Lives OUTSIDE the rail
+    builder on purpose: that function's source is scanned by
+    tests/test_marketing_scoring_brain.py::TestNoScoreIsUserFacing.
+    """
+    def _num(key: str) -> float:
+        try:
+            return float(scored_item.get(key, 0.0) or 0.0)
+        except (TypeError, ValueError):
+            return 0.0
+
+    return _num("rank_score") if rank_ordering else _num("salience")
+
+
 def _build_rail_item(
     scored: dict,
     now: datetime,
@@ -1054,7 +1077,8 @@ def run_press_tick(
                     The daemon sets this on true cold-start only.
         llm_override: test seam forwarded to build_breaking_payload.
 
-    Returns {emitted, skipped, digest, blocked, rail, intelligence, corpus, _seen}.
+    Returns {emitted, skipped, digest, blocked, rail, _rail_order, intelligence,
+    corpus, _seen}. Underscore keys are INTERNAL and must never be served.
 
     `corpus` (XG-W5) is one row per item the lane SAW — ingested items with their
     full `_components`, gate-dropped items with their reason. The lane only
@@ -1332,6 +1356,7 @@ def run_press_tick(
             "digest": [],
             "blocked": blocked,
             "rail": [],
+            "_rail_order": {},
             "intelligence": [],
             # A primed batch is a history snapshot — exactly the corpus a first
             # labeling batch wants, so the rows ship even though nothing emitted.
@@ -1594,6 +1619,11 @@ def run_press_tick(
     # once before publishing (scripts/marketing_fastlane_daemon.py::_attach_zh,
     # capped per tick and disarmable via wire.zh_enabled).
     rail_seen: set[str] = set()
+    # INTERNAL, never a payload: {rail id -> this tick's ordering value}. Returned
+    # under the underscore key `_rail_order` for the daemon's non-public
+    # wire_rank sidecar. Built HERE and not inside the rail builder so the item
+    # dicts stay numberless (TestNoScoreIsUserFacing scans that builder).
+    rail_order: dict[str, float] = {}
     for s in scored:
         try:
             if float(s.get("salience", 0.0)) < rail_floor:
@@ -1610,6 +1640,7 @@ def run_press_tick(
             continue
         rail_seen.add(rkey)
         rail.append(rail_item)
+        rail_order[rkey] = _rail_order_value(s, rank_ordering=rank_ordering)
         if len(rail) >= rail_max:
             break
 
@@ -1745,6 +1776,12 @@ def run_press_tick(
         "digest": digest,
         "blocked": blocked,
         "rail": rail,   # B4a: rail-eligible items for the wires.json sink
+        # INTERNAL (underscore = never served): {rail id -> ordering value} for
+        # exactly the rail items above. The VPS daemon folds this into its
+        # host-local state and expresses it as ELEMENT ORDER in the non-public
+        # wire_rank sidecar; the Actions lane discards it. Never write this into
+        # wires.json or any other user-facing payload.
+        "_rail_order": rail_order,
         "intelligence": intelligence,
         # XG-W5: labeling/eval corpus for this tick (host-local sink; see daemon).
         "corpus": corpus_rows,
