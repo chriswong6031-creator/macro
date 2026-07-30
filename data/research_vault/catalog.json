@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T07:40:01.474593+00:00",
-  "count": 374,
+  "generated_at": "2026-07-30T10:49:37.163569+00:00",
+  "count": 383,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -96,6 +96,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qobtqxyc7j1-8220b7",
+      "title": "US Daily FOMC Recap No Hike and No Guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:50Z",
+      "summary_points": [
+        "**FOMC Dovish Shift**: No rate hike, 3 dissenters (Hammack, Kashkari, Logan) for hike; Warsh downplays AI inflation pressures, links rate hikes to economic strength, suggests market rates could substitute for hikes, emphasizes inflation target credibility.",
+        "**Market Expectations Gap**: Markets priced 35% hike pre-meeting vs.",
+        "no hike outcome; Fed's dovish signals and lack of guidance may force rate expectation adjustment, shifting focus to economic data over market expectations.",
+        "**Bond Market Divergence**: Near-term rates fell despite energy price rise, long-term rates rose on breakeven inflation; bond market prices 60% Sept hike chance vs.",
+        "Fed's expected hold due to softer core inflation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vaxrsjkopz8-5eb692",
+      "title": "USA FOMC Leaves Fed Funds Rate Unchanged",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:40Z",
+      "summary_points": [
+        "**Dissenters Signal Rate Hike Pressure**: Three Fed officials (Hammack, Kashkari, Logan) dissented, advocating for 25bp rate hike despite FOMC holding rates at 3.5-3.75%, reflecting inflation concerns.",
+        "**Inflation Source Clarified**: Fed explicitly cited \"elevated\" inflation driven by supply shocks (not demand), particularly energy, signaling potential transitory nature for policy response.",
+        "**Growth Momentum Confirmed**: Statement reaffirmed \"expanding at solid pace\" economic activity and job gains matching workforce growth, supporting current policy stance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-8ftvcieac8b-d1fd93",
       "title": "Qualcomm Inc. (QCOM) First Take In line quarter with weak margin guidance, driven by smartphone downside",
       "institution": "Goldman Sachs",
@@ -134,6 +174,90 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hwna7uujbmj-6d5923",
+      "title": "Lam Research Corp. (LRCX) First Take In line quarter, with very strong guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:35Z",
+      "summary_points": [
+        "**Fundamental Revenue/Margin Beat**: Q3 revenue guidance $8.10bn (vs.",
+        "Street $7.13bn), operating margin 39.5% (vs.",
+        "Street 37.1%), driven by DRAM momentum, NAND spending, and systems/service revenue beats ($4.25bn/$2.37bn vs.",
+        "Street).",
+        "**Geopolitical Policy Risk**: US export restrictions on NAND suppliers and potential pause in NAND upgrade spending pose critical near-term industry disruption risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-20rb0owc0c7-b5f08a",
+      "title": "ARM Holdings (ARM) First Take Results and guidance above the Street",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:26:33Z",
+      "summary_points": [
+        "**Performance Beats vs.",
+        "Valuation Disconnect**: Quarterly revenue ($1.29bn vs $1.26bn Street) and operating margin (41.2% vs 38.0%) exceeded estimates; however, Goldman Sachs assigns a \"Sell\" rating with $150 target (38.7% downside) vs.",
+        "$244.74 current price, signaling severe valuation concerns despite near-term earnings optimism.",
+        "**EPS Deterioration Forecast**: Goldman Sachs forecasts EPS decline from $0.60 (Q3/2026) to $0.41 (Q3/2027), indicating near-term earnings contraction despite higher FY2027 guidance, critical for short-term risk assessment.",
+        "**Price Target Gap Widening**: Goldman Sachs' $150 target (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mswta1adswg-64224c",
+      "title": "MRB Webinar Chinas Anti Involution Campaign Sizzle Or Beef July 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:35:31Z",
+      "summary_points": [
+        "**Anti-Involution Policy Risk**: Critical assessment needed to distinguish minor market noise from major geopolitical risk, directly impacting EM exposure, capital flows, and portfolio risk allocation.",
+        "**Manufacturing PMI Expansion Holds**: Sustained expansion (PMI >50) through 2026 (RatingDog/CFLP data) signals industrial strength, contradicting negative narratives on manufacturing momentum.",
+        "**Industrial Output Decline Accelerating**: Sustained downward trend in industrial/manufacturing output (2023–2026) with red trend line highlighting accelerating weakness, core driver of China’s growth.",
+        "**Producer Prices Surge Dominates Inflation**: Sharp upward trajectory (2025–2026) in producer prices outpaces Core CPI, signaling cost-push pressures threatening margins and manufacturing/commodity exposure.",
+        "**Export Price Rebound Alters Global Inflation**: Sharp rebound in China’s export prices (2025–2026) reverses disinflationary pressure, removing key anchor for global disinflation and impacting commodity valuations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lct0momqhn1-5ed502",
+      "title": "LloydsBankMarketInsightsRates29July2026 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:35:05Z",
+      "summary_points": [
+        "**Fed Policy Pricing vs.",
+        "Inflation Repricing**: Futures show rising June hike probability (post-Warsh/CPI), yet short-term inflation swaps signal lower expectations (89.4 vs 1.91), with energy shock failing to alter repricing.",
+        "**Asymmetric Growth Risk from Tightening**: Renewed Fed commitment to price stability reprices rates, but policy actions risk disproportionately harming growth (key risk note).",
+        "**Narrowing Inflation Breadth & Lower Oil Shock**: Core CPI trends lower (above target but less diffuse), oil shock impact weaker than start of year due to demand weakness.",
+        "**Tighter Policy Limited on Inflation, Growth Risk**: Current policy has minimal inflation impact but poses significant growth headwinds, with high intervention opportunity cost supporting hold."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -180,6 +304,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-iwr8hhkktcc-215433",
+      "title": "Audio",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:14:19Z",
+      "summary_points": [
+        "**Tech Correction & Household Resilience**: South Korea tech equity correction (April levels) limits economic impact; household cash stockpiles sustain spending, not equity wealth; Gulf war uncertainty outweighs Russia-Ukraine in risk focus.",
+        "**Policy Catalysts**: US-Iran talks + retail gas prices above \"fair\" price drive upbeat sentiment; UK's modest disinflation (BRC index) from electricity pricing; US trade data/consumer confidence may influence policy amid political partisanship.",
+        "**Asset Class Rating System**: Five-tier equity rating (Most Attractive to Least Attractive) collapses to three tiers when combined with other assets, guiding tactical allocation via expected returns and scenario analysis."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-qqim5g0ydnt-22f7cd",
       "title": "ING Think the commodities feed oil rises as middle east tensions reignite290726 2",
       "institution": "ING",
@@ -218,6 +361,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-nvrdhtvrre1-ef9215",
+      "title": "Invesco uncommon truths hot hot hot july 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:07:04Z",
+      "summary_points": [
+        "**Climate Risk Acceleration**: CO2 at 427.35 ppm (new high), 1.39°C above pre-industrial avg, 2027 El Nino likely to exceed 1.5°C; mandates urgent mitigation/adaptation spending.",
+        "**Geopolitical & Market Flow Risks**: Strait of Hormuz/Red Sea closures (Q4) threaten energy routes; Brent futures near $100, dollar strength, low volatility signal heightened physical risk exposure.",
+        "**Climate-Driven Investment Opportunities**: Massive capital needed in carbon reduction tech (renewables, electrification) and adaptation (infrastructure, food sciences) with significant market potential.",
+        "**Commodities Surge**: GSCI +46.1% YTD (Energy +79.0%), driven by supply constraints, signaling inflationary pressures and potential policy tightening.",
+        "**Climate Scenario Assumptions**: \"Recent trends\" project emissions peak 2072, driving 4.2°C warming by 2100 (vs 3.5°C optimistic); alters carbon-intensive sector exposure under policy transitions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-tnhx0q2idxc-871c3c",
       "title": "In Credit 27 07 2026",
       "institution": "Other",
@@ -234,6 +398,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-psjwd9ejkjm-fbb453",
+      "title": "Fomc All Spin No Delivery Or Forward Guidance",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-29T22:30:14Z",
+      "summary_points": [
+        "**FOMC Inaction Despite Inflation**: Fed held rates steady with no forward guidance despite 5+ years of inflation above target and labor market reacceleration, signaling policy misalignment.",
+        "**September Hike Expectation**: Persistent data evolution now points to a September rate hike, shifting market pricing from earlier expectations of delayed action.",
+        "**Fed Credibility Erosion**: The Fed's \"spin\" on policy communication undermines institutional credibility, increasing uncertainty for portfolio positioning.",
+        "**Labor Market as Key Driver**: Reaccelerating labor market data is a critical factor overriding inflation persistence in the Fed's current stance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
