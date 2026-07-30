@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T17:41:02.114925+00:00",
-  "count": 404,
+  "generated_at": "2026-07-30T18:11:02.413855+00:00",
+  "count": 405,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -33,6 +33,25 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-0zp6mmgat4o-45583e",
+      "title": "Yen Intervention Boj Hike And Carry Trade Risk",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T17:37:25Z",
+      "summary_points": [
+        "**Yen Intervention & BOJ Hike Catalyst**: Japan’s MoF intervention triggered accelerated BOJ rate hikes (Sept instead of Oct/Jan), fueled by dovish Fed timing, upward GDP/CPI revisions, elevating carry trade risk.",
+        "**JPY Pressure & Carry Trade Caution**: JPY pressured until BoJ backs MoF with hawkish signals; Daniel Von Ahlen warns against carry trades amid tightening.",
+        "**MoF-BoJ Policy Dynamics**: MoF pressured BoJ (football metaphor), suggesting Ueda may delay decisive JPY policy action despite MoF intervention."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-23lwrdh0awc-b8881b",
       "title": "Global daily feedom of navigation",
