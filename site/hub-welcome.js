@@ -649,8 +649,11 @@
     if (activePair && !typingActive) tx.textContent = text(activePair);
   });
   hdr.classList.add('greet-run');
+  var LINE_HOLD_MIN_MS = 3000;
+  var LINE_HOLD_MAX_MS = 4600;
+  var FINAL_HOLD_MS = 6500;
+  var BRAND_HANDOFF_MS = 900;
   function finish() {
-    drop();
     greet.classList.remove('convo', 'is-speaking', 'is-thinking');
     hdr.classList.remove('greet-run');
   }   // slow CSS crossfade → brand
@@ -678,7 +681,8 @@
   }
 
   if (reduced()) {
-    // no typing/animation: show the greeting + one read, briefly, then hand to the brand
+    // no typing/animation: show the greeting + one read, then leave the last thought
+    // in place for the same full reading window as the animated path.
     var seq = [lines[0], lines[1] || lines[0]], si = 0;
     (function step() {
       var ln = seq[si];
@@ -686,34 +690,17 @@
       greet.classList.add('is-speaking');
       activePair = ln.s;
       tx.textContent = text(ln.s);
-      si++; if (si < seq.length) wait(2400, step); else wait(2400, finish);
+      si++;
+      if (si < seq.length) wait(LINE_HOLD_MIN_MS, step);
+      else wait(FINAL_HOLD_MS + BRAND_HANDOFF_MS, finish);
     })();
     return;
   }
 
-  // A DELIBERATE act — a click, a tap, a keypress — means "got it, move on", and the read
-  // gets out of the way. SCROLLING IS NOT THAT ACT. It used to be: 'wheel' and 'touchstart'
-  // were on this list, so a two-finger nudge, a trackpad's momentum after your fingers left,
-  // or a thumb merely landing to begin a swipe abandoned the sentence mid-word — the reader
-  // did the most natural thing on a hub page and the desk stopped talking to them. The
-  // greeting sits in the header and scrolls out of view on its own; it never needed help.
-  // 'click' rather than 'pointerdown' is what tells a tap from the start of a swipe: a touch
-  // that turns into a scroll never fires it. Arrow/Page/Home/End/Space are scrolling too —
-  // just with a keyboard — so they don't count either.
-  var SCROLL_KEY = { ArrowUp: 1, ArrowDown: 1, ArrowLeft: 1, ArrowRight: 1, PageUp: 1, PageDown: 1, Home: 1, End: 1, ' ': 1, Spacebar: 1 };
-  var skip = false;
-  function onSkip() { skip = true; drop(); }
-  function onKey(e) { if (!SCROLL_KEY[e.key]) onSkip(); }
-  function drop() {
-    document.removeEventListener('click', onSkip, true);
-    document.removeEventListener('keydown', onKey, true);
-  }
-  document.addEventListener('click', onSkip, { passive: true, capture: true });
-  document.addEventListener('keydown', onKey, { passive: true, capture: true });
-
+  // The sequence owns its own lifecycle. Incidental clicks and keystrokes never dismiss
+  // it: the greeting may scroll naturally out of view, but it cannot vanish mid-word.
   var li = 0;
   function playLine() {
-    if (skip) return finish();
     var ln = lines[li];
     greet.classList.toggle('convo', !ln.big);
     greet.classList.remove('is-thinking');
@@ -723,7 +710,6 @@
     typingActive = true;
     tx.style.opacity = '1';
     (function type() {
-      if (skip) return finish();
       full = text(ln.s);
       tx.textContent = full.slice(0, i);
       if (i <= full.length) {
@@ -733,15 +719,15 @@
         wait(d, type);
       } else {
         typingActive = false;
-        var hold = ln.big ? 1150 : Math.min(2600, 1250 + full.length * 12);   // longer remarks land longer
+        var hold = Math.min(LINE_HOLD_MAX_MS, LINE_HOLD_MIN_MS + full.length * 18);
+        if (li === lines.length - 1) hold = Math.max(hold, FINAL_HOLD_MS);
         wait(hold, nextLine);
       }
     })();
   }
   function nextLine() {
-    if (skip) return finish();
     li++;
-    if (li >= lines.length) { wait(700, finish); return; }   // last remark held, then dissolve
+    if (li >= lines.length) { wait(BRAND_HANDOFF_MS, finish); return; }
     greet.classList.remove('is-speaking');
     greet.classList.add('is-thinking');
     tx.style.transition = 'opacity .34s ease'; tx.style.opacity = '0';   // soft fade between remarks
