@@ -2163,3 +2163,125 @@ class TestRunSelfFetchesAStaleTape:
 
         RADAR.run(root, now=NOW.replace(hour=6, minute=0), demo=True,
                   fetcher=_no_fetch, quote_builder=_never)
+
+
+class TestMultiPassCadence:
+    """One delivered tick must do several passes — GitHub will not deliver */5.
+
+    Measured 2026-07-29, the 8h RTH window: GitHub delivered 104 scheduled runs
+    across ALL 46 scheduled workflows in this repo, of which this lane got 6 of
+    its ~92 ticks (6.5%) — ~1.4 passes an hour against a ~43-minute mean
+    detection gap, while gate 0.1 asks for booked-at-Buffer inside 20 minutes.
+    Starvation is GitHub-side, so the lever is spending each delivered tick
+    better rather than asking for more ticks.
+    """
+
+    @staticmethod
+    def _radar_step() -> dict:
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
+                encoding="utf-8"))
+        step = [s for s in wf["jobs"]["radar"]["steps"] if s.get("id") == "radar"]
+        assert len(step) == 1, "the radar step lost its id"
+        return step[0]
+
+    def test_a_run_does_more_than_one_pass(self):
+        env = self._radar_step()["env"]
+        assert int(env["PASSES"]) >= 2, (
+            "single-pass runs put the cadence back in GitHub's hands, where it "
+            "measured 1.4 passes/hour against a 5-minute design target")
+        assert 60 <= int(env["PASS_INTERVAL_S"]) <= 600, env["PASS_INTERVAL_S"]
+
+    def test_the_timeout_covers_every_planned_pass(self):
+        """The coupling that would otherwise break silently.
+
+        PASSES and timeout-minutes are one decision. Raise PASSES alone and the
+        run is killed partway through its last pass — which looks exactly like a
+        wedged job, and the passes that never ran leave no trace at all.
+        """
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
+                encoding="utf-8"))
+        job = wf["jobs"]["radar"]
+        env = self._radar_step()["env"]
+        passes, interval = int(env["PASSES"]), int(env["PASS_INTERVAL_S"])
+        sleep_min = (passes - 1) * interval / 60.0
+        # ~2 min of work per pass: the radar itself, up to 3 Chrome rasters at
+        # ~13s, a possible ~25s self-fetch, and the push race.
+        need = sleep_min + 2.0 * passes
+        assert int(job["timeout-minutes"]) >= need, (
+            f"{passes} passes at {interval}s need >= {need:.0f}m but the job "
+            f"budget is {job['timeout-minutes']}m — the last pass would be killed")
+
+    def test_every_pass_commits_and_dispatches_on_its_own(self):
+        """Latency is the whole point: a pass must not wait for the run to end.
+
+        A 10:04 cross detected on pass 1 has to reach Buffer at ~10:07, not when
+        the third pass finishes 10 minutes later. So the commit and the dispatch
+        live INSIDE the loop — which also means the old post-loop `commit`/
+        `dispatch` steps must be gone, not merely bypassed.
+        """
+        import yaml as _yaml
+
+        wf = _yaml.safe_load(
+            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
+                encoding="utf-8"))
+        names = [str(s.get("name") or "") for s in wf["jobs"]["radar"]["steps"]]
+        assert not [n for n in names if n.startswith("commit radar state")], names
+        assert not [n for n in names if n.startswith("dispatch the publisher")], names
+
+        body = self._radar_step()["run"]
+        loop = body.split("for pass in", 1)
+        assert len(loop) == 2, "the multi-pass loop is gone"
+        head, inside = loop
+        for token in ("python -m scripts.hot_tape_radar", "commit_and_push",
+                      "gh workflow run marketing-publish.yml"):
+            assert token in inside, f"{token} moved out of the per-pass loop"
+        # …and the helpers they call are DEFINED before it.
+        for fn in ("refresh_shared_tape()", "commit_and_push()"):
+            assert fn in head, f"{fn} is used in the loop but defined after it"
+
+    def test_a_booked_pass_that_cannot_push_never_dispatches(self):
+        """The publisher folds items.jsonl from main, so push-then-dispatch."""
+        body = self._radar_step()["run"]
+        dispatch_at = body.index("gh workflow run marketing-publish.yml")
+        gate_at = body.index("if commit_and_push; then")
+        assert gate_at < dispatch_at, (
+            "the dispatch is no longer gated on the push landing — the publisher "
+            "would look for item ids that are not on main yet and post nothing")
+
+    def test_the_ids_channel_is_per_pass_not_github_output(self):
+        """GITHUB_OUTPUT is append-only and collapses to one value per step.
+
+        Three passes in one step cannot each report their own booked ids through
+        it, so the loop uses a file it truncates before every pass. Reading a
+        stale value would re-dispatch the previous pass's items.
+        """
+        env = self._radar_step()["env"]
+        assert env.get("HOT_TAPE_IDS_FILE"), "no per-pass ids channel"
+        body = self._radar_step()["run"]
+        assert ': > "${HOT_TAPE_IDS_FILE}"' in body, (
+            "the ids file is not truncated before the pass — a pass that books "
+            "nothing would re-dispatch the previous pass's ids")
+        assert "HOT_TAPE_IDS_FILE" in (
+            REPO_ROOT / "scripts/hot_tape_radar.py").read_text(encoding="utf-8"), (
+            "the workflow reads an ids file the script never writes")
+
+    def test_the_script_writes_the_ids_file_when_asked(self, tmp_path, monkeypatch):
+        """The seam itself, exercised — not just asserted to exist."""
+        root = _mover_root(tmp_path)
+        ids_file = tmp_path / "ids"
+        monkeypatch.setenv("HOT_TAPE_IDS_FILE", str(ids_file))
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        # The mover fixture books; if the chart law drops it there are no ids and
+        # the file stays absent, which is also correct — assert the two agree.
+        booked = [r for r in _fired_rows(root) if r.get("item_id")]
+        if booked:
+            assert ids_file.exists(), "a pass booked items but wrote no ids file"
+            assert ids_file.read_text(encoding="utf-8").strip(), ids_file.read_text()
+        else:
+            assert not ids_file.exists() or not ids_file.read_text().strip()

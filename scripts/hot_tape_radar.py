@@ -1659,6 +1659,18 @@ def run(
                         fh.write(f"post_now_ids={joined}\n")
                 except Exception as exc:  # noqa: BLE001
                     log.warning("hot_tape_radar: GITHUB_OUTPUT write failed: %s", exc)
+            # GITHUB_OUTPUT is APPEND-ONLY and collapses to one value per step, so
+            # it cannot carry per-pass ids when one step runs the radar several
+            # times (the multi-pass loop in marketing-hot-tape.yml). This file is
+            # the per-pass channel: the loop truncates it before each pass and
+            # dispatches exactly what that pass booked. Absent env = unchanged
+            # single-pass behaviour.
+            ids_file = os.environ.get("HOT_TAPE_IDS_FILE", "").strip()
+            if ids_file:
+                try:
+                    Path(ids_file).write_text(joined, encoding="utf-8")
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("hot_tape_radar: ids-file write failed: %s", exc)
     return 0
 
 
