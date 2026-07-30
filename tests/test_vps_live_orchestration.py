@@ -1036,3 +1036,68 @@ def test_caddy_serves_live_store_without_cache():
     assert "rewrite /api/regwall/check" in protected
     assert "rewrite /api/paywall/check" in protected
     assert "handle @vps_external" in protected
+
+
+def test_live_data_orphan_push_clears_the_index_sparse_safely(tmp_path):
+    """`git rm -rf --cached .` does not empty the index under a sparse checkout.
+
+    live-quotes.yml gained a sparse cone on 2026-07-30 to stop its checkout
+    blowing the job timeout. That silently broke the orphan-branch push: `git rm`
+    HONOURS sparse rules and refuses to touch entries outside the cone, so `.`
+    expanded to the few in-cone paths and left the rest staged — measured 30,896
+    surviving entries, turning the single-file `live-data` branch into a full-tree
+    snapshot on every 5-minute push. Nothing would have alerted: quotes.json stays
+    at the top of the tree, so raw.githubusercontent keeps serving it and every
+    consumer looks healthy while the branch grows a whole tree per tick.
+
+    Executable, not a grep: the failure is git BEHAVIOUR under a config, and a
+    text assertion would have passed the broken version just as happily.
+    """
+    import subprocess
+
+    def git(*args, **kw):
+        return subprocess.run(("git",) + args, cwd=repo, capture_output=True,
+                              text=True, **kw)
+
+    repo = tmp_path / "r"
+    repo.mkdir()
+    git("init", "-q", "-b", "main")
+    git("config", "user.name", "t")
+    git("config", "user.email", "t@t")
+    # A tree with in-cone and out-of-cone paths, mirroring the real lane.
+    for rel in ("engine/x.py", "site/stocks/big.json", "data/baskets/ohlcv/a.parquet"):
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x", encoding="utf-8")
+    git("add", "-A")
+    git("commit", "-qm", "base")
+    git("sparse-checkout", "set", "engine")          # the cone the lane now uses
+
+    (repo / "quotes.json").write_text('{"quotes":{}}', encoding="utf-8")
+    git("checkout", "--orphan", "live-data-tmp")
+
+    # The OLD line, to prove the trap is real and not folklore.
+    git("rm", "-rf", "--cached", ".")
+    survivors = [l for l in git("ls-files", "--cached").stdout.splitlines() if l]
+    assert survivors, (
+        "`git rm -rf --cached .` emptied the index under a sparse checkout — if "
+        "git changed this, simplify the workflow back and delete this test")
+
+    # The shipped line must clear it regardless.
+    git("read-tree", "--empty")
+    assert not [l for l in git("ls-files", "--cached").stdout.splitlines() if l]
+    git("add", "-f", "quotes.json")
+    git("commit", "-qm", "live quotes")
+    tree = [l for l in git("ls-tree", "-r", "--name-only", "HEAD").stdout.splitlines() if l]
+    assert tree == ["quotes.json"], tree
+
+    # …and the workflow must actually use it.
+    body = (Path(__file__).resolve().parents[1] / ".github" / "workflows" /
+            "live-quotes.yml").read_text(encoding="utf-8")
+    assert "git read-tree --empty" in body, (
+        "the orphan push no longer clears the index sparse-safely")
+    # Comment lines are allowed to NAME the trap — that is how the next reader
+    # learns why read-tree is there. Only a live command line is a regression.
+    commands = [l for l in body.splitlines() if not l.lstrip().startswith("#")]
+    assert not [l for l in commands if "git rm -rf --cached" in l], (
+        "the sparse-unsafe index clear is back in live-quotes.yml")

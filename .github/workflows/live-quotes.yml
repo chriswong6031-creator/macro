@@ -137,7 +137,19 @@ jobs:
           git config user.email "dashboard-bot@users.noreply.github.com"
           # Single-commit orphan branch: stage ONLY quotes.json, never main's tree.
           git checkout --orphan live-data-tmp
-          git rm -rf --cached . >/dev/null 2>&1 || true
+          # `git read-tree --empty`, NOT `git rm -rf --cached .` — the sparse
+          # checkout above breaks the latter. `git rm` honours sparse rules and
+          # silently refuses to touch entries outside the cone, so `.` expands to
+          # the handful of in-cone paths and leaves the rest of the index intact:
+          # measured 30,896 entries surviving, and the "single-commit orphan
+          # branch" then carried the WHOLE REPOSITORY on every 5-minute push.
+          # It fails silently in the worst way — quotes.json is still at the top
+          # of the tree, so raw.githubusercontent keeps serving it and every
+          # consumer looks healthy while the branch grows a full tree per tick.
+          # read-tree operates on the index directly and ignores sparse rules:
+          # verified 0 entries after, tree == exactly ["quotes.json"], both with
+          # the cone set and without it.
+          git read-tree --empty
           git add -f quotes.json
           git commit -m "live quotes $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push -f origin HEAD:live-data
