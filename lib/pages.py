@@ -18,7 +18,8 @@ from __future__ import annotations
 import logging
 import re
 import shutil
-from pathlib import Path
+import subprocess
+from pathlib import Path, PurePosixPath
 from typing import Callable, Optional
 
 from lib import config
@@ -46,6 +47,84 @@ HAND_AUTHORED_PAGES: frozenset[str] = frozenset({
     "products/mastermind-ai.html",
     "products/market-dashboards.html",
 })
+
+# --- rendered ticker universe (cross-page dead-link filter) ------------------
+# WHICH stocks/<TICKER>.html pages exist is decided nightly by DATA, not by a
+# template: build_ticker_pages walks membership.parquet and then drops any
+# ticker with no stockdata blob, a `limited` profile, or fewer than three
+# substantive sections. 2,842 tickers are membership-active; 1,666 get a page.
+#
+# Every other surface that links a symbol draws from a WIDER source — peer cards
+# from factordata/factors.json, the movers board from the heatmap, the crypto
+# rails shelf from baskets/membership.json — so each can name a symbol that
+# never got a page. scripts/check_site_asset_refs.py measured 47 such targets
+# carrying 211 dead links the first time anyone looked: 197 peer cards over 35
+# symbols, 12 movers rows/chips, 2 crypto tiles.
+#
+# The predicate here is deliberately "a page SHIPS for this ticker", not "this
+# ticker passes the render gate". It is what the reader experiences and what the
+# guard checks; it needs no cross-builder copy of a four-stage gate that keeps
+# moving; and it stays correct the next time that gate changes.
+#
+# Callers snapshot this ONCE per run and pass the set down. build_ticker_pages
+# must snapshot BEFORE its own loop starts writing, so the answer cannot depend
+# on how far through the alphabet the loop has got. Nothing ever prunes
+# site/stocks/, so the pre-run set is a SUBSET of what ships afterwards: a
+# ticker whose page is brand new tonight goes unlinked for one night rather than
+# being linked to a 404, and picks up its links on the next render.
+
+
+def _committed_ticker_pages(stocks_dir: Path) -> set[str]:
+    """Ticker pages git tracks that this checkout does not hold.
+
+    Reading the filter off the VISIBLE pages alone is only sound when the tree
+    holds everything that ships. A lane whose checkout is partial — a sparse
+    cone, a scoped render, an interrupted sync — sees fewer pages than
+    production serves, and would then silently un-link every peer/movers/crypto
+    symbol whose page merely was not fetched. That is the same shape that
+    deleted a live stylesheet in #3988/#4042, pointed the other way: not a 404,
+    but a site-wide quiet loss of navigation.
+
+    Returns the empty set when there is no committed baseline to consult (no git
+    checkout, no git binary, path outside the repo): nothing can then be
+    committed-but-absent, so the on-disk scan is complete by definition. An
+    ABSENT baseline is not an unreadable one — it must not disable the filter.
+    """
+    # Absolute, so the pathspec still means the same directory after `cwd`
+    # walks up to the nearest one that exists (the partial-checkout case).
+    stocks_dir = stocks_dir.resolve()
+    cwd = stocks_dir
+    while not cwd.is_dir() and cwd != cwd.parent:
+        cwd = cwd.parent
+    if not cwd.is_dir():
+        return set()
+    try:
+        proc = subprocess.run(
+            ["git", "ls-files", "-z", "--", str(stocks_dir)],
+            cwd=str(cwd), capture_output=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as e:  # noqa: BLE001
+        log.debug("rendered_ticker_pages: no git baseline (%s)", e)
+        return set()
+    if proc.returncode != 0:
+        return set()
+    names = proc.stdout.decode("utf-8", "replace").split("\0")
+    return {
+        PurePosixPath(n).stem for n in names
+        if n.endswith(".html") and PurePosixPath(n).stem != "index"
+    }
+
+
+def rendered_ticker_pages(site_dir: Path) -> frozenset[str]:
+    """Tickers that have a `stocks/<TICKER>.html` page in the shipped tree.
+
+    Union of what is on disk and what is committed-but-absent, so the answer is
+    "does this page ship", not "did this checkout happen to fetch it".
+    """
+    stocks_dir = Path(site_dir) / "stocks"
+    on_disk = {p.stem for p in stocks_dir.glob("*.html") if p.stem != "index"}
+    return frozenset(on_disk | _committed_ticker_pages(stocks_dir))
+
 
 # --- asset optimization (content-hash cache-busting + defer) -----------------
 # A post-render sweep (scripts/optimize_assets.py) rewrites every local .js/.css

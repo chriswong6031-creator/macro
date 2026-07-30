@@ -119,6 +119,9 @@ body.crypto-page::before{opacity:.34}
 .lane-cta{font-size:10px;font-weight:740;color:var(--link)}
 .equity-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line)}
 .equity{padding:16px 14px;border-right:1px solid var(--line);text-decoration:none;color:inherit}.equity:last-child{border-right:0}
+/* Rails member with no dossier page — the basket names a wider universe than
+   we render. Tile and quote stay; the click does not. */
+.equity-off{cursor:default}
 .equity b{font:780 14px/1 var(--font-mono)}.equity .eq-price{margin-top:18px;font:720 13px/1 var(--font-mono)}
 .equity .eq-change{margin-top:6px;color:var(--tone);font:680 10px/1 var(--font-mono)}.equity .state{margin-top:13px;font-size:9.5px}
 .calendar-grid{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--line)}
@@ -232,7 +235,7 @@ body.crypto-page::before{opacity:.34}
 
   <section class="crypto-shelf" data-shelf="H7">
     <div class="shelf-pad"><div class="shelf-head"><span class="shelf-index">H7</span><h2 class="shelf-title">{{ t('Crypto Equities','加密概念股') }}</h2><span class="shelf-sub">{{ t('listed rails and cycle proxies','上市轨道与周期代理') }}</span></div>
-      <div class="equity-grid">{% for eq in equities %}<a class="equity {{ tone(eq.tone) }}" href="{{ eq.href }}"><b>{{ eq.ticker }}</b><div class="eq-price nb-px" data-sym="{{ eq.ticker }}">{{ eq.price }}</div><div class="eq-change nb-chg" data-sym="{{ eq.ticker }}">{{ eq.change }}</div><span class="state">{{ t(eq.state,eq.state_zh) }}</span></a>{% endfor %}</div>
+      <div class="equity-grid">{% for eq in equities %}{% if eq.href %}<a class="equity {{ tone(eq.tone) }}" href="{{ eq.href }}">{% else %}<div class="equity equity-off {{ tone(eq.tone) }}">{% endif %}<b>{{ eq.ticker }}</b><div class="eq-price nb-px" data-sym="{{ eq.ticker }}">{{ eq.price }}</div><div class="eq-change nb-chg" data-sym="{{ eq.ticker }}">{{ eq.change }}</div><span class="state">{{ t(eq.state,eq.state_zh) }}</span>{% if eq.href %}</a>{% else %}</div>{% endif %}{% endfor %}</div>
       <div class="source-line"><span>{{ t('Membership follows the curated Crypto & Digital Rails basket; this is a regime sensor, not a buy list.','成分来自经策划的“加密与数字轨道”篮子；这是阶段传感器，不是买入清单。') }}</span></div>
     </div>
   </section>
