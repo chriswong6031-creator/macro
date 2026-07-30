@@ -39,25 +39,19 @@ LEGACY_SUBMENU_MARKS = (
     "🧲", "🌊", "🏆", "🌑", "🏗", "📡", "🔥", "🔬", "🛰", "🏛",
     "⚡", "🧭", "🔄", "₿", "◎", "🛢", "💱",
 )
-EXPECTED_RESEARCH_ICON_FAMILIES = {
-    "alt-data",
-    "confluence",
-    "country-cycles",
-    "cycle-intelligence",
-    "divergence",
-    "fed-policy",
-    "foresight",
-    "fund-flows",
-    "global-cycles",
-    "intelligence-hub",
-    "macro-weather",
-    "neural-web",
-    "reports",
-    "sector-cycles",
-    "smart-money",
-    "special-situations",
-    "themes",
-    "vault",
+EXPECTED_PUBLIC_RESEARCH_DESTINATIONS = {
+    "intelligence_hub.html",
+    "reports.html",
+    "research_vault.html",
+    "neural_web.html",
+    "foresight.html",
+    "state_of_themes.html",
+    "radar.html",
+    "confluence_screener.html",
+    "smart_money.html",
+    "etfs.html",
+    "cycle.html",
+    "macro_context.html",
 }
 def _requested_menu(html: str) -> str:
     start = html.index('menu-icon-us')
@@ -99,32 +93,27 @@ def test_research_mega_menu_uses_complete_semantic_icon_set() -> None:
     # source PR, so this contract should not pin the previous generated menu.
     html = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
     research = _research_menu(html)
-    families = {
-        name.removeprefix("research-icon-")
-        for name in re.findall(
-            r'class="nm-ic research-icon (research-icon-[a-z-]+)"',
-            research,
-        )
-    }
+    public_grid = research.split('<aside class="mega-rail', 1)[0]
+    destinations = set(
+        re.findall(r'href="\{\{ NP \}\}([^"]+)"', public_grid)
+    )
 
     assert "submenu-icon" not in research
-    assert families == EXPECTED_RESEARCH_ICON_FAMILIES
-    assert research.count('class="nm-ic research-icon ') == 22
+    assert destinations == EXPECTED_PUBLIC_RESEARCH_DESTINATIONS
+    assert public_grid.count('class="icon-drawing nm-ic') == 12
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 12
+    assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in research
 
 
 def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
     partial = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
-    families = {
-        name.removeprefix("research-icon-")
-        for name in re.findall(
-            r'class="nm-ic research-icon (research-icon-[a-z-]+)"',
-            partial,
-        )
-    }
+    research = _research_menu(partial)
+    public_grid = research.split('<aside class="mega-rail', 1)[0]
 
-    assert families == EXPECTED_RESEARCH_ICON_FAMILIES
-    assert partial.count('class="nm-ic research-icon ') == 22
+    assert public_grid.count('class="icon-drawing nm-ic') == 12
+    assert public_grid.count('<svg viewBox="0 0 48 48">') == 12
+    assert "research-icon" not in public_grid
     assert '<span class="nm-ic">' not in partial
 
 
@@ -139,8 +128,11 @@ def test_jinja_nav_partial_preserves_submenu_icon_markup_on_rerender() -> None:
         )
     }
 
-    assert families == EXPECTED_ICON_FAMILIES
-    assert menu.count('class="submenu-icon ') == 65
+    # Crypto is intentionally composed inside the exact Other Assets mega-menu
+    # at runtime, so the fresh template no longer emits a duplicate top-level
+    # Crypto dropdown or its four legacy mask icons.
+    assert families == EXPECTED_ICON_FAMILIES - {"allocation", "bitcoin"}
+    assert menu.count('class="submenu-icon ') == 61
     assert not any(mark in menu for mark in LEGACY_SUBMENU_MARKS)
 
 
