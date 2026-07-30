@@ -293,6 +293,17 @@ only once all three hold. VPS headroom is thin (2 vCPU, measured burst ~90–95%
 existing 5-min lane) — size the unit's `CPUQuota`/`MemoryMax` like its siblings and state
 the measured cost in the PR.
 
+**Two mechanical facts the wiring task owns** (found in the P1 review, 2026-07-30):
+- **The prefix does not match and must be bridged deliberately.** The producer writes R2
+  `live_flow/prophet_live.json` (`engine/prophet_live/r2io.py` `LIVE_KEY`); the page reads
+  the served `live/prophet_live.json`. The puller maps one to the other — do NOT "fix" this
+  by renaming the R2 key (the reconciler and the spool prefix key off it) and do NOT change
+  the served path (P1's consumer is tested against it).
+- **A new served `live/` file is the three-file asset change**, not one: the artifact, the
+  Caddy/access entry (gated — never the public exceptions list), and the access-config test.
+  The estate default-denies unknown site asset paths, so a file that exists but is not
+  declared serves nothing.
+
 **Inherited exposure, not introduced by this program (own adjudication in flight):** the
 repo is public, so `site/factordata/us_standouts.json` — the graded board itself — already
 returns 200 from `raw.githubusercontent.com`, i.e. the Caddy regwall gates the served path
