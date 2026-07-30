@@ -18,7 +18,10 @@ def test_hover_gap_has_pointer_grace_without_geometry_change() -> None:
     assert "function bindHoverSafeDropdowns(links)" in TEMPLATE_JS
     assert "data-nav-hover-safe" in TEMPLATE_JS
     assert "window.innerWidth > 900 && fineHover.matches" in TEMPLATE_JS
-    assert "}, 420);" in TEMPLATE_JS
+    assert "function hoverGraceMs()" in TEMPLATE_JS
+    assert "menuRect.top - triggerRect.bottom" in TEMPLATE_JS
+    assert "Math.min(1000, Math.max(420, 360 + Math.round(gap * 8)))" in TEMPLATE_JS
+    assert "}, hoverGraceMs());" in TEMPLATE_JS
     assert "menu.addEventListener('pointerenter', openMenu)" in TEMPLATE_JS
     assert "menu.addEventListener('pointerleave', closeMenuSoon)" in TEMPLATE_JS
 
@@ -39,9 +42,12 @@ def test_hover_gap_assets_remain_byte_identical() -> None:
 
 
 def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
-    assert "account.js?v=20260730-exact7" in TEMPLATE_THEME_JS
-    assert "account.js?v=20260730-exact7" in SITE_THEME_JS
-    assert "nav_market.js?v=20260730-exact7" in TEMPLATE_ACCOUNT_JS
+    assert "account.js?v=20260730-exact8" in TEMPLATE_THEME_JS
+    assert "account.js?v=20260730-exact8" in SITE_THEME_JS
+    assert "nav_market.js?v=20260730-exact8" in TEMPLATE_ACCOUNT_JS
     assert "20260730-exact6" not in TEMPLATE_THEME_JS
     assert "20260730-exact6" not in SITE_THEME_JS
     assert "20260730-exact6" not in TEMPLATE_ACCOUNT_JS
+    assert "20260730-exact7" not in TEMPLATE_THEME_JS
+    assert "20260730-exact7" not in SITE_THEME_JS
+    assert "20260730-exact7" not in TEMPLATE_ACCOUNT_JS
