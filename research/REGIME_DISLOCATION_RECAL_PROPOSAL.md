@@ -716,3 +716,89 @@ Outcome column means the replay has not run; it does not mean the item passed.
 space, and gets a `research/DO_NOT_REBUILD.md` row naming the construction, the ruler,
 and the effective N. "Not found yet" is not "does not exist"; a factor that is null
 standalone is retained as a confluence input.
+
+---
+
+## §14 — `bubble_leadership` goes CALM exactly when the leadership cohort breaks
+
+**Status:** PROPOSED (construction critique — not a same-day bug fix). Added 2026-07-29
+from the cohort-dispersion audit commissioned after the operator's "how do we signal to a
+user crowded in semis" escalation.
+
+**Defect.** `engine/risk_radar.py:613-615` builds the only cohort-aware leg in the radar as
+
+```python
+lead = (smh / smh.shift(63)) / (spy / spy.shift(63)) - 1.0   # leadership concentration froth
+out["bubble_leadership"] = pcol(lead)
+```
+
+`pcol` is a rising-percentile = rising-risk convention (stated at `:562`), and the term is
+not negated. So as SMH collapses against SPY the percentile *falls* and the leg contributes
+**calm**. Its sibling `bubble_ext` (`:610`) is SPY's own distance from its 200dma — an
+index-level measure that structurally cannot see a cohort bubble deflating underneath a held
+index.
+
+**Evidence (2026-07-28/29 stores).** The `bubble` scare scores **23.2 with
+`firing_legs: []`** while, on the same vintage: `leadership_crack` state **BROKEN**
+(`med_dd` −36.4%, 42/42 members, `index_dd` −2.2% — a 16.5x ratio),
+SOXX **−25.0%** off its 252d high at **57.8%** realized vol, SMH **−20.8%**,
+`breadth_split.spread_50` **−44.64** (the most negative value in the entire 293-observation
+series: AI cohort 34.3% above 200dma vs non-AI 78.9%), index/median-name realized-vol ratio
+**0.285 = 7.4th percentile of 3 years**, implied average correlation **0.081** vs a 0.152
+median, and CBOE COR1M at the **1.4th percentile of 5,173 observations back to 2006**.
+
+**Why this is NOT filed as a bug and fixed today.** Read literally, the leg measures froth
+*accumulation*, and a deflating ratio is a truthful "froth is no longer accumulating"
+reading. The complaint is that accumulation is the wrong construction for detecting a cohort
+*break* — which is a construction critique, not a sign error. Changing it would move a
+scored leg's contribution in the escalating direction on today's tape, i.e. exactly the
+shape of an LLM originating an escalation. It therefore goes through the gauntlet.
+Compounding reasons for restraint: the leg carries weight 0.15 and is unvalidated
+(`lift_2020` 0.38 vs `_VALIDATED_MIN` 1.20), and `research/DO_NOT_REBUILD.md` row 117 KILLED
+operator force-add of un-gauntleted directional calls to signal surfaces as a process class
+after the 2026-07-11 Mag-7 incident.
+
+**Proposed change (A/B, pre-registered).**
+- **A — separate the two states.** Keep `bubble_leadership` as the accumulation read, and add
+  a distinct `leadership_break` leg sourced from the existing `leadership_crack` engine
+  (state, `med_dd`, and the `med_dd`-vs-`index_dd` ratio) so accumulation and rupture are not
+  the same axis with opposite signs.
+- **B — dispersion-aware representativeness, not a redder score.** Add an index
+  *representativeness* state from the three dispersion estimators that already exist
+  (`engine/dispersion.py`, CBOE COR1M in `data/cboe/cor1m.parquet`,
+  `engine/rotation_corr.py`), applying the ratified `sector_fragmentation` doctrine
+  (RC-R6/RC-R3, "aggregate reads not representative — legs disagree") one level up, at the
+  index. This does not move the score; it qualifies it.
+
+**Pre-registered acceptance gates (state BEFORE any replay).**
+1. Cohort-break detection: on matched historical cohort ruptures (leadership_crack BROKEN
+   with `index_dd` shallower than −5%), variant A must raise the `bubble` scare above its
+   `watch` cut in ≥ 60% of episodes, where the current construction fires in 0%.
+2. No false-alarm inflation: variant A must not raise `bubble` above `watch` on more than
+   10% of all non-rupture sessions in the same sample (the current leg's own FP rate is the
+   baseline, not zero).
+3. Representativeness (B) is **display-tier by construction and stays display-tier** — it
+   may never rank, size, or gate. Promotion to authority requires its own Wilson-CI lift
+   ≥ 1.20 at h21 against the unconditional base, matching `_VALIDATED_MIN`.
+4. PSS-CD1 (`DO_NOT_REBUILD.md` row 135) already freezes the correlation-one / low-dispersion
+   crowding overlay as prospective-only accrual: nothing here may be presented as a validated
+   crowding or sell gate, and forward accrual must start dark.
+
+**Replay plan.** Cohort-rupture episodes are identified from
+`data/leadership_crack/forward_log.jsonl` plus a reconstruction over the per-ticker panel
+(775x1540 loads in 0.13s; full vol-ratio and dispersion series compute in 0.08s — the render
+budget is not a constraint here). Declustering gap must be ≥ the outcome horizon per §8.
+Report the null loudly if variant A fails gate 1: "cohort rupture is not detectable from
+relative-strength percentiles" is a publishable result, and the display-tier
+representativeness state (B) is independently valuable and does not depend on it.
+
+**What ships WITHOUT this proposal.** The single highest-value change found by the audit
+needs no engine work and no gauntlet at all: the sentence the operator asked for already
+exists, correct and bilingual, at `templates/dashboard.html.j2:11585` — *"Leaders broken —
+the median AI-hardware leader is 36% off its high while the index still holds"* — rendered
+only inside the click-open `#dlg-risk` modal. Promoting that (plus the `breadth_split`
+AI-vs-rest line, currently 10px at ~40% opacity, and the `dispersion` chip, currently killed
+by a literal `{% if false and ... %}` at `dashboard.html.j2:13889`) to sit beside the
+headline score as a *representativeness caveat on the index* is a template placement change
+at display tier. The evidence was never missing and was never destroyed at aggregation — it
+was rendered at 10 pixels or put behind a click.
