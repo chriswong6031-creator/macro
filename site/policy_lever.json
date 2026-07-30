@@ -1,24 +1,24 @@
 {
   "schema": "policy_lever.v1",
-  "as_of": "2026-07-29",
+  "as_of": "2026-07-30",
   "favored_complex": {
     "basket": [
       "SMH",
       "SOXX"
     ],
     "basket_incomplete": false,
-    "drawdown_pct": -26.83,
-    "drawdown_z": -4.59,
-    "as_of": "2026-07-29",
-    "note": "Semis complex (SMH/SOXX equal-weight) is -26.8% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
-    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-26.8%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
+    "drawdown_pct": -21.2,
+    "drawdown_z": -3.44,
+    "as_of": "2026-07-30",
+    "note": "Semis complex (SMH/SOXX equal-weight) is -21.2% from the trailing-120-day peak. Depth of the drawdown is the structural context for rotation-reversal conditions.",
+    "note_zh": "\u534a\u5bfc\u4f53\u7ec4\u5408\uff08SMH/SOXX\u7b49\u6743\uff09\u8ddd\u8fc7\u53bb120\u65e5\u9ad8\u70b9-21.2%\u3002\u56de\u64a4\u6df1\u5ea6\u662f\u8f6e\u52a8\u53cd\u8f6c\u6761\u4ef6\u7684\u7ed3\u6784\u6027\u80cc\u666f\u3002"
   },
   "jawboning": {
-    "n_7d": 2,
-    "n_30d": 12,
-    "last_alert_ts": "2026-07-28T15:00:00+00:00",
-    "last_alert_summary": "U.S. blockade of Iran raises Hormuz disruption risk and oil-price pressure",
-    "last_alert_summary_zh": "\u7f8e\u56fd\u5c01\u9501\u4f0a\u6717\uff0c\u52a0\u5267\u970d\u5c14\u6728\u5179\u6d77\u5ce1\u4e2d\u65ad\u98ce\u9669\u4e0e\u6cb9\u4ef7\u538b\u529b"
+    "n_7d": 3,
+    "n_30d": 13,
+    "last_alert_ts": "2026-07-30T20:33:26+00:00",
+    "last_alert_summary": "DPA invoked for critical mineral recycling \u2014 tailwind for US battery scrap & rare-earth reclaimers",
+    "last_alert_summary_zh": "\u52a8\u7528\u300a\u56fd\u9632\u751f\u4ea7\u6cd5\u300b\u63a8\u52a8\u5173\u952e\u77ff\u7269\u56de\u6536\u2014\u2014\u5229\u597d\u7f8e\u56fd\u7535\u6c60\u5e9f\u6599\u548c\u7a00\u571f\u56de\u6536\u5546"
   },
   "calendar": {
     "days_to_midterm": 96,
@@ -31,13 +31,13 @@
       "name_zh": "\u4f0a\u6717/\u77f3\u6cb9",
       "asset": "CL=F",
       "arming": {
-        "stoch_k": 34.47,
-        "stoch_d": 48.39,
+        "stoch_k": 29.14,
+        "stoch_d": 35.32,
         "stoch_curl": false,
         "macd_curl": false,
         "basing": false,
         "days_in_base": 0,
-        "flatness": 0.0105,
+        "flatness": 0.0088,
         "armed": false,
         "params": {
           "stoch_k_period": 14,
