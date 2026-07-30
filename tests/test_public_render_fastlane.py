@@ -42,9 +42,12 @@ def test_heavy_render_excludes_public_surfaces():
         "!templates/seo_base.html.j2",
         "!templates/support.html.j2",
         "!templates/unsubscribe.html.j2",
-        "!scripts/build_public_pages.py",
     ):
         assert f'- "{pattern}"' in HEAVY
+    assert '"scripts/build_public_pages.py"' not in HEAVY, (
+        "the heavy lane's positive builder allowlist must leave the public builder "
+        "exclusively to public-render"
+    )
 
 
 def test_public_render_owns_the_excluded_surfaces():
