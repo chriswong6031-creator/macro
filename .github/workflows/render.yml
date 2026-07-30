@@ -235,28 +235,49 @@ jobs:
         # quarantine the oversized Git store, but RETAIN the clean current working tree:
         # main contains ~2.85 GB / 49.7k tracked files, so deleting the tree merely trades
         # the 26 GB history problem for a 25m+ cold download. A local metadata-only clone
-        # gives checkout a shallow partial repository whose index already describes the
-        # retained tree; checkout then downloads only real main deltas. The exact workspace
-        # shape is validated before any destructive command. The quarantined store lives
-        # under RUNNER_TEMP, which the runner also cleans after the job.
+        # gives the runner a shallow partial repository whose index already describes the
+        # retained tree. A local config marker keeps later runs on that managed path:
+        # fetch/reset only real main deltas and keep skipping actions/checkout, whose
+        # unconditional detach would re-download all 49.7k current-tree blobs. The exact
+        # workspace shape is validated before any destructive command. The quarantined
+        # store lives under RUNNER_TEMP, which the runner also cleans after the job.
         shell: bash
         run: |
           set -euo pipefail
           [ -d .git ] || exit 0
           GIT_KIB=$(du -sk .git | awk '{print $1}')
           GIT_MAX_KIB="${CHECKOUT_GIT_MAX_KIB:-8388608}"
+          validate_workspace() {
+            case "${GITHUB_WORKSPACE:-}" in
+              */_work/*/*) ;;
+              *) echo "::error::refusing checkout reset outside a runner _work repository: ${GITHUB_WORKSPACE:-unset}"; exit 1 ;;
+            esac
+            [ "$PWD" = "$GITHUB_WORKSPACE" ] || {
+              echo "::error::refusing checkout reset because PWD is not GITHUB_WORKSPACE"
+              exit 1
+            }
+          }
+          MANAGED=$(git config --local --get macro.renderMetadataCheckout || true)
+          if [ "$MANAGED" = "true" ] && [ "${GIT_KIB:-0}" -le "$GIT_MAX_KIB" ]; then
+            validate_workspace
+            git fetch --no-tags --depth=1 origin main
+            SEED_SHA=$(git rev-parse FETCH_HEAD)
+            # Successful renders leave site/ clean but may leave throwaway data/ writes;
+            # timed-out renders can leave either namespace dirty. A hard reset with a
+            # stat-populated index fetches only dirty or main-changed paths from the
+            # promisor remote, not every unchanged working-tree blob.
+            git reset --hard "$SEED_SHA"
+            git clean -ffdx
+            git update-index --refresh
+            echo "checkout_ready=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::refreshed managed render checkout to $SEED_SHA with a $(du -sh .git | awk '{print $1}') metadata store"
+            exit 0
+          fi
           [ "${GIT_KIB:-0}" -gt "$GIT_MAX_KIB" ] || {
             echo "::notice::persisted checkout is $((GIT_KIB / 1024)) MiB; below the reset bound"
             exit 0
           }
-          case "${GITHUB_WORKSPACE:-}" in
-            */_work/*/*) ;;
-            *) echo "::error::refusing checkout reset outside a runner _work repository: ${GITHUB_WORKSPACE:-unset}"; exit 1 ;;
-          esac
-          [ "$PWD" = "$GITHUB_WORKSPACE" ] || {
-            echo "::error::refusing checkout reset because PWD is not GITHUB_WORKSPACE"
-            exit 1
-          }
+          validate_workspace
           CHECKOUT_TRASH="${RUNNER_TEMP:?}/macro-git-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
           CHECKOUT_META="${RUNNER_TEMP:?}/macro-meta-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
           case "$CHECKOUT_TRASH $CHECKOUT_META" in
@@ -290,18 +311,19 @@ jobs:
           mv "$CHECKOUT_META/.git" "$GITHUB_WORKSPACE/.git"
           rmdir "$CHECKOUT_META"
           git remote set-url origin "$REMOTE_URL"
+          git config --local macro.renderMetadataCheckout true
           # Populate index stat data from the retained clean files without checking out
           # (and therefore without lazy-fetching) all ~49.7k current-tree blobs.
           git reset --mixed HEAD
           git update-index --refresh
-          echo "compacted=true" >> "$GITHUB_OUTPUT"
+          echo "checkout_ready=true" >> "$GITHUB_OUTPUT"
           echo "::notice::retained current tree with a $(du -sh .git | awk '{print $1}') shallow metadata store"
       - uses: actions/checkout@v4
         # checkout@v4 unconditionally detaches an existing branch before fetching its
-        # requested ref. On a freshly blobless metadata transplant that operation asks
-        # the promisor remote for the entire 2.85 GB current tree. The bound step already
-        # updated and cleaned main with the complete old store, so skip only in that case.
-        if: steps.bound.outputs.compacted != 'true'
+        # requested ref. On the managed blobless checkout that operation asks the
+        # promisor remote for the entire 2.85 GB current tree. The bound step has already
+        # updated/reset-cleaned main, both on initial compaction and every managed reuse.
+        if: steps.bound.outputs.checkout_ready != 'true'
         with:
           ref: main
           # Keep the complete current tree (all builders need committed data + site),
