@@ -358,9 +358,10 @@ Adds three shelves, keeps everything shipped:
 Six rows, each a named existing/E-lane artifact, cross-sectional over the covered universe:
 highest/lowest IV rank · biggest 5d builds/unwinds (ΔOI) · walls that broke at the close ·
 pinned names (close within 0.5% of max-pain with high pin-prob, language per pin-risk
-display rules) · crowded-calls chip (call_skew_rich — LRV-R6 construction: ≥3 of last
-5 sessions above the window-excluded own-Q80, ≥21 prior real sessions, first non-null
-n≥26 ~2026-08-06) · heaviest same-day share. Each row: 3–5 mono tickers deep-linking to
+display rules) · crowded-calls chip (call_skew_rich — LRV-R6: vote HELD at None pending
+an n≥60 re-benchmark ~mid-Oct 2026; the construction behind the hold is ≥3 of the last 5
+sessions above the window-excluded own-Q80 over ≥21 real readings) · heaviest same-day
+share. Each row: 3–5 mono tickers deep-linking to
 Ticker mode + one plain line. Stance: Watch — don't chase.
 
 ### 5.6 S6 — Strategy-fit education layer

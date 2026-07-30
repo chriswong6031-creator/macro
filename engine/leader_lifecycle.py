@@ -162,6 +162,15 @@ CROWDED_K_OF_N: int = 3                     # ≥3 of chips required
 # semantics, never tuned on outcomes — research/leader_radar_skew_chip/MEASUREMENT.md.
 CROWDED_SKEW_PERSIST_MIN: int = 3            # ≥3 of the last...
 CROWDED_SKEW_PERSIST_WINDOW: int = 5         # ...5 observed sessions above the window-excluded own-Q80
+# LRV-R6 HOLD: the chip votes only after the pre-registered n≥60 re-benchmark
+# (~mid-Oct 2026) shows the construction separates from its within-name permutation
+# null. The measurement's only supra-null structure is a market-wide factor, and a
+# market dummy inside a per-name k-of-n fails the confluence premise; the persistence
+# form also makes noise MORE state-effective on the hysteresis paths (P(≥3-consecutive)
+# +120%, EXIT_N=3 side). Until then the chip is None — out of n_avail — while the count
+# accrues in the row context. Flip = a one-line PR citing that re-benchmark plus a
+# masterplan ruling row.
+CROWDED_SKEW_CHIP_ARMED: bool = False
 
 # ---- State machine / hysteresis ---------------------------------------------
 # pre-registered-arbitrary (LR-R2; frozen)
@@ -1341,7 +1350,11 @@ def _crowded_check(inp: LifecycleInputs) -> tuple[bool, dict, int]:
     # Q80 over ≥21 PRIOR real sessions (evaluation window excluded from the benchmark);
     # the engine only applies the frozen k. The daily self-inclusive form this replaces
     # measured ≈ its mechanical coin (research/leader_radar_skew_chip/MEASUREMENT.md).
-    if not _is_null(inp.skew_rich_last5):
+    # The VOTE is HELD until CROWDED_SKEW_CHIP_ARMED: machinery and receipts ship, the
+    # k-of-n vote waits for the n≥60 re-benchmark (see the constant's provenance).
+    if not CROWDED_SKEW_CHIP_ARMED:
+        chips["call_skew_rich"] = None
+    elif not _is_null(inp.skew_rich_last5):
         chips["call_skew_rich"] = bool(int(inp.skew_rich_last5) >= CROWDED_SKEW_PERSIST_MIN)
     else:
         chips["call_skew_rich"] = None

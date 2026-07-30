@@ -1023,6 +1023,154 @@ class TestLoadOptionsSkew:
         assert isinstance(skew_data["skew_rich_last5"], int)
         assert skew_data["rr_80th_pctile"] is not None
 
+    def test_nan_readings_do_not_buy_activation(self, tmp_path):
+        """D1: the gate counts READINGS, not rows.
+
+        26 dates with 3 NaN rr readings = 23 readings → 18 prior after the window is
+        held out → null. Counting rows would clear a 21-gate on a benchmark drawn from
+        a short sample.
+        """
+        from scripts.build_leader_radar import _load_options_skew
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043],
+                          ticker="NANA")
+        for i in (2, 7, 13):
+            rows[i]["atm_call_iv"] = float("nan")   # rr = NaN on that date
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21).get("NANA")
+        assert skew_data is not None
+        assert skew_data["skew_n_obs"] == 23, "skew_n_obs must count readings, not rows"
+        assert skew_data["rr_80th_pctile"] is None, "23 - 5 = 18 prior readings < 21"
+        assert skew_data["rr_25d"] is None
+        assert skew_data["skew_rich_last5"] is None
+
+    def test_nan_rows_drop_out_and_rr_25d_stays_finite(self, tmp_path):
+        """D1/D2: NaN rows are absent from the count, and rr_25d is never NaN.
+
+        The store's latest date here is a NaN row. A NaN rr_25d would serialise into
+        radar.json as the bare token `NaN` — invalid JSON that no default= hook can
+        intercept, because json.dumps never consults one for native floats.
+        """
+        from scripts.build_leader_radar import _load_options_skew
+        rr = self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043]   # 26 real readings
+        rows = self._rows(rr + [0.0] * 4, ticker="NANB")            # + 4 later NaN rows
+        for r in rows[26:]:
+            r["atm_call_iv"] = float("nan")
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21).get("NANB")
+        assert skew_data is not None
+        assert skew_data["skew_n_obs"] == 26
+        # readings as the loader computes them (call - put), not the intended literals
+        readings = [r["atm_call_iv"] - r["otm_put_iv"] for r in rows[:26]]
+        assert np.isfinite(skew_data["rr_25d"]), "rr_25d must never be NaN (invalid JSON)"
+        assert skew_data["rr_25d"] == readings[-1], "rr_25d must be the latest real reading"
+        assert skew_data["skew_rich_last5"] == 4, "NaN rows must not enter the window"
+        assert skew_data["rr_80th_pctile"] == float(pd.Series(readings[:21]).quantile(0.80))
+
+    def test_loader_count_reaches_the_engine_chip(self, tmp_path, monkeypatch):
+        """D3: the loader's count actually arrives at LifecycleInputs.
+
+        Armed on purpose — while the vote is HELD the chip is None whatever the count
+        says, so only the armed path can observe the wire at all.
+        """
+        import engine.leader_lifecycle as ll
+        from scripts.build_leader_radar import _load_options_skew
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043])
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21)["AAA"]
+        assert skew_data["skew_rich_last5"] == 4
+
+        monkeypatch.setattr(ll, "CROWDED_SKEW_CHIP_ARMED", True)
+        idx = pd.date_range("2024-01-02", periods=300, freq="B")
+        close = pd.Series(100.0, index=idx)
+        inp = ll.LifecycleInputs(
+            close=close, bench_close=close,
+            skew_rich_last5=skew_data["skew_rich_last5"],
+        )
+        _, chips, _ = ll._crowded_check(inp)
+        assert chips["call_skew_rich"] is True, "the loader's count never reached the chip"
+
+    def test_build_call_site_passes_the_skew_field(self):
+        """D3: pin the build() → _build_ticker_assessment wire textually.
+
+        A renamed kwarg or a misspelled dict key there changes NO output while the chip
+        is held (None either way), so nothing behavioural can catch it until the flip
+        PR arms the vote — by which time the wire has been silently dead for months.
+        """
+        import inspect
+        from scripts.build_leader_radar import _build_ticker_assessment, build
+        assert "skew_rich_last5" in inspect.signature(_build_ticker_assessment).parameters, (
+            "_build_ticker_assessment lost its skew_rich_last5 parameter"
+        )
+        assert 'skew_rich_last5=_skew.get("skew_rich_last5")' in inspect.getsource(build), (
+            "build() must pass the loader's skew_rich_last5 into _build_ticker_assessment"
+        )
+
+    def test_row_context_keeps_the_lrv_r6_receipt(self, tmp_path):
+        """The receipt accrues in the row context while the chip's vote is HELD.
+
+        That accrual is the reason the machinery ships now: the n>=60 re-benchmark
+        needs the count on the record, and the chip cannot show it.
+        """
+        import inspect
+        from scripts.build_leader_radar import _load_options_skew, build
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043])
+        skew_map = _load_options_skew(self._make_skew_parquet(tmp_path, rows), min_obs=21)
+        ticker = "AAA"
+        context = {   # exactly the shape build() assembles at the LRV-R6 receipt block
+            "skew_n_obs": (skew_map.get(ticker) or {}).get("skew_n_obs"),
+            "skew_rich_last5": (skew_map.get(ticker) or {}).get("skew_rich_last5"),
+            "rr_25d": (skew_map.get(ticker) or {}).get("rr_25d"),
+            "rr_80th_pctile": (skew_map.get(ticker) or {}).get("rr_80th_pctile"),
+        }
+        assert context["skew_n_obs"] == 26
+        assert context["skew_rich_last5"] == 4
+        assert context["rr_25d"] is not None
+        assert context["rr_80th_pctile"] is not None
+
+        src = inspect.getsource(build)
+        for key in ("skew_rich_last5", "rr_25d", "rr_80th_pctile"):
+            assert f'"{key}": (skew_map.get(ticker) or {{}}).get("{key}")' in src, (
+                f"build() dropped the {key} row-context receipt"
+            )
+
+    def test_session_filter_failopen_emits_line_start_annotation(self, tmp_path, capsys):
+        """D4: a silently unfiltered read must announce itself.
+
+        session_rows fails OPEN when filtering would empty the frame, which is exactly
+        the padded-count condition the guard exists to stop. The annotation has to be a
+        bare line-start print — a logger prefix makes GitHub drop it silently
+        (tests/test_gh_annotation_line_start.py).
+        """
+        from lib.nyse_calendar import is_session
+        from scripts.build_leader_radar import _load_options_skew
+
+        # weekends only → filtering would empty the frame → the fail-open path fires
+        weekends, d = [], date(2026, 1, 3)
+        while len(weekends) < 6:
+            if not is_session(d):
+                weekends.append(d)
+            d += timedelta(days=1)
+        rows = [
+            {"date": w, "underlying": "WKND", "asof": w, "spot": 100.0, "tenor_days": 30,
+             "atm_call_iv": 0.24, "otm_put_iv": 0.23, "skew": -0.01, "n_strikes": 5}
+            for w in weekends
+        ]
+        _load_options_skew(self._make_skew_parquet(tmp_path, rows), min_obs=21)
+        hits = [ln for ln in capsys.readouterr().out.splitlines()
+                if "skew_session_filter_failopen" in ln]
+        assert hits, "fail-open read emitted no annotation"
+        assert hits[0].startswith("::warning"), (
+            f"annotation must start the line or GitHub drops it: {hits[0]!r}"
+        )
+        assert "6 non-session dates" in hits[0]
+
+    def test_clean_session_store_emits_no_failopen_annotation(self, tmp_path, capsys):
+        """Negative control: an all-session store must stay silent (no alarm fatigue)."""
+        from scripts.build_leader_radar import _load_options_skew
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043])
+        _load_options_skew(self._make_skew_parquet(tmp_path, rows), min_obs=21)
+        assert "skew_session_filter_failopen" not in capsys.readouterr().out
+
 
 class TestComputeBasketCorrelations:
     """LRV-R1(d): basket correlation — guard < 3 members, corr bounds."""

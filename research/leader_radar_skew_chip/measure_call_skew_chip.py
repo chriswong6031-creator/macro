@@ -30,6 +30,18 @@ This script measures, on the real store (data/options_skew/snapshots.parquet):
 
 Run:  python3 research/leader_radar_skew_chip/measure_call_skew_chip.py
 Deterministic (seeded). No network. Writes results JSON next to itself.
+
+Amended 2026-07-30 after the adversarial review (v1 preserved in git history):
+  7. Run-based statistics with honest denominators (pair/triple co-occurrence
+     rates and the run-length >= 3 share — the HYSTERESIS_EXIT_N=3 pathway the
+     v1 battery never reported).
+  8. Common-eval-grid breadth comparison (v1 compared SELF's grid, which
+     contains the 2026-07-14 market-wide spike day, against PERSIST's grid,
+     which does not — a grid confound; the corrected comparison reverses it)
+     plus the footprint table (PERSIST at a relaxed history floor of 8 so the
+     spike day is evaluable: peak damped, footprint stretched 1 -> 5 sessions).
+  9. The (k, m) persistence grid, nulls and observed — recorded so the record
+     shows the space around the single declared pair (3, 5); context only.
 """
 from __future__ import annotations
 
@@ -311,5 +323,134 @@ for row in radar["rows"]:
         boundary.append(st)
 R["radar_boundary_nt2"] = boundary
 
-OUT.write_text(json.dumps(R, indent=2))
-print(json.dumps(R, indent=2))
+# ── 7. Run-based statistics (amendment; honest denominators) ─────────────────
+def fire_sequences(series_map: dict[str, np.ndarray]) -> dict[str, dict[str, list[bool]]]:
+    """Per-construction, per-name boolean fire sequences on the battery's grids."""
+    seqs: dict[str, dict[str, list[bool]]] = {"self": {}, "persist": {}}
+    for u, v in series_map.items():
+        n = len(v)
+        if n < MIN_OBS_MEASURE + 1:
+            continue
+        seqs["self"][u] = [bool(v[t] >= q80(v[: t + 1])) for t in range(MIN_OBS_MEASURE, n)]
+        per = []
+        for t in range(MIN_OBS_MEASURE + PERSIST_M - 1, n):
+            hist = v[: t - PERSIST_M + 1]
+            win = v[t - PERSIST_M + 1: t + 1]
+            per.append(bool((win >= q80(hist)).sum() >= PERSIST_K))
+        if per:
+            seqs["persist"][u] = per
+    return seqs
+
+
+def run_stats(seqs: dict[str, list[bool]]) -> dict:
+    pairs = trips = pair_hits = trip_hits = 0
+    runs: list[int] = []
+    for s in seqs.values():
+        for i in range(1, len(s)):
+            pairs += 1
+            if s[i - 1] and s[i]:
+                pair_hits += 1
+        for i in range(2, len(s)):
+            trips += 1
+            if s[i - 2] and s[i - 1] and s[i]:
+                trip_hits += 1
+        run = 0
+        for f in s:
+            if f:
+                run += 1
+            elif run:
+                runs.append(run)
+                run = 0
+        if run:
+            runs.append(run)
+    return {
+        "pair_rate_p2": round(pair_hits / pairs, 4) if pairs else None,
+        "triple_rate_p3": round(trip_hits / trips, 4) if trips else None,
+        "n_runs": len(runs),
+        "share_runs_ge3": round(sum(1 for r in runs if r >= 3) / len(runs), 4) if runs else None,
+    }
+
+
+obs_seqs = fire_sequences(obs_map)
+R["run_stats"] = {k: run_stats(v) for k, v in obs_seqs.items()}
+
+# ── 8. Common-grid breadth + footprint (amendment) ───────────────────────────
+# v1's breadth_sd row compared unequal grids (SELF included the 2026-07-14
+# spike day t=12; PERSIST's grid starts t=14). Corrected: common grid t=14..19,
+# plus PERSIST at a relaxed history floor (8) so t=12 is evaluable.
+def breadth_on(series_map, grid, kind, floor):
+    by_day: dict[int, list[bool]] = {}
+    for u, v in series_map.items():
+        n = len(v)
+        for t in grid:
+            if t >= n:
+                continue
+            if kind == "self":
+                if t < floor:
+                    continue
+                by_day.setdefault(t, []).append(bool(v[t] >= q80(v[: t + 1])))
+            else:
+                if t - PERSIST_M + 1 < floor:
+                    continue
+                hist = v[: t - PERSIST_M + 1]
+                win = v[t - PERSIST_M + 1: t + 1]
+                by_day.setdefault(t, []).append(bool((win >= q80(hist)).sum() >= PERSIST_K))
+    return {t: round(float(np.mean(f)), 4) for t, f in sorted(by_day.items()) if len(f) >= 50}
+
+
+common = list(range(14, 20))
+b_self_common = breadth_on(obs_map, common, "self", MIN_OBS_MEASURE)
+b_per_common = breadth_on(obs_map, common, "persist", MIN_OBS_MEASURE)
+wide = list(range(12, 20))
+b_per_floor8 = breadth_on(obs_map, wide, "persist", 8)
+b_self_wide = breadth_on(obs_map, wide, "self", MIN_OBS_MEASURE)
+sd = lambda d: round(float(np.std(list(d.values()))), 4) if len(d) >= 3 else None  # noqa: E731
+R["breadth_common_grid"] = {
+    "grid": "t=14..19 (common to both constructions at the battery floors)",
+    "self": {"by_day": {str(k): v for k, v in b_self_common.items()}, "sd": sd(b_self_common)},
+    "persist": {"by_day": {str(k): v for k, v in b_per_common.items()}, "sd": sd(b_per_common)},
+    "footprint_t12_19": {
+        "note": "PERSIST at relaxed history floor 8 so the 2026-07-14 spike day "
+                "(t=12) is evaluable: peak damped, footprint stretched 1->5 sessions",
+        "self": {str(k): v for k, v in b_self_wide.items()},
+        "persist_floor8": {str(k): v for k, v in b_per_floor8.items()},
+    },
+    "session_index_map": {str(i): str(d) for i, d in
+                          enumerate(panel.index.tolist())},
+    "obs_over_null_breadth_sd_ratio": {
+        k: round(R["observed_battery"][k]["breadth_sd"]
+                 / R["permutation_null"][k]["breadth_sd"]["mean"], 2)
+        for k in ("self", "loo", "persist")
+        if R["observed_battery"][k].get("breadth_sd")
+        and R["permutation_null"][k].get("breadth_sd")
+    },
+}
+
+# ── 9. (k, m) persistence grid (context; the declared pair is (3, 5)) ────────
+def null_km(k: int, m: int, n_total: int) -> float:
+    x = rng.standard_normal((50_000, n_total))
+    hist = x[:, : n_total - m]
+    win = x[:, n_total - m:]
+    thr = np.quantile(hist, 0.80, axis=1, method="linear")
+    return round(float(((win >= thr[:, None]).sum(axis=1) >= k).mean()), 4)
+
+
+def observed_km(k: int, m: int) -> float:
+    fires = []
+    for u, v in obs_map.items():
+        n = len(v)
+        for t in range(MIN_OBS_MEASURE + m - 1, n):
+            hist = v[: t - m + 1]
+            win = v[t - m + 1: t + 1]
+            fires.append(bool((win >= q80(hist)).sum() >= k))
+    return round(float(np.mean(fires)), 4) if fires else None
+
+
+R["km_grid"] = {
+    f"k{k}_m{m}": {"null_n26": null_km(k, m, 26), "observed": observed_km(k, m)}
+    for k, m in ((2, 3), (3, 3), (2, 5), (3, 5), (4, 5))
+}
+
+out_json = json.dumps(R, indent=2, allow_nan=False)
+OUT.write_text(out_json)
+print(out_json)

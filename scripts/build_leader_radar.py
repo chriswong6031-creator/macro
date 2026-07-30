@@ -52,7 +52,11 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from lib import config
-from lib.nyse_calendar import session_rows as nyse_calendar_session_rows, sessions_behind
+from lib.nyse_calendar import (
+    is_session as nyse_calendar_is_session,
+    session_rows as nyse_calendar_session_rows,
+    sessions_behind,
+)
 from lib.pages import write_page
 
 log = logging.getLogger(__name__)
@@ -770,6 +774,8 @@ def _load_insider_cluster(
 # non-null arrives at n_obs >= min_obs + CROWDED_SKEW_PERSIST_WINDOW. The superseded
 # daily self-inclusive form measured ~= its mechanical coin — see
 # research/leader_radar_skew_chip/MEASUREMENT.md. Emit skew_n_obs for the young-data tag.
+# The count accrues here unconditionally; the engine HOLDS the chip's vote at None until
+# CROWDED_SKEW_CHIP_ARMED (LRV-R6 hold — receipts ship, the k-of-n vote waits).
 
 def _load_options_skew(
     data_root: Path,
@@ -784,12 +790,16 @@ def _load_options_skew(
     rr proxy = atm_call_iv - otm_put_iv (= -skew). LRV-R6: 'rr_80th_pctile' is the Q80
     of the history EXCLUDING the last CROWDED_SKEW_PERSIST_WINDOW observed sessions;
     'skew_rich_last5' counts how many sessions in that excluded window clear it (the
-    engine fires the chip at >= CROWDED_SKEW_PERSIST_MIN). Prior history < min_obs:
-    rr_25d, rr_80th_pctile and skew_rich_last5 are all None.
+    engine fires the chip at >= CROWDED_SKEW_PERSIST_MIN, and holds that vote until
+    CROWDED_SKEW_CHIP_ARMED). Prior history < min_obs: rr_25d, rr_80th_pctile and
+    skew_rich_last5 are all None.
+
+    'skew_n_obs' counts non-null READINGS, not stored rows — NaN rr rows are dropped
+    before the gate and the quantile, so a padded history cannot buy activation.
 
     Args:
         data_root: repo data root
-        min_obs: minimum PRIOR-history observations, evaluation window excluded, for
+        min_obs: minimum PRIOR-history readings, evaluation window excluded, for
             non-null output (default 21 — the LRV-R1c floor, now applied to the
             benchmark sample alone)
     """
@@ -833,11 +843,35 @@ def _load_options_skew(
     # Fail-open: session_rows returns the frame unchanged if filtering would empty it.
     df = nyse_calendar_session_rows(df, date_col)
 
+    # ...and a read that silently failed open is the padded-count defect the guard
+    # exists to stop, so it must announce itself (session_rows' docstring leaves the
+    # count difference to the caller). Bare line-start print, never log.warning — a
+    # prefixing logger makes GitHub drop the annotation entirely
+    # (tests/test_gh_annotation_line_start.py); flush because stdout blocks in CI.
+    try:
+        _nonsession = sum(
+            1 for _d in pd.unique(df[date_col])
+            if not nyse_calendar_is_session(pd.Timestamp(_d).date())
+        )
+    except (ValueError, TypeError):
+        _nonsession = 0   # unparseable dates: session_rows keeps them by design
+    if _nonsession:
+        print(
+            "::warning title=skew_session_filter_failopen::options_skew session filter "
+            f"failed open - {_nonsession} non-session dates in read",
+            flush=True,
+        )
+
     for underlying, grp in df.groupby("underlying"):
         ticker = str(underlying)
         try:
-            # Aggregate across tenors: use mean per date
-            daily = grp.groupby(date_col)["rr"].mean().sort_index()
+            # Aggregate across tenors: use mean per date. dropna is load-bearing — the
+            # activation gate and the quantile must count real READINGS, not rows: a
+            # NaN-bearing history otherwise clears a gate reporting 21 while the
+            # benchmark is drawn from a handful of points, and a NaN rr_25d serialises
+            # as the invalid JSON token `NaN` (json.dumps never consults a default=
+            # hook for native floats, so no sanitiser downstream can catch it).
+            daily = grp.groupby(date_col)["rr"].mean().sort_index().dropna()
             n_obs = len(daily)
             # LRV-R6: the evaluation window is held out of its own benchmark, so a
             # session cannot move the threshold it is being judged against.
@@ -848,7 +882,6 @@ def _load_options_skew(
                 result[ticker] = {
                     "rr_25d": float(daily.iloc[-1]),
                     "rr_80th_pctile": thr,
-                    # NaN >= thr is False: a missing reading is never counted as above
                     "skew_rich_last5": int((win >= thr).sum()),
                     "skew_n_obs": n_obs,
                 }
@@ -2577,8 +2610,11 @@ def build(
                     "tf2d_state": tf2d,
                     # LRV-W1 context additions
                     "skew_n_obs": (skew_map.get(ticker) or {}).get("skew_n_obs"),
-                    # LRV-R6 receipt: the count that fired the chip + the two rr levels
-                    # behind it (display-only — the engine reads skew_rich_last5 alone)
+                    # LRV-R6 receipt (display-only): skew_rich_last5 = how many of the
+                    # last 5 readings cleared the benchmark, rr_25d = the latest single
+                    # reading, rr_80th_pctile = the window-excluded Q80 benchmark. These
+                    # two rr levels are NOT a pairwise chip read — the chip is the COUNT
+                    # vs CROWDED_SKEW_PERSIST_MIN, and its vote is currently HELD (None).
                     "skew_rich_last5": (skew_map.get(ticker) or {}).get("skew_rich_last5"),
                     "rr_25d": (skew_map.get(ticker) or {}).get("rr_25d"),
                     "rr_80th_pctile": (skew_map.get(ticker) or {}).get("rr_80th_pctile"),
