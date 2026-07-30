@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-29T23:54:29.314197+00:00",
-  "count": 352,
+  "generated_at": "2026-07-30T00:24:16.325491+00:00",
+  "count": 353,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -2000,6 +2000,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xwuhkdbrbpc-11038c",
+      "title": "Credit Notes Expectations for Hyperscaler Debt Issuance A Top Down Approach",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:27Z",
+      "summary_points": [
+        "**Debt-Financed CapEx Peak**: Hyperscalers' AI CapEx debt-financed share to peak at 33% (2026) and 35% (2027), driven by $250B+ 2026 issuance and $400B+ 2027 forecast, with CFO narrowly exceeding CapEx in 2026 ($778B vs.",
+        "$770B).",
+        "**Market Saturation Shift**: Public market saturation (40% of YTD 2026 AI debt) forces absorption into private markets (infrastructure) by 2028-2030, with USD IG dominating 65-75% of issuance but smaller IG markets (CAD/CHF/GBP/JPY/AUD) exhausted by 2027.",
+        "**Issuer Concentration Risk**: Hyperscalers (Amazon, Alphabet, Microsoft, Meta, Oracle) dominate IG issuance, growing to top issuers, creating concentration risk as smaller IG markets lack capacity and public saturation constrains flows.",
+        "**Hyperscaler Debt Capacity**: Low leverage (0.6x-1.3x gross) enables $1.1T-$2.3T incremental debt capacity (conservative to FY2027 EBITDA), supporting broader credit market use beyond traditional IG despite $1.2T off-balance sheet lease obligations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
