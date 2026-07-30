@@ -208,6 +208,7 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     stable_blob = _git(workspace, "rev-parse", "HEAD:site/macro.html")
     assert not _object_is_local(workspace, stable_blob)
     shutil.rmtree(runner_temp / "macro-git-123-1")
+    _git(workspace, "config", "--unset", "macro.renderMetadataCheckout")
 
     (updater / "new-on-main.txt").write_text("second main delta\n", encoding="utf-8")
     (updater / "another-main-file.txt").write_text("new path\n", encoding="utf-8")
@@ -236,6 +237,7 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     assert (workspace / "another-main-file.txt").read_text(encoding="utf-8") == "new path\n"
     assert not (workspace / "ignored-again.tmp").exists()
     assert _git(workspace, "status", "--porcelain") == ""
+    assert _git(workspace, "config", "--get", "macro.renderMetadataCheckout") == "true"
     assert github_env.read_text(encoding="utf-8") == ""
     assert github_output.read_text(encoding="utf-8").strip() == "checkout_ready=true"
     assert not _object_is_local(workspace, stable_blob)

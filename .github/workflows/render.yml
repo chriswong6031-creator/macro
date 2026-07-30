@@ -258,6 +258,17 @@ jobs:
             }
           }
           MANAGED=$(git config --local --get macro.renderMetadataCheckout || true)
+          if [ "$MANAGED" != "true" ] \
+            && [ "$(git rev-parse --is-shallow-repository 2>/dev/null || true)" = "true" ] \
+            && [ "$(git config --local --get remote.origin.partialclonefilter || true)" = "blob:none" ]; then
+            # One-time adoption for workspaces compacted by the immediately preceding
+            # workflow revision, before the persistent marker existed. It is also safe
+            # for checkout-created shallow partial clones: reset below repairs missing or
+            # dirty paths while the stat-valid retained tree avoids unchanged blob fetches.
+            git config --local macro.renderMetadataCheckout true
+            MANAGED=true
+            echo "::notice::adopted existing shallow blobless render checkout"
+          fi
           if [ "$MANAGED" = "true" ] && [ "${GIT_KIB:-0}" -le "$GIT_MAX_KIB" ]; then
             validate_workspace
             git fetch --no-tags --depth=1 origin main
