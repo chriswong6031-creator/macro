@@ -50,6 +50,7 @@ def test_render_checkout_uses_a_shallow_blobless_partial_clone():
     checkout = next(
         step for step in _steps() if step.get("uses") == "actions/checkout@v4"
     )
+    assert checkout["if"] == "steps.bound.outputs.compacted != 'true'"
     assert checkout["with"]["ref"] == "main"
     assert checkout["with"]["filter"] == "blob:none"
     assert checkout["with"]["fetch-depth"] == 1
@@ -104,6 +105,20 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     _git(workspace, "branch", "-M", "main")
     _git(workspace, "push", "-u", "origin", "main")
 
+    updater = tmp_path / "updater"
+    subprocess.run(
+        ["git", "clone", "--branch", "main", remote, updater],
+        check=True,
+        capture_output=True,
+    )
+    _git(updater, "config", "user.name", "Render Updater")
+    _git(updater, "config", "user.email", "updater@example.test")
+    (updater / "tracked.txt").write_text("updated on main\n", encoding="utf-8")
+    (updater / "new-on-main.txt").write_text("main delta\n", encoding="utf-8")
+    _git(updater, "add", "tracked.txt", "new-on-main.txt")
+    _git(updater, "commit", "-m", "advance main")
+    _git(updater, "push", "origin", "main")
+
     old_git_kib = int(
         subprocess.run(
             ["du", "-sk", workspace / ".git"],
@@ -118,6 +133,7 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     runner_temp = tmp_path / "runner-temp"
     runner_temp.mkdir()
     github_env = tmp_path / "github-env"
+    github_output = tmp_path / "github-output"
     env = {
         **os.environ,
         "CHECKOUT_GIT_MAX_KIB": "1",
@@ -126,6 +142,7 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
         "GITHUB_RUN_ID": "123",
         "GITHUB_RUN_ATTEMPT": "1",
         "GITHUB_ENV": str(github_env),
+        "GITHUB_OUTPUT": str(github_output),
     }
     bound = next(
         step
@@ -142,7 +159,8 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     )
 
     assert (workspace / "site" / "macro.html").read_text(encoding="utf-8") == payload
-    assert (workspace / "tracked.txt").read_text(encoding="utf-8") == "committed\n"
+    assert (workspace / "tracked.txt").read_text(encoding="utf-8") == "updated on main\n"
+    assert (workspace / "new-on-main.txt").read_text(encoding="utf-8") == "main delta\n"
     assert not (workspace / "ignored.tmp").exists()
     assert _git(workspace, "status", "--porcelain") == ""
     assert _git(workspace, "rev-parse", "--is-shallow-repository") == "true"
@@ -152,6 +170,7 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
         github_env.read_text(encoding="utf-8").strip()
         == f"CHECKOUT_TRASH={runner_temp / 'macro-git-123-1'}"
     )
+    assert github_output.read_text(encoding="utf-8").strip() == "compacted=true"
     assert (runner_temp / "macro-git-123-1").is_dir()
     new_git_kib = int(
         subprocess.run(

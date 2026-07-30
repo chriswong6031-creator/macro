@@ -202,6 +202,13 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     jobs = workflow["jobs"]
     pack = jobs["fence-pack"]
     assert pack["runs-on"] == "ubuntu-latest"
+    checkout = next(
+        step
+        for step in pack["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert checkout["with"]["filter"] == "blob:none"
+    assert checkout["with"]["fetch-depth"] == 0
 
     publish = next(step for step in pack["steps"] if step.get("id") == "publish")
     assert publish["if"] == "always()"
@@ -224,6 +231,16 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
         assert "head.repo.full_name != github.repository" in fallback["if"]
         assert context in fallback["name"]
         assert f"fork-{context}-unused" in fallback["name"]
+
+    # The fork self-mod fence also compares against the base branch and needs
+    # complete ancestry without downloading obsolete generated-site contents.
+    fork_checkout = next(
+        step
+        for step in jobs["fork-self-mod-fence"]["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert fork_checkout["with"]["filter"] == "blob:none"
+    assert fork_checkout["with"]["fetch-depth"] == 0
 
 
 # ── every tests/*.py a workflow names must exist ─────────────────────────────
