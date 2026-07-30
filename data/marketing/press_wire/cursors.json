@@ -253,6 +253,7 @@
     "371103037df35700dd6bb7964840171f28a3ff40": "2026-07-29T18:34:45.246165+00:00",
     "373be7a55b39c8b8db35718e5ff35c5ce57e6d88": "2026-07-29T18:34:45.246165+00:00",
     "374329f39e8041d27433af8339a95dd9716edda8": "2026-07-29T18:34:45.246165+00:00",
+    "374f039b72feaa3f42baa61280abe49bcd667616": "2026-07-30T06:13:57.676069+00:00",
     "37de7e5ba87c2a8c964c29ab518d829c2619cc70": "2026-07-29T18:34:45.246165+00:00",
     "37f35dd2545b98a9e9bc9cae048621ab115638f3": "2026-07-29T20:41:08.426331+00:00",
     "3809a81bc045b82f197668ec1302363a6cfa6470": "2026-07-29T20:41:08.426331+00:00",
@@ -953,6 +954,7 @@
     "cd13c8f5c4922f5b3b295528b68af3624c3393b5": "2026-07-29T18:34:45.246165+00:00",
     "cdaab3b0a7f409d1c654591af02eacbcfaca0995": "2026-07-29T18:34:45.246165+00:00",
     "cdd3c7b894e2426e86e502f83300571e84ee3d14": "2026-07-29T18:34:45.246165+00:00",
+    "ce75d9a8e9e05653bb98e14e7813c3d6b851b820": "2026-07-30T06:13:57.676069+00:00",
     "ce7f132e0961bd10351efea5d58e30eea2fa8f80": "2026-07-29T18:34:45.246165+00:00",
     "cedf0e7847b7552af9cd705920156378168a8c64": "2026-07-29T18:34:45.246165+00:00",
     "ceede3c0e9c4ab34509e49d05af581a416a390a2": "2026-07-29T18:34:45.246165+00:00",
@@ -1182,353 +1184,26 @@
     "fedea86d17e1f40fbe68b231452a6c0a04bab6be": "2026-07-29T23:34:08.861189+00:00"
   },
   "corroboration": {
-    "claim:company_news:sec:financials": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "claim:company_news:sec:technology": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "host:cnbc.com",
-        "x:tradfi"
-      ]
-    },
-    "claim:company_news:tic:NVDA": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:stockmktnewz"
-      ]
-    },
-    "claim:geopolitical:sec:industrials": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
     "claim:geopolitical:sec:technology": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk",
-        "x:financialjuice",
-        "x:zerohedge",
-        "x:osint613"
-      ]
-    },
-    "claim:macro_print:mac:inflation": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
+      "first_ts": "2026-07-30T06:13:57.676069+00:00",
       "sources": [
         "host:cnbc.com"
       ]
     },
-    "claim:none:sec:energy": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk",
-        "x:stockmktnewz"
-      ]
-    },
-    "claim:none:sec:financials": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:watcherguru"
-      ]
-    },
-    "claim:none:sec:industrials": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613",
-        "x:bricsinfo"
-      ]
-    },
     "claim:none:sec:technology": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
+      "first_ts": "2026-07-30T06:13:57.676069+00:00",
       "sources": [
-        "host:cnbc.com",
-        "x:firstsquawk",
-        "x:financialjuice",
-        "x:whpresspool",
-        "x:osint613",
-        "x:bricsinfo",
-        "x:tradfi"
-      ]
-    },
-    "claim:none:tic:JPM": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "claim:none:tic:META": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "host:cnbc.com",
-        "x:firstsquawk"
-      ]
-    },
-    "claim:none:tic:MSFT": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk",
-        "x:stockmktnewz"
-      ]
-    },
-    "claim:policy:sec:technology": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk",
-        "x:financialjuice"
-      ]
-    },
-    "head:abadan iran after us strikes httpstco14w8icl4bl": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:americas murder problem is smaller than it looks httpstcob9tbml29pq": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:zerohedge"
-      ]
-    },
-    "head:audio sirens sound in lublin poland due to russian missile threat httpstcocujqgh": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:breaking centcom announces a new round of us strikes on iran has begun": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:cathie wood and ark invest bought 128932 shares of spacex spcx today httpstco9tl": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:stockmktnewz"
-      ]
-    },
-    "head:cuba expands market reforms as socialist economy buckles under trump pressure ht": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:zerohedge"
-      ]
-    },
-    "head:cuba says nearly threequarters of hotels have shut as travel plunges scmp": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:fun fact jeff bezos mark zuckerberg and myself have a combined net worth of 459 ": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:stockmktnewz"
-      ]
-    },
-    "head:himars towards iran httpstcojtsgsqywja": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:icymi last week sec rubio on iran our policy is a head for an eye": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:iranians reported sounds of explosions across three separate areas axios citing ": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:japan finance minister katayama so far no need to surpass reserves in current bu": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:japan finmin katayama ministry of finance official proposed no ceiling on next y": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:japan finmin katayama need to do yearonyear comparisons in budget size as initia": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:just in explosions reported on irans qeshm island as us continues strikes": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:bricsinfo"
-      ]
-    },
-    "head:just in president trump says illegal immigration is killing the united kingdom h": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:remarks"
-      ]
-    },
-    "head:just in us strikes on iran will be more extensive than in recent weeks": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:bricsinfo"
-      ]
-    },
-    "head:ldps suzuki can guarantee revenues to support temporary tax cut amid revenue sur": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:ldps suzuki says plans are to introduce the tax cut bill during the autumn parli": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:more from abadan iran httpstcoqgef4raq0r": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:powerful response": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:rt watcherguru just in over 1 trillion wiped out from the us stock market today ": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:watcherguru"
-      ]
-    },
-    "head:samsung elec not considering adr for now samsung elec open to adr for the mid an": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:tradfi"
-      ]
-    },
-    "head:samsung electronics forecasts 2nm foundry projects will more than double in 2026": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:several loud blasts heard in irans ahwaz state tv": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:sirens sound in lublin poland due to russian missile threat httpstco6npbimqlmh": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:newswire_us"
-      ]
-    },
-    "head:suzuki says japan can secure revenue to finance the temporary tax reduction due ": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:the ceo of lumentum lite was on this podcast": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:stockmktnewz"
-      ]
-    },
-    "head:the following areas in iran have been reported to have been hit in strikes by us": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:toyota tsusho says jogmec will invest up to 47668 million canadian dollars in a ": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:trump admin set to ban chinese robots in economic security push httpstcodgl3qcpn": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:zerohedge"
-      ]
-    },
-    "head:us centcom centcom assets hit dozens of islamic revolutionary guard corps target": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:us centcom us launches strikes on irgc locations following attempted iranian ass": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:us forces used centcom assets to strike dozens of irgc targets in iran centcom s": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:us global reliance on fossil fuel unchanged in 25 years httpstcotaqdiacsqn": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:zerohedge"
-      ]
-    },
-    "head:us measles cases in 2026 highest in 35 years httpstco1xrpdvtbz4": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:zerohedge"
-      ]
-    },
-    "head:us military centcom forces hit dozens of islamic revolutionary guard corps targe": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:us military latest strikes on iran completed": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:financialjuice"
-      ]
-    },
-    "head:video large explosion at fireworks warehouse in morelos mexico contributed by az": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:osint613"
-      ]
-    },
-    "head:we have special forces netanyahu unfazed by global threats of arrest httpstcoulo": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
-      "sources": [
-        "x:zerohedge"
+        "host:cnbc.com"
       ]
     },
     "truth:117005562901056692": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
+      "first_ts": "2026-07-30T06:13:57.676069+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117006290013696288": {
-      "first_ts": "2026-07-30T03:51:26.133776+00:00",
+      "first_ts": "2026-07-30T06:13:57.676069+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -1540,14 +1215,14 @@
   },
   "providers": {
     "cnn_truth_backfill": {
-      "etag": "\"7cac4baad3d7e8402958c90576826481-3\"",
+      "etag": "\"54e10f83bda52e7d46edcfcbafa47ac4-3\"",
       "fail_count": 0,
-      "last_modified": "Thu, 30 Jul 2026 03:45:19 GMT",
-      "last_poll_ts": 1785383488.0607913
+      "last_modified": "Thu, 30 Jul 2026 05:47:40 GMT",
+      "last_poll_ts": 1785392039.0841534
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785383487.5640948
+      "last_poll_ts": 1785392038.8786662
     },
     "twitterapiio": {
       "cursors": {
@@ -1571,70 +1246,70 @@
         "zerohedge": "2082670040608833986"
       },
       "last_poll": {
-        "BRICSinfo": 1785383488.5474362,
+        "BRICSinfo": 1785392039.6335256,
         "CoinDesk": 1785350087.1706393,
         "Cointelegraph": 1785350087.1706393,
-        "DeItaone": 1785383488.5474362,
-        "FirstSquawk": 1785383488.5474362,
+        "DeItaone": 1785392039.6335256,
+        "FirstSquawk": 1785392039.6335256,
         "HormuzLetter": 1785350087.1706393,
-        "NewsWire_US": 1785383488.5474362,
-        "Osint613": 1785383488.5474362,
-        "StockMKTNewz": 1785383488.5474362,
-        "WHPressPool": 1785383488.5474362,
-        "WatcherGuru": 1785383488.5474362,
-        "WhaleInsider": 1785383488.5474362,
-        "financialjuice": 1785383488.5474362,
-        "rawsalerts": 1785383488.5474362,
-        "remarks": 1785383488.5474362,
-        "tradfi": 1785383488.5474362,
-        "unusual_whales": 1785383488.5474362,
-        "zerohedge": 1785383488.5474362
+        "NewsWire_US": 1785392039.6335256,
+        "Osint613": 1785392039.6335256,
+        "StockMKTNewz": 1785392039.6335256,
+        "WHPressPool": 1785392039.6335256,
+        "WatcherGuru": 1785392039.6335256,
+        "WhaleInsider": 1785392039.6335256,
+        "financialjuice": 1785392039.6335256,
+        "rawsalerts": 1785392039.6335256,
+        "remarks": 1785392039.6335256,
+        "tradfi": 1785392039.6335256,
+        "unusual_whales": 1785392039.6335256,
+        "zerohedge": 1785392039.6335256
       },
       "spend": {
         "2026-07": {
-          "requests": 83,
+          "requests": 98,
           "tweets": 1660,
-          "usd": 0.249
+          "usd": 0.25125
         }
       }
     }
   },
   "recent_openers": {},
   "schema": "press_wire.cursors/v1",
-  "updated_at": "2026-07-30T03:51:26Z",
+  "updated_at": "2026-07-30T06:13:57Z",
   "wire": {
     "bea_news": {
       "etag": "\"3257b9a6c19dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 21 Jul 2026 12:30:01 GMT",
-      "last_poll_ts": 1785383486.8761609
+      "last_poll_ts": 1785392038.357337
     },
     "bls_news": {
       "etag": "\"80848ccc621fdd1:0\"",
       "fail_count": 0,
       "last_modified": "Wed, 29 Jul 2026 14:01:49 GMT",
-      "last_poll_ts": 1785383486.7820098
+      "last_poll_ts": 1785392038.2113252
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785383487.210922
+      "last_poll_ts": 1785392038.502452
     },
     "fed_press": {
       "etag": "\"ee42b1d841fdd1:0\"",
       "fail_count": 0,
       "last_modified": "Wed, 29 Jul 2026 18:00:17 GMT",
-      "last_poll_ts": 1785383486.7336411
+      "last_poll_ts": 1785392038.1454875
     },
     "marketwatch_top": {
-      "etag": "W/\"1ed8-sxx+mCJmhrS+G0fkUiGAYwLpq48\"",
+      "etag": "W/\"1ed8-UoJTb6wQUA9nzLWydTG+a+ewhu0\"",
       "fail_count": 0,
-      "last_poll_ts": 1785383487.3692892
+      "last_poll_ts": 1785392038.6779313
     },
     "whitehouse_actions": {
       "etag": "\"81863c8e9e4a47f8cd04683a25100687\"",
       "fail_count": 0,
       "last_modified": "Wed, 29 Jul 2026 19:44:27 GMT",
-      "last_poll_ts": 1785383487.168761
+      "last_poll_ts": 1785392038.435524
     }
   }
 }

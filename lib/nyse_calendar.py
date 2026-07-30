@@ -227,3 +227,76 @@ def session_date(now_utc: datetime | None = None) -> date:
     # Non-session day (weekend, holiday): the last completed session is on
     # or before the prior ET calendar day.
     return last_session_on_or_before(today_et - timedelta(days=1))
+
+
+def session_rows(df, date_col: str | None = None, *, label: str = "store"):
+    """Drop non-session rows from a dated frame — the #3721 weekend-row guard.
+
+    Several EOD options stores accrue a row on non-session days: as of 2026-07-29
+    ``data/cboe/gex.parquet`` carried 13 non-session rows of 39,
+    ``data/options_skew/snapshots.parquet`` 8 of 28,
+    ``data/options_ivspread/snapshots.parquet`` 6 of 21, and the
+    ``data/polygon_gex/summary_*.parquet`` family ~11 of 39 dates.  A weekend row is
+    NOT a harmless carry-forward duplicate: the builder recomputes IV, spot, walls and
+    net-GEX off a stale carried-forward price, so the row is a fabricated observation.
+    Left in, it corrupts three things at once — ``.iloc[-1]`` (the "latest" reading can
+    be a Saturday), percentile/quantile windows (fabricated points in the distribution),
+    and POSITIONAL lookbacks (``.iloc[-6]`` stops meaning "5 sessions ago") including
+    any ``n_obs`` count used as an activation gate.
+
+    Two frame shapes are supported:
+      * ``date_col=None`` — the frame is indexed by date/DatetimeIndex.
+      * ``date_col="date"`` — the dates live in that column (str or datetime).
+
+    FAIL-OPEN by design: if filtering would empty the frame, or the dates cannot be
+    parsed, the original frame is returned unchanged.  A calendar-arithmetic surprise
+    must degrade to the old behaviour, never to a blank panel.  Callers that want to
+    know log the count difference themselves.
+
+    Returns the filtered frame (a view/copy per pandas' own semantics).
+    """
+    if df is None or len(df) == 0:
+        return df
+    try:
+        import pandas as pd
+
+        src = df[date_col] if date_col is not None else df.index
+        keep = []
+        for raw in src:
+            try:
+                d = pd.Timestamp(raw).date()
+            except (ValueError, TypeError):
+                keep.append(True)      # unparseable: keep, never silently drop data
+                continue
+            keep.append(is_session(d))
+        if not any(keep):
+            return df
+        filtered = df[pd.Series(keep, index=df.index)] if date_col is not None else df[keep]
+        return filtered if len(filtered) else df
+    except Exception:  # noqa: BLE001
+        return df
+
+
+def session_dates(dates, *, key=None, keep_unparseable: bool = False) -> list:
+    """The session-only subset of an iterable of dates/strings, order preserved.
+
+    The filename-keyed twin of :func:`session_rows` — for stores whose "rows" are files
+    (``data/polygon_gex/chains/{DATE}.parquet`` carried 11 non-session snapshots of 39
+    on 2026-07-29).  Pass ``key`` to extract the date from each item (e.g.
+    ``key=lambda p: Path(p).stem`` for a list of paths); without it the items themselves
+    must parse as dates.  FAIL-OPEN: returns the input list unchanged when the filter
+    would empty it, so a calendar surprise degrades to the old behaviour.
+    """
+    import pandas as pd
+
+    out = []
+    for raw in dates:
+        try:
+            d = pd.Timestamp(key(raw) if key is not None else raw).date()
+        except (ValueError, TypeError):
+            if keep_unparseable:
+                out.append(raw)
+            continue
+        if is_session(d):
+            out.append(raw)
+    return out or list(dates)
