@@ -342,36 +342,52 @@ def _vol_shaped_calib():
                                     "legs": [("graded", 0.5), ("unpromoted", 1.0)]}}}
 
 
-def test_display_only_leg_is_excluded_from_the_displayed_subscore():
-    """The VSB W6 contract says a display_only leg is 'STRUCTURALLY UNABLE to move scare tier
-    until gauntlet-promoted'.  It was enforced only for escalation, so a quiet un-promoted leg
-    at 0.0 still carried full weight in the mean and buried the one graded leg."""
+def test_display_only_leg_still_dilutes_the_displayed_subscore_KNOWN_DEFECT():
+    """PINS A KNOWN DEFECT — do not "fix" this test, fix it via the gauntlet (§15 of
+    research/REGIME_DISLOCATION_RECAL_PROPOSAL.md).
+
+    The VSB W6 contract says a display_only leg is 'STRUCTURALLY UNABLE to move scare tier
+    until gauntlet-promoted'.  It is enforced only for escalation, so a quiet un-promoted leg
+    at 0.0 still carries full weight in the mean and buries the one graded leg.  That IS a
+    doctrine violation and it reads in the calming direction.
+
+    Excluding the leg was implemented on 2026-07-29 and reverted the same day: 'vol' registers
+    3 legs and only vix_term resolves (weight_coverage 0.5), so renormalising promotes half the
+    registered evidence to full confidence against band cuts never calibrated on that
+    composition — measured live as vol 22.4 -> 67.3, ceiling 56 -> 40, US verdict MIXED ->
+    RISK_OFF, on ONE unvalidated leg reading BELOW its own thr_pct.  Escalating on that is
+    originating a signal, not fixing a bug.
+
+    This test pins the DEFECTIVE arithmetic so the eventual gauntlet-approved fix is a visible,
+    reviewed diff rather than a silent behaviour change."""
     idx = pd.bdate_range("2026-01-01", periods=30)
     sigs = pd.DataFrame({"graded": 0.8, "unpromoted": 0.0}, index=idx)
     calib = _vol_shaped_calib()
     got = rr.subscore_series(sigs, calib)["vol_like"].iloc[-1]
-    assert got == pytest.approx(80.0), got          # the graded leg alone
-    # the buried value the defect produced: (0.8*0.5 + 0*1.0) / 1.5 * 100
-    assert got != pytest.approx(0.8 * 0.5 / 1.5 * 100)
+    # the diluted value: (0.8*0.5 + 0.0*1.0) / 1.5 * 100 == 26.67, NOT the graded leg's 80.0
+    assert got == pytest.approx(0.8 * 0.5 / 1.5 * 100), got
+    assert got != pytest.approx(80.0)
 
 
-def test_display_only_exclusion_is_single_sourced_with_escalation():
-    """subscore_series and _tierb_can_escalate must consult ONE definition of 'may not move a
-    tier', or the number and the tier disagree again in the other direction."""
+def test_display_only_dilution_is_disclosed_even_though_it_is_not_fixed():
+    """The defect above is not silent: coverage keys let a surface say "this scare is running on
+    half its registered evidence".  Disclosure is what ships while the fix waits on the
+    gauntlet, so these keys are the load-bearing part of the 2026-07-29 audit response."""
     skip = rr.display_only_legs()
     assert skip, "no display_only legs registered — the contract lost its subject"
     for leg in skip:
         assert rr._LEG_CALIB[leg].get("display_only") is True
-    # every registered display_only leg is absent from every sub-score
+    # the legs DO still reach the sub-score (the pinned defect), so the series is not empty
     idx = pd.bdate_range("2026-01-01", periods=30)
     sigs = pd.DataFrame({leg: 1.0 for leg in skip}, index=idx)
     out = rr.subscore_series(sigs)
-    assert out.dropna(how="all").empty, out.tail(1)
+    assert not out.dropna(how="all").empty, "display_only legs no longer score — see §15"
 
 
-def test_firing_display_only_leg_still_surfaces_in_the_payload():
-    """Excluding the leg from the score must not DELETE its reading — the scare it belongs to
-    can now have no sub-score at all, and a confirmed 1.0 must not vanish with it."""
+def test_firing_display_only_leg_surfaces_in_the_payload():
+    """A confirmed 1.0 on an un-promoted leg must be visible in its own right, whatever the
+    sub-score does with it — this is how a reader learns the doctrine is silencing a firing
+    signal."""
     idx = pd.bdate_range("2026-01-01", periods=30)
     sigs = pd.DataFrame({"credit_oas_roc": 0.6, "ai_breadth_divergence": 1.0}, index=idx)
     out = rr.compute(sigs=sigs)
@@ -381,8 +397,8 @@ def test_firing_display_only_leg_still_surfaces_in_the_payload():
     assert d["pctile"] == 1.0 and d["firing"] is True and d["confirmed"] is True
     assert d["scare"] == "internals"
     assert d["reason_en"] and d["reason_zh"]
-    # internals itself has no sub-score (its only non-display_only leg is absent)
-    assert "internals" not in {s["scare"] for s in out["scares"]}
+    # internals DOES carry a sub-score (the leg is counted — the pinned defect above)
+    assert "internals" in {s["scare"] for s in out["scares"]}
 
 
 def test_composition_coverage_is_published_for_every_scare():

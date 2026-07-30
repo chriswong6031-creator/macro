@@ -802,3 +802,74 @@ by a literal `{% if false and ... %}` at `dashboard.html.j2:13889`) to sit besid
 headline score as a *representativeness caveat on the index* is a template placement change
 at display tier. The evidence was never missing and was never destroyed at aggregation — it
 was rendered at 10 pixels or put behind a click.
+
+---
+
+## §15 — `display_only` legs set the DISPLAYED sub-score (implemented, then reverted same-day)
+
+**Status:** PROPOSED. Uniquely in this document, §15 was **built, measured, and reverted on
+2026-07-29** — the revert is the finding.
+
+**Defect.** The VSB W6 contract states a `display_only` leg is *"STRUCTURALLY UNABLE to move
+scare tier until gauntlet-promoted"* (`engine/risk_radar.py:130-131`). It is enforced in
+`_tierb_can_escalate` only, never in `subscore_series`, so an un-promoted leg still sets the
+number the card prints — and it does so in the **calming** direction, because a quiet leg at
+0.0 carries full weight in the mean. Live: `vol` prints 22.4 (`calm`) while its one graded
+leg `vix_term` sits at pctile 0.673.
+
+**Why the obvious fix is worse than the defect.** Excluding the leg was implemented exactly as
+the audit recommended and measured against the live stores:
+
+| | before | after exclusion |
+|---|---|---|
+| `vol` sub-score | 22.4 `calm` | **67.3 `caution`** |
+| Tier-B escalation | no | yes → `state_ungated` `elevated` |
+| `market_state.severe_gated` | False | **True** (−10 ceiling) |
+| `two_plus_scares` corroborator | off | **on** (−6) |
+| ceiling → score | 56 → 56 | **40 → 40** |
+| US verdict | MIXED | **RISK_OFF** |
+
+`vol` registers three legs and only `vix_term` resolves today (`weight_coverage` 0.5 —
+`vol_putcall`/`vol_gex` are still accruing toward their 252-row minimum). Excluding
+`corr_floor_break` renormalizes **half** the scare's registered evidence to full confidence,
+against band cuts that were never calibrated on that composition. The resulting
+authority-tier verdict flip rests on ONE leg reading **below its own `thr_pct` of 0.90**
+(`lift_2020` 0.44, `era_robust` False, i.e. unvalidated).
+
+Shipping that would be originating an escalation on the exact day an operator complained the
+score was too calm — the failure mode `DO_NOT_REBUILD.md` row 117 exists to prevent. Reverted.
+
+**What ships instead (display tier, no gate change).** `weight_coverage`,
+`partial_composition`, `n_legs_resolved` per scare, and a `display_only_legs` payload block
+carrying each un-promoted leg's pctile / firing / confirmed state with bilingual reasons. A
+surface can now say: *this scare is running on half its evidence, and a leg the doctrine
+silences is holding the number down.* `tests/test_macro_radar_audit_2026_07_29.py`
+pins the defective arithmetic under an explicit `_KNOWN_DEFECT` name so the approved fix is a
+visible diff.
+
+**Proposed change (A/B).**
+- **A — coverage-gated exclusion.** Exclude `display_only` legs from `subscore_series` *only*
+  when the remaining registered legs clear a pre-registered `weight_coverage` floor
+  (candidate 1.0, i.e. full composition). Below the floor the leg keeps diluting and the
+  scare publishes `partial_composition: true`.
+- **B — recalibrate the bands per composition.** Derive band cuts conditional on which legs
+  resolve, so a half-covered scare is scored against cuts measured on half-covered history.
+
+**Pre-registered acceptance gates.**
+1. Replay the full stored history under A. The count of sessions whose *verdict* changes must
+   be reported in full, by direction, before any judgement of merit — a variant that flips
+   more than 10% of sessions is a recalibration, not a bug fix, and needs its own lift case.
+2. Variant A must not raise `state_ungated` above `caution` on any session where the sole
+   escalating leg reads below its own `thr_pct`. This is the specific failure measured above
+   and it is disqualifying.
+3. Any variant that moves a verdict must clear Wilson-CI lift ≥ 1.20 at h21 against the
+   unconditional base on the sessions it newly escalates — `_VALIDATED_MIN`, the same bar
+   every other promoted leg cleared.
+4. `vol_putcall` / `vol_gex` reaching their 252-row minimum changes the coverage arithmetic
+   on its own. Re-run before adopting either variant; maturity may dissolve the problem.
+
+**Note.** The same class of defect is reported but unfixed elsewhere in the module:
+`engine/conditions.py` emits complacency state `"hidden_fragility"` while
+`market_state._radar_override` tests `in ("watch", "high")`, so the **strongest** complacency
+read silently fails to corroborate. Fixing it adds an amplifier firing (redder) and touches
+the amplifier set — it belongs to §10, under the same discipline as this section.

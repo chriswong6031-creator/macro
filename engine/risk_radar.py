@@ -725,24 +725,38 @@ def subscore_series(sigs: pd.DataFrame | None = None, calib: dict | None = None)
     """Daily 0-100 sub-score per scare-type = weighted mean of available leg percentiles * 100.
     For backtest + history. Renormalizes over available legs.
 
-    display_only legs are EXCLUDED (audit 2026-07-29). The VSB W6 contract — "STRUCTURALLY
-    UNABLE to move scare tier until gauntlet-promoted" — was enforced only in
-    _tierb_can_escalate, never here, so an un-promoted leg still set the DISPLAYED number and
-    therefore the band word the card prints. Worse, it did so in the wrong direction: a quiet
-    display_only leg at 0.0 carried full weight in the mean, so 'vol' printed 22.4 while its one
-    graded leg (vix_term) sat at pctile 0.67 — a real reading buried by a leg the doctrine says
-    must not speak. The number and the tier now obey the same rule."""
+    display_only legs are INCLUDED here, deliberately — see §15 of
+    research/REGIME_DISLOCATION_RECAL_PROPOSAL.md.
+
+    The 2026-07-29 audit is right that the VSB W6 contract ("STRUCTURALLY UNABLE to move scare
+    tier until gauntlet-promoted") is enforced only in _tierb_can_escalate, so an un-promoted
+    leg still sets the DISPLAYED number, and that it does so in the calming direction: a quiet
+    display_only leg at 0.0 carries full weight in the mean, so 'vol' prints 22.4 while its one
+    graded leg (vix_term) sits at pctile 0.67.
+
+    Excluding them was implemented and REVERTED the same day, because renormalizing is not
+    free: 'vol' registers 3 legs and only vix_term resolves today (weight_coverage 0.5 —
+    vol_putcall/vol_gex are still accruing). Dropping corr_floor_break renormalizes half the
+    scare's registered evidence to full confidence, and the band cuts were never calibrated on
+    that composition. Measured effect on the live stores: vol 22.4 -> 67.3, Tier-B escalates,
+    market_state severe_gated True, ceiling 56 -> 40, US verdict MIXED -> RISK_OFF — an
+    authority-tier flip resting on ONE unvalidated leg reading BELOW its own thr_pct 0.90
+    (lift_2020 0.44, era_robust False). That is originating an escalation, not fixing a bug.
+
+    The defect is disclosed instead: weight_coverage / partial_composition / n_legs_resolved
+    and the display_only_legs payload block let a surface say "this scare is running on half
+    its evidence, and a leg the doctrine silences is holding the number down." The fix itself
+    is pre-registered with acceptance gates for the gauntlet."""
     if sigs is None:
         sigs = leading_signals()
     calib = calib or _calib()
     if sigs is None or sigs.empty:
         return pd.DataFrame()
-    skip = display_only_legs(calib)
     out = pd.DataFrame(index=sigs.index)
     for scare, spec in calib["scares"].items():
         num = den = None
         for leg, w in spec["legs"]:
-            if leg not in sigs.columns or leg in skip:
+            if leg not in sigs.columns:
                 continue
             col = sigs[leg].fillna(0.0) * float(w)
             avail = sigs[leg].notna().astype(float) * float(w)
