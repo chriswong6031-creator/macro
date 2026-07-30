@@ -312,6 +312,185 @@ def test_dormant_names_produce_no_events():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# The level on the row — P1's CROSS LEVEL column
+#
+# The number the strip prints is the pack's armed edge, and the SAME edge means
+# opposite things on the two kinds of row: a cross level for a name off tonight's
+# board (`cross_level_px`), a fade level for a name on it (`fade_px`). These pin the
+# honest pair, its absence wherever there is no level, that the level is never
+# re-rounded into a price the gate would reject, and that the bare name `cross_px` —
+# the LEDGER's field, a price rather than a level — never appears in this payload.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_cross_candidate_publishes_the_armed_trigger_as_cross_level_px():
+    """The lowest provisional close that flips the gate true — what the strip prints."""
+    a = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0))
+    b = _run(pack({"AAA": near(100.0)}), quotes(AAA=101.0), a)
+    for art, state in ((a, "near"), (b, "forming")):
+        st = art["states"]["AAA"]
+        assert st["state"] == state
+        assert st["cross_level_px"] == 100.0, st
+        assert "fade_px" not in st, "a cross row must not carry a board name's level"
+
+
+def test_a_board_name_publishes_the_same_edge_as_fade_px_not_cross_level_px():
+    """Below it TONIGHT'S VERDICT flips false — it is not a cross level for that row."""
+    art = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=100.0))
+    st = art["states"]["BBB"]
+    assert st["state"] == "forming" and st["entered"] == "board"
+    assert st["fade_px"] == 90.0, st
+    assert "cross_level_px" not in st, "the board row's fade level was published as a cross"
+    # And on the way out, where the number is the one the reader most needs.
+    risk = _run(pack({"BBB": buyable(fade=90.0)}), quotes(BBB=85.0))["states"]["BBB"]
+    assert risk["state"] == "at_risk" and risk["fade_px"] == 90.0
+    assert "cross_level_px" not in risk
+
+
+def test_the_column_label_comes_off_key_presence_with_nothing_re_derived():
+    """The two lower-edge keys are mutually exclusive, so presence IS the label."""
+    art = _run(pack({"AAA": near(100.0), "BBB": buyable(fade=90.0)}),
+               quotes(AAA=101.0, BBB=100.0))
+    labels = {}
+    for tkr, st in art["states"].items():
+        keys = {"cross_level_px", "fade_px"} & set(st)
+        assert len(keys) == 1, (tkr, st)
+        labels[tkr] = keys.pop()
+    assert labels == {"AAA": "cross_level_px", "BBB": "fade_px"}
+
+
+def test_the_upper_edge_rides_along_as_fade_hi_px_and_is_absent_when_unbounded():
+    """What a ``via:"overrun"`` row ran past — the pack's own name for the number."""
+    over = _run(pack({"AAA": near(100.0, hi=105.0)}), quotes(AAA=101.0))["states"]["AAA"]
+    assert over["fade_hi_px"] == 105.0 and over["cross_level_px"] == 100.0
+    board = _run(pack({"BBB": buyable(hi=110.0)}), quotes(BBB=100.0))["states"]["BBB"]
+    assert board["fade_hi_px"] == 110.0
+    # Unbounded above inside the band ⇒ no key, never 0 and never null-as-a-number.
+    open_top = _run(pack({"AAA": near(100.0, hi=None)}), quotes(AAA=101.0))["states"]["AAA"]
+    assert "fade_hi_px" not in open_top and open_top["cross_level_px"] == 100.0
+
+
+def test_no_level_key_when_the_pack_armed_none():
+    """Absent, never 0 or null-as-a-number — the two are different claims."""
+    # Nothing in the band is buyable: there is no crossable level to name.
+    cold = _run(pack({"CCC": dormant()}), quotes(CCC=50.0))["states"]["CCC"]
+    assert cold["state"] == "dormant"
+    for key in ("cross_level_px", "fade_px", "fade_hi_px"):
+        assert key not in cold, key
+    # A board name unbounded BELOW inside the band has no lower edge — and must not
+    # borrow the cross vocabulary to say so.
+    no_lo = _run(pack({"BBB": buyable(fade=None, hi=110.0)}),
+                 quotes(BBB=100.0))["states"]["BBB"]
+    assert no_lo["state"] == "forming"
+    assert "fade_px" not in no_lo and "cross_level_px" not in no_lo
+    assert no_lo["fade_hi_px"] == 110.0        # the edge it DOES have still ships
+    # A level only exists where the INTERVAL does. `buyable_in_band: False` says no
+    # probed price in the band is buyable, so a surviving edge field (a schema skew
+    # across pack vintages is the reachable route) must not be republished as a level
+    # the reader can act on — "below 90 the verdict flips" against "the verdict is
+    # false everywhere in band" is a contradiction, and the pack wins.
+    contradiction = {**buyable(fade=90.0, hi=110.0), "buyable_in_band": False}
+    stale_edge = _run(pack({"BBB": contradiction}), quotes(BBB=100.0))["states"]["BBB"]
+    assert stale_edge["state"] != "dark"       # still evaluated, just levelless
+    for key in ("cross_level_px", "fade_px", "fade_hi_px"):
+        assert key not in stale_edge, key
+
+
+def test_a_dark_row_carries_no_level_whatever_the_reason():
+    """A dark row publishes no state to hang a level on (G0.3)."""
+    p = pack({"AAA": near(100.0),                       # no quote at all
+              "BBB": buyable(),                         # gapped below its band
+              "IRR": {"state": "irregular", "center_buyable": True, "as_of_close": 10.0,
+                      "probed": True, "buyable_in_band": None},
+              "UNP": {"state": "dormant", "center_buyable": False, "as_of_close": 10.0,
+                      "probed": False, "skip": "probe_cap", "buyable_in_band": True,
+                      "trigger_px": 11.0, "fade_hi_px": 12.0}})
+    art = _run(p, quotes(BBB=70.0, IRR=10.0, UNP=11.5))
+    assert "UNP" not in art["states"], "an unprobed name is not evaluated at all"
+    stale = LS.evaluate(pack({"AAA": near(100.0)}), quotes(AAA=101.0), None, now=NOW,
+                        cfg=CFG, quote_asof="x", delay_min=15,
+                        quote_age_of=lambda _q: 45.0)
+    rows = list(art["states"].values()) + list(stale["states"].values())
+    reasons = {r["reason"] for r in rows}
+    assert reasons == {"no_quote", "out_of_band", "irregular_gate", "stale_quote"}, reasons
+    for st in rows:
+        assert st["state"] == "dark"
+        for key in ("cross_level_px", "fade_px", "fade_hi_px"):
+            assert key not in st, (st, key)
+
+
+def test_the_level_is_republished_verbatim_never_re_rounded():
+    """A published level must be a price the GATE accepts, so it ships exactly as armed.
+
+    The pack already rounds each edge INTO the buyable region at 4 dp, and publishes
+    the full-precision bisected value when a rounding step would cross the as-of close
+    (``armed_pack._side_safe_round``). Rounding again here can only move a level the
+    wrong way: ``round(100.00004, 4)`` is 100.0, a tenth of a cent BELOW the trigger,
+    which is a price the gate rejects — printed as the level to act on.
+    """
+    from engine.prophet_live import interval as INTERVAL
+
+    cross = near(100.00004, hi=105.00006)
+    st = _run(pack({"AAA": cross}), quotes(AAA=101.0))["states"]["AAA"]
+    assert st["cross_level_px"] == 100.00004 and st["fade_hi_px"] == 105.00006
+    # The invariant behind the digits, asserted against the ONE interval reader.
+    assert INTERVAL.interval_contains(cross, st["cross_level_px"]) is True
+    assert INTERVAL.interval_contains(cross, st["fade_hi_px"]) is True
+
+    board = buyable(fade=90.00004, hi=110.00006)
+    bst = _run(pack({"BBB": board}), quotes(BBB=100.0))["states"]["BBB"]
+    assert bst["fade_px"] == 90.00004 and bst["fade_hi_px"] == 110.00006
+    assert INTERVAL.interval_contains(board, bst["fade_px"]) is True
+    assert INTERVAL.interval_contains(board, bst["fade_hi_px"]) is True
+    # `price` still rounds to the pack's display precision — that is a QUOTE, not a
+    # threshold, and rounding it cannot misstate a level.
+    assert bst["price"] == 100.0
+
+
+def test_every_non_dark_row_with_an_interval_carries_exactly_one_lower_level():
+    """The level is a fact about the pack, so it cannot depend on which branch ran."""
+    p = pack({"AAA": near(100.0, hi=105.0), "BBB": buyable(fade=90.0), "CCC": dormant()})
+    a = _run(p, quotes(AAA=101.0, BBB=100.0, CCC=50.0))     # near / forming / dormant
+    b = _run(p, quotes(AAA=101.0, BBB=85.0, CCC=50.0), a)   # forming / at_risk
+    c = _run(p, quotes(AAA=99.0, BBB=100.0, CCC=50.0), b)   # faded / forming
+    seen: set[str] = set()
+    for art in (a, b, c):
+        for tkr, st in art["states"].items():
+            seen.add(st["state"])
+            keys = {"cross_level_px", "fade_px"} & set(st)
+            want = set() if tkr == "CCC" else {"fade_px" if tkr == "BBB" else "cross_level_px"}
+            assert keys == want, (tkr, st)
+    assert seen == {"near", "forming", "faded", "at_risk", "dormant"}, seen
+
+
+def test_no_payload_field_is_named_cross_px_and_no_level_reaches_an_event_row():
+    """``cross_px`` belongs to the LEDGER, where it is a price — never to this artifact.
+
+    ``reconcile_prophet_live`` sets ``cross_px = first_px``, the price the tape actually
+    printed at the first cross, and leans on it in ``FIRST_WINS`` and in the
+    ``close_vs_cross_pct``/``fill_vs_cross_pct`` derivations. The armed LEVEL therefore
+    ships as ``cross_level_px`` (operator ruling 2026-07-30): the two names no longer
+    collide, so a join across artifact and ledger cannot compare a threshold to a fill.
+    Two ways that could regress — reviving the bare name here, or a wholesale
+    ``{**new}`` in ``transitions`` pushing the level into the spool the ledger reads —
+    and this pins both.
+    """
+    a = _run(pack({"AAA": near(100.0, hi=105.0), "BBB": buyable(fade=90.0)}),
+             quotes(AAA=101.0, BBB=85.0))
+    b = _run(pack({"AAA": near(100.0, hi=105.0), "BBB": buyable(fade=90.0)}),
+             quotes(AAA=101.0, BBB=85.0), a)
+    # The level really is being published, or the rest of this proves nothing.
+    assert b["states"]["AAA"]["cross_level_px"] == 100.0
+    for art in (a, b):
+        assert '"cross_px"' not in json.dumps(art), "the ledger's field name is back"
+    evs = a["events"] + b["events"]
+    assert evs, "fixture produced no events"
+    for ev in evs:
+        for key in ("cross_level_px", "fade_px", "fade_hi_px"):
+            assert key not in ev, (ev, key)
+        assert ev["price"] in (101.0, 85.0)      # the row still carries the TAPE price
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # The confirm window
 # ─────────────────────────────────────────────────────────────────────────────
 
