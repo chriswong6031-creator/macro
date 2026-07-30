@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+import shutil
 import subprocess
 
 import yaml
@@ -42,6 +43,7 @@ def test_oversized_checkout_is_bounded_before_checkout_runs():
     )
     assert "--filter=blob:none" in script
     assert '"file://$CHECKOUT_TRASH"' in script
+    assert "macro.renderMetadataCheckout" in script
     assert 'git reset --mixed HEAD' in script
     assert 'git update-index --refresh' in script
 
@@ -50,7 +52,7 @@ def test_render_checkout_uses_a_shallow_blobless_partial_clone():
     checkout = next(
         step for step in _steps() if step.get("uses") == "actions/checkout@v4"
     )
-    assert checkout["if"] == "steps.bound.outputs.compacted != 'true'"
+    assert checkout["if"] == "steps.bound.outputs.checkout_ready != 'true'"
     assert checkout["with"]["ref"] == "main"
     assert checkout["with"]["filter"] == "blob:none"
     assert checkout["with"]["fetch-depth"] == 1
@@ -81,6 +83,22 @@ def _git(cwd: Path, *args: str) -> str:
         stderr=subprocess.PIPE,
     )
     return result.stdout.strip()
+
+
+def _object_is_local(repo: Path, oid: str) -> bool:
+    if (repo / ".git" / "objects" / oid[:2] / oid[2:]).exists():
+        return True
+    for index in (repo / ".git" / "objects" / "pack").glob("*.idx"):
+        objects = subprocess.run(
+            ["git", "verify-pack", "-v", index],
+            cwd=repo,
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout
+        if any(line.startswith(f"{oid} ") for line in objects.splitlines()):
+            return True
+    return False
 
 
 def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path):
@@ -170,7 +188,7 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
         github_env.read_text(encoding="utf-8").strip()
         == f"CHECKOUT_TRASH={runner_temp / 'macro-git-123-1'}"
     )
-    assert github_output.read_text(encoding="utf-8").strip() == "compacted=true"
+    assert github_output.read_text(encoding="utf-8").strip() == "checkout_ready=true"
     assert (runner_temp / "macro-git-123-1").is_dir()
     new_git_kib = int(
         subprocess.run(
@@ -181,3 +199,45 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
         ).stdout.split()[0]
     )
     assert new_git_kib < old_git_kib
+    assert _git(workspace, "config", "--get", "macro.renderMetadataCheckout") == "true"
+
+    # A later run must keep using the managed metadata path even though .git is
+    # now far below the size threshold. In particular, an unchanged large blob
+    # must stay absent from the partial object store: actions/checkout would
+    # download it (and every other current-tree blob) during its forced detach.
+    stable_blob = _git(workspace, "rev-parse", "HEAD:site/macro.html")
+    assert not _object_is_local(workspace, stable_blob)
+    shutil.rmtree(runner_temp / "macro-git-123-1")
+    _git(workspace, "config", "--unset", "macro.renderMetadataCheckout")
+
+    (updater / "new-on-main.txt").write_text("second main delta\n", encoding="utf-8")
+    (updater / "another-main-file.txt").write_text("new path\n", encoding="utf-8")
+    _git(updater, "add", "new-on-main.txt", "another-main-file.txt")
+    _git(updater, "commit", "-m", "advance main again")
+    _git(updater, "push", "origin", "main")
+
+    (workspace / "tracked.txt").write_text("dirty again\n", encoding="utf-8")
+    (workspace / "ignored-again.tmp").write_text("throwaway\n", encoding="utf-8")
+    github_env.write_text("", encoding="utf-8")
+    github_output.write_text("", encoding="utf-8")
+    env["CHECKOUT_GIT_MAX_KIB"] = "999999999"
+    subprocess.run(
+        ["bash", "-c", bound["run"]],
+        cwd=workspace,
+        env=env,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+
+    assert (workspace / "site" / "macro.html").read_text(encoding="utf-8") == payload
+    assert (
+        workspace / "new-on-main.txt"
+    ).read_text(encoding="utf-8") == "second main delta\n"
+    assert (workspace / "another-main-file.txt").read_text(encoding="utf-8") == "new path\n"
+    assert not (workspace / "ignored-again.tmp").exists()
+    assert _git(workspace, "status", "--porcelain") == ""
+    assert _git(workspace, "config", "--get", "macro.renderMetadataCheckout") == "true"
+    assert github_env.read_text(encoding="utf-8") == ""
+    assert github_output.read_text(encoding="utf-8").strip() == "checkout_ready=true"
+    assert not _object_is_local(workspace, stable_blob)
