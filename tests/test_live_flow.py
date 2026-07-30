@@ -29,6 +29,7 @@ import json
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 from unittest.mock import MagicMock, patch
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -2713,3 +2714,153 @@ class TestStartupReachabilityTimeout:
         result = store_root(override=explicit)
         assert str(result) == explicit, (
             "Explicit override arg must win over THETADATA_STORE env")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 36. Event "ts" exchange-time normalisation (sibling of _minute_key, §20)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestNaiveTimestampEventTs:
+    """The event "ts" must read a NAIVE trade_timestamp as exchange (ET) wall clock.
+
+    Same defect family as TestNaiveTimestampMinuteKey, on the other consumer of
+    the same raw column: `_coalesce_batch` aggregates ts=("trade_timestamp",
+    "max"), so the event "ts" and the tide minute key are fed by identical
+    naive-ET input.  The _minute_key fix (DAY_STATE_VERSION 3) left this path
+    untouched — it appended a literal "Z" to the naive ET wall clock with no
+    conversion, so a 09:30 ET print shipped as "09:30Z".
+
+    Why that is load-bearing rather than cosmetic: this value is the event
+    timestamp in feed_current.json and live_flow/archive/*.json, and the
+    charting-app flowdesk renderers (FlowCard.tsx fmtTime, InspectorPane.tsx)
+    do `new Date(ts).toLocaleTimeString(..., {timeZone: "America/New_York"})`
+    — they parse it as an absolute instant and convert to ET.  An ET stamp
+    labeled Z double-converts, so every event card displayed a time 4h early
+    under EDT (5h under EST).
+
+    tz-AWARE inputs are unchanged (they still convert to UTC) — which is why
+    the pre-existing tests, whose fixtures are all ISO8601Z, could not see the
+    defect.  No test asserted on ev["ts"] at all before this class.
+    """
+
+    # ── direct unit tests on lf._event_ts_utc ────────────────────────────────
+
+    def test_naive_edt_stamp_converts_to_utc(self):
+        """Naive EDT stamp → +4h UTC, not the same wall clock with a "Z" bolted on."""
+        assert lf._event_ts_utc("2026-07-29T09:30:00", "2026-07-29T13:35:00Z") \
+            == "2026-07-29T13:30:00Z"
+
+    def test_naive_est_stamp_converts_to_utc(self):
+        """Naive EST stamp → +5h UTC under the winter offset.
+
+        Paired with the EDT case above: one wall-clock reading must map to two
+        different UTC instants across the year, which only holds if the stamp is
+        localized to ET rather than shifted by a fixed number of hours.
+        """
+        assert lf._event_ts_utc("2026-01-15T09:30:00", "2026-01-15T14:35:00Z") \
+            == "2026-01-15T14:30:00Z"
+
+    def test_naive_close_stamp_converts_to_utc(self):
+        """A 15:59 ET close print → 19:59Z, never "15:59Z"."""
+        assert lf._event_ts_utc("2026-07-29T15:59:00", BATCH_TS) \
+            == "2026-07-29T19:59:00Z"
+
+    def test_naive_stamp_with_milliseconds(self):
+        """Naive stamp with a ms fraction (v3 emits these) → converted, seconds kept."""
+        assert lf._event_ts_utc("2026-07-29T15:59:58.123", BATCH_TS) \
+            == "2026-07-29T19:59:58Z"
+
+    def test_aware_utc_stamp_passes_through(self):
+        """tz-aware ISO8601Z is unchanged — already a genuine UTC instant."""
+        assert lf._event_ts_utc("2026-07-29T13:30:00Z", BATCH_TS) \
+            == "2026-07-29T13:30:00Z"
+
+    def test_aware_offset_stamp_converts(self):
+        """An explicit -04:00 offset converts on its own offset, not via ET localize."""
+        assert lf._event_ts_utc("2026-07-29T09:30:00-04:00", BATCH_TS) \
+            == "2026-07-29T13:30:00Z"
+
+    def test_unparseable_ts_falls_back_to_batch_ts(self):
+        """Unparseable ts_val → batch_ts, which the poller builds as UTC ISO8601Z."""
+        assert lf._event_ts_utc("garbage", BATCH_TS) == BATCH_TS
+
+    # ── production-shape integration through process_batch ───────────────────
+
+    def _make_naive_batch(self, naive_ts: str) -> pd.DataFrame:
+        """Single ask-side SPY call whose trade_timestamp is a NAIVE ET string.
+
+        Mirrors TestNaiveTimestampMinuteKey._make_naive_batch — the shape
+        bulk_trade_quote actually returns.  Premium is 2.60*100*100 = $26,000,
+        so etf_floor=0 admits it through the notability gate.
+        """
+        return pd.DataFrame([{
+            "root": "SPY", "right": "C",
+            "expiration": "2026-07-05", "strike": 550.0,
+            "price": 2.60, "bid": 2.40, "ask": 2.80,
+            "size": 100, "trade_timestamp": naive_ts,
+            "quote_timestamp": naive_ts,
+            "sequence": abs(hash(naive_ts)) % 100000 + 1,
+            "date": SESSION_DATE,
+        }])
+
+    def _one_event(self, naive_ts: str) -> dict:
+        result = lf.process_batch(
+            calls_df=self._make_naive_batch(naive_ts), puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        events = result["events"]
+        assert len(events) == 1, f"expected exactly 1 notable event; got {len(events)}"
+        return events[0]
+
+    def test_process_batch_open_print_ts_is_utc(self):
+        """A 09:30 ET naive print must ship ts=13:30Z, never the mislabeled 09:30Z."""
+        ev = self._one_event("2026-07-02T09:30:00")
+        assert ev["ts"] == "2026-07-02T13:30:00Z", (
+            f'event ts must be genuine UTC for a 09:30 ET print; got {ev["ts"]!r}')
+        assert ev["ts"] != "2026-07-02T09:30:00Z", (
+            "ts is the ET wall clock with a literal Z appended — the charting-app "
+            "renderers would double-convert this and display 05:30")
+
+    def test_process_batch_close_print_ts_is_utc(self):
+        """A 15:59 ET naive print must ship ts=19:59Z, never the mislabeled 15:59Z."""
+        ev = self._one_event("2026-07-02T15:59:00")
+        assert ev["ts"] == "2026-07-02T19:59:00Z", (
+            f'event ts must be genuine UTC for a 15:59 ET print; got {ev["ts"]!r}')
+        assert ev["ts"] != "2026-07-02T15:59:00Z", (
+            "ts is the ET wall clock with a literal Z appended — the charting-app "
+            "renderers would double-convert this and display 11:59")
+
+    def test_event_ts_round_trips_to_et_for_display(self):
+        """End-to-end: the shipped ts, rendered the way the flowdesk renders it,
+        must read back as the original ET wall clock.
+
+        This is the assertion that actually pins the user-visible bug: it mimics
+        `new Date(ts).toLocaleTimeString(..., {timeZone: "America/New_York"})`.
+        """
+        ev = self._one_event("2026-07-02T10:45:00")
+        displayed = (
+            datetime.strptime(ev["ts"], "%Y-%m-%dT%H:%M:%SZ")
+            .replace(tzinfo=timezone.utc)
+            .astimezone(ZoneInfo("America/New_York"))
+            .strftime("%H:%M")
+        )
+        assert displayed == "10:45", (
+            f'ts {ev["ts"]!r} renders as {displayed} ET; a 10:45 ET print must '
+            "display as 10:45, not shifted")
+
+    def test_event_ts_and_minute_key_agree(self):
+        """The event ts and the tide minute key are fed by the same raw column,
+        so they must describe the same instant — one ET-localize rule for both.
+        """
+        naive = "2026-07-02T11:07:00"
+        ev = self._one_event(naive)
+        ts_et = (
+            datetime.strptime(ev["ts"], "%Y-%m-%dT%H:%M:%SZ")
+            .replace(tzinfo=timezone.utc)
+            .astimezone(ZoneInfo("America/New_York"))
+            .strftime("%H:%M")
+        )
+        assert ts_et == lf._minute_key(naive, BATCH_TS) == "11:07", (
+            f"event ts→ET ({ts_et}) must equal the minute key "
+            f"({lf._minute_key(naive, BATCH_TS)}) for the same trade_timestamp")
