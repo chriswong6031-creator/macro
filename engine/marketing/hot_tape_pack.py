@@ -147,8 +147,10 @@ def round_levels(price: float) -> tuple[float | None, float | None]:
 def _weekday_lag(older: Any, newer: Any) -> int | None:
     """Weekdays strictly after `older` up to and including `newer`. None on junk.
 
-    Mirrors hot_tape._weekdays_between; kept local so this module stays free of
-    an engine-sibling import at scan time.
+    Weekday-shaped on purpose, and NOT hot_tape._sessions_between: this is the
+    staleness lag of a nightly RECORD inside the pack (how old the plan row is),
+    not the "is the pack yesterday's session" adjacency question, and it is kept
+    local so this module stays free of an engine-sibling import at scan time.
     """
     try:
         a, b = date.fromisoformat(str(older)[:10]), date.fromisoformat(str(newer)[:10])

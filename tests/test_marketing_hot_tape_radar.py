@@ -1534,6 +1534,124 @@ class TestTwoStepBrief:
         assert cfg["two_step"]["delay_min"] > 0     # never the alert's own pass
 
 
+class TestABriefNeverOutlivesItsAlert:
+    """The residual ordering hole behind M2's build-time gate (#3960 minor).
+
+    ``pending_briefs`` requires the alert to be ``posted`` when the brief is
+    BUILT. That is a snapshot. A booked brief that does not post on its own
+    dispatch (a lost push race, a superseded publisher run) sits queued and
+    every later pass inside ``CARRYOVER_MAX_AGE_MIN`` re-dispatches it -- and a
+    dispatch is ``post_now``, which skips schedule gating entirely. Recall the
+    alert in that gap and the second half of a two-step publish goes out
+    explaining a post nobody ever saw, which is precisely what M2 existed to
+    prevent.
+    """
+
+    @staticmethod
+    def _brief_and_alert(root: Path) -> tuple[dict, dict]:
+        briefs = _brief_items(root)
+        alerts = [i for i in OB.read_items(root)
+                  if (i.get("source") or {}).get("trigger") != HT.BRIEF_TRIGGER]
+        assert briefs and alerts
+        return briefs[0], alerts[0]
+
+    def _booked_brief(self, tmp_path, monkeypatch) -> tuple[Path, dict, dict]:
+        """A posted alert plus its queued brief -- the state the hole opens in."""
+        root = _brief_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        _post_alert(root)
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+        brief, alert = self._brief_and_alert(root)
+        return root, brief, alert
+
+    def test_a_recalled_alert_stops_its_queued_brief_from_being_dispatched(
+            self, tmp_path, monkeypatch, capsys):
+        root, brief, alert = self._booked_brief(tmp_path, monkeypatch)
+        out_file = tmp_path / "gh_output.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+        # The operator kills the alert AFTER it was accepted (scripts/marketing_
+        # _recall.py's transition): `posted` -> `recalled`.
+        assert OB.transition(alert["id"], "recalled", actor="test", root=root,
+                             note="fixture recall", now=NOW) is True
+        capsys.readouterr()
+
+        RADAR.run(root, now=NOW + timedelta(minutes=10), fetcher=_no_fetch)
+
+        dispatched = out_file.read_text(encoding="utf-8") if out_file.exists() else ""
+        assert brief["id"] not in dispatched, dispatched
+        # And it is DEAD, not deferred: the scheduled publish sweep must not
+        # send it either.
+        assert OB.fold_state(root)["status"][brief["id"]] == "quarantined"
+        warn = [l for l in capsys.readouterr().out.splitlines()
+                if l.startswith("::warning title=hot-tape-orphan-brief::")]
+        assert len(warn) == 1 and brief["id"] in warn[0], warn
+
+    def test_a_still_posted_alert_lets_its_brief_ride_the_next_dispatch(
+            self, tmp_path, monkeypatch):
+        """The control. The gate must not eat a legitimate carryover brief."""
+        root, brief, _alert = self._booked_brief(tmp_path, monkeypatch)
+        out_file = tmp_path / "gh_output.txt"
+        monkeypatch.setenv("GITHUB_OUTPUT", str(out_file))
+
+        ids = RADAR.dispatch_ids(root, [], fired_today=HT.load_fired(root, DAY),
+                                 now=NOW + timedelta(minutes=8))
+
+        assert brief["id"] in ids
+        assert OB.fold_state(root)["status"][brief["id"]] == "queued"
+
+    def test_a_quarantined_alert_stops_its_queued_brief(self, tmp_path,
+                                                        monkeypatch, capsys):
+        """The quarantined spelling of the same hole, at the dispatch seam.
+
+        ``posted -> quarantined`` is not a legal outbox transition, so this state
+        is reached the way production would reach it if the ledger ever carried
+        it: the gate must key on "is the parent posted", never on "is the parent
+        absent from a known-dead list".
+        """
+        root, brief, alert = self._booked_brief(tmp_path, monkeypatch)
+        rows = HT.load_fired(root, DAY)
+        statuses = {alert["id"]: "quarantined", brief["id"]: "queued"}
+        monkeypatch.setattr(OB, "fold_state", lambda *_a, **_k: {"status": statuses})
+        capsys.readouterr()
+
+        ids = RADAR.dispatch_ids(root, [], fired_today=rows,
+                                 now=NOW + timedelta(minutes=8))
+
+        assert brief["id"] not in ids
+        assert "::warning title=hot-tape-orphan-brief::" in capsys.readouterr().out
+
+    def test_an_unresolvable_parent_withholds_the_brief_without_killing_it(
+            self, tmp_path, monkeypatch, capsys):
+        """Fail closed, but do not DESTROY on missing evidence.
+
+        A brief whose alert row cannot be found is withheld from the fast lane
+        and ages out of the carryover window on its own. Quarantine is reserved
+        for positive proof the alert is dead, so a fold hiccup cannot cost a
+        legitimate brief its life.
+        """
+        root, brief, _alert = self._booked_brief(tmp_path, monkeypatch)
+        rows = [r for r in HT.load_fired(root, DAY)
+                if str(r.get("trigger") or "") == HT.BRIEF_TRIGGER]
+        assert rows, "no brief row in the fired ledger"
+        capsys.readouterr()
+
+        ids = RADAR.dispatch_ids(root, [], fired_today=rows,
+                                 now=NOW + timedelta(minutes=8))
+
+        assert brief["id"] not in ids
+        assert OB.fold_state(root)["status"][brief["id"]] == "queued"
+        assert "unresolved" in capsys.readouterr().out
+
+    def test_the_brief_key_round_trips_to_its_alert(self):
+        """The dispatch gate can only re-check what it can resolve."""
+        assert HT.parent_alert_key(HT.brief_key("mover:MU:down:2026-09-08:0")) == \
+            "mover:MU:down:2026-09-08:0"
+        assert HT.parent_alert_key("mover:MU:down:2026-09-08:0") is None
+        assert HT.parent_alert_key("") is None
+        assert HT.parent_alert_key("brief:") is None
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 7 — the suite pins its own CI wiring (unrun-suite rot dies here)
 # ─────────────────────────────────────────────────────────────────────────────

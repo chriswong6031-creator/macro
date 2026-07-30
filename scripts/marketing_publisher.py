@@ -801,9 +801,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--post-now", default=None, metavar="ID[,ID…]",
                         help="BREAKING DISPATCH: restrict this run to these outbox item "
                              "ids, approve them regardless of the auto-approve config, "
-                             "and send them immediately (ignoring their ladder slot). "
-                             "Every safety gate still runs — validation, tape gate, "
-                             "channel, cap, and the global min-spacing floor.")
+                             "and send them immediately. SKIPS ONLY PACING: the ladder "
+                             "slot, the per-account daily cap, the cadence resolver, the "
+                             "global min-spacing floor and the send-time jitter. Every "
+                             "SAFETY gate still runs — validation, banned language, the "
+                             "chart-required law, repeat/near-dup, the live tape gate, "
+                             "channel, account halts and the global kill switch. It "
+                             "cannot arm the publisher: without --live and "
+                             "MARKETING_PUBLISH_ENABLED this is still a dry run.")
     args = parser.parse_args(argv)
 
     # Operator/breaking override: a non-empty set switches the run into
@@ -1443,10 +1448,17 @@ def main(argv: list[str] | None = None) -> int:
         # the spacing window or a forward-book slot, the same reason the tape,
         # cap and channel gates run first.
         media_paths = _media_paths_for(it, pub_cfg, _media_sidecar)
-        # An operator "post now" click is explicit intent and outranks the hold:
-        # they asked for this item, on this tape, now. Everything else waits for
-        # its picture.
-        if iid not in post_now and _missing_required_media(it, pub_cfg, media_paths):
+        # `post_now` BUYS A SLOT, NOT A WAIVER (#3960 minor). This used to read
+        # `iid not in post_now and _missing_required_media(...)`, on the reasoning
+        # that an operator click is explicit intent that outranks the hold. It is
+        # explicit intent about the TIMING; it is not consent to break the
+        # standing chart law (#3921, "every ticker post carries a chart"), and a
+        # bare ticker post is exactly what that law forbids. The operator clicking
+        # "post now" cannot see that the chart's R2 URL never resolved, so the
+        # waiver silently converted a charted entry-timing read into a naked call
+        # — the one failure mode the gate exists for. A deferred item is not
+        # refused, it retries the moment the media backfill lands.
+        if _missing_required_media(it, pub_cfg, media_paths):
             _charts = _chart_ids_for(it)
             _age_days = _item_age_days(it, now)
             if _age_days > _MEDIA_DEFER_MAX_AGE_DAYS:

@@ -189,10 +189,12 @@ def clamp_for_x(
     THE LADDER, in order, stopping at the first rung that fits:
 
       1. ``headline + body`` unchanged (what a flash almost always is);
-      2. ``body`` alone. The deterministic summary RESTATES the headline, so on
-         that path the prefix is pure duplication; on the LLM path the body is a
-         restatement of the same source. Dropping it costs no fact and no
-         attribution, both of which live in the body;
+      2. ``body`` alone. On the LLM path the body is a restatement of the same
+         source; on the deterministic path it is the source's own lead sentence
+         (breaking_summary._det_lead_sentence). Either way the FACT and the
+         ATTRIBUTION both live in the body, so dropping the headline prefix
+         costs framing, never substance -- and this rung only fires when the
+         joined form does not fit at all;
       3. the longest WHOLE-SENTENCE prefix of the body, with the attribution and
          tape clauses re-attached, so the post never ends mid-claim and never
          loses its source line;

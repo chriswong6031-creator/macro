@@ -877,6 +877,134 @@ def test_post_now_dry_run_exits_zero(monkeypatch, tmp_path):
     assert fake.calls == []
 
 
+class TestPostNowSkipsPacingNotSafety:
+    """`post_now` BUYS A SLOT, NOT A WAIVER (#3960 reviewer minor).
+
+    The bypass is legitimate for PACING — the ladder slot, the daily cap, the
+    cadence resolver, the min-spacing floor, the send-time jitter — because an
+    operator click and a breaking dispatch are explicit intent about WHEN. It is
+    not consent to relax a safety gate, and it never arms the publisher.
+
+    The gates below all bind on a `post_now` item. The chart law is the one that
+    did NOT: line 1449 used to read `iid not in post_now and
+    _missing_required_media(...)`, so a ticker post whose chart URL never
+    resolved shipped BARE on an operator click -- silently, since the panel does
+    not show that the R2 upload failed. Everything here is a RUNTIME assertion;
+    the source-shape half lives in tests/test_marketing_forward_booking.py.
+    """
+
+    @staticmethod
+    def _seed_charted_signal(tmp_path: Path, *, media_url: str = "") -> str:
+        """A $ticker `signal` that carries chart metadata with no public URL.
+
+        This is the real production shape of the defect: the plan build stamped a
+        chart onto the item, and the R2 upload that would have given it a public
+        https URL never landed.
+        """
+        from engine.marketing.outbox import make_item, enqueue
+        media = [{"kind": "chart_svg", "chart_id": "sig-pltr-1",
+                  "path": "data/marketing/outbox/media/x/sig-pltr-1.svg",
+                  "ticker": "PLTR"}]
+        if media_url:
+            media[0]["media_url"] = media_url
+        item = make_item(
+            account="flagship", kind="signal",
+            text="$PLTR reclaimed the 50-day. Watching now.", as_of=_AS_OF,
+            media=media, scheduled_at="immediate", priority=5,
+            provenance="content_studio", now=_FIXED_NOW,
+        )
+        enqueue(item, root=tmp_path, max_per_account_day=99)
+        return item["id"]
+
+    def test_a_post_now_ticker_post_missing_its_chart_is_refused(
+            self, monkeypatch, tmp_path):
+        from engine.marketing.outbox import current_statuses
+        _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+        _append_publish_key(tmp_path, "media_enabled", "true")
+        bare = self._seed_charted_signal(tmp_path)
+        fake = _FakePublisher(ok=True)
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", bare],
+                            fake_publisher=fake, kill_switch=True)
+
+        assert fake.calls == [], "a chartless ticker post reached the timeline"
+        # Deferred, not destroyed: it retries when the media backfill lands.
+        assert current_statuses(tmp_path)[bare] == "approved"
+        # And the dispatch reports RED, so the operator is not told it went out.
+        assert rc == 3
+
+    def test_the_same_item_posts_once_its_chart_has_a_public_url(
+            self, monkeypatch, tmp_path):
+        """The control. The gate refuses a MISSING chart, not the whole kind."""
+        from engine.marketing.outbox import current_statuses
+        _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+        _append_publish_key(tmp_path, "media_enabled", "true")
+        good = self._seed_charted_signal(
+            tmp_path, media_url="https://pub-test.r2.dev/c/sig-pltr-1.png")
+        fake = _FakePublisher(ok=True)
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", good],
+                            fake_publisher=fake, kill_switch=True)
+
+        assert rc == 0
+        assert current_statuses(tmp_path)[good] == "posted"
+        assert len(fake.calls) == 1
+
+    def test_a_post_now_item_with_banned_language_is_quarantined(
+            self, monkeypatch, tmp_path):
+        """An em dash is what the press lane's whole B1 wave was about: the
+        publisher's last-gate language screen quarantines it. A breaking dispatch
+        must not be the way around the copy bar."""
+        from engine.marketing.outbox import current_statuses
+        _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+        bad = _seed_queued_item(
+            tmp_path, text="$PLTR reclaimed the 50-day — watching now.")
+        fake = _FakePublisher(ok=True)
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", bad],
+                            fake_publisher=fake, kill_switch=True)
+
+        assert fake.calls == []
+        assert current_statuses(tmp_path)[bad] == "quarantined"
+        assert rc == 3
+
+    def test_a_post_now_item_on_a_halted_account_never_sends(
+            self, monkeypatch, tmp_path):
+        """The halt registry is a kill switch with an account's name on it."""
+        import json as _json
+        from engine.marketing.outbox import current_statuses
+        _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+        from engine.marketing import health_monitor as hm
+        target = _seed_queued_item(tmp_path, text="$PLTR held the 50-day.")
+        path = hm.halts_path(tmp_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(_json.dumps({"accounts": {"flagship": {
+            "state": "halted", "reason": "fixture halt",
+            "at": "2026-07-19T12:00:00Z"}}}), encoding="utf-8")
+        assert hm.is_halted("flagship", root=tmp_path) is True
+        fake = _FakePublisher(ok=True)
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", target],
+                            fake_publisher=fake, kill_switch=True)
+
+        assert fake.calls == []
+        assert current_statuses(tmp_path)[target] != "posted"
+        assert rc == 3
+
+    def test_post_now_cannot_arm_the_publisher(self, monkeypatch, tmp_path):
+        """Restates test_post_now_dry_run_exits_zero as a SAFETY claim: the
+        global kill switch is computed before post_now is ever consulted, so
+        `--post-now` with the switch off sends nothing."""
+        _write_publish_cfg(tmp_path, auto_approve=True, cap=-1, floor_min=0)
+        target = _seed_queued_item(tmp_path, text="$PLTR reclaimed the 50-day.")
+        fake = _FakePublisher(ok=True)
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", target],
+                            fake_publisher=fake, kill_switch=False)
+
+        assert rc == 0 and fake.calls == []
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Post-time repeat gate — identical copy never posts twice in the window
 # ─────────────────────────────────────────────────────────────────────────────

@@ -1157,6 +1157,10 @@ def pending_briefs(
             # explaining a post nobody ever saw. The delay window makes this
             # cheap to require: by the time a brief is eligible the alert has
             # had a full publisher pass to reach "posted".
+            #
+            # This check is a SNAPSHOT at build time; :func:`dispatch_ids`
+            # re-checks it before every send, because a booked brief can outlive
+            # its alert's "posted" status (recall, quarantine) while it waits.
             if statuses.get(str(row["item_id"])) != "posted":
                 continue
             packet = HT.build_brief_packet(
@@ -1211,18 +1215,61 @@ def dispatch_ids(
         log.warning("hot_tape_radar: outbox fold failed, dispatching booked only: %s", exc)
         return list(booked)
 
+    # The alert item_id behind each ALERT key this lane fired today. Built from
+    # the same rows, so resolving a brief's parent costs no extra read.
+    alert_item_by_key: dict[str, str] = {}
+    for row in (fired_today or []):
+        k, iid = str(row.get("key") or ""), row.get("item_id")
+        if k and iid and str(row.get("trigger") or "") != HT.BRIEF_TRIGGER:
+            alert_item_by_key.setdefault(k, str(iid))
+
     pending: list[tuple[str, str]] = []      # (fired_at, item_id)
     stale: list[str] = []
+    orphans: list[tuple[str, str]] = []      # (brief item_id, parent status)
     for row in candidates:
         item_id = str(row["item_id"])
         if statuses.get(item_id) not in ("queued", "approved"):
             continue
+        # A BRIEF RIDES ONLY WHILE ITS ALERT IS STILL POSTED (#3960 minor).
+        # pending_briefs makes that check when the brief is BUILT, and that is a
+        # SNAPSHOT: a brief whose dispatch lost a push race, or whose publisher
+        # run was superseded, sits queued and every later pass inside the
+        # carryover window re-dispatches it. If the alert was recalled (operator
+        # kill) or quarantined in that gap, the second half of a two-step publish
+        # would go out explaining a post nobody ever saw. Re-checked here because
+        # this is the last point the radar controls before the send.
+        if str(row.get("trigger") or "") == HT.BRIEF_TRIGGER:
+            parent_id = alert_item_by_key.get(HT.parent_alert_key(row.get("key")) or "")
+            parent_status = statuses.get(parent_id) if parent_id else None
+            if parent_status != "posted":
+                # Fail closed either way, but only DESTROY on positive evidence:
+                # a resolved alert that is no longer posted makes the brief a
+                # permanent orphan (quarantine, so the scheduled sweep cannot
+                # send it either), while an unresolvable parent is merely
+                # withheld -- it ages out of the carryover window on its own and
+                # a fold hiccup must not cost a legitimate brief.
+                orphans.append((item_id, parent_status or "unresolved"))
+                continue
         when = _parse_iso(row.get("fired_at"))
         age = (now - when).total_seconds() / 60.0 if when is not None else None
         if age is None or age > CARRYOVER_MAX_AGE_MIN:
             stale.append(item_id)
             continue
         pending.append((str(row.get("fired_at") or ""), item_id))
+
+    for item_id, parent_status in orphans:
+        print(f"::warning title=hot-tape-orphan-brief::context brief {item_id} is "
+              f"not dispatched: the alert it explains is {parent_status}, not "
+              "posted - a brief is the second half of a two-step publish and "
+              "never ships alone", flush=True)
+        if parent_status == "unresolved":
+            continue
+        try:
+            OB.transition(item_id, "quarantined", actor="hot_tape_radar", root=root,
+                          note=f"orphaned context brief: alert is {parent_status}")
+        except Exception as exc:  # noqa: BLE001
+            log.warning("hot_tape_radar: could not quarantine orphan brief %s: %s",
+                        item_id, exc)
 
     if stale:
         print("::warning title=hot-tape-unposted::"
