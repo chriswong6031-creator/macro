@@ -9,7 +9,7 @@ name: btc-live
 # site/live_config.js) — which otherwise has no producer.
 #
 # SCOPE: `--display` builds the exact DISPLAY_SYMBOLS universe (scripts/
-# build_live_quotes.py) — the ~30 glance-tier tiles the site renders live: BTC header,
+# build_live_quotes.py) — the ~34 glance-tier tiles the site renders live (plus the brain market packet's curve/vol inputs): BTC header,
 # macro index strip (SPY/QQQ/^DJI/^RUT), six-instrument macro tape, china live strip
 # (SSE/CSI300 ETF/HSI), commodities + forex strips. This is what keeps those tiles
 # moving on nights, weekends and the Sunday-evening Globex reopen, when the weekday

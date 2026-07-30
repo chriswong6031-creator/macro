@@ -76,11 +76,15 @@ def quotes_payload(asof: datetime | None = None, delay: float = 1.0) -> dict:
             "SI=F": _q(58.675, 0.3, delay=delay),
             "DX-Y.NYB": _q(101.514, 0.6, delay=delay),
             "BTC-USD": _q(64503.03, -3.1, delay=delay),
-            # Yahoo yield INDEXES: price is 10x the yield percent.
-            "^IRX": _q(42.0, prev=42.5, delay=delay),     # 4.2%,   -5bp
-            "^FVX": _q(41.0, prev=40.5, delay=delay),     # 4.1%,   +5bp
-            "^TNX": _q(46.92, prev=46.06, delay=delay),   # 4.692%, +8.6bp
-            "^TYX": _q(50.0, prev=48.71, delay=delay),    # 5.0%,   +12.9bp
+            # Yahoo yield indexes as the spark feed actually delivers them:
+            # the yield percent DIRECTLY (probed live from the VPS 2026-07-29 —
+            # ^TNX 4.622 = 4.622%). The CBOE ×10 convention arrives only via
+            # other paths and is normalized by _yield_pct scale detection
+            # (covered by test_yield_scale_detection_handles_both_conventions).
+            "^IRX": _q(4.20, prev=4.25, delay=delay),     # 4.2%,   -5bp
+            "^FVX": _q(4.10, prev=4.05, delay=delay),     # 4.1%,   +5bp
+            "^TNX": _q(4.692, prev=4.606, delay=delay),   # 4.692%, +8.6bp
+            "^TYX": _q(5.00, prev=4.871, delay=delay),    # 5.0%,   +12.9bp
         },
     }
 
@@ -323,10 +327,15 @@ def test_digest_stays_inside_the_default_budget(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Curve: x10 scaling, sanity gate, label matrix
+# Curve: feed-scale normalization, sanity gate, label matrix
 # ---------------------------------------------------------------------------
 
-def test_yield_index_is_scaled_by_ten(tmp_path):
+def test_yield_levels_and_bp_from_the_percent_direct_feed(tmp_path):
+    """The production spark feed delivers percent directly; levels pass through
+    unscaled and a bp move is the level difference × 100 (live.js:105 is the
+    browser's reference formula). The shipped ÷10 (W1 diagnosis, 2026-07-29)
+    rendered 10Y as 0.46% INSIDE the sanity band — silently wrong in every
+    grounding turn — and understated bp moves 10×, so no curve FLAG could fire."""
     packet = mp.build_packet(make_root(tmp_path))
     tenors = packet["curve"]["tenors"]
     assert tenors["10Y"]["level_pct"] == pytest.approx(4.692)
@@ -336,6 +345,42 @@ def test_yield_index_is_scaled_by_ten(tmp_path):
     assert tenors["30Y"]["change_bp"] == pytest.approx(12.9)
     assert packet["curve"]["front_tenor"] == "3M"
     assert packet["curve"]["long_tenor"] == "30Y"
+
+
+def test_yield_scale_detection_handles_both_conventions(tmp_path):
+    """Units are FEED-DEPENDENT (spark = percent-direct, /ws/tape relay = CBOE
+    ×10) so _yield_pct scale-detects at >15, mirroring live.js tnxPct(). Both
+    encodings of the same market must produce identical curve facts — including
+    the exact numbers probed live from the VPS on 2026-07-29 (^TNX 4.622,
+    prev 4.604 = +1.8bp)."""
+    q = quotes_payload()
+    q["quotes"]["^TNX"] = _q(4.622, prev=4.604)         # percent-direct (probe)
+    packet = mp.build_packet(make_root(tmp_path, quotes=q))
+    direct = packet["curve"]["tenors"]["10Y"]
+    assert direct["level_pct"] == pytest.approx(4.622)
+    assert direct["change_bp"] == pytest.approx(1.8)
+
+    q = quotes_payload()
+    q["quotes"]["^TNX"] = _q(46.22, prev=46.04)         # same market, ×10 units
+    packet = mp.build_packet(make_root(tmp_path, quotes=q))
+    x10 = packet["curve"]["tenors"]["10Y"]
+    assert x10["level_pct"] == pytest.approx(4.622)
+    assert x10["change_bp"] == pytest.approx(1.8)
+
+
+def test_yield_scale_detection_is_pair_level_across_the_threshold(tmp_path):
+    """A ×10 low-yield print can straddle the 15 threshold (1.45%/1.55% quotes
+    as 14.5/15.5). Per-VALUE detection would normalize only the >15 side and
+    fabricate a -1320bp junk move (dropped, tenor lost); pair-level detection
+    (either value >15 → both ÷10) renders the truth: 1.45%, a real -10bp move.
+    Peer-review note from the Analyst OS session, hardened one step further."""
+    q = quotes_payload()
+    q["quotes"]["^IRX"] = _q(14.5, prev=15.5)           # ×10 straddle pair
+    packet = mp.build_packet(make_root(tmp_path, quotes=q))
+    front = packet["curve"]["tenors"]["3M"]
+    assert front["level_pct"] == pytest.approx(1.45)
+    assert front["change_bp"] == pytest.approx(-10.0)
+    assert not any("3M" in g for g in packet["gaps"])   # never junk-gated
 
 
 def test_a_junk_tenor_move_is_dropped_and_noted(tmp_path):
