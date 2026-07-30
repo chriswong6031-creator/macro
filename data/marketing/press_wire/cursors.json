@@ -25,6 +25,7 @@
     "061a1390a9c0052aaee721518eca5eb569d86ec7": "2026-07-29T18:34:45.246165+00:00",
     "061e7e4c89ac6ca213a4b0679f18da59849a86b5": "2026-07-29T19:55:02.943400+00:00",
     "0637d3df419f3dd71178aad707faf783c3f4410e": "2026-07-29T20:41:08.426331+00:00",
+    "06956ee1602ebfe1062bd5f9df3fd456b20cbb8b": "2026-07-30T10:54:12.309725+00:00",
     "06eaa1e848222d20bb7f759701eb1183bbb76773": "2026-07-29T18:34:45.246165+00:00",
     "06ef38f6671a2dcd17a7cc89f5cb687606f1bbc2": "2026-07-29T20:41:08.426331+00:00",
     "06f3abfb7370554b7331552854ef9d486e80bf9a": "2026-07-29T18:34:45.246165+00:00",
@@ -279,9 +280,11 @@
     "3c72b48cb29f456c219d531b61f9ba77ff7d7893": "2026-07-29T18:34:45.246165+00:00",
     "3c7a9ac33bdd5ac236a759f6f4768e89b995713d": "2026-07-29T18:34:45.246165+00:00",
     "3ca457432d988fb15692931c33adbd4fe55c1dcc": "2026-07-29T20:41:08.426331+00:00",
+    "3cc65e8514fac8e85b98602277456838ba10ea6d": "2026-07-30T10:54:12.309725+00:00",
     "3d9ca074af0774850fabfbde7bd91fc006bbf053": "2026-07-29T18:34:45.246165+00:00",
     "3e0f48f7cc40ffbc8b2cf78bb720124cc826761f": "2026-07-29T18:34:45.246165+00:00",
     "3e14408764316d1c26808e6637da4a0abf62bd8f": "2026-07-29T18:34:45.246165+00:00",
+    "3e7f89fc2b4196081598a7a3c7196e2fe16489ed": "2026-07-30T10:54:12.309725+00:00",
     "3ea9046e021cc3326149f0a2bbedc43ed921d791": "2026-07-29T23:34:08.861189+00:00",
     "3eb57990b8aff16d05e876a82bfab718c1ca30f1": "2026-07-29T20:41:08.426331+00:00",
     "3ef186d1f50ab04f5e9d6bf7c370d5cc757c73ba": "2026-07-29T18:34:45.246165+00:00",
@@ -595,6 +598,7 @@
     "7da09a4dd38eeb19f64bfeaac65f3f488014a5a6": "2026-07-29T18:34:45.246165+00:00",
     "7daa55e2b27c2077b05642f4b92865b7ae6a1ea5": "2026-07-30T03:51:26.133776+00:00",
     "7db497455e1978cb4bc661809ea95b65efa01edf": "2026-07-30T00:56:43.142672+00:00",
+    "7dcc3101f9ceadfe9a96121f0e6781257d65c069": "2026-07-30T10:54:12.309725+00:00",
     "7e2ac92a19d85964371b07e43812eb36c421b62c": "2026-07-29T20:41:08.426331+00:00",
     "7e2b1216c43c3ccb2f167ec42473cda0c9946422": "2026-07-29T18:34:45.246165+00:00",
     "7e43dda003a89248468f264bb8f65a2b9967e2ba": "2026-07-29T20:41:08.426331+00:00",
@@ -796,6 +800,8 @@
     "aa475135268a4c797b99a9294b64d5e008255cdb": "2026-07-29T18:34:45.246165+00:00",
     "aa5b9bf31e9a2e9d622b71aa9f8a63026f6a3248": "2026-07-30T03:51:26.133776+00:00",
     "aa69d62b6e62c185767a6229c394f4046ecae519": "2026-07-29T18:34:45.246165+00:00",
+    "aa8c53e8502f367bb0003ec7eda013ff8c9d4a35": "2026-07-30T10:54:12.309725+00:00",
+    "aab50443fc78ba8427536b6b1f05e15a496eb40e": "2026-07-30T10:54:12.309725+00:00",
     "ab3ac4f0d228a01935b3b4bb9104f7100096a1e4": "2026-07-29T18:34:45.246165+00:00",
     "ab6d4c3c7672d387fa197da96a89d671e1b4288a": "2026-07-29T18:34:45.246165+00:00",
     "ab6d5fdf8debbc6d0d8a44e4595a92f722e16229": "2026-07-29T18:34:45.246165+00:00",
@@ -1016,6 +1022,7 @@
     "da580b0ea5d8c5e01d943e6b56be240ef7950dac": "2026-07-29T18:34:45.246165+00:00",
     "daa741c789ceca87ecab4117a90a1930b9cc88ff": "2026-07-30T00:56:43.142672+00:00",
     "dae8d9e64f48ef2e3c58e5fab4b3449165c1474a": "2026-07-29T23:34:08.861189+00:00",
+    "daef7d802662c1e9fc96d2192f59bf411828fa0f": "2026-07-30T10:54:12.309725+00:00",
     "dbc9c70bab98026920e2e72daf28c7eaacd1b115": "2026-07-29T18:34:45.246165+00:00",
     "dc2ab4c20e01f8f85e09bdf0ac5ca96069d26484": "2026-07-30T00:56:43.142672+00:00",
     "dc6355d9cf4383bc1f5f7e239620d2d2c663b5b8": "2026-07-29T18:34:45.246165+00:00",
@@ -1144,6 +1151,7 @@
     "f624ab6dd326750a066acc611a44cd67d3cd26bf": "2026-07-30T03:51:26.133776+00:00",
     "f697a038596d069412a76e5a204fd4435271a86d": "2026-07-29T18:34:45.246165+00:00",
     "f75213085c299506bdf415d7494c3dde50af9741": "2026-07-29T18:34:45.246165+00:00",
+    "f77c3341285c5185106fd4f2690463c8f04af010": "2026-07-30T10:54:12.309725+00:00",
     "f78fb68a76777db6076c415c9fa4dce09c855694": "2026-07-29T18:34:45.246165+00:00",
     "f7dedb7b49f1908aeb41dde461f6cbbe26e1856d": "2026-07-29T18:34:45.246165+00:00",
     "f804ae810bd8a3c4b08a0abc55516078ba7363f3": "2026-07-29T20:41:08.426331+00:00",
@@ -1189,44 +1197,62 @@
     "fedea86d17e1f40fbe68b231452a6c0a04bab6be": "2026-07-29T23:34:08.861189+00:00"
   },
   "corroboration": {
-    "claim:company_news:sec:industrials": {
-      "first_ts": "2026-07-30T08:49:37.302321+00:00",
+    "claim:company_news:sec:technology": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
       "sources": [
         "host:cnbc.com"
       ]
     },
-    "claim:none:sec:energy": {
-      "first_ts": "2026-07-30T08:49:37.302321+00:00",
+    "claim:company_news:tic:META": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
       "sources": [
         "host:cnbc.com"
       ]
     },
-    "claim:none:sec:technology": {
-      "first_ts": "2026-07-30T08:49:37.302321+00:00",
+    "claim:none:sec:communication": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
+      "sources": [
+        "host:cnbc.com"
+      ]
+    },
+    "claim:none:sec:real_estate": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
       "sources": [
         "host:marketwatch.com"
       ]
     },
-    "claim:none:tic:ABBV": {
-      "first_ts": "2026-07-30T08:49:37.302321+00:00",
+    "claim:policy:mac:tariffs": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
+      "sources": [
+        "host:cnbc.com"
+      ]
+    },
+    "head:social securitys biggest problem isnt a design flaw its a missing trust fund": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
       "sources": [
         "host:marketwatch.com"
       ]
     },
-    "head:jeep maker stellantis swings to profit on rising demand in north america shares ": {
-      "first_ts": "2026-07-30T08:49:37.302321+00:00",
+    "head:the view host joy behar finally finds a buyer for 7 million hamptons home after ": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
       "sources": [
-        "host:cnbc.com"
+        "host:marketwatch.com"
+      ]
+    },
+    "head:the world cup winners wore adidas shirts but the companys investors are still cr": {
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
+      "sources": [
+        "host:marketwatch.com"
       ]
     },
     "truth:117005562901056692": {
-      "first_ts": "2026-07-30T08:49:37.302321+00:00",
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117006290013696288": {
-      "first_ts": "2026-07-30T08:49:37.302321+00:00",
+      "first_ts": "2026-07-30T10:54:12.309725+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -1238,14 +1264,14 @@
   },
   "providers": {
     "cnn_truth_backfill": {
-      "etag": "\"54e10f83bda52e7d46edcfcbafa47ac4-3\"",
+      "etag": "\"8906db4b29ea4e7609e67711e882d3bc-3\"",
       "fail_count": 0,
-      "last_modified": "Thu, 30 Jul 2026 05:47:40 GMT",
-      "last_poll_ts": 1785401379.3482833
+      "last_modified": "Thu, 30 Jul 2026 10:38:59 GMT",
+      "last_poll_ts": 1785408853.4971278
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785401378.991762
+      "last_poll_ts": 1785408853.2094517
     },
     "twitterapiio": {
       "cursors": {
@@ -1269,70 +1295,70 @@
         "zerohedge": "2082670040608833986"
       },
       "last_poll": {
-        "BRICSinfo": 1785401379.5986035,
+        "BRICSinfo": 1785408853.774681,
         "CoinDesk": 1785401379.5986035,
         "Cointelegraph": 1785401379.5986035,
-        "DeItaone": 1785401379.5986035,
-        "FirstSquawk": 1785401379.5986035,
+        "DeItaone": 1785408853.774681,
+        "FirstSquawk": 1785408853.774681,
         "HormuzLetter": 1785401379.5986035,
-        "NewsWire_US": 1785401379.5986035,
-        "Osint613": 1785401379.5986035,
-        "StockMKTNewz": 1785401379.5986035,
-        "WHPressPool": 1785401379.5986035,
-        "WatcherGuru": 1785401379.5986035,
-        "WhaleInsider": 1785401379.5986035,
-        "financialjuice": 1785401379.5986035,
-        "rawsalerts": 1785401379.5986035,
-        "remarks": 1785401379.5986035,
-        "tradfi": 1785401379.5986035,
-        "unusual_whales": 1785401379.5986035,
-        "zerohedge": 1785401379.5986035
+        "NewsWire_US": 1785408853.774681,
+        "Osint613": 1785408853.774681,
+        "StockMKTNewz": 1785408853.774681,
+        "WHPressPool": 1785408853.774681,
+        "WatcherGuru": 1785408853.774681,
+        "WhaleInsider": 1785408853.774681,
+        "financialjuice": 1785408853.774681,
+        "rawsalerts": 1785408853.774681,
+        "remarks": 1785408853.774681,
+        "tradfi": 1785408853.774681,
+        "unusual_whales": 1785408853.774681,
+        "zerohedge": 1785408853.774681
       },
       "spend": {
         "2026-07": {
-          "requests": 116,
+          "requests": 131,
           "tweets": 1660,
-          "usd": 0.25395
+          "usd": 0.2562
         }
       }
     }
   },
   "recent_openers": {},
   "schema": "press_wire.cursors/v1",
-  "updated_at": "2026-07-30T08:49:37Z",
+  "updated_at": "2026-07-30T10:54:12Z",
   "wire": {
     "bea_news": {
       "etag": "\"3257b9a6c19dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 21 Jul 2026 12:30:01 GMT",
-      "last_poll_ts": 1785401378.1529078
+      "last_poll_ts": 1785408852.9457192
     },
     "bls_news": {
       "etag": "\"80848ccc621fdd1:0\"",
       "fail_count": 0,
       "last_modified": "Wed, 29 Jul 2026 14:01:49 GMT",
-      "last_poll_ts": 1785401378.0259743
+      "last_poll_ts": 1785408852.8754334
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785401378.5567667
+      "last_poll_ts": 1785408853.01443
     },
     "fed_press": {
       "etag": "\"ee42b1d841fdd1:0\"",
       "fail_count": 0,
       "last_modified": "Wed, 29 Jul 2026 18:00:17 GMT",
-      "last_poll_ts": 1785401377.9298222
+      "last_poll_ts": 1785408852.8117304
     },
     "marketwatch_top": {
-      "etag": "W/\"1ef6-9QlfADjU/GEE9YfA5Ka0gJWLVOE\"",
+      "etag": "W/\"1f56-gLgqUtZZATVnd56Dz2pEKFGWh/s\"",
       "fail_count": 0,
-      "last_poll_ts": 1785401378.8756158
+      "last_poll_ts": 1785408853.086258
     },
     "whitehouse_actions": {
       "etag": "\"81863c8e9e4a47f8cd04683a25100687\"",
       "fail_count": 0,
       "last_modified": "Wed, 29 Jul 2026 19:44:27 GMT",
-      "last_poll_ts": 1785401378.3758004
+      "last_poll_ts": 1785408852.9876544
     }
   }
 }
