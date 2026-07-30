@@ -82,41 +82,88 @@
       return true;
     });
   }
-  function gateCopy() {
+  function surfaceFor(root) {
+    if (root.closest && root.closest("#action-board")) return "action";
+    if (root.closest && root.closest("#us-standouts")) return "prophet";
+    return "";
+  }
+  function gateCopy(surface) {
     if (state.tier === "free") {
+      if (surface === "prophet") {
+        return {
+          eyebrow: "Prophet",
+          eyebrowZh: "Prophet",
+          mark: "P",
+          title: "See the complete Prophet ranking",
+          zh: "查看完整 Prophet 排名",
+          body: "Every model-ranked setup, in one signal book.",
+          bodyZh: "所有模型排名机会，集中于一份信号名单。",
+          action: "Unlock full Prophet",
+          actionZh: "解锁完整 Prophet",
+          mode: "upgrade"
+        };
+      }
       return {
-        title: "Free includes 3 signals per list",
-        zh: "免费方案每个列表可查看 3 条信号",
-        body: "Upgrade to Insider or Pro for the full book.",
-        bodyZh: "升级 Insider 或 Pro 查看完整名单。",
-        action: "See paid plans",
-        actionZh: "查看付费方案",
+        eyebrow: "Insider access",
+        eyebrowZh: "Insider 权限",
+        mark: "↗",
+        title: "Unlock the complete action board",
+        zh: "解锁完整行动面板",
+        body: "See every current setup, without limits.",
+        bodyZh: "无限制查看所有当前机会。",
+        action: "View Insider plans",
+        actionZh: "查看 Insider 方案",
         mode: "upgrade"
       };
     }
+    if (surface === "prophet") {
+      return {
+        eyebrow: "Prophet",
+        eyebrowZh: "Prophet",
+        mark: "P",
+        title: "Expand the Prophet shortlist",
+        zh: "展开 Prophet 精选名单",
+        body: "More model-ranked setups, with the same signal detail and discipline.",
+        bodyZh: "查看更多模型排名机会，同时保留完整信号细节与纪律。",
+        action: "See more Prophet picks",
+        actionZh: "查看更多 Prophet 精选",
+        mode: "signup"
+      };
+    }
     return {
-      title: "Preview 1 signal before signup",
-      zh: "注册前可预览 1 条信号",
-      body: "Create a free account to see 3 signals per list each day.",
-      bodyZh: "创建免费账户，每天每个列表可查看 3 条信号。",
+      eyebrow: "Daily action board",
+      eyebrowZh: "每日行动面板",
+      mark: "↗",
+      title: "Open more of today’s action board",
+      zh: "展开今日行动面板",
+      body: "More actionable signals, presented in one clean daily workflow.",
+      bodyZh: "更多可执行信号，集中于清晰的每日流程。",
       action: "Create free account",
       actionZh: "创建免费账户",
+      secondary: "Already a member? Sign in",
+      secondaryZh: "已有账户？登录",
       mode: "signup"
     };
   }
-  function makeGate() {
-    var copy = gateCopy();
+  function makeGate(surface) {
+    var copy = gateCopy(surface);
     var gate = document.createElement("div");
-    gate.className = "mx-tier-gate";
-    gate.setAttribute(GATE_ATTR, "");
+    gate.className = "mx-tier-gate mx-tier-gate--" + surface;
+    gate.setAttribute(GATE_ATTR, surface);
     gate.innerHTML =
-      '<span class="mx-tier-lock" aria-hidden="true">⌁</span>' +
-      '<span class="mx-tier-copy"><b><span class="l-en">' + copy.title + '</span><span class="l-zh">' + copy.zh + '</span></b>' +
+      '<span class="mx-tier-copy">' +
+      '<span class="mx-tier-eyebrow"><span class="mx-tier-mark" aria-hidden="true">' + copy.mark + '</span>' +
+      '<span class="l-en">' + copy.eyebrow + '</span><span class="l-zh">' + copy.eyebrowZh + '</span></span>' +
+      '<b><span class="l-en">' + copy.title + '</span><span class="l-zh">' + copy.zh + '</span></b>' +
       '<small><span class="l-en">' + copy.body + '</span><span class="l-zh">' + copy.bodyZh + '</span></small></span>' +
-      '<button type="button"><span class="l-en">' + copy.action + '</span><span class="l-zh">' + copy.actionZh + '</span></button>';
-    gate.querySelector("button").addEventListener("click", function () {
+      '<span class="mx-tier-actions"><button class="mx-tier-primary" type="button"><span class="l-en">' + copy.action + '</span><span class="l-zh">' + copy.actionZh + '</span></button>' +
+      (copy.secondary ? '<button class="mx-tier-signin" type="button"><span class="l-en">' + copy.secondary + '</span><span class="l-zh">' + copy.secondaryZh + '</span></button>' : '') +
+      '</span>';
+    gate.querySelector(".mx-tier-primary").addEventListener("click", function () {
       if (copy.mode === "upgrade") openUpgrade(); else openOnboard("signup");
     });
+    var signin = gate.querySelector(".mx-tier-signin");
+    if (signin) signin.addEventListener("click", function () { openOnboard("signin"); });
     return gate;
   }
   function clearGroup(group) {
@@ -129,12 +176,10 @@
         item.removeAttribute("data-mx-old-tabindex");
       }
     });
-    var next = group.root.nextElementSibling;
-    if (next && next.hasAttribute(GATE_ATTR)) next.remove();
   }
   function applyGroup(group) {
     clearGroup(group);
-    if (!isFinite(state.cap) || group.items.length <= state.cap) return;
+    if (!isFinite(state.cap) || group.items.length <= state.cap) return false;
     group.items.forEach(function (item, index) {
       if (index < state.cap) return;
       item.setAttribute("aria-hidden", "true");
@@ -146,13 +191,31 @@
         item.classList.add("mx-tier-hidden");
       }
     });
-    group.root.insertAdjacentElement("afterend", makeGate());
+    return true;
+  }
+  function placeSurfaceGates(surfaces) {
+    [
+      { key: "action", selector: "#action-board" },
+      { key: "prophet", selector: "#us-standouts" }
+    ].forEach(function (surface) {
+      var panel = document.querySelector(surface.selector);
+      if (panel && surfaces[surface.key]) panel.appendChild(makeGate(surface.key));
+    });
   }
   function apply() {
     if (applying) return;
     applying = true;
     if (observer) observer.disconnect();
-    try { groups().forEach(applyGroup); } finally {
+    try {
+      document.querySelectorAll("[" + GATE_ATTR + "]").forEach(function (gate) { gate.remove(); });
+      var surfaces = { action: false, prophet: false };
+      groups().forEach(function (group) {
+        if (!applyGroup(group)) return;
+        var surface = surfaceFor(group.root);
+        if (surface) surfaces[surface] = true;
+      });
+      placeSurfaceGates(surfaces);
+    } finally {
       applying = false;
       if (observer && document.body) observer.observe(document.body, { childList: true, subtree: true });
     }

@@ -21,9 +21,24 @@ def test_stock_preview_controller_enforces_one_three_full():
     assert 'state = { tier: "anon", cap: 1 }' in js
     assert 'tier === "free" ? 3 : 1' in js
     assert "isPaid(tier) ? Infinity" in js
-    assert "3 signals per list" in js
     assert "Create free account" in js
+    assert "Preview 1 signal before signup" not in js
+    assert js.count('action: "Create free account"') == 1
+    assert js.count('secondary: "Already a member? Sign in"') == 1
     assert (ROOT / "site" / "tier_preview.js").read_text() == js
+    assert (ROOT / "site" / "tier_preview.css").read_text() == (
+        ROOT / "templates" / "tier_preview.css"
+    ).read_text()
+
+
+def test_stock_preview_uses_one_surface_cta_per_primary_decision_system():
+    js = (ROOT / "templates" / "tier_preview.js").read_text()
+    assert '{ key: "action", selector: "#action-board" }' in js
+    assert '{ key: "prophet", selector: "#us-standouts" }' in js
+    assert 'panel.appendChild(makeGate(surface.key))' in js
+    assert 'group.root.insertAdjacentElement("afterend", makeGate())' not in js
+    assert "Open more of today’s action board" in js
+    assert "Expand the Prophet shortlist" in js
 
 
 def test_dashboard_wires_preview_and_macro_detail_gate():
