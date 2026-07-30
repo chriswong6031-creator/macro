@@ -712,6 +712,58 @@
     });
   }
 
+  // Wide desktop menus are anchored to the full navigation rail so they can
+  // stay viewport-safe. That leaves the intentional visual air gap below the
+  // trigger outside the CSS :hover tree. Keep the current menu alive briefly
+  // while a fine pointer crosses the gap, then close it only if neither the
+  // trigger/menu nor keyboard focus was reached. Touch/mobile keeps its
+  // existing click accordion and never enters this path.
+  function bindHoverSafeDropdowns(links) {
+    var fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+    links.querySelectorAll(':scope > .nav-dd').forEach(function (dd) {
+      if (dd.getAttribute('data-nav-hover-safe')) return;
+      dd.setAttribute('data-nav-hover-safe', '1');
+
+      var closeTimer = 0;
+      var menu = dd.querySelector(':scope > .nav-dd-menu');
+      if (!menu) return;
+
+      function canHover() {
+        return window.innerWidth > 900 && fineHover.matches;
+      }
+
+      function openMenu() {
+        if (!canHover()) return;
+        window.clearTimeout(closeTimer);
+        dd.parentElement.querySelectorAll(':scope > .nav-dd.nav-hover-open').forEach(function (other) {
+          if (other !== dd) other.classList.remove('nav-hover-open');
+        });
+        dd.classList.add('nav-hover-open');
+      }
+
+      function closeMenuSoon() {
+        window.clearTimeout(closeTimer);
+        closeTimer = window.setTimeout(function () {
+          if (!dd.matches(':hover') && !dd.contains(document.activeElement)) {
+            dd.classList.remove('nav-hover-open');
+          }
+        }, 420);
+      }
+
+      dd.addEventListener('pointerenter', openMenu);
+      dd.addEventListener('pointerleave', closeMenuSoon);
+      menu.addEventListener('pointerenter', openMenu);
+      menu.addEventListener('pointerleave', closeMenuSoon);
+      dd.addEventListener('focusin', openMenu);
+      dd.addEventListener('focusout', closeMenuSoon);
+      dd.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        window.clearTimeout(closeTimer);
+        dd.classList.remove('nav-hover-open');
+      });
+    });
+  }
+
   // Tracks what the rail is currently folded to, so an auth event that changes
   // nothing (theme.js emits several) does not needlessly rebuild the DOM.
   var applied = false;
@@ -736,6 +788,7 @@
     // The restored nodes are brand new, so the per-node accordion handlers
     // theme.js bound at DOMContentLoaded are gone. Re-bind before a tap can land.
     rebindAccordion(links);
+    bindHoverSafeDropdowns(links);
 
     if (!folding) { remarkActive(links); return; }   // nothing to fold
 
@@ -827,6 +880,7 @@
       enhanceResearchMenu(links);
       capture(links);
       remarkActive(links);
+      bindHoverSafeDropdowns(links);
     }
     if (!window.MDXAuth || !window.MDXAuth.onChange) return;
     window.MDXAuth.onChange(function (user) {
