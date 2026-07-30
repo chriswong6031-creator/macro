@@ -55,6 +55,7 @@
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=720475f3">
 <link rel="stylesheet" href="assets/css/19c30023.css?v=19c30023">
+<link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
 <link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
 <link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
 </head>
@@ -190,16 +191,17 @@
       </div>
     </div>
     <div class="nav-dd">
+      <a class="nav-link" href="crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Crypto Cockpit</span><span class="l-zh">加密驾驶舱</span><span class="d"><span class="l-en">Market board · flows · leverage</span><span class="l-zh">市场看板 · 资金流 · 杠杆</span></span></a>
+        <a href="vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">State · risk · cycle · strategy</span><span class="l-zh">状态 · 风险 · 周期 · 策略</span></span></a>
+        <a href="crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation</span><span class="l-zh">配置</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+        <a href="vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategy Track Record</span><span class="l-zh">策略历史表现</span><span class="d"><span class="l-en">Cycle and risk-allocation evidence</span><span class="l-zh">周期与风险配置证据</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span><span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="vector.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
-            <a href="vector_allocation.html"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-            <a href="btc_strategy.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
-          </div>
-        </div>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
@@ -310,7 +312,7 @@
     
     <div class="eh-asof"><span class="dot"></span>
       <span class="l-en">Tracking</span><span class="l-zh">追踪</span> <b>72</b>&nbsp;<span class="l-en">curated &amp; active funds</span><span class="l-zh">精选与主动基金</span> · 
-      <span class="l-en">updated each filing cycle</span><span class="l-zh">每个申报周期更新</span> · 2026-07-30 04:54 UTC
+      <span class="l-en">updated each filing cycle</span><span class="l-zh">每个申报周期更新</span> · 2026-07-30 07:03 UTC
       <span class="txq" tabindex="0">?<span class="txq-tip"><span class="l-en">Universe = curated THEMATIC / industry funds (SPDR sector, Global X, VanEck, First Trust, Sprott, Amplify, Defiance, Bitwise, Invesco, Roundhill) plus ACTIVELY managed funds (ARK). Broad-index trackers (SPY/QQQ) are excluded — their moves are reconstitution noise, not a curated read. We diff each fund&#39;s daily holdings, strip out mechanical creation/redemption flow AND the price move, and keep the manager&#39;s actual conviction per name, measured in percentage POINTS of fund weight committed. Cash &amp; money-market lines are excluded. Lagged filing data — context, never a buy list.</span><span class="l-zh">范围 = 精选主题／行业基金（SPDR 板块、Global X、VanEck、First Trust、Sprott、Amplify、Defiance、Bitwise、Invesco、Roundhill）加主动管理基金（ARK）。宽基指数基金（SPY/QQQ）已排除——其动作是再平衡噪音而非精选解读。我们比对每只基金的每日持仓，剔除机械性申购／赎回资金流及价格变动，留下经理人对每只个股的真实信念，以投入的基金权重百分点衡量。现金与货币市场科目已排除。此为滞后的申报数据——仅供参考，非买入清单。</span></span></span>
     </div>
 
@@ -3527,7 +3529,7 @@
 
 </div>
 
-<script src="theme.js?v=4e99fde4" defer></script>
+<script src="theme.js?v=8bf865d2" defer></script>
 <footer class="site-footer">
   <span class="made">© 2026 MastermindX Inc</span>
 </footer>

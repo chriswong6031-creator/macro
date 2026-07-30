@@ -108,7 +108,10 @@ _ORDER = ["calm", "watch", "caution", "elevated", "risk-off"]
 
 
 def _band_idx(score: pd.Series, bands: dict) -> pd.Series:
-    """Vectorized band index 0..4 (calm..risk-off) for a 0-100 sub-score series."""
+    """Vectorized band index 0..4 (calm..risk-off) for a 0-100 sub-score series.
+
+    `bands["watch"]`/`["caution"]` may be per-date Series (the election-cycle nudge) as well as
+    scalars; the elevated/risk_off cuts are always scalars — the calendar may never touch them."""
     idx = pd.Series(0, index=score.index)
     idx = idx.mask(score >= bands["watch"], 1)
     idx = idx.mask(score >= bands["caution"], 2)
@@ -117,17 +120,52 @@ def _band_idx(score: pd.Series, bands: dict) -> pd.Series:
     return idx
 
 
+def band_delta_series(idx) -> pd.Series:
+    """Per-date election-cycle `band_delta` (engine/election_cycle.modulation), vectorized.
+
+    REPLICA FIDELITY (audit 2026-07-29): compute() LOWERS the watch + caution cuts by this many
+    points inside a midterm Apr-Oct window while SPY is still above its 200dma, but state_series
+    used the un-nudged cuts. trajectory() consumes state_series as "what the card would have
+    shown" and maps it to the pullback-odds series whose `odds_delta` gates de-escalation
+    eligibility — so the replica's states were systematically LESS escalated than the live card's
+    for ~7 months of every midterm year. Mirrors modulation() exactly: nudge only in the risk-ON
+    slice, never on the elevated/risk-off cuts. Returns 0.0 everywhere on any failure."""
+    index = pd.DatetimeIndex(idx)
+    try:
+        from engine import election_cycle as ec
+        in_window = pd.Series(
+            [bool(ec.year_in_term(t.year) == 2
+                  and ec._in_span(t.date(), ec._WIN_START, ec._WIN_END)) for t in index],
+            index=index)
+        # risk_on mirrors compute(): gate["spy_below_200dma"] is False  <=>  SPY >= its 200dma.
+        # NaN MA (short history) compares False, matching compute()'s None -> risk_on False.
+        spy = _spy().reindex(index).ffill()
+        ma = spy.rolling(200, min_periods=120).mean()
+        risk_on = (spy >= ma).fillna(False)
+        return (in_window & risk_on).astype(float) * float(ec._BAND_NUDGE)
+    except Exception:  # noqa: BLE001 — modulator, never fatal to the replica
+        return pd.Series(0.0, index=index)
+
+
 def state_series(subs: pd.DataFrame, calib: dict) -> pd.Series:
     """Daily engine STATE (calm..risk-off) under a given calibration — vectorized replica of
     compute()'s tier-aware logic: Tier-A scares originate the state (max band), conjunction
     (>=2 Tier-A >= caution) escalates one band, and Tier-B (vol) escalates a hot Tier-A. Used by
-    the do-no-harm gate so a proposed recalibration can be scored over full history."""
+    the do-no-harm gate so a proposed recalibration can be scored over full history.
+
+    The election-cycle early-tier band nudge is applied per-date (band_delta_series) exactly as
+    compute() applies it live — see that docstring for what the omission cost."""
     bands = calib["bands"]
     scares = calib["scares"]
     tierA = [s for s, v in scares.items() if v.get("tier") == "A" and s in subs.columns]
     tierB = [s for s, v in scares.items() if v.get("tier") == "B" and s in subs.columns]
     if not tierA:
         return pd.Series("calm", index=subs.index)
+    # per-date early-tier cuts (calendar modulator); elevated/risk_off are never nudged
+    _d = band_delta_series(subs.index).reindex(subs.index).fillna(0.0)
+    bands = {**bands,
+             "watch": (bands["watch"] - _d).clip(lower=0.0),
+             "caution": (bands["caution"] - _d).clip(lower=0.0)}
     a_idx = pd.concat([_band_idx(subs[s], bands) for s in tierA], axis=1)
     maxA = a_idx.max(axis=1)
     n_hotA = pd.concat([(subs[s] >= bands["caution"]).astype(int) for s in tierA], axis=1).sum(axis=1)
