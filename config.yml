@@ -3264,9 +3264,17 @@ healthcheck:
 
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-  anchors: [stockdata, chinastockdata, feeds]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
+  anchors: [stockdata, chinastockdata, feeds, thetadata_eod]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
+                      # thetadata_eod (2026-07-30): the ~60 GB ThetaData EOD store's SOLE offsite backup —
+                      # per ops/THETADATA_R2_SYNC_RUNBOOK.md the store "exists only on the ops Mac". It had NO
+                      # tripwire, so a 3-night manifest freeze went unnoticed until a human read the log.
+                      # This list REPLACES audit_r2.DEFAULT_ANCHORS wholesale, so the anchor must be here to
+                      # take effect; tests/test_audit_r2.py pins it against a silent drop.
   max_age_hours: 26   # both lanes republish daily, landing ~05-10 UTC; the 14:30 UTC heartbeat sees ~5-9h
                       # fresh vs ~29-33h on the FIRST missed day — 26 trips on the first miss, ~30 can slide to day 2
+                      # thetadata_eod fits the same envelope: launchd 22:00 PT = ~05:00 UTC, so ~9.5h healthy
+                      # and ~33.5h on the first missed night. Only the heartbeat uses this list — daily.yml and
+                      # asia-close.yml pass their own --anchors, so their --max-age-hours 2/26 never reach it.
   asof_max_days: 6    # stockdata/SPY.json `asof` (content-level): last bar date; 3-day weekend + a holiday tolerated
 
 validation:

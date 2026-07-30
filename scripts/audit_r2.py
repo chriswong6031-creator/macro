@@ -53,9 +53,22 @@ from lib import config  # noqa: E402
 # Cloudflare's WAF 403s python-default User-Agents on the public r2.dev host.
 UA = "macro-audit/1.0"
 DEFAULT_BASE = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
+# NOTE: config.yml's r2_data_plane.anchors REPLACES this list wholesale (see run()) —
+# the live heartbeat reads config, so an anchor added only here is inert. Keep both.
 DEFAULT_ANCHORS = [
     "stockdata",      # US-evening lane — canonical daily freshness beacon
     "chinastockdata", # Asia-close lane — daily ~08:30 UTC
+    "thetadata_eod",  # ThetaData EOD options store (~60 GB / ~13k parquets). Per
+                      # ops/THETADATA_R2_SYNC_RUNBOOK.md the store "exists only on the
+                      # ops Mac", so this R2 copy is its SOLE offsite backup — the
+                      # highest-value object in the bucket, and until 2026-07-30 the
+                      # only major store with no anchor at all (a 3-night manifest
+                      # freeze went unseen until a human read the log). Published by
+                      # launchd 22:00 PT daily = ~05:00 UTC; at the 14:30 UTC heartbeat
+                      # a healthy manifest is ~9.5h old and the FIRST missed night reads
+                      # ~33.5h, so the shared 26h budget below trips on that first miss.
+                      # 7-days-a-week lane (weekend runs are md5 no-ops that still put
+                      # the manifest), so the weekday-only heartbeat needs no exception.
     # hk_stocks_ext: expanded HSCI universe (~380 names) R2 store — per-ticker OHLCV.
     # Added as a named anchor (pass --anchors hk_stocks_ext to include in the heartbeat
     # once the first full backfill publish completes).  Not in DEFAULT yet: the initial
@@ -80,6 +93,16 @@ DEFAULT_ASOF_MAX_DAYS = 6  # `asof` = last bar date: 3-day weekend + a market ho
 # Probed only when the dir is ALSO in the active anchors list. 2026-07-03 lesson
 # (massive_stock_day): a manifest can be FRESH while the store misses 110 days of
 # content — Last-Modified freshness alone cannot see that.
+#
+# thetadata_eod is deliberately NOT here (2026-07-30). Its collector manifest
+# (backfill_thetadata_eod._write_manifest) emits store/n_roots/per_root/updated_at and
+# NO coverage, anchor or latest_date block, so the probe could only ever emit the
+# "no store coverage yet" warning — a permanent nag with zero signal, which is how
+# warnings get trained into noise. Its freshness anchor above is live either way.
+# To make a coverage probe meaningful here, _write_manifest must first emit the blocks
+# (per-root year continuity is the natural coverage unit for a per-root/per-year store);
+# `updated_at` is also an unused remote-visible view of collector — not publisher —
+# health. Both are follow-ups, not preconditions for the freshness tripwire.
 COVERAGE_ANCHORS = ["massive_stock_day", "hk_stocks_ext"]
 DEFAULT_COVERAGE_MAX_RUN_BDAYS = 5   # store-reported longest missing-weekday run tolerated
 DEFAULT_COVERAGE_MAX_AGE_DAYS = 6    # newest store content older than this = content-stale
@@ -213,12 +236,39 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
             warn.append(f"coverage probe {d}: HTTP {st}")
             continue
         try:
-            store = json.loads(body).get("store") or {}
+            doc = json.loads(body)
         except ValueError as e:
             warn.append(f"coverage probe {d}: unparseable ({e!r})")
             continue
-        cov = store.get("coverage") or {}
-        anchor_blk = store.get("anchor") or {}
+        # The probe reads the PUBLISH-side doc, whose "store" block is the embedded
+        # collector manifest. Every data-dir collector also writes a LOCAL _manifest.json
+        # whose own top-level "store" is the store NAME — a plain string. When that raw
+        # doc ends up at the publish-side key (publish_r2 uploaded it in the delta pass
+        # until the _uploadable fix), `store.get(...)` raised AttributeError, which is
+        # caught by neither except above. healthcheck.check_r2_freshness swallows any
+        # exception from run() into {"ok": True}, so that crash would not have been a
+        # loud failure — it would have silently voided the WHOLE R2 tripwire, every
+        # anchor included. Shape-check before dereferencing; warn, never raise.
+        if not isinstance(doc, dict):
+            warn.append(f"coverage probe {d}: manifest is a JSON {type(doc).__name__}, "
+                        "not an object — content continuity unverifiable")
+            continue
+        store = doc.get("store")
+        if store is not None and not isinstance(store, dict):
+            # `store` present but scalar == the RAW collector doc, whose own top-level
+            # "store" is the store NAME. Distinct from `store` merely ABSENT, which is a
+            # legitimate pre-coverage publisher doc and falls through to the softer
+            # warning below.
+            warn.append(f"coverage probe {d}: manifest \"store\" is a "
+                        f"{type(store).__name__}, not a dict — the RAW collector manifest "
+                        "is sitting at the publish-side key; content continuity "
+                        "unverifiable")
+            continue
+        store = store or {}
+        cov = store.get("coverage")
+        anchor_blk = store.get("anchor")
+        cov = cov if isinstance(cov, dict) else {}
+        anchor_blk = anchor_blk if isinstance(anchor_blk, dict) else {}
         if not cov and not anchor_blk:
             warn.append(f"coverage probe {d}: manifest carries no store coverage yet "
                         "(pre-coverage publish?) — content continuity unverifiable")
@@ -227,11 +277,16 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
         latest = anchor_blk.get("last") or store.get("latest_date") or cov.get("last_day")
         rec: dict = {}
         if run_bd is not None:
-            rec["max_missing_run_weekdays"] = int(run_bd)
-            if int(run_bd) > coverage_max_run_bdays:
-                fail.append(f"R2 COVERAGE HOLE: {d} reports a {run_bd}-business-day "
-                            f"missing run (limit {coverage_max_run_bdays}) — the "
-                            "published store has an interior content gap")
+            try:
+                run_bd = int(run_bd)
+            except (TypeError, ValueError):
+                warn.append(f"coverage probe {d}: bad max_missing_run_weekdays {run_bd!r}")
+            else:
+                rec["max_missing_run_weekdays"] = run_bd
+                if run_bd > coverage_max_run_bdays:
+                    fail.append(f"R2 COVERAGE HOLE: {d} reports a {run_bd}-business-day "
+                                f"missing run (limit {coverage_max_run_bdays}) — the "
+                                "published store has an interior content gap")
         if latest:
             try:
                 age_d = (now.date() - date.fromisoformat(str(latest))).days
