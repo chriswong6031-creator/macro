@@ -9,7 +9,8 @@ separately makes that divergence visible.
 
 Outputs
 -------
-data/options_flow/cohorts.parquet  — append/idempotent accrual (one row per cohort per day)
+data/options_flow/cohorts_<key>.parquet — append/idempotent accrual (one row per cohort per
+                                     day; COLLECT_LANE=nightly-gated, HOUSE-U5)
 site/flowdata/cohorts.json         — latest-day snapshot + 10-session sparkline arrays
 
 Design principles (carry-through from flow_desk)
@@ -35,6 +36,7 @@ import numpy as np
 import pandas as pd
 
 from lib import config, store
+from engine.ledger_lane import nightly_advance_enabled
 
 log = logging.getLogger(__name__)
 
@@ -266,8 +268,14 @@ def build_cohorts(
 
     Returns a list of cohort dicts (one per cohort), with percentile context,
     tone chips, sparkline arrays, and honesty counts.  Also:
-    - appends one row per cohort to data/options_flow/cohorts.parquet (idempotent)
+    - appends one row per cohort to data/options_flow/cohorts_<key>.parquet
+      (idempotent; COLLECT_LANE=nightly-gated, HOUSE-U5)
     - writes site/flowdata/cohorts.json if site_flowdata_dir is given
+
+    The returned rows and the JSON are produced in EVERY lane — only the parquet
+    accrual is gated.  Percentile context and sparklines are read back from the
+    store, so off-nightly they reflect the committed vintage (see the gate
+    comment below).
     """
     if asof is None:
         asof = date.today()
@@ -275,24 +283,45 @@ def build_cohorts(
     members_map = _load_cohort_members(data_dir)
     cohort_rows: list[dict[str, Any]] = []
 
+    # HOUSE-U5: the accrual UPSERTS committed data/options_flow/ parquets, so only
+    # the nightly collector may advance them — express/intraday lanes bake site/
+    # from the committed vintage and must leave data/ untouched.  The headline
+    # figures below are recomputed live in every lane; only the percentile and
+    # sparkline context, read back from the store, stays at the committed vintage.
+    #
+    # This gate is not merely hygiene — it closes a measured corruption.  An
+    # off-nightly run whose asof has no per-ticker summary coverage aggregates to
+    # n_members_covered=0 / all-None, and the ungated upsert wrote THAT row into
+    # the forward ledger: measured 2026-07-29 on this checkout (tide asof 07-28,
+    # summary parquets ending 07-27) an express run appended a NaN row at 07-28 to
+    # all four cohorts_<key>.parquet and the sparkline tail came back [4893.9,
+    # None].  Gated, the ledger stays at 07-27 and the sparkline reads [4877.0,
+    # 4893.9].  Nightly is the sole advancer of forward ledgers (house law).
+    persist = nightly_advance_enabled()
+    if not persist:
+        log.info("flow_cohorts: COLLECT_LANE!=nightly — cohort accrual upserts skipped "
+                 "(cohorts_<key>.parquet stay at committed vintage; display reads "
+                 "committed history)")
+
     for cohort in COHORTS:
         ckey = cohort["key"]
         members = members_map.get(ckey, [])
         row = _aggregate_day(data_dir, ckey, members, asof)
         cohort_rows.append(row)
 
-        # Accrue to parquet store (idempotent via upsert)
-        try:
-            sdf = pd.DataFrame(
-                {k: [row.get(k)] for k in [
-                    "gross_premium_mn", "net_premium_mn", "pc_ratio",
-                    "zerodte_share", "net_doi", "n_members", "n_members_covered",
-                ]},
-                index=[pd.Timestamp(asof)],
-            )
-            store.upsert(COHORTS_STORE_GROUP, f"{COHORTS_STORE_NAME}_{ckey}", sdf, outlier_col=None)
-        except Exception as e:  # noqa: BLE001
-            log.warning("flow_cohorts: accrual %s failed: %s", ckey, e)
+        # Accrue to parquet store (idempotent via upsert) — nightly lane only.
+        if persist:
+            try:
+                sdf = pd.DataFrame(
+                    {k: [row.get(k)] for k in [
+                        "gross_premium_mn", "net_premium_mn", "pc_ratio",
+                        "zerodte_share", "net_doi", "n_members", "n_members_covered",
+                    ]},
+                    index=[pd.Timestamp(asof)],
+                )
+                store.upsert(COHORTS_STORE_GROUP, f"{COHORTS_STORE_NAME}_{ckey}", sdf, outlier_col=None)
+            except Exception as e:  # noqa: BLE001
+                log.warning("flow_cohorts: accrual %s failed: %s", ckey, e)
 
     # Enrich with percentile context + sparklines
     enriched: list[dict[str, Any]] = []

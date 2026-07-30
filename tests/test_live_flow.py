@@ -1048,6 +1048,110 @@ class TestMinuteBucketing:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# 20b. Naive trade_timestamp → ET minute keys (tide 4h-early regression)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestNaiveTimestampMinuteKey:
+    """_minute_key must read a NAIVE trade_timestamp as exchange (ET) wall clock.
+
+    The naive fixtures below pin the MEASURED ThetaData v3 response shape: the
+    bulk_trade_quote CSV carries trade_timestamp with no offset and no 'Z'
+    (see the committed v3 CSV fixture in TestCollectorAdditiveParams._CSV,
+    "2026-07-02T14:30:00"), and collectors.thetadata documents the endpoint's
+    times as ET.  _minute_key used to tz_localize("UTC") every naive stamp
+    before converting to ET, shifting every tide bucket 4h early under EDT
+    (5h under EST): production tide_current.json on 2026-07-29 ran
+    t="05:30".."11:59" for a 09:30–15:59 ET session.  Pre-fix, each naive case
+    here produces the UTC-shifted key ("05:30" for a 09:30 print) and fails.
+
+    tz-AWARE inputs are unchanged (they still .astimezone(ET)) — which is why
+    the pre-existing tests, whose fixtures are all ISO8601Z, could not see the
+    defect.
+    """
+
+    # ── direct unit tests on lf._minute_key ──────────────────────────────────
+
+    def test_naive_edt_stamp_is_exchange_time(self):
+        """Naive EDT-date stamp → same wall clock, not batch_ts, not UTC-shifted."""
+        assert lf._minute_key("2026-07-29T09:30:00", "2026-07-29T13:35:00Z") == "09:30"
+
+    def test_naive_est_stamp_is_exchange_time(self):
+        """Naive EST-date stamp → same wall clock under the winter (-5h) offset.
+
+        Paired with the EDT case above: one wall-clock reading must survive both
+        offsets, which only holds if the stamp is localized to ET rather than
+        shifted by a fixed number of hours.
+        """
+        assert lf._minute_key("2026-01-15T09:30:00", "2026-01-15T14:35:00Z") == "09:30"
+
+    def test_naive_stamp_with_milliseconds(self):
+        """Naive stamp with a ms fraction (v3 emits these) → truncated to HH:MM."""
+        assert lf._minute_key("2026-07-29T15:59:58.123", BATCH_TS) == "15:59"
+
+    def test_aware_utc_stamp_still_converts_edt(self):
+        """tz-aware ISO8601Z is unchanged: 13:30Z → 09:30 ET (EDT)."""
+        assert lf._minute_key("2026-07-29T13:30:00Z", BATCH_TS) == "09:30"
+
+    def test_aware_utc_stamp_still_converts_est(self):
+        """tz-aware ISO8601Z is unchanged: 14:30Z → 09:30 ET (EST)."""
+        assert lf._minute_key("2026-01-15T14:30:00Z", "2026-01-15T14:35:00Z") == "09:30"
+
+    def test_unparseable_ts_falls_back_to_aware_batch_ts(self):
+        """Unparseable ts_val → aware batch_ts converts (14:30Z → 10:30 EDT)."""
+        assert lf._minute_key("garbage", "2026-07-02T14:30:00Z") == "10:30"
+
+    def test_unparseable_ts_and_batch_ts_returns_midnight(self):
+        """Both legs unparseable → the "00:00" sentinel."""
+        assert lf._minute_key("garbage", "also-garbage") == "00:00"
+
+    # ── production-shape integration through process_batch ───────────────────
+
+    def _make_naive_batch(self, naive_ts: str) -> pd.DataFrame:
+        """Single ask-side SPY call whose trade_timestamp is a NAIVE ET string.
+
+        Mirrors TestMinuteBucketing._make_batch except that the timestamp is left
+        naive — the shape bulk_trade_quote actually returns.
+        """
+        return pd.DataFrame([{
+            "root": "SPY", "right": "C",
+            "expiration": "2026-07-05", "strike": 550.0,
+            "price": 2.60, "bid": 2.40, "ask": 2.80,
+            "size": 100, "trade_timestamp": naive_ts,
+            "quote_timestamp": naive_ts,
+            "sequence": abs(hash(naive_ts)) % 100000 + 1,
+            "date": SESSION_DATE,
+        }])
+
+    def test_process_batch_open_print_buckets_at_0930(self):
+        """A 09:30 ET naive print must land at "09:30", never the UTC-shifted "05:30"."""
+        result = lf.process_batch(
+            calls_df=self._make_naive_batch("2026-07-02T09:30:00"), puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        mkeys = result["state"]["market_tide_minutes"].keys()
+        assert "09:30" in mkeys, (
+            f"Naive ET open print must bucket at 09:30; got {list(mkeys)}")
+        assert "05:30" not in mkeys, (
+            "05:30 present — naive trade_timestamp was read as UTC and shifted "
+            f"4h early (the tide_current defect). Keys: {list(mkeys)}")
+
+    def test_process_batch_close_print_buckets_at_1559(self):
+        """A 15:59 ET naive print must land at "15:59", never the shifted "11:59"."""
+        result = lf.process_batch(
+            calls_df=self._make_naive_batch("2026-07-02T15:59:00"), puts_df=None,
+            session_date=SESSION_DATE, batch_ts=BATCH_TS,
+            etf_floor=0, name_floor=0, etf_anchors=["SPY"],
+        )
+        mkeys = result["state"]["market_tide_minutes"].keys()
+        assert "15:59" in mkeys, (
+            f"Naive ET close print must bucket at 15:59; got {list(mkeys)}")
+        assert "11:59" not in mkeys, (
+            "11:59 present — naive trade_timestamp was read as UTC and shifted "
+            f"4h early (the tide_current defect). Keys: {list(mkeys)}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # 21. Sector tide and DTE tide math
 # ─────────────────────────────────────────────────────────────────────────────
 

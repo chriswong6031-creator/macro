@@ -883,3 +883,65 @@ class TestReplyExemplarHook:
         assert "41.7" not in rv.allowed_numbers(DRAFT, WHITELIST)
         hits = _gates("Credit is the test, not the tape. Spreads at 41.7 say so.")
         assert hits, "a number that exists only in an exemplar cleared the gate"
+
+
+# ===========================================================================
+# 12. CHATGPT-FIRST ROUTING (operator directive 2026-07-29)
+#
+# "The marketing content LLM lanes must default to the attached ChatGPT/Codex
+# account (Claude subscription tokens are being reserved for website-building
+# sessions), with Claude as fallback drawn through the key_pool OAuth load
+# balancer."
+#
+# Ruled tier for the reply desk: gpt-5.6-terra at medium effort. Terra because a
+# reply is a short conversational turn on someone else's post, the same register
+# as the wire. The full ruling table lives in tests/test_marketing_copy_v2.py.
+# ===========================================================================
+
+class TestCodexFirstRouting:
+    def _capture(self, monkeypatch) -> list[dict]:
+        """Recorder in place of build_providers. Returning [] takes the lane down
+        its fallback branch, the shortest path that still proves the request."""
+        seen: list[dict] = []
+
+        def _rec(cfg, **kwargs):  # noqa: ANN001
+            seen.append(dict(cfg))
+            return []
+
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        monkeypatch.setattr(llm_auth, "build_providers", _rec)
+        rv.reset_stats()
+        return seen
+
+    def test_the_reply_desk_asks_for_codex_first_on_terra(self, monkeypatch, cfg, capsys):
+        seen = self._capture(monkeypatch)
+        out = rv.voice_or_fallback(
+            DRAFT, family="missing_variable", account="kelly",
+            parent_text=PARENT, numbers_whitelist=WHITELIST, cfg=cfg)
+        capsys.readouterr()
+        assert out["text"] == DRAFT, "a muted lane must hand the draft back"
+
+        assert seen, "the reply desk never reached the provider waterfall"
+        pcfg = seen[0]
+        assert pcfg["provider_order"] == ["codex", "oauth", "anthropic", "deepseek"]
+        assert pcfg["codex_source_model"] == "gpt-5.6-terra"
+        assert pcfg["codex_reasoning_effort"] == "medium"
+        assert pcfg["oauth_pool_lane"] == "reply-voice"
+        assert pcfg["usage_lane"] == "reply-voice"
+
+    def test_the_shipped_voice_block_carries_the_ruling(self, cfg):
+        voice = cfg["reply_desk"]["voice"]
+        assert voice["provider_order"] == ["codex", "oauth", "anthropic", "deepseek"]
+        assert voice["codex_source_model"] == "gpt-5.6-terra"
+        assert voice["codex_reasoning_effort"] == "medium"
+        assert voice["oauth_pool_lane"] == "reply-voice"
+        # Luna never touches a user-facing word.
+        assert "luna" not in str(voice).lower()
+
+    def test_the_source_default_is_codex_first_too(self):
+        """The config file is the operator surface; this literal is what runs
+        when a caller hands the module a bare cfg. They must not disagree."""
+        src = MODULE_PATH.read_text(encoding="utf-8")
+        assert '["codex", "oauth", "anthropic", "deepseek"]' in src
+        assert '"gpt-5.6-terra"' in src
+        assert '"gpt-5.6-luna"' not in src

@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T02:39:39.322465+00:00",
-  "count": 360,
+  "generated_at": "2026-07-30T03:09:46.219512+00:00",
+  "count": 361,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -217,6 +217,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 52,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zryrvkq454g-9c91ce",
+      "title": "JPM Euro area Saving rate",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T13:49:07Z",
+      "summary_points": [
+        "**Euro Area Saving Rate Decline**: Saving rate stable at 14.3% Q1 but set to fall in Q2 due to energy price shocks reducing real disposable income (0.6% q/q), despite positive consumption growth, signaling near-term household caution and demand weakness.",
+        "**Real Disposable Income & Consumption Drop**: Real disposable income fell 0.6% q/q amid energy shocks, while consumption growth turned negative (-1.1% yoy), amplifying risks for equity/bond allocations and indicating deteriorating household financial resilience.",
+        "**Real GDI/Spending Divergence**: J.P.",
+        "Morgan forecasts Real spending lagging Real GDI (2026), signaling potential consumer demand weakness or policy-driven shifts, critical for near-term portfolio positioning in Eurozone equities and bonds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },

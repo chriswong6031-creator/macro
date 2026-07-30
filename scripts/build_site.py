@@ -4750,6 +4750,7 @@ def main() -> int:
     try:
         if _intl_cascade and _intl_cascade.get("rows"):
             from engine.intl_market_state import market_states as _ims_fn
+            from engine.intl_recovery_quality import apply_recovery_naming as _ims_apply_naming
             from engine import intl_inputs as _ims_inputs
             # Map lowercase forward-log codes → uppercase config keys
             _IMS_CODE_MAP: dict[str, str] = {
@@ -4784,6 +4785,15 @@ def main() -> int:
             except Exception as _ims_load_exc:  # noqa: BLE001
                 log.warning("intl_cascade profile: closes/states load failed (%s)", _ims_load_exc)
                 _ims_states = {}
+            # Shared view-model step (the same one build_intl applies): resolve the
+            # conservative recovery-naming law BEFORE copying words into the
+            # world-board profile, so macro.html and intl.html can never disagree
+            # on a market's stance for the same day (2026-07-29 audit: India read
+            # "Rebound failed" on intl.html but "Repairing" here).
+            try:
+                _ims_apply_naming(_ims_states)
+            except Exception as _ims_name_exc:  # noqa: BLE001 — naming must fail open
+                log.warning("intl_cascade profile: recovery naming failed (fail-open): %s", _ims_name_exc)
             # Attach profile fields to each row (fail-open per row)
             for _ims_row in _intl_cascade["rows"]:
                 try:

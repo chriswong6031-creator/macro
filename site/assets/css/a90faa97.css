@@ -80,7 +80,7 @@ html[data-theme="dark"] a.nav-link:hover,html[data-theme="dark"] a.nav-link.acti
    ~2s in on phones; until then the expanded menu caused a 0.30 layout shift
    (2026-07-21 audit). :not(.nav-open) yields once the flyout opens; the noscript
    re-expand in _navlinks.html.j2 keeps the no-JS fallback reachable. */
-@media (max-width:1259px){
+@media (max-width:900px){
   .site-nav:not(.nav-open) .nav-links{display:none}
 }
 .site-nav .nav-search .mag{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:12px;opacity:.65;pointer-events:none}

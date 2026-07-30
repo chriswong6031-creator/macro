@@ -10,9 +10,11 @@ Covers:
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
@@ -475,3 +477,86 @@ class TestProxyWiring:
             "so the stores accrue even on nights with no options-flow index"
         )
         assert i_sector < i_tile, "sector proxy must rebuild before build_etf_tile reads it"
+
+
+class TestProxyLaneGate:
+    """HOUSE-U5 (FD-EXP): both proxy rebuilds UPSERT committed data/flows/ parquets,
+    so build() must call them ONLY in the nightly collector lane. Express/intraday
+    lanes bake site/ from the committed vintage and must leave data/ untouched.
+
+    build() runs the rebuild block BEFORE its 'no flow rows' early return, so an
+    empty tmp root exercises the gate with zero fixtures.
+    """
+
+    def _run(self, root: Path, env: dict[str, str] | None) -> tuple[MagicMock, MagicMock]:
+        """Run build() against an empty tmp root; return the (broad, sector) recorders.
+
+        env=None → COLLECT_LANE/US_LANE removed from the environment entirely
+        (simulates an express/intraday/dev run). Otherwise the mapping is layered
+        onto os.environ for the duration of the call.
+        """
+        from scripts.build_flow_desk import build
+
+        (root / "data").mkdir(parents=True, exist_ok=True)
+        (root / "site").mkdir(parents=True, exist_ok=True)
+
+        broad = MagicMock(return_value=None)
+        sector = MagicMock(return_value=None)
+
+        saved: dict[str, str] = {}
+        try:
+            if env is None:
+                for k in ("COLLECT_LANE", "US_LANE"):
+                    if k in os.environ:
+                        saved[k] = os.environ.pop(k)
+            else:
+                for k in ("COLLECT_LANE", "US_LANE"):
+                    if k in os.environ:
+                        saved[k] = os.environ.pop(k)
+                os.environ.update(env)
+            # The rebuild helpers import their engine entry points inside the
+            # function body, so patch at the SOURCE module, not the caller.
+            with patch("engine.etf_flows.rebuild_broad", broad), \
+                 patch("engine.etf_flows.rebuild", sector), \
+                 patch("lib.config.ROOT", root), \
+                 patch("lib.config.data_dir", lambda: root / "data"), \
+                 patch("lib.config.load", lambda: {
+                     "storage": {"data_dir": "data", "site_dir": "site"},
+                 }):
+                build()
+        finally:
+            if env is not None:
+                for k in env:
+                    os.environ.pop(k, None)
+            os.environ.update(saved)
+        return broad, sector
+
+    def test_no_proxy_rebuild_without_lane(self, tmp_path):
+        """COLLECT_LANE unset → neither proxy store is rebuilt."""
+        root = tmp_path / "root"
+        broad, sector = self._run(root, None)
+        # The recorder assertions are the load-bearing ones: with an empty tmp
+        # data dir the REAL rebuilders would find no per-ticker SO inputs and
+        # no-op anyway, so file-absence alone would pass even with no gate.
+        assert not broad.called, \
+            "rebuild_broad() must not be called without COLLECT_LANE=nightly"
+        assert not sector.called, \
+            "rebuild() must not be called without COLLECT_LANE=nightly"
+        # Belt-and-braces: nothing landed in the committed store directory.
+        flows_dir = root / "data" / "flows"
+        wrote = sorted(p.name for p in flows_dir.glob("*.parquet")) if flows_dir.exists() else []
+        assert wrote == [], f"no data/flows parquet may be written off-nightly, got {wrote}"
+
+    def test_proxy_rebuild_runs_on_nightly_lane(self, tmp_path):
+        """COLLECT_LANE=nightly → both proxy stores rebuild (pins against inverted logic)."""
+        root = tmp_path / "root"
+        broad, sector = self._run(root, {"COLLECT_LANE": "nightly"})
+        assert broad.call_count == 1, "rebuild_broad() must run once on the nightly lane"
+        assert sector.call_count == 1, "rebuild() must run once on the nightly lane"
+
+    def test_proxy_rebuild_runs_on_legacy_us_lane_alias(self, tmp_path):
+        """US_LANE=nightly is the legacy alias engine.ledger_lane still honours."""
+        root = tmp_path / "root"
+        broad, sector = self._run(root, {"US_LANE": "nightly"})
+        assert broad.call_count == 1, "rebuild_broad() must run once under the US_LANE alias"
+        assert sector.call_count == 1, "rebuild() must run once under the US_LANE alias"
