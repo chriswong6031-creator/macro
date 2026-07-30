@@ -50,9 +50,16 @@ _DATA_SYM_RE = re.compile(r'data-sym="([^"]+)"')
 
 # CORE live universe — always fetched even if no page links them yet. Drives the
 # landing Market clock rows + dashboard index/futures tiles. All keyless via Yahoo.
-# ^IRX/^FVX/^TNX/^TYX are Yahoo YIELD indexes quoting 10x the yield percent
-# (^TNX 46.92 = 4.692%). All four tenors are needed for a curve read — a 10y
-# alone cannot say whether a move was a steepener or a flattener.
+# ^IRX/^FVX/^TNX/^TYX are Yahoo yield indexes whose UNITS ARE FEED-DEPENDENT in
+# this repo: the spark endpoint THIS builder uses delivers the yield percent
+# directly (^TNX price 4.622 = 4.622% — probed live from the VPS 2026-07-29),
+# while the /ws/tape relay path streams the CBOE ×10 index convention (42.5 =
+# 4.25% — see templates/live.js tnxPct(), which scale-detects at >15 exactly
+# because the paths disagree). Consumers of THIS snapshot: the level is `price`
+# as-is (scale-detect if you must be robust to a Yahoo flip); a bp move is
+# (price - prevClose) × 100. `changePct` is the RELATIVE day change of the
+# level and is NOT basis points. All four tenors are needed for a curve read —
+# a 10y alone cannot say whether a move was a steepener or a flattener.
 US_INDEXES = ["^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX",
               "^IRX", "^FVX", "^TNX", "^TYX"]
 US_FUTURES = ["ES=F", "NQ=F", "YM=F", "RTY=F"]              # overnight, reference only
@@ -87,11 +94,13 @@ CORE_CRYPTO = ["BTC-USD"]
 CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
                 + CORE_COMMODITIES + CORE_FX + CORE_CRYPTO)
 
-# DISPLAY set — exactly the market/index tiles the SITE renders as glance-tier live
-# tiles (macro market strip, china live strip, commodities/forex strips, BTC header).
+# DISPLAY set — the market/index tiles the SITE renders as glance-tier live tiles
+# (macro market strip, china live strip, commodities/forex strips, BTC header)
+# PLUS the brain market packet's curve/vol inputs (^IRX/^FVX/^TYX/^VIX — read by
+# engine/neuralweb/market_packet.py from this same snapshot, no page tile).
 # This is the SAME-ORIGIN snapshot universe (site/live/quotes.json): the browser's
 # only keyless feed for these symbols when no Worker is deployed (the full-universe
-# snapshot lives on the live-data BRANCH, which pages never fetch). Kept tiny (~30
+# snapshot lives on the live-data BRANCH, which pages never fetch). Kept tiny (~34
 # symbols, seconds to fetch) so BOTH producers stay cheap: the hourly 24/7 btc-live
 # Action (nights/weekends/Sunday Globex reopen) and the 30-min intraday-fastpath
 # tick (US RTH + HKEX windows). Keep in sync with the data-sym tiles the templates

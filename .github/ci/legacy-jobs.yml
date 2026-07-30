@@ -3552,11 +3552,19 @@ jobs:
       # job red at collection, which is the point.
       #
       # NOTHING IN THE SUITE IS importorskip-GATED. The near-dup pass's optional
-      # `datasketch` dependency is exercised through its DOCUMENTED DEGRADED
-      # STATE (`cluster_density` reports `exact-only` and declares the value a
-      # floor) rather than by requiring the wheel — so the suite cannot decay
-      # into a skip-only one, and the production workflow installs datasketch
-      # so the lane itself does not ship the degraded read.
+      # `datasketch` dependency is exercised through its DOCUMENTED STATES
+      # (`cluster_density` reports `exact-only` and declares the value a floor
+      # without the wheel, `measured-alone` with it) rather than by requiring
+      # the wheel — so the suite cannot decay into a skip-only one, and the
+      # production workflow installs datasketch so the lane itself does not
+      # ship the degraded read.
+      #
+      # BOTH dependency states are FORCED at the availability seam, so the
+      # result does not depend on whether THIS env has the wheel (2026-07-29).
+      # The earlier assertion took a union of both branches, which passed here —
+      # where the pack installs `pytest pyyaml jinja2` and nothing else — and
+      # failed on every dev machine with datasketch installed. An env-shaped
+      # pass is not a pass; it just moves the red somewhere nobody runs.
       #
       # The veto pass is exercised through its injected `call` seam, so this
       # step makes no network call and needs no credential.
@@ -3801,7 +3809,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships
-        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_wiki_pageviews.py -q
+        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_vol_shock_scorecard.py tests/test_wiki_pageviews.py -q
 
   unrun-release-forecast:
     # the macro-release forecast producer — projections, benchmarks and the graded forward ledger.
@@ -3955,6 +3963,24 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
         run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_clinicaltrials_themes.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_stage_tilt.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py -q
+      # GEX modeling-core wiring (2026-07-29). Three suites, 42 tests, ~3 s serial.
+      #
+      # These were the three remaining strictly-dark suites in the GEX family — named by
+      # no `run:` step in any workflow AND matched by no ci.yml path pattern, so no
+      # possible edit could even start CI for them: the walls/surface/smile/term model
+      # layer, the finite-difference-verified greeks + dealer-sign engine math, and the
+      # Polygon per-strike chain accrual every options read now depends on. The OIP E3
+      # wave wired its own three and flagged this family as the follow-up; this closes it.
+      #
+      # Import closure verified empirically against THIS job's install line: with scipy,
+      # sklearn, jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and
+      # fastapi ALL blocked via a builtins.__import__ shim, the only miss is `requests` —
+      # it enters at module scope through collectors/base, which the accrual collector
+      # rides. pytest + pandas + numpy + pyarrow + pyyaml + requests is the full closure;
+      # all six sit in the line above, so the shared venv is unchanged, and the other
+      # nine blocked wheels are confirmed unused. All 42 green on main at wiring time.
+      - name: GEX modeling core — walls/surface model, greeks + dealer-sign engine, polygon per-strike accrual
+        run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
 
   unrun-publish-ops:
     # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.

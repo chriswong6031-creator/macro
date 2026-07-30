@@ -122,6 +122,34 @@ def _load_ths_baskets() -> dict:
         return {}
 
 
+def _artifact_asof(document: dict) -> str | None:
+    """Return a JSON artifact's declared observation date, if any."""
+    if not isinstance(document, dict):
+        return None
+    value = (
+        document.get("as_of")
+        or document.get("asof")
+        or document.get("date")
+        or document.get("built")
+        or document.get("generated_utc")
+    )
+    text = str(value or "").strip()
+    return text[:10] if len(text) >= 10 else None
+
+
+def _pit_context(document: dict, asof: str) -> dict:
+    """Accept context only when its declared date is no later than the snapshot."""
+    document_date = _artifact_asof(document)
+    target_date = str(pd.Timestamp(asof).date())
+    return document if document_date and document_date <= target_date else {}
+
+
+def _exact_pit_context(document: dict, asof: str) -> dict:
+    """Accept a decision artifact only when it matches the snapshot session."""
+    target_date = str(pd.Timestamp(asof).date())
+    return document if _artifact_asof(document) == target_date else {}
+
+
 # ------------------------------------------------------------------ enrichment ---
 
 
@@ -190,19 +218,34 @@ def _build_ths_membership(ths_data: dict) -> dict[str, dict]:
     return result
 
 
-def _build_microstructure_by_ticker(ms: dict) -> dict[str, dict]:
-    """Return {ticker: {limit_state, fillable, chase_veto, t_plus_one_risk}} from microstructure."""
+def _build_microstructure_by_ticker(
+    ms: dict,
+    asof: str | None = None,
+) -> dict[str, dict]:
+    """Return exact-session per-name execution packets.
+
+    Undated or stale packets are excluded; missing chase evidence stays ``None``
+    rather than being silently coerced to a clear veto.
+    """
+    target_date = str(pd.Timestamp(asof).date()) if asof else None
     name_packets = ms.get("name_packets") or []
     result: dict[str, dict] = {}
     for pkt in name_packets:
         ticker = pkt.get("ticker", "")
         if not ticker:
             continue
-        cv = pkt.get("chase_veto") or {}
+        packet_date = str(pkt.get("as_of") or "")[:10] or None
+        if not target_date or packet_date != target_date:
+            continue
+        cv = pkt.get("chase_veto")
+        chase = (
+            cv.get("flag") if isinstance(cv, dict) else cv
+        )
+        chase = chase if isinstance(chase, bool) else None
         result[ticker] = {
             "limit_state": pkt.get("limit_state"),
             "fillable": pkt.get("fillable"),
-            "chase_veto": bool(cv.get("flag")) if isinstance(cv, dict) else bool(cv),
+            "chase_veto": chase,
             "t_plus_one_risk": pkt.get("t_plus_one_risk"),
         }
     return result
@@ -344,7 +387,7 @@ def _fire_all_cn_books(
     _FLAGSHIP2_BOOK = {
         "engine_id": FLAGSHIP2_MIRROR_ID,
         "refire_lockout_sessions": 21,
-        "config_hash": "flagship2_mirror",
+        "config_hash": "cn_f2_reversion_v2_exact_exec_star_stack",
     }
 
     all_books_iter = list(CN_REGISTRY) + [None]  # None = flagship2 sentinel
@@ -377,21 +420,36 @@ def _fire_all_cn_books(
             # CNPL-R4: sealed_up fires are excluded from the ledger (skipped_unfillable counter)
             # The snap may have limit_state per ticker; check it
             limit_state = None
-            fillable = True
-            if not is_f2 and "limit_state" in snap.columns and ticker in snap.index:
+            fillable: bool | None = None
+            if "limit_state" in snap.columns and ticker in snap.index:
                 limit_state = snap.at[ticker, "limit_state"]
+                try:
+                    if pd.isna(limit_state):
+                        limit_state = None
+                except Exception:
+                    pass
                 # Explicit guard: only read fillable when the column exists and has a value
                 if "fillable" in snap.columns:
                     raw_fillable = snap.at[ticker, "fillable"]
                     if raw_fillable is not None and not pd.isna(raw_fillable):
                         fillable = bool(raw_fillable)
                     else:
-                        fillable = limit_state != "sealed_up" if limit_state is not None else True
+                        fillable = (
+                            limit_state != "sealed_up"
+                            if limit_state is not None else None
+                        )
                 else:
                     # fillable column absent — infer from limit_state
-                    fillable = limit_state != "sealed_up" if limit_state is not None else True
+                    fillable = (
+                        limit_state != "sealed_up"
+                        if limit_state is not None else None
+                    )
 
-            if not fillable or limit_state == "sealed_up":
+            if (
+                fillable is False
+                or limit_state == "sealed_up"
+                or (is_f2 and fillable is not True)
+            ):
                 log.debug(
                     "cn_pick_lab: %s/%s sealed_up at fire close — excluded (CNPL-R4)",
                     engine_id, ticker,
@@ -427,7 +485,7 @@ def _fire_all_cn_books(
                 # CN stamps (CNPL-R4 + spec §5)
                 "limit_state": limit_state or _snap_val("limit_state"),
                 "limit_width": _snap_val("limit_width"),
-                "fillable": bool(fillable),
+                "fillable": fillable,
                 "t_plus_one_risk": _snap_val("t_plus_one_risk"),
                 "cycle_phase": _snap_val("cycle_phase"),
                 "participation_regime": _snap_val("participation_regime"),
@@ -771,7 +829,7 @@ def _write_site_artifact(path: Path, payload: dict) -> None:
     fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".tmp_", suffix=".json")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
-            json.dump(payload, fh, default=str)
+            json.dump(payload, fh, default=str, allow_nan=False)
         os.replace(tmp, str(path))
     except Exception:
         try:
@@ -819,8 +877,12 @@ def _build() -> None:
     policy = _load_policy_transmission()
     ms = _load_microstructure()
     ths_data = _load_ths_baskets()
+    cycle = _pit_context(cycle, asof)
+    participation = _pit_context(participation, asof)
+    policy = _pit_context(policy, asof)
+    ths_data = _pit_context(ths_data, asof)
 
-    ms_by_ticker = _build_microstructure_by_ticker(ms)
+    ms_by_ticker = _build_microstructure_by_ticker(ms, asof)
     ths_by_ticker = _build_ths_membership(ths_data)
 
     snap_enriched = _enrich_snapshot(snap, cycle, participation, policy, ms_by_ticker, ths_by_ticker)
@@ -867,6 +929,10 @@ def _build() -> None:
                 trading_dates = pd.DatetimeIndex(sorted(all_raw_dates))
     except Exception as exc:
         log.warning("cn_pick_lab: trading date index build failed (%s)", exc)
+    if len(trading_dates):
+        trading_dates = trading_dates[
+            trading_dates <= pd.Timestamp(asof)
+        ]
 
     # Load reversion desk rows (for flagship2_mirror)
     reversion_desk_rows: list[dict] = []
@@ -874,7 +940,15 @@ def _build() -> None:
         rd_path = config.ROOT / "site" / "factordata" / "china_reversion_desk.json"
         if rd_path.exists():
             rd = json.loads(rd_path.read_text(encoding="utf-8"))
-            reversion_desk_rows = rd.get("rows") or []
+            rd_exact = _exact_pit_context(rd, asof)
+            if rd_exact:
+                reversion_desk_rows = rd_exact.get("rows") or []
+            else:
+                log.warning(
+                    "cn_pick_lab: reversion desk asof=%s != snapshot=%s; "
+                    "flagship2_mirror fails closed",
+                    _artifact_asof(rd), asof,
+                )
     except Exception as exc:
         log.debug("cn_pick_lab: china_reversion_desk.json unreadable (%s) — flagship2_mirror empty", exc)
 

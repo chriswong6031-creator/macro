@@ -1971,6 +1971,16 @@ on:
       - "tests/test_theme_trade_flows.py"
       - "tests/test_thetadata_resolver.py"
       - "tests/test_validate_gex.py"
+      # GEX modeling-core wiring (2026-07-29), into unrun-market-plumbing. The subject
+      # modules are already covered — engine/** reaches the walls/surface model layer
+      # and the greeks + engine math, collectors/** reaches the accrual collector, and
+      # the scripts/*.py catch-all reaches the accrual runner — so these three entries
+      # are the OTHER half: a suite-only edit (a new wall-shape case, a chain-parse
+      # re-pin) must still be able to START ci.yml. All three suites existed before
+      # this wiring and were reachable from no path pattern at all.
+      - "tests/test_gex_engine.py"
+      - "tests/test_gex_model.py"
+      - "tests/test_polygon_gex.py"
       - "scripts/backtest_event_priors.py"
       - "scripts/build_attention_deterministic.py"
       - "scripts/build_discovery_confluence.py"

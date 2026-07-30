@@ -1,0 +1,418 @@
+{
+  "seed": 20260729,
+  "params": {
+    "min_obs_prod": 21,
+    "min_obs_measure": 10,
+    "persist_k": 3,
+    "persist_m": 5,
+    "n_perm": 200,
+    "n_sim": 200000
+  },
+  "replication_padded": {
+    "evaluated": 350,
+    "fired": 62,
+    "rate": 0.1771
+  },
+  "session_true": {
+    "names_at_20_sessions": 343,
+    "names_ge_21": 0,
+    "count_histogram": {
+      "1": 26,
+      "9": 5,
+      "11": 19,
+      "12": 1,
+      "17": 2,
+      "18": 1,
+      "19": 4,
+      "20": 343
+    }
+  },
+  "null_rates_iid": {
+    "n21": {
+      "n_total": 21,
+      "self_inclusive": 0.2379,
+      "leave_one_out": 0.2275,
+      "persist_3of5": 0.1137
+    },
+    "n26": {
+      "n_total": 26,
+      "self_inclusive": 0.2305,
+      "leave_one_out": 0.2223,
+      "persist_3of5": 0.1022
+    },
+    "n40": {
+      "n_total": 40,
+      "self_inclusive": 0.1996,
+      "leave_one_out": 0.214,
+      "persist_3of5": 0.083
+    }
+  },
+  "observed_battery": {
+    "self": {
+      "n_names": 370,
+      "n_evals": 3509,
+      "fire_rate": 0.2112,
+      "p_true_given_true": 0.2825,
+      "n_transitions_from_true": 676,
+      "mean_true_run": 1.347,
+      "max_true_run": 7,
+      "breadth_by_day": {
+        "10": 0.2189,
+        "11": 0.2251,
+        "12": 0.3714,
+        "13": 0.2086,
+        "14": 0.1571,
+        "15": 0.1971,
+        "16": 0.1714,
+        "17": 0.1925,
+        "18": 0.1931,
+        "19": 0.1749
+      },
+      "breadth_sd": 0.0571
+    },
+    "loo": {
+      "n_names": 370,
+      "n_evals": 3509,
+      "fire_rate": 0.2194,
+      "p_true_given_true": 0.2876,
+      "n_transitions_from_true": 699,
+      "mean_true_run": 1.353,
+      "max_true_run": 7,
+      "breadth_by_day": {
+        "10": 0.1865,
+        "11": 0.2251,
+        "12": 0.3971,
+        "13": 0.2286,
+        "14": 0.2029,
+        "15": 0.1857,
+        "16": 0.1714,
+        "17": 0.1925,
+        "18": 0.2104,
+        "19": 0.1953
+      },
+      "breadth_sd": 0.0616
+    },
+    "persist": {
+      "n_names": 350,
+      "n_evals": 2088,
+      "fire_rate": 0.1384,
+      "p_true_given_true": 0.6133,
+      "n_transitions_from_true": 256,
+      "mean_true_run": 2.189,
+      "max_true_run": 6,
+      "breadth_by_day": {
+        "14": 0.18,
+        "15": 0.1857,
+        "16": 0.16,
+        "17": 0.1006,
+        "18": 0.1066,
+        "19": 0.0962
+      },
+      "breadth_sd": 0.038
+    }
+  },
+  "permutation_null": {
+    "self": {
+      "fire_rate": {
+        "mean": 0.2293,
+        "sd": 0.0075,
+        "p95": 0.2417
+      },
+      "p_true_given_true": {
+        "mean": 0.2243,
+        "sd": 0.0157,
+        "p95": 0.252
+      },
+      "mean_true_run": {
+        "mean": 1.2554,
+        "sd": 0.0221,
+        "p95": 1.292
+      },
+      "breadth_sd": {
+        "mean": 0.0304,
+        "sd": 0.0062,
+        "p95": 0.0412
+      }
+    },
+    "loo": {
+      "fire_rate": {
+        "mean": 0.2382,
+        "sd": 0.0072,
+        "p95": 0.2496
+      },
+      "p_true_given_true": {
+        "mean": 0.235,
+        "sd": 0.0149,
+        "p95": 0.2596
+      },
+      "mean_true_run": {
+        "mean": 1.2681,
+        "sd": 0.0215,
+        "p95": 1.303
+      },
+      "breadth_sd": {
+        "mean": 0.0221,
+        "sd": 0.0054,
+        "p95": 0.0313
+      }
+    },
+    "persist": {
+      "fire_rate": {
+        "mean": 0.1255,
+        "sd": 0.0116,
+        "p95": 0.1446
+      },
+      "p_true_given_true": {
+        "mean": 0.5727,
+        "sd": 0.0319,
+        "p95": 0.6177
+      },
+      "mean_true_run": {
+        "mean": 1.9507,
+        "sd": 0.1003,
+        "p95": 2.1021
+      },
+      "breadth_sd": {
+        "mean": 0.0158,
+        "sd": 0.0061,
+        "p95": 0.0265
+      }
+    }
+  },
+  "rr_structure": {
+    "lag1_autocorr_median": -0.0105,
+    "lag1_autocorr_iqr": [
+      -0.1424,
+      0.1739
+    ],
+    "n_names_ac": 350,
+    "panel_shape": [
+      20,
+      343
+    ],
+    "day_factor_var_share": 0.0392,
+    "day_mean_rr_series": {
+      "2026-06-22": -0.0019,
+      "2026-06-23": 0.0074,
+      "2026-06-24": 0.0069,
+      "2026-06-25": -0.0596,
+      "2026-06-26": 0.0029,
+      "2026-06-29": -0.0154,
+      "2026-06-30": -0.0078,
+      "2026-07-01": 0.0024,
+      "2026-07-02": -0.0001,
+      "2026-07-07": 0.0311,
+      "2026-07-10": -0.0035,
+      "2026-07-13": 0.0076,
+      "2026-07-14": 0.0256,
+      "2026-07-16": 0.0121,
+      "2026-07-20": 0.0068,
+      "2026-07-21": 0.0003,
+      "2026-07-22": -0.0157,
+      "2026-07-27": 0.0007,
+      "2026-07-28": 0.0088,
+      "2026-07-29": -0.0085
+    }
+  },
+  "threshold_instability": {
+    "median_abs_shift_q80_first10_vs_all20_in_iqr_units": 0.1925,
+    "p90_abs_shift": 0.5789,
+    "decision_flip_share_last_session": 0.0641
+  },
+  "day1_forecast": {
+    "cohort_n20": 343,
+    "share_latest_rr_above_q80_all20": 0.1749,
+    "share_persist_3of5_hist15": 0.0962,
+    "persist_prod_eligibility": "hist(excl window)>=21 -> first eval at n>=26 (~5 sessions after 2026-07-30)"
+  },
+  "radar_boundary_nt2": [
+    {
+      "ticker": "CTAS",
+      "state": "BREAKAWAY",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "LCID",
+      "state": "SUPPRESSED",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "MELI",
+      "state": "QUIET_ACCUMULATION",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "PCAR",
+      "state": "NONE",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "PYPL",
+      "state": "BREAKAWAY",
+      "chip_padded": false,
+      "latest_above_q80": false,
+      "persist_3of5": false
+    },
+    {
+      "ticker": "ROP",
+      "state": "BREAKAWAY",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "ROST",
+      "state": "NONE",
+      "chip_padded": false,
+      "latest_above_q80": false,
+      "persist_3of5": false
+    },
+    {
+      "ticker": "SHOP",
+      "state": "NONE",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "TRI",
+      "state": "BREAKAWAY",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "VRSK",
+      "state": "NONE",
+      "chip_padded": null,
+      "latest_above_q80": null,
+      "persist_3of5": null
+    },
+    {
+      "ticker": "WDAY",
+      "state": "BREAKAWAY",
+      "chip_padded": false,
+      "latest_above_q80": false,
+      "persist_3of5": false
+    }
+  ],
+  "run_stats": {
+    "self": {
+      "pair_rate_p2": 0.0608,
+      "triple_rate_p3": 0.0219,
+      "n_runs": 550,
+      "share_runs_ge3": 0.08
+    },
+    "persist": {
+      "pair_rate_p2": 0.0903,
+      "triple_rate_p3": 0.0576,
+      "n_runs": 132,
+      "share_runs_ge3": 0.3258
+    }
+  },
+  "breadth_common_grid": {
+    "grid": "t=14..19 (common to both constructions at the battery floors)",
+    "self": {
+      "by_day": {
+        "14": 0.1571,
+        "15": 0.1971,
+        "16": 0.1714,
+        "17": 0.1925,
+        "18": 0.1931,
+        "19": 0.1749
+      },
+      "sd": 0.0144
+    },
+    "persist": {
+      "by_day": {
+        "14": 0.18,
+        "15": 0.1857,
+        "16": 0.16,
+        "17": 0.1006,
+        "18": 0.1066,
+        "19": 0.0962
+      },
+      "sd": 0.038
+    },
+    "footprint_t12_19": {
+      "note": "PERSIST at relaxed history floor 8 so the 2026-07-14 spike day (t=12) is evaluable: peak damped, footprint stretched 1->5 sessions",
+      "self": {
+        "12": 0.3714,
+        "13": 0.2086,
+        "14": 0.1571,
+        "15": 0.1971,
+        "16": 0.1714,
+        "17": 0.1925,
+        "18": 0.1931,
+        "19": 0.1749
+      },
+      "persist_floor8": {
+        "12": 0.2314,
+        "13": 0.22,
+        "14": 0.18,
+        "15": 0.1857,
+        "16": 0.16,
+        "17": 0.1006,
+        "18": 0.1066,
+        "19": 0.0962
+      }
+    },
+    "session_index_map": {
+      "0": "2026-06-22",
+      "1": "2026-06-23",
+      "2": "2026-06-24",
+      "3": "2026-06-25",
+      "4": "2026-06-26",
+      "5": "2026-06-29",
+      "6": "2026-06-30",
+      "7": "2026-07-01",
+      "8": "2026-07-02",
+      "9": "2026-07-07",
+      "10": "2026-07-10",
+      "11": "2026-07-13",
+      "12": "2026-07-14",
+      "13": "2026-07-16",
+      "14": "2026-07-20",
+      "15": "2026-07-21",
+      "16": "2026-07-22",
+      "17": "2026-07-27",
+      "18": "2026-07-28",
+      "19": "2026-07-29"
+    },
+    "obs_over_null_breadth_sd_ratio": {
+      "self": 1.88,
+      "loo": 2.79,
+      "persist": 2.41
+    }
+  },
+  "km_grid": {
+    "k2_m3": {
+      "null_n26": 0.1377,
+      "observed": 0.1607
+    },
+    "k3_m3": {
+      "null_n26": 0.014,
+      "observed": 0.0366
+    },
+    "k2_m5": {
+      "null_n26": 0.3219,
+      "observed": 0.3147
+    },
+    "k3_m5": {
+      "null_n26": 0.1007,
+      "observed": 0.1384
+    },
+    "k4_m5": {
+      "null_n26": 0.0196,
+      "observed": 0.0469
+    }
+  }
+}

@@ -33,6 +33,7 @@ from engine import china_signals  # noqa: E402  — A-share reversal tech + QVIX
 from engine import china_liquidity  # noqa: E402  — dollar-ADV liquidity floor + turnover-shape discriminator
 from engine.china_reversal import is_st  # noqa: E402  — ST/*ST/退 delisting-risk exclusion
 from engine import china_standout_track  # noqa: E402  — board-ORDER forward ledger (keystone)
+from engine import china_board_rank  # noqa: E402  — Prophet v2 score + execution/lifecycle lanes
 from engine import stock_view  # noqa: E402
 from engine import dispersion  # noqa: E402  — cross-sectional selection-regime gross dial
 from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timing gauge (market-agnostic)
@@ -52,12 +53,38 @@ log = logging.getLogger("china_library")
 CSI300_ETF = "510300.SS"   # cap-weighted A-share market proxy for the residual-alpha leg
 JUNK_SECTOR = "A-share"    # yfinance fallback bucket → route to the engine's skip sentinel
 
-# Board width for the CN standout buy lane. A page-width cap, NOT a quality filter —
-# overflow rows (rank CAP+1..) ship in the additive `watch` lane of
-# china_standouts.json so a gate-passing name is never silently dropped
-# (156 eligible vs 110 shown on 2026-07-28; US-board parity: build_stock_library
-# W6-US fix 6 routes sector-cap overflow to watch).
-BOARD_BUY_CAP = 110
+# Prophet v2 keeps the first screen broad but makes the visible shelf selective:
+# only execution-ready T1-T3 names can enter the featured lane.  Every other raw
+# gate-eligible name is preserved in one of the explicit depth lanes.
+BOARD_BUY_CAP = china_board_rank.FEATURED_CAP
+
+
+def _prophet_ranking_contract() -> dict:
+    """Public, versioned explanation of the live China Prophet priority."""
+    return {
+        "definition": china_board_rank.BOARD_DEFINITION,
+        "score_kind": (
+            "transparent priority heuristic; not a calibrated return forecast"
+        ),
+        "formula_points": dict(china_board_rank.SCORE_WEIGHTS),
+        "featured_requirements": {
+            "signal_tiers": list(signal_gate.BUYABLE_TIERS),
+            "stage": "ENTRY",
+            "entry_status": ["buy_now", "partial"],
+            "adv_floor_yi": china_board_rank.ADV_FLOOR_YI,
+            "same_day_signal": True,
+            "same_day_microstructure": True,
+            "fillable": True,
+            "chase_veto": False,
+            "extended": False,
+            "sector_cap": china_board_rank.SECTOR_CAP,
+            "board_cap": china_board_rank.FEATURED_CAP,
+        },
+        "zero_score_authority": [
+            "residual_alpha", "setup", "sector_turn", "narrative",
+            "quality", "low_vol", "risk_sizing",
+        ],
+    }
 
 
 def _name_data_through(ticker: str | None) -> str | None:
@@ -764,18 +791,6 @@ def _detach_board_track_plumbing(bt) -> tuple[dict | None, dict | None]:
     return bt, bt.pop("fwd_excess_map_21d", None)
 
 
-def _split_board_lanes(eligible_rows: list, cap: int = BOARD_BUY_CAP) -> tuple[list, list]:
-    """Split ranked gate-eligible rows into (buy, watch) lanes at the board cap.
-
-    Order-preserving and loss-free: buy = rows[:cap], watch = rows[cap:] — every
-    gate-eligible row lands in exactly one lane. The watch lane exists so the flat
-    board cap never silently drops a gate-passing name: RIPENING/RAN exclude
-    eligible names by construction, so before this lane existed the overflow
-    appeared nowhere at all.
-    """
-    return list(eligible_rows[:cap]), list(eligible_rows[cap:])
-
-
 # Forced-verdict horizon for the CN Track-record ledger, in sessions. Held equal to
 # the US desk's LEDGER_HORIZON on purpose: the two desks' headline numbers are read
 # side by side, and a horizon that differed per market would make them incomparable
@@ -934,7 +949,14 @@ def _cn_ledger_rows(bdf: pd.DataFrame, bench_ser, look: dict[str, dict],
     return rows_out, n_locked, scored, n_inflight, n_skipped
 
 
-def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | None) -> bool:
+def emit_cn_track_ledger(
+    site: Path,
+    bt: dict | None,
+    buy_rows: list[dict] | None,
+    *,
+    board_definition: str | None = None,
+    asof: str | None = None,
+) -> bool:
     """Emit site/factordata/cn_track_ledger.json (track_ledger/v1).
 
     Grain: EPISODE (contiguous board run) from data/china_standout_track/board.parquet,
@@ -970,6 +992,16 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
     scored: list[dict] = []
     n_locked = n_inflight = n_skipped = 0
     state = "accruing"
+    if not board_definition:
+        board_definition = next(
+            (
+                r.get("board_definition")
+                or (r.get("prophet") or {}).get("version")
+                for r in (buy_rows or [])
+                if r.get("board_definition") or (r.get("prophet") or {}).get("version")
+            ),
+            (bt or {}).get("board_definition"),
+        )
 
     # name/sector display lookup. Today's ranked board carries the freshest name +
     # sector, but the ledger spans EVERY episode back to first-write — most
@@ -1007,6 +1039,14 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
         except Exception:  # noqa: BLE001
             bdf = pd.DataFrame()
         if not bdf.empty:
+            if board_definition and "board_definition" in bdf.columns:
+                bdf = bdf[
+                    bdf["board_definition"].astype(str) == str(board_definition)
+                ].copy()
+            elif board_definition and str(board_definition) != "legacy":
+                # Never publish a pre-version ledger under a new board label.
+                bdf = pd.DataFrame()
+        if not bdf.empty:
             bench_ser = _cst._bench_close()  # noqa: SLF001 — single read, reused below
             _pf_orig = _cst._price_frame
             _pf_memo: dict[str, pd.DataFrame | None] = {}
@@ -1031,11 +1071,12 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
     # rows spanning 15 nights; that interval could not have been right.
     summary = _ts.summarize(scored, metric="excess", n_inflight=n_inflight,
                             n_skipped=n_skipped, horizon=_CN_HORIZON)
+    summary["board_definition"] = board_definition
     summary["n_logged"] = len(rows_out)
     summary["n_locked_excluded"] = n_locked
     state = _ts.publish_state(summary)
 
-    as_of = None
+    as_of = asof
     if rows_out:
         as_of = max((r["d"] for r in rows_out if r["d"]), default=None)
 
@@ -1043,8 +1084,11 @@ def emit_cn_track_ledger(site: Path, bt: dict | None, buy_rows: list[dict] | Non
         "CN", as_of, state, bench_dict, summary, rows_out, grain="episode",
         survivorship={"n_locked_excluded": n_locked, "n_skipped_no_price": n_skipped,
                       "note": "locked-limit T+1 rows are unfillable — flagged, excluded from stats"},
-        extra_meta={"exit_rule": f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
-                                 "no oscillator target (3D thresholds not yet refit for A-shares)"},
+        extra_meta={
+            "board_definition": board_definition,
+            "exit_rule": f"{_CN_HORIZON}-session forced verdict · T+1 open fill · "
+                         "no oscillator target (3D thresholds not yet refit for A-shares)",
+        },
     )
     _CN_LAST_LEDGER["doc"] = doc
     return _tl.atomic_write(site / "factordata" / "cn_track_ledger.json", doc)
@@ -1065,6 +1109,44 @@ def _find_bad_json_keys(obj, path: str = "$") -> list[str]:
         for i, v in enumerate(obj):
             bad.extend(_find_bad_json_keys(v, f"{path}[{i}]"))
     return bad
+
+
+def _attach_eligible_coiled_fire(
+    coiled_by: dict[str, dict],
+    verdict_by: dict[str, dict],
+    close_by: dict[str, pd.Series],
+) -> int:
+    """Attach the display-only COILED-FIRE receipt where it can be published.
+
+    China Prophet serializes only raw-gate-eligible rows into its four board
+    lanes.  Full-universe research stores persist ``coiled``/``star`` but do not
+    consume the fire receipt, so evaluating the expensive multi-timeframe fire
+    detector for ineligible names cannot affect any score, lane, or artifact.
+
+    Returns the number of eligible COILED names evaluated. One malformed series
+    is skipped without suppressing the otherwise valid cross-sectional verdicts.
+    """
+    evaluated = 0
+    for ticker, payload in coiled_by.items():
+        if (
+            not isinstance(payload, dict)
+            or not payload.get("coiled")
+            or not (verdict_by.get(ticker) or {}).get("eligible")
+        ):
+            continue
+        close = close_by.get(ticker)
+        if close is None:
+            continue
+        evaluated += 1
+        try:
+            fire = coiled.fire_recent(close)
+        except Exception:  # noqa: BLE001 — display receipt never suppresses rank state
+            continue
+        if isinstance(fire, dict) and fire.get("fire"):
+            payload["fire"] = True
+            payload["fire_ticks"] = fire.get("ticks")
+            payload["fire_src"] = fire.get("src")
+    return evaluated
 
 
 def main(alpha: dict | None = None) -> dict | None:
@@ -1234,6 +1316,25 @@ def main(alpha: dict | None = None) -> dict | None:
     liq = current_liquidity()
     log.info("net-liquidity regime for china library: %s", liq or "unknown")
 
+    # Resolve the stock responsibility panel before any market context that can
+    # influence live score. Context ETFs/indices remain in ``uni`` for library
+    # pages, but neither their dates nor later context observations may advance
+    # the Prophet decision clock.
+    uni = universe()
+    _close_map: dict[str, pd.Series] = {
+        ticker: close
+        for ticker, close, *_rest in uni
+        if close is not None
+    }
+    _stock_universe_tickers = {
+        _t for (_t, _c, _h, _n, _s) in uni
+        if _s not in {"Sector ETF", "Index"}
+    }
+    _panel_asof = china_board_rank.stock_panel_asof(
+        uni,
+        _stock_universe_tickers,
+    )
+
     # QVIX vol-regime overlay — the GEX-analog for A-shares (no single-stock options). A panic SPIKE
     # (qvix_z high) is the crash-risk regime → a CN macro risk_overlay that taxes a chase + vetoes a
     # high-conviction verb, mirroring the US VIX overlay. INVERTED interpretation (engine/china_signals).
@@ -1241,8 +1342,20 @@ def main(alpha: dict | None = None) -> dict | None:
     cn_risk_overlay: dict = {"stress": 0.0, "drivers": []}
     try:
         _qp = config.data_dir() / "china_qvix" / "qvix300.parquet"
-        if _qp.exists():
-            qvix_reg = china_signals.qvix_regime(pd.read_parquet(_qp)["close"])
+        if _qp.exists() and _panel_asof is not None:
+            _qvix_frame = pd.read_parquet(_qp)
+            _qvix_frame.index = pd.to_datetime(
+                _qvix_frame.index,
+                errors="coerce",
+            )
+            _qvix_frame = _qvix_frame[
+                _qvix_frame.index.notna()
+                & (_qvix_frame.index <= pd.Timestamp(_panel_asof))
+            ]
+            if not _qvix_frame.empty and "close" in _qvix_frame:
+                qvix_reg = china_signals.qvix_regime(
+                    _qvix_frame["close"]
+                )
         if qvix_reg and qvix_reg.get("stress", 0) > 0:
             cn_risk_overlay = {"stress": qvix_reg["stress"],
                                "drivers": [f"QVIX {qvix_reg['regime']}"], "qvix": qvix_reg}
@@ -1271,6 +1384,8 @@ def main(alpha: dict | None = None) -> dict | None:
     try:
         _csi = store.read("china", CSI300_ETF)
         _csi_close = _csi["close"] if _csi is not None and "close" in _csi.columns else None
+        if _csi_close is not None and _panel_asof is not None:
+            _csi_close = _csi_close.loc[:pd.Timestamp(_panel_asof)]
     except Exception:  # noqa: BLE001
         _csi_close = None
     # hoist the anticipation engine + its gate ONCE (the cone is close-driven; the gate read would
@@ -1309,9 +1424,27 @@ def main(alpha: dict | None = None) -> dict | None:
         _flog_p = config.data_dir() / "china_sector_cycles" / "forward_log.parquet"
         if _flog_p.exists():
             _flog = pd.read_parquet(_flog_p)
-            if not _flog.empty and "date" in _flog.columns:
-                _latest_date = _flog["date"].max()
-                _flog_latest = _flog[_flog["date"] == _latest_date].copy()
+            if (
+                not _flog.empty
+                and "date" in _flog.columns
+                and _panel_asof is not None
+            ):
+                _flog["_pit_date"] = pd.to_datetime(
+                    _flog["date"],
+                    errors="coerce",
+                )
+                _flog = _flog[
+                    _flog["_pit_date"].notna()
+                    & (_flog["_pit_date"] <= pd.Timestamp(_panel_asof))
+                ]
+                _latest_date = (
+                    _flog["_pit_date"].max() if not _flog.empty else None
+                )
+                _flog_latest = (
+                    _flog[_flog["_pit_date"] == _latest_date].copy()
+                    if _latest_date is not None
+                    else _flog.iloc[0:0].copy()
+                )
                 # first-tick-up: oscillator just turned positive from a Trough (no reversal required,
                 # the earliest non-lagged inflection available in forward_log — rotation-machinery §3.2)
                 _ftu = _flog_latest[
@@ -1326,7 +1459,7 @@ def main(alpha: dict | None = None) -> dict | None:
                             "state":     "bottoming",
                             "osc_slope": float(_row.get("osc_slope") or 0.0),
                             "signature": float(_row.get("signature") or 0.0),
-                            "asof":      str(_latest_date),
+                            "asof":      str(pd.Timestamp(_latest_date).date()),
                             "approx":    True,  # Yahoo→SW taxonomy join is approximate
                         }
                 log.info("W0.10 sector first-tick-up: %d Shenwan L1 sectors qualify (Trough + osc_slope>0) "
@@ -1340,21 +1473,25 @@ def main(alpha: dict | None = None) -> dict | None:
     # strongest-theme basket tailwind. Both best-effort — a missing leg stays absent,
     # never read as neutral.
     rev_z_by: dict[str, float] = {}
+    reversal_context_by: dict[str, dict] = {}
+    _reversal_asof: str | None = None
     try:
         _rev = compute_china_reversal() or {}
+        _reversal_asof = str(_rev.get("as_of") or "")[:10] or None
         # rev_z_all covers the WHOLE screened universe (the fix): the validated reversal selection
         # leg now populates conviction for every name, not just the top-16 display watch list.
         rev_z_by = dict(_rev.get("rev_z_all") or {})
         for _r in _rev.get("watch", []):            # back-compat: ensure the display names are in too
             if _r.get("ticker") and _r.get("rev_z") is not None:
                 rev_z_by.setdefault(_r["ticker"], _r["rev_z"])
+        reversal_context_by = dict(_rev.get("reversal_all") or {})
         log.info("china reversal-z: populated for %d names (was top-16 only)", len(rev_z_by))
     except Exception as e:  # noqa: BLE001 — additive leg, never fatal
         log.warning("china reversal-z map unavailable (%s)", e)
     _tick("alpha + reversal-z legs")
     basket_tw = _basket_tailwind_map()          # Conviction "upside / theme tailwind" axis
 
-    index, cand, built, failed, limited = [], [], 0, 0, 0
+    index, cand, prophet_cand, built, failed, limited = [], [], [], 0, 0, 0
     price_by: dict[str, float] = {}
     sector_by: dict[str, str] = {}
     # unified Conviction profiles per name + the DEFERRED per-stock JSON writes —
@@ -1366,7 +1503,6 @@ def main(alpha: dict | None = None) -> dict | None:
     entry_sig: dict[str, dict] = {}             # entry-timing gauge per name (standout rows)
     risk_sig: dict[str, dict] = {}              # vol-managed sizing per name (standout rows)
     to_write: list[tuple[str, dict]] = []
-    uni = universe()
     # cross-sectional DISPERSION regime — the dial for WHEN selection pays (high dispersion
     # => selection earns more => take more gross). Computed ONCE over the whole-universe
     # return panel; feeds per-name vol-managed sizing. Mirrors build_stock_library; the
@@ -1400,14 +1536,10 @@ def main(alpha: dict | None = None) -> dict | None:
     # the ADV floor only excludes names we can PROVE are illiquid (missing ADV passes through, logged).
     # market-cap is inert on the top-cap search universe (all real caps >30亿, 46% placeholder) so it
     # is kept as honest defense-in-depth and reported, not relied on. Counts surface the REAL bite.
-    screen_drop = {"st": 0, "mcap": 0, "adv": 0, "stale": 0}
+    screen_drop = {"st": 0, "mcap": 0, "adv": 0, "stale": 0, "non_stock": 0}
     MCAP_FLOOR_YI = 30.0            # matches china_reversal; 30.0 exactly is the placeholder => "unknown"
     STALE_DAYS = 15                 # a name whose last bar is >15 calendar days stale is likely
     #                                suspended/delisted (e.g. a frozen HK/A name) — never a live buy.
-    # panel reference date = the freshest last-bar across the universe (suspended names lag it).
-    _panel_asof = max((c.last_valid_index() for (_t, c, *_r) in uni
-                       if c is not None and c.last_valid_index() is not None), default=None)
-
     def _tradability_ok(_t: str) -> bool:
         # ST from the Tushare name field (carries the prefix) OR the name_zh fallback (usually
         # blind — see the ST-flag sourcing above). Fail-CLOSED: either source flags → drop.
@@ -1435,7 +1567,6 @@ def main(alpha: dict | None = None) -> dict | None:
     _coil_wash:   dict[str, bool | None]  = {}
     _coil_div:    dict[str, bool]         = {}
     _coil_sector: dict[str, str | None]   = {}
-    _coil_fire:   dict[str, dict]         = {}   # wave-4 COILED-FIRE display marker (CN, no rank change)
     _hold_state_cn: dict[str, dict]       = {}   # W0.1 HOLD tracker (display/ledger only; never in _cn_bonus)
     for (ticker, close, high, name, sector), rec in zip(uni, recs):
         if rec is None:
@@ -1453,6 +1584,16 @@ def main(alpha: dict | None = None) -> dict | None:
         # gate. It NEVER changes which names are eligible (alignment stays the inclusion gate) —
         # it only adds the per-card tier badge and re-ranks WITHIN the aligned buy list (below).
         sig_verdict[ticker] = signal_gate.gate(ticker, close)
+        # signal_gate.asof is the label of its 3-business-day indicator bucket,
+        # which can legitimately be one or two calendar sessions behind the
+        # latest input. Preserve that analytical label, but add the actual daily
+        # input receipt for same-session Prophet admission.
+        _signal_input_last = close.last_valid_index()
+        sig_verdict[ticker]["input_asof"] = (
+            str(pd.Timestamp(_signal_input_last).date())
+            if _signal_input_last is not None
+            else None
+        )
         # W0.1 HOLD tracker (CN port): compute basing state after the confluence anchor. Close-only;
         # anchor = the §7 take/pending buy-marker date when an open buy exists, else fall back to the
         # most-recent 3D RSI-MACD cross-up (≤ CROSS_MAX_AGE=45 trading days old). CN-specific caveat:
@@ -1489,40 +1630,67 @@ def main(alpha: dict | None = None) -> dict | None:
             _coil_wash[ticker]   = coiled.washout_ctx(close)
             _coil_div[ticker]    = coiled.bull_div(close)
             _coil_sector[ticker] = sector or None
-            _coil_fire[ticker]   = coiled.fire_recent(close)
         except Exception:  # noqa: BLE001 — additive, never fatal
             pass
-        if alpha_pt.get(ticker):            # additive: absent => no alpha panel for this name
+        # Residual alpha remains useful display context and powers the legacy
+        # laggards strip, but it is no longer an admission dependency for Prophet
+        # v2.  Build one board-shape row for every analyzed responsibility-screened
+        # name; missing alpha/setup stays explicitly null.
+        if alpha_pt.get(ticker):
             rec["alpha"] = alpha_pt[ticker]
-            sc = _setup_score(rec)
+        sc = _setup_score(rec) if rec.get("alpha") else None
+        _lad = rec.get("ladder") or {}
+        _lad_entry = _lad.get("entry") or {}
+        _alpha_row = rec.get("alpha") or {}
+        _prophet_row = {
+            "ticker": ticker,
+            "name": name,
+            "sector": sector,
+            "alpha": _alpha_row.get("alpha"),
+            "alpha_entry": _alpha_row.get("entry"),
+            "state": _lad.get("state"),
+            "label": _lad.get("label"),
+            "label_zh": _lad.get("label_zh"),
+            "urgency": _lad_entry.get("urgency"),
+            "dir": _lad.get("dir"),
+            "eq_dir": _lad.get("eq_dir"),
+            "sector_rank": _alpha_row.get("sector_rank"),
+            "sector_n": _alpha_row.get("sector_n"),
+            "setup": (sc[1].get("setup") if sc else None),
+        }
+        # 2W washout and extension are China-native score/admission inputs. They
+        # must be computed independently of residual-alpha coverage.
+        try:
+            _tf2w = _tf_state(close.resample("2W-FRI").last().dropna())
+            _washout_2w = _tf2w.get("stoch_cross_up")
+            _prophet_row["washout_2w"] = (
+                _washout_2w if isinstance(_washout_2w, bool) else None
+            )
+        except Exception:  # noqa: BLE001 — absent context earns no points
+            _prophet_row["washout_2w"] = None
+        try:
+            _prophet_row["extension"] = china_signals.extension_read(
+                close, rec.get("tech"), ticker,
+                turn_ratio=(liq_by.get(ticker) or {}).get("turn_ratio"),
+            )
+        except Exception:  # noqa: BLE001 — unknown extension cannot be featured
+            _prophet_row["extension"] = None
+
+        # QUALITY / TRADABILITY screen — keep ST / illiquid / stale garbage off
+        # both the v2 board and the legacy laggards context.
+        _last = close.last_valid_index()
+        if (
+            _panel_asof is not None
+            and _last is not None
+            and (_panel_asof - _last).days > STALE_DAYS
+        ):
+            screen_drop["stale"] += 1
+        elif ticker not in _stock_universe_tickers:
+            screen_drop["non_stock"] += 1
+        elif _tradability_ok(ticker):
+            prophet_cand.append(_prophet_row)
             if sc:
-                # 2W StochRSI WASHOUT-RECLAIM (owner request): a bullish reclaim of the 20 line
-                # from oversold on the 2-week bar (2W-FRI, the btc_mtf/commodity_mtf convention).
-                # Such names have likely washed out on the higher 2W/1M timeframe, so the board
-                # gives them a big rank lift (signal_gate.blend_sorted bonus_of) WHILE the cascade
-                # tier still orders within. Best-effort; thin history -> no flag.
-                try:
-                    _tf2w = _tf_state(close.resample("2W-FRI").last().dropna())
-                    sc[1]["washout_2w"] = bool(_tf2w.get("stoch_cross_up"))
-                except Exception:  # noqa: BLE001 — additive, never fatal
-                    pass
-                # anti-chase EXTENSION read (close-only) — DEMOTES names that already ran (limit-up
-                # pop / stretched above MA / near 52w high). Attached to the row; blend_sorted's
-                # bonus_of subtracts a penalty proportional to score. Turnover-shape from the deep
-                # store distinguishes accumulation (expansion off a base) from a distribution spike.
-                try:
-                    sc[1]["extension"] = china_signals.extension_read(
-                        close, rec.get("tech"), ticker,
-                        turn_ratio=(liq_by.get(ticker) or {}).get("turn_ratio"))
-                except Exception:  # noqa: BLE001 — additive, never fatal
-                    pass
-                # QUALITY / TRADABILITY screen — keep ST / illiquid / stale garbage off the board
-                _last = close.last_valid_index()
-                if (_panel_asof is not None and _last is not None
-                        and (_panel_asof - _last).days > STALE_DAYS):
-                    screen_drop["stale"] += 1          # suspended / delisted — not a live pick
-                elif _tradability_ok(ticker):
-                    cand.append(sc)
+                cand.append((sc[0], copy.deepcopy(_prophet_row)))
         # ---- unified Conviction Profile (engine/stock_score, CN market) ----------
         # The single block both the china.html standout card AND china_lookup render,
         # so the two can never structurally disagree. The CN SELECTION leg is the
@@ -1767,40 +1935,18 @@ def main(alpha: dict | None = None) -> dict | None:
     if cal.exists():
         (outdir / "calibration.json").write_text(cal.read_text())
 
-    # cross-sectional "Top setups" — now BOTTOMING-ALIGNED, not reversal/momentum-led.
-    # The buy shortlist is gated on multi-timeframe alignment (weekly not-falling +
-    # 3-day nearing a bullish cross + daily just-crossed/about-to), so a mid-weekly-bear
-    # falling knife can no longer be surfaced as a buy card. The reversal-led setup score
-    # survives only as the ranking tiebreaker within aligned names; the cycle alignment
-    # is the gate. NEAR-aligned names backfill (clearly tagged) only when too few names
-    # are fully aligned. align_map keys on the same alignment block the Conviction profile
-    # carries (engine.cycles.mtf_alignment), available on every analyzed name's ladder.
+    # Cross-sectional China Prophet board.  The broad raw gate remains useful discovery
+    # telemetry, but it is not synonymous with "buy now": the explicit v2 lanes below
+    # separate confirmed execution-ready entries, live-but-not-featured setups, blocked/
+    # late names, and legacy early warnings.  Alignment remains display context.
     setups = None
     align_map = {t: (p or {}).get("alignment") for t, p in profiles.items()}
-    # CONFLUENCE GATE (owner directive, 2026-06-29): the board's INCLUSION gate is now the
-    # owner's T1->T4 MACD-RSI x StochRSI confluence cascade (engine/signal_gate, computed per
-    # name above as sig_verdict), REPLACING the bottoming-alignment screen. A name is buyable
-    # iff its cascade verdict is `eligible` — a held-fresh / forming T1 master, or a projected
-    # T2/T3/T4 — all already freshness- and not-topped-guarded inside signal_gate.gate. Being
-    # ABOVE or below the 200-day is irrelevant; the cascade alone decides (the prior screen's
-    # below-200 "bottoming" bias was wrong for this system). Ranked by the weighted cascade
-    # blend (signal_gate.blend_sorted): strongest tier first, lifted by the setup-score
-    # percentile so conviction breaks ties within a tier. The bottoming-alignment line is kept
-    # ONLY as per-card CONTEXT (align_tier, rendered when the name also happens to be aligned).
     def _atier(t: str) -> str | None:
         a = align_map.get(t) or {}
         return "aligned" if a.get("aligned") else ("near" if a.get("near") else None)
-    WASHOUT_BONUS = 0.5   # 2W StochRSI washout-reclaim lift (~one tier; cascade tier still orders within)
-    EXT_PENALTY = 0.5     # anti-chase: a fully-extended name is demoted ~one tier (symmetric w/ washout)
-    # CN tier flatten (P4, revised): in A-shares a confirmed breakout is often already run and
-    # medium-term momentum is dead, so we let a FRESH T2/T3 compete with a fresh T1 — a MILD
-    # near-parity flatten (wn floored at 0.6, tier_frac 0.30 vs the US 0.45), NOT an inversion.
-    # "Already ran" is handled ORTHOGONALLY by EXT_PENALTY below, not by demoting every T1.
-    CN_TIER_FRAC, CN_WN_FLOOR = 0.30, 0.60
 
-    # COILED wave-3 CN ranking bonus: cohort_fractions is cross-sectional (requires the full
-    # universe), so it is computed here AFTER the loop. Both steps try/except guarded; failure
-    # degrades gracefully to empty dict (board continues without the bonus, never fatal).
+    # COILED is one bounded bottom-quality component in Prophet v2.  The old fixed
+    # +0.4/+0.5 bonuses could swamp a 0..1 base score and have been removed.
     coiled_by: dict[str, dict] = {}
     try:
         _coil_frac = coiled.cohort_fractions(_coil_d, _coil_sector)
@@ -1808,56 +1954,162 @@ def main(alpha: dict | None = None) -> dict | None:
             t: coiled.assess(_coil_wash.get(t), _coil_frac.get(t), bool(_coil_div.get(t)))
             for t in sig_verdict
         }
-        # Wave-4 COILED-FIRE CN: inject fire fields into assess dict for COILED names with a
-        # recent fire. Display chip + forward-ledger only — NO rank/bonus change.
-        for t, cb in coiled_by.items():
-            if cb.get("coiled"):
-                _fr = _coil_fire.get(t) or {}
-                if _fr.get("fire"):
-                    cb["fire"]       = True
-                    cb["fire_ticks"] = _fr.get("ticks")
-                    cb["fire_src"]   = _fr.get("src")
+        # Wave-4 COILED-FIRE is a display/ledger receipt with zero score
+        # authority. Evaluate it only for COILED names that can enter one of the
+        # four serialized raw-eligible lanes.
+        _n_fire_scanned = _attach_eligible_coiled_fire(
+            coiled_by,
+            sig_verdict,
+            _close_map,
+        )
+        log.info(
+            "china COILED-FIRE: evaluated %d raw-eligible COILED names "
+            "(ineligible universe skipped)",
+            _n_fire_scanned,
+        )
     except Exception as _e:  # noqa: BLE001 — additive; board degrades gracefully without bonus
         log.warning("china coiled bonus skipped (%s)", _e)
         coiled_by = {}
 
-    def _cn_bonus(r):
-        # wave-3 CN gate: clean15 +7.33pp, stop5 −6.21pp better, n=10,784. ADDITIVE beside:
-        #   • WASHOUT_BONUS (own-name 2W StochRSI reclaim, orthogonal own-name signal)
-        #   • EXT_PENALTY (anti-chase extension demote, orthogonal anti-chase)
-        # A name with both washout_2w AND coiled legitimately stacks both bonuses.
-        b = WASHOUT_BONUS if r.get("washout_2w") else 0.0
-        b += ((coiled_by.get(r.get("ticker")) or {}).get("bonus") or 0.0)
-        ext = float((r.get("extension") or {}).get("score") or 0.0)
-        return b - EXT_PENALTY * ext                    # net additive lift/penalty on the 0..1 blend
+    _candidate_rows = dedupe_dual_class(prophet_cand)
+    for _row in _candidate_rows:
+        _cb = coiled_by.get(_row.get("ticker"))
+        if _cb is not None:
+            _row["coiled"] = _cb
 
-    eligible_rows = signal_gate.blend_sorted(
-        dedupe_dual_class([r for _s, r in cand
-                           if (sig_verdict.get(r.get("ticker")) or {}).get("eligible")]),
-        base_of=lambda r: r.get("setup") or 0.0,
-        verdict_of=lambda r: sig_verdict.get(r.get("ticker")),
-        bonus_of=_cn_bonus, tier_frac=CN_TIER_FRAC, wn_floor=CN_WN_FLOOR)
+    # Join the same-day A-share execution packet.  Missing or stale packets never
+    # manufacture a veto, but they cannot qualify a name for the featured shelf.
+    _micro_doc: dict = {}
+    try:
+        _micro_path = site / "chinastatedata" / "microstructure.json"
+        if _micro_path.exists():
+            _micro_doc = json.loads(_micro_path.read_text())
+    except Exception as _micro_e:  # noqa: BLE001 — admission degrades to non-featured
+        log.warning("china Prophet microstructure join unavailable (%s)", _micro_e)
+    _micro_by = {
+        str(_packet.get("ticker")): dict(_packet)
+        for _packet in (_micro_doc.get("name_packets") or [])
+        if isinstance(_packet, dict) and _packet.get("ticker")
+    }
+    # The board is a point-in-time decision on the actual name-price panel.
+    # Alpha can lag or advance independently; it has zero admission authority.
+    _board_asof = (
+        str(pd.Timestamp(_panel_asof).date()) if _panel_asof is not None else None
+    )
+    _alpha_asof = str((alpha or {}).get("as_of") or "")[:10] or None
+    if _alpha_asof and _board_asof and _alpha_asof != _board_asof:
+        log.warning(
+            "china Prophet as-of mismatch: alpha=%s panel=%s; board anchored to panel",
+            _alpha_asof, _board_asof,
+        )
+    _raw_gate_tickers = {
+        str(_row.get("ticker"))
+        for _row in _candidate_rows
+        if (sig_verdict.get(_row.get("ticker")) or {}).get("eligible")
+    }
+    _need_live_micro = {
+        _ticker for _ticker in _raw_gate_tickers
+        if _ticker not in _micro_by
+        or str((_micro_by.get(_ticker) or {}).get("as_of") or "")[:10] != _board_asof
+    }
+    if _need_live_micro:
+        try:
+            from engine.china_microstructure import (  # noqa: PLC0415
+                _load_st_set as _micro_st_set,
+                name_packet as _name_packet,
+            )
+            _st_set_for_micro = _micro_st_set(config.data_dir())
+            _raw_dir = config.data_dir() / "china_stocks_raw"
+            _micro_rebuilt = 0
+            for _ticker in sorted(_need_live_micro):
+                _raw_ticker = _ticker.replace(".SH", ".SS")
+                _raw_path = _raw_dir / f"{_raw_ticker}.parquet"
+                if not _raw_path.exists():
+                    _raw_path = _raw_dir / f"{_ticker}.parquet"
+                if not _raw_path.exists():
+                    continue
+                try:
+                    _raw_frame = pd.read_parquet(_raw_path)
+                    if _raw_frame.empty:
+                        continue
+                    _packet = _name_packet(
+                        ticker=_ticker,
+                        df=_raw_frame,
+                        st_set=_st_set_for_micro,
+                    )
+                    _packet["as_of"] = str(pd.Timestamp(_raw_frame.index.max()).date())
+                    _micro_by[_ticker] = _packet
+                    _micro_rebuilt += 1
+                except Exception:  # noqa: BLE001 — one bad name stays non-featured
+                    continue
+            log.info(
+                "china Prophet live microstructure: refreshed %d/%d raw-eligible packets",
+                _micro_rebuilt, len(_need_live_micro),
+            )
+        except Exception as _micro_live_e:  # noqa: BLE001 — conservative non-featured fallback
+            log.warning(
+                "china Prophet live microstructure refresh unavailable (%s)",
+                _micro_live_e,
+            )
+    _score_reversal_by = (
+        reversal_context_by
+        if _reversal_asof and _reversal_asof == _board_asof
+        else {}
+    )
+    _score_rev_z_by = (
+        rev_z_by
+        if _reversal_asof and _reversal_asof == _board_asof
+        else {}
+    )
+    if reversal_context_by and not _score_reversal_by:
+        log.warning(
+            "china Prophet reversal context rejected for as-of mismatch: "
+            "reversal=%s board=%s",
+            _reversal_asof,
+            _board_asof,
+        )
+    _sector_turn_by_ticker: dict[str, dict] = {}
+    for _row in _candidate_rows:
+        _sw_match = _YAHOO_TO_SW.get(_row.get("sector") or "")
+        if _sw_match and _sw_match in _sector_turn_by_sw:
+            _sector_turn_by_ticker[str(_row.get("ticker"))] = _sector_turn_by_sw[_sw_match]
+
+    # Prophet v2 score authority is intentionally small and transparent:
+    # confluence 35 + entry 25 + runway 20 + bottom quality 10 + membership
+    # in the validated broad reversal sleeve 10.  Residual alpha, narratives,
+    # sector turns, quality and low-vol context are recorded but have zero score
+    # authority until their own forward evidence earns promotion.
+    _scored_candidates = china_board_rank.enrich_and_score_rows(
+        _candidate_rows,
+        verdict_by=sig_verdict,
+        profile_by=profiles,
+        entry_by=entry_sig,
+        risk_by=risk_sig,
+        rev_z_by=_score_rev_z_by,
+        reversal_by=_score_reversal_by,
+        micro_by=_micro_by,
+        liquidity_by=liq_by,
+        sector_turn_by=_sector_turn_by_ticker,
+        # Each packet carries its own as-of.  Passing the board date here lets
+        # _micro_is_fresh require both the batch and per-name dates to match.
+        micro_asof=_micro_doc.get("as_of"),
+        board_asof=_board_asof,
+    )
+    eligible_rows = [
+        r for r in _scored_candidates if (r.get("signal") or {}).get("eligible")
+    ]
     _n_ext = sum(1 for r in eligible_rows if (r.get("extension") or {}).get("extended"))
-    log.info("china confluence-gate: %d of %d scored names eligible (T1-T4); "
-             "%d extended (demoted); quality-screen dropped ST=%d mcap=%d adv=%d stale=%d",
-             len(eligible_rows), len(cand), _n_ext,
+    _n_buyable = sum(1 for r in eligible_rows if signal_gate.is_buyable(r.get("signal")))
+    _reversal_coverage = china_board_rank.reversal_coverage(
+        _scored_candidates,
+        _score_reversal_by,
+        source_asof=_reversal_asof,
+        board_asof=_board_asof,
+    )
+    log.info("china Prophet v2 screen: %d raw eligible / %d actionable T1-T3 of %d scored; "
+             "%d extended; quality-screen dropped ST=%d mcap=%d adv=%d stale=%d",
+             len(eligible_rows), _n_buyable, len(_scored_candidates), _n_ext,
              screen_drop["st"], screen_drop["mcap"], screen_drop["adv"], screen_drop["stale"])
-
-    # DIVERSIFY the head of the strip: cap per-sector representation so the top isn't ONE crowded
-    # theme shown five ways (the flat, overlapping THS taxonomy makes single-theme crowding common).
-    # A pure reorder — overflow rows keep their relative order and are appended after; nothing drops.
-    def _diversify(rows: list, cap: int = 6) -> list:
-        from collections import defaultdict
-        seen: dict[str, int] = defaultdict(int)
-        head, overflow = [], []
-        for r in rows:
-            s = r.get("sector") or "—"
-            if seen[s] < cap:
-                head.append(r); seen[s] += 1
-            else:
-                overflow.append(r)
-        return head + overflow
-    eligible_rows = _diversify(eligible_rows)
 
     # ── W1-B: W-tier setup layer wiring ───────────────────────────────────────────
     # (1) Compute w_setup for the FULL closes-panel universe (>=200 bars).
@@ -1895,7 +2147,21 @@ def main(alpha: dict | None = None) -> dict | None:
             ab_tier as _narr_ab_tier,
         )
         _narr_result = _build_narr_tags()
-        _narr_tags: dict = _narr_result.get("tags") or {}
+        _narr_asof = str(_narr_result.get("as_of") or "")[:10] or None
+        _narr_tags: dict = (
+            _narr_result.get("tags") or {}
+            if (
+                _narr_asof
+                and _board_asof
+                and _narr_asof <= _board_asof
+            )
+            else {}
+        )
+        if (_narr_result.get("tags") or {}) and not _narr_tags:
+            log.warning(
+                "W2-B narrative tags rejected for PIT mismatch: narrative=%s board=%s",
+                _narr_asof, _board_asof,
+            )
         log.info("W2-B narrative tags: %d tickers tagged (%d baskets, as_of %s)",
                  _narr_result.get("n_tagged", 0), _narr_result.get("n_baskets", 0),
                  _narr_result.get("as_of", "?"))
@@ -1903,12 +2169,31 @@ def main(alpha: dict | None = None) -> dict | None:
         log.warning("W2-B narrative tags failed (%s) — board renders without narrative data",
                     _narr_exc)
         _narr_tags = {}
+        _narr_asof = None
         _narr_ab_tier = lambda stage, tag: None  # noqa: E731 — degraded stub
+
+    # Preserve every shadow/challenger input on the full scored universe before
+    # partition_board_rows copies it into display lanes. These are context-only:
+    # enrich_and_score_rows has already frozen the live score.
+    for _ranked_row in _scored_candidates:
+        _ranked_ticker = str(_ranked_row.get("ticker") or "")
+        if quality_badge.get(_ranked_ticker):
+            _ranked_row["quality"] = copy.deepcopy(
+                quality_badge[_ranked_ticker]
+            )
+        _ranked_row.update({
+            _key: _value
+            for _key, _value in (disp_map.get(_ranked_ticker) or {}).items()
+            if _value is not None
+        })
+        if _narr_tags.get(_ranked_ticker):
+            _ranked_row["narrative"] = copy.deepcopy(
+                _narr_tags[_ranked_ticker]
+            )
 
     # (2) Derive last_cross_info for rule-3 (NOT gate-eligible, recent cross <=15 sessions).
     #     Source: sig_verdict["last"] gives the last buy marker date; we compute sessions_since
     #     and pct_since from the close series in `uni`. Only compute for ineligible names.
-    _close_map: dict[str, pd.Series] = {t: c for (t, c, *_) in uni if c is not None}
     _eligible_set = {r.get("ticker") for r in eligible_rows}
 
     def _last_cross_info(ticker: str, max_sessions: int | None = 15) -> dict | None:
@@ -1953,24 +2238,23 @@ def main(alpha: dict | None = None) -> dict | None:
     #     the existing blend_sorted order UNCHANGED (F3 discipline: no rank change here).
     #     Each buy row gains stage / sublabel / detail / why_ranked fields.
     def _why_ranked(r: dict) -> str:
-        """Compact string of the actual blend inputs on this row — display only, no rank change."""
-        sig = r.get("signal") or {}
-        parts = []
-        tier = sig.get("tier_cascade") or sig.get("tier")
-        if tier:
-            parts.append(str(tier))
-        if r.get("washout_2w"):
-            parts.append("2W-washout")
-        cb = r.get("coiled") or {}
-        if cb.get("coiled"):
-            parts.append("coiled")
-        ext = r.get("extension") or {}
-        if ext.get("extended"):
-            ext_sc = ext.get("score")
-            parts.append(f"- ext {round(float(ext_sc), 2)}" if ext_sc is not None else "- ext")
-        return " + ".join(p for p in parts if not p.startswith("-")) + (
-            " " + " ".join(p for p in parts if p.startswith("-"))
-        ).rstrip() if parts else ""
+        """Compact receipt of the actual Prophet v2 score — display only."""
+        prophet = r.get("prophet") or {}
+        points = prophet.get("points") or {}
+        if not points:
+            return ""
+        labels = (
+            ("signal", "signal"),
+            ("entry", "entry"),
+            ("runway", "runway"),
+            ("bottom_quality", "bottom"),
+            ("reversal_member", "reversal"),
+        )
+        receipt = [
+            f"{label} {float(points.get(key) or 0):.1f}"
+            for key, label in labels
+        ]
+        return f"Prophet {float(prophet.get('score') or 0):.1f}: " + " + ".join(receipt)
 
     for r in eligible_rows:
         _t = r.get("ticker")
@@ -2345,40 +2629,83 @@ def main(alpha: dict | None = None) -> dict | None:
              _n_entry, _n_ran_late, len(eligible_rows) - _n_entry - _n_ran_late,
              len(_ripening_rows), len(_ripening_falling), len(_ran_rows))
 
-    if cand:
-        as_of = (alpha or {}).get("as_of")
+    if _scored_candidates:
+        as_of = _board_asof
+        _execution_coverage = china_board_rank.execution_coverage(
+            _scored_candidates
+        )
+        _board_lanes = china_board_rank.partition_board_rows(eligible_rows)
+        _buy_rows = _board_lanes["featured"]
+        _more_rows = _board_lanes["more_actionable"]
+        _late_rows = _board_lanes["late_or_unfillable"]
+        _forming_rows = _board_lanes["forming"]
+        _watch_rows = list(_more_rows) + list(_late_rows) + list(_forming_rows)
+        assert sum(_board_lanes["counts"].values()) == len(eligible_rows), (
+            "China Prophet v2 invariant FAILED: lane partition lost or duplicated "
+            f"raw-eligible rows ({_board_lanes['counts']} vs {len(eligible_rows)})."
+        )
+        assert all(signal_gate.is_buyable(r.get("signal")) for r in _buy_rows), (
+            "China Prophet v2 invariant FAILED: featured shelf contains a non-T1-T3 row."
+        )
+
         # laggards watch-strip: weakest residual-alpha names, independent of the buy gate.
         laggards = dedupe_dual_class(sorted(
             (r for _s, r in cand if r.get("alpha") is not None),
             key=lambda r: r["alpha"]))[:12]
-        for r in eligible_rows:
-            r["align_tier"] = _atier(r.get("ticker"))        # context chip only (shown if aligned/near)
-            r["signal"] = signal_gate.compact(sig_verdict.get(r.get("ticker")))
-            # COILED wave-3 CN chip: attach assess() dict when the name qualifies as coiled or
-            # at least has a washout_ctx signal (same pattern as US build_stock_library.py).
-            _t = r.get("ticker")
-            cb = coiled_by.get(_t)
-            if cb and (cb.get("coiled") or cb.get("washout_ctx")):
-                r["coiled"] = cb
-        # Board cap is page width, not a quality bar: rows past it ship in the additive
-        # `watch` lane so a gate-passing name is never dropped (RIPENING/RAN exclude
-        # eligible rows by construction — the overflow used to appear nowhere at all).
-        _buy_rows, _watch_rows = _split_board_lanes(eligible_rows)
-        setups = {"as_of": as_of, "rank_by": "confluence",
-                  "buy": _buy_rows, "laggards": laggards}
-        (site / "factordata" / "china_setups.json").write_text(
-            json.dumps(setups, separators=(",", ":"), default=str))
-        # WIDE "Standout individual stocks" board — same confluence gate; each row carries the
-        # unified Conviction profile + entry/risk gauges so the card renders fully. eligible =
-        # the confluence-eligible count; universe = the scored candidate count.
-        wide = {"as_of": as_of, "rank_by": "confluence",
-                "buy": list(_buy_rows), "watch": _watch_rows, "laggards": laggards}
-        log.info("CN board lanes: %d eligible → %d buy (cap %d) + %d watch overflow — nothing dropped",
-                 len(eligible_rows), len(wide["buy"]), BOARD_BUY_CAP, len(wide["watch"]))
-        for r in wide["buy"] + wide["watch"] + wide["laggards"]:
+        _ranking_contract = _prophet_ranking_contract()
+        _ranking_contract["input_coverage"] = {
+            "reversal": _reversal_coverage,
+        }
+        wide = {
+            "schema_version": "2.0.0",
+            "as_of": as_of,
+            "rank_by": china_board_rank.BOARD_DEFINITION,
+            "board_definition": china_board_rank.BOARD_DEFINITION,
+            "ranking": _ranking_contract,
+            "buy": _buy_rows,
+            "more_actionable": _more_rows,
+            "late_or_unfillable": _late_rows,
+            "forming": _forming_rows,
+            # Compatibility union for older consumers. New UI and contracts use
+            # the three explicit depth lanes above.
+            "watch": _watch_rows,
+            "lane_counts": dict(_board_lanes["counts"]),
+            "execution_coverage": _execution_coverage,
+            "laggards": laggards,
+        }
+        # Required top-level contract keys get conservative defaults before any
+        # fail-soft telemetry/enrichment work.
+        wide["coverage"] = {
+            "as_of": as_of,
+            "data_through": _data_through(),
+            "panel_collected_utc": None,
+            "panel_collected_hour_utc": None,
+            "partial_session": None,
+            "session_note": "session coverage unavailable",
+            "lane": os.environ.get("CN_LANE", "asia"),
+        }
+        wide["track_ledger"] = None
+        wide["sleeve_chip"] = {}
+        # The renderer and both JSON artifacts now share one lossless object; later
+        # enrichments cannot drift between the live page and the machine contract.
+        setups = wide
+        log.info(
+            "CN Prophet v2 lanes: %d raw eligible → %d featured + %d more + "
+            "%d late/unfillable + %d forming — nothing dropped",
+            len(eligible_rows), len(_buy_rows), len(_more_rows),
+            len(_late_rows), len(_forming_rows),
+        )
+        _board_rows = _buy_rows + _more_rows + _late_rows + _forming_rows
+        for r in _board_rows + wide["laggards"]:
             t = r.get("ticker")
             r["conviction"] = profiles.get(t)
-            r["signal"] = signal_gate.compact(sig_verdict.get(t))   # confluence T1->T4 tier badge
+            if not r.get("lane"):
+                # Laggards are not in the Prophet contract and may retain the
+                # richer display verdict. Board rows keep buy_signal(): slim,
+                # strict-JSON-safe, and exactly what admission consumed.
+                r["signal"] = signal_gate.compact(sig_verdict.get(t))
+            else:
+                r["align_tier"] = _atier(t)
             if entry_sig.get(t):
                 r["entry_signal"] = entry_sig[t]     # the entry-timing gauge for the card
             if risk_sig.get(t):
@@ -2399,14 +2726,14 @@ def main(alpha: dict | None = None) -> dict | None:
                 r["hold"] = _hd_cn
             # W0.10 SECTOR FIRST-TICK-UP: attach sector_turn to the row when the name's
             # Yahoo-inferred Shenwan L1 sector is in first-tick-up state (Trough + osc_slope>0).
-            # DISPLAY/LEDGER ONLY — never touches _cn_bonus or blend_sorted.
+            # DISPLAY/LEDGER ONLY — never changes Prophet v2 score or admission.
             # approx:true is propagated from the taxonomy map (Yahoo GICS ≠ Shenwan L1 exactly).
             _row_sector = r.get("sector") or ""
             _sw_match = _YAHOO_TO_SW.get(_row_sector)
             if _sw_match and _sw_match in _sector_turn_by_sw:
                 r["sector_turn"] = _sector_turn_by_sw[_sw_match]
             # W2-B NARRATIVE TAGS: attach per-name theme heat + radar join + A/B tier.
-            # DISPLAY/LEDGER ONLY — narrative NEVER affects _cn_bonus, blend_sorted, or admission.
+            # DISPLAY/LEDGER ONLY — narrative NEVER affects Prophet v2 score or admission.
             # ab_tier is None for RAN_LATE rows (spec law: ENTRY/RIPENING only).
             _nb_tag = _narr_tags.get(t) if t else None
             if _nb_tag:
@@ -2419,6 +2746,7 @@ def main(alpha: dict | None = None) -> dict | None:
                     "breadth":  _nb_tag.get("breadth"),
                     "source":   _nb_tag.get("source"),
                     "radar":    _nb_tag.get("radar"),
+                    "asof":     _narr_asof,
                 }
             _nb_stage = r.get("stage")
             r["ab_tier"] = _narr_ab_tier(_nb_stage, _nb_tag)
@@ -2430,13 +2758,14 @@ def main(alpha: dict | None = None) -> dict | None:
             "W2-B invariant FAILED: narrative tags altered the buy row order. "
             f"Pre: {_buy_tickers_pre[:5]} ... Post: {_buy_tickers_post[:5]}")
         wide["eligible"] = len(eligible_rows)
-        wide["universe"] = len(cand)
+        wide["actionable"] = _n_buyable
+        wide["universe"] = len(_scored_candidates)
         wide["quality_screen"] = {           # honest report of what the screen actually did
             "adv_floor_yi": china_liquidity.ADV_FLOOR_YI, "mcap_floor_yi": MCAP_FLOOR_YI,
             "dropped": dict(screen_drop), "n_extended_demoted": _n_ext,
             "note": ("ST/*ST/退 excluded; suspended/delisted (stale >15d) excluded; names below the "
                      "dollar-ADV tradability floor excluded (only when provably illiquid); already-"
-                     "extended names DEMOTED, not hidden (see the 'extended' badge). Market-cap is "
+                     "extended names are routed to the do-not-chase lane, not hidden. Market-cap is "
                      "defense-in-depth only — the source field is ~46% placeholder, so ADV + staleness "
                      "do the real weeding."),
         }
@@ -2464,6 +2793,21 @@ def main(alpha: dict | None = None) -> dict | None:
                 "partial_session": bool(_sess.get("partial_session")),
                 "session_note": _sess.get("reason"), "lane": _lane,
             }
+            # Full-universe, point-in-time feature/admission log for honest
+            # incumbent/challenger research. It has no live score authority and
+            # is write-gated to a settled Asia collection session.
+            try:
+                from engine import china_prophet_shadow as _cn_shadow  # noqa: PLC0415
+
+                _shadow_n = _cn_shadow.append_candidates(
+                    _scored_candidates,
+                    as_of,
+                    lane=_lane,
+                    board_lanes=_board_lanes,
+                )
+                log.info("china Prophet shadow ledger: %d total candidate rows", _shadow_n)
+            except Exception as _shadow_e:  # noqa: BLE001 — research log never suppresses board
+                log.warning("china Prophet shadow ledger failed (%s)", _shadow_e)
             # SA-W2 F1 FIX: append today's CN regime row BEFORE append_board so that
             # append_board's get_regime_for_date(today) call finds the row.  The regime
             # store is keep-first, so calling append first is the only way the SAME-DAY
@@ -2481,7 +2825,10 @@ def main(alpha: dict | None = None) -> dict | None:
             # Detach the tuple-keyed F7 map BEFORE _bt reaches wide/setups — it must
             # never ride into the JSON artifact (see _detach_board_track_plumbing).
             _bt, _fwd_map = _detach_board_track_plumbing(_bt)
-            if _bt.get("available"):
+            if (
+                _bt.get("available")
+                and _bt.get("board_definition") == wide["board_definition"]
+            ):
                 # Interim (unrealized) mark-to-latest-close read — shown while the forward ledger
                 # is still pre-maturity so the panel isn't a black box until ~07-29. Labeled
                 # INTERIM in the template; graduates to the 21d grade once maturities land.
@@ -2491,17 +2838,30 @@ def main(alpha: dict | None = None) -> dict | None:
                     log.warning("china interim board-track read failed (%s)", _ie)
                 wide["board_track"] = _bt
                 setups["board_track"] = _bt
+            elif _bt.get("available"):
+                log.info(
+                    "china board-track withheld: ledger definition %s != current %s",
+                    _bt.get("board_definition"), wide["board_definition"],
+                )
             setups["coverage"] = wide["coverage"]
             # TRD popup — EPISODE ledger (track_ledger/v1). Additive, never
             # fatal: reuses the board.parquet + closes the panel just read. Emitted even
             # when _bt is unavailable (accruing state) so the popup always has a feed.
             try:
-                _cnok = emit_cn_track_ledger(site, _bt, wide.get("buy"))
+                _cnok = emit_cn_track_ledger(
+                    site,
+                    _bt,
+                    wide.get("buy"),
+                    board_definition=wide["board_definition"],
+                    asof=as_of,
+                )
                 # Hand the ledger's own summary to the template so the chip and the
                 # popup table it heads report the SAME numbers. Before 2026-07-26 the
                 # chip read setups.board_track (the 21d research grade) while the table
                 # fetched this ledger — two methodologies, one component.
-                setups["track_ledger"] = _CN_LAST_LEDGER.get("doc")
+                setups["track_ledger"] = (
+                    _CN_LAST_LEDGER.get("doc") if _cnok else None
+                )
                 log.info("cn track_ledger: %s", "wrote cn_track_ledger.json" if _cnok else "write skipped")
             except Exception as _cnle:  # noqa: BLE001 — ledger is additive; never fatal
                 log.warning("cn track_ledger emit failed (%s) — render continues", _cnle)
@@ -2519,7 +2879,10 @@ def main(alpha: dict | None = None) -> dict | None:
                 # F7: thread the pre-computed map (grade() already opened these stores);
                 # _fwd_map was detached from _bt right after grade() above.
                 _audit_result = _cn_audit.run_attribution(
-                    bench_close=_bench, lane=_lane, fwd_excess_map=_fwd_map,
+                    bench_close=_bench,
+                    lane=_lane,
+                    fwd_excess_map=_fwd_map,
+                    board_definition=wide["board_definition"],
                 )
                 log.info("china standout attribution: %s", _audit_result)
             except Exception as _audit_e:  # noqa: BLE001 — SA-R16: attribution never fatal
@@ -2543,29 +2906,208 @@ def main(alpha: dict | None = None) -> dict | None:
         # The banner is rendered by the template when data_outage.flag is true.
         _standouts_path = site / "factordata" / "china_standouts.json"
         _prev_buy_n: int | None = None
+        _prev_definition: str | None = None
+        _prev_execution_coverage: dict = {}
         try:
             if _standouts_path.exists():
                 _prev = json.loads(_standouts_path.read_text())
                 _prev_buy_n = len(_prev.get("buy") or [])
+                _prev_definition = _prev.get("board_definition") or "legacy"
+                _prev_execution_coverage = (
+                    _prev.get("execution_coverage")
+                    if isinstance(_prev.get("execution_coverage"), dict)
+                    else {}
+                )
         except Exception:  # noqa: BLE001 — guard must never block the write
             pass
         _new_buy_n = len(wide["buy"])
-        if _prev_buy_n is not None and _prev_buy_n > 0:
-            _drop_frac = (_prev_buy_n - _new_buy_n) / _prev_buy_n
-            if _drop_frac > 0.40:
+        _collapsed: dict[str, dict] = {}
+        if (
+            _prev_buy_n is not None
+            and _prev_buy_n > 0
+            and _prev_definition == wide["board_definition"]
+        ):
+            _coverage_pairs = {
+                "featured": (_prev_buy_n, _new_buy_n),
+                "raw_eligible": (
+                    _prev_execution_coverage.get(
+                        "raw_eligible", _prev.get("eligible")
+                    ),
+                    wide["execution_coverage"]["raw_eligible"],
+                ),
+                "actionable_t1_t3": (
+                    _prev_execution_coverage.get(
+                        "actionable_t1_t3", _prev.get("actionable")
+                    ),
+                    wide["execution_coverage"]["actionable_t1_t3"],
+                ),
+            }
+            for _metric, (_old, _new) in _coverage_pairs.items():
+                try:
+                    _old_i, _new_i = int(_old), int(_new)
+                except (TypeError, ValueError):
+                    continue
+                if _old_i <= 0:
+                    continue
+                _metric_drop = (_old_i - _new_i) / _old_i
+                if _metric_drop > 0.40:
+                    _collapsed[_metric] = {
+                        "previous": _old_i,
+                        "current": _new_i,
+                        "drop_pct": round(_metric_drop * 100, 1),
+                    }
+
+            _micro_rate = float(
+                wide["execution_coverage"]["fresh_same_day_micro_rate_pct"]
+            )
+            _actionable_n = int(
+                wide["execution_coverage"]["actionable_t1_t3"]
+            )
+            _micro_incomplete = _actionable_n >= 5 and _micro_rate < 80.0
+            if _collapsed or _micro_incomplete:
+                _reason_parts = [
+                    (
+                        f"{_metric} {_vals['previous']}→{_vals['current']} "
+                        f"({_vals['drop_pct']:.0f}% drop)"
+                    )
+                    for _metric, _vals in _collapsed.items()
+                ]
+                _metric_zh = {
+                    "featured": "精选标的",
+                    "raw_eligible": "原始合格标的",
+                    "actionable_t1_t3": "可操作T1–T3标的",
+                }
+                _reason_parts_zh = [
+                    (
+                        f"{_metric_zh.get(_metric, _metric)} "
+                        f"{_vals['previous']}→{_vals['current']} "
+                        f"（下降{_vals['drop_pct']:.0f}%）"
+                    )
+                    for _metric, _vals in _collapsed.items()
+                ]
+                if _micro_incomplete:
+                    _reason_parts.append(
+                        f"same-day microstructure coverage {_micro_rate:.1f}% (<80%)"
+                    )
+                    _reason_parts_zh.append(
+                        f"当日微观结构覆盖率{_micro_rate:.1f}%（低于80%）"
+                    )
                 wide["data_outage"] = {
                     "flag": True,
-                    "prev_n": _prev_buy_n,
-                    "new_n": _new_buy_n,
-                    "drop_pct": round(_drop_frac * 100, 1),
-                    "reason": (f"buy-count collapsed {_prev_buy_n}→{_new_buy_n} "
-                               f"({_drop_frac*100:.0f}% drop, threshold 40%). "
-                               "Probable cause: data gap / collector outage. "
-                               "Board is INCOMPLETE — treat with caution."),
+                    "metrics": _collapsed,
+                    "micro_rate_pct": _micro_rate,
+                    "reason": (
+                        "; ".join(_reason_parts)
+                        + ". Probable data/collector coverage gap. "
+                        "The featured shelf is incomplete — treat with caution."
+                    ),
+                    "reason_zh": (
+                        "；".join(_reason_parts_zh)
+                        + "。可能存在数据或采集覆盖缺口，精选区并不完整，请谨慎参考。"
+                    ),
                 }
-                log.warning("W0.7 board-width guard: buy-count collapsed %d→%d (%.0f%% drop) — "
-                            "stamping data_outage; banner will render",
-                            _prev_buy_n, _new_buy_n, _drop_frac * 100)
+                log.warning(
+                    "W0.7 Prophet coverage guard: %s — stamping data_outage",
+                    "; ".join(_reason_parts),
+                )
+        elif _prev_buy_n is not None and _prev_definition != wide["board_definition"]:
+            wide["definition_change"] = {
+                "from": _prev_definition,
+                "to": wide["board_definition"],
+                "previous_featured_n": _prev_buy_n,
+                "note": "Board-width comparison reset because the admission definition changed.",
+            }
+            log.info(
+                "W0.7 board-width guard reset for definition change %s → %s",
+                _prev_definition, wide["board_definition"],
+            )
+        # Input-health checks apply even on the first v2 run, when the prior
+        # artifact has a different definition and width comparisons reset.
+        _actionable_n = int(
+            wide["execution_coverage"]["actionable_t1_t3"]
+        )
+        _micro_rate = float(
+            wide["execution_coverage"]["fresh_same_day_micro_rate_pct"]
+        )
+        _signal_rate = float(
+            wide["execution_coverage"]["fresh_same_day_signal_rate_pct"]
+        )
+        _micro_incomplete = _actionable_n >= 5 and _micro_rate < 80.0
+        _signal_incomplete = _actionable_n >= 5 and _signal_rate < 80.0
+        _reversal_incomplete = bool(_reversal_coverage["degraded"])
+        if (
+            _collapsed
+            or _micro_incomplete
+            or _signal_incomplete
+            or _reversal_incomplete
+        ):
+            _reason_parts = [
+                (
+                    f"{_metric} {_vals['previous']}→{_vals['current']} "
+                    f"({_vals['drop_pct']:.0f}% drop)"
+                )
+                for _metric, _vals in _collapsed.items()
+            ]
+            _metric_zh = {
+                "featured": "精选标的",
+                "raw_eligible": "原始合格标的",
+                "actionable_t1_t3": "可操作T1–T3标的",
+            }
+            _reason_parts_zh = [
+                (
+                    f"{_metric_zh.get(_metric, _metric)} "
+                    f"{_vals['previous']}→{_vals['current']} "
+                    f"（下降{_vals['drop_pct']:.0f}%）"
+                )
+                for _metric, _vals in _collapsed.items()
+            ]
+            if _micro_incomplete:
+                _reason_parts.append(
+                    f"same-day microstructure coverage {_micro_rate:.1f}% (<80%)"
+                )
+                _reason_parts_zh.append(
+                    f"当日微观结构覆盖率{_micro_rate:.1f}%（低于80%）"
+                )
+            if _signal_incomplete:
+                _reason_parts.append(
+                    f"same-day signal coverage {_signal_rate:.1f}% (<80%)"
+                )
+                _reason_parts_zh.append(
+                    f"当日信号覆盖率{_signal_rate:.1f}%（低于80%）"
+                )
+            if _reversal_incomplete:
+                _rev_rate = float(
+                    _reversal_coverage["actionable_coverage_rate_pct"]
+                )
+                _reason_parts.append(
+                    "same-day reversal input unavailable or incomplete "
+                    f"({_rev_rate:.1f}% actionable coverage)"
+                )
+                _reason_parts_zh.append(
+                    f"当日反转输入缺失或不完整（可操作标的覆盖率{_rev_rate:.1f}%）"
+                )
+            wide["data_outage"] = {
+                "flag": True,
+                "metrics": {
+                    **_collapsed,
+                    "reversal": _reversal_coverage,
+                },
+                "micro_rate_pct": _micro_rate,
+                "signal_rate_pct": _signal_rate,
+                "reason": (
+                    "; ".join(_reason_parts)
+                    + ". Probable data/collector coverage gap. "
+                    "The featured shelf is incomplete — treat with caution."
+                ),
+                "reason_zh": (
+                    "；".join(_reason_parts_zh)
+                    + "。可能存在数据或采集覆盖缺口，精选区并不完整，请谨慎参考。"
+                ),
+            }
+            log.warning(
+                "W0.7 Prophet input guard: %s — stamping data_outage",
+                "; ".join(_reason_parts),
+            )
         # ── W8-E: table-view enrichment ───────────────────────────────────────
         # (a) NULL-SAFE real-mcap join: overlay Tushare total_mv_yi onto rows that
         #     currently carry the placeholder-30.0 sentinel or are missing a cap.
@@ -2603,7 +3145,12 @@ def main(alpha: dict | None = None) -> dict | None:
         try:
             _brd_path = config.data_dir() / "china_standout_track" / "board.parquet"
             if _brd_path.exists():
-                _brd_df = pd.read_parquet(_brd_path, columns=["date", "ticker"])
+                _brd_df = pd.read_parquet(_brd_path)
+                if "board_definition" in _brd_df.columns:
+                    _brd_df = _brd_df[
+                        _brd_df["board_definition"].astype(str)
+                        == wide["board_definition"]
+                    ]
                 _w8e_first_seen = (
                     _brd_df.groupby("ticker")["date"].min()
                     .apply(str).to_dict()
@@ -2686,30 +3233,156 @@ def main(alpha: dict | None = None) -> dict | None:
         # (a bare "keys must be str..." from json.dumps is unlocatable in CI logs —
         # that anonymity is what let the 07-13 tuple-key crash run for 3 sessions).
         try:
-            _standouts_payload = json.dumps(wide, separators=(",", ":"), default=str)
-        except TypeError:
+            _standouts_payload = json.dumps(
+                wide,
+                separators=(",", ":"),
+                default=str,
+                allow_nan=False,
+            )
+        except (TypeError, ValueError):
             _bad = _find_bad_json_keys(wide)
-            log.error("china_standouts.json NOT written — non-JSON dict keys at: %s",
-                      "; ".join(_bad[:20]) or "(none found — non-key TypeError)")
+            log.error(
+                "china_standouts.json NOT written — non-strict JSON payload; "
+                "bad dict keys: %s",
+                "; ".join(_bad[:20]) or "(none; inspect NaN/Infinity values)",
+            )
             raise
         _standouts_path.write_text(_standouts_payload)
-        log.info("wrote china_standouts.json (%d buy [%d ENTRY/%d RAN_LATE] / %d watch / %d RIPENING"
-                 " [%d READY+%d BASING] / %d FALLING / %d RAN / %d eligible / %d universe)",
-                 len(wide["buy"]), _n_entry, _n_ran_late, len(wide.get("watch") or []),
+        (site / "factordata" / "china_setups.json").write_text(_standouts_payload)
+        log.info("wrote China Prophet artifacts (%d featured / %d more / %d late-unfillable / "
+                 "%d forming / %d RIPENING [%d READY+%d BASING] / %d FALLING / %d RAN / "
+                 "%d raw eligible / %d actionable / %d universe)",
+                 len(wide["buy"]), len(wide["more_actionable"]),
+                 len(wide["late_or_unfillable"]), len(wide["forming"]),
                  len(_ripening_rows), len(_ready_capped), len(_basing_capped),
                  len(_ripening_falling), len(_ran_rows),
-                 len(eligible_rows), len(cand))
+                 len(eligible_rows), _n_buyable, len(_scored_candidates))
+    else:
+        # A zero-name analysis collapse is the most severe coverage failure.
+        # Never leave yesterday's apparently healthy board in place: publish an
+        # explicit empty v2 artifact with a loud outage stamp.
+        as_of = _board_asof or _data_through()
+        try:
+            _zero_session = (
+                china_standout_track.session_status(as_of) if as_of else {}
+            )
+        except Exception:  # noqa: BLE001 — outage document must still publish
+            _zero_session = {}
+        _zero_coverage = {
+            "as_of": as_of,
+            "data_through": _data_through(),
+            "panel_collected_utc": _zero_session.get("collected_utc"),
+            "panel_collected_hour_utc": _zero_session.get(
+                "collected_hour_utc"
+            ),
+            "partial_session": bool(_zero_session.get("partial_session")),
+            "session_note": _zero_session.get("reason"),
+            "lane": os.environ.get("CN_LANE", "asia"),
+        }
+        try:
+            from engine.risk_radar_intl import cn_sleeve_chip  # noqa: PLC0415
+
+            _zero_sleeve = cn_sleeve_chip()
+        except Exception:  # noqa: BLE001 — optional context on an outage
+            _zero_sleeve = {}
+        wide = {
+            "schema_version": "2.0.0",
+            "as_of": as_of,
+            "rank_by": china_board_rank.BOARD_DEFINITION,
+            "board_definition": china_board_rank.BOARD_DEFINITION,
+            "ranking": _prophet_ranking_contract(),
+            "buy": [],
+            "more_actionable": [],
+            "late_or_unfillable": [],
+            "forming": [],
+            "watch": [],
+            "lane_counts": {
+                "featured": 0,
+                "more_actionable": 0,
+                "late_or_unfillable": 0,
+                "forming": 0,
+            },
+            "execution_coverage": china_board_rank.execution_coverage([]),
+            "laggards": [],
+            "eligible": 0,
+            "actionable": 0,
+            "universe": 0,
+            "quality_screen": {
+                "adv_floor_yi": china_liquidity.ADV_FLOOR_YI,
+                "mcap_floor_yi": MCAP_FLOOR_YI,
+                "dropped": dict(screen_drop),
+                "n_extended_demoted": 0,
+                "note": "Analysis universe collapsed; no admission decision is available.",
+            },
+            "coverage": _zero_coverage,
+            "sleeve_chip": _zero_sleeve,
+            "cap_composition": {
+                "large": 0, "mid": 0, "small": 0, "unknown": 0,
+            },
+            "ripening": [],
+            "ripening_falling": [],
+            "ran": [],
+            "data_outage": {
+                "flag": True,
+                "metrics": {"scored_universe": {"current": 0}},
+                "micro_rate_pct": 0.0,
+                "reason": (
+                    "Scored universe collapsed to zero. Probable data/analysis "
+                    "pipeline failure; no China Prophet picks are published today."
+                ),
+                "reason_zh": (
+                    "评分股票池降至零，可能存在数据或分析流水线故障；"
+                    "今日不发布任何中国先知标的。"
+                ),
+            },
+        }
+        if disp_regime:
+            wide["dispersion_regime"] = disp_regime
+        if qvix_reg:
+            wide["qvix_regime"] = qvix_reg
+        try:
+            _zero_ledger_ok = emit_cn_track_ledger(
+                site,
+                None,
+                [],
+                board_definition=china_board_rank.BOARD_DEFINITION,
+                asof=as_of,
+            )
+            wide["track_ledger"] = (
+                _CN_LAST_LEDGER.get("doc") if _zero_ledger_ok else None
+            )
+        except Exception as _zero_ledger_e:  # noqa: BLE001
+            log.warning(
+                "zero-universe China track shell failed (%s)",
+                _zero_ledger_e,
+            )
+            wide["track_ledger"] = None
+        setups = wide
+        _standouts_path = site / "factordata" / "china_standouts.json"
+        _standouts_payload = json.dumps(
+            wide,
+            separators=(",", ":"),
+            default=str,
+            allow_nan=False,
+        )
+        _standouts_path.write_text(_standouts_payload)
+        (site / "factordata" / "china_setups.json").write_text(
+            _standouts_payload
+        )
+        log.error(
+            "China Prophet published explicit empty outage artifact: zero scored universe"
+        )
     log.info("china library: %d analyzed, %d limited (recent listings), %d skipped (empty/failed), %d setups",
-             built, limited, failed, len(cand))
+             built, limited, failed, len(_scored_candidates))
     _tick("boards + ledgers + manifest")
 
     # ── CN Pick Lab snapshot producer + Flagship-2 Reversion Desk ────────────
     # Spec §5 (snapshot) + §4 (reversion desk). Never-fatal: any failure logs a
     # warning and returns setups unchanged. Adds ≤30s to the library build.
     # Wires into the asia-lane commit via CN_LANE=asia (CNPL-R8).
-    _cnpl_asof = (alpha or {}).get("as_of")
+    _cnpl_asof = _board_asof or (alpha or {}).get("as_of")
     if not _cnpl_asof:
-        log.warning("china pick_lab snapshot: no as_of (alpha unavailable) — skipped")
+        log.warning("china pick_lab snapshot: no settled panel as_of — skipped")
     else:
         try:
             import time as _cnpl_time
@@ -2719,6 +3392,7 @@ def main(alpha: dict | None = None) -> dict | None:
             from engine.pick_lab.profile import CN_PROFILE
             from engine.pick_lab.reversion_desk import build_reversion_desk_artifact
             from engine.china_signals import board_type as _cn_board_type
+            _cnpl_asof_date = str(pd.Timestamp(_cnpl_asof).date())
 
             # ── 1. Collect per-ticker raw vols (for low-vol tercile) ──────────
             _cnpl_vol_by: dict[str, float | None] = {}
@@ -2733,10 +3407,10 @@ def main(alpha: dict | None = None) -> dict | None:
                 except Exception:  # noqa: BLE001 — additive, never fatal
                     pass
 
-            # ── 2. Collect washout_2w and extension per ticker from cand ──────
+            # ── 2. Collect washout/extension from the full Prophet pool ───────
             _cnpl_washout_by: dict[str, bool | None] = {}
             _cnpl_extension_by: dict[str, dict | None] = {}
-            for (_cpl_s, _cpl_r) in cand:
+            for _cpl_r in _scored_candidates:
                 _cpl_t = _cpl_r.get("ticker")
                 if not _cpl_t:
                     continue
@@ -2750,6 +3424,17 @@ def main(alpha: dict | None = None) -> dict | None:
                 if _cnpl_closes_path.exists():
                     from engine.pick_lab.signals_1d import compute_grids as _cnpl_grids
                     _cnpl_panel = pd.read_parquet(_cnpl_closes_path)
+                    _cnpl_panel.index = pd.to_datetime(
+                        _cnpl_panel.index,
+                        errors="coerce",
+                    )
+                    _cnpl_panel = _cnpl_panel[
+                        _cnpl_panel.index.notna()
+                        & (
+                            _cnpl_panel.index
+                            <= pd.Timestamp(_cnpl_asof_date)
+                        )
+                    ]
                     _cnpl_osc_df = _cnpl_grids(_cnpl_panel)
                     for _cpl_t, _cpl_row in _cnpl_osc_df.iterrows():
                         _cnpl_osc_by[str(_cpl_t)] = _cpl_row.to_dict()
@@ -2791,30 +3476,19 @@ def main(alpha: dict | None = None) -> dict | None:
                     _cnpl_board_by[_cpl_t] = None
                     _cnpl_limit_width_by[_cpl_t] = None
 
-            # ── 6. Build reversal feature dicts from rev_z_by + reversal watch ─
-            _cnpl_rev_data: dict | None = None
-            try:
-                _cnpl_rev_data = compute_china_reversal()
-            except Exception:  # noqa: BLE001
-                pass
-            _cnpl_rev_z_by: dict[str, float] = dict(rev_z_by)  # already computed above
+            # ── 6. Exact full-universe PIT reversal membership ────────────────
+            _cnpl_rev_z_by: dict[str, float] = dict(_score_rev_z_by)
             _cnpl_rev_3m_by: dict[str, float | None] = {}
             _cnpl_rev_rank_by: dict[str, int | None] = {}
             _cnpl_rev_n_by: dict[str, int | None] = {}
             _cnpl_rev_deepest_by: dict[str, bool | None] = {}
-            if _cnpl_rev_data:
-                for _cpl_w in _cnpl_rev_data.get("watch", []):
-                    _cpl_t = _cpl_w.get("ticker")
-                    if not _cpl_t:
-                        continue
-                    _cnpl_rev_3m_by[_cpl_t] = _cpl_w.get("ret_3m")
-                    _cnpl_rev_rank_by[_cpl_t] = _cpl_w.get("sector_rank")
-                    _cnpl_rev_n_by[_cpl_t] = _cpl_w.get("sector_n")
-                # deepest quintile: sector_rank <= sector_n // 5
-                for _cpl_t, _cpl_rk in _cnpl_rev_rank_by.items():
-                    _cpl_n = _cnpl_rev_n_by.get(_cpl_t)
-                    if _cpl_rk is not None and _cpl_n is not None and _cpl_n > 0:
-                        _cnpl_rev_deepest_by[_cpl_t] = bool(_cpl_rk <= max(1, _cpl_n // 5))
+            for _cpl_t, _cpl_ctx in _score_reversal_by.items():
+                _cnpl_rev_3m_by[_cpl_t] = _cpl_ctx.get("ret_3m")
+                _cnpl_rev_rank_by[_cpl_t] = _cpl_ctx.get("sector_rank")
+                _cnpl_rev_n_by[_cpl_t] = _cpl_ctx.get("sector_n")
+                _cnpl_rev_deepest_by[_cpl_t] = bool(
+                    _cpl_ctx.get("deepest_quintile")
+                )
 
             # ── 7. Draw-down (2y high %) from close series ────────────────────
             _cnpl_dd_by: dict[str, float | None] = {}
@@ -2836,23 +3510,73 @@ def main(alpha: dict | None = None) -> dict | None:
             _cnpl_partic_regime = None
             _cnpl_partic_risk = None
             _cnpl_policy_impulse = None
-            _cnpl_qvix_z = (qvix_reg or {}).get("qvix_z") if qvix_reg else None
+            _cnpl_qvix_z = None
             _cnpl_csi300_close = None
+            try:
+                _cnpl_qp = (
+                    config.data_dir() / "china_qvix" / "qvix300.parquet"
+                )
+                if _cnpl_qp.exists():
+                    _cnpl_qdf = pd.read_parquet(_cnpl_qp)
+                    _cnpl_qdf.index = pd.to_datetime(
+                        _cnpl_qdf.index, errors="coerce"
+                    )
+                    _cnpl_qdf = _cnpl_qdf[
+                        _cnpl_qdf.index <= pd.Timestamp(_cnpl_asof_date)
+                    ]
+                    if not _cnpl_qdf.empty and "close" in _cnpl_qdf:
+                        _cnpl_qread = china_signals.qvix_regime(
+                            _cnpl_qdf["close"]
+                        )
+                        _cnpl_qvix_z = (
+                            (_cnpl_qread or {}).get("qvix_z")
+                        )
+            except Exception:  # noqa: BLE001 — PIT context stays null
+                pass
             try:
                 _cnpl_ms_path = (config.data_dir() / "china_regime" /
                                  "market_state.json")
                 if _cnpl_ms_path.exists():
                     _cnpl_ms = json.loads(_cnpl_ms_path.read_text())
-                    _cnpl_cycle_phase = _cnpl_ms.get("cycle_phase")
-                    _cnpl_partic_regime = _cnpl_ms.get("participation_regime")
-                    _cnpl_partic_risk = _cnpl_ms.get("participation_risk")
-                    _cnpl_policy_impulse = _cnpl_ms.get("policy_impulse")
+                    _cnpl_ms_asof = str(
+                        _cnpl_ms.get("as_of")
+                        or _cnpl_ms.get("asof")
+                        or _cnpl_ms.get("date")
+                        or ""
+                    )[:10]
+                    if (
+                        _cnpl_ms_asof
+                        and _cnpl_ms_asof <= _cnpl_asof_date
+                    ):
+                        _cnpl_cycle_phase = _cnpl_ms.get("cycle_phase")
+                        _cnpl_partic_regime = _cnpl_ms.get(
+                            "participation_regime"
+                        )
+                        _cnpl_partic_risk = _cnpl_ms.get(
+                            "participation_risk"
+                        )
+                        _cnpl_policy_impulse = _cnpl_ms.get(
+                            "policy_impulse"
+                        )
             except Exception:  # noqa: BLE001 — additive, never fatal
                 pass
             try:
                 _csi_df = store.read("china", CSI300_ETF)
                 if _csi_df is not None and "close" in _csi_df.columns:
-                    _cnpl_csi300_close = float(_csi_df["close"].iloc[-1])
+                    _csi_close_pit = pd.to_numeric(
+                        _csi_df["close"], errors="coerce"
+                    ).dropna()
+                    _csi_close_pit.index = pd.to_datetime(
+                        _csi_close_pit.index, errors="coerce"
+                    )
+                    _csi_close_pit = _csi_close_pit[
+                        _csi_close_pit.index
+                        <= pd.Timestamp(_cnpl_asof_date)
+                    ]
+                    if not _csi_close_pit.empty:
+                        _cnpl_csi300_close = float(
+                            _csi_close_pit.iloc[-1]
+                        )
             except Exception:  # noqa: BLE001
                 pass
 
@@ -2862,9 +3586,54 @@ def main(alpha: dict | None = None) -> dict | None:
                          if _liq_v and _liq_v.get("adv_yi") is not None else None)
                 for _cpl_t, _liq_v in liq_by.items()
             }
+            _cnpl_micro_by = {
+                _cpl_t: _cpl_packet
+                for _cpl_t, _cpl_packet in _micro_by.items()
+                if isinstance(_cpl_packet, dict)
+                and str(_cpl_packet.get("as_of") or "")[:10]
+                == _cnpl_asof_date
+            }
+            _cnpl_limit_state_by = {
+                _cpl_t: _cpl_packet.get("limit_state")
+                for _cpl_t, _cpl_packet in _cnpl_micro_by.items()
+            }
+            _cnpl_chase_veto_by = {
+                _cpl_t: (
+                    (_cpl_packet.get("chase_veto") or {}).get("flag")
+                    if isinstance(_cpl_packet.get("chase_veto"), dict)
+                    else _cpl_packet.get("chase_veto")
+                )
+                for _cpl_t, _cpl_packet in _cnpl_micro_by.items()
+            }
+            _cnpl_t1_risk_by = {
+                _cpl_t: _cpl_packet.get("t_plus_one_risk")
+                for _cpl_t, _cpl_packet in _cnpl_micro_by.items()
+            }
 
             # ── 10. Assemble rows ─────────────────────────────────────────────
-            _cnpl_tickers = list(sector_by.keys())
+            _scored_ticker_set = {
+                str(_cpl_row.get("ticker"))
+                for _cpl_row in _scored_candidates
+                if _cpl_row.get("ticker")
+            }
+            _cnpl_tickers = sorted(
+                _cpl_t
+                for _cpl_t in _scored_ticker_set
+                if _cpl_t in _close_map
+                and not _close_map[_cpl_t].dropna().empty
+                and str(
+                    pd.Timestamp(
+                        _close_map[_cpl_t].dropna().index.max()
+                    ).date()
+                )
+                == _cnpl_asof_date
+            )
+            log.info(
+                "china pick_lab PIT universe: %d exact-date responsibility-screened "
+                "names (%d scored names excluded for lagged data)",
+                len(_cnpl_tickers),
+                len(_scored_ticker_set) - len(_cnpl_tickers),
+            )
             _cnpl_rows = build_cn_core_rows(
                 tickers=_cnpl_tickers,
                 asof=_cnpl_asof,
@@ -2887,11 +3656,11 @@ def main(alpha: dict | None = None) -> dict | None:
                 osc_d12_by=_cnpl_osc_by,
                 tech_by=_cnpl_tech_by,
                 dd_pct_2y_by=_cnpl_dd_by,
-                # limit_state / fillable: null-honest (require live OHLC)
-                limit_state_by={},
+                # Point-in-time execution data: only same-session packets.
+                limit_state_by=_cnpl_limit_state_by,
                 limit_width_by=_cnpl_limit_width_by,
-                chase_veto_by={},
-                t_plus_one_risk_by={},
+                chase_veto_by=_cnpl_chase_veto_by,
+                t_plus_one_risk_by=_cnpl_t1_risk_by,
                 cycle_phase=_cnpl_cycle_phase,
                 participation_regime=_cnpl_partic_regime,
                 participation_risk=_cnpl_partic_risk,
@@ -2938,7 +3707,12 @@ def main(alpha: dict | None = None) -> dict | None:
                     _cnpl_desk = build_reversion_desk_artifact(
                         _cnpl_df, as_of=_cnpl_asof)
                     (_cnpl_fdir / "china_reversion_desk.json").write_text(
-                        json.dumps(_cnpl_desk, separators=(",", ":"), default=str))
+                        json.dumps(
+                            _cnpl_desk,
+                            separators=(",", ":"),
+                            allow_nan=False,
+                        )
+                    )
                     log.info("china reversion desk: %d rows written (schema=%s)",
                              _cnpl_desk.get("n_rows", 0), _cnpl_desk.get("schema"))
                 except Exception as _cnpl_rd_e:  # noqa: BLE001 — never fatal

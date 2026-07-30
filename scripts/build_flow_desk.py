@@ -12,7 +12,14 @@ Reads:
 
 Writes (additions for RLT-R3):
   data/flows/broad_flow_proxy.parquet      — broad-index ETF proxy (SPY/QQQ/IWM/RSP/DIA);
-                                             rebuilt here each nightly run via rebuild_broad()
+                                             rebuilt here via rebuild_broad()
+                                             (COLLECT_LANE=nightly-gated, HOUSE-U5)
+  data/flows/etf_flow_proxy.parquet        — sector-ETF proxy (11 SPDRs); rebuilt here via
+                                             rebuild() under the same gate — this builder is
+                                             P1.7's missing writer call site
+  data/options_flow/cohorts_<key>.parquet  — cohort accrual via engine.flow_cohorts.
+                                             build_cohorts (COLLECT_LANE=nightly-gated,
+                                             HOUSE-U5)
 
 Writes:
   site/flow_desk.json      — data payload (Market Tide + cohorts + sector heatmap + top movers + ETF)
@@ -49,6 +56,7 @@ from jinja2 import Environment, FileSystemLoader
 from lib import config, options_coverage
 from lib.pages import write_page  # noqa: E402
 from engine.flow_cohorts import build_cohorts
+from engine.ledger_lane import nightly_advance_enabled
 
 log = logging.getLogger(__name__)
 
@@ -460,8 +468,10 @@ def _rebuild_broad_proxy() -> None:
 
     Called from build() each nightly run so broad_flow_proxy.parquet is
     produced by the existing build_flow_desk step without adding a new DAG
-    node.  Non-fatal: a missing per-ticker parquet simply means that ticker
-    is skipped this run and accrues on the next collection cycle.
+    node.  That call site is gated on COLLECT_LANE=nightly (HOUSE-U5), so
+    express/intraday lanes never reach this function.  Non-fatal: a missing
+    per-ticker parquet simply means that ticker is skipped this run and
+    accrues on the next collection cycle.
     """
     try:
         from engine.etf_flows import rebuild_broad
@@ -482,7 +492,9 @@ def _rebuild_sector_proxy() -> None:
     froze at its seed commit while the per-ticker inputs kept advancing.  This
     is the missing production call site — same placement and non-fatal
     contract as _rebuild_broad_proxy(), and it must run before
-    build_etf_tile() so the tile reads today's rows.
+    build_etf_tile() so the tile reads today's rows.  That call site is gated
+    on COLLECT_LANE=nightly (HOUSE-U5), so express/intraday lanes never reach
+    this function.
     """
     try:
         from engine.etf_flows import rebuild
@@ -776,8 +788,17 @@ def build() -> dict:
     # Rebuild both flow-proxy stores FIRST — before the flow-rows early return —
     # so they accrue even on nights with no options-flow index: broad (RLT-R3,
     # read by the RLT-R2 classifier) and sector (read by build_etf_tile below).
-    _rebuild_broad_proxy()
-    _rebuild_sector_proxy()
+    # HOUSE-U5 (FD-EXP): both rebuilds UPSERT committed data/flows/ parquets, so
+    # they are lane-gated to the nightly collector — express/intraday lanes bake
+    # site/ from the committed vintage and must leave data/ untouched. Their
+    # per-ticker SO inputs (data/flows/<T>.parquet) only advance at nightly
+    # collect anyway, so an off-nightly rebuild could never produce new rows.
+    if nightly_advance_enabled():
+        _rebuild_broad_proxy()
+        _rebuild_sector_proxy()
+    else:
+        log.info("flow_desk: COLLECT_LANE!=nightly — skipping proxy store rebuilds "
+                 "(broad_flow_proxy/etf_flow_proxy stay at committed vintage)")
 
     flow_rows = _load_flow_index(site_dir)
     if not flow_rows:

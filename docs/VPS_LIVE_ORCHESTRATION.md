@@ -120,19 +120,35 @@ event lifecycle (`scheduled`, `watching`, `awaiting_publication`, `published`,
 the external state directory.
 
 The FOMC adapter resolves the deterministic official statement URL and extracts
-the target range, action, vote and dissent preference without an LLM. Those
-verified facts set `data_ready=true` for display. Other adapters continue to
-report `data_ready=false` until their deterministic value parser exists; the UI
-says that values are being verified instead of inventing an actual.
+the target range, action, vote and dissent preference without an LLM. Exact-date
+official adapters also parse headline/core CPI, PPI, payrolls/unemployment,
+GDP, headline/core PCE and initial claims. BLS uses the release-specific Atom
+feeds; BEA uses an exact RSS item followed by its permanent release page; DOL
+uses the exact dated claims entry in the ETA releases listing because the
+per-release URL is a PDF. Every verified packet carries normalized metric IDs,
+period, units, bilingual display copy and its official URL.
 
-Ordinary publication sources use a six-hour post-time polling window. FOMC uses
-a 24-hour window so a same-evening deploy or overnight process restart still
+Ordinary publication sources use a six-hour fast polling window. FOMC uses a
+24-hour fast window so a same-evening deploy or overnight process restart still
 recovers the official statement. Conditional 304 responses are retried without
-validators when a parser-backed event still lacks verified facts.
-An unresolved FOMC remains in lifecycle/heartbeat output for seven days after
-the fast window and is retried every 15 minutes. A `published_unparsed` receipt
-remains unhealthy and retained in the public payload until deterministic parsing
-recovers; it cannot disappear merely because the high-frequency window ended.
+validators when a parser-backed event still lacks verified facts, and one shared
+BEA RSS response fans out to independent GDP and PCE event IDs.
+Every unresolved result family remains in lifecycle/heartbeat output for seven
+days and an unparsed receipt is retried every 15 minutes. A parser miss is always
+`published_unparsed`, never a green `published` row. It remains unhealthy and
+retained until deterministic parsing recovers.
+
+The browser selects Release Radar by date: every selectable event card on that
+date shares the active state, and clicking GDP/PCE/claims in succession does not
+fake-refresh an unchanged date panel. Simultaneous lifecycle rows render as
+independent outcome cards while the hero, next-action card and Radar banner show
+aggregate verified/extracting/awaiting counts.
+
+The watcher publishes schedule coverage for every supported family. The external
+dead-man fails when that coverage is incomplete, preventing a hard-coded annual
+table from silently fabricating or omitting next-year release dates. Official
+schedule synchronization is still a planned Phase 1 dependency; the alarm makes
+the remaining maintenance requirement explicit and operationally visible.
 
 This sidecar is public because it contains only official agency facts, provenance
 and operational lifecycle—not proprietary signals, rankings, portfolios or user

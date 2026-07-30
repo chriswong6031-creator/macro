@@ -2621,6 +2621,17 @@ tr.lab-cell-floor td { opacity: .72; }
   background: var(--panel-2, rgba(255,255,255,.05));
   color: var(--text);
 }
+/* Dark-desk markers on a run row. `park` is a withheld batch the operator can
+   release by enabling the desk, so it lifts out of the muted row. `inert` is an
+   epistemic gap, not a tally — the liveness check never ran, so the 0 beside it is
+   not evidence; it stays unbolded and takes the dotted underline that says the
+   sentence continues on hover. Both carry a title, so both get the help cursor. */
+.pub-act-park  { color: var(--warn); font-weight: 600; cursor: help; }
+.pub-act-inert {
+  color: var(--warn);
+  border-bottom: 1px dotted var(--warn);
+  cursor: help;
+}
 
 /* --- Sentinel contract card: why the caps are what they are --- */
 .obx-sentinel {

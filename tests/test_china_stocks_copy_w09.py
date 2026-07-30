@@ -1,8 +1,8 @@
-"""W0.9 — china_stocks page copy smoke tests.
+"""China Prophet v2 copy smoke tests.
 
-Verifies that the mode=stocks copy in templates/china.html.j2 now describes
-the washout->base->fresh-turn archetype (F5 ruling), includes the three mandated
-caveats, and complies with the bilingual / t()-in-attributes safety rules.
+Verifies that the mode=stocks copy describes the selective multifactor T1–T3
+entry shelf, states the priority score's limits, and complies with bilingual /
+t()-in-attributes safety rules.
 
 Mirrors the idiom of tests/test_china_board_track_render.py (the nearest sibling)
 and tests/test_china_stocks_w1c_render.py (the extraction/anti-vacuity idiom).
@@ -138,16 +138,14 @@ def test_template_parses_without_errors() -> None:
     env.parse(SRC)  # raises TemplateSyntaxError on failure
 
 
-def test_seo_description_names_true_archetype() -> None:
-    """SEO meta description must name washout/base/turn, not reversal/low-vol."""
+def test_seo_description_names_selective_readiness_product() -> None:
+    """SEO copy names the selective entry shelf rather than an old single archetype."""
     # Extract the mode=stocks seo_desc assignment
     m = re.search(r"seo_desc = '([^']+)'", SRC)
     assert m, "seo_desc not found in mode=stocks block"
     desc = m.group(1)
-    # Must mention the actual archetype
-    assert "washout" in desc.lower() or "base" in desc.lower(), (
-        f"SEO desc does not name washout/base archetype: {desc!r}"
-    )
+    assert "selective" in desc.lower() and "readiness" in desc.lower()
+    assert "T1–T3" in desc
     # Must NOT lead with 'reversal' or 'low-vol' as the product description
     # (those are separate products per F5 ruling)
     assert "reversal and low-vol reads" not in desc.lower(), (
@@ -176,18 +174,12 @@ def test_stocks_header_names_washout_base_turn() -> None:
     )
 
 
-def test_standout_h2_archetype_copy_present_and_old_subtitle_gone() -> None:
-    """The washout archetype copy is present (now in the h2 help() tooltip) and the
-    retired h2 subtitle chip ('cycle-aligned bottoming · weekly + 3-day + daily turning
-    up') is gone.
-
-    2026-07-21 Prophet redesign: the archetype description no longer lives in a separate
-    h2 subtitle chip — it moved into the h2 (?) help() tooltip.  This test now pins the
-    live tooltip copy (positive control) alongside the two old-chip absence pins.
-    """
+def test_standout_h2_selective_v2_copy_present_and_old_subtitle_gone() -> None:
+    """The h2 explains selective v2 admission and does not revive old alignment copy."""
     html = _render_standout_header()
-    # Positive control: the archetype description is present on its new tooltip home.
-    assert "washout" in html.lower(), "h2 tooltip missing the washout archetype copy"
+    assert "deliberately selective" in html.lower()
+    assert "T1–T3" in html
+    assert "signal 35%" in html.lower()
     # Old subtitle chip strings must NOT come back.
     assert "cycle-aligned bottoming" not in html, (
         "Old 'cycle-aligned bottoming' subtitle chip still present"
@@ -197,41 +189,28 @@ def test_standout_h2_archetype_copy_present_and_old_subtitle_gone() -> None:
     )
 
 
-def test_standout_help_contains_three_caveats() -> None:
-    """The (?) popup must still carry the three epistemic caveats (F5), in plain wording.
-
-    The insider 'reversal is a separate product' caveat was dropped as jargon; the
-    user-facing honesty invariant it protected is 'research shortlist, not a buy list'.
-    """
+def test_standout_help_contains_v2_epistemic_caveats() -> None:
+    """The popup distinguishes priority from prediction and exposes the broader set."""
     html = _render_standout_header()
-    # Caveat (i): it is context/research, NOT a buy list
-    assert "not a buy list" in html.lower() or "非买入清单" in html, (
-        "Caveat (i) — research shortlist, not a buy list — not found in (?) popup"
-    )
-    # Caveat (ii): 0-100 score is buy-readiness, not a win-rate/edge
-    assert "buy-readiness" in html.lower() or "买入就绪" in html, (
-        "Caveat (ii) — buy-readiness (not a win-rate) — not found"
-    )
-    # Caveat (iii): the board's track record is still accruing
+    assert "not a win probability or return forecast" in html.lower()
     assert "accruing" in html.lower() or "累积" in html, (
-        "Caveat (iii) — track record still accruing — not found"
+        "forward record accrual caveat not found"
     )
+    assert "broader and blocked names remain below" in html.lower()
 
 
-def test_standout_help_describes_cascade() -> None:
-    """Help tooltip must mention the T1-T4 cascade (the actual admission gate)."""
+def test_standout_help_describes_actionable_tiers() -> None:
+    """Help tooltip must identify the actionable T1–T3 admission set."""
     html = _render_standout_header()
-    assert "T1" in html and "T4" in html, (
-        "Help tooltip does not mention T1–T4 cascade"
-    )
+    assert "T1–T3" in html
 
 
 def test_standout_help_says_rank_not_bottoming_alignment() -> None:
     """Help must NOT describe the board as a bottoming-alignment screen."""
     html = _render_standout_header()
-    # Positive control: the tooltip actually rendered (buy-readiness is its live rank
+    # Positive control: the tooltip actually rendered (readiness is its live rank
     # driver) — the two absence pins below are real absences, not a vacuous empty render.
-    assert "buy-readiness" in html.lower() or "买入就绪" in html, (
+    assert "readiness rank" in html.lower() or "就绪度排序" in html, (
         "standout tooltip did not render (absence checks would be vacuous)"
     )
     assert "MULTI-TIMEFRAME BOTTOMING-ALIGNMENT" not in html, (
@@ -243,13 +222,12 @@ def test_standout_help_says_rank_not_bottoming_alignment() -> None:
 
 
 def test_standfirst_paragraph_honest() -> None:
-    """Header must name the honest rank driver (buy-readiness / the T1–T4 cascade)."""
+    """Header must name the honest priority/readiness rank driver."""
     html = _render_standout_header()
     # Must name the honest driver: buy-readiness, or the T1–T4 cascade in the subtitle
     assert (
-        "buy-readiness" in html.lower() or "买入就绪" in html
-        or "cascade" in html.lower() or "级联" in html
-    ), "Header does not name the honest rank driver (buy-readiness / cascade)"
+        "readiness rank" in html.lower() or "就绪度排序" in html
+    ), "Header does not name the honest readiness rank"
     # Must not claim ranked by 'alignment quality'
     assert "Ranked by alignment quality" not in html, (
         "Old alignment-quality ranking claim still present"
@@ -261,7 +239,7 @@ def test_bilingual_dual_spans_present() -> None:
     html = _render_stocks_header() + _render_standout_header()
     assert 'class="l-en"' in html or "l-en" in html, "No l-en spans found"
     assert 'class="l-zh"' in html or "l-zh" in html, "No l-zh spans found"
-    assert "洗盘" in html or "筑底" in html, "No ZH copy found for washout/base"
+    assert "精选入场" in html and "就绪度" in html
 
 
 def test_no_t_call_inside_attributes_in_changed_blocks() -> None:
@@ -298,10 +276,10 @@ def test_no_straight_reversal_claims_in_standout_header() -> None:
     replaced it.
     """
     html = _render_standout_header()
-    # Positive control: the honest rank driver ('buy-readiness') IS present — proves the
+    # Positive control: the honest readiness driver IS present — proves the
     # header rendered, so the reversal-tiebreaker absence below is a real absence.
-    assert "buy-readiness" in html.lower() or "买入就绪" in html, (
-        "honest rank driver 'buy-readiness' missing (absence check would be vacuous)"
+    assert "readiness rank" in html.lower() or "就绪度排序" in html, (
+        "honest readiness rank missing (absence check would be vacuous)"
     )
     # The old standfirst mentioned 'A-share reversal / relative-strength leg only as a tiebreaker'
     assert "reversal / relative-strength leg only as a tiebreaker" not in html, (

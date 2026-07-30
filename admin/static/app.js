@@ -6600,7 +6600,7 @@ RENDER.marketing_publish = async () => {
   const actStrip = activity.length ? `<div class="card"><div class="section">Recent runs</div>
     ${activity.map(a => `<div class="pub-act-row"><span class="muted">${esc(a.at || "")}</span>
       <span class="pub-act-lane">${esc(a.lane || "")}</span>
-      posted ${a.posted || 0} · would_post ${a.would_post || 0} · quarantined ${a.quarantined || 0}${a.auto_approved ? ` · auto ${a.auto_approved}` : ""}</div>`).join("")}
+      posted ${a.posted || 0} · would_post ${a.would_post || 0} · quarantined ${a.quarantined || 0}${a.auto_approved ? ` · auto ${a.auto_approved}` : ""}${pubParkedReadout(a)}</div>`).join("")}
   </div>` : "";
 
   const goLive = pubGoLive(d);
@@ -6619,6 +6619,50 @@ RENDER.marketing_publish = async () => {
   conStartCountdowns();
 };
 
+/* Dark-desk park readout for ONE publisher run row. The dispatch-time gate parks
+   items addressed to a desk that is not enabled in desk_network, so a run whose
+   whole batch was parked must not read as an idle run that did nothing.
+
+   Three states, and the last two are not the same fact:
+     parked_dark > 0        → say how many, and name the dark desks when known.
+     dark_accounts === null → the publisher asked and could NOT resolve liveness,
+                              so the gate was inert: a park count of 0 means the
+                              check never ran, not that every desk is live.
+     dark_accounts absent   → the row predates the gate. `undefined !== null` is
+                              the whole discriminator, so a historical run is
+                              never retro-labelled with a claim nobody made. */
+function pubParkedReadout(a) {
+  const n = a.parked_dark || 0;
+  const dark = a.dark_accounts;
+  if (n > 0) {
+    const who = Array.isArray(dark) && dark.length ? ` (${dark.map(esc).join(", ")})` : "";
+    return ` · <span class="pub-act-park" title="Parked at dispatch — addressed to a desk that is not enabled in desk_network (account_disabled). Enable the desk to let these post.">parked ${n}${who}</span>`;
+  }
+  if (dark === null) {
+    return ` · <span class="pub-act-inert" title="Desk liveness could not be resolved on this run, so nothing could be parked. A park count of 0 here means the check never ran — not that every desk is live.">desk liveness unknown</span>`;
+  }
+  return "";
+}
+
+/* Desk-liveness disclosure for the dry-run panel. `dark_accounts` carries three
+   distinct facts and collapsing them would be dishonest: null = asked and could
+   not resolve (gate inert, so a would-park count of 0 proves nothing), [] = asked
+   and every desk is enabled, [ids] = these desks are dark and anything addressed
+   to them is held. Absent = the report predates the gate, so claim nothing. */
+function pubDarkDeskNote(d) {
+  const dark = d.dark_accounts;
+  if (dark === null) {
+    return `<div class="pub-alert-row" style="margin-top:8px"><span class="pub-alert-tag warn">desk liveness unknown</span><span class="pub-alert-note">The publisher could not resolve which desks are enabled, so nothing can be parked — a would-park count of 0 means the check never ran, not that every desk is live.</span></div>`;
+  }
+  if (Array.isArray(dark) && dark.length) {
+    return `<div class="pub-alert-row" style="margin-top:8px"><span class="pub-alert-tag warn">dark desks</span><span class="pub-alert-note">Not enabled in desk_network: ${dark.map(x => `<code>${esc(x)}</code>`).join(" ")}. Anything addressed to these is parked, never posted.</span></div>`;
+  }
+  if (Array.isArray(dark)) {
+    return `<div class="note muted" style="margin-top:8px">Desk liveness checked — every desk is enabled, so nothing would be parked.</div>`;
+  }
+  return "";
+}
+
 /* When a dry-run would post nothing, explain WHY in one plain sentence per
    reason, from the counts the payload already returns. The operator never has to
    guess whether the outbox is empty, nothing's approved, approvals aren't due
@@ -6628,10 +6672,19 @@ function pubZeroWhy(d) {
   const approvedDue = c.approved_due || 0;
   const noChannel = c.skipped_no_channel || 0;
   const capped = c.skipped_cap || 0;
+  const parked = c.would_park_dark || 0;
   const cfg = (OBX_LAST && OBX_LAST.summary) || null;  /* best-effort outbox snapshot */
   const rows = [];
   const line = (state, txt) => rows.push(`<div class="pub-why-row"><span class="dot ${state}"></span><span class="pub-why-txt">${txt}</span></div>`);
 
+  // Parks lead, because a park is the one reason the old readout could not express
+  // at all. A parked item IS approved and due — it is counted in approved_due and
+  // then dropped from would_post — so without this line the panel ends up at its
+  // "Nothing is approved and due" fallback while describing posts that are exactly
+  // that, and the operator reads a dark desk as an empty outbox.
+  if (parked > 0) {
+    line("mut", `<b>${parked}</b> parked — addressed to a desk that is not enabled in <code>desk_network</code>. Enable the desk, or re-address the post, and they go out at the next slot.`);
+  }
   if (approvedDue > 0 && noChannel >= approvedDue) {
     line("mut", `<b>${approvedDue}</b> approved and due, but the desk has <b>no Buffer channel</b> — set a channel id to post them.`);
   } else if (approvedDue === 0) {
@@ -6664,12 +6717,13 @@ async function pubRunDryRun(btn) {
   const wp = d.would_post || [];
   const q = d.quarantine || [];
   const wa = d.would_auto_approve || [];
+  const wpk = d.would_park_dark || [];
   const killWord = d.kill_switch
     ? `<span style="color:var(--warn)">kill-switch ON — a live run WOULD post</span>`
     : `<span class="muted">kill-switch off — a live run stays dry</span>`;
 
   const summary = `<div class="note" style="margin-bottom:8px">
-    <b>${wp.length}</b> would post · <b>${q.length}</b> would quarantine · <b>${c.skipped_cap || 0}</b> capped · <b>${c.skipped_no_channel || 0}</b> no-channel${d.auto_approve ? ` · <b>${wa.length}</b> would auto-approve` : ""}. ${killWord}.</div>`;
+    <b>${wp.length}</b> would post · <b>${q.length}</b> would quarantine${wpk.length ? ` · <b>${wpk.length}</b> would park` : ""} · <b>${c.skipped_cap || 0}</b> capped · <b>${c.skipped_no_channel || 0}</b> no-channel${d.auto_approve ? ` · <b>${wa.length}</b> would auto-approve` : ""}. ${killWord}.</div>`;
 
   const wpRows = wp.length ? `<table class="tbl pub-tbl"><thead><tr><th>desk</th><th>chars</th><th>sched</th><th>preview</th></tr></thead>
     <tbody>${wp.map(p => `<tr><td>${esc(p.account || "")}</td><td>${p.chars}</td><td class="muted">${esc(p.scheduled_at || "immediate")}</td><td class="pub-text">${esc(p.preview || "")}</td></tr>`).join("")}</tbody></table>`
@@ -6680,7 +6734,15 @@ async function pubRunDryRun(btn) {
 
   const waRows = (d.auto_approve && wa.length) ? `<div class="note muted" style="margin-top:8px">Would auto-approve (queued → approved): ${wa.map(x => `<code>${esc(x.id)}</code>`).join(" ")}</div>` : "";
 
-  out.innerHTML = summary + wpRows + qRows + waRows;
+  /* What the dark-desk gate would take out. Entries come from BOTH gates — the
+     auto-approve pass (still queued) and the approved-and-due loop — so the note
+     says only what is true of every row: the desk it is addressed to is not
+     enabled. `account_disabled` is the reason string the live run writes to the
+     ledger, tagged verbatim so the preview and the ledger stay greppable together. */
+  const wpkRows = wpk.length ? `<div class="note muted" style="margin-top:8px">Would park — addressed to a desk that is not enabled in <code>desk_network</code>. A live run holds these instead of posting; enable the desk, or re-address the post, to let them go.</div>
+    ${wpk.map(x => `<div class="pub-alert-row"><span class="pub-alert-tag warn">account_disabled</span><code>${esc(x.id)}</code> <span class="muted">${esc(x.account || "")}</span></div>`).join("")}` : "";
+
+  out.innerHTML = summary + wpRows + qRows + wpkRows + waRows + pubDarkDeskNote(d);
 }
 
 RENDER.marketing_sentinel = async () => {

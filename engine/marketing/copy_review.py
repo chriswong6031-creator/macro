@@ -216,9 +216,29 @@ def review_posts_llm(posts: list[dict], cfg: dict, *,
         if not model_id:
             return None
 
+        # CHATGPT-FIRST (operator directive 2026-07-29, recorded on
+        # config/marketing.yml copywriter.llm): codex leads, the key_pool-balanced
+        # Claude oauth rung is the fallback. Sol, same tier as the writer whose
+        # prose this pass judges line by line.
+        #
+        # The POOL LANE is pinned, not threaded: `llm_cfg` here IS
+        # `copywriter.llm` (review_batch narrows cfg to the copywriter block), so
+        # inheriting its oauth_pool_lane would bill every review to
+        # marketing-copywriter and make the two lanes indistinguishable in the
+        # key ledger. The codex tier IS threaded because the ruling gives both
+        # lanes the same one.
         from engine import llm_auth  # noqa: PLC0415
         providers = llm_auth.build_providers(
-            {"usage_lane": "marketing-copy-review"}, opus_model=model_id)
+            {
+                "usage_lane": "marketing-copy-review",
+                "oauth_pool_lane": "marketing-copy-review",
+                "provider_order": llm_cfg.get("provider_order")
+                or ["codex", "oauth", "anthropic", "deepseek"],
+                "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
+                "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
+            },
+            opus_model=model_id,
+        )
         if not providers:
             print("::warning title=marketing_copy_review_mute::Copy review is "
                   "enabled but no LLM provider credential is visible — falling "

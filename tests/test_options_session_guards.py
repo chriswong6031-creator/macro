@@ -189,8 +189,16 @@ def test_the_two_canonical_fixes_are_untouched():
 def test_the_skew_activation_gate_counts_sessions_not_rows(tmp_path):
     """THE live defect: min_obs=21 over a store whose dates include weekends.
 
-    Frame: 22 dates, 4 of them non-session -> 18 real sessions. Unfiltered it clears a
-    21-observation gate; filtered it correctly does not."""
+    Frame: 26 dates, 8 of them non-session -> 18 real sessions. Unfiltered it clears the
+    activation floor; filtered it correctly does not.
+
+    SIZED AGAINST LRV-R6 (#4020), not against min_obs alone: the loader now holds the last
+    CROWDED_SKEW_PERSIST_WINDOW=5 observations out of their own benchmark
+    (``hist = daily.iloc[:-5]``), so the first possible non-null moved from n_obs >= 21 to
+    n_obs >= 21 + 5 = 26. The 22-date frame this test shipped with therefore gave an
+    unfiltered hist of 17 < 21 and stayed null for the WRONG reason — the padding, not the
+    filter — which made the premise assertion at the bottom pass vacuously. Eight padding
+    rows restore it: unfiltered hist = 21 (activates), filtered hist = 13 (stays null)."""
     import scripts.build_leader_radar as blr
 
     sessions, cur = [], date(2026, 6, 22)
@@ -198,12 +206,17 @@ def test_the_skew_activation_gate_counts_sessions_not_rows(tmp_path):
         if nyse_calendar.is_session(cur):
             sessions.append(cur.isoformat())
         cur = date.fromordinal(cur.toordinal() + 1)
-    weekends = [SAT, SUN, "2026-07-18", "2026-07-19"]
-    dates = sorted(set(sessions + weekends))
-    # Not `len(dates) == 22` (a literal against a literal, minor 11): assert the two
-    # PROPERTIES the test's arithmetic depends on — 18 real sessions and 4 fabricated days.
+    # Every non-session day INSIDE the 2026-06-22..2026-07-16 session span — the three
+    # weekend pairs AND the observed Independence Day holiday (2026-07-03, a Friday: the
+    # guard must catch holidays, not just Saturdays) — which is the shape a store accruing
+    # one row per CALENDAR day actually has, plus the trailing Saturday.
+    non_sessions = ["2026-06-27", "2026-06-28", "2026-07-03", "2026-07-04", "2026-07-05",
+                    "2026-07-11", "2026-07-12", SAT]
+    dates = sorted(set(sessions + non_sessions))
+    # Not `len(dates) == 26` (a literal against a literal, minor 11): assert the two
+    # PROPERTIES the test's arithmetic depends on — 18 real sessions and 8 fabricated days.
     assert sum(1 for d in dates if nyse_calendar.is_session(date.fromisoformat(d))) == 18
-    assert sum(1 for d in dates if not nyse_calendar.is_session(date.fromisoformat(d))) == 4
+    assert sum(1 for d in dates if not nyse_calendar.is_session(date.fromisoformat(d))) == 8
 
     df = pd.DataFrame({
         "date": dates,
@@ -217,9 +230,12 @@ def test_the_skew_activation_gate_counts_sessions_not_rows(tmp_path):
 
     got = blr._load_options_skew(tmp_path, min_obs=21)
     assert got["TESTX"]["skew_n_obs"] == 18, (
-        "the gate must count the 18 SESSIONS, not the 22 stored dates"
+        "the gate must count the 18 SESSIONS, not the 26 stored dates"
     )
-    assert got["TESTX"]["rr_25d"] is None, "18 < 21 — the chip must stay null"
+    assert got["TESTX"]["rr_25d"] is None, (
+        "18 sessions leave a 13-observation prior history once the 5-session evaluation "
+        "window is held out — 13 < 21, so the chip must stay null"
+    )
 
     # neutralise the filter and the same store wrongly activates
     orig = blr.nyse_calendar_session_rows
@@ -228,7 +244,7 @@ def test_the_skew_activation_gate_counts_sessions_not_rows(tmp_path):
         bad = blr._load_options_skew(tmp_path, min_obs=21)
     finally:
         blr.nyse_calendar_session_rows = orig
-    assert bad["TESTX"]["skew_n_obs"] == 22
+    assert bad["TESTX"]["skew_n_obs"] == 26
     assert bad["TESTX"]["rr_25d"] is not None, (
         "premise check: unfiltered, this store DOES wrongly activate the chip"
     )

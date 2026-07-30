@@ -897,25 +897,31 @@ class TestLoadInsiderCluster:
         assert result.get("CCC") is None
 
 
-def _nyse_sessions(n: int, start: str) -> list[pd.Timestamp]:
-    """n consecutive NYSE SESSION timestamps from `start` (inclusive if it is one).
-
-    Neither calendar days nor pandas' freq="B" give sessions: "B" keeps exchange
-    holidays. Fixtures that need "N observations" must generate N real sessions or the
-    count they assert is not the count the session-filtered loader will see.
-    """
-    from lib import nyse_calendar
-    out: list[pd.Timestamp] = []
-    d = pd.Timestamp(start)
-    while len(out) < n:
-        if nyse_calendar.is_session(d.date()):
-            out.append(d)
-        d += pd.Timedelta(days=1)
-    return out
-
-
 class TestLoadOptionsSkew:
-    """LRV-R1(c): _load_options_skew sign convention and young-data null."""
+    """LRV-R6: window-excluded Q80 benchmark + last-5 persistence count.
+
+    Supersedes LRV-R1(c)'s daily self-inclusive form, which measured ~= its own
+    mechanical coin at n=21 (research/leader_radar_skew_chip/MEASUREMENT.md).
+    """
+
+    # Puts pinned, calls carry the whole signal, so rr is bit-identical to the intended
+    # value under the loader's own (call - put) subtraction.
+    _PUT_IV = 0.20
+    # 21 prior sessions ramping 0.010 → 0.030. pandas' Q80 of 21 points is exactly the
+    # 17th order statistic (0.026) — the benchmark the window is judged against.
+    _HIST_RR = [0.010 + i * 0.001 for i in range(21)]
+
+    def _sessions(self, n: int, start: date = date(2026, 1, 5)) -> list[date]:
+        """First n real NYSE sessions from `start`.
+
+        Sessions, not calendar days and not freq="B": the loader session-filters its
+        store, and business days keep exchange holidays — either substitute makes the
+        fixture assert an observation count the loader will never see.
+        """
+        from lib.nyse_calendar import sessions_between
+        out = sessions_between(start, start + timedelta(days=3 * n + 30))
+        assert len(out) >= n, f"widen the span: {len(out)} sessions < {n} requested"
+        return out[:n]
 
     def _make_skew_parquet(self, tmp_path: Path, rows: list[dict]) -> Path:
         p = tmp_path / "options_skew" / "snapshots.parquet"
@@ -924,20 +930,69 @@ class TestLoadOptionsSkew:
         df.to_parquet(p)
         return tmp_path
 
-    def test_calls_rich_positive_rr(self, tmp_path):
-        """atm_call_iv > otm_put_iv → rr = positive (calls rich); above 80th pctile → True."""
+    def _rows(self, rr_values: list[float], ticker: str = "AAA") -> list[dict]:
+        dates = self._sessions(len(rr_values))
+        return [
+            {"date": d, "underlying": ticker, "asof": d,
+             "spot": 100.0, "tenor_days": 30,
+             "atm_call_iv": self._PUT_IV + rr, "otm_put_iv": self._PUT_IV,
+             "skew": -rr, "n_strikes": 5}
+            for d, rr in zip(dates, rr_values)
+        ]
+
+    def test_benchmark_excludes_the_evaluation_window(self, tmp_path):
+        """LRV-R6 pin: Q80 of the 21 PRIOR sessions, evaluation window held out.
+
+        The window carries the fixture's largest rr values, so the self-inclusive Q80
+        the superseded construction computed sits strictly above the window-excluded
+        one — this test fails on that construction.
+        """
         from scripts.build_leader_radar import _load_options_skew
-        # 25 dates so we exceed the 21-obs threshold. SESSIONS, not freq="B":
-        # _load_options_skew session-filters its store (the #3721 weekend-row class —
-        # a non-session snapshot recomputes both IVs off a stale spot), and business
-        # days include exchange HOLIDAYS. 25 bdays from 2026-01-02 spans MLK Day, so
-        # this fixture used to describe 25 rows but only 24 observations.
-        dates = _nyse_sessions(25, "2026-01-02")
+        # window: four sessions clear the 0.026 benchmark, one does not → count 4
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043])
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21).get("AAA")
+        assert skew_data is not None
+
+        rr = [r["atm_call_iv"] - r["otm_put_iv"] for r in rows]
+        expected_thr = float(pd.Series(rr[:21]).quantile(0.80))
+        self_inclusive = float(pd.Series(rr).quantile(0.80))
+        assert expected_thr < self_inclusive, "fixture must separate the two constructions"
+        assert skew_data["rr_80th_pctile"] == expected_thr
+        assert skew_data["rr_80th_pctile"] < self_inclusive, (
+            "benchmark is still self-inclusive — the evaluation window leaked into the "
+            "distribution it is judged against (LRV-R6)"
+        )
+        assert skew_data["skew_rich_last5"] == 4
+        assert skew_data["rr_25d"] == rr[-1]
+        assert skew_data["skew_n_obs"] == 26
+
+    def test_young_data_below_threshold_returns_null(self, tmp_path):
+        """25 sessions → 20 prior once the window is held out → all three None.
+
+        One session short of activation: LRV-R6 moves the first possible non-null from
+        n=21 to n = min_obs + CROWDED_SKEW_PERSIST_WINDOW = 26.
+        """
+        from scripts.build_leader_radar import _load_options_skew
+        rows = self._rows([0.010 + i * 0.001 for i in range(25)], ticker="BBB")
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21).get("BBB")
+        assert skew_data is not None
+        assert skew_data["rr_25d"] is None, "rr_25d must be None below the prior-history floor"
+        assert skew_data["rr_80th_pctile"] is None
+        assert skew_data["skew_rich_last5"] is None
+        assert skew_data["skew_n_obs"] == 25  # obs count still emitted
+
+    def test_calls_rich_positive_rr(self, tmp_path):
+        """atm_call_iv > otm_put_iv → rr positive (calls rich), on an eligible fixture."""
+        from scripts.build_leader_radar import _load_options_skew
+        # 26 SESSIONS — the LRV-R6 activation floor (21 prior + the 5-session window)
+        dates = self._sessions(26)
         rows = []
         for i, d in enumerate(dates):
-            # calls rich: atm_call_iv > otm_put_iv → rr = 0.02 + small variation
+            # calls rich: atm_call_iv > otm_put_iv → rr = 0.03 + small variation
             rows.append({
-                "date": d.date(), "underlying": "AAA", "asof": d.date(),
+                "date": d, "underlying": "AAA", "asof": d,
                 "spot": 100.0, "tenor_days": 30,
                 "atm_call_iv": 0.25 + i * 0.001,   # rising calls
                 "otm_put_iv": 0.22 + i * 0.001,    # puts cheaper → rr > 0
@@ -945,32 +1000,176 @@ class TestLoadOptionsSkew:
                 "n_strikes": 5,
             })
         data_root = self._make_skew_parquet(tmp_path, rows)
-        result = _load_options_skew(data_root, min_obs=21)
-        skew_data = result.get("AAA")
+        skew_data = _load_options_skew(data_root, min_obs=21).get("AAA")
         assert skew_data is not None
-        assert skew_data["rr_25d"] is not None, "rr_25d should be non-null with 25 obs"
+        assert skew_data["rr_25d"] is not None, "rr_25d should be non-null with 26 sessions"
         assert skew_data["rr_80th_pctile"] is not None
+        assert skew_data["skew_rich_last5"] is not None
         assert skew_data["rr_25d"] > 0, "rr should be positive when calls > puts"
-        assert skew_data["skew_n_obs"] == 25
+        assert skew_data["skew_n_obs"] == 26
 
-    def test_young_data_below_threshold_returns_null(self, tmp_path):
-        """< 21 observations → rr_25d and rr_80th_pctile are None (young data)."""
+    def test_window_below_benchmark_counts_zero_not_null(self, tmp_path):
+        """No window session clears the benchmark → 0, never None.
+
+        Zero is a real FALSE vote in the CROWDED k-of-n; None would instead drop the
+        chip out of n_avail. The int cast is load-bearing (numpy scalars break JSON).
+        """
         from scripts.build_leader_radar import _load_options_skew
-        # 16 SESSIONS (16 bdays from here span the July-3 holiday — see above)
-        dates = _nyse_sessions(16, "2026-06-22")
-        rows = [
-            {"date": d.date(), "underlying": "BBB", "asof": d.date(),
-             "spot": 100.0, "tenor_days": 30, "atm_call_iv": 0.24,
-             "otm_put_iv": 0.23, "skew": -0.01, "n_strikes": 5}
-            for d in dates
-        ]
+        rows = self._rows(self._HIST_RR + [0.001, 0.002, 0.003, 0.004, 0.005])
         data_root = self._make_skew_parquet(tmp_path, rows)
-        result = _load_options_skew(data_root, min_obs=21)
-        skew_data = result.get("BBB")
+        skew_data = _load_options_skew(data_root, min_obs=21).get("AAA")
         assert skew_data is not None
-        assert skew_data["rr_25d"] is None, "rr_25d must be None when obs < 21"
-        assert skew_data["rr_80th_pctile"] is None
-        assert skew_data["skew_n_obs"] == 16  # obs count still emitted
+        assert skew_data["skew_rich_last5"] == 0
+        assert isinstance(skew_data["skew_rich_last5"], int)
+        assert skew_data["rr_80th_pctile"] is not None
+
+    def test_nan_readings_do_not_buy_activation(self, tmp_path):
+        """D1: the gate counts READINGS, not rows.
+
+        26 dates with 3 NaN rr readings = 23 readings → 18 prior after the window is
+        held out → null. Counting rows would clear a 21-gate on a benchmark drawn from
+        a short sample.
+        """
+        from scripts.build_leader_radar import _load_options_skew
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043],
+                          ticker="NANA")
+        for i in (2, 7, 13):
+            rows[i]["atm_call_iv"] = float("nan")   # rr = NaN on that date
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21).get("NANA")
+        assert skew_data is not None
+        assert skew_data["skew_n_obs"] == 23, "skew_n_obs must count readings, not rows"
+        assert skew_data["rr_80th_pctile"] is None, "23 - 5 = 18 prior readings < 21"
+        assert skew_data["rr_25d"] is None
+        assert skew_data["skew_rich_last5"] is None
+
+    def test_nan_rows_drop_out_and_rr_25d_stays_finite(self, tmp_path):
+        """D1/D2: NaN rows are absent from the count, and rr_25d is never NaN.
+
+        The store's latest date here is a NaN row. A NaN rr_25d would serialise into
+        radar.json as the bare token `NaN` — invalid JSON that no default= hook can
+        intercept, because json.dumps never consults one for native floats.
+        """
+        from scripts.build_leader_radar import _load_options_skew
+        rr = self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043]   # 26 real readings
+        rows = self._rows(rr + [0.0] * 4, ticker="NANB")            # + 4 later NaN rows
+        for r in rows[26:]:
+            r["atm_call_iv"] = float("nan")
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21).get("NANB")
+        assert skew_data is not None
+        assert skew_data["skew_n_obs"] == 26
+        # readings as the loader computes them (call - put), not the intended literals
+        readings = [r["atm_call_iv"] - r["otm_put_iv"] for r in rows[:26]]
+        assert np.isfinite(skew_data["rr_25d"]), "rr_25d must never be NaN (invalid JSON)"
+        assert skew_data["rr_25d"] == readings[-1], "rr_25d must be the latest real reading"
+        assert skew_data["skew_rich_last5"] == 4, "NaN rows must not enter the window"
+        assert skew_data["rr_80th_pctile"] == float(pd.Series(readings[:21]).quantile(0.80))
+
+    def test_loader_count_reaches_the_engine_chip(self, tmp_path, monkeypatch):
+        """D3: the loader's count actually arrives at LifecycleInputs.
+
+        Armed on purpose — while the vote is HELD the chip is None whatever the count
+        says, so only the armed path can observe the wire at all.
+        """
+        import engine.leader_lifecycle as ll
+        from scripts.build_leader_radar import _load_options_skew
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043])
+        data_root = self._make_skew_parquet(tmp_path, rows)
+        skew_data = _load_options_skew(data_root, min_obs=21)["AAA"]
+        assert skew_data["skew_rich_last5"] == 4
+
+        monkeypatch.setattr(ll, "CROWDED_SKEW_CHIP_ARMED", True)
+        idx = pd.date_range("2024-01-02", periods=300, freq="B")
+        close = pd.Series(100.0, index=idx)
+        inp = ll.LifecycleInputs(
+            close=close, bench_close=close,
+            skew_rich_last5=skew_data["skew_rich_last5"],
+        )
+        _, chips, _ = ll._crowded_check(inp)
+        assert chips["call_skew_rich"] is True, "the loader's count never reached the chip"
+
+    def test_build_call_site_passes_the_skew_field(self):
+        """D3: pin the build() → _build_ticker_assessment wire textually.
+
+        A renamed kwarg or a misspelled dict key there changes NO output while the chip
+        is held (None either way), so nothing behavioural can catch it until the flip
+        PR arms the vote — by which time the wire has been silently dead for months.
+        """
+        import inspect
+        from scripts.build_leader_radar import _build_ticker_assessment, build
+        assert "skew_rich_last5" in inspect.signature(_build_ticker_assessment).parameters, (
+            "_build_ticker_assessment lost its skew_rich_last5 parameter"
+        )
+        assert 'skew_rich_last5=_skew.get("skew_rich_last5")' in inspect.getsource(build), (
+            "build() must pass the loader's skew_rich_last5 into _build_ticker_assessment"
+        )
+
+    def test_row_context_keeps_the_lrv_r6_receipt(self, tmp_path):
+        """The receipt accrues in the row context while the chip's vote is HELD.
+
+        That accrual is the reason the machinery ships now: the n>=60 re-benchmark
+        needs the count on the record, and the chip cannot show it.
+        """
+        import inspect
+        from scripts.build_leader_radar import _load_options_skew, build
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043])
+        skew_map = _load_options_skew(self._make_skew_parquet(tmp_path, rows), min_obs=21)
+        ticker = "AAA"
+        context = {   # exactly the shape build() assembles at the LRV-R6 receipt block
+            "skew_n_obs": (skew_map.get(ticker) or {}).get("skew_n_obs"),
+            "skew_rich_last5": (skew_map.get(ticker) or {}).get("skew_rich_last5"),
+            "rr_25d": (skew_map.get(ticker) or {}).get("rr_25d"),
+            "rr_80th_pctile": (skew_map.get(ticker) or {}).get("rr_80th_pctile"),
+        }
+        assert context["skew_n_obs"] == 26
+        assert context["skew_rich_last5"] == 4
+        assert context["rr_25d"] is not None
+        assert context["rr_80th_pctile"] is not None
+
+        src = inspect.getsource(build)
+        for key in ("skew_rich_last5", "rr_25d", "rr_80th_pctile"):
+            assert f'"{key}": (skew_map.get(ticker) or {{}}).get("{key}")' in src, (
+                f"build() dropped the {key} row-context receipt"
+            )
+
+    def test_session_filter_failopen_emits_line_start_annotation(self, tmp_path, capsys):
+        """D4: a silently unfiltered read must announce itself.
+
+        session_rows fails OPEN when filtering would empty the frame, which is exactly
+        the padded-count condition the guard exists to stop. The annotation has to be a
+        bare line-start print — a logger prefix makes GitHub drop it silently
+        (tests/test_gh_annotation_line_start.py).
+        """
+        from lib.nyse_calendar import is_session
+        from scripts.build_leader_radar import _load_options_skew
+
+        # weekends only → filtering would empty the frame → the fail-open path fires
+        weekends, d = [], date(2026, 1, 3)
+        while len(weekends) < 6:
+            if not is_session(d):
+                weekends.append(d)
+            d += timedelta(days=1)
+        rows = [
+            {"date": w, "underlying": "WKND", "asof": w, "spot": 100.0, "tenor_days": 30,
+             "atm_call_iv": 0.24, "otm_put_iv": 0.23, "skew": -0.01, "n_strikes": 5}
+            for w in weekends
+        ]
+        _load_options_skew(self._make_skew_parquet(tmp_path, rows), min_obs=21)
+        hits = [ln for ln in capsys.readouterr().out.splitlines()
+                if "skew_session_filter_failopen" in ln]
+        assert hits, "fail-open read emitted no annotation"
+        assert hits[0].startswith("::warning"), (
+            f"annotation must start the line or GitHub drops it: {hits[0]!r}"
+        )
+        assert "6 non-session dates" in hits[0]
+
+    def test_clean_session_store_emits_no_failopen_annotation(self, tmp_path, capsys):
+        """Negative control: an all-session store must stay silent (no alarm fatigue)."""
+        from scripts.build_leader_radar import _load_options_skew
+        rows = self._rows(self._HIST_RR + [0.040, 0.041, 0.012, 0.042, 0.043])
+        _load_options_skew(self._make_skew_parquet(tmp_path, rows), min_obs=21)
+        assert "skew_session_filter_failopen" not in capsys.readouterr().out
 
 
 class TestComputeBasketCorrelations:

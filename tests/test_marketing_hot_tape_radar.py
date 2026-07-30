@@ -1193,7 +1193,14 @@ class TestLLMPhrasing:
         cfg = _yaml.safe_load((REPO_ROOT / "config.yml").read_text(encoding="utf-8"))
         block = (cfg.get("hot_tape") or {}).get("llm") or {}
         assert block.get("enabled") is True
-        assert block.get("provider_order") == ["oauth", "anthropic", "deepseek"]
+        # CHATGPT-FIRST (operator directive 2026-07-29): codex leads every
+        # marketing LLM lane so Claude subscription tokens stay reserved for
+        # website-building sessions; the Claude oauth rung is the balanced
+        # fallback behind it. Pinned here so a silent re-order is caught.
+        assert block.get("provider_order") == ["codex", "oauth", "anthropic", "deepseek"]
+        assert block.get("codex_source_model") == "gpt-5.6-terra"
+        assert block.get("codex_reasoning_effort") == "low"
+        assert block.get("oauth_pool_lane") == "hot-tape-wire"
         assert RADAR.llm_config(REPO_ROOT)["llm"] == block
 
 

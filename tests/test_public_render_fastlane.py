@@ -65,6 +65,7 @@ def test_public_render_owns_the_excluded_surfaces():
     ):
         assert f'- "{pattern}"' in PUBLIC
     assert "runs-on: ubuntu-latest" in PUBLIC
+    assert "timeout-minutes: 20" in PUBLIC
     assert "cancel-in-progress: true" in PUBLIC
     assert "fetch-depth: 2" in PUBLIC
     assert "fetch-depth: 0" not in PUBLIC
@@ -77,6 +78,19 @@ def test_public_render_never_invokes_market_or_data_builders():
     assert "fetch_r2" not in PUBLIC_SH
     assert "publish_r2" not in PUBLIC_SH
     assert "read_parquet" not in PUBLIC_SH
+
+
+def test_public_render_retry_does_not_repeat_the_full_site_js_guard():
+    """Busy-main retries must stay shorter than the repository's merge cadence.
+
+    Run 30505255868 spent ~2m30s re-validating all 3,263 pages after each
+    successful rebase, lost the ref again, and exhausted its push budget.
+    """
+    assert "check_inline_js.py site\n" not in PUBLIC_SH
+    assert 'PUBLIC_OUTPUTS=(site/plans.html site/support.html site/unsubscribe.html)' in PUBLIC_SH
+    assert 'check_inline_js.py "${PUBLIC_OUTPUTS[@]}"' in PUBLIC_SH
+    assert 'if [ "$(git rev-parse HEAD)" != "$PRE_SYNC_HEAD" ]; then' in PUBLIC_SH
+    assert "PUSH_BUDGET_SECS=600" in PUBLIC_SH
 
 
 def test_public_builder_renders_current_pricing_without_market_data(tmp_path):

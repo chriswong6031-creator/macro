@@ -26,9 +26,8 @@
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=720475f3">
 <link rel="stylesheet" href="assets/css/d57cff12.css?v=d57cff12">
-<link rel="preload" as="style" href="navigation-refresh.css?v=88af7a13">
 <link rel="preload" as="style" href="product-nav-icons.css?v=7b0290e9">
-<link rel="preload" as="style" href="navigation-refresh.css?v=6607344b">
+<link rel="preload" as="style" href="navigation-refresh.css?v=f38c6288">
 
 
 
@@ -55,7 +54,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=88af7a13">
+    <link rel="stylesheet" href="navigation-refresh.css?v=f38c6288">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -181,16 +180,17 @@
       </div>
     </div>
     <div class="nav-dd">
+      <a class="nav-link" href="crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="caret">▾</span></a>
+      <div class="nav-dd-menu" role="menu">
+        <a href="crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Crypto Cockpit</span><span class="l-zh">加密驾驶舱</span><span class="d"><span class="l-en">Market board · flows · leverage</span><span class="l-zh">市场看板 · 资金流 · 杠杆</span></span></a>
+        <a href="vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">State · risk · cycle · strategy</span><span class="l-zh">状态 · 风险 · 周期 · 策略</span></span></a>
+        <a href="crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation</span><span class="l-zh">配置</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
+        <a href="vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategy Track Record</span><span class="l-zh">策略历史表现</span><span class="d"><span class="l-en">Cycle and risk-allocation evidence</span><span class="l-zh">周期与风险配置证据</span></span></a>
+      </div>
+    </div>
+    <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span><span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="vector.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
-            <a href="vector_allocation.html"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-            <a href="btc_strategy.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
-          </div>
-        </div>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
@@ -207,51 +207,59 @@
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-feat">
-          <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Central command · all desks fused · 2nd/3rd-order reads</span><span class="l-zh">中枢指挥 · 所有信号台融合 · 二三阶推理</span></span></span></a>
-          <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">In-depth written market & macro reports</span><span class="l-zh">深度市场与宏观研究报告</span></span></span></a>
-          <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Institutional desk research · read & search the PDFs</span><span class="l-zh">机构研究报告 · 在线阅读与全文检索</span></span></span></a>
-          <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal is challenged</span><span class="l-zh">查看每个信号如何经过审议</span></span></span></a>
-        </div>
-        <div class="nav-mega-grid">
-          <div class="nav-mega-col">
-            <div class="nav-mega-h"><span class="l-en">Find Edge</span><span class="l-zh">寻找边际</span></div>
-            <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Catch important themes early</span><span class="l-zh">提前捕捉重要主题</span></span></span></a>
-            <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">See every theme in motion</span><span class="l-zh">查看所有主题的变化</span></span></span></a>
-            <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Find gaps between price and reality</span><span class="l-zh">寻找价格与现实的差距</span></span></span></a>
-            <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Find signals lining up now</span><span class="l-zh">寻找当前共振信号</span></span></span></a>
-          </div>
-          <div class="nav-mega-col">
+        <div class="nav-mega-main">
+          <section class="nav-mega-section">
+            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
+            <div class="nav-mega-item-grid">
+              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
+              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+            </div>
+          </section>
+          <section class="nav-mega-section">
+            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
+            <div class="nav-mega-item-grid">
+              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+            </div>
+          </section>
+          <section class="nav-mega-section">
             <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">Track proven investor positioning</span><span class="l-zh">追踪优秀投资者的仓位</span></span></span></a>
-            <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">See where conviction is building</span><span class="l-zh">观察资金信念正在形成</span></span></span></a>
-            <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand where the cycle sits</span><span class="l-zh">理解周期所处位置</span></span></span></a>
-            <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read the global regime quickly</span><span class="l-zh">快速读取全球宏观环境</span></span></span></a>
-          </div>
-          <div class="nav-mega-col nav-mega-explore">
-            <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-            <a class="nav-mega-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Follow policy and capital rotation</span><span class="l-zh">追踪政策与资本轮动</span></span></span></a>
-            <a class="nav-mega-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Connect signals beyond price</span><span class="l-zh">连接价格之外的信号</span></span></span></a>
-            <a class="nav-mega-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Track event-driven opportunities</span><span class="l-zh">追踪事件驱动机会</span></span></span></a>
-            <div class="nav-drill" data-nav-drill>
-              <button class="nav-mega-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-                <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-                <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Explore markets and sectors</span><span class="l-zh">探索市场与行业周期</span></span></span>
-                <span class="nav-drill-arrow" aria-hidden="true">›</span>
-              </button>
-              <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
-                <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
-                <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
-                <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
-                <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Track countries and regions</span><span class="l-zh">追踪国家与区域</span></span></span></a>
-                <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">U.S. Sector Cycles</span><span class="l-zh">美国行业周期</span></span><span class="d"><span class="l-en">See every sector clock</span><span class="l-zh">查看所有行业周期</span></span></span></a>
-                <a class="nav-mega-item" href="sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">China Sector Cycles</span><span class="l-zh">中国行业周期</span></span><span class="d"><span class="l-en">Read China sector rotation</span><span class="l-zh">查看中国行业轮动</span></span></span></a>
-                <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand the full cycle</span><span class="l-zh">理解完整经济周期</span></span></span></a>
-                <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
-              </div>
+            <div class="nav-mega-item-grid">
+              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+            </div>
+          </section>
+        </div>
+        <aside class="nav-mega-rail">
+          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
+          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <div class="nav-drill" data-nav-drill>
+            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
+              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
+              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            </button>
+            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+              <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
+              <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
+              <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
+              <a class="nav-mega-item" href="country_cycles.html"><span class="nm-ic research-icon research-icon-country-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Country Cycles</span><span class="l-zh">国家周期</span></span><span class="d"><span class="l-en">Track countries and regions</span><span class="l-zh">追踪国家与区域</span></span></span></a>
+              <a class="nav-mega-item" href="sector_cycles.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">U.S. Sector Cycles</span><span class="l-zh">美国行业周期</span></span><span class="d"><span class="l-en">See every sector clock</span><span class="l-zh">查看所有行业周期</span></span></span></a>
+              <a class="nav-mega-item" href="sector_cycles_china.html"><span class="nm-ic research-icon research-icon-sector-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">China Sector Cycles</span><span class="l-zh">中国行业周期</span></span><span class="d"><span class="l-en">Read China sector rotation</span><span class="l-zh">查看中国行业轮动</span></span></span></a>
+              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Understand the full cycle</span><span class="l-zh">理解完整经济周期</span></span></span></a>
+              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-        </div>
+          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+        </aside>
       </div>
     </div>
   </div>
@@ -268,7 +276,6 @@
     <div class="nav-sugg"></div>
   </div>
   <div class="nav-ctrls">
-    <a class="ai-brief-link mastermind-link" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-mastermind" aria-hidden="true"></span><span class="l-en">Mastermind</span><span class="l-zh">操盘大脑</span></a>
     <a class="ai-brief-link terminal-link" href="https://app.mastermind-x.com" target="_blank" rel="noopener"><span class="product-icon product-icon-terminal" aria-hidden="true"></span><span class="l-en">Terminal</span><span class="l-zh">终端</span></a>
     <button class="theme-switch" aria-label="Toggle dark / light mode">
       <span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span>
@@ -324,12 +331,12 @@
       <span class="rel-chip stable"><span class="l-en">Reliability stable</span><span class="l-zh">可靠性稳定</span></span>
       
       
-      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#21</b></span><span class="ftier watch" data-tip-en="Watch score 52.4" data-tip-zh="观察分 52.4"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></div>
+      <span class="chip-fresh"><span class="l-en">leaderboard rank</span><span class="l-zh">榜单排名</span> <b class="num">#21</b></span><span class="ftier watch" data-tip-en="Watch score 57.0" data-tip-zh="观察分 57.0"><span class="l-en">WATCH</span><span class="l-zh">观察</span></span></div>
   </div>
   <div class="metacol">
     <span class="chip-fresh t-amber"><span class="fdot"></span><span class="l-en">13F · quarterly · ~45-day lag</span><span class="l-zh">13F · 季度披露 · 约45天滞后</span></span>
     <span class="chip-fresh"><span class="l-en">filed</span><span class="l-zh">申报日</span> <b class="num">2026-05-15</b> · <span class="l-en">period end</span><span class="l-zh">期末</span> <b class="num">2026-03-31</b></span>
-    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-30 01:19 UTC</span></span>
+    <span class="chip-fresh"><span class="l-en">generated</span><span class="l-zh">生成于</span> <span class="num">2026-07-30 07:03 UTC</span></span>
     <a class="chip-fresh" href="funddata/d1capital.json"><span class="l-en">Data (JSON)</span><span class="l-zh">数据 (JSON)</span></a>
   </div>
 </div>
@@ -369,7 +376,7 @@
   </div>
   <div class="fd-stat">
     <div class="k"><span class="l-en">Hit rate</span><span class="l-zh">胜率</span></div>
-    <div class="v">39%</div>
+    <div class="v">40%</div>
     <div class="s"><span class="l-en">share of buys beating SPY</span><span class="l-zh">跑赢SPY的买入占比</span></div>
   </div>
 </div>
@@ -522,12 +529,12 @@
       <span class="rel-chip stable"><span class="l-en">stable</span><span class="l-zh">稳定</span></span>
       
        · 12 <span class="l-en">scored quarters</span><span class="l-zh">已评分季度</span>
-       · 17% <span class="l-en">positive</span><span class="l-zh">为正</span>
-       · <span class="l-en">recent-4 median</span><span class="l-zh">近4季中位</span> <span class="num r-neg">-8%</span>
-       <span class="l-en">vs all-time</span><span class="l-zh">对全期</span> <span class="num r-neg">-9%</span>
+       · 25% <span class="l-en">positive</span><span class="l-zh">为正</span>
+       · <span class="l-en">recent-4 median</span><span class="l-zh">近4季中位</span> <span class="num r-neg">-7%</span>
+       <span class="l-en">vs all-time</span><span class="l-zh">对全期</span> <span class="num r-neg">-7%</span>
     </p>
     <p class="cnt"><span class="l-en">Median excess by quarter</span><span class="l-zh">各季度中位超额</span>:
-      <span class="spark">▁▁▆▅█▄▃▆▃▄▆▇</span>
+      <span class="spark">▁▁▆▆█▃▂▆▂▄▅▇</span>
       <span class="sub">(<span class="l-en">oldest → newest, shifted by the series minimum so negatives render</span><span class="l-zh">由旧到新，按序列最小值平移以呈现负值</span>)</span>
     </p>
     <table class="sm-t">
@@ -543,7 +550,7 @@
         <tr>
           <td class="l num">2023-06-30</td>
           <td class="num">17</td>
-          <td><b><span class="num r-neg">-30%</span></b></td>
+          <td><b><span class="num r-neg">-27%</span></b></td>
           <td class="num">29%</td>
           <td><span class="num r-pos">+1%</span></td>
         </tr>
@@ -551,7 +558,7 @@
         <tr>
           <td class="l num">2023-09-30</td>
           <td class="num">18</td>
-          <td><b><span class="num r-neg">-33%</span></b></td>
+          <td><b><span class="num r-neg">-30%</span></b></td>
           <td class="num">22%</td>
           <td><span class="num r-pos">+4%</span></td>
         </tr>
@@ -559,7 +566,7 @@
         <tr>
           <td class="l num">2023-12-31</td>
           <td class="num">7</td>
-          <td><b><span class="num r-neg">-4%</span></b></td>
+          <td><b><span class="num r-neg">-1%</span></b></td>
           <td class="num">43%</td>
           <td><span class="num r-pos">+2%</span></td>
         </tr>
@@ -567,7 +574,7 @@
         <tr>
           <td class="l num">2024-03-31</td>
           <td class="num">16</td>
-          <td><b><span class="num r-neg">-7%</span></b></td>
+          <td><b><span class="num r-neg">-2%</span></b></td>
           <td class="num">50%</td>
           <td><span class="num r-pos">+2%</span></td>
         </tr>
@@ -575,7 +582,7 @@
         <tr>
           <td class="l num">2024-06-30</td>
           <td class="num">14</td>
-          <td><b><span class="num r-pos">+7%</span></b></td>
+          <td><b><span class="num r-pos">+10%</span></b></td>
           <td class="num">50%</td>
           <td><span class="num r-pos">+20%</span></td>
         </tr>
@@ -583,7 +590,7 @@
         <tr>
           <td class="l num">2024-09-30</td>
           <td class="num">11</td>
-          <td><b><span class="num r-neg">-11%</span></b></td>
+          <td><b><span class="num r-neg">-15%</span></b></td>
           <td class="num">36%</td>
           <td><span class="num r-pos">+3%</span></td>
         </tr>
@@ -591,7 +598,7 @@
         <tr>
           <td class="l num">2024-12-31</td>
           <td class="num">20</td>
-          <td><b><span class="num r-neg">-19%</span></b></td>
+          <td><b><span class="num r-neg">-21%</span></b></td>
           <td class="num">35%</td>
           <td><span class="num r-pos">+0%</span></td>
         </tr>
@@ -599,8 +606,8 @@
         <tr>
           <td class="l num">2025-03-31</td>
           <td class="num">23</td>
-          <td><b><span class="num r-neg">-0%</span></b></td>
-          <td class="num">44%</td>
+          <td><b><span class="num r-pos">+3%</span></b></td>
+          <td class="num">52%</td>
           <td><span class="num r-pos">+0%</span></td>
         </tr>
       
@@ -615,24 +622,24 @@
         <tr>
           <td class="l num">2025-09-30</td>
           <td class="num">16</td>
-          <td><b><span class="num r-neg">-13%</span></b></td>
-          <td class="num">25%</td>
+          <td><b><span class="num r-neg">-11%</span></b></td>
+          <td class="num">19%</td>
           <td><span class="num r-pos">+1%</span></td>
         </tr>
       
         <tr>
           <td class="l num">2025-12-31</td>
           <td class="num">22</td>
-          <td><b><span class="num r-neg">-4%</span></b></td>
-          <td class="num">36%</td>
+          <td><b><span class="num r-neg">-3%</span></b></td>
+          <td class="num">41%</td>
           <td><span class="num r-neg">-9%</span></td>
         </tr>
       
         <tr>
           <td class="l num">2026-03-31</td>
           <td class="num">21</td>
-          <td><b><span class="num r-pos">+7%</span></b></td>
-          <td class="num">57%</td>
+          <td><b><span class="num r-pos">+8%</span></b></td>
+          <td class="num">62%</td>
           <td><span class="mut">—</span></td>
         </tr>
       
@@ -1026,7 +1033,7 @@
           data-streak="0"
           data-conv="70.0"
           data-sector="Consumer Defensive"
-          data-since="0.1465">
+          data-since="0.1625">
         <td class="rk num">1</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CART.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CART</span></td>
         <td class="l mut">Maplebear Inc</td>
@@ -1044,7 +1051,7 @@
         </td>
         <td class="l sub2">Consumer Defensive</td>
         <td class="l sub">Ads &amp; Media, Grocery</td>
-        <td><span class="num r-pos">+15%</span></td>
+        <td><span class="num r-pos">+16%</span></td>
       </tr>
     
       
@@ -1083,7 +1090,7 @@
           data-streak="3"
           data-conv="84.1"
           data-sector="Technology"
-          data-since="0.2018">
+          data-since="0.2178">
         <td class="rk num">2</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MELI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MELI</span></td>
         <td class="l mut">Mercadolibre Inc</td>
@@ -1101,7 +1108,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">E-Commerce, Marketplaces</td>
-        <td><span class="num r-pos">+20%</span></td>
+        <td><span class="num r-pos">+22%</span></td>
       </tr>
     
       
@@ -1140,7 +1147,7 @@
           data-streak="1"
           data-conv="73.2"
           data-sector="Healthcare"
-          data-since="0.2297">
+          data-since="0.2292">
         <td class="rk num">3</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DHR.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DHR</span></td>
         <td class="l mut">Danaher Corp Del</td>
@@ -1197,7 +1204,7 @@
           data-streak="0"
           data-conv="67.4"
           data-sector="Industrials"
-          data-since="0.1262">
+          data-since="0.088">
         <td class="rk num">4</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/FLS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">FLS</span></td>
         <td class="l mut">Flowserve Corp</td>
@@ -1215,7 +1222,7 @@
         </td>
         <td class="l sub2">Industrials</td>
         <td class="l sub">—</td>
-        <td><span class="num r-pos">+13%</span></td>
+        <td><span class="num r-pos">+9%</span></td>
       </tr>
     
       
@@ -1254,7 +1261,7 @@
           data-streak="0"
           data-conv="66.5"
           data-sector="Consumer Defensive"
-          data-since="0.2294">
+          data-since="0.2555">
         <td class="rk num">5</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/USFD.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">USFD</span></td>
         <td class="l mut">Us Foods Hldg Corp</td>
@@ -1272,7 +1279,7 @@
         </td>
         <td class="l sub2">Consumer Defensive</td>
         <td class="l sub">Processing</td>
-        <td><span class="num r-pos">+23%</span></td>
+        <td><span class="num r-pos">+26%</span></td>
       </tr>
     
       
@@ -1311,7 +1318,7 @@
           data-streak="0"
           data-conv="65.6"
           data-sector="Industrials"
-          data-since="-0.0026">
+          data-since="0.0875">
         <td class="rk num">6</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CLH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CLH</span></td>
         <td class="l mut">Clean Harbors Inc</td>
@@ -1329,7 +1336,7 @@
         </td>
         <td class="l sub2">Industrials</td>
         <td class="l sub">Waste</td>
-        <td><span class="num r-neg">-0%</span></td>
+        <td><span class="num r-pos">+9%</span></td>
       </tr>
     
       
@@ -1368,7 +1375,7 @@
           data-streak="2"
           data-conv="74.8"
           data-sector="Consumer Cyclical"
-          data-since="-0.1283">
+          data-since="-0.1288">
         <td class="rk num">7</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AMZN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AMZN</span></td>
         <td class="l mut">Amazon Com Inc</td>
@@ -1425,7 +1432,7 @@
           data-streak="1"
           data-conv="68.9"
           data-sector="Healthcare"
-          data-since="0.314">
+          data-since="0.3296">
         <td class="rk num">8</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TMO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TMO</span></td>
         <td class="l mut">Thermo Fisher Scientific Inc</td>
@@ -1443,7 +1450,7 @@
         </td>
         <td class="l sub2">Healthcare</td>
         <td class="l sub">Health Care (Equal-Weight)</td>
-        <td><span class="num r-pos">+31%</span></td>
+        <td><span class="num r-pos">+33%</span></td>
       </tr>
     
       
@@ -1482,7 +1489,7 @@
           data-streak="1"
           data-conv="78.0"
           data-sector="Consumer Cyclical"
-          data-since="0.151">
+          data-since="0.1072">
         <td class="rk num">9</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SGI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SGI</span></td>
         <td class="l mut">Somnigroup International Inc</td>
@@ -1500,7 +1507,7 @@
         </td>
         <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">—</td>
-        <td><span class="num r-pos">+15%</span></td>
+        <td><span class="num r-pos">+11%</span></td>
       </tr>
     
       
@@ -1539,7 +1546,7 @@
           data-streak="2"
           data-conv="72.1"
           data-sector="Technology"
-          data-since="-0.087">
+          data-since="-0.0907">
         <td class="rk num">10</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TXN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TXN</span></td>
         <td class="l mut">Texas Instrs Inc</td>
@@ -1596,7 +1603,7 @@
           data-streak="3"
           data-conv="61.2"
           data-sector="Communication Services"
-          data-since="0.2151">
+          data-since="0.2414">
         <td class="rk num">11</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SE</span></td>
         <td class="l mut">Sea Ltd</td>
@@ -1614,7 +1621,7 @@
         </td>
         <td class="l sub2">Communication Services</td>
         <td class="l sub">—</td>
-        <td><span class="num r-pos">+22%</span></td>
+        <td><span class="num r-pos">+24%</span></td>
       </tr>
     
       
@@ -1653,7 +1660,7 @@
           data-streak="1"
           data-conv="50.4"
           data-sector="Communication Services"
-          data-since="0.1259">
+          data-since="0.1384">
         <td class="rk num">12</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/RDDT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">RDDT</span></td>
         <td class="l mut">Reddit Inc</td>
@@ -1671,7 +1678,7 @@
         </td>
         <td class="l sub2">Communication Services</td>
         <td class="l sub">Networks, Advertising, Niche</td>
-        <td><span class="num r-pos">+13%</span></td>
+        <td><span class="num r-pos">+14%</span></td>
       </tr>
     
       
@@ -1710,7 +1717,7 @@
           data-streak="0"
           data-conv="44.5"
           data-sector="Real Estate"
-          data-since="0.1229">
+          data-since="0.1607">
         <td class="rk num">13</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/KRC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">KRC</span></td>
         <td class="l mut">Kilroy Realty Corp</td>
@@ -1728,7 +1735,7 @@
         </td>
         <td class="l sub2">Real Estate</td>
         <td class="l sub">Office</td>
-        <td><span class="num r-pos">+12%</span></td>
+        <td><span class="num r-pos">+16%</span></td>
       </tr>
     
       
@@ -1767,7 +1774,7 @@
           data-streak="0"
           data-conv="43.6"
           data-sector="Industrials"
-          data-since="0.0162">
+          data-since="0.0444">
         <td class="rk num">14</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/KNX.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">KNX</span></td>
         <td class="l mut">Knight-Swift Transn Hldgs In</td>
@@ -1785,7 +1792,7 @@
         </td>
         <td class="l sub2">Industrials</td>
         <td class="l sub">Trucking</td>
-        <td><span class="num r-pos">+2%</span></td>
+        <td><span class="num r-pos">+4%</span></td>
       </tr>
     
       
@@ -1824,7 +1831,7 @@
           data-streak="1"
           data-conv="47.8"
           data-sector="Technology"
-          data-since="-0.105">
+          data-since="-0.1145">
         <td class="rk num">15</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AVGO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AVGO</span></td>
         <td class="l mut">Broadcom Inc</td>
@@ -1842,7 +1849,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">AI Infrastructure, AI Semiconductors, Technology (Equal-Weight)</td>
-        <td><span class="num r-neg">-10%</span></td>
+        <td><span class="num r-neg">-11%</span></td>
       </tr>
     
       
@@ -1881,7 +1888,7 @@
           data-streak="3"
           data-conv="56.9"
           data-sector="Technology"
-          data-since="-0.1269">
+          data-since="-0.1426">
         <td class="rk num">16</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NVDA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NVDA</span></td>
         <td class="l mut">Nvidia Corporation</td>
@@ -1899,7 +1906,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">Magnificent Seven, AI Infrastructure, AI Semiconductors</td>
-        <td><span class="num r-neg">-13%</span></td>
+        <td><span class="num r-neg">-14%</span></td>
       </tr>
     
       
@@ -1938,7 +1945,7 @@
           data-streak="0"
           data-conv="41.0"
           data-sector="Technology"
-          data-since="-0.1675">
+          data-since="-0.1895">
         <td class="rk num">17</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/APP.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">APP</span></td>
         <td class="l mut">Applovin Corp</td>
@@ -1956,7 +1963,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">AI Software &amp; Platforms, AI Agents &amp; Applications, Technology (Equal-Weight)</td>
-        <td><span class="num r-neg">-17%</span></td>
+        <td><span class="num r-neg">-19%</span></td>
       </tr>
     
       
@@ -1995,7 +2002,7 @@
           data-streak="0"
           data-conv="30.1"
           data-sector="Industrials"
-          data-since="0.0002">
+          data-since="-0.0106">
         <td class="rk num">18</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/XPO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">XPO</span></td>
         <td class="l mut">Xpo Inc</td>
@@ -2013,7 +2020,7 @@
         </td>
         <td class="l sub2">Industrials</td>
         <td class="l sub">Trucking</td>
-        <td><span class="num r-pos">+0%</span></td>
+        <td><span class="num r-neg">-1%</span></td>
       </tr>
     
       
@@ -2109,7 +2116,7 @@
           data-streak="0"
           data-conv="28.4"
           data-sector="Communication Services"
-          data-since="-0.0322">
+          data-since="-0.0208">
         <td class="rk num">20</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DIS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DIS</span></td>
         <td class="l mut">Disney Walt Co</td>
@@ -2127,7 +2134,7 @@
         </td>
         <td class="l sub2">Communication Services</td>
         <td class="l sub">Communication Services (Equal-Weight)</td>
-        <td><span class="num r-neg">-3%</span></td>
+        <td><span class="num r-neg">-2%</span></td>
       </tr>
     
       
@@ -2166,7 +2173,7 @@
           data-streak="0"
           data-conv="27.5"
           data-sector="Financial"
-          data-since="0.1638">
+          data-since="0.1627">
         <td class="rk num">21</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SCHW.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SCHW</span></td>
         <td class="l mut">Schwab Charles Corp</td>
@@ -2223,7 +2230,7 @@
           data-streak="1"
           data-conv="21.6"
           data-sector="Technology"
-          data-since="-0.0445">
+          data-since="-0.0464">
         <td class="rk num">22</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CPNG.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CPNG</span></td>
         <td class="l mut">Coupang Inc</td>
@@ -2241,7 +2248,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">E-Commerce, Grocery</td>
-        <td><span class="num r-neg">-4%</span></td>
+        <td><span class="num r-neg">-5%</span></td>
       </tr>
     
       
@@ -2280,7 +2287,7 @@
           data-streak="1"
           data-conv="20.8"
           data-sector="Technology"
-          data-since="0.2259">
+          data-since="0.2288">
         <td class="rk num">23</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/DASH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">DASH</span></td>
         <td class="l mut">Doordash Inc</td>
@@ -2337,7 +2344,7 @@
           data-streak="1"
           data-conv="29.9"
           data-sector="Consumer Cyclical"
-          data-since="-0.0187">
+          data-since="0.0005">
         <td class="rk num">24</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CVNA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CVNA</span></td>
         <td class="l mut">Carvana Co</td>
@@ -2355,7 +2362,7 @@
         </td>
         <td class="l sub2">Consumer Cyclical</td>
         <td class="l sub">Consumer Discretionary (Equal-Weight)</td>
-        <td><span class="num r-neg">-2%</span></td>
+        <td><span class="num r-pos">+0%</span></td>
       </tr>
     
       
@@ -2394,7 +2401,7 @@
           data-streak="1"
           data-conv="29.0"
           data-sector="Financial"
-          data-since="0.1374">
+          data-since="0.133">
         <td class="rk num">25</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/COF.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">COF</span></td>
         <td class="l mut">Capital One Finl Corp</td>
@@ -2412,7 +2419,7 @@
         </td>
         <td class="l sub2">Financial</td>
         <td class="l sub">Payments &amp; Fintech, Financials (Equal-Weight)</td>
-        <td><span class="num r-pos">+14%</span></td>
+        <td><span class="num r-pos">+13%</span></td>
       </tr>
     
       
@@ -2451,7 +2458,7 @@
           data-streak="1"
           data-conv="18.1"
           data-sector="Basic Materials"
-          data-since="0.0425">
+          data-since="0.0328">
         <td class="rk num">26</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MLM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MLM</span></td>
         <td class="l mut">Martin Marietta Matls Inc</td>
@@ -2469,7 +2476,7 @@
         </td>
         <td class="l sub2">Basic Materials</td>
         <td class="l sub">Materials (Equal-Weight)</td>
-        <td><span class="num r-pos">+4%</span></td>
+        <td><span class="num r-pos">+3%</span></td>
       </tr>
     
       
@@ -2508,7 +2515,7 @@
           data-streak="0"
           data-conv="22.2"
           data-sector="Communication Services"
-          data-since="0.1685">
+          data-since="0.2124">
         <td class="rk num">27</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPOT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SPOT</span></td>
         <td class="l mut">Spotify Technology S A</td>
@@ -2526,7 +2533,7 @@
         </td>
         <td class="l sub2">Communication Services</td>
         <td class="l sub">Music</td>
-        <td><span class="num r-pos">+17%</span></td>
+        <td><span class="num r-pos">+21%</span></td>
       </tr>
     
       
@@ -2622,7 +2629,7 @@
           data-streak="0"
           data-conv="20.5"
           data-sector="Basic Materials"
-          data-since="0.1813">
+          data-since="0.162">
         <td class="rk num">29</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SHW.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SHW</span></td>
         <td class="l mut">Sherwin Williams Co</td>
@@ -2640,7 +2647,7 @@
         </td>
         <td class="l sub2">Basic Materials</td>
         <td class="l sub">Housing Chain, Materials (Equal-Weight)</td>
-        <td><span class="num r-pos">+18%</span></td>
+        <td><span class="num r-pos">+16%</span></td>
       </tr>
     
       
@@ -2679,7 +2686,7 @@
           data-streak="1"
           data-conv="24.6"
           data-sector="Communication Services"
-          data-since="-0.1607">
+          data-since="-0.1378">
         <td class="rk num">30</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/GOOGL.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">GOOGL</span></td>
         <td class="l mut">Alphabet Inc</td>
@@ -2697,7 +2704,7 @@
         </td>
         <td class="l sub2">Communication Services</td>
         <td class="l sub">Magnificent Seven, AI Software &amp; Platforms, Quantum Computing</td>
-        <td><span class="num r-neg">-16%</span></td>
+        <td><span class="num r-neg">-14%</span></td>
       </tr>
     
       
@@ -2736,7 +2743,7 @@
           data-streak="0"
           data-conv="18.8"
           data-sector="Financial"
-          data-since="-0.0774">
+          data-since="-0.0984">
         <td class="rk num">31</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/APO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">APO</span></td>
         <td class="l mut">Apollo Global Mgmt Inc</td>
@@ -2754,7 +2761,7 @@
         </td>
         <td class="l sub2">Financial</td>
         <td class="l sub">Financials (Equal-Weight)</td>
-        <td><span class="num r-neg">-8%</span></td>
+        <td><span class="num r-neg">-10%</span></td>
       </tr>
     
       
@@ -2793,7 +2800,7 @@
           data-streak="1"
           data-conv="12.9"
           data-sector="Technology"
-          data-since="-0.0298">
+          data-since="-0.0581">
         <td class="rk num">32</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TSM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TSM</span></td>
         <td class="l mut">Taiwan Semiconductor Manufac</td>
@@ -2811,7 +2818,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">Compute, Compute, Foundries</td>
-        <td><span class="num r-neg">-3%</span></td>
+        <td><span class="num r-neg">-6%</span></td>
       </tr>
     
       
@@ -2850,7 +2857,7 @@
           data-streak="1"
           data-conv="22.0"
           data-sector="Communication Services"
-          data-since="0.0688">
+          data-since="0.1053">
         <td class="rk num">33</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LYV.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LYV</span></td>
         <td class="l mut">Live Nation Entertainment In</td>
@@ -2868,7 +2875,7 @@
         </td>
         <td class="l sub2">Communication Services</td>
         <td class="l sub">Travel &amp; Experiences, Communication Services (Equal-Weight)</td>
-        <td><span class="num r-pos">+7%</span></td>
+        <td><span class="num r-pos">+11%</span></td>
       </tr>
     
       
@@ -2907,7 +2914,7 @@
           data-streak="1"
           data-conv="21.1"
           data-sector="Technology"
-          data-since="-0.1236">
+          data-since="-0.1381">
         <td class="rk num">34</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ADI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ADI</span></td>
         <td class="l mut">Analog Devices Inc</td>
@@ -2925,7 +2932,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">Non-AI Tech &amp; Hardware, Technology (Equal-Weight)</td>
-        <td><span class="num r-neg">-12%</span></td>
+        <td><span class="num r-neg">-14%</span></td>
       </tr>
     
       
@@ -2964,7 +2971,7 @@
           data-streak="1"
           data-conv="20.2"
           data-sector="Financial"
-          data-since="0.0977">
+          data-since="0.0783">
         <td class="rk num">35</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AFRM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AFRM</span></td>
         <td class="l mut">Affirm Hldgs Inc</td>
@@ -2982,7 +2989,7 @@
         </td>
         <td class="l sub2">Financial</td>
         <td class="l sub">Payments &amp; Fintech</td>
-        <td><span class="num r-pos">+10%</span></td>
+        <td><span class="num r-pos">+8%</span></td>
       </tr>
     
       
@@ -3135,7 +3142,7 @@
           data-streak="0"
           data-conv="12.6"
           data-sector="Technology"
-          data-since="0.0009">
+          data-since="0.0496">
         <td class="rk num">38</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ADSK.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ADSK</span></td>
         <td class="l mut">Autodesk Inc</td>
@@ -3153,7 +3160,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">Technology (Equal-Weight)</td>
-        <td><span class="num r-pos">+0%</span></td>
+        <td><span class="num r-pos">+5%</span></td>
       </tr>
     
       
@@ -3192,7 +3199,7 @@
           data-streak="1"
           data-conv="6.8"
           data-sector="Technology"
-          data-since="0.1697">
+          data-since="0.1928">
         <td class="rk num">39</td>
         <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/U.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">U</span></td>
         <td class="l mut">Unity Software Inc</td>
@@ -3210,7 +3217,7 @@
         </td>
         <td class="l sub2">Technology</td>
         <td class="l sub">Gaming, Design, Software</td>
-        <td><span class="num r-pos">+17%</span></td>
+        <td><span class="num r-pos">+19%</span></td>
       </tr>
     
       
@@ -3299,7 +3306,7 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MELI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MELI</span> <span class="act-pill add">add</span></td>
           <td>5.8%</td>
-          <td><span class="num r-pos">+20%</span></td>
+          <td><span class="num r-pos">+22%</span></td>
         </tr>
       
         <tr>
@@ -3317,13 +3324,13 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TMO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TMO</span> <span class="act-pill new">new</span></td>
           <td>3.2%</td>
-          <td><span class="num r-pos">+31%</span></td>
+          <td><span class="num r-pos">+33%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SGI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SGI</span> <span class="act-pill new">new</span></td>
           <td>3.1%</td>
-          <td><span class="num r-pos">+15%</span></td>
+          <td><span class="num r-pos">+11%</span></td>
         </tr>
       
         <tr>
@@ -3335,31 +3342,31 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SE.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SE</span> <span class="act-pill add">add</span></td>
           <td>3.0%</td>
-          <td><span class="num r-pos">+22%</span></td>
+          <td><span class="num r-pos">+24%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/RDDT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">RDDT</span> <span class="act-pill add">add</span></td>
           <td>3.0%</td>
-          <td><span class="num r-pos">+13%</span></td>
+          <td><span class="num r-pos">+14%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AVGO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AVGO</span> <span class="act-pill add">add</span></td>
           <td>2.7%</td>
-          <td><span class="num r-neg">-10%</span></td>
+          <td><span class="num r-neg">-11%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NVDA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NVDA</span> <span class="act-pill add">add</span></td>
           <td>2.4%</td>
-          <td><span class="num r-neg">-13%</span></td>
+          <td><span class="num r-neg">-14%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CPNG.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CPNG</span> <span class="act-pill new">new</span></td>
           <td>1.9%</td>
-          <td><span class="num r-neg">-4%</span></td>
+          <td><span class="num r-neg">-5%</span></td>
         </tr>
       
         <tr>
@@ -3371,19 +3378,19 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CVNA.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CVNA</span> <span class="act-pill new">new</span></td>
           <td>1.9%</td>
-          <td><span class="num r-neg">-2%</span></td>
+          <td><span class="num r-pos">+0%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/COF.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">COF</span> <span class="act-pill add">add</span></td>
           <td>1.8%</td>
-          <td><span class="num r-pos">+14%</span></td>
+          <td><span class="num r-pos">+13%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/MLM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">MLM</span> <span class="act-pill new">new</span></td>
           <td>1.7%</td>
-          <td><span class="num r-pos">+4%</span></td>
+          <td><span class="num r-pos">+3%</span></td>
         </tr>
       
         <tr>
@@ -3395,31 +3402,31 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/GOOGL.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">GOOGL</span> <span class="act-pill new">new</span></td>
           <td>1.2%</td>
-          <td><span class="num r-neg">-16%</span></td>
+          <td><span class="num r-neg">-14%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/TSM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">TSM</span> <span class="act-pill new">new</span></td>
           <td>1.0%</td>
-          <td><span class="num r-neg">-3%</span></td>
+          <td><span class="num r-neg">-6%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LYV.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LYV</span> <span class="act-pill new">new</span></td>
           <td>0.9%</td>
-          <td><span class="num r-pos">+7%</span></td>
+          <td><span class="num r-pos">+11%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ADI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ADI</span> <span class="act-pill new">new</span></td>
           <td>0.8%</td>
-          <td><span class="num r-neg">-12%</span></td>
+          <td><span class="num r-neg">-14%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AFRM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AFRM</span> <span class="act-pill add">add</span></td>
           <td>0.8%</td>
-          <td><span class="num r-pos">+10%</span></td>
+          <td><span class="num r-pos">+8%</span></td>
         </tr>
       
         <tr>
@@ -3437,7 +3444,7 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/U.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">U</span> <span class="act-pill new">new</span></td>
           <td>0.6%</td>
-          <td><span class="num r-pos">+17%</span></td>
+          <td><span class="num r-pos">+19%</span></td>
         </tr>
       
       </tbody></table>
@@ -3452,25 +3459,25 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/FLS.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">FLS</span> <span class="act-pill trim">trim</span></td>
           <td class="sub">-23%</td>
-          <td><span class="num r-pos">+13%</span></td>
+          <td><span class="num r-pos">+9%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CLH.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CLH</span> <span class="act-pill trim">trim</span></td>
           <td class="sub">-52%</td>
-          <td><span class="num r-neg">-0%</span></td>
+          <td><span class="num r-pos">+9%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/KNX.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">KNX</span> <span class="act-pill trim">trim</span></td>
           <td class="sub">-29%</td>
-          <td><span class="num r-pos">+2%</span></td>
+          <td><span class="num r-pos">+4%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/XPO.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">XPO</span> <span class="act-pill trim">trim</span></td>
           <td class="sub">-37%</td>
-          <td><span class="num r-pos">+0%</span></td>
+          <td><span class="num r-neg">-1%</span></td>
         </tr>
       
         <tr>
@@ -3482,80 +3489,80 @@
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SPOT.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SPOT</span> <span class="act-pill trim">trim</span></td>
           <td class="sub">-14%</td>
-          <td><span class="num r-pos">+17%</span></td>
+          <td><span class="num r-pos">+21%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/SHW.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">SHW</span> <span class="act-pill trim">trim</span></td>
           <td class="sub">-51%</td>
-          <td><span class="num r-pos">+18%</span></td>
+          <td><span class="num r-pos">+16%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ADSK.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ADSK</span> <span class="act-pill trim">trim</span></td>
           <td class="sub">-32%</td>
-          <td><span class="num r-pos">+0%</span></td>
+          <td><span class="num r-pos">+5%</span></td>
         </tr>
       
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/AEP.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">AEP</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-pos">+6%</span></td>
+          <td><span class="num r-pos">+5%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ANET.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ANET</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-pos">+19%</span></td>
+          <td><span class="num r-pos">+13%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/APG.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">APG</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-neg">-9%</span></td>
+          <td><span class="num r-neg">-10%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/BAC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">BAC</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-pos">+26%</span></td>
+          <td><span class="num r-pos">+25%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/CNM.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">CNM</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-neg">-6%</span></td>
+          <td><span class="num r-neg">-8%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/ENTG.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">ENTG</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-neg">-11%</span></td>
+          <td><span class="num r-neg">-18%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/GEHC.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">GEHC</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-pos">+5%</span></td>
+          <td><span class="num r-pos">+20%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/LIN.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">LIN</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-pos">+1%</span></td>
+          <td><span class="num r-pos">+3%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/META.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">META</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-neg">-4%</span></td>
+          <td><span class="num r-neg">-3%</span></td>
         </tr>
       
         <tr>
           <td class="l"><img class="tklogo" src="https://cdn.jsdelivr.net/gh/nvstly/icons@main/ticker_icons/NI.png" alt="" loading="eager" onerror="this.style.display='none'"> <span class="tk">NI</span> <span class="act-pill exit">exit</span></td>
           <td class="sub">-100%</td>
-          <td><span class="num r-neg">-1%</span></td>
+          <td><span class="num r-neg">-2%</span></td>
         </tr>
       
       
@@ -3643,6 +3650,6 @@
 })();
 </script>
 
-<script src="theme.js?v=4e99fde4" defer></script>
+<script src="theme.js?v=8bf865d2" defer></script>
 </body>
 </html>

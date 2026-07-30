@@ -10,7 +10,8 @@ Bonuses (rank-order only, additive on top of the depth rank):
   -0.5×extension_score  (anti-chase penalty)
 
 Executability screens (applied before ranking, not signals):
-  - drop fillable == False
+  - require fillable == True
+  - require chase_veto == False
   - drop is_st == True
 
 Chips (display context, never gates):
@@ -29,13 +30,14 @@ Output schema (site/factordata/china_reversion_desk.json):
 Max 12 rows.
 
 CNPL-R1: authority = "display_only" on every row.
-CNPL-R4: fillable == False excluded (executability screen).
+CNPL-R4: observed fillability and a clear chase screen are required.
 CN kill law: no momentum ranks, no subsector-state gates, no northbound.
 "validated" word: NOT used anywhere in this module (CI-enforced).
 """
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 import pandas as pd
@@ -43,6 +45,7 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 _MAX_ROWS = 12
+DEFINITION = "cn_f2_reversion_v2_exact_exec_star_stack"
 
 
 # --------------------------------------------------------------------------- #
@@ -75,8 +78,10 @@ def _compute_score(row: "pd.Series[Any]") -> float:
         bonus += 0.5
     if bool(row.get("coiled")):
         bonus += 0.25
-    elif bool(row.get("star")):
-        bonus += 0.15
+        # STAR is defined by engine.coiled as COILED plus bullish divergence;
+        # its 0.15 is the marginal bonus on top of the 0.25 COILED base.
+        if bool(row.get("star")):
+            bonus += 0.15
 
     # Anti-chase penalty
     ext_score = row.get("extension_score")
@@ -96,6 +101,20 @@ def _is_null(v: Any) -> bool:
         return False
 
 
+def _json_scalar(value: Any) -> Any:
+    """Return a strict-JSON scalar, preserving unknown observations as null."""
+    if _is_null(value):
+        return None
+    if hasattr(value, "item"):
+        try:
+            value = value.item()
+        except Exception:
+            pass
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
 def _bonus_dict(row: "pd.Series[Any]") -> dict:
     """Return a dict describing applied bonuses (for the 'bonuses' field in output)."""
     out: dict = {}
@@ -103,8 +122,8 @@ def _bonus_dict(row: "pd.Series[Any]") -> dict:
         out["washout_2w"] = 0.5
     if bool(row.get("coiled")):
         out["coiled"] = 0.25
-    elif bool(row.get("star")):
-        out["star"] = 0.15
+        if bool(row.get("star")):
+            out["star"] = 0.15
     ext_score = row.get("extension_score")
     if ext_score is not None and not _is_null(ext_score) and float(ext_score) > 0:
         out["extension_penalty"] = round(-0.5 * float(ext_score), 4)
@@ -123,7 +142,7 @@ def _chips(row: "pd.Series[Any]") -> dict:
     ):
         v = row.get(key)
         if not _is_null(v):
-            chips[key] = v
+            chips[key] = _json_scalar(v)
     return chips
 
 
@@ -183,9 +202,15 @@ def _compute(
     if df.empty:
         return []
 
-    #    Drop fillable == False
-    if "fillable" in df.columns:
-        df = df[df["fillable"].ne(False).fillna(True)]
+    #    Flagship-2 is an actionable mirror: require observed same-session
+    #    fillability and reject a live chase veto. Unknown execution evidence
+    #    cannot become a pick.
+    if "fillable" not in df.columns:
+        return []
+    df = df[df["fillable"].eq(True).fillna(False)]
+    if "chase_veto" not in df.columns:
+        return []
+    df = df[df["chase_veto"].eq(False).fillna(False)]
     if df.empty:
         return []
 
@@ -209,21 +234,21 @@ def _compute(
         rev_rank = row.get("rev_3m_sector_rank")
         sector_n = row.get("rev_sector_n")
         rows.append({
-            "ticker": ticker,
-            "name": row.get("name"),
-            "name_zh": row.get("name_zh"),
+            "ticker": str(ticker),
+            "name": _json_scalar(row.get("name")),
+            "name_zh": _json_scalar(row.get("name_zh")),
             "rank": rank,
             "score": round(float(row["_score"]), 4),
             "rev_depth": {
-                "rev_z": row.get("rev_z"),
-                "rev_3m": row.get("rev_3m"),
+                "rev_z": _json_scalar(row.get("rev_z")),
+                "rev_3m": _json_scalar(row.get("rev_3m")),
                 "sector_rank": int(rev_rank) if not _is_null(rev_rank) else None,
                 "sector_n": int(sector_n) if not _is_null(sector_n) else None,
             },
             "bonuses": _bonus_dict(row),
             "chips": _chips(row),
-            "close": row.get("close"),
-            "sector": row.get("sector"),
+            "close": _json_scalar(row.get("close")),
+            "sector": _json_scalar(row.get("sector")),
             "authority": "display_only",
         })
     return rows
@@ -251,6 +276,7 @@ def build_reversion_desk_artifact(
         rows = []
     return {
         "schema": "china_reversion_desk.v1",
+        "definition": DEFINITION,
         "as_of": as_of,
         "rows": rows,
         "n_rows": len(rows),

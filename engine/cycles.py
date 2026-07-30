@@ -284,29 +284,48 @@ def _w_fri_completed(daily: pd.Series) -> pd.Series:
     return b[b.index <= last_obs]
 
 
+def _me_completed(daily: pd.Series) -> pd.Series:
+    """Return the month-end (ME) resampled series keeping ONLY completed monthly bars.
+
+    SAME DEFECT CLASS AS R3b, one timeframe over (audit 2026-07-29): the W leg was PIT-gated
+    while M kept resampling the LIVE partial month, so under completed_only=True the monthly
+    MACD/RSI state was still computed from an in-progress bar — the exact leak R3b closed for
+    W. A "ME" label is the calendar month-end; when that label is AFTER the last observed daily
+    date the bucket is still filling, so drop it. Expect the trend leg to shift: that is the
+    correction, not a regression.
+    """
+    last_obs = daily.index.max()
+    b = daily.resample("ME").last().dropna()
+    return b[b.index <= last_obs]
+
+
 def mtf_snapshot(close: pd.Series, kind: str = "equity",
                  completed_only: bool = False) -> dict:
     """Daily / 3-day / weekly indicator states. The 3-day bar respects the
     asset's trading calendar (business days for equities, calendar days for
     24/7 crypto).
 
-    completed_only=True: the W timeframe uses ONLY completed weekly bars
-    (IHM-R1 PIT gate — drops the trailing in-progress W-FRI bucket).
+    completed_only=True: the W *and* M timeframes use ONLY completed bars
+    (IHM-R1 PIT gate — drops the trailing in-progress W-FRI / month-end bucket).
     Default False preserves existing behaviour for all callers.
     Only market_state.trend opts in; every other caller is byte-identical.
 
-    W availability gate: IDENTICAL to the default path — gated on
-    len(daily) > 300, not on len(w_series).  The ONLY difference between
-    the two paths is which weekly series feeds _tf_state (completed vs live
-    partial).  A medium-history index (<= 300 daily bars) gets {} for W
-    whether completed_only is True or False.
+    W/M availability gate: IDENTICAL to the default path — gated on
+    len(daily) > 300 (W) / > 900 (M), never on len(resampled).  The ONLY
+    difference between the two paths is which resampled series feeds
+    _tf_state (completed vs live partial).  A medium-history index
+    (<= 300 daily bars) gets {} for W whether completed_only is True or
+    False; same for M under 900.
     """
     daily = close.dropna()
     tf3 = _preset(kind)["tf3"]
     if completed_only:
         w_state = _tf_state(_w_fri_completed(daily)) if len(daily) > 300 else {}
+        # M gets the same PIT gate as W (audit 2026-07-29) — see _me_completed.
+        m_state = _tf_state(_me_completed(daily)) if len(daily) > 900 else {}
     else:
         w_state = _tf_state(daily.resample("W-FRI").last().dropna()) if len(daily) > 300 else {}
+        m_state = _tf_state(daily.resample("ME").last().dropna()) if len(daily) > 900 else {}
     out = {
         "D": _tf_state(daily),
         "3D": _tf_state(daily.resample(tf3).last().dropna()) if len(daily) > 150 else {},
@@ -314,7 +333,7 @@ def mtf_snapshot(close: pd.Series, kind: str = "equity",
         # Monthly — for the multi-timeframe Bottom-Confidence confluence. Needs
         # ~40 month-end bars for the MACD/RSI math (_tf_state bows out under 40),
         # i.e. ~900 trading days; thin-history names simply omit it.
-        "M": _tf_state(daily.resample("ME").last().dropna()) if len(daily) > 900 else {},
+        "M": m_state,
     }
     # The MACD cross ETA is computed in *bars of each timeframe*; a 3-day or
     # weekly bar is not one day. Surface it in trading days so the "d to cross"

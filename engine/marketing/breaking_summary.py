@@ -387,9 +387,22 @@ def _llm_summarize(item: dict, cfg: dict, wire: dict | None = None) -> str | Non
 
         max_tokens = int(llm_cfg.get("max_tokens", 800))
 
+        # CHATGPT-FIRST (operator directive 2026-07-29, recorded on
+        # config/marketing.yml copywriter.llm): the attached Codex account leads,
+        # Claude follows as the balanced fallback drawn through the key_pool load
+        # balancer. Sol — the breaking rewriter produces the published sentence.
         from engine import llm_auth  # noqa: PLC0415
         providers = llm_auth.build_providers(
-            {"usage_lane": "marketing-breaking"}, opus_model=model_id)
+            {
+                "usage_lane": llm_cfg.get("usage_lane", "marketing-breaking"),
+                "oauth_pool_lane": llm_cfg.get("oauth_pool_lane", "marketing-breaking"),
+                "provider_order": llm_cfg.get("provider_order")
+                or ["codex", "oauth", "anthropic", "deepseek"],
+                "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
+                "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
+            },
+            opus_model=model_id,
+        )
         if not providers:
             return None
 

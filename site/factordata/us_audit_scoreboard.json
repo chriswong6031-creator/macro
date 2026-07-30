@@ -1,6 +1,6 @@
 {
   "schema": "standout_audit.scoreboard.v1",
-  "as_of": "2026-07-29",
+  "as_of": "2026-07-30",
   "note": "CIs are cluster-unit (entry-date-collapsed) and descriptive only. No significance claims. Cells with effective_n<3 print state='ACCRUING'.",
   "timing_basis": [
     "board_tenure"
@@ -12,7 +12,7 @@
   "coverage_monitor": {
     "frozen_baseline": null,
     "frozen_baseline_note": "Not yet frozen. Will be anchored at first sensor-maturity date.",
-    "trailing_4wk_buy_count": 389,
+    "trailing_4wk_buy_count": 357,
     "weekly_history": [
       {
         "week": "2026-06-15/2026-06-21",
@@ -36,7 +36,7 @@
       },
       {
         "week": "2026-07-20/2026-07-26",
-        "unique_tickers": 45
+        "unique_tickers": 68
       }
     ],
     "data_gap": null

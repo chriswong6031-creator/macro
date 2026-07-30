@@ -1,17 +1,17 @@
 {
-"applied": "2026-07-22T02:02:11.648968+00:00",
-"rows_flagged": 336,
-"tickers_flagged": 187,
+"applied": "2026-07-30T02:04:52.331838+00:00",
+"rows_flagged": 353,
+"tickers_flagged": 199,
 "by_flag": {
 "placeholder": 50,
-"pre_public": 228,
-"pre_public_tiny": 5,
+"pre_public": 242,
+"pre_public_tiny": 7,
 "unit_extreme": 7,
 "unit_level": 8,
-"unit_scale": 38
+"unit_scale": 39
 },
-"repaired": 79,
-"nulled": 257,
+"repaired": 80,
+"nulled": 273,
 "rows": [
 {
 "ticker": "AAP",
@@ -294,6 +294,14 @@
 "note": "x1e3 vs right flank"
 },
 {
+"ticker": "ARAI",
+"fy": 2024,
+"flag": "pre_public",
+"shares_raw": 29120905.0,
+"repair": null,
+"note": "period_end<2025-04-01"
+},
+{
 "ticker": "ASTH",
 "fy": 2023,
 "flag": "unit_level",
@@ -308,6 +316,14 @@
 "shares_raw": 10032000.0,
 "repair": null,
 "note": "period_end<2014-01-30"
+},
+{
+"ticker": "ATYR",
+"fy": 2014,
+"flag": "pre_public",
+"shares_raw": 909880.0,
+"repair": null,
+"note": "period_end<2015-04-01"
 },
 {
 "ticker": "AVTR",
@@ -508,6 +524,14 @@
 "shares_raw": 513167094.0,
 "repair": null,
 "note": "period_end<2013-09-01"
+},
+{
+"ticker": "BYND",
+"fy": 2018,
+"flag": "pre_public",
+"shares_raw": 6951350.0,
+"repair": null,
+"note": "period_end<2019-04-01"
 },
 {
 "ticker": "CABO",
@@ -1174,6 +1198,14 @@
 "note": "period_end<2016-09-01"
 },
 {
+"ticker": "GOSS",
+"fy": 2018,
+"flag": "pre_public",
+"shares_raw": 8051418.0,
+"repair": null,
+"note": "period_end<2019-01-02"
+},
+{
 "ticker": "GPOR",
 "fy": 2010,
 "flag": "pre_public",
@@ -1382,6 +1414,14 @@
 "note": "period_end<2021-06-01"
 },
 {
+"ticker": "HUMA",
+"fy": 2020,
+"flag": "pre_public_tiny",
+"shares_raw": 5822396.0,
+"repair": null,
+"note": "leading segment <2e+07"
+},
+{
 "ticker": "INSP",
 "fy": 2017,
 "flag": "pre_public",
@@ -1478,12 +1518,68 @@
 "note": "period_end<2023-05-02"
 },
 {
+"ticker": "KORE",
+"fy": 2020,
+"flag": "pre_public",
+"shares_raw": 30281520.0,
+"repair": null,
+"note": "period_end<2026-06-01"
+},
+{
+"ticker": "KORE",
+"fy": 2021,
+"flag": "pre_public",
+"shares_raw": 72027743.0,
+"repair": null,
+"note": "period_end<2026-06-01"
+},
+{
+"ticker": "KORE",
+"fy": 2022,
+"flag": "pre_public",
+"shares_raw": 76292241.0,
+"repair": null,
+"note": "period_end<2026-06-01"
+},
+{
+"ticker": "KORE",
+"fy": 2023,
+"flag": "pre_public",
+"shares_raw": 16476530.0,
+"repair": null,
+"note": "period_end<2026-06-01"
+},
+{
+"ticker": "KORE",
+"fy": 2024,
+"flag": "pre_public",
+"shares_raw": 17008356.0,
+"repair": null,
+"note": "period_end<2026-06-01"
+},
+{
+"ticker": "KORE",
+"fy": 2025,
+"flag": "pre_public",
+"shares_raw": 17540384.0,
+"repair": null,
+"note": "period_end<2026-06-01"
+},
+{
 "ticker": "KVUE",
 "fy": 2022,
 "flag": "pre_public",
 "shares_raw": 1915000000.0,
 "repair": null,
 "note": "period_end<2023-04-01"
+},
+{
+"ticker": "LAB",
+"fy": 2010,
+"flag": "pre_public",
+"shares_raw": 1937000.0,
+"repair": null,
+"note": "period_end<2011-01-02"
 },
 {
 "ticker": "LIF",
@@ -1630,6 +1726,30 @@
 "note": "period_end<2012-01-31"
 },
 {
+"ticker": "MVIS",
+"fy": 2020,
+"flag": "unit_scale",
+"shares_raw": 152926.0,
+"repair": 152926000.0,
+"note": "x1e3"
+},
+{
+"ticker": "MYO",
+"fy": 2016,
+"flag": "pre_public",
+"shares_raw": 1124080.0,
+"repair": null,
+"note": "period_end<2017-05-02"
+},
+{
+"ticker": "MYPS",
+"fy": 2020,
+"flag": "pre_public_tiny",
+"shares_raw": 3574009.0,
+"repair": null,
+"note": "leading segment <2e+07"
+},
+{
 "ticker": "NATL",
 "fy": 2022,
 "flag": "pre_public",
@@ -1692,6 +1812,14 @@
 "shares_raw": 100.0,
 "repair": null,
 "note": "period_end<2019-08-02"
+},
+{
+"ticker": "NXXT",
+"fy": 2020,
+"flag": "pre_public",
+"shares_raw": 17199912.0,
+"repair": null,
+"note": "period_end<2021-08-02"
 },
 {
 "ticker": "OGE",
@@ -2452,6 +2580,14 @@
 "shares_raw": 100.0,
 "repair": null,
 "note": "no clean flank snap"
+},
+{
+"ticker": "VVX",
+"fy": 2013,
+"flag": "pre_public",
+"shares_raw": 10484974.0,
+"repair": null,
+"note": "period_end<2014-08-02"
 },
 {
 "ticker": "WAT",

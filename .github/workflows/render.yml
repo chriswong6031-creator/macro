@@ -405,6 +405,7 @@ jobs:
           }
 
           hub() { [ -n "$HUB_DONE" ] && return 0; HUB_DONE=1; run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
+          crypto() { [ -n "$CRYPTO_DONE" ] && return 0; CRYPTO_DONE=1; run_py "crypto intelligence cockpit (build_crypto)" scripts.build_crypto; }
           intl() { [ -n "$INTL_DONE" ] && return 0; INTL_DONE=1; run_py "international macro dashboard (build_intl)" scripts.build_intl; }
 
           canada() { [ -n "$CANADA_DONE" ] && return 0; CANADA_DONE=1; export SKIP_CANADA_HOOK=1; run_py "canada / S&P-TSX dashboard (build_canada)" scripts.build_canada; }
@@ -585,19 +586,19 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; intl; canada; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; us_pages; libs; sits; csits ;;
+              spine; intl; canada; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; crypto; us_pages; libs; sits; csits ;;
             macro)
-              spine; hub; us_pages; central ;;
+              spine; hub; crypto; us_pages; central ;;
             intl)
               intl ;;
             sits)
               sits ;;
             china)
-              run_py "build china a-share dashboard (build_china)" scripts.build_china; csits; hub ;;
+              run_py "build china a-share dashboard (build_china)" scripts.build_china; csits; hub; crypto ;;
             hk)
-              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
+              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub; crypto ;;
             canada)
-              canada; hub ;;
+              canada; hub; crypto ;;
             markets)
               run_py "build commodity vector (build_commodities)"         scripts.build_commodities
               run_py "build strategic reserves (build_spr)"               scripts.build_spr
@@ -607,7 +608,7 @@ jobs:
               run_py "rate & inflation transmission (build_transmission)" scripts.build_transmission
               run_py "discovery leaderboard (build_discovery)"            scripts.build_discovery
               run_py "build macro-context page (build_macro_context)"     scripts.build_macro_context
-              hub ;;
+              hub; crypto ;;
             gex)
               run_py "GEX magnets board (build_gex_board)"      scripts.build_gex_board
               run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
@@ -618,7 +619,7 @@ jobs:
               # flowleaders BEFORE optionscmd: options.html re-serialises
               # site/flowleaders/leaders.json (M10). See the OIP E8 note above the step.
               flowleaders; optionscmd
-              hub ;;
+              hub; crypto ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
               run_py "news suite (build_news)"              scripts.build_news
@@ -626,7 +627,7 @@ jobs:
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
-              central; hub ;;
+              central; hub; crypto ;;
             *)
               echo "::error::unknown scope '$SC'"; exit 1 ;;
           esac

@@ -21,5 +21,5 @@ def test_full_render_includes_international_dashboard():
     # this assertion only pins that intl/canada/hub/sits/csits kept their places around it.
     assert (
         "spine; intl; canada; band; central; flowleaders; optionscmd; leaderradar; "
-        "foresightpage; hub; us_pages; libs; sits; csits ;;"
+        "foresightpage; hub; crypto; us_pages; libs; sits; csits ;;"
     ) in WORKFLOW

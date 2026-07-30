@@ -1364,6 +1364,31 @@ copywriter:
     max_posts_per_run: 60
     daily_token_cap: 300000
 
+    # ── CHATGPT-FIRST ROUTING (operator directive 2026-07-29) ────────────────
+    # "The marketing content LLM lanes default to the attached ChatGPT/Codex
+    # account. Claude subscription tokens are reserved for website-building
+    # sessions." So codex leads the waterfall on every marketing writing lane and
+    # Claude becomes the BALANCED FALLBACK: the oauth rung below is drawn through
+    # the key_pool load balancer (oauth_pool_lane), not a single pinned token, so
+    # a Claude fallback night still spreads across the pool instead of burning one
+    # key. anthropic + deepseek stay last as the metered floor.
+    #
+    # TIER RULING (fixed, do not relitigate): Sol writes, Terra critiques and
+    # wires, Luna never touches user-facing words.
+    #   gpt-5.6-sol   -> copywriter, breaking, copy review, weekend levels
+    #   gpt-5.6-terra -> cold-read critic, hot-tape wire, reply voice
+    #   gpt-5.6-luna  -> NOTHING here. No marketing lane may route to it.
+    # engine/codex_provider.py translate_model() passes these ids through
+    # verbatim, so the source model named here is the tier that runs.
+    #
+    # A host without the Codex CLI plus an attached login (every ubuntu runner)
+    # omits the codex rung entirely and the lane degrades to the oauth pool. That
+    # is the designed path, not a failure: tests pin it.
+    provider_order: [codex, oauth, anthropic, deepseek]
+    codex_source_model: "gpt-5.6-sol"
+    codex_reasoning_effort: "medium"
+    oauth_pool_lane: "marketing-copywriter"
+
     # ── THE NO-FALLBACK LAW (Content Studio LLM-first W1, 2026-07-29) ────────
     # research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §0
     # gate 1. Operator directive after reading the 2026-07-29 outbox batch
@@ -1406,6 +1431,13 @@ copywriter:
     critic:
       enabled: true
       max_tokens: 200
+      # Terra, not Sol: the critic reads and judges, it never writes the post
+      # (de-escalation only). Its own waterfall is codex-first for the same
+      # operator reason as the writer above.
+      provider_order: [codex, oauth, anthropic, deepseek]
+      codex_source_model: "gpt-5.6-terra"
+      codex_reasoning_effort: "medium"
+      oauth_pool_lane: "marketing-critic"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Selection layer — what the Content Studio is ALLOWED to plan tonight
@@ -1584,6 +1616,12 @@ breaking:
     enabled: true
     model_key: "marketing_copy"
     max_tokens: 800
+    # ChatGPT-first per the operator directive on copywriter.llm above. Sol: the
+    # breaking rewriter produces the published sentence, so it is writing work.
+    provider_order: [codex, oauth, anthropic, deepseek]
+    codex_source_model: "gpt-5.6-sol"
+    codex_reasoning_effort: "medium"
+    oauth_pool_lane: "marketing-breaking"
 
   # ═══════════════════════════════════════════════════════════════════════════
   # GARBAGE GATE (XG-W5 / IS-W2) — engine/marketing/garbage_gate.py
@@ -1973,7 +2011,13 @@ reply_desk:
     # purpose — the CHAIN is the retry.
     client_timeout_s: 5.0
     client_max_retries: 0
-    provider_order: [oauth, anthropic, deepseek]
+    # ChatGPT-first per the operator directive on copywriter.llm. Terra, not Sol:
+    # a reply is a short conversational turn on someone else's post, the same
+    # register as the wire, and Terra is the all-rounder tier. Effort medium.
+    provider_order: [codex, oauth, anthropic, deepseek]
+    codex_source_model: "gpt-5.6-terra"
+    codex_reasoning_effort: "medium"
+    oauth_pool_lane: "reply-voice"
     oauth_token_env: CLAUDE_CODE_OAUTH_TOKEN
     deepseek_key_env: DEEPSEEK_API_KEY
     deepseek_model: deepseek-chat

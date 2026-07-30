@@ -295,6 +295,12 @@ def _standout_track_row_from_parquet(label: str, rel_path: str, region: str, roo
         if not p.exists():
             return _cold
         df = pd.read_parquet(p)
+        board_definition = None
+        if region.lower() == "cn":
+            from engine import china_standout_track as _cn_track  # noqa: PLC0415
+
+            df, board_definition = _cn_track._latest_definition_frame(df)  # noqa: SLF001
+            board_definition = board_definition or "legacy"
         n_rows = len(df)
         # n_graded: rows where the 21d forward metric has matured (non-null)
         graded_col = "fwd_mfe_21"
@@ -314,6 +320,7 @@ def _standout_track_row_from_parquet(label: str, rel_path: str, region: str, roo
         )
         return {
             "name": label, "region": region, "rel_path": rel_path,
+            "board_definition": board_definition,
             "board_dates": board_dates,
             "graded_rows": n_graded,
             "h21_hit_rate": None, "h21_n": n_graded,

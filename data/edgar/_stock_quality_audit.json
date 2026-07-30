@@ -1,17 +1,17 @@
 {
-"applied": "2026-07-22T02:02:19.784047+00:00",
-"rows_flagged": 11,
-"tickers_flagged": 6,
+"applied": "2026-07-30T02:05:01.344315+00:00",
+"rows_flagged": 13,
+"tickers_flagged": 7,
 "by_flag": {
 "assets:flank_scale": 2,
 "equity:flank_scale": 1,
 "debt_lt:flank_scale": 2,
-"assets:junk_null": 3,
-"equity:junk_null": 3
+"assets:junk_null": 4,
+"equity:junk_null": 4
 },
 "repaired": 5,
-"nulled": 6,
-"mirrors": 5,
+"nulled": 8,
+"mirrors": 6,
 "rows": [
 {
 "ticker": "ATO",
@@ -100,6 +100,24 @@
 "col": "equity",
 "flag": "junk_null",
 "raw": 4364.0,
+"repair": null,
+"note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
+"ticker": "NRDY",
+"fy": 2019,
+"col": "assets",
+"flag": "junk_null",
+"raw": 25093.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 3605x)"
+},
+{
+"ticker": "NRDY",
+"fy": 2019,
+"col": "equity",
+"flag": "junk_null",
+"raw": 16506.0,
 "repair": null,
 "note": "null junk-fact leading-edge corr:same_row_assets"
 },
@@ -1111,6 +1129,13 @@
 "med": 226490000.0
 },
 {
+"ticker": "BYND",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "equity",
+"med": -997000.0
+},
+{
 "ticker": "CLSK",
 "fy_lo": 2010,
 "fy_hi": 2013,
@@ -1209,6 +1234,20 @@
 "med": 961000.0
 },
 {
+"ticker": "NRDY",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 108625500.0
+},
+{
+"ticker": "NRDY",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "equity",
+"med": 43203500.0
+},
+{
 "ticker": "OGS",
 "fy_lo": 2013,
 "fy_hi": 2013,
@@ -1305,6 +1344,34 @@
 "fy_hi": 2017,
 "col": "assets",
 "med": 25000.0
+},
+{
+"ticker": "WALD",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "assets",
+"med": 166792.0
+},
+{
+"ticker": "WALD",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 975860000.0
+},
+{
+"ticker": "WALD",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "equity",
+"med": -10951.0
+},
+{
+"ticker": "WALD",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 624626000.0
 },
 {
 "ticker": "WSO",

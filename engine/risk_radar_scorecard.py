@@ -11,7 +11,7 @@ Pure observation over already-graded rows.  No LLM, no signal origination.
 Frozen schema: scorecard.json
   {schema, generated_at, markets: {us + _INTL_MARKETS keys: MARKET}}
   MARKET = {asof_last_row, monitoring: {log_fresh, last_logged_days_ago,
-             ungraded_backlog, graded_n},
+             ungraded_backlog, awaiting_maturity, backlog_cutoff_bd, graded_n},
             windows: {full: WINDOW, y1: WINDOW}}
   Market keys are ADDITIVE-ONLY under risk_radar_scorecard.v1: consumers read
   markets by key and must tolerate keys they don't know (never pattern-match
@@ -43,7 +43,14 @@ _MIN_N = 5          # minimum rows before computing a rate (honesty floor)
 _ALERT_STATES = frozenset(("elevated", "risk-off"))
 _WATCH_CAUTION_STATES = frozenset(("watch", "caution"))
 _LOG_FRESH_DAYS = 3     # last row this many days old or less = fresh
-_UNGRADED_BACKLOG_AGE = 7  # rows older than this with graded=null count as backlog
+# A row CANNOT be graded until its longest horizon matures — engine/risk_radar_audit.HORIZONS
+# tops out at 21 BUSINESS days (_grade_entry returns None before then). The backlog test used 7
+# CALENDAR days, so every row between ~1 and ~5 weeks old counted as "backlog": steady state read
+# as a stalled grader (audit 2026-07-29). Both numbers are now business days, and the maturation
+# horizon is named rather than folded into one magic constant. The 7 is unchanged — it is now
+# SLACK BEYOND maturation, which is what the original comment meant it to be.
+_UNGRADED_MATURATION_BD = 21   # mirrors max(risk_radar_audit.HORIZONS) — not a tunable
+_UNGRADED_BACKLOG_AGE = 7      # business days of slack past maturation before a row is backlog
 
 
 # ---------------------------------------------------------------------------
@@ -130,11 +137,36 @@ def _read_jsonl(p: Path) -> list[dict]:
 # Monitoring block
 # ---------------------------------------------------------------------------
 
-def _monitoring(rows: list[dict]) -> dict:
-    """Compute the monitoring meta-block for a ledger's rows (all rows, not just graded)."""
+def _bd_between(d0, d1) -> int:
+    """Business days (Mon-Fri, no holiday calendar) strictly after d0 through d1; 0 if d1 <= d0.
+
+    Deliberately calendar-free: the grader's maturation horizon is counted in trading bars off
+    the SPY index, and a Mon-Fri count is the closest holiday-free approximation. It can only
+    OVER-count (holidays are counted as business days), so the backlog test stays conservative —
+    it will never flag a row as stalled earlier than the trading calendar would."""
+    try:
+        from datetime import timedelta  # noqa: PLC0415
+        if d1 <= d0:
+            return 0
+        days = (d1 - d0).days
+        weeks, rem = divmod(days, 7)
+        n = weeks * 5
+        for i in range(rem):
+            if (d0 + timedelta(days=i + 1)).weekday() < 5:
+                n += 1
+        return n
+    except Exception:  # noqa: BLE001
+        return 0
+
+
+def _monitoring(rows: list[dict], today=None) -> dict:
+    """Compute the monitoring meta-block for a ledger's rows (all rows, not just graded).
+
+    `today` is the reference date; None = wall clock. Threaded so the block is reproducible
+    from the ledger alone (a scorecard rebuilt tomorrow off the same rows must not drift)."""
     try:
         from datetime import date  # noqa: PLC0415
-        today = date.today()
+        today = today or date.today()
 
         # Last row age
         last_logged_days_ago: int | None = None
@@ -151,8 +183,13 @@ def _monitoring(rows: list[dict]) -> dict:
                 except Exception:  # noqa: BLE001
                     pass
 
-        # Ungraded backlog: rows with graded=null older than 7 days
+        # Ungraded backlog: rows still ungraded MORE than (maturation + slack) BUSINESS days
+        # after their as-of. A row younger than the 21-bd maturation horizon is not a backlog —
+        # the grader is structurally unable to score it yet (risk_radar_audit._grade_entry
+        # returns None). Counting those as backlog made steady state look like a stall.
+        cutoff_bd = _UNGRADED_MATURATION_BD + _UNGRADED_BACKLOG_AGE
         ungraded_backlog = 0
+        awaiting_maturity = 0
         for r in rows:
             if r.get("graded") is not None:
                 continue
@@ -161,8 +198,10 @@ def _monitoring(rows: list[dict]) -> dict:
                 continue
             try:
                 asof_date = date.fromisoformat(str(asof_str)[:10])
-                if (today - asof_date).days > _UNGRADED_BACKLOG_AGE:
+                if _bd_between(asof_date, today) > cutoff_bd:
                     ungraded_backlog += 1
+                else:
+                    awaiting_maturity += 1
             except Exception:  # noqa: BLE001
                 pass
 
@@ -172,11 +211,16 @@ def _monitoring(rows: list[dict]) -> dict:
             "log_fresh": log_fresh,
             "last_logged_days_ago": last_logged_days_ago,
             "ungraded_backlog": ungraded_backlog,
+            # ungraded but not yet maturable — the honest "working as designed" bucket that the
+            # old calendar-day test folded into `ungraded_backlog`.
+            "awaiting_maturity": awaiting_maturity,
+            "backlog_cutoff_bd": cutoff_bd,
             "graded_n": graded_n,
         }
     except Exception as e:  # noqa: BLE001
         log.warning("scorecard _monitoring failed: %s", e)
-        return {"log_fresh": False, "last_logged_days_ago": None, "ungraded_backlog": 0, "graded_n": 0}
+        return {"log_fresh": False, "last_logged_days_ago": None, "ungraded_backlog": 0,
+                "awaiting_maturity": 0, "backlog_cutoff_bd": None, "graded_n": 0}
 
 
 # ---------------------------------------------------------------------------
@@ -274,21 +318,25 @@ def _window(graded: list[dict], recovery_rows: list[dict] | None) -> dict:
     }
 
 
-def _trailing_365(all_graded: list[dict]) -> list[dict]:
-    """Filter to rows with asof within the trailing 365 calendar days."""
+def _trailing_365(all_graded: list[dict], today=None) -> list[dict]:
+    """Filter to rows with asof within the trailing 365 calendar days.
+
+    `today` is the reference date (None = wall clock). Threaded so ONE reference date serves the
+    whole build instead of three independent date.today() reads that could straddle midnight and
+    produce a scorecard whose monitoring block and y1 window disagree about what day it is."""
     try:
         from datetime import date, timedelta  # noqa: PLC0415
-        cutoff = (date.today() - timedelta(days=365)).isoformat()
+        cutoff = ((today or date.today()) - timedelta(days=365)).isoformat()
         return [r for r in all_graded if str(r.get("asof", "")) >= cutoff]
     except Exception:  # noqa: BLE001
         return []
 
 
-def _trailing_365_recovery(recovery_graded: list[dict]) -> list[dict]:
-    """Filter recovery graded rows to trailing 365 days."""
+def _trailing_365_recovery(recovery_graded: list[dict], today=None) -> list[dict]:
+    """Filter recovery graded rows to trailing 365 days. See _trailing_365 re `today`."""
     try:
         from datetime import date, timedelta  # noqa: PLC0415
-        cutoff = (date.today() - timedelta(days=365)).isoformat()
+        cutoff = ((today or date.today()) - timedelta(days=365)).isoformat()
         return [r for r in recovery_graded if str(r.get("asof", "")) >= cutoff]
     except Exception:  # noqa: BLE001
         return []
@@ -302,8 +350,14 @@ def _market_entry(
     market: str,
     forward_path: Path,
     recovery_path: Path | None = None,
+    today=None,
 ) -> dict:
-    """Build one MARKET block. Never raises; returns fail-soft entry on any error."""
+    """Build one MARKET block. Never raises; returns fail-soft entry on any error.
+
+    `today` is the ONE reference date for the whole build (None = wall clock) — see
+    _trailing_365. The monitoring block deliberately measures against the real clock by
+    default: a ledger that stopped writing must read stale, so it can never be anchored to
+    the ledger's own newest row (that would make every dead ledger look fresh)."""
     try:
         all_rows = _read_jsonl(forward_path)
         if not all_rows and not forward_path.exists():
@@ -311,11 +365,12 @@ def _market_entry(
             return {
                 "asof_last_row": None,
                 "monitoring": {"log_fresh": False, "last_logged_days_ago": None,
-                               "ungraded_backlog": 0, "graded_n": 0},
+                               "ungraded_backlog": 0, "awaiting_maturity": 0,
+                               "backlog_cutoff_bd": None, "graded_n": 0},
                 "windows": {"full": _window([], []), "y1": _window([], [])},
             }
 
-        monitoring = _monitoring(all_rows)
+        monitoring = _monitoring(all_rows, today=today)
         # Filter defensively: graded must be a dict; a corrupt scalar value (e.g.
         # graded='CORRUPT') drops that single row without aborting the whole market.
         graded = [r for r in all_rows if isinstance(r.get("graded"), dict)]
@@ -327,8 +382,8 @@ def _market_entry(
         recovery_graded = [r for r in recovery_all if r.get("graded") is not None]
 
         asof_last_row = str(all_rows[-1].get("asof")) if all_rows else None
-        y1_graded = _trailing_365(graded)
-        y1_recovery = _trailing_365_recovery(recovery_graded)
+        y1_graded = _trailing_365(graded, today=today)
+        y1_recovery = _trailing_365_recovery(recovery_graded, today=today)
 
         return {
             "asof_last_row": asof_last_row,
@@ -343,7 +398,8 @@ def _market_entry(
         return {
             "asof_last_row": None,
             "monitoring": {"log_fresh": False, "last_logged_days_ago": None,
-                           "ungraded_backlog": 0, "graded_n": 0},
+                           "ungraded_backlog": 0, "awaiting_maturity": 0,
+                           "backlog_cutoff_bd": None, "graded_n": 0},
             "windows": {"full": _window([], []), "y1": _window([], [])},
         }
 
@@ -352,18 +408,24 @@ def _market_entry(
 # Public API
 # ---------------------------------------------------------------------------
 
-def build(root=None) -> dict:
-    """Build and return the scorecard dict. Never raises."""
+def build(root=None, today=None) -> dict:
+    """Build and return the scorecard dict. Never raises.
+
+    `today` pins the reference date for every window + monitoring block in ONE place
+    (None = wall clock), so the whole scorecard is reproducible and testable."""
     try:
+        from datetime import date as _date  # noqa: PLC0415
+        today = today or _date.today()
         markets: dict[str, dict] = {
             "us": _market_entry(
                 "us",
                 _us_forward_path(root),
                 _us_recovery_path(root),
+                today=today,
             ),
         }
         for mkt in _INTL_MARKETS:
-            markets[mkt] = _market_entry(mkt, _intl_forward_path(mkt, root))
+            markets[mkt] = _market_entry(mkt, _intl_forward_path(mkt, root), today=today)
 
         return {
             "schema": _SCHEMA,

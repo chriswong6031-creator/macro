@@ -296,11 +296,16 @@ class TestCursorAndUniverse:
     def test_universe_reads_the_ss_half_only(self, tmp_path, monkeypatch):
         site = tmp_path / "site"
         (site / "factordata").mkdir(parents=True)
-        (site / "factordata" / "china_setups.json").write_text(json.dumps({"buy": [
-            {"ticker": "601963.SS"}, {"ticker": "600362.SS"}, {"ticker": "002595.SZ"},
-        ]}))
+        (site / "factordata" / "china_setups.json").write_text(json.dumps({
+            "schema_version": "2.0.0",
+            "buy": [{"ticker": "601963.SS"}],
+            "more_actionable": [{"ticker": "600362.SS"}],
+            "late_or_unfillable": [{"ticker": "688001.SS"}],
+            "forming": [{"ticker": "603001.SS"}],
+            "watch": [{"ticker": "600000.SS"}],
+        }))
         monkeypatch.setattr(config, "site_dir", lambda: site)
-        assert ce.board_universe() == ["600362", "601963"]
+        assert ce.board_universe() == ["600362", "601963", "603001", "688001"]
 
     def test_absent_universe_file(self, tmp_path, monkeypatch):
         monkeypatch.setattr(config, "site_dir", lambda: tmp_path / "nope")
