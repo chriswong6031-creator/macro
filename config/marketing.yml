@@ -1048,6 +1048,12 @@ desk_network:
       # `disabled` ALONE, so this entry plus its channel id made a dark property
       # postable — fixed in engine/marketing/publish_time_content.py, and carried
       # here too so no surviving `disabled`-only reader anywhere can revive it.
+      # Enforced at DISPATCH as well: scripts/marketing_publisher.py parks
+      # (quarantines, reason account_disabled, ::warning in the Actions summary)
+      # any item addressed to a desk that is not effective-enabled here —
+      # operator "post now" included — so this desk's bound channel id in
+      # publish.channels can never post the property on its own. Arming stays
+      # this one flip (or an account_overrides.json entry).
       enabled: false
       disabled: true
       tilt:

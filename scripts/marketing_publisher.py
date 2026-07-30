@@ -103,6 +103,80 @@ def _channel_id_for(pub_cfg: dict, account: str) -> str:
     return str((pub_cfg.get("channels") or {}).get(account, "") or "").strip()
 
 
+def _dark_account_ids(cfg: dict, root) -> "frozenset[str] | None":
+    """Ids of desk_network accounts that are NOT effective-enabled, or None when
+    liveness is UNKNOWN (the accounts model could not be consulted).
+
+    The accounts model is the single reader of that question — config intent
+    (``enabled``, legacy ``disabled: true``) plus the operator override file
+    data/marketing/account_overrides.json — and sentinel.gate_plan resolves the
+    plan-path version of this list with the identical predicate. Both paths call
+    effective_accounts and test ``not enabled`` so the nightly plan and a
+    dispatch can never disagree about which desk is armed.
+
+    FAIL DIRECTION, deliberately the OPPOSITE of wire_routing._enabled_accounts.
+    That module treats unknown liveness as route-to-default because it HAS a safe
+    fallback account to route to; the publisher has no safe fallback for "may
+    this desk post at all", and failing closed would park every live desk on a
+    transient helper error — a seven-desk outage to protect one dark one, which
+    is the worse failure. Unknown therefore stands the gate down INERT for the
+    run (items flow exactly as they did before this gate existed) and says so in
+    the Actions summary. None and the empty set are still DIFFERENT answers and
+    callers must not conflate them: empty means "asked, nothing is dark".
+    """
+    try:
+        from engine.marketing.accounts import effective_accounts  # noqa: PLC0415
+
+        return frozenset(
+            str(a.get("id") or "")
+            for a in effective_accounts(cfg, root)
+            if not a.get("enabled")
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("dark-desk park: accounts model unavailable (%s) — the gate "
+                    "stands down INERT for this run", exc)
+        return None
+
+
+#: Accounts already annotated in THIS process. The park fires once per item and
+#: the publisher runs on a */5 cron, so an unarmed desk with a queue behind it
+#: would otherwise bury the Actions summary the annotation exists to surface.
+#: Keyed by account, not by item: the operator's action is the same one
+#: desk_network flip however many items are behind it.
+_WARNED_DARK_PARK: set[str] = set()
+
+#: Ledger note for BOTH park sites. Starts with the reason class sentinel's
+#: _ALWAYS_ENFORCED already names, so a parked item greps the same as a
+#: plan-gate quarantine and no operator exception can revive it.
+_DARK_PARK_NOTE = (
+    "account_disabled: desk not enabled in desk_network — dispatch-time park "
+    "(arming = enable the desk; parked items stay parked)"
+)
+
+
+def reset_dark_park_warnings() -> None:
+    """Clear the once-per-process dark-park warning set (tests)."""
+    _WARNED_DARK_PARK.clear()
+
+
+def _warn_dark_park(acct: str) -> None:
+    """Print the dark-desk park annotation at most once per account per process."""
+    if acct in _WARNED_DARK_PARK:
+        return
+    _WARNED_DARK_PARK.add(acct)
+    # Start-of-line annotation (house law): a logger prefix makes GitHub drop it
+    # silently, and a dispatch aimed at a dark property is exactly what the
+    # operator must see in the Actions summary.
+    print(
+        f"::warning title=publisher-dark-desk::item(s) for {acct!r} parked — the "
+        "desk is not enabled in desk_network (reason account_disabled). Enabling "
+        "the desk (one desk_network flip, or an account_overrides.json entry) "
+        "arms dispatch; parked items stay parked — wire copy is perishable and "
+        "fresh items flow once armed.",
+        flush=True,
+    )
+
+
 # Kinds whose producers compose item text as headline + "\n\n" + body
 # (outbox.compose_text): the content-plan desks (signal/chart/education/
 # macro/receipt/watchlist/event/mover/theme_list) and the earnings fastlane.
@@ -620,6 +694,9 @@ def _auto_approve_pass(
     only_ids: "frozenset[str] | None" = None,
     cap_for=None,
     halted: "set[str] | frozenset[str] | None" = None,
+    dark_accounts: "frozenset[str] | None" = None,
+    announce: bool = True,
+    parked_out: "list[str] | None" = None,
 ) -> list[str]:
     """Auto-advance queued → approved for items passing ALL publish gates.
 
@@ -627,6 +704,15 @@ def _auto_approve_pass(
       * the account is NOT halted (XG-W6 health monitor / network tripwire).
         Auto-approving for a halted desk would build a pile of approved items
         the post loop then refuses one by one — noise that hides the halt.
+      * the account is LIVE: an account that is not effective-enabled in
+        desk_network (``dark_accounts``) is QUARANTINED here, not skipped. The
+        halt above skips on purpose — a halt is temporary and the item is fine —
+        but a dark desk is a durable ARMING state and its wire copy is
+        perishable, so quarantine is the honest terminal park rather than a pile
+        that would fire stale the day someone flips the switch. The reason class
+        is ``account_disabled``, which sentinel holds in _ALWAYS_ENFORCED: no
+        operator exception overrides it, and neither does an operator --post-now
+        (see ``only_ids`` below). The remedy is the desk_network flip.
       * NOT held (a queued item whose latest operator decision is 'hold' stays put)
       * kind scope: when ``allowed_kinds`` is not None (global publish.auto_approve
         is OFF but publish.auto_approve_kinds is set), an item is a candidate ONLY
@@ -644,10 +730,19 @@ def _auto_approve_pass(
     logs and returns the ids it WOULD approve. The queued→approved transition is
     applied via outbox.transition() ONLY when ``live`` is True.
 
+    ``announce`` False silences the dark-desk annotation for the writeless admin
+    preview (same reason resolve_ramp takes announce=False there). It is not
+    cosmetic: the annotation is once-per-account-per-PROCESS, so a preview that
+    printed it would also CONSUME it and the real dispatch behind it would park
+    silently. A preview is not a dispatch and must leave that budget alone.
+    ``parked_out`` is the matching sink — the caller that cannot read the log
+    (the preview builds a dict) gets the parked ids appended to it.
+
     ``only_ids`` is the operator "post now" override: the pass considers ONLY
     those ids and drops the kind scope (the operator's click IS the approval for
     any kind). It does NOT relax a hold, nor any of the gates above — an item
-    that fails validation, has no channel, or is at cap still will not post.
+    that fails validation, has no channel, is at cap, or is addressed to a dark
+    desk still will not post.
 
     Returns the list of item ids that were (or, in dry-run, would be) approved,
     in the deterministic order they were considered.
@@ -702,6 +797,22 @@ def _auto_approve_pass(
 
         if halted and acct in halted:
             log.info("auto-approve SKIP %s (%s): account HALTED", iid, acct)
+            continue
+
+        # Dark desk: routing is pure — an emitter addresses a desk by what the
+        # item IS, never by whether that desk is armed — so liveness binds HERE,
+        # ahead of every other gate. A dark property costs nothing, reaches
+        # nothing, and no operator post_now overrides account_disabled.
+        if dark_accounts and acct in dark_accounts:
+            log.warning("auto-approve PARK %s (%s): account dark (desk_network)",
+                        iid, acct)
+            if live:
+                outbox.transition(iid, "quarantined", actor="publisher",
+                                  root=root, note=_DARK_PARK_NOTE)
+            if parked_out is not None:
+                parked_out.append(iid)
+            if announce:
+                _warn_dark_park(acct)
             continue
 
         problems = validate_postable(text, link, links_allowed)
@@ -999,6 +1110,27 @@ def main(argv: list[str] | None = None) -> int:
                     "desk posts normally", sorted(_halts))
     skipped_halt = 0
 
+    # ── DARK DESK PARK (desk_network liveness) ───────────────────────────────
+    # The dispatch-time half of the accounts model. Emitters route by what an
+    # item IS and never consult liveness — wire_routing states the law outright
+    # ("LIVENESS IS NOT ROUTING") — so a wired-but-dark desk whose Buffer channel
+    # id already sits in publish.channels was one immediate dispatch away from
+    # posting live. Sentinel's plan gate resolves the same disabled-account list
+    # (reason account_disabled) but only ever sees the NIGHTLY plan; the
+    # breaking/immediate rail is enqueued straight to the outbox and dispatched
+    # with --post-now, so it passes no plan gate at all. Read ONCE per run, same
+    # idiom as the halt registry, threaded through the auto-approve pass and the
+    # post loop. None = liveness unknown = gate INERT (see _dark_account_ids for
+    # why unknown must not fail closed here).
+    _dark = _dark_account_ids(cfg, root)
+    if _dark is None:
+        print("::warning title=publisher-dark-desk::accounts model unavailable — "
+              "dark-desk park INERT this run (see the log line above for the "
+              "error); desk liveness is NOT enforced at dispatch.", flush=True)
+    elif _dark:
+        log.info("dark desk(s) not enabled in desk_network: %s — any dispatch "
+                 "addressed to them parks", sorted(_dark))
+
     auto_approve_on = bool(args.auto_approve) or _auto_approve_cfg(pub_cfg)
     allowed_kinds = _auto_approve_kinds_cfg(pub_cfg)
     # W1: the global flag is no longer a blanket. Under the default
@@ -1019,6 +1151,7 @@ def main(argv: list[str] | None = None) -> int:
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
             only_ids=post_now, cap_for=_cap_for, halted=set(_halts),
+            dark_accounts=_dark,
         )
     elif auto_approve_on or scoped_on:
         # allowed_kinds param: None ONLY when the operator asked for the
@@ -1031,6 +1164,7 @@ def main(argv: list[str] | None = None) -> int:
             account=args.account, posted_today=posted_today,
             validate_postable=validate_postable, root=root,
             allowed_kinds=_kinds_param, cap_for=_cap_for, halted=set(_halts),
+            dark_accounts=_dark,
         )
     if live and auto_approved:
         # Re-fold so the candidate set below sees the freshly-approved items.
@@ -1076,7 +1210,7 @@ def main(argv: list[str] | None = None) -> int:
 
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
-    forward_booked = deferred_no_media = 0
+    forward_booked = deferred_no_media = parked_dark = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -1216,6 +1350,22 @@ def main(argv: list[str] | None = None) -> int:
             log.warning("item %s (%s) SKIPPED — account HALTED (%s)", iid, account,
                         (_halts.get(account) or {}).get("reason"))
             skipped_halt += 1
+            continue
+
+        # -- dark-desk park: directly behind the halt, ahead of validation ----
+        # The auto-approve pass parks queued items, but an item can be APPROVED
+        # already — an operator approval, or a run from before the desk went dark
+        # — and this is the last gate that sees it. Quarantine, not skip: unlike
+        # a halt, an unarmed desk is not a state that lifts on its own, and
+        # leaving perishable copy approved would fire it stale on arming day.
+        if _dark and account in _dark:
+            log.warning("item %s (%s) QUARANTINED — account dark (desk_network "
+                        "disabled)", iid, account)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher",
+                                   root=root, note=_DARK_PARK_NOTE)
+            parked_dark += 1
+            _warn_dark_park(account)
             continue
 
         links_allowed = _links_allowed_for(pub_cfg, account)
@@ -1648,13 +1798,13 @@ def main(argv: list[str] | None = None) -> int:
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
-        "skipped_no_channel=%d skipped_halt=%d "
+        "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa, skipped_channel,
-        skipped_halt,
+        skipped_halt, parked_dark,
         len(stuck_posting),
         len(auto_approved),
     )
@@ -1681,6 +1831,8 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_no_channel": skipped_channel,
             "skipped_halt": skipped_halt,
             "halted_accounts": sorted(_halts),
+            "parked_dark": parked_dark,
+            "dark_accounts": (None if _dark is None else sorted(_dark)),
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),
             "pt_generated": pt_generated,
@@ -1730,10 +1882,12 @@ def dry_run_report(root=None, *, account: str | None = None,
 
     Returns {ok, mode:"dry_run", backend, cap, kill_switch, account,
              counts:{approved_due, would_post, quarantine, skipped_cap,
-                     skipped_no_channel, stuck_posting, would_auto_approve},
+                     skipped_no_channel, stuck_posting, would_auto_approve,
+                     would_park_dark},
              would_post:[{id,account,channel,chars,media,scheduled_at,preview}],
              quarantine:[{id,account,reasons}],
              would_auto_approve:[{id,account,chars}],
+             would_park_dark:[{id,account}],
              stuck_posting:[ids], auto_approve:bool}.
     """
     try:
@@ -1783,6 +1937,14 @@ def dry_run_report(root=None, *, account: str | None = None,
         except Exception:  # noqa: BLE001
             _halts = {}
 
+        # Same argument for desk liveness, and the failure is worse: a dark desk
+        # under "would post" promises the operator a post the live run parks, and
+        # promising a post on an UNARMED property is the exact confusion the park
+        # exists to end. Resolved once, like the halts, and reported explicitly
+        # (would_park_dark) rather than by silent omission.
+        _dark = _dark_account_ids(cfg, r)
+        would_park_dark: list[dict] = []
+
         def _acct_ok(it: dict) -> bool:
             return account is None or it.get("account") == account
 
@@ -1804,13 +1966,21 @@ def dry_run_report(root=None, *, account: str | None = None,
         scoped_on = (not auto_unscoped) and bool(allowed_kinds)
         would_auto: list[dict] = []
         if auto_on or scoped_on:
+            # announce=False: a preview must not spend the once-per-process
+            # annotation budget the real dispatch behind it needs. parked_out is
+            # how this writeless caller learns what the gate took out.
+            _parked_ids: list[str] = []
             ids = _auto_approve_pass(
                 _outbox, state, pub_cfg, cap=cap, now=now, live=False,
                 account=account, posted_today=posted_today,
                 validate_postable=validate_postable, root=r,
                 allowed_kinds=(None if auto_unscoped else allowed_kinds),
-                cap_for=_cap_for, halted=set(_halts),
+                cap_for=_cap_for, halted=set(_halts), dark_accounts=_dark,
+                announce=False, parked_out=_parked_ids,
             )
+            for iid in _parked_ids:
+                would_park_dark.append(
+                    {"id": iid, "account": items_by_id.get(iid, {}).get("account", "")})
             for iid in ids:
                 it = items_by_id.get(iid, {})
                 would_auto.append({"id": iid, "account": it.get("account", ""),
@@ -1837,9 +2007,12 @@ def dry_run_report(root=None, *, account: str | None = None,
             acct = it.get("account", "")
             text = it.get("text", "") or ""
             link = it.get("link")
-            # Halt first, exactly as main() orders it.
+            # Halt first, then the dark-desk park, exactly as main() orders them.
             if acct in _halts:
                 skipped_halt += 1
+                continue
+            if _dark and acct in _dark:
+                would_park_dark.append({"id": iid, "account": acct})
                 continue
             problems = validate_postable(text, link, _links_allowed_for(pub_cfg, acct))
             if problems:
@@ -1897,12 +2070,16 @@ def dry_run_report(root=None, *, account: str | None = None,
                 "skipped_halt": skipped_halt,
                 "stuck_posting": len(stuck),
                 "would_auto_approve": len(would_auto),
+                "would_park_dark": len(would_park_dark),
             },
             "would_post": would_post,
             "quarantine": quarantine,
             "would_auto_approve": would_auto,
+            "would_park_dark": would_park_dark,
             "stuck_posting": stuck,
             "halted_accounts": sorted(_halts),
+            # None = liveness UNKNOWN (gate inert), [] = asked, nothing dark.
+            "dark_accounts": (None if _dark is None else sorted(_dark)),
         }
     except Exception as exc:  # noqa: BLE001
         log.warning("dry_run_report failed: %s", exc)

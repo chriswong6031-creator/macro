@@ -215,6 +215,14 @@ rather than reviving a separate daemon. Its emit/dedupe plumbing is reusable.
 - XG charter §6: employee desks join per-call lanes only after XG-W2 enables —
   Hot Tape routes to mastermind_news + flagship until then (cadence-spec chip
   task_0cd280af is in flight; its resolver enablement widens routing later).
+- **Dark-desk park (2026-07-29):** the severity_account ↔ desk_network gap is
+  closed in `scripts/marketing_publisher.py`, not in routing. `severity_account`
+  keeps no liveness fallback — rerouting sub-85 events to flagship would break
+  the flagship law (≥85 severity, ≤1 per pass). Instead any dispatch addressed
+  to a desk that is not effective-enabled quarantines as `account_disabled`
+  (post_now included, both the auto-approve pass and the post loop), with a
+  once-per-account `::warning`. Arming remains the one desk_network flip
+  (XG-W2): fresh radar items flow from that moment, parked history stays dead.
 - In-flight sessions to coordinate with: word-salad copy rewrite
   (task_445d4ea5 — owns template mechanics), Buffer recall (task_318af965 —
   shipped `recall_pending`), cadence specs (task_0cd280af).
