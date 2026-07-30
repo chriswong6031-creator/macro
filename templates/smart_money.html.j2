@@ -1280,7 +1280,7 @@ research/smart_money_grade_a_q1_2026.md
 <div class="sm-sec" id="sec-ideas">
   <h2>{{ t('Best ideas board','最佳想法榜') }}</h2>
 </div>
-<p class="sm-sec-sub">{{ t('The strongest new buys from proven managers, ranked — plus what the cohort is walking away from.','经过验证的经理们最强的新买入（排名）——以及他们正在离场的股票。') }}</p>
+<p class="sm-sec-sub">{{ t('The strongest new buys from proven managers, ranked — plus what the cohort is walking away from.','业绩优良的经理们最强的新买入（排名）——以及他们正在离场的股票。') }}</p>
 
 {# ---- Best Buys board (cap 20 + fold) ---- #}
 {% if d_best_buys %}
@@ -1551,7 +1551,7 @@ research/smart_money_grade_a_q1_2026.md
     {%- set _fol_meta = (desk.get('follow') or {}).get('meta') or {} -%}
     {%- set _nc_pr = _fol_meta.get('n_proven_rotators') -%}
     {%- set _nc_fd = (_fol_meta.get('n_fade') or 0) -%}
-    <span class="chip-fresh">n {{ _nc_pr if _nc_pr is not none else '—' }} {{ t('proven rotators','经验证轮动者') }} · {{ _nc_fd }} {{ t('fade excluded','淡出排除') }}</span>
+    <span class="chip-fresh">n {{ _nc_pr if _nc_pr is not none else '—' }} {{ t('proven rotators','业绩达标轮动者') }} · {{ _nc_fd }} {{ t('fade excluded','淡出排除') }}</span>
   </div>
   <div class="board-note">{{ t('IQ-weighted sector delta (pp). Descriptive screen — n printed, not a forecast.','IQ加权板块变化（百分点）。描述性筛选——样本量已打印，非预测。') }}</div>
   {%- set _cs_mx = namespace(v=0.0) -%}
