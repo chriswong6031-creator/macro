@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T16:10:42.910097+00:00",
-  "count": 399,
+  "generated_at": "2026-07-30T16:25:46.879882+00:00",
+  "count": 400,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -70,6 +70,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-trl5ns3ej3q-da674a",
+      "title": "The eu strengthens its industry and reduces dependencies",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T14:10:06Z",
+      "summary_points": [
+        "**EU Manufacturing Target**: EU aims to boost manufacturing to 20% of GDP by 2035 (current 14%) via \"Made in EU\" and CO₂ mandates, supported by €234B European Competitiveness Fund (2028–2034) requiring unanimous EU approval.",
+        "**China Dependency Risk**: EU relies on China for 80%+ of critical clean tech imports (solar panels, wind turbines, batteries, heat pumps) and faces displacement in vehicles/chemicals/machinery due to Chinese competition.",
+        "**Trade Defense Focus**: 71% of EU anti-subsidy investigations target China (200+ active anti-dumping/anti-subsidy measures), with expansion plans risking trade friction amid protectionism.",
+        "**Critical Materials Strategy**: Critical Raw Materials Act (easier permitting, strategic projects) and FTAs with Mercosur (lithium/niobium), Australia (lithium/cobalt), and India aim to reduce China dependency (80%+ reliance).",
+        "**Geopolitical Retaliation Risk**: US/China threats (sanctions, export restrictions) and EU internal divisions (e.g., Germany targeting US firms, Spain caution on Chinese investments) threaten tech/clean tech/defense supply chains."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
