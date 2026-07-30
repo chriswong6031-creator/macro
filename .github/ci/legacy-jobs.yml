@@ -4045,7 +4045,8 @@ jobs:
   # renamed sentinel silently disarms every absence assertion keyed to the old one;
   # when a presence marker changes, re-point the absence tests in the same edit.
   # Repeats the shared dependency install BYTE-FOR-BYTE so run_ci_pack.py keeps one
-  # venv across the unrun-* set.  Measured locally: 3 suites / 42 tests / ~2s.
+  # venv across the unrun-* set.  The macro-header suite also keeps the glance
+  # layer compact while preserving the click-through detail affordances.
   unrun-template-chips:
     if: ${{ false }}
     timeout-minutes: 4
@@ -4057,6 +4058,8 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      - name: Macro header — compact glance layer with on-demand detail
+        run: python -m pytest tests/test_macro_header_compact.py -q
       - name: OKX retail chip — bilingual + the contrarian framing survives copy edits
         run: python -m pytest tests/test_okx_retail.py -q
       - name: CN risk-backdrop chip — renders, degrades, and stays out of macro mode

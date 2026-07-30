@@ -155,6 +155,8 @@ def test_allocation_and_strategy_legacy_urls_are_durable_redirects():
     strategy = (ROOT / "site" / "btc_strategy.html").read_text(encoding="utf-8")
     assert 'href="https://www.mastermind-x.com/crypto.html"' in allocation
     assert "crypto.html#allocation" in allocation
+    assert 'http-equiv="refresh"' in allocation
+    assert '<nav class="site-nav">' not in allocation
     assert 'href="https://www.mastermind-x.com/vector.html"' in strategy
     assert "vector.html#strategy-track-record" in strategy
     template = (ROOT / "templates" / "vector_allocation.html.j2").read_text(

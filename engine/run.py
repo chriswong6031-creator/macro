@@ -155,6 +155,7 @@ def run(force: bool = False) -> dict:
     confirming, contradicting = confirming_contradicting(full, asof)
     table = rs_table(asof)
     fc = flip_condition(f, regime, asof)
+    qcfg_hyst_days = int(config.load()["engine"]["quad"]["hysteresis_days"])
     latest = {
         # contract hygiene (research/PERCEPTION_CONTRACTS.md): versioned schema +
         # a TRUE-DATA timestamp at top level (asof = last session in the regime
@@ -165,6 +166,26 @@ def run(force: bool = False) -> dict:
         "quad": quad,
         "quad_name": QUAD_NAMES.get(quad, quad),
         "label": label,
+        # HYSTERESIS TRANSPARENCY (added 2026-07-29). `quad` is the STICKY confirmed
+        # label; on ~44% of sessions since 2000 the memoryless sign rule disagrees with
+        # it, and until now that disagreement — plus the confirmation countdown that
+        # would resolve it — existed only inside an unrendered playbook string, so
+        # today's state was unobservable from committed data. These four keys publish it:
+        #   raw_quad     : the memoryless sign rule on today's axes (may != quad)
+        #   pending_quad : the candidate currently counting down (None when none)
+        #   pending_days : consecutive sessions the candidate has held
+        #   pending_need : hysteresis_days — sessions required to confirm
+        # NOTE the counter is keyed on candidate IDENTITY, so an alternating candidate
+        # resets it every session and the label can hold indefinitely against both of
+        # its own axes (pinned in tests/test_engine.py::
+        # test_alternating_candidate_stalls_hysteresis_known_defect).
+        "raw_quad": (None if (_rq := row.get("raw_quad")) is None
+                     or str(_rq) in ("None", "nan") else str(_rq)),
+        "pending_quad": (None if (_pq := row.get("pending_quad")) is None
+                         or str(_pq) in ("None", "nan") else str(_pq)),
+        "pending_days": (0 if row.get("pending_days") is None
+                         else int(row["pending_days"])),
+        "pending_need": int(qcfg_hyst_days),
         "growth_score": round(float(row["growth_score"]), 3),
         "inflation_score": round(float(row["inflation_score"]), 3),
         "growth_confidence": round(float(row["growth_confidence"]), 3),
@@ -184,8 +205,15 @@ def run(force: bool = False) -> dict:
         "contradicting": contradicting,
         "flip_condition": fc,
         # top-level mirror of flip_condition.margin — the single number consumers
-        # damp on (was only nested; None when the axis is already mixed)
-        "flip_margin": (fc or {}).get("margin"),
+        # damp on (was only nested; None when the axis is already mixed).
+        # When flip_condition reports `label_unsupported` (the label's own axes
+        # contradict it) there is no supporting component to measure a margin from, but
+        # that state is MAXIMALLY fragile, not unknown — so it mirrors 0.0 ("at the
+        # cutoff") rather than None. Reporting None there would have silently weakened
+        # engine/neuralweb/contradictions._is_near_flip, which treats a small margin as
+        # the near-flip signal and skips the check entirely on None.
+        "flip_margin": (0.0 if (fc or {}).get("label_unsupported")
+                        else (fc or {}).get("margin")),
         "sector_rs": table.reset_index().to_dict(orient="records"),
         "preference_check": preference_check(quad, table),
         "pair_ratios": pair_ratios_snapshot(f),
@@ -443,6 +471,16 @@ def run(force: bool = False) -> dict:
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("fed-stance layer failed: %s", e)
         latest["fed_stance"] = None
+    # The dislocation fedput_off leg tests the 10y BREAKEVEN, not policy — so a
+    # buyable_washout can coexist with a HAWKISH fed_stance on this same artifact.
+    # Attach that divergence as context now that fed_stance exists (dislocation runs
+    # earlier, so it cannot see it). Never changes the verdict; never fatal.
+    try:
+        if latest.get("dislocation"):
+            from engine.dislocation import attach_policy_divergence
+            attach_policy_divergence(latest["dislocation"], latest.get("fed_stance"))
+    except Exception as e:  # noqa: BLE001 — additive, never fatal
+        log.error("dislocation policy-divergence layer failed: %s", e)
     # Rate & inflation TRANSMISSION (research/RATE_INFLATION_TRANSMISSION.md): how the
     # current rate / rate-expectations / inflation (CPI, core PCE) state propagates —
     # first/second/third order — into per-asset-class headwind/tailwind, with honest

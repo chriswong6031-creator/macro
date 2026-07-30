@@ -4705,6 +4705,59 @@ def main() -> int:
         _irl_base = config.data_dir() / "risk_radar_intl"
         _irl_rows: list[dict] = []
         _irl_asofs: list[str] = []
+        # PER-COUNTRY MAX-AGE GATE (audit 2026-07-29). Each ring was drawn from its ledger's
+        # LAST ROW with no age test, and `asof` published only max() of them — so on 2026-07-29
+        # the CN and HK rings rendered risk-off 98/91 alert=true off 2026-07-16 rows (13 calendar
+        # days / 9 business days old) under an "As of 2026-07-29" footer. A stale ring is not a
+        # reading: mark it, exclude it from the alert count, and publish its own as-of so the
+        # template lane can render the date it actually belongs to. Nothing is deleted — the
+        # engine still emits the row and its value, now with `stale` + `age_bd` beside it.
+        _IRL_MAX_AGE_BD = 3          # business days; a ring older than this is not current
+        # PLAIN-WORD STATE for EVERY ring (audit 2026-07-29). The per-tile profile below only
+        # covers the 7 markets intl_inputs.countries() knows (JP/KR/TW/IN/AU/GB/EZ), so CN, HK
+        # and CA shipped a coloured ring with NO state word at all — a red circle and nothing
+        # that says what red means. The radar state IS a state word; label it bilingually here
+        # for every row, and label the dominant scare here too (it was set only inside the
+        # profile branch, so the three uncovered markets lost that as well). The richer
+        # intl_market_state profile still attaches on top for the markets that have one.
+        _IRL_STATE_EN = {"calm": "Calm", "watch": "Watch", "caution": "Caution",
+                         "elevated": "Elevated risk", "risk-off": "Risk-off"}
+        _IRL_STATE_ZH = {"calm": "平静", "watch": "观察", "caution": "警戒",
+                         "elevated": "风险升高", "risk-off": "避险"}
+        _IRL_STANCE_EN = {"calm": "Normal exposure", "watch": "Watch — stay normal",
+                          "caution": "Trim chasing", "elevated": "De-risk: cut size",
+                          "risk-off": "Protect capital"}
+        _IRL_STANCE_ZH = {"calm": "正常仓位", "watch": "留意即可，保持正常",
+                          "caution": "减少追高", "elevated": "降险：减仓",
+                          "risk-off": "保住本金"}
+        _IRL_SCARE_EN = {"breadth": "Market breadth", "rate_shock": "Rate shock",
+                         "capital_flow": "Capital outflow", "extension": "Overextended"}
+        _IRL_SCARE_ZH = {"breadth": "市场广度", "rate_shock": "利率冲击",
+                         "capital_flow": "资本外流", "extension": "过度延伸"}
+        from datetime import date as _irl_date, timedelta as _irl_td
+        try:
+            _irl_ref = _irl_date.fromisoformat(str(latest.get("date"))[:10])
+        except Exception:  # noqa: BLE001 — no build date -> age gate degrades to "unknown"
+            _irl_ref = None
+
+        def _irl_age_bd(asof_str: str):
+            """Business days (Mon-Fri) from a ledger row's as-of to the build's as-of."""
+            if not _irl_ref or not asof_str:
+                return None
+            try:
+                d0 = _irl_date.fromisoformat(str(asof_str)[:10])
+            except Exception:  # noqa: BLE001
+                return None
+            if d0 >= _irl_ref:
+                return 0
+            days = (_irl_ref - d0).days
+            weeks, rem = divmod(days, 7)
+            n = weeks * 5
+            for _i in range(rem):
+                if (d0 + _irl_td(days=_i + 1)).weekday() < 5:
+                    n += 1
+            return n
+
         for _code, (_nen, _nzh) in _INTL_LOG_CODES.items():
             _lf = _irl_base / f"{_code}_forward_log.jsonl"
             if not _lf.exists():
@@ -4716,28 +4769,65 @@ def main() -> int:
                 continue
             _irl_asofs.append(_last.get("asof", ""))
             _irl_dp = _last.get("drawdown_prob") or {}
+            _irl_asof = _last.get("asof", "")
+            _irl_age = _irl_age_bd(_irl_asof)
+            _irl_stale = bool(_irl_age is not None and _irl_age > _IRL_MAX_AGE_BD)
             _irl_rows.append({
                 "code": _code,
                 "name_en": _nen,
                 "name_zh": _nzh,
                 "score": round(_last.get("top_score") or 0),
                 "state": _last.get("state", ""),
-                "alert": bool(_last.get("alert")),
-                "asof": _last.get("asof", ""),
+                # a stale row's alert flag is NOT a live alert — it is a 13-day-old one
+                "alert": bool(_last.get("alert")) and not _irl_stale,
+                "alert_as_logged": bool(_last.get("alert")),
+                "asof": _irl_asof,
+                # staleness disclosure (per-country; the board's own footer is build-dated)
+                "age_bd": _irl_age,
+                "stale": _irl_stale,
+                "max_age_bd": _IRL_MAX_AGE_BD,
+                "stale_note_en": (f"Last graded {_irl_asof} — {_irl_age} business days before this "
+                                  f"board's date; treat as last known, not current."
+                                  if _irl_stale else None),
+                "stale_note_zh": (f"最后评级于 {_irl_asof}，比本页日期早 {_irl_age} 个交易日；"
+                                  f"仅代表最后已知状态，非当前读数。" if _irl_stale else None),
                 # — extra fields for per-tile hover profile (Task 7a) —
                 "rd_state": _last.get("state", ""),          # risk-radar state (same field)
                 "dd_h21": _irl_dp.get("h21"),                # ≥5% pullback odds 21-session
                 "dd_lift": _irl_dp.get("lift_h21"),          # odds lift vs long-run baseline
                 "dominant_scare": _last.get("dominant_scare"),
+                # plain-word labels for EVERY ring (see _IRL_STATE_EN above) — CN/HK/CA get a
+                # state word here even though they have no intl_market_state profile.
+                "state_en": _IRL_STATE_EN.get(_last.get("state") or "", ""),
+                "state_zh": _IRL_STATE_ZH.get(_last.get("state") or "", ""),
+                "stance_en": _IRL_STANCE_EN.get(_last.get("state") or "", ""),
+                "stance_zh": _IRL_STANCE_ZH.get(_last.get("state") or "", ""),
+                "dominant_en": _IRL_SCARE_EN.get(_last.get("dominant_scare") or "",
+                                                 _last.get("dominant_scare") or ""),
+                "dominant_zh": _IRL_SCARE_ZH.get(_last.get("dominant_scare") or "",
+                                                 _last.get("dominant_scare") or ""),
+                "has_profile": False,   # set True by the B1b attach below when one exists
             })
         _irl_alerts = [r for r in _irl_rows if r["alert"]]
         _irl_alerts.sort(key=lambda r: -r["score"])
+        _irl_stale_rows = [r for r in _irl_rows if r["stale"]]
+        _irl_fresh_asofs = [r["asof"] for r in _irl_rows if r["asof"] and not r["stale"]]
         _intl_cascade = {
             "n_alert": len(_irl_alerts),
             "n_total": len(_irl_rows),
             "alerts": _irl_alerts,
             "rows": _irl_rows,  # full 10-market list (fixed order; display re-sorts alert-first)
+            # `asof` stays max() for backward compatibility, but it is the NEWEST row — never
+            # evidence that every ring is current. The honest spread is published beside it.
             "asof": max(_irl_asofs) if _irl_asofs else None,
+            "asof_min": min([a for a in _irl_asofs if a], default=None),
+            "asof_fresh_max": max(_irl_fresh_asofs) if _irl_fresh_asofs else None,
+            "asof_by_country": {r["code"]: r["asof"] for r in _irl_rows},
+            "board_asof": (_irl_ref.isoformat() if _irl_ref else None),
+            "n_stale": len(_irl_stale_rows),
+            "stale_codes": [r["code"] for r in _irl_stale_rows],
+            "max_age_bd": _IRL_MAX_AGE_BD,
+            "n_alert_as_logged": len([r for r in _irl_rows if r["alert_as_logged"]]),
         }
     except Exception as _ice:  # noqa: BLE001 — display-only, never fatal
         log.warning("intl_cascade build failed (%s)", _ice)
@@ -4746,7 +4836,9 @@ def main() -> int:
     # Fail-open: on ANY exception, rows keep their existing fields untouched.
     # market_states() keys use UPPERCASE config codes (JP/KR/TW/IN/AU/GB/EZ);
     # forward_log codes are lowercase (jp/kr/tw/in/au/gb/ez). CN/HK/CA have
-    # no market_states() coverage (separate systems), so they remain profile-free.
+    # no market_states() coverage (separate systems), so they carry no `profile` —
+    # but they DO now carry state_en/state_zh/stance_*/dominant_* from the B1 loop
+    # above (audit 2026-07-29), so no ring ever renders without a state word.
     try:
         if _intl_cascade and _intl_cascade.get("rows"):
             from engine.intl_market_state import market_states as _ims_fn
@@ -4809,6 +4901,7 @@ def main() -> int:
                             "mom20_pct": _ims_st.get("mom20_pct"),
                             "dd_pct":    _ims_st.get("dd_pct"),
                         }
+                        _ims_row["has_profile"] = True
                         _ims_ds = _ims_row.get("dominant_scare")
                         _ims_row["dominant_en"] = _IMS_SCARE_EN.get(_ims_ds, _ims_ds or "")
                         _ims_row["dominant_zh"] = _IMS_SCARE_ZH.get(_ims_ds, _ims_ds or "")
