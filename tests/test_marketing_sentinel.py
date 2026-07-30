@@ -26,17 +26,26 @@ Coverage:
   - reasons_histogram populated
   - self-contained quarantined entries carry account+headline+reasons
   - run_gate: reads plan+cfg from tmp tree, writes both artifacts atomically
+  - POST-TIME gates (ported from #3928): per-account template-frame repeats, the
+    no-ticker filler cap (plan side AND publish side), and the substance floor —
+    each unit-tested and each proven to run through the live publisher
 """
 from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from engine.marketing.sentinel import gate_plan, run_gate, publish_enabled
+
+#: Repo root — the post-time gate sections read the COMMITTED config/marketing.yml
+#: (the plan side and the publisher both read its sentinel keys, so a drifted key
+#: silently changes both seams).
+ROOT = Path(__file__).resolve().parent.parent
 
 
 # ---------------------------------------------------------------------------
@@ -1848,3 +1857,716 @@ class TestEffectiveDisabledAccounts:
         off = report["checks"]["kill_switch"]["accounts_disabled"]
         assert "theme_desk" in off
         assert "flagship" not in off
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# POST-TIME GATES (ported from PR #3928, adapted to the W1 pipeline 2026-07-29)
+#
+# Three gates that run at PUBLISH time, not plan time, over ONE account's
+# same-day posted history. #3928's other halves (consequence.py, the template
+# bank rewrites) are obsolete under the W1 no-fallback law — the bank no longer
+# ships planned copy anywhere — but these three are lane-independent post-time
+# checks that gate_plan structurally cannot perform, because an account's day is
+# assembled from lanes that never share a plan.
+#
+# EVERY GATE HERE IS PROVEN TO RUN. The unit sections pin the arithmetic; the
+# publisher section drives the real scripts/marketing_publisher.main() over a
+# fixture clock and asserts the ledger, so reverting a call site turns these red
+# rather than leaving a tested function nothing calls.
+# ═════════════════════════════════════════════════════════════════════════════
+
+# ── The real corpus these gates were measured on ─────────────────────────────
+# Two posts flagship ACTUALLY SHIPPED on 2026-07-25 (outbox ids
+# ob-2026-07-25-8431ea805e / ob-2026-07-25-b87e9ce3f7, both `watchlist`, both
+# status `posted`). One template, two tickers, two prices. Verbatim from
+# data/marketing/outbox/items.jsonl so the threshold is pinned against live copy
+# and not against a paraphrase of it.
+_REAL_FRAME_A = (
+    "$PLTR into the week\n\nClosed 123, down 7% on the week, under both the "
+    "20- (128) and 50-day (132). About 41% off the highs, in the lower third of "
+    "its range. Into next week, the 20-day at 128 is the first hurdle back. On "
+    "the watch list, not a call."
+)
+_REAL_FRAME_B = (
+    "$MSFT into the week\n\nClosed 382, down 3% on the week, under both the "
+    "20- (387) and 50-day (399). About 29% off the highs, in the lower third of "
+    "its range. Into next week, the 20-day at 387 is the first hurdle back. "
+    "Watching, no position."
+)
+# The HIGHEST-scoring pair that must NOT trip: also flagship, also one day
+# (2026-07-28), also both posted, and genuinely two different reads — one is a
+# bare stance, the other carries a level and a dated volume spike.
+_REAL_DIFFERENT_A = (
+    "Watching $TEL, not buying yet\n\nPrice is the most honest thing on the "
+    "screen. Interesting name, unfinished setup. The list stays honest that way."
+)
+_REAL_DIFFERENT_B = (
+    "Watching $CUBI, not buying yet\n\nCUBI closed back above 77.99, the "
+    "average price paid since the Jun 26 volume spike. Interesting name, "
+    "unfinished setup. The list stays honest that way."
+)
+
+
+class TestSkeletonFrame:
+    """The template-frame primitive: blank the tickers and numbers, compare."""
+
+    def test_skeleton_blanks_tickers_and_numbers(self):
+        from engine.marketing.sentinel import skeleton
+
+        out = skeleton("$TEL close to going. Almost there at 41.20.")
+        assert "TEL" not in out and "41" not in out
+        assert "close to going" in out
+
+    def test_the_founder_desk_trio_collapses_to_one_frame(self):
+        """"$TEL close to going" / "$CBOE close to going" / "$FDS close to going"
+        — the three posts the founder desk shipped in one day on 2026-07-28."""
+        from engine.marketing.sentinel import skeleton
+
+        frames = {
+            skeleton(f"{tag} close to going\n\nAlmost there at {px}. "
+                     f"Haven't touched it. Watching live.")
+            for tag, px in (("$TEL", "41.20"), ("$CBOE", "219.80"), ("$FDS", "486.10"))
+        }
+        assert len(frames) == 1, f"three renders of one template gave {len(frames)} frames"
+
+    def test_token_jaccard_structurally_cannot_see_it(self):
+        """WHY THIS GATE EXISTS, pinned as an assertion.
+
+        The publisher's per-account near-dup gate compares RAW tokens, and the
+        tickers and prices differ, so the real 2026-07-25 pair scores UNDER its
+        bar and both posts went out. Blank the tickers and numbers and the same
+        pair is over the frame bar. If a future refactor ever makes raw Jaccard
+        catch this on its own, this assertion is the thing that says so.
+        """
+        from engine.marketing.outbox import _NEAR_DUP_JACCARD, token_jaccard
+        from engine.marketing.sentinel import (
+            _DEFAULT_FRAME_SIMILARITY, skeleton_similarity)
+
+        raw = token_jaccard(_REAL_FRAME_A, _REAL_FRAME_B)
+        frame = skeleton_similarity(_REAL_FRAME_A, _REAL_FRAME_B)
+        assert raw < _NEAR_DUP_JACCARD, (
+            f"raw jaccard {raw:.3f} already clears the near-dup bar "
+            f"{_NEAR_DUP_JACCARD} — this fixture no longer pins the blind spot")
+        assert frame >= _DEFAULT_FRAME_SIMILARITY, (
+            f"the real shipped pair scored {frame:.3f} on skeletons")
+
+    def test_two_genuinely_different_reads_do_not_collide(self):
+        """The false-positive guard, on the closest real pair in the corpus.
+
+        Measured over the whole live outbox on 2026-07-29: 124 same-(account,
+        day) pairs among approved/posted items, exactly ONE at or over 0.60 (the
+        pair above, at 0.778). This is the runner-up, at 0.500 — so the shipped
+        threshold sits in a real gap rather than on a slope.
+        """
+        from engine.marketing.sentinel import (
+            _DEFAULT_FRAME_SIMILARITY, skeleton_similarity)
+
+        score = skeleton_similarity(_REAL_DIFFERENT_A, _REAL_DIFFERENT_B)
+        assert score < _DEFAULT_FRAME_SIMILARITY, (
+            f"two real, genuinely different posts scored {score:.3f}")
+
+    def test_frame_repeat_of_names_the_prior_post(self):
+        from engine.marketing.sentinel import frame_repeat_of, skeleton_tokens
+
+        prior = [("ob-earlier", skeleton_tokens(_REAL_FRAME_A))]
+        hit = frame_repeat_of(skeleton_tokens(_REAL_FRAME_B), prior, threshold=0.60)
+        assert hit is not None
+        prior_id, score = hit
+        assert prior_id == "ob-earlier"
+        assert score >= 0.60
+
+    def test_a_different_frame_passes(self):
+        from engine.marketing.sentinel import frame_repeat_of, skeleton_tokens
+
+        prior = [("ob-earlier", skeleton_tokens(_REAL_FRAME_A))]
+        assert frame_repeat_of(skeleton_tokens(_REAL_DIFFERENT_B), prior,
+                              threshold=0.60) is None
+
+    def test_empty_prior_history_passes(self):
+        """The first post of the day has nothing to repeat."""
+        from engine.marketing.sentinel import frame_repeat_of, skeleton_tokens
+
+        assert frame_repeat_of(skeleton_tokens(_REAL_FRAME_A), [], threshold=0.60) is None
+        assert frame_repeat_of(skeleton_tokens(_REAL_FRAME_A), None, threshold=0.60) is None
+
+    def test_threshold_comes_from_config(self):
+        """A config key nothing reads is a lie in a config file."""
+        from engine.marketing.sentinel import (
+            _DEFAULT_FRAME_SIMILARITY, frame_similarity_threshold)
+
+        assert frame_similarity_threshold({"sentinel": {"frame_similarity": 0.9}}) == 0.9
+        assert frame_similarity_threshold({}) == _DEFAULT_FRAME_SIMILARITY
+        # A garbage value must fall back, never crash the publisher.
+        assert frame_similarity_threshold(
+            {"sentinel": {"frame_similarity": "wat"}}) == _DEFAULT_FRAME_SIMILARITY
+
+
+class TestFillerKinds:
+    """The no-ticker, no-chart kinds and their daily budget."""
+
+    def test_the_three_no_ticker_kinds_are_filler(self):
+        from engine.marketing.sentinel import FILLER_KINDS, is_filler_kind
+
+        assert FILLER_KINDS == frozenset({"macro", "event", "education"})
+        for kind in ("macro", "event", "education", "MACRO"):
+            assert is_filler_kind(kind), kind
+
+    def test_every_ticker_bearing_kind_is_not_filler(self):
+        from engine.marketing.sentinel import is_filler_kind
+
+        for kind in ("signal", "chart", "watchlist", "receipt", "mover",
+                     "theme_list", "breaking", "", None):
+            assert not is_filler_kind(kind), kind
+
+    def test_cap_comes_from_config_and_minus_one_is_unlimited(self):
+        from engine.marketing.sentinel import (
+            _DEFAULT_MAX_FILLER_PER_ACCOUNT_PER_DAY,
+            max_filler_per_account_per_day)
+
+        assert max_filler_per_account_per_day(
+            {"sentinel": {"max_filler_per_account_per_day": 3}}) == 3
+        assert max_filler_per_account_per_day(
+            {"sentinel": {"max_filler_per_account_per_day": -1}}) is None
+        assert max_filler_per_account_per_day({}) == \
+            _DEFAULT_MAX_FILLER_PER_ACCOUNT_PER_DAY
+
+    def test_shipped_config_carries_the_key(self):
+        """The committed marketing.yml must actually set it — the plan side and
+        the publisher both read it, so a missing key silently changes both."""
+        import yaml
+
+        cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        sc = cfg["sentinel"]
+        assert sc["max_filler_per_account_per_day"] == 1
+        assert sc["frame_similarity"] == 0.60
+        assert sc["require_ticker_and_number"] is False
+
+
+class TestSubstanceFloor:
+    """Name a cashtag, state a quantity. Armed by config, dark by default."""
+
+    def test_a_no_ticker_post_states_no_ticker(self):
+        from engine.marketing.sentinel import substance_gap
+
+        assert substance_gap("Rates drifted again today. Liquidity is thinner.") \
+            == "ticker"
+
+    def test_a_cashtag_with_no_quantity_states_no_number(self):
+        from engine.marketing.sentinel import substance_gap
+
+        assert substance_gap("$AAPL is interesting here. Watching it.") == "number"
+
+    def test_a_post_naming_both_passes(self):
+        from engine.marketing.sentinel import substance_gap
+
+        assert substance_gap("$AAPL closed 214, back over its 20-day.") is None
+
+    def test_the_ticker_may_come_from_the_item_not_the_copy(self):
+        """Outbox items keep the name on source.ticker; the copy is the fallback."""
+        from engine.marketing.sentinel import substance_gap
+
+        assert substance_gap("Closed 214, back over the 20-day.", ticker="AAPL") is None
+        assert substance_gap("Closed 214, back over the 20-day.") == "ticker"
+
+    def test_looser_than_the_copywriter_number_rule_on_purpose(self):
+        """copywriter._NUMBER_RE skips bare 1-2 digit integers so "T1" and
+        "3 weeks" do not read as invented prices. THIS regex takes any digit: the
+        question here is "does the post state a quantity at all", not "is every
+        quantity whitelisted". The divergence is pinned so a future unification
+        has to be deliberate."""
+        from engine.marketing.copywriter import _NUMBER_RE
+        from engine.marketing.sentinel import substance_gap
+
+        text = "$AAPL has held this base for 3 weeks."
+        assert not _NUMBER_RE.search(text), \
+            "fixture no longer exercises the divergence — pick another number"
+        assert substance_gap(text) is None
+
+    def test_the_floor_is_dark_by_default_and_arms_by_config(self):
+        from engine.marketing.sentinel import require_ticker_and_number
+
+        assert require_ticker_and_number({}) is False
+        assert require_ticker_and_number(
+            {"sentinel": {"require_ticker_and_number": True}}) is True
+        # A quoted "false" must never arm a gate (the _flag contract).
+        assert require_ticker_and_number(
+            {"sentinel": {"require_ticker_and_number": "false"}}) is False
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The PLAN side of the filler cap (content_studio.apply_reuse_budget)
+#
+# THE RECONCILIATION. Measured on the committed tilts, the W1 allocator gives
+# ONE desk 3-10 filler slots on the emitted day (sophia 10, kelly 9, meagan 7,
+# flagship 6, cici 6, founder 3), and the live 2026-07-28/29 queues carried 6
+# for flagship. A publish-time cap of 1 with no plan-side trim would therefore
+# have quarantined 5 of 6 planned-and-written posts every night. The plan side
+# reads the SAME sentinel key and trims first, which is what makes the
+# publisher's copy a backstop instead of a scythe.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _filler_row(account: str, n: int, *, kind: str = "macro", day: str = "D1") -> dict:
+    return {"id": account, "queue": [
+        {"id": f"{account}-{i}", "account": account, "type": kind, "ticker": "",
+         "slot": f"{day}-S{i + 1}"}
+        for i in range(n)
+    ]}
+
+
+class TestPlanSideFillerBudget:
+    def test_four_filler_posts_trim_to_one(self):
+        """Kelly's 2026-07-28 day, at the seam where it should have been stopped."""
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [_filler_row("kelly", 4)]
+        counts = apply_reuse_budget(rows, cfg=None, day_prefix="D1")
+        assert len(rows[0]["queue"]) == 1
+        assert counts["dropped_filler_budget"] == 3
+
+    def test_the_budget_is_per_account(self):
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [_filler_row("kelly", 3), _filler_row("sophia", 3)]
+        apply_reuse_budget(rows, cfg=None, day_prefix="D1")
+        assert [len(r["queue"]) for r in rows] == [1, 1]
+
+    def test_mixed_filler_kinds_share_one_budget(self):
+        """macro + event + education are one class, not three budgets — Kelly's
+        day was four posts across two of them."""
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [{"id": "kelly", "queue": [
+            {"id": f"k{i}", "account": "kelly", "type": k, "ticker": "",
+             "slot": f"D1-S{i + 1}"}
+            for i, k in enumerate(("macro", "education", "event"))]}]
+        counts = apply_reuse_budget(rows, cfg=None, day_prefix="D1")
+        assert len(rows[0]["queue"]) == 1
+        assert counts["dropped_filler_budget"] == 2
+
+    def test_ticker_bearing_posts_are_untouched(self):
+        """The budget is about the NO-ticker kinds; a watchlist post is not filler."""
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [{"id": "flagship", "queue": [
+            {"id": f"w{i}", "account": "flagship", "type": "watchlist",
+             "ticker": f"T{i}", "slot": f"D1-S{i + 1}"} for i in range(4)]}]
+        counts = apply_reuse_budget(rows, cfg=None, day_prefix="D1")
+        assert len(rows[0]["queue"]) == 4
+        assert counts["dropped_filler_budget"] == 0
+
+    def test_only_the_emitted_day_is_trimmed(self):
+        """D2-D7 never reach the outbox, so trimming them would delete posts
+        nothing was going to send — the same scoping the ticker budget uses."""
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [_filler_row("kelly", 4, day="D3")]
+        apply_reuse_budget(rows, cfg=None, day_prefix="D1")
+        assert len(rows[0]["queue"]) == 4
+
+    def test_unlimited_keeps_everything(self):
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [_filler_row("kelly", 4)]
+        counts = apply_reuse_budget(
+            rows, cfg={"sentinel": {"max_filler_per_account_per_day": -1}},
+            day_prefix="D1")
+        assert len(rows[0]["queue"]) == 4
+        assert counts["dropped_filler_budget"] == 0
+
+    def test_the_number_comes_from_the_sentinel_key(self):
+        """ONE reader for the key: the plan side must move when it moves, or the
+        two seams disagree about how many filler posts a day holds."""
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [_filler_row("kelly", 4)]
+        apply_reuse_budget(
+            rows, cfg={"sentinel": {"max_filler_per_account_per_day": 2}},
+            day_prefix="D1")
+        assert len(rows[0]["queue"]) == 2
+
+    def test_survivors_still_get_their_angle(self):
+        """The trim must not cost the surviving filler post its angle stamp —
+        the writer, the emit provenance and the learning lane all read it."""
+        from engine.marketing.content_studio import apply_reuse_budget
+
+        rows = [_filler_row("kelly", 3)]
+        apply_reuse_budget(rows, cfg=None, day_prefix="D1")
+        assert rows[0]["queue"][0].get("angle")
+
+    def test_the_shipped_config_trims_the_real_allocator(self):
+        """END-TO-END on the committed tilts: every enabled desk lands at 1."""
+        import yaml
+
+        from engine.marketing import content_studio as cs
+
+        cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        accounts = [a for a in ((cfg.get("desk_network") or {}).get("accounts") or [])
+                    if a.get("enabled")]
+        assert accounts, "fixture needs at least one enabled desk"
+        rows = []
+        for acct in accounts:
+            tilt = acct.get("tilt") or {}
+            items = cs.plan_account(account=acct, plans=[], n_days=7,
+                                    per_day=len(cs._LADDER_SLOTS), seed=0,
+                                    tilt=tilt or None)
+            rows.append({"id": acct["id"], "queue": [i.as_dict() for i in items]})
+
+        def _d1_filler(row):
+            return sum(1 for i in row["queue"]
+                       if str(i.get("slot", "")).startswith("D1-")
+                       and i.get("type") in {"macro", "event", "education"})
+
+        before = {r["id"]: _d1_filler(r) for r in rows}
+        assert max(before.values()) >= 2, (
+            "THE RECONCILIATION IS VACUOUS: the allocator no longer plans 2+ "
+            f"filler posts for any desk ({before}), so the publish-time cap "
+            "could not have killed planned work and this trim is unneeded")
+        cs.apply_reuse_budget(rows, cfg=cfg, day_prefix="D1")
+        after = {r["id"]: _d1_filler(r) for r in rows}
+        assert set(after.values()) <= {0, 1}, after
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The PUBLISH side: the gates run inside scripts/marketing_publisher.main()
+#
+# A gate with no production caller is not a gate. These drive the real publisher
+# over a fixture clock with a fake backend and assert the outbox ledger, so
+# deleting a call site turns them red.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_PG_NOW = datetime(2026, 7, 22, 12, 0, 0, tzinfo=timezone.utc)
+_PG_AS_OF = "2026-07-22"
+_PG_UNLIMITED = {"sentinel": {"max_posts_per_account_per_day": -1}}
+
+
+class _PGFakePublisher:
+    backend = "buffer"
+
+    def __init__(self) -> None:
+        self.calls: list[dict] = []
+
+    def publish(self, **kwargs):
+        from engine.marketing.social_publisher import Receipt
+
+        self.calls.append(kwargs)
+        at_iso = (kwargs.get("now") or _PG_NOW).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return Receipt(True, f"buf-{len(self.calls)}", None, None, self.backend, at_iso)
+
+    def list_channels(self):
+        return []
+
+
+def _pg_write_cfg(root: Path, *, extra: str = "") -> None:
+    (root / "config").mkdir(parents=True, exist_ok=True)
+    (root / "config" / "marketing.yml").write_text(
+        "sentinel:\n"
+        "  max_posts_per_account_per_day: -1\n"   # isolate the ported gates
+        "  max_filler_per_account_per_day: 1\n"
+        "  frame_similarity: 0.60\n" + extra
+        + "publish:\n"
+          "  backend: buffer\n"
+          "  require_approval: true\n"
+          "  auto_approve: true\n"
+          "  min_minutes_between_any_posts: 0\n"
+          "  post_jitter_max_min: 0\n"
+          "  channels:\n"
+          '    desk: "buf-chan-0"\n',
+        encoding="utf-8",
+    )
+    p = root / "data" / "marketing"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "live_quotes_snapshot.json").write_text(json.dumps({
+        "asof": _PG_NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), "quotes": {},
+    }), encoding="utf-8")
+
+
+def _pg_seed(root: Path, *, text: str, kind: str = "watchlist",
+             immediate: bool = False, posted: bool = False) -> str:
+    """Queue + approve (and optionally POST) one item on the `desk` account.
+
+    A ladder item gets an explicit past slot time so it does not take the
+    immediate/breaking path, which the volume caps exempt.
+    """
+    from engine.marketing.outbox import enqueue, make_item, transition
+
+    when = _PG_NOW - timedelta(hours=3)
+    item = make_item(
+        account="desk", kind=kind, text=text, as_of=_PG_AS_OF,
+        scheduled_at=("immediate" if immediate
+                      else (_PG_NOW - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")),
+        provenance="content_studio", now=when)
+    assert enqueue(item, root=root, cfg=_PG_UNLIMITED) == "queued"
+    assert transition(item["id"], "approved", actor="test", root=root, now=when)
+    if posted:
+        assert transition(item["id"], "posted", actor="test", root=root, now=when)
+    return item["id"]
+
+
+def _pg_run(monkeypatch, root: Path, fake) -> int:
+    import scripts.marketing_publisher as pub
+
+    monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
+    monkeypatch.setenv("BUFFER_TOKEN", "test-token")
+    monkeypatch.setattr(pub, "_make_publisher", lambda backend, *, token, cfg: fake)
+    return pub.main(["--live", "--root", str(root),
+                     "--now", _PG_NOW.strftime("%Y-%m-%dT%H:%M:%SZ")])
+
+
+class TestPublisherFrameGate:
+    def test_a_frame_repeat_of_todays_post_is_quarantined(self, monkeypatch, tmp_path):
+        """THE NAMED DEFECT, at the seam that should have stopped it: one post of
+        the frame already went out today, the second is the same template with a
+        different ticker, and it must not reach the network."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        _pg_seed(tmp_path, text=_REAL_FRAME_A, posted=True)
+        pending = _pg_seed(tmp_path, text=_REAL_FRAME_B)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert fake.calls == [], "a template-frame repeat reached the network"
+        assert current_statuses(tmp_path)[pending] == "quarantined"
+
+    def test_a_genuinely_different_read_still_posts(self, monkeypatch, tmp_path):
+        """The same fixture shape, flipped by COPY alone — which is what makes
+        the test above a test of the frame and not of "something refused"."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        _pg_seed(tmp_path, text=_REAL_DIFFERENT_A, posted=True)
+        pending = _pg_seed(tmp_path, text=_REAL_DIFFERENT_B)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert len(fake.calls) == 1
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+    def test_two_frame_siblings_in_ONE_run_cannot_both_go_out(
+            self, monkeypatch, tmp_path):
+        """The folded state is read before the loop, so without in-loop
+        bookkeeping a single sweep sends both — which is exactly how the three
+        "$X close to going" renders shipped on one day."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        a = _pg_seed(tmp_path, text=_REAL_FRAME_A)
+        b = _pg_seed(tmp_path, text=_REAL_FRAME_B)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert len(fake.calls) == 1
+        statuses = current_statuses(tmp_path)
+        assert sorted((statuses[a], statuses[b])) == ["posted", "quarantined"]
+
+    def test_the_frame_gate_binds_breaking_items(self, monkeypatch, tmp_path):
+        """Every SIMILARITY gate above it binds immediates on purpose (a
+        coordinated-looking set of renders is worse when it is fast). Only the
+        VOLUME caps exempt breaking. This pins which family the gate is in."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        _pg_seed(tmp_path, text=_REAL_FRAME_A, posted=True)
+        pending = _pg_seed(tmp_path, text=_REAL_FRAME_B, immediate=True)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert fake.calls == []
+        assert current_statuses(tmp_path)[pending] == "quarantined"
+
+    def test_a_loose_threshold_lets_the_pair_through(self, monkeypatch, tmp_path):
+        """The publisher reads the CONFIG number, not a buried constant."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        (tmp_path / "config" / "marketing.yml").write_text(
+            (tmp_path / "config" / "marketing.yml").read_text().replace(
+                "frame_similarity: 0.60", "frame_similarity: 0.99"),
+            encoding="utf-8")
+        _pg_seed(tmp_path, text=_REAL_FRAME_A, posted=True)
+        pending = _pg_seed(tmp_path, text=_REAL_FRAME_B)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+
+class TestPublisherFillerCap:
+    def test_a_second_filler_post_is_held_not_quarantined(self, monkeypatch, tmp_path):
+        """Kelly's day, at the last gate. HELD (still approved): the item is
+        fine, the day is full, and it can post tomorrow — the same treatment the
+        daily cap and the cadence resolver give."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        _pg_seed(tmp_path, kind="macro", posted=True,
+                 text="Rates drifted lower again, the third session in a row.")
+        pending = _pg_seed(
+            tmp_path, kind="education",
+            text="What a moving average actually tells you, in plain words.")
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert fake.calls == [], "a second filler post cleared the daily cap"
+        assert current_statuses(tmp_path)[pending] == "approved"
+
+    def test_a_ticker_post_is_not_filler(self, monkeypatch, tmp_path):
+        """Same fixture, one field changed: the cap covers macro/event/education
+        only, so a watchlist post after a macro post still goes out."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        _pg_seed(tmp_path, kind="macro", posted=True,
+                 text="Rates drifted lower again, the third session in a row.")
+        pending = _pg_seed(tmp_path, kind="watchlist", text=_REAL_DIFFERENT_B)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert len(fake.calls) == 1
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+    def test_breaking_is_exempt_from_the_filler_cap(self, monkeypatch, tmp_path):
+        """"Breaking has no limits" (operator 2026-07-27) — the standing ruling
+        that already exempts immediates from the daily cap and the resolver. A
+        breaking `event` post is exactly what it protects."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        _pg_seed(tmp_path, kind="macro", posted=True,
+                 text="Rates drifted lower again, the third session in a row.")
+        pending = _pg_seed(
+            tmp_path, kind="event", immediate=True,
+            text="The jobs print landed hot and the whole curve repriced at once.")
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert len(fake.calls) == 1, "the filler cap killed a breaking post"
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+    def test_unlimited_disarms_the_cap(self, monkeypatch, tmp_path):
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        (tmp_path / "config" / "marketing.yml").write_text(
+            (tmp_path / "config" / "marketing.yml").read_text().replace(
+                "max_filler_per_account_per_day: 1",
+                "max_filler_per_account_per_day: -1"),
+            encoding="utf-8")
+        _pg_seed(tmp_path, kind="macro", posted=True,
+                 text="Rates drifted lower again, the third session in a row.")
+        pending = _pg_seed(
+            tmp_path, kind="education",
+            text="What a moving average actually tells you, in plain words.")
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+
+class TestPublisherSubstanceFloor:
+    def test_dark_by_default_the_post_goes_out(self, monkeypatch, tmp_path):
+        """The shipped posture: the verdict is computed and counted, nothing is
+        enforced. Arming it is a product ruling about the no-ticker lanes."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        pending = _pg_seed(tmp_path, kind="macro",
+                           text="Rates drifted lower, and positioning has not caught up.")
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert len(fake.calls) == 1
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+    def test_armed_by_config_the_same_post_is_quarantined(self, monkeypatch, tmp_path):
+        """ONE key flips it, and the fixture is otherwise identical — which is
+        what makes this a test of the floor rather than of "something refused"."""
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path, extra="  require_ticker_and_number: true\n")
+        pending = _pg_seed(tmp_path, kind="macro",
+                           text="Rates drifted lower, and positioning has not caught up.")
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert fake.calls == []
+        assert current_statuses(tmp_path)[pending] == "quarantined"
+
+    def test_armed_a_post_naming_a_ticker_and_a_number_still_ships(
+            self, monkeypatch, tmp_path):
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path, extra="  require_ticker_and_number: true\n")
+        pending = _pg_seed(tmp_path, kind="watchlist", text=_REAL_DIFFERENT_B)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert len(fake.calls) == 1
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+
+class TestPublisherGatesFailSoft:
+    def test_a_broken_sentinel_never_wedges_the_queue(self, monkeypatch, tmp_path):
+        """A guard that can stop the whole desk is worse than the defect it
+        guards. If the gate module cannot be read, the post still goes out and
+        every pre-existing gate still runs."""
+        from engine.marketing import sentinel as sen
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        _pg_seed(tmp_path, text=_REAL_FRAME_A, posted=True)
+        pending = _pg_seed(tmp_path, text=_REAL_FRAME_B)
+
+        def _boom(*a, **k):
+            raise RuntimeError("sentinel gates unavailable")
+
+        # The publisher imports sentinel lazily inside main(), so the module
+        # attribute is the patch point (monkeypatch restores it either way).
+        # Fault-injecting the CONFIG READ is the realistic shape: everything the
+        # gates do in the loop afterwards is pure string work on a str and cannot
+        # raise, so the import and the setup read are the whole risk surface.
+        monkeypatch.setattr(sen, "frame_similarity_threshold", _boom)
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake) == 0
+        assert len(fake.calls) == 1, "a broken gate must not hold the queue"
+        assert current_statuses(tmp_path)[pending] == "posted"
+
+
+class TestPostedTodayRowsSurface:
+    """The same-day surface both gates read, and its agreement with the cap."""
+
+    def test_rows_carry_id_text_and_kind(self):
+        from engine.marketing.outbox import posted_today_rows_by_account
+
+        state = {
+            "items": {"i1": {"account": "desk", "text": "one", "kind": "macro"}},
+            "status": {"i1": "posted"},
+            "last": {"i1": {"at": "2026-07-22T10:00:00Z"}},
+        }
+        rows = posted_today_rows_by_account(state, "2026-07-22")
+        assert rows == {"desk": [("i1", "one", "macro")]}
+
+    def test_the_cap_counter_is_a_count_over_the_same_rows(self):
+        """ONE predicate for "did this consume a posting slot today" — if the two
+        ever diverge, the cap and the gates disagree about the account's day."""
+        from engine.marketing.outbox import (
+            posted_today_by_account, posted_today_rows_by_account)
+
+        state = {
+            "items": {
+                "i1": {"account": "desk", "text": "a", "kind": "macro"},
+                "i2": {"account": "desk", "text": "b", "kind": "signal"},
+                "i3": {"account": "desk", "text": "c", "kind": "macro"},
+                "i4": {"account": "other", "text": "d", "kind": "macro"},
+            },
+            "status": {"i1": "posted", "i2": "posting", "i3": "quarantined",
+                       "i4": "posted"},
+            "last": {"i1": {"at": "2026-07-22T10:00:00Z"},
+                     "i2": {"at": "2026-07-22T11:00:00Z"},
+                     "i3": {"at": "2026-07-22T09:00:00Z"},
+                     "i4": {"at": "2026-07-21T10:00:00Z"}},
+        }
+        rows = posted_today_rows_by_account(state, "2026-07-22")
+        counts = posted_today_by_account(state, "2026-07-22")
+        assert counts == {a: len(r) for a, r in rows.items()}
+        assert counts == {"desk": 2}, "quarantined and yesterday must not count"

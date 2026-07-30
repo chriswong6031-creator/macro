@@ -133,6 +133,47 @@ sentinel:
   max_same_cashtag_per_account_per_day: 3
   max_replies_per_account_per_day: 0
 
+  # ── Post-time gates (ported from #3928) ────────────────────────────────────
+  # Enforced by scripts/marketing_publisher.py at the last gate before the
+  # network, over ONE account's same-day posted history. Lane-blind on purpose:
+  # the nightly plan, the wire lanes, the press bridge and an operator "post now"
+  # all land in the same account's day and only the publisher sees all of them.
+  #
+  # Per-account template-FRAME similarity (tickers and numbers blanked, token
+  # Jaccard). Two posts by one desk in one day at or above this are one template
+  # wearing two tickers: "$TEL close to going" / "$CBOE close to going" /
+  # "$FDS close to going" all shipped on the founder desk on 2026-07-28 because
+  # every dedup gate in the tree compares raw tokens and the tickers differ.
+  # Measured over the live outbox on 2026-07-29: of 124 same-(account, day)
+  # pairs among approved/posted items exactly ONE scores at or over 0.60 (the
+  # flagship "$PLTR into the week" / "$MSFT into the week" pair at 0.778, which
+  # is the defect); the next-highest pair is 0.500.
+  frame_similarity: 0.60
+  # Per-account daily cap on the no-ticker, no-chart kinds (macro/event/
+  # education). Kelly's entire 2026-07-28 output was four of them, each a
+  # different way to say "I post my results", so she shipped nothing after
+  # review. They are seasoning, not a meal.
+  #
+  # content_studio.apply_reuse_budget reads THIS SAME KEY and trims the emitted
+  # day to it, so the publisher's copy is a cross-lane backstop rather than a
+  # scythe through planned work: on the 2026-07-28/29 plans the allocator gave
+  # flagship 6 filler slots a day (sophia's tilt allows 10), and arming only the
+  # publish-time half would have quarantined 5 of 6 every night with nothing
+  # upstream saying so. -1 = unlimited.
+  max_filler_per_account_per_day: 1
+  # THE BAR (operator 2026-07-28): "a post must name a ticker, state a dated
+  # fact with its numbers, and then say something that FOLLOWS from that fact."
+  # This gate covers the first two clauses over every ORIGINATED post from every
+  # lane and vintage (replies are exempt — a reply is a conversation).
+  #
+  # DARK ON PURPOSE. Arming it drops the no-ticker kinds outright: macro, event,
+  # education and the planner's ticker-free watchlist slot cannot name a cashtag
+  # by construction. That is a product ruling about whether those lanes exist,
+  # not a bug fix, so the publisher EVALUATES the floor every sweep and
+  # annotates what arming would refuse (the same land-dark shape
+  # cadence_resolver.enabled uses) and enforces nothing until this flips true.
+  require_ticker_and_number: false
+
   # min_minutes_between_posts is NOT enforced at plan tier (queue slots have no
   # timestamps). It is the contract value the D02 actuator MUST read from here
   # and honour at post time, never post faster than this floor.
