@@ -7,8 +7,19 @@ these files are what it must end up looking like.
 | File | What it is |
 |---|---|
 | `strip.html` | The mockup itself. Self-contained: theme tokens copied verbatim from `templates/theme.css`, strip CSS verbatim from spec §3, prophet-card CSS verbatim from `_prophet_card.html.j2`'s `pv_css()` plus the new `.pv-live` chip (spec §5.3). **This file, not the PNGs, is the authoritative reference** — it carries the exact CSS. |
-| `build_refs.py` | Playwright shot harness. `python3 mockups/refs/prophet_live/build_refs.py`. Also prints the height-invariance proof. |
-| `shots/*.png` | 2× crops: `{specimen}_{theme}_{lang}.png`, plus `_mobile_` at 375px. |
+| `build_refs.py` | Playwright shot harness for the MOCKUP. `python3 mockups/refs/prophet_live/build_refs.py`. Also prints the height-invariance proof. |
+| `shots/*.png` | 2× crops of the mockup: `{specimen}_{theme}_{lang}.png`, plus `_mobile_` at 375px. |
+| **`verify_p1.py`** | **Acceptance harness for the SHIPPED build** (added with the P1 PR). Renders the real `dashboard.html.j2` with the real `us_standouts.json`, serves `site/` over loopback so the page's own `fetch('live/prophet_live.json')` resolves, freezes the ET clock per specimen, and drives the production JS path. Prints the five proofs and exits non-zero on any failure, so it doubles as a pre-push gate. |
+| `p1_shots/*.png` | 2× crops from `verify_p1.py` — the shipped surface, not the mockup. Includes `strip_closed` and `strip_overflow`, which the mockup has no specimen for. |
+
+## Which numbers to trust
+
+The mockup's height numbers (231.25 / 233.25 / 284.34px) do **not** carry over: the real
+page inherits `line-height:1.5` where the mockup inherited `normal`, so a baseline-aligned
+row measures 26.06px there against 24.5px here. The shipped build therefore pins the row
+height and derives the body reservation from it (`--plv-rh`), and the production numbers are
+**243.25px** at 1180px (en and zh) and **336.34px** at 375px. `verify_p1.py` is the source
+of truth for the shipped surface; re-run it, never quote the mockup.
 
 ## Specimens
 
