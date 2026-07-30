@@ -1132,7 +1132,8 @@
       }
       if (pos.insider) {
         var ins = pos.insider, net = ins.net_usd_mn, irows = '';
-        // headline: net buying as a % of market cap (size-normalised, the validated read)
+        // headline: net buying as a % of market cap — the mcap-normalised construction that
+        // cleared the FDR gate (reports/insider-phase0.md, insider-phase1.md)
         if (ins.net_mcap_bps != null) {
           var pct = ins.net_mcap_bps / 100, tiny = Math.abs(pct) < 0.005;
           var pctStr = tiny ? '≈0%' : (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
