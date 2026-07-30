@@ -281,3 +281,6 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     assert not _object_is_local(workspace, stable_blob)
     _git(workspace, "update-ref", "HEAD", commit, parent)
     assert not _object_is_local(workspace, stable_blob)
+    _git(workspace, "push", "origin", "HEAD:main")
+    assert not _object_is_local(workspace, stable_blob)
+    assert _git(remote, "rev-parse", "refs/heads/main") == commit
