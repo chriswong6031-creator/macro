@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T15:25:37.795717+00:00",
-  "count": 397,
+  "generated_at": "2026-07-30T15:40:40.541091+00:00",
+  "count": 398,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -111,6 +111,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wshtfsnskfo-ed6546",
+      "title": "When Will This Cycle End",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T12:30:51Z",
+      "summary_points": [
+        "**Fed's dovish policy consensus risks cycle extension to mid-2027**: Persistent inflation above target, labor market capacity constraints, and overly accommodative Fed stance could prolong expansion beyond 2027, undermining disinflation efforts.",
+        "**AI tech overinvestment and debt exposure pose systemic risk**: Hyperscalers' AI capex reliance on debt ($120bn extra in 2024, $300bn by 2027) creates \"margin call\" vulnerability; speculative returns (85% from capex recycling) sour fundamentals amid structural headwinds.",
+        "**Supercore inflation decoupled from labor markets**: Medical/insurance costs dominate CPI’s supercore, weakening labor-inflation linkage; Fed may delay tightening despite labor improvements, elevating medium-term inflation risks.",
+        "**Portfolio imperative: avoid AI stocks and bonds, diversify globally**: Shift from concentrated AI exposure to global growth stocks (upside without AI dependency); reject \"buy bonds for 2027\" thesis as AI buildout sustains producer prices and rates.",
+        "**Inflation persistence erodes policy flexibility**: Six years of above-target inflation eliminates central banks’ \"plausible deniability,\" forcing action by 2027 as labor market reaccelerates, contradicting disinflation hopes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
