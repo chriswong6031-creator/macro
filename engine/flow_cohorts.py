@@ -518,10 +518,26 @@ def build_cohorts(
         enriched_row["spark_gross"] = spark_gross
         enriched_row["spark_net"] = spark_net
 
-        # P/C tone (solid read — magnitude)
-        enriched_row["pc_tone"] = _pc_tone(row.get("pc_ratio"))
-        # Net soft tone (direction approx)
-        enriched_row["net_tone"] = _net_soft_tone(row.get("net_premium_mn"))
+        # Tone chips are a READ of a value — with no value there is no read, so a
+        # zero-coverage day emits None rather than a stance word.  _pc_tone(None)
+        # returns "balanced" and _net_soft_tone(None) returns "neutral~" (both are
+        # pure threshold labellers and stay that way); publishing those verbatim
+        # laundered a null into an affirmative claim about positioning.
+        #
+        # Measured 2026-07-29: build_flow_desk passes the market-tide asof
+        # (scripts/build_flow_desk.py:803), so a run whose tide has advanced past
+        # per-ticker summary coverage aggregates to n_members_covered=0 with every
+        # headline None — yet pc_tone came back "balanced".  19 committed
+        # cohorts.json vintages (2026-07-11 → 07-21) published that stance on
+        # all-null days.  Those never reached the page (the Theme groups panel only
+        # began rendering 07-22, by which time coverage was full) but the panel
+        # renders every day now, so the next uncovered session would have printed
+        # "balanced / 均衡" beside "no data today / 今日无数据" in one tile.
+        # House epistemics: nulls are printed, not spun (DESIGN_DOCTRINE Law 5).
+        pc_val = row.get("pc_ratio")
+        net_val = row.get("net_premium_mn")
+        enriched_row["pc_tone"] = _pc_tone(pc_val) if pc_val is not None else None
+        enriched_row["net_tone"] = _net_soft_tone(net_val) if net_val is not None else None
 
         # Coverage label
         n_m = row.get("n_members", 0)

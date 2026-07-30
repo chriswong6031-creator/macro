@@ -315,6 +315,7 @@
 {% set read = fd.read if fd else None %}
 {% set tide = fd.market_tide if fd else {} %}
 {% set cohorts = fd.cohorts if fd else [] %}
+{% set cohorts_any_covered = cohorts | map(attribute='n_members_covered') | select | list | length > 0 %}
 {% set heatmap = fd.sector_heatmap if fd else [] %}
 {% set top = fd.top_movers if fd else [] %}
 {% set etf = fd.etf_tile if fd else None %}
@@ -571,6 +572,11 @@
         '四个跨越行业边界的主题 — 七巨头、存储、AI芯片、AI软件。权利金规模与看涨/看跌倾向（按成交量）为可靠读数；净买卖标签为近似（~）。留意与大盘反向的群组 — 这种背离正是设立这些群组的意义所在。'
       ) }}
     </div>
+    {# Whole-panel null: when no group has a single covered member the four tiles carry
+       nothing but dashes, so say so once in plain words instead of four times. #}
+    {% if not cohorts_any_covered %}
+    <p class="muted sm">{{ t('No theme-group data yet — check back after the next close.','暂无主题群组数据 — 下次收盘后再看。') }}</p>
+    {% else %}
     <div class="coh-strip">
       {% for c in cohorts %}
       <div class="coh-tile" data-tip-en="{{ c.name_en }} — {{ c.n_members_covered }}/{{ c.n_members }} members covered; P/C {{ '%.2f'|format(c.pc_ratio) if c.pc_ratio is not none else '—' }}; net ~{{ '+' if c.net_premium_mn and c.net_premium_mn>0 else '' }}{{ '%.0f'|format(c.net_premium_mn) if c.net_premium_mn is not none else '—' }}M (approx); 0DTE {{ (c.zerodte_share*100)|int if c.zerodte_share is not none else '—' }}%"
@@ -578,9 +584,13 @@
         <div class="c-nm"><span class="l-en">{{ c.name_en }}</span><span class="l-zh">{{ c.name_zh }}</span></div>
         <div class="c-gr num">{{ dollars(c.gross_premium_mn) }}</div>
         <div class="c-chips">
+          {# A tilt chip is a read of the P/C ratio — with no ratio there is no tilt, so
+             the chip is withheld rather than defaulting to "balanced". #}
+          {% if c.pc_ratio is not none %}
           <span class="pc-chip {{ 'pc-call' if c.pc_tone=='call-tilted' else 'pc-put' if c.pc_tone=='put-tilted' else 'pc-bal' }}">
             {% if c.pc_tone=='call-tilted' %}{{ t('calls','偏看涨') }}{% elif c.pc_tone=='put-tilted' %}{{ t('puts','偏看跌') }}{% else %}{{ t('balanced','均衡') }}{% endif %}
           </span>
+          {% endif %}
           {% if c.net_premium_mn is not none %}
           <span class="pc-chip {{ 'pc-call' if c.net_tone=='pos~' else 'pc-put' if c.net_tone=='neg~' else 'pc-bal' }}">
             {% if c.net_tone=='pos~' %}{{ t('net buy~','净买~') }}{% elif c.net_tone=='neg~' %}{{ t('net sell~','净卖~') }}{% else %}{{ t('flat~','持平~') }}{% endif %}
@@ -591,6 +601,7 @@
       </div>
       {% endfor %}
     </div>
+    {% endif %}
   </div>
   {% endif %}
 
