@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T14:10:49.368245+00:00",
-  "count": 389,
+  "generated_at": "2026-07-30T14:25:30.860371+00:00",
+  "count": 392,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -33,6 +33,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-188mlfonwvt-467191",
+      "title": "JPM US Market Intell Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:36:47Z",
+      "summary_points": [
+        "**Fed Policy Ambiguity**: Warsh's vague 2% PCE commitment and focus on balance sheet shrinkage over rates risk quicker yield curve steepening, TIPS widening, and dollar weakness amid inflation measurement uncertainty.",
+        "**MAG7 Valuation Compression**: Median forward P/E at 17.49 (vs.",
+        "high 37.15) signals compressed expectations with elevated volatility, heightening risk if AI capex ROI questions persist.",
+        "**NDX Correction & Deleveraging**: NDX in official correction (11% from June highs); tech/semiconductor deleveraging accelerating faster than anticipated, with hedge funds unwinding April/May gains.",
+        "**Inflation Measurement Risk**: Task forces redefining inflation via intermediate variables (e.g., M2) risks policy shifts, triggering curve steepening and market uncertainty before 2% target achieved."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ehqbfjwfxxq-ad763b",
       "title": "JPM US Market Intell Afternoon Briefing 29.07",
@@ -72,6 +93,41 @@
       "tickers": [],
       "top_pick": true,
       "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-whhqdlxtxc3-117bf6",
+      "title": "JPM Europe Equity Research | Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:08:22Z",
+      "summary_points": [
+        "**EUROAPI FX-Driven Margin Cut**: 25% FY26 EBITDA consensus cut due to 30% Core EBITDA miss and FX impact (critical risk factor) - **Electrolux EPS Revision Extremes**: -96.5% current EPS revision signals severe fundamental deterioration vs.",
+        "sector upside (Aston Martin +30.0% next EPS) - **Aeroports de Paris (ADP) Policy Catalyst**: ERA agreement with French State drives potential squeeze; binding proposal pending (geopolitics/policy) - **European Gas Storage Momentum**: Low storage underpins positive earnings momentum for generators/utilities (fundamentals/geopolitics) - **UK Political Landscape Shifts**: Direct impact on sector/stock performance (geopolitics/policies)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-93omoeisoaj-a73af5",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T12:07:26Z",
+      "summary_points": [
+        "**Glencore PLC Earnings Preview**: Copper project pipeline lifts 2026-28 EBITDA/EPs to $1.9bn (vs $1.5bn), but African copper risk (non-RMI build/cost control) threatens capital returns - **Airbus SE Outlook**: Q2 adj EBIT €2.427M (11.8% margin) and 28% sales growth drive €250 price target increase, underpinned by 2H26 demand momentum - **Deutsche Bank's Q2 Revenue Momentum**: Q2 revenue surprise and Corporate Bank trends justify €36 price target (up from €35), with buyback supporting near-term valuation - **Rio Tinto's Indirect Costs**: Indirect costs concern amid clean financials creates fundamental risk, offsetting otherwise strong performance"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
