@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -167,6 +167,126 @@ def test_release_watcher_cold_start_recovers_from_official_date():
     _, payload = wrp.detect(now=after, state={}, fetcher=fetcher)
     assert [row["type"] for row in payload["publications"]] == ["CPI"]
     assert payload["publications"][0]["data_ready"] is True
+
+
+def test_release_watcher_does_not_bootstrap_old_miss_as_live_failure():
+    now = datetime(2026, 7, 28, 12, 1, tzinfo=timezone.utc)
+
+    def unexpected_fetch(*_args, **_kwargs):
+        raise AssertionError("an untracked historical release must not be fetched")
+
+    state, payload = wrp.detect(now=now, state={}, fetcher=unexpected_fetch)
+
+    assert all(
+        row["event_id"] != "claims:2026-07-23"
+        for row in payload["events"]
+    )
+    assert all(
+        row["status"] != "verification_delayed"
+        for row in payload["events"]
+    )
+    expected_coverage = {
+        event_type: now.isoformat()
+        for event_type in wrp.RESULT_EVENT_TYPES
+    }
+    assert state["coverage_started_at_by_type"] == expected_coverage
+    assert payload["coverage_started_at_by_type"] == expected_coverage
+
+    next_state, next_payload = wrp.detect(
+        now=now + timedelta(minutes=1),
+        state=state,
+        fetcher=unexpected_fetch,
+    )
+    assert next_state["coverage_started_at_by_type"] == expected_coverage
+    assert next_payload["coverage_started_at_by_type"] == expected_coverage
+
+
+def test_release_watcher_migration_matches_july_30_production_bootstrap():
+    now = datetime(2026, 7, 30, 4, 7, tzinfo=timezone.utc)
+    fomc_publication = {
+        "event_id": "fomc:2026-07-29",
+        "type": "FOMC",
+        "date": "2026-07-29",
+        "time_et": "14:00",
+        "status": "published",
+        "data_ready": True,
+        "actual": {"action": "hold"},
+    }
+    state = {
+        "schema": "release_publication_state.v2",
+        "sources": {},
+        "publications": {"fomc:2026-07-29": fomc_publication},
+    }
+
+    def fetcher(spec, prior, timeout):
+        assert spec.source_id == "fed_fomc"
+        return _http_result(
+            FOMC_STATEMENT,
+            last_modified="Wed, 29 Jul 2026 18:00:15 GMT",
+        )
+
+    _, payload = wrp.detect(now=now, state=state, fetcher=fetcher)
+
+    event_ids = {row["event_id"] for row in payload["events"]}
+    assert "fomc:2026-07-29" in event_ids
+    assert "claims:2026-07-23" not in event_ids
+    assert all(
+        row["status"] != "verification_delayed"
+        for row in payload["events"]
+    )
+
+
+def test_new_non_fomc_coverage_immediately_recovers_outside_fast_window():
+    after_fast_window = datetime(2026, 7, 14, 20, 7, tzinfo=timezone.utc)
+    calls: list[str] = []
+
+    def fetcher(spec, prior, timeout):
+        calls.append(spec.source_id)
+        return _http_result(_bls_cpi_feed(event_date="2026-07-14"))
+
+    _, payload = wrp.detect(
+        now=after_fast_window,
+        state={},
+        fetcher=fetcher,
+    )
+
+    publication = next(
+        row for row in payload["publications"] if row["type"] == "CPI"
+    )
+    assert publication["status"] == "published"
+    assert publication["data_ready"] is True
+    assert calls == ["bls_cpi"]
+
+
+def test_release_watcher_retains_precoverage_publication_evidence():
+    now = datetime(2026, 7, 28, 12, 1, tzinfo=timezone.utc)
+    publication = {
+        "event_id": "claims:2026-07-23",
+        "type": "CLAIMS",
+        "date": "2026-07-23",
+        "time_et": "08:30",
+        "status": "published",
+        "data_ready": True,
+        "actual": {"initial_claims": 217_000},
+    }
+    state = {
+        "schema": "release_publication_state.v2",
+        "sources": {},
+        "publications": {"claims:2026-07-23": publication},
+    }
+
+    def unexpected_fetch(*_args, **_kwargs):
+        raise AssertionError("retained historical evidence must not be refetched")
+
+    _, payload = wrp.detect(now=now, state=state, fetcher=unexpected_fetch)
+
+    retained = next(
+        row
+        for row in payload["events"]
+        if row["event_id"] == "claims:2026-07-23"
+    )
+    assert retained["status"] == "published"
+    assert retained["actual"]["initial_claims"] == 217_000
 
 
 def _july_30_fetcher(spec, prior, timeout):
@@ -482,12 +602,20 @@ def test_fomc_cold_start_recovers_through_24_hour_watch_window(now):
 
 def test_fomc_missing_result_stays_delayed_after_24_hour_poll_window():
     after_window = datetime(2026, 7, 30, 18, 1, tzinfo=timezone.utc)
+    state = {
+        "schema": "release_publication_state.v2",
+        "coverage_started_at_by_type": {
+            "FOMC": "2026-07-29T17:30:00+00:00",
+        },
+        "sources": {},
+        "publications": {},
+    }
 
     def no_fomc_fetch(spec, prior, timeout):
         assert spec.source_id != "fed_fomc"
         return _http_result(b"unrelated same-day release page")
 
-    _, payload = wrp.detect(now=after_window, state={}, fetcher=no_fomc_fetch)
+    _, payload = wrp.detect(now=after_window, state=state, fetcher=no_fomc_fetch)
     event = next(
         row for row in payload["events"] if row["event_id"] == "fomc:2026-07-29"
     )
