@@ -67,11 +67,24 @@ def test_render_publish_commits_from_index_to_avoid_promisor_blob_materializatio
     )
     script = publish["run"]
 
+    assert publish["if"] == "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
     assert "tree=$(git write-tree --missing-ok)" in script
     assert 'git commit-tree "$tree" -p "$parent"' in script
     assert 'git update-ref HEAD "$commit" "$parent"' in script
-    assert script.count('commit_index "render') == 3
+    assert script.count('commit_index "render') == 2
     assert "git commit " not in script
+
+
+def test_cancelled_or_guard_failed_render_never_normalizes_or_publishes():
+    steps = _steps()
+    render = next(step for step in steps if step.get("id") == "render_pages")
+    normalize = next(
+        step for step in steps if step.get("name", "").startswith("inject data-base shim")
+    )
+
+    assert 'echo "complete=true" >> "$GITHUB_OUTPUT"' in render["run"]
+    gate = "${{ success() && steps.render_pages.outputs.complete == 'true' }}"
+    assert normalize["if"] == gate
 
 
 def test_quarantine_cleanup_is_exact_and_runs_even_after_failure():
