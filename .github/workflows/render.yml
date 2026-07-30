@@ -40,10 +40,10 @@ on:
         default: all
         options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
       runner:
-        description: "Runner label — macstudio is the fast default; use render-linux as the PC fallback"
+        description: "Runner label — render-heavy is reserved; macstudio/render-linux are manual fallbacks"
         type: choice
-        default: macstudio
-        options: [render-linux, macstudio]
+        default: render-heavy
+        options: [render-heavy, render-linux, macstudio]
   push:
     branches: [main]
     # A HUMAN pushing a template or builder change auto-renders + deploys. The
@@ -210,11 +210,14 @@ concurrency:
 
 jobs:
   render:
-    # The full macstudio pool is the measured fast path (40-71m quiet-box runs versus
-    # 65-108m on render-linux, with the Mac-saved zstd caches restoring natively).
-    # Keep render-linux as an explicit manual fallback; GHA has no OR-label fallback
-    # and the venv/bootstrap steps below remain portable both ways.
-    runs-on: ${{ github.event.inputs.runner || 'macstudio' }}
+    # `macstudio` currently represents logical agents on only two physical Macs.
+    # General daily/asia/codex jobs could therefore run beside this serial renderer
+    # and turn a 40-71m quiet-box build into a 2h+ run. `render-heavy` reserves one
+    # M2 host for this lane. The dispatch input retains the shared Mac pool and
+    # render-linux as explicit operator fallbacks; bootstrap remains portable.
+    runs-on:
+      - self-hosted
+      - ${{ github.event.inputs.runner || 'render-heavy' }}
     # was 75 — a scope=all render now takes 40-71m when the box is quiet (measured
     # 2026-07-11: run 29155365959 = 40m, run 29169451233 = 71.4m) and blew straight
     # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED
@@ -223,9 +226,45 @@ jobs:
     # #2271) and asia-close (#2193). 115m ≈ 1.6× the worst quiet-box run.
     timeout-minutes: 115
     steps:
+      - name: bound persisted render checkout
+        # Self-hosted workspaces persist between jobs. The generated site history made
+        # their .git directories grow without bound (measured 2026-07-30: 4.5–26 GB
+        # across the local Mac pool; run 30530156302 then spent >20m in checkout's
+        # index-pack before one builder ran). Once the object store crosses 8 GiB,
+        # quarantine that disposable checkout and let checkout create a shallow partial
+        # clone. The exact workspace shape is validated before removal; the quarantined
+        # Git store lives under RUNNER_TEMP, which the runner also cleans after the job.
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -d .git ] || exit 0
+          GIT_KIB=$(du -sk .git | awk '{print $1}')
+          [ "${GIT_KIB:-0}" -gt 8388608 ] || {
+            echo "::notice::persisted checkout is $((GIT_KIB / 1024)) MiB; below the 8 GiB reset bound"
+            exit 0
+          }
+          case "${GITHUB_WORKSPACE:-}" in
+            */_work/*/*) ;;
+            *) echo "::error::refusing checkout reset outside a runner _work repository: ${GITHUB_WORKSPACE:-unset}"; exit 1 ;;
+          esac
+          [ "$PWD" = "$GITHUB_WORKSPACE" ] || {
+            echo "::error::refusing checkout reset because PWD is not GITHUB_WORKSPACE"
+            exit 1
+          }
+          CHECKOUT_TRASH="${RUNNER_TEMP:?}/macro-git-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+          echo "::notice::resetting oversized persisted checkout ($((GIT_KIB / 1024)) MiB)"
+          mv .git "$CHECKOUT_TRASH"
+          find "$GITHUB_WORKSPACE" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +
+          echo "CHECKOUT_TRASH=$CHECKOUT_TRASH" >> "$GITHUB_ENV"
       - uses: actions/checkout@v4
         with:
           ref: main
+          # Keep the complete current tree (all builders need committed data + site),
+          # but never download historical generated-site blobs. Combined with the
+          # bounded reset above, each runner retains one useful tree, not tens of GB
+          # of obsolete HTML generations.
+          filter: blob:none
+          fetch-depth: 1
       - run: git pull origin main
       - name: python 3.12 venv (self-hosted runner; Linux render-linux, Homebrew fallback)
         run: |
@@ -915,3 +954,13 @@ jobs:
           push_lost
           echo "::error title=rendered site NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — main does not carry this render (the next render or the nightly re-lands it). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
           echo "### ⚠️ rendered site NOT pushed after $PUSH_ATTEMPT attempts (next render/nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
+      - name: remove oversized-checkout quarantine
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          [ -n "${CHECKOUT_TRASH:-}" ] || exit 0
+          case "$CHECKOUT_TRASH" in
+            "${RUNNER_TEMP:?}"/macro-git-"${GITHUB_RUN_ID:?}"-"${GITHUB_RUN_ATTEMPT:?}") ;;
+            *) echo "::error::refusing unexpected checkout quarantine path: $CHECKOUT_TRASH"; exit 1 ;;
+          esac
+          rm -rf -- "$CHECKOUT_TRASH"
