@@ -244,6 +244,7 @@ class _FakeS3:
         self.fail_keys = set(fail_keys)
         self.uploaded: list[str] = []
         self.manifest_puts: list[str] = []
+        self.transfer_configs: list[object] = []
 
     def list_objects_v2(self, **kw):
         return {"Contents": [], "IsTruncated": False}
@@ -251,7 +252,8 @@ class _FakeS3:
     def get_object(self, **kw):
         raise Exception("no remote manifest")
 
-    def upload_file(self, filename, bucket, key, ExtraArgs=None):
+    def upload_file(self, filename, bucket, key, ExtraArgs=None, Config=None):
+        self.transfer_configs.append(Config)
         if key in self.fail_keys:
             raise ConnectionError(f"simulated terminal failure: {key}")
         self.uploaded.append(key)
@@ -270,7 +272,7 @@ def _wire_fake_tree(tmp_path, monkeypatch, s3, names):
     monkeypatch.setattr(config, "ROOT", tmp_path)
     monkeypatch.setattr(config, "load",
                         lambda: {"storage": {"site_dir": "site", "data_dir": "data"}})
-    monkeypatch.setattr(pr2, "_client", lambda: s3)
+    monkeypatch.setattr(pr2, "_client", lambda *a, **k: s3)
     monkeypatch.setenv("R2_BUCKET", "test-bucket")
     return pr2
 
@@ -308,3 +310,82 @@ def test_client_retry_config(monkeypatch):
     # fail-fast connect bounds the hard-down worst case (serial dir lists inside
     # daily.yml's 150-min engine job) — 10 retries must not mean 10 x 60s hangs
     assert cfg.connect_timeout == 15 and cfg.read_timeout == 60
+
+
+# ── connection-pool sizing ────────────────────────────────────────────────────
+# 2026-07-29 incident: the pool was a flat 64 while the real ceiling is
+# workers(32) x s3transfer's per-file part concurrency(10) = 320. urllib3
+# discarded every connection released into the full pool (1,119 warnings in one
+# run) and the TLS churn killed multipart parts outright — 16 terminal failures
+# across three runs, every one a `?uploadId=...&partNumber=N` request. Because
+# publish() refuses to write the manifest when ANY upload failed, the offsite
+# INDEX stopped advancing while the bytes kept landing.
+#
+# These assert the pure arithmetic on purpose: the CI pack that runs this file
+# installs no boto3, so anything behind importorskip("boto3") is DISARMED here
+# and cannot be the only guard on the invariant.
+
+def test_pool_covers_worker_times_transfer_concurrency():
+    """The pool must cover every worker's full multipart fan-out, not one
+    connection per worker — that undercount is the whole 2026-07-29 defect."""
+    from scripts.publish_r2 import _TRANSFER_CONCURRENCY, _pool_size
+    for workers in (16, 32, 64):
+        assert _pool_size(workers) >= workers * _TRANSFER_CONCURRENCY
+
+
+def test_default_workers_pool_beats_the_flat_64_that_starved():
+    """publish()'s default 32 workers must land well clear of the old 64."""
+    from scripts.publish_r2 import _pool_size
+    assert _pool_size(32) >= 320
+
+
+def test_pool_never_drops_below_the_historical_floor():
+    """A small --workers must not shrink the pool below what shipped before."""
+    from scripts.publish_r2 import _pool_size
+    assert _pool_size(1) >= 64 and _pool_size(0) >= 64
+
+
+def test_publish_passes_workers_through_to_the_pool(tmp_path, monkeypatch):
+    """publish(workers=N) must size the client for N — a client built for the
+    default while the executor runs N is the same under-provisioning by another
+    route."""
+    s3 = _FakeS3()
+    pr2 = _wire_fake_tree(tmp_path, monkeypatch, s3, ["A.json"])
+    seen: list[int] = []
+
+    def _spy(workers=32, *a, **k):
+        seen.append(workers)
+        return s3
+
+    monkeypatch.setattr(pr2, "_client", _spy)      # after _wire_fake_tree's own patch
+    pr2.publish(["stockdata"], workers=8)
+    assert seen == [8], f"publish did not hand its worker count to the client: {seen}"
+
+
+def test_transfer_concurrency_is_pinned_not_inherited(tmp_path, monkeypatch):
+    """The pool arithmetic is derived from _TRANSFER_CONCURRENCY, so the upload
+    call must PIN that value rather than inherit s3transfer's default — a future
+    default bump would otherwise silently under-provision the pool again."""
+    import pytest
+    pytest.importorskip("boto3")
+    from scripts.publish_r2 import _TRANSFER_CONCURRENCY
+    s3 = _FakeS3()
+    pr2 = _wire_fake_tree(tmp_path, monkeypatch, s3, ["A.json", "B.json"])
+    assert pr2.publish(["stockdata"]) == 0
+    assert len(s3.transfer_configs) == 2
+    for cfg in s3.transfer_configs:
+        assert cfg is not None, "upload_file inherited s3transfer's default config"
+        assert cfg.max_concurrency == _TRANSFER_CONCURRENCY
+
+
+def test_client_pool_is_sized_from_workers(monkeypatch):
+    """End-to-end on the real botocore Config (skipped in the thin CI pack —
+    test_pool_covers_worker_times_transfer_concurrency is the armed guard)."""
+    import pytest
+    pytest.importorskip("boto3")
+    from scripts.publish_r2 import _client, _pool_size
+    monkeypatch.setenv("R2_ENDPOINT", "https://example.r2.cloudflarestorage.com")
+    monkeypatch.setenv("R2_ACCESS_KEY_ID", "x")
+    monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "y")
+    assert _client(32).meta.config.max_pool_connections == _pool_size(32)
+    assert _client(16).meta.config.max_pool_connections == _pool_size(16)
