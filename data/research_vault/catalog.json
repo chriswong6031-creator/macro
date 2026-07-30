@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T00:39:26.883369+00:00",
-  "count": 354,
+  "generated_at": "2026-07-30T00:54:22.116061+00:00",
+  "count": 355,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -2040,6 +2040,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-g0vajyhuee8-2e726a",
+      "title": "SLB (SLB) Remain Constructive Given Leverage to International Activity Resumptions and Idiosyncratic Opportunities, Contribu...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:18Z",
+      "summary_points": [
+        "**SLB Buy Rating & Growth Catalysts**: Goldman Sachs maintains *Buy* with $62 target (20.3% upside), driven by Middle East activity resumption (10% international revenue growth 2026-2027) and data center expansion targeting >$2B annual revenue by 2027.",
+        "**Valuation & Key Metrics**: Trading at 7.0% free cash flow yield and 9.0x EV/EBITDA, with adjusted EBITDA estimates up 1% annually (2026-2028) and Middle East production recovery as primary near-term earnings driver.",
+        "**Strong Fundamentals**: Robust EBITDA growth (10.2% in 12/2E), improving free cash flow per share (2.30→2.75), and low net debt/EBITDA (1.0), indicating sustainable growth potential.",
+        "**Relative Performance Strength**: Delivered 25.2% total return over 12 months, outperforming S&P 500 by identical margin, confirming strong market positioning and momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
