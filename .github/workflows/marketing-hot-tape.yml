@@ -89,10 +89,12 @@ concurrency:
 jobs:
   radar:
     runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
-    # A pass is ~1 min. 12 is generous head-room for a Chrome raster (~13s each,
-    # up to 3 cards) plus the push race, and small enough that a wedged run frees
-    # the concurrency group before the next cron.
-    timeout-minutes: 12
+    # A pass is ~1-2 min (Chrome raster ~13s each, up to 3 cards, plus the push
+    # race and a possible ~25s self-fetch). A run is now PASSES of those with
+    # PASS_INTERVAL_S between them — 3 x 300s = 10 min of sleep plus ~5 min of
+    # work — so the old 12 would kill the run mid-third-pass. 20 covers the
+    # planned 15 with margin; raise it together with PASSES, never separately.
+    timeout-minutes: 20
     steps:
       - name: checkout (shallow + sparse + write token)
         # SHALLOW ON PURPOSE. marketing-publish.yml ran fetch-depth: 0 and on
@@ -110,6 +112,17 @@ jobs:
         # surface (~6.6k files, ~450MB) and cone mode always includes top-level
         # files, so lib/config's root config.yml comes along:
         #   engine, scripts, lib  — the code
+        #   app                   — NOT decorative and NOT a read path: the
+        #                           radar's live self-fetch imports
+        #                           scripts.build_live_quotes, which does
+        #                           `from app.tape_symbols import TAPE_SYMBOLS` at
+        #                           MODULE scope. Without this entry that import
+        #                           raises ModuleNotFoundError, refresh_live_snapshot
+        #                           catches it, prints its fail-soft warning, and
+        #                           the self-fetch is dead in production while
+        #                           looking healthy in every test — the shipped-dark
+        #                           class. Verified by materializing this cone and
+        #                           importing inside it.
         #   config                — hot_tape.yml + marketing.yml
         #   data/marketing        — pack, ring, fired ledger, outbox, quote
         #                           snapshot, logo cache (all three commit paths
@@ -129,6 +142,7 @@ jobs:
           fetch-depth: 1
           filter: blob:none
           sparse-checkout: |
+            app
             engine
             scripts
             lib
@@ -165,29 +179,41 @@ jobs:
         # (pytest+pyyaml+jinja2, no anthropic) still collects.
         run: pip install --quiet pyyaml requests pyarrow anthropic
 
-      - name: fetch full-universe live quotes (radar input)
-        # Copied from marketing-publish.yml. The live-data orphan branch carries
-        # a ~2k-symbol quotes.json refreshed every 5 min in RTH (15-min-delayed
-        # prices) — the SAME merge the post-time tape gate reads, so the radar
-        # fires on exactly the tape the rest of the estate reasons about. Note
-        # what that does NOT mean: `breaking` items are outside the post-time
-        # gate's kind list, so nothing re-verifies this move between booking and
-        # sending. Freshness is enforced HERE, in the radar's own gate.
-        # Fail-soft: without the snapshot the radar falls back to site/live +
-        # the sp500 heatmap, and its own freshness gate stands the pass down if
-        # what is left is stale.
-        run: |
-          if git fetch --depth 1 origin live-data && \
-             git show FETCH_HEAD:quotes.json > data/marketing/live_quotes_snapshot.json 2>/dev/null; then
-            echo "live quotes snapshot: $(wc -c < data/marketing/live_quotes_snapshot.json) bytes"
-          else
-            echo "::warning::live-data quotes unavailable — radar falls back to site/live artifacts"
-            rm -f data/marketing/live_quotes_snapshot.json
-          fi
-
-      - name: run the radar
+      - name: run the radar (multi-pass)
         id: radar
         env:
+          # ── MULTI-PASS: why one delivered tick does several passes ────────────
+          # The schedule above asks for a pass every 5 minutes. GitHub does not
+          # deliver it. Measured across the 8h RTH window on 2026-07-29: 104
+          # scheduled runs delivered across ALL 46 scheduled workflows in this
+          # repo, of which this lane got 6 of its ~92 ticks (6.5%) — about 1.4
+          # passes an hour, a ~43-minute mean detection gap. Gate 0.1 asks for
+          # booked-at-Buffer within 20 minutes of the cross; at a 43-minute gap
+          # the median event misses that before the radar has even looked.
+          #
+          # Starvation is a GitHub-side property of this repo's schedule load, so
+          # adding crons does not reliably buy delivery (every high-frequency lane
+          # here lands at ~1/hour regardless of how many ticks it asks for —
+          # live-quotes 8.6%, vps-live-heartbeat 12.5%, merge-on-green 12.5%).
+          # What DOES work is spending each delivered tick better: one run does
+          # PASSES passes spaced PASS_INTERVAL_S apart, so delivery rate stops
+          # being the cadence. 3 passes at 5 minutes turns a ~43-minute mean gap
+          # into ~14 minutes for ~13 minutes of runner time per delivered tick.
+          #
+          # This is a MULTIPLIER, not a fix for the underlying starvation, and it
+          # is deliberately bounded rather than session-long: guaranteeing a true
+          # 5-minute cadence needs a persistent poller or an off-GitHub ticker,
+          # which is a standing-cost decision for the operator, not something to
+          # slip in here. See research/MARKETING_HOT_TAPE_MASTERPLAN.md §3.6.
+          #
+          # LATENCY IS WHY THE LOOP IS HERE AND NOT INSIDE THE SCRIPT: every pass
+          # commits and dispatches on its own, so a 10:04 cross still books at
+          # ~10:07 rather than waiting for the run to end.
+          PASSES: "3"
+          PASS_INTERVAL_S: "300"
+          # Per-pass dispatch channel. GITHUB_OUTPUT is append-only and collapses
+          # to one value per step, so it cannot carry three passes' ids.
+          HOT_TAPE_IDS_FILE: /tmp/hot_tape_post_now_ids
           # Empty on every scheduled pass, so the scheduled lane is provably
           # identical to one with no demo input at all.
           HOT_TAPE_DEMO: ${{ (github.event_name == 'workflow_dispatch' && inputs.demo_override) && '1' || '' }}
@@ -223,85 +249,123 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN_6: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_6 }}
           CLAUDE_CODE_OAUTH_TOKEN_7: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_7 }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-        run: |
-          if [ "${DRY_RUN:-}" = "true" ]; then
-            python -m scripts.hot_tape_radar --dry-run
-          else
-            python -m scripts.hot_tape_radar
-          fi
-
-      - name: commit radar state (no-op when nothing changed)
-        id: commit
-        # ALWAYS: the ring is appended on every pass, eventless included — it is
-        # the intraday history the "$X added in 3 hours" claims are built from,
-        # and the fired ledger is the cooldown memory that stops a second pass
-        # re-posting the same event. Losing either is worse than a noisy log.
-        if: ${{ always() }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
-          # Stage ONLY this lane's paths (ledger law). data/massive_stock_day is
-          # gitignored, so a hydrated parquet can never ride along.
-          git add data/marketing/outbox 2>/dev/null || true
-          git add data/marketing/hot_tape_ring.jsonl 2>/dev/null || true
-          git add data/marketing/hot_tape_fired.jsonl 2>/dev/null || true
-
-          if git diff --cached --quiet; then
-            echo "marketing-hot-tape: no radar state to commit"
-            echo "pushed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          git commit -m "hot-tape: radar $(date -u +%FT%H:%MZ) [skip ci]"
-
-          # Retry-rebase push loop, identical in mechanics to marketing-publish's:
-          # this lane races the publish sweeps and the nightly on the same outbox
-          # paths. All three ledgers carry merge=union (.gitattributes) so a
-          # concurrent append resolves instead of conflicting the loop to death.
-          for i in 1 2 3 4 5; do
-            # --depth 20: the checkout is shallow, so a bare fetch would leave
-            # `pull --rebase` without a merge base once main advanced mid-run.
-            git fetch --depth 20 origin main || true
-            # Drop any untracked file that shadows an origin/main path — a mid-run
-            # commit could TRACK a path we wrote as an untracked side-effect,
-            # which would make the rebase checkout refuse.
-            comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
-                     <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
-              | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
-              echo "marketing-hot-tape: pushed radar state on attempt $i"
-              echo "pushed=true" >> "$GITHUB_OUTPUT"
-              exit 0
+          # Refresh the shared snapshot from the live-data orphan branch. Cheap
+          # (one shallow ref fetch) and it is the SAME merge the post-time tape
+          # gate reads, so the radar fires on the tape the rest of the estate
+          # reasons about. Note what that does NOT mean: `breaking` items are
+          # outside the post-time gate's kind list, so nothing re-verifies this
+          # move between booking and sending — freshness is enforced in the
+          # radar's own gate. Fail-soft in both directions: without the snapshot
+          # the radar falls back to site/live + the heatmap, and if THAT is stale
+          # too it self-fetches its own universe (scripts/hot_tape_radar
+          # refresh_live_snapshot) rather than standing the pass down.
+          refresh_shared_tape() {
+            if git fetch --depth 1 origin live-data 2>/dev/null && \
+               git show FETCH_HEAD:quotes.json \
+                 > data/marketing/live_quotes_snapshot.json 2>/dev/null; then
+              echo "live quotes snapshot: $(wc -c < data/marketing/live_quotes_snapshot.json) bytes"
+            else
+              echo "::warning::live-data quotes unavailable - radar falls back to its own fetch"
+              rm -f data/marketing/live_quotes_snapshot.json
             fi
-            git rebase --abort 2>/dev/null || true
-            echo "marketing-hot-tape: push attempt $i lost a race; re-syncing"
-            sleep $((i * 7))
+          }
+
+          # ALWAYS run, every pass, eventless included: the ring is the intraday
+          # history the "$X added in 3 hours" claims are built from, and the fired
+          # ledger is the cooldown memory that stops the NEXT pass re-posting the
+          # same event. In a multi-pass run that second role is load-bearing
+          # within the run itself, not just across runs. Echoes "pushed" so the
+          # caller can gate the dispatch on it.
+          commit_and_push() {
+            # Stage ONLY this lane's paths (ledger law). data/massive_stock_day is
+            # gitignored, so a hydrated parquet can never ride along.
+            git add data/marketing/outbox 2>/dev/null || true
+            git add data/marketing/hot_tape_ring.jsonl 2>/dev/null || true
+            git add data/marketing/hot_tape_fired.jsonl 2>/dev/null || true
+
+            if git diff --cached --quiet; then
+              echo "marketing-hot-tape: no radar state to commit"
+              return 1
+            fi
+
+            git commit -m "hot-tape: radar $(date -u +%FT%H:%MZ) [skip ci]"
+
+            # Retry-rebase push loop, identical in mechanics to marketing-publish's:
+            # this lane races the publish sweeps and the nightly on the same outbox
+            # paths. All three ledgers carry merge=union (.gitattributes) so a
+            # concurrent append resolves instead of conflicting the loop to death.
+            for i in 1 2 3 4 5; do
+              # --depth 20: the checkout is shallow, so a bare fetch would leave
+              # `pull --rebase` without a merge base once main advanced mid-run.
+              git fetch --depth 20 origin main || true
+              # Drop any untracked file that shadows an origin/main path — a mid-run
+              # commit could TRACK a path we wrote as an untracked side-effect,
+              # which would make the rebase checkout refuse.
+              comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
+                       <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
+                | while IFS= read -r f; do rm -f -- "$f" || true; done
+              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+                echo "marketing-hot-tape: pushed radar state on attempt $i"
+                return 0
+              fi
+              git rebase --abort 2>/dev/null || true
+              echo "marketing-hot-tape: push attempt $i lost a race; re-syncing"
+              sleep $((i * 7))
+            done
+
+            echo "::warning::marketing-hot-tape: could not push radar state after 5 attempts (non-fatal)"
+            return 1
+          }
+
+          for pass in $(seq 1 "${PASSES:-1}"); do
+            if [ "$pass" -gt 1 ]; then
+              echo "── sleeping ${PASS_INTERVAL_S}s before pass ${pass}/${PASSES} ──"
+              sleep "${PASS_INTERVAL_S}"
+            fi
+            echo "════════ hot-tape pass ${pass}/${PASSES} $(date -u +%FT%H:%M:%SZ) ════════"
+
+            refresh_shared_tape
+
+            if [ "${DRY_RUN:-}" = "true" ]; then
+              # The PR receipt mode: detect, compose, simulate the chart, write
+              # nothing. No ring append, no outbox item, no push, no dispatch —
+              # so there is nothing for the rest of the loop to do either.
+              python -m scripts.hot_tape_radar --dry-run || \
+                echo "::warning::marketing-hot-tape: dry-run pass ${pass} exited non-zero"
+              continue
+            fi
+
+            # A pass that raises must not cost the remaining passes, and must not
+            # skip the commit: the ring append and the fired ledger are what keep
+            # the NEXT pass honest.
+            : > "${HOT_TAPE_IDS_FILE}"
+            python -m scripts.hot_tape_radar || \
+              echo "::warning::marketing-hot-tape: pass ${pass} exited non-zero"
+
+            if commit_and_push; then
+              ids="$(cat "${HOT_TAPE_IDS_FILE}" 2>/dev/null || true)"
+              if [ -n "$ids" ]; then
+                # ORDER IS LOAD-BEARING: push THEN dispatch. marketing-publish
+                # checks out main and folds items.jsonl from HEAD — dispatched
+                # before our push lands it would find no such item ids and post
+                # nothing, so a failed push means NO dispatch rather than a
+                # wasted run.
+                #
+                # ONE API CALL, no polling (GitHub quota is one shared bucket):
+                # fire and forget. The publisher's own run is the receipt.
+                echo "marketing-hot-tape: dispatching publisher for $ids"
+                gh workflow run marketing-publish.yml \
+                  -f post_now_item="$ids" \
+                  --repo "$GITHUB_REPOSITORY" \
+                  || echo "::warning::marketing-hot-tape: dispatch failed for $ids"
+              fi
+            elif [ -s "${HOT_TAPE_IDS_FILE}" ]; then
+              echo "::warning::marketing-hot-tape: pass ${pass} booked $(cat "${HOT_TAPE_IDS_FILE}") but the push did not land - NOT dispatching (the publisher folds items from main)"
+            fi
           done
-
-          echo "::warning::marketing-hot-tape: could not push radar state after 5 attempts (non-fatal)"
-          echo "pushed=false" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: dispatch the publisher for the booked items
-        # ORDER IS LOAD-BEARING: push THEN dispatch. marketing-publish checks out
-        # main and folds items.jsonl from HEAD — dispatched before our push lands
-        # it would find no such item ids and post nothing, so a failed push means
-        # NO dispatch (steps.commit.outputs.pushed) rather than a wasted run.
-        #
-        # ONE API CALL, no polling (GitHub quota is one shared bucket): we fire
-        # and forget. The publisher's own run is the receipt.
-        if: >-
-          ${{ success()
-              && steps.radar.outputs.post_now_ids != ''
-              && steps.commit.outputs.pushed == 'true'
-              && !(github.event_name == 'workflow_dispatch' && inputs.dry_run) }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          POST_NOW_IDS: ${{ steps.radar.outputs.post_now_ids }}
-        run: |
-          echo "marketing-hot-tape: dispatching publisher for $POST_NOW_IDS"
-          gh workflow run marketing-publish.yml \
-            -f post_now_item="$POST_NOW_IDS" \
-            --repo "$GITHUB_REPOSITORY"

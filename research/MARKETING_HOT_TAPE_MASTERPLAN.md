@@ -163,8 +163,12 @@ Two speeds, one skeleton — heavy compute nightly, light joins intraday
 4. **Delivery** (exists): enqueue `kind="breaking"` `scheduled_at="immediate"`
    → immediate items are floor/cap-exempt and unjittered (2026-07-27 re-spec)
    → self-dispatch `marketing-publish.yml post_now_item=<ids>` → ~2–3 min to
-   Buffer post-shallow-checkout. End-to-end latency = detector cadence (≤5m)
-   + radar runtime (~1m) + dispatch (~3m) ≈ **≤9 min typical**, inside gate 1.
+   Buffer post-shallow-checkout. End-to-end latency = detector cadence
+   + radar runtime (~1m) + dispatch (~3m). **The ≤5m detector cadence this
+   assumed does not exist** — GitHub delivers ~1.4 of this lane's 92 daily ticks
+   per hour, so the honest figure is ~17 min mean / ~50 min tail with the shipped
+   multi-pass loop, against gate 0.1's 20 min. Measurements, options and the
+   recommended fix are in §3.6; do not quote a latency from this bullet.
 5. **Charts**: single-name → v2 tape card (extend `_PRICE_SUBDIRS` to
    `data/massive_stock_day` so ANY liquid name renders); sector → new grid
    card (tiles + % + logos, Phase 1.5); market-wide → heatmap image reuse.
@@ -174,11 +178,85 @@ Two speeds, one skeleton — heavy compute nightly, light joins intraday
 lanes fold INTO the radar loop as detectors (one intraday loop, N detectors)
 rather than reviving a separate daemon. Its emit/dedupe plumbing is reusable.
 
+### §3.6 Trigger strategy — GitHub cron cannot deliver the 5-minute cadence
+
+§3.4 assumed "detector cadence (≤5m)". That assumption is false, and it is the
+remaining structural gap against gate 0.1.
+
+**Measured, 2026-07-29, the 13:00–21:00Z window.** GitHub delivered **104
+scheduled runs across ALL 46 scheduled workflows in this repo** — about 13 an
+hour for the whole estate. Per lane, against ticks asked for:
+
+| lane | scheduled | delivered | rate |
+|---|---|---|---|
+| live-quotes (`*/5` + `*/15`) | 128 | 11 | 8.6% |
+| marketing-hot-tape (`*/5`) | ~92 | 6 | 6.5% |
+| vps-live-heartbeat (`*/10`) | 48 | 6 | 12.5% |
+| merge-on-green (`*/10`) | 48 | 6 | 12.5% |
+
+Every high-frequency lane lands at **~1–1.5 runs/hour regardless of how many
+ticks it asks for**. `startedAt == createdAt` on every run, so nothing is
+queuing — GitHub simply never creates the runs. This is a known standing
+condition here, already recorded for the merge sweeper (memory:
+`merge-on-green-sweeper-cron-starvation`), and it is why "the cron says `*/5`"
+has never been evidence about cadence.
+
+**What that does to gate 0.1.** At 1.4 passes/hour the mean detection gap is
+~43 min, so a random cross waits ~21 min before the radar even looks, plus ~1
+min radar and ~3 min dispatch→Buffer: **~25 min mean, ~47 min tail.** Gate 0.1
+asks for ≤20 min. The gate was unreachable before a single line of detector code
+ran.
+
+**Options assessed.**
+
+1. **Fewer, denser crons** — no. The delivery rate is per-lane and roughly flat;
+   re-shaping 92 ticks into 30 does not raise the ~1.4/hour floor, it only
+   coarsens the schedule we fail to get.
+2. **More crons** — untested and probably no. Delivered counts (5–11 per lane per
+   8h) track lane count far more tightly than requested-tick count, which points
+   at a per-lane floor rather than a proportional share of a repo budget. Not
+   worth spending the estate's schedule budget to find out.
+3. **In-run multi-pass — SHIPPED 2026-07-30.** One delivered tick does `PASSES`
+   passes `PASS_INTERVAL_S` apart, each committing and dispatching on its own so
+   latency is per-pass, not per-run. At 3×300s this takes the mean to **~17 min**
+   (23% of crosses land inside a covered 10-min window and wait ~2.5 min; the
+   rest wait out the ~33-min hole). That makes the **median** compliant and
+   leaves the **tail** where it was — passes are clustered, so the holes between
+   delivered ticks are untouched. It is a multiplier on whatever GitHub gives us,
+   which is exactly why it is robust to either throttling model.
+4. **Session-long poller** — a chained pair of long jobs (the 6h job cap does not
+   cover a 7h40m session) looping every 5 min, bootstrapped by one delivered tick
+   a day with an hourly re-bootstrap cron as the dead-man. True 5-min cadence,
+   fully compliant distribution. Cost: ~7.7h/day of GitHub-hosted Linux ≈
+   **$77/month**. No new host, no new credential.
+5. **External ticker via `repository_dispatch`** — RECOMMENDED TARGET. A launchd
+   timer on the Mac Studio fires `repository_dispatch` every 5 min during the ET
+   window. `repository_dispatch` and `workflow_dispatch` are the two documented
+   exceptions to GitHub's "GITHUB_TOKEN events do not create workflow runs" rule,
+   so this composes with the existing publisher dispatch. Actions cost is only
+   the real pass time (~12 × 1.5 min/hour ≈ **$23/month**), it gives an exact
+   5-min cadence, and the ticker is ~10 lines. Costs: a fine-grained PAT with
+   `actions:write` (GITHUB_TOKEN does not exist outside Actions), and host-ops on
+   the Studio — negligible load (one curl per tick), but it does put a product
+   dependency on a machine whose job is the render pool.
+
+**Recommendation.** Ship 3 (done). Then 5, because it is both the cheapest and
+the only option that makes the whole latency distribution compliant rather than
+just the median; 4 is the fallback if putting the ticker on the Studio is
+unwanted. Both 4 and 5 are standing-cost/host decisions and belong to the
+operator, not to a defect-fix chip — which is why this section states the
+numbers rather than picking for them.
+
+**Standing rule.** A cadence claim in this repo is about *delivered* runs, never
+about the cron expression. When tuning any intraday lane, measure delivery first
+(`gh api "/repos/:owner/:repo/actions/runs?created=<from>..<to>&event=schedule"`)
+and treat the crontab as an upper bound that reality will not honour.
+
 ## §4 Data inventory — have vs need
 
 | Capability | Source | Status |
 |---|---|---|
-| 5-min live quotes, ~2.1k names | live-data branch + site/live + heatmap | HAVE (merge is freshness-safe since #3913) |
+| 5-min live quotes, ~2.1k names | radar self-fetch (primary, 2026-07-30) + live-data branch + site/live + heatmap | HAVE (freshness-safe merge since #3913; the radar no longer depends on another lane's commit cadence, and the ceiling allows for the feed's declared ~15-min delay) |
 | Sector membership + sizes | sp500_heatmap tiles (503, sector+size) | HAVE |
 | Daily bars, 20k names | data/massive_stock_day | HAVE |
 | Earnings calendar + AH/BMO flag | data/earnings/earnings.parquet (1,364) | HAVE |

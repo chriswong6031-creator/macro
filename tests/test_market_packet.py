@@ -113,6 +113,34 @@ def breadth_payload() -> dict:
     }
 
 
+def basket_pulse_payload(mode: str = "live", asof: object = "") -> dict:
+    """Intraday basket pulse — the LEADERS source.
+
+    Shaped so the selection has to work for its answer: four positive groups (only
+    three may print), four negative (same), one exactly flat, and one honest
+    coverage null. tape_rank is present but deliberately mis-ordered relative to
+    the moves, because the block must sort on the number it PRINTS.
+    """
+    return {
+        "schema": "basket_pulse.v1", "market": "us", "session": "rth", "mode": mode,
+        "as_of_quotes": asof if asof != "" else _iso(NOW - timedelta(minutes=3)),
+        "as_of_utc": _iso(NOW - timedelta(minutes=1)),
+        "delay_min_median": 1.0, "coverage_pct": 99.4,
+        "baskets": [
+            {"id": "ai_semiconductors", "live_ew_chg_pct": 2.1, "tape_rank": 1},
+            {"id": "us_sector_energy", "live_ew_chg_pct": 1.83, "tape_rank": 2},
+            {"id": "power_grid", "live_ew_chg_pct": 1.2, "tape_rank": 3},
+            {"id": "retail", "live_ew_chg_pct": 0.4, "tape_rank": 4},
+            {"id": "big_pharma", "live_ew_chg_pct": 0.0, "tape_rank": 5},
+            {"id": "insurance", "live_ew_chg_pct": None, "tape_rank": None},
+            {"id": "housing", "live_ew_chg_pct": -0.35, "tape_rank": 6},
+            {"id": "us_sector_utilities", "live_ew_chg_pct": -0.7, "tape_rank": 7},
+            {"id": "us_sector_staples", "live_ew_chg_pct": -0.92, "tape_rank": 8},
+            {"id": "memory_storage", "live_ew_chg_pct": -1.42, "tape_rank": 9},
+        ],
+    }
+
+
 def drivers_payload(confidence: object = "medium") -> dict:
     return {
         "asof": "2026-07-24", "window_d": 5,
@@ -198,6 +226,7 @@ def make_root(tmp_path: Path, **overrides: object) -> Path:
         "quotes": (live / "quotes.json", quotes_payload()),
         "risk_state": (live / "risk_state.json", risk_payload()),
         "breadth": (live / "breadth.json", breadth_payload()),
+        "basket_pulse": (live / "basket_pulse.json", basket_pulse_payload()),
         "market_drivers": (live / "market_drivers.json", drivers_payload()),
         "shock_state": (live / "shock_state.json", shock_payload()),
         "wires": (live / "wires.json", wires_payload()),
@@ -251,15 +280,17 @@ def test_happy_path_renders_every_section_in_priority_order(tmp_path):
     assert text.split("\n")[0].startswith("[CURRENT DASHBOARD STATE —")
     heads = [ln.split(" (")[0].split(":")[0] for ln in text.split("\n")]
     for want in ("TAPE", "CURVE", "FLAGS", "SHOCK WINDOW", "EVENTS", "DRIVERS",
-                 "RATES DESK", "VOL", "BREADTH", "CROSS-ASSET", "DESK READ", "WATCH"):
+                 "RATES DESK", "VOL", "BREADTH", "LEADERS", "CROSS-ASSET",
+                 "DESK READ", "WATCH"):
         assert want in heads, want
     # Priority order is the render order.
     order = [h for h in heads if h in ("TAPE", "CURVE", "FLAGS", "SHOCK WINDOW",
                                        "EVENTS", "DRIVERS", "RATES DESK", "VOL",
-                                       "BREADTH", "CROSS-ASSET", "DESK READ", "WATCH")]
+                                       "BREADTH", "LEADERS", "CROSS-ASSET",
+                                       "DESK READ", "WATCH")]
     assert order == ["TAPE", "CURVE", "FLAGS", "SHOCK WINDOW", "EVENTS", "DRIVERS",
-                     "RATES DESK", "VOL", "BREADTH", "CROSS-ASSET", "DESK READ",
-                     "WATCH"]
+                     "RATES DESK", "VOL", "BREADTH", "LEADERS", "CROSS-ASSET",
+                     "DESK READ", "WATCH"]
 
 
 def test_tape_line_carries_every_group_with_its_stamp_and_basis(tmp_path):
@@ -625,7 +656,7 @@ _SOURCES = [
     ("quotes", "TAPE ("), ("breadth", "BREADTH ("), ("market_drivers", "DRIVERS ("),
     ("shock_state", "SHOCK WINDOW ("), ("wires", "EVENTS ("),
     ("rates", "RATES DESK ("), ("vol", "VOL ("), ("crossasset", "CROSS-ASSET ("),
-    ("world_state", "Cross-asset regime:"),
+    ("basket_pulse", "LEADERS ("), ("world_state", "Cross-asset regime:"),
 ]
 
 
@@ -824,8 +855,8 @@ def test_events_line_shape(tmp_path):
 def test_sections_drop_from_the_bottom_of_the_priority_list(tmp_path):
     packet = mp.build_packet(make_root(tmp_path))
     text = mp.render_digest(packet, 100_000)
-    for marker in ("WATCH (", "DESK READ", "CROSS-ASSET (", "BREADTH (", "VOL (",
-                   "RATES DESK (", "DRIVERS (", "EVENTS (", "SHOCK WINDOW (",
+    for marker in ("WATCH (", "DESK READ", "CROSS-ASSET (", "LEADERS (", "BREADTH (",
+                   "VOL (", "RATES DESK (", "DRIVERS (", "EVENTS (", "SHOCK WINDOW (",
                    "FLAGS (", "CURVE ("):
         assert marker in text, marker
         nxt = mp.render_digest(packet, len(text) - 1)
@@ -976,3 +1007,261 @@ def test_tape_no_etf_duplicate_when_cash_index_present(tmp_path):
     tape = next(ln for ln in text.split("\n") if ln.startswith("TAPE"))
     assert "SPX −1.7%" in tape
     assert "SPY" not in tape
+
+
+# ---------------------------------------------------------------------------
+# LEADERS — "what is leading / lagging" without a tool call
+# ---------------------------------------------------------------------------
+# The block SELECTS from the pulse's own equal-weight day move; it computes no
+# ranking of its own. So these pin (a) that the selection is by the number that
+# gets PRINTED, (b) that a group with no honest move is skipped rather than
+# imputed, and (c) that no basket slug ever reaches the prompt.
+
+def _leaders(text: str) -> str:
+    return _line(text, "LEADERS (")
+
+
+def test_leaders_line_carries_both_halves_strongest_first(tmp_path):
+    text = mp.digest(make_root(tmp_path))
+    line = _leaders(text)
+    assert re.match(r"^LEADERS \(\d\d-\d\d \d\d:\d\dZ\): ", line), line
+    assert line.split("): ", 1)[1] == (
+        "up — AI semiconductors +2.1% · energy sector +1.8% "
+        "· power & grid buildout +1.2% "
+        "| down — memory & storage −1.4% · staples sector −0.9% "
+        "· utilities sector −0.7%"
+    ), line
+    # Fourth-place movers, the exactly-flat group and the coverage null all sit
+    # outside the print — and tape_rank, which disagrees with the moves in the
+    # fixture, did not drive the order.
+    for excluded in ("retail", "big pharma", "insurance", "housing"):
+        assert excluded not in line, excluded
+
+
+def test_leaders_prints_at_most_three_a_side(tmp_path):
+    packet = mp.build_packet(make_root(tmp_path))
+    assert len(packet["leaders"]["up"]) == mp.LEADERS_PER_SIDE
+    assert len(packet["leaders"]["down"]) == mp.LEADERS_PER_SIDE
+    assert mp.LEADERS_PER_SIDE == 3
+
+
+def test_leaders_renders_only_the_up_half_when_nothing_is_down(tmp_path):
+    """An all-green tape must not promote three flat/least-green groups to
+    'down' — a half with nothing in it is simply not printed."""
+    payload = basket_pulse_payload()
+    payload["baskets"] = [
+        {"id": "us_sector_energy", "live_ew_chg_pct": 1.4},
+        {"id": "big_pharma", "live_ew_chg_pct": 0.6},
+        {"id": "retail", "live_ew_chg_pct": 0.0},
+        {"id": "housing", "live_ew_chg_pct": None},
+    ]
+    line = _leaders(mp.digest(make_root(tmp_path, basket_pulse=payload)))
+    assert line.split("): ", 1)[1] == "up — energy sector +1.4% · big pharma +0.6%"
+    assert "down" not in line
+    assert "retail" not in line and "housing" not in line
+
+
+def test_leaders_renders_only_the_down_half_when_nothing_is_up(tmp_path):
+    payload = basket_pulse_payload()
+    payload["baskets"] = [{"id": "memory_storage", "live_ew_chg_pct": -2.5},
+                          {"id": "crypto", "live_ew_chg_pct": -1.1}]
+    line = _leaders(mp.digest(make_root(tmp_path, basket_pulse=payload)))
+    assert line.split("): ", 1)[1] == (
+        "down — memory & storage −2.5% · crypto & digital assets −1.1%")
+    assert "up —" not in line
+
+
+def test_leaders_is_omitted_when_every_group_is_flat_or_null(tmp_path):
+    payload = basket_pulse_payload()
+    payload["baskets"] = [{"id": "retail", "live_ew_chg_pct": 0.0},
+                          {"id": "housing", "live_ew_chg_pct": None}]
+    root = make_root(tmp_path, basket_pulse=payload)
+    packet = mp.build_packet(root)
+    assert "leaders" not in packet
+    assert "LEADERS" not in mp.digest(root)
+    assert any(g.startswith("leaders:") for g in packet["gaps"]), packet["gaps"]
+
+
+@pytest.mark.parametrize("mode,note", [
+    ("live", ""),                       # the stamp already says it
+    ("delayed", "delayed quotes"),
+    ("last_rth", "last full session"),
+    ("eod", "last close"),
+    ("some_new_mode", ""),              # never leak an unmapped slug
+])
+def test_leaders_mode_qualifies_the_stamp_in_plain_words(tmp_path, mode, note):
+    root = make_root(tmp_path, basket_pulse=basket_pulse_payload(mode=mode))
+    line = _leaders(mp.digest(root))
+    head = line.split("): ", 1)[0] + ")"
+    assert (", " + note) in head if note else head.count(",") == 0, head
+    if mode not in note:            # 'delayed' legitimately reads inside its note
+        assert mode not in line     # 'last_rth' / an unmapped mode never do
+    assert "_" not in line          # no slug shape reaches the prompt at all
+
+
+def test_leaders_without_an_asof_renders_the_bare_head(tmp_path):
+    """Mirrors the DESK READ / FLAGS law: no as-of anywhere in the source means a
+    bare header, never a borrowed or implied stamp."""
+    payload = basket_pulse_payload(asof=None)
+    payload.pop("as_of_utc", None)
+    text = mp.digest(make_root(tmp_path, basket_pulse=payload))
+    line = _line(text, "LEADERS")
+    assert line.startswith("LEADERS: up — AI semiconductors +2.1%"), line
+    assert "LEADERS (" not in text
+
+
+def test_leaders_falls_back_to_the_build_stamp_when_the_quote_stamp_is_absent(tmp_path):
+    payload = basket_pulse_payload(asof=None)
+    payload["as_of_utc"] = "2026-07-28T14:05:00+00:00"
+    line = _leaders(mp.digest(make_root(tmp_path, basket_pulse=payload)))
+    assert line.startswith("LEADERS (07-28 14:05Z): "), line
+
+
+def test_leaders_junk_move_is_dropped_and_noted(tmp_path):
+    """A 10x glitch must never reach the prompt as a leadership fact."""
+    payload = basket_pulse_payload()
+    payload["baskets"].append({"id": "quantum_computing", "live_ew_chg_pct": 210.0})
+    packet = mp.build_packet(make_root(tmp_path, basket_pulse=payload))
+    assert "quantum" not in mp.render_digest(packet)
+    assert any("quantum_computing move 210.0% outside sanity band" in g
+               for g in packet["gaps"]), packet["gaps"]
+    # The rest of the line is untouched.
+    assert "AI semiconductors +2.1%" in mp.render_digest(packet)
+
+
+def test_leaders_unknown_slug_degrades_to_plain_words(tmp_path):
+    """An upstream basket with no label entry still reports — underscores become
+    spaces rather than the group vanishing or a raw slug printing."""
+    payload = basket_pulse_payload()
+    payload["baskets"] = [{"id": "fusion_power_startups", "live_ew_chg_pct": 3.0}]
+    line = _leaders(mp.digest(make_root(tmp_path, basket_pulse=payload)))
+    assert line.endswith("up — fusion power startups +3%"), line
+    assert "_" not in line
+
+
+def test_leaders_needs_a_baskets_list(tmp_path):
+    for payload in ({"schema": "basket_pulse.v1", "mode": "live"},
+                    {"schema": "basket_pulse.v1", "baskets": []},
+                    {"schema": "basket_pulse.v1", "baskets": "nope"}):
+        root = make_root(tmp_path, basket_pulse=payload)
+        assert "LEADERS" not in mp.digest(root)
+        assert "TAPE (" in mp.digest(root)       # never degrades a neighbour
+
+
+def test_leaders_survives_hostile_basket_rows(tmp_path):
+    payload = basket_pulse_payload()
+    payload["baskets"] = [
+        "not a dict", None, 17, {"live_ew_chg_pct": 1.0},        # no id
+        {"id": "retail"},                                        # no move
+        {"id": "crypto", "live_ew_chg_pct": "1.5"},              # string, not a number
+        {"id": "big_pharma", "live_ew_chg_pct": True},           # bool is not a move
+        {"id": "us_sector_energy", "live_ew_chg_pct": 0.9},      # the only real row
+    ]
+    line = _leaders(mp.digest(make_root(tmp_path, basket_pulse=payload)))
+    assert line.split("): ", 1)[1] == "up — energy sector +0.9%", line
+
+
+def test_leaders_sits_between_breadth_and_crossasset(tmp_path):
+    text = mp.digest(make_root(tmp_path))
+    heads = [ln.split(" (")[0] for ln in text.split("\n")]
+    assert heads.index("BREADTH") < heads.index("LEADERS") < heads.index("CROSS-ASSET")
+    assert mp._SECTION_ORDER.index("LEADERS") == mp._SECTION_ORDER.index("BREADTH") + 1
+    assert mp._SECTION_ORDER.index("CROSSASSET") == mp._SECTION_ORDER.index("LEADERS") + 1
+
+
+def test_leaders_source_is_in_the_cache_key(tmp_path):
+    """A pulse refresh must invalidate the digest cache like any other source."""
+    root = make_root(tmp_path)
+    assert "basket_pulse.json" in mp._LIVE_SOURCES
+    first = mp.digest(root)
+    payload = basket_pulse_payload()
+    payload["baskets"] = [{"id": "cybersecurity", "live_ew_chg_pct": 5.0}]
+    _write(root / "site" / "live" / "basket_pulse.json", payload)
+    os.utime(root / "site" / "live" / "basket_pulse.json", (1, 1))
+    second = mp.digest(root)
+    assert second != first
+    assert "cybersecurity +5%" in second
+
+
+# ---------------------------------------------------------------------------
+# Real-artifact smoke: the committed vintage, not a fixture
+# ---------------------------------------------------------------------------
+
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_the_committed_artifacts_render_a_packet_inside_the_budget():
+    """The fixtures prove the shapes; this proves the FIELD NAMES still match the
+    artifacts on disk. Freshness is deliberately not asserted — the committed
+    vintage ages, and a stale-but-parsed source is exactly what the stamps exist
+    to disclose."""
+    packet = mp.build_packet(_REPO_ROOT)
+    text = mp.render_digest(packet)
+    assert 0 < len(text) <= mp.DEFAULT_CHAR_BUDGET, len(text)
+
+    pulse = _REPO_ROOT / "site" / "live" / "basket_pulse.json"
+    if not pulse.exists():
+        pytest.skip("site/live/basket_pulse.json is not in this checkout")
+    movers = [b for b in (json.loads(pulse.read_text(encoding="utf-8")).get("baskets")
+                          or [])
+              if isinstance(b, dict) and isinstance(b.get("live_ew_chg_pct"), (int, float))
+              and not isinstance(b.get("live_ew_chg_pct"), bool)
+              and b["live_ew_chg_pct"]]
+    if not movers:
+        pytest.skip("this basket_pulse vintage carries no non-flat group")
+    line = _leaders(text)
+    assert " — " in line and "%" in line, line
+    # No raw slug survived the label map / _humanize degrade.
+    assert not re.search(r"[a-z]+_[a-z]+", line), line
+
+
+# ── zh render branch (Analyst OS W1): desk-precomputed Chinese only ──────────
+# Narrow by design (audit 2026-07-30): only fields whose zh the DESK already
+# computed switch — drivers labels, wire item zh, the curve-regime label. All
+# other text stays EN; the gateway LANGUAGE directive governs the reply.
+
+def test_zh_drivers_render_uses_desk_translations(tmp_path):
+    root = make_root(tmp_path)
+    zh = mp.digest(root, lang="zh")
+    assert "美联储重定价" in zh and "鹰派重定价" in zh
+    assert "置信度: 中" in zh and "归因: 明确" in zh
+    assert "hawkish repricing" not in zh
+
+
+def test_zh_events_prefer_wire_zh_with_en_fallback(tmp_path):
+    root = make_root(tmp_path)
+    zh = mp.digest(root, lang="zh")
+    assert "美联储维持利率" in zh          # item a has zh
+    assert "Chipmaker guides lower" in zh  # item b has none — EN fallback
+
+
+def test_zh_rates_curve_uses_canonical_label(tmp_path):
+    rp = rates_payload()
+    rp["board"]["risk_row"]["curve_regime_label_zh"] = "熊市变陡"
+    root = make_root(tmp_path, rates=rp)
+    zh = mp.digest(root, lang="zh")
+    en = mp.digest(root, lang="en")
+    assert "curve: 熊市变陡" in zh
+    assert "curve: bear steepener" in en
+
+
+def test_en_default_identical_to_explicit_en(tmp_path):
+    root = make_root(tmp_path)
+    assert mp.digest(root) == mp.digest(root, lang="en")
+
+
+def test_render_lang_never_mutates_caller_packet(tmp_path):
+    root = make_root(tmp_path)
+    packet = mp.build_packet(root)
+    mp.render_digest(packet, lang="zh")
+    assert "_render_lang" not in packet
+
+
+def test_zh_and_en_cached_separately(tmp_path):
+    root = make_root(tmp_path)
+    zh = mp.digest(root, lang="zh")
+    en = mp.digest(root, lang="en")
+    assert zh != en
+    # Second reads hit the cache and stay language-correct.
+    assert mp.digest(root, lang="zh") == zh
+    assert mp.digest(root, lang="en") == en

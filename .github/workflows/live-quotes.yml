@@ -12,22 +12,27 @@ name: live-quotes
 # real-time US prices from this job instead (the key never reaches the browser).
 on:
   schedule:
-    # Every 5 min, Mon–Fri (tightened from */10 per TSU: measured run duration
-    # ~80-100s across 2026-07-09/10 at the full universe, >2x headroom in the
-    # 5-min slot; concurrency-cancel below guards pile-up). Covers US + Asia +
-    # Europe equity sessions and the ~23h weekday futures tape. Weekends fall
-    # back to the last close (correct).
+    # ONE cron, and it ALWAYS runs the job. Every 5 min, Mon–Fri (tightened from
+    # */10 per TSU: measured run duration ~80-100s across 2026-07-09/10 at the
+    # full universe, >2x headroom in the 5-min slot; concurrency-cancel below
+    # guards pile-up). Covers US + Asia + Europe equity sessions and the ~23h
+    # weekday futures tape. Weekends fall back to the last close (correct).
+    #
+    # WHY THE SECOND CRON IS GONE (2026-07-30). This used to be a */5 browser
+    # tick gated off by VPS_LIVE_PRIMARY plus an ungated */15 tape-gate tick. The
+    # pair interacted badly with GitHub's schedule starvation, which is severe in
+    # this repo: in the 8h RTH window on 2026-07-29 GitHub delivered 104 scheduled
+    # runs across ALL 46 scheduled workflows, and live-quotes got 11 of its 128
+    # ticks (8.6%). Of those 11, roughly half were the */5 tick whose job `if:`
+    # evaluated false — so they concluded `skipped` in 1-9 seconds having written
+    # nothing. HALF OF THE SCARCE DELIVERED SLOTS PRODUCED NO SNAPSHOT. Collapsing
+    # to a single always-running cron therefore roughly DOUBLES the effective
+    # writer cadence without asking GitHub for a single extra run.
+    #
+    # It also removes a live hazard: `concurrency` below is workflow-level with
+    # cancel-in-progress, but the old `if:` was JOB-level, so a skipped tick still
+    # entered the group and could cancel a real snapshot mid-fetch.
     - cron: "*/5 * * * 1-5"
-    # Every 15 min, Mon–Fri — the TAPE-GATE feed, and it runs even when the VPS
-    # is the browser's primary (see the job `if:`). `live-data` has a second
-    # consumer the VPS cutover did not account for: marketing-publish.yml fetches
-    # it into data/marketing/live_quotes_snapshot.json every sweep, and the
-    # publisher's live gate refuses to post any signal it cannot verify against a
-    # quote younger than publish.live_gate.max_quote_age_min (45). 15 min keeps
-    # that comfortably satisfied at a third of the browser cadence's cost. This
-    # is a subset of the */5 slots above, so when BOTH are enabled the duplicate
-    # tick is cancelled by the concurrency group below.
-    - cron: "*/15 * * * 1-5"
   workflow_dispatch:
 
 permissions:
@@ -41,35 +46,79 @@ concurrency:
 
 jobs:
   snapshot:
-    # The BROWSER fallback (*/5) is disabled once the VPS passes its production
-    # soak and VPS_LIVE_PRIMARY=true is set. Manual recovery always remains.
-    #
-    # The */15 tick is NOT gated on that variable, because `live-data` feeds a
-    # consumer the VPS cutover did not account for. VPS_LIVE_PRIMARY went true at
-    # 2026-07-27T22:50Z; every scheduled run since concluded `skipped`, so the
-    # branch head froze at 22:31:59Z. marketing-publish.yml keeps fetching it and
-    # the publisher's tape gate kept re-verifying against a SEVENTEEN-HOUR-OLD
-    # snapshot ("quote for ROST is 452m old (max 45m)"), holding the desk
-    # network's entire queue — the repo's other two quote artifacts
-    # (site/live/quotes.json, site/marketdata/sp500_heatmap.json) were equally
-    # stale on main, so nothing else could satisfy the gate. The VPS serves the
-    # browser; it does not write this branch. Until it does, this tick is the
-    # tape gate's only fresh source.
-    if: >-
-      ${{ github.event_name == 'workflow_dispatch'
-          || vars.VPS_LIVE_PRIMARY != 'true'
-          || github.event.schedule == '*/15 * * * 1-5' }}
+    # NO JOB GATE. `live-data` has three consumers and the VPS writes it for none
+    # of them: the browser's fallback, marketing-publish.yml's tape gate (which
+    # refuses any signal it cannot verify against a quote younger than
+    # publish.live_gate.max_quote_age_min = 45), and — since #3941 — the Hot Tape
+    # radar, whose ceiling is far tighter. VPS_LIVE_PRIMARY went true at
+    # 2026-07-27T22:50Z and the gate immediately cost more than it saved: it froze
+    # the branch head at 22:31:59Z, the tape gate started re-verifying against a
+    # SEVENTEEN-HOUR-OLD snapshot ("quote for ROST is 452m old (max 45m)") and
+    # held the desk network's whole queue, and after that was patched with the
+    # */15 exemption the surviving cadence was still too slow for the radar. The
+    # VPS serves the browser; it does not write this branch. Until it does, this
+    # job is the only thing that keeps the branch alive, so it always runs.
     runs-on: ubuntu-latest
     # Cap raised 800 → 2200 (2026-07-09) → 3000 (2026-07-12, HK basket pulse:
     # the membership leg joins every US+HK basket member; production universe
-    # ~2130). Measured Yahoo rate ~37 symbols/s → ~58 s at today's universe,
-    # still ~12 % of the 8-min timeout. File size ~300 KB (< 500 KB browser
-    # budget). Timeout unchanged.
-    timeout-minutes: 8
+    # ~2130). Measured Yahoo rate ~37 symbols/s → ~58 s at today's universe.
+    #
+    # 8 → 15 (2026-07-30). The fetch was never the problem; `checkout` was. Two of
+    # the eleven delivered ticks on 2026-07-29 (runs 30470042079 at 16:17Z and
+    # 30487564493 at 20:12Z) spent their ENTIRE budget inside
+    # `git fetch --depth=1` and were killed at 8m06s having written nothing — an
+    # 18% loss on top of the starvation. The sparse cone below is the real fix;
+    # this raise is the margin, because a runner that is slow once will be slow
+    # again and a snapshot that arrives late still beats one that never arrives.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        # BLOBLESS + SPARSE. A bare `fetch-depth: 1` still materializes the whole
+        # tree — 2827 MB across 49,266 tracked files, and on a slow runner that
+        # exceeds the job budget outright (see the timeout note above). The cone
+        # is this lane's exact read surface, ~410 MB:
+        #   engine, scripts, lib, config,
+        #   app                           — the code (~48 MB with the root files).
+        #                                   `app` is NOT decorative: build_live_quotes
+        #                                   imports app.tape_symbols at module scope,
+        #                                   so omitting it does not degrade the
+        #                                   universe, it stops the script importing
+        #                                   at all. Verified by materializing this
+        #                                   exact cone and building the universe in
+        #                                   it (2113 symbols, 147 .HK — identical to
+        #                                   the full tree).
+        #   data/baskets                  — basket_member_symbols() reads
+        #                                   membership.json from here. Cone mode is
+        #                                   recursive and data/baskets' only child
+        #                                   is ohlcv (284 MB), so this leg is the
+        #                                   bulk of the cone. It is NOT optional:
+        #                                   without it the ~810 US+HK basket
+        #                                   members silently leave the universe,
+        #                                   which is the GAP-3 regression that the
+        #                                   membership leg exists to prevent.
+        #   data/baskets_hk               — the HK membership file (~0.1 MB)
+        #   site/live                     — a BOUNDARY entry, not a read: cone mode
+        #                                   includes every file sitting directly in
+        #                                   an ancestor of a listed path, so this is
+        #                                   how scrape_site_symbols gets site/*.html
+        #                                   (371 files, 74 MB) without dragging in
+        #                                   site/stocks (200 MB) and the rest of the
+        #                                   9,155-file site tree.
+        # top_conviction() reads site/stockdata/index.json, which does not exist in
+        # the tree — it already returns [] in production and needs no cone entry.
+        # Adding a read path to this script means adding it HERE too.
         with:
           fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            app
+            engine
+            scripts
+            lib
+            config
+            data/baskets
+            data/baskets_hk
+            site/live
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -88,7 +137,19 @@ jobs:
           git config user.email "dashboard-bot@users.noreply.github.com"
           # Single-commit orphan branch: stage ONLY quotes.json, never main's tree.
           git checkout --orphan live-data-tmp
-          git rm -rf --cached . >/dev/null 2>&1 || true
+          # `git read-tree --empty`, NOT `git rm -rf --cached .` — the sparse
+          # checkout above breaks the latter. `git rm` honours sparse rules and
+          # silently refuses to touch entries outside the cone, so `.` expands to
+          # the handful of in-cone paths and leaves the rest of the index intact:
+          # measured 30,896 entries surviving, and the "single-commit orphan
+          # branch" then carried the WHOLE REPOSITORY on every 5-minute push.
+          # It fails silently in the worst way — quotes.json is still at the top
+          # of the tree, so raw.githubusercontent keeps serving it and every
+          # consumer looks healthy while the branch grows a full tree per tick.
+          # read-tree operates on the index directly and ignores sparse rules:
+          # verified 0 entries after, tree == exactly ["quotes.json"], both with
+          # the cone set and without it.
+          git read-tree --empty
           git add -f quotes.json
           git commit -m "live quotes $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push -f origin HEAD:live-data

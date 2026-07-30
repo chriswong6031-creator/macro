@@ -44,7 +44,7 @@ SOURCES (each block independent, each fail-soft)
 -----------------------------------------------
 Live dir (see ``_live_dir`` — env override, then the VPS public live dir, then
 the repo's ``site/live``): quotes.json, breadth.json, market_drivers.json,
-shock_state.json, risk_state.json, wires.json.
+shock_state.json, risk_state.json, wires.json, basket_pulse.json.
 Repo: site/master_brief.json (else data/regime/master_brief.json),
 data/neuralweb/world_state.json, data/rates_command/latest.json,
 site/vol/regime.json, data/crossasset/latest.json, and a final wires fallback at
@@ -171,6 +171,9 @@ EVENTS_MAX_AGE_H = 12.0        # a wire item older than this is not "live"
 EVENTS_MAX_ITEMS = 3
 EVENTS_TEXT_CHARS = 90
 
+LEADERS_PER_SIDE = 3           # strongest N and weakest N groups
+LEADERS_MAX_ABS_PCT = 40.0     # |EW day move| above this = junk print, dropped
+
 _CURVE_GLOSS: dict[str, str] = {
     "bear_steepener": "bear steepener (long end selling off while the front end holds)",
     "bull_steepener": "bull steepener (front end rallying faster than the long end)",
@@ -198,6 +201,77 @@ _CROSSASSET_LABELS: dict[str, str] = {
     "crypto": "bitcoin",
 }
 
+# Basket/sector slugs -> plain words for the LEADERS line. Same reason as
+# _CROSSASSET_LABELS above: the canonical names live in the baskets-membership
+# registry (and its site-sector-pulse mirror), but opening a SECOND artifact
+# to label a line the first one already fully populates would triple this block's
+# read cost, and importing the basket registry would drag lib.config into a module
+# that must stay stdlib-pure. Compacted from the canonical `name` field, so an
+# equal-weight GICS sector reads as "<sector> sector" and never collides with the
+# thematic basket next to it ("energy sector" vs "energy complex"). An unlisted
+# slug degrades to underscores-as-spaces rather than dropping the group.
+_BASKET_LABELS: dict[str, str] = {
+    # US GICS sectors, equal-weight
+    "us_sector_tech": "tech sector",
+    "us_sector_financials": "financials sector",
+    "us_sector_health": "health care sector",
+    "us_sector_discretionary": "discretionary sector",
+    "us_sector_comm": "communications sector",
+    "us_sector_industrials": "industrials sector",
+    "us_sector_staples": "staples sector",
+    "us_sector_energy": "energy sector",
+    "us_sector_utilities": "utilities sector",
+    "us_sector_realestate": "real estate sector",
+    "us_sector_materials": "materials sector",
+    # Thematic baskets
+    "mag7": "mega-cap tech",
+    "ai_infra": "AI infrastructure",
+    "ai_software": "AI software",
+    "ai_agents": "AI agents",
+    "ai_neoclouds": "AI neoclouds",
+    "ai_semiconductors": "AI semiconductors",
+    "semicap_equipment": "semiconductor equipment",
+    "memory_storage": "memory & storage",
+    "non_ai_software": "non-AI software",
+    "non_ai_tech": "non-AI tech & hardware",
+    "cybersecurity": "cybersecurity",
+    "quantum_computing": "quantum computing",
+    "robotics_automation": "robotics & automation",
+    "space_economy": "space economy",
+    "defense": "defense & aerospace",
+    "reshoring": "reshoring & industrial capex",
+    "industrial_distribution": "industrial distribution",
+    "power_grid": "power & grid buildout",
+    "data_center_power": "data-center power",
+    "nuclear_power": "nuclear & SMR power",
+    "uranium_miners": "uranium & nuclear fuel",
+    "critical_minerals": "critical minerals & rare earths",
+    "energy_complex": "energy complex",
+    "housing": "housing chain",
+    "travel": "travel & experiences",
+    "retail": "retail",
+    "defensives": "defensives",
+    "regional_banks": "regional banks",
+    "payments_fintech": "payments & fintech",
+    "insurance": "insurance & brokers",
+    "managed_care": "managed care & insurers",
+    "big_pharma": "big pharma",
+    "obesity_glp1": "GLP-1 & obesity",
+    "crypto": "crypto & digital assets",
+    "crypto_rails": "crypto rails",
+}
+
+# The pulse's OWN graded-mode field (TS-R1 honest-delay law in
+# scripts/build_basket_pulse.py) as a plain phrase. 'live' adds nothing the
+# section stamp does not already say; an unknown mode renders NOTHING rather than
+# leaking a raw slug into the prompt.
+_LEADERS_MODE_NOTE: dict[str, str] = {
+    "live": "",
+    "delayed": "delayed quotes",
+    "last_rth": "last full session",
+    "eod": "last close",
+}
+
 _BASIS_LIVE = "live"
 _BASIS_DELAYED = "≈15-min delayed"
 _BASIS_CLOSED = "last session's tape (market closed)"
@@ -217,7 +291,7 @@ _HEADER = (
 # so it sits with the flags it qualifies rather than at the droppable tail.
 _SECTION_ORDER: tuple[str, ...] = (
     "HEADER", "TAPE", "CURVE", "FLAGS", "SHOCK", "EVENTS", "DRIVERS",
-    "RATES", "VOL", "BREADTH", "CROSSASSET", "DESK", "WATCH",
+    "RATES", "VOL", "BREADTH", "LEADERS", "CROSSASSET", "DESK", "WATCH",
 )
 _NEVER_DROP: frozenset[str] = frozenset({"HEADER", "TAPE"})
 
@@ -567,6 +641,83 @@ def _breadth_block(raw: object, gaps: list[str]) -> dict | None:
             "delay_min": _f(raw.get("delay_min")), "asof": raw.get("asof")}
 
 
+def _leaders_block(raw: object, gaps: list[str]) -> dict | None:
+    """Today's strongest / weakest groups off the intraday basket pulse.
+
+    SOURCE CHOICE — the intraday basket pulse (basket_pulse.v1, ~14 KB), the
+    smallest artifact on disk that actually answers "what is leading". The four
+    alternatives were rejected on grain or weight:
+
+    * site-sector-pulse (47 KB) carries the same 46 groups but NO 1-day move — its
+      numbers are a composite score, a cross-sectional rank and a 5-day relative,
+      none of which is "today".
+    * site-flow-leaders (68 KB) and site-leader-radar (326 KB) are TICKER grain,
+      not group grain.
+    * site-us-standouts is 1.8 MB and its ``leaders`` key is also per-ticker.
+    * The nightly baskets snapshot (14 KB) is group grain but, like sector-pulse,
+      carries score/rank/label only — no day move.
+
+    The pulse also happens to be the one candidate that is BOTH git-tracked under
+    the repo's live dir (so a dev checkout resolves it) and published into the VPS
+    public live dir by scripts/vps_live_orchestrator's snapshot lane (so production
+    resolves it) — it rides the module's existing ``_live_dir`` ladder with no new
+    path convention, and check_vps_live_health holds it to a 15-minute freshness
+    bound on weekdays. It is NOT in config/synapse.yml: the whole live plane is
+    unregistered there, so declaring it is a governance decision, not this block's.
+
+    WHAT IS AND IS NOT COMPUTED HERE. ``live_ew_chg_pct`` is the builder's own
+    equal-weight member day move; this function only SELECTS from it (the same
+    idiom as ``_events_block`` sorting the wire by the wire's own salience) and
+    THRESHOLD-gates a junk print. The sort key is the printed move rather than the
+    artifact's ``tape_rank`` because rank ships null on the eod fallback path,
+    and because sorting on the number we print keeps the order and the figures
+    from ever disagreeing. A group whose member coverage fell under the builder's
+    floor already arrives as an honest null and is skipped, never imputed.
+
+    Zero is neither half: a group has to be strictly above 0 to read as leading
+    and strictly below to read as lagging, so an all-green tape renders the up
+    half alone rather than promoting three flat groups to "down".
+    """
+    if not isinstance(raw, dict):
+        return None
+    rows_raw = raw.get("baskets")
+    if not isinstance(rows_raw, list) or not rows_raw:
+        gaps.append("leaders: no baskets")
+        return None
+    rows: list[dict] = []
+    for b in rows_raw:
+        if not isinstance(b, dict):
+            continue
+        bid = str(b.get("id") or "").strip()
+        chg = _f(b.get("live_ew_chg_pct"))
+        if not bid or chg is None:
+            continue
+        if abs(chg) > LEADERS_MAX_ABS_PCT:
+            gaps.append(f"leaders: {bid} move {chg:.1f}% outside sanity band — dropped")
+            continue
+        rows.append({"id": bid, "label": _BASKET_LABELS.get(bid, _humanize(bid)),
+                     "change_pct": chg})
+    if not rows:
+        gaps.append("leaders: no group with a usable move")
+        return None
+
+    up = sorted((r for r in rows if r["change_pct"] > 0),
+                key=lambda r: -r["change_pct"])[:LEADERS_PER_SIDE]
+    down = sorted((r for r in rows if r["change_pct"] < 0),
+                  key=lambda r: r["change_pct"])[:LEADERS_PER_SIDE]
+    if not up and not down:
+        gaps.append("leaders: every group flat")
+        return None
+
+    mode = str(raw.get("mode") or "").strip()
+    return {"up": up, "down": down, "mode": mode,
+            "mode_note": _LEADERS_MODE_NOTE.get(mode, ""),
+            # as_of_quotes is the tape the moves were measured on; as_of_utc is
+            # the build. The quote stamp is the one that says when the numbers
+            # were true, so it leads.
+            "asof": raw.get("as_of_quotes") or raw.get("as_of_utc")}
+
+
 def _drivers_block(raw: object) -> dict | None:
     if not isinstance(raw, dict):
         return None
@@ -625,6 +776,9 @@ def _rates_block(raw: object) -> dict | None:
         "policy_rate": _f(rp.get("policy_rate")),
         "implied_m3": _f(path.get("m3")),
         "curve_regime": curve or "",
+        # Desk-canonical zh curve label (熊市变陡 family) — rendered on zh turns so
+        # the model reuses the desk's own translation instead of inventing one.
+        "curve_regime_zh": str(risk.get("curve_regime_label_zh") or "").strip(),
         "breakeven_10y": _f(infl.get("breakeven_10y")),
         "term_premium_dir": str(risk.get("term_premium_dir") or "").strip(),
     }
@@ -838,6 +992,7 @@ def build_packet(root: Path) -> dict:
 
         for key, path, builder in (
             ("breadth", live / "breadth.json", lambda r: _breadth_block(r, gaps)),
+            ("leaders", live / "basket_pulse.json", lambda r: _leaders_block(r, gaps)),
             ("drivers", live / "market_drivers.json", _drivers_block),
             ("shock", live / "shock_state.json", _shock_block),
             ("rates", root / "data" / "rates_command" / "latest.json", _rates_block),
@@ -996,11 +1151,22 @@ def _render_shock(p: dict) -> str:
     return f"SHOCK WINDOW ({window or 'active'}): {_clip(note, 200)}"
 
 
+def _zh(p: dict) -> bool:
+    """True when this render pass targets Chinese. The flag is stamped onto a
+    SHALLOW COPY by render_digest (never the caller's dict); zh rendering is
+    deliberately narrow — only fields whose Chinese the DESK already computed
+    (drivers labels, wire item zh, the curve-regime label) switch, so the model
+    reuses canonical desk vocabulary instead of re-translating. Everything else
+    stays English and the LANGUAGE directive handles it."""
+    return p.get("_render_lang") == "zh"
+
+
 def _render_events(p: dict) -> str:
     items = p["events"].get("items") or []
+    zh = _zh(p)
     parts: list[str] = []
     for it in items:
-        text = it["en"]
+        text = (it.get("zh") or it["en"]) if zh else it["en"]
         if len(text) > EVENTS_TEXT_CHARS:
             text = text[:EVENTS_TEXT_CHARS - 1].rstrip() + "…"
         parts.append(f"{it['hhmm']} UTC {text}")
@@ -1009,12 +1175,17 @@ def _render_events(p: dict) -> str:
 
 def _render_drivers(p: dict) -> str:
     d = p["drivers"]
-    body = " — ".join(x for x in (d.get("primary_label"), d.get("direction")) if x)
+    zh = _zh(p)
+    label = (d.get("primary_label_zh") or d.get("primary_label")) if zh else d.get("primary_label")
+    direction = (d.get("direction_zh") or d.get("direction")) if zh else d.get("direction")
+    conf = (d.get("confidence_zh") or d.get("confidence")) if zh else d.get("confidence")
+    verdict = (d.get("verdict_zh") or d.get("verdict")) if zh else d.get("verdict")
+    body = " — ".join(x for x in (label, direction) if x)
     tail: list[str] = []
-    if d.get("confidence"):
-        tail.append(f"desk confidence: {d['confidence']}")
-    if d.get("verdict"):
-        tail.append(f"attribution: {d['verdict']}")
+    if conf:
+        tail.append(f"置信度: {conf}" if zh else f"desk confidence: {conf}")
+    if verdict:
+        tail.append(f"归因: {verdict}" if zh else f"attribution: {verdict}")
     stamp = _stamp(d.get("asof"))
     win = _num(d.get("window_d"), 0)
     head = f"DRIVERS ({stamp}{f', {win}d window' if win else ''}): "
@@ -1031,7 +1202,8 @@ def _render_rates(p: dict) -> str:
     if m3:
         parts.append(f"implied path m3 {m3}%")
     if r.get("curve_regime"):
-        parts.append(f"curve: {r['curve_regime']}")
+        curve = (r.get("curve_regime_zh") or r["curve_regime"]) if _zh(p) else r["curve_regime"]
+        parts.append(f"curve: {curve}")
     be = _num(r.get("breakeven_10y"), 2)
     if be:
         parts.append(f"10Y breakeven {be}%")
@@ -1090,6 +1262,34 @@ def _render_breadth(p: dict) -> str:
     return head + _SEP.join(parts)
 
 
+def _render_leaders(p: dict) -> str:
+    """'LEADERS (07-27 19:38Z, last full session): up — … | down — …'
+
+    Either half may be absent (an all-green or all-red tape); with both absent the
+    section renders "" rather than a promise it cannot keep. The head mirrors
+    BREADTH's stamp+qualifier join, and falls back to the bare 'LEADERS: ' form
+    that FLAGS / DESK READ use when the source carries no as-of at all.
+    """
+    ld = p["leaders"]
+
+    def half(rows: list[dict]) -> str:
+        parts: list[str] = []
+        for r in rows:
+            pct = _signed(r.get("change_pct"), 1, "%")
+            if pct:
+                parts.append(f"{r['label']} {pct}")
+        return _SEP.join(parts)
+
+    halves = [f"{word} — {body}" for word, body in
+              (("up", half(ld.get("up") or [])), ("down", half(ld.get("down") or [])))
+              if body]
+    if not halves:
+        return ""
+    bits = ", ".join(x for x in (_stamp(ld.get("asof")), ld.get("mode_note") or "") if x)
+    head = f"LEADERS ({bits}): " if bits else "LEADERS: "
+    return head + " | ".join(halves)
+
+
 def _render_crossasset(p: dict) -> str:
     c = p["crossasset"]
     parts: list[str] = []
@@ -1136,22 +1336,30 @@ _RENDERERS: dict[str, object] = {
     "RATES": ("rates", _render_rates),
     "VOL": ("vol", _render_vol),
     "BREADTH": ("breadth", _render_breadth),
+    "LEADERS": ("leaders", _render_leaders),
     "CROSSASSET": ("crossasset", _render_crossasset),
     "DESK": ("desk", _render_desk),
     "WATCH": ("watch", _render_watch),
 }
 
 
-def render_digest(packet: dict, char_budget: int = DEFAULT_CHAR_BUDGET) -> str:
+def render_digest(packet: dict, char_budget: int = DEFAULT_CHAR_BUDGET,
+                  lang: str = "en") -> str:
     """Compact plain text for prompt injection. "" when the packet has no content.
 
     Sections render in _SECTION_ORDER; when the text exceeds ``char_budget``
     whole sections are dropped from the BOTTOM of that order up. HEADER and TAPE
     are never dropped, and a header with nothing under it renders as "" rather
     than an empty promise.
+
+    ``lang='zh'`` switches ONLY the desk-precomputed Chinese fields (see _zh);
+    the flag rides a shallow copy so a caller-held packet is never mutated.
     """
     if not isinstance(packet, dict):
         return ""
+    if lang == "zh":
+        packet = dict(packet)
+        packet["_render_lang"] = "zh"
     sections: list[tuple[str, str]] = []
     try:
         for name in _SECTION_ORDER:
@@ -1205,7 +1413,7 @@ _CACHE_LOCK = threading.Lock()
 # Relative to the LIVE dir.
 _LIVE_SOURCES: tuple[str, ...] = (
     "quotes.json", "breadth.json", "market_drivers.json",
-    "shock_state.json", "risk_state.json", "wires.json",
+    "shock_state.json", "risk_state.json", "wires.json", "basket_pulse.json",
 )
 # Relative to root.
 _ROOT_SOURCES: tuple[str, ...] = (
@@ -1221,7 +1429,7 @@ def _clock() -> float:
     return time.monotonic()
 
 
-def _cache_key(root: Path, char_budget: int) -> tuple:
+def _cache_key(root: Path, char_budget: int, lang: str = "en") -> tuple:
     """(root, budget) plus the (path, mtime) pair of every source. A source that
     APPEARS or vanishes changes the key as surely as an edited one, because a
     missing file is keyed as None rather than skipped."""
@@ -1236,10 +1444,11 @@ def _cache_key(root: Path, char_budget: int) -> tuple:
                 pairs.append((str(p), None))
     except Exception:  # noqa: BLE001
         pass
-    return (str(root), int(char_budget), tuple(pairs))
+    return (str(root), int(char_budget), str(lang), tuple(pairs))
 
 
-def digest(root: Path, char_budget: int = DEFAULT_CHAR_BUDGET) -> str:
+def digest(root: Path, char_budget: int = DEFAULT_CHAR_BUDGET,
+           lang: str = "en") -> str:
     """build_packet + render_digest behind a cache. Never raises.
 
     Cached on the source mtimes and the budget, with a 60 s ceiling so a clock-
@@ -1247,13 +1456,13 @@ def digest(root: Path, char_budget: int = DEFAULT_CHAR_BUDGET) -> str:
     when nothing on disk moved.
     """
     try:
-        key = _cache_key(root, char_budget)
+        key = _cache_key(root, char_budget, lang)
         now = _clock()
         with _CACHE_LOCK:
             hit = _CACHE.get(key)
             if hit is not None and (now - hit[1]) < _CACHE_TTL_S:
                 return hit[0]
-        text = render_digest(build_packet(root), char_budget)
+        text = render_digest(build_packet(root), char_budget, lang=lang)
         with _CACHE_LOCK:
             if len(_CACHE) > 64:      # unbounded roots would leak; cheap to rebuild
                 _CACHE.clear()
