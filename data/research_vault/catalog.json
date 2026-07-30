@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T00:24:16.325491+00:00",
-  "count": 353,
+  "generated_at": "2026-07-30T00:39:26.883369+00:00",
+  "count": 354,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -2021,6 +2021,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a6llvl2vdjl-a45d44",
+      "title": "Americas Transportation Railroads Weekly Rail Carload Snapshot — Week 29",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-28T01:36:26Z",
+      "summary_points": [
+        "**US Rail Momentum Slows**: Class I carload growth decelerated to +3.6% YoY (week 29) from +4.6% YoY (week 28), with intermodal growth slowing to +5.3% YoY (vs +7.8%).",
+        "**Canada Rail Growth Reverses Trend**: Total Canadian carload growth accelerated to +0.2% YoY (week 29) from -0.8% YoY (week 28), marking a shift from negative to positive momentum.",
+        "**Carrier Leadership Emerges**: UNP led intermodal growth (+8.2% YoY), while CPKC drove ex-intermodal (+4.8% YoY) and intermodal (+6.4% YoY) acceleration in Canada."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
