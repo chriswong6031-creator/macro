@@ -103,6 +103,9 @@ public:
     - /vendor/d3-array.min.js
     - /vendor/d3-geo.min.js
     - /vendor/topojson-client.min.js
+    # Static Natural Earth topology consumed by the public start-page globe.
+    # Contains geometry only — no signals, customer data, or account state.
+    - /world-110m.json
     # Ad Central Plane O split-test shim (research/AD_CENTRAL_MASTERPLAN.md §2).
     # Must be public for the same reason theme.js is: it runs before auth resolves,
     # on anonymous visitors — who are precisely the population a landing-page test
