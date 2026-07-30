@@ -8,16 +8,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
-def test_start_page_ships_the_intelligence_surface():
-    html = (ROOT / "site" / "start.html").read_text(encoding="utf-8")
-    assert 'class="hub-intel-shell"' in html
-    assert 'class="hub-intel-message"' in html
-    assert 'class="hub-intel-meta"' not in html
-    assert 'class="hub-intel-foot"' not in html
+def test_builder_renders_the_floating_intelligence_surface():
+    builder = (ROOT / "scripts" / "build_vector.py").read_text(encoding="utf-8")
+    assert '<div class="hub-intel-message"><span class="greet-tx"></span>' in builder
+    assert "hub-intel-meta" not in builder
+    assert "hub-intel-foot" not in builder
 
-    match = re.search(r'href="(assets/css/[a-f0-9]+\.css)\?v=', html)
-    assert match, "start.html must reference its externalized page CSS"
-    css = (ROOT / "site" / match.group(1)).read_text(encoding="utf-8")
+    match = re.search(r'_GLOBE_HUB_CSS = r?"""<style>(.*?)</style>"""', builder, re.DOTALL)
+    assert match, "build_vector must carry the hub page CSS"
+    css = match.group(1)
     assert ".hub-intel-shell" in css
     assert ".hub-greet.is-speaking" in css
     assert "-webkit-backdrop-filter:blur(18px)" in css
