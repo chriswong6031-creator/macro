@@ -1,17 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-30T14:31:37.799329+00:00",
+  "as_of": "2026-07-30T16:49:19.483448+00:00",
   "posts_seen": 10,
   "seen_total": 70,
-  "evaluated": 1,
+  "evaluated": 0,
   "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-07-30-the-white-house-government-transparency-task-force-fact-sheet",
-      "importance": 10,
-      "activated": false,
-      "degraded_reason": "served_by:deepseek"
-    }
-  ]
+  "gate_scores": []
 }
