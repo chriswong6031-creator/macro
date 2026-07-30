@@ -388,10 +388,14 @@ class TestAdversarialValidation:
         # LLM override provided invented numbers -> should fall back
         assert result["mode"] == "llm_fallback"
         assert len(result["violations_seen"]) > 0
-        # Fallback text must be deterministic "{headline} -- {source_name}"
-        # (B1: double hyphen, never an em dash -- the publisher quarantines U+2014)
-        expected_fallback = f"{item['headline']} -- {item['source_name']}"
-        assert result["summary"] == expected_fallback
+        # The fallback is the deterministic body, attributed on a DOUBLE HYPHEN
+        # (B1: never an em dash -- the publisher quarantines U+2014). Its text is
+        # the source's own lead sentence, so the invented 0.5% is gone and every
+        # number that remains is the source's.
+        assert result["summary"].endswith(f" -- {item['source_name']}")
+        assert "0.5%" not in result["summary"]
+        body = result["summary"].rsplit(" -- ", 1)[0]
+        assert body in (item["body_snippet"] or "") or body == item["headline"]
 
     def test_summarize_item_llm_fallback_on_stance(self):
         """summarize_item with LLM returning bullish stance -> llm_fallback."""
@@ -411,7 +415,15 @@ class TestAdversarialValidation:
 # ---------------------------------------------------------------------------
 
 class TestDeterministicFallback:
-    """With no MARKETING_LLM_ENABLED and no override -> mode=deterministic."""
+    """With no MARKETING_LLM_ENABLED and no override -> mode=deterministic.
+
+    W1.5 (#3960 reviewer minor) CHANGED WHAT THE FALLBACK BODY SAYS. It used to
+    be ``{headline} -- {source_name}``, i.e. the headline verbatim; since the
+    emitted post is ``headline + blank line + body`` (outbox.compose_text), every
+    keyless press item shipped the same sentence twice. The body is now the
+    source's own lead sentence when the packet carries one, and falls back to the
+    headline relay when it does not. The attribution join is unchanged.
+    """
 
     def test_no_env_var_deterministic(self):
         xml = _load_fixture("rss_mixed.xml")
@@ -424,19 +436,66 @@ class TestDeterministicFallback:
         cfg = {"breaking": {"llm": {"enabled": True, "model_key": "marketing_copy"}}}
         result = summarize_item(cpi, cfg)
         assert result["mode"] == "deterministic"
-        expected = f"{cpi['headline']} -- {cpi['source_name']}"
-        assert result["summary"] == expected
+        assert result["summary"].endswith(f" -- {cpi['source_name']}")
+        # THE WART: the body is no longer the headline wearing an attribution.
+        assert result["summary"] != f"{cpi['headline']} -- {cpi['source_name']}"
+        body = result["summary"].rsplit(" -- ", 1)[0]
+        assert body != cpi["headline"]
+        assert body in cpi["body_snippet"], "the body is not source text"
 
     def test_deterministic_summary_format(self):
-        """Deterministic summary == '{headline} -- {source_name}' (B1)."""
+        """Every deterministic body is source text, attributed on ' -- ' (B1)."""
         xml = _load_fixture("rss_mixed.xml")
         items = parse_feed(xml, BLS_SOURCE_CFG)
         for item in items:
             cfg = {"breaking": {"llm": {"enabled": False}}}
             result = summarize_item(item, cfg)
-            expected = f"{item['headline']} -- {item['source_name']}"
-            assert result["summary"] == expected
             assert result["mode"] == "deterministic"
+            assert result["summary"].endswith(f" -- {item['source_name']}")
+            body = result["summary"].rsplit(" -- ", 1)[0]
+            # Nothing invented: the body is either the source's lead sentence or
+            # the headline, never a construction of our own.
+            assert body == item["headline"] or body in (item["body_snippet"] or ""), \
+                body
+
+    def test_a_packet_with_no_body_keeps_the_headline_relay(self):
+        """The honest floor. With nothing but a headline, relaying it IS the
+        truthful thing to send -- the fix removes a redundancy, not a fallback."""
+        item = {"headline": "Fed holds rates steady", "body_snippet": "",
+                "source_name": "Federal Reserve"}
+        result = summarize_item(item, {"breaking": {"llm": {"enabled": False}}})
+        assert result["summary"] == "Fed holds rates steady -- Federal Reserve"
+
+    def test_a_body_that_merely_repeats_the_headline_is_not_used(self):
+        """A wire mirror whose snippet restates its own headline gains nothing,
+        so the near-verbatim gate sends it back to the headline relay."""
+        item = {"headline": "Treasury secretary says tariffs stay in place",
+                "body_snippet": "Treasury secretary says tariffs stay in place.",
+                "source_name": "Reuters"}
+        result = summarize_item(item, {"breaking": {"llm": {"enabled": False}}})
+        assert result["summary"] == \
+            "Treasury secretary says tariffs stay in place -- Reuters"
+
+    def test_an_em_dash_in_the_source_body_never_reaches_the_copy(self):
+        """The publisher's last gate quarantines U+2014, so a source dash must be
+        normalised to the house double hyphen rather than relayed."""
+        from engine.marketing.copywriter import banned_language
+
+        item = {"headline": "ECB signals a pause",
+                "body_snippet": "The ECB said policy — unchanged since March "
+                                "— will stay restrictive for now.",
+                "source_name": "ECB"}
+        summary = summarize_item(item, {"breaking": {"llm": {"enabled": False}}})["summary"]
+        assert "—" not in summary and "–" not in summary
+        assert banned_language(summary) == []
+        assert "unchanged since March" in summary        # the fact survived
+
+    def test_a_byline_fragment_is_not_a_body(self):
+        """"By Reuters Staff" is not a fact. Too-short leads fall back."""
+        item = {"headline": "Oil holds gains", "body_snippet": "By Reuters Staff.",
+                "source_name": "Reuters"}
+        result = summarize_item(item, {"breaking": {"llm": {"enabled": False}}})
+        assert result["summary"] == "Oil holds gains -- Reuters"
 
 
 # ---------------------------------------------------------------------------

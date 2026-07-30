@@ -2179,27 +2179,48 @@ intel:
     # A candidate needs a real denominator behind its interaction rate.
     min_views: 5000
 
+  # ── The daily light pass ─────────────────────────────────────────────────
+  # `tier: daily` on a roster entry admits it to `x_intel_harvest --light`, the
+  # bounded cheap pass the monthly cap was ALREADY sized for (see the budget
+  # arithmetic above: 5 handles x 30 days = 150 calls). At most
+  # light_max_handles are polled however many entries carry the tier, and an
+  # empty selection polls NOTHING rather than falling back to the full roster.
+  # Everything else defaults to `tier: weekly` and is only ever polled by the
+  # Sunday deep pass. NO CAP MOVES for this: monthly_call_cap and
+  # monthly_usd_cap are unchanged, and the $5 intel carve of the shared $75
+  # twitterapi.io bucket is unchanged.
+  light_tier: daily
+  light_max_handles: 5
+
   # ── The roster — the 17 accounts of the manual docket, with the register
   # each one writes in (the docket's "By register" grouping). Registers:
   # wire | aggregator | commentary | trader | macro_color.
   roster:
     # wire / breaking — terse, fact-first, ALL-CAPS or `BREAKING:` leads,
-    # almost no cashtags, almost no emoji.
+    # almost no cashtags, almost no emoji. THE FIVE FASTEST DESKS — the wire
+    # trio plus the two highest-cadence relays — carry `tier: daily`: they post
+    # many times a day, so a weekly-only read of them samples a sliver of what
+    # they published and the register drifts between passes.
     - handle: DeItaone
       register: wire
+      tier: daily
       note: "asterisk-prefix + SOURCE: attribution shorthand; 85% ALL-CAPS lead"
     - handle: FirstSquawk
       register: wire
+      tier: daily
       note: "sentence case, 100% single-line, one-decimal precision"
     - handle: unusual_whales
       register: wire
+      tier: daily
       note: "BREAKING: prefix + `per <source>` suffix; corpus engagement leader"
     # news / numbers aggregator — cashtag-heavy, URL-heavy, long stacks.
     - handle: KobeissiLetter
       register: aggregator
+      tier: daily
       note: "longest posts in the corpus (p50 580 chars), 100% carry digits"
     - handle: Barchart
       register: aggregator
+      tier: daily
       note: "95% emoji, 95% URL — the chart-relay template"
     - handle: StockMKTNewz
       register: aggregator
