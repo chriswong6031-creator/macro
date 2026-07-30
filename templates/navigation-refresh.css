@@ -1923,8 +1923,30 @@ html[data-lang="zh"] .nav-dd-menu.mega-menu .section-label { letter-spacing: .02
   transition: background .16s ease, transform .16s ease;
 }
 
-.nav-dd-menu.mega-menu .mega-item:hover,
-.nav-dd-menu.mega-menu .nav-market-item:hover {
+/* These exact-menu links also match theme.css's older aurora hover selector.
+   Suppress its gradient wash and glowing left rail here so the live menu keeps
+   the same quiet interaction language as the approved mockup. */
+.nav-dd-menu.mega-menu :is(a, button):is(
+  .mega-item,
+  .nav-market-item,
+  .rail-link,
+  .nav-market-rail-item,
+  .nav-rail-item
+)::before,
+.nav-dd-menu.mega-menu :is(a, button):is(
+  .mega-item,
+  .nav-market-item,
+  .rail-link,
+  .nav-market-rail-item,
+  .nav-rail-item
+)::after {
+  content: none;
+  opacity: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.nav-dd-menu.mega-menu :is(a, button):is(.mega-item, .nav-market-item):hover {
   border-color: transparent;
   color: var(--mock-ink);
   background: var(--mock-surface-hover);
@@ -2091,9 +2113,11 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .rail-link,
 html:not([data-theme="light"]) .nav-dd-menu.mega-menu .nav-market-rail-item,
 html:not([data-theme="light"]) .nav-dd-menu.mega-menu .nav-rail-item { color: #d7deea; }
 
-.nav-dd-menu.mega-menu .rail-link:hover,
-.nav-dd-menu.mega-menu .nav-market-rail-item:hover,
-.nav-dd-menu.mega-menu .nav-rail-item:hover {
+.nav-dd-menu.mega-menu :is(a, button):is(
+  .rail-link,
+  .nav-market-rail-item,
+  .nav-rail-item
+):hover {
   border-color: transparent;
   color: var(--mock-blue-deep);
   background: transparent;
