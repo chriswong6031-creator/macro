@@ -141,6 +141,11 @@ def test_start_hub_uses_canonical_product_navigation_and_demotes_clock() -> None
     assert "'<div class=\"hub-live-meta\">" in source
     assert "'<div class=\"hub-top\">'" not in source
 
+    rendered = (ROOT / "site" / "start.html").read_text(encoding="utf-8")
+    assert 'class="site-nav"' in rendered
+    assert 'class="hub-live-meta"' in rendered
+    assert 'class="hub-top"' not in rendered
+
 
 def test_search_waits_for_refresh_css_on_stale_rendered_pages() -> None:
     """Static assets deploy before the full HTML render; that skew must stay safe."""
