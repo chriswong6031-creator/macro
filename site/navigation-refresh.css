@@ -2436,6 +2436,8 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
   }
   .ticker-search .search-trigger { justify-content: flex-start; padding-left: 16px; }
   .ticker-search .idle-ticker { min-width: 0; }
+  /* iOS Safari zooms the page when a focused text input is smaller than 16px. */
+  .ticker-search .ticker-input { font-size: 16px; }
   .ticker-dropdown { left: 0; right: 0; width: 100%; }
 }
 
