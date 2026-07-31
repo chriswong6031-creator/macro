@@ -514,7 +514,7 @@ html[data-lang="zh"] .nav-mega-h { letter-spacing: .02em; }
   box-shadow: none;
   font: 720 13px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: .035em;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .ticker-search .ticker-input:focus { border: 0; box-shadow: none; }
@@ -2314,6 +2314,10 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
   padding: 0;
   border-radius: 6px;
   font-size: 8.5px;
+}
+
+html[data-lang="zh"] .ticker-search .search-esc {
+  min-width: 38px;
 }
 
 .ticker-dropdown {

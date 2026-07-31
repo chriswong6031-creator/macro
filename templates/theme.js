@@ -603,11 +603,11 @@
      that set data-lib is just relabelled, since it now searches the whole world).
      Path-depth aware so it works from /sectors/ too. No-ops without a .nav-search. */
   var STOCK_MARKETS = [
-    { key: 'us',   lib: 'stockdata/index.json',       target: 'stock.html',        flag: '🇺🇸', mkt: 'US',     examples: ['NVDA', 'AAPL', 'MSFT'] },
-    { key: 'cn',   lib: 'chinastockdata/index.json',  target: 'china_lookup.html', flag: '🇨🇳', mkt: 'China',  examples: ['600519.SS', '000858.SZ'] },
-    { key: 'hk',   lib: 'hkstockdata/index.json',     target: 'hk_lookup.html',    flag: '🇭🇰', mkt: 'HK',     examples: ['0700.HK', '9988.HK'] },
-    { key: 'ca',   lib: 'canadastockdata/index.json', target: 'canada_stock.html', flag: '🇨🇦', mkt: 'Canada', examples: ['SHOP.TO', 'SU.TO'] },
-    { key: 'intl', lib: 'intlstockdata/index.json',   target: 'intl_stock.html',   flag: '🌐', mkt: 'Intl',   examples: ['7203.T', 'ASML.AS'] }
+    { key: 'us',   lib: 'stockdata/index.json',       target: 'stock.html',        flag: '🇺🇸', mkt: 'US',     mktZh: '美国',   examples: ['NVDA', 'AAPL', 'MSFT'] },
+    { key: 'cn',   lib: 'chinastockdata/index.json',  target: 'china_lookup.html', flag: '🇨🇳', mkt: 'China',  mktZh: '中国A股', examples: ['600519.SS', '000858.SZ'] },
+    { key: 'hk',   lib: 'hkstockdata/index.json',     target: 'hk_lookup.html',    flag: '🇭🇰', mkt: 'HK',     mktZh: '香港',   examples: ['0700.HK', '9988.HK'] },
+    { key: 'ca',   lib: 'canadastockdata/index.json', target: 'canada_stock.html', flag: '🇨🇦', mkt: 'Canada', mktZh: '加拿大', examples: ['SHOP.TO', 'SU.TO'] },
+    { key: 'intl', lib: 'intlstockdata/index.json',   target: 'intl_stock.html',   flag: '🌐', mkt: 'Intl',   mktZh: '国际',   examples: ['7203.T', 'ASML.AS'] }
   ];
 
   function initNavDrills() {
@@ -745,20 +745,21 @@
     if (box.getAttribute('data-ticker-search-ready') === '1') return;
     if (!ensureNavSearchCss(box)) return;
     box.setAttribute('data-ticker-search-ready', '1');
-    var phEn = 'Ticker or company';
-    var phZh = '股票代码或公司';
     var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    var initialCopy = curLang() === 'zh'
+      ? { trigger: '搜索股票', input: '搜索股票代码或公司', close: '关闭股票搜索', closeShort: '关闭', results: '股票搜索结果' }
+      : { trigger: 'Search tickers', input: 'Search stocks', close: 'Close ticker search', closeShort: 'Esc', results: 'Ticker search results' };
     var icon = '<svg class="search-glyph" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg>';
     box.className = 'nav-search ticker-search';
     box.innerHTML =
-      '<button class="search-trigger" type="button" aria-label="Search tickers" aria-expanded="false" aria-controls="ticker-search-dropdown">' +
+      '<button class="search-trigger" type="button" aria-label="' + initialCopy.trigger + '" aria-expanded="false" aria-controls="ticker-search-dropdown">' +
         icon + '<span class="idle-ticker" aria-hidden="true"></span>' +
       '</button>' +
       '<div class="search-expanded">' + icon +
-        '<input class="ticker-input" type="text" inputmode="search" maxlength="10" autocomplete="off" spellcheck="false" aria-label="Search stocks" aria-autocomplete="list" aria-controls="ticker-search-dropdown">' +
-        '<button class="search-esc" type="button" aria-label="Close ticker search">Esc</button>' +
+        '<input class="ticker-input" type="text" inputmode="search" maxlength="80" autocomplete="off" spellcheck="false" aria-label="' + initialCopy.input + '" aria-autocomplete="list" aria-controls="ticker-search-dropdown">' +
+        '<button class="search-esc" type="button" aria-label="' + initialCopy.close + '">' + initialCopy.closeShort + '</button>' +
       '</div>' +
-      '<div class="ticker-dropdown" id="ticker-search-dropdown" role="listbox" aria-label="Ticker search results"></div>';
+      '<div class="ticker-dropdown" id="ticker-search-dropdown" role="listbox" aria-label="' + initialCopy.results + '"></div>';
     ensureNavLogoAssets(box);
 
     var trigger = box.querySelector('.search-trigger');
@@ -768,11 +769,84 @@
     var idleTicker = box.querySelector('.idle-ticker');
     var lib = [], libsStarted = false, pending = 0, page = 0, selected = -1;
     var pageRows = [], idleTimer = 0, idleIndex = 0, idleChars = 0, deleting = false;
+    var isComposing = false;
 
     function esc(value) {
       return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
+    }
+
+    function searchCopy() {
+      if (curLang() === 'zh') {
+        return {
+          placeholder: '股票代码或公司名称',
+          trigger: '搜索股票',
+          input: '搜索股票代码或公司',
+          close: '关闭股票搜索',
+          closeShort: '关闭',
+          results: '股票搜索结果',
+          allMarkets: '全部市场',
+          loadingTitle: '正在加载全球股票库',
+          loadingSub: '正在准备热门股票和公司匹配…',
+          loadingEmpty: '最新股票库正在加载。',
+          popularTitle: '热门股票',
+          popularSub: '您所选市场的近期活跃股票',
+          selectTicker: '选择股票并在终端中打开',
+          stillLoading: '仍在加载匹配市场…',
+          noMatches: '没有匹配的股票代码或公司。',
+          company: '公司',
+          inLibrary: '已收录',
+          logoAttribution: 'Logo 由 Logo.dev 提供'
+        };
+      }
+      return {
+        placeholder: 'Ticker or company',
+        trigger: 'Search tickers',
+        input: 'Search stocks',
+        close: 'Close ticker search',
+        closeShort: 'Esc',
+        results: 'Ticker search results',
+        allMarkets: 'All markets',
+        loadingTitle: 'Loading your market universe',
+        loadingSub: 'Preparing popular tickers and company matches…',
+        loadingEmpty: 'The latest ticker libraries are loading.',
+        popularTitle: 'Popular tickers',
+        popularSub: 'Latest active names in your markets',
+        selectTicker: 'Select a ticker to open Terminal',
+        stillLoading: 'Still loading matching markets…',
+        noMatches: 'No ticker or company matches this search.',
+        company: 'Company',
+        inLibrary: 'IN LIBRARY',
+        logoAttribution: 'Logos by Logo.dev'
+      };
+    }
+
+    function normalizeSearch(value) {
+      var text = String(value == null ? '' : value);
+      try { text = text.normalize('NFKC'); } catch (e) {}
+      return text.trim().replace(/\s+/g, ' ').toUpperCase();
+    }
+
+    function nameEnglish(x) {
+      var explicit = String(x.en || x.name_en || '').trim();
+      var raw = explicit || String(x.n || '').trim();
+      var split = raw.indexOf(' / ');
+      return split > -1 ? (raw.slice(0, split).trim() || raw) : raw;
+    }
+
+    function nameChinese(x) {
+      var explicit = String(x.z || x.zh || x.cn || x.name_zh || '').trim();
+      if (explicit) return explicit;
+      var raw = String(x.n || '').trim();
+      var split = raw.lastIndexOf(' / ');
+      var candidate = split > -1 ? raw.slice(split + 3).trim() : '';
+      return /[\u3400-\u9fff]/.test(candidate) ? candidate : '';
+    }
+
+    function displayName(x) {
+      var c = searchCopy(), en = nameEnglish(x), zh = nameChinese(x);
+      return curLang() === 'zh' ? (zh || en || c.company) : (en || zh || c.company);
     }
 
     function marketPreference() {
@@ -800,15 +874,26 @@
     }
 
     function profileLabel() {
-      var names = marketPreference().enabled.map(function (key) { return marketMeta(key).mkt; });
-      return names.join(' · ') || 'All markets';
+      var zh = curLang() === 'zh';
+      var names = marketPreference().enabled.map(function (key) {
+        var meta = marketMeta(key);
+        return zh ? (meta.mktZh || meta.mkt) : meta.mkt;
+      });
+      return names.join(' · ') || searchCopy().allMarkets;
     }
 
-    function setPlaceholder() {
-      input.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? phZh : phEn;
+    function applySearchLocale() {
+      var c = searchCopy();
+      input.placeholder = c.placeholder;
+      input.setAttribute('aria-label', c.input);
+      trigger.setAttribute('aria-label', c.trigger);
+      closeButton.setAttribute('aria-label', c.close);
+      closeButton.textContent = c.closeShort;
+      dropdown.setAttribute('aria-label', c.results);
+      if (box.classList.contains('open')) render();
     }
-    setPlaceholder();
-    document.addEventListener('langchange', setPlaceholder);
+    applySearchLocale();
+    document.addEventListener('langchange', applySearchLocale);
 
     function loadLibs() {
       if (libsStarted) return;
@@ -844,12 +929,13 @@
     }
 
     function rank(x, value) {
-      var ticker = String(x.t || '').toUpperCase(), name = String(x.n || '').toUpperCase();
+      var ticker = normalizeSearch(x.t), en = normalizeSearch(nameEnglish(x));
+      var zh = normalizeSearch(nameChinese(x)), raw = normalizeSearch(x.n);
       if (ticker === value) return 0;
       if (ticker.indexOf(value) === 0) return 1;
-      if (name.indexOf(value) === 0) return 2;
+      if (en.indexOf(value) === 0 || zh.indexOf(value) === 0 || raw.indexOf(value) === 0) return 2;
       if (ticker.indexOf(value) > -1) return 3;
-      if (name.indexOf(value) > -1) return 4;
+      if (en.indexOf(value) > -1 || zh.indexOf(value) > -1 || raw.indexOf(value) > -1) return 4;
       return 9;
     }
 
@@ -883,27 +969,54 @@
     }
 
     function logoMarkup(x) {
-      return '<span data-stock-logo data-ticker="' + esc(x.t) + '" data-company="' + esc(x.n || '') +
+      return '<span data-stock-logo data-ticker="' + esc(x.t) + '" data-company="' + esc(nameEnglish(x)) +
         '" data-market="' + esc(x._mk || '') + '" data-flag="' + esc(x._fl || '') + '" data-logo-size="38"></span>';
     }
 
+    function statusLabel(status) {
+      var value = String(status || '').trim().toUpperCase();
+      if (curLang() !== 'zh') return value || searchCopy().inLibrary;
+      var labels = {
+        'DECLINE': '下跌阶段',
+        'BOTTOM WATCH': '底部观察',
+        'TURN SIGNALED': '转折信号',
+        'FRESH BUY': '新买点',
+        'RALLY ON': '上涨延续',
+        'TOP WATCH': '顶部观察',
+        'ROLLING OVER': '开始转弱',
+        'COUNTERTREND BOUNCE': '逆势反弹',
+        'CONFIRMING TURN': '确认转折',
+        'LIMITED': '数据积累中'
+      };
+      return labels[value] || value || searchCopy().inLibrary;
+    }
+
+    function marketLabel(x) {
+      var meta = marketMeta(x._key);
+      return curLang() === 'zh' ? (meta.mktZh || x._mk || '') : (meta.mkt || x._mk || '');
+    }
+
     function resultMarkup(x, index, popular) {
-      var status = String(x.st || '').trim();
+      var c = searchCopy(), status = String(x.st || '').trim();
       var klass = popular ? 'fan-card' : 'result-row';
+      var openLabel = curLang() === 'zh'
+        ? '在终端中打开 ' + String(x.t || '')
+        : 'Open ' + String(x.t || '') + ' in Terminal';
       return '<button class="' + klass + '" type="button" role="option" data-result-index="' + index +
-        '" style="--i:' + index + '" aria-label="Open ' + esc(x.t) + ' in Terminal">' +
+        '" style="--i:' + index + '" aria-label="' + esc(openLabel) + '">' +
           logoMarkup(x) +
           '<span><span class="ticker-symbol">' + esc(x.t) + '</span><span class="ticker-name">' +
-            esc(x.n || 'Company') + (popular ? '' : ' · ' + esc(x._mk || '')) + '</span></span>' +
+            esc(displayName(x)) + (popular ? '' : ' · ' + esc(marketLabel(x))) + '</span></span>' +
           (popular
-            ? '<span class="market-code">' + esc(x._mk || '') + '</span>'
-            : '<span class="signal-status ' + statusClass(status) + '">' + esc(status || 'IN LIBRARY') + '</span>') +
+            ? '<span class="market-code">' + esc(marketLabel(x)) + '</span>'
+            : '<span class="signal-status ' + statusClass(status) + '">' + esc(statusLabel(status)) + '</span>') +
         '</button>';
     }
 
     function attribution() {
       return window.MMX_LOGO_DEV_TOKEN
-        ? '<div class="logo-dev-attribution"><a href="https://logo.dev" target="_blank" rel="noopener">Logos by Logo.dev</a></div>'
+        ? '<div class="logo-dev-attribution"><a href="https://logo.dev" target="_blank" rel="noopener">' +
+          esc(searchCopy().logoAttribution) + '</a></div>'
         : '';
     }
 
@@ -912,21 +1025,23 @@
     }
 
     function render() {
-      var query = input.value.trim().toUpperCase();
+      var c = searchCopy();
+      var queryDisplay = input.value.trim().replace(/\s+/g, ' ');
+      var query = normalizeSearch(queryDisplay);
       selected = -1;
       if (!query) {
         pageRows = popularRows();
         if (!pageRows.length) {
           dropdown.innerHTML =
-            '<div class="search-drop-head"><div><div class="search-drop-title">Loading your market universe</div>' +
-            '<div class="search-drop-sub">Preparing popular tickers and company matches…</div></div>' +
+            '<div class="search-drop-head"><div><div class="search-drop-title">' + esc(c.loadingTitle) + '</div>' +
+            '<div class="search-drop-sub">' + esc(c.loadingSub) + '</div></div>' +
             '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
-            '<div class="empty-search">The latest ticker libraries are loading.</div>';
+            '<div class="empty-search">' + esc(c.loadingEmpty) + '</div>';
           return;
         }
         dropdown.innerHTML =
-          '<div class="search-drop-head"><div><div class="search-drop-title">Popular tickers</div>' +
-          '<div class="search-drop-sub">Latest active names in your markets</div></div>' +
+          '<div class="search-drop-head"><div><div class="search-drop-title">' + esc(c.popularTitle) + '</div>' +
+          '<div class="search-drop-sub">' + esc(c.popularSub) + '</div></div>' +
           '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
           '<div class="fan-grid">' + pageRows.map(function (x, i) { return resultMarkup(x, i, true); }).join('') + '</div>' +
           attribution();
@@ -949,18 +1064,21 @@
         var buttons = [];
         for (var i = start; i < end; i++) {
           buttons.push('<button type="button" data-search-page="' + i + '" class="' + (i === page ? 'active' : '') +
-            '" aria-label="Results page ' + (i + 1) + '">' + (i + 1) + '</button>');
+            '" aria-label="' + (curLang() === 'zh' ? '结果第 ' + (i + 1) + ' 页' : 'Results page ' + (i + 1)) +
+            '">' + (i + 1) + '</button>');
         }
         pagination = '<div class="search-pagination">' + buttons.join('') + '</div>';
       }
+      var resultTitle = curLang() === 'zh'
+        ? '“' + esc(queryDisplay) + '” 的匹配结果（' + matches.length + '）'
+        : matches.length + ' match' + (matches.length === 1 ? '' : 'es') + ' for “' + esc(queryDisplay) + '”';
       dropdown.innerHTML =
-        '<div class="search-drop-head"><div><div class="search-drop-title">' + matches.length + ' match' +
-        (matches.length === 1 ? '' : 'es') + ' for “' + esc(query) + '”</div>' +
-        '<div class="search-drop-sub">Select a ticker to open Terminal</div></div>' +
-        '<span class="market-profile">All markets</span></div>' +
+        '<div class="search-drop-head"><div><div class="search-drop-title">' + resultTitle + '</div>' +
+        '<div class="search-drop-sub">' + esc(c.selectTicker) + '</div></div>' +
+        '<span class="market-profile">' + esc(c.allMarkets) + '</span></div>' +
         (pageRows.length
           ? '<div class="results-list">' + pageRows.map(function (x, i) { return resultMarkup(x, i, false); }).join('') + '</div>' + pagination
-          : '<div class="empty-search">' + (pending > 0 ? 'Still loading matching markets…' : 'No ticker or company matches this search.') + '</div>') +
+          : '<div class="empty-search">' + esc(pending > 0 ? c.stillLoading : c.noMatches) + '</div>') +
         attribution();
       enhanceLogos();
     }
@@ -1023,12 +1141,19 @@
 
     trigger.addEventListener('click', openSearch);
     closeButton.addEventListener('click', closeSearch);
-    input.addEventListener('input', function () {
-      input.value = input.value.toUpperCase().replace(/[^A-Z0-9.^-]/g, '').slice(0, 10);
+    input.addEventListener('compositionstart', function () { isComposing = true; });
+    input.addEventListener('compositionend', function () {
+      isComposing = false;
+      page = 0;
+      render();
+    });
+    input.addEventListener('input', function (e) {
+      if (isComposing || e.isComposing) return;
       page = 0;
       render();
     });
     input.addEventListener('keydown', function (e) {
+      if (isComposing || e.isComposing || e.key === 'Process' || e.keyCode === 229) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         selected = Math.min(selected + 1, pageRows.length - 1);

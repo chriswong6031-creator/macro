@@ -196,6 +196,24 @@ def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
     }
 
 
+def _search_index_row(
+    ticker: str,
+    name: str,
+    sector: str,
+    status: str,
+    *,
+    name_en: str | None = None,
+    name_zh: str | None = None,
+) -> dict:
+    """Build a compact bilingual row for the global ticker-search manifest."""
+    english = str(name_en or name or ticker).strip()
+    row = {"t": ticker, "n": english, "s": sector, "st": status}
+    chinese = str(name_zh or "").strip()
+    if chinese and chinese.lower() != "nan":
+        row["z"] = chinese
+    return row
+
+
 def _write_verified_index(outdir: Path, index: list[dict]) -> list[dict]:
     """Write search manifest rows only when the matching detail JSON exists."""
     verified, missing = [], []
@@ -1246,6 +1264,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # market caps (亿) for the fundamentals valuation pass + Chinese names (for the ST screen) — best-effort
     mktcap_by: dict[str, float] = {}
     name_zh_by: dict[str, str] = {}
+    name_en_by: dict[str, str] = {}
     _PLACEHOLDER_MCAP = 30.0     # china_universe seeds CSI/config extras with a 30.0亿 sentinel; 46% of
     #                              members carry it exactly. It is NOT a real cap — feeding it into
     #                              Altman-Z distress zones / P-S coloring fabricates readings from a
@@ -1264,6 +1283,9 @@ def main(alpha: dict | None = None) -> dict | None:
             if "name_zh" in mdf.columns:
                 name_zh_by = {str(r[tcol]): str(r["name_zh"])
                               for _, r in mdf.iterrows() if pd.notna(r.get("name_zh"))}
+            if "name_en" in mdf.columns:
+                name_en_by = {str(r[tcol]): str(r["name_en"])
+                              for _, r in mdf.iterrows() if pd.notna(r.get("name_en"))}
         # prefer real per-name caps from Tushare valuation total_mv_yi (asof-gated so a frozen
         # gated plane can't reintroduce stale caps) — fills exactly the placeholder-dropped names.
         try:
@@ -1577,7 +1599,10 @@ def main(alpha: dict | None = None) -> dict | None:
             # "analysis pending" detail page (renderLimited), but it NEVER enters
             # scoring / boards / profiles (accrual without authority).
             to_write.append((_safe(ticker), rec))
-            index.append({"t": ticker, "n": name, "s": sector, "st": "LIMITED"})
+            index.append(_search_index_row(
+                ticker, name, sector, "LIMITED",
+                name_en=name_en_by.get(ticker), name_zh=name_zh_by.get(ticker),
+            ))
             limited += 1
             continue
         # COMBINE: the confluence T1->T4 cascade is computed alongside main's bottoming-alignment
@@ -1785,7 +1810,10 @@ def main(alpha: dict | None = None) -> dict | None:
             rec["hold"] = _hold_state_cn[ticker]
         safe = _safe(ticker)
         to_write.append((safe, rec))            # deferred: write after percentile scoring
-        idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        idx = _search_index_row(
+            ticker, name, sector, rec["ladder"]["state"],
+            name_en=name_en_by.get(ticker), name_zh=name_zh_by.get(ticker),
+        )
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
