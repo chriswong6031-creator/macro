@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T02:57:15.585326+00:00",
-  "count": 430,
+  "generated_at": "2026-07-31T03:27:47.956147+00:00",
+  "count": 431,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -272,6 +272,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-v0gzxwbxkjl-e6e366",
+      "title": "All talk and no hike",
+      "institution": "Rabobank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T14:10:13Z",
+      "summary_points": [
+        "**FOMC Hike Risk Elevated**: Three dissents at July meeting signal growing committee support for rate hike despite unchanged 3.50-3.75% target, increasing near-term policy risk and portfolio repricing exposure.",
+        "**Policy Uncertainty**: Fed's \"all talk and no hike\" stance with internal dissent creates conflicting signals, heightening market speculation on rate hikes and amplifying volatility without clear guidance.",
+        "**PCE Inflation Trajectory**: Median projections show PCE inflation declining from 3.6% (2026) to 2.0% (2028), central to Fed's trend-driven policy focus and critical for rate expectation modeling.",
+        "**Geopolitical Risk Factor**: Recurrent Middle East hostilities threaten to unanchor inflation expectations, increasing likelihood of unavoidable rate hikes if inflation persists."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
