@@ -244,20 +244,41 @@ def win_rate_hook(sig: dict) -> tuple[str, str]:
     direction_word = "higher" if side == "long" else "lower"
     win_rate_str = f"{win_rate:.0f}%"
 
-    headline = (
-        f"Our technical signals have resolved {direction_word} {win_rate_str} of the "
-        f"time from this spot. {cashtag} is there now."
-    )
-
-    # Body: win-rate stat named, historical framing, disclosure, cashtag.
-    # Plain-word, first-person-plural for the track record, no em dashes.
+    # TWO FALSE CLAIMS LIVED IN THIS COPY (2026-07-30 audit).
+    #
+    # 1. THE WIN RATE IS A SELECTION-ON-TEST-HALF NUMBER. `win_rate` is
+    #    h21.wr_mc_test, and `_score` RANKS on sqrt(edge_wr_test * wr_mc_test) —
+    #    the same test statistic. Publishing the top of that ranking as "our
+    #    signals have resolved higher 87.5% of the time" states an optimistically
+    #    biased figure as a first-person TRACK RECORD. The repo's own epistemics
+    #    law is explicit: display-tier until gauntleted, and "validated" is
+    #    CI-enforced language. This lane was promoting a display-tier artifact to
+    #    authority in the headline.
+    #
+    # 2. `n_fires` AND THE SPAN ARE UNIVERSE-POOLED, NOT PER-TICKER. They come
+    #    off the COMBO row, so "when these signals line up on $SLB they've gone
+    #    higher 87.5% of the time ... (72 times)" attributes 72 fires and a
+    #    multi-decade span to one name that contributed a handful. Every number
+    #    in that sentence was false about the ticker it named — the $N defect
+    #    with a statistics degree.
+    #
+    # The rewrite says only what is true: the pattern is described as a pattern
+    # across a universe, the count is explicitly not this ticker's, and the
+    # figure is framed as what the study measured rather than what we achieved.
+    headline = f"{cashtag} just lined up a pattern we track."
+    # ONE number budget note: copywriter.number_soup_violations trips above two
+    # DISTINCT numbers, and the original body carried four (win rate, n_fires,
+    # fires_last3y, the "3 years" itself). So this copy could never have cleared
+    # the publish-time voice gate even if the lane were shipping — which is part
+    # of why it ships nothing. Two numbers: the rate, and the sample it came
+    # from. The 3-year sub-count is dropped rather than the sample size, because
+    # the sample size is the honesty anchor and the sub-count is decoration.
     body = (
-        f"When these signals line up on {cashtag} they've gone {direction_word} "
-        f"{win_rate_str} of the time about a month out {span_phrase} "
-        f"({n_fires} times"
-        + (f", {fires_last3y} in the last 3 years" if fires_last3y else "")
-        + "). "
-        f"Historical odds, not a promise. Chart below."
+        f"Across every name we test it on, this combination has resolved "
+        f"{direction_word} {win_rate_str} of the time about a month out, over "
+        f"{n_fires} occurrences universe-wide, not this one name. A measured "
+        f"tendency on a study split, not our trading record. "
+        f"Chart below."
     )
 
     return headline, body

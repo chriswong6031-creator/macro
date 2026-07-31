@@ -945,6 +945,62 @@ def _slot_day_num(slot: Any) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _confluence_census(
+    account_rows: list[dict],
+    posts_added: list[dict],
+    charts_added: int,
+) -> dict:
+    """What the confluence lane BUILT vs what actually survived into a queue.
+
+    THE LIE THIS REPLACES. The block reported `fired_combos: len(posts_added)`
+    and a note reading "9 confluence signal posts added (8 charts)" — where
+    `posts_added` is appended once per item CONSTRUCTED, several stages before
+    anything downstream can drop it. On the 2026-07-30 plan it said 9 posts and 8
+    charts while ZERO confluence items were in any desk queue and zero had ever
+    reached the outbox (provenance census: content_studio 151, weekend_levels 22,
+    claude_rewrite 12, movers 4, press 2, hot_tape 19 — no confluence, ever).
+
+    So the operator's console reported a lane as producing nine posts a night
+    that has never produced one, while 8 headless-Chrome rasters were spent on
+    it against a 67-minute render budget. A built-count masquerading as a
+    shipped-count is the tinted window again: it reports OUTPUT and hides the
+    LOSS, which is the one thing this console exists to do the other way round.
+
+    Counts survivors from the live queues at report time, so the number cannot
+    drift from reality again, and names the gap when there is one.
+    """
+    built = len(posts_added or [])
+    survived = sum(
+        1
+        for row in (account_rows or [])
+        for item in (row.get("queue") or [])
+        if str((item or {}).get("source") or "") == "confluence"
+    )
+    lost = max(0, built - survived)
+    if not built:
+        note = "No fresh fired confluence combos today; Prophet posts only."
+    elif lost:
+        note = (
+            f"{built} confluence post(s) built and {charts_added} chart(s) "
+            f"rendered, but {lost} were dropped downstream and {survived} "
+            f"reached a desk queue. The render cost was paid for posts that "
+            f"cannot ship."
+        )
+    else:
+        note = f"{survived} confluence signal post(s) live ({charts_added} charts)."
+    return {
+        # Kept for readers that already parse it, but no longer the headline.
+        "fired_combos": built,
+        "built": built,
+        "surviving": survived,
+        "dropped_before_queue": lost,
+        "charts": charts_added,
+        "orphan_charts": charts_added if survived == 0 else 0,
+        "posts": posts_added,
+        "note": note,
+    }
+
+
 def drop_stale_forward_bookings(
     account_rows: list[dict],
     *,
@@ -4070,17 +4126,8 @@ def content_plan(
         },
         "content": {
             "movers": _movers_summary,
-            "confluence": {
-                "fired_combos": len(confluence_posts_added),
-                "charts": conf_charts_added,
-                "posts": confluence_posts_added,
-                "note": (
-                    f"{len(confluence_posts_added)} confluence signal posts added "
-                    f"({conf_charts_added} charts)."
-                    if confluence_posts_added
-                    else "No fresh fired confluence combos today; Prophet posts only."
-                ),
-            },
+            "confluence": _confluence_census(
+                account_rows, confluence_posts_added, conf_charts_added),
             "copy": {
                 "mode": _copy_mode,
                 "n_validated": _copy_n_validated,
