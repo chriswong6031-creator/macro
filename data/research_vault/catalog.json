@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T03:42:10.684206+00:00",
-  "count": 432,
+  "generated_at": "2026-07-31T04:14:21.265566+00:00",
+  "count": 433,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1181,6 +1181,26 @@
         "**Fed Meeting Impact**: Today's Fed meeting is pivotal; potential rate hike amid AI uncertainty could tighten financial conditions, pressuring equities and flattening global yield curves.",
         "**Global Rate Drivers**: Oil prices and inflation expectations dominate daily rate movements, with real rates adding ~50bp pressure to nominal 2Y swaps.",
         "**Auction Sizes Critical**: Germany's €6bn 10y Bund and US $30bn 2y FRN auctions are key for rate market dynamics, alongside ECB wage tracker assessing second-round inflation risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jiu2iyjkswj-b4834e",
+      "title": "ING Think inflation dynamics strengthen the case for an extended rba hold 2",
+      "institution": "ING",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:13:49Z",
+      "summary_points": [
+        "**Inflation Miss**: Headline CPI at 3.9% YoY (vs RBA’s 4.8% forecast) and QoQ 0.6% (vs 1.4% Q1), driven by softer housing/transport costs, signaling stronger-than-expected cooling in domestic demand.",
+        "**Broad Disinflation**: Deceleration across most components, not sector-specific, reinforcing sustainable path toward inflation target and reducing need for rate hikes.",
+        "**Trimmed Mean CPI**: Preferred metric at 3.6% YoY (Q2, below 3.8% forecast), with services inflation at 4.0% YoY, confirming disinflation pace exceeds baseline forecasts.",
+        "**Policy Support**: Inflation easing faster than expected outweighs subdued growth/unemployment (4.4% unemployment vs 4.2% forecast), strengthening case for RBA to hold rates through year-end."
       ],
       "tags": [],
       "tickers": [],
