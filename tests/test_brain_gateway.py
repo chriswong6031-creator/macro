@@ -5040,19 +5040,30 @@ def test_a_single_word_is_not_enough_english_to_override_a_stored_zh():
     assert gw._turn_lang("hello there", {}, "zh") == "en"
 
 
-def test_the_english_prose_bar_counts_tickers_too_inherited_not_introduced():
-    """PRE-EXISTING behaviour of _expected_lang, pinned here because the account fallback
-    inherits it verbatim: the "real English prose" test is `[A-Za-z]{3,}` twice, and two
-    TICKERS satisfy it. So a Chinese-profile user typing 'XLF vs XLV' is answered in
-    English, even though _expected_lang's own docstring offers that exact string as an
-    example of a bare-ticker turn that KEEPS Chinese. Not changed here (the wrapper must
-    not alter _expected_lang for existing callers) — pinned so the gap is visible and a
-    fix to the regex shows up as this test failing, not as a silent behaviour change."""
-    assert gw._expected_lang("XLF vs XLV", {"lang": "zh"}) == "en"
-    assert gw._turn_lang("XLF vs XLV", {}, "zh") == "en"
+def test_the_english_prose_bar_ignores_ticker_shaped_tokens():
+    """HISTORY: the prose bar (`[A-Za-z]{3,}` twice) originally counted TICKERS as
+    prose, so a Chinese-profile user typing 'XLF vs XLV' was answered in English even
+    though _expected_lang's own docstring offered that exact string as a bare-ticker
+    turn that KEEPS Chinese. The W3 wrapper pinned that defect as inherited-not-
+    introduced (this test's previous body) rather than fix it mid-lane; the fix landed
+    right after: ticker-shaped tokens (optional $ cashtag, 1-5 caps, optional .X class
+    suffix) are struck before the prose count, so symbols are never a language choice."""
+    assert gw._expected_lang("XLF vs XLV", {"lang": "zh"}) == "zh"
+    assert gw._turn_lang("XLF vs XLV", {}, "zh") == "zh"
+    # cashtags and class-suffix tickers are the same shape, not prose
+    assert gw._expected_lang("$AAPL vs $MSFT", {"lang": "zh"}) == "zh"
+    assert gw._expected_lang("BRK.B vs BF.B?", {"lang": "zh"}) == "zh"
+    # a sentence period after a ticker does not turn it back into prose
+    assert gw._expected_lang("XLF vs XLV.", {"lang": "zh"}) == "zh"
     # one ticker is still under the bar, in both the context and the account form
     assert gw._expected_lang("XLF", {"lang": "zh"}) == "zh"
     assert gw._turn_lang("XLF", {}, "zh") == "zh"
+    # real prose AROUND tickers still flips — the bar moved, not the operator rule
+    assert gw._expected_lang("should I buy XLF or XLV", {"lang": "zh"}) == "en"
+    assert gw._turn_lang("should I buy XLF or XLV", {}, "zh") == "en"
+    # prose the strip must NOT eat: mixed case and 6+ cap words are words, not tickers
+    assert gw._expected_lang("Apple looks strong", {"lang": "zh"}) == "en"
+    assert gw._expected_lang("MARKET CRASHING today", {"lang": "zh"}) == "en"
 
 
 def test_garbage_surface_lang_does_not_outrank_the_account():
