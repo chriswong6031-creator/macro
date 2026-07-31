@@ -160,6 +160,7 @@ MUST_RESTART = [
     "engine/research_vault/sidecar.py",
     # /api/ask + /api/brain engine closure
     "engine/neuralweb/ask_brain.py",
+    "engine/neuralweb/chat_plain_words.py",
     "engine/neuralweb/brain_gateway.py",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/chart_perception.py",
