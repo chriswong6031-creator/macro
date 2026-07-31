@@ -131,6 +131,7 @@ on:
       - "scripts/build_intel_hub.py"
       - "scripts/build_intelligence.py"
       - "scripts/build_intl.py"
+      - "scripts/build_international_macro.py"
       - "scripts/build_intl_library.py"
       - "scripts/build_ipo.py"
       - "scripts/build_leader_radar.py"
@@ -457,6 +458,7 @@ jobs:
               templates/china.html.j2|templates/china_news.html.j2|scripts/build_china.py) echo china;;
               templates/china_special_situations.html.j2|templates/_china_special_situations_*.html.j2|scripts/build_china_special_situations.py) echo china;;
               templates/intl.html.j2|scripts/build_intl.py) echo intl;;
+              templates/international_macro.html.j2|scripts/build_international_macro.py|engine/international_macro_dashboard.py|collectors/intl_macro.py|data/intl_risk/cb_calendar.yml|docs/INTERNATIONAL_MACRO_DATA_CONTRACT.md) echo intl;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
               templates/canada.html.j2|templates/canada_stock.html.j2|templates/canada_history.html.j2|templates/canada_sector.html.j2|scripts/build_canada.py|scripts/build_canada_library.py) echo canada;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;

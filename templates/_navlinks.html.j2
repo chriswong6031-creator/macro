@@ -155,6 +155,20 @@
       <a class="nav-link" href="{{ NP }}intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span>{{ t('International', '国际') }} <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="{{ NP }}intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span>{{ t('Macro Dashboard', '宏观仪表盘') }}<span class="d">{{ t('JP · KR · TW · UK · EU compared', '日 · 韩 · 台 · 英 · 欧 对比') }}</span></a>
+        {# These five anchors are the canonical destination registry for the
+           country dashboards. nav_market.js reads data-intl-country and reuses
+           the same hrefs for its adaptive wide panel, folded-market menu and
+           mobile accordion, so those interfaces cannot drift. #}
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="{{ NP }}japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> {{ t('Country Dashboards', '国家看板') }}<span class="d">{{ t('Japan · Korea · Euro Area · UK · India', '日本 · 韩国 · 欧元区 · 英国 · 印度') }}</span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="{{ NP }}japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> {{ t('Japan Macro', '日本宏观') }}<span class="d">{{ t('BoJ · wages · JGBs · yen', '日银 · 工资 · JGB · 日元') }}</span></a>
+            <a href="{{ NP }}south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> {{ t('South Korea Macro', '韩国宏观') }}<span class="d">{{ t('BOK · exports · household credit · won', '韩银 · 出口 · 家庭信贷 · 韩元') }}</span></a>
+            <a href="{{ NP }}euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> {{ t('Euro Area Macro', '欧元区宏观') }}<span class="d">{{ t('EA21 · ECB · HICP · bank credit', 'EA21 · 欧洲央行 · HICP · 银行信贷') }}</span></a>
+            <a href="{{ NP }}united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> {{ t('United Kingdom Macro', '英国宏观') }}<span class="d">{{ t('BoE · services CPI · wages · gilts', '英央行 · 服务CPI · 工资 · 英债') }}</span></a>
+            <a href="{{ NP }}india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> {{ t('India Macro', '印度宏观') }}<span class="d">{{ t('RBI · food inflation · credit · rupee', 'RBI · 食品通胀 · 信贷 · 卢比') }}</span></a>
+          </div>
+        </div>
         <a href="{{ NP }}intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span>{{ t('Stock Dashboard', '股票仪表盘') }}<span class="d">{{ t('Prophet cross-market · sectors', '先知跨市场 · 板块') }}</span></a>
         <a href="{{ NP }}baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span>{{ t('Thematic Baskets', '主题篮子') }}<span class="d">{{ t('Cross-country theme baskets · ex-US', '跨国主题篮子 · 除美') }}</span></a>
       </div>
