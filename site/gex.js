@@ -73,10 +73,22 @@
     greed: { en: "Calls bid · upside chase", zh: "看涨偏贵 · 上行追逐", cls: "up", sh_en: "Greed", sh_zh: "贪婪" },
     balanced: { en: "Balanced skew", zh: "偏斜均衡", cls: "neu", sh_en: "Balanced", sh_zh: "均衡" }
   };
+  /* IV rank is a NON-directional reading — "how expensive is protection right now",
+     not which way price leans. It is not one of the two sanctioned direction
+     instruments (tape_flow, ΔOI), so no band may reach --up/--down: site/theme.css
+     swaps that pair under html[data-lang="zh"], which rendered the SAME reading
+     (e.g. "Vol rich") red in EN and green in ZH. The colour therefore lives ON the
+     band, in the direction-neutral warn/orange/muted/info family theme.css keeps
+     un-flipped ("Mid-tones --warn/--orange/--info/--muted are direction-neutral
+     escalation — left alone", theme.css:158) — there is no cls left for a consumer
+     to re-map onto a directional token. Mirrors IVR_BAND in templates/options.html.j2;
+     --info stands in for that file's page-local --oew-accent. */
   var IVRANK = {
-    rich: { en: "Vol rich", zh: "波动偏贵", cls: "down" }, elevated: { en: "Elevated", zh: "偏高", cls: "warn" },
-    normal: { en: "Normal", zh: "正常", cls: "neu" }, cheap: { en: "Cheap", zh: "偏低", cls: "up" },
-    very_cheap: { en: "Very cheap", zh: "便宜", cls: "up" }
+    rich: { en: "Vol rich", zh: "波动偏贵", col: "var(--warn)" },
+    elevated: { en: "Elevated", zh: "偏高", col: "var(--orange)" },
+    normal: { en: "Normal", zh: "正常", col: "var(--muted)" },
+    cheap: { en: "Cheap", zh: "偏低", col: "var(--muted)" },
+    very_cheap: { en: "Very cheap", zh: "便宜", col: "var(--info)" }
   };
   var READS = {
     agree_up: { en: "Leans higher", zh: "偏上行", cls: "up", arrow: "▲" },
@@ -209,8 +221,7 @@
   }
   function ivrCell(m) {
     var d = IVRANK[m.iv_rank_band]; if (!d) return "<td>—</td>";
-    var col = d.cls === "down" ? "var(--down)" : d.cls === "up" ? "var(--up)"
-      : d.cls === "warn" ? "var(--orange)" : "var(--muted)";
+    var col = d.col || "var(--muted)";
     return '<td style="color:' + col + ';white-space:nowrap">' + esc(lz(d.en, d.zh)) + "</td>";
   }
   function renderBoard() {
@@ -777,7 +788,7 @@
         ivrHtml = '<span class="ivr-building">' + esc(lz("history building — " + (ivr.n_days || "?") + "d", "历史积累中 — " + (ivr.n_days || "?") + "天")) + "</span>";
       } else {
         var d = IVRANK[ivr.band] || {};
-        var col = d.cls === "down" ? "var(--down)" : d.cls === "up" ? "var(--up)" : d.cls === "warn" ? "var(--orange)" : "var(--muted)";
+        var col = d.col || "var(--muted)";
         ivrHtml = '<span class="ivr-chip" style="color:' + col + ';border-color:' + col + '">' + esc(lz(d.en, d.zh)) + "</span>";
       }
     }
