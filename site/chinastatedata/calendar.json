@@ -1,7 +1,7 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-07-30",
-  "generated_at_utc": "2026-07-30T10:02:50.616753+00:00",
+  "asof": "2026-07-31",
+  "generated_at_utc": "2026-07-31T10:23:18.406710+00:00",
   "horizon_days": 45,
   "entries": [
     {
@@ -15,18 +15,6 @@
       "source_class": "static",
       "source": "china_calendar.political_windows",
       "approx": true
-    },
-    {
-      "date": "2026-07-30",
-      "window_end": null,
-      "etype": "omo_reverse_repo_preannounce",
-      "label_en": "PBoC reverse repo (pre-announced) — 隔夜, RMB 600bn",
-      "label_zh": "央行逆回购操作（预告）：隔夜，6,000亿元",
-      "region": "cn",
-      "impact": "medium",
-      "source_class": "feed",
-      "source": "china_omo.operations",
-      "approx": false
     },
     {
       "date": "2026-07-31",
