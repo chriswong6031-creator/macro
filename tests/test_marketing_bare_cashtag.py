@@ -288,3 +288,153 @@ class TestABuiltChartThatFailedToUploadNeverShipsBare:
         it = {"kind": "theme_list", "text": "Insurance: $ALL $ERIE", "media": []}
         assert _bare_cashtag_post(it, self.CFG, []), "should quarantine as bare"
         assert _missing_required_media(it, self.CFG, []) is False
+
+
+class TestTheGroupCardActuallySatisfiesThisGate:
+    """The radar's fix and this gate must agree, or neither works.
+
+    2026-07-31: the hot-tape radar now draws a watchlist card for its group
+    posts, because shipping them text-only walked straight into the gate above
+    — 19 queued on 2026-07-30, 19 quarantined, none ever seen.
+
+    That fix is only real if the entry the radar attaches is one THIS side
+    recognises. The two live in different files and neither imports the other:
+    the radar writes media[] entries, the publisher resolves them through
+    _media_paths_for, and a field-name drift between them would reproduce the
+    exact outage with a card rendered, uploaded, paid for and still refused.
+    So the item below is built the way resolve_group_card builds it, and run
+    through the real resolver rather than a hand-made list of URLs.
+    """
+
+    # The 2026-07-30 story, verbatim, and the entry the radar now attaches.
+    TEXT = ("Computer Hardware: 5 of 7 names higher right now, median +10.0%. "
+            "Best: $SNDK +21.1%, $WDC +15.2%.")
+    ENTRY = {
+        "kind": "chart_svg",
+        "path": "data/marketing/outbox/media/2026-07-30/"
+                "hottape-sector_rip-computer-hardware-1530Z.svg",
+        "chart_id": "hottape-sector_rip-computer-hardware-1530Z",
+        "tickers": ["SNDK", "WDC", "STX", "DELL", "HPQ"],
+        "media_url": "https://pub-test.r2.dev/c/hottape-sector_rip.png",
+    }
+
+    def _item(self):
+        return {"text": self.TEXT, "kind": "breaking", "as_of": "2026-07-30",
+                "media": [self.ENTRY]}
+
+    def test_the_publisher_resolves_the_url_the_radar_attaches(self):
+        from scripts.marketing_publisher import _media_paths_for
+
+        urls = _media_paths_for(self._item(), CFG, None)
+        assert urls == [self.ENTRY["media_url"]], (
+            "the publisher cannot see the URL the radar attached — the two "
+            "sides have drifted on the media entry's field names"
+        )
+
+    def test_the_group_post_is_no_longer_quarantined(self):
+        from scripts.marketing_publisher import _media_paths_for
+
+        it = self._item()
+        assert _bare_cashtag_post(it, CFG, _media_paths_for(it, CFG, None)) == ""
+
+    def test_the_same_post_without_the_card_is_still_refused(self):
+        """The gate is not weakened — only satisfied."""
+        it = {"text": self.TEXT, "kind": "breaking", "as_of": "2026-07-30",
+              "media": []}
+        assert _bare_cashtag_post(it, CFG, []) == "$SNDK $WDC"
+
+    def test_an_entry_whose_upload_failed_does_not_count_as_a_picture(self):
+        """A media[] entry with no hosted URL is not a card.
+
+        The radar drops these before they reach the queue, but nothing stops
+        another lane attaching one — and here it must NOT read as satisfied,
+        because Buffer would then post the text with no image.
+        """
+        from scripts.marketing_publisher import _media_paths_for
+
+        entry = {k: v for k, v in self.ENTRY.items() if k != "media_url"}
+        it = {"text": self.TEXT, "kind": "breaking", "as_of": "2026-07-30",
+              "media": [entry]}
+        assert _media_paths_for(it, CFG, None) == []
+
+
+class TestTheTwoGatesHandOffWithoutAGap:
+    """A post fell BETWEEN the bare-cashtag rule and the deferral rule.
+
+    _bare_cashtag_post stepped aside whenever the item carried a media[] entry,
+    on the stated grounds that "a chart exists but has no URL yet — that is the
+    DEFERRAL case above". _missing_required_media takes only the kinds in
+    _CHART_BEARING_KINDS / _TICKER_ROLLUP_KINDS, and `breaking` is deliberately
+    in neither: a breadth read may mention $SPY in passing and holding it for an
+    upload would strangle the desks' non-ticker voice.
+
+    Both statements are true. Together they meant a `breaking` post that NAMED
+    tickers, whose card was drawn and whose upload failed, passed the first gate
+    (media[] non-empty), passed the second (wrong kind), and SHIPPED BARE —
+    the exact outcome both rules exist to prevent.
+
+    It is not a hypothetical kind. `breaking` is what the hot-tape and press
+    lanes emit, so it is most of the account's volume, and the press wire could
+    not host a card AT ALL until 2026-07-31 (no boto3, no R2 credentials): both
+    live wire posts on main carry media_url: null.
+    """
+
+    CFG = {"media_enabled": True}
+    TEXT = ("Computer Hardware: 5 of 7 names higher right now, median +10.0%. "
+            "Best: $SNDK +21.1%, $WDC +15.2%.")
+    UNHOSTED = {"kind": "chart_svg", "chart_id": "c1", "path": "media/c1.svg"}
+
+    def _verdict(self, kind, media):
+        from scripts.marketing_publisher import (
+            _bare_cashtag_post, _media_paths_for, _missing_required_media)
+        it = {"text": self.TEXT, "kind": kind, "as_of": "2026-07-30",
+              "media": list(media)}
+        paths = _media_paths_for(it, self.CFG, None)
+        if _bare_cashtag_post(it, self.CFG, paths):
+            return "quarantine"
+        return "defer" if _missing_required_media(it, self.CFG, paths) else "ships"
+
+    def test_a_breaking_ticker_post_with_a_failed_upload_never_ships(self):
+        assert self._verdict("breaking", [self.UNHOSTED]) == "quarantine"
+
+    def test_any_kind_the_deferral_gate_ignores_is_covered(self):
+        """The defect was never specific to `breaking` — that is just the kind
+        production hit. Every kind outside both frozensets had the same hole."""
+        for kind in ("breaking", "macro", "education", "event", "wire",
+                     "earnings"):
+            assert self._verdict(kind, [self.UNHOSTED]) == "quarantine", kind
+
+    def test_a_recoverable_kind_still_defers_rather_than_quarantines(self):
+        """The fix must not turn a recoverable hold into a deletion.
+
+        These kinds have a working recovery path (the media backfill fills the
+        URL in and the next sweep posts it), so quarantining them would throw
+        away a post the system can still complete.
+        """
+        for kind in ("signal", "chart", "watchlist", "receipt", "theme_list",
+                     "mover"):
+            assert self._verdict(kind, [self.UNHOSTED]) == "defer", kind
+
+    def test_a_hosted_card_ships_on_every_kind(self):
+        hosted = dict(self.UNHOSTED, media_url="https://pub-test.r2.dev/c1.png")
+        for kind in ("breaking", "signal", "theme_list", "macro"):
+            assert self._verdict(kind, [hosted]) == "ships", kind
+
+    def test_a_post_with_no_cashtag_is_untouched(self):
+        """The live BEA wire posts. No ticker, so no picture is owed, and this
+        change must not start holding the desks' macro voice."""
+        from scripts.marketing_publisher import _bare_cashtag_post
+        it = {"text": "Real GDP grew at an annual rate of 1.5 percent in the "
+                      "second quarter of 2026.", "kind": "breaking",
+              "as_of": "2026-07-30", "media": [self.UNHOSTED]}
+        assert _bare_cashtag_post(it, self.CFG, []) == ""
+
+    def test_the_helper_reads_the_deferral_gate_s_own_sets(self):
+        """Derived, not duplicated — or the two drift apart again."""
+        import inspect
+        from scripts.marketing_publisher import _deferral_covers
+
+        src = inspect.getsource(_deferral_covers)
+        assert "_CHART_BEARING_KINDS" in src and "_TICKER_ROLLUP_KINDS" in src, (
+            "a hand-copied kind list will drift from the gate it mirrors"
+        )

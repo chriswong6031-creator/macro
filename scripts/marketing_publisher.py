@@ -595,6 +595,23 @@ def _unknown_cashtags(it: dict, root: Path | str = ".") -> list[str]:
     return seen
 
 
+def _deferral_covers(it: dict) -> bool:
+    """True when :func:`_missing_required_media` would take this item.
+
+    The two gates hand off to each other, and until 2026-07-31 the handoff was
+    an assumption rather than a check: _bare_cashtag_post stepped aside for any
+    item carrying a media[] entry, on the grounds that the deferral gate owns
+    "a chart was built and the URL is missing". The deferral gate owns only the
+    kinds in these two sets, so the assumption was false for every other kind
+    and the item fell through both.
+
+    Derived from the same frozensets the deferral gate reads, so the two cannot
+    drift apart: widening one widens this.
+    """
+    kind = str(it.get("kind") or "")
+    return kind in _CHART_BEARING_KINDS or kind in _TICKER_ROLLUP_KINDS
+
+
 def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     """A post that names tickers and ships no picture. Returns the tickers, or "".
 
@@ -621,9 +638,20 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
         # Media globally off → nothing can resolve a picture and gating on that
         # would wedge every ticker post, same reasoning as the deferral gate.
         return ""
-    if any(isinstance(m, dict) for m in (it.get("media") or [])):
+    if (any(isinstance(m, dict) for m in (it.get("media") or []))
+            and _deferral_covers(it)):
         # A chart exists but has no URL yet — that is the DEFERRAL case above,
         # which is recoverable via the backfill. Not this rule's business.
+        #
+        # ONLY when the deferral gate will ACTUALLY take it (2026-07-31). This
+        # used to step aside for any non-empty media[], on the reasoning that
+        # the deferral gate owns that case. It owns only the kinds it lists,
+        # and `breaking` is deliberately in neither _CHART_BEARING_KINDS nor
+        # _TICKER_ROLLUP_KINDS — so a breaking post with cashtags and a card
+        # whose upload failed fell between the two gates and SHIPPED BARE, the
+        # one outcome both rules exist to prevent. `breaking` is the kind the
+        # hot-tape and press lanes emit, i.e. most of the account's volume,
+        # and the press wire could not host a card at all until this change.
         return ""
     found = _CASHTAG_RE.findall(str(it.get("text") or ""))
     return " ".join(sorted(set(found))) if found else ""
