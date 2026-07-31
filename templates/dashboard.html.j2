@@ -201,7 +201,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
-<link rel="stylesheet" href="onboard.css">
+{% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 <link rel="stylesheet" href="tier_preview.css">
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
@@ -10229,9 +10229,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
       </div>
     </div>
-    {# Heatmap staging: heatmap.js mounts on first #heatmap-scorecard at DOMContentLoaded;
-       this div sits outside any dialog, height-collapsed so it doesn't affect layout.
-       On first open of dlg-markets, mx5OpenDlg adopts the node into #dlg-heatmap-scorecard. #}
+    {# Heatmap staging: this div sits outside any dialog, height-collapsed so it
+       doesn't affect layout. On first open of dlg-markets, mx5OpenDlg adopts the
+       node into #dlg-heatmap-scorecard, then loads heatmap.js on demand. #}
     <div class="mx5-hm-stage" style="height:0;overflow:hidden;width:min(920px,calc(100vw - 100px))" aria-hidden="true">
       <div class="isle-heatmap-chrome-head"><span class="l-en">Sector Heatmap</span><span class="l-zh">板块热力图</span></div>
       <div id="heatmap-scorecard" style="min-height:120px"></div>
@@ -11178,11 +11178,9 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
         </div>
         {% endif %}
 
-        {# — S&P Heatmap — heatmap.js mounts on first #heatmap-scorecard instance in DOM;
-           the island's #heatmap-scorecard is the canonical mount point.
-           Here we show the same container only when the dialog is open so the JS can re-use it.
-           The slot below stays empty (heatmap.js mounts on the island's id first); this is a
-           fallback visual placeholder that explains where the chart lives. #}
+        {# — S&P Heatmap — the island's #heatmap-scorecard is adopted into this
+           dialog and heatmap.js mounts it on demand. The slot below is the visible
+           destination and remains as a fallback when the renderer is unavailable. #}
         <div class="mx5-dlg-sep"></div>
         <div class="mx5-dlg-eyebrow"><span class="l-en">S&amp;P 500 Sector Heatmap</span><span class="l-zh">标普500板块热力图</span></div>
         <div class="mx5-dlg-heatmap-wrap">
@@ -13667,6 +13665,12 @@ body.page-macro .mx5-dlg-hm-mobile-link a{font-size:13px;color:var(--link,#22d97
       /* 1) make it displayed (start state painted) */
       dlg.classList.add('open');
       dlg.setAttribute('aria-modal','true');
+      /* This heatmap exists only inside the hidden Markets dialog. Fetch its
+         134 KB renderer after the dialog is visible instead of taxing every
+         cold dashboard visit. */
+      if(id === 'dlg-markets' && window.mmLoadHeatmap){
+        window.mmLoadHeatmap().catch(function(){ /* full-page link remains */ });
+      }
       /* Scroll lock (M03): lock the real scroller (<html>) and freeze <body> at the
          current scrollY so wheel/trackpad/arrow scrolling can't leak to the page
          behind the modal. Capture only on first open (switching dialogs is a no-op). */
@@ -16354,7 +16358,6 @@ window.__CHART_SWAP__ = {
 };
 </script>
 <script src="theme.js"></script>
-<script src="onboard.js"></script>
 <script src="tier_preview.js"></script>
 <script src="chart_i18n.js"></script>
 <script src="timemachine.js"></script>
@@ -16364,7 +16367,6 @@ window.__CHART_SWAP__ = {
    live.js is __mmLiveInit-guarded so this second include was a no-op — dropped. #}
 <script src="risk_state_live.js"></script>
 <script src="release_publications_live.js"></script>
-<script src="heatmap.js"></script>
 <script>
 /* Keep .help tooltips on-screen: flip below the icon when it's near the top of
    the viewport, and clamp horizontally near the left/right edges. Hover-only,
