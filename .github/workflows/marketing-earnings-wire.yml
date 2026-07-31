@@ -99,7 +99,13 @@ jobs:
       - name: install deps
         # pandas+pyarrow: earnings.parquet is the calendar. pyyaml: config.
         # requests+anthropic: the llm_auth waterfall behind the copy pass.
-        run: pip install --quiet pyyaml requests anthropic pandas pyarrow
+        # boto3: the R2 upload that turns the rendered card into a public PNG
+        # URL. Omitting it does NOT fail — publish_chart_png log.warning()s
+        # "boto3 not installed" and returns None, and the post reaches the queue
+        # with no picture. That is how marketing-hot-tape.yml spent a day writing
+        # 8,081 cards nothing could ever attach (fixed in the same change), and
+        # this lane was written with the identical omission.
+        run: pip install --quiet pyyaml requests anthropic pandas pyarrow boto3
 
       - name: run the earnings lane
         env:

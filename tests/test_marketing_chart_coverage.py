@@ -762,35 +762,12 @@ class TestChartQualityIsVisible:
             "doomed launches for every card"
         )
 
-    def test_the_two_renderers_stay_distinguishable_from_the_png_alone(self):
-        """The forensic method, pinned — because `media_render` is not written
-        to the outbox, only to the plan, and a plan can be overwritten by a
-        local run.
-
-        When the artifact that records the renderer is untrustworthy, the PNG
-        itself still answers: the legacy PIL card is 1200x675, the real card
-        rasters at 2000x1760 (1000x880 at device scale 2). That is how
-        production was cleared (2026-07-29: 21 of 21 at 2000x1760) after a
-        contended local plan build had been mistaken for a live outage.
-
-        If these ever collide, that check silently starts returning "healthy"
-        for degraded cards.
-        """
-        import struct
-
-        numpy = pytest.importorskip("numpy")   # noqa: F841 - chart deps
-        from engine.marketing.chart_render import render_signal_chart_png
-
-        png = render_signal_chart_png(
-            "TEST",
-            [f"2026-01-{i:02d}" for i in range(1, 21)],
-            [100.0 + i for i in range(20)],
-            marker_index=None,
-            subtitle="x",
-        )
-        assert png[:8] == b"\x89PNG\r\n\x1a\n"
-        w, h = struct.unpack(">II", png[16:24])
-        assert (w, h) == (1200, 675), (
-            f"the legacy card is now {w}x{h}; if that ever equals the 2000x1760 "
-            "raster size, degraded and real cards become indistinguishable on disk"
-        )
+    # The forensic "which renderer drew this card" pin lives in
+    # tests/test_marketing_chart_png.py, not here. It rasters a real legacy card,
+    # which needs PIL — and PIL is installed by exactly one job
+    # (marketing-media-pipeline: pytest+pyyaml+pillow). Written here it guarded
+    # nothing twice over: this file's lanes install pandas/numpy but NOT pillow,
+    # so render_signal_chart_png hit its own fail-soft ("PIL/share_cards
+    # unavailable — no PNG"), returned b"", and the test asserted PNG magic bytes
+    # against an empty string. Its importorskip named numpy, which the renderer
+    # does not use, so the guard could not even skip itself out of the way.

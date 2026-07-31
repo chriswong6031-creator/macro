@@ -1857,9 +1857,24 @@ class TestCIWiring:
         # anthropic joined for the P2 wire desk (§10 E1): engine/llm_auth builds
         # every provider on anthropic.Anthropic, DeepSeek included, so an armed
         # lane without it is mute by construction. pandas is still barred.
+        #
+        # boto3 joined 2026-07-31 and it is NOT optional decoration: the step
+        # below is handed four R2 secrets, and without the client
+        # media_publish.publish_chart_png returns None on every card, so
+        # resolve_chart reports `no-media-url` and book_packet DROPS the post
+        # rather than ship it bare. That is a whole day of single-name posts
+        # deleted by a missing package, at full green — 2026-07-30 rendered
+        # 8,081 cards and hosted none of them.
         installs = [l for l in text.splitlines() if l.strip().startswith("run: pip install")]
         assert installs == [
-            "        run: pip install --quiet pyyaml requests pyarrow anthropic"], installs
+            "        run: pip install --quiet pyyaml requests pyarrow anthropic boto3"], installs
+        # The two halves of that line stated as rules, so a future edit reads
+        # WHY the string is what it is rather than just re-pinning it.
+        assert "pandas" not in installs[0], "pandas is barred from the intraday path"
+        assert "boto3" in installs[0], (
+            "without boto3 this lane holds R2 credentials it cannot spend and "
+            "every ticker post it detects is dropped for a missing picture"
+        )
 
     def test_the_radar_step_carries_the_llm_arming_and_credential_block(self):
         """An armed lane with no visible credential is MUTE, not off (§10 E1).
