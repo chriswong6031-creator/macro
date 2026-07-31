@@ -6,7 +6,7 @@
      byte-exact from site/index.html with hrefs depth-fixed for /products/ — when the
      landing chrome changes, re-sync these blocks.
      Spec: research/products_estate/PRODUCT_PAGES_MASTERPLAN.md §3. -->
-<html lang="en" data-lang="en">
+<html lang="en" data-lang="en" data-motion-page="market-terminal">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -46,17 +46,17 @@
   document.documentElement.lang=l==='zh'?'zh-CN':'en';}catch(e){}})();
 </script>
 <title>Market Terminal &amp; Browser Charting — MastermindX</title>
-<meta name="description" content="Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.">
+<meta name="description" content="Browser charting with five complementary indicator systems, 31 advanced modules, watchlists, key stats, engine reads and Mastermind AI. Free to start.">
 <link rel="canonical" href="https://www.mastermind-x.com/products/market-terminal.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
 <meta property="og:title" content="Market Terminal &amp; Browser Charting">
-<meta property="og:description" content="Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.">
+<meta property="og:description" content="Browser charting with five complementary indicator systems, 31 advanced modules, watchlists, key stats, engine reads and Mastermind AI. Free to start.">
 <meta property="og:url" content="https://www.mastermind-x.com/products/market-terminal.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Market Terminal &amp; Browser Charting">
-<meta name="twitter:description" content="Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.">
+<meta name="twitter:description" content="Browser charting with five complementary indicator systems, 31 advanced modules, watchlists, key stats, engine reads and Mastermind AI. Free to start.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <link rel="icon" href="../favicon.ico" sizes="any">
@@ -65,7 +65,7 @@
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "Market Terminal & Browser Charting",
-  "description": "Institutional-grade charting in your browser — candles, indicators, watchlists, key stats, engine reads and Mastermind AI beside the chart. Free to start.",
+  "description": "Browser charting with five complementary indicator systems, 31 advanced modules, watchlists, key stats, engine reads and Mastermind AI. Free to start.",
   "url": "https://www.mastermind-x.com/products/market-terminal.html",
   "isPartOf": {
     "@type": "WebSite",
@@ -172,9 +172,10 @@
 </style>
 <style>
 /* ═══ PER-PAGE SYSTEMS — 01 Market Terminal (accent blue).
-   New classes are namespaced .mt-*; colour comes from landing tokens and
-   white/transparent derivations only. Every bespoke animation carries a
-   resting state for prefers-reduced-motion and for html.still (?still). ═══ */
+   New classes are namespaced .mt-*; product chrome follows landing tokens,
+   while drawn charts keep a compact semantic up/down/pulse palette inside
+   their own namespace. Every bespoke animation carries a resting state for
+   prefers-reduced-motion and for html.still (?still). ═══ */
 .pg-terminal{--pg-accent:var(--blue)}
 
 /* hero copy is left-set (the shared .phero .sub uses margin:18px 0 0) */
@@ -274,25 +275,101 @@
 .mt-tf .trk i::after{content:"";position:absolute;right:-5px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;
   background:#fff;box-shadow:0 1px 5px rgba(0,0,0,.6)}
 
-/* 02 indicators — picker column beside a script editor card */
-.mt-ig{display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.14fr);gap:12px;margin-top:10px}
-.mt-pick{border:1px solid var(--hair);border-radius:12px;background:var(--panel-2);padding:11px 12px}
-.mt-pick .row{display:flex;align-items:center;gap:9px;padding:6.5px 0;border-top:1px solid var(--hair);font-size:12px;color:var(--ink-soft)}
-.mt-pick .row:first-of-type{border-top:0}
-.mt-pick .bx{flex:none;width:14px;height:14px;border-radius:4px;border:1px solid var(--hair-2);background:#fff}
-.mt-pick .row.on .bx{background:var(--blue);border-color:var(--blue);position:relative}
-.mt-pick .row.on .bx::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 1.6px 1.6px 0;transform:rotate(42deg)}
-.mt-pick .row.on{color:var(--ink);font-weight:600}
-.mt-pick .n{margin-left:auto;font-family:var(--display);font-weight:700;font-size:9.5px;color:var(--faint)}
-.mt-ed{border:1px solid var(--hair);border-radius:12px;background:var(--plate);padding:11px 12px;display:flex;flex-direction:column;
-  --pl-fa:rgba(255,255,255,.36);--pl-hr:rgba(255,255,255,.09)}
-.mt-ed pre{margin:9px 0 0;font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;font-size:10.5px;line-height:1.62;
-  color:rgba(255,255,255,.8);white-space:pre-wrap;word-break:break-word}
-.mt-ed .cmp{display:flex;align-items:center;gap:7px;margin-top:11px;padding-top:10px;border-top:1px solid var(--pl-hr);
-  font-family:var(--display);font-weight:700;font-size:9px;letter-spacing:.09em;text-transform:uppercase;
-  color:color-mix(in srgb,var(--q-green) 50%,#fff)}
-.mt-ed .cmp i{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
-.mt-ed .cmp .pro{margin-left:auto;color:rgba(255,255,255,.5);letter-spacing:.06em}
+/* 02 indicator systems — a finite, controllable workflow illustration.
+   This is a product story, not a simulation or a signal claim. */
+.mt-suites-section .feat-grid{align-items:start}
+.mt-suite-actions{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:22px}
+.mt-suite-actions .feat-cta{margin-top:0}
+.mt-suite-actions .secondary{color:var(--muted)}
+.mt-suite-demo{padding:0;overflow:hidden}
+.mt-suite-head{display:flex;align-items:center;gap:10px;padding:13px 15px;border-bottom:1px solid var(--hair)}
+.mt-suite-head .mt-suite-mark{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;
+  color:#fff;background:linear-gradient(145deg,var(--blue),var(--violet));font-family:var(--display);font-size:9px;font-weight:800}
+.mt-suite-head b{display:block;font-family:var(--display);font-size:11px;letter-spacing:.05em;color:var(--ink)}
+.mt-suite-head small{display:block;margin-top:2px;font-size:9px;color:var(--faint)}
+.mt-suite-head .live-tag{position:static;margin-left:auto}
+.mt-suite-player{position:relative;background:#0b1020;color:#fff}
+.mt-suite-stagebar{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;padding:8px;background:rgba(255,255,255,.025)}
+.mt-suite-step{appearance:none;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(255,255,255,.035);
+  min-height:48px;color:rgba(255,255,255,.52);padding:8px 6px;cursor:pointer;text-align:left;transition:border-color .2s ease,background .2s ease,color .2s ease}
+.mt-suite-step:hover{border-color:rgba(103,141,255,.48);color:rgba(255,255,255,.84)}
+.mt-suite-step:focus-visible{outline:2px solid #8ca8ff;outline-offset:2px}
+.mt-suite-step span{display:block;font-family:var(--display);font-size:7.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase}
+.mt-suite-step b{display:block;margin-top:3px;font-size:10.5px;font-weight:650}
+.mt-suite-step[aria-current="step"]{border-color:rgba(89,128,255,.72);background:rgba(55,95,223,.18);color:#fff;
+  box-shadow:inset 0 0 0 1px rgba(89,128,255,.12)}
+.mt-suite-canvas{position:relative;border-block:1px solid rgba(255,255,255,.07)}
+.mt-suite-canvas svg{display:block;width:100%;height:auto}
+.mt-suite-grid{stroke:rgba(255,255,255,.075);stroke-width:1;vector-effect:non-scaling-stroke}
+.mt-suite-price{stroke:#21ddb0;stroke-width:1.4;vector-effect:non-scaling-stroke}
+.mt-suite-price.down{stroke:#ff5f7d}
+.mt-suite-price-body{fill:#21ddb0}.mt-suite-price-body.down{fill:#ff5f7d}
+.mt-suite-layer{opacity:.09;transform:translateY(4px);transition:opacity .38s ease,transform .38s ease}
+.mt-suite-player[data-stage="1"] .mt-suite-s1,
+.mt-suite-player[data-stage="2"] .mt-suite-s1,
+.mt-suite-player[data-stage="2"] .mt-suite-s2,
+.mt-suite-player[data-stage="3"] .mt-suite-s1,
+.mt-suite-player[data-stage="3"] .mt-suite-s2,
+.mt-suite-player[data-stage="3"] .mt-suite-s3,
+.mt-suite-player[data-stage="4"] .mt-suite-layer{opacity:1;transform:none}
+.mt-suite-zone{fill:rgba(69,120,255,.13);stroke:#4f80ff;stroke-width:1.2;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.mt-suite-structure{fill:none;stroke:#71a0ff;stroke-width:1.6;stroke-dasharray:34 5;vector-effect:non-scaling-stroke}
+.mt-suite-label-bg{fill:#152347;stroke:rgba(126,160,255,.55);stroke-width:1}
+.mt-suite-label{fill:#d7e2ff;font-family:ui-monospace,'SF Mono',monospace;font-size:9px;font-weight:700}
+.mt-suite-pulse-area{fill:url(#mtPulseFill);opacity:.64}
+.mt-suite-pulse{fill:none;stroke:#c383ff;stroke-width:2.2;vector-effect:non-scaling-stroke}
+.mt-suite-zero{stroke:rgba(255,255,255,.15);stroke-width:1;stroke-dasharray:4 4}
+.mt-suite-dot{fill:#d8a3ff;stroke:#fff;stroke-width:1.5}
+.mt-suite-band{fill:url(#mtTrendBand);opacity:.68}
+.mt-suite-trend{fill:none;stroke:#20dcae;stroke-width:2.4;vector-effect:non-scaling-stroke}
+.mt-suite-entry{fill:#18c997;stroke:#b9ffec;stroke-width:1}
+.mt-suite-target{stroke:#58ddba;stroke-width:1;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.mt-suite-target-dim{stroke:#5f718e;stroke-width:1;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.mt-suite-trail{fill:none;stroke:#ff6680;stroke-width:1.8;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.mt-suite-stage-copy{display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 14px}
+.mt-suite-stage-copy p{display:none;margin:0;font-size:11.5px;line-height:1.45;color:rgba(255,255,255,.7)}
+.mt-suite-stage-copy p b{color:#fff}
+.mt-suite-player[data-stage="1"] .mt-suite-stage-copy p[data-copy="1"],
+.mt-suite-player[data-stage="2"] .mt-suite-stage-copy p[data-copy="2"],
+.mt-suite-player[data-stage="3"] .mt-suite-stage-copy p[data-copy="3"],
+.mt-suite-player[data-stage="4"] .mt-suite-stage-copy p[data-copy="4"]{display:block}
+.mt-suite-replay{appearance:none;flex:none;width:44px;height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.13);
+  background:rgba(255,255,255,.055);color:#fff;display:grid;place-items:center;cursor:pointer}
+.mt-suite-replay:hover{background:rgba(255,255,255,.1)}
+.mt-suite-replay:focus-visible{outline:2px solid #8ca8ff;outline-offset:2px}
+.mt-suite-replay svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8}
+.mt-suite-player.is-playing[data-stage="1"] .mt-suite-s1 .mt-suite-structure,
+.mt-suite-player.is-playing[data-stage="3"] .mt-suite-s3 .mt-suite-trend,
+.mt-suite-player.is-playing[data-stage="4"] .mt-suite-s4 .mt-suite-trail{
+  stroke-dasharray:160;animation:mtSuiteDraw .9s cubic-bezier(.22,.75,.22,1) both}
+.mt-suite-player.is-playing[data-stage="2"] .mt-suite-s2 .mt-suite-dot{animation:mtSuitePop .55s cubic-bezier(.2,.85,.3,1.25) both}
+@keyframes mtSuiteDraw{from{stroke-dashoffset:160}to{stroke-dashoffset:0}}
+@keyframes mtSuitePop{from{opacity:0;transform:scale(.3);transform-origin:center}to{opacity:1;transform:scale(1);transform-origin:center}}
+
+.mt-suite-proof{margin-top:clamp(28px,4vw,44px)}
+.mt-suite-proof-head{display:flex;align-items:end;justify-content:space-between;gap:24px;margin-bottom:15px}
+.mt-suite-proof-head h3{margin:0;font-family:var(--display);font-size:clamp(1.15rem,2vw,1.48rem);letter-spacing:-.015em;color:var(--ink)}
+.mt-suite-proof-access{max-width:50ch;text-align:right}
+.mt-pro-availability{display:inline-flex;align-items:center;gap:8px;font-family:var(--display);font-size:8px;font-weight:800;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--blue)}
+.mt-pro-availability::before{content:"";width:6px;height:6px;border-radius:2px;background:var(--blue);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--blue) 10%,transparent);transform:rotate(45deg)}
+.mt-suite-proof-access p{margin:7px 0 0;font-size:12.5px;line-height:1.5;color:var(--muted)}
+.mt-suite-proof-access a{color:var(--ink);font-weight:650;text-decoration:none;white-space:nowrap}
+.mt-suite-proof-access a:hover{text-decoration:underline;text-underline-offset:3px}
+.mt-system-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.mt-system-card{position:relative;min-height:138px;padding:15px;border:1px solid var(--hair);border-radius:13px;background:var(--panel);
+  box-shadow:var(--sh-card);overflow:hidden}
+.mt-system-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--sys,var(--blue))}
+.mt-system-card .num{font-family:var(--fig);font-size:9px;font-weight:800;letter-spacing:.1em;color:var(--sys,var(--blue))}
+.mt-system-card h4{margin:15px 0 7px;font-family:var(--display);font-size:13px;color:var(--ink)}
+.mt-system-card p{margin:0;font-size:11.5px;line-height:1.48;color:var(--muted)}
+.mt-system-card.structure{--sys:#4f80ff}.mt-system-card.trend{--sys:#16b98c}.mt-system-card.pulse{--sys:#a865dc}
+.mt-system-card.rsi{--sys:#e59b32}.mt-system-card.macd{--sys:#df526d}
+.mt-script-note{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px 14px;border:1px dashed var(--hair-2);border-radius:12px;color:var(--muted)}
+.mt-script-note svg{width:22px;height:22px;flex:none;fill:none;stroke:var(--blue);stroke-width:1.6}
+.mt-script-note p{margin:0;font-size:11.5px;line-height:1.45}
+.mt-script-note b{color:var(--ink)}
 
 /* 03 watchlists — grouped rail, a basis badge on every group, one row updating */
 .mt-wl .gp{display:flex;align-items:center;gap:8px;padding:11px 0 6px;border-top:1px solid var(--pl-hr)}
@@ -396,12 +473,24 @@
 @media (prefers-reduced-motion:reduce){
   .mt-ch .cd{opacity:1}
   .mt-ch .ma{stroke-dashoffset:0}
+  .mt-suite-layer{transition:none}
+  .mt-suite-player .mt-suite-layer,
+  .mt-suite-player .mt-suite-structure,
+  .mt-suite-player .mt-suite-trend,
+  .mt-suite-player .mt-suite-trail,
+  .mt-suite-player .mt-suite-dot{animation:none!important}
 }
 html.still .mt-ch .cd{opacity:1}
 html.still .mt-ch .ma{stroke-dashoffset:0}
+html.still .mt-suite-layer{transition:none}
+html.still .mt-suite-player .mt-suite-layer,
+html.still .mt-suite-player .mt-suite-structure,
+html.still .mt-suite-player .mt-suite-trend,
+html.still .mt-suite-player .mt-suite-trail,
+html.still .mt-suite-player .mt-suite-dot{animation:none!important}
 
 @media (max-width:1080px){
-  .mt-ig{grid-template-columns:minmax(0,1fr)}
+  .mt-system-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media (max-width:640px){
   .mt-frame .tt-cwrap{min-height:250px}
@@ -409,8 +498,17 @@ html.still .mt-ch .ma{stroke-dashoffset:0}
   .mt-dos .bk{display:none}
   .mt-dos .card{margin-top:0}
   .mt-thread .msg{max-width:96%}
+  .mt-suite-stagebar{grid-template-columns:repeat(2,1fr)}
+  .mt-suite-step{padding:7px}
+  .mt-suite-step b{font-size:10px}
+  .mt-suite-proof-head{display:block}
+  .mt-suite-proof-access{margin-top:12px;text-align:left}
+  .mt-system-grid{grid-template-columns:minmax(0,1fr)}
+  .mt-system-card{min-height:0}
+  .mt-system-card h4{margin-top:9px}
 }
 </style>
+<link rel="stylesheet" href="../scene-motion.css?v=f426716d">
 </head>
 <body class="pg-terminal">
 <nav class="nav" aria-label="Main">
@@ -705,44 +803,181 @@ html.still .mt-ch .ma{stroke-dashoffset:0}
 </section>
 
 <!-- ══════════════ 02 INDICATORS ══════════════ -->
-<section class="feature flip" id="indicators">
-  <div class="wrap feat-grid">
-    <div class="feat-copy rv">
-      <span class="kicker" data-zh="指标体系">Indicators</span>
-      <h2 class="feat-title" data-zh="内置十七种。<br>还能自己写。">Seventeen built in.<br>Then write your own.</h2>
-      <p class="feat-sub" data-zh="均线、布林带、VWAP、MACD、RSI，还有一套日内指标——每一个的参数和样式都能改。脚本编辑器还能编译你自己写的指标；<b>保存自定义脚本属于 Pro 功能。</b>">Moving averages, Bollinger, VWAP, MACD, RSI and a day-trade suite — each with editable inputs and styles. A script editor compiles studies you write yourself; <b>saving custom scripts is a Pro feature.</b></p>
-      <ul class="fx">
-        <li data-zh="<b>选择器里 17 个指标。</b>开箱即用。"><b>17 indicators in the picker.</b> Ready to switch on.</li>
-        <li data-zh="<b>每个参数都能改。</b>周期、颜色、线宽。"><b>Every input editable.</b> Lengths, colours, widths.</li>
-        <li data-zh="<b>一个脚本编辑器。</b>自己写、编译、运行。"><b>A script editor.</b> Write it, compile it, run it.</li>
-      </ul>
-      <a class="feat-cta" href="../plans.html" data-zh="查看方案 →">See plans →</a>
-    </div>
-    <div class="rv" style="--d:.1s">
-      <div class="demo">
-        <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
-        <p class="dk" data-zh="指标 <span class='asof'>选择器 + 脚本编辑器</span>">INDICATORS <span class="asof">picker + script editor</span></p>
-        <div class="mt-ig">
-          <div class="mt-pick">
-            <div class="row on"><span class="bx"></span><span data-zh="均线">Moving averages</span><span class="n">9 · 21</span></div>
-            <div class="row on"><span class="bx"></span><span data-zh="布林带">Bollinger Bands</span><span class="n">20 · 2</span></div>
-            <div class="row"><span class="bx"></span><span>VWAP</span><span class="n" data-zh="当日">session</span></div>
-            <div class="row on"><span class="bx"></span><span>MACD</span><span class="n">12 · 26 · 9</span></div>
-            <div class="row"><span class="bx"></span><span>RSI</span><span class="n">14</span></div>
-            <div class="row"><span class="bx"></span><span data-zh="日内套件">Day-trade suite</span><span class="n">6</span></div>
+<section class="feature flip mt-suites-section" id="indicators">
+  <div class="wrap">
+    <div class="feat-grid">
+      <div class="feat-copy rv">
+        <span class="kicker" data-zh="指标体系">Indicator systems</span>
+        <h2 class="feat-title" data-zh="五套互补系统。<br>一条更清晰的技术流程。">Five complementary systems.<br>One clearer technical workflow.</h2>
+        <p class="feat-sub" data-zh="这不是把更多线条堆到图上。31 个高级模块分属五套可以自由组合的互补系统，覆盖市场结构、动能轮动、趋势确认、失效位与分批止盈。先保持干净，需要时再展开深度。">This is not more lines for the sake of more lines. Thirty-one advanced modules are organized into five complementary systems you can combine across market structure, momentum rotation, trend confirmation, invalidation and staged profit objectives. Start clean; reveal depth only when the thesis needs it.</p>
+        <ul class="fx">
+          <li data-zh="<b>31 个高级模块。</b>聚焦、工作流、研究三种深度。"><b>31 advanced modules.</b> Focus, Workflow and Research depth.</li>
+          <li data-zh="<b>从结构读到交易管理。</b>背景、轮动、确认、止损与 TP1–TP6。"><b>From structure to trade management.</b> Context, rotation, confirmation, risk and TP1–TP6.</li>
+          <li data-zh="<b>多周期，但不偷看未来。</b>图表列保持灵敏；已完成的 2× 与 4× 区块提供更慢背景。"><b>Multi-timeframe without peeking ahead.</b> Chart stays responsive; completed 2× and 4× blocks provide slower context.</li>
+        </ul>
+        <div class="mt-suite-actions">
+          <a class="feat-cta" href="https://app.mastermind-x.com" data-zh="打开终端 →">Open the Terminal →</a>
+          <a class="feat-cta secondary" href="../plans.html#pricing-matrix" data-zh="比较权限 →">Compare access →</a>
+        </div>
+      </div>
+      <div class="rv" style="--d:.1s">
+        <div class="demo mt-suite-demo">
+          <div class="mt-suite-head">
+            <span class="mt-suite-mark">MX</span>
+            <span><b data-zh="组合工作流">COMPOSITE WORKFLOW</b><small data-zh="Insider + Pro 模块 · 一种示例组合">Insider + Pro modules · one example combination</small></span>
+            <span class="live-tag ill" data-zh="<i></i>示意"><i></i>ILLUSTRATIVE</span>
           </div>
-          <div class="mt-ed">
-            <span class="mt-k" data-zh="我的脚本">My scripts</span>
-            <pre data-zh="study(&quot;区间突破&quot;, overlay=true)
-len  = input(20, &quot;回看根数&quot;)
-top  = highest(high, len)
-plot(top, width=2)">study("Range break", overlay=true)
-len  = input(20, "Lookback")
-top  = highest(high, len)
-plot(top, width=2)</pre>
-            <div class="cmp"><i></i><span data-zh="编译通过">Compiled</span><span class="pro" data-zh="保存 · Pro">Save · Pro</span></div>
+          <div class="mt-suite-player" data-stage="4" data-autoplay
+            aria-label="Illustrative composite workflow using Insider and Pro indicator modules"
+            data-aria-en="Illustrative composite workflow using Insider and Pro indicator modules"
+            data-aria-zh="使用 Insider 与 Pro 指标模块的组合工作流示意">
+            <div class="mt-suite-stagebar" role="group" aria-label="Choose a workflow stage"
+              data-aria-en="Choose a workflow stage" data-aria-zh="选择工作流阶段">
+              <button class="mt-suite-step" type="button" data-suite-step="1" aria-current="false">
+                <span data-zh="01 · 背景">01 · Context</span><b data-zh="市场结构">Structure</b>
+              </button>
+              <button class="mt-suite-step" type="button" data-suite-step="2" aria-current="false">
+                <span data-zh="02 · 时机">02 · Timing</span><b data-zh="动能轮动">Rotation</b>
+              </button>
+              <button class="mt-suite-step" type="button" data-suite-step="3" aria-current="false">
+                <span data-zh="03 · 触发">03 · Trigger</span><b data-zh="趋势确认">Confirmation</b>
+              </button>
+              <button class="mt-suite-step" type="button" data-suite-step="4" aria-current="step">
+                <span data-zh="04 · 管理">04 · Manage</span><b data-zh="目标与失效">Targets &amp; risk</b>
+              </button>
+            </div>
+            <div class="mt-suite-canvas" aria-hidden="true">
+              <svg viewBox="0 0 620 315">
+                <defs>
+                  <linearGradient id="mtPulseFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#b477ee" stop-opacity=".6"/>
+                    <stop offset="1" stop-color="#b477ee" stop-opacity="0"/>
+                  </linearGradient>
+                  <linearGradient id="mtTrendBand" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0" stop-color="#16c596" stop-opacity=".08"/>
+                    <stop offset=".65" stop-color="#16d8a5" stop-opacity=".45"/>
+                    <stop offset="1" stop-color="#4f80ff" stop-opacity=".18"/>
+                  </linearGradient>
+                </defs>
+                <rect width="620" height="315" fill="#0b1020"/>
+                <g>
+                  <line class="mt-suite-grid" x1="0" y1="50" x2="620" y2="50"/><line class="mt-suite-grid" x1="0" y1="100" x2="620" y2="100"/>
+                  <line class="mt-suite-grid" x1="0" y1="150" x2="620" y2="150"/><line class="mt-suite-grid" x1="0" y1="200" x2="620" y2="200"/>
+                  <line class="mt-suite-grid" x1="60" y1="0" x2="60" y2="315"/><line class="mt-suite-grid" x1="160" y1="0" x2="160" y2="315"/>
+                  <line class="mt-suite-grid" x1="260" y1="0" x2="260" y2="315"/><line class="mt-suite-grid" x1="360" y1="0" x2="360" y2="315"/>
+                  <line class="mt-suite-grid" x1="460" y1="0" x2="460" y2="315"/><line class="mt-suite-grid" x1="560" y1="0" x2="560" y2="315"/>
+                </g>
+                <g opacity=".93">
+                  <line class="mt-suite-price down" x1="31" y1="106" x2="31" y2="153"/><rect class="mt-suite-price-body down" x="27" y="119" width="8" height="22" rx="1"/>
+                  <line class="mt-suite-price" x1="52" y1="123" x2="52" y2="168"/><rect class="mt-suite-price-body" x="48" y="132" width="8" height="23" rx="1"/>
+                  <line class="mt-suite-price down" x1="73" y1="133" x2="73" y2="179"/><rect class="mt-suite-price-body down" x="69" y="146" width="8" height="20" rx="1"/>
+                  <line class="mt-suite-price" x1="94" y1="145" x2="94" y2="183"/><rect class="mt-suite-price-body" x="90" y="153" width="8" height="18" rx="1"/>
+                  <line class="mt-suite-price down" x1="115" y1="151" x2="115" y2="195"/><rect class="mt-suite-price-body down" x="111" y="162" width="8" height="20" rx="1"/>
+                  <line class="mt-suite-price" x1="136" y1="161" x2="136" y2="201"/><rect class="mt-suite-price-body" x="132" y="171" width="8" height="17" rx="1"/>
+                  <line class="mt-suite-price down" x1="157" y1="169" x2="157" y2="208"/><rect class="mt-suite-price-body down" x="153" y="180" width="8" height="16" rx="1"/>
+                  <line class="mt-suite-price" x1="178" y1="172" x2="178" y2="206"/><rect class="mt-suite-price-body" x="174" y="180" width="8" height="14" rx="1"/>
+                  <line class="mt-suite-price" x1="199" y1="162" x2="199" y2="197"/><rect class="mt-suite-price-body" x="195" y="172" width="8" height="17" rx="1"/>
+                  <line class="mt-suite-price down" x1="220" y1="168" x2="220" y2="203"/><rect class="mt-suite-price-body down" x="216" y="176" width="8" height="17" rx="1"/>
+                  <line class="mt-suite-price" x1="241" y1="153" x2="241" y2="195"/><rect class="mt-suite-price-body" x="237" y="166" width="8" height="18" rx="1"/>
+                  <line class="mt-suite-price" x1="262" y1="143" x2="262" y2="181"/><rect class="mt-suite-price-body" x="258" y="151" width="8" height="20" rx="1"/>
+                  <line class="mt-suite-price down" x1="283" y1="149" x2="283" y2="185"/><rect class="mt-suite-price-body down" x="279" y="157" width="8" height="17" rx="1"/>
+                  <line class="mt-suite-price" x1="304" y1="130" x2="304" y2="174"/><rect class="mt-suite-price-body" x="300" y="143" width="8" height="21" rx="1"/>
+                  <line class="mt-suite-price" x1="325" y1="114" x2="325" y2="155"/><rect class="mt-suite-price-body" x="321" y="123" width="8" height="23" rx="1"/>
+                  <line class="mt-suite-price down" x1="346" y1="120" x2="346" y2="160"/><rect class="mt-suite-price-body down" x="342" y="130" width="8" height="18" rx="1"/>
+                  <line class="mt-suite-price" x1="367" y1="98" x2="367" y2="147"/><rect class="mt-suite-price-body" x="363" y="112" width="8" height="25" rx="1"/>
+                  <line class="mt-suite-price" x1="388" y1="83" x2="388" y2="126"/><rect class="mt-suite-price-body" x="384" y="93" width="8" height="24" rx="1"/>
+                  <line class="mt-suite-price" x1="409" y1="67" x2="409" y2="111"/><rect class="mt-suite-price-body" x="405" y="78" width="8" height="23" rx="1"/>
+                  <line class="mt-suite-price down" x1="430" y1="73" x2="430" y2="116"/><rect class="mt-suite-price-body down" x="426" y="84" width="8" height="20" rx="1"/>
+                  <line class="mt-suite-price" x1="451" y1="55" x2="451" y2="102"/><rect class="mt-suite-price-body" x="447" y="67" width="8" height="25" rx="1"/>
+                  <line class="mt-suite-price down" x1="472" y1="61" x2="472" y2="108"/><rect class="mt-suite-price-body down" x="468" y="75" width="8" height="21" rx="1"/>
+                  <line class="mt-suite-price" x1="493" y1="48" x2="493" y2="91"/><rect class="mt-suite-price-body" x="489" y="59" width="8" height="23" rx="1"/>
+                  <line class="mt-suite-price" x1="514" y1="36" x2="514" y2="80"/><rect class="mt-suite-price-body" x="510" y="46" width="8" height="25" rx="1"/>
+                  <line class="mt-suite-price down" x1="535" y1="43" x2="535" y2="87"/><rect class="mt-suite-price-body down" x="531" y="54" width="8" height="21" rx="1"/>
+                  <line class="mt-suite-price" x1="556" y1="32" x2="556" y2="74"/><rect class="mt-suite-price-body" x="552" y="43" width="8" height="22" rx="1"/>
+                </g>
+                <g class="mt-suite-layer mt-suite-s1">
+                  <rect class="mt-suite-zone" x="88" y="166" width="157" height="38" rx="5"/>
+                  <path class="mt-suite-structure" d="M52 142H102V160H169V145H225V161H280"/>
+                  <rect class="mt-suite-label-bg" x="96" y="133" width="35" height="17" rx="5"/><text class="mt-suite-label" x="104" y="145">BOS</text>
+                  <rect class="mt-suite-label-bg" x="214" y="146" width="49" height="17" rx="5"/><text class="mt-suite-label" x="220" y="158">CHoCH</text>
+                </g>
+                <g class="mt-suite-layer mt-suite-s2">
+                  <line class="mt-suite-zero" x1="18" y1="272" x2="602" y2="272"/>
+                  <path class="mt-suite-pulse-area" d="M18 285C64 288 91 282 124 286S191 294 222 279S264 252 301 259S348 278 377 263S414 242 447 249S503 270 535 253S573 239 602 242V301H18Z"/>
+                  <path class="mt-suite-pulse" d="M18 285C64 288 91 282 124 286S191 294 222 279S264 252 301 259S348 278 377 263S414 242 447 249S503 270 535 253S573 239 602 242"/>
+                  <circle class="mt-suite-dot" cx="301" cy="259" r="5"/>
+                </g>
+                <g class="mt-suite-layer mt-suite-s3">
+                  <path class="mt-suite-band" d="M206 188C251 179 282 165 315 147S373 117 414 97S490 72 575 50L575 73C499 88 455 99 418 117S354 144 319 166S257 197 206 205Z"/>
+                  <path class="mt-suite-trend" d="M206 196C251 188 282 174 315 156S373 126 414 106S490 82 575 61"/>
+                  <path class="mt-suite-entry" d="M319 163l-7 13h14Z"/>
+                  <rect x="306" y="178" width="25" height="18" rx="8" fill="#117a62"/><text class="mt-suite-label" x="315" y="190" fill="#dffff5">✓</text>
+                </g>
+                <g class="mt-suite-layer mt-suite-s4">
+                  <line class="mt-suite-target" x1="365" y1="104" x2="600" y2="104"/>
+                  <line class="mt-suite-target" x1="408" y1="78" x2="600" y2="78"/>
+                  <line class="mt-suite-target-dim" x1="450" y1="52" x2="600" y2="52"/>
+                  <rect x="566" y="94" width="36" height="16" rx="7" fill="#126d59"/><text class="mt-suite-label" x="575" y="105">TP1</text>
+                  <rect x="566" y="68" width="36" height="16" rx="7" fill="#126d59"/><text class="mt-suite-label" x="575" y="79">TP2</text>
+                  <rect x="566" y="42" width="36" height="16" rx="7" fill="#29364d"/><text class="mt-suite-label" x="575" y="53">TP3</text>
+                  <path class="mt-suite-trail" d="M352 171H383V145H424V124H465V110H506V91H548V78"/>
+                </g>
+              </svg>
+            </div>
+            <div class="mt-suite-stage-copy" aria-live="polite">
+              <button class="mt-suite-replay" type="button" data-suite-replay aria-label="Replay the four-stage workflow"
+                data-aria-en="Replay the four-stage workflow" data-aria-zh="重播四阶段工作流">
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.4 6.1H1.9V2.6M2.3 6a8 8 0 1 1-.2 7.6"/></svg>
+              </button>
+              <p data-copy="1" data-zh="<b>Structure Core</b> 先标出环境：结构转变、流动性与价格所处位置。"><b>Structure Core</b> maps the environment first: structural shifts, liquidity and price location.</p>
+              <p data-copy="2" data-zh="<b>Pulse Oscillator</b> 显示正在发展的动能轮动；是否行动，仍由价格与趋势确认决定。"><b>Pulse Oscillator</b> shows momentum rotation as it develops; price and trend confirmation still determine whether to act.</p>
+              <p data-copy="3" data-zh="<b>Trend Waves</b> 用趋势翻转、回踩与多周期状态决定是否确认。"><b>Trend Waves</b> uses trend flips, retests and multi-timeframe state to decide whether the move is confirmed.</p>
+              <p data-copy="4" data-zh="<b>目标与风险</b> 把失效位、移动保护线与 TP1–TP6 进度放在同一张图上。"><b>Targets and risk</b> keep invalidation, a trailing protection line and TP1–TP6 progress on the same chart.</p>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div class="mt-suite-proof rv">
+      <div class="mt-suite-proof-head">
+        <h3 data-zh="五套专门系统，而不是一包杂乱指标。">Five specialist systems, not one crowded bundle.</h3>
+        <div class="mt-suite-proof-access">
+          <span class="mt-pro-availability" data-zh="五套完整系统 · Pro 方案提供">All five, complete · Available in Pro</span>
+          <p data-zh="Insider 提供精选模块；Pro 解锁完整 31 模块指标库。<a href='../plans.html#pricing-matrix'>查看方案权限 →</a>">Insider unlocks a curated selection; Pro opens the complete 31-module library. <a href="../plans.html#pricing-matrix">See plan access →</a></p>
+        </div>
+      </div>
+      <div class="mt-system-grid">
+        <article class="mt-system-card structure">
+          <span class="num" data-zh="09 个模块">09 MODULES</span>
+          <h4>Structure Core</h4>
+          <p data-zh="看清谁在控制价格、反应可能发生在哪里，以及什么会让判断失效。">See who controls price, where reactions matter, and what invalidates the setup.</p>
+        </article>
+        <article class="mt-system-card trend">
+          <span class="num" data-zh="05 个模块">05 MODULES</span>
+          <h4>Trend Waves</h4>
+          <p data-zh="趋势翻转、回踩、移动失效位与 TP1–TP6 阶梯。">Trend flips, retests, trailing invalidation and a TP1–TP6 ladder.</p>
+        </article>
+        <article class="mt-system-card pulse">
+          <span class="num" data-zh="06 个模块">06 MODULES</span>
+          <h4>Pulse Oscillator</h4>
+          <p data-zh="动能状态、轮动、背离、成交量参与度与资金流确认。">Momentum state, rotation, divergence, volume participation and money-flow confirmation.</p>
+        </article>
+        <article class="mt-system-card rsi">
+          <span class="num" data-zh="05 个模块">05 MODULES</span>
+          <h4>RSI Ultimate</h4>
+          <p data-zh="分清普通动能与真正的极端、轮动和背离。">Separate ordinary momentum from real stretch, rotation and divergence.</p>
+        </article>
+        <article class="mt-system-card macd">
+          <span class="num" data-zh="06 个模块">06 MODULES</span>
+          <h4>MACD Ultimate</h4>
+          <p data-zh="看清动能正在增强、衰减，还是跨周期改变阶段。">See momentum building, fading or changing phase across timeframes.</p>
+        </article>
+      </div>
+
+      <div class="mt-script-note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7-5 5 5 5M15 7l5 5-5 5M14 4l-4 16"/></svg>
+        <p data-zh="<b>还想自己构建？</b>内置 Pine 风格编辑器可以编写、编译并运行自定义指标；保存自定义脚本属于 Pro 功能。"><b>Still want to build your own?</b> The Pine-style editor writes, compiles and runs custom studies; saving custom scripts is a Pro feature.</p>
       </div>
     </div>
   </div>
@@ -1027,6 +1262,7 @@ plot(top, width=2)</pre>
   </div>
 </footer>
 
+<script src="../scene-motion.js?v=5ce10d9a"></script>
 <script>
 /* capture hook for visual QA (see .still CSS) */
 if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
@@ -1184,6 +1420,95 @@ const MMX_NAV = (() => {
 /* ───── reveal on scroll ───── */
 const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }), { rootMargin:'0px 0px -8% 0px', threshold:.08 });
 document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
+
+/* ───── indicator workflow — one finite pass, controllable at every step ───── */
+(function(){
+  const player = document.querySelector('.mt-suite-player[data-autoplay]');
+  if (!player) return;
+  const steps = [...player.querySelectorAll('[data-suite-step]')];
+  const copies = [...player.querySelectorAll('[data-copy]')];
+  const replay = player.querySelector('[data-suite-replay]');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const still = document.documentElement.classList.contains('still');
+  let stage = 4;
+  let timer = 0;
+  let visible = false;
+  let completed = false;
+  let userStopped = false;
+
+  function motionOff(){ return still || reduce.matches; }
+  function clearTimer(){ if (timer) window.clearTimeout(timer); timer = 0; }
+  function render(next){
+    stage = Math.max(1, Math.min(4, Number(next) || 1));
+    player.dataset.stage = String(stage);
+    steps.forEach(button => button.setAttribute('aria-current',
+      Number(button.dataset.suiteStep) === stage ? 'step' : 'false'));
+    copies.forEach(copy => { copy.hidden = Number(copy.dataset.copy) !== stage; });
+  }
+  function syncLocalizedAria(){
+    const language = LANG.cur();
+    document.querySelectorAll('[data-aria-en][data-aria-zh]').forEach(node => {
+      node.setAttribute('aria-label', node.getAttribute(language === 'zh' ? 'data-aria-zh' : 'data-aria-en') || '');
+    });
+  }
+  function schedule(){
+    clearTimer();
+    if (!visible || document.hidden || completed || userStopped || motionOff()) {
+      player.classList.remove('is-playing');
+      return;
+    }
+    player.classList.add('is-playing');
+    timer = window.setTimeout(() => {
+      if (stage >= 4) {
+        completed = true;
+        player.classList.remove('is-playing');
+        return;
+      }
+      render(stage + 1);
+      schedule();
+    }, 1650);
+  }
+  function choose(next){
+    userStopped = true;
+    completed = Number(next) === 4;
+    clearTimer();
+    player.classList.remove('is-playing');
+    render(next);
+  }
+
+  steps.forEach(button => button.addEventListener('click', () => choose(button.dataset.suiteStep)));
+  if (replay) replay.addEventListener('click', () => {
+    clearTimer();
+    completed = false;
+    userStopped = motionOff();
+    render(1);
+    if (!motionOff()) schedule();
+  });
+  document.addEventListener('visibilitychange', schedule);
+  const onMotionChange = () => {
+    if (motionOff()) {
+      clearTimer();
+      completed = true;
+      player.classList.remove('is-playing');
+      render(4);
+    }
+  };
+  if (reduce.addEventListener) reduce.addEventListener('change', onMotionChange); else reduce.addListener(onMotionChange);
+  LANG.onChange(syncLocalizedAria);
+  syncLocalizedAria();
+
+  if (motionOff()) {
+    completed = true;
+    render(4);
+  } else {
+    render(1);
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+      visible = entry.isIntersecting && entry.intersectionRatio >= .35;
+      schedule();
+    }), { threshold:[0,.35,1] });
+    observer.observe(player);
+  }
+})();
 
 /* ───── i18n boot — the landing runs this after its live-data wiring (index.html:1906);
    the product chrome carries no live wiring, so it runs here: swap static [data-zh]

@@ -6,7 +6,7 @@
      Chrome (nav+gear+footer+LANG/MMX_NAV JS) is copied byte-exact from
      site/index.html with hrefs depth-fixed for /products/ — when the landing chrome
      changes, re-sync these blocks. Spec: research/products_estate/PRODUCT_PAGES_MASTERPLAN.md §5. -->
-<html lang="en" data-lang="en">
+<html lang="en" data-lang="en" data-motion-page="dashboards">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -402,6 +402,7 @@ html[data-lang="zh"] .md-oc,html[data-lang="zh"] .md-anchors{letter-spacing:.02e
   border-top:1px solid #10161f;color:#6f7a8c;font-size:11.5px;line-height:1.65}
 .md-legal span{display:block;max-width:70ch;margin:0 auto}
 </style>
+<link rel="stylesheet" href="../scene-motion.css?v=f426716d">
 </head>
 <body>
 <nav class="nav" aria-label="Main">
@@ -1182,6 +1183,7 @@ html[data-lang="zh"] .md-oc,html[data-lang="zh"] .md-anchors{letter-spacing:.02e
   </div>
 </footer>
 
+<script src="../scene-motion.js?v=5ce10d9a"></script>
 <script>
 /* capture hook for visual QA (see .still CSS) */
 if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');

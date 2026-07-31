@@ -12,7 +12,7 @@ workflow:
   - "Continue into the dossier or research page"
 cluster: market-research-platform
 published: 2026-07-27
-updated: 2026-07-27
+updated: 2026-07-30
 related:
   products: [mastermind-ai, market-dashboards]
   live:
@@ -24,6 +24,9 @@ cta: {href: "https://app.mastermind-x.com", label: "Open the Market Terminal"}
 
 <h2>Chart without a desktop install</h2>
 <p>Use candlestick charts, multiple timeframes and indicators directly in the browser. Current quote context stays near the chart so price structure and the broader workspace do not become separate research tasks.</p>
+
+<h2>Read a complete technical workflow</h2>
+<p>Five complementary indicator systems organize 31 advanced modules that users can combine around structure, momentum rotation, trend confirmation, invalidation and staged profit objectives. Focus, Workflow and Research profiles let a chart begin clean and add depth only when the thesis requires it. Insider unlocks a curated selection across the five systems; Pro opens the complete library. The pricing page carries the current plan-by-plan access details.</p>
 
 <h2>Keep the evidence beside the chart</h2>
 <p>Watchlists, comparison controls, key statistics and earnings context sit inside the same working view. When MastermindX has a current engine reading for a symbol, the Terminal can connect that reading to the chart without presenting the two as if they share one timestamp.</p>
