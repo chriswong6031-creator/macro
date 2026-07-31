@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T01:44:23.284536+00:00",
-  "count": 426,
+  "generated_at": "2026-07-31T01:56:53.559166+00:00",
+  "count": 427,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -127,6 +127,26 @@
         "**QLD Dominates Dwelling Approvals**: Qld's 29% YoY dwelling approvals growth outpaces Vic (8% YoY), WA (4% YoY), and leads NSW (-1% YoY) and SA (6% YoY) in strength, driving national new dwellings (19% YoY) growth.",
         "**Detached Resilience Amid Headwinds**: Private detached approvals exceed 10k for six consecutive months, showing sector resilience despite RBA rate hikes and elevated construction costs threatening sustained growth.",
         "**Value Decline Contrasts Volume Growth**: Total approvals rose 7.2% MoM (8.9% YoY) in volume, but value fell 5.5% MoM due to non-residential sector weakness, highlighting divergent performance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-w3dy1bp87io-dd7396",
+      "title": "er20260730BullDwellingApprovalsJun",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T23:44:00Z",
+      "summary_points": [
+        "**Total Approvals Rebound with Value Decline**: 7.2% monthly rise in approvals (8.9% annualized) driven by unit approvals, but value fell 5.5% monthly due to non-residential weakness.",
+        "**QLD Dominates Regional Growth**: Qld's 29% annualized dwelling approvals growth outpaces Vic (8% yr), WA (4% yr), NSW (-1% yr), and SA (6% yr), highlighting regional divergence.",
+        "**RBA Rate Hikes and Construction Costs Threaten Resilience**: Persistent rate hikes and elevated costs undermine sustained growth despite detached dwelling approvals exceeding 10k for six months.",
+        "**New Dwellings Drive Approvals with State-Specific Leadership**: 19% annualized new dwellings growth led by Qld/NSW in high-rise and detached segments amid strong state demand."
       ],
       "tags": [],
       "tickers": [],
