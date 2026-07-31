@@ -283,6 +283,12 @@ _BRAIN_TOOLS = frozenset({
     # China-analog idiom) and the full curve read (pure slice of yield_curve snapshot)
     "get_historical_analogues",
     "get_curve_detail",
+    # Analyst OS W3 — per-user memory: own-session recall + own trade journal
+    # (signed-in only, per-user scoped; derived from canonical stores — CXI-R12)
+    # and the durable chat preference setter (enum-only writes to user_metadata)
+    "recall_sessions",
+    "get_trade_episodes",
+    "set_chat_preference",
     # Inline chart rendering (all pages — renders SVG inside the chat reply)
     "render_inline_chart",
     # Chart-command bus (W6b): client-executed, terminal page only
@@ -330,6 +336,10 @@ _BRAIN_ONLY_TOOLS = frozenset({
     # Analyst OS W2
     "get_historical_analogues",
     "get_curve_detail",
+    # Analyst OS W3
+    "recall_sessions",
+    "get_trade_episodes",
+    "set_chat_preference",
     # Inline chart rendering (all pages)
     "render_inline_chart",
     # Chart-command bus (W6b)
@@ -3325,6 +3335,28 @@ def _dispatch_brain_tool(
             # snapshot the site already publishes). Open to every tier.
             from engine.neuralweb import brain_curve as _bcv  # noqa: PLC0415
             return _bcv.get_curve_detail(root)
+        if tool_name == "recall_sessions":
+            # Analyst OS W3 — the signed-in user's OWN recent sessions, derived at
+            # read time from the canonical thread store (CXI-R12: no second store).
+            from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+            return _bum.recall_sessions(
+                user_id or "",
+                days=tool_params.get("days", 14),
+                limit=tool_params.get("limit", 8),
+            )
+        if tool_name == "get_trade_episodes":
+            # Analyst OS W3 — the signed-in user's OWN trade journal (research-only
+            # reflections; never evidence_packet internals — whitelist lives in the
+            # module and is whole-payload tested).
+            from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+            return _bum.get_trade_episodes(
+                user_id or "",
+                limit=tool_params.get("limit", 10),
+            )
+        if tool_name == "set_chat_preference":
+            # Analyst OS W3 — durable enum-only preference write (depth/lang) to the
+            # user's own metadata; guests refused inside the tool.
+            return _tool_set_chat_preference(tool_params, user_id or "")
         if tool_name == "render_inline_chart":
             return _tool_render_inline_chart(tool_params, root)
         # Chart-command bus (W6b)
@@ -3397,6 +3429,15 @@ def _all_brain_tool_schemas(root: Path, page: str = "", internals_allowed: bool 
         schemas = schemas + [_bcv.CURVE_TOOL_SCHEMA]
     except Exception:  # noqa: BLE001
         pass
+    # Analyst OS W3: per-user memory (own sessions, own trade journal) + the durable
+    # preference setter. Offered everywhere — each refuses guests with a sign-in note
+    # at execution, the watchlist idiom.
+    try:
+        from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+        schemas = schemas + [_bum.RECALL_TOOL_SCHEMA, _bum.EPISODES_TOOL_SCHEMA]
+    except Exception:  # noqa: BLE001
+        pass
+    schemas = schemas + [SET_PREF_TOOL_SCHEMA]
     if page == "terminal":
         schemas = schemas + _chart_command_tool_schemas()
     if internals_allowed:
@@ -4837,13 +4878,21 @@ def _run_brain_loop(
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
+    # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's
+    # own instructions still read closest to the turn (and the LANGUAGE line stays last).
+    system_prompt = system_prompt + _depth_addendum(_account_pref(context, "brain_depth"))
     system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
     # W1-A seed plan: fast lane only (pro/research get tool autonomy by design), chat mode
     # only, and never the Terminal — a chart turn follows the technician protocol's read order.
     if lane == "fast" and mode == "chat" and safe_page != "terminal":
         system_prompt = system_prompt + _seed_tool_plan(message)
+    # W3: a Free/Trial attachment was dropped upstream — say so instead of answering a
+    # picture the model never received.
+    if _image_was_gated(context):
+        system_prompt = system_prompt + _IMAGE_GATE_NOTE
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
-    turn_lang = _expected_lang(message, context)
+    # W3: account language is the middle fallback — see _turn_lang.
+    turn_lang = _turn_lang(message, context, _account_pref(context, "lang"))
     system_prompt = system_prompt + _language_directive(turn_lang)
     # A Terminal chart turn spends rounds READING the chart (digest → state → measure)
     # before it draws, so a text-sized budget runs out mid-draw and the turn degrades.
@@ -5062,6 +5111,9 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "search_research":        ("Searching institutional research", "检索机构研报"),
     "get_historical_analogues": ("Searching the desk's history books", "检索历史相似情景"),
     "get_curve_detail":       ("Reading the yield curve",       "解读收益率曲线"),
+    "recall_sessions":        ("Recalling your past sessions",  "回顾您最近的会话"),
+    "get_trade_episodes":     ("Reading your trade journal",    "读取您的交易日志"),
+    "set_chat_preference":    ("Saving your preference",        "保存您的偏好设置"),
     "render_inline_chart":    ("Drawing a chart",               "绘制图表"),
     "annotate_chart":         ("Marking key levels",            "标记关键位置"),
     "chart_digest":           ("Reading your chart",            "读取您的图表"),
@@ -5275,13 +5327,21 @@ def _run_brain_loop_stream(
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
     system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
+    # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's
+    # own instructions still read closest to the turn (and the LANGUAGE line stays last).
+    system_prompt = system_prompt + _depth_addendum(_account_pref(context, "brain_depth"))
     system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
     # W1-A seed plan: fast lane only (pro/research get tool autonomy by design), chat mode
     # only, and never the Terminal — a chart turn follows the technician protocol's read order.
     if lane == "fast" and mode == "chat" and safe_page != "terminal":
         system_prompt = system_prompt + _seed_tool_plan(message)
+    # W3: a Free/Trial attachment was dropped upstream — say so instead of answering a
+    # picture the model never received.
+    if _image_was_gated(context):
+        system_prompt = system_prompt + _IMAGE_GATE_NOTE
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
-    turn_lang = _expected_lang(message, context)
+    # W3: account language is the middle fallback — see _turn_lang.
+    turn_lang = _turn_lang(message, context, _account_pref(context, "lang"))
     system_prompt = system_prompt + _language_directive(turn_lang)
     # A Terminal chart turn spends rounds READING the chart (digest → state → measure)
     # before it draws, so a text-sized budget runs out mid-draw and the turn degrades.
@@ -5624,6 +5684,156 @@ def _json_safe(obj: Any) -> Any:
 
 
 # ---------------------------------------------------------------------------
+# Server-owned turn facts (Analyst OS W3) — account prefs + the image-gate flag
+# ---------------------------------------------------------------------------
+#
+# Two facts the MODEL needs are known only to the server: the caller's stored preferences
+# (``lib.user_prefs.read_user_prefs`` off the record ``require_user`` already returned) and
+# whether this turn's image attachment was dropped by the tier gate.
+#
+# They ride inside ``context`` under one reserved key rather than as new
+# ``_run_brain_loop(...)`` parameters. That is deliberate: ``context`` is already the loop's
+# per-turn envelope, and a new loop kwarg breaks every caller that patches the loop with a
+# pinned signature — including the test that pins the free-tier vision gate, which is the
+# exact turn the image note has to reach. A client CANNOT forge the block: any inbound
+# ``_server`` key is stripped before ours is written.
+_SERVER_CONTEXT_KEY = "_server"
+
+
+def _server_turn_context(context: dict | None, *, account_prefs: dict | None = None) -> dict:
+    """Copy ``context`` with the server-owned block installed (client value stripped)."""
+    src = context if isinstance(context, dict) else {}
+    out = {k: v for k, v in src.items() if k != _SERVER_CONTEXT_KEY}
+    prefs = {k: v for k, v in (account_prefs or {}).items()
+             if k in ("lang", "theme", "brain_depth") and isinstance(v, str)}
+    if prefs:
+        out[_SERVER_CONTEXT_KEY] = {"account_prefs": prefs}
+    return out
+
+
+def _mark_image_gated(context: dict | None) -> dict:
+    """Record that THIS turn's attachment was dropped by the tier gate (see _IMAGE_GATE_NOTE)."""
+    src = context if isinstance(context, dict) else {}
+    out = {k: v for k, v in src.items() if k != _SERVER_CONTEXT_KEY}
+    srv = dict(src.get(_SERVER_CONTEXT_KEY) or {}) if isinstance(src.get(_SERVER_CONTEXT_KEY), dict) else {}
+    srv["image_gated"] = True
+    out[_SERVER_CONTEXT_KEY] = srv
+    return out
+
+
+def _account_pref(context: dict | None, key: str) -> str | None:
+    """One stored preference off the server block, or None. Never raises on a junk context."""
+    src = context if isinstance(context, dict) else {}
+    srv = src.get(_SERVER_CONTEXT_KEY)
+    prefs = srv.get("account_prefs") if isinstance(srv, dict) else None
+    val = prefs.get(key) if isinstance(prefs, dict) else None
+    return val if isinstance(val, str) and val else None
+
+
+def _image_was_gated(context: dict | None) -> bool:
+    src = context if isinstance(context, dict) else {}
+    srv = src.get(_SERVER_CONTEXT_KEY)
+    return bool(srv.get("image_gated")) if isinstance(srv, dict) else False
+
+
+# ---------------------------------------------------------------------------
+# set_chat_preference (Analyst OS W3) — the one tool that WRITES for the user
+# ---------------------------------------------------------------------------
+#
+# "Keep the answers short" and "以后用中文回答" are standing instructions, and until now the
+# chat could only honour them for one turn. This tool stores them where the account page
+# stores its own (auth user_metadata, via lib/user_prefs) so they survive the session.
+#
+# Scope is deliberately two keys. This is the only tool here that mutates anything the user
+# owns, so it stores a display preference and nothing else — no tier, no billing, no email.
+
+SET_PREF_TOOL_SCHEMA: dict = {
+    "name": "set_chat_preference",
+    "description": (
+        "Save a STANDING preference for this signed-in user — how long the answers should "
+        "be, and/or which language to reply in. Call it when the user asks for a lasting "
+        "change: 'keep answers short from now on', 'stop giving me essays', 'always reply "
+        "in Chinese', '以后用中文回答'. Do NOT call it for a one-off ('short answer this "
+        "time' is just a short answer, not a setting). Pass at least one of depth/lang. It "
+        "stores a display preference and NOTHING else — no tier, billing, or account change "
+        "— and the reply must confirm in one sentence that it applies to future sessions too."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "depth": {
+                "type": "string",
+                "enum": ["concise", "standard", "deep"],
+                "description": ("Answer length. 'concise' = fewer words at the SAME evidence "
+                                "bar; 'standard' = the desk default; 'deep' = more of the "
+                                "picture. Never a change to how much is verified."),
+            },
+            "lang": {
+                "type": "string",
+                "enum": ["en", "zh"],
+                "description": "Reply language from now on: 'en' or 'zh'.",
+            },
+        },
+        # At least one — JSON Schema cannot express that through `required` without an anyOf
+        # the API may ignore, so minProperties states it and the tool ENFORCES it (an empty
+        # call comes back as nothing_to_save, never as a silent success).
+        "minProperties": 1,
+        "required": [],
+    },
+}
+
+#: tool input name → user_metadata key (the tool speaks the user's words, not the schema's).
+_SET_PREF_FIELDS = {"depth": "brain_depth", "lang": "lang"}
+
+
+def _tool_set_chat_preference(params: dict, user_id: str) -> dict:
+    """Persist a standing chat preference. Returns a dict ALWAYS — never raises.
+
+    A guest (or an unresolved identity) has no stored record to write to, so it gets an
+    explainable error rather than a no-op that would read to the user as "saved". Same for a
+    store that refuses the write: claiming success on an unpersisted preference is the one
+    outcome worse than failing.
+    """
+    from lib import user_prefs as _up  # noqa: PLC0415 — keep it off gateway module load
+
+    uid = str(user_id or "").strip()
+    if not uid or uid.startswith("guest:") or uid == "unknown":
+        return {"error": "signin_required",
+                "note": ("Saving a preference needs a signed-in account. Tell the user it "
+                         "will stick once they sign in — and answer THIS turn their way "
+                         "anyway; the request itself is honoured now.")}
+
+    patch: dict = {}
+    for field, meta_key in _SET_PREF_FIELDS.items():
+        if params.get(field) is not None:
+            patch[meta_key] = params.get(field)
+    if not patch:
+        return {"error": "nothing_to_save",
+                "note": ("Send depth ('concise'|'standard'|'deep') and/or lang ('en'|'zh') — "
+                         "an empty call saves nothing.")}
+
+    clean, rejected = _up.validate_prefs(patch)
+    if rejected:
+        inverse = {v: k for k, v in _SET_PREF_FIELDS.items()}
+        return {"error": "unknown_value",
+                "allowed": {inverse.get(k, k): list(_up.PREF_VALUES[k])
+                            for k in rejected if k in _up.PREF_VALUES},
+                "note": ("Not a value this preference accepts. Say so plainly and ask which "
+                         "of the allowed values the user meant — do not guess one.")}
+
+    if not _up.write_user_prefs(uid, clean):
+        return {"error": "save_failed",
+                "note": ("The preference store did not accept the write. Tell the user it "
+                         "did NOT save and that the account page can set it — never claim a "
+                         "save that did not happen.")}
+
+    inverse = {v: k for k, v in _SET_PREF_FIELDS.items()}
+    return {"ok": True,
+            "saved": {inverse.get(k, k): v for k, v in clean.items()},
+            "note": "Preference saved — it now applies to every future session."}
+
+
+# ---------------------------------------------------------------------------
 # [NEXT] suggestions contract (W6d) — split follow-up buttons off the reply
 # ---------------------------------------------------------------------------
 
@@ -5651,6 +5861,35 @@ def _expected_lang(message: str, context: dict | None) -> str:
     return profile
 
 
+def _turn_lang(message: str, context: dict | None, account_lang: str | None = None) -> str:
+    """:func:`_expected_lang` with the ACCOUNT language as a middle fallback (W3).
+
+    The ladder, strongest first:
+
+    1. **what the user WROTE** — any CJK is Chinese; real English prose (two 3+ letter words)
+       under a Chinese profile is English. Unchanged: a bare ticker is still not a choice.
+    2. **the surface's own lang** (``context.lang``, stamped by the client from the UI) — a
+       page that names a language wins over a stored preference, because it is where the user
+       is right now. Only a lang that RESOLVES counts; ``klingon`` is garbage, not a signal,
+       and garbage must not outrank the account.
+    3. **the stored account language** — the signed-in user's saved choice, which is how a
+       Chinese-speaking user gets Chinese from the widget on a page that stamped nothing.
+    4. English.
+
+    Implemented as a wrapper that substitutes the account lang into the context's profile
+    slot and delegates, so rules (1) apply to the account language identically and
+    ``_expected_lang``'s own behaviour is untouched for every existing caller.
+    """
+    acct = str(account_lang or "").strip().lower()
+    if acct not in ("en", "zh"):
+        return _expected_lang(message, context)
+    src = context if isinstance(context, dict) else {}
+    raw = str(src.get("lang") or "").strip().lower()
+    if raw.startswith("zh") or raw.startswith("en"):
+        return _expected_lang(message, context)   # the surface named a language: it wins
+    return _expected_lang(message, {**src, "lang": acct})
+
+
 _LANG_NAMES = {"en": "English", "zh": "Chinese (简体中文)"}
 
 
@@ -5673,6 +5912,30 @@ def _language_directive(lang: str) -> str:
                 "Chinese label too — Goldilocks=理想增长, Reflation=再通胀, CAUTION=谨慎 — "
                 "never the bare English token.")
     return out
+
+
+#: The stored answer-length preference, as ONE system line. 'standard' (and absent) say
+#: nothing — the default length is the doctrine's own, and a line asserting it would only
+#: compete with the analyst block for the model's attention.
+#: The evidence bar is named in BOTH directions on purpose: 'concise' must not read as
+#: permission to cite less, and 'deep' must not read as permission to get technical.
+_DEPTH_ADDENDA = {
+    "concise": ("\n\nDEPTH PREFERENCE: this user prefers tight answers — same evidence bar, "
+                "fewer words, no padding sections."),
+    "deep": ("\n\nDEPTH PREFERENCE: this user prefers fuller answers — more of the picture, "
+             "same plain voice, never jargon."),
+}
+
+#: Free/Trial attachments are DROPPED before the model ever sees them (vision is Pro).
+#: Dropping them silently made the model answer a picture it was never handed — it read as
+#: a model that ignored the user. The drop stands; this line makes it honest.
+_IMAGE_GATE_NOTE = ("\n\nNOTE: the user attached an image, but image reading is a Pro "
+                    "capability — acknowledge that in one sentence and answer from the text.")
+
+
+def _depth_addendum(depth: str | None) -> str:
+    """The user's stored answer-length line, or '' for standard/absent/junk."""
+    return _DEPTH_ADDENDA.get(str(depth or "").strip().lower(), "")
 
 
 def _screen_suggestions(items: list[str], lang: str) -> list[str]:
@@ -5936,6 +6199,7 @@ def chat(
     is_guest: bool = False,
     guest_aid: str = "",
     guest_ip: str = "",
+    account_prefs: dict | None = None,
 ) -> dict:
     """Process a brain chat request (non-streaming).
 
@@ -5960,12 +6224,23 @@ def chat(
           when not eligible.  Consumes ONE pro message (same quota + token ledger as a
           normal Pro turn — no new quota bucket).
 
+    account_prefs (W3): the caller's STORED preferences ({lang?, theme?, brain_depth?}) as
+                returned by lib.user_prefs.read_user_prefs off the record require_user
+                already fetched — so threading them costs no network call. Server-verified
+                like user_email: never from the body. Sets the answer LENGTH (see
+                _depth_addendum) and the middle language fallback (see _turn_lang).
+                Always absent/{} for a guest, who has no stored record.
+
     Response shape:
         ok, reply, citations, annotations?, commands?, charts?, suggestions?, symbol?, lane, model,
         thread_id, quota: {lane, remaining, limit, period}, filtered, degraded, is_context_only
     """
     from engine.neuralweb.ask_brain import _post_filter_advice  # noqa: PLC0415
     from lib import ai_costs as _ac  # noqa: PLC0415
+
+    # W3: install the server-owned block (and strip any forged one) before ANY consumer of
+    # `context` runs — the loop, the language resolver and the suggestion screen all read it.
+    context = _server_turn_context(context, account_prefs=account_prefs)
 
     root = _repo_root(root)
     cfg = _load_brain_config(root)
@@ -6103,6 +6378,9 @@ def chat(
     turn_providers = providers
     if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) == 0:
         image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
+        # W3: the DROP stands — but the model is told it happened, so the reply owns the gate
+        # in one sentence instead of silently answering a picture it never received.
+        context = _mark_image_gated(context)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
         if vprovs:
@@ -6178,12 +6456,21 @@ def chat(
     answer_text, was_filtered = _post_filter_advice(answer_text, citations)
     answer_text = _leak_screen(answer_text)  # PART B: prompt-echo → distill refusal
     answer_text, suggestions = _split_suggestions(answer_text)
-    suggestions = _screen_suggestions(suggestions, _expected_lang(clean_msg, context))
+    # Same language ladder the prompt used (W3: account lang is the middle fallback), so a
+    # chip can never come back screened against a different language than the body.
+    suggestions = _screen_suggestions(
+        suggestions, _turn_lang(clean_msg, context, _account_pref(context, "lang")))
 
     # 8. Thread message persistence (best-effort) — persist the CLEAN text (no [NEXT] block)
     if effective_thread_id:
         _append_message(effective_thread_id, "user", clean_msg + ("\n\n[image attached]" if image_blocks else ""))
-        _append_message(effective_thread_id, "assistant", answer_text)
+        # The assistant turn carries SYSTEM-EVENT meta (W3): the tool names this turn
+        # called and the symbols they/the answer named — never user prose, never a score.
+        # brain_user_memory.recall_sessions reads it back so a later "as we discussed last
+        # week" costs one indexed read instead of re-deriving from answer text.
+        from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+        _append_message(effective_thread_id, "assistant", answer_text,
+                        meta=_bum.assistant_meta(final_messages, answer_text))
 
     # 9. Cost settlement from response.usage (fix #1: real tokens, never zeros)
     in_tok = int(usage_dict.get("input_tokens") or 0)
@@ -6264,6 +6551,7 @@ def chat_stream(
     is_guest: bool = False,
     guest_aid: str = "",
     guest_ip: str = "",
+    account_prefs: dict | None = None,
 ) -> Generator[str, None, None]:
     """Process a brain chat request (streaming). Yields SSE strings per contract.
 
@@ -6281,9 +6569,14 @@ def chat_stream(
 
     mode: 'chat' (default) or 'research' (W6b Deep Research).
     user_email: Supabase-verified email for CXI-R23a internals gating (never from body).
+    account_prefs (W3): stored {lang?, theme?, brain_depth?} off the verified record — see
+                chat()'s docstring. Server-derived, never from the body; {} for a guest.
     On quota exhaustion or error, yields a done event with appropriate flags.
     """
     from lib import ai_costs as _ac  # noqa: PLC0415
+
+    # W3: server-owned turn block installed (and any forged one stripped) before use.
+    context = _server_turn_context(context, account_prefs=account_prefs)
 
     root = _repo_root(root)
     cfg = _load_brain_config(root)
@@ -6392,6 +6685,8 @@ def chat_stream(
     turn_providers = providers
     if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) == 0:
         image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
+        # W3: the DROP stands — the model is told, so the reply owns the gate in one sentence.
+        context = _mark_image_gated(context)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
         if vprovs:
@@ -6480,7 +6775,15 @@ def chat_stream(
     #    run's own thread (app/brain_runs.py), so it still happens when the client that
     #    asked the question is long gone — that is what makes the answer recoverable.
     if effective_thread_id and answer_out:
-        _append_message(effective_thread_id, "assistant", answer_out[0])
+        # Same system-event meta as the non-streaming path (W3), with the SYMBOLS half
+        # only: the streaming loop keeps its message list internal and hands back just
+        # usage/answer/thinking side-channels, so no tool-name list is in scope here and
+        # threading new state through the loop is out of this change's scope. `tools`
+        # therefore ships empty on streamed turns — brain_user_memory falls back to
+        # reading the answer text, which is what every pre-W3 row needs anyway.
+        from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+        _append_message(effective_thread_id, "assistant", answer_out[0],
+                        meta=_bum.assistant_meta(None, answer_out[0]))
 
     # 8. Cost record (fix #1: real tokens; fix #2: accumulate ceiling backstop)
     usage_dict = usage_out[0] if usage_out else {}

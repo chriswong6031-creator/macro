@@ -223,3 +223,43 @@ def test_seed_plan_curve_and_analogue_nudges():
     # zh triggers ride the same tuples
     plan = gw._seed_tool_plan("历史上有类似的情况吗")
     assert "get_historical_analogues" in plan
+
+
+# ── 9. Analyst OS W3 — per-user memory tools + preference setter ─────────────
+
+def test_w3_tools_in_allowlists():
+    for name in ("recall_sessions", "get_trade_episodes", "set_chat_preference"):
+        assert name in gw._BRAIN_TOOLS, name
+        assert name in gw._BRAIN_ONLY_TOOLS, name
+        en, zh = gw._TOOL_LABELS[name]
+        assert en and zh and en != zh
+
+
+def test_w3_tools_in_schemas(tmp_path):
+    names = {s["name"] for s in gw._all_brain_tool_schemas(tmp_path)}
+    assert {"recall_sessions", "get_trade_episodes", "set_chat_preference"} <= names
+
+
+def test_recall_sessions_guest_gets_signin_note(tmp_path):
+    out = _dispatch("recall_sessions", {}, tmp_path, user_id="")
+    assert out.get("available") is False
+    assert "sign in" in (out.get("note") or "")
+
+
+def test_trade_episodes_guest_gets_signin_note(tmp_path):
+    out = _dispatch("get_trade_episodes", {}, tmp_path, user_id="")
+    assert out.get("available") is False
+
+
+def test_set_chat_preference_guest_refused(tmp_path):
+    out = _dispatch("set_chat_preference", {"depth": "concise"}, tmp_path, user_id="")
+    assert out.get("error") == "signin_required"
+
+
+def test_recall_sessions_signed_in_reaches_module(tmp_path, monkeypatch):
+    from engine.neuralweb import brain_user_memory as bum
+    monkeypatch.setattr(bum, "_sb_get", lambda path: [])
+    bum.clear_cache()
+    out = _dispatch("recall_sessions", {"days": 7, "limit": 3}, tmp_path, user_id="u1")
+    assert out.get("schema") == "brain.session_recall.v1"
+    bum.clear_cache()

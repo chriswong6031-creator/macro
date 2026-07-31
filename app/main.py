@@ -82,6 +82,10 @@ _REPO_ROOT_FOR_IMPORT = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 if str(_REPO_ROOT_FOR_IMPORT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT_FOR_IMPORT))
 
+# Stored user preferences (lang/theme/brain_depth). MUST come after the sys.path insert
+# above — `lib` lives at the repo root, not under app/. Pure stdlib, no app import cycle.
+from lib import user_prefs  # noqa: E402
+
 REPO = Path(os.environ.get("MACRO_REPO", "/opt/macro"))
 SITE = REPO / "site"
 # VPS live artifacts live outside the git work-tree so a frequent
@@ -1153,6 +1157,10 @@ def brain_chat(body: BrainChatRequest, request: Request, background: BackgroundT
         is_guest=is_guest,
         guest_aid=user.get("_guest_aid") or "",
         guest_ip=user.get("_guest_ip") or "",
+        # Analyst OS W3: stored depth/language, read off the record the auth dependency
+        # already returned — ZERO extra network calls. Server-derived like user_email, so
+        # the body can never set it; a guest record carries none and reads as {}.
+        account_prefs=user_prefs.read_user_prefs(user),
     )
 
     if result.get("quota_exhausted"):
@@ -1194,6 +1202,10 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
     background.add_task(_brain_track_event, aid, ip, user_id)
 
     history = (body.history or [])[:24]
+    # Analyst OS W3: stored depth/language off the already-fetched record (no extra fetch).
+    # Resolved OUTSIDE the generator so it is computed on this request's thread, not on the
+    # brain_runs pump thread that may outlive the socket.
+    account_prefs = user_prefs.read_user_prefs(user)
 
     def _gen():
         yield from gw.chat_stream(
@@ -1211,6 +1223,7 @@ def brain_stream(body: BrainChatRequest, request: Request, background: Backgroun
             is_guest=is_guest,
             guest_aid=guest_aid,
             guest_ip=guest_ip,
+            account_prefs=account_prefs,
         )
 
     # The turn is registered as a server-side RUN before a single byte goes out.

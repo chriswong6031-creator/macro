@@ -17,24 +17,32 @@ Two sinks, one request:
 Identity comes from the Bearer token ONLY (``app.main.require_user``, the same secretless
 verification every authed route uses). Any ``user_id`` in the body is ignored — it is not
 a field on the model and it is never read.
+
+Analyst OS W3: the enum table and the GoTrue merge-write moved to ``lib/user_prefs.py``,
+because the chat gateway now writes a preference too (``set_chat_preference`` — "answer
+shorter from now on"). Two hand-rolled merge-writes is how one path clobbers the other's
+key. This route keeps its own shape (400 with the offending field named, per-sink booleans,
+the ``email_prefs`` mirror) and gains ``brain_depth`` on the body.
 """
 from __future__ import annotations
 
-import json
 import logging
-import urllib.parse
-import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
+from lib import user_prefs
+
 log = logging.getLogger("macro.account_prefs")
 router = APIRouter()
 
-LANGS = ("en", "zh")
-THEMES = ("light", "dark")
+# Back-compat aliases: the value sets now live in lib/user_prefs.PREF_VALUES (one table,
+# shared with the chat tool). Kept as names so nothing importing them breaks.
+LANGS = user_prefs.PREF_VALUES["lang"]
+THEMES = user_prefs.PREF_VALUES["theme"]
+DEPTHS = user_prefs.PREF_VALUES["brain_depth"]
 
 
 def _current_user(authorization: str | None = Header(default=None)) -> dict:
@@ -48,32 +56,17 @@ def _supabase() -> tuple[str, str]:
     return billing.SUPABASE_URL, billing.SUPABASE_SERVICE_ROLE_KEY
 
 
-def _write_user_metadata(user_id: str, patch: dict) -> bool:
+def _write_user_metadata(user_id: str, patch: dict, base: dict) -> bool:
     """Merge ``patch`` into the user's auth ``user_metadata``. False on any failure.
 
-    The merge is done HERE, from the record the token verification already returned,
-    rather than trusting the admin endpoint's own merge semantics — GoTrue versions have
-    differed on whether a partial ``user_metadata`` replaces or merges, and losing an
-    unrelated key a future feature stored would be a silent data loss.
+    Thin delegate to ``lib.user_prefs.write_user_prefs``. The merge base is passed in from
+    the record the token verification already returned, so this path still makes exactly ONE
+    network call (a PUT) — the lib's own admin GET is for callers that hold only a user id.
+    ``app.billing``'s constants are injected so this process has one credential source.
     """
-    base_url, key = _supabase()
-    if not user_id or not key:
+    if not user_id:
         return False
-    body = json.dumps({"user_metadata": patch}).encode()
-    req = urllib.request.Request(
-        f"{base_url}/auth/v1/admin/users/{urllib.parse.quote(str(user_id))}",
-        data=body,
-        method="PUT",
-        headers={"apikey": key, "Authorization": f"Bearer {key}",
-                 "Content-Type": "application/json", "Accept": "application/json"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=6) as resp:
-            resp.read()
-        return True
-    except Exception as exc:  # noqa: BLE001
-        log.warning("account_prefs: metadata write failed for %s (%s)", user_id, type(exc).__name__)
-        return False
+    return user_prefs.write_user_prefs(str(user_id), patch, base=base, supabase=_supabase())
 
 
 def _mirror_email_lang(user_id: str, lang: str) -> bool:
@@ -96,11 +89,14 @@ def _mirror_email_lang(user_id: str, lang: str) -> bool:
 class PrefsRequest(BaseModel):
     lang: str | None = Field(None, description="'en' | 'zh'")
     theme: str | None = Field(None, description="'light' | 'dark'")
+    # Analyst OS W3: how many WORDS the chat answers with. Same evidence bar at every
+    # setting — 'concise' buys a shorter answer, never a thinner-sourced one.
+    brain_depth: str | None = Field(None, description="'concise' | 'standard' | 'deep'")
 
 
 @router.post("/api/account/prefs")
 def save_prefs(body: PrefsRequest, user: dict = Depends(_current_user)) -> dict:
-    """Store the caller's display preferences. Body ``{lang?, theme?}``; at least one.
+    """Store the caller's preferences. Body ``{lang?, theme?, brain_depth?}``; at least one.
 
     Returns ``{"ok", "prefs", "metadata", "email_prefs"}`` — the two booleans say which
     sinks actually took the write, so a partial failure is visible instead of silently
@@ -110,23 +106,22 @@ def save_prefs(body: PrefsRequest, user: dict = Depends(_current_user)) -> dict:
     if not user_id:
         raise HTTPException(401, "no user id")
 
+    # One validation loop over the lib's enum table — a value the lib would refuse is
+    # rejected HERE, by name, so the client learns which field was wrong.
     patch: dict[str, Any] = {}
-    if body.lang is not None:
-        lang = body.lang.strip().lower()
-        if lang not in LANGS:
-            raise HTTPException(400, f"unknown lang '{body.lang}'")
-        patch["lang"] = lang
-    if body.theme is not None:
-        theme = body.theme.strip().lower()
-        if theme not in THEMES:
-            raise HTTPException(400, f"unknown theme '{body.theme}'")
-        patch["theme"] = theme
+    for key, raw in (("lang", body.lang), ("theme", body.theme),
+                     ("brain_depth", body.brain_depth)):
+        if raw is None:
+            continue
+        val = user_prefs.normalize_pref(key, raw)
+        if val is None:
+            raise HTTPException(400, f"unknown {key} '{raw}'")
+        patch[key] = val
     if not patch:
-        raise HTTPException(400, "nothing to save (send lang and/or theme)")
+        raise HTTPException(400, "nothing to save (send lang, theme and/or brain_depth)")
 
-    existing = dict(user.get("user_metadata") or {})
-    existing.update(patch)
-    stored = _write_user_metadata(str(user_id), existing)
+    stored = _write_user_metadata(str(user_id), patch,
+                                  dict(user.get("user_metadata") or {}))
 
     mirrored = False
     if "lang" in patch:
