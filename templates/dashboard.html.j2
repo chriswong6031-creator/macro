@@ -204,8 +204,7 @@
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 <link rel="stylesheet" href="tier_preview.css">
 {% if mode != 'stocks' %}
-<link rel="preload" href="fonts/InterDisplay-600.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/JetBrainsMono-100-800.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/InterDisplay-600.woff2" as="font" type="font/woff2" crossorigin>
 {% endif %}
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
