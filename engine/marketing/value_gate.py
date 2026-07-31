@@ -255,7 +255,16 @@ _BRIDGE_RE = re.compile(
 )
 
 #: A body this short is a stem, not a post.
-_MIN_BODY_WORDS = 6
+#:
+#: PUBLIC because producers need it, not only the gate. A lane that selects copy
+#: on a different definition of "usable" than the gate admits on will build
+#: drafts the gate then refuses, and the post is lost between them with nobody
+#: at fault (engine/press/research_lane.compose_post, 2026-07-30). Read this name
+#: rather than re-declaring the number, so raising the floor moves every stage.
+MIN_BODY_WORDS = 6
+#: Internal alias — this module's predicates were written against the private
+#: name and there is no reason to churn them.
+_MIN_BODY_WORDS = MIN_BODY_WORDS
 #: Jaccard at or above which the copy is a restatement of its own source
 #: headline (§7.2: "We rewrote the headline is not an answer").
 _RESTATEMENT_JACCARD = 0.60

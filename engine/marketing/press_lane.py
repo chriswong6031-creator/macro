@@ -684,13 +684,21 @@ def _emit_outbox_item(
     )
     if _would_block:
         _verdict = _source.get("value_gate") or {}
-        print(
-            "::notice title=press-lane-value-gate::"
-            f"{item_id}: would abstain ({','.join(_verdict.get('reasons') or [])}) "
-            f"— enforce={_verdict.get('enforced')}",
-            flush=True,
-        )
-        if _ob._value_gate_enforced(cfg):
+        # SAY WHICH IT IS (2026-07-30). One line served both modes, so an armed
+        # refusal announced itself in the conditional voice — "would abstain …
+        # enforce=True" is what a dropped post looked like in the nightly log,
+        # and a reader scanning for trouble sees a rehearsal. A post that does
+        # not ship is a ::warning, not a ::notice.
+        _enforced = _ob._value_gate_enforced(cfg)
+        _why = ",".join(_verdict.get("reasons") or [])
+        if _enforced:
+            print("::warning title=press-lane-value-gate::"
+                  f"{item_id}: ABSTAINED, not posted ({_why})", flush=True)
+        else:
+            print("::notice title=press-lane-value-gate::"
+                  f"{item_id}: would abstain ({_why}) — shadow mode, post ships",
+                  flush=True)
+        if _enforced:
             return None
 
     try:
