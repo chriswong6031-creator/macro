@@ -46,7 +46,7 @@ def test_macro_desk_source_and_rendered_pages_opt_in() -> None:
 
 
 def test_sector_central_double_frame_is_removed() -> None:
-    css = _read("templates/theme.css")
+    css = _read("templates/macro-desk.css")
     selector = "body.macro-desk.page-sector-central .scc-cycle .cyc-stage"
     start = css.index(selector)
     rule = css[start : css.index("}", start)]
@@ -56,9 +56,9 @@ def test_sector_central_double_frame_is_removed() -> None:
     assert "box-shadow: none" in rule
 
 
-def test_macro_desk_css_is_synced_and_cache_busted() -> None:
-    template_css = (ROOT / "templates/theme.css").read_bytes()
-    site_css = (ROOT / "site/theme.css").read_bytes()
+def test_macro_desk_css_is_synced_scoped_and_cache_busted() -> None:
+    template_css = (ROOT / "templates/macro-desk.css").read_bytes()
+    site_css = (ROOT / "site/macro-desk.css").read_bytes()
     assert site_css == template_css
 
     version = hashlib.sha256(site_css).hexdigest()[:8]
@@ -70,11 +70,21 @@ def test_macro_desk_css_is_synced_and_cache_busted() -> None:
         "allocation_canada",
     }
     for page in rendered_pages:
-        assert f"theme.css?v={version}" in _read(f"site/{page}.html"), page
+        assert f"macro-desk.css?v={version}" in _read(f"site/{page}.html"), page
+
+    linked_pages = {
+        path.stem
+        for path in (ROOT / "site").glob("*.html")
+        if "macro-desk.css?v=" in path.read_text(encoding="utf-8")
+    }
+    assert linked_pages == rendered_pages
+
+    # The opt-in layer must not churn the immutable global theme boundary.
+    assert (ROOT / "site/theme.css").read_bytes() == (ROOT / "templates/theme.css").read_bytes()
 
 
 def test_rotation_time_machine_control_is_mobile_scroll_safe() -> None:
-    css = _read("templates/theme.css")
+    css = _read("templates/macro-desk.css")
     assert "body.macro-desk.page-rotation .tm-unit-row" in css
     assert "overflow-x: auto" in css
     assert "body.macro-desk.page-rotation .tm-tier-btns { min-width: max-content; }" in css
