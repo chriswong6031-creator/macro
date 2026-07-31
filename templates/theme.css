@@ -232,6 +232,197 @@ html body h1 { font-size: 24px; }
 html body .badge { font-size: 14px; padding: 4px 13px; }
 html body .prob .pc { font-size: 18px; font-weight: 700; }
 
+/* ---- Macro desk surface language --------------------------------------------
+   Dense market-workflow pages opt in with `body.macro-desk`. The tokens and
+   geometry are ported from macro.html's terminal layer: one 4px spacing rhythm,
+   one 14px panel radius, a machined top edge, restrained depth, tabular figures,
+   and sentence-case section headings. This keeps the older sector / rotation
+   destinations congruent with the macro command centre without forcing its
+   specialised layout onto unrelated pages. */
+body.macro-desk {
+  --desk-num: var(--font-mono);
+  --desk-hair: color-mix(in srgb, var(--line) 78%, transparent);
+  --desk-hair-strong: var(--line);
+  --desk-tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --desk-ink-2: color-mix(in srgb, var(--text) 66%, transparent);
+  --desk-r-sm: 8px;
+  --desk-r-md: 10px;
+  --desk-r-lg: 14px;
+  --desk-sp-2: 8px;
+  --desk-sp-3: 12px;
+  --desk-sp-4: 16px;
+  --desk-sp-5: 20px;
+  --desk-sp-6: 24px;
+  --card-shadow: inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent),
+    0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
+  font-size: 14px;
+  line-height: 1.55;
+}
+html[data-theme="light"] body.macro-desk {
+  --desk-hair: color-mix(in srgb, var(--line) 92%, transparent);
+  --desk-ink-2: color-mix(in srgb, var(--text) 70%, transparent);
+  --card-shadow: inset 0 1px 0 rgba(255,255,255,.72),
+    0 1px 2px rgba(20,30,50,.05), 0 14px 30px -20px rgba(20,30,50,.16);
+}
+body.macro-desk h1 {
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -.02em;
+}
+body.macro-desk h2:not(.site-nav h2, .settings-pop h2, .mmb-main h2) {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -.01em;
+  text-transform: none;
+}
+html[data-lang="zh"] body.macro-desk h1,
+html[data-lang="zh"] body.macro-desk h2:not(.site-nav h2, .settings-pop h2, .mmb-main h2) {
+  letter-spacing: 0;
+}
+body.macro-desk :is(.num, .tnum, th, td.num, th.num, .conv-score, .kpi .v, .asof) {
+  font-family: var(--desk-num);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -.01em;
+}
+body.macro-desk :is(.panel, .card, .detail, .gcard, .lcard, .sc-tablecard,
+  .sr-map-card, .sr-table-wrap, .sr-versus, .sr-turns, .sr-tr-wrap, .sr-strip,
+  .sr-vb-wrap, .rc-card, .rc-card-cn, .td-sector-card, .tpo-node-card) {
+  border-color: var(--desk-hair-strong);
+  border-radius: var(--desk-r-lg);
+  box-shadow: var(--card-shadow);
+}
+body.macro-desk :is(.card, .gcard, .lcard, .rc-card, .rc-card-cn,
+  .td-sector-card, .tpo-node-card) {
+  transition: transform .18s ease, border-color .18s ease, box-shadow .2s ease;
+}
+body.macro-desk :is(.card, .gcard, .lcard, .rc-card, .rc-card-cn,
+  .td-sector-card, .tpo-node-card):hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--link) 34%, var(--desk-hair-strong));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent),
+    0 18px 36px -22px color-mix(in srgb, var(--link) 36%, rgba(0,0,0,.45));
+}
+
+/* Sector Central: the chart and its readout are already complete panels. The
+   old .cyc-stage frame wrapped both in a third opaque panel, producing the
+   large white container called out in the UI review. Let the page canvas show
+   through and keep the two useful surfaces independent. */
+body.macro-desk.page-sector-central .scc-wrap {
+  max-width: 1400px;
+  padding: var(--desk-sp-5) var(--desk-sp-6) 72px;
+}
+body.macro-desk.page-sector-central .scc-cycle .cyc-stage {
+  gap: var(--desk-sp-5);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+body.macro-desk.page-sector-central .scc-cycle :is(.cyc-hero, .cyc-detail),
+body.macro-desk.page-sector-central :is(.regime .rg-headline-row, .grader,
+  .scf-wrap, .lead-wrap, .card) {
+  border-color: var(--desk-hair-strong);
+  border-radius: var(--desk-r-lg);
+  box-shadow: var(--card-shadow);
+}
+body.macro-desk.page-sector-central .scc-cycle .cyc-hero { padding: 20px 22px 14px; }
+body.macro-desk.page-sector-central .scc-section-h {
+  display: grid;
+  grid-template-columns: 3px minmax(0, 1fr);
+  column-gap: var(--desk-sp-3);
+  align-items: center;
+  margin: 28px 0 var(--desk-sp-3);
+  padding-bottom: var(--desk-sp-3);
+  border-bottom: 1px solid var(--desk-hair-strong);
+}
+body.macro-desk.page-sector-central .scc-section-h::before {
+  content: "";
+  grid-row: 1 / span 2;
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--link),
+    color-mix(in srgb, var(--link) 35%, transparent));
+}
+body.macro-desk.page-sector-central .scc-section-h :is(h2, .scc-section-sub) {
+  grid-column: 2;
+}
+body.macro-desk.page-sector-central .scc-section-h h2 { font-size: 17px; }
+body.macro-desk.page-sector-central .scc-section-h .scc-section-sub {
+  color: var(--desk-ink-2);
+}
+body.macro-desk.page-sector-central .board { gap: var(--desk-sp-4); }
+body.macro-desk.page-sector-central .scc-boardhead {
+  margin-top: 34px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Rotation and confluence pages: repeated `.wrap` blocks become one continuous
+   command-desk rhythm; their actual maps, tables and cards remain the surfaces. */
+body.macro-desk.page-rotation .wrap,
+body.macro-desk.page-subsectors .wrap {
+  width: min(100%, 1440px);
+  margin: 0 auto;
+  padding: var(--desk-sp-5) var(--desk-sp-6);
+}
+body.macro-desk.page-rotation .wrap + .wrap { padding-top: 0; }
+body.macro-desk.page-rotation :is(.tm-section, .td-section, .tpo-section) {
+  margin-top: var(--desk-sp-6);
+  padding-top: var(--desk-sp-6);
+  border-top: 1px solid var(--desk-hair-strong);
+}
+body.macro-desk.page-rotation .sr-head .sub,
+body.macro-desk.page-subsectors :is(.sc-lede, .sc-sub) {
+  color: var(--desk-ink-2);
+  font-size: 13px;
+}
+body.macro-desk.page-rotation :is(.sr-map-card, .sr-turns, .sr-tr-wrap,
+  .sr-strip, .sr-vb-wrap, .tm-map-box, .tm-episodes-panel) {
+  border-color: var(--desk-hair-strong);
+  border-radius: var(--desk-r-lg);
+  box-shadow: var(--card-shadow);
+}
+body.macro-desk.page-rotation .tm-unit-row {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+body.macro-desk.page-rotation .tm-tier-btns { min-width: max-content; }
+
+/* Thematic basket pages share the same crisp panels and four-point spacing,
+   while preserving their category colours and chart-specific layouts. */
+body.macro-desk.page-baskets :is(.panel, .detail, .card, .tcard, .rvx-card) {
+  border-color: var(--desk-hair-strong);
+  border-radius: var(--desk-r-lg);
+  box-shadow: var(--card-shadow);
+}
+body.macro-desk.page-baskets :is(.cards, .desk) { gap: var(--desk-sp-4); }
+body.macro-desk.page-baskets > h2,
+body.macro-desk.page-baskets .rvx-sec-h > h2,
+body.macro-desk.page-baskets #theme-context-hero h2 {
+  margin-top: 32px;
+  padding-bottom: var(--desk-sp-3);
+  border-bottom: 1px solid var(--desk-hair-strong);
+}
+
+@media (max-width: 720px) {
+  body.macro-desk.page-sector-central .scc-wrap,
+  body.macro-desk.page-rotation .wrap,
+  body.macro-desk.page-subsectors .wrap {
+    padding-left: var(--desk-sp-3);
+    padding-right: var(--desk-sp-3);
+  }
+  body.macro-desk.page-sector-central .scc-cycle .cyc-hero { padding: 14px 12px 8px; }
+  body.macro-desk.page-sector-central .scc-section-h { margin-top: var(--desk-sp-5); }
+  body.macro-desk.page-rotation .tm-unit-row { padding-bottom: 4px; }
+}
+
 /* buttons — shared polish mirroring the landing's interactive feel: smooth
    transitions, a subtle lift + accent glow on hover, a pressed state, and a
    crisp keyboard focus ring. The accent is always --link (per theme); the
