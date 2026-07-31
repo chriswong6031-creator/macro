@@ -216,7 +216,12 @@ def _price_id(lookup_key: str) -> str:
     stripe = _stripe()
     data = stripe.Price.list(lookup_keys=[lookup_key], active=True, limit=1).data
     if not data:
-        raise HTTPException(500, f"price '{lookup_key}' not found in Stripe — run scripts/stripe_bootstrap.py")
+        # Public error bodies must never carry runbook commands or Stripe provisioning
+        # state — the operator signal lives in the server log only.
+        log.error(
+            "billing: price %r is missing in the current Stripe mode — "
+            "run scripts/stripe_bootstrap.py (--allow-live against the live key)", lookup_key)
+        raise HTTPException(503, "billing is temporarily unavailable, please try again shortly")
     pid = data[0].id
     with _PRICE_CACHE_LOCK:
         _PRICE_CACHE[lookup_key] = (pid, now + 300)
@@ -258,8 +263,13 @@ def _promotion_code(offer_key: str) -> Any:
     stripe = _stripe()
     data = stripe.PromotionCode.list(code=spec["promotion_code"], limit=1).data
     if not data:
-        raise HTTPException(
-            503, f"offer '{offer_key}' is not provisioned in Stripe — run scripts/stripe_bootstrap.py")
+        # Public error bodies must never carry runbook commands or Stripe provisioning
+        # state — the operator signal lives in the server log only.
+        log.error(
+            "billing: offer '%s' promotion code %r is missing in the current Stripe mode — "
+            "run scripts/stripe_bootstrap.py (--allow-live against the live key)",
+            offer_key, spec["promotion_code"])
+        raise HTTPException(503, f"offer '{offer_key}' is temporarily unavailable")
     promo = data[0]
     with _PROMO_CACHE_LOCK:
         _PROMO_CACHE[offer_key] = (promo, now + 30)
@@ -461,7 +471,8 @@ def _offer_discount(
     promo = _promotion_code(offer_key)
     promo_id = _field(promo, "id")
     if not promo_id:
-        raise HTTPException(503, f"offer '{offer_key}' has no Stripe promotion-code id")
+        log.error("billing: offer '%s' promotion code carries no id in the Stripe payload", offer_key)
+        raise HTTPException(503, f"offer '{offer_key}' is temporarily unavailable")
     return [{"promotion_code": promo_id}]
 
 
