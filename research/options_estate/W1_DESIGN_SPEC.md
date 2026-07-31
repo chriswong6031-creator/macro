@@ -91,10 +91,50 @@ design lane, not resolved in the build (spawn-handoff law).
 
 **Copy**
 12. All fixed labels are pinned EN+ZH in §5/§6. Do not translate, re-word, or "improve" them.
-13. Every new panel carries exactly one stance chip and at most one footnote, one as-of —
-    same law as the base spec. The three empty-state panels still carry a stance (usually
-    **Ignore** or **Watch — don't chase** — see §5.3) even though they show no data: "the
-    honest answer is nothing yet" is itself a stance, not an excuse to omit one.
+13. **Word budget is a ceiling, not a mandate — corrected 2026-07-30, design-lane ruling.**
+    `WORKSPACE_DESIGN_SPEC.md` §0's "exactly one stance chip + at most one footnote + one
+    as-of per panel" caps what a single panel is allowed to carry. It has never been, and is
+    not, a requirement that every panel carry a stance — a panel with zero stance chips
+    satisfies that ceiling exactly as well as one with a single chip. The binding rule for
+    *how many stance chips appear across a page* is the masterplan's own verdict law
+    (`OIP_MASTERPLAN.md` §3), reproduced here in full so this item is self-contained:
+    *"Each surface keeps exactly one decision element (the stance chip row of its
+    hero/footer). New shelves add facts, never verdicts — machine-checkable: one
+    `data-verdict-surface` marker per page; CI greps for duplicates."* A prior draft of this
+    item conflated the two laws — it read the per-panel ceiling as a per-panel mandate and
+    had every new panel, including both empty states, carry its own chip. That reading is
+    **superseded by this item** and was visibly wrong in the mockup: the identical chip
+    "Watch — don't chase" stacked five times down one page
+    (`mockups/refs/oip/w1/02_ticker_core_en_dark.png`, pre-fix crop), reading as boilerplate
+    a reader learns to skip — the opposite of a decision element.
+
+    Applied to this wave's five new reads: **exactly one stance chip survives in Ticker
+    mode, on the existing verdict surface — the Name-header panel (§5.1 item 1: spot, regime
+    headline, stance, expected range), the same role gex.html's own per-symbol card already
+    plays as "the existing verdict hero" (§3.5).** That panel's `.oew-ic-foot` row is the
+    sole element carrying the `data-verdict-surface` marker (bare boolean attribute — see
+    §5.1 for the exact markup). **Every other new panel this wave ships — "How the day
+    traded" (§3.5), "Rich or cheap?" and "Where positions built" (§5.2, all their coverage-
+    gap/young-window variants included), and both `.oew-notyet` empty states (§5.3) — drops
+    the stance chip entirely**, in every state each panel can render, and keeps only its
+    footnote sentence and its as-of stamp (where it has one). This explicitly includes both
+    empty states: rendering no data is not itself grounds for a second decision element on
+    the page — the plain-word "not measured yet" sentence already discloses the honest
+    nothing-yet, and does not need a chip to say it a second time. The wall-persistence
+    cross-check chip (§4, `.oew-wcheck`) was never a candidate here in the first place —
+    §0.6 already rules it "not a stance and not a pip," and "The map" panel itself is
+    unchanged by this wave and carries no stance chip of its own (verified against the
+    mockup: its footer is caveat + as-of only, no `.oew-stance`) — so §4 needed no edit
+    beyond this cross-reference.
+
+    Out of scope for this item, flagged not fixed: the persistent chrome's `.oew-nofuse`
+    banner and the pre-existing "Today's measured flow" panel (§5.1 item 9, unchanged) also
+    render a `.oew-stance` and also appear in the affected crops. Both are
+    `WORKSPACE_DESIGN_SPEC.md`-owned, pre-date this wave, and sit outside every file this
+    document's §12 lists — §0.13, old or new reading, has only ever governed the panels *this
+    wave* introduces. A fully page-wide reading of the verdict law would eventually want
+    those addressed too; that is a base-spec decision for a separate PR, not a silent
+    addition to this targeted revision's scope.
 14. No panel claims "validated." `iv_rank`'s `low_confidence` state is disclosed as "history
     building — Nd," never softened, never hidden.
 
@@ -454,7 +494,8 @@ implying a magic whole-market composite: *"SPY's session, read as the market's" 
     <!-- filmstrip <figure> from §3.3, inserted then window.ilxReveal(host) called -->
   </div>
   <div class="oew-pfoot">
-    <span class="oew-stance st-watch">{{ t("Watch — don't chase", '观察—勿追高') }}</span>
+    <!-- NO stance chip (§0.13 ruling) — this is not the verdict surface; the
+         Name-header hero above already carries the page's one data-verdict-surface -->
     <span>{{ t('A record of how today unfolded, not a forecast for tomorrow.', '记录今日走势，不预测明日。') }}</span>
     <span class="oew-asof mono"><!-- session_date --></span>
   </div>
@@ -482,6 +523,15 @@ verdict hero, the same way the masterplan names it ("gex.html's detail head").
 `wall_persistence` (PR #3976) is deliberately **not** its own panel. It is an independent,
 signing-free cross-check on the SAME two levels "The map" already shows (Ceiling/Floor),
 so it belongs on those rows, not in a new place a reader has to learn.
+
+**Checked against the §0.13 verdict-law ruling and found not applicable:** the only new
+markup this section adds is the `.oew-wcheck` chip below, already ruled "not a stance and
+not a pip" (§0.6) — it was never a stance-chip candidate. "The map" panel itself is
+unchanged by this wave and carries no stance chip of its own (its footer is one caveat
+sentence — "Walls are measured from this close, so price always starts inside the band." —
+plus an as-of stamp, no `.oew-stance`; verified against `mockups/oip_w1/w1_mockup.html`).
+Nothing in this section changed as a result of that ruling; this note exists so a reader who
+starts here does not have to re-derive that from §0.13.
 
 ### 4.1 Field grounding
 
@@ -542,7 +592,9 @@ placeholder row.
 Existing panels keep their exact current markup (unchanged, verified against
 `options.html.j2:1120-1264`); new panels are marked **NEW**. Order, top to bottom:
 
-1. Name header (spot, regime headline, stance, expected range) — unchanged
+1. Name header (spot, regime headline, stance, expected range) — unchanged markup, **plus
+   one new attribute** (see below): this panel's stance-chip row is the wave's sole
+   `data-verdict-surface`
 2. **NEW — "How the day traded"** (the filmstrip, §3.5)
 3. "The map" (walls/flip/magnet) — unchanged rows, **enhanced** with the wall-check chip
    (§4)
@@ -560,6 +612,22 @@ row (which stays exactly where doctrine already validated it); the two always-or
 empty panels sit together, late, near the flow/shelf material they're conceptually closest
 to (both are "what we'd tell you if the ledger existed yet") — this keeps the top of the
 page dense with real information and the empty states from interrupting it.
+
+**Where the single `data-verdict-surface` marker lives (§0.13 ruling, made concrete):** add
+the bare attribute `data-verdict-surface` (boolean — no value) to the Name-header panel's
+existing stance-row wrapper, i.e. its `.oew-ic-foot` div (the row already holding the
+`.oew-stance` chip and the expected-range text) becomes
+`<div class="oew-ic-foot" data-verdict-surface style="margin-top:12px">` — one attribute
+added to one already-existing element, nothing else about this panel changes. This is the
+only element in Ticker mode's five new/enhanced panels that keeps its stance chip; it is
+therefore also the only element in scope for the marker. `mockups/oip_w1/w1_mockup.html`
+carries this attribute verbatim (search `data-verdict-surface`).
+
+Scoped to Ticker mode only — whether Brief mode's own hero (W2, not built yet) or gex.html's
+own pre-existing verdict hero already carries this marker, or should gain it, is not decided
+here: gex.html's hero is untouched by W1 (§3.5 adds only the filmstrip below it), so this
+spec neither asserts its current state nor adds the attribute to it. Each surface's own
+build wave owns adding its own single marker.
 
 ### 5.2 "Rich or cheap" — real panel, young-window honesty (not an empty state — §0.3)
 
@@ -592,7 +660,8 @@ of 100" phrasing the data does not support.
     </p>
   </div>
   <div class="oew-pfoot">
-    <span class="oew-stance st-watch">{{ t("Watch — don't chase", '观察—勿追高') }}</span>
+    <!-- NO stance chip (§0.13 ruling) — the Name-header hero above carries the page's
+         one data-verdict-surface; this footer is a fact about the reading, not a verdict -->
     <span>{{ t('Still building toward a full year of history — read this as a rough placement, not a settled rank.', '仍在积累完整一年的历史 — 请视为粗略定位，而非确定分位。') }}</span>
     <span class="oew-asof mono"><!-- meta.asof --></span>
   </div>
@@ -634,7 +703,8 @@ this name to place today's cost against its own past."*
     </div>
   </div>
   <div class="oew-pfoot">
-    <span class="oew-stance st-watch">{{ t("Watch — don't chase", '观察—勿追高') }}</span>
+    <!-- NO stance chip (§0.13 ruling) — the Name-header hero above carries the page's
+         one data-verdict-surface; this footer is a fact about the reading, not a verdict -->
     <span>{{ t('A count of contracts opened or closed, not a direction call.', '合约新增或平仓的计数，并非方向判断。') }}</span>
     <span class="oew-asof mono"><!-- oi_delta_clusters.latest_snapshot --></span>
   </div>
@@ -658,8 +728,9 @@ this name to place today's cost against its own past."*
   panel renders the block's own `note_en`/`note_zh` **verbatim** as the panel body (replace
   the two-column layout with a single plain sentence) — never a generic "no data" fallback,
   because the engine has already composed the exact right sentence for each of the ~7
-  distinct coverage states (§0.18's PR body table). Stance for this state is **Ignore**
-  (there is nothing here to watch, not even an absence worth tracking).
+  distinct coverage states (§0.18's PR body table). No stance chip renders in this state
+  either (§0.13 ruling) — the engine's own composed sentence already says plainly that
+  there is nothing here to watch; a chip would restate that as a second decision element.
 
 ### 5.3 The two full empty-state panels
 
@@ -682,7 +753,9 @@ verified absent):
     </div>
   </div>
   <div class="oew-pfoot">
-    <span class="oew-stance st-ignore">{{ t('Ignore', '忽略') }}</span>
+    <!-- NO stance chip (§0.13 ruling) — "nothing here to act on" is already the honest
+         answer in plain words; a chip does not need to say it a second time, and the
+         Name-header hero above already carries the page's one data-verdict-surface -->
     <span>{{ t('Not measured yet — nothing here to act on.', '尚未测量 — 此处暂无可据以行动的内容。') }}</span>
   </div>
 </div>
@@ -704,7 +777,7 @@ consumers of `S-FRONT-CHARM`/`S-VANNA-RELIEF` anywhere in `templates/`):
     </div>
   </div>
   <div class="oew-pfoot">
-    <span class="oew-stance st-ignore">{{ t('Ignore', '忽略') }}</span>
+    <!-- NO stance chip (§0.13 ruling) — see the note on the other empty state above -->
     <span>{{ t('Not measured yet — nothing here to act on.', '尚未测量 — 此处暂无可据以行动的内容。') }}</span>
   </div>
 </div>
@@ -713,7 +786,10 @@ consumers of `S-FRONT-CHARM`/`S-VANNA-RELIEF` anywhere in `templates/`):
 Both explicitly avoid every falsifier/refutation register word (doctrine ban) and avoid
 "coming soon" marketing language — they say plainly what the panel is *for* and that it
 does not exist yet, which is the honest, useful form of an empty state per the doctrine's
-own worked example (Turn Watch, before/after).
+own worked example (Turn Watch, before/after). Neither carries a stance chip (§0.13 ruling)
+— "not measured yet — nothing here to act on" already discloses the honest nothing-yet in
+plain words; the `st-ignore` chip a prior draft placed here was a second, redundant decision
+element saying the same thing twice.
 
 ### 5.4 `.oew-notyet` — the shared first-class empty-state shell
 
@@ -858,7 +934,8 @@ law (item 6) plus the page-level `.oew *` blanket rule as a second, redundant gu
 
 | Law | How this design satisfies it |
 |---|---|
-| Tier 1 = state + stance | Every new panel, including both empty states, carries exactly one stance chip |
+| Tier 1 = state + stance | Every new panel discloses its state and the reader's stance toward it in plain words — as a stance *chip* only on the one panel that is this read's decision element (the Name-header hero), and as its own caveat or nothing-yet sentence everywhere else (§0.13); the content requirement is satisfied by prose where the chip is not |
+| Verdict law (`OIP_MASTERPLAN.md` §3) | Exactly one decision element survives per Ticker-mode read — the Name-header hero's stance chip, this wave's sole `data-verdict-surface` (§0.13, §5.1 marker placement). Every new shelf below it — filmstrip, rich-or-cheap, where-positions-built, both empty states — adds facts, never a second verdict |
 | Plain words | Every new string is authored plain; every payload-sourced note (`note_en`, `arc_shape_en`, `coverage.quality_en`) was already written plain by its own engine module — reused, not translated a second time |
 | Numbers carry meaning | IV rank rides the same 5-pip fill-track as the posture console; ΔOI bars are pure length + a labeled mono value; the filmstrip's track is the coverage denominator itself |
 | Word budgets | Titles ≤4 words ("Rich or cheap?", "Where positions built", "How the day traded", "What the move is worth", "Expiration pressure" — 2–4 words each); subtitles ≤14; one footer sentence; one as-of |

@@ -553,6 +553,8 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
       </div>
     </div>
   </div>
+  <!-- persistent chrome, whole-market stance — pre-existing, unchanged by W1, out of the
+       §0.13 verdict-law ruling's file scope (WORKSPACE_DESIGN_SPEC.md-owned). Left as-is. -->
   <div class="oew-nofuse">
     <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
     <span><span class="l-en">Four readings, shown side by side and never averaged into one score.</span><span class="l-zh">四项读数并列呈现，不会合成单一评分。</span></span>
@@ -597,7 +599,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
     </div>
     <h3 class="oew-tk-regime"><span class="l-en">Jumpy — moves get amplified</span><span class="l-zh">剧烈 — 波动被放大</span></h3>
     <p class="oew-tk-say"><span class="l-en">Dealer hedging adds to moves today — swings and air-pockets run bigger than usual.</span><span class="l-zh">今日做市商对冲会加剧波动 — 摆动与急跌幅度大于平常。</span></p>
-    <div class="oew-ic-foot" style="margin-top:12px">
+    <div class="oew-ic-foot" data-verdict-surface style="margin-top:12px">
       <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
       <span class="oew-ic-em"><span class="l-en">expected tomorrow</span><span class="l-zh">明日预期区间</span> <b class="mono">735.03–748.35</b> <span class="mono">±0.90%</span></span>
     </div>
@@ -625,7 +627,6 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
       </figure>
     </div>
     <div class="oew-pfoot">
-      <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
       <span><span class="l-en">Premium built steadily in one direction and stayed. Crossed the flip twice, closed above it.</span><span class="l-zh">权利金全天单向累积并维持。穿越翻转位两次，收于其上方。</span></span>
       <span class="oew-asof mono">2026-07-30</span>
     </div>
@@ -695,7 +696,6 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
       </p>
     </div>
     <div class="oew-pfoot">
-      <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
       <span><span class="l-en">Still building toward a full year of history — read this as a rough placement, not a settled rank.</span><span class="l-zh">仍在积累完整一年的历史 — 请视为粗略定位，而非确定分位。</span></span>
       <span class="oew-asof mono">2026-07-29</span>
     </div>
@@ -726,7 +726,6 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
         <span class="l-zh">另有记录：今日净做市商 Gamma 高于该标的自身 <b class="mono">72%</b> 的每日记录（34个交易日，2026-06-11 至 2026-07-29）。</span></div>
     </div>
     <div class="oew-pfoot">
-      <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
       <span><span class="l-en">A count of contracts opened or closed, not a direction call.</span><span class="l-zh">合约新增或平仓的计数，并非方向判断。</span></span>
       <span class="oew-asof mono">2026-07-29</span>
     </div>
@@ -764,7 +763,6 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
       </div>
     </div>
     <div class="oew-pfoot">
-      <span class="oew-stance st-ignore"><span class="l-en">Ignore</span><span class="l-zh">忽略</span></span>
       <span><span class="l-en">Not measured yet — nothing here to act on.</span><span class="l-zh">尚未测量 — 此处暂无可据以行动的内容。</span></span>
     </div>
   </div>
@@ -782,12 +780,13 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
       </div>
     </div>
     <div class="oew-pfoot">
-      <span class="oew-stance st-ignore"><span class="l-en">Ignore</span><span class="l-zh">忽略</span></span>
       <span><span class="l-en">Not measured yet — nothing here to act on.</span><span class="l-zh">尚未测量 — 此处暂无可据以行动的内容。</span></span>
     </div>
   </div>
 
-  <!-- measured flow — UNCHANGED existing panel -->
+  <!-- measured flow — UNCHANGED existing panel. Its stance chip predates this wave and
+       is outside the §0.13 verdict-law ruling's file scope (base-spec-owned, §5.1 item 9
+       "unchanged") — flagged as a follow-up in the ruling, not fixed here. -->
   <div class="oew-panel">
     <div class="oew-phead">
       <h2 class="oew-ph-title"><span class="l-en">Today's measured flow</span><span class="l-zh">今日实测资金</span></h2>
@@ -852,7 +851,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
             <span class="oew-film-empty"><span class="l-en">No intraday record for this session</span><span class="l-zh">本交易日没有盘中记录</span></span>
           </figure>
         </div>
-        <div class="oew-pfoot"><span class="oew-stance st-ignore"><span class="l-en">Ignore</span><span class="l-zh">忽略</span></span>
+        <div class="oew-pfoot">
           <span><span class="l-en">Nothing to read from this session's tape.</span><span class="l-zh">本场次盘中数据无可读内容。</span></span></div>
       </div>
     </div>
@@ -865,7 +864,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
           <p class="oew-pb-note"><span class="l-en">The 2026-07-02 and 2026-07-07 chain snapshots report identical open interest for this name, so no change can be measured yet.</span>
             <span class="l-zh">2026-07-02 与 2026-07-07 两次期权链快照对该标的报告的未平仓量相同，因此暂无法测算变化。</span></p>
         </div>
-        <div class="oew-pfoot"><span class="oew-stance st-ignore"><span class="l-en">Ignore</span><span class="l-zh">忽略</span></span>
+        <div class="oew-pfoot">
           <span><span class="l-en">The payload's own composed sentence — never a generic "no data."</span><span class="l-zh">此为数据本身生成的语句 — 而非通用的"无数据"提示。</span></span></div>
       </div>
     </div>
@@ -881,7 +880,7 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
           <p class="oew-tk-say"><span class="l-en">Too few sessions on file yet to place today's cost against this name's own history.</span>
             <span class="l-zh">该标的历史记录尚短，暂无法将今日价格与自身历史比较。</span></p>
         </div>
-        <div class="oew-pfoot"><span class="oew-stance st-ignore"><span class="l-en">Ignore</span><span class="l-zh">忽略</span></span>
+        <div class="oew-pfoot">
           <span><span class="l-en">A short window still shows honestly — never hidden, never rounded up to look complete.</span><span class="l-zh">窗口虽短仍如实显示 — 绝不隐藏，也不为显得完整而夸大。</span></span></div>
       </div>
     </div>
