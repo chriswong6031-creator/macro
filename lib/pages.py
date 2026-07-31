@@ -481,6 +481,10 @@ _DBASE_EXTERNAL_TAG_RE = re.compile(
     rf'<script\s+{DBASE_MARKER}\s+src="[^"]*data_base\.js(?:\?[^"]*)?"\s*>\s*</script>',
     re.IGNORECASE,
 )
+_DBASE_INLINE_TAG_RE = re.compile(
+    rf'<script\s+{DBASE_MARKER}\s*>.*?</script>',
+    re.IGNORECASE | re.DOTALL,
+)
 _shim_body_cache: dict[Path, str] = {}
 
 
@@ -521,17 +525,23 @@ def _tag(prefix: str) -> str:
 
 def inject_text(text: str, prefix: str = "") -> str:
     """Return `text` with the shim <script> inserted at the TOP of <head> (so it
-    runs before any body fetch). Idempotent — text already carrying the inline
-    shim is unchanged; a page still carrying the OLD external <script src> tag is
-    upgraded in place (same position, so ordering is preserved)."""
+    runs before any body fetch). Idempotent — an up-to-date inline shim is
+    unchanged; a stale inline body is refreshed in place; and a page still
+    carrying the OLD external <script src> tag is upgraded in place (same
+    position, so ordering is preserved)."""
     tag = _tag(prefix)
     if DBASE_MARKER in text:
         # Upgrade path: pages rendered before inlining (and any page the CI sweep
         # re-visits) carry the external ref. Swap it for the inline body in place.
-        # Gate the scan on a cheap substring — once the site is fully upgraded this
-        # runs over every page of every render and must not cost a regex sweep.
+        # Then refresh an older inline body when templates/data_base.js changes.
+        # Without the inline refresh, the safety sweep treated the marker as proof
+        # of currency and left thousands of committed pages pinned to a stale
+        # fetch wrapper indefinitely.
         if "data_base.js" in text and _shim_body() is not None and _DBASE_EXTERNAL_TAG_RE.search(text):
             return _DBASE_EXTERNAL_TAG_RE.sub(lambda _m: tag, text, count=1)
+        inline = _DBASE_INLINE_TAG_RE.search(text)
+        if inline and inline.group(0) != tag:
+            return text[:inline.start()] + tag + text[inline.end():]
         return text
     m = _HEAD_RE.search(text)
     if m:
