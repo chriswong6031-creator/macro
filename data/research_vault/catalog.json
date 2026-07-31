@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T16:28:15.679397+00:00",
-  "count": 469,
+  "generated_at": "2026-07-31T16:43:16.674773+00:00",
+  "count": 470,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-1t2sy5jalvf-e1af45",
+      "title": "Meta Platforms Inc. (META) Q2'26 Review Core Business Provides Evidence of Near Term ROIC but Lack of Visibility into Long ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:18:13Z",
+      "summary_points": [
+        "**Q2'26 Earnings Downgrades & Litigation Impact**: GAAP EPS revised down to $6.48 (Q3) and $31.65 (FY2026) from $7.22/$33.28 due to $2.4bn Q2 litigation charge and regulatory risks, with $3.6bn one-time charges distorting metrics.",
+        "**AI Capex Growth vs.",
+        "Monetization Uncertainty**: 14% capex raise for 2027-28 driven by AI compute scaling, but investor concerns persist on monetization path (subscriptions, pricing) and long-term spend clarity, risking moderate '26/'27 capex growth.",
+        "**Price Target Cut to $725 Amid Revised Estimates**: Buy rating maintained but 12-month target lowered from $815 to $725 (current price at ~17x 2027 GAAP EPS), reflecting downward earnings revisions and regulatory headwinds.",
+        "**Critical Regulatory & Competitive Risks**: Antitrust scrutiny altering business model, M&A constraints, intense ad competition, and macro volatility impacting growth stock appetite are top risks depressing margins and growth."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-u9aizxe1fiq-f02741",
       "title": "GS Vol Views July 31",
