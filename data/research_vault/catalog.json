@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T02:41:59.396395+00:00",
-  "count": 429,
+  "generated_at": "2026-07-31T02:57:15.585326+00:00",
+  "count": 430,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1062,6 +1062,27 @@
         "14% forecast) and climbing profit forecasts.",
         "**Tech Concentration Risk**: Indices overly concentrated in tech; strategic diversification into \"AI losers,\" defensive stocks, and European markets (reasonable valuations, dividends) is critical amid moderate returns.",
         "**Momentum Bubble Warning**: Current momentum (4th strongest since 1995) shows falling momentum-valuation correlation, rising tech volatility (e.g., Korean memory stocks), and risks in tech/industrials/Japan/emerging markets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h3vmhltiw7c-a5575a",
+      "title": "India needs lasting reforms to attract foreign capital not stopgaps",
+      "institution": "Natixis",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:17:34Z",
+      "summary_points": [
+        "**FDI Gap**: Manufacturing FDI at <1% of GDP (vs.",
+        "ASEAN avg.",
+        "7%), sector stagnant at 15-17% of GDP for 20 years, limiting job creation for 10-12M annual youth entrants.",
+        "**BIT Termination**: 77 bilateral treaties terminated (incl.",
+        "22 EU states), replaced by weaker 2015 Model BIT removing expropriation safeguards and dispute resolution, increasing investor uncertainty."
       ],
       "tags": [],
       "tickers": [],
