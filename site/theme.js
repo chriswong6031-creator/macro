@@ -277,7 +277,14 @@
   // like every other public UI asset. This loader remains as a resilient fallback
   // for local/custom builds that serve the sources without the production bake.
   var _mmOverlayScript = null, _mmOverlayWaiters = [];
-  var _mmThemeScript = document.currentScript;
+  var _mmThemeScript = document.currentScript ||
+    document.querySelector('script[src$="theme.js"],script[src*="theme.js?"]');
+  var _mmSharedAssetRoot = (function () {
+    try {
+      return new URL('.', _mmThemeScript && _mmThemeScript.src
+        ? _mmThemeScript.src : location.href).href;
+    } catch (e) { return ''; }
+  })();
   var _mmOverlaySrc = (function () {
     try {
       return new URL('terminal_overlay.js', _mmThemeScript && _mmThemeScript.src
@@ -431,7 +438,14 @@
     if (window.__mmAccountLoading) return;
     window.__mmAccountLoading = true;
     window.MM_API = window.MM_API || 'https://app.mastermind-x.com';
-    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    /* Derive the shared-asset root from this script's own URL.  The previous
+       pathname special-case only knew about /sectors/, so every other nested
+       estate (/basket_canada/, /basket/, /rotation/, …) requested account.js
+       from its page folder.  That 404 also prevented account.js from loading
+       nav_market.js, leaving those pages on the legacy dropdown.  The rendered
+       theme.js reference already carries the correct ../ depth, so reuse it as
+       the single source of truth for every current and future nested page. */
+    var pfx = _mmSharedAssetRoot;
     var s = document.createElement('script');
     // Keep the dynamic dependency cache-safe too. theme.js itself is
     // content-hashed in every page; this explicit release key prevents a
@@ -745,7 +759,7 @@
     if (box.getAttribute('data-ticker-search-ready') === '1') return;
     if (!ensureNavSearchCss(box)) return;
     box.setAttribute('data-ticker-search-ready', '1');
-    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    var pfx = _mmSharedAssetRoot;
     var initialCopy = curLang() === 'zh'
       ? { trigger: '搜索股票', input: '搜索股票代码或公司', close: '关闭股票搜索', closeShort: '关闭', results: '股票搜索结果' }
       : { trigger: 'Search tickers', input: 'Search stocks', close: 'Close ticker search', closeShort: 'Esc', results: 'Ticker search results' };
@@ -3302,7 +3316,7 @@
     // whitelist: signin (default) · signup · upgrade (post-login monetization sheet)
     var m = (mode === 'signup') ? 'signup' : (mode === 'upgrade') ? 'upgrade' : 'signin';
     if (window.MMOnboard && window.MMOnboard.open) { window.MMOnboard.open(m); return; }
-    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    var pfx = _mmSharedAssetRoot;
     if (window.__mmOnboardLoading) return;    // second click while loading — first one will open
     window.__mmOnboardLoading = true;
     var s = document.createElement('script');

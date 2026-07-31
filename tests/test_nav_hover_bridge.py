@@ -65,3 +65,15 @@ def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
     assert "20260730-exact7" not in TEMPLATE_THEME_JS
     assert "20260730-exact7" not in SITE_THEME_JS
     assert "20260730-exact7" not in TEMPLATE_ACCOUNT_JS
+
+
+def test_nested_pages_resolve_market_nav_from_theme_asset_root() -> None:
+    """Every nested estate must load the one shared market-menu runtime."""
+    for source in (TEMPLATE_THEME_JS, SITE_THEME_JS):
+        assert "document.currentScript" in source
+        assert 'script[src$="theme.js"],script[src*="theme.js?"]' in source
+        assert "var _mmSharedAssetRoot" in source
+        assert "new URL('.', _mmThemeScript" in source
+        assert source.count("var pfx = _mmSharedAssetRoot;") == 3
+        assert "location.pathname.indexOf('/sectors/')" not in source
+        assert "s.src = pfx + 'account.js?v=20260730-exact8'" in source
