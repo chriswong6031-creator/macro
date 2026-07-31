@@ -75,6 +75,11 @@ _ACTIVITY_WORDS: dict[str, str] = {
     "posted": "went out to X",
     "would_post": "would have gone out (dry run)",
     "failed": "failed at the API",
+    # A WAIT, NOT A LOSS — and the wording is the whole point. These posts went
+    # back to `approved` and the next sweep re-picks them; reading them as
+    # "failed" is exactly the confusion that let three good posts be discarded
+    # on 2026-07-30 without anyone noticing they were recoverable.
+    "rate_limited": "waiting out a Buffer rate limit (will retry)",
     "quarantined": "pulled at dispatch",
     "skipped_no_channel": "no channel wired for that desk",
     "skipped_halt": "desk halted by the learning tripwire",

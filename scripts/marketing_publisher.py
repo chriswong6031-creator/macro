@@ -1513,6 +1513,10 @@ def main(argv: list[str] | None = None) -> int:
     # first time a gate actually fired.
     quarantined_bare_cashtag = quarantined_unknown_cashtag = 0
     quarantined_voice_laws = quarantined_run_duplicate = 0
+    #: Sends refused for quota, not for content — requeued rather than failed.
+    #: Counted separately because "3 failed" and "3 will retry next sweep" are
+    #: opposite facts and the summary line was reporting them as the same one.
+    rate_limited = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -2373,6 +2377,31 @@ def main(argv: list[str] | None = None) -> int:
             log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
                      receipt.external_id,
                      (f" (scheduled {send_scheduled_at})" if booked_at > now else ""))
+        elif getattr(receipt, "retryable", False):
+            # A RATE LIMIT IS NOT A VERDICT ON THE POST.
+            #
+            # `failed` is in outbox._DEAD_STATUSES — nothing ever picks an item
+            # up again — so treating a 429 as a failure DELETED the post. Three
+            # flagship posts died that way on 2026-07-30 ("http_error 429: Too
+            # many requests from this client"), each a perfectly good post that
+            # arrived while the shared Buffer token was out of quota. The
+            # publisher and the engagement poller authenticate as ONE token and
+            # share ONE 24h allowance, so a metrics sweep can spend the posting
+            # budget — this is self-inflicted and transient, and both halves of
+            # that sentence say "retry", not "discard".
+            #
+            # Back to `approved`, which the legality table already allows
+            # (failed -> approved was reachable, just never used), so the next
+            # scheduled sweep re-picks it with every gate re-evaluated: the tape
+            # gate will refuse it if the number has gone stale in the meantime,
+            # which is exactly the check that should decide a retry, not this one.
+            _outbox.transition(iid, "approved", actor="publisher", root=root,
+                               note=f"rate_limited, requeued for the next sweep: "
+                                    f"{receipt.error or 'buffer 429'}",
+                               receipt={"backend": receipt.backend,
+                                        "error": receipt.error, "at": receipt.at})
+            rate_limited += 1
+            log.warning("item %s RATE-LIMITED, requeued: %s", iid, receipt.error)
         else:
             _outbox.transition(iid, "failed", actor="publisher", root=root,
                                note=receipt.error or "publish failed",
@@ -2450,6 +2479,12 @@ def main(argv: list[str] | None = None) -> int:
     # posted. A genuinely empty queue is NOT an alarm (nothing was due), it is a
     # supply problem the plan lane reports on its own.
     _blocked = {
+        # Phrased as a WAIT, not a loss, because that is what it now is: the
+        # item went back to approved and the next sweep re-picks it. Reading
+        # "failed" here for what is really "Buffer was out of quota for a few
+        # minutes" is precisely the confusion that let three posts be discarded
+        # on 2026-07-30 without anyone noticing they were recoverable.
+        "waiting out a Buffer rate limit": rate_limited,
         "held for a chart": deferred_no_media,
         "no fresh quote to verify the price claim": tape_skipped,
         "price claim contradicted the tape": tape_quarantined,
@@ -2498,7 +2533,7 @@ def main(argv: list[str] | None = None) -> int:
                   _considered, _waiting, _top)
 
     log.info(
-        "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
+        "%s complete | posted=%d failed=%d rate_limited=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
@@ -2508,7 +2543,7 @@ def main(argv: list[str] | None = None) -> int:
         "substance_shadow=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
         "stuck_posting=%d auto_approved=%d",
-        mode, posted, failed, quarantined, would_post,
+        mode, posted, failed, rate_limited, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
@@ -2528,6 +2563,7 @@ def main(argv: list[str] | None = None) -> int:
             "cap": cap,
             "posted": posted,
             "failed": failed,
+            "rate_limited": rate_limited,
             "quarantined": quarantined,
             "would_post": would_post,
             "tape_quarantined": tape_quarantined,

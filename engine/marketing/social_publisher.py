@@ -203,6 +203,23 @@ class Receipt:
     error       human-readable failure string — None on success.
     backend     backend name, e.g. "buffer".
     at          iso8601 UTC timestamp of the attempt.
+    retryable   True when the attempt failed for a reason that will PASS LATER
+                and nothing about the post itself is wrong. Today that means one
+                thing: Buffer answered 429. It defaults False, so every existing
+                construction site and every caller keeps its exact behaviour.
+
+                WHY IT HAD TO EXIST. `ok=False` was the only signal, and the
+                publisher's one response to it is `transition(iid, "failed")` —
+                and `failed` is in outbox._DEAD_STATUSES, so nothing ever picks
+                the item up again. A rate limit therefore DELETED the post. Three
+                flagship posts died exactly that way on 2026-07-30 ("http_error
+                429: Too many requests from this client"), and each was a
+                perfectly good post that simply arrived while the shared Buffer
+                token was out of quota.
+
+                That risk grows with volume, which this change set increases: the
+                press wire's salience floor moved 70 -> 30 the same day, so the
+                wire books where it used to book nothing.
     """
     ok: bool
     external_id: str | None
@@ -210,6 +227,7 @@ class Receipt:
     error: str | None
     backend: str
     at: str
+    retryable: bool = False
 
 
 @dataclass
@@ -837,13 +855,21 @@ class BufferPublisher:
             # until the beta adds one (then request it in _CREATE_POST_MUTATION).
             return Receipt(True, post_id, None, None, self.backend, at)
 
+        except BufferRateLimited as exc:
+            # BEFORE HTTPError, or this is unreachable dead code: _transport
+            # raises this INSTEAD of the HTTPError for a 429, but a future
+            # caller reaching Buffer another way may still surface the raw
+            # HTTPError, so the code branch below stays as the backstop.
+            return Receipt(False, None, None, f"rate_limited: {exc}",
+                           self.backend, at, retryable=True)
         except HTTPError as exc:
             detail = ""
             try:
                 detail = exc.read(_MAX_RESPONSE_BYTES).decode("utf-8", "replace")[:300]
             except Exception:  # noqa: BLE001
                 pass
-            return Receipt(False, None, None, f"http_error {exc.code}: {detail}", self.backend, at)
+            return Receipt(False, None, None, f"http_error {exc.code}: {detail}",
+                           self.backend, at, retryable=exc.code == 429)
         except URLError as exc:
             return Receipt(False, None, None, f"network_error: {exc.reason}", self.backend, at)
         except Exception as exc:  # noqa: BLE001

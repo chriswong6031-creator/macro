@@ -853,3 +853,86 @@ def test_posted_item_appends_publication_receipt(monkeypatch, tmp_path):
     assert row["mode"] == "live"
     assert row["correction_state"] == "clean"
     assert row["effective_copy_hash"].startswith("sha256:")
+
+
+class TestARateLimitIsNotAVerdictOnThePost:
+    """A 429 DELETED three flagship posts on 2026-07-30.
+
+    `ok=False` was the only signal a send could give, and the publisher's one
+    response to it is `transition(iid, "failed")`. `failed` is in
+    outbox._DEAD_STATUSES, so nothing ever picks the item up again — a transient
+    quota refusal was permanent. The ledger rows read:
+
+        ob-2026-07-30-85765fdcaa  posting -> failed
+        http_error 429: {"errors":[{"message":"Too many requests from this
+        client. Please try again later."}]}
+
+    Each was a good post that arrived while the shared Buffer token was out of
+    quota. The publisher and the engagement poller authenticate as ONE token
+    against ONE 24h allowance, so a metrics sweep can spend the posting budget:
+    self-inflicted and transient, and both halves say retry, not discard.
+
+    The risk grows with volume, and this change set increases volume — the press
+    wire's salience floor moved 70 -> 30 on the same day.
+    """
+
+    def _receipt(self, **kw):
+        from engine.marketing.social_publisher import Receipt
+        base = dict(ok=False, external_id=None, external_url=None,
+                    error="boom", backend="buffer", at="2026-07-31T12:00:00Z")
+        base.update(kw)
+        return Receipt(**base)
+
+    def test_retryable_defaults_false_so_nothing_else_changes(self):
+        """Every existing construction site omits it; none may become retryable."""
+        assert self._receipt().retryable is False
+        assert self._receipt(ok=True, error=None).retryable is False
+
+    def test_a_429_http_error_is_marked_retryable(self):
+        from urllib.error import HTTPError
+        from engine.marketing.social_publisher import Receipt
+
+        # The shape the live failures took, before BufferRateLimited existed.
+        exc = HTTPError("http://buffer", 429, "Too Many Requests", {}, None)
+        r = Receipt(False, None, None, f"http_error {exc.code}: x", "buffer",
+                    "2026-07-31T12:00:00Z", retryable=exc.code == 429)
+        assert r.retryable is True
+
+    def test_a_400_is_not_retryable(self):
+        """"Invalid post: Whoops" is a verdict ON THE POST — retrying it forever
+        would spin. Only quota gets a second chance."""
+        from urllib.error import HTTPError
+        from engine.marketing.social_publisher import Receipt
+
+        exc = HTTPError("http://buffer", 400, "Bad Request", {}, None)
+        r = Receipt(False, None, None, f"http_error {exc.code}: x", "buffer",
+                    "2026-07-31T12:00:00Z", retryable=exc.code == 429)
+        assert r.retryable is False
+
+    def test_the_publisher_requeues_instead_of_failing(self):
+        """The branch reads `retryable` and transitions to approved, not failed."""
+        import inspect
+        import scripts.marketing_publisher as mp
+
+        src = inspect.getsource(mp.main)
+        assert 'getattr(receipt, "retryable", False)' in src, (
+            "the publisher no longer consults retryable — a 429 is back to "
+            "being a permanent failure")
+        # It must land in `approved`, which the legality table allows, so the
+        # next sweep re-picks it with every gate (including the tape gate)
+        # re-evaluated.
+        i = src.index('getattr(receipt, "retryable", False)')
+        branch = src[i:i + 1400]
+        assert '"approved"' in branch, branch[:400]
+        assert '"failed"' not in branch.split("else:")[0], (
+            "the retryable branch still marks the item failed")
+
+    def test_failed_to_approved_is_a_legal_transition(self):
+        """The requeue relies on it; it was reachable but never used."""
+        from engine.marketing import outbox as OB
+
+        legal = getattr(OB, "TRANSITIONS", None)
+        assert legal is not None, "transition table moved — this pin is blind"
+        assert "approved" in legal["failed"], (
+            "failed -> approved is no longer legal, so the requeue silently "
+            "becomes a no-op and a rate-limited post is lost again")
