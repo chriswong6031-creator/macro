@@ -126,7 +126,7 @@
 @property --field-tint{syntax:'<color>';inherits:true;initial-value:#dbe4ff}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display',system-ui,sans-serif;font-size:16px;line-height:1.5;
   font-feature-settings:"cv05" 1,"ss01" 1;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:clip;
   padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 /* Chinese renders Latin/numerals in Inter, CJK glyphs in the platform's UI face */

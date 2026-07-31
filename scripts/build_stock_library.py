@@ -57,6 +57,7 @@ from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-bla
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
+from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("stock_library")
@@ -2101,6 +2102,7 @@ def main() -> int:
     _liq_map: dict[str, dict] = {}              # P0.3 liquidity/capacity hygiene (display-only, R10)
     to_write: list[tuple[str, dict]] = []
     uni = universe()
+    latest_volumes = latest_volume_map("us")
     # Bare print, NOT a logger call: GitHub only parses a workflow command when
     # "::" STARTS the line, and this module's logging format prefixes every
     # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
@@ -2746,6 +2748,7 @@ def main() -> int:
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)

@@ -33,6 +33,7 @@ from engine.cycles import analyze  # noqa: E402
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade; HK inclusion gate (2026-07-16)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
+from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
 from scripts.build_hk import tv_symbol  # noqa: E402
 from collectors.hk_names_zh import load_names_zh as _load_names_zh  # noqa: E402
 
@@ -2025,6 +2026,7 @@ def main(betas: dict | None = None) -> dict | None:
     index, built, failed, limited = [], 0, 0, 0
     price_by: dict[str, float] = {}
     uni = universe()
+    latest_volumes = latest_volume_map("hk")
     recs = _analyze_universe(uni, liq)      # parallel analyze() fan-out (order-preserving)
 
     # ── HK Confirming-Turn witness bypass (W1 HKRV spec §6) ─────────────────
@@ -2135,9 +2137,11 @@ def main(betas: dict | None = None) -> dict | None:
             # "analysis pending" detail page (renderLimited), but it NEVER enters
             # scoring / boards / profiles (accrual without authority).
             (outdir / f"{_safe(ticker)}.json").write_text(json.dumps(rec, default=str))
-            index.append(_search_index_row(
+            idx = _search_index_row(
                 ticker, name, sector, "LIMITED", name_zh=_HK_NAMES_ZH.get(ticker),
-            ))
+            )
+            attach_latest_volume(idx, ticker, latest_volumes)
+            index.append(idx)
             limited += 1
             continue
         # HK Confirming-Turn witness bypass: upgrade COUNTERTREND BOUNCE when
@@ -2161,6 +2165,7 @@ def main(betas: dict | None = None) -> dict | None:
         idx = _search_index_row(
             ticker, name, sector, rec["ladder"]["state"], name_zh=_HK_NAMES_ZH.get(ticker),
         )
+        attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("global_beta", {}).get("beta") is not None:
             idx["gb"] = rec["global_beta"]["beta"]
         index.append(idx)

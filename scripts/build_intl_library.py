@@ -35,6 +35,7 @@ from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 casca
 from engine import stock_view  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
+from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("intl_library")
@@ -317,6 +318,7 @@ def main(alpha: dict | None = None) -> dict | None:
         log.warning("intl anticipation benchmarks unavailable (%s)", e)
 
     index, cand, built, failed, limited = [], [], 0, 0, 0
+    latest_volumes = latest_volume_map("intl")
     uni = []
     for ticker in closes.columns:
         if ticker not in members.index:
@@ -383,6 +385,7 @@ def main(alpha: dict | None = None) -> dict | None:
         to_write.append((safe, rec))
         idx = {"t": ticker, "n": rec["name"], "s": rec["sector"], "st": rec["ladder"]["state"],
                "fl": rec["flag"], "mk": rec["market"]}
+        attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]
         index.append(idx)

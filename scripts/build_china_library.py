@@ -46,6 +46,7 @@ from engine import coiled  # noqa: E402  — wave-3-validated COILED cohort-wash
 from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (CN port, W0.1); close-only, additive display chip; NEVER fed into _cn_bonus / blend_sorted
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
+from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("china_library")
@@ -1343,6 +1344,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # pages, but neither their dates nor later context observations may advance
     # the Prophet decision clock.
     uni = universe()
+    latest_volumes = latest_volume_map("cn")
     _close_map: dict[str, pd.Series] = {
         ticker: close
         for ticker, close, *_rest in uni
@@ -1814,6 +1816,7 @@ def main(alpha: dict | None = None) -> dict | None:
             ticker, name, sector, rec["ladder"]["state"],
             name_en=name_en_by.get(ticker), name_zh=name_zh_by.get(ticker),
         )
+        attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)
