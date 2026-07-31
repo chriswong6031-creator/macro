@@ -1,10 +1,10 @@
 {
-  "checked_at": "2026-07-31T10:11:03+00:00",
+  "checked_at": "2026-07-31T10:56:38+00:00",
   "expected_session": "2026-07-31",
   "stores": {
     "cache": {
-      "asof": "2026-07-31",
-      "lag_days": 0,
+      "asof": "2026-07-30",
+      "lag_days": 1,
       "state": "fresh"
     },
     "bellwether": {
