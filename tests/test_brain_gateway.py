@@ -1713,6 +1713,81 @@ def test_chat_mode_system_prompt_unchanged():
     assert "CHART CONTROL" not in prompt
 
 
+def test_chart_behaviour_splits_by_surface():
+    """Terminal drives the live chart; the dashboard draws its own in the reply.
+
+    The two surfaces are different situations, and one prompt cannot serve both: in the
+    Terminal a static picture is a downgrade from the chart already on screen, while on
+    the dashboard the reply's chart IS the only chart there is.
+    """
+    dash = gw._build_system_prompt("chat", page="dashboard")
+    term = gw._build_system_prompt("chat", page="terminal")
+
+    # dashboard: draw it, unprompted, when the answer is about price action
+    assert "SHOWING THE CHART (dashboard)" in dash
+    assert "WITHOUT being asked" in dash
+    assert "CHART CONTROL" not in dash
+    # terminal: drive the user's chart instead of sending a picture of one
+    assert "CHART CONTROL" in term
+    assert "DRAW ON THE USER'S CHART, DON'T SEND A PICTURE" in term
+    assert "SHOWING THE CHART (dashboard)" not in term
+    # an unset page is the dashboard (the widget only sends 'terminal' from the Terminal)
+    assert "SHOWING THE CHART (dashboard)" in gw._build_system_prompt("chat", page="")
+
+
+def test_answer_shape_is_lane_scaled_not_one_size():
+    """The lane the user picked reaches the model as a request about ANSWER DEPTH.
+
+    Live regression this pins (2026-07-30): a Pro turn on "analyze technicals for apple
+    stock" came back three lines under a chart while the SAME question on the cheaper Fast
+    lane produced a full trend / momentum / relative-strength / levels / caution read. The
+    deeper lane was writing the shorter answer, because nothing in the prompt distinguished
+    them — the lane dial tuned tool spend only.
+    """
+    fast = gw._build_system_prompt("chat", lane="fast")
+    pro = gw._build_system_prompt("chat", lane="pro")
+    bare = gw._build_system_prompt("chat")
+
+    assert "SHAPE FOR THIS TURN (Fast)" in fast
+    assert "SHAPE FOR THIS TURN (Pro)" in pro
+    # Pro is told, in terms, that the failure mode is the short answer — and that padding
+    # the length back out with empty sections is the other way to fail.
+    assert "three-line answer here is a failure" in pro
+    assert "padding" in pro
+    assert "Levels that matter" in pro
+    # the two lanes must not collapse into the same instruction
+    assert fast != pro
+    # an unknown/absent lane changes nothing for existing callers
+    assert bare == gw._build_system_prompt("chat", lane="")
+    assert "SHAPE FOR THIS TURN" not in bare
+
+    # research keeps its own report directive and does NOT also take a lane block (research
+    # forces lane='pro' upstream, so a naive append would say it twice)
+    research = gw._build_system_prompt("research", lane="pro")
+    assert "RESEARCH MODE" in research
+    assert "SHAPE FOR THIS TURN" not in research
+
+
+def test_prompt_no_longer_targets_a_three_line_answer():
+    """The old 'a tight three-line answer beats a paragraph' line WAS the terseness bug.
+
+    Its intent (no padding, no hedging) survives; its length target does not — a model
+    that follows instructions literally read it as a ceiling and answered analysis
+    requests in three lines.
+    """
+    for prompt in (gw._build_system_prompt("chat"),
+                   gw._build_system_prompt("chat", lane="fast"),
+                   gw._build_system_prompt("chat", lane="pro"),
+                   gw._build_system_prompt("research")):
+        assert "three-line answer beats" not in prompt
+        assert "Fewer, sharper words always win" not in prompt
+    base = gw._build_system_prompt("chat")
+    assert "LENGTH IS SET BY THE QUESTION" in base
+    assert "What you must never do is PAD" in base
+    # a chart is evidence to read, not a substitute for the read
+    assert "laziest thing you can send" in base
+
+
 def test_terminal_system_prompt_describes_chart_tools_as_display_only():
     """page='terminal' appends the chart-control directive framing the 4 tools as
     display actions that are never recommendations (fixes the 'READ tools only'
@@ -3865,21 +3940,25 @@ def test_status_event_sequence_two_round_tool_turn(tmp_path):
     models = [e for e in parsed if e.get("phase") == "model"]
     assert [e["n"] for e in models] == [1, 2]
     # Pro wording, with the pass count baked in from round 2 on
-    assert models[0]["label_en"] == "Analyzing in depth"
-    assert models[1]["label_en"] == "Analyzing in depth · pass 2"
-    assert models[1]["label_zh"] == "深度分析中 · 第 2 轮"
+    assert (models[0]["label_en"], models[0]["label_zh"]) == gw._STAGE_LABELS["model.pro"]
+    assert models[1]["label_en"] == gw._STAGE_LABELS["model.pro"][0] + " \u00b7 pass 2"
+    assert models[1]["label_zh"] == gw._STAGE_LABELS["model.pro"][1] + " \u00b7 \u7b2c 2 \u8f6e"
     # elapsed_ms is loop-local and never goes backwards
     elapsed = [e["elapsed_ms"] for e in parsed if e["type"] == "status"]
     assert elapsed == sorted(elapsed) and elapsed[0] >= 0
 
 
 def test_status_model_label_is_lane_specific(tmp_path):
-    """The Fast lane reasons, it does not 'analyze in depth' — labels track the lane."""
+    """The Fast lane reasons, it does not 'think it through properly' — labels track the lane."""
     root = _make_temp_root()
     parsed = _stream_events(_two_round_client(), root, tmp_path, lane="fast")
     models = [e for e in parsed if e.get("phase") == "model"]
-    assert models[0]["label_en"] == "Working out the answer"
-    assert models[0]["label_zh"] == "推理中"
+    # against the table, so the copy stays editable and the LANE SPLIT stays pinned
+    assert (models[0]["label_en"], models[0]["label_zh"]) == gw._STAGE_LABELS["model.fast"]
+    assert gw._STAGE_LABELS["model.fast"] != gw._STAGE_LABELS["model.pro"]
+    # round 2 onward carries the pass count so a multi-round wait reads as progress
+    if len(models) > 1:
+        assert "pass 2" in models[1]["label_en"]
 
 
 def test_status_grounding_skipped_when_digest_empty(tmp_path):
@@ -3911,7 +3990,7 @@ def test_status_writing_beats_report_length_only(tmp_path):
     writing = [e for e in parsed if e.get("phase") == "writing"]
     assert len(writing) >= 2
     assert [e["n"] for e in writing] == sorted(e["n"] for e in writing)
-    assert all(e["label_en"] == "Writing your answer" for e in writing)
+    assert all((e["label_en"], e["label_zh"]) == gw._STAGE_LABELS["writing"] for e in writing)
     assert all("Steady" not in json.dumps(e) for e in writing)
     # Still exactly one delta, still after every writing beat
     types = [e["type"] for e in parsed]
@@ -3948,8 +4027,11 @@ def test_tool_event_carries_whitelist_label_and_sanitized_detail(tmp_path):
     `name` for the deployed widget."""
     ev = json.loads(gw._tool_event("get_quote", {"symbol": "aapl"})[6:])
     assert ev["type"] == "tool" and ev["name"] == "get_quote"
-    assert ev["label_en"] == "Fetching the latest quote"
-    assert ev["label_zh"] == "获取最新行情"
+    # assert against the TABLE, not a copy string: the contract is "the label ships from the
+    # whitelist", and pinning the wording turns every copy pass into a red test.
+    assert (ev["label_en"], ev["label_zh"]) == gw._TOOL_LABELS["get_quote"]
+    assert ev["label_en"] and ev["label_zh"] and ev["label_en"] != ev["label_zh"]
+    assert "get_quote" not in ev["label_en"]   # never the raw name as user-visible copy
     assert ev["detail"] == "AAPL"
 
 
@@ -3970,7 +4052,10 @@ def test_tool_event_unknown_name_uses_fallback_label():
     """A tool shipped before its label falls back to a truthful generic line — never the
     raw snake_case name as user-visible copy."""
     ev = json.loads(gw._tool_event("some_future_tool", {})[6:])
-    assert (ev["label_en"], ev["label_zh"]) == ("Gathering data", "整理数据")
+    assert (ev["label_en"], ev["label_zh"]) == gw._TOOL_LABEL_FALLBACK
+    en, zh = gw._TOOL_LABEL_FALLBACK
+    assert en and zh and en != zh
+    assert "some_future_tool" not in en and "_" not in en   # never the raw name
     assert ev["name"] == "some_future_tool"  # machine field still exact
 
 
@@ -3992,7 +4077,14 @@ def test_stage_labels_are_bilingual_and_complete():
     for key in ("start", "grounding", "model.fast", "model.pro", "synthesis", "writing", "review"):
         en, zh = gw._STAGE_LABELS[key]
         assert en and zh and en != zh
-    assert gw._STAGE_LABELS["synthesis"] == gw._STAGE_LABELS["writing"]
+    # synthesis and writing must NOT share a string. The widget keys a step on its label, so
+    # identical copy collapsed the two into one line and hid the moment the answer starts
+    # being written — the most reassuring beat in the whole wait.
+    assert gw._STAGE_LABELS["synthesis"] != gw._STAGE_LABELS["writing"]
+    # every stage reads as a person narrating their own work, never as a pipeline stage name
+    for key, (en, _zh) in gw._STAGE_LABELS.items():
+        assert "_" not in en, key
+        assert en[0].isupper(), key
 
 
 # ── B5: prompt caching ───────────────────────────────────────────────────────

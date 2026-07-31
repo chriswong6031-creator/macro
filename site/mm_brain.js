@@ -405,9 +405,9 @@
   @keyframes mmb-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   /* messages */
   .mmb-msg{display:flex;flex-direction:column;gap:4px;max-width:88%}
-  .mmb-msg.user{align-self:flex-end;align-items:flex-end;max-width:78%;animation:mmb-pop .2s ease-out both}
+  .mmb-msg.user{align-self:flex-end;align-items:flex-end;max-width:78%;animation:mmb-pop .34s var(--mmb-ease) backwards}
   .mmb-msg.assistant{align-self:flex-start;align-items:flex-start;max-width:100%;width:100%}
-  @keyframes mmb-pop{from{opacity:0;transform:translateY(4px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes mmb-pop{from{opacity:0;transform:translateY(14px) scale(.94)}60%{opacity:1}to{opacity:1;transform:none}}
   @media(prefers-reduced-motion:reduce){.mmb-msg.user{animation:none}}
   .mmb-bub{font:14.5px/1.62 var(--mmb-font);word-break:break-word}
   /* USER: keep the violet-tinted gradient bubble */
@@ -450,8 +450,74 @@
   @keyframes mmb-caret{0%,100%{opacity:1}50%{opacity:.25}}
   @media(prefers-reduced-motion:reduce){.mmb-caret{animation:none}}
   .mmb-stopped{color:var(--mmb-muted);font-style:italic;font-size:13px}
+  /* fallback container: the server's own SVG, used only when the live engine below has
+     no bars for the symbol. No watermark chrome is added here — that belongs to the
+     social-post renderer, not to a reply. */
   .mmb-bub .mmb-chart{margin:10px 0 2px;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--mmb-ink) 8%,transparent);background:#0E1420}
   .mmb-bub .mmb-chart svg{display:block;width:100%;height:auto}
+  /* ── the in-chat chart ───────────────────────────────────────────────────────
+     Drawn here, live, from the desk's own daily bars — not a picture of a chart.
+     What that buys: a real price axis, panes that are not squeezed, indicators
+     computed over the FULL history (so no cold-start stub at the left edge), a
+     crosshair that reads the bar under the cursor, and a build sequence you can
+     watch. The gradient is the widget's own; the social renderer's watermark,
+     logo and CTA have no business inside a reply. */
+  #mmb-root{--mmb-up:#45b873;--mmb-dn:#e06464;--mmb-cx-a:#101725;--mmb-cx-b:#0a0d14;--mmb-cx-grid:#fff}
+  html[data-theme="light"] #mmb-root{--mmb-up:#1f9a55;--mmb-dn:#cf4040;--mmb-cx-a:#ffffff;--mmb-cx-b:#eaeff7;--mmb-cx-grid:#1c2430}
+  /* 红涨绿跌 — a price chart IS a market-direction read, so it takes the Asia
+     convention in Chinese exactly like the site's boards do (theme.css swaps
+     --up/--down under html[data-lang=zh]; the widget owns its own tokens because it
+     also runs on the Terminal, where theme.css is not loaded). */
+  html[data-lang="zh"] #mmb-root{--mmb-up:#e06464;--mmb-dn:#45b873}
+  html[data-theme="light"][data-lang="zh"] #mmb-root{--mmb-up:#cf4040;--mmb-dn:#1f9a55}
+  .mmb-cx{position:relative;margin:12px 0 4px;border-radius:14px;overflow:hidden;
+    border:1px solid color-mix(in srgb,var(--mmb-ink) 11%,transparent);
+    background:radial-gradient(120% 88% at 6% -12%,color-mix(in srgb,var(--mmb-info) 15%,transparent),transparent 58%),
+      radial-gradient(86% 70% at 104% -6%,color-mix(in srgb,var(--mmb-violet) 13%,transparent),transparent 56%),
+      linear-gradient(180deg,var(--mmb-cx-a),var(--mmb-cx-b));
+    box-shadow:var(--mmb-shadow-box);animation:mmb-cx-in .5s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+  .mmb-cx-h{display:flex;align-items:baseline;gap:9px;padding:11px 14px 6px;min-height:34px}
+  .mmb-cx-sym{flex:none;white-space:nowrap;font:800 15px/1 var(--mmb-font);letter-spacing:-.01em;color:color-mix(in srgb,var(--mmb-text) 97%,var(--mmb-hi))}
+  .mmb-cx-tf{flex:none;white-space:nowrap;font:700 9.5px/1 var(--mmb-font);letter-spacing:.09em;text-transform:uppercase;color:var(--mmb-muted);
+    border:1px solid color-mix(in srgb,var(--mmb-ink) 15%,transparent);border-radius:5px;padding:3px 5px}
+  .mmb-cx-h .sp{flex:1;min-width:4px}
+  /* the readout: last price at rest, the hovered bar while the crosshair is live. It is the
+     part that GIVES WAY when the card is narrow — volume drops first, then it ellipsises.
+     The symbol never wraps: an "AAP / L" header is the card losing its own name. */
+  .mmb-cx-read{display:flex;align-items:baseline;justify-content:flex-end;gap:7px;min-width:0;
+    font:600 11px/1.2 var(--mmb-mono);color:var(--mmb-muted);
+    font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+  .mmb-cx.narrow .mmb-cx-vol{display:none}
+  .mmb-cx-last{font:800 15px/1 var(--mmb-mono);color:color-mix(in srgb,var(--mmb-text) 97%,var(--mmb-hi));font-variant-numeric:tabular-nums}
+  .mmb-cx-chg{font:700 11.5px/1 var(--mmb-mono);font-variant-numeric:tabular-nums}
+  .mmb-cx-chg.up{color:var(--mmb-up)}.mmb-cx-chg.dn{color:var(--mmb-dn)}
+  .mmb-cx-read b{font-weight:700;color:color-mix(in srgb,var(--mmb-text) 88%,var(--mmb-muted))}
+  .mmb-cx svg{display:block;width:100%;height:auto;touch-action:pan-y}
+  .mmb-cx-foot{display:flex;align-items:center;gap:10px;padding:0 14px 10px;font:10.5px/1.3 var(--mmb-font);color:var(--mmb-muted)}
+  .mmb-cx-key{display:inline-flex;align-items:center;gap:4px}
+  .mmb-cx-key i{width:11px;height:2px;border-radius:2px;display:inline-block;background:currentColor}
+  .mmb-cx-foot .sp{flex:1}
+  .mmb-cx-src{opacity:.75;font:10px/1.3 var(--mmb-mono)}
+  /* build sequence — candles rise from their own base, lines draw themselves, panes
+     resolve after the price. One gesture, ~1.3s end to end, then it is a static chart. */
+  .mmb-cx .cndl,.mmb-cx .vbar,.mmb-cx .hbar{transform-box:fill-box;transform-origin:center bottom;
+    animation:mmb-cx-grow .34s var(--mmb-ease) backwards}
+  .mmb-cx .hbar{transform-origin:center center}
+  @keyframes mmb-cx-grow{from{transform:scaleY(.02);opacity:.2}to{transform:none;opacity:1}}
+  .mmb-cx .draw{animation:mmb-cx-draw 1.1s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+  .mmb-cx .fade{animation:mmb-cx-fade .5s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-fade{from{opacity:0}to{opacity:1}}
+  .mmb-cx .pop{transform-box:fill-box;transform-origin:left center;animation:mmb-cx-pop .42s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-pop{from{opacity:0;transform:translateX(-6px) scale(.9)}to{opacity:1;transform:none}}
+  .mmb-cx-xh{opacity:0;transition:opacity .12s ease}
+  .mmb-cx.live .mmb-cx-xh{opacity:1}
+  /* a chart that could not be drawn says so in a line rather than leaving a hole */
+  .mmb-cx-miss{padding:14px;font:12.5px/1.5 var(--mmb-font);color:var(--mmb-muted)}
+  @media(prefers-reduced-motion:reduce){
+    .mmb-cx,.mmb-cx .cndl,.mmb-cx .vbar,.mmb-cx .hbar,.mmb-cx .draw,.mmb-cx .fade,.mmb-cx .pop{animation:none}
+    .mmb-cx .draw{stroke-dashoffset:0}}
   .mmb-txt:empty,.mmb-charts:empty{display:none}
   /* assistant action row (copy · regenerate · timestamp) — space always reserved */
   .mmb-actions{display:flex;align-items:center;gap:6px;height:22px;margin-top:5px;opacity:0;transition:opacity .14s ease}
@@ -590,6 +656,12 @@
   .mmb-box:focus-within{border-color:color-mix(in srgb,var(--mmb-info) 40%,transparent);
     box-shadow:var(--mmb-shadow-box),0 0 0 3px color-mix(in srgb,var(--mmb-info) 13%,transparent)}
   .mmb-ta:focus-visible{outline:none}   /* the box carries the ring; a second one inside it is noise */
+  /* Send is the one moment the composer should answer back. A 240ms settle — the box dips
+     and returns while the bubble it just launched rises into the transcript — so pressing
+     the key FEELS like the message left, rather than like the text vanished. */
+  .mmb-box.mmb-sent{animation:mmb-recoil .24s var(--mmb-ease)}
+  @keyframes mmb-recoil{0%{transform:none}38%{transform:scale(.985) translateY(2px)}100%{transform:none}}
+  @media(prefers-reduced-motion:reduce){.mmb-box.mmb-sent{animation:none}}
   .mmb-ctx{display:none;align-items:center;gap:7px;padding:9px 12px 0}
   .mmb-ctx.on{display:flex}
   .mmb-ctx .chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font:600 11.5px/1 var(--mmb-font);
@@ -599,11 +671,50 @@
   .mmb-ctx .chip b{font:700 11.5px/1 var(--mmb-font);letter-spacing:.03em;color:var(--mmb-text)}
   .mmb-thumbs{display:none;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
   .mmb-thumbs.on{display:flex}
-  .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:var(--mmb-plate);flex:none}
+  .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:var(--mmb-plate);flex:none;
+    animation:mmb-thumb-in .42s var(--mmb-ease) backwards;animation-delay:calc(var(--i,0)*55ms)}
+  /* an attachment ARRIVES — it does not blink into existence. The rotation is tiny and
+     unwinds: a picture being set down on the desk, not a card dealt at you. */
+  @keyframes mmb-thumb-in{from{opacity:0;transform:translateY(10px) scale(.82) rotate(-4deg)}to{opacity:1;transform:none}}
   .mmb-thumb img{width:100%;height:100%;object-fit:cover;display:block}
   .mmb-thumb .x{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;cursor:pointer;display:grid;place-items:center;
-    background:rgba(8,10,16,.82);color:#fff;font:700 11px/1 var(--mmb-font);padding:0}
+    background:rgba(8,10,16,.82);color:#fff;font:700 11px/1 var(--mmb-font);padding:0;
+    opacity:0;transform:scale(.7);transition:opacity .15s var(--mmb-ease),transform .15s var(--mmb-ease),background .13s}
+  .mmb-thumb:hover .x,.mmb-thumb:focus-within .x{opacity:1;transform:none}
+  @media(hover:none),(pointer:coarse){.mmb-thumb .x{opacity:1;transform:none}}
   .mmb-thumb .x:hover{background:var(--mmb-danger)}
+  /* ── drag & drop ──────────────────────────────────────────────────────────────
+     A chat that takes images should SAY so the moment a file crosses it. The overlay
+     is the whole panel — a small target you have to aim at is the thing people miss —
+     and it lights the frame it is asking you to drop into. */
+  .mmb-drop{position:absolute;inset:0;z-index:20;display:grid;place-items:center;pointer-events:none;
+    opacity:0;visibility:hidden;transition:opacity .2s var(--mmb-ease),visibility 0s linear .2s;
+    background:color-mix(in srgb,var(--mmb-panel) 72%,transparent);
+    -webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1)}
+  #mmb-panel.dropping .mmb-drop{opacity:1;visibility:visible;transition-delay:0s,0s}
+  .mmb-drop-in{display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px 34px;text-align:center;
+    border-radius:20px;border:2px dashed color-mix(in srgb,var(--mmb-info) 46%,transparent);
+    background:color-mix(in srgb,var(--mmb-info) 7%,transparent);
+    transform:scale(.94);transition:transform .26s var(--mmb-ease)}
+  #mmb-panel.dropping .mmb-drop-in{transform:none}
+  .mmb-drop-ic{position:relative;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;
+    color:#fff;background:linear-gradient(160deg,var(--mmb-violet),var(--mmb-glow));
+    box-shadow:0 14px 34px -12px color-mix(in srgb,var(--mmb-glow) 80%,transparent)}
+  .mmb-drop-ic svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  #mmb-panel.dropping .mmb-drop-ic{animation:mmb-drop-hover 1.8s ease-in-out infinite}
+  @keyframes mmb-drop-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  /* the ring the icon is hovering over — it breathes on the offbeat, so the pair reads as
+     one object in motion rather than two things pulsing together */
+  .mmb-drop-ic::after{content:'';position:absolute;inset:-10px;border-radius:22px;
+    border:1px solid color-mix(in srgb,var(--mmb-info) 40%,transparent)}
+  #mmb-panel.dropping .mmb-drop-ic::after{animation:mmb-drop-ring 1.8s ease-in-out infinite}
+  @keyframes mmb-drop-ring{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.12);opacity:.25}}
+  .mmb-drop-t{font:700 15px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 96%,var(--mmb-hi))}
+  .mmb-drop-s{font:400 12px/1.4 var(--mmb-font);color:var(--mmb-muted);max-width:220px}
+  @media(prefers-reduced-motion:reduce){
+    .mmb-thumb{animation:none}
+    #mmb-panel.dropping .mmb-drop-ic,#mmb-panel.dropping .mmb-drop-ic::after{animation:none}
+    .mmb-drop,.mmb-drop-in,.mmb-thumb .x{transition:none}}
   /* attached-image thumbs inside a sent user bubble */
   .mmb-bub .mmb-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
   .mmb-bub .mmb-imgs img{width:120px;max-width:44vw;height:auto;border-radius:10px;border:1px solid color-mix(in srgb,#fff 18%,transparent);display:block}
@@ -796,19 +907,42 @@
   };
   function toolFam(name) {
     name = String(name || '');
-    if (TOOL_FAM[name]) return FAM[TOOL_FAM[name]];
-    if (/chart|annotate|measure|indicator|detection/.test(name)) return FAM.chart;
-    if (/contradict|governance/.test(name)) return FAM.check;
-    if (/option|flow|smart_money|insider|congress/.test(name)) return FAM.flow;
-    if (/theme/.test(name)) return FAM.theme;
-    if (/research|context|artifact|event|news/.test(name)) return FAM.notes;
-    if (/watchlist|portfolio/.test(name)) return FAM.book;
-    if (/quote|price|mover|peer/.test(name)) return FAM.tape;
-    if (/earning|fundamental/.test(name)) return FAM.fund;
-    if (/screen/.test(name)) return FAM.screen;
-    if (/^(read|query|get|explain)_/.test(name)) return FAM.regime;
-    return FAM.data;
+    if (TOOL_FAM[name]) return TOOL_FAM[name];
+    if (/chart|annotate|measure|indicator|detection/.test(name)) return 'chart';
+    if (/contradict|governance/.test(name)) return 'check';
+    if (/option|flow|smart_money|insider|congress/.test(name)) return 'flow';
+    if (/theme/.test(name)) return 'theme';
+    if (/research|context|artifact|event|news/.test(name)) return 'notes';
+    if (/watchlist|portfolio/.test(name)) return 'book';
+    if (/quote|price|mover|peer/.test(name)) return 'tape';
+    if (/earning|fundamental/.test(name)) return 'fund';
+    if (/screen/.test(name)) return 'screen';
+    if (/^(read|query|get|explain)_/.test(name)) return 'regime';
+    return 'data';
   }
+  /* The second line under a running step. The server's label says WHAT it is doing; this
+     says what KIND of question it is answering by doing it — the finer grain users asked
+     for, still derived from the wire and still at "what kind of work" altitude. */
+  var FAM_SUB = {
+    tape:   ['checking what the tape actually did', '看盘面究竟走了什么'],
+    screen: ['combing the market for matches', '在全市场里筛匹配的标的'],
+    flow:   ['seeing which way the crowd is leaning', '看资金和仓位站在哪一边'],
+    fund:   ['looking at the business underneath', '看背后的基本面'],
+    book:   ['pulling up your own names', '调出你自己的持仓'],
+    regime: ['placing this in the bigger picture', '把它放进大局里看'],
+    theme:  ['following the theme it belongs to', '顺着它所属的主题看'],
+    notes:  ['reading what is already written down', '翻看已有的研究记录'],
+    chart:  ['working on the chart itself', '在图表上动手'],
+    check:  ['making sure the readings agree', '核对各处读数是否一致'],
+    data:   ['picking up one more read', '再取一份数据']
+  };
+  /* Rounds are not interchangeable: the first decides where to look, the second chases what
+     the first turned up. Saying so is the difference between progress and a stuck line. */
+  var MODEL_SUB = [
+    ['working out where to look first', '先想清楚该从哪儿查起'],
+    ['chasing what the first look turned up', '顺着第一轮的线索继续追'],
+    ['tightening the read with one more pass', '再看一轮，把结论收紧']
+  ];
   /* One plain clause per stage — what this part of the wait is FOR. The server owns the
      headline (bilingual, whitelisted); this is the widget's own second line, and it stays
      at "what kind of work" altitude: never how a signal is built. */
@@ -816,7 +950,6 @@
     start: ["working out what you're really asking", '先弄清你真正想问的'],
     grounding: ["today's market state, before anything else", '先载入今日的市场状态'],
     model: ['deciding what to look up next', '决定接下来查什么'],
-    tool: ['gathering what it needs to answer', '收集回答所需的资料'],
     synthesis: ['putting the pieces together', '把各条线索拼起来'],
     writing: ['turning it into plain words', '用平实的话写出来'],
     review: ["checking it against the desk's rules", '按台席规则复核']
@@ -859,6 +992,12 @@
           '<button class="mmb-icon" data-act="new" title="New chat">' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
           '<button class="mmb-icon" data-act="close" title="Close">' + ic('<path d="M6 6l12 12M18 6L6 18"/>') + '</button>' +
         '</div>' +
+        '<div class="mmb-drop" id="mmb-drop" aria-hidden="true"><div class="mmb-drop-in">' +
+          '<div class="mmb-drop-ic">' + ic('<rect x="3" y="4" width="18" height="14" rx="3"/><path d="M3 15l4.5-4.5 3.5 3.5 3-3L21 16"/><circle cx="9" cy="9" r="1.4"/>') + '</div>' +
+          '<div class="mmb-drop-t">' + LB('Drop it here', '拖到这里') + '</div>' +
+          '<div class="mmb-drop-s">' + LB('Charts, screenshots, anything you are looking at — I will read it.',
+                                          '图表、截图、你正在看的任何画面 — 我来读。') + '</div>' +
+        '</div></div>' +
         '<div class="mmb-scroll" id="mmb-scroll" role="log" aria-label="' + L('Conversation', '对话') + '" tabindex="0"></div>' +
         '<div id="mmb-live" class="mmb-sr" aria-live="polite" role="status"></div>' +
         '<div class="mmb-comp"><div class="mmb-upgrade" id="mmb-upgrade"></div>' +
@@ -1170,6 +1309,535 @@
       },
       cancel: function () { if (raf) { cancelAnimationFrame(raf); raf = 0; } if (caret) { caret.parentNode && caret.parentNode.removeChild(caret); caret = null; } }
     };
+  }
+
+  /* ══ in-chat chart engine ══════════════════════════════════════════════════════
+     The gateway's render_inline_chart hands back a picture produced by the SOCIAL-POST
+     renderer — watermark, logo, CTA, flat black, a price axis you cannot read and a MACD
+     squeezed into a strip. That engine is right for an image posted to a timeline and
+     wrong for a reply: here the user is looking at a chart, not receiving one.
+
+     So the widget draws its own from the same daily bars the site publishes
+     (<store>/<TICKER>.json on the data plane), and keeps the server SVG only as the
+     fallback for symbols it has no bars for. Everything below is computed client-side:
+     EMA20 / SMA50 / RSI(14) / MACD(12,26,9) over the FULL history, then the last window
+     is drawn — so no indicator starts mid-canvas the way a warm-up-less render does.
+
+     Nothing here is a signal. It draws the bars the desk already publishes; the read
+     stays in the model's words underneath.  ────────────────────────────────────────── */
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  /* Per-market stores, mirroring the data-plane prefixes in data_base.js. A suffix picks
+     the store; unknown suffixes take the US store and simply miss (→ server fallback). */
+  function chartStore(t) {
+    t = String(t || '').toUpperCase();
+    if (/\.(SS|SZ|SH)$/.test(t)) return 'chinaohlc';
+    if (/\.HK$/.test(t)) return 'hkohlc';
+    if (/\.(TO|V|CN|NE)$/.test(t)) return 'canadaohlc';
+    if (/\.(T|KS|KQ|TW|TWO|L|DE|PA|AS|MI|MC|SW|ST|HE|OL|CO|AX|NZ|SI|BO|NS)$/.test(t)) return 'intlohlc';
+    return 'ohlc';
+  }
+  /* The dashboard rewrites relative store paths to the data plane via its own fetch shim;
+     the Terminal has no shim, so the base is resolved explicitly. CFG wins, then the host
+     page's DATA_BASE, then the public data plane this widget is served alongside. */
+  var DATA_FALLBACK = 'https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev';
+  function chartBase() {
+    var b = CFG.dataBase || window.DATA_BASE || DATA_FALLBACK;
+    return String(b).replace(/\/+$/, '');
+  }
+  var barCache = {};
+  function fetchBars(ticker) {
+    var key = String(ticker || '').toUpperCase();
+    if (barCache[key]) return barCache[key];
+    var url = chartBase() + '/' + chartStore(key) + '/' + encodeURIComponent(key) + '.json';
+    barCache[key] = fetch(url, { credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var bars = d && d.bars;
+        if (!bars || !bars.length) return null;
+        /* [date, o, h, l, c, v] — reject rows that are not a full OHLC bar rather than
+           drawing a candle out of nulls. */
+        var out = [];
+        for (var i = 0; i < bars.length; i++) {
+          var b = bars[i];
+          if (!b || b.length < 5) continue;
+          var o = +b[1], h = +b[2], lo = +b[3], c = +b[4];
+          if (!isFinite(o) || !isFinite(h) || !isFinite(lo) || !isFinite(c)) continue;
+          out.push({ d: String(b[0]), o: o, h: h, l: lo, c: c, v: isFinite(+b[5]) ? +b[5] : 0 });
+        }
+        return out.length >= 30 ? out : null;
+      })
+      .catch(function () { return null; });
+    return barCache[key];
+  }
+
+  /* ── indicator math (full-history, so the visible window is always warm) ── */
+  function emaSeries(v, n) {
+    var k = 2 / (n + 1), out = new Array(v.length), prev = null;
+    for (var i = 0; i < v.length; i++) {
+      prev = prev === null ? v[i] : v[i] * k + prev * (1 - k);
+      out[i] = i >= n - 1 ? prev : null;
+    }
+    return out;
+  }
+  function smaSeries(v, n) {
+    var out = new Array(v.length), sum = 0;
+    for (var i = 0; i < v.length; i++) {
+      sum += v[i];
+      if (i >= n) sum -= v[i - n];
+      out[i] = i >= n - 1 ? sum / n : null;
+    }
+    return out;
+  }
+  function rsiSeries(v, n) {
+    var out = new Array(v.length), g = 0, l = 0, i;
+    for (i = 1; i <= n && i < v.length; i++) { var d = v[i] - v[i - 1]; if (d >= 0) g += d; else l -= d; }
+    var ag = g / n, al = l / n;
+    for (i = 0; i < v.length; i++) out[i] = null;
+    if (v.length > n) out[n] = al === 0 ? 100 : 100 - 100 / (1 + ag / al);
+    for (i = n + 1; i < v.length; i++) {
+      var ch = v[i] - v[i - 1];
+      ag = (ag * (n - 1) + (ch > 0 ? ch : 0)) / n;
+      al = (al * (n - 1) + (ch < 0 ? -ch : 0)) / n;
+      out[i] = al === 0 ? 100 : 100 - 100 / (1 + ag / al);
+    }
+    return out;
+  }
+  function macdSeries(v) {
+    var f = emaSeries(v, 12), s = emaSeries(v, 26), line = [], i;
+    for (i = 0; i < v.length; i++) line[i] = (f[i] === null || s[i] === null) ? null : f[i] - s[i];
+    /* the signal EMA runs on the MACD line's own defined stretch, not on nulls */
+    var start = 0; while (start < line.length && line[start] === null) start++;
+    var sig = new Array(v.length), k = 2 / 10, prev = null;
+    for (i = 0; i < v.length; i++) sig[i] = null;
+    for (i = start; i < line.length; i++) {
+      prev = prev === null ? line[i] : line[i] * k + prev * (1 - k);
+      if (i - start >= 8) sig[i] = prev;
+    }
+    var hist = new Array(v.length);
+    for (i = 0; i < v.length; i++) hist[i] = (line[i] === null || sig[i] === null) ? null : line[i] - sig[i];
+    return { line: line, signal: sig, hist: hist };
+  }
+
+  /* ── small helpers ── */
+  function svgEl(tag, attrs) {
+    var e = DOC.createElementNS(SVGNS, tag);
+    if (attrs) for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function niceStep(range, target) {
+    var raw = range / Math.max(1, target), mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / mag;
+    var step = norm >= 5 ? 10 : norm >= 2.5 ? 5 : norm >= 2 ? 2.5 : norm >= 1 ? 2 : 1;
+    return step * mag;
+  }
+  function fmtPrice(v) {
+    var a = Math.abs(v);
+    if (a >= 1000) return v.toFixed(0);
+    if (a >= 100) return v.toFixed(1);
+    if (a >= 1) return v.toFixed(2);
+    return v.toFixed(4);
+  }
+  function fmtVol(v) {
+    if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+    return String(Math.round(v));
+  }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MON_ZH = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  function monLabel(iso) {
+    var p = String(iso).split('-'); var m = (+p[1] || 1) - 1;
+    return (zh() ? MON_ZH : MON)[m] + (m === 0 ? " '" + String(p[0]).slice(2) : '');
+  }
+
+  /* ── the renderer ────────────────────────────────────────────────────────────
+     One pass builds the whole SVG; the animation is CSS on the pieces, so a resize or a
+     theme flip is a plain re-render and never a half-played sequence. */
+  function drawChart(box, ticker, tf, bars) {
+    var reduced = reduceMotion();
+    var W = Math.max(280, Math.min(1100, Math.round(box.clientWidth || 420)));
+    var H = Math.round(Math.max(330, Math.min(560, W * 0.72)));
+    var PAD_R = 54, PAD_L = 8, X0 = PAD_L, X1 = W - PAD_R;
+    var plotW = X1 - X0;
+    /* one bar every ~6.4px, so a wide panel shows more history instead of fatter candles */
+    var VIS = Math.max(52, Math.min(200, Math.floor(plotW / 5.6)));
+    var TOP = 10, XAXIS = 20;
+    var priceH = Math.round((H - TOP - XAXIS) * 0.62);
+    var rsiH = Math.round((H - TOP - XAXIS) * 0.14);
+    var macdH = (H - TOP - XAXIS) - priceH - rsiH - 16;
+    var pY0 = TOP, pY1 = TOP + priceH;
+    var rY0 = pY1 + 8, rY1 = rY0 + rsiH;
+    var mY0 = rY1 + 8, mY1 = mY0 + macdH;
+
+    var close = bars.map(function (b) { return b.c; });
+    var ema20 = emaSeries(close, 20), sma50 = smaSeries(close, 50);
+    var rsi = rsiSeries(close, 14), mac = macdSeries(close);
+
+    var i0 = Math.max(0, bars.length - VIS);
+    var view = bars.slice(i0), n = view.length;
+    var step = plotW / n, cw = Math.max(1.5, Math.min(11, step * 0.66));
+    function cx(k) { return X0 + step * (k + 0.5); }
+
+    /* price scale spans the bars AND the overlays, so a moving average never leaves the pane */
+    var lo = Infinity, hi = -Infinity, k;
+    for (k = 0; k < n; k++) { if (view[k].l < lo) lo = view[k].l; if (view[k].h > hi) hi = view[k].h; }
+    for (k = i0; k < bars.length; k++) {
+      if (ema20[k] !== null) { lo = Math.min(lo, ema20[k]); hi = Math.max(hi, ema20[k]); }
+      if (sma50[k] !== null) { lo = Math.min(lo, sma50[k]); hi = Math.max(hi, sma50[k]); }
+    }
+    var padY = (hi - lo) * 0.07 || 1;
+    lo -= padY; hi += padY;
+    function py(v) { return pY1 - (v - lo) / (hi - lo) * (pY1 - pY0); }
+
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H,
+                             preserveAspectRatio: 'xMidYMid meet', role: 'img' });
+    svg.setAttribute('aria-label', ticker + ' ' + (tf || 'daily') + ' price chart');
+    var GRID = 'color-mix(in srgb, var(--mmb-cx-grid) 9%, transparent)';
+    var AXIS = 'var(--mmb-muted)';
+    function delay(ms) { return reduced ? null : ms + 'ms'; }
+
+    /* ── grid + price axis ── */
+    var gGrid = svgEl('g', { class: reduced ? '' : 'fade' });
+    if (!reduced) gGrid.style.animationDelay = '60ms';
+    var pstep = niceStep(hi - lo, 5);
+    var first = Math.ceil(lo / pstep) * pstep;
+    for (var pv = first; pv < hi; pv += pstep) {
+      var yy = py(pv);
+      gGrid.appendChild(svgEl('line', { x1: X0, x2: X1, y1: yy, y2: yy, stroke: GRID, 'stroke-width': 1 }));
+      var tl = svgEl('text', { x: X1 + 7, y: yy + 3.4, fill: AXIS, 'font-size': 10,
+                               'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+      tl.textContent = fmtPrice(pv);
+      gGrid.appendChild(tl);
+    }
+    svg.appendChild(gGrid);
+
+    /* ── volume, sunk into the bottom third of the price pane ── */
+    var vmax = 0;
+    for (k = 0; k < n; k++) if (view[k].v > vmax) vmax = view[k].v;
+    var volTop = pY1 - (pY1 - pY0) * 0.20;
+    var gVol = svgEl('g', { opacity: .34 });
+    for (k = 0; k < n && vmax > 0; k++) {
+      var vh = Math.max(0.6, (view[k].v / vmax) * (pY1 - volTop));
+      var vb = svgEl('rect', { x: cx(k) - cw / 2, y: pY1 - vh, width: cw, height: vh,
+                               fill: view[k].c >= view[k].o ? 'var(--mmb-up)' : 'var(--mmb-dn)',
+                               class: reduced ? '' : 'vbar', rx: .5 });
+      if (!reduced) vb.style.animationDelay = (120 + k * (620 / n)) + 'ms';
+      gVol.appendChild(vb);
+    }
+    svg.appendChild(gVol);
+
+    /* ── candles ── */
+    var gC = svgEl('g');
+    for (k = 0; k < n; k++) {
+      var b = view[k], up = b.c >= b.o, col = up ? 'var(--mmb-up)' : 'var(--mmb-dn)';
+      var g1 = svgEl('g', { class: reduced ? '' : 'cndl' });
+      if (!reduced) g1.style.animationDelay = (110 + k * (640 / n)) + 'ms';
+      g1.appendChild(svgEl('line', { x1: cx(k), x2: cx(k), y1: py(b.h), y2: py(b.l),
+                                     stroke: col, 'stroke-width': Math.max(1, cw * 0.16) }));
+      var yTop = py(Math.max(b.o, b.c)), bodyH = Math.max(1, Math.abs(py(b.o) - py(b.c)));
+      g1.appendChild(svgEl('rect', { x: cx(k) - cw / 2, y: yTop, width: cw, height: bodyH,
+                                     fill: col, rx: Math.min(1.5, cw * 0.2) }));
+      gC.appendChild(g1);
+    }
+    svg.appendChild(gC);
+
+    /* ── overlays: EMA20 + SMA50, drawn rather than pasted ── */
+    function linePath(series, color, width, dash, delayMs, klass) {
+      var d = '', started = false;
+      for (var j = 0; j < n; j++) {
+        var v = series[i0 + j];
+        if (v === null || v === undefined) { started = false; continue; }
+        d += (started ? 'L' : 'M') + cx(j).toFixed(1) + ' ' + py(v).toFixed(1) + ' ';
+        started = true;
+      }
+      if (!d) return null;
+      var p = svgEl('path', { d: d, fill: 'none', stroke: color, 'stroke-width': width,
+                              'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+                              class: klass || '' });
+      if (dash) p.setAttribute('stroke-dasharray', dash);
+      if (!reduced && !dash) {
+        svg.appendChild(p);
+        var L = 0; try { L = p.getTotalLength(); } catch (e) { L = 0; }
+        if (L) {
+          p.style.setProperty('--len', L);
+          p.setAttribute('stroke-dasharray', L);
+          p.classList.add('draw');
+          p.style.animationDelay = delayMs + 'ms';
+        }
+        return p;
+      }
+      return p;
+    }
+    var pe = linePath(ema20, 'var(--mmb-info)', 1.5, null, 380);
+    if (pe && !pe.parentNode) svg.appendChild(pe);
+    var ps = linePath(sma50, 'var(--mmb-violet)', 1.5, null, 520);
+    if (ps && !ps.parentNode) svg.appendChild(ps);
+
+    /* ── last-price tag on the axis ── */
+    var lastBar = view[n - 1], lastY = py(lastBar.c);
+    var tag = svgEl('g', { class: reduced ? '' : 'pop' });
+    if (!reduced) tag.style.animationDelay = '900ms';
+    var tagCol = lastBar.c >= lastBar.o ? 'var(--mmb-up)' : 'var(--mmb-dn)';
+    tag.appendChild(svgEl('line', { x1: X0, x2: X1, y1: lastY, y2: lastY, stroke: tagCol,
+                                    'stroke-width': 1, 'stroke-dasharray': '2 3', opacity: .55 }));
+    tag.appendChild(svgEl('rect', { x: X1 + 2, y: lastY - 8, width: PAD_R - 6, height: 16, rx: 4, fill: tagCol }));
+    var tt = svgEl('text', { x: X1 + 5, y: lastY + 3.6, fill: '#fff', 'font-size': 10, 'font-weight': 700,
+                             'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+    tt.textContent = fmtPrice(lastBar.c);
+    tag.appendChild(tt);
+    svg.appendChild(tag);
+
+    /* ── RSI pane ── */
+    function paneLabel(y, txt, extra) {
+      /* a legend CHIP, not bare text: an unbacked label sits directly on the RSI line and
+         both become unreadable where they cross. */
+      var g = svgEl('g', { class: reduced ? '' : 'fade' });
+      var w = txt.length * 5.1 + 10;
+      g.appendChild(svgEl('rect', { x: X0 + 1, y: y + 1.5, width: w, height: 12, rx: 3,
+                                    fill: 'var(--mmb-cx-b)', opacity: .72 }));
+      var t = svgEl('text', { x: X0 + 6, y: y + 10.4, fill: AXIS, 'font-size': 9,
+                              'font-weight': 700, 'letter-spacing': .35,
+                              'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+      t.textContent = txt;
+      g.appendChild(t);
+      if (!reduced) g.style.animationDelay = (extra || 700) + 'ms';
+      return g;
+    }
+    var gR = svgEl('g');
+    gR.appendChild(svgEl('rect', { x: X0, y: rY0 + (rY1 - rY0) * 0.3, width: plotW, height: (rY1 - rY0) * 0.4,
+                                   fill: GRID, opacity: .6 }));
+    function ry(v) { return rY1 - (v / 100) * (rY1 - rY0); }
+    var prsi = '', st = false;
+    for (k = 0; k < n; k++) {
+      var rv = rsi[i0 + k];
+      if (rv === null || rv === undefined) { st = false; continue; }
+      prsi += (st ? 'L' : 'M') + cx(k).toFixed(1) + ' ' + ry(rv).toFixed(1) + ' '; st = true;
+    }
+    if (prsi) {
+      var rp = svgEl('path', { d: prsi, fill: 'none', stroke: 'var(--mmb-info)', 'stroke-width': 1.4,
+                               'stroke-linejoin': 'round' });
+      gR.appendChild(rp);
+      if (!reduced) {
+        svg.appendChild(gR);
+        var RL = 0; try { RL = rp.getTotalLength(); } catch (e2) { RL = 0; }
+        if (RL) { rp.style.setProperty('--len', RL); rp.setAttribute('stroke-dasharray', RL); rp.classList.add('draw'); rp.style.animationDelay = '760ms'; }
+      }
+    }
+    gR.appendChild(paneLabel(rY0, 'RSI 14', 720));
+    var rlast = rsi[bars.length - 1];
+    if (rlast !== null && rlast !== undefined) {
+      var rt = svgEl('text', { x: X1 + 7, y: ry(rlast) + 3.4, fill: AXIS, 'font-size': 10,
+                               'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace',
+                               class: reduced ? '' : 'fade' });
+      rt.textContent = rlast.toFixed(0);
+      if (!reduced) rt.style.animationDelay = '860ms';
+      gR.appendChild(rt);
+    }
+    if (!gR.parentNode) svg.appendChild(gR);
+
+    /* ── MACD pane: histogram + both lines, on its own scale ── */
+    var gM = svgEl('g');
+    var mlo = Infinity, mhi = -Infinity;
+    for (k = i0; k < bars.length; k++) {
+      [mac.line[k], mac.signal[k], mac.hist[k]].forEach(function (v) {
+        if (v === null || v === undefined) return;
+        if (v < mlo) mlo = v; if (v > mhi) mhi = v;
+      });
+    }
+    if (!isFinite(mlo)) { mlo = -1; mhi = 1; }
+    var mspan = Math.max(Math.abs(mlo), Math.abs(mhi)) * 1.12 || 1;
+    function my(v) { return (mY0 + mY1) / 2 - (v / mspan) * ((mY1 - mY0) / 2); }
+    gM.appendChild(svgEl('line', { x1: X0, x2: X1, y1: my(0), y2: my(0), stroke: GRID, 'stroke-width': 1 }));
+    for (k = 0; k < n; k++) {
+      var hv = mac.hist[i0 + k];
+      if (hv === null || hv === undefined) continue;
+      var y0 = my(0), y1 = my(hv), hh = Math.max(0.8, Math.abs(y1 - y0));
+      var hb = svgEl('rect', { x: cx(k) - cw / 2, y: Math.min(y0, y1), width: cw, height: hh, rx: .5,
+                               fill: hv >= 0 ? 'var(--mmb-up)' : 'var(--mmb-dn)', opacity: .55,
+                               class: reduced ? '' : 'hbar' });
+      if (!reduced) hb.style.animationDelay = (700 + k * (420 / n)) + 'ms';
+      gM.appendChild(hb);
+    }
+    function macdPath(series, color, w, delayMs) {
+      var d = '', started = false;
+      for (var j = 0; j < n; j++) {
+        var v = series[i0 + j];
+        if (v === null || v === undefined) { started = false; continue; }
+        d += (started ? 'L' : 'M') + cx(j).toFixed(1) + ' ' + my(v).toFixed(1) + ' '; started = true;
+      }
+      if (!d) return;
+      var p = svgEl('path', { d: d, fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linejoin': 'round' });
+      gM.appendChild(p);
+      if (!reduced) {
+        if (!gM.parentNode) svg.appendChild(gM);
+        var L = 0; try { L = p.getTotalLength(); } catch (e3) { L = 0; }
+        if (L) { p.style.setProperty('--len', L); p.setAttribute('stroke-dasharray', L); p.classList.add('draw'); p.style.animationDelay = delayMs + 'ms'; }
+      }
+    }
+    macdPath(mac.line, 'var(--mmb-info)', 1.4, 880);
+    macdPath(mac.signal, 'var(--mmb-warn)', 1.2, 960);
+    gM.appendChild(paneLabel(mY0, 'MACD 12/26/9', 900));
+    if (!gM.parentNode) svg.appendChild(gM);
+
+    /* ── date axis: one label per month change ── */
+    var gX = svgEl('g', { class: reduced ? '' : 'fade' });
+    if (!reduced) gX.style.animationDelay = '780ms';
+    var lastMon = '';
+    for (k = 0; k < n; k++) {
+      var mo = String(view[k].d).slice(0, 7);
+      if (mo === lastMon) continue;
+      lastMon = mo;
+      if (cx(k) < X0 + 14 || cx(k) > X1 - 18) continue;
+      var xt = svgEl('text', { x: cx(k), y: H - 6, fill: AXIS, 'font-size': 9.5, 'text-anchor': 'middle',
+                               'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+      xt.textContent = monLabel(view[k].d);
+      gX.appendChild(xt);
+    }
+    svg.appendChild(gX);
+
+    /* ── crosshair: the bar under the cursor, read out in the header ── */
+    var gXh = svgEl('g', { class: 'mmb-cx-xh' });
+    var vx = svgEl('line', { x1: 0, x2: 0, y1: pY0, y2: mY1, stroke: 'var(--mmb-muted)',
+                             'stroke-width': 1, 'stroke-dasharray': '3 3' });
+    var hy = svgEl('line', { x1: X0, x2: X1, y1: 0, y2: 0, stroke: 'var(--mmb-muted)',
+                             'stroke-width': 1, 'stroke-dasharray': '3 3' });
+    var dot = svgEl('circle', { r: 3, fill: 'var(--mmb-info)' });
+    /* the two chips that make a crosshair feel like an instrument rather than a hairline:
+       the price it is sitting on, in the axis gutter, and the date it is over, on the rail */
+    var pxR = svgEl('rect', { x: X1 + 2, y: 0, width: PAD_R - 6, height: 15, rx: 4, fill: 'var(--mmb-panel2)' });
+    var pxT = svgEl('text', { x: X1 + 5, y: 0, 'font-size': 9.5, 'font-weight': 700, fill: 'var(--mmb-text)',
+                              'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+    var dtR = svgEl('rect', { x: 0, y: H - 16, width: 52, height: 14, rx: 4, fill: 'var(--mmb-panel2)' });
+    var dtT = svgEl('text', { x: 0, y: H - 5.6, 'font-size': 9, 'text-anchor': 'middle', fill: 'var(--mmb-text)',
+                              'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+    gXh.appendChild(vx); gXh.appendChild(hy); gXh.appendChild(dot);
+    gXh.appendChild(pxR); gXh.appendChild(pxT); gXh.appendChild(dtR); gXh.appendChild(dtT);
+    svg.appendChild(gXh);
+
+    return { svg: svg, view: view, n: n, cx: cx, py: py, X0: X0, X1: X1, W: W, H: H,
+             xh: { g: gXh, v: vx, h: hy, dot: dot, pxR: pxR, pxT: pxT, dtR: dtR, dtT: dtT },
+             last: lastBar, prev: view[n - 2] || view[n - 1] };
+  }
+
+  /* ── mount: shell first (so the reply never waits on a fetch), then the live draw ── */
+  function mountChart(host, j) {
+    var ticker = String(j.ticker || '').toUpperCase().slice(0, 12);
+    var tf = String(j.timeframe || 'DAILY').toLowerCase();
+    var box = el('div', 'mmb-cx');
+    var head = el('div', 'mmb-cx-h');
+    var sym = el('span', 'mmb-cx-sym'); sym.textContent = ticker || '—';
+    var tfc = el('span', 'mmb-cx-tf'); tfc.textContent = zh() ? (tf === 'daily' ? '日线' : tf) : tf;
+    var sp = el('div', 'sp');
+    var read = el('div', 'mmb-cx-read');
+    head.appendChild(sym); head.appendChild(tfc); head.appendChild(sp); head.appendChild(read);
+    box.appendChild(head);
+    var body = el('div', 'mmb-cx-body');
+    box.appendChild(body);
+    host.appendChild(box);
+
+    function fallback() {
+      /* the server's picture, when we have no bars of our own for this symbol */
+      if (!j.svg) {
+        box.removeChild(body);
+        var m = el('div', 'mmb-cx-miss');
+        m.textContent = L('No daily bars for ' + ticker + ' — the read below stands on its own.',
+                          ticker + ' 暂无日线数据 — 下方研判独立成立。');
+        box.appendChild(m);
+        return;
+      }
+      box.remove();
+      var w = el('div', 'mmb-chart'); w.innerHTML = j.svg; host.appendChild(w); stickAfter();
+    }
+
+    fetchBars(ticker).then(function (bars) {
+      if (!bars) { fallback(); return; }
+      var built = null;
+      function render() {
+        body.textContent = '';
+        built = drawChart(body, ticker, tf, bars);
+        box.classList.toggle('narrow', built.W < 470);
+        body.appendChild(built.svg);
+        paintRead(null);
+        wireCrosshair();
+        stickAfter();
+      }
+      /* header readout: last close + day change at rest, the hovered bar while tracking */
+      function paintRead(bar) {
+        read.textContent = '';
+        var b = bar || built.last, prev = bar ? null : built.prev;
+        if (bar) {
+          [[L('O', '开'), bar.o], [L('H', '高'), bar.h], [L('L', '低'), bar.l], [L('C', '收'), bar.c]]
+            .forEach(function (pair) {
+              var s = el('span'); var b2 = el('b'); b2.textContent = pair[0] + ' ';
+              s.appendChild(b2); s.appendChild(DOC.createTextNode(fmtPrice(pair[1]))); read.appendChild(s);
+            });
+          var vsp = el('span', 'mmb-cx-vol'); var vb = el('b'); vb.textContent = L('V ', '量 ');
+          vsp.appendChild(vb); vsp.appendChild(DOC.createTextNode(fmtVol(bar.v))); read.appendChild(vsp);
+          var ch = bar.o ? (bar.c - bar.o) / bar.o * 100 : 0;
+          var cs = el('span', 'mmb-cx-chg ' + (ch >= 0 ? 'up' : 'dn'));
+          cs.textContent = (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%';
+          read.appendChild(cs);
+          return;
+        }
+        var last = el('span', 'mmb-cx-last'); last.textContent = fmtPrice(b.c); read.appendChild(last);
+        if (prev && prev.c) {
+          var d = (b.c - prev.c) / prev.c * 100;
+          var cg = el('span', 'mmb-cx-chg ' + (d >= 0 ? 'up' : 'dn'));
+          cg.textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + '%';
+          read.appendChild(cg);
+        }
+      }
+      function wireCrosshair() {
+        var svg = built.svg;
+        function track(ev) {
+          var r = svg.getBoundingClientRect();
+          var x = (ev.clientX - r.left) / r.width * built.W;
+          var idx = Math.round((x - built.X0) / ((built.X1 - built.X0) / built.n) - 0.5);
+          if (idx < 0) idx = 0; if (idx > built.n - 1) idx = built.n - 1;
+          var bar = built.view[idx], px = built.cx(idx), pyv = built.py(bar.c);
+          var xh = built.xh;
+          xh.v.setAttribute('x1', px); xh.v.setAttribute('x2', px);
+          xh.h.setAttribute('y1', pyv); xh.h.setAttribute('y2', pyv);
+          xh.dot.setAttribute('cx', px); xh.dot.setAttribute('cy', pyv);
+          xh.pxR.setAttribute('y', pyv - 7.5); xh.pxT.setAttribute('y', pyv + 3.4);
+          xh.pxT.textContent = fmtPrice(bar.c);
+          var dx = Math.max(built.X0, Math.min(built.X1 - 52, px - 26));
+          xh.dtR.setAttribute('x', dx); xh.dtT.setAttribute('x', dx + 26);
+          xh.dtT.textContent = String(bar.d).slice(5);
+          box.classList.add('live');
+          paintRead(bar);
+        }
+        function leave() { box.classList.remove('live'); paintRead(null); }
+        svg.addEventListener('pointermove', track);
+        svg.addEventListener('pointerdown', track);
+        svg.addEventListener('pointerleave', leave);
+      }
+      render();
+
+      var foot = el('div', 'mmb-cx-foot');
+      [[L('EMA 20', 'EMA 20'), 'var(--mmb-info)'], [L('SMA 50', 'SMA 50'), 'var(--mmb-violet)']]
+        .forEach(function (kv) {
+          var s = el('span', 'mmb-cx-key'); s.style.color = kv[1];
+          var i2 = DOC.createElement('i'); s.appendChild(i2);
+          var tx = el('span'); tx.style.color = 'var(--mmb-muted)'; tx.textContent = kv[0];
+          s.appendChild(tx); foot.appendChild(s);
+        });
+      foot.appendChild(el('div', 'sp'));
+      var src = el('span', 'mmb-cx-src');
+      src.textContent = built.view[built.n - 1].d + ' · ' + built.n + (zh() ? ' 根K线' : ' bars');
+      foot.appendChild(src);
+      box.appendChild(foot);
+
+      /* a resize or a theme/language flip is a re-render, never a stretched picture */
+      var rt = 0;
+      function relayout() { if (rt) clearTimeout(rt); rt = setTimeout(function () { if (box.isConnected) render(); }, 120); }
+      if (typeof ResizeObserver === 'function') {
+        var ro = new ResizeObserver(relayout);
+        ro.observe(box);
+      }
+      DOC.addEventListener('themechange', relayout);
+      DOC.addEventListener('langchange', relayout);
+    });
   }
 
   /* ── gateway auth: attach the Supabase Bearer token (gateway ignores the cookie) ── */
@@ -1502,6 +2170,8 @@
     lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
     pendingImages = []; renderThumbs();
     ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
+    /* the composer answers the keystroke: one settle, retriggerable on a fast second send */
+    boxEl.classList.remove('mmb-sent'); void boxEl.offsetWidth; boxEl.classList.add('mmb-sent');
     pinned = true; hideJump();
     runStream(payload, true);
   }
@@ -1668,6 +2338,7 @@
     if (j.phase === 'beat') return;
     var writing = j.phase === 'writing' && j.n > 0;
     var sub = PHASE_SUB[j.phase];
+    if (j.phase === 'model') sub = MODEL_SUB[Math.min(MODEL_SUB.length - 1, Math.max(0, (j.n || 1) - 1))];
     thinkStep(tl, {
       label: evLabel(j, '', ''),
       detail: writing ? ('~' + (zh() ? (j.n + ' 字') : (Math.max(1, Math.round(j.n / 6)) + ' words'))) : evDetail(j),
@@ -1678,11 +2349,12 @@
   }
   /* one `tool` event — an old gateway sends no labels, so fall back to the house line */
   function thinkTool(tl, j) {
+    var key = toolFam(j.name), fam = FAM_SUB[key] || FAM_SUB.data;
     thinkStep(tl, {
       label: evLabel(j, 'Reading market data', '读取市场数据'),
       detail: evDetail(j), isTool: true,
-      sub: L(PHASE_SUB.tool[0], PHASE_SUB.tool[1]),
-      ico: toolFam(j.name)
+      sub: L(fam[0], fam[1]),
+      ico: FAM[key] || FAM.data
     });
   }
   /* Fold into the receipt chip above the finished answer, then tear the strip down. */
@@ -1758,7 +2430,14 @@
     /* stage narration; anything arriving after `done` is stale noise */
     else if (j.type === 'status') { if (!T.doneSeen) thinkStatus(T.tl, j); }
     else if (j.type === 'tool') { ensureBub(T); if (!T.doneSeen) thinkTool(T.tl, j); stickAfter(); }
-    else if (j.type === 'chart' && j.svg) { ensureBub(T); var cw = el('div', 'mmb-chart'); cw.innerHTML = j.svg; (T.bub.querySelector('.mmb-charts') || T.bub).appendChild(cw); stickAfter(); }
+    /* A chart event no longer means "paste this picture": the widget draws the symbol
+       itself from the published daily bars and keeps j.svg only as the fallback, so an
+       older gateway (svg, no ticker) still renders exactly as before. */
+    else if (j.type === 'chart' && (j.ticker || j.svg)) {
+      ensureBub(T);
+      mountChart(T.bub.querySelector('.mmb-charts') || T.bub, j);
+      stickAfter();
+    }
     else if (j.type === 'delta') {
       /* the answer has landed: the strip folds into the receipt above the text */
       ensureBub(T); thinkCollapse(T.tl, T.bub);
@@ -2427,6 +3106,47 @@
     else if (a === 'signin') { e.preventDefault(); if (window.MDXAuth) window.MDXAuth.open('signin'); }
   });
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
+  /* ── drag & drop ──────────────────────────────────────────────────────────────
+     dragenter/dragleave fire for every child the pointer crosses, so a naive
+     leave-hides-it never survives the first hop between two nodes — the overlay would
+     strobe. Depth counting is the fix: the drag is over us until as many leaves as
+     enters have landed. `dragover` must preventDefault or the browser navigates to the
+     dropped file and takes the whole conversation with it. */
+  (function wireDrop() {
+    var depth = 0;
+    function hasFiles(e) {
+      var dt = e.dataTransfer; if (!dt) return false;
+      if (dt.types) for (var i = 0; i < dt.types.length; i++) if (dt.types[i] === 'Files') return true;
+      return false;
+    }
+    function show(on) { panel.classList.toggle('dropping', !!on); if (!on) depth = 0; }
+    panel.addEventListener('dragenter', function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); depth++; show(true);
+    });
+    panel.addEventListener('dragover', function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'copy'; } catch (err) {}
+    });
+    panel.addEventListener('dragleave', function (e) {
+      if (!hasFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (!depth) show(false);
+    });
+    panel.addEventListener('drop', function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); show(false);
+      /* same gate as the paperclip: attaching images is a Pro capability, and finding
+         that out from a 402 after the upload is the worse way to learn it */
+      if (!proEligible) { showUpgrade(guestMode ? { feature: 'pro' } : { feature: 'vision' }); return; }
+      addFiles(e.dataTransfer.files);
+      try { ta.focus(); } catch (err) {}
+    });
+    /* a drag that ends outside the window never fires drop or leave on us */
+    window.addEventListener('dragend', function () { show(false); });
+    window.addEventListener('drop', function (e) { if (!panel.contains(e.target)) show(false); });
+  })();
   if (searchIn) {
     searchIn.addEventListener('input', paintThreads);
     searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); toggleSearch(false); } });
@@ -2525,7 +3245,7 @@
     if (!pendingImages.length) { thumbsEl.className = 'mmb-thumbs'; thumbsEl.innerHTML = ''; syncSend(); return; }
     thumbsEl.className = 'mmb-thumbs on'; thumbsEl.innerHTML = '';
     pendingImages.forEach(function (src, i) {
-      var d = DOC.createElement('div'); d.className = 'mmb-thumb';
+      var d = DOC.createElement('div'); d.className = 'mmb-thumb'; d.style.setProperty('--i', i);
       /* set src via the DOM property (never interpolate a data URI into innerHTML) */
       var im = DOC.createElement('img'); im.src = src; im.alt = '';
       var x = DOC.createElement('button'); x.className = 'x'; x.setAttribute('data-rmimg', i); x.title = 'Remove'; x.textContent = '✕';
