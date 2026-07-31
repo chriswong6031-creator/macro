@@ -189,29 +189,34 @@ class TestPlanWiring:
             assert field in seg, f"cut record missing {field}"
 
 
-class TestAuditScopeCoversTheForwardTail:
-    """The D1 pin exempted the part of the plan that actually ships as written.
+class TestAuditScopeIsTheShippingDay:
+    """D1 only -- and the reasoning that briefly widened it was WRONG.
 
-    `drop_stale_forward_bookings` keeps EVERGREEN copy (watchlist, receipt) at
-    the full seven-day horizon on purpose -- "a level that has held 23 sessions
-    still reads true on Friday" -- and its own docstring records that such a
-    post reaches its slot: "by the time one of those posts reached its slot the
-    tape had moved, so the publisher's live-tape gate refused it." Reaching the
-    slot is shipping.
+    On 2026-07-30 I set max_day to 0 (whole horizon) believing evergreen
+    watchlist/receipt copy forward-books and ships on its own day, leaving 73
+    D2-D7 posts unjudged. The code contradicts that: `emit_from_content_plan`
+    takes `day_prefix="D1"` (outbox.py:1630) and the governor takes the default,
+    so ONLY D1 slots are ever emitted. The outbox proves it -- across its entire
+    history: 185 D1 items, 4 LIVE, 19 HOT, ZERO D2+.
 
-    On the 2026-07-30 plan the pin left 73 watchlist posts written,
-    forward-booked and never judged. Watchlist is both the biggest kind (97 of
-    187 queued) and where the repetition the operator named actually lives.
+    D2-D7 is a PROJECTION the next nightly regenerates from fresh facts.
+    Auditing it spends model calls on posts that can never post.
     """
 
-    def test_the_shipped_default_reads_the_whole_horizon(self):
+    def test_the_shipped_default_is_the_shipping_day(self):
         import yaml
         from engine.marketing.copy_auditor import max_audit_day
         cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
-        assert max_audit_day(cfg) is None, (
-            "the auditor is capped again -- the evergreen forward tail ships "
-            "unjudged when it is"
+        assert max_audit_day(cfg) == 1, (
+            "the auditor is reading past D1 again -- those slots never emit"
         )
+
+    def test_only_d1_is_ever_emitted(self):
+        """The premise itself, pinned. If this changes, revisit the scope."""
+        import inspect
+        from engine.marketing import outbox
+        sig = inspect.signature(outbox.emit_from_content_plan)
+        assert sig.parameters["day_prefix"].default == "D1"
 
     def test_zero_and_junk_mean_no_limit_but_a_positive_n_still_caps(self):
         from engine.marketing.copy_auditor import max_audit_day
@@ -222,21 +227,9 @@ class TestAuditScopeCoversTheForwardTail:
             assert max_audit_day(
                 {"copywriter": {"llm": {"auditor": {"max_day": value}}}}) == value
 
-    def test_the_old_d1_behaviour_is_still_reachable(self):
-        """Cost lever, not a one-way door: max_day 1 restores the old scope."""
-        from engine.marketing.copy_auditor import max_audit_day
-        assert max_audit_day(
-            {"copywriter": {"llm": {"auditor": {"max_day": 1}}}}) == 1
-
-    def test_evergreen_kinds_really_do_keep_the_forward_horizon(self):
-        """The premise, pinned: if this changes, the widening loses its reason.
-
-        watchlist/receipt must NOT be perishable, or there is no forward tail
-        to audit and the D1 pin would have been correct all along.
-        """
-        import yaml
-        from engine.marketing.content_studio import perishable_kinds
-        cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
-        perish = set(perishable_kinds(cfg))
-        assert "watchlist" not in perish, "watchlist became perishable"
-        assert "receipt" not in perish, "receipt became perishable"
+    def test_the_scope_is_still_config_driven(self):
+        """Widening must stay a config change, not a code change."""
+        import inspect
+        from engine.marketing import content_studio
+        seg = _auditor_block(inspect.getsource(content_studio))
+        assert "max_audit_day" in seg

@@ -1436,23 +1436,19 @@ copywriter:
       window: 20
       # HOW FAR INTO THE PLAN THE AUDITOR READS (0 = the whole horizon).
       #
-      # This was hard-coded to D1 on the reasoning that "D1 is the sole day that
-      # has ever enqueued, so auditing the evergreen forward tail would spend
-      # calls judging posts that cannot post." That is wrong for the EVERGREEN
-      # kinds. drop_stale_forward_bookings keeps watchlist/receipt copy at the
-      # full seven-day horizon on purpose (a level that has held 23 sessions
-      # still reads true on Friday), and its own docstring records that such a
-      # post DOES reach its slot: "by the time one of those posts reached its
-      # slot the tape had moved, so the publisher's live-tape gate refused it."
-      # Reaching the slot is shipping. On the 2026-07-30 plan that left 73
-      # watchlist posts written, forward-booked and never judged -- and
-      # watchlist is the single biggest kind (97 of 187 queued) AND the one
-      # where the repetition the operator named actually lives.
+      # 1 = D1 ONLY, and that is CORRECT. I widened this to 0 earlier on
+      # 2026-07-30 on the reasoning that evergreen watchlist/receipt copy
+      # forward-books and "reaches its slot", so 73 D2-D7 posts were shipping
+      # unjudged. That premise was wrong, and the code says so plainly:
+      # outbox.emit_from_content_plan takes day_prefix="D1" (outbox.py:1630) and
+      # the governor takes the default, so ONLY D1 slots are ever emitted. The
+      # outbox confirms it -- across its whole history it holds 185 D1 items,
+      # 4 LIVE, 19 HOT and ZERO D2+.
       #
-      # Cost: the D2-D7 tail is ~73 posts once education is off (it was 43 of
-      # the 135), so roughly four extra windows per account. Set to 1 to restore
-      # the old D1-only behaviour if that spend ever needs cutting.
-      max_day: 0
+      # D2-D7 is a PROJECTION that the next nightly regenerates from fresh facts.
+      # Auditing it spends model calls judging posts that can never post, which
+      # is exactly what the original D1 pin said. Restored.
+      max_day: 1
     max_posts_per_run: 60
     daily_token_cap: 300000
 
