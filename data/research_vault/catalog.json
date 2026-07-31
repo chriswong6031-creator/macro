@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T14:12:56.475833+00:00",
-  "count": 459,
+  "generated_at": "2026-07-31T14:27:59.045962+00:00",
+  "count": 462,
   "institutions": [
     "Amova",
     "Apollo",
@@ -41,6 +41,41 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-jae00g2m4od-8fad08",
+      "title": "US Market Intell | Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T14:06:17Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-jldrbzd8rts-cee3fa",
+      "title": "Thematic Research Next week...this week",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T14:00:09Z",
+      "summary_points": [
+        "**US Labor & Geopolitical Catalysts**: July jobs report (65k payrolls, 4.2% unemployment) and Iran conflict-driven OPEC+ meeting spiking oil prices +20% create immediate inflation and risk sentiment pressures.",
+        "**Japan Rate Hike Signals**: MPM statement shifts hinting at September rate hike directly alter global yield curves and JGB positioning, impacting cross-currency flows.",
+        "**Fed Policy Ambiguity**: FOMC recap showing no action combined with inflation frameworks task force introduces critical uncertainty on future rate path, complicating asset allocation.",
+        "**Corporate Earnings Catalysts**: SpaceX's first report and biotech giants (Eli Lilly, Novo Nordisk) alongside tech (AMD) and industrials (Siemens) amplify sector-specific risk exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-0natz1tlzak-bf2676",
       "title": "JPM Europe Equity Research Today’s Morning Meeting",
@@ -1496,6 +1531,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bjoocgurvhe-271d66",
+      "title": "Global developments in sustainability policy and regulation Q2 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:24:11Z",
+      "summary_points": [
+        "**EC ESRS Mandatory Transition**: Draft Simplified European Sustainability Reporting Standards (ESRS) consultation ends June 2026, with mandatory adoption by 2028; impacts materiality, value chain reporting, and sector valuations for compliance-driven firms.",
+        "**ESG Rating Integrity Rules**: EC Delegated Regulation (effective July 2026) mandates transparency/comparability for ESG rating providers, threatening credibility of ratings used in portfolio construction and ESG integration.",
+        "**ERISA Fiduciary Liability Risk**: DOL guidance reinterprets proxy advisory firms under ERISA, heightening co-fiduciary liability exposure for asset managers on voting decisions.",
+        "**ESG Credit Rating Threat**: 23-state coalition warns Moody’s/S&P/Fitch over speculative ESG factors in credit ratings, citing SEC violations; risks ESG-driven downgrades and enforcement actions.",
+        "**HKMA Climate Risk Mandate**: HKMA circular requires banks to integrate climate risks into ICAAP and capital adequacy, critical for financial institution risk management and portfolio resilience."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
