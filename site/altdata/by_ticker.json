@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-30",
-  "generated_utc": "2026-07-30T22:45:32.166859+00:00",
+  "generated_utc": "2026-07-30T23:50:55.146489+00:00",
   "n_tickers": 2572,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -2233,16 +2233,15 @@
     "NRG": {
       "ticker": "NRG",
       "channels": [
-        "trump",
-        "unusual_options"
+        "trump"
       ],
-      "weighted_score": 1.15,
+      "weighted_score": 0.5,
       "trump_side": "sell",
       "opt_vol_oi": 0.262,
       "opt_put_call": 0.21,
       "days_to_earnings": 6,
       "next_earnings": "2026-08-05",
-      "convergence_score": 2,
+      "convergence_score": 1,
       "trump_linked": true,
       "affiliated": false
     },
@@ -2783,18 +2782,6 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "OLLI": {
-      "ticker": "OLLI",
-      "channels": [
-        "unusual_options"
-      ],
-      "weighted_score": 0.65,
-      "opt_vol_oi": 0.669,
-      "opt_put_call": 0.05,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
     "TRMB": {
       "ticker": "TRMB",
       "channels": [
@@ -2809,14 +2796,14 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "HUBS": {
-      "ticker": "HUBS",
+    "OLLI": {
+      "ticker": "OLLI",
       "channels": [
         "unusual_options"
       ],
       "weighted_score": 0.65,
-      "opt_vol_oi": 0.452,
-      "opt_put_call": 5.3,
+      "opt_vol_oi": 0.669,
+      "opt_put_call": 0.05,
       "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
@@ -2845,6 +2832,18 @@
       "opt_put_call": 2.46,
       "analyst_bull_ratio": 1.0,
       "convergence_score": 3,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "HUBS": {
+      "ticker": "HUBS",
+      "channels": [
+        "unusual_options"
+      ],
+      "weighted_score": 0.65,
+      "opt_vol_oi": 0.452,
+      "opt_put_call": 5.3,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2889,15 +2888,39 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "ALT": {
-      "ticker": "ALT",
+    "ALHC": {
+      "ticker": "ALHC",
       "channels": [
         "unusual_options"
       ],
       "weighted_score": 0.65,
-      "opt_vol_oi": 0.081,
-      "opt_put_call": 1.73,
+      "opt_vol_oi": 0.108,
+      "opt_put_call": 6.94,
       "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "NVT": {
+      "ticker": "NVT",
+      "channels": [
+        "unusual_options"
+      ],
+      "weighted_score": 0.65,
+      "opt_vol_oi": 0.148,
+      "opt_put_call": 0.46,
+      "days_to_earnings": 8,
+      "next_earnings": "2026-08-07",
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "STM": {
+      "ticker": "STM",
+      "channels": [],
+      "weighted_score": 0,
+      "opt_vol_oi": 0.31,
+      "opt_put_call": 0.21,
+      "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
     },
@@ -2913,44 +2936,12 @@
       "trump_linked": false,
       "affiliated": false
     },
-    "NVT": {
-      "ticker": "NVT",
+    "BYD": {
+      "ticker": "BYD",
       "channels": [],
       "weighted_score": 0,
-      "opt_vol_oi": 0.148,
-      "opt_put_call": 0.46,
-      "days_to_earnings": 8,
-      "next_earnings": "2026-08-07",
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "ALHC": {
-      "ticker": "ALHC",
-      "channels": [],
-      "weighted_score": 0,
-      "opt_vol_oi": 0.108,
-      "opt_put_call": 6.94,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "XLF": {
-      "ticker": "XLF",
-      "channels": [],
-      "weighted_score": 0,
-      "opt_vol_oi": 0.056,
-      "opt_put_call": 4.3,
-      "convergence_score": 0,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "MTH": {
-      "ticker": "MTH",
-      "channels": [],
-      "weighted_score": 0,
-      "opt_vol_oi": 0.289,
-      "opt_put_call": 0.37,
+      "opt_vol_oi": 0.225,
+      "opt_put_call": 0.36,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false
@@ -2961,6 +2952,16 @@
       "weighted_score": 0,
       "opt_vol_oi": 0.159,
       "opt_put_call": 12.98,
+      "convergence_score": 0,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "MTH": {
+      "ticker": "MTH",
+      "channels": [],
+      "weighted_score": 0,
+      "opt_vol_oi": 0.289,
+      "opt_put_call": 0.37,
       "convergence_score": 0,
       "trump_linked": false,
       "affiliated": false

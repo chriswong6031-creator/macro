@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-07-30T22:45:24.937321+00:00",
+  "generated_utc": "2026-07-30T23:50:47.652724+00:00",
   "as_of": "2026-07-30",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -24231,33 +24231,25 @@
     ],
     "unusual_options": [
       {
-        "ticker": "OLLI",
-        "vol_oi": 0.669,
-        "mult": 15.31,
-        "put_call": 0.05,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
         "ticker": "TRMB",
         "vol_oi": 0.622,
-        "mult": 10.37,
+        "mult": 11.77,
         "put_call": 0.93,
         "lean": "balanced",
         "hot": true
       },
       {
-        "ticker": "HUBS",
-        "vol_oi": 0.452,
-        "mult": 5.62,
-        "put_call": 5.3,
-        "lean": "put-skew",
+        "ticker": "OLLI",
+        "vol_oi": 0.669,
+        "mult": 11.71,
+        "put_call": 0.05,
+        "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "BTDR",
         "vol_oi": 0.668,
-        "mult": 5.25,
+        "mult": 8.08,
         "put_call": 0.2,
         "lean": "call-skew",
         "hot": true
@@ -24265,40 +24257,40 @@
       {
         "ticker": "VRT",
         "vol_oi": 0.395,
-        "mult": 5.09,
+        "mult": 4.99,
         "put_call": 2.46,
+        "lean": "put-skew",
+        "hot": true
+      },
+      {
+        "ticker": "HUBS",
+        "vol_oi": 0.452,
+        "mult": 4.77,
+        "put_call": 5.3,
         "lean": "put-skew",
         "hot": true
       },
       {
         "ticker": "BLDR",
         "vol_oi": 0.274,
-        "mult": 4.46,
+        "mult": 4.15,
         "put_call": 0.45,
-        "lean": "call-skew",
-        "hot": true
-      },
-      {
-        "ticker": "SOFI",
-        "vol_oi": 0.501,
-        "mult": 4.32,
-        "put_call": 0.49,
         "lean": "call-skew",
         "hot": true
       },
       {
         "ticker": "TGT",
         "vol_oi": 0.235,
-        "mult": 3.85,
+        "mult": 3.72,
         "put_call": 0.19,
         "lean": "call-skew",
         "hot": true
       },
       {
-        "ticker": "NRG",
-        "vol_oi": 0.262,
+        "ticker": "SOFI",
+        "vol_oi": 0.501,
         "mult": 3.56,
-        "put_call": 0.21,
+        "put_call": 0.49,
         "lean": "call-skew",
         "hot": true
       },
@@ -24311,51 +24303,59 @@
         "hot": true
       },
       {
-        "ticker": "ALT",
-        "vol_oi": 0.081,
-        "mult": 3.33,
-        "put_call": 1.73,
+        "ticker": "ALHC",
+        "vol_oi": 0.108,
+        "mult": 3.31,
+        "put_call": 6.94,
         "lean": "put-skew",
         "hot": true
       },
       {
-        "ticker": "WULF",
-        "vol_oi": 0.308,
-        "mult": 2.98,
-        "put_call": 0.56,
+        "ticker": "NVT",
+        "vol_oi": 0.148,
+        "mult": 3.09,
+        "put_call": 0.46,
+        "lean": "call-skew",
+        "hot": true
+      },
+      {
+        "ticker": "PEP",
+        "vol_oi": 0.285,
+        "mult": 2.97,
+        "put_call": 0.08,
+        "lean": "call-skew",
+        "hot": false
+      },
+      {
+        "ticker": "STM",
+        "vol_oi": 0.31,
+        "mult": 2.97,
+        "put_call": 0.21,
         "lean": "call-skew",
         "hot": false
       },
       {
         "ticker": "CORZ",
         "vol_oi": 0.189,
-        "mult": 2.88,
+        "mult": 2.94,
         "put_call": 0.55,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "NVT",
-        "vol_oi": 0.148,
-        "mult": 2.87,
-        "put_call": 0.46,
+        "ticker": "WULF",
+        "vol_oi": 0.308,
+        "mult": 2.85,
+        "put_call": 0.56,
         "lean": "call-skew",
         "hot": false
       },
       {
-        "ticker": "PEP",
-        "vol_oi": 0.285,
-        "mult": 2.87,
-        "put_call": 0.08,
+        "ticker": "NRG",
+        "vol_oi": 0.262,
+        "mult": 2.77,
+        "put_call": 0.21,
         "lean": "call-skew",
-        "hot": false
-      },
-      {
-        "ticker": "ALHC",
-        "vol_oi": 0.108,
-        "mult": 2.81,
-        "put_call": 6.94,
-        "lean": "put-skew",
         "hot": false
       },
       {
@@ -24367,18 +24367,10 @@
         "hot": false
       },
       {
-        "ticker": "XLF",
-        "vol_oi": 0.056,
-        "mult": 2.61,
-        "put_call": 4.3,
-        "lean": "put-skew",
-        "hot": false
-      },
-      {
-        "ticker": "MTH",
-        "vol_oi": 0.289,
-        "mult": 2.59,
-        "put_call": 0.37,
+        "ticker": "BYD",
+        "vol_oi": 0.225,
+        "mult": 2.58,
+        "put_call": 0.36,
         "lean": "call-skew",
         "hot": false
       },
@@ -24388,6 +24380,14 @@
         "mult": 2.57,
         "put_call": 12.98,
         "lean": "put-skew",
+        "hot": false
+      },
+      {
+        "ticker": "MTH",
+        "vol_oi": 0.289,
+        "mult": 2.53,
+        "put_call": 0.37,
+        "lean": "call-skew",
         "hot": false
       }
     ],
@@ -26821,14 +26821,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -29722,7 +29722,7 @@
           "special_situation",
           "unusual_options"
         ],
-        "why": "analyst_upgrade_cluster: net upgrades +25 revision delta \u00b7 special_situation: Tender Offers \u00b7 unusual_options: 5.09\u00d7 vol/OI, put-skew"
+        "why": "analyst_upgrade_cluster: net upgrades +25 revision delta \u00b7 special_situation: Tender Offers \u00b7 unusual_options: 4.99\u00d7 vol/OI, put-skew"
       },
       {
         "ticker": "CNTM",
@@ -29745,16 +29745,6 @@
           "trump"
         ],
         "why": "lobbying: $7,002,500 lobbied \u00b7 special_situation: M&A / Divestitures \u00b7 stocktwits_bull: 67% bull \u00b7 601,506 watching \u00b7 trump: META PLATFORMS INC"
-      },
-      {
-        "ticker": "NRG",
-        "score": 2,
-        "weighted_score": 1.15,
-        "channel_list": [
-          "trump",
-          "unusual_options"
-        ],
-        "why": "trump: NRG ENERGY INC \u00b7 unusual_options: 3.56\u00d7 vol/OI, call-skew"
       },
       {
         "ticker": "AAPL",
@@ -29836,6 +29826,16 @@
           "trump"
         ],
         "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01) \u00b7 trump: PROCTER & GAMBLE CO"
+      },
+      {
+        "ticker": "TDG",
+        "score": 2,
+        "weighted_score": 1.0,
+        "channel_list": [
+          "congress_buy",
+          "material_8k"
+        ],
+        "why": "congress_buy: 1 member(s) net +10 \u00b7 material_8k: 3 material 8-Ks (items 5.02, 8.01)"
       }
     ]
   }
