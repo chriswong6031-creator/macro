@@ -311,6 +311,7 @@
     ] },
     { g: ["TERMINAL", "TERMINAL"], rows: [
       { l: ["Live charting", "实时图表"],                  v: [1, 1, 1] },
+      { l: ["Advanced indicator modules", "高级指标模块"], v: [["1 / 31", "1 / 31"], ["15 / 31", "15 / 31"], ["All 31", "全部 31 个"]] },
       { l: ["Intraday options flow", "日内期权流"],        v: [0, 1, 1] },
       { l: ["Earnings call transcripts", "财报电话会记录"], v: [0, 1, 1] }
     ] },

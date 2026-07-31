@@ -421,7 +421,7 @@
           <li>{{ t('Special situations', '特殊事件') }} — <b>{{ t('the 3 newest filings', '最新 3 份申报') }}</b></li>
           <li>{{ t('Committee &amp; brief — a teaser', '委员会与简报 — 预览') }}</li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('5 quick questions a week', '每周 5 个快速提问') }}</b></li>
-          <li>{{ t('Charts terminal', '图表终端') }} — <b>{{ t('free for everyone', '所有人免费') }}</b></li>
+          <li>{{ t('Terminal charting', 'Terminal 图表') }} — <b>{{ terminal_indicators.core_count }} {{ t('core indicators', '个核心指标') }}</b> + {{ t('Candle Painter', 'K 线着色器') }}</li>
         </ul>
         <button class="btn" data-act="free" type="button"><span class="btxt">{{ t('Sign in — it’s free', '登录 — 完全免费') }}</span></button>
         <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
@@ -446,6 +446,7 @@
           <li><b>{{ t('The special situations desk', '完整特殊事件交易台') }}</b> — {{ t('activist, M&amp;A, spin-offs, take-privates', '维权、并购、分拆、私有化') }}</li>
           <li>{{ t('Committee, brief &amp; track record', '委员会、简报与业绩记录') }} — {{ t('in full', '完整版') }}</li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('300 a month', '每月 300 次') }}</b></li>
+          <li><b>{{ terminal_indicators.access.insider }} / {{ terminal_indicators.advanced_total }} {{ t('advanced indicator modules', '个高级指标模块') }}</b> — {{ t('Trend Engine, market structure &amp; oscillator signals', '趋势引擎、市场结构与振荡器信号') }}</li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
         </ul>
         <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt">{{ t('Start 7-day trial', '开始 7 天试用') }}</span></button>
@@ -486,6 +487,7 @@
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('unlimited', '无限量') }}</b></li>
           <li><b>{{ t('Deep Opus chat', '深度 Opus 对话') }}</b> — {{ t('150 a month', '每月 150 次') }}</li>
           <li>{{ t('Priority research answers', '优先研究回答') }}</li>
+          <li><b>{{ t('All', '全部') }} {{ terminal_indicators.access.pro }} {{ t('advanced indicator modules', '个高级指标模块') }}</b> — {{ t('all five suites', '5 套工具组全解锁') }}</li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
         </ul>
         <button class="btn primary" data-act="subscribe" data-tier="pro" type="button"><span class="btxt">{{ t('Try Pro free for 7 days', '免费试用 Pro 7 天') }}</span></button>
@@ -570,6 +572,12 @@
             <td class="val">{{ t('Free', '免费') }}</td>
             <td class="ok">✓</td>
             <td class="ok">✓</td>
+          </tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft">{{ t('Advanced indicator modules', '高级指标模块') }}</span><span class="tipbox up">{{ t('Every plan includes 21 core indicators. Free also includes Candle Painter; Insider unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.', '所有方案均含 21 个核心指标。Free 另含 K 线着色器；Insider 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。') }}</span></td>
+            <td class="val">{{ terminal_indicators.access.free }} / {{ terminal_indicators.advanced_total }}<small>{{ t('Candle Painter', 'K 线着色器') }}</small></td>
+            <td class="val">{{ terminal_indicators.access.insider }} / {{ terminal_indicators.advanced_total }}<small>{{ t('core trend + signals', '核心趋势 + 信号') }}</small></td>
+            <td class="val">{{ t('All', '全部') }} {{ terminal_indicators.access.pro }}<small>{{ t('5 complete suites', '5 套完整工具组') }}</small></td>
           </tr>
           <tr>
             <td class="feat has-tip"><span class="ft">{{ t('Terminal live options', '终端实时期权') }}</span><span class="mchip">{{ insider.name }}</span><span class="tipbox up">{{ t('Live options data inside the terminal — included during the trial too.', '终端内的实时期权数据——试用期同样包含。') }}</span></td>
