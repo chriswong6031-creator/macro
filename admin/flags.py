@@ -126,9 +126,9 @@ def secret_present(name: str) -> bool:
     return bool(os.environ.get(name, "").strip())
 
 
-def snapshot() -> dict:
+def snapshot(cfg: dict | None = None) -> dict:
     """Current value + secret-readiness for every managed flag, grouped by category."""
-    cfg = config_store.read_config()
+    cfg = cfg if cfg is not None else config_store.read_config()
     groups: dict[str, list[dict]] = {}
     for f in FLAGS:
         val = config_store.get_value(f["path"], cfg)

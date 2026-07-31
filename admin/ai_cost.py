@@ -59,8 +59,8 @@ def _count_lines(p) -> int:
         return 0
 
 
-def estimate() -> dict:
-    cfg = config_store.read_config()
+def estimate(cfg: dict | None = None) -> dict:
+    cfg = cfg if cfg is not None else config_store.read_config()
     mb = cfg.get("master_brain", {}) or {}
     ad = cfg.get("ai_desk", {}) or {}
     cs = cfg.get("catalyst_stock", {}) or {}

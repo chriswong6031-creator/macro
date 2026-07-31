@@ -34,8 +34,8 @@ def _age_days(ts) -> float | None:
         return None
 
 
-def panel() -> dict:
-    cfg = config_store.read_config()
+def panel(cfg: dict | None = None) -> dict:
+    cfg = cfg if cfg is not None else config_store.read_config()
     mb = cfg.get("master_brain", {}) or {}
     ad = cfg.get("ai_desk", {}) or {}
     key = secret_present("DEEPSEEK_API_KEY")
