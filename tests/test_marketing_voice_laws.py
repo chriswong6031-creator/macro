@@ -261,3 +261,104 @@ def test_a_template_never_asserts_a_fact_of_its_own():
         if any(phrase in (variant[0] + " " + variant[1]).lower() for phrase in invented)
     ]
     assert not offenders, f"templates asserting an invented history: {offenders}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The monoculture the fact-plus-cost law grew.
+#
+# Fixing "no reaction" immediately produced a new tic. A LIVE 8-post run under
+# the new prompt passed 8/8 with zero drops -- and seven of the eight said some
+# version of "I missed it". That is the retired stock closer one level up:
+# prescribing a REACTION rather than a sentence did not stop convergence,
+# because the two operator-approved exemplars are both regret-shaped.
+#
+# Three rounds of prompt work moved the measured share only 0.88 -> 0.62. The
+# cause is the input mix, not the wording: every watchlist item is "a level on a
+# name we do not hold", so "I'm outside the move" is the reaction the material
+# invites. Enforcement is the only thing that holds.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Verbatim from the live run that exposed the defect.
+_LIVE_MONOCULTURE = [
+    "$ARES held 122, the most-traded price of the past four months. I didn't buy the dip, but I'm watching now.",
+    "$AAPL is sitting near 314 at yearly highs. I missed the run, and I'm not chasing it here.",
+    "$MSFT is under its short-term average at 387. I'm waiting for a reclaim before trying again.",
+    "$COHR leads electronic components today. I missed the move, and I'm not fixing that by chasing at 211.",
+    "$NVDA reclaimed 203. I missed the turn, so I'm waiting to see if buyers can hold that level.",
+    "$TPR keeps closing green, but I missed the run. I'm waiting to see how it handles 190.",
+    "While New York slept, $TSLA stayed near the low end of its year. I've been early on the slide.",
+    "I missed the start of $HSY's green streak. It's pressing 178 now, and I'm not chasing it.",
+]
+
+_HEALTHY_MIX = [
+    "Hershey's closed green eight days in a row. I don't have a clever explanation and I'm not going to invent one.",
+    "We said under 42 kills it. Closed 41.80. Killed. Tuition paid, next.",
+    "$NVDA reclaimed 203. I'm not sure this holds and I've said that before.",
+    "$MSFT is heavy. My read was wrong on the last bounce here.",
+    "$TSLA near the low end of its year. I missed the first leg down.",
+    "$AAPL at 314. If it loses that the whole read was noise.",
+]
+
+
+def test_the_live_monoculture_is_detected():
+    verdict = cw.cost_monoculture(_LIVE_MONOCULTURE)
+    assert verdict, "the batch that shipped this defect reads as healthy"
+    assert verdict["family"] == "outside-the-move"
+    assert verdict["share"] > 0.5
+
+
+def test_a_varied_batch_is_left_alone():
+    assert cw.cost_monoculture(_HEALTHY_MIX) == {}
+    assert cw.trim_cost_monoculture(_HEALTHY_MIX) == []
+
+
+def test_missed_it_and_passed_on_it_count_as_ONE_family():
+    """Splitting a semantic cluster is how a guard reports health it cannot see.
+
+    A first cut had these as separate families and called the live batch clean
+    while seven of eight posts were the same admission in different words.
+    """
+    for text in ("I missed the run.", "I passed on the breakout.",
+                 "I didn't buy the dip.", "it went without me.",
+                 "I've been early on this."):
+        assert cw.cost_family(text) == "outside-the-move", text
+
+
+def test_the_trim_actually_converges():
+    """Cutting shrinks the denominator too.
+
+    A first version kept int(total * share) and left 4 of 7 (0.571) still over
+    a 0.5 cap, because it measured against the batch it was about to change.
+    """
+    cut = cw.trim_cost_monoculture(_LIVE_MONOCULTURE)
+    kept = [t for i, t in enumerate(_LIVE_MONOCULTURE) if i not in cut]
+    assert cw.cost_monoculture(kept) == {}, "the trim left the batch still over"
+
+
+def test_the_trim_never_manufactures_a_silent_night():
+    """A batch where EVERY post makes the same admission solves to keep=0.
+
+    Mathematically right, operationally a self-inflicted silent night -- the one
+    outcome this program exists to prevent. A slightly repetitive feed beats an
+    empty one, and the ::warning says which it was.
+    """
+    all_same = [f"I missed the move on $A{i}." for i in range(6)]
+    cut = cw.trim_cost_monoculture(all_same)
+    kept = [t for i, t in enumerate(all_same) if i not in cut]
+    assert len(kept) >= 3, f"trimmed an account down to {len(kept)} posts"
+
+
+def test_a_small_batch_is_never_judged():
+    """Three posts sharing an admission is a coincidence, not a house voice."""
+    assert cw.cost_monoculture(_LIVE_MONOCULTURE[:3]) == {}
+    assert cw.trim_cost_monoculture(_LIVE_MONOCULTURE[:3]) == []
+
+
+def test_the_plan_enforces_it_deterministically():
+    """Not left to the auditor: its `repetitive` criterion describes this exactly
+    and still needs a model to notice it."""
+    import inspect
+    from engine.marketing import content_studio
+    src = inspect.getsource(content_studio)
+    assert "trim_cost_monoculture" in src, "the trim is not wired into the plan"
+    assert "marketing-cost-monoculture" in src, "the loss is not named for the operator"

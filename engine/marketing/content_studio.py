@@ -3868,12 +3868,44 @@ def content_plan(
     _audit_report: dict[str, Any] = {
         "ran": False, "kept": 0, "cut": 0, "unaudited": 0, "cuts": [], "notes": {},
     }
+    _mono_cut = 0
     try:
         from engine.marketing import copy_auditor as _auditor  # noqa: PLC0415
+
+        # ── Cost-monoculture trim (deterministic, runs BEFORE the auditor) ────
+        # The fact-plus-cost law fixed "no reaction" and grew a new defect: a
+        # live 8-post run passed 8/8 with SEVEN posts saying some version of "I
+        # missed it". That is the retired stock closer one level up.
+        #
+        # Deterministic and not left to the auditor, whose `repetitive` criterion
+        # describes this exactly but depends on a model noticing: three rounds of
+        # prompt work moved the measured share only 0.88 -> 0.62. The cause is
+        # the input mix, not the wording — every watchlist item is "a level on a
+        # name we do not hold", so "I'm outside the move" is what the material
+        # invites. Enforcement is the only thing that holds.
+        for _row in account_rows:
+            _q = _row.get("queue") or []
+            if not _q:
+                continue
+            from engine.marketing.copywriter import (  # noqa: PLC0415
+                trim_cost_monoculture as _trim_mono)
+            _cut_idx = _trim_mono(
+                [f"{d.get('headline') or ''} {d.get('body') or ''}".strip() for d in _q])
+            if not _cut_idx:
+                continue
+            _cut_set = set(_cut_idx)
+            _row["queue"] = [d for i, d in enumerate(_q) if i not in _cut_set]
+            _mono_cut += len(_cut_idx)
+            print(f"::warning title=marketing-cost-monoculture::"
+                  f"{_row.get('id')}: cut {len(_cut_idx)} post(s) that repeated the "
+                  f"same admission as the rest of the batch. A feed where every "
+                  f"post says 'I missed it' reads as bot-written as one that ends "
+                  f"on the same sentence.", flush=True)
 
         _win = _auditor.window_size(cfg)
         _max_day = _auditor.max_audit_day(cfg)
         _audit_report["max_day"] = _max_day
+        _audit_report["cost_monoculture_cut"] = _mono_cut
         for _row in account_rows:
             _aid = str(_row.get("id") or "")
             _queue = _row.get("queue") or []

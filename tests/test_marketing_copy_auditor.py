@@ -113,6 +113,18 @@ class TestContract:
         assert "luna" not in ca._audit_cfg(cfg)["codex_source_model"].lower()
 
 
+
+def _auditor_block(src: str) -> str:
+    """The auditor wiring, start marker to end marker.
+
+    NOT a fixed-length slice. Adding the cost-monoculture trim above the auditor
+    pushed its internals past a [:3000] cut and failed two unrelated tests; a
+    literal length is a time bomb that fires on the next insertion.
+    """
+    start = src.index("copy_auditor as _auditor")
+    return src[start:src.index("_surviving_ids = {", start)]
+
+
 class TestPlanWiring:
     """The auditor is the last gate in content_plan. These pin the properties
     that keep a judge safe inside a publishing path."""
@@ -144,7 +156,7 @@ class TestPlanWiring:
         import inspect
         from engine.marketing import content_studio
         src = inspect.getsource(content_studio)
-        seg = src[src.index("copy_auditor as _auditor"):][:2600]
+        seg = _auditor_block(src)
         assert 'startswith("D1-")' not in seg, (
             "the auditor is hard-pinned to D1 again -- the evergreen forward "
             "tail ships unjudged when it is")
@@ -156,14 +168,14 @@ class TestPlanWiring:
         import inspect
         from engine.marketing import content_studio
         src = inspect.getsource(content_studio)
-        seg = src[src.index("copy_auditor as _auditor"):][:2000]
+        seg = _auditor_block(src)
         assert "for _row in account_rows:" in seg
 
     def test_an_auditor_failure_cannot_break_the_night(self):
         import inspect
         from engine.marketing import content_studio
         src = inspect.getsource(content_studio)
-        seg = src[src.index("copy_auditor as _auditor"):][:3000]
+        seg = _auditor_block(src)
         assert "except Exception" in seg
         assert "marketing-auditor-failed" in seg
 
@@ -172,7 +184,7 @@ class TestPlanWiring:
         import inspect
         from engine.marketing import content_studio
         src = inspect.getsource(content_studio)
-        seg = src[src.index("copy_auditor as _auditor"):][:3000]
+        seg = _auditor_block(src)
         for field in ('"codes"', '"note"', '"text"'):
             assert field in seg, f"cut record missing {field}"
 

@@ -2077,6 +2077,142 @@ def repeated_sentence_violations(
     return []
 
 
+"""The cost families, and the monoculture guard over them.
+
+The fact-plus-cost law fixed the "no reaction" defect and immediately grew a new
+one. A live 8-post run under the new prompt passed 8/8 with zero drops -- and
+SEVEN of the eight said the same thing:
+
+    "I missed the bounce" / "I missed the run" / "I missed the move" /
+    "I missed the turn" / "I missed the start" / "I leaned on the bounce too
+    early" / "catching this early has cost me before"
+
+That is the retired stock closer one level up. Prescribing a REACTION rather
+than a sentence did not stop the model converging: the two operator-approved
+exemplars both happen to be regret-shaped, so "the cost" collapsed to "I was
+late". A feed where every post is the same confession reads exactly as bot-like
+as one where every post ends on the same clause, and it makes the desk sound
+like it never gets anything right.
+
+A cost has to actually vary. These families are the enumerable ones; the guard
+below fires when a single family owns too much of one account's batch.
+"""
+    # ONE family, not two. A first cut split "missed it" from "passed on it" and
+    # the guard then called a batch clean in which seven of eight posts were
+    # some flavour of "I am not in this": "I didn't buy the dip", "expensive to
+    # watch without me", "I've been early on the slide", "I passed on the
+    # breakout". Splitting a semantic cluster across families is how a
+    # monoculture guard reports health it cannot see. These all cost the writer
+    # the same thing — the admission of being outside the move — so they count
+    # together.
+_COST_FAMILIES: tuple[tuple[str, str], ...] = (
+    ("outside-the-move",
+     r"\b(?:i|we)\s+(?:missed|was late|were late|didn'?t catch|got there late|"
+     r"passed|didn'?t buy|didn'?t take|talked myself out of|sat (?:this |it )?out)\b"
+     r"|\bmissed the (?:move|run|bounce|turn|start|trade|streak)\b"
+     r"|\bwithout me\b|\btoo clever\b"
+     r"|\b(?:been|was|am)\s+early\b"
+     r"|\b(?:not|never)\s+(?:in|fishing|chasing)\s+(?:it|this)\b"
+     r"|\bfrom the sidelines?\b"),
+    ("no-explanation", r"\b(?:i|we)\s+(?:don'?t|do not)\s+(?:have|know)\b.{0,40}"
+                       r"\b(?:explanation|why|idea)\b|\bnot going to invent\b"),
+    ("was-wrong", r"\b(?:i|we)\s+(?:was|were|got it)\s+wrong\b|\bmy read was\b"),
+    ("it-hurt", r"\btuition\b|\bstopped out\b|\bit cost me\b|\btook the loss\b"),
+    ("still-unsure", r"\b(?:i|we)'?m not sure\b|\bstill don'?t (?:know|trust)\b"),
+)
+
+#: A family may own at most this share of one account's batch before it reads as
+#: a tic. 0.5 lets a genuinely regretful day stay honest without letting one
+#: confession become the house voice.
+_COST_FAMILY_MAX_SHARE = 0.5
+
+
+def cost_family(text: str) -> str:
+    """Which admission a post makes, or "" when it makes none of the known ones."""
+    low = str(text or "").lower()
+    for name, pattern in _COST_FAMILIES:
+        if re.search(pattern, low):
+            return name
+    return ""
+
+
+def cost_monoculture(texts: Iterable[str]) -> dict[str, Any]:
+    """Which cost family is eating the batch. {} when the mix is healthy.
+
+    Batch-level ON PURPOSE: no single post here is wrong, and the per-post
+    guards cannot see a pattern that only exists across a feed. Returns the
+    offending family and its share so the caller can report it in plain words.
+    """
+    seen = [cost_family(t) for t in (texts or [])]
+    named = [s for s in seen if s]
+    if len(named) < 4:          # too small a sample to call a monoculture
+        return {}
+    counts: dict[str, int] = {}
+    for s in named:
+        counts[s] = counts.get(s, 0) + 1
+    family, n = max(counts.items(), key=lambda kv: kv[1])
+    share = n / len(seen)
+    if share > _COST_FAMILY_MAX_SHARE:
+        return {"family": family, "count": n, "of": len(seen), "share": round(share, 3)}
+    return {}
+
+
+#: The trim never takes an account below this many posts. A batch in which
+#: EVERY post makes the same admission solves to keep=0 — mathematically right,
+#: operationally a self-inflicted silent night, which is the one outcome this
+#: whole program exists to prevent. A slightly repetitive feed beats an empty
+#: one; the ::warning says which it was.
+_COST_TRIM_MIN_KEEP = 3
+
+
+def trim_cost_monoculture(
+    texts: list[str], *, max_share: float = _COST_FAMILY_MAX_SHARE,
+    min_keep: int = _COST_TRIM_MIN_KEEP,
+) -> list[int]:
+    """Indices to CUT so no one cost family owns more than ``max_share``. [] = fine.
+
+    Deterministic on purpose. The auditor's ``repetitive`` criterion already
+    describes this defect ("four posts that each say 'respect the move, don't
+    chase' in different wordings are three posts too many"), but that depends on
+    a model noticing, and three rounds of prompt work moved the live share only
+    from 0.88 to 0.62 — the input mix is the cause, not the wording. Every item
+    in a watchlist batch is "a level on a name we do not hold", so "I'm outside
+    the move" is the reaction the material invites and the model converges on it.
+
+    Keeps the EARLIEST posts of the crowded family (they are the highest-salience
+    items in a plan queue) and cuts from the tail until the share is legal. Per
+    the supply-honest volume law an empty rung stays empty: nothing is re-typed
+    to replace what this removes, the account simply posts less and reads better.
+    """
+    fams = [cost_family(t) for t in (texts or [])]
+    named = [f for f in fams if f]
+    if len(named) < 4:
+        return []
+    counts: dict[str, int] = {}
+    for f in named:
+        counts[f] = counts.get(f, 0) + 1
+    family, n = max(counts.items(), key=lambda kv: kv[1])
+    total = len(fams)
+    if not 0 < max_share < 1:
+        return []
+    if n <= int(total * max_share):
+        return []
+    # CUTTING SHRINKS THE DENOMINATOR TOO. A first version kept
+    # int(total * max_share) and left 4 of 7 (0.571) still over a 0.5 cap,
+    # because it measured the share against the batch it was about to change.
+    # Solve for the keep count k directly:
+    #     k / (total - (n - k)) <= s   ->   k <= s * (total - n) / (1 - s)
+    keep = int(max_share * (total - n) / (1.0 - max_share))
+    idxs = [i for i, f in enumerate(fams) if f == family]
+    cut = sorted(idxs[max(0, keep):])
+    # Floor: never trim the account below min_keep posts.
+    surviving = total - len(cut)
+    if surviving < min_keep:
+        give_back = min(len(cut), min_keep - surviving)
+        cut = cut[give_back:]
+    return cut
+
+
 def queued_voice_violations(text: str, kind: str = "") -> list[str]:
     """The voice laws, runnable against copy that is ALREADY in the queue.
 
@@ -4615,6 +4751,25 @@ def write_posts_llm(
             + "\n- Use ONLY numbers from each item's numbers_whitelist, verbatim. "
             "Never invent or recompute a number.\n"
             "- Each item's cashtag(s) must appear. Body <= 275 chars. Headline <= 90 chars.\n"
+            "- COMMITMENT IS A COST, AND IT IS THE ONE YOU KEEP SKIPPING. Most of "
+            "these posts are about names the desk does NOT hold, so the lazy cost is "
+            "always 'I'm not in it': two live runs under this prompt produced eight "
+            "posts each in which SEVEN were some flavour of missed it / passed on it "
+            "/ been early / watched it go without me. That is as bot-written as any "
+            "repeated closer, and a desk that only ever reports being outside the "
+            "move sounds like it is never right about anything.\n"
+            "  For a name you don't hold, the cost that works is going ON RECORD: "
+            "say plainly what you would need to see, or what would make you drop it, "
+            "and accept being publicly wrong. \"314 is the line. If it goes, I was "
+            "early and I'll say so.\" That costs you something and it is not regret.\n"
+            "  AT MOST ONE POST IN THREE may say you were late, passed, or missed "
+            "it. Rotate through the others instead:\n"
+            "    * no clean explanation, and you won't invent one\n"
+            "    * your read was flatly wrong\n"
+            "    * a position hurt (tuition paid, stopped out)\n"
+            "    * you still don't know, and say so\n"
+            "    * you like it and admit that makes you soft on it\n"
+            "    * you're committing to a level and can be wrong in public\n"
             "- NEVER write that a number proves YOU wrong. 'I'm wrong below 33.8', "
             "'30.9 proves me wrong', 'X is my trigger' are banned outright — no human "
             "talks like this. Risk belongs to the SETUP and only when it's the point: "

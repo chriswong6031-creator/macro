@@ -2343,6 +2343,64 @@ def main(argv: list[str] | None = None) -> int:
             f"arming it would have dropped every one.",
             flush=True,
         )
+    # ── SILENT-NIGHT ALARM ───────────────────────────────────────────────────
+    # THE failure mode this system actually has. Every other annotation in this
+    # file names a PER-ITEM reason; the aggregate "the whole night produced
+    # nothing" was silent, so on 2026-07-29 zero posts went out and the operator
+    # found out by looking at the account instead of at the run. A machine that
+    # cannot tell you it failed is not autonomous, it is just unattended.
+    #
+    # Fires on the shape that matters: candidates existed and none of them
+    # posted. A genuinely empty queue is NOT an alarm (nothing was due), it is a
+    # supply problem the plan lane reports on its own.
+    _blocked = {
+        "held for a chart": deferred_no_media,
+        "no fresh quote to verify the price claim": tape_skipped,
+        "price claim contradicted the tape": tape_quarantined,
+        "named tickers with no chart": quarantined_bare_cashtag,
+        "named a ticker no price store knows": quarantined_unknown_cashtag,
+        "reads machine-written": quarantined_voice_laws,
+        "repeats a post already sent": quarantined_run_duplicate,
+        "same skeleton as a recent post": quarantined_frame,
+        "over the desk's daily cap": skipped_cap,
+        "too soon after the last post": skipped_cadence,
+        "no channel wired": skipped_channel,
+        "desk halted": skipped_halt,
+        "below the salience floor": skipped_floor,
+        "other quarantine": quarantined,
+    }
+    _considered = posted + would_post + sum(_blocked.values())
+    # Supply that never even reached the loop. A night also goes silent when
+    # every post sits unapproved: with auto-approve off and nobody awake, the
+    # gate counters all read zero and an in-loop-only trigger stays quiet about
+    # the exact outcome it exists to report. Counted separately so the message
+    # can say WHICH shape it is.
+    try:
+        _waiting = sum(1 for _s in statuses.values()
+                       if str(_s) in ("queued", "approved"))
+    except Exception:  # noqa: BLE001 — an alarm must never break the run
+        _waiting = 0
+    if live and posted == 0 and (_considered > 0 or _waiting > 0):
+        _top = sorted(_blocked.items(), key=lambda kv: -kv[1])[:3]
+        _why = ", ".join(f"{n} {label}" for label, n in _top if n)
+        if not _why:
+            _why = (f"{_waiting} post(s) still waiting for approval"
+                    if _waiting else "no reason recorded")
+        # ::error, not ::warning — a silent night is the outcome this whole
+        # program exists to prevent, and it must not read like routine noise in
+        # the Actions summary. Bare line-start print: a logger prefix makes
+        # GitHub drop the annotation entirely.
+        print(
+            f"::error title=marketing-zero-posted::NOTHING POSTED. "
+            f"{_considered} post(s) reached the dispatch loop and "
+            f"{_waiting} were still waiting; none went out. "
+            f"Top reasons: {_why}. Check the Marketing Floor for the full "
+            f"loss ledger.",
+            flush=True,
+        )
+        log.error("SILENT NIGHT: considered=%d waiting=%d posted=0 top_reasons=%s",
+                  _considered, _waiting, _top)
+
     log.info(
         "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
