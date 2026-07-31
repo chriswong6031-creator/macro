@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T17:16:44.856555+00:00",
-  "count": 471,
+  "generated_at": "2026-07-31T17:28:22.639304+00:00",
+  "count": 472,
   "institutions": [
     "Amova",
     "Apollo",
@@ -80,6 +80,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-oax9mqnyaod-f73045",
+      "title": "GS Korea KOSPI +18, Taiwan TAIEX +8, Japan NKY +4",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:10:25Z",
+      "summary_points": [
+        "**Korea's AI-driven momentum rebound & leverage risk**: $7.3bn foreign inflows (W7.3tn) fueled KOSPI +17.91%, with 43% higher activity vs 20d averages; single-stock leveraged ETF min deposit rose to W30m (from W10m), signaling elevated volatility risk.",
+        "**Japan's BOJ policy & AI positioning vulnerability**: BOJ holds rate at 1% (expected Jan 2025 hikes), yen intervention (Y7-8tn Aug), and elevated AI equities positioning heighten momentum reversal risk (2024 sell-off trigger warning).",
+        "**AI/semiconductor-driven rebound**: MSCI Asia Pacific’s largest one-day gain in 4 months led by Korea (SK Hynix/Samsung), Taiwan (TSMC), Japan (Advantest/Tokyo Electron); margin debt unwinding in Korea/Taiwan/China reinforces cleaner August AI trade setup.",
+        "**Big Tech Financials**: Net income (blue) significantly outpaces free cash flow ex-dividend (red) for Meta, MSFT, AMZN, AAPL, Alphabet, Oracle; net income surging post-2022 amid AI-driven growth validates profitability trends.",
+        "**Taiwan's Tech Rally & Flow Dynamics**: TSMC +10% (limit up since Apr'25), MediaTek/ASE +10% driven by foreign money/short covering; margin debt down signaling sustained AI trade potential amid regional outperformance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
