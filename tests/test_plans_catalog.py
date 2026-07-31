@@ -33,6 +33,12 @@ LOCKED = {
                 "annual_pm": 109, "save_pct": 27},
 }
 
+TERMINAL_INDICATORS = {
+    "core_count": 21,
+    "advanced_total": 31,
+    "access": {"free": 1, "insider": 15, "pro": 31},
+}
+
 
 def _catalog() -> dict:
     with (ROOT / "config" / "plans.yml").open() as fh:
@@ -53,6 +59,16 @@ def test_catalog_locked_pricing():
         assert prices["annual"]["lookup_key"] == f"{key}_2026_v2_annual"
         assert prices["monthly"]["interval"] == "month"
         assert prices["annual"]["interval"] == "year"
+
+
+def test_terminal_indicator_access_is_explicit_and_cumulative():
+    """Pricing copy must describe the same tier ladder the Terminal enforces."""
+    indicator_access = _catalog()["terminal_indicators"]
+    assert indicator_access == TERMINAL_INDICATORS
+    assert list(indicator_access["access"].values()) == sorted(
+        indicator_access["access"].values()
+    )
+    assert indicator_access["access"]["pro"] == indicator_access["advanced_total"]
 
 
 def test_savings_badges_derive_from_config():

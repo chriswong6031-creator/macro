@@ -1723,6 +1723,9 @@ on:
       - "tests/test_flow_leaders_render_markers.py"
       - "tests/test_macro_signals_render.py"
       - "tests/test_movers_page.py"
+      # product-nav-icons.css is the icon authority test_nav_submenu_icons.py now
+      # checks the nav partial against, so its own guard must not stay dark.
+      - "tests/test_nav_icon_refresh.py"
       - "tests/test_nav_submenu_icons.py"
       - "tests/test_sector_nav_links.py"
       - "tests/test_site_semantics_refs.py"

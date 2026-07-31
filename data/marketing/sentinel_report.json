@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-07-30T04:49:37Z",
-  "as_of": "2026-07-30",
+  "produced_at": "2026-07-31T04:54:10Z",
+  "as_of": "2026-07-31",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 8,
-    "passed": 4,
+    "items": 6,
+    "passed": 2,
     "quarantined": 4,
     "quarantined_policy": 4,
     "quarantined_overflow": 0,
@@ -25,8 +25,8 @@
       "account": "meagan",
       "slot": "THEME-04",
       "type": "theme_list",
-      "cashtag": "$PSN",
-      "headline": "Defense & Aerospace selling off, -5.7% avg today",
+      "cashtag": "$FORM",
+      "headline": "Semiconductors ripping, +9.3% avg today",
       "class": "policy",
       "reasons": [
         "ramp_theme_list"
@@ -37,8 +37,8 @@
       "account": "sophia",
       "slot": "MOVER-02",
       "type": "mover",
-      "cashtag": "$VRT",
-      "headline": "$VRT -17.3% today",
+      "cashtag": "$EME",
+      "headline": "$EME +19.3% today",
       "class": "policy",
       "reasons": [
         "near_dup:post-mover-001"
@@ -49,8 +49,8 @@
       "account": "kelly",
       "slot": "THEME-05",
       "type": "theme_list",
-      "cashtag": "$VRT",
-      "headline": "Artificial Intelligence selling off, -2.3% avg today",
+      "cashtag": "$XRX",
+      "headline": "Hardware ripping, +4.7% avg today",
       "class": "policy",
       "reasons": [
         "ramp_theme_list"
@@ -61,8 +61,8 @@
       "account": "cici",
       "slot": "THEME-06",
       "type": "theme_list",
-      "cashtag": "$LMND",
-      "headline": "FinTech selling off, -2.6% avg today",
+      "cashtag": "$FCEL",
+      "headline": "Energy Renewable ripping, +4.6% avg today",
       "class": "policy",
       "reasons": [
         "ramp_theme_list"
@@ -75,37 +75,21 @@
       "account": "flagship",
       "slot": "THEME-03",
       "type": "theme_list",
-      "cashtag": "$RIOT",
-      "headline": "Crypto & Blockchain selling off, -4.7% avg today"
-    },
-    {
-      "id": "post-founder-134",
-      "account": "founder",
-      "slot": "D5-S22",
-      "type": "event",
-      "cashtag": "",
-      "headline": ""
+      "cashtag": "$IREN",
+      "headline": "Crypto & Blockchain ripping, +7.9% avg today"
     },
     {
       "id": "post-mover-001",
       "account": "founder",
       "slot": "MOVER-01",
       "type": "mover",
-      "cashtag": "$LII",
-      "headline": "$LII -21.0% today"
-    },
-    {
-      "id": "post-kelly-080",
-      "account": "kelly",
-      "slot": "D3-S24",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
+      "cashtag": "$SNDK",
+      "headline": "$SNDK +26.0% today"
     }
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 8,
+      "pairs_checked": 3,
       "hits": 1,
       "shared_media_hits": 0
     },
@@ -128,7 +112,7 @@
       "cherry_pick_detected": false
     },
     "stale_receipts": {
-      "age_days": 1,
+      "age_days": 2,
       "max": 7
     },
     "kill_switch": {
@@ -158,7 +142,7 @@
     "ramp": {
       "enforced": true,
       "graduate_after_days": 56,
-      "as_of": "2026-07-30",
+      "as_of": "2026-07-31",
       "as_of_usable": true,
       "base": {
         "max_posts_per_account_per_day": null,
@@ -174,7 +158,7 @@
       "accounts": {
         "flagship": {
           "created": "2026-07-24",
-          "age_days": 6,
+          "age_days": 7,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -287,7 +271,7 @@
         },
         "founder": {
           "created": "2026-07-27",
-          "age_days": 3,
+          "age_days": 4,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -305,7 +289,7 @@
         },
         "meagan": {
           "created": "2026-07-28",
-          "age_days": 2,
+          "age_days": 3,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -323,7 +307,7 @@
         },
         "sophia": {
           "created": "2026-07-28",
-          "age_days": 2,
+          "age_days": 3,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -341,7 +325,7 @@
         },
         "kelly": {
           "created": "2026-07-28",
-          "age_days": 2,
+          "age_days": 3,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {
@@ -359,7 +343,7 @@
         },
         "cici": {
           "created": "2026-07-28",
-          "age_days": 2,
+          "age_days": 3,
           "tier": "weeks_1_2",
           "enabled": true,
           "caps": {

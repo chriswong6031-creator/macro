@@ -2198,7 +2198,22 @@ def _memo_quote_response(
 # ---------------------------------------------------------------------------
 
 def _dispatch_read_tool(tool_name: str, tool_params: dict, root: Path) -> dict:
-    """Dispatch a read-only tool call.  Refuses write tools by name."""
+    """Dispatch a read-only tool call.  Refuses write tools by name.
+
+    Every result passes through the chat plain-word projection
+    (chat_plain_words.project_plain_words): internal state enums (RISK_OFF,
+    CAUTION, …) become plain words HERE, at the only boundary the chat model
+    reads from — live probes (2026-07-30/31) showed the model copying the raw
+    tokens into EN and zh prose, and the W2.1 lesson is that input-side
+    substitution beats prompt directives.  The stored artifacts and the
+    cortex/metabolism loop (cortex.dispatch_tool) keep the raw enums.
+    """
+    from engine.neuralweb.chat_plain_words import project_plain_words  # noqa: PLC0415
+    return project_plain_words(_dispatch_read_tool_raw(tool_name, tool_params, root))
+
+
+def _dispatch_read_tool_raw(tool_name: str, tool_params: dict, root: Path) -> dict:
+    """Raw dispatch — enum tokens verbatim; chat surfaces must use the wrapper."""
     if tool_name not in _ASK_READ_TOOLS:
         log.warning("ask_brain: REFUSED tool %r (not in read-only whitelist)", tool_name)
         return {"error": f"tool not allowed: {tool_name!r}. Read-only whitelist: {sorted(_ASK_READ_TOOLS)}"}

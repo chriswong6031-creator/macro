@@ -3305,6 +3305,7 @@ def _plans_view_model() -> dict:
         "insider": _tier_vm("insider"),
         "pro": _tier_vm("pro"),
         "founding": founding,
+        "terminal_indicators": catalog.get("terminal_indicators", {}),
     }
 
 
@@ -3324,6 +3325,7 @@ def build_plans_page(env: Environment, site: Path, generated: str) -> None:
         insider=vm["insider"],
         pro=vm["pro"],
         founding=vm["founding"],
+        terminal_indicators=vm["terminal_indicators"],
     )
     write_page(site / "plans.html", html)
     log.info("wrote plans.html (insider $%s/$%s save %s%% · pro $%s/$%s save %s%%)",

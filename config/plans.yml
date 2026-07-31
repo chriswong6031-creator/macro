@@ -27,6 +27,18 @@ features:
   - key: chat_opus
     name: Mastermind Pro chat (Opus)
 
+# Display contract for the Terminal indicator library. The Terminal gates advanced
+# modules directly from the account tier (free < insider < pro); this block lets the
+# two pricing surfaces describe that same cumulative access without inventing counts.
+# Keep it aligned with terminal/lib/suites/* module definitions and IndicatorsModal.
+terminal_indicators:
+  core_count: 21
+  advanced_total: 31
+  access:
+    free: 1
+    insider: 15
+    pro: 31
+
 # Paid products. `tier` is the string written to user_entitlements.tier and read by
 # brain_gateway._resolve_tier (must match config/brain.yml quota keys: insider | pro).
 products:

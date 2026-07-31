@@ -20,6 +20,8 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 html[data-lang="zh"] .hub-signin .l-en{display:none}
 html[data-lang="zh"] .hub-signin .l-zh{display:inline}
 .h{text-align:center;margin:6px 0 22px;position:relative;isolation:isolate}
+.hub-live-meta{display:flex;justify-content:center;align-items:center;margin-top:14px}
+.hub-live-meta .eyebrow{margin-bottom:0}
 /* a soft, feathered radial --bg scrim sits BEHIND the hero text (own stacking
    context via isolation) so the bright sun/moon disc never washes the headline
    out. Radial + fully transparent edges = no hard rectangular line across the body. */

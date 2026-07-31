@@ -135,6 +135,16 @@ design lane, not resolved in the build (spawn-handoff law).
     wave* introduces. A fully page-wide reading of the verdict law would eventually want
     those addressed too; that is a base-spec decision for a separate PR, not a silent
     addition to this targeted revision's scope.
+
+    **RESOLVED — that separate PR shipped.** The base spec took the page-wide reading:
+    `WORKSPACE_DESIGN_SPEC.md` §0.16 now states the ceiling-not-mandate correction in its
+    own voice and drops the chip from both spots, keeping each sentence verbatim in EN and
+    ZH plus the as-of stamp where there is one. Nothing above changes — this paragraph
+    correctly describes what was in scope *for W1*. What it means going forward: the page
+    now carries exactly one `data-verdict-surface`, the Ticker name-header row this
+    document's §5.1 pins, and `tests/test_build_options_command.py` greps for duplicates
+    the way `OIP_MASTERPLAN.md` §3 asks. The chips this item removed and the two that PR
+    removed were the same defect at different scopes.
 14. No panel claims "validated." `iv_rank`'s `low_confidence` state is disclosed as "history
     building — Nd," never softened, never hidden.
 
