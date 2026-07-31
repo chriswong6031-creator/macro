@@ -1,8 +1,8 @@
 {
-  "date": "2026-07-29",
-  "health_score": 84,
+  "date": "2026-07-30",
+  "health_score": 83,
   "health_label": "healthy",
   "cycle_phase": "late",
-  "verdict_en": "Bond health healthy (84/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
-  "verdict_zh": "债券健康度健康（84/100），周期晚段。曲线正向倾斜。信用偏紧。利率波动平静。"
+  "verdict_en": "Bond health healthy (83/100), late-cycle. Curve positively sloped. Credit tight. Rates-vol calm.",
+  "verdict_zh": "债券健康度健康（83/100），周期晚段。曲线正向倾斜。信用偏紧。利率波动平静。"
 }

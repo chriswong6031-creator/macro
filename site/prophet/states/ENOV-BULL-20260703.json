@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "ENOV-BULL-20260703",
-  "asof": "2026-07-29",
+  "asof": "2026-07-30",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 64.1,
-  "raw_confidence": 67.9,
-  "delta_vs_base": 4.1,
+  "management_confidence": 63.8,
+  "raw_confidence": 63.4,
+  "delta_vs_base": 3.8,
   "recommended_action": "hold",
   "human_state": "On Track",
   "components": {
     "validity": 100.0,
-    "progress": 45.3,
-    "pace": 58.8,
+    "progress": 38.6,
+    "pace": 48.1,
     "retention": 50.0,
-    "overlay": 59.0
+    "overlay": 53.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.872,
-    "dist_to_t1_r": 0.628,
-    "dist_to_t2_r": 2.128,
-    "horizon_pct_used": 57.8,
-    "p1": 0.5813,
-    "p2": 0.2907,
+    "dist_to_stop_r": 1.706,
+    "dist_to_t1_r": 0.794,
+    "dist_to_t2_r": 2.294,
+    "horizon_pct_used": 60.0,
+    "p1": 0.4706,
+    "p2": 0.2353,
     "p3": null,
-    "move_r": 0.872,
+    "move_r": 0.706,
     "mfe_r": 0.872,
     "mae_r": -0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-14",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 26,
-  "tau": 0.5778
+  "days_elapsed": 27,
+  "tau": 0.6
 }

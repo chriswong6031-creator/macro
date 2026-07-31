@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "QCOM-BULL-20260709",
-  "asof": "2026-07-29",
+  "asof": "2026-07-30",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 13.2,
@@ -17,16 +17,16 @@
     "overlay": 47.0
   },
   "geometry": {
-    "dist_to_stop_r": -1.603,
+    "dist_to_stop_r": -1.903,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 44.4,
-    "p1": -1.7355,
-    "p2": -0.8677,
+    "horizon_pct_used": 46.7,
+    "p1": -1.9354,
+    "p2": -0.9677,
     "p3": null,
-    "move_r": -2.603,
+    "move_r": -2.903,
     "mfe_r": 0.001,
-    "mae_r": -2.603
+    "mae_r": -2.903
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.010000610351568184,
-  "_mae": -35.420007324218744,
+  "_mae": -39.49999389648437,
   "_max_p1": 0.0004899978123701306,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 20,
-  "tau": 0.4444
+  "days_elapsed": 21,
+  "tau": 0.4667
 }

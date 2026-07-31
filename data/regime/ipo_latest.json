@@ -1,10 +1,10 @@
 {
-  "date": "2026-07-29",
+  "date": "2026-07-30",
   "window_band": "OPEN",
-  "ipo_5y": -0.04401737860214039,
-  "spy_5y": 0.120546936702288,
-  "gap_5y": -0.1645643153044284,
-  "priced_90d": 102,
+  "ipo_5y": -0.03423817812107466,
+  "spy_5y": 0.125374535410409,
+  "gap_5y": -0.15961271353148365,
+  "priced_90d": 99,
   "spac_pct_90d": 51,
   "upcoming_n": 5,
   "verdict": "trails",
@@ -12,5 +12,5 @@
   "lockups_just_expired": 11,
   "next_lockup": "PLYX",
   "next_lockup_date": "2026-08-01",
-  "built": "2026-07-30 03:32 UTC"
+  "built": "2026-07-31 03:20 UTC"
 }

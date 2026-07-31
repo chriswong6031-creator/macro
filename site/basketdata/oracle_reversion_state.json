@@ -1,6 +1,6 @@
 {
   "schema": "oracle_reversion_state.v1",
-  "asof": "2026-07-30",
+  "asof": "2026-07-31",
   "n_signals": 11,
   "signals": [
     {
@@ -314,7 +314,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/oracle_reversion_state.py",
-  "produced_at": "2026-07-30T04:01:35Z",
-  "inputs_hash": "sha256:1b4bee18dfe16986d52665fc4b9285f89430c1b5b8d55b3049f96881c116425f",
+  "produced_at": "2026-07-31T03:50:28Z",
+  "inputs_hash": "sha256:1bb57ee5302ffe077a5c2178a2b515a437b0e6fd853a6721513614e5f76d7898",
   "tier": "display"
 }

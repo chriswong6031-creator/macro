@@ -1,6 +1,6 @@
 {
   "schema": "release_forecast.v2",
-  "asof": "2026-07-30T03:59:53Z",
+  "asof": "2026-07-31T03:48:39Z",
   "display_only": true,
   "authority": {
     "can_score": false,
@@ -23,331 +23,11 @@
   ],
   "upcoming": [
     {
-      "release": "pce",
-      "release_type": "pce_headline",
-      "period": "2026-06",
-      "release_date": "2026-07-30",
-      "days_to": 1,
-      "target": "mom_sa_pct",
-      "projection": {
-        "point": -0.2864,
-        "p10": -0.4111,
-        "p25": -0.3426,
-        "p50": -0.2895,
-        "p75": -0.2287,
-        "p90": -0.167
-      },
-      "confidence": 0.9189,
-      "input_completeness": 1.0,
-      "benchmark_set": {
-        "naive_prior": 0.4775,
-        "trailing_3m": 0.5323,
-        "ar_model": null,
-        "cleveland_nowcast": -0.123176603475239,
-        "market_implied": null
-      },
-      "surprise_skew": {
-        "sigma": -4.3105,
-        "sigma_scale_pp": 0.1772,
-        "tag": "cooler",
-        "inline_band": 0.35
-      },
-      "pit": {
-        "revision_optimistic_legs": [],
-        "vintaged_legs": [
-          "sticky_mom_lag1",
-          "median_mom_lag1",
-          "flex_mom_lag1"
-        ],
-        "unrevised_legs": [
-          "gasoline_mom"
-        ],
-        "absent_legs": [],
-        "display_only": true,
-        "authority": false,
-        "pit_note": "sticky/median/flex sourced from ALFRED first-prints via knowable_series (same path as CPI champion); series available from 2014-02 in vintages.parquet.",
-        "range_violation_legs": [],
-        "n_train": 305,
-        "n_features_used": 8
-      },
-      "input_manifest": {
-        "pce_hl_mom_lag1": 0.47745641777818815,
-        "pce_hl_mom_lag2": 0.4280979561774867,
-        "pce_hl_mom_lag3": 0.691391976763045,
-        "sticky_mom_lag1": 0.0676495,
-        "median_mom_lag1": 0.17412399936844736,
-        "flex_mom_lag1": -1.774278179,
-        "ppifis_mom_lag1": -0.6932683830291886,
-        "gasoline_mom": -9.592007590556461
-      },
-      "regime_axis": "inflation",
-      "policy_backdrop": {
-        "fed_stance": "hawkish",
-        "gap_bp": 9,
-        "implied_cuts_12m": -2.0,
-        "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
-      },
-      "components": null,
-      "confidence_v2": null,
-      "confidence_components_v2": null,
-      "revision_risk": null,
-      "surprise_distribution": {
-        "p_hot": 0.0,
-        "p_cold": 1.0,
-        "p_inline": 0.0
-      },
-      "market_implied": null,
-      "expectation_read": {
-        "tag": "below_expectations",
-        "delta_pp": -0.1632,
-        "standardized": -0.92,
-        "expectation_median": -0.1232,
-        "sources": [
-          "cleveland_nowcast"
-        ],
-        "n_sources": 1
-      },
-      "reaction_sensitivity": null,
-      "quirk_flags": [],
-      "print_integrity": {
-        "regime": "normal",
-        "collection_rate_vs_5y": null,
-        "cpi_median_se_trend": null,
-        "revision_streak": null,
-        "source_years": [],
-        "as_of": "2026-07-29",
-        "display_only": true,
-        "authority": false
-      },
-      "print_integrity_regime": "normal",
-      "event_window_ctx": {
-        "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
-        "td_to_release": null,
-        "ex_ante": null,
-        "is_context_only": true
-      },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-06_first_2026-07-29_v1.json",
-      "coverage_flags": {
-        "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 0.875,
-        "non_vintaged_share": 0.125,
-        "model_maturity": 0
-      },
-      "cutoff_label": "T-1"
-    },
-    {
-      "release": "pce",
-      "release_type": "pce_core",
-      "period": "2026-06",
-      "release_date": "2026-07-30",
-      "days_to": 1,
-      "target": "mom_sa_pct",
-      "projection": {
-        "point": -0.0299,
-        "p10": -0.1598,
-        "p25": -0.0992,
-        "p50": -0.0387,
-        "p75": 0.0293,
-        "p90": 0.095
-      },
-      "confidence": 0.4414,
-      "input_completeness": 1.0,
-      "benchmark_set": {
-        "naive_prior": 0.3487,
-        "trailing_3m": 0.3154,
-        "ar_model": null,
-        "cleveland_nowcast": 0.187030847713643,
-        "market_implied": null
-      },
-      "surprise_skew": {
-        "sigma": -2.782,
-        "sigma_scale_pp": 0.1361,
-        "tag": "cooler",
-        "inline_band": 0.35
-      },
-      "pit": {
-        "revision_optimistic_legs": [],
-        "vintaged_legs": [
-          "sticky_mom_lag1",
-          "median_mom_lag1",
-          "flex_mom_lag1"
-        ],
-        "unrevised_legs": [],
-        "absent_legs": [],
-        "display_only": true,
-        "authority": false,
-        "pit_note": "sticky/median/flex sourced from ALFRED first-prints via knowable_series (same path as CPI champion); series available from 2014-02 in vintages.parquet.",
-        "range_violation_legs": [],
-        "n_train": 305,
-        "n_features_used": 7
-      },
-      "input_manifest": {
-        "pce_core_mom_lag1": 0.34868471804365697,
-        "pce_core_mom_lag2": 0.2715058130090764,
-        "pce_core_mom_lag3": 0.32593765278325915,
-        "sticky_mom_lag1": 0.0676495,
-        "median_mom_lag1": 0.17412399936844736,
-        "flex_mom_lag1": -1.774278179,
-        "ppifes_mom_lag1": -0.09795844226613282
-      },
-      "regime_axis": "inflation",
-      "policy_backdrop": {
-        "fed_stance": "hawkish",
-        "gap_bp": 9,
-        "implied_cuts_12m": -2.0,
-        "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
-      },
-      "components": null,
-      "confidence_v2": null,
-      "confidence_components_v2": null,
-      "revision_risk": null,
-      "surprise_distribution": {
-        "p_hot": 0.0,
-        "p_cold": 1.0,
-        "p_inline": 0.0
-      },
-      "market_implied": null,
-      "expectation_read": {
-        "tag": "below_expectations",
-        "delta_pp": -0.2169,
-        "standardized": -1.59,
-        "expectation_median": 0.187,
-        "sources": [
-          "cleveland_nowcast"
-        ],
-        "n_sources": 1
-      },
-      "reaction_sensitivity": null,
-      "quirk_flags": [],
-      "print_integrity": {
-        "regime": "normal",
-        "collection_rate_vs_5y": null,
-        "cpi_median_se_trend": null,
-        "revision_streak": null,
-        "source_years": [],
-        "as_of": "2026-07-29",
-        "display_only": true,
-        "authority": false
-      },
-      "print_integrity_regime": "normal",
-      "event_window_ctx": {
-        "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
-        "td_to_release": null,
-        "ex_ante": null,
-        "is_context_only": true
-      },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-06_first_2026-07-29_v1.json",
-      "coverage_flags": {
-        "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 1.0,
-        "non_vintaged_share": 0.0,
-        "model_maturity": 0
-      },
-      "cutoff_label": "T-1"
-    },
-    {
-      "release": "claims",
-      "release_type": "claims",
-      "period": "2026-07-30",
-      "release_date": "2026-07-30",
-      "days_to": 1,
-      "target": "change_thousands",
-      "projection": {
-        "mode": "benchmark_only",
-        "reason": "Walk-forward MAE (IC4WSA spec attempt 2: 43.9 thousand full, 17.7 thousand 2021+) fails to beat naive_prior (27.9 thousand full, 14.8 thousand 2021+). \u00a76 kill rule triggered on both windows: benchmark-only mode (research/release_forecast/CLAIMS_BACKTEST.md). No attempt 3 without program-level adjudication."
-      },
-      "confidence": null,
-      "input_completeness": null,
-      "benchmark_set": {
-        "naive_prior": 187.0,
-        "trailing_4w": 206.25,
-        "ar_model": 167.88,
-        "cleveland_nowcast": null,
-        "market_implied": null
-      },
-      "surprise_skew": {},
-      "pit": {
-        "revision_optimistic_legs": [],
-        "vintaged_legs": [
-          "ICSA",
-          "IC4WSA"
-        ],
-        "unrevised_legs": [],
-        "absent_legs": [],
-        "display_only": true,
-        "authority": false,
-        "note": "frozen trivial spec: IC4WSA point, expanding IC4WSA\u2192ICSA residuals"
-      },
-      "input_manifest": {},
-      "regime_axis": "growth",
-      "policy_backdrop": {
-        "fed_stance": "hawkish",
-        "gap_bp": 9,
-        "implied_cuts_12m": -2.0,
-        "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
-      },
-      "components": null,
-      "confidence_v2": null,
-      "confidence_components_v2": null,
-      "revision_risk": null,
-      "surprise_distribution": null,
-      "market_implied": null,
-      "expectation_read": null,
-      "reaction_sensitivity": null,
-      "quirk_flags": [],
-      "print_integrity": {
-        "regime": "normal",
-        "collection_rate_vs_5y": null,
-        "cpi_median_se_trend": null,
-        "revision_streak": null,
-        "source_years": [],
-        "as_of": "2026-07-29",
-        "display_only": true,
-        "authority": false
-      },
-      "print_integrity_regime": "normal",
-      "event_window_ctx": {
-        "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
-        "td_to_release": null,
-        "ex_ante": null,
-        "is_context_only": true
-      },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-07-30_first_2026-07-29_v1.json",
-      "coverage_flags": {
-        "weight_coverage": 1.0,
-        "fresh_proxy_coverage": 1.0,
-        "non_vintaged_share": 0.0,
-        "model_maturity": 3
-      },
-      "cutoff_label": "T-1"
-    },
-    {
       "release": "claims",
       "release_type": "claims",
       "period": "2026-08-06",
       "release_date": "2026-08-06",
-      "days_to": 8,
+      "days_to": 7,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -356,9 +36,9 @@
       "confidence": null,
       "input_completeness": null,
       "benchmark_set": {
-        "naive_prior": 187.0,
-        "trailing_4w": 206.25,
-        "ar_model": 167.88,
+        "naive_prior": 197.0,
+        "trailing_4w": 201.75,
+        "ar_model": 207.49,
         "cleveland_nowcast": null,
         "market_implied": null
       },
@@ -382,7 +62,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -399,38 +79,36 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-06_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-06_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
         "non_vintaged_share": 0.0,
         "model_maturity": 3
       },
-      "cutoff_label": "early"
+      "cutoff_label": "T-1"
     },
     {
       "release": "nfp",
       "release_type": "nfp",
       "period": "2026-07",
       "release_date": "2026-08-07",
-      "days_to": 9,
+      "days_to": 8,
       "target": "change_thousands",
       "projection": {
         "point": null,
@@ -495,7 +173,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": {
         "private_trend": null,
@@ -546,7 +224,7 @@
           2022,
           2023
         ],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
@@ -570,17 +248,15 @@
       },
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-07_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-07_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.875,
         "fresh_proxy_coverage": 0.625,
@@ -608,7 +284,7 @@
       "release_type": "cpi_headline",
       "period": "2026-07",
       "release_date": "2026-08-12",
-      "days_to": 14,
+      "days_to": 13,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0416,
@@ -624,7 +300,7 @@
         "naive_prior": -0.4225,
         "trailing_3m": 0.2302,
         "ar_model": 0.6387,
-        "cleveland_nowcast": 0.0409189882264712,
+        "cleveland_nowcast": 0.0865130552949185,
         "market_implied": {
           "source": "polymarket",
           "event_key": "cpi_print",
@@ -690,7 +366,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": [
         {
@@ -724,9 +400,9 @@
       },
       "revision_risk": null,
       "surprise_distribution": {
-        "p_hot": 0.08,
-        "p_cold": 0.71,
-        "p_inline": 0.21
+        "p_hot": 0.05,
+        "p_cold": 0.75,
+        "p_inline": 0.2
       },
       "market_implied": {
         "source": "polymarket",
@@ -738,9 +414,9 @@
       },
       "expectation_read": {
         "tag": "below_expectations",
-        "delta_pp": -0.0825,
-        "standardized": -0.4,
-        "expectation_median": 0.0409,
+        "delta_pp": -0.1281,
+        "standardized": -0.62,
+        "expectation_median": 0.0865,
         "sources": [
           "cleveland_nowcast"
         ],
@@ -762,24 +438,22 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-07_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_2026-07_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.7777777777777778,
@@ -918,12 +592,12 @@
         }
       },
       "combined": {
-        "combined_point": -0.004971,
-        "p10": -0.285946,
-        "p25": -0.152847,
-        "p50": -0.004971,
-        "p75": 0.142906,
-        "p90": 0.276005,
+        "combined_point": 0.004424,
+        "p10": -0.280044,
+        "p25": -0.14529,
+        "p50": 0.004424,
+        "p75": 0.154139,
+        "p90": 0.288893,
         "combined_components": {
           "inputs_used": [
             "champion",
@@ -937,7 +611,7 @@
             "v3_factor": -0.1307,
             "cpi_bridge": 0.0091,
             "mf_energy": 0.0734,
-            "cleveland": 0.040919
+            "cleveland": 0.086513
           },
           "weights": {
             "champion": 0.189331,
@@ -962,8 +636,8 @@
           },
           "MAE_pool": 0.4195,
           "sigma_champion": 0.2075,
-          "Var_w": 0.00500916,
-          "sigma_combined": 0.219238,
+          "Var_w": 0.00621152,
+          "sigma_combined": 0.221963,
           "cold_start": false,
           "k": 3.0
         },
@@ -978,7 +652,7 @@
       "release_type": "cpi_core",
       "period": "2026-07",
       "release_date": "2026-08-12",
-      "days_to": 14,
+      "days_to": 13,
       "target": "mom_sa_pct",
       "projection": {
         "point": -0.0056,
@@ -1057,7 +731,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": [
         {
@@ -1124,24 +798,22 @@
         "cpi_median_se_trend": "falling",
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-07_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CPI_CORE_2026-07_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
@@ -1212,7 +884,7 @@
       "release_type": "ppi_finaldemand",
       "period": "2026-07",
       "release_date": "2026-08-13",
-      "days_to": 15,
+      "days_to": 14,
       "target": "mom_sa_pct",
       "projection": {
         "point": 0.4173,
@@ -1263,7 +935,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -1284,24 +956,22 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-07_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PPI_2026-07_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.8,
@@ -1315,7 +985,7 @@
       "release_type": "claims",
       "period": "2026-08-13",
       "release_date": "2026-08-13",
-      "days_to": 15,
+      "days_to": 14,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1324,9 +994,9 @@
       "confidence": null,
       "input_completeness": null,
       "benchmark_set": {
-        "naive_prior": 187.0,
-        "trailing_4w": 206.25,
-        "ar_model": 167.88,
+        "naive_prior": 197.0,
+        "trailing_4w": 201.75,
+        "ar_model": 207.49,
         "cleveland_nowcast": null,
         "market_implied": null
       },
@@ -1350,7 +1020,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -1367,24 +1037,22 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-13_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-13_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1398,7 +1066,7 @@
       "release_type": "claims",
       "period": "2026-08-20",
       "release_date": "2026-08-20",
-      "days_to": 22,
+      "days_to": 21,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1407,9 +1075,9 @@
       "confidence": null,
       "input_completeness": null,
       "benchmark_set": {
-        "naive_prior": 187.0,
-        "trailing_4w": 206.25,
-        "ar_model": 167.88,
+        "naive_prior": 197.0,
+        "trailing_4w": 201.75,
+        "ar_model": 207.49,
         "cleveland_nowcast": null,
         "market_implied": null
       },
@@ -1433,7 +1101,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -1450,24 +1118,22 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-20_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-20_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1481,27 +1147,27 @@
       "release_type": "pce_headline",
       "period": "2026-07",
       "release_date": "2026-08-26",
-      "days_to": 28,
+      "days_to": 27,
       "target": "mom_sa_pct",
       "projection": {
-        "point": -0.2731,
-        "p10": -0.3978,
-        "p25": -0.3293,
-        "p50": -0.2762,
-        "p75": -0.2154,
-        "p90": -0.1537
+        "point": -0.2335,
+        "p10": -0.3624,
+        "p25": -0.2916,
+        "p50": -0.2364,
+        "p75": -0.1736,
+        "p90": -0.1088
       },
-      "confidence": 0.9189,
+      "confidence": 0.8969,
       "input_completeness": 1.0,
       "benchmark_set": {
-        "naive_prior": 0.4775,
-        "trailing_3m": 0.5323,
+        "naive_prior": -0.1026,
+        "trailing_3m": 0.2676,
         "ar_model": null,
-        "cleveland_nowcast": 0.156949548490434,
+        "cleveland_nowcast": 0.184503596421753,
         "market_implied": null
       },
       "surprise_skew": {
-        "sigma": -4.2356,
+        "sigma": -0.7382,
         "sigma_scale_pp": 0.1772,
         "tag": "cooler",
         "inline_band": 0.35
@@ -1521,13 +1187,13 @@
         "authority": false,
         "pit_note": "sticky/median/flex sourced from ALFRED first-prints via knowable_series (same path as CPI champion); series available from 2014-02 in vintages.parquet.",
         "range_violation_legs": [],
-        "n_train": 305,
+        "n_train": 306,
         "n_features_used": 8
       },
       "input_manifest": {
-        "pce_hl_mom_lag1": 0.47745641777818815,
-        "pce_hl_mom_lag2": 0.4280979561774867,
-        "pce_hl_mom_lag3": 0.691391976763045,
+        "pce_hl_mom_lag1": -0.10264052247827005,
+        "pce_hl_mom_lag2": 0.47745641777818815,
+        "pce_hl_mom_lag3": 0.4280979561774867,
         "sticky_mom_lag1": 0.0676495,
         "median_mom_lag1": 0.17412399936844736,
         "flex_mom_lag1": -1.774278179,
@@ -1540,7 +1206,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -1554,9 +1220,9 @@
       "market_implied": null,
       "expectation_read": {
         "tag": "below_expectations",
-        "delta_pp": -0.43,
-        "standardized": -2.43,
-        "expectation_median": 0.1569,
+        "delta_pp": -0.418,
+        "standardized": -2.36,
+        "expectation_median": 0.1845,
         "sources": [
           "cleveland_nowcast"
         ],
@@ -1570,59 +1236,57 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-07_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_2026-07_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 0.875,
         "non_vintaged_share": 0.125,
         "model_maturity": 0
       },
-      "cutoff_label": "early"
+      "cutoff_label": "T-1"
     },
     {
       "release": "pce",
       "release_type": "pce_core",
       "period": "2026-07",
       "release_date": "2026-08-26",
-      "days_to": 28,
+      "days_to": 27,
       "target": "mom_sa_pct",
       "projection": {
-        "point": -0.0299,
-        "p10": -0.1598,
-        "p25": -0.0992,
-        "p50": -0.0387,
-        "p75": 0.0293,
-        "p90": 0.095
+        "point": -0.0325,
+        "p10": -0.1665,
+        "p25": -0.1037,
+        "p50": -0.0412,
+        "p75": 0.0326,
+        "p90": 0.0991
       },
-      "confidence": 0.4414,
+      "confidence": 0.2691,
       "input_completeness": 1.0,
       "benchmark_set": {
-        "naive_prior": 0.3487,
-        "trailing_3m": 0.3154,
+        "naive_prior": 0.1414,
+        "trailing_3m": 0.2539,
         "ar_model": null,
         "cleveland_nowcast": 0.273671689976095,
         "market_implied": null
       },
       "surprise_skew": {
-        "sigma": -2.782,
-        "sigma_scale_pp": 0.1361,
+        "sigma": -1.2766,
+        "sigma_scale_pp": 0.1363,
         "tag": "cooler",
         "inline_band": 0.35
       },
@@ -1639,13 +1303,13 @@
         "authority": false,
         "pit_note": "sticky/median/flex sourced from ALFRED first-prints via knowable_series (same path as CPI champion); series available from 2014-02 in vintages.parquet.",
         "range_violation_legs": [],
-        "n_train": 305,
+        "n_train": 306,
         "n_features_used": 7
       },
       "input_manifest": {
-        "pce_core_mom_lag1": 0.34868471804365697,
-        "pce_core_mom_lag2": 0.2715058130090764,
-        "pce_core_mom_lag3": 0.32593765278325915,
+        "pce_core_mom_lag1": 0.14144923971033396,
+        "pce_core_mom_lag2": 0.34868471804365697,
+        "pce_core_mom_lag3": 0.2715058130090764,
         "sticky_mom_lag1": 0.0676495,
         "median_mom_lag1": 0.17412399936844736,
         "flex_mom_lag1": -1.774278179,
@@ -1657,7 +1321,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -1671,8 +1335,8 @@
       "market_implied": null,
       "expectation_read": {
         "tag": "below_expectations",
-        "delta_pp": -0.3036,
-        "standardized": -2.23,
+        "delta_pp": -0.3062,
+        "standardized": -2.25,
         "expectation_median": 0.2737,
         "sources": [
           "cleveland_nowcast"
@@ -1687,38 +1351,36 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-07_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/PCE_CORE_2026-07_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
         "non_vintaged_share": 0.0,
         "model_maturity": 0
       },
-      "cutoff_label": "early"
+      "cutoff_label": "T-1"
     },
     {
       "release": "claims",
       "release_type": "claims",
       "period": "2026-08-27",
       "release_date": "2026-08-27",
-      "days_to": 29,
+      "days_to": 28,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1727,9 +1389,9 @@
       "confidence": null,
       "input_completeness": null,
       "benchmark_set": {
-        "naive_prior": 187.0,
-        "trailing_4w": 206.25,
-        "ar_model": 167.88,
+        "naive_prior": 197.0,
+        "trailing_4w": 201.75,
+        "ar_model": 207.49,
         "cleveland_nowcast": null,
         "market_implied": null
       },
@@ -1753,7 +1415,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -1770,24 +1432,22 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-27_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-08-27_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1801,7 +1461,7 @@
       "release_type": "claims",
       "period": "2026-09-03",
       "release_date": "2026-09-03",
-      "days_to": 36,
+      "days_to": 35,
       "target": "change_thousands",
       "projection": {
         "mode": "benchmark_only",
@@ -1810,9 +1470,9 @@
       "confidence": null,
       "input_completeness": null,
       "benchmark_set": {
-        "naive_prior": 187.0,
-        "trailing_4w": 206.25,
-        "ar_model": 167.88,
+        "naive_prior": 197.0,
+        "trailing_4w": 201.75,
+        "ar_model": 207.49,
         "cleveland_nowcast": null,
         "market_implied": null
       },
@@ -1836,7 +1496,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -1853,24 +1513,22 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-03_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/CLAIMS_2026-09-03_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 1.0,
         "fresh_proxy_coverage": 1.0,
@@ -1884,7 +1542,7 @@
       "release_type": "nfp",
       "period": "2026-08",
       "release_date": "2026-09-04",
-      "days_to": 37,
+      "days_to": 36,
       "target": "change_thousands",
       "projection": {
         "point": null,
@@ -1949,7 +1607,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": {
         "private_trend": null,
@@ -1993,7 +1651,7 @@
           2022,
           2023
         ],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
@@ -2017,17 +1675,15 @@
       },
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-08_first_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/NFP_2026-08_first_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.875,
         "fresh_proxy_coverage": 0.625,
@@ -2096,7 +1752,7 @@
         "gap_bp": 9,
         "implied_cuts_12m": -2.0,
         "next_fomc": "2026-09-16",
-        "guidance_direction": "unknown"
+        "guidance_direction": "on_hold"
       },
       "components": null,
       "confidence_v2": null,
@@ -2113,24 +1769,22 @@
         "cpi_median_se_trend": null,
         "revision_streak": null,
         "source_years": [],
-        "as_of": "2026-07-29",
+        "as_of": "2026-07-30",
         "display_only": true,
         "authority": false
       },
       "print_integrity_regime": "normal",
       "event_window_ctx": {
         "schema": "event_window.release_ctx.v1",
-        "phase": "fomc_day",
-        "active_collisions": [
-          "fomc_in_opex_week"
-        ],
-        "phase_read_en": "fomc day: historically -0.31% excess fwd-5d return (HAC t=-2.15, n=216). Display context \u2014 not a buy/sell signal.",
-        "phase_read_zh": "fomc_day\u9636\u6bb5\uff1a\u5386\u53f2\u8d85\u989d\u524d\u5411\u6536\u76ca -0.31%\uff08HAC t=-2.15\uff0cn=216\uff09\u3002\u4ec5\u4f9b\u5c55\u793a\u53c2\u8003\uff0c\u975e\u4e70\u5356\u4fe1\u53f7\u3002",
+        "phase": "post_fomc_3d",
+        "active_collisions": [],
+        "phase_read_en": "post fomc 3d: no statistically robust calendar edge measured (display context).",
+        "phase_read_zh": "post_fomc_3d\u9636\u6bb5\uff1a\u672a\u6d4b\u5f97\u7edf\u8ba1\u663e\u8457\u7684\u65e5\u5386\u6548\u5e94\uff08\u4ec5\u4f9b\u53c2\u8003\uff09\u3002",
         "td_to_release": null,
         "ex_ante": null,
         "is_context_only": true
       },
-      "input_snapshot_ref": "data/release_forecast/input_snapshots/retail_sales_2026-07-29_v1.json",
+      "input_snapshot_ref": "data/release_forecast/input_snapshots/retail_sales_2026-07-30_v1.json",
       "coverage_flags": {
         "weight_coverage": 0.0,
         "fresh_proxy_coverage": 0.0,
@@ -2203,23 +1857,23 @@
       "schema": 2,
       "row_type": "scored",
       "model": null,
-      "asof_night": "2026-07-25",
+      "asof_night": "2026-07-30",
       "release": "claims",
-      "period": "2026-07-23",
-      "release_date": "2026-07-23",
-      "actual": 187.0,
-      "actual_first": 187.0,
-      "raw_initial_print": 187.0,
-      "frozen_asof_night": "2026-07-20",
+      "period": "2026-07-30",
+      "release_date": "2026-07-30",
+      "actual": 197.0,
+      "actual_first": 197.0,
+      "raw_initial_print": 197.0,
+      "frozen_asof_night": "2026-07-29",
       "frozen_projection_point": null,
       "frozen_projection_p10": null,
       "frozen_projection_p25": null,
       "frozen_projection_p75": null,
       "frozen_projection_p90": null,
       "our_surprise": null,
-      "surprise_vs_naive": null,
-      "surprise_vs_trailing": null,
-      "surprise_vs_ar": null,
+      "surprise_vs_naive": 10.0,
+      "surprise_vs_trailing": -9.25,
+      "surprise_vs_ar": 29.12,
       "surprise_vs_cleveland": null,
       "interval_hit": null,
       "skew_hit": null,
@@ -2231,9 +1885,9 @@
   ],
   "scoreboard_ref": "data/release_forecast/scoreboard.json",
   "capture_health": {
-    "asof": "2026-07-29",
-    "last_nightly_asof": "2026-07-28",
-    "nightly_gap_days": 1,
+    "asof": "2026-07-30",
+    "last_nightly_asof": "2026-07-30",
+    "nightly_gap_days": 0,
     "past_due_unscored": [
       {
         "release": "ppi_finaldemand",
@@ -2241,14 +1895,28 @@
         "release_date": "2026-07-15",
         "model": null,
         "reason": "api_key_absent"
+      },
+      {
+        "release": "pce_headline",
+        "period": "2026-06",
+        "release_date": "2026-07-30",
+        "model": null,
+        "reason": "api_key_absent"
+      },
+      {
+        "release": "pce_core",
+        "period": "2026-06",
+        "release_date": "2026-07-30",
+        "model": null,
+        "reason": "api_key_absent"
       }
     ],
     "enricher_staleness": {
-      "kalshi_releases_asof": "2026-07-30",
-      "cleveland_nowcast_asof": "2026-07-30",
+      "kalshi_releases_asof": "2026-07-31",
+      "cleveland_nowcast_asof": "2026-07-31",
       "work_stoppages_asof": "2024-10-01",
       "print_integrity_asof": "2024-01-01"
     },
-    "past_due_unscored_count": 1
+    "past_due_unscored_count": 3
   }
 }

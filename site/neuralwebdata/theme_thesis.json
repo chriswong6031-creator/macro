@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
-  "as_of": "2026-07-30",
-  "generated_at": "2026-07-30T04:02:27Z",
+  "as_of": "2026-07-31",
+  "generated_at": "2026-07-31T03:51:19Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -465,10 +465,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-30",
+      "as_of": "2026-07-31",
       "thesis_id": "robotics_automation.v1",
-      "content_hash": "sha256:6cb5df95160c83d3a6e965dbb71fd206c388bda414f1223a9686b1d991a11188",
-      "prev_content_hash": "sha256:cf73ff983241a84fe617f6aea64700b2352dfb145693d271adc1c9348bd0fe5a",
+      "content_hash": "sha256:97f11fd1a64fb5bd44f419e709ffdc10ad63eda37a9c62b28f06d3d4cfc62e54",
+      "prev_content_hash": "sha256:6cb5df95160c83d3a6e965dbb71fd206c388bda414f1223a9686b1d991a11188",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -534,7 +534,7 @@
           "rule_en": "If reshoring basket score falls below 30 or moves to 'avoid' label, the industrial-capex driver underpinning automation demand is weakening.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=48.0"
+          "detail": "threshold check: 'basket_intel[*].score' lt 30 → value=61.0"
         },
         {
           "id": "robo_f3",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-07-30T04:02:27Z",
-  "inputs_hash": "sha256:db2789be55ed8c165f8e6e867c5abda63188f8c83635ecdbe3a3131d45172924",
+  "produced_at": "2026-07-31T03:51:19Z",
+  "inputs_hash": "sha256:7ac3d3318d4b52e3a0423a38ddf37fedf128fa0f73015436be1642d0db1785df",
   "tier": "display"
 }

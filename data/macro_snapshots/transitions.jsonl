@@ -90,3 +90,13 @@
 {"asof": "2026-07-30", "domain": "fx", "field": "fx_eurusd_action", "from_value": "FLAT", "to_value": "SHORT", "macro_context_id": "a6640f174cbb3573"}
 {"asof": "2026-07-30", "domain": "commodity", "field": "silver_action", "from_value": "SELL", "to_value": "HOLD", "macro_context_id": "a6640f174cbb3573"}
 {"asof": "2026-07-30", "domain": "canada", "field": "canada_overlay_state", "from_value": "Risk-on", "to_value": "Neutral", "macro_context_id": "a6640f174cbb3573"}
+{"asof": "2026-07-31", "domain": "us", "field": "us_quad", "from_value": "Q1", "to_value": "Q2", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "us", "field": "us_fused_risk", "from_value": "caution", "to_value": "elevated", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "us", "field": "us_liquidity_quality", "from_value": "stress-expansion", "to_value": "neutral-hollow", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "us", "field": "us_liquidity_overlay", "from_value": "expanding", "to_value": "neutral", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "us", "field": "us_dislocation", "from_value": "buyable_washout", "to_value": "calm", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "us", "field": "us_vrp_state", "from_value": "rich (vol overpriced \u2014 constructive)", "to_value": "normal", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "market", "field": "market_state_verdict", "from_value": "RISK_OFF", "to_value": "MIXED", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "fx", "field": "fx_liquidity_dir", "from_value": "soft", "to_value": "supportive", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "fx", "field": "fx_usdchf_action", "from_value": "LONG", "to_value": "FLAT", "macro_context_id": "72189d007b106157"}
+{"asof": "2026-07-31", "domain": "canada", "field": "canada_overlay_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "72189d007b106157"}

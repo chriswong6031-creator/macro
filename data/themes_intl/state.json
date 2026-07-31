@@ -1,76 +1,69 @@
 {
   "_debounce": {
     "label": {
-      "intl_automation": {
-        "bucket": "2026-07-29",
+      "intl_pharma": {
+        "bucket": "2026-07-31",
         "count": 1,
-        "from": "neutral"
+        "from": "dominant"
       }
     },
     "lead": {
       "displayed": "intl_insurers",
       "pending": {
-        "bucket": "2026-07-29",
-        "count": 2,
-        "tid": "intl_software"
+        "bucket": "2026-07-31",
+        "count": 1,
+        "tid": "intl_telecom"
       }
     },
-    "reco": {
-      "intl_pharma": {
-        "bucket": "2026-07-29",
-        "count": 1,
-        "from": "hold",
-        "to": "accumulate"
-      }
-    }
+    "reco": {}
   },
   "intl_automation": {
     "label": "emerging",
     "name": "Industrial Automation & Machinery",
     "name_zh": "\u5de5\u4e1a\u81ea\u52a8\u5316\u4e0e\u673a\u68b0",
-    "rank": 12,
+    "rank": 9,
     "reco": "enter",
-    "score": 49
+    "score": 56
   },
   "intl_autos": {
     "label": "dominant",
     "name": "Autos & Mobility",
     "name_zh": "\u6c7d\u8f66\u4e0e\u51fa\u884c",
-    "rank": 2,
+    "rank": 3,
     "reco": "accumulate",
-    "score": 68
+    "score": 70
   },
   "intl_banks": {
     "label": "neutral",
     "name": "Global Banks",
     "name_zh": "\u5168\u7403\u94f6\u884c",
-    "rank": 10,
+    "rank": 11,
     "reco": "hold",
-    "score": 56
+    "score": 53
   },
   "intl_defense": {
-    "label": "deteriorating",
+    "label": "neutral",
     "name": "Defense & Aerospace",
     "name_zh": "\u56fd\u9632\u4e0e\u822a\u7a7a\u822a\u5929",
-    "rank": 14,
-    "reco": "avoid",
-    "score": 32
+    "rank": 12,
+    "reco": "hold",
+    "score": 53
   },
   "intl_energy": {
-    "label": "emerging",
+    "label": "dominant",
     "name": "Global Energy",
     "name_zh": "\u5168\u7403\u80fd\u6e90",
-    "rank": 8,
-    "reco": "enter",
-    "score": 58
+    "rank": 2,
+    "reco": "accumulate",
+    "score": 71
   },
   "intl_india": {
     "label": "emerging",
     "name": "India Growth",
     "name_zh": "\u5370\u5ea6\u6210\u957f",
-    "rank": 9,
+    "rank": 8,
     "reco": "hold",
-    "score": 58
+    "score": 57
   },
   "intl_insurers": {
     "label": "dominant",
@@ -78,7 +71,7 @@
     "name_zh": "\u4fdd\u9669\u4e0e\u591a\u5143\u91d1\u878d",
     "rank": 4,
     "reco": "accumulate",
-    "score": 67
+    "score": 69
   },
   "intl_japan": {
     "label": "deteriorating",
@@ -86,7 +79,7 @@
     "name_zh": "\u65e5\u672c\u4f01\u4e1a",
     "rank": 13,
     "reco": "avoid",
-    "score": 44
+    "score": 51
   },
   "intl_korea": {
     "label": "deteriorating",
@@ -94,7 +87,7 @@
     "name_zh": "\u97e9\u56fd\u79d1\u6280\u4e0e\u5de5\u4e1a",
     "rank": 16,
     "reco": "avoid",
-    "score": 20
+    "score": 30
   },
   "intl_luxury": {
     "label": "emerging",
@@ -108,17 +101,17 @@
     "label": "emerging",
     "name": "Mining & Metals",
     "name_zh": "\u77ff\u4e1a\u4e0e\u91d1\u5c5e",
-    "rank": 11,
+    "rank": 10,
     "reco": "enter",
-    "score": 53
+    "score": 56
   },
   "intl_pharma": {
-    "label": "dominant",
+    "label": "emerging",
     "name": "Global Pharma & Healthcare",
     "name_zh": "\u5168\u7403\u5236\u836f\u4e0e\u533b\u7597",
-    "rank": 5,
-    "reco": "accumulate",
-    "score": 63
+    "rank": 14,
+    "reco": "enter",
+    "score": 44
   },
   "intl_semis": {
     "label": "deteriorating",
@@ -126,15 +119,15 @@
     "name_zh": "\u5168\u7403\u534a\u5bfc\u4f53",
     "rank": 17,
     "reco": "avoid",
-    "score": 19
+    "score": 29
   },
   "intl_software": {
     "label": "dominant",
     "name": "Software & IT Services",
     "name_zh": "\u8f6f\u4ef6\u4e0eIT\u670d\u52a1",
-    "rank": 1,
+    "rank": 5,
     "reco": "hold",
-    "score": 69
+    "score": 63
   },
   "intl_tech_hw": {
     "label": "deteriorating",
@@ -142,15 +135,15 @@
     "name_zh": "\u79d1\u6280\u786c\u4ef6\u4e0e\u96f6\u90e8\u4ef6",
     "rank": 15,
     "reco": "avoid",
-    "score": 26
+    "score": 32
   },
   "intl_telecom": {
     "label": "dominant",
     "name": "Telecom, Media & Internet",
     "name_zh": "\u7535\u4fe1\u5a92\u4f53\u4e0e\u4e92\u8054\u7f51",
-    "rank": 3,
+    "rank": 1,
     "reco": "accumulate",
-    "score": 68
+    "score": 74
   },
   "intl_uk": {
     "label": "emerging",
@@ -158,6 +151,6 @@
     "name_zh": "\u82f1\u56fd\u84dd\u7b79",
     "rank": 7,
     "reco": "enter",
-    "score": 61
+    "score": 60
   }
 }

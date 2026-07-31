@@ -3,10 +3,13 @@
   "crash": false,
   "eligible": [
     "ai_infra",
+    "ai_neoclouds",
     "ai_semiconductors",
     "ai_software",
     "big_pharma",
+    "crypto",
     "cybersecurity",
+    "data_center_power",
     "defensives",
     "energy_complex",
     "industrial_distribution",
@@ -15,6 +18,7 @@
     "memory_storage",
     "non_ai_tech",
     "obesity_glp1",
+    "power_grid",
     "regional_banks",
     "reshoring",
     "retail",
@@ -34,9 +38,9 @@
   ],
   "held": [
     "memory_storage",
-    "us_sector_health",
     "cybersecurity",
-    "big_pharma"
+    "us_sector_health",
+    "ai_neoclouds"
   ],
   "leader": "memory_storage",
   "names": {

@@ -1,23 +1,23 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 0.412,
+  "roro": 0.882,
   "cap_recent": true,
-  "fear_built": 0.319,
-  "roro_velocity": -0.028,
-  "vel_pctile": 0.425,
+  "fear_built": 0.368,
+  "roro_velocity": 0.307,
+  "vel_pctile": 0.927,
   "legs_up": 2,
   "legs_total": 7,
   "flipped_legs": [
-    "skew",
+    "vix_term",
     "dxy"
   ],
-  "days_since_last_snap": 33,
-  "fear_rebuilding": true,
-  "vix_term": 0.961,
-  "status": "dormant",
+  "days_since_last_snap": 34,
+  "fear_rebuilding": false,
+  "vix_term": 0.876,
+  "status": "building",
   "gates": {
-    "velocity": false,
+    "velocity": true,
     "legs": false,
     "fear": false,
     "washout": true
@@ -25,9 +25,9 @@
   "min_legs": 4,
   "flipped_legs_named": [
     {
-      "key": "skew",
-      "en": "SKEW (tail pricing)",
-      "zh": "SKEW \u5c3e\u90e8\u5b9a\u4ef7"
+      "key": "vix_term",
+      "en": "VIX term structure",
+      "zh": "VIX \u671f\u9650\u7ed3\u6784"
     },
     {
       "key": "dxy",
@@ -35,5 +35,22 @@
       "zh": "\u7f8e\u5143\uff0820\u65e5 %\u53d8\u52a8\uff09"
     }
   ],
-  "magnitude_band": null
+  "magnitude_band": null,
+  "veto": {
+    "schema": "regime_snap_veto.v1",
+    "is_context_only": true,
+    "lean": "fragile",
+    "confidence": "medium",
+    "checks": {
+      "catalyst": "no clear structural positive catalyst; risk-off AI/semis de-rating dominates; any bounce is technical, not driven by a signed deal or policy shift.",
+      "premium": "fear premium moderate (fear_built 0.368) and not fully unwound; VIX term backwardation persists, but fear was not extreme, so some unwinding may happen but not a full reset.",
+      "washout": "capitulation recent (cap_recent true) suggests a washout, but fear built only 0.368, indicating a shallow dip, not a deep panic; limited cleansing.",
+      "follow_through": "only 2 of 7 legs flipped up (vix_term, dxy) with risk-off direction still clear; cross-asset confirmation is weak and likely to fade next session."
+    },
+    "read": "Relief attempt is building on thin legs against persistent AI/semis de\u2011rating. With no structural positive catalyst and only a shallow washout, this looks like a knife that won\u2019t hold.",
+    "model": "deepseek-v4-pro",
+    "generated_at": "2026-07-31T01:53:45.142946+00:00",
+    "degraded_reason": null,
+    "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
+  }
 }

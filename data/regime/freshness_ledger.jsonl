@@ -16,3 +16,4 @@
 {"asof": "2026-07-27", "quad": "Q1", "label_quad": "Q1", "freshness_bitmask": 23, "degraded": false}
 {"asof": "2026-07-28", "quad": "Q1", "label_quad": "Q1", "freshness_bitmask": 23, "degraded": false}
 {"asof": "2026-07-29", "quad": "Q1", "label_quad": "Q1", "freshness_bitmask": 23, "degraded": false}
+{"asof": "2026-07-30", "quad": "Q2", "label_quad": "Q2", "freshness_bitmask": 31, "degraded": false}

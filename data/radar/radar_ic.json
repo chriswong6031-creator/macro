@@ -1,13 +1,13 @@
 {
   "schema": "radar_ic.v1",
-  "as_of": "2026-07-29",
-  "generated_at": "2026-07-30T03:47:36.527487+00:00",
+  "as_of": "2026-07-30",
+  "generated_at": "2026-07-31T03:35:27.864042+00:00",
   "horizon_d": 21,
   "horizons": [
     21,
     63
   ],
-  "n_snapshots": 7737,
+  "n_snapshots": 7983,
   "n_matured": 3452,
   "ic_all": -0.2709,
   "ic_rolling_90": -0.2043,
@@ -39,15 +39,15 @@
       "dir_accuracy": 0.3,
       "mean_fwd_ret": -0.0473
     },
-    "NEGATIVE_DIVERGENCE": {
-      "n": 547,
-      "dir_accuracy": 0.636,
-      "mean_fwd_ret": -0.0372
-    },
     "CONFIRMED_DOWN": {
       "n": 558,
       "dir_accuracy": 0.5,
       "mean_fwd_ret": -0.0192
+    },
+    "NEGATIVE_DIVERGENCE": {
+      "n": 547,
+      "dir_accuracy": 0.636,
+      "mean_fwd_ret": -0.0372
     }
   },
   "note": "3452 matured observations (horizon=21d). IC_all=-0.2709, IC_rolling_90=-0.2043. CONTEXT-ONLY \u2014 never fed into a score/size/allocation.",
@@ -95,15 +95,15 @@
           "dir_accuracy": 0.3,
           "mean_fwd_ret": -0.0473
         },
-        "NEGATIVE_DIVERGENCE": {
-          "n": 547,
-          "dir_accuracy": 0.636,
-          "mean_fwd_ret": -0.0372
-        },
         "CONFIRMED_DOWN": {
           "n": 558,
           "dir_accuracy": 0.5,
           "mean_fwd_ret": -0.0192
+        },
+        "NEGATIVE_DIVERGENCE": {
+          "n": 547,
+          "dir_accuracy": 0.636,
+          "mean_fwd_ret": -0.0372
         }
       },
       "note": "3452 matured observations (horizon=21d). IC_all=-0.2709, IC_rolling_90=-0.2043. CONTEXT-ONLY \u2014 never fed into a score/size/allocation."

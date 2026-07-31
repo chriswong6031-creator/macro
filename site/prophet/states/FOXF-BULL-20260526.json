@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "FOXF-BULL-20260526",
-  "asof": "2026-07-29",
+  "asof": "2026-07-30",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 40.0,
@@ -10,23 +10,23 @@
   "recommended_action": "trim",
   "human_state": "Overtime Stall",
   "components": {
-    "validity": 100.0,
-    "progress": 20.8,
-    "pace": 4.7,
-    "retention": 86.0,
+    "validity": 90.6,
+    "progress": 0.0,
+    "pace": 3.3,
+    "retention": 0.0,
     "overlay": 53.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.309,
-    "dist_to_t1_r": 1.191,
-    "dist_to_t2_r": 2.691,
-    "horizon_pct_used": 142.2,
-    "p1": 0.2058,
-    "p2": 0.1029,
+    "dist_to_stop_r": 0.93,
+    "dist_to_t1_r": 1.5,
+    "dist_to_t2_r": 3.0,
+    "horizon_pct_used": 144.4,
+    "p1": -0.047,
+    "p2": -0.0235,
     "p3": null,
-    "move_r": 0.309,
+    "move_r": -0.07,
     "mfe_r": 0.359,
-    "mae_r": 0.0
+    "mae_r": -0.07
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 1.070000152587891,
-  "_mae": 0.0,
+  "_mae": -0.21000053405761676,
   "_max_p1": 0.23937363592570277,
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 64,
-  "tau": 1.4222
+  "days_elapsed": 65,
+  "tau": 1.4444
 }

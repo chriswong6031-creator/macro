@@ -2,31 +2,31 @@
   "08b80102b582": {
     "name_en": "Cross-sector cluster \u00b7 Industrials + Energy",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Energy",
-    "score": 59.1
+    "score": 56.7
   },
-  "0f7944be0e16": {
-    "name_en": "Cross-sector cluster \u00b7 Communication + Financials",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Financials",
-    "score": 53.4
+  "0ed37e4c669e": {
+    "name_en": "Cross-sector cluster \u00b7 Consumer Staples + Consumer Discretionary",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Staples + Consumer Discretionary",
+    "score": 50.2
   },
   "3e7462242031": {
     "name_en": "Cross-sector cluster \u00b7 Consumer Staples + Communication",
     "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Consumer Staples + Communication",
-    "score": 63.7
+    "score": 64.4
   },
-  "7d168cc5f7a4": {
-    "name_en": "Emerging Financials cluster",
-    "name_zh": "\u65b0\u5174 Financials \u96c6\u7fa4",
-    "score": 40.6
+  "51740433a212": {
+    "name_en": "Cross-sector cluster \u00b7 Communication + Consumer Discretionary",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Communication + Consumer Discretionary",
+    "score": 60.4
   },
-  "b6e9deee1ac4": {
-    "name_en": "Cross-sector cluster \u00b7 Information Technology + Communication",
-    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Information Technology + Communication",
-    "score": 67.5
+  "7384878a18fa": {
+    "name_en": "Emerging Consumer Discretionary cluster",
+    "name_zh": "\u65b0\u5174 Consumer Discretionary \u96c6\u7fa4",
+    "score": 60.1
   },
-  "d08b80e9a3c7": {
-    "name_en": "Emerging Consumer Staples cluster",
-    "name_zh": "\u65b0\u5174 Consumer Staples \u96c6\u7fa4",
-    "score": 41.8
+  "ef629cfaab20": {
+    "name_en": "Cross-sector cluster \u00b7 Industrials + Financials",
+    "name_zh": "\u8de8\u677f\u5757\u96c6\u7fa4 \u00b7 Industrials + Financials",
+    "score": 52.3
   }
 }

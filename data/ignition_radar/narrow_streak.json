@@ -18,5 +18,10 @@
     "streak": 3,
     "last_date": "2026-07-29",
     "score": 0.9905
+  },
+  "non_ai_software": {
+    "streak": 1,
+    "last_date": "2026-07-30",
+    "score": 0.9143
   }
 }

@@ -11,8 +11,8 @@
   ],
   "held": [
     "cn_semis",
-    "cn_pharma_cxo",
     "cn_food_bev",
+    "cn_pharma_cxo",
     "cn_coal"
   ],
   "leader": "cn_semis",

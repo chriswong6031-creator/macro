@@ -1,7 +1,7 @@
 {
  "schema": "track_ledger/v1",
  "market": "CA",
- "as_of": "2026-07-29",
+ "as_of": "2026-07-30",
  "state": "accruing",
  "bench": {
   "code": "_GSPTSE",
@@ -10,18 +10,360 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 253,
-  "n_logged": 235,
+  "n_calls": 271,
+  "n_logged": 253,
   "n_matured": 0,
   "n_beat": 0,
   "n_lag": 0,
-  "n_suspended": 54,
+  "n_suspended": 72,
   "hit_matured": null,
   "wilson_lo_pct": null,
   "wilson_hi_pct": null,
   "first_read_est": "2026-08-24"
  },
  "rows": [
+  {
+   "t": "TVK.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "entry_open",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 1,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "DSV.TO",
+   "nm": "DISCOVERY MINING LTD",
+   "sec": "Materials",
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 2,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "NWC.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 3,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "CSH-UN.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 4,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "SPB.TO",
+   "nm": "SUPERIOR PLUS CORP.",
+   "sec": "Utilities",
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 5,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "KEL.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 6,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "DOL.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 7,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "BEI-UN.TO",
+   "nm": "BOARDWALK REAL ESTATE INVESTMEN",
+   "sec": "Real Estate",
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 8,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "LUG.TO",
+   "nm": "LUNDIN GOLD INC",
+   "sec": "Materials",
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 9,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "BAM.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "setting_up",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 10,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EIF.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 11,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "QBR-B.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 12,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "VNP.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 13,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "EFX.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 14,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "ALS.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 15,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "REI-UN.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 16,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "HPS-A.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 17,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
+  {
+   "t": "IGM.TO",
+   "nm": null,
+   "sec": null,
+   "grp": "watch",
+   "d": "2026-07-29",
+   "e": null,
+   "l": null,
+   "p": null,
+   "x": null,
+   "dy": null,
+   "st": "early",
+   "m": false,
+   "rk": 18,
+   "tr": null,
+   "fl": [
+    "susp"
+   ]
+  },
   {
    "t": "MG.TO",
    "nm": null,
@@ -119,8 +461,8 @@
   },
   {
    "t": "NGEX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "NGEX MINERALS LTD",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-28",
    "e": null,
@@ -195,8 +537,8 @@
   },
   {
    "t": "ATS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ATS CORPORATION",
+   "sec": "Industrials",
    "grp": "setting_up",
    "d": "2026-07-28",
    "e": null,
@@ -385,8 +727,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": "TERRAVEST INDUSTRIES INC",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "entry_open",
    "d": "2026-07-27",
    "e": null,
@@ -499,8 +841,8 @@
   },
   {
    "t": "KEL.TO",
-   "nm": "KELT EXPLORATION LTD",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-27",
    "e": null,
@@ -537,8 +879,8 @@
   },
   {
    "t": "VZLA.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "VIZSLA SILVER CORP",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-07-27",
    "e": null,
@@ -727,8 +1069,8 @@
   },
   {
    "t": "VZLA.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "VIZSLA SILVER CORP",
+   "sec": "Materials",
    "grp": "entry_open",
    "d": "2026-07-24",
    "e": null,
@@ -822,8 +1164,8 @@
   },
   {
    "t": "NWC.TO",
-   "nm": "THE NORTH WEST COMPANY INC",
-   "sec": "Consumer Staples",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -860,8 +1202,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": "TERRAVEST INDUSTRIES INC",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-24",
    "e": null,
@@ -1152,8 +1494,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": "TERRAVEST INDUSTRIES INC",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-21",
    "e": null,
@@ -1475,8 +1817,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": "TERRAVEST INDUSTRIES INC",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-20",
    "e": null,
@@ -1764,8 +2106,8 @@
   },
   {
    "t": "KEL.TO",
-   "nm": "KELT EXPLORATION LTD",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -1781,8 +2123,8 @@
   },
   {
    "t": "TVK.TO",
-   "nm": "TERRAVEST INDUSTRIES INC",
-   "sec": "Energy",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-17",
    "e": null,
@@ -2036,8 +2378,8 @@
   },
   {
    "t": "NWC.TO",
-   "nm": "THE NORTH WEST COMPANY INC",
-   "sec": "Consumer Staples",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -2053,8 +2395,8 @@
   },
   {
    "t": "ATS.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "ATS CORPORATION",
+   "sec": "Industrials",
    "grp": "setting_up",
    "d": "2026-07-15",
    "e": null,
@@ -2733,8 +3075,8 @@
   },
   {
    "t": "BAM.TO",
-   "nm": "BROOKFIELD ASSET MANAGEMENT LTD",
-   "sec": "Financials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-10",
    "e": null,
@@ -3294,8 +3636,8 @@
   },
   {
    "t": "BAM.TO",
-   "nm": "BROOKFIELD ASSET MANAGEMENT LTD",
-   "sec": "Financials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-06",
    "e": null,
@@ -3600,8 +3942,8 @@
   },
   {
    "t": "BAM.TO",
-   "nm": "BROOKFIELD ASSET MANAGEMENT LTD",
-   "sec": "Financials",
+   "nm": null,
+   "sec": null,
    "grp": "setting_up",
    "d": "2026-07-03",
    "e": null,
@@ -3889,8 +4231,8 @@
   },
   {
    "t": "NGEX.TO",
-   "nm": null,
-   "sec": null,
+   "nm": "NGEX MINERALS LTD",
+   "sec": "Materials",
    "grp": "setting_up",
    "d": "2026-06-30",
    "e": null,
@@ -4127,11 +4469,11 @@
   }
  ],
  "meta": {
-  "n_total": 235,
+  "n_total": 253,
   "truncated": 0,
   "grain": "board_day",
   "survivorship": {
-   "n_suspended": 54,
+   "n_suspended": 72,
    "note": "no delisting archive — vanished names leave the sample"
   }
  }

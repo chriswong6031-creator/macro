@@ -6,7 +6,7 @@
    "from_leg": "memory",
    "to_leg": "ai_semis",
    "started": "2026-07-24",
-   "lapse_count": 3,
+   "lapse_count": 4,
    "last_receipts": {
     "blowoff": {
      "peak_date": "2026-06-22",

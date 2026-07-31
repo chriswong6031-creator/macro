@@ -1,29 +1,29 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-07-30",
-  "oldest_component_asof": "2026-07-28",
-  "macro_context_id": "a6640f174cbb3573",
+  "asof": "2026-07-31",
+  "oldest_component_asof": "2026-07-29",
+  "macro_context_id": "72189d007b106157",
   "labels": {
     "us": {
-      "us_quad": "Q1",
+      "us_quad": "Q2",
       "us_transition_state": "TRANSITIONING",
-      "us_fused_risk": "caution",
+      "us_fused_risk": "elevated",
       "us_vol_regime": "normalizing",
       "us_risk_radar": "caution",
       "us_rate_pressure": "pressure",
       "us_business_cycle_phase": "recovery",
-      "us_liquidity_quality": "stress-expansion",
-      "us_liquidity_overlay": "expanding",
+      "us_liquidity_quality": "neutral-hollow",
+      "us_liquidity_overlay": "neutral",
       "us_froth_band": "watch",
-      "us_dislocation": "buyable_washout",
+      "us_dislocation": "calm",
       "us_gamma_regime": null,
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "rich (vol overpriced \u2014 constructive)",
+      "us_vrp_state": "normal",
       "cross_asset_verdict": "diverge"
     },
     "market": {
-      "market_state_verdict": "RISK_OFF"
+      "market_state_verdict": "MIXED"
     },
     "transmission": {
       "yield_curve_regime": "bear_steepener",
@@ -34,7 +34,7 @@
       "usd_regime": "US growth premium",
       "fx_risk": "risk-off",
       "real_rate_regime": "Restrictive real yields",
-      "fx_liquidity_dir": "soft",
+      "fx_liquidity_dir": "supportive",
       "fx_regime_radar": null,
       "usd_valuation": "fair",
       "usd_positioning": "neutral",
@@ -42,7 +42,7 @@
       "fx_eurusd_action": "SHORT",
       "fx_gbpusd_action": "FLAT",
       "fx_usdjpy_action": "SHORT",
-      "fx_usdchf_action": "LONG",
+      "fx_usdchf_action": "FLAT",
       "fx_audusd_action": "SHORT",
       "fx_usdcad_action": "FLAT",
       "fx_usdmxn_action": "SHORT",
@@ -81,7 +81,7 @@
     },
     "canada": {
       "canada_quad": "Q2",
-      "canada_overlay_state": "Neutral",
+      "canada_overlay_state": "Risk-on",
       "canada_cycle_tag": "mid"
     },
     "dispersion": {
@@ -98,23 +98,23 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-07-29",
-    "data/market_state/latest.json": "2026-07-29",
-    "data/transmission/latest.json": "2026-07-29",
-    "data/forex/latest.json": "2026-07-30",
-    "data/bonds/bond_health.json": "2026-07-29",
-    "data/commodity/latest.json": "2026-07-29",
-    "data/china_regime/latest.json": "2026-07-29",
-    "data/hk_regime/latest.json": "2026-07-29",
-    "data/canada_regime/latest.json": "2026-07-29",
-    "data/dispersion/regime.json": "2026-07-29",
-    "data/intl_regime/AU_history.parquet": "2026-07-28",
-    "data/intl_regime/EZ_history.parquet": "2026-07-28",
-    "data/intl_regime/GB_history.parquet": "2026-07-28",
-    "data/intl_regime/IN_history.parquet": "2026-07-28",
-    "data/intl_regime/JP_history.parquet": "2026-07-28",
-    "data/intl_regime/KR_history.parquet": "2026-07-28",
-    "data/intl_regime/TW_history.parquet": "2026-07-28"
+    "data/regime/latest.json": "2026-07-30",
+    "data/market_state/latest.json": "2026-07-30",
+    "data/transmission/latest.json": "2026-07-30",
+    "data/forex/latest.json": "2026-07-31",
+    "data/bonds/bond_health.json": "2026-07-30",
+    "data/commodity/latest.json": "2026-07-30",
+    "data/china_regime/latest.json": "2026-07-30",
+    "data/hk_regime/latest.json": "2026-07-30",
+    "data/canada_regime/latest.json": "2026-07-30",
+    "data/dispersion/regime.json": "2026-07-30",
+    "data/intl_regime/AU_history.parquet": "2026-07-29",
+    "data/intl_regime/EZ_history.parquet": "2026-07-29",
+    "data/intl_regime/GB_history.parquet": "2026-07-29",
+    "data/intl_regime/IN_history.parquet": "2026-07-29",
+    "data/intl_regime/JP_history.parquet": "2026-07-31",
+    "data/intl_regime/KR_history.parquet": "2026-07-29",
+    "data/intl_regime/TW_history.parquet": "2026-07-29"
   },
   "gaps": [],
   "display_only": true

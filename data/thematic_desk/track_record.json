@@ -1,30 +1,30 @@
 {
   "schema": "thematic_desk.v1",
-  "as_of": "2026-07-30",
-  "scored_total": 44,
-  "open": 102,
-  "unscored_soft": 21,
+  "as_of": "2026-07-31",
+  "scored_total": 46,
+  "open": 103,
+  "unscored_soft": 22,
   "overall": {
-    "n": 44,
-    "hits": 26,
-    "misses": 18,
-    "hit_rate": 0.591,
-    "dir_accuracy": 0.409
+    "n": 46,
+    "hits": 27,
+    "misses": 19,
+    "hit_rate": 0.587,
+    "dir_accuracy": 0.413
   },
   "by_market": {
     "us": {
-      "n": 11,
+      "n": 12,
       "hits": 4,
-      "misses": 7,
-      "hit_rate": 0.364,
-      "dir_accuracy": 0.182
+      "misses": 8,
+      "hit_rate": 0.333,
+      "dir_accuracy": 0.167
     },
     "china": {
-      "n": 16,
-      "hits": 7,
+      "n": 17,
+      "hits": 8,
       "misses": 9,
-      "hit_rate": 0.438,
-      "dir_accuracy": 0.375
+      "hit_rate": 0.471,
+      "dir_accuracy": 0.412
     },
     "hk": {
       "n": 1,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 44,
-      "hits": 26,
-      "misses": 18,
-      "hit_rate": 0.591,
-      "dir_accuracy": 0.409
+      "n": 46,
+      "hits": 27,
+      "misses": 19,
+      "hit_rate": 0.587,
+      "dir_accuracy": 0.413
     },
     "medium": {
       "n": 0,
@@ -64,8 +64,28 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "44 scored, hit-rate 0.591 (directional accuracy 0.409).",
+  "calibration_note": "46 scored, hit-rate 0.587 (directional accuracy 0.413).",
   "recent": [
+    {
+      "id": "china-2026-07-02-2",
+      "market": "china",
+      "subject": "Innovative Pharma & CXO",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0489,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "us-2026-07-02-1",
+      "market": "us",
+      "subject": "Memory, HBM & Storage",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.126,
+      "check_by": "2026-07-30"
+    },
     {
       "id": "us-2026-07-01-1",
       "market": "us",
@@ -164,26 +184,6 @@
       "conviction": "low",
       "outcome": "hit",
       "realized": -0.1376,
-      "check_by": "2026-07-27"
-    },
-    {
-      "id": "china-2026-06-29-3",
-      "market": "china",
-      "subject": "Innovative Pharma & CXO",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.1722,
-      "check_by": "2026-07-27"
-    },
-    {
-      "id": "canada-2026-06-29-1",
-      "market": "canada",
-      "subject": "Big Banks",
-      "lean": "overweight",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0065,
       "check_by": "2026-07-27"
     }
   ]
