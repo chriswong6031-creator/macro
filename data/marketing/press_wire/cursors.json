@@ -5,14 +5,13 @@
     "03a8c671c389b4cd69f2557875d60f556e765288": "2026-07-31T17:54:40.596641+00:00",
     "0aa64e8249fee87b0e3c09b65ebf0fb4d0727147": "2026-07-30T23:39:13.478726+00:00",
     "0b1c21ba456ab2b362b678dda29874c5a8106224": "2026-07-30T23:39:13.478726+00:00",
-    "0ded5c22649e26d587c4e3ce5c8818ea84ac9464": "2026-07-30T22:40:28.966436+00:00",
     "10906265adbf05c3dc97b145c57d3aaf901e9bb1": "2026-07-31T04:36:05.323258+00:00",
     "10a422eee2e2b0ad6e95590787bd2acef9ae209f": "2026-07-31T14:30:10.223340+00:00",
     "14fb3bd6bece99548ad5b6f69e8d7aca183846e7": "2026-07-31T17:54:40.596641+00:00",
     "180945a0931844b853b835655368d7f772099664": "2026-07-31T14:30:10.223340+00:00",
     "20fbab9140cd08b995d70e26f2fa1c4347ce3b30": "2026-07-31T19:00:57.574746+00:00",
     "22643900cd4e38d8b198e159008e2b765540ab64": "2026-07-30T23:39:13.478726+00:00",
-    "24de10f96880ee5544c1d2774edc3d4aa9776d88": "2026-07-30T22:40:28.966436+00:00",
+    "24de10f96880ee5544c1d2774edc3d4aa9776d88": "2026-07-31T23:34:47.271216+00:00",
     "279d181eb94865981b94efe375e2d0bfd0a0b105": "2026-07-31T22:34:38.296169+00:00",
     "2b210c138ec36cd879df77a589311e456c6d924d": "2026-07-31T01:10:15.273857+00:00",
     "2ce70a6ad1d97195dbedeac8db85c0cc980d44cf": "2026-07-31T22:34:38.296169+00:00",
@@ -36,7 +35,6 @@
     "501e661192641de2c9e9672e378dafa1d8840176": "2026-07-31T10:04:12.944246+00:00",
     "50be4319b9dc922ea573c98585d25812f0e59cb7": "2026-07-31T14:30:10.223340+00:00",
     "562ba6b2b71b16eea0cf58f46945681d42cc2071": "2026-07-31T19:00:57.574746+00:00",
-    "5c455c1003bc95b24fb27019b21bcaa990f60e8b": "2026-07-30T22:40:28.966436+00:00",
     "5d167b6092213e0144cbec07b34841a61b516926": "2026-07-30T23:39:13.478726+00:00",
     "5f2c780896d79f895d66c30b06acf4d013776a75": "2026-07-31T11:59:29.559585+00:00",
     "5f7f5ad0ceca5ced182d6a67fc4435ee73e3da3a": "2026-07-31T17:54:40.596641+00:00",
@@ -59,7 +57,6 @@
     "8a371c131171f9856bd8b48bdea366e41f2b1a46": "2026-07-31T16:17:05.721809+00:00",
     "943d96d3edd75bbf7297094383c30230186484d4": "2026-07-30T23:39:13.478726+00:00",
     "9697e4bfb267b53c7484357d309c8e5d762fbfd4": "2026-07-31T22:34:38.296169+00:00",
-    "96b37e0ff24335884480ea23e2401a5acea18e7d": "2026-07-30T22:40:28.966436+00:00",
     "9edbae7ed3431a5306f0f314c60f61a59698dcb5": "2026-07-31T14:30:10.223340+00:00",
     "a293082f4da5da7db81eda4e9949b41c0dacd0d8": "2026-07-31T14:30:10.223340+00:00",
     "a2a6854eb90c123474cc0fc03a676f6c914c10d0": "2026-07-30T23:39:13.478726+00:00",
@@ -104,128 +101,91 @@
     "f465ab3bab979886b9aaf528d40c8c1b03ef4326": "2026-07-31T16:17:05.721809+00:00",
     "f6685ac2950dbdefd2089ce43d5aec5e1c75ccce": "2026-07-31T14:30:10.223340+00:00",
     "f99bde55826bd51f72fff1231f0c95314ad13700": "2026-07-31T11:59:29.559585+00:00",
-    "fc63e27ef6ef16654d7023616dcde82c169a0d92": "2026-07-30T22:40:28.966436+00:00",
     "fd15053bd6cf0842c79114d6213bf442f2442e88": "2026-07-31T14:30:10.223340+00:00",
     "fd66817577d85e52a1bb993f903b7b6483e06a70": "2026-07-31T14:30:10.223340+00:00",
     "ff409572df91dfef019987a4ae28357b79603948": "2026-07-31T22:34:38.296169+00:00"
   },
   "corroboration": {
-    "claim:none:sec:industrials": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
-      "sources": [
-        "host:marketwatch.com"
-      ]
-    },
-    "claim:none:sec:technology": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
-      "sources": [
-        "host:cnbc.com"
-      ]
-    },
-    "claim:policy:tic:NVDA": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
-      "sources": [
-        "host:cnbc.com"
-      ]
-    },
-    "head:july ends on a hopeful note for stocks after momentum trade sees biggest wipeout": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
-      "sources": [
-        "host:marketwatch.com"
-      ]
-    },
-    "head:situational awareness vs longterm capital management a sidebyside comparison": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
-      "sources": [
-        "host:marketwatch.com"
-      ]
-    },
-    "head:trump appeals order that slammed his irs lawsuit and referred his lawyer to bar": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
-      "sources": [
-        "host:cnbc.com"
-      ]
-    },
     "truth:117005796425040371": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117006290013696288": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117009581290419286": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117010030683816088": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011270507732212": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011459082239407": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460046411651": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460524966016": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117014253232654593": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117015146759027639": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016403652131870": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016448991757333": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016718142773652": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016718934084117": {
-      "first_ts": "2026-07-31T22:34:38.296169+00:00",
+      "first_ts": "2026-07-31T23:34:47.271216+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -237,14 +197,14 @@
   },
   "providers": {
     "cnn_truth_backfill": {
-      "etag": "\"15228cab3f1cc224baaa9c9c6f3602e0-3\"",
+      "etag": "\"b63734268ffc36ace0c53eca12421b12-3\"",
       "fail_count": 0,
-      "last_modified": "Fri, 31 Jul 2026 22:10:13 GMT",
-      "last_poll_ts": 1785537279.8048975
+      "last_modified": "Fri, 31 Jul 2026 23:27:28 GMT",
+      "last_poll_ts": 1785540889.3369472
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785537279.4747818
+      "last_poll_ts": 1785540888.9593675
     },
     "twitterapiio": {
       "cursors": {
@@ -271,27 +231,27 @@
         "BRICSinfo": 1785537280.1147075,
         "CoinDesk": 1785537280.1147075,
         "Cointelegraph": 1785537280.1147075,
-        "DeItaone": 1785537280.1147075,
-        "FirstSquawk": 1785537280.1147075,
+        "DeItaone": 1785540889.7953446,
+        "FirstSquawk": 1785540889.7953446,
         "HormuzLetter": 1785537280.1147075,
         "NewsWire_US": 1785537280.1147075,
         "Osint613": 1785537280.1147075,
         "StockMKTNewz": 1785537280.1147075,
-        "WHPressPool": 1785537280.1147075,
+        "WHPressPool": 1785540889.7953446,
         "WatcherGuru": 1785537280.1147075,
         "WhaleInsider": 1785537280.1147075,
-        "financialjuice": 1785537280.1147075,
+        "financialjuice": 1785540889.7953446,
         "rawsalerts": 1785537280.1147075,
         "remarks": 1785537280.1147075,
         "tradfi": 1785537280.1147075,
         "unusual_whales": 1785537280.1147075,
-        "zerohedge": 1785537280.1147075
+        "zerohedge": 1785540889.7953446
       },
       "spend": {
         "2026-07": {
-          "requests": 375,
+          "requests": 380,
           "tweets": 1660,
-          "usd": 0.2928
+          "usd": 0.29355
         }
       }
     }
@@ -304,40 +264,40 @@
     ]
   },
   "schema": "press_wire.cursors/v1",
-  "updated_at": "2026-07-31T22:34:38Z",
+  "updated_at": "2026-07-31T23:34:47Z",
   "wire": {
     "bea_news": {
       "etag": "\"fc82db231f20dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 12:30:00 GMT",
-      "last_poll_ts": 1785537278.9890583
+      "last_poll_ts": 1785540888.1248102
     },
     "bls_news": {
       "etag": "\"80ba6c61e820dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 12:30:33 GMT",
-      "last_poll_ts": 1785537278.9022398
+      "last_poll_ts": 1785540887.9062352
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785537279.2333014
+      "last_poll_ts": 1785540888.5367446
     },
     "fed_press": {
       "etag": "\"927a7ee7f420dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 14:00:11 GMT",
-      "last_poll_ts": 1785537278.8375344
+      "last_poll_ts": 1785540887.8296623
     },
     "marketwatch_top": {
-      "etag": "W/\"2052-iVEtgjU8wX3QKd06GQ/zhdT4rvw\"",
+      "etag": "W/\"2052-BgT5sz7W6v3hT9Lyw13jfdvSbsI\"",
       "fail_count": 0,
-      "last_poll_ts": 1785537279.3523865
+      "last_poll_ts": 1785540888.6562362
     },
     "whitehouse_actions": {
       "etag": "\"34a52cac5505dc40e7fd6e4e47eebc2b\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 17:38:11 GMT",
-      "last_poll_ts": 1785537279.0370798
+      "last_poll_ts": 1785540888.4203544
     }
   }
 }
