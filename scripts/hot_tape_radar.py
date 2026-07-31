@@ -1502,6 +1502,15 @@ def emit(
     booked: list[str] = []
     llm = llm_cfg if isinstance(llm_cfg, dict) else {"llm": {}}
     said_capped = False
+    # Posts this pass DREW A CARD and then lost it. Counted because the loss is
+    # otherwise silent: a drop prints one stdout line among hundreds, the pass
+    # exits 0, and the lane reads healthy. That silence is how 2026-07-30 spent
+    # a whole session rendering 8,081 cards it could not host (boto3 was not
+    # installed, so every upload returned None) and shipped nothing. A rendered
+    # card is a Chrome raster, an R2 attempt and — because it happens after the
+    # copy pass — an LLM call, and a drop here is NOT recorded as fired, so the
+    # same story comes back on the next five-minute pass and pays it all again.
+    unhosted: list[str] = []
 
     def _over_day_cap() -> bool:
         nonlocal said_capped
@@ -1550,6 +1559,13 @@ def emit(
             # cap rejection came back every five minutes: re-detected, re-drawn
             # (a Chrome raster + an R2 upload each time) and re-refused.
             HT.append_fired(root, HT.fired_entry(packet, item_id=None, account=account))
+            continue
+        if status in ("drop:no-media-url", "drop:render-failed"):
+            # DELIBERATELY NOT recorded as fired: an upload that blipped should
+            # be retried on the next pass, not written off for the day. The
+            # annotation below is what keeps that retry from being invisible
+            # when it is an outage rather than a blip.
+            unhosted.append(f"{packet.key} ({status.split(':', 1)[1]})")
 
     # ── Two-step publish: the context brief for an already-posted alert ──────
     # A demo is bounded to ONE post (reviewer M5). pending_briefs already
@@ -1584,6 +1600,19 @@ def emit(
             # stops the radar rebuilding and re-refusing the same brief every
             # pass until the window closes.
             HT.append_fired(root, HT.fired_entry(packet, item_id=None, account=account))
+
+    if unhosted:
+        # BARE print, line-start, flushed — never through the logger. Every
+        # builder here logs with a prefixing format, so log.warning("::warning")
+        # emits "WARNING ::warning" and GitHub silently drops it: the call
+        # reviews as an alarm and produces nothing in the Actions summary.
+        print(f"::warning title=hot-tape-unhosted-card::{len(unhosted)} post(s) "
+              f"drew a card this pass and could not host it, so they were "
+              f"dropped: {'; '.join(unhosted[:5])}"
+              f"{' ...' if len(unhosted) > 5 else ''}. Every one of these cost a "
+              f"raster and a copy pass and will be retried next pass. If this "
+              f"repeats, the R2 upload is failing (check boto3 is installed and "
+              f"R2_* are set), not the tape.", flush=True)
     return booked
 
 

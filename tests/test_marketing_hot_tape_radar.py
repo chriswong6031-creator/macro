@@ -2784,3 +2784,54 @@ class TestHotTapeRenderSweep:
             "a blanket .svg ignore would silently stop committing the chart "
             "snapshots the admin console previews from"
         )
+
+
+class TestAnUnhostedCardIsNotSilent:
+    """8,081 cards, zero annotations.
+
+    A drop for a missing media URL prints one stdout line among hundreds and
+    the pass exits 0, so the lane reads healthy. That is exactly how
+    2026-07-30 spent a session rendering cards it could not host — the R2
+    client was not installed, every upload returned None, and nothing in the
+    Actions summary said so.
+
+    The retry is deliberate (an upload that blipped should come back next
+    pass), which is precisely why the loss has to be visible: without the
+    annotation, a blip and a day-long outage look identical from outside.
+    """
+
+    def test_a_dropped_card_raises_a_github_annotation(self, tmp_path, monkeypatch,
+                                                       capsys):
+        def _hostless(packet, *, root, marketing_cfg, as_of, now, fetcher=None, **kw):
+            return {"media": None, "published": {}, "reason": "no-media-url"}
+        monkeypatch.setattr(RADAR, "resolve_chart", _hostless)
+        monkeypatch.setattr(RADAR, "resolve_group_card", _hostless)
+
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+
+        out = capsys.readouterr().out
+        line = next((l for l in out.splitlines()
+                     if "hot-tape-unhosted-card" in l), None)
+        assert line is not None, out
+        # The annotation law: bare, at the START of the line, or GitHub drops it.
+        assert line.startswith("::warning title=hot-tape-unhosted-card::"), line
+        # It must name the cause an operator can act on.
+        assert "boto3" in line and "R2_" in line, line
+
+    def test_a_clean_pass_stays_quiet(self, tmp_path, monkeypatch, capsys):
+        """A warning that fires on healthy passes is one nobody reads."""
+        _stub_chart(monkeypatch)
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+        assert "hot-tape-unhosted-card" not in capsys.readouterr().out
+
+    def test_a_no_bars_drop_does_not_raise_it(self, tmp_path, capsys):
+        """Scoped to cards that were DRAWN and lost.
+
+        A name with no bars never reaches the renderer, so it cost nothing and
+        says nothing about R2. Folding it in here would point the operator at
+        the wrong subsystem on every quiet day.
+        """
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+        out = capsys.readouterr().out
+        assert "no-bars" in out
+        assert "hot-tape-unhosted-card" not in out
