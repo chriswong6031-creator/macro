@@ -946,6 +946,10 @@
 
     function go(x) {
       if (!x) return;
+      /* Collapse the search before Terminal mounts. Keeping the expanded input
+         alive under the overlay squeezed long exchange-qualified symbols (for
+         example 600519.SS) into the compact nav lane. */
+      closeSearch();
       try {
         if (window.mmTrack) window.mmTrack('search', {
           ticker: x.t,
@@ -1128,6 +1132,7 @@
 
     function openSearch() {
       box.classList.add('open');
+      document.body.classList.add('nav-search-focus');
       trigger.setAttribute('aria-expanded', 'true');
       loadLibs();
       page = 0;
@@ -1137,6 +1142,7 @@
 
     function closeSearch() {
       box.classList.remove('open');
+      document.body.classList.remove('nav-search-focus');
       trigger.setAttribute('aria-expanded', 'false');
       input.blur();
       selected = -1;

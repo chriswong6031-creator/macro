@@ -2040,6 +2040,13 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 html[data-lang="zh"] .hub-signin .l-en{display:none}
 html[data-lang="zh"] .hub-signin .l-zh{display:inline}
 .h{text-align:center;margin:6px 0 22px;position:relative;isolation:isolate}
+.hub-page .h,.hub-page .globe-deck{
+ transition:opacity .18s ease,transform .22s cubic-bezier(.2,.82,.2,1),filter .18s ease}
+/* The global nav search is intentionally an overlay. On the hub, gently yield
+   the duplicate hero/globe layer while it is open so the result panel reads as
+   a focused command surface rather than an accidental collision. */
+.hub-page.nav-search-focus .h{opacity:.12;transform:translateY(5px) scale(.992);filter:saturate(.72)}
+.hub-page.nav-search-focus .globe-deck{opacity:.58;filter:saturate(.68)}
 .hub-live-meta{display:flex;justify-content:center;align-items:center;margin-top:14px}
 .hub-live-meta .eyebrow{margin-bottom:0}
 /* a soft, feathered radial --bg scrim sits BEHIND the hero text (own stacking
@@ -3313,7 +3320,7 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
             # back to a UTC-offset longitude (15°/hr) + locale-guessed latitude.
             '<script>window.__mmHome=(function(){try{var tz=Intl.DateTimeFormat().resolvedOptions().timeZone||"",M={"America/New_York":[-74,40.7],"America/Detroit":[-83,42.3],"America/Toronto":[-79.4,43.7],"America/Montreal":[-73.6,45.5],"America/Halifax":[-63.6,44.6],"America/Chicago":[-87.6,41.9],"America/Winnipeg":[-97.1,49.9],"America/Denver":[-105,39.7],"America/Edmonton":[-113.5,53.5],"America/Phoenix":[-112.1,33.4],"America/Los_Angeles":[-118.2,34.1],"America/Vancouver":[-123.1,49.3],"America/Mexico_City":[-99.1,19.4],"America/Sao_Paulo":[-46.6,-23.5],"America/Bogota":[-74.1,4.7],"Europe/London":[-0.1,51.5],"Europe/Dublin":[-6.3,53.3],"Europe/Lisbon":[-9.1,38.7],"Europe/Madrid":[-3.7,40.4],"Europe/Paris":[2.3,48.9],"Europe/Brussels":[4.4,50.8],"Europe/Amsterdam":[4.9,52.4],"Europe/Zurich":[8.5,47.4],"Europe/Berlin":[13.4,52.5],"Europe/Rome":[12.5,41.9],"Europe/Vienna":[16.4,48.2],"Europe/Stockholm":[18.1,59.3],"Europe/Warsaw":[21,52.2],"Europe/Athens":[23.7,38],"Europe/Istanbul":[29,41],"Europe/Moscow":[37.6,55.8],"Asia/Jerusalem":[35.2,31.8],"Asia/Dubai":[55.3,25.2],"Asia/Karachi":[67,24.9],"Asia/Kolkata":[77.2,28.6],"Asia/Dhaka":[90.4,23.8],"Asia/Bangkok":[100.5,13.8],"Asia/Jakarta":[106.8,-6.2],"Asia/Singapore":[103.8,1.35],"Asia/Kuala_Lumpur":[101.7,3.1],"Asia/Manila":[121,14.6],"Asia/Shanghai":[116.4,39.9],"Asia/Chongqing":[106.5,29.6],"Asia/Urumqi":[87.6,43.8],"Asia/Hong_Kong":[114.2,22.3],"Asia/Taipei":[121.5,25],"Asia/Seoul":[127,37.6],"Asia/Tokyo":[139.7,35.7],"Australia/Perth":[115.9,-31.9],"Australia/Sydney":[151.2,-33.9],"Australia/Melbourne":[145,-37.8],"Australia/Brisbane":[153,-27.5],"Pacific/Auckland":[174.8,-36.9],"Africa/Johannesburg":[28,-26.2],"Africa/Cairo":[31.2,30],"Africa/Lagos":[3.4,6.5]};if(M[tz])return M[tz];var off=-(new Date().getTimezoneOffset())/60,lon=Math.max(-179,Math.min(179,off*15)),lang=(navigator.language||"").toLowerCase(),lat=/^(zh|ja|ko)/.test(lang)?32:(/^(en-gb|de|fr|nl|sv|pl|it|es|nb|da|fi|cs|ru|uk)/.test(lang)?50:38);return[lon,lat];}catch(e){return null;}})();</script>\n'
             '<link rel="stylesheet" href="theme.css">\n'
-            + _GLOBE_HUB_CSS + _HUB_CRITICAL_CSS + "</head><body>")
+            + _GLOBE_HUB_CSS + _HUB_CRITICAL_CSS + '</head><body class="hub-page">')
 
     body = (
         '<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div><div id="sky-moon"></div>'
