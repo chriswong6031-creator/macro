@@ -5,7 +5,7 @@
 #
 # Rules:
 #   • Every foresight theme MUST appear exactly once as a canonical id.
-#   • basket_ids reference data/baskets/membership.json keys (46 baskets total).
+#   • basket_ids reference data/baskets/membership.json keys (47 baskets total).
 #   • subsector_keys reference site/marketdata/subsector_rotation.json themes[].theme strings.
 #   • Baskets not mapped to any canonical theme are listed in unmapped_baskets below.
 #   • citrini_basket_ids: always [] in this PR (CITR-2 deferred per §7.4 OPEN-OPERATOR).
@@ -263,9 +263,14 @@ themes:
 
 # ---------------------------------------------------------------------------
 # Baskets not mapped to any canonical theme
-# (All 46 baskets accounted for — 38 mapped above, 8 here)
+# (All 47 baskets accounted for — 18 mapped above, 29 here)
 # ---------------------------------------------------------------------------
 unmapped_baskets:
+  - id: gold_miners
+    reason: >
+      Globally traded gold-producer sleeve. Covered by cross-market narrative
+      rotation, but not one of the canonical foresight themes.
+
   - id: mag7
     reason: >
       Mega-cap tech concentration basket (AAPL/MSFT/NVDA/GOOGL/META/AMZN/TSLA).

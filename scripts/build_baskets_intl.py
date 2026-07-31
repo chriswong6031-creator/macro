@@ -102,7 +102,7 @@ def main() -> int:
     # per-theme detail pages (site/basket_intl/<id>.html) + the shared desk renderer
     try:
         from scripts.build_theme_detail import build_detail_pages
-        build_detail_pages(data, site, env, "intl")
+        build_detail_pages(data, site, env, "intl", chart)
         deskjs = config.ROOT / "templates" / "baskets_desk.js"
         if deskjs.exists():
             (site / "baskets_desk.js").write_text(deskjs.read_text())

@@ -14,6 +14,8 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pandas as pd
+
 from lib import config
 from lib.pages import write_page
 
@@ -31,6 +33,59 @@ REGIONS = {
     "canada": ("canadastockdata",  "basket_canada", "../canada_stock.html#"),
     "intl":   ("intlstockdata",    "basket_intl",   "../intl_stock.html#"),
 }
+
+_CYCLE_COLORS = ("#38bdf8", "#818cf8", "#34d399", "#fbbf24",
+                 "#fb923c", "#c084fc", "#f472b6", "#2dd4bf")
+
+
+def _year_float(ts: pd.Timestamp) -> float:
+    start = pd.Timestamp(ts.year, 1, 1)
+    end = pd.Timestamp(ts.year + 1, 1, 1)
+    return float(ts.year + (ts - start).days / max(1, (end - start).days))
+
+
+def _cycle_from_chart(chart: dict | None, bid: str, basket: dict) -> dict | None:
+    """Build the same price-cycle record for any region from its equal-weight level."""
+    if not chart:
+        return None
+    values = (chart.get("baskets") or {}).get(bid)
+    dates = chart.get("dates") or []
+    if not values or not dates:
+        return None
+    n = min(len(values), len(dates))
+    try:
+        idx = pd.to_datetime(dates[:n], errors="coerce")
+        full = pd.Series(values[:n], index=idx, dtype="float64").dropna()
+        full = full[~full.index.isna()].sort_index()
+        if len(full) < 60:
+            return None
+        from engine import sector_cycles as sc
+        rec = sc._record_core(full, full.index[0], full.index[-1],
+                              pct=sc._zz_pct_for(full), series_id=bid)
+        if not rec:
+            return None
+        proj = rec.get("proj") or {}
+        price = rec.get("price") or []
+        last_x = price[-1]["x"] if price else _year_float(full.index[-1])
+        end_x = max(last_x + 0.30, float(proj.get("central_x") or last_x) + 0.08)
+        accent_i = sum(ord(ch) for ch in bid) % len(_CYCLE_COLORS)
+        nw = rec.get("now") or {}
+        return {
+            "name": basket.get("name"), "name_zh": basket.get("name_zh"),
+            "accent": _CYCLE_COLORS[accent_i],
+            "asOf": full.index[-1].strftime("%Y-%m-%d"),
+            "today": round(_year_float(full.index[-1]), 3),
+            "xDomain": [price[0]["x"] if price else _year_float(full.index[0]),
+                        round(end_x, 3)],
+            "price": price, "turns": rec.get("turns"), "proj": rec.get("proj"),
+            "phases": sc.PHASES, "basis": "equal_weight_close",
+            "now": {k: nw.get(k) for k in (
+                "phase", "phaseLabel", "pos", "signal", "above200d",
+                "ret_win_pct", "lastTrough", "lastPeak", "signature")},
+        }
+    except Exception as exc:  # noqa: BLE001 — detail enrichment must fail open
+        log.warning("theme cycle failed for %s: %s", bid, exc)
+        return None
 
 
 def _personality_slim(rec: dict) -> dict | None:
@@ -179,7 +234,8 @@ def standout_index(region: str = "us") -> dict[str, dict]:
     return out
 
 
-def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
+def build_detail_pages(data: dict, site: Path, env, region: str = "us",
+                       chart: dict | None = None) -> int:
     """data carries theme_intel + baskets (the build payload). Returns # pages written."""
     from engine import basket_history, basket_score
     sd_dir, out_name, stock_base = REGIONS.get(region, REGIONS["us"])
@@ -195,13 +251,20 @@ def build_detail_pages(data: dict, site: Path, env, region: str = "us") -> int:
     n = 0
     for b in data.get("baskets", []):
         bid = b["id"]
+        basket_view = {**b}
+        if b.get("cycle"):
+            basket_view["cycle"] = {**b["cycle"]}
+            if region == "china":
+                basket_view["cycle"]["full_href"] = f"../sector_cycles_china.html#b-{bid}"
+        else:
+            basket_view["cycle"] = _cycle_from_chart(chart, bid, b)
         basket_ctx = mctx.get(bid) or {}    # {ticker -> ctx} for THIS basket only
         members = [{**m, "conviction": _conviction(m["symbol"], sd_dir, cache),
                     "on_board": m["symbol"] in board,
                     "member_ctx": basket_ctx.get(m["symbol"])} for m in b.get("members", [])]
         th = {**tmap.get(bid, {}), "weights": ti.get("weights")}   # weights for the composition bar
         detail = {
-            "basket": b, "members": members, "theme": th,
+            "basket": basket_view, "members": members, "theme": th,
             "act_now": basket_score.act_now_stocks(members, th),
             "history": basket_history.score_series(bid, "score", region),
             "timeline": basket_history.change_timeline(bid, region=region),

@@ -368,7 +368,7 @@ def main() -> int:
     # theme_intel + members) and the env; chart already split off above. Additive.
     try:
         from scripts.build_theme_detail import build_detail_pages
-        build_detail_pages(data, site, env, "us")
+        build_detail_pages(data, site, env, "us", chart)
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("theme detail pages failed: %s", e)
     # ship the TradingView Lightweight Charts runtime (Apache-2.0) used by the page
