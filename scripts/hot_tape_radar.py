@@ -92,6 +92,16 @@ SINGLE_NAME_TRIGGERS: frozenset[str] = frozenset({
     "earnings_reaction",
 })
 
+#: Triggers whose post is about a GROUP of names, and where each one keeps its
+#: [[symbol, pct], ...] constituents. These get the watchlist card, not a price
+#: chart — see :func:`resolve_group_card` for why they get one at all.
+_GROUP_ROWS_FACT: dict[str, str] = {
+    "sector_rout": "leaders",
+    "sector_rip": "leaders",
+    "contrarian_breadth": "green",
+}
+GROUP_TRIGGERS: frozenset[str] = frozenset(_GROUP_ROWS_FACT)
+
 #: A card drawn off bars older than this is a lie about "so far today".
 MAX_BAR_AGE_DAYS = 7
 #: Snapshot ring depth: 36 x 5 min ~ the RTH session (masterplan T6 input).
@@ -132,6 +142,16 @@ def _f(v: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return f if f == f and abs(f) != float("inf") else None
+
+
+def _slug(raw: Any) -> str:
+    """A filename-safe token for a group label ("REIT - Residential" -> "reit-residential").
+
+    Used in a chart_id, which becomes a path and an R2 key, so it must never
+    emit a separator or an empty string.
+    """
+    out = "".join(ch if ch.isalnum() else "-" for ch in str(raw or "").lower())
+    return "-".join(p for p in out.split("-") if p) or "market"
 
 
 def _read_json(path: Path) -> dict | None:
@@ -755,12 +775,20 @@ def needs_chart(packet: HT.FactPacket) -> bool:
     """Does the operator's every-ticker-post-carries-a-chart law apply here?
 
     Trigger family for an alert, and the SUBJECT for a context brief: a brief
-    that names one ticker is a ticker post no matter which trigger built it,
-    while a brief about a whole group is a breadth post and ships text-only in
-    P1 exactly as its alert did.
+    that names one ticker is a ticker post no matter which trigger built it.
+
+    A GROUP post owes a picture too (2026-07-31). It used to answer False here
+    — "a breadth post ships text-only in P1 exactly as its alert did" — which
+    was true about the price chart and wrong about the law. The copy names its
+    movers, so the publisher's chart law quarantines it: 19 group posts queued
+    on 2026-07-30 and all 19 died there. The picture is the watchlist card, not
+    a chart, and it is owed only when the packet actually carries the names to
+    put on it.
     """
     if packet.trigger in SINGLE_NAME_TRIGGERS:
         return True
+    if packet.trigger in GROUP_TRIGGERS:
+        return bool(group_rows(packet))
     return packet.trigger == HT.BRIEF_TRIGGER and bool(packet.ticker)
 
 
@@ -959,6 +987,148 @@ def _is_massive_only(ticker: str, root: Path) -> bool:
         return path.parent.resolve() == (root / HYDRATE_SUBDIR).resolve()
     except Exception:  # noqa: BLE001
         return HYDRATE_SUBDIR in str(path).replace("\\", "/")
+
+
+def group_rows(packet: HT.FactPacket) -> list[dict[str, Any]]:
+    """The names a group post is about, as watchlist-card rows.
+
+    Both group families already carry their constituents — `sector_rout` /
+    `sector_rip` in facts["leaders"], `contrarian_breadth` in facts["green"] —
+    as [[symbol, pct], ...] in the order the copy names them. That is exactly
+    render_watchlist_card's row shape minus the price, which it degrades
+    cleanly on (no pill rather than a placeholder dash).
+
+    Returns [] when the packet is not a group post or its constituents are
+    missing/unusable, which the caller reads as "no card" and drops the post.
+    """
+    fact_key = _GROUP_ROWS_FACT.get(str(packet.trigger or ""))
+    if not fact_key:
+        return []
+    rows: list[dict[str, Any]] = []
+    for entry in (packet.facts.get(fact_key) or []):
+        try:
+            sym, pct = entry[0], entry[1]
+        except (TypeError, IndexError, KeyError):
+            continue
+        ticker = str(sym or "").strip().upper().lstrip("$")
+        pct_f = _f(pct)
+        if not ticker or pct_f is None:
+            continue
+        rows.append({"ticker": ticker, "pct_change": float(pct_f), "price": None})
+    return rows
+
+
+def _group_card_title(packet: HT.FactPacket) -> str:
+    """The card's hero line. Plain words, and it says nothing the post does not."""
+    label = str(packet.sector or "").strip()
+    if str(packet.trigger) == "contrarian_breadth":
+        return "Defensive names green"
+    verb = "selling off" if str(packet.direction) == "down" else "bid up"
+    return f"{label} {verb}".strip() if label else f"A group {verb}"
+
+
+def _group_card_subtitle(packet: HT.FactPacket) -> str | None:
+    """The panel's own caption: the breadth fact, straight out of the packet.
+
+    Deliberately NOT a second stance. The post text carries the read; a card
+    that argues alongside it can contradict it, and every number here is one
+    the packet already authorised (gate 0.3).
+    """
+    f = packet.facts
+    n_members = f.get("n_members")
+    agree = f.get("n_down") if str(packet.direction) == "down" else f.get("n_up")
+    median = _f(f.get("median_pct"))
+    if agree is None or n_members is None or median is None:
+        n_green = f.get("n_green")
+        return f"{n_green} names green" if n_green else None
+    way = "lower" if str(packet.direction) == "down" else "higher"
+    return f"{agree} of {n_members} {way}, median {median:+.1f}%"
+
+
+def resolve_group_card(
+    packet: HT.FactPacket,
+    *,
+    root: Path,
+    marketing_cfg: dict,
+    as_of: str,
+    now: datetime,
+) -> dict[str, Any]:
+    """The picture for a post about a GROUP of names. Same contract as
+    :func:`resolve_chart` — {"media", "published", "reason"}.
+
+    WHY THIS EXISTS. `needs_chart` used to answer False for the whole group
+    family, on the reasoning that a breadth read is not a post about one name
+    and has no price chart to draw. True, and it made the family
+    unpublishable: the copy names its movers ("Best: $SNDK +21.1%, $WDC
+    +15.2%"), and the publisher's chart law — a post that NAMES TICKERS ships
+    a picture, whatever kind it claims to be (operator 2026-07-30) —
+    quarantines every one of them. Two rules, each right on its own, that
+    between them deleted an entire post family: 19 queued on 2026-07-30, 19
+    quarantined.
+
+    A price chart was never the answer for a group. render_watchlist_card is —
+    the third member of the same card family, written for exactly this ("a
+    plain multi-ticker text post ... as a screenshot of a premium SaaS
+    watchlist panel").
+
+    The rows come straight from the packet, so nothing here can invent a name
+    or a number. The card does read bars, but only for the per-row sparkline
+    (load_closes n=10 under logo_root), and that read is silent on a miss — a
+    name with no local history draws no sparkline rather than a made-up one.
+    """
+    out: dict[str, Any] = {"media": None, "published": {}, "reason": "no-rows"}
+    rows = group_rows(packet)
+    if not rows:
+        return out
+    try:
+        from engine.marketing.chart_render import (  # noqa: PLC0415
+            chart_cta_enabled,
+            render_watchlist_card,
+        )
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+
+        svg = render_watchlist_card(
+            _group_card_title(packet),
+            rows,
+            as_of=as_of,
+            subtitle=_group_card_subtitle(packet),
+            logo_root=root,
+            cta=chart_cta_enabled(marketing_cfg),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: group card render failed for %s: %s",
+                    packet.key, exc)
+        out["reason"] = "render-failed"
+        return out
+
+    # Keyed on the packet, not a ticker: this card is about the group.
+    chart_id = f"hottape-{packet.trigger}-{_slug(packet.sector or 'market')}-{now.strftime('%H%M')}Z"
+    try:
+        published = publish_card(svg, chart_id=chart_id, as_of=as_of, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: publish_card failed for %s: %s", chart_id, exc)
+        published = {}
+    out["published"] = dict(published or {})
+    out["published"]["chart_id"] = chart_id
+
+    url = str((published or {}).get("media_url") or "").strip()
+    if not url.lower().startswith(("http://", "https://")):
+        out["reason"] = "no-media-url"
+        return out
+
+    entry: dict[str, Any] = {
+        "kind": "chart_svg",
+        "path": (published.get("svg_path")
+                 or f"data/marketing/outbox/media/{as_of}/{chart_id}.svg"),
+        "chart_id": chart_id,
+        "tickers": [r["ticker"] for r in rows],
+        "media_url": url,
+    }
+    if published.get("media_png_path"):
+        entry["media_png_path"] = published["media_png_path"]
+    out["media"] = entry
+    out["reason"] = "ok"
+    return out
 
 
 def resolve_chart(
@@ -1185,13 +1355,32 @@ def book_packet(
     published: dict[str, Any] = {}
     chart_state = "none"
     if needs_chart(packet):
+        is_group = packet.trigger in GROUP_TRIGGERS
         if dry_run:
-            # Simulation: local bars only, no fetch, no render, no upload.
-            _, reason = load_bars(str(packet.ticker or ""), root, now=now, fetcher=None)
-            if reason != "ok":
-                print(f"hot-tape DROP {packet.key} {reason}", flush=True)
-                return {"status": f"drop:{reason}", "item_id": None, "text": text}
-            chart_state = "ok(simulated)"
+            # Simulation: local inputs only, no fetch, no render, no upload.
+            if is_group:
+                # A group card needs no bars — its rows ARE the packet — so the
+                # only way it can fail is having no names, which needs_chart
+                # already refused above.
+                chart_state = "ok(simulated,group)"
+            else:
+                _, reason = load_bars(str(packet.ticker or ""), root, now=now,
+                                      fetcher=None)
+                if reason != "ok":
+                    print(f"hot-tape DROP {packet.key} {reason}", flush=True)
+                    return {"status": f"drop:{reason}", "item_id": None, "text": text}
+                chart_state = "ok(simulated)"
+        elif is_group:
+            card = resolve_group_card(packet, root=root,
+                                      marketing_cfg=marketing_cfg,
+                                      as_of=as_of, now=now)
+            if card.get("media") is None:
+                print(f"hot-tape DROP {packet.key} {card.get('reason')}", flush=True)
+                return {"status": f"drop:{card.get('reason')}", "item_id": None,
+                        "text": text}
+            media = [card["media"]]
+            published = card.get("published") or {}
+            chart_state = "ok(group)"
         else:
             card = resolve_chart(packet, root=root, marketing_cfg=marketing_cfg,
                                  as_of=as_of, now=now, fetcher=fetcher,

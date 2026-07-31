@@ -5,8 +5,11 @@ Pins the integration half of research/MARKETING_HOT_TAPE_MASTERPLAN.md §0:
   0.5  the existing safety stack is untouched AND exercised (kill switch off by
        default, outbox transition legality, enqueue dedupe on a second pass)
   0.6  EVERY TICKER POST CARRIES A CHART — a single-name event whose card cannot
-       be drawn and hosted is DROPPED, never enqueued bare; sector/contrarian
-       breadth posts ship text-only in P1
+       be drawn and hosted is DROPPED, never enqueued bare. Since 2026-07-31
+       that covers GROUP posts too: sector/contrarian breadth used to ship
+       text-only, which the publisher's chart law then quarantined for naming
+       cashtags, so the whole family died in the queue. They now carry a
+       watchlist card and are dropped on the same terms if it cannot be hosted.
   0.7  every new suite is named in a run line in the lane it belongs to, plus
        ci.yml trigger paths for every new file — a suite that ships dark is the
        unrun-suite rot class, so this suite PINS ITS OWN WIRING (below)
@@ -189,6 +192,30 @@ def _fired_rows(root: Path) -> list[dict]:
     return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x]
 
 
+def _stub_group_card(monkeypatch,
+                     *, media_url: str = "https://pub-test.r2.dev/c/grp.png") -> list[dict]:
+    """Stand in for the group card's raster + upload. Returns the CALL LOG."""
+    calls: list[dict] = []
+
+    def _fake(packet, *, root, marketing_cfg, as_of, now, **kw):
+        calls.append({"key": packet.key, "trigger": packet.trigger,
+                      "rows": RADAR.group_rows(packet)})
+        chart_id = (f"hottape-{packet.trigger}-{RADAR._slug(packet.sector or 'market')}"
+                    f"-{now.strftime('%H%M')}Z")
+        return {
+            "media": {"kind": "chart_svg",
+                      "path": f"data/marketing/outbox/media/{as_of}/{chart_id}.svg",
+                      "chart_id": chart_id,
+                      "tickers": [r["ticker"] for r in RADAR.group_rows(packet)],
+                      "media_url": media_url},
+            "published": {"chart_id": chart_id, "media_url": media_url},
+            "reason": "ok",
+        }
+
+    monkeypatch.setattr(RADAR, "resolve_group_card", _fake)
+    return calls
+
+
 def _stub_chart(monkeypatch, *, media_url: str = "https://pub-test.r2.dev/c/hot.png") -> list[dict]:
     """Stand in for the Chrome raster + R2 upload with the shape they return.
 
@@ -330,8 +357,23 @@ class TestChartLaw:
         assert OB.read_items(root) == []
         assert "no-media-url" in capsys.readouterr().out
 
-    def test_sector_event_ships_text_only(self, tmp_path, capsys):
-        """A breadth post is about a GROUP — lawful without a card in P1."""
+    def test_sector_event_carries_a_watchlist_card(self, tmp_path, capsys, monkeypatch):
+        """A breadth post owes a picture too — it just is not a price chart.
+
+        THE RULE THIS REPLACES, and why. A group post used to ship text-only,
+        on the reasoning that a breadth read is not about one name and has no
+        chart to draw. Correct about the chart, wrong about the law: the copy
+        NAMES its movers ("Best: $SNDK +21.1%, $WDC +15.2%"), and the
+        publisher's chart law refuses any post that names tickers without a
+        picture, whatever kind it claims to be (operator 2026-07-30). Two rules
+        that were each right in isolation, and between them the entire group
+        family was unpublishable — 19 queued on 2026-07-30, all 19 quarantined,
+        none ever seen.
+
+        The picture is render_watchlist_card, the third member of the same card
+        family, whose rows come straight out of the packet.
+        """
+        calls = _stub_group_card(monkeypatch)
         root = _sector_root(tmp_path)
 
         assert RADAR.run(root, now=NOW, fetcher=_no_fetch) == 0
@@ -339,13 +381,39 @@ class TestChartLaw:
         items = OB.read_items(root)
         assert len(items) == 1, items
         assert items[0]["kind"] == "breaking"
-        assert items[0]["media"] == []
         assert items[0]["source"]["trigger"] in ("sector_rout", "sector_rip")
         assert items[0]["source"]["ticker"] is None
         # One story, one post: the industry and its parent sector both qualify
         # here and the detector emits only the more extreme of the pair.
         assert "Technology" in items[0]["text"]
         assert "hot-tape DROP" not in capsys.readouterr().out
+
+        assert len(calls) == 1, "the group card was not drawn"
+        media = items[0]["media"]
+        assert len(media) == 1, media
+        assert media[0]["kind"] == "chart_svg"
+        assert media[0]["media_url"].startswith("https://")
+        # Keyed on the GROUP, not a ticker — there is no one name to key on.
+        assert media[0]["chart_id"].startswith("hottape-sector_")
+        assert media[0]["tickers"], "the card must record the names it shows"
+
+    def test_a_group_post_with_no_card_is_dropped_like_any_other(self, tmp_path,
+                                                                 monkeypatch, capsys):
+        """The chart law is not softer for a group.
+
+        Without this, widening needs_chart would have been a downgrade: the
+        family would ask for a picture, fail to get one, and ship bare anyway —
+        which is exactly the state the publisher quarantines.
+        """
+        def _hostless(packet, *, root, marketing_cfg, as_of, now, **kw):
+            return {"media": None, "published": {}, "reason": "no-media-url"}
+        monkeypatch.setattr(RADAR, "resolve_group_card", _hostless)
+        root = _sector_root(tmp_path)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+
+        assert OB.read_items(root) == []
+        assert "no-media-url" in capsys.readouterr().out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -370,7 +438,8 @@ class TestDedupe:
         assert "hot-tape BOOKED" not in out
         assert len(HT.load_ring(root)) == 2       # the ring still advances
 
-    def test_sector_event_fires_once_per_direction_per_day(self, tmp_path, capsys):
+    def test_sector_event_fires_once_per_direction_per_day(self, tmp_path, capsys, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         # Regression pin for the granularity flip-flop: the fired-key filter in
         # _detect_group_moves must run AFTER the industry/parent overlap
         # suppression, or a fired group's rival (the same names at the other
@@ -497,13 +566,14 @@ def _emit_three(root: Path, packets: list) -> list[str]:
 
 
 class TestFlagshipBudget:
-    def test_only_the_top_event_mirrors_to_flagship(self, tmp_path):
+    def test_only_the_top_event_mirrors_to_flagship(self, tmp_path, monkeypatch):
         """Three routs clear the floor in one sweep; exactly one may mirror.
 
         Group routs carry base severity 80-90, so a floor alone routes EVERY
         routine rout to the flagship and leaves the wire desk dark — measured on
         the 2026-07-28 tape, three industry routs in one sweep.
         """
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -519,8 +589,9 @@ class TestFlagshipBudget:
         accounts = [by_id[i]["account"] for i in booked]
         assert accounts == ["flagship", "mastermind_news", "mastermind_news"], accounts
 
-    def test_a_deduped_flagship_event_does_not_burn_the_budget(self, tmp_path):
+    def test_a_deduped_flagship_event_does_not_burn_the_budget(self, tmp_path, monkeypatch):
         """The budget is spent on a POST, not on an attempt."""
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -544,7 +615,8 @@ class TestFlagshipBudget:
                  (root / "data/marketing/hot_tape_fired.jsonl").read_text().splitlines() if x]
         assert [f["item_id"] for f in fired].count(None) == 1
 
-    def test_run_cap_stops_at_three(self, tmp_path):
+    def test_run_cap_stops_at_three(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         extra = _sector_packet("Oil & Gas Midstream", -2.90, 86.0,
@@ -553,7 +625,7 @@ class TestFlagshipBudget:
         booked = _emit_three(root, [_P_TOP, _P_MID, _P_LOW, extra])
         assert len(booked) == 3
 
-    def test_a_near_identical_rout_is_refused_by_the_existing_guard(self, tmp_path):
+    def test_a_near_identical_rout_is_refused_by_the_existing_guard(self, tmp_path, monkeypatch):
         """Gate 0.5, unchanged and load-bearing for this lane.
 
         Two desks posting the same sentence about different groups is the
@@ -561,6 +633,7 @@ class TestFlagshipBudget:
         radar does not get an exemption: it logs the skip, records the fire with
         NO item_id, and the day's emit budget is untouched.
         """
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         twin = _sector_packet("Semiconductors", -6.90, 88.0,
@@ -580,7 +653,8 @@ class TestDemoBlastRadius:
     """M5 — demo relaxes EVERY threshold at once, and with the publisher armed
     those are real posts. One item, wire desk, never the flagship."""
 
-    def test_two_flagship_events_in_demo_book_one_wire_post(self, tmp_path):
+    def test_two_flagship_events_in_demo_book_one_wire_post(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -598,7 +672,8 @@ class TestDemoBlastRadius:
         assert len(items) == 1
         assert items[0]["account"] == "mastermind_news"
 
-    def test_the_same_events_outside_demo_keep_the_normal_budget(self, tmp_path):
+    def test_the_same_events_outside_demo_keep_the_normal_budget(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         booked = _emit_three(root, [_P_TOP, _P_MID])
