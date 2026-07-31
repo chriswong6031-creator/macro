@@ -64,6 +64,23 @@ log = logging.getLogger(__name__)
 
 BUFFER_GRAPHQL_ENDPOINT = "https://api.buffer.com"
 BUFFER_TOKEN_ENV = "BUFFER_TOKEN"
+
+
+class BufferRateLimited(RuntimeError):
+    """Buffer answered 429 — we are out of quota, not offline.
+
+    RuntimeError on purpose: every existing caller catches broadly and turns a
+    transport failure into a fail-soft "did not send", and that must not change.
+    What changes is that the reason is now nameable, because the two failures
+    need opposite responses — a rate limit is self-inflicted (the publisher and
+    the metrics poller share one token and one 24h allowance) and is fixed by
+    spacing our own calls out, while an outage is Buffer's and is fixed by
+    waiting.
+    """
+
+    def __init__(self, message: str, *, retry_after: str = "") -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
 _HTTP_TIMEOUT_S = 15
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024  # a hostile/broken response must not OOM
 
@@ -481,8 +498,45 @@ class BufferPublisher:
                 "Accept": "application/json",
             },
         )
-        with urlopen(req, timeout=_HTTP_TIMEOUT_S) as resp:  # noqa: S310
-            raw = resp.read(_MAX_RESPONSE_BYTES + 1)
+        try:
+            with urlopen(req, timeout=_HTTP_TIMEOUT_S) as resp:  # noqa: S310
+                raw = resp.read(_MAX_RESPONSE_BYTES + 1)
+        except HTTPError as exc:
+            # A 429 IS NOT A NETWORK BLIP, AND IT USED TO LOOK LIKE ONE.
+            #
+            # Buffer authenticates as ONE personal token, and BOTH the publisher
+            # (`publish`) and the engagement poller (`fetch_post_metrics`) go
+            # through this method with it. They share one 24h quota: a metrics
+            # sweep over a few hundred posted items can spend the allowance the
+            # publisher needs to post at all, and the publisher's failure then
+            # arrives as a generic transport error that the public callers turn
+            # into a fail-soft "did not send".
+            #
+            # Fail-soft is right — a rate limit must never crash a sweep — but
+            # INDISTINGUISHABLE is not. "Buffer refused us because we are out of
+            # quota" and "Buffer is down" call for opposite responses, and the
+            # first is self-inflicted and fixable by spacing the poller out.
+            #
+            # BufferRateLimited subclasses RuntimeError, so every existing
+            # `except Exception` caller keeps its current fail-soft behaviour
+            # unchanged; the difference is that the reason is now on the record.
+            if getattr(exc, "code", None) == 429:
+                retry_after = ""
+                try:
+                    retry_after = str(exc.headers.get("Retry-After") or "")
+                except Exception:  # noqa: BLE001
+                    retry_after = ""
+                print("::warning title=marketing-buffer-rate-limited::"
+                      "Buffer returned 429 — the publisher and the engagement "
+                      "poller share ONE token and ONE 24h quota, so this is most "
+                      "likely our own polling spending the posting allowance"
+                      + (f" (Retry-After: {retry_after})" if retry_after else ""),
+                      flush=True)
+                raise BufferRateLimited(
+                    "Buffer rate limit (429)"
+                    + (f"; retry after {retry_after}" if retry_after else ""),
+                    retry_after=retry_after) from exc
+            raise
         if len(raw) > _MAX_RESPONSE_BYTES:
             raise ValueError("Buffer response exceeded size cap")
         return json.loads(raw.decode("utf-8"))

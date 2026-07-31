@@ -359,3 +359,82 @@ def test_publisher_attach_flows_through_build_assets(monkeypatch):
     assert r.ok is True
     assert captured["payload"]["variables"]["input"]["assets"] == \
         [{"image": {"url": "https://pub-x.r2.dev/marketing/charts/2026-07-23/c1.png"}}]
+
+
+class TestBufferRateLimitIsNameable:
+    """The publisher and the engagement poller share ONE token and ONE quota.
+
+    `publish` and `fetch_post_metrics` both go through BufferPublisher._transport
+    with the same BUFFER_TOKEN, so a metrics sweep over a few hundred posted
+    items can spend the 24h allowance the publisher needs to post at all.
+
+    Before this, a 429 arrived as a bare HTTPError, the public callers turned it
+    into a fail-soft "did not send", and it was indistinguishable from Buffer
+    being down. Fail-soft is right; indistinguishable is not — a rate limit is
+    self-inflicted and fixed by spacing our own calls out, an outage is not.
+    """
+
+    @staticmethod
+    def _raise(code, headers=None):
+        import io
+        from urllib.error import HTTPError
+
+        def _fake(req, timeout=None):
+            raise HTTPError(req.full_url, code, "boom", headers or {}, io.BytesIO(b""))
+
+        return _fake
+
+    def test_a_429_becomes_a_named_rate_limit_carrying_retry_after(self, monkeypatch):
+        from engine.marketing import social_publisher as SP
+
+        monkeypatch.setattr(SP, "urlopen", self._raise(429, {"Retry-After": "900"}))
+        client = SP.BufferPublisher(token="t")
+        try:
+            client._transport({"query": "{}"})
+        except SP.BufferRateLimited as exc:
+            assert exc.retry_after == "900"
+        else:
+            raise AssertionError("a 429 did not raise BufferRateLimited")
+
+    def test_it_stays_a_RuntimeError_so_fail_soft_callers_are_unchanged(self, monkeypatch):
+        """Every caller catches broadly and must keep doing so.
+
+        This change makes the reason legible; it must not turn a rate limit into
+        a crash that takes down a publish sweep.
+        """
+        from engine.marketing import social_publisher as SP
+
+        assert issubclass(SP.BufferRateLimited, RuntimeError)
+        monkeypatch.setattr(SP, "urlopen", self._raise(429))
+        try:
+            SP.BufferPublisher(token="t")._transport({"query": "{}"})
+        except Exception as exc:  # noqa: BLE001 — the shape every caller uses
+            assert isinstance(exc, RuntimeError)
+
+    def test_other_http_errors_are_not_reclassified(self, monkeypatch):
+        """A 500 is Buffer's problem and must not be blamed on our quota."""
+        from urllib.error import HTTPError
+
+        from engine.marketing import social_publisher as SP
+
+        monkeypatch.setattr(SP, "urlopen", self._raise(500))
+        try:
+            SP.BufferPublisher(token="t")._transport({"query": "{}"})
+        except SP.BufferRateLimited:
+            raise AssertionError("a 500 was misreported as a rate limit")
+        except HTTPError as exc:
+            assert exc.code == 500
+
+    def test_the_shared_quota_is_named_on_the_console(self, monkeypatch, capsys):
+        """Bare line-start annotation per CLAUDE.md, or GitHub drops it."""
+        from engine.marketing import social_publisher as SP
+
+        monkeypatch.setattr(SP, "urlopen", self._raise(429))
+        try:
+            SP.BufferPublisher(token="t")._transport({"query": "{}"})
+        except SP.BufferRateLimited:
+            pass
+        out = capsys.readouterr().out
+        line = next(ln for ln in out.splitlines() if "buffer-rate-limited" in ln)
+        assert line.startswith("::warning title=marketing-buffer-rate-limited::")
+        assert "ONE token" in line and "poller" in line
