@@ -139,7 +139,9 @@ class TestUnknownCashtagGate:
     @_needs_store
     def test_the_price_stores_are_actually_reached(self):
         """Guards the union, not just its result: membership alone is too narrow."""
-        import pandas as pd
+        pd = pytest.importorskip(
+            "pandas",
+            reason="CI packs install minimal deps, not requirements.txt")
         mem = pd.read_parquet("data/universe/membership.parquet", columns=["ticker"])
         mem_syms = {str(t).upper() for t in mem["ticker"].tolist()}
         assert _UNIVERSE - mem_syms, (
@@ -176,7 +178,9 @@ class TestUnknownCashtagGate:
         The `active` filter covers the OTHER shape: a ticker still listed in
         membership whose listing has died. Both must stay excluded.
         """
-        import pandas as pd
+        pd = pytest.importorskip(
+            "pandas",
+            reason="CI packs install minimal deps, not requirements.txt")
         df = pd.read_parquet("data/universe/membership.parquet",
                              columns=["ticker", "active"])
         # One ticker holds several rows (sp500 / sp400 / sp600 / r2000), and a
