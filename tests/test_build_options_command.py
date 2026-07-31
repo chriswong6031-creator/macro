@@ -46,6 +46,61 @@ EMPTY_STORES: dict = {
     "market_structure": None, "vol": None, "gex": {}, "gex_index": None,
 }
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Banned vocabulary — ONE list, three streams
+# ─────────────────────────────────────────────────────────────────────────────
+# Hoisted out of test_no_banned_vocabulary_in_visible_copy so every sweep in this
+# file measures the same words.  Consumers:
+#   · test_no_banned_vocabulary_in_visible_copy      — static glance-tier text
+#   · test_no_banned_vocabulary_in_aria_copy         — aria-label (glance tier
+#     for a screen-reader user: it SUBSTITUTES for the visible content)
+#   · test_no_banned_vocabulary_in_hover_copy        — data-tip-* (Tier 2)
+#   · test_no_banned_vocabulary_in_script_authored_copy — the workspace script's
+#     own string literals (glance AND hover copy it builds at runtime)
+# PR #4123 (OIP W1) hoists this same list for a fourth consumer that EXECUTES
+# renderTicker/renderScanner/renderLeaders under node; on rebase keep one copy —
+# the contents are identical, only the comment differs.
+BANNED_VOCABULARY = [
+    "IGNITION", "UPTURN_CONFIRMED", "slow reco", "expected-null", "forward meter",
+    "display-tier", "K-of-N", "gauntlet", "prereg", "Oracle P", "FlowZ", "TSBrd",
+    "NotTrap", "PriceOK", "NearHigh", "VolOK", "TurnOrg", "Inflect", "n=", "FDR",
+    "z-score", "t-stat", "rank-IC", "cross-sectional", "multi-timeframe",
+    "validated", "us_sector", "yCaution", "BothSides", "EarnWin",
+    "pain_dist", "median_depth", "wilson_", "0DTE",
+]
+
+# The list above is a TIER-1 list.  Tier 2 (docs/DESIGN_DOCTRINE.md §1) is the
+# SANCTIONED home for "mechanics, definitions, base rates, provenance, receipts",
+# and Law 5 spells out what a compliant Tier-2 receipt looks like:
+#
+#     "backtested basket-level turn = null edge (Oracle P8, n=26); slow reco
+#      labels unchanged; display tier."
+#
+# That sentence — the doctrine's OWN worked example of correct copy — contains
+# three entries of BANNED_VOCABULARY.  Sweeping hover copy with the Tier-1 list
+# verbatim would therefore fail the doctrine it is supposed to enforce, so the
+# hover sweep subtracts exactly the receipt vocabulary the doctrine names, and
+# nothing else.  test_tier2_carve_out_is_exactly_the_doctrines_own_example pins
+# this: widen the carve-out and that test fails.
+#
+# Everything NOT listed here stays banned on Tier 2 as well, because it has no
+# sanctioned home in user copy on any tier — raw machine slugs (`pain_dist`,
+# `wilson_`, `us_sector`), internal state names (`IGNITION`, `Inflect`), the
+# non-compliant disclosure form Law 5 explicitly rejects (`expected-null forward
+# meter`), and `validated` (CI-guarded estate-wide).  `0DTE` stays banned too:
+# it is an acronym, and this workspace never DEFINES it — the plain phrase
+# already carries the whole meaning.  Its real home is Tier 3, on a page that
+# does explain it (content/seo/learn/options/zero-dte-regime.md).
+TIER2_RECEIPT_VOCABULARY = {
+    "Oracle P",   # study / ruling ID — Law 5: "study ID ... moves to Tier 2"
+    "n=",         # sample size — Law 3: "Precision belongs on Tier 2 ('58.3%, n=26, ...')"
+    "slow reco",  # the rating label a receipt cites as unchanged — Law 5's example
+    # Same family as `n=` under Law 3's "precision belongs on Tier 2": a base
+    # rate's error bars are a receipt, not glance-tier copy.
+    "FDR", "z-score", "t-stat", "rank-IC",
+}
+BANNED_ON_TIER_2 = [b for b in BANNED_VOCABULARY if b not in TIER2_RECEIPT_VOCABULARY]
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Synthetic stores — the SHAPES the four upstream builders publish
@@ -149,7 +204,19 @@ def _workspace(page: str) -> str:
 
 
 def _visible_text(fragment: str) -> str:
-    """Strip everything a user cannot read: script, style, comments, tip/aria values, tags."""
+    """Text a sighted user reads IN THE FLOW: script, style, comments, tags and
+    the two attribute families that are read some other way all come out.
+
+    The tip/aria strip is a TIERING split, not a "nobody can read this" claim —
+    the original docstring said "strip everything a user cannot read", and that
+    premise was wrong about tips.  A hover popup IS read: docs/DESIGN_DOCTRINE.md
+    §1 makes `data-tip-en/zh` the Tier-2 surface and this estate's whole
+    demotion rule depends on it carrying real copy.  Believing that copy was
+    unreadable is what let the banned term `0DTE` — item 34 of this file's own
+    BANNED_VOCABULARY — ship in a live hover from #3590 until 2026-07-30 without
+    any sweep ever seeing it.  So the values are not discarded any more, they are
+    swept on their own tier: _tip_text() below, against BANNED_ON_TIER_2.
+    `aria-label` likewise goes to _aria_text(), against the full Tier-1 list."""
     out = re.sub(r"<script\b.*?</script>", " ", fragment, flags=re.S | re.I)
     out = re.sub(r"<style\b.*?</style>", " ", out, flags=re.S | re.I)
     out = re.sub(r"<!--.*?-->", " ", out, flags=re.S)
@@ -157,6 +224,108 @@ def _visible_text(fragment: str) -> str:
     out = re.sub(r'aria-label\s*=\s*"[^"]*"', " ", out)
     out = re.sub(r"<[^>]+>", " ", out)
     return html.unescape(out)
+
+
+def _attr_values(fragment: str, *attrs: str) -> str:
+    """The VALUES of named attributes, as their own text stream.
+
+    Comments and <script>/<style> bodies are dropped first, so this reads only
+    attributes the server actually shipped in markup — a tip built at runtime by
+    the workspace script is a different stream (_script_authored_text)."""
+    out = re.sub(r"<script\b.*?</script>", " ", fragment, flags=re.S | re.I)
+    out = re.sub(r"<style\b.*?</style>", " ", out, flags=re.S | re.I)
+    out = re.sub(r"<!--.*?-->", " ", out, flags=re.S)
+    found: list[str] = []
+    for attr in attrs:
+        found += re.findall(rf'{re.escape(attr)}\s*=\s*"([^"]*)"', out)
+    return html.unescape("\n".join(found))
+
+
+def _tip_text(fragment: str) -> str:
+    """Tier-2 hover copy: the tip body plus the optional receipt line that
+    templates/theme.js:4988 renders underneath it (`data-tip-rc-*`)."""
+    return _attr_values(fragment, "data-tip-en", "data-tip-zh",
+                        "data-tip-rc-en", "data-tip-rc-zh")
+
+
+def _aria_text(fragment: str) -> str:
+    """What a screen-reader user hears INSTEAD of the visible content — glance
+    tier for them, so it is swept with the Tier-1 list, not the Tier-2 one."""
+    return _attr_values(fragment, "aria-label")
+
+
+def _js_string_literals(src: str) -> list[str]:
+    """The string literals of a JS source, and nothing else — single pass.
+
+    A regex over quote pairs is not good enough for this file and never was.
+    Its block comments include six with an English possessive ("the page's OWN
+    thresholds"), and its regex literals include `/"/g` and `/'/g`; every one of
+    those quote characters desynchronises a naive scanner, after which literal
+    and non-literal text swap places for the remainder of the file.  The sweep
+    stays green either way — just green about the wrong bytes.  Stripping
+    comments first with a second regex does not fix it and adds a bug of its
+    own: `'//app.mastermind-x.com/?symbol='` is a URL inside a literal, and a
+    line-comment strip eats the rest of that line.
+
+    Escape sequences are kept verbatim (`\\'` stays two characters).  No banned
+    needle contains a backslash, and decoding them would be a second chance to
+    be wrong about bytes nobody reads."""
+    out: list[str] = []
+    i, n, prev = 0, len(src), ""
+    while i < n:
+        c = src[i]
+        if c in "'\"":
+            j, buf = i + 1, []
+            while j < n and src[j] != c:
+                if src[j] == "\\":
+                    buf.append(src[j:j + 2]); j += 2; continue
+                buf.append(src[j]); j += 1
+            out.append("".join(buf))
+            prev, i = c, j + 1
+            continue
+        if c == "/" and src[i + 1:i + 2] == "/":
+            nl = src.find("\n", i)
+            i = n if nl < 0 else nl
+            continue
+        if c == "/" and src[i + 1:i + 2] == "*":
+            end = src.find("*/", i + 2)
+            i = n if end < 0 else end + 2
+            continue
+        # `/` after an operator or an opener starts a regex literal; after an
+        # identifier, `)` or `]` it is division.
+        if c == "/" and (prev == "" or prev in "(,=:[!&|?{};+-*%~^<>"):
+            j = i + 1
+            while j < n and src[j] != "/":
+                if src[j] == "\\":
+                    j += 2; continue
+                if src[j] == "[":                      # a class may hold a bare /
+                    while j < n and src[j] != "]":
+                        j += 2 if src[j] == "\\" else 1
+                j += 1
+            prev, i = "/", j + 1
+            continue
+        if not c.isspace():
+            prev = c
+        i += 1
+    return out
+
+
+def _script_authored_text(rendered: str) -> str:
+    """Every string literal in the workspace's inline script, as one stream.
+
+    The script builds its markup by concatenation (`'... data-tip-en="' + esc(x)
+    + '"'`), so no attribute regex can recover a runtime tip from the source —
+    but the COPY itself is always a literal, and a literal cannot hide behind a
+    state no test happens to drive.  Attribute-name syntax is normalised away
+    afterwards because the needles and the markup collide: `n=` matches inside
+    the literal `data-tip-en="`, which alone raises 9 false positives here."""
+    stream = html.unescape("\n".join(_js_string_literals(_extract_workspace_script(rendered))))
+    return re.sub(r'[A-Za-z][\w-]*\s*=\s*(?=["\'])', " ", stream)
+
+
+def _banned_vocabulary_hits(text: str, needles: list[str] | None = None) -> dict:
+    """Substring counts for every banned needle present. Default list is Tier 1."""
+    return {b: text.count(b) for b in (needles or BANNED_VOCABULARY) if b in text}
 
 
 @pytest.fixture(scope="module")
@@ -583,18 +752,135 @@ def test_validated_never_appears_in_user_copy(page):
 
 def test_no_banned_vocabulary_in_visible_copy(page):
     """Run, not asserted. Scoped to the workspace subtree — the shared nav is
-    not this lane's copy."""
-    banned = [
-        "IGNITION", "UPTURN_CONFIRMED", "slow reco", "expected-null", "forward meter",
-        "display-tier", "K-of-N", "gauntlet", "prereg", "Oracle P", "FlowZ", "TSBrd",
-        "NotTrap", "PriceOK", "NearHigh", "VolOK", "TurnOrg", "Inflect", "n=", "FDR",
-        "z-score", "t-stat", "rank-IC", "cross-sectional", "multi-timeframe",
-        "validated", "us_sector", "yCaution", "BothSides", "EarnWin",
-        "pain_dist", "median_depth", "wilson_", "0DTE",
-    ]
-    text = _visible_text(_workspace(page))
-    hits = {b: text.count(b) for b in banned if b in text}
+    not this lane's copy.
+
+    Glance tier only: _visible_text() drops tips, aria-labels and <script>.  The
+    other three quarters of the same sweep are the two tests below plus PR #4123's
+    JS-execution pass."""
+    hits = _banned_vocabulary_hits(_visible_text(_workspace(page)))
     assert hits == {}, f"banned vocabulary in visible copy: {hits}"
+
+
+def test_no_banned_vocabulary_in_aria_copy(page):
+    """`aria-label` replaces the visible content for a screen-reader user, so it
+    is that user's glance tier — full Tier-1 list, same as the sighted copy."""
+    hits = _banned_vocabulary_hits(_aria_text(_workspace(page)))
+    assert hits == {}, f"banned vocabulary in aria copy: {hits}"
+
+
+def test_no_banned_vocabulary_in_hover_copy(page):
+    """Tier-2 hover copy — the blind spot that let `0DTE` ship live (#3590).
+
+    `data-tip-en/zh` is read: it is the doctrine's own Tier-2 surface, and the
+    demotion rule ("nothing is lost by moving detail to a hover") only holds if
+    what lands there is held to a language standard too.  A looser one than
+    Tier 1 — BANNED_ON_TIER_2 — because the hover is where receipts are SUPPOSED
+    to live; see that constant for what it subtracts and why."""
+    hits = _banned_vocabulary_hits(_tip_text(_workspace(page)), BANNED_ON_TIER_2)
+    assert hits == {}, f"banned vocabulary in hover copy: {hits}"
+
+
+def test_no_banned_vocabulary_in_script_authored_copy(page):
+    """The workspace script's own copy, swept as literals rather than as output.
+
+    Complementary to PR #4123's JS-execution sweep, not a duplicate of it:
+    executing renderTicker/renderScanner/renderLeaders proves what a DRIVEN state
+    renders; sweeping the literals proves no banned term exists in any state at
+    all, including branches no fixture reaches.  `ZDTE`'s tip — one of the two
+    `0DTE` sites this PR fixes — sits in exactly such a branch
+    (`if(r.zerodte_dominated)`), which is why the literal form is the one that
+    catches it.  Tier-2 list: this stream mixes glance copy and hover copy, so
+    the permissive list is the only one that cannot produce a false positive on
+    a legitimate receipt."""
+    hits = _banned_vocabulary_hits(_script_authored_text(page), BANNED_ON_TIER_2)
+    assert hits == {}, f"banned vocabulary in script-authored copy: {hits}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Negative controls — a green sweep must mean "clean", never "looked at nothing"
+# ─────────────────────────────────────────────────────────────────────────────
+def test_hover_sweep_catches_a_planted_term_in_both_languages(page):
+    """The control this guard was missing for four months.
+
+    A sweep that silently extracts an EMPTY stream passes forever, which is
+    exactly the failure mode that hid `0DTE`: the term was there, the sweep was
+    green, and nothing distinguished "no violations" from "no text".  So plant
+    the real historical string — verbatim, as it shipped from #3590 — back into
+    real workspace markup, in EN and in ZH separately, and require a hit each
+    time.  Planting into MARKUP rather than into an already-extracted string is
+    the point: it exercises _attr_values' regex, not just the substring count."""
+    ws = _workspace(page)
+    assert _banned_vocabulary_hits(_tip_text(ws), BANNED_ON_TIER_2) == {}
+
+    shipped_en = "Mostly same-day (0DTE) options — usually day-trading, not positioning for a move."
+    shipped_zh = "以当日到期（0DTE）期权为主 — 通常是日内交易，而非布局趋势。"
+    for lang, copy in (("en", shipped_en), ("zh", shipped_zh)):
+        planted = ws + f'<span class="oew-pips" data-tip-{lang}="{copy}"></span>'
+        hits = _banned_vocabulary_hits(_tip_text(planted), BANNED_ON_TIER_2)
+        assert hits == {"0DTE": 1}, f"tip sweep blind to a planted {lang} violation: {hits}"
+
+    # The receipt line renders inside the same popup (templates/theme.js:4988),
+    # so it is swept too — a term demoted one attribute further is still read.
+    planted_rc = ws + '<button class="lens-q" data-tip-rc-en="IGNITION confirmed">?</button>'
+    assert _banned_vocabulary_hits(_tip_text(planted_rc), BANNED_ON_TIER_2) == {"IGNITION": 1}
+
+
+def test_script_sweep_catches_a_planted_term_in_both_languages(page):
+    """Same control for the literal stream, planted as the workspace script's
+    own tip constants really are written — a bilingual pair inside an array."""
+    body = _extract_workspace_script(page)
+    plant = ("\nvar PLANT = ['x','y', false,\n"
+             "  'Mostly same-day (0DTE) options — usually day-trading, not positioning for a move.',\n"
+             "  '以当日到期（0DTE）期权为主 — 通常是日内交易，而非布局趋势。'];\n")
+    doctored = page.replace(body, body + plant, 1)
+    assert doctored != page, "could not splice the plant into the workspace script"
+    hits = _banned_vocabulary_hits(_script_authored_text(doctored), BANNED_ON_TIER_2)
+    assert hits == {"0DTE": 2}, f"script sweep blind to a planted violation: {hits}"
+
+
+def test_the_swept_streams_are_not_empty(page):
+    """Guards against the other half of a vacuous pass: an extractor that returns
+    nothing at all still satisfies every "no hits" assertion above.  Pin real,
+    bilingual copy that the page is known to ship on each stream."""
+    ws = _workspace(page)
+    tips = _tip_text(ws)
+    assert len(tips) > 1000, f"tip stream implausibly short ({len(tips)} chars)"
+    assert "quiet-to-frantic scale" in tips, "EN tip copy missing from the tip stream"
+    assert "清淡至狂热刻度" in tips, "ZH tip copy missing from the tip stream"
+
+    assert "Options workspace modes" in _aria_text(ws), "aria stream lost the mode tablist label"
+
+    script = _script_authored_text(page)
+    assert len(script) > 5000, f"script literal stream implausibly short ({len(script)} chars)"
+    assert "day-trading" in script and "日内交易" in script, "script stream lost its tip constants"
+    # Normalisation must kill the attribute NAME (`n=` hides inside `data-tip-en="`)
+    # without touching the value it introduces.
+    assert 'data-tip-en="' not in script, "attribute-name normalisation regressed"
+
+
+def test_tier2_carve_out_is_exactly_the_doctrines_own_example(page):
+    """The carve-out is not a judgement call left open — it is pinned to the one
+    sentence docs/DESIGN_DOCTRINE.md Law 5 offers as COMPLIANT Tier-2 copy.
+
+    Narrow it and that sentence fails the hover sweep; widen it and a term with
+    no sanctioned home starts passing.  Both directions are asserted here."""
+    doctrine_receipt = ("backtested basket-level turn = null edge (Oracle P8, n=26); "
+                        "slow reco labels unchanged; display tier.")
+    assert _banned_vocabulary_hits(doctrine_receipt, BANNED_ON_TIER_2) == {}, (
+        "the hover sweep now rejects the doctrine's own example of compliant Tier-2 copy"
+    )
+    # ...and it is genuinely a carve-out: the Tier-1 list still rejects it, which
+    # is the whole reason hover copy needs its own list.
+    assert set(_banned_vocabulary_hits(doctrine_receipt)) == {"Oracle P", "n=", "slow reco"}
+
+    # Nothing beyond the receipt vocabulary was quietly let through.  `0DTE` is
+    # named explicitly: it is an acronym this workspace never defines, so the
+    # hover is not its home either (Tier 3 is — zero-dte-regime.md).
+    assert TIER2_RECEIPT_VOCABULARY == {
+        "Oracle P", "n=", "slow reco", "FDR", "z-score", "t-stat", "rank-IC",
+    }
+    for still_banned in ("0DTE", "IGNITION", "expected-null", "pain_dist", "validated"):
+        assert still_banned in BANNED_ON_TIER_2, f"{still_banned} must stay banned on Tier 2"
 
 
 def test_every_panel_answers_so_what_do_i_do(page):

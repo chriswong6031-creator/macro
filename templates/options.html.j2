@@ -1325,9 +1325,13 @@ var CAU = {
     'Short-gamma regime around this name — price can whip around, so the flow read is less stable.',
     '该标的处于负Gamma环境 — 价格易剧烈波动，资金解读稳定性较低。']
 };
+/* Client-side twin of build_options_command.py's _ZERODTE_TIP_EN/_ZERODTE_TIP_ZH
+   — same wording verbatim.  Plain words only: the acronym this tip used to
+   carry is banned on the glance tier AND the hover tier of this workspace.
+   These bytes ship to the browser, so the comment does not name it either. */
 var ZDTE = ['Same-day heavy','当日到期为主', false,
-  'Mostly same-day (0DTE) options — usually day-trading, not positioning for a move.',
-  '以当日到期（0DTE）期权为主 — 通常是日内交易，而非布局趋势。'];
+  'Same-day contracts are usually day-trading, not positioning for a move.',
+  '当日到期合约通常用于日内交易，而非布局趋势。'];
 function cauChip(c){
   return '<span class="cau' + (c[2] ? ' cau-warn' : '') + '" data-tip-en="' + esc(c[3]) + '" data-tip-zh="' + esc(c[4]) + '">'
     + bi(c[0], c[1]) + '</span>';
