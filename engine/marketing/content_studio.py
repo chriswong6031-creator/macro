@@ -986,16 +986,27 @@ def _alarm_on_a_planless_night(
     rastered for them anyway — charts are drawn BEFORE the writer runs, so the
     render budget is spent whether or not any copy survives.
 
-    None of that raised anything. `_copy_dropped` was recorded into
-    content_plan.json at `content.copy.dropped` and read by nobody; the run went
-    green; the accounts simply posted nothing, which from outside is
-    indistinguishable from a quiet day. The publisher already has this alarm on
-    its own side (`::error title=marketing-zero-posted`), and the plan side —
-    where the supply is actually created — had none.
+    WHAT DID AND DID NOT EXIST. The copywriter's own per-desk warning DID fire —
+    six times, once per enabled account ("The planned-copy lane dropped 166 of
+    166 posts (100%...)"). What was missing is the whole-plan fact. Six warnings
+    scattered through a 24,000-line nightly log, each true about one desk, never
+    add up to "there is nothing to publish tomorrow" in the reader's head, and
+    the run still concluded green. `_copy_dropped` held the total the entire time
+    at content.copy.dropped and nothing looked at it.
 
-    A credential outage is the most likely cause and the cheapest to fix, so the
-    provider stage names the environment variables to check rather than making
-    the reader map "stage=provider" onto "our OAuth tokens expired".
+    So this is an AGGREGATE and an ESCALATION, not the first alarm: it fires once,
+    at ::error, only when the plan as a whole came out empty. The publisher has
+    had the same shape on its side for a while (`::error
+    title=marketing-zero-posted`); the plan side, where the supply is created,
+    had per-part warnings and no whole.
+
+    It also names the remedy. The per-desk line says "a provider-stage spike is a
+    credential or quota problem", which still leaves the reader to map that onto
+    an env var — and on 2026-07-31 it was misleading besides: credentials were
+    fine and DeepSeek was answering, it just answered with no text because its
+    thinking consumed max_tokens (see llm_auth._deepseek_no_thinking). Naming the
+    variables costs nothing when the guess is right and is quickly falsified when
+    it is wrong, which is the better failure of the two.
     """
     dropped = {str(k): int(v) for k, v in (copy_dropped or {}).items() if int(v or 0) > 0}
     n_dropped = sum(dropped.values())

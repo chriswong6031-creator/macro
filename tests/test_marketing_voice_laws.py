@@ -501,7 +501,7 @@ def test_the_gate_fails_OPEN_so_an_outage_cannot_silence_the_desks():
 
 
 class TestAPlanlessNightIsAudible:
-    """The nightly planned ZERO posts and nothing said so.
+    """The nightly planned ZERO posts and no ONE line said that.
 
     2026-07-31, in production:
 
@@ -509,15 +509,17 @@ class TestAPlanlessNightIsAudible:
         summary.charts       : 102
         content.copy.dropped : {"provider": 914, "validate": 1}
 
-    915 posts were planned; 914 died because the LLM provider never answered;
-    the desks had nothing to publish; and 102 headless-Chrome cards were
-    rastered for them anyway, because charts are drawn BEFORE the writer runs.
+    915 posts were planned; 914 came back with no text; the desks had nothing to
+    publish; and 102 headless-Chrome cards were rastered for them anyway, because
+    charts are drawn BEFORE the writer runs.
 
-    The run went green. `_copy_dropped` was recorded at content.copy.dropped in
-    the artifact and read by nobody, and an account posting nothing looks from
-    outside exactly like a quiet day. The publisher has had this alarm on its own
-    side for a while (`::error title=marketing-zero-posted`); the PLAN side —
-    where the supply is created — had none.
+    THE PER-DESK WARNING DID FIRE — six times, once per enabled account. What was
+    missing is the whole-plan fact: six true statements about six desks, spread
+    through a 24,000-line log, never add up to "there is nothing to publish
+    tomorrow", and the run still concluded green. So this is an aggregate and an
+    escalation rather than the first alarm — one ::error, only when the plan came
+    out empty. The publisher has had the same shape on its side for a while
+    (`::error title=marketing-zero-posted`); the plan side had parts and no whole.
     """
 
     def test_a_zero_post_plan_is_an_error_naming_the_stage_and_the_cost(self, capsys):
