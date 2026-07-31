@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T03:27:47.956147+00:00",
-  "count": 431,
+  "generated_at": "2026-07-31T03:42:10.684206+00:00",
+  "count": 432,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -25,6 +25,7 @@
     "S&T",
     "Scotiabank",
     "Societe Generale",
+    "Std Chartered",
     "TS Lombard",
     "The Market Ear",
     "The Punchline",
@@ -924,6 +925,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p4psqrhhf88-002ad1",
+      "title": "Warsh delivers on not giving guidance",
+      "institution": "Std Chartered",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:42:39Z",
+      "summary_points": [
+        "**Policy Guidance Vacuum**: FOMC's lack of concrete inflation policy guidance (despite 2% target) triggered market volatility: 12bps Fed funds drop, 5bps 10Y UST yield rise, 0.4% USD decline, and dissenting votes (Logan, Hammack, Kashkari).",
+        "**Geopolitical Overhang**: Tech-sector and geopolitical concerns overshadowed FOMC impact, complicating market assessment and amplifying uncertainty beyond monetary policy.",
+        "**Dovish Expectation Shift**: Vagueness drove dovish pricing (Fed funds), reflected in Treasury yield moves and USD weakness, risking prolonged inflation resolution delays.",
+        "**Uncertainty Risk**: Absence of concrete policy signals heightens risk of extended market volatility and delayed inflation normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
