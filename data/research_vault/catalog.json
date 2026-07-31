@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T14:27:59.045962+00:00",
-  "count": 462,
+  "generated_at": "2026-07-31T15:13:02.581525+00:00",
+  "count": 465,
   "institutions": [
     "Amova",
     "Apollo",
@@ -26,6 +26,7 @@
     "Prime",
     "RBC",
     "Rabobank",
+    "Raymond James",
     "Royal London on Private Credit",
     "S&T",
     "Safra",
@@ -48,7 +49,13 @@
       "side": "sell",
       "desk": "",
       "published_at": "2026-07-31T14:06:17Z",
-      "summary_points": [],
+      "summary_points": [
+        "**AMZN AWS Beat Drives Tech Rally**: AMZN surged 13% pre-market on AWS revenue +37% Y/Y (exceeding +35% guide) and 39% operating margins, contrasting with AAPL’s 7% post-close drop from weak supply chain guidance.",
+        "**Inflation & Fed Policy Risk**: Inflation remains above target (Eurozone CPI 2.9%, Core 2.5%), with hawkish Fed commentary (Warsh) lacking credibility; near-term NFP spike fears and CPI/PCE data (Aug 12, Sep 11) amplify rate trajectory uncertainty.",
+        "**Geopolitical Volatility Spike**: US strikes Iran again, escalating conflict; oil volatility rises amid Saudi-led maritime coalition proposal, creating immediate market disruption risk.",
+        "**Tech ETF Flows & De-Grossing**: Aggressive buying in US Growth/Tech ETFs (XLK, VGT, VOOG) post-FOMC; US de-grossing at 3-day extreme (biggest since 2020), momentum sell-off abating.",
+        "**US Economic Fundamentals Weaken**: Q2 growth slowed to 1.5%, mortgage rates hit one-year high—key indicators of US slowdown contradicting tech rally narrative."
+      ],
       "tags": [],
       "tickers": [],
       "top_pick": false,
@@ -1556,6 +1563,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-n7wr71nugur-cedb05",
+      "title": "Dailyspark 2026 07 29",
+      "institution": "Apollo",
+      "side": "buy",
+      "desk": "",
+      "published_at": "2026-07-30T05:23:27Z",
+      "summary_points": [
+        "**Tesla CDS Leadership**: Tesla's 5-year CDS spread exceeds 100 bps, highest among major tech peers (Amazon, Google, Apple, Microsoft, NVIDIA), signaling severe credit risk deterioration.",
+        "**Sector-Wide Credit Erosion**: All leading tech firms show widening CDS spreads, with Tesla's spread accelerating fastest amid deteriorating market sentiment on sector credit quality.",
+        "**Accelerating Risk Focus**: Tesla's spread widening since late 2024 outpaces peers, making it the primary credit risk driver in the tech sector for portfolio managers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-vgkicyvyrz8-c99773",
       "title": "Fed to keep policy rate unchanged but a hike cant be ruled out 2026 07 29",
       "institution": "Other",
@@ -1566,6 +1592,45 @@
         "**Fed Policy Outlook**: 32% hike probability due to oil surge (USD 3-4/bbl) and hawkish Fed Chair, conflicting with market pricing (8bps) and creating rate uncertainty.",
         "**Geopolitical & Tech Pressures**: Middle East attack spurs oil prices; tech sector drag (SK Hynix, Kospi -8%) and SEK strength (4-5% vs EUR/USD) signal sector and currency volatility.",
         "**Nordic GDP Momentum**: Swedish Q2 recovery (Apr/May) supports 2026 growth forecast (2.6% vs Riksbank 2.29%), though June weakness and household uncertainty persist."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fmvjuuljwvb-34814a",
+      "title": "Economics Economics Daily Alert 29 07 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:20:13Z",
+      "summary_points": [
+        "**Geopolitical risk (Middle East)**: Oil prices fall 4.8% to $84.09 amid peace deal hopes; Trump’s Iran threats and Strait of Hormuz tensions create supply disruption risk, directly impacting energy sector exposure.",
+        "**US FOMC Meeting (Thu 30 Jul)**: Critical for rate trajectory (target 3.50-3.75%); 1-2 dissenters for 25bp hike expected, influencing market liquidity and global risk sentiment.",
+        "**AUD weakness**: AUD weakens across major pairs (0.2-0.4% declines), signaling risk-off sentiment or USD strength, heightening currency risk for Australian asset portfolios.",
+        "**US GDP Q2 (Thu 30 Jul)**: 2.8% saar growth supported by tax cuts/AI capex; strong labor market underpins economic resilience, key for global risk sentiment and market positioning."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tueay91vfmw-e9dd01",
+      "title": "latamdaily20260729",
+      "institution": "Raymond James",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:19:36Z",
+      "summary_points": [
+        "**Chile BCC Policy Shift**: BCC holds 4.5% rate but adopts defensive stance amid renewed inflation concerns (Middle East tensions, labor costs, fuel prices); July/August CPI data pivotal for potential Sept 25bp rate hike.",
+        "**Monetary Policy Uncertainty**: Central bank signals rate hike alongside hold/cut options for September, creating significant policy ambiguity for market positioning.",
+        "**Swap Rate Reaction**: Nominal swap rates projected to rise for 1-year maturities as market prices in the defensive policy shift."
       ],
       "tags": [],
       "tickers": [],
