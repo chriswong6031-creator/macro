@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T17:43:25.265196+00:00",
-  "count": 473,
+  "generated_at": "2026-07-31T18:13:29.606955+00:00",
+  "count": 474,
   "institutions": [
     "Amova",
     "Apollo",
@@ -139,6 +139,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qxy1kwuhmon-fbff4a",
+      "title": "JPM JPM Chips for Brunc",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T15:16:06Z",
+      "summary_points": [
+        "**AMD F2Q26 Guidance**: Revenue $11.2b (vs $11.3b consensus), GM 56% (vs 56.05% consensus), EPS $1.63 (vs $1.63 consensus) – slight miss signaling underperformance risk.",
+        "**US Semis vs Software Positioning Shift**: Semis net selling (-2.6z 5d, -1.1z 20d) vs Software net buying (+1.6z 5d, +3.3z 20d); Semis at 60th %tile (down from 95th since '18), Software at 27th/3rd %tile.",
+        "**AI Infrastructure Capex Surge**: 2026 aggregate capex ~$750bn (+$50bn), driven by hyperscalers (GOOGL $195-205bn +115% y/y, AMZN $220bn +70% y/y); beneficiaries (APH, ANET, CLS, CIEN, COHR, CRDO, FLEX, JBL, LITE) rated Overweight.",
+        "**Memory Supply Crunch**: Samsung warns memory crunch until 2028 (profit 19x rise), AMZN weak guidance drove 7% decline; memory sector (MU, SNDK) up amid component issues.",
+        "**Semiconductor Packaging Competition**: ASE raises 2026 capex to $10.5B for LEAP revenue target; TSMC developing EMBT-like tech to counter Intel, Google weighing Intel’s packaging."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
