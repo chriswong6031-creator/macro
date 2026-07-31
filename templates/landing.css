@@ -209,14 +209,19 @@ html[data-lang="zh"] .mk{font-family:ui-monospace,'SF Mono',SFMono-Regular,Menlo
   transition:--field-tint 1.2s var(--ease-emph)}
 .tx-curtain::after{content:"";position:absolute;inset:0;
   background:repeating-linear-gradient(90deg,rgba(255,255,255,.85) 0 1px,transparent 1px 8px);
+  opacity:1;transition:opacity .5s var(--ease-out);
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 34%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
   mask-image:linear-gradient(180deg,transparent 0,#000 34%),linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);
   -webkit-mask-composite:source-in;mask-composite:intersect}
+/* Once the canvas is ready it becomes the same 8px curtain grid, gently deformed.
+   Leave a trace of the straight fallback underneath so the field stays airy rather
+   than reading as a separate animated illustration. */
+.cover.market-field-live .tx-curtain::after{opacity:.26}
 /* Living market field — a progressively enhanced canvas above the curtain wash and
    below every hero object. The canvas owns only light and line work: the static
    curtain remains the no-JS / reduced-motion composition. */
 .market-field{position:absolute;left:0;right:0;bottom:0;width:100%;height:58%;
-  pointer-events:none;z-index:0;opacity:.9;mix-blend-mode:multiply;
+  pointer-events:none;z-index:0;opacity:.88;mix-blend-mode:multiply;
   -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 88%,transparent 100%);
   mask-image:linear-gradient(180deg,transparent 0,#000 18%,#000 88%,transparent 100%)}
 /* 5 · dark-band modifier — `class="tx-curtain tx-curtain-dark"`: hairlines only,
