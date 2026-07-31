@@ -67,3 +67,29 @@ def test_rendered_plans_page_names_the_indicator_ladder():
     assert f"{access['access']['free']} / {access['advanced_total']}" in page
     assert f"{access['access']['insider']} / {access['advanced_total']}" in page
     assert f'<span class="l-zh">全部</span> {access["access"]["pro"]}<small' in page
+
+
+def test_market_terminal_showcase_uses_the_current_indicator_contract():
+    access = _access()
+    page = (ROOT / "site" / "products" / "market-terminal.html").read_text()
+
+    assert "Five complementary systems.<br>One clearer technical workflow." in page
+    assert f"complete {access['advanced_total']}-module library" in page
+    assert "All five, complete · Available in Pro" in page
+    assert "Insider unlocks a curated selection" in page
+    assert "Structure Core" in page
+    assert "Trend Waves" in page
+    assert "Pulse Oscillator" in page
+    assert "RSI Ultimate" in page
+    assert "MACD Ultimate" in page
+    assert "TP1–TP6" in page
+    assert "complementary systems you can combine" in page
+    assert "Insider + Pro modules · one example combination" in page
+    assert 'data-aria-zh="选择工作流阶段"' in page
+    assert "../plans.html#pricing-matrix" in page
+    assert "mt-access-ladder" not in page
+    assert f"{access['core_count']} core +" not in page
+    assert "Seventeen built in" not in page
+    assert "17 indicators in the picker" not in page
+    assert "five coordinated systems" not in page.lower()
+    assert "before the move is already mature" not in page
