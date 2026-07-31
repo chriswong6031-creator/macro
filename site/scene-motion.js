@@ -124,6 +124,9 @@
     if (phase === 'reset') {
       scene.dataset.mmPhase = 'idle';
       scene.classList.remove('mm-scene-live');
+      scene.dispatchEvent(new CustomEvent('mm:phase', {
+        detail: { phase: 'idle' }
+      }));
       schedule(scene, phaseTimes.reset);
       return;
     }
@@ -131,6 +134,9 @@
     scene.dataset.mmPhase = phase;
     scene.classList.add('mm-scene-live');
     scene.style.setProperty('--mm-cycle', String(entry.cycles));
+    scene.dispatchEvent(new CustomEvent('mm:phase', {
+      detail: { phase: phase, cycle: entry.cycles }
+    }));
 
     if (phase === 'hold') entry.cycles += 1;
     schedule(scene, phaseTimes[phase]);
