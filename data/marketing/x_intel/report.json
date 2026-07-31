@@ -1,0 +1,364 @@
+{
+  "as_of": "2026-07-31",
+  "by_author": [
+    {
+      "author": "DeItaone",
+      "med_interaction_rate": 0.003804,
+      "med_likes": 450.5,
+      "med_repost_rate": 0.000276,
+      "med_retweets": 36.5,
+      "med_views": 145265.0,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20
+    },
+    {
+      "author": "FirstSquawk",
+      "med_interaction_rate": 0.001117,
+      "med_likes": 23.0,
+      "med_repost_rate": 0.000125,
+      "med_retweets": 3.5,
+      "med_views": 27505.5,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20
+    },
+    {
+      "author": "KobeissiLetter",
+      "med_interaction_rate": 0.009314,
+      "med_likes": 2675.5,
+      "med_repost_rate": 0.000782,
+      "med_retweets": 223.0,
+      "med_views": 262704.0,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20
+    },
+    {
+      "author": "StockMKTNewz",
+      "med_interaction_rate": 0.005155,
+      "med_likes": 142.0,
+      "med_repost_rate": 0.00021,
+      "med_retweets": 6.5,
+      "med_views": 31262.5,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20
+    },
+    {
+      "author": "traderstewie",
+      "med_interaction_rate": 0.003102,
+      "med_likes": 92.0,
+      "med_repost_rate": 0.000117,
+      "med_retweets": 4.5,
+      "med_views": 41336.5,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20
+    },
+    {
+      "author": "unusual_whales",
+      "med_interaction_rate": 0.009113,
+      "med_likes": 730.0,
+      "med_repost_rate": 0.000435,
+      "med_retweets": 52.5,
+      "med_views": 139014.0,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20
+    },
+    {
+      "author": "wallstengine",
+      "med_interaction_rate": 0.003622,
+      "med_likes": 58.5,
+      "med_repost_rate": 0.000371,
+      "med_retweets": 7.0,
+      "med_views": 19504.5,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20
+    },
+    {
+      "author": "Barchart",
+      "med_interaction_rate": 0.010345,
+      "med_likes": 444.0,
+      "med_repost_rate": 0.000974,
+      "med_retweets": 53.5,
+      "med_views": 55873.0,
+      "n": 19,
+      "n_no_views": 0,
+      "n_rate": 19
+    },
+    {
+      "author": "PeterLBrandt",
+      "med_interaction_rate": 0.00635,
+      "med_likes": 291.0,
+      "med_repost_rate": 0.000246,
+      "med_retweets": 20.0,
+      "med_views": 53104.0,
+      "n": 19,
+      "n_no_views": 0,
+      "n_rate": 19
+    },
+    {
+      "author": "alphatrends",
+      "med_interaction_rate": 0.00605,
+      "med_likes": 114.0,
+      "med_repost_rate": 0.000282,
+      "med_retweets": 6.0,
+      "med_views": 23916.0,
+      "n": 19,
+      "n_no_views": 0,
+      "n_rate": 19
+    },
+    {
+      "author": "LizAnnSonders",
+      "med_interaction_rate": 0.003903,
+      "med_likes": 79.0,
+      "med_repost_rate": 0.000457,
+      "med_retweets": 12.0,
+      "med_views": 24356.5,
+      "n": 18,
+      "n_no_views": 0,
+      "n_rate": 18
+    },
+    {
+      "author": "Mr_Derivatives",
+      "med_interaction_rate": 0.004324,
+      "med_likes": 102.0,
+      "med_repost_rate": 0.000191,
+      "med_retweets": 6.0,
+      "med_views": 32277.5,
+      "n": 18,
+      "n_no_views": 0,
+      "n_rate": 18
+    },
+    {
+      "author": "bespokeinvest",
+      "med_interaction_rate": 0.002952,
+      "med_likes": 16.5,
+      "med_repost_rate": 0.000542,
+      "med_retweets": 4.0,
+      "med_views": 6560.5,
+      "n": 18,
+      "n_no_views": 0,
+      "n_rate": 18
+    },
+    {
+      "author": "RyanDetrick",
+      "med_interaction_rate": 0.014117,
+      "med_likes": 159.5,
+      "med_repost_rate": 0.00108,
+      "med_retweets": 11.5,
+      "med_views": 12808.0,
+      "n": 14,
+      "n_no_views": 0,
+      "n_rate": 14
+    },
+    {
+      "author": "markminervini",
+      "med_interaction_rate": 0.003176,
+      "med_likes": 517.5,
+      "med_repost_rate": 0.000133,
+      "med_retweets": 26.0,
+      "med_views": 109451.0,
+      "n": 14,
+      "n_no_views": 0,
+      "n_rate": 14
+    },
+    {
+      "author": "charliebilello",
+      "med_interaction_rate": 0.009272,
+      "med_likes": 315.0,
+      "med_repost_rate": 0.001322,
+      "med_retweets": 57.0,
+      "med_views": 37912.0,
+      "n": 11,
+      "n_no_views": 0,
+      "n_rate": 11,
+      "verdict": "seeding",
+      "verdict_note": "11 posts against an n-floor of 12 — no ranking claim is made from this row"
+    },
+    {
+      "author": "jam_croissant",
+      "med_interaction_rate": 0.007355,
+      "med_likes": 275.0,
+      "med_repost_rate": 0.000435,
+      "med_retweets": 19.0,
+      "med_views": 43873.0,
+      "n": 5,
+      "n_no_views": 0,
+      "n_rate": 5,
+      "verdict": "seeding",
+      "verdict_note": "5 posts against an n-floor of 12 — no ranking claim is made from this row"
+    }
+  ],
+  "by_register": [
+    {
+      "med_interaction_rate": 0.004498,
+      "med_likes": 129.0,
+      "med_repost_rate": 0.000186,
+      "med_retweets": 7.0,
+      "med_views": 41729.0,
+      "n": 90,
+      "n_no_views": 0,
+      "n_rate": 90,
+      "register": "trader"
+    },
+    {
+      "med_interaction_rate": 0.007384,
+      "med_likes": 288.0,
+      "med_repost_rate": 0.000543,
+      "med_retweets": 26.0,
+      "med_views": 40286.0,
+      "n": 79,
+      "n_no_views": 0,
+      "n_rate": 79,
+      "register": "aggregator"
+    },
+    {
+      "med_interaction_rate": 0.003216,
+      "med_likes": 300.0,
+      "med_repost_rate": 0.000213,
+      "med_retweets": 27.0,
+      "med_views": 119651.0,
+      "n": 60,
+      "n_no_views": 0,
+      "n_rate": 60,
+      "register": "wire"
+    },
+    {
+      "med_interaction_rate": 0.006427,
+      "med_likes": 105.0,
+      "med_repost_rate": 0.000857,
+      "med_retweets": 11.0,
+      "med_views": 10493.0,
+      "n": 43,
+      "n_no_views": 0,
+      "n_rate": 43,
+      "register": "commentary"
+    },
+    {
+      "med_interaction_rate": 0.004476,
+      "med_likes": 90.0,
+      "med_repost_rate": 0.000437,
+      "med_retweets": 14.0,
+      "med_views": 24649.0,
+      "n": 23,
+      "n_no_views": 0,
+      "n_rate": 23,
+      "register": "macro_color"
+    }
+  ],
+  "by_shape": [
+    {
+      "med_interaction_rate": 0.004084,
+      "med_likes": 117.5,
+      "med_repost_rate": 0.000383,
+      "med_retweets": 15.0,
+      "med_views": 37411.5,
+      "n": 128,
+      "n_no_views": 0,
+      "n_rate": 128,
+      "shape": "one_liner"
+    },
+    {
+      "med_interaction_rate": 0.005067,
+      "med_likes": 192.0,
+      "med_repost_rate": 0.00039,
+      "med_retweets": 17.5,
+      "med_views": 39454.0,
+      "n": 83,
+      "n_no_views": 0,
+      "n_rate": 83,
+      "shape": "stack"
+    },
+    {
+      "med_interaction_rate": 0.006303,
+      "med_likes": 160.0,
+      "med_repost_rate": 0.000294,
+      "med_retweets": 10.0,
+      "med_views": 36346.0,
+      "n": 59,
+      "n_no_views": 0,
+      "n_rate": 59,
+      "shape": "two_part"
+    },
+    {
+      "med_interaction_rate": 0.004775,
+      "med_likes": 109.5,
+      "med_repost_rate": 0.000371,
+      "med_retweets": 9.0,
+      "med_views": 24520.5,
+      "n": 20,
+      "n_no_views": 0,
+      "n_rate": 20,
+      "shape": "caption"
+    },
+    {
+      "med_interaction_rate": 0.009535,
+      "med_likes": 871.0,
+      "med_repost_rate": 0.00089,
+      "med_retweets": 110.0,
+      "med_views": 174471.0,
+      "n": 5,
+      "n_no_views": 0,
+      "n_rate": 5,
+      "shape": "list",
+      "verdict": "seeding",
+      "verdict_note": "5 posts against an n-floor of 12 — no ranking claim is made from this row"
+    }
+  ],
+  "diff_vs_prior": {
+    "available": false,
+    "reason": "no prior report.json — this is the first run"
+  },
+  "generated_at": "2026-07-31T23:47:24Z",
+  "n_authors": 17,
+  "n_floor": 12,
+  "n_posts": 295,
+  "n_posts_all_time": 295,
+  "note": "Operator/writer-desk artifact. Deterministic arithmetic over observed counters — no model scored anything here (charter §2 amendment 9). Posts with no view count are excluded from every rate denominator and counted in n_no_views; an unmeasured post is not a zero-rate post.",
+  "our_shape_quotas": {
+    "one_liner_min": 0.25,
+    "two_part_max": 0.3
+  },
+  "precision": {
+    "all_caps_lead_rate": 0.3864,
+    "bare_int_rate": 0.7085,
+    "blank_spacer_rate": 0.4271,
+    "cashtag_rate": 0.2576,
+    "decimal_any_rate": 0.1525,
+    "decimal_strict_rate": 0.0576,
+    "emoji_rate": 0.1627,
+    "has_number_rate": 0.7492,
+    "note": "strict decimal is the docket's \\d+\\.\\d\\d (4.75); any-decimal also catches the far more common single-decimal percent (4.7%). The gap between them IS the finding — see the docket's key finding #2.",
+    "quote_rate": 0.1322,
+    "starts_cashtag_rate": 0.0508,
+    "url_rate": 0.5085
+  },
+  "produced_by": "engine/marketing/x_intel.py",
+  "quota_gap": [
+    {
+      "note": "corpus share of single-content-line posts vs our floor",
+      "ours_min": 0.25,
+      "shape": "one_liner",
+      "theirs": 0.4339
+    },
+    {
+      "note": "corpus share of two-content-line posts vs our ceiling",
+      "ours_max": 0.3,
+      "shape": "two_part",
+      "theirs": 0.2
+    }
+  ],
+  "schema": "marketing.x_intel_report/v1",
+  "shape_distribution": {
+    "caption": 0.0678,
+    "list": 0.0169,
+    "one_liner": 0.4339,
+    "stack": 0.2814,
+    "two_part": 0.2
+  },
+  "window_days": 90
+}
