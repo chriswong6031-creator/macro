@@ -498,3 +498,89 @@ def test_the_gate_fails_OPEN_so_an_outage_cannot_silence_the_desks():
     assert "return False" in src.split("except Exception")[-1], (
         "stamp_value_gate no longer treats its own failure as a PASS"
     )
+
+
+class TestAPlanlessNightIsAudible:
+    """The nightly planned ZERO posts and nothing said so.
+
+    2026-07-31, in production:
+
+        summary.total_posts  : 0
+        summary.charts       : 102
+        content.copy.dropped : {"provider": 914, "validate": 1}
+
+    915 posts were planned; 914 died because the LLM provider never answered;
+    the desks had nothing to publish; and 102 headless-Chrome cards were
+    rastered for them anyway, because charts are drawn BEFORE the writer runs.
+
+    The run went green. `_copy_dropped` was recorded at content.copy.dropped in
+    the artifact and read by nobody, and an account posting nothing looks from
+    outside exactly like a quiet day. The publisher has had this alarm on its own
+    side for a while (`::error title=marketing-zero-posted`); the PLAN side —
+    where the supply is created — had none.
+    """
+
+    def test_a_zero_post_plan_is_an_error_naming_the_stage_and_the_cost(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 914, "validate": 1}, 102, {})
+        out = capsys.readouterr().out
+        line = next(ln for ln in out.splitlines() if "marketing-plan-empty" in ln)
+        assert line.startswith("::error title=marketing-plan-empty::"), line
+        assert "ZERO posts" in line
+        assert "provider=914" in line
+        assert "102 chart(s)" in line, "the wasted render cost is not named"
+
+    def test_the_provider_stage_names_the_credentials_to_check(self, capsys):
+        """"stage=provider" makes the reader translate. An alert should not."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 900}, 10, {})
+        line = capsys.readouterr().out
+        for env in ("CODEX_ACCESS_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN",
+                    "ANTHROPIC_API_KEY", "MARKETING_LLM_ENABLED"):
+            assert env in line, f"{env} is not named as a thing to check"
+
+    def test_the_remedy_follows_the_DOMINANT_stage_not_the_provider_always(self, capsys):
+        """A validate-dominated wipeout is a voice problem, not an outage.
+
+        Sending an operator to check credentials when the model answered fine
+        and the copy laws refused the drafts wastes the one alert they get.
+        """
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"validate": 40, "provider": 2}, 5, {})
+        line = capsys.readouterr().out
+        assert "copy laws refused" in line
+        assert "CODEX_ACCESS_TOKEN" not in line
+
+    def test_a_majority_drop_that_still_ships_is_a_warning_not_an_error(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(50, {"provider": 200}, 30, {})
+        out = capsys.readouterr().out
+        assert out.startswith("::warning title=marketing-copy-drops::"), out
+        assert "50 survived" in out
+
+    def test_a_healthy_night_says_nothing(self, capsys):
+        """An alarm that fires on a good night is an alarm nobody reads."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(140, {"validate": 3}, 100, {})
+        assert capsys.readouterr().out == ""
+
+    def test_an_empty_run_is_not_reported_as_a_failure(self, capsys):
+        """No posts considered at all (a weekend, a disabled network) is not the
+        same fact as a plan that lost everything it built."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {}, 0, {})
+        assert capsys.readouterr().out == ""
+
+    def test_the_alarm_is_actually_wired_into_the_plan_build(self):
+        """A census nothing calls is the defect it was written to fix."""
+        import inspect
+        from engine.marketing import content_studio
+
+        src = inspect.getsource(content_studio.content_plan)
+        assert "_alarm_on_a_planless_night(" in src

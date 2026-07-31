@@ -950,6 +950,78 @@ def _slot_day_num(slot: Any) -> int | None:
 #: not, so a handful of fallbacks is already the failure, not noise.
 _LEGACY_FALLBACK_ALARM_SHARE = 0.10
 
+#: Share of writer drops at which a night is reported as broken rather than picky.
+#: The writer rejecting a third of a plan is editing; rejecting most of it is an
+#: outage wearing an editorial costume.
+_COPY_DROP_ALARM_SHARE = 0.50
+
+#: Stage → what an operator should actually go and check. A drop census that
+#: prints stage names makes the reader translate; naming the remedy is the whole
+#: difference between a number and an alert.
+_COPY_DROP_REMEDY: dict[str, str] = {
+    "provider": ("the LLM never answered — check credentials first "
+                 "(CODEX_ACCESS_TOKEN, the CLAUDE_CODE_OAUTH_TOKEN pool, "
+                 "ANTHROPIC_API_KEY, DEEPSEEK_API_KEY) and MARKETING_LLM_ENABLED"),
+    "validate": "the model answered and the copy laws refused it — a voice/guard problem",
+    "critic": "the critic vetoed the drafts — a quality problem, not an outage",
+}
+
+
+def _alarm_on_a_planless_night(
+    total_posts: int,
+    copy_dropped: dict[str, int],
+    n_charts: int,
+    sel_report: dict | None = None,
+) -> None:
+    """A plan that produced NO POSTS must say so, loudly, and name the stage.
+
+    THE NIGHT THIS EXISTS FOR (2026-07-31, in production). The nightly wrote:
+
+        summary.total_posts : 0
+        summary.charts      : 102
+        content.copy.dropped: {"provider": 914, "validate": 1}
+
+    915 posts were planned, 914 died because the LLM provider never answered,
+    the desks had nothing to publish, and 102 headless-Chrome cards were
+    rastered for them anyway — charts are drawn BEFORE the writer runs, so the
+    render budget is spent whether or not any copy survives.
+
+    None of that raised anything. `_copy_dropped` was recorded into
+    content_plan.json at `content.copy.dropped` and read by nobody; the run went
+    green; the accounts simply posted nothing, which from outside is
+    indistinguishable from a quiet day. The publisher already has this alarm on
+    its own side (`::error title=marketing-zero-posted`), and the plan side —
+    where the supply is actually created — had none.
+
+    A credential outage is the most likely cause and the cheapest to fix, so the
+    provider stage names the environment variables to check rather than making
+    the reader map "stage=provider" onto "our OAuth tokens expired".
+    """
+    dropped = {str(k): int(v) for k, v in (copy_dropped or {}).items() if int(v or 0) > 0}
+    n_dropped = sum(dropped.values())
+    considered = total_posts + n_dropped
+    if not considered:
+        return
+
+    worst = max(dropped, key=lambda k: dropped[k]) if dropped else ""
+    remedy = _COPY_DROP_REMEDY.get(worst, "check content.copy.dropped in the plan")
+    detail = ", ".join(f"{k}={v}" for k, v in sorted(dropped.items(), key=lambda kv: -kv[1]))
+
+    if total_posts == 0:
+        # Nothing to publish tomorrow. This is the loudest thing this module says.
+        print(f"::error title=marketing-plan-empty::"
+              f"the nightly planned ZERO posts. {n_dropped} of {considered} were "
+              f"dropped ({detail}) and {n_charts} chart(s) were rastered for posts "
+              f"that no longer exist. Most likely: {remedy}.", flush=True)
+        return
+
+    share = n_dropped / considered
+    if share >= _COPY_DROP_ALARM_SHARE:
+        print(f"::warning title=marketing-copy-drops::"
+              f"the writer lost {n_dropped} of {considered} posts "
+              f"({share * 100:.0f}%; {detail}). {total_posts} survived. "
+              f"Most likely: {remedy}.", flush=True)
+
 
 def _chart_quality_census(featured_charts: list[dict]) -> dict:
     """How many posted images are the REAL card, and how many are the fallback.
@@ -4254,6 +4326,7 @@ def content_plan(
     total_posts = len(all_items)
     signal_posts = sum(1 for i in all_items if i.type == "signal")
     n_charts = len(featured_charts)
+    _alarm_on_a_planless_night(total_posts, _copy_dropped, n_charts, _sel_report)
     n_plans = len(plans)
     n_with_charts = len(set(fc["ticker"] for fc in featured_charts))
 
