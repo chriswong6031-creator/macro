@@ -633,6 +633,85 @@ class TestTerminalEnqueueVerdicts:
         assert len(calls) == 1                      # … so nothing is re-rendered
         assert len(_fired_rows(root)) == 1
 
+    def test_a_duplicate_costs_no_render_at_all(self, tmp_path, monkeypatch, capsys):
+        """The card is drawn AFTER the copy is known to be publishable.
+
+        The fired ledger stops a re-DETECT, but it cannot help the first time a
+        packet is offered against copy the outbox already holds. resolve_chart
+        is a Chrome raster plus an R2 upload and it used to run BEFORE enqueue,
+        so that first offer paid full price for an image the dedupe guard was
+        always going to refuse — charged to a nightly render budget that is law.
+
+        Nothing enqueue rejects on depends on the picture, so the verdict is
+        available before the render. Here the fired ledger is deliberately wiped
+        so the packet IS re-detected: the only thing standing between it and a
+        second raster is the preflight.
+        """
+        root = _mover_root(tmp_path)
+        calls = _stub_chart(monkeypatch)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        assert len(OB.read_items(root)) == 1
+        assert len(calls) == 1, "the first, legitimate render"
+        capsys.readouterr()
+
+        # Wipe the cooldown memory: force the radar to offer the same event again.
+        (root / HT.FIRED_REL).unlink()
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        out = capsys.readouterr().out
+        assert "hot-tape DETECT" in out, "the packet must actually be re-offered"
+        assert len(calls) == 1, (
+            "the duplicate was re-rendered — a Chrome raster and an R2 upload "
+            "spent on a post the outbox refuses on text alone"
+        )
+        assert "preflight, no render" in out
+        assert len(OB.read_items(root)) == 1, "and nothing extra was queued"
+
+    def test_the_preflight_answers_exactly_what_enqueue_would(self, tmp_path):
+        """A preflight that disagrees with the gate is worse than none.
+
+        It would either waste the render it promised to save, or drop a post
+        enqueue would have taken. Both callers therefore run the SAME
+        `_rejection_reason` over the SAME `_enqueue_ctx`; this pins that they
+        agree on every code, not just on the happy path.
+        """
+        import inspect
+
+        src = inspect.getsource(OB)
+        assert src.count("def _rejection_reason") == 1
+        # Both paths must go through the one definition.
+        assert "_rejection_reason(" in inspect.getsource(OB.preflight_enqueue)
+        assert "_rejection_reason(" in inspect.getsource(OB.enqueue)
+        assert "_enqueue_ctx(" in inspect.getsource(OB.preflight_enqueue)
+        assert "_enqueue_ctx(" in inspect.getsource(OB.enqueue)
+
+        # And it agrees in fact, not only in structure.
+        item = OB.make_item(account="mastermind_x", kind="breaking",
+                            text="A one-off line about $MU and its tape.",
+                            as_of="2026-07-30", provenance="hot_tape")
+        assert OB.preflight_enqueue(
+            account="mastermind_x", kind="breaking", text=item["text"],
+            as_of="2026-07-30", root=tmp_path) == "ok"
+        assert OB.enqueue(item, tmp_path) == "queued"
+        # Now the same copy is a duplicate to BOTH.
+        assert OB.preflight_enqueue(
+            account="mastermind_x", kind="breaking", text=item["text"],
+            as_of="2026-07-30", root=tmp_path) == "duplicate"
+        assert OB.enqueue(item, tmp_path) == "duplicate"
+
+    def test_the_preflight_fails_OPEN_and_can_never_cause_an_outage(self):
+        """It may only skip work. It may never be the reason a post is lost."""
+        import inspect
+
+        src = inspect.getsource(OB.preflight_enqueue)
+        tail = src.split("except Exception")[-1]
+        assert 'return "ok"' in tail, (
+            "a preflight that cannot read the corpus must assume the post is "
+            "fine — at worst that costs one wasted render"
+        )
+
     def test_a_cap_rejection_is_recorded_too(self, tmp_path, monkeypatch):
         root = _mover_root(tmp_path)
         _stub_chart(monkeypatch)

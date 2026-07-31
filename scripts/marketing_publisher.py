@@ -382,6 +382,20 @@ _CHART_BEARING_KINDS: frozenset[str] = frozenset({
     "signal", "chart", "watchlist", "receipt",
 })
 
+# ROLLUPS: not about ONE name, but about the basket they enumerate — so a post
+# that lists $ALL $ERIE $TRV is about those three, and shipping it bare is the
+# text-only failure the operator named. Distinct from _CHART_BEARING_KINDS
+# because a rollup only owes a picture when one was actually BUILT for it (see
+# _missing_required_media, which requires a non-empty media[] first).
+#
+# `macro`, `education`, `event`, `wire` and `breaking` are deliberately ABSENT.
+# A breadth read may mention $SPY in passing; that is not a post about $SPY, and
+# holding it for an upload strangles the desks' non-ticker voice for a rule
+# written about rollups.
+_TICKER_ROLLUP_KINDS: frozenset[str] = frozenset({
+    "theme_list", "mover",
+})
+
 # A ticker post whose chart never resolves may not defer forever. Past this age
 # the publisher gives up and QUARANTINES it instead of shipping it bare: an
 # entry-timing read this stale is not worth posting even if the picture finally
@@ -640,7 +654,7 @@ def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> 
     kind = str(it.get("kind") or "").strip().lower()
     if kind in _CHART_BEARING_KINDS:
         return bool(_item_ticker(it))
-    # NON-chart-bearing kinds that still NAME TICKERS (2026-07-30).
+    # ROLLUP kinds whose post is ABOUT the names it lists (2026-07-30).
     #
     # The kind list above was the whole test, and it left a hole exactly where
     # the operator's complaint lives. A `theme_list` or `mover` rollup whose
@@ -652,10 +666,22 @@ def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> 
     # — the precise failure that drew "ID RATHER YOU DESTROY THE ENTIRE ENGINE
     # THAN SHIP TEXT ONLY".
     #
+    # SCOPED TO THE ROLLUPS, NOT TO "ANY CASHTAG". The first version of this
+    # returned on `_CASHTAG_RE.search(text)` alone, which quietly overrode the
+    # contract stated at _CHART_BEARING_KINDS: a breadth post reading "231 of 231
+    # names above the 200-day. Even $SPY is stretched." names a ticker IN PASSING
+    # and is not about it. Holding that for an upload is how a text-only voice
+    # gets strangled by a rule written for rollups, and
+    # tests/test_marketing_forward_booking.py pins it as a contract precisely so
+    # a later widening has to argue with something. THE KIND DECIDES, NOT THE
+    # TEXT — the same principle the set above rests on.
+    #
     # Deferring (not quarantining) is right here for the same reason it is right
     # above: the chart exists, so the URL is recoverable by the backfill, and the
     # bounded _MEDIA_DEFER_MAX_AGE_DAYS escape still quarantines it if the
     # picture never arrives.
+    if kind not in _TICKER_ROLLUP_KINDS:
+        return False
     return bool(_CASHTAG_RE.search(str(it.get("text") or "")))
 
 

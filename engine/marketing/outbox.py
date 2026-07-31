@@ -1000,6 +1000,136 @@ def posted_today_rows_by_account(
 # Enqueue
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _rejection_reason(
+    *,
+    item_id: str,
+    account: str,
+    as_of: str,
+    text: str,
+    ctx: dict,
+    cap: int,
+) -> str | None:
+    """Why `enqueue` would refuse this item, or None if it would accept it.
+
+    EXTRACTED SO A PREFLIGHT CANNOT DRIFT FROM THE REAL CHECK (2026-07-30).
+    Every rejection here is a function of (id, account, as_of, text) — NOT of
+    media. That is what makes `preflight_enqueue` below possible and honest: a
+    caller can learn the verdict before paying for a picture, and it learns it
+    from THIS function rather than from a second copy of these rules that would
+    quietly diverge on the next edit. A preflight that disagrees with the gate
+    is worse than no preflight — it either wastes the render it promised to
+    save, or silently drops a post the gate would have taken.
+    """
+    if item_id in ctx["ids"]:
+        return "duplicate"
+    # Cross-night near-dup: identical copy re-emitted on a later day gets
+    # a fresh id (as_of is in the hash), so the id check above misses it.
+    # recent_texts holds account-scoped normalized text from the window;
+    # absent for legacy _ctx callers → the guard no-ops (back-compat).
+    new_text = _normalize_text(str(text or ""))
+    if (account, new_text) in ctx.get("recent_texts", ()):
+        return "duplicate"
+    # Near-duplicate ("deeply reworded" law, 2026-07-27): also reject a
+    # lightly-edited repeat — token Jaccard ≥ 0.7 vs any same-account text
+    # in the window. recent_texts_by_account maps account → its normalized
+    # texts; absent for legacy _ctx callers → the guard no-ops.
+    prior_texts = ctx.get("recent_texts_by_account", {}).get(account, ())
+    if any(near_duplicate(new_text, prior) for prior in prior_texts):
+        return "duplicate"
+    # CROSS-ACCOUNT near-dup radar (XG-W2). The guard above is strictly
+    # same-account; with seven live accounts the failure that matters is
+    # TWO of ours posting near-identical text, which reads as one
+    # operator running a fleet — the coordination signal the near-dup
+    # bar exists to deny. Same Jaccard machinery, wider corpus, stricter
+    # threshold (sentinel.near_dup_jaccard — see cross_account_threshold).
+    xa_thresh = ctx.get("cross_account_threshold")
+    if xa_thresh is not None:
+        by_account = ctx.get("recent_texts_by_account", {})
+        for other_acct, other_texts in by_account.items():
+            if other_acct == account:
+                continue
+            if any(near_duplicate(new_text, prior, threshold=xa_thresh)
+                   for prior in other_texts):
+                log.warning(
+                    "outbox.enqueue: %s rejected — near-identical to a "
+                    "recent %s item (cross-account jaccard >= %.2f)",
+                    account, other_acct, xa_thresh)
+                return "cross_account_duplicate"
+    # Cap: every existing same-day item consumed a slot regardless of
+    # status (quarantined/failed included — refilling a bad slot the
+    # same day is how retry-spam starts). A negative cap = unlimited
+    # (autonomous cadence) → never blocks on volume.
+    if cap >= 0 and ctx["day_counts"].get((account, as_of), 0) >= cap:
+        return "cap_exceeded"
+    return None
+
+
+def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> dict:
+    """The corpus `_rejection_reason` reads. Built identically for both callers."""
+    existing = read_items_all(root)
+    dead = dead_item_ids(root)
+    ctx = {
+        "ids": {i.get("id") for i in existing},
+        "day_counts": {},
+        "recent_texts": {
+            _text_key(i.get("account"), i.get("text"))
+            for i in existing
+            if _within_text_window(i.get("as_of"), as_of)
+            and str(i.get("id") or "") not in dead
+        },
+        "recent_texts_by_account": _recent_texts_by_account(existing, as_of, dead),
+        "cross_account_threshold": cross_account_threshold(cfg),
+    }
+    for i in existing:
+        key = (i.get("account"), i.get("as_of"))
+        ctx["day_counts"][key] = ctx["day_counts"].get(key, 0) + 1
+    return ctx
+
+
+def preflight_enqueue(
+    *,
+    account: str,
+    kind: str,
+    text: str,
+    as_of: str,
+    root: Path | str | None = None,
+    cfg: dict | None = None,
+    max_per_account_day: int | None = None,
+) -> str:
+    """Would `enqueue` refuse this copy? Answered WITHOUT building the media.
+
+    Returns the same code `enqueue` would ("duplicate", "cross_account_duplicate",
+    "cap_exceeded") or "ok".
+
+    WHY THIS EXISTS. A lane that draws a chart card before enqueueing pays a
+    Chrome raster AND an R2 upload for every duplicate, near-duplicate and cap
+    rejection — a picture nobody will ever see, charged against a nightly render
+    budget that is law (~67 min, 4-core-bound). The deciding text always exists
+    before the render; only the ordering was wrong. Callers keep their own
+    account of that; this function stays generic, and deliberately knows nothing
+    about which program calls it.
+
+    FAIL-OPEN BY CONSTRUCTION. Any error returns "ok", so a preflight that
+    cannot read the corpus costs a wasted render at worst and can never become a
+    publish outage. It is an optimisation, not a gate: `enqueue` still runs every
+    one of these checks under the outbox lock, which is where the answer is
+    authoritative. This function races by design — it reads without the lock —
+    and that is safe precisely because it can only skip work, never admit any.
+    """
+    try:
+        item_id = _item_id(account, kind, text, as_of)
+        cap = (max_per_account_day if max_per_account_day is not None
+               else effective_cap(cfg or {}))
+        ctx = _enqueue_ctx(root, as_of, cfg)
+        return _rejection_reason(
+            item_id=item_id, account=account, as_of=as_of,
+            text=text, ctx=ctx, cap=cap,
+        ) or "ok"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.preflight_enqueue: %s — assuming ok", exc)
+        return "ok"
+
+
 def enqueue(
     item: dict,
     root: Path | str | None = None,
@@ -1046,48 +1176,14 @@ def enqueue(
                else effective_cap(cfg or {}))
 
         def _check_and_append(ctx: dict) -> str:
-            if item_id in ctx["ids"]:
-                return "duplicate"
-            # Cross-night near-dup: identical copy re-emitted on a later day gets
-            # a fresh id (as_of is in the hash), so the id check above misses it.
-            # recent_texts holds account-scoped normalized text from the window;
-            # absent for legacy _ctx callers → the guard no-ops (back-compat).
+            rejection = _rejection_reason(
+                item_id=item_id, account=account, as_of=as_of,
+                text=str(item.get("text") or ""), ctx=ctx, cap=cap,
+            )
+            if rejection is not None:
+                return rejection
             new_text = _normalize_text(str(item.get("text") or ""))
             text_key = (account, new_text)
-            if text_key in ctx.get("recent_texts", ()):
-                return "duplicate"
-            # Near-duplicate ("deeply reworded" law, 2026-07-27): also reject a
-            # lightly-edited repeat — token Jaccard ≥ 0.7 vs any same-account text
-            # in the window. recent_texts_by_account maps account → its normalized
-            # texts; absent for legacy _ctx callers → the guard no-ops.
-            prior_texts = ctx.get("recent_texts_by_account", {}).get(account, ())
-            if any(near_duplicate(new_text, prior) for prior in prior_texts):
-                return "duplicate"
-            # CROSS-ACCOUNT near-dup radar (XG-W2). The guard above is strictly
-            # same-account; with seven live accounts the failure that matters is
-            # TWO of ours posting near-identical text, which reads as one
-            # operator running a fleet — the coordination signal the near-dup
-            # bar exists to deny. Same Jaccard machinery, wider corpus, stricter
-            # threshold (sentinel.near_dup_jaccard — see cross_account_threshold).
-            xa_thresh = ctx.get("cross_account_threshold")
-            if xa_thresh is not None:
-                by_account = ctx.get("recent_texts_by_account", {})
-                for other_acct, other_texts in by_account.items():
-                    if other_acct == account:
-                        continue
-                    if any(near_duplicate(new_text, prior, threshold=xa_thresh)
-                           for prior in other_texts):
-                        log.warning(
-                            "outbox.enqueue: %s rejected — near-identical to a "
-                            "recent %s item (cross-account jaccard >= %.2f)",
-                            account, other_acct, xa_thresh)
-                        return "cross_account_duplicate"
-            # Cap: every existing same-day item consumed a slot regardless of
-            # status (quarantined/failed included — refilling a bad slot the
-            # same day is how retry-spam starts). A negative cap = unlimited
-            # (autonomous cadence) → never blocks on volume.
-            if cap >= 0 and ctx["day_counts"].get((account, as_of), 0) >= cap:
-                return "cap_exceeded"
             target = _host_items_path(root) if spool else _items_path(root)
             if not append_jsonl(target, item):
                 log.warning("outbox.enqueue: append_jsonl failed for item %r", item_id)
@@ -1109,28 +1205,13 @@ def enqueue(
             # UNION corpus (tracked + daemon spool): a question of the form "does
             # this content already exist on this host?" must see every emission,
             # or a daemon-side item would be invisible to the guards.
-            existing = read_items_all(root)
             # Quarantined/failed items are excluded from the TEXT corpus only —
             # a dead item is not competing for the slot, so it must not veto a
-            # live desk. It still counts toward the cap below (see that comment).
-            dead = dead_item_ids(root)
-            ctx = {
-                "ids": {i.get("id") for i in existing},
-                "day_counts": {},
-                "recent_texts": {
-                    _text_key(i.get("account"), i.get("text"))
-                    for i in existing
-                    if _within_text_window(i.get("as_of"), as_of)
-                    and str(i.get("id") or "") not in dead
-                },
-                "recent_texts_by_account": _recent_texts_by_account(
-                    existing, as_of, dead),
-                "cross_account_threshold": cross_account_threshold(cfg),
-            }
-            for i in existing:
-                key = (i.get("account"), i.get("as_of"))
-                ctx["day_counts"][key] = ctx["day_counts"].get(key, 0) + 1
-            return _check_and_append(ctx)
+            # live desk. It still counts toward the cap (see _rejection_reason).
+            # Built by the SAME helper `preflight_enqueue` uses, so the two can
+            # never answer differently because their corpora were assembled
+            # differently.
+            return _check_and_append(_enqueue_ctx(root, as_of, cfg))
 
     except Exception as exc:  # noqa: BLE001
         log.warning("outbox.enqueue: unexpected error: %s", exc)

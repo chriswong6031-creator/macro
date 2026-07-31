@@ -265,6 +265,40 @@ class TestTickerPostMustCarryItsChart:
                   "source": {}, "text": "The stop matters more than the target"}
             assert _missing_required_media(it, self.PUB_CFG, []) is False, kind
 
+    def test_a_rollup_whose_chart_was_built_is_held_not_shipped_bare(self):
+        """The incident itself: $ALL $ERIE $TRV went out with no picture.
+
+        A `theme_list` is not a chart-bearing KIND, so the kind gate waved it
+        through; `_bare_cashtag_post` treats a built-but-unresolved chart as the
+        recoverable deferral case, so it waved it through too. Each gate deferred
+        to the other and the post shipped text-only — "ID RATHER YOU DESTROY THE
+        ENTIRE ENGINE THAN SHIP TEXT ONLY".
+
+        The chart EXISTS here (media[] is non-empty), so its URL is recoverable
+        by the backfill and deferring is honest rather than a quarantine.
+        """
+        from scripts.marketing_publisher import _missing_required_media
+
+        for kind in ("theme_list", "mover"):
+            it = {"id": "itm-r", "kind": kind, "as_of": "2026-07-28",
+                  "source": {}, "media": [{"chart_id": "chart-011"}],
+                  "text": "Insurance caught a bid today: $ALL $ERIE $TRV."}
+            assert _missing_required_media(it, self.PUB_CFG, []) is True, kind
+
+    def test_a_rollup_with_no_chart_built_is_still_out_of_scope(self):
+        """Nothing was rendered, so there is nothing for the backfill to fix.
+
+        Holding it would wedge the post until the escape hatch for a picture that
+        does not exist — the same reasoning that keeps a chartless ticker post
+        out of this gate.
+        """
+        from scripts.marketing_publisher import _missing_required_media
+
+        it = {"id": "itm-r2", "kind": "theme_list", "as_of": "2026-07-28",
+              "source": {}, "media": [],
+              "text": "Insurance caught a bid today: $ALL $ERIE $TRV."}
+        assert _missing_required_media(it, self.PUB_CFG, []) is False
+
     def test_a_breadth_post_that_mentions_a_cashtag_still_posts(self):
         """"231 of 231 names..." may name a ticker in passing and even carry an
         illustration. The KIND gate, not the text, decides — so a macro post can

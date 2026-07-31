@@ -1156,6 +1156,31 @@ def book_packet(
     phrased = phrase(packet, template_text, llm_cfg=llm_cfg)
     text = phrased["text"]
 
+    # PREFLIGHT BEFORE THE PICTURE (2026-07-30).
+    #
+    # resolve_chart() below is a Chrome raster AND an R2 upload. It used to run
+    # before enqueue, so every duplicate, near-duplicate and cap rejection paid
+    # full price for an image nobody would ever see — on a nightly render budget
+    # that is law (~67 min, 4-core-bound). Nothing enqueue rejects on depends on
+    # the media: the id hashes (account, kind, text, as_of), and the dedupe and
+    # cap checks read text and account. The deciding facts are all in hand HERE.
+    #
+    # This is an optimisation, never a gate. preflight_enqueue is fail-open and
+    # reads without the outbox lock, so it can only ever skip work it was going
+    # to lose anyway; enqueue below still runs every check authoritatively. The
+    # caller records these codes in the fired ledger (_TERMINAL_ENQUEUE_CODES),
+    # so a refusal here suppresses the re-detect on the next five-minute pass
+    # exactly as a post-render refusal did.
+    if not dry_run:
+        _pre = OB.preflight_enqueue(
+            account=account, kind="breaking", text=text, as_of=as_of,
+            root=root, cfg=marketing_cfg,
+        )
+        if _pre != "ok":
+            print(f"hot-tape REFUSE {packet.key} {_pre} (preflight, no render)",
+                  flush=True)
+            return {"status": _pre, "item_id": None, "text": text}
+
     media: list[dict] = []
     published: dict[str, Any] = {}
     chart_state = "none"
