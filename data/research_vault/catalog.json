@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T07:27:21.969649+00:00",
-  "count": 443,
+  "generated_at": "2026-07-31T07:57:36.843790+00:00",
+  "count": 444,
   "institutions": [
     "Amova",
     "BTIG",
@@ -1249,6 +1249,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-5sm1snxetpx-d9378b",
+      "title": "China Capital Flow Tracker 2026 Q3 Net FX receipts rebound with trade surplus and contained outbound investment",
+      "institution": "Natixis",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:17:31Z",
+      "summary_points": [
+        "**China's Net FX Receipts Rebound**: Three-month average net FX receipts rose to RMB 54 billion (from RMB 29 billion), driven by trade surplus and reduced securities outflows, with outbound investment constrained by QDII quota exhaustion and new offshore trust tax rules (July 24).",
+        "**Securities Investment Dominates Inflows**: Securities Investment shows the largest net receipts (inflows) among all categories, signaling strong foreign portfolio confidence in China's capital markets.",
+        "**RMB Appreciation vs.",
+        "NDF Spread Divergence**: Chart 1a shows RMB appreciation, while Chart 1b’s negative spread (USDCNY 1Y - CNY Spot) signals market expectations of future depreciation, creating a critical hedging disconnect.",
+        "**Trade Surplus Sustains Capital Flows**: Trade surplus (RMB 29B→RMB 54B) from exports (petrochemicals, autos, textiles) to EU/HK/ASEAN remains the primary driver of capital inflows, despite China Shock 2.0 concerns."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
