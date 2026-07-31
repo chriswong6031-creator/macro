@@ -1,28 +1,28 @@
 {
   "handles": {
     "Barchart": {
-      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_captured_at": "2026-07-31T22:13:33Z",
       "last_kept": 0
     },
     "DeItaone": {
-      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_captured_at": "2026-07-31T22:13:33Z",
       "last_kept": 0
     },
     "FirstSquawk": {
-      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_captured_at": "2026-07-31T22:13:33Z",
       "last_kept": 0
     },
     "KobeissiLetter": {
-      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_captured_at": "2026-07-31T22:13:33Z",
       "last_kept": 0
     },
     "unusual_whales": {
-      "last_captured_at": "2026-07-30T22:16:18Z",
+      "last_captured_at": "2026-07-31T22:13:33Z",
       "last_kept": 0
     }
   },
   "last_run": {
-    "at": "2026-07-30T22:16:18Z",
+    "at": "2026-07-31T22:13:33Z",
     "calls": 5,
     "rows": 0,
     "stopped": null,
@@ -30,11 +30,11 @@
   },
   "months": {
     "2026-07": {
-      "calls": 5,
+      "calls": 10,
       "tweets": 0,
-      "usd": 0.00075
+      "usd": 0.0015
     }
   },
   "schema": "marketing.x_intel_state/v1",
-  "updated_at": "2026-07-30T22:16:18Z"
+  "updated_at": "2026-07-31T22:13:33Z"
 }
