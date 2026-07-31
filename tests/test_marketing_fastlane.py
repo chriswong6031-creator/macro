@@ -681,3 +681,83 @@ class TestTheEarningsPostObeysTheHouseVoice:
                 for token in wl:
                     assert str(token) in text, (
                         f"whitelisted {token!r} never appears in the post")
+
+
+class TestTheEarningsLaneIsActuallyArmed:
+    """The lane existed and nothing ran it. This pins the wiring that does.
+
+    Three switches, and they are not the same one — getting it wrong is how a
+    workflow runs 36 times a day and does nothing:
+
+        MARKETING_FASTLANE_ENABLED   arms the daemon; without it a live run
+                                     prints one line and exits 0 before fetching
+        MARKETING_OUTBOX_ENABLED     lets the lane WRITE the queue
+        MARKETING_PUBLISH_ENABLED    lets marketing-publish.yml SEND
+
+    The first must be present or the workflow is inert. The last must be ABSENT
+    or this lane stops being queue-only and starts posting to live accounts.
+    """
+
+    WORKFLOW = "​.github/workflows/marketing-earnings-wire.yml".replace("​", "")
+
+    def _wf(self):
+        import pathlib
+
+        import pytest
+
+        yaml = pytest.importorskip("yaml")
+        p = pathlib.Path(self.WORKFLOW)
+        assert p.exists(), "the earnings lane has no workflow — it is dark again"
+        return yaml.safe_load(p.read_text(encoding="utf-8"))
+
+    def _run_env(self):
+        job = self._wf()["jobs"]["earnings"]
+        step = next(s for s in job["steps"] if s.get("name") == "run the earnings lane")
+        return step["env"], step["run"]
+
+    def test_the_daemon_switch_is_set_or_every_pass_is_a_no_op(self):
+        env, _ = self._run_env()
+        assert env.get("MARKETING_FASTLANE_ENABLED") == "1"
+        assert env.get("MARKETING_OUTBOX_ENABLED") == "1"
+
+    def test_the_SEND_switch_is_absent_so_the_lane_stays_queue_only(self):
+        env, _ = self._run_env()
+        assert "MARKETING_PUBLISH_ENABLED" not in env, (
+            "this lane would now POST to live accounts instead of queueing"
+        )
+
+    def test_it_writes_the_TRACKED_outbox_not_the_host_spool(self):
+        """spool=True routes to the GITIGNORED items-host.jsonl, which the
+        publisher never folds — the split-brain that kept the press wire dark."""
+        _, run = self._run_env()
+        assert "--no-spool" in run
+
+    def test_it_stays_off_the_render_pool(self):
+        """The nightly's ~67-minute budget is law."""
+        assert self._wf()["jobs"]["earnings"]["runs-on"] == "ubuntu-latest"
+
+    def test_it_polls_the_reporting_windows_on_weekdays_only(self):
+        on = self._wf().get(True) or self._wf().get("on")
+        crons = [e["cron"] for e in on["schedule"]]
+        assert crons, "no schedule — the lane is dark again"
+        fields = crons[0].split()
+        assert fields[4] == "1-5", "weekend passes poll a calendar that cannot move"
+        assert "11-13" in fields[1] and "20-22" in fields[1], fields[1]
+
+    def test_the_earnings_calendar_is_in_the_checkout_cone(self):
+        """earnings.parquet IS the input. Coning it out makes the lane blind."""
+        job = self._wf()["jobs"]["earnings"]
+        cone = job["steps"][0]["with"]["sparse-checkout"].split()
+        assert "data/earnings" in cone
+        install = next(s for s in job["steps"] if s.get("name") == "install deps")
+        assert "pandas" in install["run"], "the parquet cannot be read without it"
+
+    def test_the_daemon_exposes_the_no_spool_flag(self):
+        """The workflow's command is only honest if the flag exists."""
+        from scripts.marketing_fastlane_daemon import main  # noqa: F401
+        import inspect
+        import scripts.marketing_fastlane_daemon as D
+
+        src = inspect.getsource(D)
+        assert '"--no-spool"' in src
+        assert "spool=args.spool" in src, "the flag is parsed but never threaded"

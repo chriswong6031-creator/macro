@@ -293,7 +293,7 @@ def _save_press_seen(seen: dict, *, now: datetime | None = None) -> None:
 # Single earnings tick (UNCHANGED behaviour)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
+def _run_one_tick(*, dry_run: bool, armed: bool = True, spool: bool = True) -> dict:
     """Run one earnings fetch-and-process tick.  Returns the TickResult dict.
 
     armed=False (disarmed + --dry-run inspection, m1): earnings_feed.fetch_events
@@ -327,7 +327,7 @@ def _run_one_tick(*, dry_run: bool, armed: bool = True) -> dict:
     # by a 3-minute `git pull`; dirtying a tracked file there would conflict
     # that pull. House law: the poller makes zero git writes.
     result = run_tick(events, root=ROOT, now=now, dry_run=dry_run, cta=_cta,
-                      cfg=_cfg, spool=True)
+                      cfg=_cfg, spool=spool)
     return result
 
 
@@ -1226,6 +1226,18 @@ def main(argv: list[str] | None = None) -> int:
         default=_DEFAULT_INTERVAL_S,
         help=f"Poll interval in seconds (default: {_DEFAULT_INTERVAL_S}).",
     )
+    parser.add_argument(
+        "--no-spool",
+        dest="spool",
+        action="store_false",
+        default=True,
+        help=(
+            "Emit to the git-TRACKED outbox (data/marketing/outbox/items.jsonl) "
+            "instead of the host spool. For the GitHub Actions lane, which "
+            "commits what it queues; the VPS daemon keeps the spool default "
+            "because dirtying a tracked file there conflicts its 3-minute pull."
+        ),
+    )
     args = parser.parse_args(argv)
 
     # Kill-switch: unless we are in a pure --dry-run (which writes nothing and is
@@ -1251,7 +1263,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.lane in ("earnings", "all"):
                 # m1: a DISARMED --dry-run must NOT reach earnings_feed.fetch_events
                 # (network). Passing armed gates the fetch to offline-safe when dark.
-                result = _run_one_tick(dry_run=args.dry_run, armed=armed)
+                result = _run_one_tick(dry_run=args.dry_run, armed=armed, spool=args.spool)
                 _log_tick(result, now, dry_run=args.dry_run)
             if args.lane in ("press", "all"):
                 press_result = _run_press_tick(dry_run=args.dry_run)

@@ -1,0 +1,184 @@
+name: marketing-earnings-wire
+# ─────────────────────────────────────────────────────────────────────────────
+# THE EARNINGS POST TYPE, ARMED. It has never run.
+#
+# WHAT THIS FIXES. `engine/marketing/fastlane.py` builds a complete earnings
+# post — copy plus a branded card from `chart_render.render_earnings_card` — and
+# NOTHING INVOKES IT. `scripts/marketing_fastlane_daemon.py --lane earnings` has
+# no systemd unit, no workflow and no cron; the only unit that exists
+# (app/deploy/marketing-press-feeds.service) drives `--lane press`. No `earnings`
+# item has ever reached the outbox. An entire kind, with its own illustration,
+# dark since the day it was written.
+#
+# Driven by hand on 2026-07-31 it worked first time, and its copy was six figures
+# with an emoji lead and no point of view — because a dark lane is frozen at the
+# standard of the day it shipped while every copy law around it moved on. That
+# copy was rewritten in the same change; this workflow is what makes it run.
+#
+# SAME SHAPE AS marketing-press-wire.yml, and for the same reason: the VPS daemon
+# emits with spool=True into the GITIGNORED items-host.jsonl, which the publisher
+# never folds. `--no-spool` routes this lane to the git-TRACKED outbox and the
+# job commits what it queued, so the split-brain cannot happen here by
+# construction.
+#
+# WHY IT IS SAFE. This workflow only QUEUES. Sending is marketing-publish.yml's
+# job and that lane self-downgrades to dry-run unless the operator's kill switch
+# (repo variable MARKETING_PUBLISH_ENABLED=1) is on. With the switch off this
+# fills the outbox and the queue sits there — which is also how you read what it
+# WOULD have posted before arming anything.
+#
+# ubuntu-latest, NEVER the self-hosted macstudio pool: the nightly's ~67-minute
+# render budget is law and this lane must not touch it.
+#
+# LEDGER LAW: writes ONLY data/marketing/outbox/* (items, media, and the
+# fast-lane seen ledger beside them). It never advances a forward ledger — the
+# nightly is the sole advancer of those.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # EARNINGS ARE NOT 24/7, unlike the press wire. US reports cluster in two
+    # windows and there is no reason to poll the other eighteen hours:
+    #   11:00-14:00 UTC  pre-market releases (07:00-10:00 ET)
+    #   20:00-23:00 UTC  after-the-close releases (16:00-19:00 ET)
+    # Ten-minute cadence inside them. Weekdays only — Mon-Fri covers every US
+    # reporting session, and a Saturday pass would poll a calendar that cannot
+    # have moved.
+    - cron: "*/10 11-13,20-22 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: >-
+          DRY RUN — run the full tick and write nothing: no outbox item, no card,
+          no seen-ledger row, no commit. The PR receipt mode.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write     # commit the outbox rows this lane queues
+
+concurrency:
+  # Queued, never cancelled. Two passes must not overlap: both would read the
+  # same seen ledger, both would find the same report unseen, and both would
+  # book it. A pass in flight may already have written a card.
+  group: marketing-earnings-wire
+  cancel-in-progress: false
+
+jobs:
+  earnings:
+    runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
+    timeout-minutes: 10
+    steps:
+      - name: checkout (shallow + sparse + write token)
+        # Same posture as the press wire: shallow, blobless, coned to this
+        # lane's exact read+write surface. Nothing here needs history.
+        #
+        # data/earnings IS in the cone here (and deliberately is NOT in the press
+        # wire's): `earnings_feed` reads earnings.parquet to know who reports,
+        # which is the whole input to this lane. That is also why this job
+        # installs pandas and the press lane refuses to.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine
+            scripts
+            lib
+            config
+            data/marketing
+            data/earnings
+            site/live
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # pandas+pyarrow: earnings.parquet is the calendar. pyyaml: config.
+        # requests+anthropic: the llm_auth waterfall behind the copy pass.
+        run: pip install --quiet pyyaml requests anthropic pandas pyarrow
+
+      - name: run the earnings lane
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+
+          # THREE SWITCHES, AND THEY ARE NOT THE SAME ONE. Getting this wrong is
+          # how a lane runs 36 times a day and does nothing:
+          #
+          #   MARKETING_FASTLANE_ENABLED  arms THIS DAEMON. Without it a live run
+          #                               prints one line and exits 0 before it
+          #                               fetches anything. Set here, because a
+          #                               workflow whose whole purpose is to run
+          #                               the lane must actually run it.
+          #   MARKETING_OUTBOX_ENABLED    lets the lane WRITE the outbox queue.
+          #   MARKETING_PUBLISH_ENABLED   lets marketing-publish.yml SEND. It is
+          #                               deliberately ABSENT here, and that is
+          #                               the safety: this lane fills the queue
+          #                               and the operator reads what it would
+          #                               have posted before arming the send.
+          MARKETING_FASTLANE_ENABLED: "1"
+          MARKETING_OUTBOX_ENABLED: "1"
+
+          # The copy pass is double-gated (config + this flag) AND THE FLAG ALONE
+          # IS A LIE WITHOUT CREDENTIALS UNDER IT: lib.config.secret() reads env
+          # only, so an unset key means build_providers() returns [] and every
+          # post falls back to the deterministic template. That exact omission is
+          # what made the flagship read machine-written for months.
+          MARKETING_LLM_ENABLED: "1"
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+
+          # R2 hosts the card PNG. Absent creds → the post degrades to text-only,
+          # which the publisher's own chart law then refuses for a ticker post,
+          # so this is not optional in practice.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          set -uo pipefail
+          if [ "${DRY_RUN:-}" = "true" ]; then
+            python -m scripts.marketing_fastlane_daemon \
+              --lane earnings --once --dry-run --no-spool
+          else
+            python -m scripts.marketing_fastlane_daemon \
+              --lane earnings --once --no-spool
+          fi
+
+      - name: commit queued earnings posts (no-op when nothing changed)
+        if: always() && inputs.dry_run != true
+        # ALWAYS: the seen ledger is the file whose loss is expensive — losing a
+        # row re-books a report that already went out. Committing it even after a
+        # failed tick is strictly safer than losing it.
+        run: |
+          set -uo pipefail
+          git config user.name "dashboard-bot"
+          git config user.email "actions@users.noreply.github.com"
+
+          # Stage ONLY this lane's paths (ledger law).
+          git add data/marketing/outbox 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "marketing-earnings-wire: nothing queued this pass"
+            exit 0
+          fi
+          git commit -m "marketing-earnings: queued $(date -u +%FT%H:%MZ) [skip ci]"
+          for i in 1 2 3 4 5; do
+            # --depth 20 mirrors the other marketing lanes: the checkout is
+            # shallow, so `pull --rebase` needs deepening to find a merge base
+            # once main advances mid-run. The outbox ledgers carry merge=union,
+            # so a concurrent append resolves instead of conflicting.
+            git fetch --depth 20 origin main || true
+            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              echo "marketing-earnings-wire: pushed on attempt $i"
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            echo "marketing-earnings-wire: push attempt $i lost a race; re-syncing"
+            sleep $((i * 7))
+          done
+          echo "::warning title=marketing-earnings-wire::could not push after 5 attempts (non-fatal)"
+          exit 0
