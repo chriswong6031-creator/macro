@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T11:16:51.804109+00:00",
-  "count": 454,
+  "generated_at": "2026-07-31T11:42:43.296658+00:00",
+  "count": 455,
   "institutions": [
     "Amova",
     "Apollo",
@@ -58,6 +58,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-f7innzlipk2-f520bc",
+      "title": "Citi The Point for Europe Friday, 31 July 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T10:37:47Z",
+      "summary_points": [
+        "**UK BoE Policy Uncertainty**: MPC's weak inflation profile and real economy slack undermine rate hike credibility, creating significant policy uncertainty for interest rates and market expectations.",
+        "**EDP Growth & Valuation Discount**: Strong H226 delivery, 2027 CMD commitment (500MW land capacity), and material valuation discount vs peers (PE/EV/EBITDA) justify Buy rating.",
+        "**Shell Production & Earnings**: Q326 O&G production cut (15% to 2,380 kboe/d) offset by strong refining margins ($23/bbl, 49% above cons), raising adj.",
+        "NI by 20% (Neutral, TP 3200p).",
+        "**Lloyds NII Risk**: Conservative 2028/2030 targets imply £950m+ NII shortfall vs targets due to lower reinvestment yields and margin compression (reiterate Buy)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
