@@ -2531,3 +2531,87 @@ class TestTheLogReportsTheCeilingItApplied:
         assert "effective_max_quote_age_min(live, cfg)" not in body, (
             "a raw-config ceiling resolution is back — in demo it prints a "
             "threshold the gate never applied")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The render litter.
+#
+# This lane renders a card for EVERY candidate it evaluates, BEFORE it knows
+# whether the post will ship, on every intraday sweep. In one day that wrote
+# 8,068 hottape-*.svg into data/marketing/outbox/media/<date>/ -- a directory
+# that is COMMITTED, because the nightly chart-NNN.svg snapshots there feed the
+# admin console preview. Result: 420 MB in the media tree, ~8k new TRACKED files
+# per day, and a git that had begun printing "too many unreachable loose
+# objects" on every command in the repo.
+#
+# Two halves to the fix. .gitignore now excludes hottape-*.svg specifically
+# (chart-NNN.svg stays committed, deliberately). This is the other half: without
+# a sweep the files still pile up on the runner's disk forever.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestHotTapeRenderSweep:
+    def _tree(self, tmp_path, days):
+        base = tmp_path / "data" / "marketing" / "outbox" / "media"
+        for day, n in days.items():
+            d = base / day
+            d.mkdir(parents=True, exist_ok=True)
+            for i in range(n):
+                (d / f"hottape-mover_pop-aaa{i}-1400Z.svg").write_text("<svg/>")
+            # A nightly snapshot in the same directory, which must SURVIVE.
+            (d / "chart-001.svg").write_text("<svg/>")
+        return base
+
+    def _sweep(self, root, now):
+        from scripts.hot_tape_radar import sweep_hot_tape_renders
+        return sweep_hot_tape_renders(root, now=now)
+
+    def test_stale_render_litter_is_removed(self, tmp_path):
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-20": 40, "2026-07-21": 5})
+        n = self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc))
+        assert n == 45, n
+        assert not list(base.rglob("hottape-*"))
+
+    def test_the_committed_nightly_snapshots_are_never_touched(self, tmp_path):
+        """chart-NNN.svg feeds the admin preview and is committed ON PURPOSE."""
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-20": 10, "2026-07-21": 10})
+        self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc))
+        survivors = sorted(p.name for p in base.rglob("chart-*.svg"))
+        assert survivors == ["chart-001.svg", "chart-001.svg"], survivors
+
+    def test_recent_days_are_retained(self, tmp_path):
+        """Today and yesterday stay readable for an operator in the console."""
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-29": 7, "2026-07-30": 9})
+        n = self._sweep(tmp_path, datetime(2026, 7, 30, 20, 0, tzinfo=timezone.utc))
+        assert n == 0, f"swept {n} files inside the retention window"
+        assert len(list(base.rglob("hottape-*"))) == 16
+
+    def test_a_non_date_directory_is_left_alone(self, tmp_path):
+        """An unparseable name must not be treated as infinitely old."""
+        from datetime import datetime, timezone
+        base = tmp_path / "data" / "marketing" / "outbox" / "media" / "scratch"
+        base.mkdir(parents=True)
+        (base / "hottape-x-y-0000Z.svg").write_text("<svg/>")
+        assert self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc)) == 0
+        assert (base / "hottape-x-y-0000Z.svg").exists()
+
+    def test_a_missing_tree_is_not_an_error(self, tmp_path):
+        from datetime import datetime, timezone
+        assert self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc)) == 0
+
+    def test_the_radar_actually_calls_the_sweep(self):
+        """A helper nothing invokes is the leak with extra steps."""
+        import inspect
+        import scripts.hot_tape_radar as htr
+        assert "sweep_hot_tape_renders(root, now=ts)" in inspect.getsource(htr.run)
+
+    def test_the_gitignore_is_hottape_scoped(self):
+        """It must NOT swallow the nightly snapshots the console renders from."""
+        from pathlib import Path
+        rules = Path(".gitignore").read_text(encoding="utf-8")
+        assert "data/marketing/outbox/media/**/hottape-*.svg" in rules
+        assert "data/marketing/outbox/media/**/*.svg" not in rules, (
+            "a blanket .svg ignore would silently stop committing the chart "
+            "snapshots the admin console previews from"
+        )

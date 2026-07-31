@@ -1605,6 +1605,66 @@ def _parse_iso(raw: Any) -> datetime | None:
 # Entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Hot-tape render litter older than this is swept at the start of each pass.
+#: 2 days keeps today and yesterday available for an operator looking at a card
+#: in the console, and throws away everything the R2 URL already owns.
+_HOT_TAPE_RENDER_RETENTION_DAYS = 2
+
+
+def sweep_hot_tape_renders(
+    root: "Path | str",
+    *,
+    now: datetime | None = None,
+    retention_days: int = _HOT_TAPE_RENDER_RETENTION_DAYS,
+) -> int:
+    """Delete stale hottape-*.svg/.png render inputs. Returns files removed.
+
+    THE LEAK (2026-07-30): this lane renders a card for EVERY candidate it
+    evaluates, before it knows whether the post will ship, on every intraday
+    sweep. In one day that wrote 8,068 hottape-*.svg into
+    data/marketing/outbox/media/<date>/ -- a directory that is COMMITTED, because
+    the nightly chart-NNN.svg snapshots there feed the admin console preview.
+    420 MB in the media tree, ~8k new tracked files per day, and a git that had
+    started printing "too many unreachable loose objects" on every command.
+
+    The .gitignore now excludes hottape-*.svg specifically (the nightly
+    chart-NNN.svg snapshots stay committed). This is the other half: without a
+    sweep the files still accumulate on the runner's disk forever.
+
+    Deletes ONLY files matching the hottape- prefix. Never raises: a sweep
+    failure must not cost the radar its pass.
+    """
+    from pathlib import Path as _P
+    base = _P(root) / "data" / "marketing" / "outbox" / "media"
+    ts = now or datetime.now(timezone.utc)
+    cutoff = (ts - timedelta(days=retention_days)).date()
+    removed = 0
+    try:
+        if not base.is_dir():
+            return 0
+        for day_dir in base.iterdir():
+            if not day_dir.is_dir():
+                continue
+            try:
+                day = date.fromisoformat(day_dir.name)
+            except (ValueError, TypeError):
+                continue          # not a date-named dir: leave it alone
+            if day >= cutoff:
+                continue
+            for f in list(day_dir.glob("hottape-*")):
+                try:
+                    f.unlink()
+                    removed += 1
+                except OSError:
+                    pass
+    except Exception as exc:  # noqa: BLE001 — never cost the radar its pass
+        log.warning("hot_tape_radar: render sweep failed: %s", exc)
+        return removed
+    if removed:
+        log.info("hot_tape_radar: swept %d stale render file(s)", removed)
+    return removed
+
+
 def run(
     root: Path,
     *,
@@ -1623,6 +1683,9 @@ def run(
     ts = now or datetime.now(timezone.utc)
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
+
+    # Sweep this lane's own render litter before doing anything else.
+    sweep_hot_tape_renders(root, now=ts)
     cfg = HT.load_config(root)
 
     if not bool(_cfg(cfg, "enabled", True)):
