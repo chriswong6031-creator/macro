@@ -1308,13 +1308,19 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
   border-radius: 11px;
 }
 
-.nav-market-rail > .nav-market-drill > .nav-sub-trig .nav-sub-text {
-  display: flex;
+.nav-dd-menu.mega-menu .nav-market-rail > .nav-market-drill > .nav-sub-trig .nav-sub-text {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
   align-items: center;
-  gap: 7px;
+  gap: 10px;
+  line-height: 1.25;
 }
 
-.nav-market-rail > .nav-market-drill > .nav-sub-trig .menu-icon { margin-right: 0; }
+.nav-dd-menu.mega-menu .nav-market-rail > .nav-market-drill > .nav-sub-trig .menu-icon {
+  width: 22px;
+  min-width: 22px;
+  margin-right: 0;
+}
 
 .nav-market-rail > .nav-market-drill > .nav-market-drill-panel {
   inset: 0;
@@ -1333,7 +1339,7 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
   left: 22px;
 }
 
-.nav-market-drill-panel > .nav-market-main { padding-top: 62px; }
+.nav-dd-menu.mega-menu.nav-market-drill-panel > .nav-market-main { padding-top: 72px; }
 
 /* The compact control sits at the right edge, as in the approved mockup. It
    expands left over reserved whitespace so the menu does not jump. */
@@ -1594,7 +1600,7 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
     position: static;
     margin-bottom: 8px;
   }
-  .nav-market-drill-panel > .nav-market-main { padding-top: 0; }
+  .nav-dd-menu.mega-menu.nav-market-drill-panel > .nav-market-main { padding-top: 0; }
 
   .nav-drill-panel {
     position: fixed;
@@ -2509,5 +2515,43 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
+  }
+}
+
+/* Desktop country/market maps are click-owned. Keep this final in the file so
+   it decisively overrides the legacy generic :hover / :focus-within flyout
+   rules without changing Research's hover-safe interaction. */
+@media (min-width: 901px) {
+  .site-nav .nav-links > .nav-market-dd:not(.nav-click-open):hover > .nav-market-menu,
+  .site-nav .nav-links > .nav-market-dd:not(.nav-click-open):focus-within > .nav-market-menu,
+  .topbar .nav-links > .nav-market-dd:not(.nav-click-open):hover > .nav-market-menu,
+  .topbar .nav-links > .nav-market-dd:not(.nav-click-open):focus-within > .nav-market-menu {
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(12px);
+  }
+
+  .site-nav .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu,
+  .topbar .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu {
+    display: grid;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+    animation: mockupMenuSwap .24s cubic-bezier(.2, .76, .2, 1) both;
+  }
+
+  .site-nav .nav-links > .nav-market-dd.nav-click-open > .nav-link .caret,
+  .topbar .nav-links > .nav-market-dd.nav-click-open > .nav-link .caret {
+    transform: rotate(180deg);
+  }
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: reduce) {
+  .site-nav .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu,
+  .topbar .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu {
+    animation: none;
   }
 }
