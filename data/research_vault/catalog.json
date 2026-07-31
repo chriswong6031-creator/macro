@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T15:52:55.287992+00:00",
-  "count": 467,
+  "generated_at": "2026-07-31T16:13:11.574299+00:00",
+  "count": 468,
   "institutions": [
     "Amova",
     "Apollo",
@@ -60,6 +60,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mhnnrk9k4sp-1631f2",
+      "title": "JPM JPM US Market Intell",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T15:15:48Z",
+      "summary_points": [
+        "**Tech Earnings Disparity**: AMZN +13% pre-market (AWS revenue +37% Y/Y, margin beat) vs AAPL -7% (weak guidance); SPX +0.4%, NDX +1.1% as Taiwan/KOSPI surged 8%/18% overnight.",
+        "**De-Grossing Extremes**: US de-grossing at 3-day extreme (biggest since 2020), HF positioning at -2z z-score, momentum selling (-2.2z 20d) signaling potential abatement.",
+        "**Geopolitical Headwinds**: Iran tensions driving oil volatility and Middle East kinetic hostilities, compounding crowded Semis positioning as near-term risk.",
+        "**AI Capex & Revenue Gap**: $50bn debt capacity for AI infra, $6T sector capex by 2030 requires $1.8T revenue (8.5% of SPX revenue), with near-term tailwinds (lower yields, weaker USD) offsetting headwinds."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
