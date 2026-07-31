@@ -666,6 +666,10 @@
     var trig = dd.querySelector(':scope > a');
     if (!trig) return dd;
     dd.classList.add('nav-sub', 'nav-drill', 'nav-market-drill');
+    // This node was initialized while it still lived on the top rail. Folding
+    // it must synchronously clear any inherited hover-open state; from here on
+    // the explicit drill trigger is the only owner of its country panel.
+    dd.classList.remove('nav-hover-open');
 
     var text = document.createElement('span');
     text.className = 'nav-sub-text';
@@ -739,11 +743,19 @@
       if (!trigger || !menu) return;
 
       function canHover() {
-        return window.innerWidth > 900 && fineHover.matches;
+        // A country node may be moved under International after this listener
+        // is attached. Once folded, it is a click-owned drill and must never
+        // reuse its former top-rail hover behavior.
+        return dd.parentElement === links &&
+          !dd.classList.contains('nav-market-drill') &&
+          window.innerWidth > 900 && fineHover.matches;
       }
 
       function openMenu() {
-        if (!canHover()) return;
+        if (!canHover()) {
+          dd.classList.remove('nav-hover-open');
+          return;
+        }
         window.clearTimeout(closeTimer);
         dd.parentElement.querySelectorAll(':scope > .nav-dd.nav-hover-open').forEach(function (other) {
           if (other !== dd) other.classList.remove('nav-hover-open');

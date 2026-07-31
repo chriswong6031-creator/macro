@@ -23,6 +23,9 @@ def test_top_market_menus_keep_hover_bridge_while_folded_countries_click() -> No
     assert "data-nav-hover-safe" in TEMPLATE_JS
     assert "if (dd.classList.contains('nav-market-dd')) return;" not in TEMPLATE_JS
     assert "window.innerWidth > 900 && fineHover.matches" in TEMPLATE_JS
+    assert "dd.parentElement === links" in TEMPLATE_JS
+    assert "!dd.classList.contains('nav-market-drill')" in TEMPLATE_JS
+    assert "dd.classList.remove('nav-hover-open')" in TEMPLATE_JS
     assert "function hoverGraceMs()" in TEMPLATE_JS
     assert "menuRect.top - triggerRect.bottom" in TEMPLATE_JS
     assert "Math.min(1000, Math.max(420, 360 + Math.round(gap * 8)))" in TEMPLATE_JS
@@ -39,10 +42,31 @@ def test_top_market_menus_keep_hover_bridge_while_folded_countries_click() -> No
     # canonical menu remains hidden under hover/focus until .is-open is set by
     # the explicit drill trigger.
     assert "data-nav-drill-open" in TEMPLATE_JS
-    assert ".nav-market-drill:not(.is-open):hover > .nav-market-drill-panel" in TEMPLATE_CSS
-    assert ".nav-market-drill.is-open > .nav-market-drill-panel" in TEMPLATE_CSS
+    assert (
+        ".nav-market-rail > .nav-market-drill:not(.is-open) "
+        "> .nav-market-drill-panel"
+    ) in TEMPLATE_CSS
+    assert (
+        ".nav-market-rail > .nav-market-drill.is-open > .nav-market-drill-panel"
+    ) in TEMPLATE_CSS
     assert "pointer-events: none;" in TEMPLATE_CSS
     assert "pointer-events: auto;" in TEMPLATE_CSS
+
+    # The final state-owned rule must appear after the generic hover bridge so
+    # a moved country cannot be reopened by :hover or a stale hover class.
+    generic_hover = TEMPLATE_CSS.rfind(
+        ".site-nav .nav-dd.nav-hover-open > .nav-dd-menu.nav-market-menu"
+    )
+    folded_guard = TEMPLATE_CSS.rfind(
+        ".nav-market-rail > .nav-market-drill:not(.is-open) "
+        "> .nav-market-drill-panel"
+    )
+    assert generic_hover > -1
+    assert folded_guard > generic_hover
+    final_guard = TEMPLATE_CSS[folded_guard:].split("}", 1)[0]
+    assert "visibility: hidden;" in final_guard
+    assert "pointer-events: none;" in final_guard
+    assert "animation: none !important;" in final_guard
 
     # The approved menu geometry remains unchanged.
     assert "top: calc(100% + 7px)" not in TEMPLATE_CSS
@@ -82,9 +106,9 @@ def test_hover_gap_assets_remain_byte_identical() -> None:
 
 
 def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
-    assert "account.js?v=20260731-folded1" in TEMPLATE_THEME_JS
-    assert "account.js?v=20260731-folded1" in SITE_THEME_JS
-    assert "nav_market.js?v=20260731-folded1" in TEMPLATE_ACCOUNT_JS
+    assert "account.js?v=20260731-folded2" in TEMPLATE_THEME_JS
+    assert "account.js?v=20260731-folded2" in SITE_THEME_JS
+    assert "nav_market.js?v=20260731-folded2" in TEMPLATE_ACCOUNT_JS
     assert "20260730-exact6" not in TEMPLATE_THEME_JS
     assert "20260730-exact6" not in SITE_THEME_JS
     assert "20260730-exact6" not in TEMPLATE_ACCOUNT_JS
@@ -102,4 +126,4 @@ def test_nested_pages_resolve_market_nav_from_theme_asset_root() -> None:
         assert "new URL('.', _mmThemeScript" in source
         assert source.count("var pfx = _mmSharedAssetRoot;") == 3
         assert "location.pathname.indexOf('/sectors/')" not in source
-        assert "s.src = pfx + 'account.js?v=20260731-folded1'" in source
+        assert "s.src = pfx + 'account.js?v=20260731-folded2'" in source
