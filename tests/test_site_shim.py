@@ -43,6 +43,8 @@ def test_inject_text_top_of_head_and_idempotent():
     out = inject_text(html, "")
     assert out.index(DBASE_MARKER) < out.index("<meta"), "shim must load before anything in <head>"
     assert "window.DATA_BASE" in out, "shim body must be INLINE (see below)"
+    assert "new URL(u, location.href)" in out, "absolute same-origin data URLs must route to R2"
+    assert "a.origin === location.origin" in out, "external fetches must not be rewritten"
     assert inject_text(out, "") == out, "second injection must be a no-op"
 
 
@@ -78,6 +80,26 @@ def test_inject_text_upgrades_legacy_external_tag():
         assert "window.DATA_BASE" in out
         assert out.index(DBASE_MARKER) < out.index("<title>"), "must stay first in <head>"
         assert inject_text(out, prefix) == out, "upgrade must be idempotent"
+
+
+def test_inject_text_refreshes_stale_inline_body():
+    """Changing data_base.js must update already-inlined committed pages.
+
+    Merely finding ``data-dbase`` is not enough: every page carries its own copy
+    of the wrapper, so leaving a stale body in place makes a shim hotfix a no-op
+    until that individual page happens to be rebuilt.
+    """
+    stale = (
+        f"<html><head><script {DBASE_MARKER}>"
+        "(function(){window.DATA_BASE='https://stale.invalid';})();"
+        "</script><title>t</title></head><body></body></html>"
+    )
+    out = inject_text(stale, "")
+    assert "stale.invalid" not in out
+    assert "new URL(u, location.href)" in out
+    assert out.count(DBASE_MARKER) == 1
+    assert out.index(DBASE_MARKER) < out.index("<title>")
+    assert inject_text(out, "") == out
 
 
 def test_inject_text_prefix_and_headless_fallback():
