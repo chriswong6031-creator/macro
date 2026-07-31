@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T13:28:03.106693+00:00",
-  "count": 457,
+  "generated_at": "2026-07-31T14:12:56.475833+00:00",
+  "count": 459,
   "institutions": [
     "Amova",
     "Apollo",
@@ -28,6 +28,7 @@
     "Rabobank",
     "Royal London on Private Credit",
     "S&T",
+    "Safra",
     "Scotiabank",
     "Societe Generale",
     "Std Chartered",
@@ -1413,6 +1414,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vqux4sxmzg6-1b671e",
+      "title": "FSA Daily 29 Jul 2026",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:31:31Z",
+      "summary_points": [
+        "**Structured Product Risk**: Auto-callable Multi-Reverse Convertible on iShares Semiconductor carries market risk (not capital guaranteed), credit risk from Goldman Sachs, and 52.5% geared strike (52.5% of initial price), risk level 3.",
+        "**GBP/NZD Tactical Trade**: RBNZ hawkish hike (2.5%) vs BoE dovish hold (3.75%) creates GBP/NZD range 2.2300-2.3600; 6-week strangle trade offers 0.42% premium with risk level 5.",
+        "**Ferrari Valuation Catalyst**: Premium valuation (P/E 31.0, EV/EBITDA 18.6) hinges on successful client-first launches (e.g., 12Cilindri Special Series) to deepen order book and justify premium pricing.",
+        "**Axis Bank Fundamentals**: Strong digital leadership (35% UPI share, 15M credit cards), healthy capital (CET1 14.38%, LCR 14.38%), and 38% YoY wholesale lending growth support investment thesis.",
+        "**Critical Risk Exposure**: BNP Paribas-issued Bullish Shark Note faces credit risk, liquidity risk, and energy sector volatility (oil prices/geopolitics), with 2026 YTD return 26.3% but max drawdown -15.5%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qqmizsnc9ze-358cd5",
+      "title": "FSA FI Daily Commentary 29 July 2026",
+      "institution": "Safra",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:31:29Z",
+      "summary_points": [
+        "**US Treasury Yield Curve Flattening**: 2Y yield down 35bps vs 10Y down 4bps (4.607%), signaling strong Fed rate cut expectations and recessionary pressures.",
+        "**EM Sovereign Bonds Outperformance**: EM Sovereign total return +1.39% YTD vs Global Corporate -0.75% YTD, highlighting significant relative value in emerging market debt.",
+        "**SK Hynix Credit Resilience**: Q2 FY2024 operating profit +557% YoY, 83% gross margin (AI memory pricing), KRW 93.9T cash reserves; credit profile strengthened despite supply chain volatility risk.",
+        "**Geopolitical Escalation Risk**: US/Saudi strikes against Iran-aligned groups in Iraq targeting IRGC sites, driving regional instability, oil volatility, and market jitters."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
       "language": "en",
       "needs_metadata": false
     },
