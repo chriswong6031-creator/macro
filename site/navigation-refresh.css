@@ -2522,3 +2522,25 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
     transition-duration: .01ms !important;
   }
 }
+
+/* Folded country menus are state-owned drills. These selectors intentionally
+   come after every generic mega-menu hover rule: moving a formerly top-level
+   market under International must not let :hover, :focus-within, or a stale
+   nav-hover-open class reveal its panel. Only the click handler's .is-open
+   state may do that. */
+.site-nav .nav-links .nav-market-rail > .nav-market-drill:not(.is-open) > .nav-market-drill-panel,
+.topbar .nav-links .nav-market-rail > .nav-market-drill:not(.is-open) > .nav-market-drill-panel {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(32px);
+  animation: none !important;
+}
+
+.site-nav .nav-links .nav-market-rail > .nav-market-drill.is-open > .nav-market-drill-panel,
+.topbar .nav-links .nav-market-rail > .nav-market-drill.is-open > .nav-market-drill-panel {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+}
