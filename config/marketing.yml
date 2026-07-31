@@ -1238,6 +1238,25 @@ desk_network:
 # pass regardless of whether the LLM or the deterministic fallback wrote it.
 # ─────────────────────────────────────────────────────────────────────────────
 copywriter:
+  # How old a RESOLVED Prophet plan may be and still earn a receipt post.
+  #
+  # WAS 14 IN CODE, WHICH IS WHY THE RECEIPTS DESK HAD NEVER PRODUCED ONE.
+  # Measured on the live board 2026-07-31 (site/prophet/index.json, 63 plans):
+  # every plan that had actually resolved was 21-22 days old, so a 14-day window
+  # admitted ZERO of them. The desk drew its share of the nightly tilt and
+  # emitted nothing, every night, while real receipts sat just past the edge.
+  #
+  # The mismatch is structural rather than a bad week: Prophet's swing horizon is
+  # 2-4 weeks, so a window shorter than the horizon it grades can only ever be
+  # empty. At 30 the same board yields 2 receipts ($MS, $QCOM).
+  #
+  # A receipt does not decay like a tape claim. "Three weeks ago I said X, here
+  # is how it resolved" is STRONGER than a three-day-old one because the outcome
+  # is settled — and it is the one post shape that costs something to make, which
+  # is the house voice law. Lower this to tighten; the plan announces a starved
+  # desk either way (::warning marketing-receipts-starved).
+  receipt_max_age_days: 30
+
   copy_laws:
     - sound like a real person on X, not a desk or a brand; contractions always, fragments are fine, natural-short not telegraph-short
     - NO em dashes and NO spaced en dashes anywhere; use a period, a comma, or a new sentence (hyphens in compounds like 52-week are fine)

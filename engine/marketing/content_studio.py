@@ -950,6 +950,52 @@ def _slot_day_num(slot: Any) -> int | None:
 #: not, so a handful of fallbacks is already the failure, not noise.
 _LEGACY_FALLBACK_ALARM_SHARE = 0.10
 
+def _alarm_on_starved_receipts(
+    plans: list[dict],
+    n_receipts: int,
+    window_days: int,
+    today: str | None = None,
+) -> None:
+    """A receipts desk with budget and no supply must say which it is.
+
+    THE SILENCE THIS REPLACES (2026-07-31). `graded_receipts` returned 0 every
+    night, the receipts desk drew its share of the tilt, and the plan recorded a
+    bare `graded_receipts: 0` that reads as "nothing resolved" — an honest quiet
+    week. It was not. Six plans on the live board HAD resolved (three hit a
+    profit level, three invalidated); they were 21 to 22 days old against a
+    14-day window. The supply existed and the gate was cutting it off.
+
+    Those two states look identical in the artifact and need opposite responses:
+    nothing to say is fine and self-correcting; a window shorter than the horizon
+    it grades is a permanent famine. So when there are ZERO receipts but resolved
+    plans exist just outside the window, this names the oldest one and the number
+    of days by which the window missed it.
+    """
+    if n_receipts:
+        return
+    try:
+        from engine.marketing.receipt_source import _age_days, _is_resolved
+    except Exception:  # noqa: BLE001
+        return
+
+    missed: list[int] = []
+    for plan in plans or []:
+        if not isinstance(plan, dict) or not _is_resolved(plan):
+            continue
+        age = _age_days(plan.get("_signal_date"), today=today)
+        if age is not None and age > window_days:
+            missed.append(age)
+    if not missed:
+        return          # genuinely nothing resolved — a quiet week, not a fault
+    print(f"::warning title=marketing-receipts-starved::"
+          f"{len(missed)} plan(s) RESOLVED but every one is older than the "
+          f"{window_days}-day receipt window (oldest {max(missed)}d, nearest "
+          f"{min(missed)}d). The receipts desk is drawing budget and can emit "
+          f"nothing. Prophet's horizon is 2-4 weeks, so a window shorter than it "
+          f"can only ever be empty — raise copywriter.receipt_max_age_days.",
+          flush=True)
+
+
 #: The ONE ladder day that can reach the outbox. outbox.emit_from_content_plan
 #: takes `day_prefix="D1"` and skips every other slot with one unconditional
 #: `continue`, and the governor takes that default.
@@ -3786,8 +3832,14 @@ def content_plan(
         )
         from engine.marketing.receipt_source import graded_receipts
 
-        _graded_receipts_list = graded_receipts(plans or [], today=today)
+        from engine.marketing.receipt_source import receipt_max_age_days
+
+        _receipt_window = receipt_max_age_days(cfg)
+        _graded_receipts_list = graded_receipts(
+            plans or [], today=today, max_age_days=_receipt_window)
         _copy_n_receipts = len(_graded_receipts_list)
+        _alarm_on_starved_receipts(
+            plans or [], _copy_n_receipts, _receipt_window, today)
         _receipts_by_ticker: dict[str, dict] = {
             r["ticker"]: r for r in _graded_receipts_list
         }

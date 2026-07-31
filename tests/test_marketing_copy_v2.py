@@ -2229,3 +2229,83 @@ class TestTheWriterIsPaidOnlyForCopyThatCanShip:
             "a zip still pairs the writer's output against the FULL queue"
         )
         assert src.count("_ctx_items.append(item_dict)") == 1
+
+
+class TestTheReceiptsDeskCanActuallyProduce:
+    """It drew budget nightly and emitted nothing, because of one constant.
+
+    Measured on the live board 2026-07-31 (site/prophet/index.json, 63 plans):
+    every plan that had actually RESOLVED — a profit level DONE, or invalidated —
+    was 21 to 22 days old. The receipt window was 14, so it admitted zero of
+    them. The supply existed; the gate was cutting it off.
+
+    Structural, not a bad week: Prophet's swing horizon is 2-4 weeks, so a window
+    shorter than the horizon it grades can only ever be empty.
+    """
+
+    @staticmethod
+    def _plan(ticker, *, days_ago, resolved, today="2026-07-31"):
+        from datetime import date, timedelta
+
+        y, m, d = (int(x) for x in today.split("-"))
+        sig = (date(y, m, d) - timedelta(days=days_ago)).isoformat()
+        plan = {"asset": ticker, "entry": 100.0, "invalidation": 85.0,
+                "targets": [115.0], "_signal_date": sig, "phase": "triggered_pre_t1",
+                "profit_plan": [{"status": "PENDING", "price": 115.0}]}
+        if resolved:
+            plan["profit_plan"] = [{"status": "DONE", "price": 115.0}]
+        return plan
+
+    def test_a_three_week_old_resolution_is_now_a_receipt(self):
+        from engine.marketing.receipt_source import graded_receipts
+
+        plans = [self._plan("MS", days_ago=21, resolved=True)]
+        assert graded_receipts(plans, today="2026-07-31"), (
+            "a 21-day-old resolved plan still yields no receipt — the window is "
+            "back under Prophet's own 2-4 week horizon and the desk is starved"
+        )
+
+    def test_the_window_is_config_driven_and_the_reader_exists(self):
+        """A config key nothing reads is a lie in a config file."""
+        import yaml
+
+        from engine.marketing.receipt_source import receipt_max_age_days
+
+        cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
+        assert receipt_max_age_days(cfg) >= 30
+        assert receipt_max_age_days({"copywriter": {"receipt_max_age_days": 45}}) == 45
+        assert receipt_max_age_days({}) >= 30           # falls back, never to 0
+        assert receipt_max_age_days({"copywriter": {"receipt_max_age_days": 0}}) >= 30
+
+    def test_resolution_is_asked_WITHOUT_the_freshness_window(self):
+        """Zero-because-quiet and zero-because-starved must be distinguishable."""
+        from engine.marketing.receipt_source import _is_resolved
+
+        assert _is_resolved(self._plan("A", days_ago=99, resolved=True)) is True
+        assert _is_resolved({"asset": "B", "phase": "invalidated"}) is True
+        assert _is_resolved(self._plan("C", days_ago=1, resolved=False)) is False
+        assert _is_resolved({}) is False
+
+    def test_a_starved_desk_announces_itself(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_starved_receipts
+
+        plans = [self._plan("MS", days_ago=21, resolved=True)]
+        _alarm_on_starved_receipts(plans, 0, 14, "2026-07-31")
+        line = capsys.readouterr().out
+        assert line.startswith("::warning title=marketing-receipts-starved::")
+        assert "RESOLVED" in line and "receipt_max_age_days" in line
+
+    def test_a_genuinely_quiet_week_stays_silent(self, capsys):
+        """Nothing resolved is fine and self-correcting. Do not cry wolf."""
+        from engine.marketing.content_studio import _alarm_on_starved_receipts
+
+        _alarm_on_starved_receipts(
+            [self._plan("A", days_ago=2, resolved=False)], 0, 30, "2026-07-31")
+        assert capsys.readouterr().out == ""
+
+    def test_a_producing_desk_stays_silent(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_starved_receipts
+
+        _alarm_on_starved_receipts(
+            [self._plan("A", days_ago=21, resolved=True)], 2, 30, "2026-07-31")
+        assert capsys.readouterr().out == ""
