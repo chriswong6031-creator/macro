@@ -20,6 +20,13 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 html[data-lang="zh"] .hub-signin .l-en{display:none}
 html[data-lang="zh"] .hub-signin .l-zh{display:inline}
 .h{text-align:center;margin:6px 0 22px;position:relative;isolation:isolate}
+.hub-page .h,.hub-page .globe-deck{
+ transition:opacity .18s ease,transform .22s cubic-bezier(.2,.82,.2,1),filter .18s ease}
+/* The global nav search is intentionally an overlay. On the hub, gently yield
+   the duplicate hero/globe layer while it is open so the result panel reads as
+   a focused command surface rather than an accidental collision. */
+.hub-page.nav-search-focus .h{opacity:.12;transform:translateY(5px) scale(.992);filter:saturate(.72)}
+.hub-page.nav-search-focus .globe-deck{opacity:.58;filter:saturate(.68)}
 .hub-live-meta{display:flex;justify-content:center;align-items:center;margin-top:14px}
 .hub-live-meta .eyebrow{margin-bottom:0}
 /* a soft, feathered radial --bg scrim sits BEHIND the hero text (own stacking
