@@ -368,20 +368,114 @@ def test_the_value_gate_is_armed():
     """Gift-Grip-Proof BLOCKS now, it does not just observe.
 
     It landed dark by design, with a stated precondition: "one cycle of recorded
-    verdicts read first". That cycle was read on 2026-07-30 -- 132 pass, 22
-    abstain -- and the 22 were exactly the class the operator graded F: three
-    near-identical "AI and chip trade is unwinding" event posts (grip:no_hook),
-    a macro post ending "None of this says what to buy"
-    (gift:no_informational_surplus), and "How I keep myself honest", which
-    narrates the receipts concept the copy law bans narrating.
+    verdicts read first". That cycle was read on 2026-07-30, MISREAD, and read
+    again. The first pass recorded 132 pass / 22 abstain and called all 22 the
+    operator's F-grade class. Fourteen of them were `grip:no_hook` on posts with
+    obvious hooks -- an empty-headline bug, not a verdict (see
+    value_gate.evaluate). Corrected: 142 pass / 12 abstain, and THOSE 12 are the
+    F-grade class -- five re-headlined copies of one "AI and chip trade is
+    unwinding" paragraph, "How I keep myself honest" twice, and three bare
+    template stems.
 
-    If this ever reads False again, 14% of the queue that a purpose-built
+    If this ever reads False again, the ~8% of the queue that a purpose-built
     quality gate rejects is shipping to live accounts.
     """
     import yaml
     from engine.marketing.outbox import _value_gate_enforced
     cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
-    assert _value_gate_enforced(cfg) is True
+    assert _value_gate_enforced(cfg, "signal") is True
+
+
+def test_arming_is_per_kind_so_an_unmeasured_lane_cannot_be_silenced():
+    """Zero observations buys zero authority -- the house rule, applied to us.
+
+    A global `enforce: true` would police `wire`, `earnings`, `receipt` and
+    `reply` on a corpus that contains none of them, which is the
+    "validated on the generator it polices" error value_gate.py's own pre-arming
+    note warns about. Those kinds ship and are RECORDED until measured.
+    """
+    import yaml
+    from engine.marketing.outbox import (
+        _value_gate_enforced,
+        value_gate_kind_is_measured,
+    )
+    cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
+
+    for measured in ("signal", "watchlist", "event", "chart", "macro"):
+        assert _value_gate_enforced(cfg, measured) is True, measured
+        assert value_gate_kind_is_measured(cfg, measured) is True, measured
+
+    for unmeasured in ("wire", "earnings", "receipt", "reply", "news"):
+        assert _value_gate_enforced(cfg, unmeasured) is False, (
+            f"{unmeasured} has no observations in the corpus and must not be "
+            "policed -- it should ship with its verdict recorded"
+        )
+        assert value_gate_kind_is_measured(cfg, unmeasured) is False, unmeasured
+
+    # A caller that cannot say what it is emitting gets the conservative answer.
+    assert _value_gate_enforced(cfg, None) is False
+
+
+def test_an_unmeasured_abstention_is_announced_not_swallowed():
+    """It is EVIDENCE being collected, and it has to reach a human to become that.
+
+    An unmeasured kind that abstains is the single signal that would justify
+    arming it later. If it is silent, the corpus never grows and the kind stays
+    unpoliced forever.
+    """
+    import inspect
+    from engine.marketing import press_lane
+    from engine.press import research_lane
+
+    for mod in (press_lane, research_lane):
+        src = inspect.getsource(mod)
+        assert "UNMEASURED kind" in src, (
+            f"{mod.__name__} does not distinguish a recorded abstention on an "
+            "unmeasured kind from an ordinary shadow-mode one"
+        )
+
+    from engine.marketing import outbox
+    assert 'counts["value_gate_unmeasured_kind"]' in inspect.getsource(outbox)
+
+
+def test_grip_reads_the_opening_line_when_a_post_has_no_headline_field():
+    """An X post is ONE BLOCK. Its hook is the first thing the reader meets.
+
+    THE DEFECT: grip reads `headline`, and every single-block producer passes
+    "". All eight devices then score False on copy that plainly has a hook, and
+    the verdict says `grip:no_hook` -- an editorial-sounding reason for a
+    plumbing fact. It was 14 of 22 abstentions on the live corpus, and it was
+    read as evidence FOR arming the gate.
+    """
+    from engine.marketing import value_gate as VG
+
+    # Real copy from data/marketing/outbox/items.jsonl that the bug rejected.
+    for text in (
+        "$EQT returned to 51.7, where buyers had history. They showed up again.",
+        "$ARLO, 4 green closes deep. I respect 14.2, won't chase. Under 11.9 "
+        "I'm wrong.",
+        "$TPR held 146, where the most shares traded over the past four months.",
+    ):
+        v = VG.evaluate("", text, kind="chart", has_media=True)
+        assert v.grip is True, (
+            f"still no hook found in {text!r} -- devices: {v.components['grip_devices']}"
+        )
+
+    # And the fix does not invent a hook where there is none: a bare template
+    # stem with a real headline still abstains.
+    stem = VG.evaluate(
+        "Macro without the jargon",
+        "Growth data has been roughly steady while inflation readings cool.",
+        kind="macro",
+    )
+    assert stem.grip is False, "a hookless template stem must still fail grip"
+
+    # An explicit headline always wins over the derived one.
+    explicit = VG.evaluate("Macro without the jargon", "$EQT returned to 51.7.",
+                           kind="macro")
+    assert explicit.grip is False, (
+        "the derived hook must only apply when NO headline was supplied"
+    )
 
 
 def test_a_blocked_post_is_counted_not_silently_dropped():

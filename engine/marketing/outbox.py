@@ -614,8 +614,8 @@ def compose_text(headline: object, body: object) -> str:
     return "\n\n".join(p for p in parts if p)
 
 
-def _value_gate_enforced(cfg: dict | None) -> bool:
-    """Is the Gift-Grip-Proof gate armed to BLOCK, or only to record?
+def _value_gate_enforced(cfg: dict | None, kind: str | None = None) -> bool:
+    """Is the Gift-Grip-Proof gate armed to BLOCK this kind, or only to record?
 
     THE SINGLE READER of `config/marketing.yml` `value_gate.enforce`. Ships
     false (the XG-W2 "LAND DARK" precedent): every emission carries its verdict
@@ -625,8 +625,52 @@ def _value_gate_enforced(cfg: dict | None) -> bool:
     A config key nothing reads is a lie in a config file, which is precisely
     what the XG-W3 review caught — so this function exists to be the reader, and
     `tests/test_marketing_desk_feeds.py` asserts both branches are live.
+
+    ARMING IS PER-KIND, BECAUSE THE EVIDENCE IS PER-KIND (2026-07-30).
+    `value_gate.py`'s own PRE-ARMING REQUIREMENT is that the regression corpus
+    cover the kinds enforcement will police, and it names the reason: a gate
+    armed on the kinds that happened to be in one nightly plan is "validated on
+    the generator it polices". The measured corpus
+    (`data/marketing/outbox/items.jsonl`, 154 stamped emissions) covers eight
+    kinds. It does not cover `wire`, `earnings`, `receipt`, `reply` or `news` —
+    for those the honest count of observations is ZERO, and a global boolean
+    would silence them on no evidence at all.
+
+    So `enforce` arms only the kinds listed in `value_gate.enforce_kinds`. An
+    emission of any other kind keeps its verdict RECORDED and ships, and the
+    caller announces the unmeasured kind so it stops being unmeasured. This is
+    the same posture the repo takes everywhere else: display-tier freely,
+    authority only where it was earned.
+
+    `enforce_kinds` absent (or empty) with `enforce: true` means EVERY kind —
+    the old global behaviour — so an operator can still arm the whole board in
+    one line once the corpus justifies it.
     """
-    return bool(((cfg or {}).get("value_gate") or {}).get("enforce", False))
+    block = (cfg or {}).get("value_gate") or {}
+    if not bool(block.get("enforce", False)):
+        return False
+    armed = block.get("enforce_kinds")
+    if not armed:
+        return True
+    if kind is None:
+        # No kind supplied: the caller cannot say what it is emitting, so it
+        # gets the conservative answer rather than a silent block.
+        return False
+    return str(kind) in {str(k) for k in armed}
+
+
+def value_gate_kind_is_measured(cfg: dict | None, kind: str | None) -> bool:
+    """Does `kind` sit inside the armed set? False means "recorded, not policed".
+
+    Exists so a caller can tell an abstention it ACTED on from one it merely
+    noticed, and log them differently — the distinction that was invisible while
+    both printed "would abstain".
+    """
+    block = (cfg or {}).get("value_gate") or {}
+    armed = block.get("enforce_kinds")
+    if not armed:
+        return True
+    return kind is not None and str(kind) in {str(k) for k in armed}
 
 
 def stamp_value_gate(
@@ -1908,11 +1952,19 @@ def emit_from_content_plan(
                         counts["value_gate_would_block"] = (
                             counts.get("value_gate_would_block", 0) + 1
                         )
-                        if _value_gate_enforced(cfg):
+                        _k = qi.get("type") or "signal"
+                        if _value_gate_enforced(cfg, _k):
                             counts["value_gate_blocked"] = (
                                 counts.get("value_gate_blocked", 0) + 1
                             )
                             continue
+                        # Recorded, not policed. Counted separately so the two
+                        # never read as one number: an unmeasured kind that
+                        # abstains is a REQUEST FOR EVIDENCE, not a rejection.
+                        if not value_gate_kind_is_measured(cfg, _k):
+                            counts["value_gate_unmeasured_kind"] = (
+                                counts.get("value_gate_unmeasured_kind", 0) + 1
+                            )
 
                     try:
                         item = make_item(

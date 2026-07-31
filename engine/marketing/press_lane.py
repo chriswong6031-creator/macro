@@ -689,11 +689,18 @@ def _emit_outbox_item(
         # enforce=True" is what a dropped post looked like in the nightly log,
         # and a reader scanning for trouble sees a rehearsal. A post that does
         # not ship is a ::warning, not a ::notice.
-        _enforced = _ob._value_gate_enforced(cfg)
+        _enforced = _ob._value_gate_enforced(cfg, "breaking")
         _why = ",".join(_verdict.get("reasons") or [])
         if _enforced:
             print("::warning title=press-lane-value-gate::"
                   f"{item_id}: ABSTAINED, not posted ({_why})", flush=True)
+        elif not _ob.value_gate_kind_is_measured(cfg, "breaking"):
+            # The kind is outside the armed set: the verdict is EVIDENCE being
+            # collected, not a judgment being applied. Say so, or the next
+            # reader arms it on a corpus that never contained this kind.
+            print("::notice title=press-lane-value-gate::"
+                  f"{item_id}: abstains on an UNMEASURED kind (breaking) — "
+                  f"recorded, post ships ({_why})", flush=True)
         else:
             print("::notice title=press-lane-value-gate::"
                   f"{item_id}: would abstain ({_why}) — shadow mode, post ships",

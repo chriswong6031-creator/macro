@@ -789,31 +789,67 @@ persona_memory:
   retention_days: 90
 
 value_gate:
-  # ARMED 2026-07-30. This landed dark on purpose: "a separate arming decision
-  # for the operator/session, not a builder's, and it wants one cycle of
+  # ARMED 2026-07-30, PER KIND. This landed dark on purpose: "a separate arming
+  # decision for the operator/session, not a builder's, and it wants one cycle of
   # recorded verdicts read first."
   #
-  # That cycle has now been read. On the live queue the gate stands at 132 pass
-  # / 22 abstain (14%), and the 22 are precisely the class the operator graded
-  # F. Verbatim, with their failing legs:
-  #   * three near-identical `event` posts all opening "The AI and chip trade is
-  #     unwinding today, with tech leading the selloff" (grip:no_hook);
-  #   * a macro post that ends "None of this says what to buy"
-  #     (gift:no_informational_surplus — it says so itself);
-  #   * "How I keep myself honest / Every call gets its result posted" — the
-  #     copy law's own banned move, narrating the receipts concept instead of
-  #     showing a receipt;
-  #   * "Last time the tape looked like this / Base rates over vibes, every
-  #     time" — an education lecture with no fact in it.
-  # Failing legs across the 22: bridge 18, grip 14, proof 10, gift 3.
+  # THE FIRST READING OF THAT CYCLE WAS WRONG, AND THE CORRECTION IS THE REASON
+  # THIS BLOCK IS SHAPED THE WAY IT IS. It recorded 132 pass / 22 abstain and
+  # called all 22 the operator's F-grade class, with "grip 14" among the failing
+  # legs. Those 14 were not editorial verdicts. `grip` reads the HEADLINE, and
+  # every producer that emits a post as one block — which is what a post on X
+  # actually is — passed `headline=""`, so all eight grip devices scored False on
+  # copy that plainly had a hook ("$EQT returned to 51.7, where buyers had
+  # history", "$ARLO, 4 green closes deep. I respect 14.2, won't chase"). 64% of
+  # what the gate blocked was plumbing wearing an editorial costume, and it was
+  # read as evidence FOR arming. value_gate.evaluate now derives the hook from the
+  # body's first line when no headline is supplied.
   #
-  # Blocking 14% is the right trade on a desk whose operator has said twice that
-  # volume is already too high and quality is the problem. Reversible with this
-  # one flag; every block is counted as `value_gate_blocked` and the verdict is
-  # stamped on the item either way, so the console shows exactly what it cost.
-  # The gate is fail-soft: if it raises, the item is treated as PASSING, so an
-  # outage cannot silence the desks.
+  # RE-MEASURED over the same 154 stamped emissions in
+  # data/marketing/outbox/items.jsonl: 142 pass / 12 abstain (7.8%). Legs:
+  # proof:below_reasoning 5, proof:below_hard 5, grip:no_hook 3,
+  # gift:no_informational_surplus 3. All 12 are the class the operator graded F:
+  #   * FIVE near-identical `event` posts opening "The AI and chip trade is
+  #     unwinding today, with tech leading the selloff" (proof:below_hard) —
+  #     the same paragraph re-headlined five ways;
+  #   * "How I keep myself honest / Every call gets its result posted" (twice)
+  #     and "Last time the tape looked like this" — narrating the receipts
+  #     concept instead of showing a receipt (proof:below_reasoning);
+  #   * "The base-rate way of thinking", "Using analogues without kidding
+  #     yourself" — education with no fact in it (gift:no_informational_surplus);
+  #   * "Macro without the jargon", "The discipline a watch list enforces" —
+  #     bare template stems (grip:no_hook).
+  #
+  # Blocking 7.8% is the right trade on a desk whose operator has said twice that
+  # volume is already too high and quality is the problem. Every block is counted
+  # as `value_gate_blocked` and the verdict is stamped either way, so the console
+  # shows exactly what it cost. The gate is fail-soft: if it raises, the item is
+  # treated as PASSING, so an outage cannot silence the desks.
   enforce: true
+
+  # ARMED KINDS — the corpus above, and nothing else.
+  #
+  # value_gate.py's PRE-ARMING REQUIREMENT is that the regression corpus cover
+  # the kinds enforcement polices, and it names the failure precisely: a gate
+  # armed on whatever kinds happened to appear in one nightly plan is "validated
+  # on the generator it polices". These eight are the kinds actually observed in
+  # the 154 stamped emissions. `wire`, `earnings`, `receipt`, `reply` and `news`
+  # have ZERO observations, and `theme_list`/`mover` reach the queue through
+  # lanes that never call the gate at all — arming those on a global boolean
+  # would silence them on no evidence whatsoever.
+  #
+  # An unarmed kind still gets its verdict STAMPED and still ships, and the lane
+  # announces it as an UNMEASURED kind so it stops being unmeasured. Delete this
+  # list to arm every kind at once, once a corpus justifies it.
+  enforce_kinds:
+    - signal
+    - watchlist
+    - event
+    - chart
+    - macro
+    - education
+    - breaking
+    - insider
 
 departments:
   growth_os:

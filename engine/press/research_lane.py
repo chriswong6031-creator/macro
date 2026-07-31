@@ -522,11 +522,15 @@ def build_items(pieces: Iterable[dict], *, cfg: dict | None = None,
                 # rehearsal and the lane is actually losing output. Shadow mode
                 # keeps "would abstain"; an armed refusal says so, at ::warning,
                 # because a post that does not ship is not a notice.
-                enforced = _ob._value_gate_enforced(cfg)
+                enforced = _ob._value_gate_enforced(cfg, KIND)
                 why = ",".join(verdict.get("reasons") or [])
                 if enforced:
                     print("::warning title=research-lane-value-gate::"
                           f"{rid}/{fmt}: ABSTAINED, not posted ({why})", flush=True)
+                elif not _ob.value_gate_kind_is_measured(cfg, KIND):
+                    print("::notice title=research-lane-value-gate::"
+                          f"{rid}/{fmt}: abstains on an UNMEASURED kind ({KIND}) — "
+                          f"recorded, post ships ({why})", flush=True)
                 else:
                     print("::notice title=research-lane-value-gate::"
                           f"{rid}/{fmt}: would abstain ({why}) — "
