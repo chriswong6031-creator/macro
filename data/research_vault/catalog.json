@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T11:57:51.599643+00:00",
-  "count": 456,
+  "generated_at": "2026-07-31T12:12:50.212392+00:00",
+  "count": 457,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1275,6 +1275,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zix5c2xagsu-f8ec7b",
+      "title": "Economics 07 2026 29 Update",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:34:41Z",
+      "summary_points": [
+        "**ECB rate hike contradicted by data**: Real M1 growth indicates no urgent GDP turning point, while depressed mortgage lending (3% yoy, real rate 0%) due to energy inflation undermines prior recovery assumptions.",
+        "**Geopolitical inflation restricts spending**: Iran shock drives inflation, suppressing real household and corporate spending, making ECB hikes unnecessary and counterproductive.",
+        "**Policy risk from ECB tightening**: Further ECB rate hikes would exacerbate economic strain despite stabilized energy inflation, contradicting data showing no need for tightening."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
