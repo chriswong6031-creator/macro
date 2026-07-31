@@ -46,6 +46,29 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
 
+<script>
+(function(){
+  if(window.mmLoadHeatmap)return;
+  var pending=null;
+  window.mmLoadHeatmap=function(){
+    if(window.MMHeatmap)return Promise.resolve(window.MMHeatmap);
+    if(pending)return pending;
+    pending=new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=new URL('heatmap.js',document.baseURI).href;
+      s.async=true;
+      s.onload=function(){
+        if(window.MMHeatmap)resolve(window.MMHeatmap);
+        else{pending=null;reject(new Error('heatmap API unavailable'));}
+      };
+      s.onerror=function(){pending=null;reject(new Error('heatmap load failed'));};
+      (document.head||document.documentElement).appendChild(s);
+    });
+    return pending;
+  };
+})();
+</script>
+
 
 <link rel="stylesheet" href="illus.css?v=816c67ce">
 <link rel="stylesheet" href="assets/css/abb1aea3.css?v=abb1aea3">
@@ -2317,7 +2340,7 @@
 </div>
 
 
-<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-31 03:15 UTC</p>
+<p class="muted small" style="margin-top:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-07-31 04:16 UTC</p>
 
 </div>
 
@@ -2467,10 +2490,15 @@
     history.replaceState(null,'',location.pathname+'#'+id);
     requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('cax-in');});});
     /* Lazy-mount the Canada heatmap the first time the Markets dialog opens */
-    if(id==='cax-dlg-markets'&&!_hmMounted&&window.MMHeatmap&&MMHeatmap.mountScorecard){
-      _hmMounted=true;
-      try{MMHeatmap.mountScorecard('ca-hm-embed','marketdata/canada_heatmap.json');}
-      catch(e){_hmMounted=false;}
+    if(id==='cax-dlg-markets'&&!_hmMounted){
+      var mountHm=function(){
+        if(_hmMounted||!el.classList.contains('open')||!window.MMHeatmap||!MMHeatmap.mountScorecard)return;
+        _hmMounted=true;
+        try{MMHeatmap.mountScorecard('ca-hm-embed','marketdata/canada_heatmap.json');}
+        catch(e){_hmMounted=false;}
+      };
+      if(window.MMHeatmap)mountHm();
+      else if(window.mmLoadHeatmap)window.mmLoadHeatmap().then(mountHm).catch(function(){});
     }
     /* Replay the ilx / Signal-Ink charts in this dialog. They're already laid out
        (stretch to their column via illus.css); ilxReveal restarts the ink draw once
@@ -2529,8 +2557,7 @@
   window.caxCloseDlg=caxCloseDlg;
   window.caxTogglePop=caxTogglePop;
   window.caxClosePops=caxClosePops;
-  /* defer hash-open to DOMContentLoaded so heatmap.js has time to register
-     window.MMHeatmap before cax-dlg-markets is opened (china pattern fix) */
+  /* Resolve only after the dialog DOM and lazy heatmap loader are available. */
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',caxResolveHash);
   }else{
@@ -2539,7 +2566,6 @@
   window.addEventListener('hashchange',caxResolveHash);
 })();
 </script>
-<script src="heatmap.js?v=74c8da96" defer></script>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>

@@ -64,7 +64,29 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
-<link rel="stylesheet" href="onboard.css?v=5c897a72">
+
+<script>
+(function(){
+  if(window.mmLoadHeatmap)return;
+  var pending=null;
+  window.mmLoadHeatmap=function(){
+    if(window.MMHeatmap)return Promise.resolve(window.MMHeatmap);
+    if(pending)return pending;
+    pending=new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=new URL('heatmap.js',document.baseURI).href;
+      s.async=true;
+      s.onload=function(){
+        if(window.MMHeatmap)resolve(window.MMHeatmap);
+        else{pending=null;reject(new Error('heatmap API unavailable'));}
+      };
+      s.onerror=function(){pending=null;reject(new Error('heatmap load failed'));};
+      (document.head||document.documentElement).appendChild(s);
+    });
+    return pending;
+  };
+})();
+</script>
 <link rel="stylesheet" href="tier_preview.css?v=1c64e203">
 
 
@@ -4422,14 +4444,14 @@
       <div class="mx5-ai-body">
         
         <span class="l-en">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 High-Impact Items</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 High-Impact Items</span><br>
           Dominant channel: <span style="color:var(--mx5-accent-ink);font-weight:600">earnings</span><br>
-          9 high-impact signals across channels
+          7 high-impact signals across channels
         </span>
         <span class="l-zh">
-          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">9 条高影响信息</span><br>
+          <span style="color:var(--ink-3,rgba(255,255,255,.36));font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;">7 条高影响信息</span><br>
           主导频道：<span style="color:var(--mx5-accent-ink);font-weight:600">业绩</span><br>
-          9 条高影响信号
+          7 条高影响信号
         </span>
         
       </div>
@@ -8050,15 +8072,33 @@
           
           
           
-          <a class="nbx-item" href="https://seekingalpha.com/news/4622332-caredx-raises-2026-revenue-outlook-to-490m-500m-as-navdx-integration-begins?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+          <a class="nbx-item" href="https://seekingalpha.com/news/4622340-dexcom-lifts-2026-revenue-outlook-to-5_18b-5_25b-as-it-targets-nearly-50-percent-u-s-g7-15?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">CareDx raises 2026 revenue outlook to $490M-$500M as NavDx integration begins</span><span class="l-zh">CareDx上调2026年营收展望至4.9亿-5亿美元，NavDx整合启动</span></span>
+              <span class="nbx-title"><span class="l-en">Dexcom lifts 2026 revenue outlook to $5.18B-$5.25B as it targets nearly 50% U.S. G7 15 Day conversion by year-end</span><span class="l-zh">Dexcom将2026年营收展望上调至51.8亿-52.5亿美元，目标年底前美国G7 15 Day转换率接近50%</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Jul 31</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.npr.org/2026/07/30/nx-s1-5912203/federal-reserve-holds-interest-rates-steady-despite-high-inflation" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="nbx-title"><span class="l-en">Federal Reserve holds interest rates steady despite high inflation</span><span class="l-zh">美联储尽管通胀高企仍维持利率不变</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 30</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8089,84 +8129,12 @@
           <a class="nbx-item" href="https://www.cnbc.com/2026/07/29/the-market-is-overreacting-to-metas-earnings-heres-our-plan-.html" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">The market is overreacting to Meta&#39;s earnings and guidance. Here&#39;s our plan</span><span class="l-zh">市场对Meta的财报和指引反应过度。以下是我们的计划</span></span>
+              <span class="nbx-title"><span class="l-en">The market is overreacting to Meta&#39;s earnings and guidance. Here&#39;s our plan</span><span class="l-zh">市场对Meta财报及指引反应过度。以下是我们的计划</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Jul 30</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.npr.org/2026/07/30/nx-s1-5912203/federal-reserve-holds-interest-rates-steady-despite-high-inflation" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
-              <span class="nbx-title"><span class="l-en">Federal Reserve holds interest rates steady despite high inflation</span><span class="l-zh">美联储尽管通胀高企仍维持利率不变</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 31</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://finance.yahoo.com/markets/stocks/articles/wec-energy-beats-earnings-forecast-134131255.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">WEC Energy Beats Earnings Forecast but Revenue Miss and Outlook Weigh on Shares</span><span class="l-zh">WEC Energy盈利超预期但营收不及预期且展望疲软拖累股价</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 29</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://seekingalpha.com/news/4622338-sps-commerce-outlines-2026-revenue-of-788_4m-793_4m-as-it-targets-ai-agent-monetization-by?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">SPS Commerce outlines 2026 revenue of $788.4M-$793.4M as it targets AI agent monetization by late Q4</span><span class="l-zh">SPS Commerce设定2026年营收7.884亿-7.934亿美元，目标在第四季度末实现AI代理商业化</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 31</span>
-              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
-            </div>
-            
-          </a>
-          
-          
-          
-          
-          
-          <a class="nbx-item" href="https://www.cnbc.com/2026/07/28/meta-q2-earnings-call-mentions-kalshi-market-odds-.html" target="_blank" rel="noopener">
-            <div class="nbx-top">
-              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
-              <span class="nbx-title"><span class="l-en">Meta likely to highlight smart glasses, avoid social media policy on upcoming earnings call, Kalshi traders say</span><span class="l-zh">Kalshi交易员称Meta即将到来的财报电话会议料将聚焦智能眼镜，回避社交媒体政策</span></span>
-            </div>
-            <div class="nbx-meta">
-              <span class="nbx-src">news_rss</span>
-              <span class="nbx-dot">·</span>
-              <span class="nbx-date">Jul 28</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -8194,15 +8162,69 @@
           
           
           
+          <a class="nbx-item" href="https://www.cnbc.com/2026/07/28/meta-q2-earnings-call-mentions-kalshi-market-odds-.html" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">Meta likely to highlight smart glasses, avoid social media policy on upcoming earnings call, Kalshi traders say</span><span class="l-zh">Kalshi交易员称，Meta在即将到来的财报电话会议上可能重点介绍智能眼镜，回避社交媒体政策</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 28</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://www.federalreserve.gov/newsevents/pressreleases/monetary20260729a.htm" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Fed</span><span class="l-zh">美联储</span></span>
+              <span class="nbx-title"><span class="l-en">Federal Reserve issues FOMC statement</span><span class="l-zh">美联储发布FOMC声明</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">official</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 29</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
           <a class="nbx-item" href="https://www.marketwatch.com/story/metas-stock-is-falling-hard-heres-why-the-company-is-in-wall-streets-doghouse-afae2f55?mod=mw_rss_topstories" target="_blank" rel="noopener">
             <div class="nbx-top">
               <span class="nbx-theme"><span class="l-en">Stocks</span><span class="l-zh">个股</span></span>
-              <span class="nbx-title"><span class="l-en">Meta’s stock falls hard. Here’s why the company is in Wall Street’s doghouse.</span><span class="l-zh">Meta股价大幅下跌。以下是该公司为何失宠于华尔街的原因。</span></span>
+              <span class="nbx-title"><span class="l-en">Meta’s stock falls hard. Here’s why the company is in Wall Street’s doghouse.</span><span class="l-zh">Meta股价大幅下跌。以下是该公司为何失宠于华尔街。</span></span>
             </div>
             <div class="nbx-meta">
               <span class="nbx-src">news_rss</span>
               <span class="nbx-dot">·</span>
               <span class="nbx-date">Jul 30</span>
+              <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
+            </div>
+            
+          </a>
+          
+          
+          
+          
+          
+          <a class="nbx-item" href="https://seekingalpha.com/news/4622346-godaddy-forecasts-q3-2026-revenue-of-1_315b-1_335b-while-reaffirming-1_8b-free-cash-flow?utm_source=feed_news_all&amp;utm_medium=referral&amp;feed_item_type=news" target="_blank" rel="noopener">
+            <div class="nbx-top">
+              <span class="nbx-theme"><span class="l-en">Earnings</span><span class="l-zh">业绩</span></span>
+              <span class="nbx-title"><span class="l-en">GoDaddy forecasts Q3 2026 revenue of $1.315B-$1.335B while reaffirming ~$1.8B free cash flow target</span><span class="l-zh">GoDaddy预测2026年第三季度营收为13.15亿-13.35亿美元，同时重申约18亿美元自由现金流目标</span></span>
+            </div>
+            <div class="nbx-meta">
+              <span class="nbx-src">news_rss</span>
+              <span class="nbx-dot">·</span>
+              <span class="nbx-date">Jul 31</span>
               <span class="nbx-arrow"><span class="l-en">Read</span><span class="l-zh">阅读</span> →</span>
             </div>
             
@@ -10157,6 +10179,12 @@
       /* 1) make it displayed (start state painted) */
       dlg.classList.add('open');
       dlg.setAttribute('aria-modal','true');
+      /* This heatmap exists only inside the hidden Markets dialog. Fetch its
+         134 KB renderer after the dialog is visible instead of taxing every
+         cold dashboard visit. */
+      if(id === 'dlg-markets' && window.mmLoadHeatmap){
+        window.mmLoadHeatmap().catch(function(){ /* full-page link remains */ });
+      }
       /* Scroll lock (M03): lock the real scroller (<html>) and freeze <body> at the
          current scrollY so wheel/trackpad/arrow scrolling can't leak to the page
          behind the modal. Capture only on first open (switching dialogs is a no-op). */
@@ -11973,9 +12001,9 @@
       
     </table>
     <p class="muted"><span class="l-en">A failed source never crashes the dashboard — affected signals just lose confidence until it heals.
-       Generated 2026-07-31 01:51 UTC · <a href="aibrief.html">AI daily brief</a> ·
+       Generated 2026-07-31 03:01 UTC · <a href="aibrief.html">AI daily brief</a> ·
        <a href="history.html">history & charts</a></span><span class="l-zh">数据源失败绝不会让仪表盘崩溃 — 受影响的信号只是降低置信度，直到其恢复。
-       生成于 2026-07-31 01:51 UTC · <a href="aibrief.html">AI每日简报</a> ·
+       生成于 2026-07-31 03:01 UTC · <a href="aibrief.html">AI每日简报</a> ·
        <a href="history.html">历史与图表</a></span></p>
   </details>
   
@@ -12066,8 +12094,7 @@ window.__CHART_SWAP__ = {
            "HY OAS %":"高收益债利差 %","% S&P500 > 50DMA":"标普500 高于50日均线 %"}
 };
 </script>
-<script src="theme.js?v=0c14abc8" defer></script>
-<script src="onboard.js?v=37b179a8" defer></script>
+<script src="theme.js?v=dd69c67c" defer></script>
 <script src="tier_preview.js?v=cd38973c" defer></script>
 <script src="chart_i18n.js?v=23272c48" defer></script>
 <script src="timemachine.js?v=92798ed7" defer></script>
@@ -12076,7 +12103,6 @@ window.__CHART_SWAP__ = {
 
 <script src="risk_state_live.js?v=07117cd1" defer></script>
 <script src="release_publications_live.js?v=edf357d3" defer></script>
-<script src="heatmap.js?v=74c8da96" defer></script>
 <script>
 /* Keep .help tooltips on-screen: flip below the icon when it's near the top of
    the viewport, and clamp horizontally near the left/right edges. Hover-only,

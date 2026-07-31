@@ -48,6 +48,29 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
 
+<script>
+(function(){
+  if(window.mmLoadHeatmap)return;
+  var pending=null;
+  window.mmLoadHeatmap=function(){
+    if(window.MMHeatmap)return Promise.resolve(window.MMHeatmap);
+    if(pending)return pending;
+    pending=new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=new URL('heatmap.js',document.baseURI).href;
+      s.async=true;
+      s.onload=function(){
+        if(window.MMHeatmap)resolve(window.MMHeatmap);
+        else{pending=null;reject(new Error('heatmap API unavailable'));}
+      };
+      s.onerror=function(){pending=null;reject(new Error('heatmap load failed'));};
+      (document.head||document.documentElement).appendChild(s);
+    });
+    return pending;
+  };
+})();
+</script>
+
 
 <link rel="stylesheet" href="illus.css?v=816c67ce">
 <link rel="stylesheet" href="assets/css/9d46e7cb.css?v=9d46e7cb">
@@ -416,7 +439,7 @@
         
         
         <button class="cnx-hbtn" onclick="cnxTogglePop('cnx-pop-risk',event)" style="border-color:color-mix(in srgb,var(--down) 50%,transparent)">⚠
-          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--down)">90</span> ▾</button>
+          <span class="l-en">Pullback risk</span><span class="l-zh">回撤风险</span> · <span class="n" style="color:var(--down)">91</span> ▾</button>
 
         <!-- popover: factor breakdown -->
         <div class="cnx-pop" id="cnx-pop-signals">
@@ -477,8 +500,8 @@
         <div class="cnx-pop" id="cnx-pop-risk" style="left:auto">
           <div class="cnx-pop-h"><span class="l-en">Pullback risk radar</span><span class="l-zh">回撤风险雷达</span></div>
           
-          <div class="cnx-pop-big"><span class="n">90</span><span class="t"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span></div>
-          <div class="cnx-pop-sub"><span class="l-en">~40% chance of a ≥5% pullback within a month · 1.3× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约40% · 约为平时的1.3倍</span></div>
+          <div class="cnx-pop-big"><span class="n">91</span><span class="t"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span></div>
+          <div class="cnx-pop-sub"><span class="l-en">~50% chance of a ≥5% pullback within a month · 1.6× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约50% · 约为平时的1.6倍</span></div>
           
           <div class="cnx-pop-row">
             <div class="pr-t"><span><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span><b>82</b></div>
@@ -878,17 +901,17 @@
     
     
     <div class="cnx-card" role="button" tabindex="0" onclick="cnxOpenDlg('cnx-dlg-risk')" style="border-color:color-mix(in srgb,var(--down) 35%,transparent)">
-      <div class="cnx-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cnx-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)"><span class="l-en">ELEVATED</span><span class="l-zh">偏高</span></span></div>
+      <div class="cnx-ctitle"><span class="l-en">Pullback Risk</span><span class="l-zh">回撤风险</span> <span class="cnx-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down)"><span class="l-en">HIGH</span><span class="l-zh">高</span></span></div>
       
-      <div class="cnx-bignum" style="color:var(--down)">90<span style="font-size:14px;color:var(--muted)"> /100</span></div>
+      <div class="cnx-bignum" style="color:var(--down)">91<span style="font-size:14px;color:var(--muted)"> /100</span></div>
       <div class="cnx-bigsub" style="color:var(--down)"><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></div>
       
-      <div class="cnx-kv"><span class="k"><span class="l-en">≥5% dip odds</span><span class="l-zh">≥5%回撤概率</span></span><span class="v">40%</span></div>
+      <div class="cnx-kv"><span class="k"><span class="l-en">≥5% dip odds</span><span class="l-zh">≥5%回撤概率</span></span><span class="v">50%</span></div>
       <div class="cnx-kv"><span class="k"><span class="l-en">Deep-drawdown gauge</span><span class="l-zh">深跌仪表</span></span>
         
         
         <span class="v"><span style="font-weight:700;color:var(--warn)"><span class="l-en">Elevated</span><span class="l-zh">偏高</span></span></span></div>
-      <div class="cnx-foot"><span class="l-en">De-risk: cut size, don't add to froth, honour stops.</span><span class="l-zh">降险：减仓、勿加注泡沫、严守止损。</span></div>
+      <div class="cnx-foot"><span class="l-en">Protect capital: raise cash, no new chases.</span><span class="l-zh">保住本金：提高现金、勿追新高。</span></div>
     </div>
     
 
@@ -1075,18 +1098,18 @@
       
         
         <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>业界存年内降准降息预期</b>
-            <span class="sub">PBoC · 富途牛牛</span></div>
+          <span class="ic">📰</span>
+          <div class="tx"><b>国家统计局：7月份制造业采购经理指数（PMI）为49.2%</b>
+            <span class="sub">Growth · 证券时报</span></div>
         </div>
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>华尔街见闻早餐 | 2026年7月31日</b>
-            <span class="sub">Inflation · 华尔街见闻</span></div>
+          <div class="tx"><b>国家统计局：装备制造业和高技术制造业继续发挥支撑引领作用</b>
+            <span class="sub">Growth · 华尔街见闻</span></div>
         </div>
         
-        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 795 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
+        <div class="cnx-view-all">24 <span class="l-en">of</span><span class="l-zh">/</span> 808 <span class="l-en">stories kept · full feed →</span><span class="l-zh">条新闻保留 · 完整新闻流 →</span></div>
       
     </div>
   </div>
@@ -1329,13 +1352,13 @@
       <div class="cnx-dlg-body">
         <div class="cnx-cols2">
           <div>
-            <div class="cnx-eyebrow"><span class="l-en">Risk radar</span><span class="l-zh">风险雷达</span> · 90/100</div>
+            <div class="cnx-eyebrow"><span class="l-en">Risk radar</span><span class="l-zh">风险雷达</span> · 91/100</div>
             
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 8px">
-              <span class="cnx-bignum" style="color:var(--down)">90</span>
+              <span class="cnx-bignum" style="color:var(--down)">91</span>
               <span class="cnx-alert-pill" style="background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down);margin:0"><span class="l-en">BREADTH BREAKDOWN (ALL-BOATS)</span><span class="l-zh">广度普跌（普跌）</span></span>
             </div>
-            <div style="font-size:12px;color:var(--muted);margin-bottom:10px"><span class="l-en">~40% chance of a ≥5% pullback within a month · 1.3× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约40% · 约为平时的1.3倍</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:10px"><span class="l-en">~50% chance of a ≥5% pullback within a month · 1.6× the usual odds</span><span class="l-zh">未来一个月内出现≥5%回撤的概率约50% · 约为平时的1.6倍</span></div>
             
             <div class="cnx-frow" style="grid-template-columns:170px 1fr 40px">
               <span><span class="l-en">Breadth breakdown (all-boats)</span><span class="l-zh">广度普跌（普跌）</span></span>
@@ -1992,41 +2015,13 @@
         <div class="cnx-sep"></div>
         
         
-        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 795 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">🏦</span>
-          <div class="tx"><b>业界存年内降准降息预期</b>
-            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 富途牛牛 · 100/100</span></div>
-        </div>
+        <div class="cnx-eyebrow"><span class="l-en">Today's feed</span><span class="l-zh">今日新闻</span> · 24 <span class="l-en">of</span><span class="l-zh">/</span> 808 <span class="l-en">stories kept</span><span class="l-zh">条保留</span></div>
         
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>华尔街见闻早餐 | 2026年7月31日</b>
-            <span class="sub"><span class="l-en">Inflation</span><span class="l-zh">物价</span> · 华尔街见闻 · 100/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>国家统计局：7月份制造业PMI为49.2%，比上月下降1.1个百分点</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 同花顺 · 96/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>国家统计局：7月制造业采购经理指数（PMI）为49.2%</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 富途牛牛 · 96/100</span></div>
-        </div>
-        
-        
-        <div class="cnx-row">
-          <span class="ic">📰</span>
-          <div class="tx"><b>国家统计局：非制造业商务活动指数有所下降，文旅行业较为活跃</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 富途牛牛 · 94/100</span></div>
+          <div class="tx"><b>国家统计局：7月份制造业采购经理指数（PMI）为49.2%</b>
+            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 证券时报 · 88/100</span></div>
         </div>
         
         
@@ -2053,15 +2048,43 @@
         
         <div class="cnx-row">
           <span class="ic">📰</span>
-          <div class="tx"><b>中国7月官方制造业PMI将于十分钟后公布</b>
-            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 富途牛牛 · 82/100</span></div>
+          <div class="tx"><b>发改委：下半年物价有望保持平稳运行</b>
+            <span class="sub"><span class="l-en">Inflation</span><span class="l-zh">物价</span> · 华尔街见闻 · 74/100</span></div>
         </div>
         
         
         <div class="cnx-row">
-          <span class="ic">🏛</span>
-          <div class="tx"><b>财经早报：升资本市场韧性和信心！中央政治局会议最新定调释放多重信号丨2026年7月31日</b>
-            <span class="sub"><span class="l-en">Policy</span><span class="l-zh">政策</span> · 新浪财经股票 · 82/100</span></div>
+          <span class="ic">📰</span>
+          <div class="tx"><b>Chinese business responds to EU acceleration of Cybersecurity Law revision draft and Industrial Accelerator Act</b>
+            <span class="sub"><span class="l-en">Inflation</span><span class="l-zh">物价</span> · 金十数据 · 80/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>中国7月官方综合PMI 49.3，前值 50.6</b>
+            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 华尔街见闻 · 76/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">🏦</span>
+          <div class="tx"><b>中国央行公开市场今日净投放450亿元人民币</b>
+            <span class="sub"><span class="l-en">PBoC</span><span class="l-zh">央行</span> · 华尔街见闻 · 68/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>国家统计局称，从企业规模看，7月，大、中、小型企业制造业PMI分别为49.5%、49.7%和47.4%，比上月下降1.2个、0.8个和0.8个百分点，均低于临界点</b>
+            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 华尔街见闻 · 74/100</span></div>
+        </div>
+        
+        
+        <div class="cnx-row">
+          <span class="ic">📰</span>
+          <div class="tx"><b>提醒：北京时间09:30将公布中国7月官方制造业和非制造业PMI</b>
+            <span class="sub"><span class="l-en">Growth</span><span class="l-zh">增长</span> · 华尔街见闻 · 74/100</span></div>
         </div>
         
         
@@ -2260,7 +2283,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-31 01:57 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-31 03:35 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
@@ -2286,10 +2309,15 @@ window.__CHART_SWAP__ = {
     requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('cnx-in');});});
     /* Lazy-mount the China heatmap the first time the Markets dialog opens — the
        treemap needs a laid-out (visible) container, so we can't render it while hidden. */
-    if(id==='cnx-dlg-markets'&&!_hmMounted&&window.MMHeatmap&&MMHeatmap.mountScorecard){
-      _hmMounted=true;
-      try{MMHeatmap.mountScorecard('cn-hm-embed','marketdata/china_heatmap.json');}
-      catch(e){_hmMounted=false;}
+    if(id==='cnx-dlg-markets'&&!_hmMounted){
+      var mountHm=function(){
+        if(_hmMounted||!el.classList.contains('open')||!window.MMHeatmap||!MMHeatmap.mountScorecard)return;
+        _hmMounted=true;
+        try{MMHeatmap.mountScorecard('cn-hm-embed','marketdata/china_heatmap.json');}
+        catch(e){_hmMounted=false;}
+      };
+      if(window.MMHeatmap)mountHm();
+      else if(window.mmLoadHeatmap)window.mmLoadHeatmap().then(mountHm).catch(function(){});
     }
     /* Replay the ilx / Signal-Ink charts in this dialog. They're already laid out
        (stretch to their column via illus.css); ilxReveal restarts the ink draw once
@@ -2443,244 +2471,7 @@ window.__CHART_SWAP__ = {
 <script src="chart_i18n.js?v=23272c48" defer></script>
 <script src="mtf.js?v=b62aea2f" defer></script>
 <script src="tablesort.js?v=484d9333" defer></script>
-<script src="stocktable.js?v=b1a1a572" defer></script>
-<script>
-/* W8-E: StockTable init — standout board table view (CN market).
-   Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent. */
-(function(){
-function initStockTableView(){
-  if (!window.StockTable) return;
-  var SECZH = {"Technology":"科技","Industrials":"工业","Basic Materials":"原材料","Financial Services":"金融","Consumer Cyclical":"可选消费","Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费","Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产"};
-  var STAGE_LABELS = {"ENTRY":["ENTRY","入场"],"RAN_LATE":["RAN/LATE","信号已过"],"RIPENING":["RIPENING","蓄势中"]};
-  var ZONE_LABELS = {"READY":["READY","就绪"],"BASING":["BASING","筑底"],"FALLING":["FALLING","下跌"]};
-  var LANE_LABELS = {
-    "featured":["Featured","精选入场"],
-    "more_actionable":["More live","更多实时"],
-    "late_or_unfillable":["Blocked / late","受阻 / 已晚"],
-    "forming":["Early warning","早期预警"],
-    "ripening":["Ripening","蓄势中"],
-    "falling":["Falling","下跌中"],
-    "ran":["Already ran","信号已过"]
-  };
-  var TIER_ZH = {"PRIME":"极佳","CONFIRMED":"确认","CONFIRMING":"确认中","APPROACHING":"临近","FIRST SPARK":"首信号"};
-  var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum, mg = StockTable._macdGlyph;
 
-  function legacyContextRank(r) {
-    /* Context-only ordering for the older ripening/ran shelves. Prophet board
-       rows never enter this heuristic. */
-    var st = r.stage || r._stage, zone = r.zone, v;
-    if (st === 'ENTRY') {
-      v = (r.conviction != null ? parseFloat(r.conviction) : 45);
-      if (r.days_since_signal != null && r.days_since_signal <= 2) v += 8;
-      if (r.washout_2w) v += 4;
-      if (r.coiled) v += 2;
-    } else if (st === 'RIPENING' && zone === 'READY') {
-      v = 55;
-      if (r.imminence != null) v += Math.max(0, 18 - 8 * r.imminence);
-      if (r.w2_stoch != null) v += r.w2_stoch <= 20 ? 10 : (r.w2_stoch <= 35 ? 6 : 0);
-      if (r.w2_stoch_arrow === 1) v += 4;
-      if (r.macd_hist_d != null && r.macd_hist_d > 0) v += 3;
-    } else if (st === 'RIPENING' && zone === 'BASING') {
-      v = 35;
-      if (r.w2_stoch != null) v += r.w2_stoch <= 20 ? 12 : (r.w2_stoch <= 35 ? 7 : 0);
-      if (r.w2_stoch_arrow === 1) v += 5;
-      if (r.macd_hist_d != null && r.macd_hist_d > 0) v += 3;
-      if (r.spot_pct_in_range != null) v += r.spot_pct_in_range <= 15 ? 6 : (r.spot_pct_in_range <= 30 ? 3 : 0);
-    } else if (st === 'RIPENING') {   // FALLING — knife; stays near the bottom
-      v = 8;
-      if (r.w2_stoch_arrow === 1) v += 4;
-    } else {                          // RAN_LATE — signal spent
-      v = 2;
-    }
-    return Math.max(0, Math.min(100, v));
-  }
-
-  function prophetTableRank(r) {
-    /* Preserve semantic lanes first, then the server-issued Prophet priority.
-       This keeps execution-blocked and early-warning rows from sorting above
-       featured entries because of an unrelated client-side heuristic. */
-    var laneOrder = {
-      featured:7, more_actionable:6, late_or_unfillable:5,
-      ripening:4, forming:3, falling:2, ran:1
-    };
-    var bucket = laneOrder[r.lane] || 0;
-    var score = r.prophet_score == null ? legacyContextRank(r) : parseFloat(r.prophet_score);
-    if (isNaN(score)) score = 0;
-    var tie = r.score_rank == null ? 0 : Math.max(0, 10000 - parseInt(r.score_rank,10)) / 100000;
-    return bucket * 1000 + score + tie;
-  }
-
-  function laneBadge(lane) {
-    if (!lane) return '<span class="st-muted">—</span>';
-    var pair = LANE_LABELS[lane] || [lane.replace(/_/g,' '),lane.replace(/_/g,' ')];
-    var cls = lane === 'featured' ? 'st-chip-entry' :
-      lane === 'late_or_unfillable' || lane === 'ran' ? 'st-chip-ran' :
-      lane === 'forming' || lane === 'falling' ? 'st-chip-knife' : 'st-chip-rip';
-    return '<span class="st-chip ' + cls + '">' + b(esc(pair[0]),esc(pair[1])) + '</span>';
-  }
-
-  function stageBadge(stage, zone) {
-    if (!stage) return '<span class="st-muted">—</span>';
-    var cls = stage === 'ENTRY' ? 'st-chip-entry' : stage === 'RAN_LATE' ? 'st-chip-ran' : zone === 'FALLING' ? 'st-chip-knife' : 'st-chip-rip';
-    var lbl = stage === 'RIPENING' ? (zone || 'RIPENING') : stage;
-    var lzh = ZONE_LABELS[lbl] ? ZONE_LABELS[lbl][1] : (STAGE_LABELS[lbl] ? STAGE_LABELS[lbl][1] : lbl);
-    var len = ZONE_LABELS[lbl] ? ZONE_LABELS[lbl][0] : (STAGE_LABELS[lbl] ? STAGE_LABELS[lbl][0] : lbl);
-    return '<span class="st-chip ' + cls + '">' + b(len, lzh) + '</span>';
-  }
-
-  /* Default view = 9 columns that fit a laptop viewport with no horizontal
-     scroll (operator request 2026-07-10). Specialist columns (tier, theme,
-     2W stoch, MACD, imminence, range%…) stay available via the Columns chooser. */
-  var cols = [
-    { key:'lane', labelEn:'Lane', labelZh:'通道', default:true, sortable:true,
-      fmt:function(v){ return laneBadge(v); },
-      tip:{en:'Prophet admission lane. Featured cleared every execution check; depth lanes state why a name did not.',zh:'先知准入通道。精选标的通过全部成交检查；扩展通道说明未入选原因。'} },
-    { key:'_stage_zone', labelEn:'Stage', labelZh:'阶段', default:false, sortable:false,
-      fmt:function(v,r){ return stageBadge(r.stage||r._stage, r.zone); },
-      tip:{en:'Signal stage and zone (rows are pre-ranked by system)',zh:'信号阶段与区域（行已按系统排序）'} },
-    { key:'ticker', labelEn:'Ticker', labelZh:'代码', default:true, sortable:true,
-      fmt:function(v,r){
-        var fresh = (r.days_since_signal != null && r.days_since_signal <= 2);
-        return (fresh ? '<span class="st-new-dot"></span>' : '') + '<b>' + esc(v||'') + '</b>';
-      }},
-    { key:'name', labelEn:'Name', labelZh:'名称', default:true, sortable:true, cls:'st-name',
-      fmt:function(v,r){
-        var parts = (v||'').split(' / ');
-        return '<span class="l-en">' + esc(parts[0]||'') + '</span><span class="l-zh">' + esc(parts[1]||parts[0]||'') + '</span>';
-      }},
-    { key:'tier', labelEn:'Tier', labelZh:'级别', default:false, sortable:true,
-      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
-        return '<span class="st-chip st-chip-entry" style="font-size:9px;padding:1px 6px">' + b(esc(v), esc(TIER_ZH[v]||v)) + '</span>'; }},
-    { key:'sector', labelEn:'Sector', labelZh:'板块', default:true, sortable:true, cls:'st-hide-sm',
-      fmt:function(v){ if(!v) return '<span class="st-muted">—</span>';
-        return b(esc(v), esc(SECZH[v]||v)); }},
-    { key:'theme', labelEn:'Theme', labelZh:'主题', default:false, sortable:true,
-      fmt:function(v,r){
-        var en = (r.narrative&&r.narrative.theme)||r.theme||'';
-        var zh = (r.narrative&&r.narrative.theme_zh)||r.theme_zh||'';
-        if(!en&&!zh) return '<span class="st-muted">—</span>';
-        return b(esc(en), esc(zh));
-      }},
-    { key:'price', labelEn:'Price', labelZh:'价格', default:true, sortable:true, right:true, cls:'st-hide-sm',
-      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fn(v,2); }},
-    { key:'prophet_score', labelEn:'Priority', labelZh:'优先级', default:true, sortable:true, right:true,
-      fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
-        var n = Math.round(parseFloat(v)); var cls = n>=70?'st-pos':n>=40?'':'st-neg';
-        return '<span class="' + cls + '">' + n + '</span>'; },
-      tip:{en:'China Prophet priority 0–100. Readiness rank, not a win probability or return forecast.',zh:'中国先知优先级0–100。就绪度排序，不是胜率或收益预测。'} },
-    { key:'conviction', labelEn:'Context score', labelZh:'情境评分', default:false, sortable:true, right:true,
-      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': String(Math.round(parseFloat(v))); },
-      tip:{en:'Legacy profile score shown only as context; it does not control Prophet v2 order.',zh:'旧版画像评分仅作情境参考；不影响先知v2排序。'} },
-    { key:'mcap', labelEn:'Mkt cap', labelZh:'市值(亿)', default:true, sortable:true, right:true, cls:'st-hide-sm',
-      fmt:function(v,r){ if(v==null) return '<span class="st-muted">—</span>';
-        var b2 = r.cap_bucket; var cls = b2==='large'?'st-pos':b2==='small'?'st-neg':'';
-        return '<span class="' + cls + '">' + fn(v,0) + '</span>'; },
-      tip:{en:'Market cap (亿 RMB = 100M). — = unknown (placeholder); large ≥500 / mid 100-500 / small <100',zh:'市值（亿人民币）。— = 未知（占位符）；大盘≥500 / 中盘100-500 / 小盘<100'} },
-    { key:'cap_bucket', labelEn:'Cap', labelZh:'市值档', default:false, sortable:true,
-      fmt:function(v){ if(!v) return '<span class="st-muted">?</span>';
-        var cls = v==='large'?'st-pos':v==='small'?'st-neg':'';
-        return '<span class="' + cls + '">' + b(v, {large:'大盘',mid:'中盘',small:'小盘'}[v]||v) + '</span>'; }},
-    { key:'off_high', labelEn:'Off High', labelZh:'距高点', default:true, sortable:true, right:true, cls:'st-hide-sm',
-      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fp(v,1); }},
-    { key:'spot_pct_in_range', labelEn:'Range%', labelZh:'区间位置', default:false, sortable:true, right:true,
-      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fn(v,0)+'%'; },
-      tip:{en:'Price position inside 2-year range (0=bottom, 100=top)',zh:'价格在2年区间内的位置（0=底部，100=顶部）'} },
-    { key:'w2_stoch', labelEn:'2W Stoch', labelZh:'双周随机', default:false, sortable:true, right:true,
-      fmt:function(v,r){
-        if(v==null) return '<span class="st-muted">—</span>';
-        var arr = r.w2_stoch_arrow; var arrowStr = arr===1?' ↑':arr===-1?' ↓':'';
-        var cls = v<=20?'st-neg':v<=35?'':'st-pos';
-        return '<span class="' + cls + '">' + fn(v,1) + arrowStr + '</span>';
-      }, tip:{en:'2W StochRSI washout level. ≤35 = washout zone; arrow = direction',zh:'双周随机RSI洗盘水平。≤35=洗盘区；箭头=方向'} },
-    { key:'macd_hist_d', labelEn:'MACD D/2D/3D', labelZh:'MACD多周期', default:false, sortable:false,
-      fmt:function(v,r){ return mg(r.macd_hist_d, r.macd_d2, r.macd_d3); },
-      tip:{en:'Daily / 2D / 3D MACD histogram direction (▲ pos / ▼ neg / · unknown)',zh:'日线/2日/3日MACD柱方向（▲正 / ▼负 / ·未知）'} },
-    /* days_since_signal demoted to non-default: recency is carried by the NEW-dot on the
-       ticker cell; Setup column now holds the 9th default slot (operator no-scroll request 2026-07-10). */
-    { key:'days_since_signal', labelEn:'Days', labelZh:'信号天数', default:false, sortable:true, right:true, cls:'st-hide-sm',
-      fmt:function(v){ if(v==null) return '<span class="st-muted">—</span>';
-        var n = parseInt(v);
-        return n<=2 ? '<span class="st-pos">' + n + '</span>' : String(n); },
-      tip:{en:'Days since first appearance on this board (from ledger; history starts 2026-06-30)',zh:'首次出现在本榜单的天数（账本自2026-06-30起）'} },
-    { key:'imminence', labelEn:'Imminence', labelZh:'临近度', default:false, sortable:true, right:true,
-      fmt:function(v){ return v==null?'<span class="st-muted">—</span>':
-        '<span class="st-pos">~' + fn(v,1) + 'W</span>'; },
-      tip:{en:'2W MACD bars until projected cross (ripening rows)',zh:'预计2W MACD穿越前的周期数（蓄势行）'} },
-    { key:'ret_5d', labelEn:'5d Ret', labelZh:'5日涨跌', default:false, sortable:true, right:true,
-      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fp(v*100,1); }},
-    { key:'alpha', labelEn:'Alpha', labelZh:'Alpha', default:false, sortable:true, right:true,
-      fmt:function(v){ return v==null?'<span class="st-muted">—</span>': fp(v*100,2); },
-      tip:{en:'Sector-neutral residual alpha (display context only)',zh:'板块中性残差Alpha（仅供参考）'} },
-  ];
-
-  /* Filter dropdown labels — single active language per option (operator request:
-     EN/ZH never shown together in the filter row). */
-  var SECTOR_LABELS = {};
-  Object.keys(SECZH).forEach(function(k){ SECTOR_LABELS[k] = [k, SECZH[k]]; });
-  var OPTION_LABELS = {
-    stage: { 'ENTRY':['Entry','入场'], 'RAN_LATE':['Ran / late','信号已过'],
-             'RIPENING':['Ripening','蓄势中'], 'KNIFE':['Falling knife','下跌中'] },
-    zone:  { 'READY':['Ready','就绪'], 'BASING':['Basing','筑底'], 'FALLING':['Falling','下跌'] },
-    capBucket: { 'large':['Large cap','大盘'], 'mid':['Mid cap','中盘'], 'small':['Small cap','小盘'] },
-    lane: LANE_LABELS,
-    sector: SECTOR_LABELS,
-  };
-
-  // Set the internal key for the stage+zone column to something that won't collide
-  // with a real row field (Lane is now the first visible column).
-  var stageCol = cols.find(function(c){ return c.key === '_stage_zone'; });
-  if (stageCol) stageCol.key = '_stage_zone_display';
-
-  /* ── view persistence ── */
-  var LS_VIEW = 'mdx_stocktable_cn_view';
-  var currentView = localStorage.getItem(LS_VIEW) || 'grid';
-
-  function applyView(v) {
-    currentView = v;
-    localStorage.setItem(LS_VIEW, v);
-    var standouts = document.getElementById('standouts');
-    var chipsEl   = document.getElementById('st-count-chips');
-    var gbtn = document.getElementById('st-btn-grid');
-    var tbtn = document.getElementById('st-btn-table');
-    if (!standouts) return;
-    if (v === 'table') {
-      standouts.classList.add('st-table-mode');
-      if (chipsEl) chipsEl.style.display = '';
-      if (gbtn) gbtn.setAttribute('aria-selected','false');
-      if (tbtn) tbtn.setAttribute('aria-selected','true');
-    } else {
-      standouts.classList.remove('st-table-mode');
-      if (chipsEl) chipsEl.style.display = 'none';
-      if (gbtn) gbtn.setAttribute('aria-selected','true');
-      if (tbtn) tbtn.setAttribute('aria-selected','false');
-    }
-  }
-
-  StockTable._setView = applyView;
-
-  /* ── init ── */
-  StockTable.init({
-    dataId: 'stocktable-data',
-    containerId: 'stocktable-wrap',
-    market: 'cn',
-    linkPattern: 'china_lookup.html#{ticker}',
-    columns: cols,
-    optionLabels: OPTION_LABELS,
-    searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
-    rankFn: prophetTableRank,
-    pageSize: 25,   // paginate the long board (165+ rows) — footer "Show more / all"
-  });
-
-  /* restore persisted view */
-  applyView(currentView);
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initStockTableView, { once: true });
-} else {
-  initStockTableView();
-}
-})();
-</script>
 <script>
 /* W-FCT: standout stage facet bar — grid view only; no-op when the bar is absent. */
 (function(){
@@ -2745,7 +2536,6 @@ if (document.readyState === 'loading') {
     if (wrap) placePop(wrap);
   }, true);
 })();
-</script><script src="heatmap.js?v=74c8da96" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
+</script>
 </body>
 </html>

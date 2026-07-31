@@ -45,6 +45,29 @@
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
 
+<script>
+(function(){
+  if(window.mmLoadHeatmap)return;
+  var pending=null;
+  window.mmLoadHeatmap=function(){
+    if(window.MMHeatmap)return Promise.resolve(window.MMHeatmap);
+    if(pending)return pending;
+    pending=new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=new URL('heatmap.js',document.baseURI).href;
+      s.async=true;
+      s.onload=function(){
+        if(window.MMHeatmap)resolve(window.MMHeatmap);
+        else{pending=null;reject(new Error('heatmap API unavailable'));}
+      };
+      s.onerror=function(){pending=null;reject(new Error('heatmap load failed'));};
+      (document.head||document.documentElement).appendChild(s);
+    });
+    return pending;
+  };
+})();
+</script>
+
 
 <link rel="stylesheet" href="illus.css?v=816c67ce">
 <link rel="stylesheet" href="assets/css/c821091e.css?v=c821091e">
@@ -401,10 +424,10 @@
       
       <div class="hkx-hero-btns" style="position:relative">
         
-        <button class="hkx-hbtn" onclick="hkxTogglePop('hkx-pop-signals',event)">&#x21B1; <span class="l-en">2 of 8 signals positive</span><span class="l-zh">2/8 信号偏多</span> <span class="hkx-hbtn-n">&#x25BE;</span></button>
+        <button class="hkx-hbtn" onclick="hkxTogglePop('hkx-pop-signals',event)">&#x21B1; <span class="l-en">3 of 8 signals positive</span><span class="l-zh">3/8 信号偏多</span> <span class="hkx-hbtn-n">&#x25BE;</span></button>
         
         
-        <button class="hkx-hbtn" style="" onclick="hkxTogglePop('hkx-pop-risk',event)">&#9888; <span class="l-en">Drop risk</span><span class="l-zh">回撤风险</span> · <span class="hkx-hbtn-n" style=""><span class="l-en">USD / HKD funding</span><span class="l-zh">美元／港元资金</span></span> &#x25BE;</button>
+        <button class="hkx-hbtn" style="" onclick="hkxTogglePop('hkx-pop-risk',event)">&#9888; <span class="l-en">Drop risk</span><span class="l-zh">回撤风险</span> · <span class="hkx-hbtn-n" style=""><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span> &#x25BE;</button>
         
         
         <div class="hkx-pop" id="hkx-pop-signals">
@@ -417,8 +440,8 @@
           </div>
           
           <div class="hkx-pop-row">
-            <div class="hkx-pop-rt"><span><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span><b style="color:var(--warn)">52</b></div>
-            <div class="hkx-pop-bar"><i style="width:52%;background:var(--warn)"></i></div>
+            <div class="hkx-pop-rt"><span><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span><b style="color:var(--warn)">54</b></div>
+            <div class="hkx-pop-bar"><i style="width:54%;background:var(--warn)"></i></div>
           </div>
           
           <div class="hkx-pop-row">
@@ -453,13 +476,13 @@
           <div class="hkx-pop-sub"><span class="l-en">Trim chasing; favour good entries over extended leaders.</span><span class="l-zh">减少追高；择优入场而非追逐已延展的龙头。</span></div>
           
           <div class="hkx-pop-row">
-            <div class="hkx-pop-rt"><span><span class="l-en">USD / HKD funding</span><span class="l-zh">美元／港元资金</span></span><b>elevated</b></div>
-            <div class="hkx-pop-bar"><i style="width:82.9%;background:var(--down)"></i></div>
+            <div class="hkx-pop-rt"><span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span><b>elevated</b></div>
+            <div class="hkx-pop-bar"><i style="width:81.3%;background:var(--down)"></i></div>
           </div>
           
           <div class="hkx-pop-row">
-            <div class="hkx-pop-rt"><span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span><b>elevated</b></div>
-            <div class="hkx-pop-bar"><i style="width:81.9%;background:var(--down)"></i></div>
+            <div class="hkx-pop-rt"><span><span class="l-en">USD / HKD funding</span><span class="l-zh">美元／港元资金</span></span><b>caution</b></div>
+            <div class="hkx-pop-bar"><i style="width:73.4%;background:var(--down)"></i></div>
           </div>
           
           
@@ -891,9 +914,9 @@
       <div class="cat-tag"><span class="l-en">USD/oz</span><span class="l-zh">美元/盎司</span></div>
       
       
-      <div class="cat-val hkx-tt-up">4,150</div>
+      <div class="cat-val hkx-tt-up">4,165</div>
       
-      <div class="cat-chg hkx-tt-up">+114.1</div>
+      <div class="cat-chg hkx-tt-up">+130.0</div>
       
       
       
@@ -908,9 +931,9 @@
       <div class="cat-tag"><span class="l-en">DXY</span><span class="l-zh">美元</span></div>
       
       
-      <div class="cat-val hkx-tt-up">100.80</div>
+      <div class="cat-val hkx-tt-up">99.97</div>
       
-      <div class="cat-chg hkx-tt-up">-0.58</div>
+      <div class="cat-chg hkx-tt-up">-0.83</div>
       
       
       
@@ -961,8 +984,8 @@
       </div>
       
       <div class="hkx-row">
-        <span class="hkx-ic">🟡</span>
-        <div class="hkx-tx"><b><span class="l-en">Global risk</span><span class="l-zh">全球风险</span></b><span class="hkx-sub"><span class="l-en">neutral</span><span class="l-zh">中性</span></span></div>
+        <span class="hkx-ic">🟢</span>
+        <div class="hkx-tx"><b><span class="l-en">Global risk</span><span class="l-zh">全球风险</span></b><span class="hkx-sub"><span class="l-en">risk-on</span><span class="l-zh">风险偏好</span></span></div>
       </div>
       
       <div class="hkx-row">
@@ -1251,8 +1274,8 @@
       <div class="hkx-ctitle"><span class="l-en">Overnight & Leverage</span><span class="l-zh">隔夜与杠杆</span></div>
       
       
-      <div class="hkx-kv"><span class="hkx-k"><span class="l-en">US overnight read</span><span class="l-zh">美股隔夜读数</span></span><span class="hkx-v"><span class="hkx-stword ok">1.1%</span><span class="l-en"> implied open</span><span class="l-zh"> 隐含开盘</span></span></div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">up</div>
+      <div class="hkx-kv"><span class="hkx-k"><span class="l-en">US overnight read</span><span class="l-zh">美股隔夜读数</span></span><span class="hkx-v"><span class="hkx-stword ok">0.6%</span><span class="l-en"> implied open</span><span class="l-zh"> 隐含开盘</span></span></div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">flat</div>
       
       
       
@@ -1388,8 +1411,8 @@
         
         <div class="hkx-frow">
           <span><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></span>
-          <span><div class="hkx-fbar"><i style="width:52%;background:var(--warn)"></i></div></span>
-          <span class="hkx-fscore" style="color:var(--warn)">52</span>
+          <span><div class="hkx-fbar"><i style="width:54%;background:var(--warn)"></i></div></span>
+          <span class="hkx-fscore" style="color:var(--warn)">54</span>
         </div>
         
         <div class="hkx-frow">
@@ -1436,7 +1459,7 @@
         <div class="hkx-frow">
           <span><span class="l-en">Global risk</span><span class="l-zh">全球风险</span></span>
           <span><div class="hkx-fbar"><i style="width:50%;background:var(--warn)"></i></div></span>
-          <span class="hkx-fscore" style="color:var(--warn)"><span class="l-en">neutral</span><span class="l-zh">中性</span></span>
+          <span class="hkx-fscore" style="color:var(--warn)"><span class="l-en">risk-on</span><span class="l-zh">风险偏好</span></span>
         </div>
         
         <div class="hkx-frow">
@@ -1469,7 +1492,7 @@
           <span class="hkx-fscore" style="color:var(--warn)"><span class="l-en">high</span><span class="l-zh">高</span></span>
         </div>
         
-        <div class="hkx-receipt"><span class="l-en">Signal tally:</span><span class="l-zh">信号汇总：</span> <b class="hkx-up">2</b> <span class="l-en">bull</span><span class="l-zh">多</span> · <b>3</b> <span class="l-en">neutral</span><span class="l-zh">中性</span> · <b class="hkx-dn">3</b> <span class="l-en">bear</span><span class="l-zh">空</span> <span class="l-en">of</span><span class="l-zh">共</span> 8</div>
+        <div class="hkx-receipt"><span class="l-en">Signal tally:</span><span class="l-zh">信号汇总：</span> <b class="hkx-up">3</b> <span class="l-en">bull</span><span class="l-zh">多</span> · <b>2</b> <span class="l-en">neutral</span><span class="l-zh">中性</span> · <b class="hkx-dn">3</b> <span class="l-en">bear</span><span class="l-zh">空</span> <span class="l-en">of</span><span class="l-zh">共</span> 8</div>
         
         
         <div class="hkx-sep"></div>
@@ -1665,10 +1688,10 @@
             
             
             <div style="display:flex;gap:12px;align-items:baseline;margin:2px 0 6px">
-              <span class="hkx-bignum" style="font-size:22px;color:var(--up)">+1.1%</span>
+              <span class="hkx-bignum" style="font-size:22px;color:var(--up)">+0.6%</span>
             </div>
-            <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Implied HK open</span><span class="l-zh">隐含港股开盘</span></span><span class="hkx-v">+1.1%</span></div>
-            <div style="font-size:11px;color:var(--muted);margin-top:6px">up</div>
+            <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Implied HK open</span><span class="l-zh">隐含港股开盘</span></span><span class="hkx-v">+0.6%</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">flat</div>
             
             
             
@@ -1679,32 +1702,32 @@
               
               <tr>
                 <td><span class="l-en">Alibaba</span><span class="l-zh">阿里巴巴</span></td>
-                <td class="r hkx-dn">-0.1%</td>
+                <td class="r hkx-up">+1.1%</td>
               </tr>
               
               <tr>
                 <td><span class="l-en">Baidu</span><span class="l-zh">百度</span></td>
-                <td class="r hkx-up">+0.3%</td>
+                <td class="r hkx-up">+2.1%</td>
               </tr>
               
               <tr>
                 <td><span class="l-en">JD.com</span><span class="l-zh">京东</span></td>
-                <td class="r hkx-up">+1.3%</td>
+                <td class="r hkx-up">+0.3%</td>
               </tr>
               
               <tr>
                 <td><span class="l-en">PDD</span><span class="l-zh">拼多多</span></td>
-                <td class="r hkx-up">+3.0%</td>
+                <td class="r hkx-dn">-1.0%</td>
               </tr>
               
               <tr>
                 <td><span class="l-en">Tencent</span><span class="l-zh">腾讯</span></td>
-                <td class="r hkx-up">+1.8%</td>
+                <td class="r hkx-up">+0.9%</td>
               </tr>
               
               <tr>
                 <td><span class="l-en">Meituan</span><span class="l-zh">美团</span></td>
-                <td class="r hkx-up">+1.8%</td>
+                <td class="r hkx-up">+0.9%</td>
               </tr>
               
             </table>
@@ -1864,15 +1887,15 @@
         
         
         <div class="hkx-frow">
-          <span><span class="l-en">USD / HKD funding</span><span class="l-zh">美元／港元资金</span></span>
-          <span><div class="hkx-fbar"><i style="width:82.9%;background:var(--down)"></i></div></span>
+          <span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span>
+          <span><div class="hkx-fbar"><i style="width:81.3%;background:var(--down)"></i></div></span>
           <span class="hkx-fscore" style="color:var(--down)">elevated</span>
         </div>
         
         <div class="hkx-frow">
-          <span><span class="l-en">US rate shock</span><span class="l-zh">美债利率冲击</span></span>
-          <span><div class="hkx-fbar"><i style="width:81.9%;background:var(--down)"></i></div></span>
-          <span class="hkx-fscore" style="color:var(--down)">elevated</span>
+          <span><span class="l-en">USD / HKD funding</span><span class="l-zh">美元／港元资金</span></span>
+          <span><div class="hkx-fbar"><i style="width:73.4%;background:var(--down)"></i></div></span>
+          <span class="hkx-fscore" style="color:var(--down)">caution</span>
         </div>
         
         
@@ -1950,7 +1973,7 @@
         
         <div class="hkx-sep"></div>
         <div class="hkx-eyebrow"><span class="l-en">Signal tally</span><span class="l-zh">信号汇总</span></div>
-        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Constructive (bull)</span><span class="l-zh">建设性（多）</span></span><span class="hkx-v hkx-up">2</span></div>
+        <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Constructive (bull)</span><span class="l-zh">建设性（多）</span></span><span class="hkx-v hkx-up">3</span></div>
         <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Cautionary (bear)</span><span class="l-zh">谨慎（空）</span></span><span class="hkx-v hkx-dn">3</span></div>
         <div class="hkx-kv"><span class="hkx-k"><span class="l-en">Total signals</span><span class="l-zh">信号总数</span></span><span class="hkx-v">8</span></div>
         
@@ -2423,10 +2446,15 @@
     requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('hkx-in');});});
     /* Lazy-mount the HK heatmap the first time the Markets dialog opens — mirrors
        china.html.j2:3391-3394; container must be visible before mountScorecard. */
-    if(id==='hkx-dlg-markets'&&!_hkHmMounted&&window.MMHeatmap&&MMHeatmap.mountScorecard){
-      _hkHmMounted=true;
-      try{MMHeatmap.mountScorecard('hk-hm-embed','marketdata/hk_heatmap.json');}
-      catch(e){_hkHmMounted=false;}
+    if(id==='hkx-dlg-markets'&&!_hkHmMounted){
+      var mountHm=function(){
+        if(_hkHmMounted||!d.classList.contains('open')||!window.MMHeatmap||!MMHeatmap.mountScorecard)return;
+        _hkHmMounted=true;
+        try{MMHeatmap.mountScorecard('hk-hm-embed','marketdata/hk_heatmap.json');}
+        catch(e){_hkHmMounted=false;}
+      };
+      if(window.MMHeatmap)mountHm();
+      else if(window.mmLoadHeatmap)window.mmLoadHeatmap().then(mountHm).catch(function(){});
     }
     /* Replay the ilx / Signal-Ink charts in this dialog once the panel entrance has
        settled — mirrors china.html.j2:cnxOpenDlg, so every open re-animates the ink. */
@@ -2512,7 +2540,7 @@
 </div>
 
 <div class="foot">
-  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-31 01:57 UTC<br>
+  <span class="l-en">Built</span><span class="l-zh">生成于</span> 2026-07-31 03:35 UTC<br>
   <span class="made">© 2026 Mastermind Inc</span>
 </div>
 
@@ -2520,173 +2548,8 @@
 <script src="mtf.js?v=b62aea2f" defer></script>
 <script src="charts.js?v=5372d2a2" defer></script>
 <script src="tablesort.js?v=484d9333" defer></script>
-<script src="stocktable.js?v=b1a1a572" defer></script><script src="heatmap.js?v=74c8da96" defer></script>
+
 <script defer src="illus.js?v=8e0a3779"></script>
-<script>
-/* W8-G: StockTable init — standout board table view (HK market).
-   Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent.
-   HK-specific columns: group, ticker, name, sector, price (HKD), off_high, conviction,
-   alpha (63d RS z), edge_z, sb_z (southbound accum z), ah_z (A/H value z), washout_2w.
-   No mcap/cap_bucket/days_since_signal/tier — not on HK rows. No stage/zone — HK uses group. */
-(function(){
-function initStockTableView(){
-  if (!window.StockTable) return;  /* stocktable.js not loaded */
-  var b = StockTable._bi, esc = StockTable._esc, fp = StockTable._fmtPct, fn = StockTable._fmtNum;
-
-  var GROUP_LABELS = {
-    "entry_open":  ["Entry open", "入场开启"],
-    "setting_up":  ["Setting up", "蓄势中"]
-  };
-  var ALIGN_LABELS = {
-    "aligned": ["Aligned", "共振"],
-    "near":    ["Near", "临近"]
-  };
-  var SECZH = {
-    "Technology":"科技","Industrials":"工业","Basic Materials":"原材料",
-    "Financial Services":"金融","Consumer Cyclical":"可选消费",
-    "Healthcare":"医疗保健","Utilities":"公用事业","Consumer Defensive":"必需消费",
-    "Energy":"能源","Communication Services":"通信服务","Real Estate":"房地产",
-    "Telecom & Utilities":"电信与公用事业","Consumer":"消费","Finance":"金融",
-    "Financial":"金融","Technology & Telecom":"科技与电信"
-  };
-
-  function groupBadge(group) {
-    var lbl = GROUP_LABELS[group] || [group || "—", group || "—"];
-    var cls = group === "entry_open" ? "st-chip-entry" : "st-chip-rip";
-    return '<span class="st-chip ' + cls + '">' + b(lbl[0], lbl[1]) + '</span>';
-  }
-
-  var cols = [
-    { key:"_group_display", labelEn:"Group", labelZh:"组别", default:true, sortable:false,
-      fmt:function(v,r){ return groupBadge(r.group); },
-      tip:{en:"Entry open = confluence buyable + in/near buy zone. Setting up = aligned but awaiting entry.",
-           zh:"入场开启 = 汇流可买入 + 位于买入区附近。蓄势中 = 已共振但等待入场。"} },
-    { key:"ticker", labelEn:"Ticker", labelZh:"代码", default:true, sortable:true,
-      fmt:function(v,r){
-        return '<b>' + esc(v||'') + '</b>';
-      }},
-    { key:"name", labelEn:"Name", labelZh:"名称", default:true, sortable:true,
-      fmt:function(v,r){
-        if (!v) return '<span class="st-muted">—</span>';
-        var zh = r.name_zh || v;
-        return b(esc(v), esc(zh));
-      }},
-    { key:"sector", labelEn:"Sector", labelZh:"板块", default:true, sortable:true,
-      fmt:function(v,r){
-        if (!v) return '<span class="st-muted">—</span>';
-        var zh = r.sector_zh || SECZH[v] || v;
-        return b(esc(v), esc(zh));
-      }},
-    { key:"price", labelEn:"Price HK$", labelZh:"价格(港元)", default:true, sortable:true, right:true,
-      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' : fn(v,2); },
-      tip:{en:"Last close price in HKD",zh:"最近收盘价（港元）"} },
-    { key:"off_high", labelEn:"Off High", labelZh:"距高点", default:true, sortable:true, right:true,
-      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' : fp(v,1); },
-      tip:{en:"% off 52-week high",zh:"距52周高点百分比"} },
-    { key:"conviction", labelEn:"Score", labelZh:"评分", default:true, sortable:true, right:true,
-      fmt:function(v){
-        if (v==null) return '<span class="st-muted">—</span>';
-        var n = parseInt(v);
-        var cls = n>=70 ? 'st-pos' : n>=40 ? '' : 'st-neg';
-        return '<span class="' + cls + '">' + n + '</span>';
-      },
-      tip:{en:"HK conviction score — edge percentile (not a win-rate). Fused: southbound flow + A/H value + beta-neutral RS.",
-           zh:"港股确信评分 — 优势百分位（非胜率）。融合：南向资金 + A/H 价值 + 贝塔中性相对强度。"} },
-    { key:"alpha", labelEn:"3M RS z", labelZh:"3月相对强度z", default:true, sortable:true, right:true,
-      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' :
-        '<span class="' + (v>=0 ? 'st-pos' : 'st-neg') + '">' + fn(v,2) + '</span>'; },
-      tip:{en:"63-day relative return z-score within HK board universe (descriptive context, not a rank input)",
-           zh:"63日收益率z分数（港股看板宇宙内的描述性背景，非排序输入）"} },
-    { key:"edge_z", labelEn:"Edge z", labelZh:"综合优势z", default:true, sortable:true, right:true,
-      fmt:function(v){ return v==null ? '<span class="st-muted">—</span>' :
-        '<span class="' + (v>=0 ? 'st-pos' : 'st-neg') + '">' + fn(v,2) + '</span>'; },
-      tip:{en:"Fused HK edge z (southbound + A/H value + beta-neutral RS). Primary rank input.",
-           zh:"融合港股优势z（南向资金 + A/H价值 + 贝塔中性强度）。主要排序输入。"} },
-    { key:"sb_z", labelEn:"SB flow z", labelZh:"南向资金z", default:true, sortable:true, right:true,
-      fmt:function(v,r){
-        if (v==null) return '<span class="st-muted">—</span>';
-        var cls = v>=0.6 ? 'st-pos' : v<=-0.6 ? 'st-neg' : '';
-        var own = r.sb_own!=null ? ' <span class="st-muted">(' + fn(r.sb_own,1) + '%)</span>' : '';
-        return '<span class="' + cls + '">' + fn(v,2) + '</span>' + own;
-      },
-      tip:{en:"Southbound Connect accumulation z-score. Context only — H1 NO-GO (not a standalone edge).",
-           zh:"南向资金累积z分数。仅供参考 — H1未通过（不作为独立优势）。"} },
-    { key:"ah_z", labelEn:"A/H z", labelZh:"A/H价值z", default:true, sortable:true, right:true,
-      fmt:function(v,r){
-        if (v==null) return '<span class="st-muted">—</span>';
-        var cls = r.ah_cheap ? 'st-pos' : '';
-        return '<span class="' + cls + '">' + fn(v,2) + (r.ah_cheap ? ' <span style="font-size:9px">H</span>' : '') + '</span>';
-      },
-      tip:{en:"A/H value z — H-share cheap vs A-share twin when positive. Near-GO (DSR 0.879).",
-           zh:"A/H价值z — 正值表示H股相对A股孪生便宜。临近通过（DSR 0.879）。"} },
-    { key:"align_tier", labelEn:"Alignment", labelZh:"共振级别", default:false, sortable:true,
-      fmt:function(v){
-        if (!v) return '<span class="st-muted">—</span>';
-        var lbl = ALIGN_LABELS[v] || [v, v];
-        var cls = v==='aligned' ? 'st-pos' : '';
-        return '<span class="' + cls + '">' + b(lbl[0], lbl[1]) + '</span>';
-      },
-      tip:{en:"Aligned = weekly+3D+daily all turning up (PRIME/ARMED). Near = backfill.",
-           zh:"共振 = 周线+3日+日线均向上（精英/武装）。临近 = 补位。"} },
-    { key:"washout_2w", labelEn:"2W washout", labelZh:"双周洗盘", default:false, sortable:true,
-      fmt:function(v){ return v ? '<span class="st-pos">✓</span>' : '<span class="st-muted">—</span>'; },
-      tip:{en:"2-week StochRSI washout-reclaim cross (CN port, display context, no rank effect yet)",
-           zh:"双周随机RSI洗盘回升穿越（CN移植，展示背景，暂无排序效果）"} },
-  ];
-
-  /* use a non-colliding key for the derived group+display column */
-  cols[0].key = '_group_display_key';
-
-  /* ── view persistence ── */
-  var LS_VIEW = 'mdx_stocktable_hk_view';
-  var currentView = localStorage.getItem(LS_VIEW) || 'grid';
-
-  function applyView(v) {
-    currentView = v;
-    localStorage.setItem(LS_VIEW, v);
-    var standouts = document.getElementById('standouts');
-    var chipsEl   = document.getElementById('st-count-chips');
-    var gbtn = document.getElementById('st-btn-grid');
-    var tbtn = document.getElementById('st-btn-table');
-    if (!standouts) return;
-    if (v === 'table') {
-      standouts.classList.add('st-table-mode');
-      /* HK: count-chips uses CN stage taxonomy — never shown (element stays display:none) */
-      if (gbtn) gbtn.setAttribute('aria-selected','false');
-      if (tbtn) tbtn.setAttribute('aria-selected','true');
-    } else {
-      standouts.classList.remove('st-table-mode');
-      if (gbtn) gbtn.setAttribute('aria-selected','true');
-      if (tbtn) tbtn.setAttribute('aria-selected','false');
-    }
-  }
-
-  StockTable._setView = applyView;
-
-  /* ── init ── */
-  /* Filter dropdown labels — single active language per option (matches CN board). */
-  var SECTOR_LABELS = {};
-  Object.keys(SECZH).forEach(function(k){ SECTOR_LABELS[k] = [k, SECZH[k]]; });
-  StockTable.init({
-    dataId:      'stocktable-data',
-    containerId: 'stocktable-wrap',
-    market:      'hk',
-    linkPattern: 'hk_lookup.html#{ticker}',
-    columns:     cols,
-    optionLabels: { sector: SECTOR_LABELS },
-    searchPlaceholder: ['Search name or theme…','搜索名称或主题…'],
-  });
-
-  /* restore persisted view */
-  applyView(currentView);
-}
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initStockTableView, { once: true });
-} else {
-  initStockTableView();
-}
-})();
-</script>
 <script>
 /* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
    Also corrects popover position (flip above/below, clamp to right edge). */
