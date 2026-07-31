@@ -186,6 +186,107 @@ html[data-motion-page="mastermind-ai"] section.feature#lanes[data-mm-phase="reas
 @keyframes mm-stance-scan{45%{transform:translateY(-2px);border-color:var(--violet);background:var(--violet-wash)}}
 @keyframes mm-candle-build{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
+/* Market Terminal hero: the chart assembles only while it is on screen, then
+   the intelligence layer resolves on top of the evidence. */
+html[data-motion-page="market-terminal"].mm-motion-ready .phero .pstage .mt-ch :is(.cd,.ma){
+  animation-play-state:paused}
+html[data-motion-page="market-terminal"] .phero .pstage.mm-scene-live .mt-ch :is(.cd,.ma){
+  animation-play-state:running}
+html[data-motion-page="market-terminal"] .phero .pstage .mt-frame{
+  transition:border-color .55s,box-shadow .65s}
+html[data-motion-page="market-terminal"] .phero .pstage .mt-il{
+  transition:opacity .55s,transform .7s cubic-bezier(.22,.8,.3,1),border-color .5s}
+html[data-motion-page="market-terminal"] .phero .pstage:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .mt-il{
+  opacity:0;transform:translateY(13px) scale(.985)}
+html[data-motion-page="market-terminal"] .phero .pstage[data-mm-phase="reason"] .mt-il{
+  opacity:.52;transform:translateY(5px)}
+html[data-motion-page="market-terminal"] .phero .pstage:is([data-mm-phase="resolve"],[data-mm-phase="hold"]) .mt-frame{
+  box-shadow:0 28px 80px -25px rgba(35,78,175,.27)}
+html[data-motion-page="market-terminal"] .phero .pstage[data-mm-phase="resolve"] .mt-il{
+  border-color:rgba(255,255,255,.28)}
+
+/* Market Terminal feature scenes. The indicator-system player intentionally
+   stays independent: it is already finite, controllable and motion-aware. */
+html[data-motion-page="market-terminal"] :is(#charting,#watchlists,#dossier,#signals,#options,#ai)
+  :is(.pn,.gp,.r,.bk,.tabs span,.fr,.seg,.ezc .c,.st,.ts,.sr,.mt-lock,.mt-sym,.msg,.mt-tools span,.mt-aic){
+  transition:opacity .45s,transform .58s cubic-bezier(.22,.8,.3,1),background-color .45s,
+    border-color .45s,box-shadow .45s}
+html[data-motion-page="market-terminal"] :is(#charting,#watchlists,#dossier,#signals,#options,#ai)[data-mm-phase="idle"]
+  :is(.pn,.gp,.r,.tabs span,.fr,.seg,.ezc .c,.st,.ts,.sr,.mt-lock,.mt-sym,.msg,.mt-tools span,.mt-aic),
+html[data-motion-page="market-terminal"] :is(#charting,#watchlists,#dossier,#signals,#options,#ai)[data-mm-phase="observe"]
+  :is(.pn,.gp,.r,.tabs span,.fr,.seg,.ezc .c,.st,.ts,.sr,.mt-lock,.mt-sym,.msg,.mt-tools span,.mt-aic){
+  opacity:.14;transform:translateY(7px)}
+html[data-motion-page="market-terminal"] :is(#charting,#watchlists,#dossier,#signals,#options,#ai)[data-mm-phase="observe"]
+  :is(.pn,.gp,.r,.tabs span,.fr,.seg,.ezc .c,.sr,.mt-sym,.mt-tools span){
+  animation:mm-row-read .45s ease both;animation-delay:calc(var(--mm-i,0) * 90ms)}
+
+/* 01 — panes load, the terminal reasons through them, replay becomes ready. */
+html[data-motion-page="market-terminal"] #charting .mt-tf .trk i{
+  transform-origin:left;transition:transform 1.15s cubic-bezier(.22,.8,.3,1)}
+html[data-motion-page="market-terminal"] #charting:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .mt-tf .trk i{
+  transform:scaleX(.04)}
+html[data-motion-page="market-terminal"] #charting[data-mm-phase="reason"] .mt-tf .pn{
+  border-color:color-mix(in srgb,var(--blue) 28%,rgba(255,255,255,.09))}
+html[data-motion-page="market-terminal"] #charting[data-mm-phase="resolve"] .mt-tf .tfr span.on{
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 18%,transparent)}
+
+/* 03 — grouped watchlists arrive as feeds; one finite quote update replaces
+   the old forever-looping tick. */
+html[data-motion-page="market-terminal"] #watchlists .mt-wl .r.tick{animation:none}
+html[data-motion-page="market-terminal"] #watchlists[data-mm-phase="reason"] .mt-wl .r.tick{
+  animation:mm-terminal-tick 1.55s ease both}
+html[data-motion-page="market-terminal"] #watchlists[data-mm-phase="resolve"] .mt-wl .r.sel{
+  box-shadow:inset 2px 0 0 var(--pl-ac),0 0 0 2px rgba(89,128,255,.11)}
+@keyframes mm-terminal-tick{
+  0%{background:transparent}
+  34%,72%{background:color-mix(in srgb,var(--q-green) 24%,transparent)}
+  100%{background:color-mix(in srgb,var(--q-green) 10%,transparent)}
+}
+
+/* 04/05 — dossier tabs fan into place, then the engine read prints its
+   bounded stance and timestamp. */
+html[data-motion-page="market-terminal"] #dossier .mt-dos .bk{
+  transition:opacity .55s,transform .8s cubic-bezier(.22,.8,.3,1)}
+html[data-motion-page="market-terminal"] #dossier:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .mt-dos .bk{
+  opacity:.08;transform:translateY(18px) rotate(0)}
+html[data-motion-page="market-terminal"] #dossier[data-mm-phase="reason"] .mt-dos .bk.b1{
+  opacity:1;transform:translateY(-7px) rotate(3deg)}
+html[data-motion-page="market-terminal"] #dossier[data-mm-phase="reason"] .mt-dos .bk.b2{
+  opacity:1;transform:translateY(-3px) rotate(-2.4deg)}
+html[data-motion-page="market-terminal"] #dossier .mt-dos .fr .bar i,
+html[data-motion-page="market-terminal"] #options .mt-gx .sr .bar i{
+  transform-origin:left;transition:transform .9s cubic-bezier(.22,.8,.3,1)}
+html[data-motion-page="market-terminal"] #dossier:not([data-mm-phase="resolve"]):not([data-mm-phase="hold"]) .mt-dos .fr .bar i,
+html[data-motion-page="market-terminal"] #options:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .mt-gx .sr .bar i{
+  transform:scaleX(.04)}
+html[data-motion-page="market-terminal"] #signals[data-mm-phase="reason"] .mt-read .seg.on i{
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--q-green) 13%,transparent)}
+html[data-motion-page="market-terminal"] #signals:not([data-mm-phase="resolve"]):not([data-mm-phase="hold"])
+  :is(.mt-read .st,.mt-read .ts){opacity:.08;transform:translateY(6px)}
+html[data-motion-page="market-terminal"] #signals[data-mm-phase="resolve"] .mt-read{
+  border-color:color-mix(in srgb,var(--q-green) 26%,var(--hair-2));
+  box-shadow:0 13px 32px rgba(31,139,65,.08)}
+
+/* 06/07 — exposure becomes geometry, then the copilot exposes its tool calls
+   before the sourced answer and drawn levels resolve. */
+html[data-motion-page="market-terminal"] #options:not([data-mm-phase="resolve"]):not([data-mm-phase="hold"]) .mt-lock{
+  opacity:.08;transform:translateY(6px)}
+html[data-motion-page="market-terminal"] #options[data-mm-phase="reason"] .mt-gx .sr.wall{
+  opacity:1;transform:translateX(3px)}
+html[data-motion-page="market-terminal"] #options[data-mm-phase="resolve"] .mt-lock{
+  color:rgba(255,255,255,.82)}
+html[data-motion-page="market-terminal"] #ai:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .mt-thread .msg.a,
+html[data-motion-page="market-terminal"] #ai:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .mt-aic{
+  opacity:0;transform:translateY(9px)}
+html[data-motion-page="market-terminal"] #ai[data-mm-phase="reason"] .mt-thread .msg.a{
+  animation:mm-output-ready .52s ease both}
+html[data-motion-page="market-terminal"] #ai .mt-aic{
+  clip-path:inset(0 100% 0 0);transition:clip-path .9s cubic-bezier(.22,.8,.3,1),opacity .45s,transform .55s}
+html[data-motion-page="market-terminal"] #ai:is([data-mm-phase="resolve"],[data-mm-phase="hold"]) .mt-aic{
+  clip-path:inset(0);opacity:1;transform:none}
+html[data-motion-page="market-terminal"] #ai[data-mm-phase="resolve"] .mt-sym{
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--blue) 11%,transparent)}
+
 /* Landing: preserve its bespoke live loops, but give every vignette a shared
    visual cadence and a calm resolved endpoint. */
 html[data-motion-page="landing"] :is(#f-terminal,#f-prophet,#f-rotations,#f-filings,#f-sits,#f-funds,#f-beyond,#ai)
