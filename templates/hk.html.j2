@@ -16,6 +16,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+{% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
 <link rel="stylesheet" href="illus.css">
@@ -2852,10 +2853,15 @@
     requestAnimationFrame(function(){requestAnimationFrame(function(){d.classList.add('hkx-in');});});
     /* Lazy-mount the HK heatmap the first time the Markets dialog opens — mirrors
        china.html.j2:3391-3394; container must be visible before mountScorecard. */
-    if(id==='hkx-dlg-markets'&&!_hkHmMounted&&window.MMHeatmap&&MMHeatmap.mountScorecard){
-      _hkHmMounted=true;
-      try{MMHeatmap.mountScorecard('hk-hm-embed','marketdata/hk_heatmap.json');}
-      catch(e){_hkHmMounted=false;}
+    if(id==='hkx-dlg-markets'&&!_hkHmMounted){
+      var mountHm=function(){
+        if(_hkHmMounted||!d.classList.contains('open')||!window.MMHeatmap||!MMHeatmap.mountScorecard)return;
+        _hkHmMounted=true;
+        try{MMHeatmap.mountScorecard('hk-hm-embed','marketdata/hk_heatmap.json');}
+        catch(e){_hkHmMounted=false;}
+      };
+      if(window.MMHeatmap)mountHm();
+      else if(window.mmLoadHeatmap)window.mmLoadHeatmap().then(mountHm).catch(function(){});
     }
     /* Replay the ilx / Signal-Ink charts in this dialog once the panel entrance has
        settled — mirrors china.html.j2:cnxOpenDlg, so every open re-animates the ink. */
@@ -3898,9 +3904,8 @@ _rcStripObs.observe(document.documentElement,{attributes:true,attributeFilter:['
 <script src="mtf.js"></script>
 <script src="charts.js"></script>
 <script src="tablesort.js"></script>
+{% if mode != 'macro' %}
 <script src="stocktable.js"></script>
-{%- if mode != 'stocks' %}<script src="heatmap.js"></script>{%- endif %}
-<script defer src="illus.js"></script>
 <script>
 /* W8-G: StockTable init — standout board table view (HK market).
    Wired only on the stocks mode page (setups.buy exists); safe no-op if element absent.
@@ -4066,6 +4071,8 @@ if (document.readyState === 'loading') {
 }
 })();
 </script>
+{% endif %}
+<script defer src="illus.js"></script>
 <script>
 /* Caution icon popover — tap-to-toggle on mobile, hover on desktop via CSS.
    Also corrects popover position (flip above/below, clamp to right edge). */

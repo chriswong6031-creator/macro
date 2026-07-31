@@ -53,9 +53,13 @@ def test_stock_preview_uses_one_surface_cta_per_primary_decision_system():
 
 def test_dashboard_wires_preview_and_macro_detail_gate():
     template = (ROOT / "templates" / "dashboard.html.j2").read_text()
+    theme = (ROOT / "templates" / "theme.js").read_text()
     assert '<script src="tier_preview.js"></script>' in template
     assert '<link rel="stylesheet" href="tier_preview.css">' in template
-    assert '<script src="onboard.js"></script>' in template
+    assert '<script src="onboard.js"></script>' not in template
+    assert '<link rel="stylesheet" href="onboard.css">' not in template
+    assert "onboard.js is lazy-loaded" in theme
+    assert "s.src = pfx + 'onboard.js'" in theme
     assert "window.MMXAccessPreview.isAnon()" in template
     assert "window.MMXAccessPreview.openSignin()" in template
     for selector in (
