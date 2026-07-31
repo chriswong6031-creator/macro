@@ -14,20 +14,14 @@ TEMPLATE_ACCOUNT_JS = (ROOT / "templates" / "account.js").read_text(encoding="ut
 SITE_ACCOUNT_JS = (ROOT / "site" / "account.js").read_text(encoding="utf-8")
 
 
-def test_market_menus_are_click_owned_while_research_keeps_hover_bridge() -> None:
-    assert "function bindClickMarketDropdowns(links)" in TEMPLATE_JS
-    assert "data-nav-click-market" in TEMPLATE_JS
-    assert "nav-click-open" in TEMPLATE_JS
-    assert "aria-haspopup" in TEMPLATE_JS
-    assert "trigger.setAttribute('aria-expanded', wasOpen ? 'false' : 'true')" in TEMPLATE_JS
-    assert "if (dd.parentElement !== links) return;" in TEMPLATE_JS
-    assert "closeClickMarketMenus(links)" in TEMPLATE_JS
-
-    # Research retains the deliberate trigger-to-panel hover bridge. Market
-    # menus explicitly opt out before any pointer listeners are attached.
+def test_top_market_menus_keep_hover_bridge_while_folded_countries_click() -> None:
+    # Top-level market and Research menus share the hover-safe gap bridge.
+    assert "function bindClickMarketDropdowns(links)" not in TEMPLATE_JS
+    assert "data-nav-click-market" not in TEMPLATE_JS
+    assert "nav-click-open" not in TEMPLATE_JS
     assert "function bindHoverSafeDropdowns(links)" in TEMPLATE_JS
     assert "data-nav-hover-safe" in TEMPLATE_JS
-    assert "if (dd.classList.contains('nav-market-dd')) return;" in TEMPLATE_JS
+    assert "if (dd.classList.contains('nav-market-dd')) return;" not in TEMPLATE_JS
     assert "window.innerWidth > 900 && fineHover.matches" in TEMPLATE_JS
     assert "function hoverGraceMs()" in TEMPLATE_JS
     assert "menuRect.top - triggerRect.bottom" in TEMPLATE_JS
@@ -38,19 +32,23 @@ def test_market_menus_are_click_owned_while_research_keeps_hover_bridge() -> Non
 
     assert ".nav-dd.nav-hover-open > .nav-dd-menu" in TEMPLATE_CSS
     assert ".nav-dd.nav-hover-open > .nav-dd-menu.nav-mega" in TEMPLATE_CSS
+    assert ".nav-dd.nav-hover-open > .nav-dd-menu.nav-market-menu" in TEMPLATE_CSS
     assert "transform: translateY(0);" in TEMPLATE_CSS
 
-    assert ".nav-market-dd:not(.nav-click-open):hover > .nav-market-menu" in TEMPLATE_CSS
-    assert ".nav-market-dd.nav-click-open > .nav-market-menu" in TEMPLATE_CSS
+    # Only countries folded into International are click-to-drill. Their
+    # canonical menu remains hidden under hover/focus until .is-open is set by
+    # the explicit drill trigger.
+    assert "data-nav-drill-open" in TEMPLATE_JS
+    assert ".nav-market-drill:not(.is-open):hover > .nav-market-drill-panel" in TEMPLATE_CSS
+    assert ".nav-market-drill.is-open > .nav-market-drill-panel" in TEMPLATE_CSS
     assert "pointer-events: none;" in TEMPLATE_CSS
     assert "pointer-events: auto;" in TEMPLATE_CSS
 
-    # The approved menu geometry is unchanged; only its interaction owner
-    # changes from hover to a deliberate click.
+    # The approved menu geometry remains unchanged.
     assert "top: calc(100% + 7px)" not in TEMPLATE_CSS
 
 
-def test_research_hover_and_market_click_animations_have_stable_owners() -> None:
+def test_top_menu_entrance_animation_cannot_restart_across_hover_gap() -> None:
     hover_rule = TEMPLATE_CSS.split(
         ".site-nav .nav-dd:hover > .nav-dd-menu.mega-menu,", 1
     )[1].split("}", 1)[0]
@@ -61,11 +59,6 @@ def test_research_hover_and_market_click_animations_have_stable_owners() -> None
         ".site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,", 1
     )[1].split("}", 1)[0]
     assert "animation: mockupMenuSwap" in persistent_open_rule
-
-    market_click_rule = TEMPLATE_CSS.split(
-        ".site-nav .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu,", 1
-    )[1].split("}", 1)[0]
-    assert "animation: mockupMenuSwap" in market_click_rule
     assert "(prefers-reduced-motion: reduce)" in TEMPLATE_CSS
 
 
@@ -89,9 +82,9 @@ def test_hover_gap_assets_remain_byte_identical() -> None:
 
 
 def test_hover_gap_release_uses_fresh_immutable_asset_chain() -> None:
-    assert "account.js?v=20260731-click1" in TEMPLATE_THEME_JS
-    assert "account.js?v=20260731-click1" in SITE_THEME_JS
-    assert "nav_market.js?v=20260731-click1" in TEMPLATE_ACCOUNT_JS
+    assert "account.js?v=20260731-folded1" in TEMPLATE_THEME_JS
+    assert "account.js?v=20260731-folded1" in SITE_THEME_JS
+    assert "nav_market.js?v=20260731-folded1" in TEMPLATE_ACCOUNT_JS
     assert "20260730-exact6" not in TEMPLATE_THEME_JS
     assert "20260730-exact6" not in SITE_THEME_JS
     assert "20260730-exact6" not in TEMPLATE_ACCOUNT_JS
@@ -109,4 +102,4 @@ def test_nested_pages_resolve_market_nav_from_theme_asset_root() -> None:
         assert "new URL('.', _mmThemeScript" in source
         assert source.count("var pfx = _mmSharedAssetRoot;") == 3
         assert "location.pathname.indexOf('/sectors/')" not in source
-        assert "s.src = pfx + 'account.js?v=20260731-click1'" in source
+        assert "s.src = pfx + 'account.js?v=20260731-folded1'" in source
