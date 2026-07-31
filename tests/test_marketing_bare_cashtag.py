@@ -195,3 +195,96 @@ class TestUnknownCashtagGate:
         leaked = dead_everywhere & _UNIVERSE_FROM_MEMBERSHIP_ONLY
         assert not leaked, f"delisted rows leaked into the universe: {sorted(leaked)[:5]}"
         assert dead_everywhere, "fixture holds no delisted rows — test is vacuous"
+
+
+class TestNonEquityCashtagsAreRealTickers:
+    """$VIX / $SPX / $BTC are correct FinTwit usage, not fake symbols.
+
+    The gate shipped earlier today checked one thing: is this symbol in an
+    EQUITY price store. Indices, rates, FX and crypto are in none of them, so
+    the first live check of the gate quarantined $VIX, $SPX, $DXY, $BTC and
+    $ETH -- terminally, with a false accusation of naming a fake ticker. Every
+    macro and crypto post on the roster would have died.
+
+    ETFs need no allowlist entry: $SPY/$QQQ/$TLT/$GLD are real listings and the
+    price stores already carry them.
+    """
+
+    @pytest.mark.parametrize("tag", [
+        "$VIX", "$SPX", "$DXY", "$BTC", "$ETH", "$SOL", "$TNX", "$WTI", "$GOLD",
+    ])
+    def test_a_non_equity_cashtag_is_never_called_fake(self, tag):
+        assert _unknown_cashtags({"text": f"Macro read: {tag} is moving."}) == []
+
+    @_needs_store
+    @pytest.mark.parametrize("tag", ["$SPY", "$QQQ", "$TLT", "$AAPL"])
+    def test_real_listings_still_pass_without_an_allowlist_entry(self, tag):
+        from scripts.marketing_publisher import _NON_EQUITY_CASHTAGS
+        assert tag.lstrip("$") not in _NON_EQUITY_CASHTAGS, (
+            f"{tag} is a real listing; allowlisting it would hide a genuine "
+            f"price-store gap"
+        )
+        assert _unknown_cashtags({"text": f"{tag} moved today."}) == []
+
+    @_needs_store
+    def test_the_allowlist_does_not_swallow_a_genuinely_dead_symbol(self):
+        assert _unknown_cashtags({"text": "$N and $ZZZZZ"}) == ["N", "ZZZZZ"]
+
+
+class TestABuiltChartThatFailedToUploadNeverShipsBare:
+    """The hole BETWEEN the two chart gates, closed 2026-07-30.
+
+    A theme_list/mover rollup whose chart WAS rendered and whose R2 upload then
+    failed carries a media[] dict with no media_url.
+
+      * _bare_cashtag_post treats a built-but-unresolved chart as the
+        recoverable DEFERRAL case and returns "" -- so it waves it through;
+      * _missing_required_media keyed on _CHART_BEARING_KINDS, and theme_list
+        and mover are not in it -- so it waved it through too.
+
+    Each gate deferred to the other and the post shipped BARE with
+    "$ALL $ERIE $TRV" in the text: the precise failure that drew "ID RATHER YOU
+    DESTROY THE ENTIRE ENGINE THAN SHIP TEXT ONLY".
+    """
+
+    CFG = {"media_enabled": True}
+
+    def _ships_bare(self, it):
+        from scripts.marketing_publisher import (
+            _bare_cashtag_post, _missing_required_media)
+        return (not _bare_cashtag_post(it, self.CFG, [])
+                and not _missing_required_media(it, self.CFG, []))
+
+    @pytest.mark.parametrize("kind", ["theme_list", "mover"])
+    def test_the_rollup_that_shipped_bare_is_now_held(self, kind):
+        it = {"kind": kind, "text": "Insurance moving: $ALL $ERIE $TRV",
+              "media": [{"kind": "chart_svg", "chart_id": "chart-009"}]}
+        assert not self._ships_bare(it)
+
+    def test_it_DEFERS_rather_than_quarantines(self):
+        """The chart exists, so the backfill can still stamp its URL.
+
+        Quarantine is terminal; the bounded age escape still kills it if the
+        picture never arrives.
+        """
+        from scripts.marketing_publisher import (
+            _bare_cashtag_post, _missing_required_media)
+        it = {"kind": "theme_list", "text": "Insurance: $ALL $ERIE",
+              "media": [{"kind": "chart_svg", "chart_id": "chart-009"}]}
+        assert _bare_cashtag_post(it, self.CFG, []) == "", "must not quarantine"
+        assert _missing_required_media(it, self.CFG, []) is True, "must defer"
+
+    def test_a_ticker_less_post_with_media_is_not_held(self):
+        """A macro card has no ticker to illustrate; holding it wedges the lane."""
+        it = {"kind": "macro", "text": "GDP was revised again.",
+              "media": [{"kind": "chart_svg", "chart_id": "chart-007"}]}
+        from scripts.marketing_publisher import _missing_required_media
+        assert _missing_required_media(it, self.CFG, []) is False
+
+    def test_a_post_that_never_had_a_chart_is_still_the_other_gate_s_job(self):
+        """No media[] at all is the bare-cashtag quarantine, not a deferral."""
+        from scripts.marketing_publisher import (
+            _bare_cashtag_post, _missing_required_media)
+        it = {"kind": "theme_list", "text": "Insurance: $ALL $ERIE", "media": []}
+        assert _bare_cashtag_post(it, self.CFG, []), "should quarantine as bare"
+        assert _missing_required_media(it, self.CFG, []) is False

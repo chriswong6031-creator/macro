@@ -536,6 +536,25 @@ def _symbol_universe(root: Path | str = ".") -> frozenset[str]:
     return out
 
 
+#: Cashtags that are correct FinTwit usage but are NOT equities, so they appear
+#: in no equity price store, no index membership file and no earnings calendar.
+#: Without this the gate accuses a perfectly standard macro post of naming a
+#: fake ticker and quarantines it TERMINALLY: $VIX, $SPX, $DXY, $BTC and $ETH
+#: all failed on the first live check of the gate shipped earlier today.
+#: ETFs ($SPY/$QQQ/$TLT/$GLD) need no entry — they are real listings and the
+#: price stores already carry them.
+_NON_EQUITY_CASHTAGS: frozenset[str] = frozenset({
+    # Index / volatility / rates / dollar
+    "SPX", "NDX", "DJI", "DJIA", "RUT", "VIX", "VVIX", "MOVE", "DXY", "TNX",
+    "TYX", "IRX", "US10Y", "US02Y", "US30Y", "COMP", "NYA", "SOX", "BKX",
+    # Majors + crypto, both common in this desk's macro and crypto copy
+    "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "BNB", "LTC", "AVAX", "LINK",
+    "EUR", "JPY", "GBP", "CNY", "CNH", "AUD", "CAD", "CHF", "MXN",
+    # Commodities quoted as cashtags
+    "WTI", "BRENT", "GOLD", "SILVER", "COPPER", "NATGAS", "CL", "NG", "HG",
+})
+
+
 def _unknown_cashtags(it: dict, root: Path | str = ".") -> list[str]:
     """Cashtags in the copy that no live store can vouch for. [] = all fine.
 
@@ -555,6 +574,8 @@ def _unknown_cashtags(it: dict, root: Path | str = ".") -> list[str]:
     seen: list[str] = []
     for tag in found:
         sym = tag.lstrip("$").upper()
+        if sym in _NON_EQUITY_CASHTAGS:
+            continue          # real, just not an equity in our stores
         if sym not in universe and sym not in seen:
             seen.append(sym)
     return seen
@@ -614,11 +635,28 @@ def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> 
     """
     if not _media_enabled_cfg(pub_cfg) or media_paths:
         return False
-    if str(it.get("kind") or "").strip().lower() not in _CHART_BEARING_KINDS:
-        return False
     if not any(isinstance(m, dict) for m in (it.get("media") or [])):
         return False
-    return bool(_item_ticker(it))
+    kind = str(it.get("kind") or "").strip().lower()
+    if kind in _CHART_BEARING_KINDS:
+        return bool(_item_ticker(it))
+    # NON-chart-bearing kinds that still NAME TICKERS (2026-07-30).
+    #
+    # The kind list above was the whole test, and it left a hole exactly where
+    # the operator's complaint lives. A `theme_list` or `mover` rollup whose
+    # chart WAS rendered and whose R2 upload then failed carries a media[] dict
+    # with no media_url. It is not a chart-bearing kind, so this gate waved it
+    # through; and _bare_cashtag_post treats a built-but-unresolved chart as the
+    # recoverable DEFERRAL case, so that waved it through too. Both gates
+    # deferred to the other and the post shipped BARE with $ALL $ERIE $TRV in it
+    # — the precise failure that drew "ID RATHER YOU DESTROY THE ENTIRE ENGINE
+    # THAN SHIP TEXT ONLY".
+    #
+    # Deferring (not quarantining) is right here for the same reason it is right
+    # above: the chart exists, so the URL is recoverable by the backfill, and the
+    # bounded _MEDIA_DEFER_MAX_AGE_DAYS escape still quarantines it if the
+    # picture never arrives.
+    return bool(_CASHTAG_RE.search(str(it.get("text") or "")))
 
 
 def _chart_ids_for(it: dict) -> str:
@@ -2080,8 +2118,10 @@ def main(argv: list[str] | None = None) -> int:
                   f"ship.", flush=True)
             log.warning("item %s (%s/%s) quarantined — bare cashtags %s, no media",
                         iid, account, it.get("kind"), _bare)
-            OB.transition(iid, "quarantined", actor="publisher",
-                          note=f"bare cashtag post: names {_bare} with no chart")
+            if live:
+                _outbox.transition(
+                    iid, "quarantined", actor="publisher", root=root,
+                    note=f"bare cashtag post: names {_bare} with no chart")
             quarantined_bare_cashtag += 1
             continue
 
@@ -2096,8 +2136,10 @@ def main(argv: list[str] | None = None) -> int:
                   f"symbol store (delisted or never existed).", flush=True)
             log.warning("item %s (%s/%s) quarantined — unknown cashtags %s",
                         iid, account, it.get("kind"), _unknown)
-            OB.transition(iid, "quarantined", actor="publisher",
-                          note=f"unknown cashtag(s): {', '.join(_unknown)}")
+            if live:
+                _outbox.transition(
+                    iid, "quarantined", actor="publisher", root=root,
+                    note=f"unknown cashtag(s): {', '.join(_unknown)}")
             quarantined_unknown_cashtag += 1
             continue
 
