@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T22:29:03.110662+00:00",
-  "count": 487,
+  "generated_at": "2026-07-31T22:51:32.982008+00:00",
+  "count": 488,
   "institutions": [
     "Amova",
     "Apollo",
@@ -203,6 +203,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rzx3fhbb6hj-810596",
+      "title": "Global Markets Daily What Could Spark a Reset Higher in FX Vol",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:24Z",
+      "summary_points": [
+        "**FX Volatility Reset Triggers**: Resets occur only when growth expectations deteriorate across equities, commodities, and rates, driven by liquidity crises (30% equity sell-offs) or supply shocks; demand/policy shocks cause broad cross-asset volatility spikes.",
+        "**Current FX Volatility Anomaly**: FX volatility (EUR/USD, GBP/USD, USD/JPY) at 20-year lows despite AI, energy, and Fed uncertainty, contrasting with historical correlation where volatility spikes coincided with equity/commodity/interest rate stress.",
+        "**Divergence from Historical Patterns**: Recent cross-asset volatility spikes (equities, commodities) have not triggered sharp FX volatility resets, indicating a structural or temporary deviation in market dynamics versus past episodes (e.g., 2008 GFC, 2020 Covid).",
+        "**Growth Expectations as Key Constraint**: Stable growth sentiment across US, China, and Euro area has suppressed FX volatility, unlike historical periods where weaker growth pricing drove spikes—highlighting growth sentiment as a critical volatility determinant."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
       "language": "en",
       "needs_metadata": false
     },
