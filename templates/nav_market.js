@@ -721,15 +721,74 @@
     });
   }
 
-  // Wide desktop menus are anchored to the full navigation rail so they can
-  // stay viewport-safe. That leaves the intentional visual air gap below the
-  // trigger outside the CSS :hover tree. Keep the current menu alive briefly
-  // while a fine pointer crosses the gap, then close it only if neither the
-  // trigger/menu nor keyboard focus was reached. Touch/mobile keeps its
-  // existing click accordion and never enters this path.
+  function closeClickMarketMenus(links, except) {
+    links.querySelectorAll(':scope > .nav-market-dd.nav-click-open').forEach(function (dd) {
+      if (dd === except) return;
+      dd.classList.remove('nav-click-open');
+      var trigger = dd.querySelector(':scope > a.nav-link');
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  // Country/market destination maps are intentionally click-owned on desktop.
+  // The panels are large enough to behave like navigation dialogs, and opening
+  // them from a passing pointer made the rail flicker while users crossed the
+  // top bar. Mobile retains theme.js's existing tap accordion.
+  function bindClickMarketDropdowns(links) {
+    links.querySelectorAll(':scope > .nav-market-dd').forEach(function (dd) {
+      if (dd.getAttribute('data-nav-click-market')) return;
+      var trigger = dd.querySelector(':scope > a.nav-link');
+      var menu = dd.querySelector(':scope > .nav-dd-menu.nav-market-menu');
+      if (!trigger || !menu) return;
+
+      dd.setAttribute('data-nav-click-market', '1');
+      trigger.setAttribute('aria-haspopup', 'menu');
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.addEventListener('click', function (e) {
+        if (window.innerWidth <= 900) return;
+        // A profile rebuild can move this exact node under International after
+        // binding. Once nested, theme.js owns it as an in-panel drill trigger.
+        if (dd.parentElement !== links) return;
+        e.preventDefault();
+        e.stopPropagation();
+        var wasOpen = dd.classList.contains('nav-click-open');
+        closeClickMarketMenus(links, dd);
+        links.querySelectorAll(':scope > .nav-dd.nav-hover-open').forEach(function (other) {
+          other.classList.remove('nav-hover-open');
+        });
+        dd.classList.toggle('nav-click-open', !wasOpen);
+        trigger.setAttribute('aria-expanded', wasOpen ? 'false' : 'true');
+      });
+    });
+
+    if (links.getAttribute('data-nav-click-away')) return;
+    links.setAttribute('data-nav-click-away', '1');
+    document.addEventListener('click', function (e) {
+      if (window.innerWidth <= 900) return;
+      var open = links.querySelector(':scope > .nav-market-dd.nav-click-open');
+      if (!open || open.contains(e.target)) return;
+      closeClickMarketMenus(links);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var open = links.querySelector(':scope > .nav-market-dd.nav-click-open');
+      if (!open) return;
+      var trigger = open.querySelector(':scope > a.nav-link');
+      closeClickMarketMenus(links);
+      if (trigger) trigger.focus();
+    });
+    window.addEventListener('resize', function () {
+      if (window.innerWidth <= 900) closeClickMarketMenus(links);
+    });
+  }
+
+  // Non-market dropdowns retain their hover-safe bridge. Wide desktop menus
+  // are anchored to the full navigation rail, so a short grace period keeps
+  // Research usable while a fine pointer crosses the intentional air gap.
   function bindHoverSafeDropdowns(links) {
     var fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
     links.querySelectorAll(':scope > .nav-dd').forEach(function (dd) {
+      if (dd.classList.contains('nav-market-dd')) return;
       if (dd.getAttribute('data-nav-hover-safe')) return;
       dd.setAttribute('data-nav-hover-safe', '1');
 
@@ -745,6 +804,7 @@
       function openMenu() {
         if (!canHover()) return;
         window.clearTimeout(closeTimer);
+        closeClickMarketMenus(links);
         dd.parentElement.querySelectorAll(':scope > .nav-dd.nav-hover-open').forEach(function (other) {
           if (other !== dd) other.classList.remove('nav-hover-open');
         });
@@ -805,6 +865,7 @@
     // The restored nodes are brand new, so the per-node accordion handlers
     // theme.js bound at DOMContentLoaded are gone. Re-bind before a tap can land.
     rebindAccordion(links);
+    bindClickMarketDropdowns(links);
     bindHoverSafeDropdowns(links);
 
     if (!folding) { remarkActive(links); return; }   // nothing to fold
@@ -897,6 +958,7 @@
       enhanceResearchMenu(links);
       capture(links);
       remarkActive(links);
+      bindClickMarketDropdowns(links);
       bindHoverSafeDropdowns(links);
     }
     if (!window.MDXAuth || !window.MDXAuth.onChange) return;
