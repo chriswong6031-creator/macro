@@ -40,7 +40,7 @@ class _FakeStripe:
             @staticmethod
             def list(**kwargs):
                 assert kwargs["code"] == "FOUNDINGPRO2026V2"
-                return _ListResp([promo])
+                return _ListResp([] if promo is None else [promo])
 
         class _Customer:
             @staticmethod
@@ -209,3 +209,48 @@ def test_subscription_history_repairs_missing_customer_marker(monkeypatch):
     )
     assert billing._customer_offer_entitled("cus_founder", "founding_pro") is True
     assert fake.modified_metadata == {"mm_founding_pro_entitled": "true"}
+
+
+def test_unprovisioned_offer_is_a_clean_503(monkeypatch, caplog):
+    """An unbootstrapped Stripe mode must not leak the operator runbook to clients.
+
+    On 2026-07-31 the live VPS served 85/85 requests to /api/billing/offers/founding_pro
+    as 503s whose public detail said "run scripts/stripe_bootstrap.py" — the runbook
+    belongs in the server log, never in the response body.
+    """
+    _wire(monkeypatch, None)
+    with caplog.at_level("ERROR", logger="macro.billing"):
+        with pytest.raises(HTTPException) as ei:
+            billing._offer_status("founding_pro")
+    assert ei.value.status_code == 503
+    detail = str(ei.value.detail)
+    assert "temporarily unavailable" in detail
+    for leak in ("stripe_bootstrap", "scripts/", "provisioned", "Stripe"):
+        assert leak not in detail
+    assert any("stripe_bootstrap" in r.message for r in caplog.records)
+
+
+def test_promo_without_id_is_a_clean_503(monkeypatch):
+    _wire(monkeypatch, types.SimpleNamespace(id=None, times_redeemed=0, active=True))
+    with pytest.raises(HTTPException) as ei:
+        billing._offer_discount("founding_pro")
+    assert ei.value.status_code == 503
+    detail = str(ei.value.detail)
+    assert "temporarily unavailable" in detail
+    assert "Stripe" not in detail
+
+
+def test_missing_price_is_a_clean_503(monkeypatch, caplog):
+    billing._PRICE_CACHE.clear()
+    fake = types.SimpleNamespace(
+        Price=types.SimpleNamespace(list=lambda **kwargs: _ListResp([])))
+    monkeypatch.setattr(billing, "_stripe", lambda: fake)
+    with caplog.at_level("ERROR", logger="macro.billing"):
+        with pytest.raises(HTTPException) as ei:
+            billing._price_id("pro_2026_v2_annual")
+    assert ei.value.status_code == 503
+    detail = str(ei.value.detail)
+    assert "temporarily unavailable" in detail
+    for leak in ("stripe_bootstrap", "scripts/", "pro_2026_v2_annual", "Stripe"):
+        assert leak not in detail
+    assert any("stripe_bootstrap" in r.message for r in caplog.records)
