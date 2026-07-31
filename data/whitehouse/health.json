@@ -1,21 +1,15 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-31T21:22:25.275627+00:00",
+  "as_of": "2026-07-31T23:17:00.307009+00:00",
   "posts_seen": 13,
-  "seen_total": 75,
-  "evaluated": 2,
-  "activated": 1,
+  "seen_total": 76,
+  "evaluated": 1,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
   "gate_scores": [
     {
-      "id": "wh-2026-07-31-to-facilitate-positive-adjustment-to-competition-from-imports-of-quartz-surface-",
-      "importance": 65,
-      "activated": true,
-      "degraded_reason": "served_by:deepseek"
-    },
-    {
-      "id": "wh-2026-07-31-icymi-confirm-todd-blanche-as-attorney-general",
-      "importance": 10,
+      "id": "wh-2026-07-31-president-trump-hosts-historic-cabinet-meeting-at-camp-david",
+      "importance": 25,
       "activated": false,
       "degraded_reason": "served_by:deepseek"
     }
