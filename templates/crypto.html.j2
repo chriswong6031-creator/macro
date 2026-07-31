@@ -1,4 +1,4 @@
-{# Crypto Intelligence Cockpit — Wave 2. H1–H8 are governed shelf roots. #}
+{# Crypto Intelligence Cockpit — H1–H8 are governed shelf roots. #}
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en }}</span><span class="l-zh">{{ zh if zh else en }}</span>
 {%- endmacro %}
@@ -154,6 +154,7 @@ body.crypto-page::before{opacity:.34}
   .equity-grid{grid-template-columns:repeat(2,1fr)}.calendar-grid{grid-template-columns:repeat(2,1fr)}
   .compact-market{grid-template-columns:repeat(2,1fr)}.source-line{display:block}
 }
+{% include "_crypto_house_style.html.j2" %}
 </style>
 </head>
 <body class="crypto-page">
@@ -163,7 +164,7 @@ body.crypto-page::before{opacity:.34}
     <div class="hero-grid">
       <div>
         <div class="shelf-kicker">{{ t('Crypto intelligence','加密情报') }}</div>
-        <h1 class="hero-word"><span class="l-en">Market<br>State</span><span class="l-zh">市场<br>状态</span></h1>
+        <h1 class="hero-word"><span class="l-en">Market State</span><span class="l-zh">市场状态</span></h1>
         <div class="hero-stance">{{ t(market.stance, market.stance_zh) }}</div>
         <p class="hero-copy">{{ t(market.summary, market.summary_zh) }}</p>
         <div class="hero-meta"><span class="live-chip"><i></i>{{ t('Daily class read','每日市场解读') }}</span><span class="num">{{ t('As of','截至') }} {{ as_of }}</span></div>
