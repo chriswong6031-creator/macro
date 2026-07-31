@@ -101,6 +101,13 @@ _ACTIVITY_WORDS: dict[str, str] = {
     "pt_dropped": "publish-time read dropped",
     "auto_approved": "auto-approved",
     "stuck_posting": "stuck mid-post",
+    # The 2026-07-30 gates, after the operator graded a batch F. Plain words
+    # matter most here: these four are the ones that will move, and "why did
+    # only 51 of 187 go out" has to be answerable from this page alone.
+    "quarantined_bare_cashtag": "pulled — named tickers with no chart",
+    "quarantined_unknown_cashtag": "pulled — named a ticker no price store knows",
+    "quarantined_voice_laws": "pulled — reads machine-written",
+    "quarantined_run_duplicate": "pulled — repeats a post already sent today",
 }
 
 # Counters that mean "a post did NOT go out because of this" — the ones that sum

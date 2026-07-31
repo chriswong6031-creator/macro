@@ -330,3 +330,49 @@ class TestAuditorBlockPath:
         blk = _auditor_block({"content": {"copy": {"auditor": {
             "ran": True, "kept": 10, "cut": 10, "cuts": [], "notes": {}}}}})
         assert "supply" in blk["verdict"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# "its like a factory with its window panes all tinted and me as the CEO unable
+# to see the inside of the factory. Work to let me see the factory."
+#
+# The Floor renders an unmapped counter under its raw name rather than dropping
+# it, so a new gate is never INVISIBLE — but a raw slug is still a tinted pane.
+# This walks the publisher's own activity row so a gate cannot ship wordless.
+# ─────────────────────────────────────────────────────────────────────────────
+def test_every_publisher_counter_has_plain_words_on_the_floor():
+    import re
+    from pathlib import Path
+
+    from admin.marketing_floor import _ACTIVITY_WORDS
+
+    src = Path("scripts/marketing_publisher.py").read_text(encoding="utf-8")
+    start = src.index('"lane": "publisher_live"')
+    block = src[start:src.index("})", start)]
+    keys = set(re.findall(r'^\s+"([a-z_0-9]+)":', block, re.M))
+
+    # Structural fields, not loss counters: these name the run or carry lists,
+    # and the Floor renders them through its own header rather than the ledger.
+    STRUCTURAL = {"at", "lane", "backend", "cap", "account",
+                  "dark_accounts", "halted_accounts", "parked_dark"}
+
+    assert len(keys) > 20, f"only {len(keys)} activity keys parsed — the scrape broke"
+    missing = sorted(k for k in keys if k not in _ACTIVITY_WORDS and k not in STRUCTURAL)
+    assert not missing, (
+        "publisher counters with no plain-word label on the Floor "
+        f"(they would render as raw slugs): {missing}"
+    )
+
+
+def test_the_2026_07_30_gates_are_named_in_operator_language():
+    """Each of the four new gates says WHY in words, and names no internals."""
+    from admin.marketing_floor import _ACTIVITY_WORDS
+
+    for key in ("quarantined_bare_cashtag", "quarantined_unknown_cashtag",
+                "quarantined_voice_laws", "quarantined_run_duplicate"):
+        words = _ACTIVITY_WORDS[key]
+        assert words and words == words.lower() or words[0].islower(), words
+        # No slugs, no internal names, no study jargon in the operator's view.
+        for banned in ("cashtag_", "_violations", "validate_", "queued_voice",
+                       "jaccard", "regex"):
+            assert banned not in words.lower(), (key, words)
