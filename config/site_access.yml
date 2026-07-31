@@ -68,6 +68,10 @@ public:
     # chat.html's second block, kept separate because it is linked from the
     # BODY to hold its place in the cascade (see templates/chat_nav.css).
     - /landing.css
+    # Shared choreography for the public landing and product-story pages.
+    # Presentation only: no market payloads, account state, or customer data.
+    - /scene-motion.css
+    - /scene-motion.js
     - /chat.css
     - /chat_nav.css
     - /theme.css
