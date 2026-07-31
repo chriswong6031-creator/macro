@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-30",
-  "generated_utc": "2026-07-31T03:35:37Z",
+  "generated_utc": "2026-07-31T05:27:23Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -42,15 +42,6 @@
           "same_earnings_week": false
         },
         {
-          "ticker": "URBN",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.16<0.2",
-          "shared_groups": [],
-          "same_earnings_week": false
-        },
-        {
           "ticker": "JBLU",
           "combined": 0.0,
           "membership_jaccard": 0.0,
@@ -58,6 +49,15 @@
           "factor_basis": "beta-read-thin:r2=0.16<0.2",
           "shared_groups": [],
           "same_earnings_week": true
+        },
+        {
+          "ticker": "URBN",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [],
+          "same_earnings_week": false
         }
       ],
       "earnings_leg": {
@@ -88,7 +88,7 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "URBN",
+          "ticker": "JBLU",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -97,7 +97,7 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "JBLU",
+          "ticker": "URBN",
           "combined": 0.0,
           "membership_jaccard": 0.0,
           "factor_cosine": null,
@@ -114,48 +114,6 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as ARLO \u2014 Information Technology (similarity 100%).",
       "why_zh": "\u4e0e ARLO \u62bc\u6ce8\u76f8\u540c \u2014 Information Technology\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
-    },
-    "URBN": {
-      "verdict": "duplicate",
-      "max_similarity": 0.982,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "JBLU",
-          "combined": 0.982,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.982,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "NVST",
-          "combined": 0.951,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.951,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "ARLO",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": null,
-          "factor_basis": "beta-read-thin:r2=0.16<0.2",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
-      ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as JBLU \u2014 shared factor profile (similarity 98%).",
-      "why_zh": "\u4e0e JBLU \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 98%\uff09\u3002"
     },
     "JBLU": {
       "verdict": "duplicate",
@@ -200,6 +158,48 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as URBN \u2014 shared factor profile (similarity 98%).",
       "why_zh": "\u4e0e URBN \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 98%\uff09\u3002"
+    },
+    "URBN": {
+      "verdict": "duplicate",
+      "max_similarity": 0.982,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "JBLU",
+          "combined": 0.982,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.982,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "NVST",
+          "combined": 0.951,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.951,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "ARLO",
+          "combined": 0.0,
+          "membership_jaccard": 0.0,
+          "factor_cosine": null,
+          "factor_basis": "beta-read-thin:r2=0.16<0.2",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as JBLU \u2014 shared factor profile (similarity 98%).",
+      "why_zh": "\u4e0e JBLU \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 98%\uff09\u3002"
     },
     "NVST": {
       "verdict": "duplicate",
@@ -254,14 +254,14 @@
         "sector:Information Technology"
       ]
     },
-    "ARLO__URBN": {
+    "ARLO__JBLU": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
-    "ARLO__JBLU": {
+    "ARLO__URBN": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -275,14 +275,14 @@
       "factor_basis": "beta-read-thin:r2=0.16<0.2",
       "shared_groups": []
     },
-    "PI__URBN": {
+    "PI__JBLU": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
     },
-    "PI__JBLU": {
+    "PI__URBN": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -296,17 +296,10 @@
       "factor_basis": "beta-read-thin:r2=0.19<0.2",
       "shared_groups": []
     },
-    "URBN__JBLU": {
+    "JBLU__URBN": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.982,
       "combined": 0.982,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "URBN__NVST": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.951,
-      "combined": 0.951,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -314,6 +307,13 @@
       "membership_jaccard": 0.0,
       "factor_cosine": 0.9786,
       "combined": 0.9786,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "URBN__NVST": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.951,
+      "combined": 0.951,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     }
@@ -326,7 +326,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 2.6,
+    "entry_open": 2.0,
     "setting_up": null
   },
   "source_passport": {

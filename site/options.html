@@ -237,7 +237,7 @@
             </div>
           </section>
         </div>
-        <aside class="mega-rail nav-mega-rail" aria-label="<span class="l-en">Explore research</span><span class="l-zh">探索研究</span>">
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
           <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
           <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
@@ -390,9 +390,13 @@
     </div>
   </div>
 
-  <!-- the non-fused sentence — the design's central honesty statement -->
+  <!-- the non-fused sentence — the design's central honesty statement.
+       NO stance chip: this persistent chrome is a caveat about how the four readings
+       are PRESENTED, not a verdict on them, and it rides every mode — so a chip here
+       repeated the read's decision element on all four tabs. The page keeps exactly one
+       decision element (OIP_MASTERPLAN §3 verdict law); the sentence is the valuable
+       half and stays verbatim. Resolves the follow-up W1_DESIGN_SPEC §0.13 flagged. -->
   <div class="oew-nofuse">
-    <span class="oew-stance st-watch"><span class="l-en">Watch — don&#39;t chase</span><span class="l-zh">观察—勿追高</span></span>
     <span><span class="l-en">Four readings, shown side by side and never averaged into one score.</span><span class="l-zh">四项读数并列呈现，不会合成单一评分。</span></span>
   </div>
 
@@ -807,7 +811,7 @@
           <div class="oew-rg-h"><span class="l-en">Turned back up after a washout</span><span class="l-zh">洗盘后重新转强</span></div>
           <div class="oew-rg-s"><span class="l-en">Money flipped positive right after a run of selling.</span><span class="l-zh">在连续卖出之后，资金刚刚转为流入。</span></div>
           <div class="oew-tkchips">
-            <button class="oew-tkchip" type="button" data-goto="AVAV">AVAV</button><button class="oew-tkchip" type="button" data-goto="CNC">CNC</button><button class="oew-tkchip" type="button" data-goto="CRCL">CRCL</button><button class="oew-tkchip" type="button" data-goto="CRDO">CRDO</button><button class="oew-tkchip" type="button" data-goto="CZR">CZR</button><button class="oew-tkchip" type="button" data-goto="ICHR">ICHR</button>
+            <button class="oew-tkchip" type="button" data-goto="DDOG">DDOG</button><button class="oew-tkchip" type="button" data-goto="ICHR">ICHR</button><button class="oew-tkchip" type="button" data-goto="NVO">NVO</button><button class="oew-tkchip" type="button" data-goto="OKLO">OKLO</button><button class="oew-tkchip" type="button" data-goto="SNOW">SNOW</button><button class="oew-tkchip" type="button" data-goto="V">V</button>
           </div>
         </div>
         <div class="oew-rg">
@@ -1147,7 +1151,9 @@ function renderTicker(host, tk, gx, fl){
     + '</div>'
     + '<h3 class="oew-tk-regime">' + bi(head[0], head[1]) + '</h3>'
     + '<p class="oew-tk-say">' + bi(say[0], say[1]) + '</p>'
-    + '<div class="oew-ic-foot" style="margin-top:12px">'
+    /* The read's ONE decision element (OIP_MASTERPLAN §3 verdict law; marker placement
+       pinned by W1_DESIGN_SPEC §5.1). Bare boolean attribute — CI greps for duplicates. */
+    + '<div class="oew-ic-foot" data-verdict-surface style="margin-top:12px">'
       + (reg === 'short'
           ? '<span class="oew-stance st-protect">' + bi('Protect gains','保护利润') + '</span>'
           : '<span class="oew-stance st-watch">' + bi("Watch — don't chase",'观察—勿追高') + '</span>')
@@ -1219,8 +1225,10 @@ function renderTicker(host, tk, gx, fl){
       + mt('Put/call','认沽认购比', num(fl.pc_ratio) === null ? '—' : num(fl.pc_ratio).toFixed(2) + 'x')
       + mt('Net premium','净权利金', smoney(fl.net_premium_mn))
     + '</div></div>'
+    /* NO stance chip: this footer states how far the measured numbers can be trusted —
+       a fact about the reading, not a second verdict on it. The name header above is
+       this read's one decision element. Sentence + as-of stay verbatim (§0.13 follow-up). */
     + '<div class="oew-pfoot">'
-      + '<span class="oew-stance st-watch">' + bi("Watch — don't chase",'观察—勿追高') + '</span>'
       + '<span>' + bi('Size is a solid read. Direction comes from tick-rule signing and is not reliable enough to read on its own.',
           '规模数据可靠。方向数据来自 tick 规则签署，其本身不足以作为方向依据。') + '</span>'
       + (fl.asof ? '<span class="oew-asof mono">' + esc(fl.asof) + '</span>' : '')

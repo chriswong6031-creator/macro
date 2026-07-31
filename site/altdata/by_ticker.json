@@ -1,7 +1,7 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-07-31",
-  "generated_utc": "2026-07-31T02:59:59.394428+00:00",
+  "generated_utc": "2026-07-31T04:51:18.613905+00:00",
   "n_tickers": 2563,
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
   "tickers": {
@@ -1506,14 +1506,13 @@
     "EXE": {
       "ticker": "EXE",
       "channels": [
-        "material_8k",
-        "special_situation"
+        "material_8k"
       ],
-      "weighted_score": 0.75,
+      "weighted_score": 0.55,
       "material_8k_30d": 3,
       "days_to_earnings": 4,
       "next_earnings": "2026-08-04",
-      "convergence_score": 2,
+      "convergence_score": 1,
       "trump_linked": false,
       "affiliated": false
     },
@@ -3087,17 +3086,6 @@
     },
     "TYL": {
       "ticker": "TYL",
-      "channels": [
-        "analyst_upgrade_cluster"
-      ],
-      "weighted_score": 0.35,
-      "analyst_bull_ratio": 1.0,
-      "convergence_score": 1,
-      "trump_linked": false,
-      "affiliated": false
-    },
-    "CIEN": {
-      "ticker": "CIEN",
       "channels": [
         "analyst_upgrade_cluster"
       ],
