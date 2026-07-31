@@ -101,6 +101,7 @@
     "ded68209024e8afe7709d363e4e9dc90afcce65e": "2026-07-30T16:11:28.032933+00:00",
     "e31ac0bab92047f4db84c5391c01eb71107faccb": "2026-07-30T14:37:10.481667+00:00",
     "e31dd022db67d1619cb66093ff65ff6de81cbe8d": "2026-07-31T04:36:05.323258+00:00",
+    "e56975441e4a485edc112b2fec6d0f158c384556": "2026-07-31T12:07:46.333088+00:00",
     "e93f508ee97260d26ba6b0c2b383daefd1acb1a9": "2026-07-30T17:46:37.348003+00:00",
     "ee32be38eca2e5aaf9fc17d9d47fec00a375dd0b": "2026-07-31T07:27:04.256025+00:00",
     "eee93a529615309f3fb9209fb7ac2deba54786e7": "2026-07-30T20:18:38.435589+00:00",
@@ -132,6 +133,12 @@
     },
     "claim:geopolitical:sec:technology": {
       "first_ts": "2026-07-31T11:59:29.559585+00:00",
+      "sources": [
+        "host:cnbc.com"
+      ]
+    },
+    "claim:macro_print:mac:inflation": {
+      "first_ts": "2026-07-31T12:07:46.333088+00:00",
       "sources": [
         "host:cnbc.com"
       ]
@@ -216,7 +223,7 @@
     }
   },
   "flagship_counter": {
-    "count": 1,
+    "count": 2,
     "day": "2026-07-31"
   },
   "providers": {
@@ -228,7 +235,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785499170.6417084
+      "last_poll_ts": 1785499668.7170355
     },
     "twitterapiio": {
       "cursors": {
@@ -275,7 +282,7 @@
         "2026-07": {
           "requests": 297,
           "tweets": 1660,
-          "usd": 0.2811
+          "usd": 0.2810999999999996
         }
       }
     }
@@ -283,44 +290,45 @@
   "recent_openers": {
     "flagship": [
       "",
-      "New this hour:"
+      "New this hour:",
+      ""
     ]
   },
   "schema": "press_wire.cursors/v1",
-  "updated_at": "2026-07-31T11:59:29Z",
+  "updated_at": "2026-07-31T12:07:46Z",
   "wire": {
     "bea_news": {
       "etag": "\"fc82db231f20dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 12:30:00 GMT",
-      "last_poll_ts": 1785499170.2004209
+      "last_poll_ts": 1785499667.3958807
     },
     "bls_news": {
       "etag": "\"80848ccc621fdd1:0\"",
       "fail_count": 0,
       "last_modified": "Wed, 29 Jul 2026 14:01:49 GMT",
-      "last_poll_ts": 1785499170.1074169
+      "last_poll_ts": 1785499667.245748
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785499170.28681
+      "last_poll_ts": 1785499668.46299
     },
     "fed_press": {
       "etag": "W/\"11ff261f3420dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 15:00:12 GMT",
-      "last_poll_ts": 1785499170.0544615
+      "last_poll_ts": 1785499667.0935092
     },
     "marketwatch_top": {
-      "etag": "W/\"2049-XCBFSlHHnZ8240uMCNrI5YTpxE8\"",
+      "etag": "W/\"2049-QIYBrZypSzDsUEVgE0Fe3hkLo6A\"",
       "fail_count": 0,
-      "last_poll_ts": 1785499170.5135784
+      "last_poll_ts": 1785499668.6791058
     },
     "whitehouse_actions": {
       "etag": "\"74058cbc1aa7708cb6fbf01922a43fa7\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 17:53:48 GMT",
-      "last_poll_ts": 1785499170.2626698
+      "last_poll_ts": 1785499667.7460246
     }
   }
 }
