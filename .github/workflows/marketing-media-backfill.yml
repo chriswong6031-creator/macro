@@ -20,6 +20,26 @@ name: marketing-media-backfill
 # carries its own media_url is never touched.
 # ─────────────────────────────────────────────────────────────────────────────
 on:
+  # SCHEDULED 2026-07-30. This lane was dispatch-only, which made it a recovery
+  # path that only ran when somebody already knew the day was broken — and the
+  # symptom is silent: posts ship text-only, which looks like a quiet day rather
+  # than a fault. Production really did lose a day this way (2026-07-28: 53
+  # outbox media entries with no public URL; the 37 sidecar rows for that date
+  # are the manual rescue somebody had to notice and launch).
+  #
+  # GitHub-hosted (ubuntu-latest), so this never touches the macstudio render
+  # pool and cannot cost the ~67-minute budget. Cheap by construction: a chart
+  # already in the sidecar is skipped, so a healthy day does nothing but read.
+  #
+  # Times are UTC and sit around the posting window, not on top of the nightly:
+  #   01:10  the nightly (22:30) has finished and committed; repairs the whole
+  #          day's charts BEFORE the main 11:00-23:00 posting window opens.
+  #   12:10  first mid-window catch — intraday hot-tape cards whose upload failed.
+  #   17:10  second, so an afternoon failure still has slots left to post into.
+  # Offset off the round hour because the publish sweeps run at :00 and :30 and
+  # both push to main; no reason to collide with them.
+  schedule:
+    - cron: "10 1,12,17 * * *"
   workflow_dispatch:
     inputs:
       as_of:
@@ -88,6 +108,16 @@ jobs:
           ARGS=""
           [ -n "${AS_OF:-}" ] && ARGS="$ARGS --as-of $AS_OF"
           [ "${DRY_RUN:-false}" = "true" ] && ARGS="$ARGS --dry-run"
+          # An UNATTENDED sweep gets an age bound; a human asking for a date does
+          # not. The sidecar records successes only, so a hole that cannot be
+          # filled (missing SVG, unrasterizable card) stays in the "missing" set
+          # forever and would be re-attempted on every one of the three daily
+          # runs. Three days is past every slot a chart could still post into.
+          # `--as-of` overrides the bound inside the script, so the manual rescue
+          # of an older day is unaffected — see _iter_missing.
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            ARGS="$ARGS --max-age-days 3"
+          fi
           python -m scripts.marketing_media_backfill $ARGS
 
       - name: commit recovered URLs (no-op when nothing changed)
