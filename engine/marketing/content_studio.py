@@ -945,6 +945,73 @@ def _slot_day_num(slot: Any) -> int | None:
     return int(m.group(1)) if m else None
 
 
+#: Share of degraded cards above which the run says so at ::warning rather than
+#: ::notice. Deliberately low: the rasteriser either works on a host or it does
+#: not, so a handful of fallbacks is already the failure, not noise.
+_LEGACY_FALLBACK_ALARM_SHARE = 0.10
+
+
+def _chart_quality_census(featured_charts: list[dict]) -> dict:
+    """How many posted images are the REAL card, and how many are the fallback.
+
+    THE SILENCE THIS REPLACES. `legacy_png` is a hand-drawn PIL line chart: no
+    candles, no indicators, no footer CTA. It exists so a Chrome-less host (CI,
+    the ubuntu publish runner) still posts a picture instead of bare text. On the
+    2026-07-30 plan it drew 15 of 23 cards — 65% — on a host where Chrome IS
+    present and rasters a card in 3 to 4 seconds. So it was not the designed
+    degradation for a Chrome-less box; it was a live failure, running at scale,
+    with no counter anywhere and its only trace a `log.warning` that GitHub drops
+    because it does not start the line.
+
+    An earlier audit of this repo reported "65% of images are the retired legacy
+    chart" and it was refuted — by counting SVGs on disk. Every SVG on disk IS
+    v2; the legacy path emits a PNG, so that check could not observe the thing it
+    was used to rule out. This census reads `media_render`, which is the field
+    that actually records which renderer drew the image.
+    """
+    total = 0
+    modes: dict[str, int] = {}
+    degraded: list[str] = []
+    for fc in featured_charts or []:
+        if not isinstance(fc, dict):
+            continue
+        mode = str(fc.get("media_render") or "")
+        if not mode:
+            continue          # never rastered (deferred/pruned) — not a quality fact
+        total += 1
+        modes[mode] = modes.get(mode, 0) + 1
+        if mode == "legacy_png":
+            degraded.append(str(fc.get("id") or "?"))
+
+    n_legacy = modes.get("legacy_png", 0)
+    share = (n_legacy / total) if total else 0.0
+    if total and share >= _LEGACY_FALLBACK_ALARM_SHARE:
+        print(f"::warning title=marketing-chart-quality::"
+              f"{n_legacy} of {total} posted cards ({share * 100:.0f}%) are the "
+              f"DEGRADED legacy PNG, not the designed card. The rasteriser is "
+              f"Chrome; this is it failing or timing out under load, not a "
+              f"Chrome-less host. Affected: {', '.join(degraded[:6])}"
+              f"{' …' if len(degraded) > 6 else ''}", flush=True)
+    elif total:
+        print(f"::notice title=marketing-chart-quality::"
+              f"{total - n_legacy} of {total} cards rendered as the real card.",
+              flush=True)
+
+    return {
+        "rastered": total,
+        "by_render": modes,
+        "legacy_fallback": n_legacy,
+        "legacy_share": round(share, 3),
+        "degraded_chart_ids": degraded,
+        "note": (
+            f"{n_legacy} of {total} cards fell back to the legacy PNG "
+            f"(no candles, no indicators, no CTA)."
+            if n_legacy else
+            f"All {total} cards rendered as the designed card."
+        ) if total else "No cards rastered.",
+    }
+
+
 def _confluence_census(
     account_rows: list[dict],
     posts_added: list[dict],
@@ -1838,6 +1905,30 @@ def _attach_chart_media(
         if "media_url" in stamped:
             # explicit None documents "rendered but not hosted"
             fc["media_url"] = stamped["media_url"]
+
+        # THE DEGRADED IMAGE HAS TO BE AUDIBLE (2026-07-30).
+        #
+        # `legacy_png` is a hand-drawn PIL line chart with no candles, no
+        # indicators and NO FOOTER CTA — a visibly worse picture than the card
+        # the preview promises. media_publish already noted the swap, but through
+        # `log.warning`, and this repo's builders log with a prefixing format, so
+        # GitHub silently drops any annotation that does not START the line
+        # (CLAUDE.md; it shipped dead five times before #3587 swept 69 sites).
+        # Nothing counted it either.
+        #
+        # So the quality of every image we post was a number nobody could see,
+        # and on the 2026-07-30 plan it was 15 of 23 cards — 65% — degraded.
+        # The rasteriser itself works on this host (measured: 3-4s per card), so
+        # a fallback is a SYMPTOM, not a steady state, and it belongs on the
+        # console where the operator reads losses rather than in a log nobody
+        # opens. Bare print, line start, flushed — the house form.
+        if str(fc.get("media_render") or "") == "legacy_png":
+            print(f"::warning title=marketing-chart-legacy-fallback::"
+                  f"{chart_id}: the SVG raster produced nothing, so this post "
+                  f"carries the DEGRADED legacy PNG (no candles, no indicators, "
+                  f"no footer CTA). Chrome is the rasteriser; a fallback here "
+                  f"means it failed or timed out, not that the card is fine.",
+                  flush=True)
     except Exception as exc:  # noqa: BLE001
         import logging  # noqa: PLC0415
         logging.getLogger(__name__).warning(
@@ -4128,6 +4219,11 @@ def content_plan(
             "movers": _movers_summary,
             "confluence": _confluence_census(
                 account_rows, confluence_posts_added, conf_charts_added),
+            # WHAT THE READER ACTUALLY SEES. Per-card fallbacks are announced at
+            # the moment they happen; this is the share, which is the number that
+            # tells an operator whether the rasteriser is healthy or the account
+            # has quietly been posting degraded pictures all week.
+            "chart_quality": _chart_quality_census(featured_charts),
             "copy": {
                 "mode": _copy_mode,
                 "n_validated": _copy_n_validated,

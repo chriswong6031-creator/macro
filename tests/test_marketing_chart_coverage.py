@@ -674,3 +674,84 @@ class TestChartDrawsWhatTheCopyClaims:
         )
         assert "POC" in svg, "the POC level is not labelled on the chart"
         assert "AVWAP" in svg, "the anchored VWAP is not labelled on the chart"
+
+
+class TestChartQualityIsVisible:
+    """65% of our posted images were the DEGRADED renderer and nobody could tell.
+
+    `legacy_png` is a hand-drawn PIL line chart: no candles, no indicators, no
+    footer CTA. It exists so a Chrome-less host (CI, the ubuntu publish runner)
+    posts a picture rather than bare text. On the 2026-07-30 plan it drew 15 of
+    23 cards on a host where Chrome IS installed and rasters a card in 3-4s.
+
+    It was invisible for two compounding reasons: the only trace was a
+    `log.warning`, which GitHub drops because this repo's builders log with a
+    prefixing format and an annotation must START the line; and nothing counted
+    it. An audit that read SVGs off disk then "refuted" the finding — every SVG
+    on disk IS v2, because the legacy path emits a PNG. The field that records
+    which renderer drew the image is `media_render`.
+    """
+
+    def test_the_census_counts_the_degraded_renderer(self):
+        from engine.marketing.content_studio import _chart_quality_census
+
+        out = _chart_quality_census([
+            {"id": "chart-001", "media_render": "svg_raster"},
+            {"id": "chart-002", "media_render": "legacy_png"},
+            {"id": "chart-003", "media_render": "legacy_png"},
+        ])
+        assert out["rastered"] == 3
+        assert out["legacy_fallback"] == 2
+        assert out["legacy_share"] == pytest.approx(0.667, abs=0.001)
+        assert out["degraded_chart_ids"] == ["chart-002", "chart-003"]
+
+    def test_a_card_that_was_never_rastered_is_not_a_quality_fact(self):
+        """Deferred and pruned cards have no media_render. Counting them as
+        healthy would inflate the share; counting them as degraded would cry
+        wolf on cards no post carries."""
+        from engine.marketing.content_studio import _chart_quality_census
+
+        out = _chart_quality_census([
+            {"id": "chart-001", "media_render": "svg_raster"},
+            {"id": "chart-002"},                       # deferred, never rastered
+            {"id": "chart-003", "media_render": ""},   # ditto
+        ])
+        assert out["rastered"] == 1
+        assert out["legacy_share"] == 0.0
+
+    def test_a_degraded_batch_reaches_the_console_as_a_line_start_warning(self, capsys):
+        """CLAUDE.md: an annotation that does not start the line is dropped by
+        GitHub, which is how this shipped dead five times before #3587."""
+        from engine.marketing.content_studio import _chart_quality_census
+
+        _chart_quality_census([
+            {"id": "chart-001", "media_render": "legacy_png"},
+            {"id": "chart-002", "media_render": "svg_raster"},
+        ])
+        out = capsys.readouterr().out
+        line = next(ln for ln in out.splitlines() if "marketing-chart-quality" in ln)
+        assert line.startswith("::warning title=marketing-chart-quality::"), line
+        assert "50%" in line
+
+    def test_a_clean_batch_does_not_cry_wolf(self, capsys):
+        from engine.marketing.content_studio import _chart_quality_census
+
+        _chart_quality_census([{"id": "c", "media_render": "svg_raster"}])
+        out = capsys.readouterr().out
+        assert "::notice title=marketing-chart-quality::" in out
+        assert "::warning" not in out
+
+    def test_the_raster_retries_once_before_accepting_a_worse_picture(self):
+        """A single failed Chrome launch used to decide the image a live account
+        posts. The raster is deterministic and writes only inside its own temp
+        dir, so one retry is safe — and it is bounded at one so a genuinely
+        Chrome-less host does not pay two doomed launches per card."""
+        import inspect
+        from engine.marketing import media_publish
+
+        src = inspect.getsource(media_publish.publish_card)
+        assert "for _attempt in (1, 2)" in src, "the retry is gone"
+        assert "find_chrome()" in src, (
+            "without the no-binary short-circuit, a Chrome-less host pays two "
+            "doomed launches for every card"
+        )
