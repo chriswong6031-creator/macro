@@ -1077,6 +1077,35 @@ class TestRoutineRestatementDemotion:
             now=self.NOW,
         )
 
+    @pytest.mark.parametrize("headline", [
+        # The phrasings a first exact-phrase list MISSED. It was written from
+        # guesses and caught only "third estimate" -- 1 of 5 real forms. A gate
+        # calibrated against invented strings is a gate you have not tested.
+        "US Q2 GDP revised up to 3.1%",
+        "GDP growth revised to 3.1% from 3.0%",
+        "BEA revises Q2 GDP to 3.1%",
+        "Second-quarter GDP revision shows 3.1% growth",
+        "US Q2 GDP revised higher in third estimate",
+        "Payrolls restated lower for June",
+    ])
+    def test_every_real_restatement_phrasing_is_demoted(self, headline):
+        r = self._sal(headline, "Gross domestic product and payrolls data.")
+        assert r["_salience_components"]["revision_penalty"] > 0, headline
+        assert r["salience"] < 60.0, headline
+
+    def test_a_fresh_print_that_merely_mentions_a_revision_survives(self):
+        """Headline-scoped on purpose: the headline is what an item is ABOUT.
+
+        A snippet routinely cites the prior reading while the item itself is
+        the new print, so matching headline+snippet would demote the print.
+        """
+        r = self._sal(
+            "US Q3 GDP grows 2.8%",
+            "GDP rose 2.8%; the prior quarter was revised to 3.1%.",
+        )
+        assert r["_salience_components"]["revision_penalty"] == 0.0
+        assert r["_salience_components"]["revision_marker"] == ""
+
     def test_the_live_gdp_restatement_is_demoted_below_the_emit_floor(self):
         r = self._sal(
             "US Q2 GDP revised to 3.1% in third estimate, BEA says",
@@ -1084,7 +1113,7 @@ class TestRoutineRestatementDemotion:
             "domestic product growth in its third estimate.",
         )
         assert r["_salience_components"]["revision_penalty"] > 0
-        assert r["_salience_components"]["revision_marker"] == "third estimate"
+        assert r["_salience_components"]["revision_marker"].startswith("revis")
         assert r["salience"] < 60.0, "the restatement still clears the wire"
 
     def test_a_first_release_print_is_untouched(self):
@@ -1146,7 +1175,7 @@ class TestRoutineRestatementDemotion:
             "Payrolls benchmark revision cuts 818,000 jobs",
             "The annual benchmark revision showed nonfarm payrolls were weaker.",
         )["_salience_components"]
-        assert c["revision_marker"] in ("benchmark revision", "annual revision")
+        assert c["revision_marker"].startswith("revis")
         assert set(c) >= {"base", "tier_bonus", "kw_bonus", "ticker_bonus",
                           "revision_penalty", "revision_marker",
                           "market_hours_weight", "raw", "capped"}

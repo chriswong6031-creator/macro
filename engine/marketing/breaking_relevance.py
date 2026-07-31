@@ -198,12 +198,21 @@ _TICKER_MATCH_CAP = 3
 # it back over the threshold, which is what "big revision" looks like in the
 # score. Scoped to macro_print ON PURPOSE — a COMPANY revising guidance is real
 # news, and "revised" is a normal word in that context.
-_MACRO_REVISION_MARKERS: tuple[str, ...] = (
-    "second estimate", "third estimate", "final estimate", "advance estimate",
-    "benchmark revision", "annual revision", "comprehensive revision",
-    "revised estimate", "revised reading", "revised figure", "revised data",
-    "previously reported", "prior estimate", "initially reported",
-    "restated", "restatement",
+# Matched against the HEADLINE ONLY. A first-release print that mentions a
+# revision in passing ("Q3 GDP grows 2.8%; Q2 revised to 3.1%") is still about
+# the new print, and the headline is what the item is ABOUT.
+#
+# The stem `revis` is deliberately broad — an exact-phrase list written from
+# guesses missed four of the five real phrasings on its first calibration run
+# ("GDP revised up to 3.1%", "revised to 3.1% from 3.0%", "BEA revises Q2 GDP",
+# "Second-quarter GDP revision shows..."), catching only "third estimate". For a
+# macro DATA SERIES, "revised/revises/revision" essentially always means
+# restating a prior print, and the macro_print scoping already keeps this away
+# from company guidance, where the word is ordinary.
+_MACRO_REVISION_RE = re.compile(
+    r"\b(?:revis\w*|restat\w*|"
+    r"(?:second|third|final|advance)\s+estimate|"
+    r"previously\s+reported|prior\s+estimate|initially\s+reported)\b"
 )
 _MACRO_REVISION_PENALTY = 20.0
 
@@ -211,18 +220,19 @@ _MACRO_REVISION_PENALTY = 20.0
 _DEFAULT_THRESHOLD = 60.0
 
 
-def macro_revision_penalty(event_class: str, text_lower: str) -> tuple[float, str]:
+def macro_revision_penalty(event_class: str, headline_lower: str) -> tuple[float, str]:
     """(penalty, marker) for a macro print that only RESTATES a published one.
+
+    Takes the HEADLINE, not headline+snippet: a snippet routinely mentions the
+    prior reading while the item itself is the fresh print.
 
     Returns (0.0, "") for every other class and for a first-release print, so
     the historical score of everything else is untouched.
     """
     if event_class != "macro_print":
         return 0.0, ""
-    for marker in _MACRO_REVISION_MARKERS:
-        if marker in text_lower:
-            return _MACRO_REVISION_PENALTY, marker
-    return 0.0, ""
+    hit = _MACRO_REVISION_RE.search(headline_lower or "")
+    return (_MACRO_REVISION_PENALTY, hit.group(0)) if hit else (0.0, "")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Static mega-cap + ETF fallback universe (used when parquet unavailable)
@@ -558,7 +568,8 @@ def score_item(
     # the market-hours weight, so a restatement is demoted by the same
     # proportion at 3am as at the open — the item's newsworthiness does not
     # depend on what time it crossed.
-    revision_penalty, revision_marker = macro_revision_penalty(event_class, full_lower)
+    revision_penalty, revision_marker = macro_revision_penalty(
+        event_class, str(headline or "").lower())
 
     # Salience = (base + tier_bonus + kw_bonus + ticker_bonus - revision) * mhw,
     # capped 0-100
