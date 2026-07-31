@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/crypto_class_state.schema.json",
+  "title": "Crypto class narration context",
+  "type": "object",
+  "required": ["schema", "tier", "display_only", "as_of", "market", "flows", "heat", "assets"],
+  "properties": {
+    "schema": {"const": "crypto.class_state/v1"},
+    "tier": {"const": "display"},
+    "display_only": {"const": true},
+    "as_of": {"type": ["string", "null"], "format": "date"},
+    "market": {"type": "object"},
+    "flows": {"type": "object"},
+    "heat": {"type": "object"},
+    "assets": {"type": "object"}
+  }
+}

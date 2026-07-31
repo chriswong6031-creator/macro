@@ -98,7 +98,8 @@ def compute(holdings_path: str | None = None,
         Force a BTC price for testing without a live store.
     """
     try:
-        cfg = config.load().get("btc_dat", {})
+        full_cfg = config.load()
+        cfg = full_cfg.get("btc_dat") or full_cfg.get("vector", {}).get("btc_dat", {})
         if not cfg.get("enabled", True):
             return {"ok": False, "reason": "btc_dat disabled in config"}
 

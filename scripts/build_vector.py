@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from lib import config, store  # noqa: E402
 from lib.illus import illus, regime_tape  # noqa: E402
 from lib.pages import write_page  # noqa: E402
+from engine.btc_options import build_contract as build_btc_options  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_vector")
@@ -4156,6 +4157,10 @@ def main() -> int:
             "charts": {},
         }
 
+    btc_options_contract = build_btc_options()
+    reserve_risk_asof = store.last_date("checkonchain", "reserve_risk")
+    vdd_asof = store.last_date("checkonchain", "vdd_multiple")
+
     vm = {
         "as_of": sig.index.max().strftime("%b %d, %Y"),
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
@@ -4247,6 +4252,11 @@ def main() -> int:
             "em_pct": _r(last.get("expected_move_pct"), 1),
             "em_upper": _r(last.get("em_upper"), 0),
             "em_lower": _r(last.get("em_lower"), 0),
+        },
+        "btc_options": btc_options_contract,
+        "cycle_vintage": {
+            "reserve_risk_asof": str(reserve_risk_asof) if reserve_risk_asof else None,
+            "vdd_asof": str(vdd_asof) if vdd_asof else None,
         },
         "leverage": {
             "oi_total": _r(last.get("oi_total_usd"), 0),

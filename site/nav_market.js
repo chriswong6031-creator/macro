@@ -336,9 +336,9 @@
       subtitle: 'Digital assets, commodities, currencies and fixed income.',
       sections: [
         ['Digital assets', [
-          ['Bitcoin Overview', 'Market state, risk and momentum', 'crypto.html', 'crypto'],
-          ['Allocation Strategy', 'Bitcoin, Ether, alts and cash', 'crypto.html#allocation', 'allocation', null, null, ''],
-          ['BTC Strategy', 'Cycle versus risk allocation', 'vector.html#strategy-track-record', 'strategy', null, null, 'cyan']
+          ['Crypto Intelligence', 'Market state, flows, leverage and asset lanes', 'crypto.html', 'crypto'],
+          ['Bitcoin Vector', 'Bitcoin state, risk and cycle evidence', 'vector.html', 'bitcoin', null, null, ''],
+          ['Strategy Track Record', 'Cycle and allocation evidence', 'vector.html#strategy-track-record', 'strategy', null, null, 'cyan']
         ]],
         ['Commodities', [
           ['Commodity Dashboard', 'Gold, oil, copper and silver', 'commodities.html', 'commodity', null, null, ''],

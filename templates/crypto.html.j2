@@ -93,6 +93,12 @@ body.crypto-page::before{opacity:.34}
 .meter-score b{font:800 42px/.9 var(--font-mono)}.meter-score span{color:var(--muted);font-size:10px}
 .meter-rail{height:8px;background:var(--line);position:relative}.meter-rail i{position:absolute;inset:0 auto 0 0;background:var(--tone);width:var(--v)}
 .meter-scale{display:flex;justify-content:space-between;margin-top:7px;color:var(--muted);font-size:9px}
+.deriv-fold{border:1px solid var(--line);border-top:0}.deriv-fold summary{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;font-size:11px;font-weight:740}
+.deriv-fold summary span:last-child{margin-left:auto;color:var(--muted);font:650 10px/1 var(--font-mono)}
+.deriv-grid{display:grid;grid-template-columns:repeat(6,1fr);border-top:1px solid var(--line)}
+.deriv-fact{min-height:92px;padding:15px;border-right:1px solid var(--line)}.deriv-fact:last-child{border-right:0}
+.deriv-fact span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.08em}.deriv-fact b{display:block;margin-top:13px;font:760 16px/1 var(--font-mono)}
+.deriv-note{padding:10px 15px;border-top:1px solid var(--line);color:var(--muted);font-size:10px}
 
 /* H5 */
 .alloc-grid{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,.7fr);border:1px solid var(--line)}
@@ -110,12 +116,13 @@ body.crypto-page::before{opacity:.34}
 .alloc-note{margin-top:16px;color:var(--muted);font-size:10px}
 
 /* H6/H7/H8 */
-.lane-grid{display:grid;grid-template-columns:repeat(2,1fr);border:1px solid var(--line)}
+.lane-grid{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line)}
 .asset-lane{padding:24px;border-right:1px solid var(--line);text-decoration:none;color:inherit}.asset-lane:last-child{border-right:0}
 .lane-top{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.lane-symbol{font:820 34px/.9 var(--font-mono);letter-spacing:-.05em}
 .lane-name{margin-top:5px;color:var(--muted);font-size:10px}.lane-price{text-align:right;font:760 18px/1 var(--font-mono)}
 .lane-price small{display:block;margin-top:7px;color:var(--tone);font-size:10px}
 .lane-state{margin-top:24px;font-size:17px;font-weight:760}.lane-copy{min-height:42px;margin:8px 0 20px;color:var(--muted);font-size:11px}
+.lane-coverage{min-height:28px;margin:-10px 0 17px;color:var(--muted);font-size:9px}
 .lane-cta{font-size:10px;font-weight:740;color:var(--link)}
 .equity-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--line)}
 .equity{padding:16px 14px;border-right:1px solid var(--line);text-decoration:none;color:inherit}.equity:last-child{border-right:0}
@@ -133,6 +140,7 @@ body.crypto-page::before{opacity:.34}
 @media(max-width:1050px){
   .hero-grid{grid-template-columns:1fr;gap:28px}.hero-viz{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:20px}
   .heat-layout,.alloc-grid{grid-template-columns:1fr}.heat-meter,.alloc-side{border-left:0;border-top:1px solid var(--line)}
+  .deriv-grid{grid-template-columns:repeat(3,1fr)}.deriv-fact{border-bottom:1px solid var(--line)}
   .equity-grid{grid-template-columns:repeat(4,1fr)}.equity{border-bottom:1px solid var(--line)}
   .calendar-grid{grid-template-columns:repeat(3,1fr)}.event{border-bottom:1px solid var(--line)}
 }
@@ -155,7 +163,7 @@ body.crypto-page::before{opacity:.34}
     <div class="hero-grid">
       <div>
         <div class="shelf-kicker">{{ t('Crypto intelligence','加密情报') }}</div>
-        <h1 class="hero-word">{{ t('Market<br>State','市场<br>状态') }}</h1>
+        <h1 class="hero-word"><span class="l-en">Market<br>State</span><span class="l-zh">市场<br>状态</span></h1>
         <div class="hero-stance">{{ t(market.stance, market.stance_zh) }}</div>
         <p class="hero-copy">{{ t(market.summary, market.summary_zh) }}</p>
         <div class="hero-meta"><span class="live-chip"><i></i>{{ t('Daily class read','每日市场解读') }}</span><span class="num">{{ t('As of','截至') }} {{ as_of }}</span></div>
@@ -211,6 +219,18 @@ body.crypto-page::before{opacity:.34}
         </div>
         <div class="heat-meter {{ tone(market.heat.altseason.tone) }}"><div class="shelf-kicker">{{ t('Altseason meter','山寨季仪表') }}</div><div class="meter-score"><b>{{ market.heat.altseason.value if market.heat.altseason.value is not none else '—' }}</b><span>/ 100</span></div><div class="meter-rail" style="--v:{{ market.heat.altseason.value if market.heat.altseason.value is not none else 0 }}%"><i></i></div><div class="meter-scale"><span>BTC</span><span>{{ t('Mixed','混合') }}</span><span>ALTS</span></div><div class="read-label" style="margin-top:18px"><span class="state">{{ t(market.heat.altseason.state,market.heat.altseason.state_zh) }}</span></div><div class="receipt" style="margin-top:15px;color:var(--muted);font-size:10px">{{ t('ETH/BTC relative trend plus BTC dominance; display context only.','ETH/BTC 相对趋势结合 BTC 占比；仅作展示背景。') }}</div></div>
       </div>
+      <details class="deriv-fold" id="btc-derivatives">
+        <summary><span>{{ t('Bitcoin derivatives desk','比特币衍生品台') }}</span><span>{{ btc_options.as_of or t('Awaiting data','等待数据') }}</span></summary>
+        <div class="deriv-grid">
+          <div class="deriv-fact"><span>{{ t('30D implied vol','30日隐含波动') }}</span><b>{{ "%.1f"|format(btc_options.volatility.atm_iv_30d) if btc_options.volatility.atm_iv_30d is not none else '—' }}</b></div>
+          <div class="deriv-fact"><span>{{ t('Gamma flip','Gamma 翻转位') }}</span><b>{% if btc_options.gamma.flip is not none %}${{ "{:,.0f}".format(btc_options.gamma.flip) }}{% else %}—{% endif %}</b></div>
+          <div class="deriv-fact"><span>{{ t('Distance to flip','距翻转位') }}</span><b>{{ "%+.1f%%"|format(btc_options.gamma.distance_pct) if btc_options.gamma.distance_pct is not none else '—' }}</b></div>
+          <div class="deriv-fact"><span>{{ t('Put / call OI','看跌/看涨持仓') }}</span><b>{{ "%.2f×"|format(btc_options.positioning.put_call_oi_ratio) if btc_options.positioning.put_call_oi_ratio is not none else '—' }}</b></div>
+          <div class="deriv-fact"><span>{{ t('Max pain','最大痛点') }}</span><b>{% if btc_options.positioning.max_pain is not none %}${{ "{:,.0f}".format(btc_options.positioning.max_pain) }}{% else %}—{% endif %}</b></div>
+          <div class="deriv-fact"><span>{{ t('Futures basis','期货基差') }}</span><b>{{ "%+.1f%%"|format(btc_options.basis.annualized_pct) if btc_options.basis.annualized_pct is not none else '—' }}</b></div>
+        </div>
+        <div class="deriv-note">{{ t(btc_options.coverage.note_en,btc_options.coverage.note_zh) }} {{ t(btc_options.gamma.assumption_en,btc_options.gamma.assumption_zh) }}</div>
+      </details>
     </div>
   </section>
 
@@ -227,9 +247,9 @@ body.crypto-page::before{opacity:.34}
     </div>
   </section>
 
-  <section class="crypto-shelf" data-shelf="H6">
-    <div class="shelf-pad"><div class="shelf-head"><span class="shelf-index">H6</span><h2 class="shelf-title">{{ t('Asset Lanes','资产通道') }}</h2><span class="shelf-sub">{{ t('governed BTC · honest ETH preview','受治理的 BTC · 诚实的 ETH 预览') }}</span></div>
-      <div class="lane-grid">{% for lane in lanes %}<a class="asset-lane {{ tone(lane.tone) }}" href="{{ lane.href }}"><div class="lane-top"><div><div class="lane-symbol">{{ lane.symbol }}</div><div class="lane-name">{{ t(lane.name,lane.name_zh) }}</div></div><div class="lane-price nb-px" data-sym="{{ lane.live_symbol }}">{{ lane.price }}<small class="nb-chg" data-sym="{{ lane.live_symbol }}">{{ lane.change }}</small></div></div><div class="lane-state">{{ t(lane.state,lane.state_zh) }}</div><p class="lane-copy">{{ t(lane.summary,lane.summary_zh) }}</p><span class="lane-cta">{{ t(lane.cta,lane.cta_zh) }} →</span></a>{% endfor %}</div>
+  <section class="crypto-shelf" data-shelf="H6" id="asset-lanes">
+    <div class="shelf-pad"><div class="shelf-head"><span class="shelf-index">H6</span><h2 class="shelf-title">{{ t('Asset Lanes','资产通道') }}</h2><span class="shelf-sub">{{ t('BTC authority · ETH/SOL states','BTC 权威 · ETH/SOL 状态') }}</span></div>
+      <div class="lane-grid">{% for lane in lanes %}<a class="asset-lane {{ tone(lane.tone) }}" href="{{ lane.href }}"><div class="lane-top"><div><div class="lane-symbol">{{ lane.symbol }}</div><div class="lane-name">{{ t(lane.name,lane.name_zh) }}</div></div><div class="lane-price nb-px" data-sym="{{ lane.live_symbol }}">{{ lane.price }}<small class="nb-chg" data-sym="{{ lane.live_symbol }}">{{ lane.change }}</small></div></div><div class="lane-state">{{ t(lane.state,lane.state_zh) }}</div><p class="lane-copy">{{ t(lane.summary,lane.summary_zh) }}</p>{% if lane.coverage %}<p class="lane-coverage">{{ t(lane.coverage,lane.coverage_zh) }}</p>{% endif %}<span class="lane-cta">{{ t(lane.cta,lane.cta_zh) }} →</span></a>{% endfor %}</div>
     </div>
   </section>
 

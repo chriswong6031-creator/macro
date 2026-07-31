@@ -1,0 +1,38 @@
+{
+  "schema": "crypto.class_state/v1",
+  "tier": "display",
+  "display_only": true,
+  "as_of": "2026-07-30",
+  "market": {
+    "stance": "Advancing, led by Bitcoin",
+    "total_state": "Rising",
+    "dominance_state": "Steady",
+    "fear_state": "Fearful",
+    "breadth_state": "Building history"
+  },
+  "flows": {
+    "etf": "Falling",
+    "stablecoins": "Falling",
+    "volume": "Quiet tape"
+  },
+  "heat": {
+    "funding": "Balanced",
+    "open_interest": "Leverage normal",
+    "volatility": "Volatility compressed",
+    "altseason": "Mixed participation"
+  },
+  "assets": {
+    "ETH": {
+      "trend": "Range",
+      "risk": "Stressed",
+      "relative": "Tracking Bitcoin",
+      "coverage": "3,185 daily observations from Yahoo close-only availability fallback."
+    },
+    "SOL": {
+      "trend": "Fading",
+      "risk": "Stressed",
+      "relative": "Leading Bitcoin",
+      "coverage": "2,302 daily observations from Yahoo close-only availability fallback."
+    }
+  }
+}

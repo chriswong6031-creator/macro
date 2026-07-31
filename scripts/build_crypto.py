@@ -19,8 +19,10 @@ from jinja2 import Environment, FileSystemLoader
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine import alt_cycle, btc_mtf  # noqa: E402
+from engine.btc_options import build_contract as build_btc_options, write_contract as write_btc_options  # noqa: E402
 from engine.crypto_market_state import build_market_state  # noqa: E402
 from engine.crypto_universe import breadth_read, load_universe  # noqa: E402
+from engine.eth_state import build_states as build_asset_states  # noqa: E402
 from engine.event_calendar import us_macro_events  # noqa: E402
 from lib import config, store  # noqa: E402
 from lib.illus import illus, regime_tape  # noqa: E402
@@ -138,10 +140,13 @@ def _load_e0(site: Path) -> dict:
 
 def _enrich_universe(rows: list[dict]) -> list[dict]:
     deep = {
-        "BTC": _series("yahoo", "BTC-USD"),
-        "ETH": _series("yahoo", "ETH-USD"),
-        "SOL": _series("yahoo", "SOL-USD"),
+        "BTC": _series("coinbase", "btc_daily"),
+        "ETH": _series("coinbase", "eth_daily"),
+        "SOL": _series("coinbase", "sol_daily"),
     }
+    for symbol in ("BTC", "ETH", "SOL"):
+        if deep[symbol].empty:
+            deep[symbol] = _series("yahoo", f"{symbol}-USD")
     for row in rows:
         series = deep.get(row["symbol"])
         if series is not None and len(series) >= 30:
@@ -227,23 +232,9 @@ def _allocation(signals: pd.DataFrame, market: dict) -> dict:
     }
 
 
-def _asset_lanes(e0: dict) -> list[dict]:
-    eth = _series("yahoo", "ETH-USD")
-    btc = _series("yahoo", "BTC-USD")
-    eth_change = 100 * (eth.iloc[-1] / eth.iloc[-31] - 1) if len(eth) > 31 else None
-    rel = pd.concat([eth.rename("eth"), btc.rename("btc")], axis=1, sort=False).dropna()
-    rel_change = (
-        100 * ((rel["eth"] / rel["btc"]).iloc[-1] / (rel["eth"] / rel["btc"]).iloc[-31] - 1)
-        if len(rel) > 31
-        else None
-    )
-    eth_state = (
-        "Leading Bitcoin"
-        if rel_change is not None and rel_change > 3
-        else ("Lagging Bitcoin" if rel_change is not None and rel_change < -3 else "Tracking Bitcoin")
-    )
+def _asset_lanes(e0: dict, asset_states: dict) -> list[dict]:
     hero = e0.get("hero") or {}
-    return [
+    lanes = [
         {
             "symbol": "BTC",
             "live_symbol": "BTC-USD",
@@ -259,30 +250,38 @@ def _asset_lanes(e0: dict) -> list[dict]:
             "href": "vector.html",
             "cta": "Open Bitcoin Vector",
             "cta_zh": "打开比特币向量",
-        },
-        {
-            "symbol": "ETH",
-            "live_symbol": "ETH-USD",
-            "name": "Ethereum",
-            "name_zh": "以太坊",
-            "price": _money(eth.iloc[-1]) if not eth.empty else "—",
-            "change": _pct(eth_change),
-            "state": eth_state,
-            "state_zh": {
-                "Leading Bitcoin": "领先比特币",
-                "Lagging Bitcoin": "落后比特币",
-                "Tracking Bitcoin": "跟随比特币",
-            }[eth_state],
-            "summary": "Relative trend only. A governed ETH state machine arrives in Wave 3.",
-            "summary_zh": "当前仅展示相对趋势。受治理的 ETH 状态机将在第三阶段上线。",
-            "tone": "bull" if rel_change is not None and rel_change > 3 else (
-                "bear" if rel_change is not None and rel_change < -3 else "neutral"
-            ),
-            "href": "crypto.html#market-board",
-            "cta": "See the class board",
-            "cta_zh": "查看全市场看板",
-        },
+        }
     ]
+    names = {
+        "ETH": ("Ethereum", "以太坊"),
+        "SOL": ("Solana", "索拉纳"),
+    }
+    for symbol in ("ETH", "SOL"):
+        state = ((asset_states.get("assets") or {}).get(symbol) or {})
+        trend = state.get("trend") or {}
+        coverage = state.get("coverage") or {}
+        name_en, name_zh = names[symbol]
+        lanes.append(
+            {
+                "symbol": symbol,
+                "live_symbol": f"{symbol}-USD",
+                "name": name_en,
+                "name_zh": name_zh,
+                "price": _money(state.get("price")),
+                "change": _pct(state.get("change_30d_pct")),
+                "state": trend.get("state") or "Unavailable",
+                "state_zh": trend.get("state_zh") or "暂无",
+                "summary": state.get("summary_en") or coverage.get("note_en") or "",
+                "summary_zh": state.get("summary_zh") or coverage.get("note_zh") or "",
+                "coverage": coverage.get("note_en") or "",
+                "coverage_zh": coverage.get("note_zh") or "",
+                "tone": state.get("tone") or "neutral",
+                "href": "crypto.html#market-board",
+                "cta": "See the class board",
+                "cta_zh": "查看全市场看板",
+            }
+        )
+    return lanes
 
 
 def _equities(linkable: frozenset[str] | None = None) -> list[dict]:
@@ -377,6 +376,45 @@ def build(site_dir: Path | None = None) -> Path:
     breadth["state_zh"] = _state_zh(breadth["state"])
     signals = store.read("vector", "signals")
     allocation = _allocation(signals, market)
+    asset_states = build_asset_states()
+    options_contract = build_btc_options()
+    write_btc_options(site, options_contract)
+    (site / "crypto_asset_states.json").write_text(
+        json.dumps(asset_states, ensure_ascii=False, allow_nan=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    class_state = {
+        "schema": "crypto.class_state/v1",
+        "tier": "display",
+        "display_only": True,
+        "as_of": market["as_of"],
+        "market": {
+            "stance": market.get("stance"),
+            "total_state": market.get("total_state"),
+            "dominance_state": market.get("dominance_state"),
+            "fear_state": market.get("fear_state"),
+            "breadth_state": breadth.get("state"),
+        },
+        "flows": {
+            key: value.get("state") for key, value in (market.get("flows") or {}).items()
+        },
+        "heat": {
+            key: value.get("state") for key, value in (market.get("heat") or {}).items()
+        },
+        "assets": {
+            symbol: {
+                "trend": (state.get("trend") or {}).get("state"),
+                "risk": (state.get("risk") or {}).get("state"),
+                "relative": (state.get("relative") or {}).get("state"),
+                "coverage": (state.get("coverage") or {}).get("note_en"),
+            }
+            for symbol, state in (asset_states.get("assets") or {}).items()
+        },
+    }
+    (site / "crypto_class_state.json").write_text(
+        json.dumps(class_state, ensure_ascii=False, allow_nan=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     cap_history = market["history"]
     cap_trillions = {
@@ -426,7 +464,9 @@ def build(site_dir: Path | None = None) -> Path:
         "breadth": breadth,
         "allocation": allocation,
         "e0": e0,
-        "lanes": _asset_lanes(e0),
+        "lanes": _asset_lanes(e0, asset_states),
+        "asset_states": asset_states,
+        "btc_options": options_contract,
         "equities": _equities(rendered_ticker_pages(site)),
         "calendar": _calendar(market["as_of"]),
         "fmt_money": _money,

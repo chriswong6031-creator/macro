@@ -23,6 +23,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-system | 6 |
 | codex-b5 | 1 |
 | codex-docket-b6 | 3 |
+| crypto-cockpit | 3 |
 | cycle-intelligence | 14 |
 | dannytrades | 1 |
 | engine-fix | 18 |
@@ -101,7 +102,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 342 |
+| display | 345 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 79 |
@@ -110,7 +111,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 494 |
+| git | 497 |
 | git+r2 | 1 |
 | gitignored-local | 15 |
 | r2 | 10 |
@@ -248,6 +249,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | watchlist-alerts-jsonl | `data/alerts/watchlist_alerts.jsonl` | jsonl | daily-engine | infrastructure | 2 | 0 |
 | watchlist-sentinel-cooldown | `data/alerts/watchlist_sentinel_cooldown.json` | json | daily-engine | infrastructure | 1 | 0 |
 | watchlist-sentinel-states | `data/alerts/watchlist_sentinel_states.json` | json | daily-engine | infrastructure | 1 | 0 |
+
+### crypto-cockpit
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| btc-options | `site/btc_options.json` | json | daily-engine | display | 3 | 0 |
+| crypto-asset-states | `site/crypto_asset_states.json` | json | daily-engine | display | 1 | 0 |
+| crypto-class-state | `site/crypto_class_state.json` | json | daily-engine | display | 1 | 0 |
 
 ### cycle-intelligence
 
