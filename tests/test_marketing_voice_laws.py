@@ -362,3 +362,45 @@ def test_the_plan_enforces_it_deterministically():
     src = inspect.getsource(content_studio)
     assert "trim_cost_monoculture" in src, "the trim is not wired into the plan"
     assert "marketing-cost-monoculture" in src, "the loss is not named for the operator"
+
+
+def test_the_value_gate_is_armed():
+    """Gift-Grip-Proof BLOCKS now, it does not just observe.
+
+    It landed dark by design, with a stated precondition: "one cycle of recorded
+    verdicts read first". That cycle was read on 2026-07-30 -- 132 pass, 22
+    abstain -- and the 22 were exactly the class the operator graded F: three
+    near-identical "AI and chip trade is unwinding" event posts (grip:no_hook),
+    a macro post ending "None of this says what to buy"
+    (gift:no_informational_surplus), and "How I keep myself honest", which
+    narrates the receipts concept the copy law bans narrating.
+
+    If this ever reads False again, 14% of the queue that a purpose-built
+    quality gate rejects is shipping to live accounts.
+    """
+    import yaml
+    from engine.marketing.outbox import _value_gate_enforced
+    cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
+    assert _value_gate_enforced(cfg) is True
+
+
+def test_a_blocked_post_is_counted_not_silently_dropped():
+    """Every block must reach the console as a named loss."""
+    import inspect
+    from engine.marketing import outbox
+    src = inspect.getsource(outbox)
+    assert 'counts["value_gate_blocked"]' in src
+    assert 'counts["value_gate_would_block"]' in src, (
+        "the shadow counter is what made arming this an evidence-based call; "
+        "keep it so the next tightening can be argued the same way"
+    )
+
+
+def test_the_gate_fails_OPEN_so_an_outage_cannot_silence_the_desks():
+    """A quality gate that goes down must not become a publish outage."""
+    import inspect
+    from engine.marketing import outbox
+    src = inspect.getsource(outbox.stamp_value_gate)
+    assert "return False" in src.split("except Exception")[-1], (
+        "stamp_value_gate no longer treats its own failure as a PASS"
+    )

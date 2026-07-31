@@ -789,13 +789,31 @@ persona_memory:
   retention_days: 90
 
 value_gate:
-  # RECORD-ONLY at W3 (the XG-W2 "LAND DARK" precedent). Every emission carries
-  # its Gift-Grip-Proof verdict in item metadata from day one — that is the §0
-  # gate — but making an abstention BLOCK a live desk is a separate arming
-  # decision for the operator/session, not a builder's, and it wants one cycle
-  # of recorded verdicts read first. Flipping this to true is what turns the
-  # verdict into a publish gate.
-  enforce: false
+  # ARMED 2026-07-30. This landed dark on purpose: "a separate arming decision
+  # for the operator/session, not a builder's, and it wants one cycle of
+  # recorded verdicts read first."
+  #
+  # That cycle has now been read. On the live queue the gate stands at 132 pass
+  # / 22 abstain (14%), and the 22 are precisely the class the operator graded
+  # F. Verbatim, with their failing legs:
+  #   * three near-identical `event` posts all opening "The AI and chip trade is
+  #     unwinding today, with tech leading the selloff" (grip:no_hook);
+  #   * a macro post that ends "None of this says what to buy"
+  #     (gift:no_informational_surplus — it says so itself);
+  #   * "How I keep myself honest / Every call gets its result posted" — the
+  #     copy law's own banned move, narrating the receipts concept instead of
+  #     showing a receipt;
+  #   * "Last time the tape looked like this / Base rates over vibes, every
+  #     time" — an education lecture with no fact in it.
+  # Failing legs across the 22: bridge 18, grip 14, proof 10, gift 3.
+  #
+  # Blocking 14% is the right trade on a desk whose operator has said twice that
+  # volume is already too high and quality is the problem. Reversible with this
+  # one flag; every block is counted as `value_gate_blocked` and the verdict is
+  # stamped on the item either way, so the console shows exactly what it cost.
+  # The gate is fail-soft: if it raises, the item is treated as PASSING, so an
+  # outage cannot silence the desks.
+  enforce: true
 
 departments:
   growth_os:

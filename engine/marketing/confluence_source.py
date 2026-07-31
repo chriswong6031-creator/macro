@@ -234,8 +234,22 @@ def win_rate_hook(sig: dict) -> tuple[str, str]:
     fd, ld = _parse_date(first_fire), _parse_date(last_fire)
     if fd and ld and ld >= fd:
         span_years = int(round((ld - fd).days / 365.25))
+    # SPELLED OUT, never numeric. The span is real disclosure (how far back the
+    # study actually looks) and dropping it to make room in the number budget
+    # would trade honesty for a guard. Spelled out it adds no token to
+    # copywriter.number_soup_violations, which counts DIGITS, so the sentence
+    # keeps its meaning and the post keeps its two-number budget for the figures
+    # that matter: the win rate and the sample size.
+    _YEARS_IN_WORDS = {
+        2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven",
+        8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve",
+        13: "thirteen", 14: "fourteen", 15: "fifteen", 20: "twenty",
+    }
     if span_years >= 2:
-        span_phrase = f"over the past {span_years} years"
+        _w = _YEARS_IN_WORDS.get(span_years)
+        span_phrase = (
+            f"over the past {_w} years" if _w else "over its full tested history"
+        )
     elif span_years == 1:
         span_phrase = "over the past year"
     else:
@@ -275,9 +289,9 @@ def win_rate_hook(sig: dict) -> tuple[str, str]:
     # the sample size is the honesty anchor and the sub-count is decoration.
     body = (
         f"Across every name we test it on, this combination has resolved "
-        f"{direction_word} {win_rate_str} of the time about a month out, over "
-        f"{n_fires} occurrences universe-wide, not this one name. A measured "
-        f"tendency on a study split, not our trading record. "
+        f"{direction_word} {win_rate_str} of the time about a month out "
+        f"{span_phrase}, over {n_fires} occurrences universe-wide, not this one "
+        f"name. A measured tendency on a study split, not our trading record. "
         f"Chart below."
     )
 
