@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T22:58:57.260395+00:00",
-  "count": 488,
+  "generated_at": "2026-07-31T23:13:59.790231+00:00",
+  "count": 489,
   "institutions": [
     "Amova",
     "Apollo",
@@ -265,6 +265,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-d4ojivfufys-eaf086",
+      "title": "Japan July Consumer Sentiment Improves Beyond Market Forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:16:44Z",
+      "summary_points": [
+        "**Historical Policy Shocks**: Consumption tax hikes (2014/2019), East Japan Earthquake (2011), and GFC (2008) caused sharp consumer confidence declines and inflation expectation spikes.",
+        "**Persistent Inflation Risk**: Post-COVID, 1Y inflation expectations remain elevated above 3% through 2026/27, signaling sustained portfolio inflation risks despite consumer confidence rebound.",
+        "**Forward-Looking Inflation Expectations**: Elevated 1Y inflation expectations (above 3%) persist beyond recovery, requiring proactive portfolio adjustments for long-term inflation exposure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
