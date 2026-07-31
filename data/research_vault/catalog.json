@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T01:56:53.559166+00:00",
-  "count": 427,
+  "generated_at": "2026-07-31T02:26:58.505938+00:00",
+  "count": 428,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -127,6 +127,26 @@
         "**QLD Dominates Dwelling Approvals**: Qld's 29% YoY dwelling approvals growth outpaces Vic (8% YoY), WA (4% YoY), and leads NSW (-1% YoY) and SA (6% YoY) in strength, driving national new dwellings (19% YoY) growth.",
         "**Detached Resilience Amid Headwinds**: Private detached approvals exceed 10k for six consecutive months, showing sector resilience despite RBA rate hikes and elevated construction costs threatening sustained growth.",
         "**Value Decline Contrasts Volume Growth**: Total approvals rose 7.2% MoM (8.9% YoY) in volume, but value fell 5.5% MoM due to non-residential sector weakness, highlighting divergent performance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9m5gfs0znr6-3d4afe",
+      "title": "scotiaflash20260729",
+      "institution": "Scotiabank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T23:45:51Z",
+      "summary_points": [
+        "**Fed Policy Divergence**: 9-3 FOMC vote to hold rates (3 dissenters: Kashkari, Logan, Hammack) signals internal debate on tightening amid supply shocks, contradicting market expectations of hikes despite unchanged policy.",
+        "**Yield Steepening & Market Misalignment**: 2-yr/10-yr/30-yr yields rise (9-10bps) as markets doubt Fed’s inflation fight; Chair Powell’s \"no tolerance\" stance clashes with market pricing of dovishness, risking misaligned tightening.",
+        "**Supply Shock Inflation Drivers**: Fed acknowledges energy/Middle East conflict as key inflation drivers but rejects immediate rate hikes, prioritizing 2% target via expectations management over single data points (e.g., June CPI).",
+        "**Jackson Hole Policy Timing**: Dual mandate strategy (balancing growth/stability) sets framework for Fall actions; critical for portfolio timing as Fed delays tightening despite strong productivity and stable unemployment."
       ],
       "tags": [],
       "tickers": [],
