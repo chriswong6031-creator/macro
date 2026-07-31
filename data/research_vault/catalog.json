@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T07:12:27.618320+00:00",
-  "count": 442,
+  "generated_at": "2026-07-31T07:27:21.969649+00:00",
+  "count": 443,
   "institutions": [
     "Amova",
     "BTIG",
@@ -10,6 +10,7 @@
     "Cantor",
     "Citi",
     "Deutsche Bank",
+    "Franklin",
     "Goldman Sachs",
     "ING",
     "J.P. Morgan",
@@ -1344,6 +1345,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-kxbimds5siy-1e6503",
+      "title": "Weekly municipal monitor rich ratios 2026 07 28",
+      "institution": "Franklin",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:11:48Z",
+      "summary_points": [
+        "**After-Tax Yield Advantage**: 30Y AAA munis offer ~120bps after-tax yield pickup vs Treasuries (vs 5Y avg), with BBB/HY munis also outperforming corporates (124bps), highlighting tax efficiency in higher-rate environments.",
+        "**Credit Spread Divergence**: BBB muni yields (5.34% at 30Y) exceed AAA (4.53%), signaling rising credit risk and potential volatility in lower-rated municipal debt.",
+        "**Taxable-Equivalent Yield Premium**: BBB muni yields (9.02% at 30Y) surpass Treasuries (5.16%), indicating widening credit spreads and elevated risk under 40.8% tax-equivalent rate.",
+        "**Relative Value Shift**: AAA muni yields vs Treasuries show widening spreads (2Y: +18 bps, 10Y: +22 bps), reflecting shifting relative value toward munis despite rich valuations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
