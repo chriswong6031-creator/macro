@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T15:13:02.581525+00:00",
-  "count": 465,
+  "generated_at": "2026-07-31T15:28:05.092757+00:00",
+  "count": 466,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1814,6 +1814,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-loy4xl2oth5-b73558",
+      "title": "Fast5AItoSpaceJuly26",
+      "institution": "Franklin",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:11:36Z",
+      "summary_points": [
+        "**AI Adoption Acceleration**: GenAI adoption accelerating 3x faster than prior tech waves (Internet, Mobile, Cloud), driven by falling inference costs and hyperscaler infrastructure investment, compressing decades of adoption into years.",
+        "**Infrastructure Buildout Scale**: Hyperscalers driving largest tech infrastructure buildout in history (data centers, networking, compute) to support parallel AI adoption, infrastructure investment, and commercialization.",
+        "**AI Scaling Bottleneck**: Infrastructure (compute, connectivity, power, space) is critical constraint for AI adoption, not model sophistication, requiring integrated stack solutions across entire value chain.",
+        "**Execution Over Ownership**: Long-term AI value tied to businesses using AI to automate workflows and reshape industries (not just owning AI), aligning with historical tech platform evolution (infrastructure → applications)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
