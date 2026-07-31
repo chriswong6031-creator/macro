@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T08:30:46.054634+00:00",
-  "count": 444,
+  "generated_at": "2026-07-31T10:18:24.951303+00:00",
+  "count": 447,
   "institutions": [
     "Amova",
     "BTIG",
@@ -38,6 +38,69 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-ewptkz1rvaz-0c9c98",
+      "title": "JPM Oil Markets Weekly",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T09:27:09Z",
+      "summary_points": [
+        "**Iran's Strait of Hormuz Fee Strategy**: Iran shifts from closing the strait to implementing UNCLOS-compliant navigation fees (e.g., $260k for VLCCs), leveraging Turkey/Suez precedent, introducing transit fee volatility and legal disputes that alter oil market flows and portfolio risk exposure.",
+        "**USD Settlement Conflict with Sanctions**: Iran’s fee collection faces operational hurdles due to USD settlement preference (oil trade norm) clashing with US sanctions, creating a dual barrier that could paradoxically enable US-Iran diplomatic talks.",
+        "**Persistent Global Oil Supply Surplus**: Consistent supply exceeding demand (103.6–111.3 mb/d vs.",
+        "4–107.5 mb/d 2025–2027F) drives inventory accumulation (+0.2–4.8 mb/d), posing downside price risk unless demand accelerates or supply constraints emerge.",
+        "**OPEC+ Quota Compliance Risks**: Key members (Algeria, Angola) underproduce vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h996df90xkq-e7c63a",
+      "title": "JPM US Final sales rush",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T09:27:06Z",
+      "summary_points": [
+        "**US PCE Surprise & Fed Policy**: Core PCE (0.13% m/m, 3.3% yoy) missed forecasts, elevating FOMC rate hike odds if inflation persists.",
+        "**Inventory Correction Risk**: Inventories declined 1.0% over five quarters ($51bn drop in 2Q), signaling potential slowdown amid near-pre-pandemic lows.",
+        "**Inflation Acceleration**: GDP chain price index surged to 6.2% in Q2 2026 (vs.",
+        "6% Q1), risking aggressive policy tightening.",
+        "**Corporate Earnings Volatility**: Pretax profits collapsed from 12.8% (Q1) to 1.7% (Q2), heightening downgrade risks and equity pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-lbldar57jky-4c25f5",
+      "title": "JPM International Market Intell Morning Briefing",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T09:25:41Z",
+      "summary_points": [
+        "**EU GDP Beat & ECB Implications**: EU Q2 GDP at 1.8% (exceeding US), signaling divergent growth dynamics; ECB policy implications critical amid energy shock differences vs 2022.",
+        "**Momentum Overconcentration Risk**: HF net momentum exposure (Z-score) elevated alongside high JPPQMO factor, indicating overconcentration risk requiring tactical hedging.",
+        "**Japan FX Intervention Surge**: ¥11.73T intervention (vs ¥5.62T 2023–2026), active JPY stabilization driving global flow shifts and risk sentiment.",
+        "**2s30s Yield Curve Steepening**: Sharp spike (15:00 29-Jul) coinciding with DXY weakness—critical timing signal for rate-sensitive asset positioning.",
+        "**US Earnings Dominance**: S&P 500 beats (85%) vs Europe (59%) and sales beats (70% vs 62%), confirming structural US outperformance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-njfb55sctn3-af8274",
       "title": "ING Think rates spark fed holds long end getting nervous",
