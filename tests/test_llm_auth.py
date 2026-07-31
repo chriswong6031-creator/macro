@@ -1128,3 +1128,120 @@ def test_client_tuning_kwargs_drops_unusable_values(caplog):
         assert _client_tuning_kwargs({"client_max_retries": "two",
                                       "client_timeout_s": "soon"}) == {}
     assert "client_max_retries" in caplog.text and "client_timeout_s" in caplog.text
+
+
+class TestDeepSeekDoesNotSpendTheBudgetThinking:
+    """914 of 915 posts were dropped because DeepSeek answered with no text.
+
+    `deepseek-v4-pro` — llm_auth's default DeepSeek model — returns a
+    ThinkingBlock BEFORE the text block on the Anthropic-compat endpoint, and
+    bills roughly 4x the output tokens for it. Callers here pass a SMALL
+    max_tokens because they want one short answer (the marketing copywriter
+    sends 400). The response hits the cap mid-thought and carries NO text block.
+
+    Every symptom pointed away from the cause: llm_auth logged "provider
+    'deepseek' served after fallback" because the call really did succeed, and
+    the callers' extraction was correct (they filter every block of
+    type=="text", not content[0]). The post was simply dropped at stage=provider
+    with "provider returned no text". On the 2026-07-31 nightly that produced a
+    content plan with total_posts=0 and 102 charts rastered for nothing.
+
+    Fixed at the PROVIDER: eleven call sites across engine/marketing and
+    engine/press build their own request, so patching the one that was on fire
+    would leave ten carrying the defect.
+    """
+
+    @staticmethod
+    def _client():
+        class Msgs:
+            def __init__(self):
+                self.calls = []
+
+            def create(self, **kw):
+                self.calls.append(kw)
+                return "resp"
+
+            def helper(self):
+                return "passthrough"
+
+        class Client:
+            def __init__(self):
+                self.messages = Msgs()
+                self.api_key = "sk-test"
+
+            def close(self):
+                return "closed"
+
+        return Client()
+
+    def test_thinking_is_disabled_by_default(self):
+        from engine.llm_auth import _deepseek_no_thinking
+
+        inner = self._client()
+        _deepseek_no_thinking(inner).messages.create(
+            model="deepseek-v4-pro", max_tokens=400, messages=[])
+        assert inner.messages.calls[-1]["extra_body"] == {
+            "thinking": {"type": "disabled"}}
+
+    def test_an_explicit_thinking_kwarg_is_never_overridden(self):
+        """A lane that wants reasoning asks for it and keeps it."""
+        from engine.llm_auth import _deepseek_no_thinking
+
+        inner = self._client()
+        _deepseek_no_thinking(inner).messages.create(
+            model="deepseek-v4-pro", thinking={"type": "enabled"})
+        sent = inner.messages.calls[-1]
+        assert sent["thinking"] == {"type": "enabled"}
+        assert "thinking" not in (sent.get("extra_body") or {})
+
+    def test_thinking_already_inside_extra_body_is_respected(self):
+        from engine.llm_auth import _deepseek_no_thinking
+
+        inner = self._client()
+        _deepseek_no_thinking(inner).messages.create(
+            model="x", extra_body={"thinking": {"type": "enabled"}, "foo": 1})
+        assert inner.messages.calls[-1]["extra_body"] == {
+            "thinking": {"type": "enabled"}, "foo": 1}
+
+    def test_an_unrelated_extra_body_survives(self):
+        """The wrapper must ADD a key, never replace the caller's dict."""
+        from engine.llm_auth import _deepseek_no_thinking
+
+        inner = self._client()
+        _deepseek_no_thinking(inner).messages.create(model="x", extra_body={"foo": 1})
+        assert inner.messages.calls[-1]["extra_body"] == {
+            "foo": 1, "thinking": {"type": "disabled"}}
+
+    def test_every_other_attribute_still_reaches_the_real_client(self):
+        """Usage hooks, close(), with_options() must not be shadowed."""
+        from engine.llm_auth import _deepseek_no_thinking
+
+        wrapped = _deepseek_no_thinking(self._client())
+        assert wrapped.api_key == "sk-test"
+        assert wrapped.close() == "closed"
+        assert wrapped.messages.helper() == "passthrough"
+
+    def test_a_client_with_no_messages_is_returned_untouched(self):
+        """Fail-soft: a stub must never turn provider construction into a crash."""
+        from engine.llm_auth import _deepseek_no_thinking
+
+        sentinel = object()
+        assert _deepseek_no_thinking(sentinel) is sentinel
+
+    def test_the_deepseek_provider_actually_uses_the_wrapper(self):
+        """A wrapper nothing wraps is the defect it was written to fix."""
+        import inspect
+
+        from engine import llm_auth
+
+        src = inspect.getsource(llm_auth.build_providers)
+        assert "_deepseek_no_thinking(anthropic.Anthropic(" in src
+
+    def test_only_deepseek_is_wrapped(self):
+        """Anthropic and the OAuth pool 400 on an unknown thinking shape."""
+        import inspect
+
+        from engine import llm_auth
+
+        src = inspect.getsource(llm_auth.build_providers)
+        assert src.count("_deepseek_no_thinking(") == 1

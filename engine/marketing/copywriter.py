@@ -5803,6 +5803,32 @@ def _v2_write_one(
 
     def _call(user_msg: str) -> str:
         def _do_call(client, model):
+            # DEEPSEEK v4 THINKS BY DEFAULT, AND THAT ATE THE WHOLE BUDGET.
+            #
+            # `deepseek-v4-pro` (llm_auth's default deepseek model) returns a
+            # ThinkingBlock BEFORE the text block on the Anthropic-compat
+            # endpoint, and bills roughly 4x the output tokens for it (probed
+            # live 2026-07-26). `max_tokens` here is per_post_max_tokens, 400 by
+            # default — enough for a post, nowhere near enough for a post PLUS
+            # the model's reasoning. The response hits the cap mid-thought and
+            # carries NO text block at all.
+            #
+            # The extraction below is correct — it filters every block of
+            # type=="text" rather than reading content[0] — so this did not look
+            # like a parse bug. It looked like the provider succeeding and
+            # returning nothing: llm_auth logs "provider 'deepseek' served after
+            # fallback" and this function returns None, so the post is dropped at
+            # stage=provider with "provider returned no text". On 2026-07-31 that
+            # was 914 of 915 planned posts, every enabled desk reporting 100%
+            # dropped, and a nightly plan with total_posts=0.
+            #
+            # FIXED AT THE PROVIDER, NOT HERE. eleven call sites across
+            # engine/marketing and engine/press build their own request through
+            # this same waterfall, so patching this one would leave ten lanes
+            # carrying the defect and the next new lane inheriting it.
+            # llm_auth's deepseek client now defaults `thinking` off for every
+            # caller (see _deepseek_no_thinking there); a lane that genuinely
+            # wants reasoning still gets it by passing `thinking` explicitly.
             resp = client.messages.create(
                 model=model, max_tokens=max_tokens, system=system_prompt,
                 messages=[{"role": "user", "content": user_msg}],
@@ -5811,6 +5837,19 @@ def _v2_write_one(
                 return None, "stop_refusal", resp
             text = "".join(b.text for b in resp.content
                            if getattr(b, "type", "") == "text")
+            if not text:
+                # SAY WHAT CAME BACK INSTEAD. "provider returned no text" is true
+                # and undiagnosable: it reads as an outage when the call in fact
+                # succeeded and spent its budget on something we discarded. The
+                # block types and stop_reason are the whole diagnosis, and they
+                # cost one log line at the moment they are still in hand.
+                _blocks = [str(getattr(b, "type", "?")) for b in (resp.content or [])]
+                log.warning(
+                    "copywriter v2: %s answered with no text block "
+                    "(blocks=%s, stop_reason=%s, max_tokens=%d) — if this is a "
+                    "thinking model the reasoning consumed the budget",
+                    model, _blocks or "[]", getattr(resp, "stop_reason", "?"),
+                    max_tokens)
             return (text or None), None, resp
 
         raw, _reason, _provider = llm_auth.make_call(

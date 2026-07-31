@@ -548,6 +548,79 @@ def _client_tuning_kwargs(cfg: dict) -> dict:
     return out
 
 
+class _NoThinkingMessages:
+    """`messages` proxy that defaults DeepSeek's thinking mode OFF.
+
+    An explicit `thinking=` (or one already inside `extra_body`) always wins, so
+    a lane that genuinely wants reasoning simply asks for it.
+    """
+
+    def __init__(self, inner: "Any") -> None:
+        self._inner = inner
+
+    def __getattr__(self, name: str) -> "Any":
+        return getattr(self._inner, name)
+
+    def create(self, **kw: "Any") -> "Any":
+        extra = dict(kw.get("extra_body") or {})
+        if "thinking" not in kw and "thinking" not in extra:
+            extra["thinking"] = {"type": "disabled"}
+            kw["extra_body"] = extra
+        return self._inner.create(**kw)
+
+
+class _DeepSeekClient:
+    """Thin pass-through wrapper; only `.messages` behaves differently."""
+
+    def __init__(self, inner: "Any") -> None:
+        self._inner = inner
+        self.messages = _NoThinkingMessages(inner.messages)
+
+    def __getattr__(self, name: str) -> "Any":
+        return getattr(self._inner, name)
+
+
+def _deepseek_no_thinking(client: "Any") -> "Any":
+    """Wrap a DeepSeek client so it stops spending the caller's budget thinking.
+
+    THE OUTAGE THIS FIXES (2026-07-31). `deepseek-v4-pro` — llm_auth's default
+    DeepSeek model — returns a ThinkingBlock BEFORE the text block on the
+    Anthropic-compat endpoint and bills roughly 4x the output tokens for it
+    (probed live 2026-07-26). Callers here pass a SMALL `max_tokens` because
+    they want one short answer: the marketing copywriter sends 400, enough for a
+    post and nowhere near enough for a post plus the model's reasoning. The
+    response hits the cap mid-thought and comes back carrying NO text block.
+
+    Every symptom pointed away from the cause. llm_auth logged "provider
+    'deepseek' served after fallback" — the call genuinely succeeded. The
+    callers' extraction was correct (they filter every block of type=="text"
+    rather than reading content[0], so this was not the classic content[0] bug).
+    The post was simply dropped at stage=provider with "provider returned no
+    text", which reads as an outage. On the 2026-07-31 nightly that was 914 of
+    915 planned posts and a content plan with total_posts=0.
+
+    FIXED HERE RATHER THAN IN THE CALLERS. Eleven sites across engine/marketing
+    and engine/press build their own request and hand it to make_call; patching
+    the one that was on fire would leave ten carrying the defect and every future
+    lane inheriting it. The provider is the thing that thinks, so the provider is
+    where it is turned off — and a lane that wants reasoning still gets it by
+    passing `thinking` explicitly, which this never overrides.
+
+    Wrapping rather than subclassing keeps every other attribute (usage hooks,
+    `with_options`, `close`) pointing at the real client. Fail-soft: if the
+    client has no `.messages` at all (a stub in a test), the original is
+    returned untouched.
+    """
+    try:
+        if getattr(client, "messages", None) is None:
+            return client
+        return _DeepSeekClient(client)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("llm_auth: could not wrap DeepSeek client (%s) — "
+                    "thinking stays at its default", exc)
+        return client
+
+
 def build_providers(
     cfg: dict,
     *,
@@ -884,7 +957,7 @@ def build_providers(
                 client_kwargs = {"api_key": key, "base_url": ds_base, **tuning}
                 if http_client is not None:
                     client_kwargs["http_client"] = http_client
-                client = anthropic.Anthropic(**client_kwargs)
+                client = _deepseek_no_thinking(anthropic.Anthropic(**client_kwargs))
                 out.append({"name": "deepseek", "env_var": env, "cred": key,
                              "client": client, "model": ds_model,
                              "cap_id": "deepseek_api_key"})
