@@ -956,18 +956,32 @@ def _chart_quality_census(featured_charts: list[dict]) -> dict:
 
     THE SILENCE THIS REPLACES. `legacy_png` is a hand-drawn PIL line chart: no
     candles, no indicators, no footer CTA. It exists so a Chrome-less host (CI,
-    the ubuntu publish runner) still posts a picture instead of bare text. On the
-    2026-07-30 plan it drew 15 of 23 cards — 65% — on a host where Chrome IS
-    present and rasters a card in 3 to 4 seconds. So it was not the designed
-    degradation for a Chrome-less box; it was a live failure, running at scale,
-    with no counter anywhere and its only trace a `log.warning` that GitHub drops
-    because it does not start the line.
+    the ubuntu publish runner) still posts a picture instead of bare text.
 
-    An earlier audit of this repo reported "65% of images are the retired legacy
-    chart" and it was refuted — by counting SVGs on disk. Every SVG on disk IS
-    v2; the legacy path emits a PNG, so that check could not observe the thing it
-    was used to rule out. This census reads `media_render`, which is the field
-    that actually records which renderer drew the image.
+    WHAT PRODUCTION ACTUALLY DOES, measured rather than inferred: the renderers
+    are distinguishable by size — legacy is 1200x675, the real card rasters at
+    2000x1760. All 21 PNGs the nightly wrote on 2026-07-29
+    (data/marketing/outbox/media/2026-07-29/) are 2000x1760. Production ships the
+    real card, and this census should read 0% on a healthy night.
+
+    IT WAS STILL WORTH BUILDING, and the reason is the point. A committed
+    content_plan.json showed 15 of 23 cards as `legacy_png`, and that one number
+    was read three different ways: an audit called it "65% of our images are the
+    retired legacy chart"; a refutation counted SVGs on disk, found every one v2,
+    and dismissed it (the legacy path emits a PNG — that check cannot observe
+    what it was used to rule out); then the 65% was believed as a live production
+    failure. All three were reading an artifact a LOCAL run had overwritten,
+    where Chrome was contended by parallel work — `git log` on the file names the
+    author. Nobody could tell which environment produced it, because the only
+    trace of a fallback was a `log.warning` GitHub drops for not starting the
+    line, and nothing counted the share.
+
+    So this exists to end the guessing rather than to report a known fire. It
+    reads `media_render` — the field that actually records which renderer drew
+    the image — and puts the share where the run that produced it is identified.
+    A contended local run SHOULD light it up: that is correct behaviour, because
+    a degraded local artifact getting committed and then misread three times is
+    precisely what happened.
     """
     total = 0
     modes: dict[str, int] = {}
@@ -1934,12 +1948,15 @@ def _attach_chart_media(
         # (CLAUDE.md; it shipped dead five times before #3587 swept 69 sites).
         # Nothing counted it either.
         #
-        # So the quality of every image we post was a number nobody could see,
-        # and on the 2026-07-30 plan it was 15 of 23 cards — 65% — degraded.
-        # The rasteriser itself works on this host (measured: 3-4s per card), so
-        # a fallback is a SYMPTOM, not a steady state, and it belongs on the
-        # console where the operator reads losses rather than in a log nobody
-        # opens. Bare print, line start, flushed — the house form.
+        # So the quality of every image we post was a number nobody could see —
+        # which is how one committed plan showing 15 of 23 cards degraded got
+        # read as an audit finding, then as a refuted finding, then as a live
+        # production failure, when it was a LOCAL run with Chrome contended.
+        # Production's own PNGs (2026-07-29, 21 of 21 at 2000x1760) are all the
+        # real card. The rasteriser works when it is not fighting for the
+        # machine, so a fallback is a SYMPTOM of that fight, not a steady state,
+        # and it belongs on the console where the operator reads losses rather
+        # than in a log nobody opens. Bare print, line start, flushed.
         if str(fc.get("media_render") or "") == "legacy_png":
             print(f"::warning title=marketing-chart-legacy-fallback::"
                   f"{chart_id}: the SVG raster produced nothing, so this post "

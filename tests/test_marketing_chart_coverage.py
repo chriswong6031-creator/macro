@@ -677,19 +677,25 @@ class TestChartDrawsWhatTheCopyClaims:
 
 
 class TestChartQualityIsVisible:
-    """65% of our posted images were the DEGRADED renderer and nobody could tell.
+    """Which renderer drew the image we posted was a fact nobody could check.
 
     `legacy_png` is a hand-drawn PIL line chart: no candles, no indicators, no
     footer CTA. It exists so a Chrome-less host (CI, the ubuntu publish runner)
-    posts a picture rather than bare text. On the 2026-07-30 plan it drew 15 of
-    23 cards on a host where Chrome IS installed and rasters a card in 3-4s.
+    posts a picture rather than bare text.
 
-    It was invisible for two compounding reasons: the only trace was a
-    `log.warning`, which GitHub drops because this repo's builders log with a
-    prefixing format and an annotation must START the line; and nothing counted
-    it. An audit that read SVGs off disk then "refuted" the finding — every SVG
-    on disk IS v2, because the legacy path emits a PNG. The field that records
-    which renderer drew the image is `media_render`.
+    ONE committed content_plan.json showing 15 of 23 cards as `legacy_png` was
+    read three ways in two days: as an audit finding ("65% of images are the
+    retired legacy chart"); as a REFUTED finding (a census of SVGs on disk found
+    every one v2 — but the legacy path emits a PNG, so that check could not
+    observe what it was used to rule out); and then as a live production outage.
+    It was a LOCAL plan build with Chrome contended by parallel work. Production
+    ships the real card: all 21 PNGs the nightly wrote on 2026-07-29 are
+    2000x1760, the raster size, against the legacy renderer's 1200x675.
+
+    Three readings, no instrument. The only trace of a fallback was a
+    `log.warning` — dropped by GitHub, because this repo's builders log with a
+    prefixing format and an annotation must START the line — and nothing counted
+    the share. `media_render` is the field that records the answer; this reads it.
     """
 
     def test_the_census_counts_the_degraded_renderer(self):
@@ -754,4 +760,37 @@ class TestChartQualityIsVisible:
         assert "find_chrome()" in src, (
             "without the no-binary short-circuit, a Chrome-less host pays two "
             "doomed launches for every card"
+        )
+
+    def test_the_two_renderers_stay_distinguishable_from_the_png_alone(self):
+        """The forensic method, pinned — because `media_render` is not written
+        to the outbox, only to the plan, and a plan can be overwritten by a
+        local run.
+
+        When the artifact that records the renderer is untrustworthy, the PNG
+        itself still answers: the legacy PIL card is 1200x675, the real card
+        rasters at 2000x1760 (1000x880 at device scale 2). That is how
+        production was cleared (2026-07-29: 21 of 21 at 2000x1760) after a
+        contended local plan build had been mistaken for a live outage.
+
+        If these ever collide, that check silently starts returning "healthy"
+        for degraded cards.
+        """
+        import struct
+
+        numpy = pytest.importorskip("numpy")   # noqa: F841 - chart deps
+        from engine.marketing.chart_render import render_signal_chart_png
+
+        png = render_signal_chart_png(
+            "TEST",
+            [f"2026-01-{i:02d}" for i in range(1, 21)],
+            [100.0 + i for i in range(20)],
+            marker_index=None,
+            subtitle="x",
+        )
+        assert png[:8] == b"\x89PNG\r\n\x1a\n"
+        w, h = struct.unpack(">II", png[16:24])
+        assert (w, h) == (1200, 675), (
+            f"the legacy card is now {w}x{h}; if that ever equals the 2000x1760 "
+            "raster size, degraded and real cards become indistinguishable on disk"
         )

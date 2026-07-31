@@ -175,12 +175,15 @@ def publish_card(
     render_mode = "svg_raster"
     # RETRY ONCE BEFORE ACCEPTING A WORSE PICTURE (2026-07-30).
     #
-    # A fallback used to be one failed launch away, and on the 2026-07-30 plan
-    # 15 of 23 cards took it — on a host where Chrome is installed and rasters a
-    # card in 3 to 4 seconds when asked on its own. That profile is contention or
-    # a transient launch failure under nightly load, not an absent binary, and
-    # the fallback is a visibly worse image (no candles, no indicators, no footer
-    # CTA) posted to a live account.
+    # A fallback is one failed launch away, and the fallback is a visibly worse
+    # image — no candles, no indicators, no footer CTA — on a live account.
+    #
+    # Measured on this host: a card rasters in 3 to 4 seconds when asked on its
+    # own, and 15 of 23 took the fallback on a local plan build competing with
+    # other Chrome work. Production's own PNGs are all the real card (2026-07-29:
+    # 21 of 21 at 2000x1760), so this is contention, not an absent binary — the
+    # exact failure a retry is for, and the exact failure a single attempt turns
+    # into a permanently worse picture.
     #
     # rasterize_svg is deterministic, writes only inside its own temp dir and is
     # already fail-soft, so a second attempt is safe and idempotent. It costs
