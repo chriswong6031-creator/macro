@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T21:58:48.818484+00:00",
-  "count": 485,
+  "generated_at": "2026-07-31T22:13:52.832245+00:00",
+  "count": 486,
   "institutions": [
     "Amova",
     "Apollo",
@@ -120,6 +120,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-caednmvzovu-ae085e",
+      "title": "Asia in Focus China H2 Fiscal Outlook Reversing the Tightening",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:21:06Z",
+      "summary_points": [
+        "**Fiscal Policy Shift to Targeted \"Stop-Go\" Easing**: Reactive easing constrained by high debt, low capital returns, and US-China tech race; smaller scale, delayed timing, and targeted spending (e.g., high-tech manufacturing) replace broad stimulus, despite RMB8tn+ H2 funding capacity.",
+        "**Negative Fiscal Impulse in Q2**: Fiscal impulse turned negative due to slowed government bond issuance/spending, contributing nearly half the GDP slowdown (Q2 growth 3.6% qoq vs Q1 5.0% yoy), offsetting export strength.",
+        "**Local Implementation Risks**: Local officials’ risk aversion (record-high anti-corruption proxies, post-disaster caution from Lushenyu coal disaster, Shanxi explosion) and implementation constraints undermine fiscal stimulus effectiveness.",
+        "**Growth Target Achievable with Conditional Stimulus**: 4.5-5.0% full-year target remains on track (H1 GDP 4.7% yoy), prioritizing *pace* of planned easing over new stimulus; broad measures unlikely unless growth weakens further.",
+        "**Supply-Side Policy Focus**: Spending tilted toward tech, green transition, and \"Two Majors\" investment (boosting 2026 GDP +50bp+), with consumption support secondary despite recent rhetoric."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
       "language": "en",
       "needs_metadata": false
     },
