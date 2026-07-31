@@ -1,8 +1,9 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T05:25:31.523665+00:00",
-  "count": 434,
+  "generated_at": "2026-07-31T07:12:27.618320+00:00",
+  "count": 442,
   "institutions": [
+    "Amova",
     "BTIG",
     "Bank of America",
     "Blackrock",
@@ -16,6 +17,7 @@
     "Mizuho",
     "Morgan Stanley",
     "Natixis",
+    "Nordea",
     "Nuveen",
     "Other",
     "Prime",
@@ -35,6 +37,26 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-njfb55sctn3-af8274",
+      "title": "ING Think rates spark fed holds long end getting nervous",
+      "institution": "ING",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T00:06:38Z",
+      "summary_points": [
+        "**Fed Policy Stance**: Holds rates steady amid 2Y yield drop; 10Y yield vulnerability to 5% limits hawkishness due to Iran war risk, overriding technicals.",
+        "**10Y Yield Threshold**: Long-term yields rising to 5.2% signal tightening; 10Y >5% is Treasury red line, favoring short-duration assets.",
+        "**BoE Oil Sensitivity**: Sterling highly oil-sensitive (2Y swap at 3.9%); no BoE rate change expected, complicated by oil correlation and Middle East escalation.",
+        "**Geopolitical Risk Constraint**: Iran war escalation dampens confidence, directly constraining Fed’s hawkishness and complicating BoE’s policy response."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-6dqs9kf8acd-a8e23e",
       "title": "Goldman Sachs Prime Insights Analytics At the Half Webinar Slide Pack",
@@ -74,6 +96,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-d0el2cpxhig-b5c9a7",
+      "title": "Gold",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T23:59:05Z",
+      "summary_points": [
+        "**Fed Policy Dual Impact**: Near-term downside risk to $3,850/oz if rate hikes materialize, but 12-month outlook bullish on rate cuts reviving investment demand via lower real yields and USD diversification.",
+        "**Supply Revisions**: Mine supply up to 901 tons (Q1), central bank demand revised lower (244→289 tons), annualized run rate at 700 tons, moderating recycled supply to 326 tons (Q2).",
+        "**Investment Demand Weakness**: Jewelry and investment demand remain key drags despite strong Q2 central bank buying (289 tons), creating persistent headwinds for price momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
@@ -212,6 +253,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-48mn0x2kywn-71c89e",
+      "title": "Lower Cpi Growth Pave Way For Rate Cuts",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T17:35:47Z",
+      "summary_points": [
+        "**Brazil Rate Cut Pathway**: Downside CPI surprise (4.52% 12-mo vs 4.80% prior) triggers 25bps cuts (Aug 5, Sept 16), but elevated CPI rebounds to 5% by year-end, with growth slowing in H2 due to restrictive monetary policy despite easing.",
+        "**Election & Fiscal Policy Shift**: Lula’s consolidation reduces near-term fiscal stimulus risk ahead of October election; fiscal reform critical for November/December spending cuts and 2027 easing cycle duration, with deficit reduction showing early progress.",
+        "**El Niño & Policy Risks**: El Niño threatens 2026/27 harvests (geopolitical risk), while electricity tariffs (policy) add inflationary pressure, offsetting food price relief and sustaining sticky services inflation amid agricultural acreage stagnation."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -576,6 +636,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gmubvhurzpw-ba6748",
+      "title": "Duttenhoefer´s Daily (30.07.2026)",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T06:49:46Z",
+      "summary_points": [
+        "**Geopolitical Market Shifts**: S&P +7% ytd amid Middle East strikes (US vs Iran), Fed holds rate (9-3), US30yr steepening to 5.24%, Brent $90, Gold $4046, Bitcoin $64k.",
+        "**China AI Policy Pivot**: Xi prioritizes physical AI (not chatbots) in 15th Five-Year Plan for real economy growth, mandates human control, open source, geopolitical shift.",
+        "**Hedge Fund Outflow Surge**: Largest 3-day gross flow de-grossing since Nov 2022, signaling critical capital withdrawal."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
@@ -1131,6 +1210,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-xwjaicfpb4x-136574",
+      "title": "Fed review Hold now, but dissents",
+      "institution": "Nordea",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:25:40Z",
+      "summary_points": [
+        "**Fed Dissents Signal September Hike**: Three hawkish dissents (Hammack, Logan, Kashkari) at Fed meeting indicate September rate hike is plausible, overriding unchanged June rhetoric and signaling policy tightening.",
+        "**30Y Yield Divergence & Dollar Weakness**: 30-yr Treasury yield hits 7-year high (10bp rise) while dollar weakens, reflecting market skepticism on Fed’s inflation control despite yield surge.",
+        "**Dot Plot vs.",
+        "Market SOFR Divergence**: Fed Dot Plot projects higher rates than market SOFR forwards, highlighting critical uncertainty in policy trajectory post-FOMC.",
+        "**Duration Risk Acceleration**: US 30Y yield surged from ~2% (2012-2015) to 5%+ (2023-2026), driven by Fed hikes and dissenting voices, escalating duration risk for fixed-income portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-h3vmhltiw7c-a5575a",
       "title": "India needs lasting reforms to attract foreign capital not stopgaps",
       "institution": "Natixis",
@@ -1229,6 +1329,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-jjnmox8m5mt-d1862f",
+      "title": "ING Think fed holds rates steady as three fomc members dissent 2",
+      "institution": "ING",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:13:33Z",
+      "summary_points": [
+        "**Fed Holds Rates Steady with Dissent**: Fed maintained 3-1/2% to 3-3/4% target range despite three dissenters (Hammack, Kashkari, Logan) advocating for 25bp hike; contradicts market expectations (only 2/104 economists polled expected hike), signaling policy caution amid weak data.",
+        "**Labor Market Fragility Beyond Unemployment**: Participation rate decline in 25-54 age group (-0.7pp since Jan) indicates firms cutting costs via early retirement, revealing deeper labor market weakness than unemployment rates suggest.",
+        "**Inflation Dynamics & Policy Paradox**: Oil at $85/bbl (gasoline prices stagnant), housing cooling (rents down), and rising labor costs (0.8% QoQ) create disinflation uncertainty; Fed prioritizes stability over hikes despite rhetoric, conflicting with market pricing of 18bp hikes."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-nvrdhtvrre1-ef9215",
       "title": "Invesco uncommon truths hot hot hot july 2026",
       "institution": "Other",
@@ -1246,6 +1365,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 14,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-8nbvmeuc9v8-2c98c8",
+      "title": "2607 the yen carrying the weight of the world s risk tolerance",
+      "institution": "Amova",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:06:14Z",
+      "summary_points": [
+        "**Carry Trade Mechanism**: Japan’s accommodative conditions (low rates, no capital controls) enable yen borrowing for long-duration risk assets, overriding traditional yield differential explanations as the primary driver of yen weakness.",
+        "**Term Premium Signaling**: Rising JGB term premium (vs.",
+        "US Treasury) reflects fiscal credibility concerns and markets pricing in prolonged Fed rate hikes, signaling heightened policy risk for portfolios.",
+        "**Domestic Flow Shift**: Tankan data shows slowing overseas investment intentions relative to domestic, indicating potential reallocation toward domestic assets and threatening the yen’s \"duration-funded carry\" regime."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -1389,6 +1528,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 24,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2rxx35iddcm-c12b84",
+      "title": "Pinterest July 29",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T14:14:40Z",
+      "summary_points": [
+        "**Q2 Revenue & EBITDA Beat**: $1.148bn revenue (+15% y/y) and $267mn adj.",
+        "EBITDA within guidance, driven by UCAN integration (majority revenue contribution), confirming measurement gains.",
+        "**Pinterest Stabilization Confirmed**: Ad spend/impressions stabilized in Q2 (aligns with healthier post-2025 retail environment), but no renewed share gains or high-teens organic growth; historical ad spend decline (6% revenue drag in Q3 2025) persists.",
+        "**Critical Risk: Advertiser Pressure**: Persistent 6% revenue drag from advertiser pressure (moderating but not resolved), with no evidence of organic growth recovery; measurement gains concentrated among limited advertisers.",
+        "**DAU & Engagement Acceleration**: Q2 2026 shows accelerated worldwide/US-CA DAU growth and rising engagement time, signaling stronger user base and future ad potential."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 14,
       "language": "en",
       "needs_metadata": false
     },
