@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T02:26:58.505938+00:00",
-  "count": 428,
+  "generated_at": "2026-07-31T02:41:59.396395+00:00",
+  "count": 429,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -172,6 +172,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3qtf8hjplpa-faa17b",
+      "title": "Beijing Doing Enough",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T20:11:21Z",
+      "summary_points": [
+        "**Policy Pivot**: Politburo shifts from \"stability\" to proactive fiscal easing (infrastructure/bond issuance) and dovish monetary policy (precedes rate cuts), signaling direct intervention against slowdown.",
+        "**Fiscal Volatility Risk**: Government budget expenditure volatility (\"spending collapse\") indicates fiscal policy uncertainty and near-term growth risks despite 4.8% GDP forecast.",
+        "**Fiscal Capacity**: RMB7tn fiscal space (5% of 2025 GDP) and RMB800bn off-balance-sheet financing provide substantial stimulus capacity for counter-cyclical measures.",
+        "**Growth Bottom Timing**: Q2/26 identified as 2026 growth bottom; stabilization expected from strong exports, resilient consumption, and recovering investment amid easing local government spending caution."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
