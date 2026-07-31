@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T00:41:41.900955+00:00",
-  "count": 423,
+  "generated_at": "2026-07-31T00:56:48.578718+00:00",
+  "count": 424,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -52,6 +52,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 41,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-e4qobabjogz-ee3931",
+      "title": "Blog",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T23:58:43Z",
+      "summary_points": [
+        "**UK BoE Rate Hold**: BoE maintains 3.75% rate (6-3 vote) amid energy-driven inflation risks (oil/gas prices above pre-conflict levels), overriding softening domestic data (June headline inflation 2.6%).",
+        "**Inflation Outlook & Policy Stance**: MPC retains restrictive stance to prevent energy shock embedding; rates likely unchanged, but market pricing suggests further tightening if shock persists, targeting 2% medium-term.",
+        "**GBP Bond Positioning**: GBP bonds attractive (cheap rates, carry, declining yields); optimal maturities 2–6 years, A/BBB corporate bonds favored for risk-reward; positive on sterling due to short positioning and carry."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
       "language": "en",
       "needs_metadata": false
     },
