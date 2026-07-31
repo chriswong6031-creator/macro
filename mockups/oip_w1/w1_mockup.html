@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en" data-theme="dark" class="soft-contrast">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Options — Ticker workbench (OIP W1 design mockup)</title>
+<!--
+  ══════════════════════════════════════════════════════════════════════════════
+  OIP W1 · Options nav regroup + Ticker workbench — STATIC DESIGN MOCKUP
+  Spec: research/options_estate/W1_DESIGN_SPEC.md
+  Masterplan: research/options_estate/OIP_MASTERPLAN.md §5.1 (S1), §3 (design language)
+  Extends: research/options_estate/WORKSPACE_DESIGN_SPEC.md (the pinned .oew system)
+
+  This file is hand-baked fixture data + inline CSS/JS, self-contained, no build step,
+  no external fetches. It exists so the builder copies MARKUP AND CSS VERBATIM rather
+  than making design choices. Ticker-mode fixture data is real SPY numbers read from
+  site/gex/SPY.json on 2026-07-30 (spot 741.69, regime short, iv_rank rank_pct 43/
+  n_days 37, etc.) — the oi_delta_clusters sample rows are the EXACT numbers quoted in
+  PR #3976's own test output (SPY 525P / 660P). Everything else invented-but-plausible.
+
+  All CSS through the "END REPRODUCED PRODUCTION CSS" marker is copied verbatim from
+  templates/options.html.j2's own <style> block (unchanged in W1) so the chrome renders
+  byte-accurately. In production this reproduction does not exist — the page already
+  has this CSS inline. CSS after that marker is NEW for W1, pinned in the spec above.
+  ══════════════════════════════════════════════════════════════════════════════
+-->
+<script>try{var th=localStorage.getItem('mock_theme')||'dark';document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('mock_lang')||'';if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════
+   1 · HOUSE TOKENS — reproduced from theme.css (production links the real file).
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+    Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --bg:#0f1115; --panel:#181b21; --panel2:#1e222a; --text:#d7dce3;
+  --muted:#8b93a1; --line:#2a2f3a;
+  --warn:#e0a030; --act:#e05555; --ok:#3da564;
+  --up:#45b873; --down:#e06464; --orange:#e08b45;
+  --info:#5b9bf0; --link:#7aa7e0;
+  --card-shadow:0 1px 0 rgba(255,255,255,.02);
+  --popover-shadow:0 6px 18px rgba(0,0,0,.5);
+}
+html[data-theme="light"]{
+  --bg:#f7f8fa; --panel:#ffffff; --panel2:#eef1f6; --text:#1c2430;
+  --muted:#5d6b7e; --line:#eaecf0;
+  --warn:#b9791a; --act:#c43d3d; --ok:#2f8a52;
+  --up:#1f9a55; --down:#cf4040; --orange:#c4781f;
+  --info:#285fff; --link:#285fff;
+  --card-shadow:0 1px 3px rgba(20,30,50,.07);
+  --popover-shadow:0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
+}
+html.soft-contrast{
+  --bg:#0d1018; --panel:#151820; --panel2:#1b1f28; --text:#c8d0dc; --line:#262c38;
+}
+html.soft-contrast[data-theme="light"]{
+  --bg:#eceef1; --panel:#f5f5f7; --panel2:#e8eaed; --text:#2e3950;
+  --muted:#4c5a6c; --line:#d0d4db; --card-shadow:0 1px 3px rgba(20,30,50,.05);
+}
+html[data-lang="zh"]{ --up:#e06464; --down:#45b873; }
+html[data-theme="light"][data-lang="zh"]{ --up:#cf4040; --down:#1f9a55; }
+html:not([data-lang="zh"]) .l-zh{ display:none; }
+html[data-lang="zh"] .l-en{ display:none; }
+html[data-lang="zh"] body{
+  font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",
+    "Noto Sans CJK SC","Microsoft JhengHei","Heiti SC",Inter,sans-serif;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);
+  font-size:13.5px;line-height:1.5;margin:0;padding:0;-webkit-font-smoothing:antialiased}
+.oew .mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   2 · WORKSPACE TOKENS (unchanged from the pinned base spec)
+   ═══════════════════════════════════════════════════════════════════════════ */
+.oew{
+  --oew-accent:#8e97c8;
+  --oew-stamp:#b49256;
+  --hair: color-mix(in srgb, var(--line) 72%, transparent);
+  --tile: color-mix(in srgb, var(--panel2) 86%, var(--panel));
+  --ink-2: color-mix(in srgb, var(--text) 66%, transparent);
+  --ink-3: var(--muted);
+  --oew-st-act: var(--oew-accent); --oew-st-ready: var(--oew-accent);
+  --oew-st-watch: var(--ink-2); --oew-st-protect: var(--warn);
+  --oew-st-aside: var(--muted); --oew-st-ignore: var(--muted);
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:44px;
+  --r-pill:999px; --r-ctl:8px; --r-panel:14px; --r-shell:14px;
+}
+html[data-theme="light"] .oew{
+  --oew-accent:#4c55a8; --oew-stamp:#8a6a2e;
+  --hair: color-mix(in srgb, var(--line) 92%, transparent);
+  --ink-2: color-mix(in srgb, var(--text) 72%, transparent);
+}
+.oew-eyebrow{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+html[data-lang="zh"] .oew-eyebrow{letter-spacing:.02em;text-transform:none}
+.oew-wrap{max-width:1240px;margin:0 auto;padding:0 var(--s5) var(--s8)}
+@media (max-width:560px){.oew-wrap{padding:0 var(--s3) var(--s7)}}
+
+/* ═══ PERSISTENT CHROME — verbatim from templates/options.html.j2 (unchanged in W1) ═══ */
+.oew-chrome{padding:var(--s6) 0 0}
+.oew-idrow{display:flex;align-items:flex-end;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s5)}
+.oew-title{margin:0;font-size:22px;font-weight:700;letter-spacing:-.015em;line-height:1.15}
+.oew-title .sub{display:block;font-size:11.5px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:3px}
+.oew-receipt{display:grid;grid-template-columns:minmax(196px,232px) 1fr;gap:var(--s5);align-items:stretch}
+@media (max-width:900px){.oew-receipt{grid-template-columns:1fr;gap:var(--s4)}}
+.oew-stampblock{border:1px solid var(--hair);border-radius:var(--r-panel);background:var(--tile);
+  padding:var(--s4) var(--s4) var(--s3);position:relative;overflow:hidden}
+.oew-stampblock::before{content:'';position:absolute;inset:0 auto 0 0;width:2px;background:var(--oew-stamp);opacity:.8}
+.oew-stamp-k{font-size:10px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--oew-stamp);margin-bottom:5px}
+html[data-lang="zh"] .oew-stamp-k{letter-spacing:.03em;text-transform:none}
+.oew-stamp-date{font-size:27px;font-weight:700;line-height:1;color:var(--text)}
+.oew-stamp-closed{font-size:11px;color:var(--muted);margin-top:6px}
+.oew-stamp-rows{margin-top:var(--s3);padding-top:var(--s3);border-top:1px solid var(--hair);display:grid;gap:4px}
+.oew-stamp-row{display:flex;gap:var(--s2);font-size:11px;align-items:baseline}
+.oew-stamp-row .k{color:var(--muted)}
+.oew-stamp-row .v{margin-left:auto;color:var(--ink-2);font-weight:600}
+.oew-stamp-row .v.brass{color:var(--oew-stamp)}
+.oew-console{border:1px solid var(--hair);border-radius:var(--r-panel);background:var(--panel);display:flex;flex-direction:column}
+.oew-console-grid{display:grid;grid-template-columns:repeat(4,1fr);flex:1}
+@media (max-width:760px){.oew-console-grid{grid-template-columns:repeat(2,1fr)}}
+.oew-read{padding:var(--s4);border-left:1px solid var(--hair);display:flex;flex-direction:column;gap:6px;justify-content:center}
+.oew-read:first-child{border-left:none}
+@media (max-width:760px){
+  .oew-read:nth-child(odd){border-left:none}
+  .oew-read:nth-child(n+3){border-top:1px solid var(--hair)}
+}
+.oew-read-k{display:flex;align-items:center;gap:5px}
+.oew-read-v{font-size:15px;font-weight:650;line-height:1.2;color:var(--text)}
+.oew-read-n{font-size:10.5px;color:var(--muted)}
+.oew-vetted{display:inline-grid;place-items:center;width:13px;height:13px;border-radius:50%;
+  background:color-mix(in srgb,var(--ok) 20%,transparent);color:var(--ok);font-size:8.5px;font-weight:900;cursor:help;flex:none}
+.oew-pips{display:inline-flex;gap:3px;align-items:center;cursor:help;margin-top:2px}
+.oew-pip{width:17px;height:6px;border-radius:2px;background:color-mix(in srgb,var(--text) 13%,transparent);border:none}
+.oew-pip.on{background:var(--oew-accent)}
+.oew-pip.nul{background:transparent;border:1px dotted var(--hair);opacity:.6}
+.oew-pips.sm .oew-pip{width:9px;height:5px}
+.oew-nofuse{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s4);font-size:12.5px;color:var(--ink-2)}
+.oew-stance{display:inline-flex;align-items:center;gap:6px;flex:none;font-size:11.5px;font-weight:700;
+  letter-spacing:.01em;white-space:nowrap;padding:4px 11px;border-radius:var(--r-pill);border:1px solid}
+.oew-stance::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+.st-act{color:#fff;background:var(--oew-st-act);border-color:var(--oew-st-act)}
+.st-ready{color:var(--oew-st-ready);border-color:color-mix(in srgb,var(--oew-st-ready) 55%,var(--hair));
+  background:color-mix(in srgb,var(--oew-st-ready) 13%,var(--tile))}
+.st-watch{color:var(--oew-st-watch);border-color:var(--hair);background:var(--tile)}
+.st-protect{color:var(--oew-st-protect);border-color:color-mix(in srgb,var(--oew-st-protect) 45%,var(--hair));
+  background:color-mix(in srgb,var(--oew-st-protect) 10%,var(--tile))}
+.st-aside{color:var(--oew-st-aside);border-color:var(--hair);background:transparent;opacity:.85}
+.st-ignore{color:var(--oew-st-ignore);border:1px solid transparent;background:transparent;opacity:.7}
+.oew-closeline{position:relative;height:3px;margin-top:var(--s7);border-radius:3px;
+  background:repeating-linear-gradient(90deg,var(--line) 0 3px,transparent 3px 6px)}
+.oew-closeline::before{content:'';position:absolute;inset:0;border-radius:3px;
+  background:color-mix(in srgb,var(--line) 55%,transparent)}
+.oew-closeline::after{content:'';position:absolute;left:0;top:0;height:3px;width:var(--oew-cov,100%);
+  background:var(--oew-accent);border-radius:3px;
+  box-shadow:0 0 14px -2px color-mix(in srgb,var(--oew-accent) 70%,transparent)}
+.oew-cov-tick{position:absolute;top:-5px;left:var(--oew-cov,100%);width:2px;height:13px;background:var(--oew-stamp);border-radius:1px}
+.oew-cov-label{position:absolute;top:-21px;left:var(--oew-cov,100%);transform:translateX(-100%);
+  font-size:10px;font-weight:600;color:var(--oew-stamp);white-space:nowrap;padding-right:7px;letter-spacing:.03em}
+.oew-tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-bottom:var(--s6)}
+.oew-tabs::-webkit-scrollbar{display:none}
+.oew-tab{appearance:none;background:none;border:none;border-top:2px solid transparent;margin-top:-2px;
+  padding:11px var(--s4) 10px;font:inherit;font-size:13px;font-weight:650;color:var(--muted);cursor:pointer;
+  white-space:nowrap;flex:none;display:inline-flex;align-items:baseline;gap:6px}
+.oew-tab:hover{color:var(--text)}
+.oew-tab:focus-visible{outline:2px solid var(--oew-accent);outline-offset:-3px;border-radius:2px}
+.oew-tab .cnt{font-size:10.5px;font-weight:600;color:var(--muted);opacity:.8}
+.oew-tab[aria-selected="true"]{color:var(--text);border-top-color:var(--oew-accent)}
+.oew-tab[aria-selected="true"] .cnt{color:var(--oew-accent);opacity:1}
+.oew-panel{border:1px solid var(--hair);border-radius:var(--r-panel);background:var(--panel);
+  box-shadow:var(--card-shadow);margin-bottom:var(--s4);overflow:hidden}
+.oew-phead{display:flex;align-items:baseline;gap:var(--s3);flex-wrap:wrap;padding:var(--s3) var(--s4);border-bottom:1px solid var(--hair)}
+.oew-ph-title{font-size:14px;font-weight:700;margin:0;letter-spacing:-.01em}
+.oew-ph-sub{font-size:11.5px;color:var(--muted)}
+.oew-ph-right{margin-left:auto;display:flex;align-items:center;gap:var(--s2)}
+.oew-pbody{padding:var(--s4)}
+.oew-pfoot{padding:10px var(--s4);border-top:1px solid var(--hair);background:var(--tile);
+  font-size:11px;color:var(--muted);display:flex;gap:var(--s2);align-items:center;flex-wrap:wrap}
+.oew-asof{margin-left:auto;font-size:10px;color:var(--oew-stamp);opacity:.9;letter-spacing:.02em}
+.oew-help{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;
+  border:1px solid var(--hair);color:var(--muted);font-size:9.5px;font-weight:800;cursor:help;flex:none;background:var(--tile)}
+.oew-help:hover,.oew-help:focus-visible{color:var(--text);border-color:var(--oew-accent);outline:none}
+.oew [data-tip-en]{cursor:help}
+.oew-mode{display:none}
+.oew-mode.active{display:block}
+.oew-empty{font-size:12.5px;color:var(--ink-2);line-height:1.5}
+.oew-tk-head{display:flex;align-items:flex-end;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s3)}
+.oew-tk-sym{font-size:30px;font-weight:700;line-height:1}
+.oew-tk-name{font-size:12.5px;color:var(--muted)}
+.oew-tk-px{margin-left:auto;text-align:right}
+.oew-tk-px .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;display:block}
+html[data-lang="zh"] .oew-tk-px .k{letter-spacing:.02em;text-transform:none}
+.oew-tk-px .v{font-size:24px;font-weight:700}
+.oew-tk-regime{font-size:19px;font-weight:700;margin:0 0 5px}
+.oew-tk-say{font-size:12.5px;color:var(--ink-2);max-width:74ch;line-height:1.5}
+.oew-lad{position:relative;height:96px;margin:var(--s5) 0 var(--s3)}
+.oew-lad-band{position:absolute;inset:22px 0 30px;border-radius:5px;overflow:hidden;
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--down) 26%,transparent) 0%,
+    color-mix(in srgb,var(--down) 9%,transparent) 34%,
+    color-mix(in srgb,var(--text) 4%,transparent) 50%,
+    color-mix(in srgb,var(--up) 9%,transparent) 66%,
+    color-mix(in srgb,var(--up) 26%,transparent) 100%);
+  border:1px solid var(--hair)}
+.oew-lad-mk{position:absolute;top:22px;bottom:30px;width:3px;border-radius:2px;transform:translateX(-50%)}
+.oew-lad-mk.floor{background:var(--down)}
+.oew-lad-mk.ceil{background:var(--up)}
+.oew-lad-mk.flip{background:var(--oew-accent);width:0;border-left:2px dashed var(--oew-accent)}
+.oew-lad-mk.magnet{background:var(--orange);width:2px}
+.oew-lad-lbl{position:absolute;bottom:4px;transform:translateX(-50%);text-align:center;white-space:nowrap}
+.oew-lad-lbl .v{font-size:12px;font-weight:700;display:block}
+.oew-lad-lbl .k{font-size:9.5px;color:var(--muted);display:block}
+.oew-lad-spot{position:absolute;top:0;transform:translateX(-50%);text-align:center;white-space:nowrap}
+.oew-lad-spot .v{font-size:13px;font-weight:700;display:block}
+.oew-lad-spot .k{font-size:9px;color:var(--muted);display:block}
+.oew-lad-dot{position:absolute;top:calc(50% - 6px);width:12px;height:12px;border-radius:50%;background:var(--text);
+  transform:translateX(-50%);border:2px solid var(--panel);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--text) 40%,transparent)}
+@media (max-width:640px){.oew-lad{display:none}}
+.oew-lvl{display:grid;gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:var(--r-ctl);overflow:hidden}
+.oew-lvrow{display:grid;grid-template-columns:auto 1fr auto auto;gap:var(--s3);align-items:center;
+  padding:9px var(--s3);background:var(--panel);font-size:12.5px}
+@media (max-width:640px){
+  .oew-lvrow{grid-template-columns:auto 1fr}
+  .oew-lvrow .oew-lv-pct,.oew-lvrow .oew-lv-px{grid-column:2;justify-self:start}
+}
+.oew-lv-sw{width:9px;height:9px;border-radius:2px;flex:none}
+.oew-lv-main .n{font-weight:650;display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap}
+.oew-lv-main .s{display:block;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+.oew-lv-pct{font-size:11.5px;color:var(--muted)}
+.oew-lv-px{font-size:14px;font-weight:700}
+.oew-reads{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s3)}
+@media (max-width:900px){.oew-reads{grid-template-columns:1fr}}
+.oew-rd-v{font-size:18px;font-weight:700;margin:2px 0 5px}
+.oew-rd-s{font-size:12px;color:var(--ink-2);line-height:1.45}
+.oew-metrics{display:flex;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s3)}
+.oew-mt{min-width:64px}
+.oew-mt .k{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;display:block}
+html[data-lang="zh"] .oew-mt .k{letter-spacing:.02em;text-transform:none}
+.oew-mt .v{font-size:14px;font-weight:700;display:block;margin-top:1px}
+.oew-shelf summary{cursor:pointer;font-size:12px;font-weight:650;color:var(--muted);padding:var(--s3) var(--s4);list-style:none}
+.oew-shelf summary::-webkit-details-marker{display:none}
+.oew-shelf summary::before{content:'▸ ';color:var(--oew-accent)}
+.oew-shelf[open] summary::before{content:'▾ '}
+.oew-shelf summary:hover{color:var(--text)}
+.oew-handoff{border:1px solid var(--hair);border-radius:var(--r-panel);
+  background:linear-gradient(100deg,color-mix(in srgb,var(--oew-accent) 11%,var(--panel)),var(--panel) 62%);
+  padding:var(--s4);display:flex;align-items:center;gap:var(--s4);flex-wrap:wrap}
+.oew-ho-t{font-size:14px;font-weight:700}
+.oew-ho-s{font-size:12px;color:var(--ink-2);margin-top:2px;max-width:56ch;line-height:1.45}
+.oew-cta{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:7px;background:var(--oew-accent);
+  color:#fff;border:none;border-radius:var(--r-ctl);padding:10px 17px;font:inherit;font-size:13px;font-weight:650;
+  cursor:pointer;text-decoration:none}
+.oew-cta:hover{filter:brightness(1.08)}
+@media (max-width:640px){.oew-cta{margin-left:0;width:100%;justify-content:center}}
+.oew-sec-h{display:flex;align-items:baseline;gap:var(--s2);margin:var(--s6) 0 var(--s3)}
+.oew-sec-h h2{font-size:12px;font-weight:700;margin:0;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+html[data-lang="zh"] .oew-sec-h h2{letter-spacing:.02em;text-transform:none;font-size:13px}
+@media (prefers-reduced-motion:reduce){
+  .oew *,.oew *::before,.oew *::after{animation:none !important;transition:none !important}
+}
+/* ═══════════════════════════════════════════ END REPRODUCED PRODUCTION CSS ═══ */
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   3 · NEW FOR W1 — §2/§3/§4/§5/§6 of W1_DESIGN_SPEC.md
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* §2 — Ticker search toolbar */
+.oew-tktoolbar{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s4)}
+.oew-tksearch{position:relative;flex:1 1 260px;max-width:400px}
+.oew-tksearch .mag{position:absolute;left:13px;top:50%;transform:translateY(-50%);
+  opacity:.55;font-size:14px;pointer-events:none;color:var(--muted)}
+.oew-tksearch input{width:100%;padding:10px 13px 10px 36px;border:1px solid var(--hair);
+  border-radius:var(--r-ctl);background:var(--tile);color:var(--text);
+  font-size:13.5px;font-family:var(--font-ui)}
+.oew-tksearch input::placeholder{color:var(--muted)}
+.oew-tksearch input:focus-visible{outline:2px solid var(--oew-accent);outline-offset:1px;
+  border-color:var(--oew-accent)}
+.oew-tksugg{position:absolute;top:112%;left:0;right:0;min-width:300px;background:var(--panel);
+  border:1px solid var(--hair);border-radius:var(--r-panel);
+  box-shadow:0 10px 30px rgba(0,0,0,.25);padding:6px;display:none;z-index:20;
+  max-height:340px;overflow-y:auto}
+.oew-tksugg.on{display:block}
+.oew-tksugg .row{display:flex;justify-content:space-between;gap:10px;padding:8px 11px;
+  cursor:pointer;border-radius:8px;align-items:center}
+.oew-tksugg .row:hover,.oew-tksugg .row.hl{background:var(--tile)}
+.oew-tksugg .row b{font-family:var(--font-mono);font-weight:700}
+.oew-tksugg .row .g{color:var(--ink-3);font-size:11.5px}
+.oew-tkhint{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.oew-tkhint kbd{font-family:var(--font-mono);border:1px solid var(--hair);border-radius:4px;
+  padding:1px 5px;background:var(--tile);font-size:10px}
+@media (max-width:560px){ .oew-tkhint{display:none} }
+
+/* §3 — the session filmstrip (ilx-family markup; production classes are shared
+   with templates/illus.css, reproduced narrowly here for the mockup). margin:0
+   is load-bearing — <figure> carries a 40px UA-stylesheet margin by default
+   (templates/illus.css:11 already resets it in production; reproduced here so
+   the mockup doesn't silently rely on a stylesheet it isn't linking). */
+.ilx{position:relative;display:block;width:100%;margin:0}
+.oew-film{height:64px;margin-bottom:2px}
+.oew-film svg{width:100%;height:100%;display:block;overflow:visible}
+.oew-film-track{stroke:var(--hair);stroke-width:1}
+.oew-film-closecap{stroke:var(--oew-stamp);stroke-width:1.5;opacity:.85}
+.oew-film-ink{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.oew-film-dot{fill:currentColor}
+.oew-film-tick{stroke:var(--oew-accent);stroke-width:1.2;opacity:.65}
+.oew-film-d{position:absolute;bottom:-15px;font-size:9.5px;color:var(--muted)}
+.oew-film-d0{left:0}.oew-film-d1{right:0}
+.oew-film-ev{position:absolute;top:0;left:var(--x);transform:translateX(-50%);width:16px;height:64px;cursor:help}
+.oew-film-ev i{position:absolute;top:8px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;
+  background:var(--oew-accent);opacity:0;transition:opacity .15s}
+.oew-film-ev:hover i,.oew-film-ev:focus-visible i{opacity:1}
+.oew-film-ev:focus-visible{outline:2px solid var(--oew-accent);outline-offset:1px;border-radius:3px}
+.oew-film-empty{position:absolute;top:50%;left:var(--s3);transform:translateY(-50%);
+  font-size:11.5px;color:var(--muted)}
+.oew-film-null .oew-film-track{stroke-dasharray:2 3}
+
+/* §4 — wall-persistence cross-check chip */
+.oew-wcheck{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:600;
+  margin-left:var(--s2);padding:2px 7px;border-radius:var(--r-pill);white-space:nowrap;cursor:help}
+.oew-wcheck-yes{color:var(--oew-accent);background:color-mix(in srgb, var(--oew-accent) 12%, transparent)}
+.oew-wcheck-no{color:var(--ink-3);background:var(--tile)}
+
+/* §5.2 — Rich or cheap fill-track */
+.oew-rich-track{display:inline-flex;gap:3px;align-items:center;cursor:help;margin-bottom:var(--s3)}
+.oew-rich-pip{width:34px;height:8px;border-radius:2px;background:color-mix(in srgb,var(--text) 13%,transparent)}
+.oew-rich-pip.on{background:var(--oew-accent)}
+.oew-rich-band{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;margin-left:var(--s3)}
+.oew-rich-building{font-size:11.5px;color:var(--muted);font-weight:600;padding:3px 9px;border:1px dashed var(--hair);
+  border-radius:var(--r-pill)}
+
+/* §5.2 — where positions built, diverging bars (sector-bar idiom, two columns) */
+.oew-pb{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:560px){.oew-pb{grid-template-columns:1fr;gap:var(--s4)}}
+.oew-pb-h{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:7px}
+html[data-lang="zh"] .oew-pb-h{letter-spacing:.02em;text-transform:none}
+.oew-pb-col{display:grid;gap:6px}
+.oew-pb-row{display:grid;grid-template-columns:48px 1fr 74px;gap:var(--s2);align-items:center;font-size:12px}
+.oew-pb-row .k{font-weight:700}
+.oew-pb-row .bar-track{position:relative;height:14px;background:color-mix(in srgb,var(--text) 7%,transparent);border-radius:3px;overflow:hidden}
+.oew-pb-row .bar{position:absolute;inset:0 auto 0 0;border-radius:3px;background:color-mix(in srgb,var(--oew-accent) 62%,transparent);min-width:2px}
+.oew-pb-row .bar.unwind{background:color-mix(in srgb,var(--muted) 55%,transparent)}
+.oew-pb-row .v{text-align:right;font-weight:650}
+.oew-pb-row .v.build{color:var(--oew-accent)}
+.oew-pb-pctile{margin-top:var(--s2);padding-top:var(--s2);border-top:1px solid var(--hair);font-size:11px;color:var(--ink-3)}
+
+/* §5.4 — .oew-notyet, the shared first-class empty-state shell */
+.oew-notyet{display:flex;align-items:center;gap:var(--s5);padding:var(--s2) 0}
+.oew-notyet-ghost{flex:none;width:96px;height:56px;border:1.5px dashed var(--hair);
+  border-radius:var(--r-ctl);background:
+    repeating-linear-gradient(135deg, var(--hair) 0 1px, transparent 1px 7px);
+  opacity:.55}
+.oew-notyet-cone{clip-path:polygon(0% 46%, 0% 54%, 100% 8%, 100% 92%)}
+.oew-notyet-bar{clip-path:polygon(0% 70%,22% 70%,22% 30%,44% 30%,44% 55%,66% 55%,66% 15%,88% 15%,88% 45%,100% 45%,100% 100%,0% 100%)}
+.oew-notyet-say{margin:0;font-size:12.5px;line-height:1.55;color:var(--ink-2);max-width:56ch}
+.oew-notyet-say em{color:var(--text);font-style:normal;font-weight:600}
+@media (max-width:560px){ .oew-notyet{flex-direction:column;align-items:flex-start;gap:var(--s3)} }
+
+/* §6 — declared-cap link */
+.oew-ph-more{font-size:11px;font-weight:600;color:var(--oew-accent);text-decoration:none;
+  white-space:nowrap;margin-left:auto}
+.oew-ph-more:hover{text-decoration:underline}
+.oew-ph-more:focus-visible{outline:2px solid var(--oew-accent);outline-offset:2px;border-radius:3px}
+
+/* coverage-gap note block (reuses .oew-empty typography, adds the receipt look) */
+.oew-pb-note{font-size:12.5px;color:var(--ink-2);line-height:1.55;padding:var(--s2) 0}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4 · NAV — a narrow, faithful-enough reproduction of the flyout ONLY (the rest
+   of navigation-refresh.css, 2394 lines, is unchanged; icons below are neutral
+   placeholders — the real glyphs are untouched by this design, only which row
+   carries which link changes).
+   ═══════════════════════════════════════════════════════════════════════════ */
+.topbar{display:flex;align-items:center;gap:20px;padding:12px 24px;border-bottom:1px solid var(--line);
+  background:var(--panel);position:relative;z-index:5;flex-wrap:wrap}
+.topbar .brand{font-weight:800;font-size:14px;letter-spacing:-.01em;flex:none}
+.topbar .nav-links{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.topbar .nav-link{font-size:12.5px;font-weight:600;color:var(--muted);padding:8px 10px;border-radius:8px;
+  text-decoration:none;white-space:nowrap;cursor:default}
+.topbar .nav-link.is-open{color:var(--text);background:var(--panel2)}
+.nav-search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;
+  padding:8px 12px;color:var(--muted);font-size:12px;flex:1 1 220px;max-width:320px;margin-left:auto}
+.nav-ctrls{display:flex;align-items:center;gap:10px;flex:none}
+.theme-switch{width:38px;height:22px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);
+  position:relative;cursor:pointer;appearance:none;padding:0}
+.theme-switch .knob{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--text);
+  transition:transform .15s}
+html[data-theme="light"] .theme-switch .knob{transform:translateX(16px)}
+.theme-switch .ic{display:none}
+.lang-toggle{display:flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:2px;
+  gap:2px;font-size:10.5px;font-weight:700;cursor:pointer;position:relative}
+.lang-toggle .opt{padding:4px 9px;border-radius:999px;color:var(--muted);position:relative;z-index:1}
+.lang-toggle .pill{position:absolute;top:2px;bottom:2px;left:2px;width:36px;border-radius:999px;
+  background:var(--panel2);transition:transform .15s}
+html[data-lang="zh"] .lang-toggle .pill{transform:translateX(36px)}
+html:not([data-lang="zh"]) .lang-toggle .en-opt{color:var(--text)}
+html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
+
+/* the flyout itself — shown EXPANDED for review (production: hover/click dropdown,
+   unchanged interaction model; only its contents are new) */
+.nav-fly-demo{padding:0 24px 24px}
+.nav-fly-demo .demo-note{font-size:11px;color:var(--muted);margin:0 0 10px;font-style:italic}
+.nav-fly{width:min(420px,100%);border:1px solid var(--line);border-radius:20px;background:var(--panel);
+  box-shadow:0 28px 72px rgba(0,0,0,.28),0 3px 10px rgba(0,0,0,.12);padding:13px}
+.nav-fly-trig{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;padding:10px 12px 14px;
+  border-bottom:1px solid var(--line);margin-bottom:8px}
+.nav-fly-ic{width:40px;height:40px;border-radius:11px;background:color-mix(in srgb,var(--oew-accent) 22%,var(--panel2));
+  display:grid;place-items:center;color:var(--oew-accent);font-size:16px;font-weight:800}
+.nav-fly-trig .t{font-size:13.5px;font-weight:700}
+.nav-fly-trig .d{font-size:11px;color:var(--muted);margin-top:2px}
+.nav-fly-row{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;padding:9px 8px;
+  border-radius:12px;cursor:default}
+.nav-fly-row:hover{background:var(--panel2)}
+.nav-fly-row .ic{width:40px;height:40px;border-radius:10px;background:var(--panel2);display:grid;place-items:center;
+  color:var(--muted);font-size:14px;font-weight:800}
+.nav-fly-row.featured .ic{background:color-mix(in srgb,var(--oew-accent) 18%,var(--panel2));color:var(--oew-accent)}
+.nav-fly-row .t{font-size:13px;font-weight:650;color:var(--text)}
+.nav-fly-row .d{font-size:11px;color:var(--muted);margin-top:1px}
+.nav-fly-leaving{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.nav-fly-leaving-h{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px}
+.nav-fly-leaving-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);padding:4px 8px}
+.nav-fly-leaving-row .strike{text-decoration:line-through;text-decoration-color:var(--line)}
+.nav-fly-leaving-row .go{margin-left:auto;color:var(--oew-accent);font-size:10.5px;font-weight:600}
+
+/* ═══ MOCKUP-ONLY chrome (never ships) ═══ */
+.mock-band{background:color-mix(in srgb,var(--warn) 10%,var(--bg));border-bottom:1px dashed color-mix(in srgb,var(--warn) 45%,var(--line));
+  padding:9px 24px;font-size:11.5px;color:var(--ink-2)}
+.mock-band b{color:var(--warn)}
+.mock-gallery{margin-top:56px;padding-top:28px;border-top:2px dashed var(--line)}
+.mock-gallery-h{font-size:16px;font-weight:800;margin:0 0 4px}
+.mock-gallery-s{font-size:12px;color:var(--muted);margin:0 0 22px}
+.mock-gallery-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s5)}
+@media (max-width:900px){.mock-gallery-grid{grid-template-columns:1fr}}
+.mock-card-label{font-size:11px;font-weight:700;color:var(--oew-accent);text-transform:uppercase;letter-spacing:.06em;
+  margin-bottom:8px}
+</style>
+</head>
+<body class="page-options">
+
+<div class="mock-band">
+  <b>DESIGN MOCKUP</b> — <span class="l-en">not a live page; no network requests. Toggle theme/lang with the controls in the topbar. Scroll down for the empty/degraded-state gallery and the gex.html placement crop.</span>
+  <span class="l-zh"><b>设计原型</b> — 非上线页面，无网络请求。使用顶部控件切换主题/语言。下滑查看空状态/降级状态图集与 gex.html 位置截图。</span>
+</div>
+
+<nav class="topbar">
+  <span class="brand">MASTERMINDX</span>
+  <div class="nav-links">
+    <span class="nav-link">United States ▾</span>
+    <span class="nav-link is-open">Options & Flow ▾</span>
+    <span class="nav-link">China ▾</span>
+    <span class="nav-link">Hong Kong ▾</span>
+    <span class="nav-link">Research ▾</span>
+  </div>
+  <div class="nav-search"><span>⌕</span><span class="l-en">Search any stock, ETF…</span><span class="l-zh">搜索任意股票、ETF…</span></div>
+  <div class="nav-ctrls">
+    <button class="theme-switch" id="mockThemeBtn" aria-label="Toggle dark / light mode"><span class="knob"></span></button>
+    <div class="lang-toggle" id="mockLangBtn" role="group" aria-label="Language">
+      <span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span>
+    </div>
+  </div>
+</nav>
+
+<div class="nav-fly-demo">
+  <p class="demo-note"><span class="l-en">↓ the "Options & Flow" flyout, shown expanded for review — §1 of the spec. Production interaction (hover/click open) is unchanged; only the contents below are new.</span>
+    <span class="l-zh">↓ "期权与资金流"下拉菜单，为便于审阅而展开显示 — 对应规格 §1。生产环境的交互方式（悬停/点击展开）不变，仅以下内容为新增。</span></p>
+  <div class="nav-fly">
+    <div class="nav-fly-trig">
+      <span class="nav-fly-ic">⌁</span>
+      <div><div class="t"><span class="l-en">Options & Flow</span><span class="l-zh">期权与资金流</span></div>
+        <div class="d"><span class="l-en">Workspace · desk · flow tracker · dark pool</span><span class="l-zh">工作台 · 期权台 · 资金流追踪 · 暗池</span></div></div>
+    </div>
+    <div class="nav-fly-row featured">
+      <span class="ic">⌁</span>
+      <div><div class="t"><span class="l-en">Options — the workspace</span><span class="l-zh">期权工作台</span></div>
+        <div class="d"><span class="l-en">Daily Brief · Scanner · Ticker · Leaders</span><span class="l-zh">每日简报 · 筛选 · 个股 · 领头股</span></div></div>
+    </div>
+    <div class="nav-fly-row">
+      <span class="ic">▦</span>
+      <div><div class="t"><span class="l-en">Options Desk</span><span class="l-zh">期权台</span></div>
+        <div class="d"><span class="l-en">Instrument bench — charts, walls, vol surface</span><span class="l-zh">工具台 — 图表、墙位、波动率曲面</span></div></div>
+    </div>
+    <div class="nav-fly-row">
+      <span class="ic">▦</span>
+      <div><div class="t"><span class="l-en">Intraday Flow Tracker</span><span class="l-zh">盘中资金流追踪</span></div>
+        <div class="d"><span class="l-en">Volume durability · RVOL · VWAP · ~options flow</span><span class="l-zh">量持续性 · RVOL · VWAP · ~期权资金</span></div></div>
+    </div>
+    <div class="nav-fly-row">
+      <span class="ic">◐</span>
+      <div><div class="t"><span class="l-en">Dark Pool Desk</span><span class="l-zh">场外暗池台</span></div>
+        <div class="d"><span class="l-en">Off-exchange volume · short ratio · ATS venues</span><span class="l-zh">场外成交量 · 融券比率 · ATS场所</span></div></div>
+    </div>
+    <div class="nav-fly-row">
+      <span class="ic">≋</span>
+      <div><div class="t"><span class="l-en">Market Structure</span><span class="l-zh">市场结构</span></div>
+        <div class="d"><span class="l-en">GEX regime · machine flows · dispersion</span><span class="l-zh">做市商制度 · 机器资金 · 离散度</span></div></div>
+    </div>
+    <div class="nav-fly-leaving">
+      <div class="nav-fly-leaving-h"><span class="l-en">No longer linked here — URLs stay live forever, with their existing banner</span><span class="l-zh">此处不再链接 — 网址永久保留，并带有原有横幅提示</span></div>
+      <div class="nav-fly-leaving-row"><span class="strike">Options Screener</span><span class="go">→ Scanner mode</span></div>
+      <div class="nav-fly-leaving-row"><span class="strike">US Options Flow</span><span class="go">→ Brief mode</span></div>
+      <div class="nav-fly-leaving-row"><span class="strike">Flow Leaders</span><span class="go">→ Leaders mode</span></div>
+    </div>
+  </div>
+  <p class="demo-note" style="margin-top:12px"><span class="l-en">Daily Movers relocates to United States → right after "Stock Dashboard" (not re-drawn here — see §1.3 of the spec for the one-line diff).</span>
+    <span class="l-zh">"每日异动"迁移至"美国"分组 → 紧跟"股票仪表盘"之后（此处未重复绘制 — 详见规格 §1.3 的单行差异）。</span></p>
+</div>
+
+<div class="oew">
+<div class="oew-wrap">
+
+<!-- ══════════ PERSISTENT CHROME (unchanged by W1 — reproduced for context) ══════════ -->
+<header class="oew-chrome">
+  <div class="oew-idrow">
+    <h1 class="oew-title">
+      <span class="l-en">Options</span><span class="l-zh">期权工作台</span>
+      <span class="sub">
+        <span class="l-en">One workspace for the settled close — brief, scanner, per-name, leaders.</span>
+        <span class="l-zh">收盘后的统一工作台 — 简报、筛选、个股、领头股。</span>
+      </span>
+    </h1>
+  </div>
+  <div class="oew-receipt">
+    <div class="oew-stampblock">
+      <div class="oew-stamp-k"><span class="l-en">Session closed</span><span class="l-zh">收盘场次</span></div>
+      <div class="oew-stamp-date mono">2026-07-30</div>
+      <div class="oew-stamp-closed"><span class="l-en">Thursday · closed 16:00 ET</span><span class="l-zh">周四 · 美东 16:00 收盘</span></div>
+      <div class="oew-stamp-rows">
+        <div class="oew-stamp-row"><span class="k"><span class="l-en">Positions counted</span><span class="l-zh">持仓统计</span></span><span class="v brass mono">2026-07-29 EOD</span></div>
+        <div class="oew-stamp-row"><span class="k"><span class="l-en">Names covered</span><span class="l-zh">覆盖标的</span></span><span class="v mono">403 / 431</span></div>
+        <div class="oew-stamp-row"><span class="k"><span class="l-en">Data quality</span><span class="l-zh">数据质量</span></span><span class="v"><span class="l-en">Complete</span><span class="l-zh">完整</span></span></div>
+      </div>
+    </div>
+    <div class="oew-console">
+      <div class="oew-console-grid">
+        <div class="oew-read"><div class="oew-read-k"><span class="oew-eyebrow"><span class="l-en">Whole market</span><span class="l-zh">整体市场</span></span><span class="oew-vetted" role="img">✓</span></div>
+          <div class="oew-read-v"><span class="l-en">Jumpy</span><span class="l-zh">剧烈</span></div>
+          <div class="oew-pips"><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip"></i><i class="oew-pip"></i></div>
+          <div class="oew-read-n">3/5</div></div>
+        <div class="oew-read"><div class="oew-read-k"><span class="oew-eyebrow"><span class="l-en">S&amp;P dealers</span><span class="l-zh">标普做市商</span></span></div>
+          <div class="oew-read-v"><span class="l-en">Short gamma</span><span class="l-zh">空头Gamma</span></div>
+          <div class="oew-pips"><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip"></i></div>
+          <div class="oew-read-n">−$8.1B</div></div>
+        <div class="oew-read"><div class="oew-read-k"><span class="oew-eyebrow"><span class="l-en">Today's tape</span><span class="l-zh">今日盘面</span></span></div>
+          <div class="oew-read-v"><span class="l-en">Two-sided</span><span class="l-zh">双向</span></div>
+          <div class="oew-pips"><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip"></i><i class="oew-pip"></i><i class="oew-pip"></i></div>
+          <div class="oew-read-n">2/5</div></div>
+        <div class="oew-read"><div class="oew-read-k"><span class="oew-eyebrow"><span class="l-en">Same-day bets</span><span class="l-zh">当日到期押注</span></span></div>
+          <div class="oew-read-v"><span class="l-en">Elevated</span><span class="l-zh">偏高</span></div>
+          <div class="oew-pips"><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip on"></i><i class="oew-pip"></i><i class="oew-pip"></i></div>
+          <div class="oew-read-n">41%</div></div>
+      </div>
+    </div>
+  </div>
+  <!-- persistent chrome, whole-market stance — pre-existing, unchanged by W1, out of the
+       §0.13 verdict-law ruling's file scope (WORKSPACE_DESIGN_SPEC.md-owned). Left as-is. -->
+  <div class="oew-nofuse">
+    <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
+    <span><span class="l-en">Four readings, shown side by side and never averaged into one score.</span><span class="l-zh">四项读数并列呈现，不会合成单一评分。</span></span>
+  </div>
+  <div class="oew-closeline" style="--oew-cov:93.5%" role="img">
+    <span class="oew-cov-tick"></span>
+    <span class="oew-cov-label"><span class="l-en">covered <b class="mono">403</b>/<span class="mono">431</span> names</span><span class="l-zh">已覆盖 <b class="mono">403</b>/<span class="mono">431</span> 个标的</span></span>
+  </div>
+  <nav class="oew-tabs" role="tablist" aria-label="Options workspace modes">
+    <button class="oew-tab" role="tab" aria-selected="false"><span class="l-en">Daily Brief</span><span class="l-zh">每日简报</span></button>
+    <button class="oew-tab" role="tab" aria-selected="false"><span class="l-en">Scanner</span><span class="l-zh">筛选</span><span class="cnt mono">403</span></button>
+    <button class="oew-tab" role="tab" aria-selected="true"><span class="l-en">Ticker</span><span class="l-zh">个股</span><span class="cnt mono">SPY</span></button>
+    <button class="oew-tab" role="tab" aria-selected="false"><span class="l-en">Leaders</span><span class="l-zh">领头股</span><span class="cnt mono">25</span></button>
+  </nav>
+</header>
+
+<!-- ══════════════════════════ TICKER MODE — the W1 build ══════════════════════════ -->
+<section class="oew-mode active" id="mode-ticker">
+
+  <!-- §2 — search toolbar (new, static sibling of the render target) -->
+  <div class="oew-tktoolbar">
+    <div class="oew-tksearch">
+      <span class="mag" aria-hidden="true">⌕</span>
+      <input id="oew-tk-q" type="text" autocomplete="off" aria-label="Look up a ticker" aria-expanded="true" role="combobox"
+        placeholder="Look up a ticker — SPY, NVDA, TSLA…" data-ph-zh="查询代码 — SPY、NVDA、TSLA…" value="SP">
+      <div class="oew-tksugg on" id="oew-tk-sugg">
+        <div class="row hl"><span><b>SPY</b> <span class="g">SPDR S&amp;P 500 ETF</span></span><span class="g">Jumpy · −8.1bn</span></div>
+        <div class="row"><span><b>SPX</b> <span class="g">S&amp;P 500 Index</span></span><span class="g">Jumpy · −9.4bn</span></div>
+        <div class="row"><span><b>SPGI</b> <span class="g">S&amp;P Global</span></span><span class="g">Calm · +0.3bn</span></div>
+      </div>
+    </div>
+    <span class="oew-tkhint"><span class="l-en">press <kbd>/</kbd> to search</span><span class="l-zh">按 <kbd>/</kbd> 搜索</span></span>
+  </div>
+
+  <div id="oew-tk-body">
+
+  <!-- name header — UNCHANGED existing panel -->
+  <div class="oew-panel"><div class="oew-pbody">
+    <div class="oew-tk-head">
+      <div><div class="oew-tk-sym mono">SPY</div><div class="oew-tk-name"><span class="l-en">SPDR S&amp;P 500 ETF Trust</span><span class="l-zh">SPDR 标普500 ETF</span></div></div>
+      <div class="oew-tk-px"><span class="k"><span class="l-en">Last close</span><span class="l-zh">最新收盘</span></span><span class="v mono">741.69</span></div>
+    </div>
+    <h3 class="oew-tk-regime"><span class="l-en">Jumpy — moves get amplified</span><span class="l-zh">剧烈 — 波动被放大</span></h3>
+    <p class="oew-tk-say"><span class="l-en">Dealer hedging adds to moves today — swings and air-pockets run bigger than usual.</span><span class="l-zh">今日做市商对冲会加剧波动 — 摆动与急跌幅度大于平常。</span></p>
+    <div class="oew-ic-foot" data-verdict-surface style="margin-top:12px">
+      <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
+      <span class="oew-ic-em"><span class="l-en">expected tomorrow</span><span class="l-zh">明日预期区间</span> <b class="mono">735.03–748.35</b> <span class="mono">±0.90%</span></span>
+    </div>
+  </div></div>
+
+  <!-- §3.5 NEW — How the day traded (filmstrip) -->
+  <div class="oew-panel">
+    <div class="oew-phead"><h2 class="oew-ph-title"><span class="l-en">How the day traded</span><span class="l-zh">今日如何交易</span></h2></div>
+    <div class="oew-pbody">
+      <figure class="ilx oew-film" role="img" aria-label="Session premium arrival, 3 structure events" style="color:var(--oew-accent)">
+        <svg viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">
+          <line class="oew-film-track" x1="0" y1="32" x2="560" y2="32"/>
+          <line class="oew-film-closecap" x1="558" y1="12" x2="558" y2="52"/>
+          <path class="oew-film-ink" d="M2 40 L60 39 L120 34 L180 30 L211 27 L260 22 L320 18 L380 15 L420 20 L460 16 L520 13 L557 11"/>
+          <circle class="oew-film-dot" cx="557" cy="11" r="3"/>
+          <line class="oew-film-tick" x1="211" y1="6" x2="211" y2="58"/>
+          <line class="oew-film-tick" x1="380" y1="6" x2="380" y2="58"/>
+          <line class="oew-film-tick" x1="460" y1="6" x2="460" y2="58"/>
+        </svg>
+        <span class="oew-film-d oew-film-d0 mono">09:30</span>
+        <span class="oew-film-d oew-film-d1 mono">16:00</span>
+        <span class="oew-film-ev" style="--x:37.7%" tabindex="0" role="note" data-tip-en="price crossed the gamma flip level" data-tip-zh="价格穿越 gamma 翻转价位" aria-label="price crossed the gamma flip level"><i></i></span>
+        <span class="oew-film-ev" style="--x:67.9%" tabindex="0" role="note" data-tip-en="premium changed hands faster than the rest of the day" data-tip-zh="权利金成交节奏明显快于当天其余时段" aria-label="premium burst"><i></i></span>
+        <span class="oew-film-ev" style="--x:82.1%" tabindex="0" role="note" data-tip-en="price crossed the gamma flip level" data-tip-zh="价格穿越 gamma 翻转价位" aria-label="flip cross"><i></i></span>
+      </figure>
+    </div>
+    <div class="oew-pfoot">
+      <span><span class="l-en">Premium built steadily in one direction and stayed. Crossed the flip twice, closed above it.</span><span class="l-zh">权利金全天单向累积并维持。穿越翻转位两次，收于其上方。</span></span>
+      <span class="oew-asof mono">2026-07-30</span>
+    </div>
+  </div>
+
+  <!-- The map — UNCHANGED rows, ENHANCED with §4 wall-check chips -->
+  <div class="oew-panel">
+    <div class="oew-phead">
+      <h2 class="oew-ph-title"><span class="l-en">The map — where dealer hedging sits</span><span class="l-zh">地图 — 做市商对冲所在位置</span></h2>
+      <div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button">?</span></div>
+    </div>
+    <div class="oew-pbody">
+      <div class="oew-lad" aria-hidden="true">
+        <div class="oew-lad-band"></div>
+        <span class="oew-lad-mk floor" style="left:8%"></span>
+        <span class="oew-lad-mk magnet" style="left:52%"></span>
+        <span class="oew-lad-mk flip" style="left:64%"></span>
+        <span class="oew-lad-mk ceil" style="left:92%"></span>
+        <span class="oew-lad-dot" style="left:58%"></span>
+        <span class="oew-lad-spot" style="left:58%"><span class="v mono">741.69</span><span class="k"><span class="l-en">last close</span><span class="l-zh">最新收盘</span></span></span>
+        <span class="oew-lad-lbl" style="left:8%"><span class="v mono">740</span><span class="k"><span class="l-en">floor</span><span class="l-zh">下方墙</span></span></span>
+        <span class="oew-lad-lbl" style="left:52%"><span class="v mono">745</span><span class="k"><span class="l-en">magnet</span><span class="l-zh">磁吸位</span></span></span>
+        <span class="oew-lad-lbl" style="left:64%"><span class="v mono">747</span><span class="k"><span class="l-en">flip</span><span class="l-zh">翻转位</span></span></span>
+        <span class="oew-lad-lbl" style="left:92%"><span class="v mono">760</span><span class="k"><span class="l-en">ceiling</span><span class="l-zh">上方墙</span></span></span>
+      </div>
+      <div class="oew-lvl">
+        <div class="oew-lvrow"><span class="oew-lv-sw" style="background:var(--up)"></span>
+          <div class="oew-lv-main"><span class="n"><span class="l-en">Ceiling — call wall</span><span class="l-zh">上方墙 — 看涨墙</span>
+            <span class="oew-wcheck oew-wcheck-yes" tabindex="0" data-tip-en="The open-interest wall (a signing-free contract count, independent of the dealer-gamma model) sits at the same strike as this dealer-gamma wall — two different measurements agree." data-tip-zh="未平仓量墙位（合约数量统计，独立于做市商模型）与该做市商Gamma墙位落在同一行权价 — 两种独立测算结果一致。">✓ <span class="l-en">confirmed by open interest</span><span class="l-zh">未平仓量印证</span></span></span>
+            <span class="s"><span class="l-en">Rallies tend to stall into this wall.</span><span class="l-zh">涨势往往在此墙位停滞。</span></span></div>
+          <span class="oew-lv-pct">Strong</span><span class="oew-lv-px mono">760.00</span></div>
+        <div class="oew-lvrow"><span class="oew-lv-sw" style="background:var(--oew-accent)"></span>
+          <div class="oew-lv-main"><span class="n"><span class="l-en">Flip — the regime line</span><span class="l-zh">翻转位 — 状态分界</span></span>
+            <span class="s"><span class="l-en">Calm above this line, jumpy below.</span><span class="l-zh">此线上方平静，下方剧烈。</span></span></div>
+          <span class="oew-lv-pct">—</span><span class="oew-lv-px mono">747.27</span></div>
+        <div class="oew-lvrow"><span class="oew-lv-sw" style="background:var(--orange)"></span>
+          <div class="oew-lv-main"><span class="n"><span class="l-en">Magnet — max pain</span><span class="l-zh">磁吸位 — 最大痛点</span></span>
+            <span class="s"><span class="l-en">On quiet days price drifts toward this level into expiry.</span><span class="l-zh">平静时价格临近到期时倾向于向此水位漂移。</span></span></div>
+          <span class="oew-lv-pct">Weak</span><span class="oew-lv-px mono">745.00</span></div>
+        <div class="oew-lvrow"><span class="oew-lv-sw" style="background:var(--down)"></span>
+          <div class="oew-lv-main"><span class="n"><span class="l-en">Floor — put wall</span><span class="l-zh">下方墙 — 看跌墙</span>
+            <span class="oew-wcheck oew-wcheck-no" tabindex="0" data-tip-en="The open-interest wall sits at a different strike ($735) than this dealer-gamma wall ($740). Two independent measurements, two different answers — worth knowing, not a contradiction to resolve." data-tip-zh="未平仓量墙位（$735）与该做市商Gamma墙位（$740）不在同一行权价 — 两种独立测算给出不同答案，值得留意，但并非需要解决的矛盾。"><span class="l-en">open interest disagrees</span><span class="l-zh">未平仓量不一致</span></span></span>
+            <span class="s"><span class="l-en">Sell-offs tend to slow into this wall.</span><span class="l-zh">抛售往往在此墙位放缓。</span></span></div>
+          <span class="oew-lv-pct">Strong</span><span class="oew-lv-px mono">740.00</span></div>
+      </div>
+    </div>
+    <div class="oew-pfoot">
+      <span><span class="l-en">Walls are measured from this close, so price always starts inside the band.</span><span class="l-zh">墙位以本次收盘计算，因此价格始终从区间内开始。</span></span>
+      <span class="oew-asof mono">2026-07-29</span>
+    </div>
+  </div>
+
+  <!-- §5.2 NEW — Rich or cheap? -->
+  <div class="oew-panel">
+    <div class="oew-phead">
+      <h2 class="oew-ph-title"><span class="l-en">Rich or cheap?</span><span class="l-zh">偏贵还是偏便宜？</span></h2>
+      <div class="oew-ph-right"><span class="oew-help" tabindex="0" role="button" data-tip-en="Where today's 30-day implied volatility sits versus this name's own recent daily readings. This is a SHORT window (about 40 trading days) — not a full-year IV rank. A young or thin window is flagged, not hidden." data-tip-zh="今日30日隐含波动率相对该标的近期每日读数的位置。这是一个较短窗口（约40个交易日）— 并非完整一年的隐波分位。窗口较短或较薄时会明确标注，而非隐藏。">?</span></div>
+    </div>
+    <div class="oew-pbody">
+      <div class="oew-rich-track" role="img" tabindex="0" data-tip-en="43rd percentile of the last 37 trading sessions on file for this name." data-tip-zh="该标的近37个交易日记录中的第43百分位。">
+        <i class="oew-rich-pip on"></i><i class="oew-rich-pip on"></i><i class="oew-rich-pip"></i><i class="oew-rich-pip"></i><i class="oew-rich-pip"></i>
+        <span class="oew-rich-band"><span class="l-en">Normal</span><span class="l-zh">正常</span></span>
+      </div>
+      <p class="oew-tk-say">
+        <span class="l-en">Options on SPY cost more than <b class="mono">43%</b> of the last <b class="mono">37</b> sessions we have on file.</span>
+        <span class="l-zh">SPY 期权价格高于我们记录的近 <b class="mono">37</b> 个交易日中的 <b class="mono">43%</b>。</span>
+      </p>
+    </div>
+    <div class="oew-pfoot">
+      <span><span class="l-en">Still building toward a full year of history — read this as a rough placement, not a settled rank.</span><span class="l-zh">仍在积累完整一年的历史 — 请视为粗略定位，而非确定分位。</span></span>
+      <span class="oew-asof mono">2026-07-29</span>
+    </div>
+  </div>
+
+  <!-- §5.2 NEW — Where positions built -->
+  <div class="oew-panel">
+    <div class="oew-phead">
+      <h2 class="oew-ph-title"><span class="l-en">Where positions built</span><span class="l-zh">仓位在何处建立</span></h2>
+      <span class="oew-ph-sub"><span class="l-en">open-interest change between the last two chain snapshots</span><span class="l-zh">最近两次期权链快照之间的未平仓量变化</span></span>
+    </div>
+    <div class="oew-pbody">
+      <div class="oew-pb">
+        <div class="oew-pb-col">
+          <div class="oew-pb-h"><span class="l-en">Built</span><span class="l-zh">新增</span></div>
+          <div class="oew-pb-row"><span class="k mono">525P</span><span class="bar-track"><span class="bar" style="width:100%"></span></span><span class="v build mono">+196,512</span></div>
+          <div class="oew-pb-row"><span class="k mono">750C</span><span class="bar-track"><span class="bar" style="width:44%"></span></span><span class="v build mono">+86,210</span></div>
+          <div class="oew-pb-row"><span class="k mono">700P</span><span class="bar-track"><span class="bar" style="width:22%"></span></span><span class="v build mono">+42,880</span></div>
+        </div>
+        <div class="oew-pb-col">
+          <div class="oew-pb-h"><span class="l-en">Unwound</span><span class="l-zh">平仓</span></div>
+          <div class="oew-pb-row"><span class="k mono">660P</span><span class="bar-track"><span class="bar unwind" style="width:100%"></span></span><span class="v mono">−18,624</span></div>
+          <div class="oew-pb-row"><span class="k mono">780C</span><span class="bar-track"><span class="bar unwind" style="width:61%"></span></span><span class="v mono">−11,340</span></div>
+          <div class="oew-pb-row"><span class="k mono">715P</span><span class="bar-track"><span class="bar unwind" style="width:38%"></span></span><span class="v mono">−7,050</span></div>
+        </div>
+      </div>
+      <div class="oew-pb-pctile"><span class="l-en">Also on file: today's net dealer gamma sits above <b class="mono">72%</b> of this name's own stored daily readings (34 trading days, 2026-06-11 to 2026-07-29).</span>
+        <span class="l-zh">另有记录：今日净做市商 Gamma 高于该标的自身 <b class="mono">72%</b> 的每日记录（34个交易日，2026-06-11 至 2026-07-29）。</span></div>
+    </div>
+    <div class="oew-pfoot">
+      <span><span class="l-en">A count of contracts opened or closed, not a direction call.</span><span class="l-zh">合约新增或平仓的计数，并非方向判断。</span></span>
+      <span class="oew-asof mono">2026-07-29</span>
+    </div>
+  </div>
+
+  <!-- three reads — UNCHANGED existing panel -->
+  <div class="oew-reads">
+    <div class="oew-panel"><div class="oew-pbody">
+      <span class="oew-eyebrow"><span class="l-en">The tape — calm or jumpy?</span><span class="l-zh">盘面 — 平静还是剧烈？</span></span>
+      <div class="oew-rd-v"><span class="l-en">Jumpy</span><span class="l-zh">剧烈</span></div>
+      <p class="oew-rd-s"><span class="l-en">Dealer hedging adds to moves — swings and air-pockets run bigger than usual.</span><span class="l-zh">做市商对冲会加剧波动 — 摆动与急跌幅度大于平常。</span></p>
+    </div></div>
+    <div class="oew-panel"><div class="oew-pbody">
+      <span class="oew-eyebrow"><span class="l-en">The mood — what options cost</span><span class="l-zh">情绪 — 期权价格</span></span>
+      <div class="oew-rd-v mono">14.2% IV</div>
+      <p class="oew-rd-s"><span class="l-en">What the options market charges for 30-day cover on this name.</span><span class="l-zh">期权市场对该标的 30 天保护的定价。</span></p>
+    </div></div>
+    <div class="oew-panel"><div class="oew-pbody">
+      <span class="oew-eyebrow"><span class="l-en">The lean — direction by time window</span><span class="l-zh">倾向 — 分时间窗口的方向</span></span>
+      <div class="oew-rd-v"><span class="l-en">Put-heavy</span><span class="l-zh">认沽偏重</span></div>
+      <p class="oew-rd-s"><span class="l-en">Weaker evidence than the tape read — treat this as context, not a signal.</span><span class="l-zh">证据强度弱于盘面读数 — 应作为背景参考，而非信号。</span></p>
+    </div></div>
+  </div>
+
+  <!-- §5.3 NEW — What the move is worth (empty state) -->
+  <div class="oew-panel">
+    <div class="oew-phead"><h2 class="oew-ph-title"><span class="l-en">What the move is worth</span><span class="l-zh">本次波幅是否值得</span></h2></div>
+    <div class="oew-pbody">
+      <div class="oew-notyet">
+        <div class="oew-notyet-ghost oew-notyet-cone" aria-hidden="true"></div>
+        <p class="oew-notyet-say">
+          <span class="l-en">The expected move itself is in the header above. What we don't yet track is whether that number is usually <em>right</em> — we're building a nightly record that grades each session's implied move against what actually happened.</span>
+          <span class="l-zh">预期波幅本身已显示在上方页头。我们尚未跟踪的是这个数字是否<em>通常准确</em> — 正在建立一份每夜记录，用以对照隐含波幅与实际结果。</span>
+        </p>
+      </div>
+    </div>
+    <div class="oew-pfoot">
+      <span><span class="l-en">Not measured yet — nothing here to act on.</span><span class="l-zh">尚未测量 — 此处暂无可据以行动的内容。</span></span>
+    </div>
+  </div>
+
+  <!-- §5.3 NEW — Expiration pressure (empty state) -->
+  <div class="oew-panel">
+    <div class="oew-phead"><h2 class="oew-ph-title"><span class="l-en">Expiration pressure</span><span class="l-zh">到期压力</span></h2></div>
+    <div class="oew-pbody">
+      <div class="oew-notyet">
+        <div class="oew-notyet-ghost oew-notyet-bar" aria-hidden="true"></div>
+        <p class="oew-notyet-say">
+          <span class="l-en">Not measured yet. The idea: how much of this name's open interest rolls off in the next few days, and whether that concentration tends to feed on itself into expiry.</span>
+          <span class="l-zh">尚未测量。设想中的内容：该标的近几日到期的未平仓量占比，以及该集中度在到期前是否会自我强化。</span>
+        </p>
+      </div>
+    </div>
+    <div class="oew-pfoot">
+      <span><span class="l-en">Not measured yet — nothing here to act on.</span><span class="l-zh">尚未测量 — 此处暂无可据以行动的内容。</span></span>
+    </div>
+  </div>
+
+  <!-- measured flow — UNCHANGED existing panel. Its stance chip predates this wave and
+       is outside the §0.13 verdict-law ruling's file scope (base-spec-owned, §5.1 item 9
+       "unchanged") — flagged as a follow-up in the ruling, not fixed here. -->
+  <div class="oew-panel">
+    <div class="oew-phead">
+      <h2 class="oew-ph-title"><span class="l-en">Today's measured flow</span><span class="l-zh">今日实测资金</span></h2>
+      <span class="oew-ph-sub"><span class="l-en">what actually traded, before any interpretation</span><span class="l-zh">实际成交数据，未经任何解读</span></span>
+    </div>
+    <div class="oew-pbody"><div class="oew-metrics">
+      <div class="oew-mt"><span class="k"><span class="l-en">Premium</span><span class="l-zh">权利金</span></span><span class="v mono">$1.2B</span></div>
+      <div class="oew-mt"><span class="k"><span class="l-en">Same-day</span><span class="l-zh">当日到期</span></span><span class="v mono">38%</span></div>
+      <div class="oew-mt"><span class="k"><span class="l-en">Put/call</span><span class="l-zh">认沽认购比</span></span><span class="v mono">1.59x</span></div>
+      <div class="oew-mt"><span class="k"><span class="l-en">Net premium</span><span class="l-zh">净权利金</span></span><span class="v mono">−$44M</span></div>
+    </div></div>
+    <div class="oew-pfoot">
+      <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
+      <span><span class="l-en">Size is a solid read. Direction comes from tick-rule signing and is not reliable enough to read on its own.</span><span class="l-zh">规模数据可靠。方向数据来自 tick 规则签署，其本身不足以作为方向依据。</span></span>
+      <span class="oew-asof mono">2026-07-29</span>
+    </div>
+  </div>
+
+  <!-- raw shelf — UNCHANGED existing panel -->
+  <details class="oew-panel oew-shelf">
+    <summary><span class="l-en">Under the hood — the raw options structure</span><span class="l-zh">底层数据 — 原始期权结构</span></summary>
+    <div class="oew-pbody" style="border-top:1px solid var(--hair)">
+      <div class="oew-metrics">
+        <div class="oew-mt"><span class="k"><span class="l-en">Net gamma</span><span class="l-zh">净 Gamma</span></span><span class="v mono">−8.05B</span></div>
+        <div class="oew-mt"><span class="k"><span class="l-en">Strikes</span><span class="l-zh">行权价数</span></span><span class="v mono">6,252</span></div>
+        <div class="oew-mt"><span class="k"><span class="l-en">Max pain</span><span class="l-zh">最大痛点</span></span><span class="v mono">745</span></div>
+      </div>
+    </div>
+  </details>
+
+  <!-- Terminal handoff — UNCHANGED existing panel -->
+  <div class="oew-handoff">
+    <div><div class="oew-ho-t"><span class="l-en">These levels are frozen until tomorrow</span><span class="l-zh">这些水位在明日前保持不变</span></div>
+      <div class="oew-ho-s"><span class="l-en">Walls move during the session as positions change. To watch this name's structure update live, open it in the Terminal.</span><span class="l-zh">墙位会随持仓变化在盘中移动。若要实时观察该标的结构的更新，请在交易终端中打开。</span></div></div>
+    <a class="oew-cta" href="#" onclick="return false"><span class="l-en">Open SPY live in Terminal</span><span class="l-zh">在交易终端打开 SPY 实时行情</span> ↗</a>
+  </div>
+
+  </div><!-- /oew-tk-body -->
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     STATES GALLERY — mockup-only, demonstrates empty/degraded states and the
+     gex.html placement. Not part of the live page; clearly demarcated.
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="mock-gallery">
+  <h2 class="mock-gallery-h"><span class="l-en">Component states — review gallery</span><span class="l-zh">组件状态 — 审阅图集</span></h2>
+  <p class="mock-gallery-s"><span class="l-en">Not part of the live page. Demonstrates degraded/coverage-gap states named in §5/§0.18 of the spec, plus the gex.html detail-head placement (§3.5).</span>
+    <span class="l-zh">非上线页面内容。展示规格 §5/§0.18 所述的降级/覆盖缺口状态，以及 gex.html 详情页头的放置位置（§3.5）。</span></p>
+
+  <div class="mock-gallery-grid">
+
+    <div>
+      <div class="mock-card-label"><span class="l-en">Filmstrip — no intraday record</span><span class="l-zh">交易带 — 无盘中记录</span></div>
+      <div class="oew-panel">
+        <div class="oew-phead"><h2 class="oew-ph-title"><span class="l-en">How the day traded</span><span class="l-zh">今日如何交易</span></h2></div>
+        <div class="oew-pbody">
+          <figure class="ilx oew-film oew-film-null" role="img" aria-label="No intraday record for this session" style="color:var(--oew-accent)">
+            <svg viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">
+              <line class="oew-film-track" x1="0" y1="32" x2="560" y2="32"/>
+              <line class="oew-film-closecap" x1="558" y1="12" x2="558" y2="52"/>
+            </svg>
+            <span class="oew-film-empty"><span class="l-en">No intraday record for this session</span><span class="l-zh">本交易日没有盘中记录</span></span>
+          </figure>
+        </div>
+        <div class="oew-pfoot">
+          <span><span class="l-en">Nothing to read from this session's tape.</span><span class="l-zh">本场次盘中数据无可读内容。</span></span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="mock-card-label"><span class="l-en">Where positions built — coverage gap</span><span class="l-zh">仓位建立位置 — 覆盖缺口</span></div>
+      <div class="oew-panel">
+        <div class="oew-phead"><h2 class="oew-ph-title"><span class="l-en">Where positions built</span><span class="l-zh">仓位在何处建立</span></h2></div>
+        <div class="oew-pbody">
+          <p class="oew-pb-note"><span class="l-en">The 2026-07-02 and 2026-07-07 chain snapshots report identical open interest for this name, so no change can be measured yet.</span>
+            <span class="l-zh">2026-07-02 与 2026-07-07 两次期权链快照对该标的报告的未平仓量相同，因此暂无法测算变化。</span></p>
+        </div>
+        <div class="oew-pfoot">
+          <span><span class="l-en">The payload's own composed sentence — never a generic "no data."</span><span class="l-zh">此为数据本身生成的语句 — 而非通用的"无数据"提示。</span></span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="mock-card-label"><span class="l-en">Rich or cheap — young / low-confidence window</span><span class="l-zh">偏贵偏便宜 — 历史尚短 / 置信度低</span></div>
+      <div class="oew-panel">
+        <div class="oew-phead"><h2 class="oew-ph-title"><span class="l-en">Rich or cheap?</span><span class="l-zh">偏贵还是偏便宜？</span></h2></div>
+        <div class="oew-pbody">
+          <div class="oew-rich-track" role="img">
+            <span class="oew-rich-building"><span class="l-en">history building — 14d</span><span class="l-zh">历史积累中 — 14天</span></span>
+          </div>
+          <p class="oew-tk-say"><span class="l-en">Too few sessions on file yet to place today's cost against this name's own history.</span>
+            <span class="l-zh">该标的历史记录尚短，暂无法将今日价格与自身历史比较。</span></p>
+        </div>
+        <div class="oew-pfoot">
+          <span><span class="l-en">A short window still shows honestly — never hidden, never rounded up to look complete.</span><span class="l-zh">窗口虽短仍如实显示 — 绝不隐藏，也不为显得完整而夸大。</span></span></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="mock-card-label"><span class="l-en">gex.html detail head — filmstrip placement</span><span class="l-zh">gex.html 详情页头 — 交易带位置</span></div>
+      <div class="oew-panel" style="border-color:var(--hair)">
+        <div class="oew-pbody" style="padding-bottom:6px">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+            <span style="font-family:var(--font-mono);font-weight:800;font-size:22px">SPY</span>
+            <span style="font-size:12px;color:var(--muted)"><span class="l-en">Jumpy — moves get amplified</span><span class="l-zh">剧烈 — 波动被放大</span></span>
+          </div>
+          <p style="font-size:11.5px;color:var(--ink-2);margin:0 0 10px">
+            <span class="l-en">(gex.html's existing verdict hero — unchanged)</span><span class="l-zh">（gex.html 现有结论卡片 — 不变）</span></p>
+        </div>
+        <div class="oew-pbody" style="padding-top:0">
+          <figure class="ilx oew-film" style="color:var(--oew-accent);height:64px">
+            <svg viewBox="0 0 560 64" preserveAspectRatio="none" aria-hidden="true">
+              <line class="oew-film-track" x1="0" y1="32" x2="560" y2="32"/>
+              <line class="oew-film-closecap" x1="558" y1="12" x2="558" y2="52"/>
+              <path class="oew-film-ink" d="M2 40 L60 39 L120 34 L180 30 L211 27 L260 22 L320 18 L380 15 L420 20 L460 16 L520 13 L557 11"/>
+              <circle class="oew-film-dot" cx="557" cy="11" r="3"/>
+              <line class="oew-film-tick" x1="211" y1="6" x2="211" y2="58"/>
+              <line class="oew-film-tick" x1="380" y1="6" x2="380" y2="58"/>
+            </svg>
+            <span class="oew-film-d oew-film-d0 mono">09:30</span>
+            <span class="oew-film-d oew-film-d1 mono">16:00</span>
+          </figure>
+          <p style="font-size:11px;color:var(--muted);margin:14px 0 0"><span class="l-en">↓ the price ladder (#3341's signature) continues below, unchanged</span><span class="l-zh">↓ 下方为价位图（#3341 的既有标志性设计），保持不变</span></p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /oew-wrap -->
+</div><!-- /oew -->
+
+<script>
+(function(){
+'use strict';
+var themeBtn = document.getElementById('mockThemeBtn');
+var langBtn = document.getElementById('mockLangBtn');
+themeBtn.addEventListener('click', function(){
+  var cur = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', cur);
+  try{ localStorage.setItem('mock_theme', cur); }catch(e){}
+});
+langBtn.addEventListener('click', function(){
+  var cur = document.documentElement.getAttribute('data-lang') === 'zh' ? '' : 'zh';
+  if(cur) document.documentElement.setAttribute('data-lang', cur); else document.documentElement.removeAttribute('data-lang');
+  try{ localStorage.setItem('mock_lang', cur); }catch(e){}
+});
+
+/* §2 search — same predicate/keyboard model as gex.html's #gx-q, reproduced
+   against a tiny fixture manifest so the mockup is self-contained. */
+var M = [
+  {key:'SPY', en:'SPDR S&P 500 ETF', regime:'Jumpy', net:'-8.1'},
+  {key:'SPX', en:'S&P 500 Index', regime:'Jumpy', net:'-9.4'},
+  {key:'SPGI', en:'S&P Global', regime:'Calm', net:'+0.3'},
+  {key:'NVDA', en:'NVIDIA Corp', regime:'Jumpy', net:'-3.2'},
+  {key:'QQQ', en:'Invesco QQQ Trust', regime:'Jumpy', net:'-4.5'}
+];
+var inp = document.getElementById('oew-tk-q'), sg = document.getElementById('oew-tk-sugg');
+var hl = 0, shown = M.filter(function(m){ return m.key.indexOf('SP') >= 0; });
+function render(q){
+  q = (q || '').trim().toUpperCase();
+  shown = M.filter(function(m){ return !q || m.key.indexOf(q) === 0 || m.key.indexOf(q) >= 0 || m.en.toUpperCase().indexOf(q) >= 0; }).slice(0, 12);
+  if(!shown.length){ sg.classList.remove('on'); return; }
+  sg.innerHTML = shown.map(function(m, i){
+    return '<div class="row' + (i === hl ? ' hl' : '') + '" data-key="' + m.key + '"><span><b>' + m.key + '</b> <span class="g">' + m.en + '</span></span><span class="g">' + m.regime + ' · ' + m.net + 'bn</span></div>';
+  }).join('');
+  sg.classList.add('on');
+  sg.querySelectorAll('.row').forEach(function(r){
+    r.addEventListener('mousedown', function(e){ e.preventDefault(); inp.value = r.getAttribute('data-key'); sg.classList.remove('on'); });
+  });
+}
+inp.addEventListener('input', function(){ hl = -1; render(inp.value); });
+inp.addEventListener('focus', function(){ render(inp.value); });
+inp.addEventListener('blur', function(){ setTimeout(function(){ sg.classList.remove('on'); }, 150); });
+inp.addEventListener('keydown', function(e){
+  if(!sg.classList.contains('on')) return;
+  if(e.key === 'ArrowDown'){ hl = Math.min(shown.length - 1, hl + 1); render(inp.value); e.preventDefault(); }
+  else if(e.key === 'ArrowUp'){ hl = Math.max(0, hl - 1); render(inp.value); e.preventDefault(); }
+  else if(e.key === 'Enter'){ var pick = shown[hl < 0 ? 0 : hl]; if(pick){ inp.value = pick.key; sg.classList.remove('on'); } }
+  else if(e.key === 'Escape'){ sg.classList.remove('on'); }
+});
+document.addEventListener('keydown', function(e){
+  if(e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')){
+    inp.focus(); e.preventDefault();
+  }
+});
+})();
+</script>
+</body>
+</html>
