@@ -161,6 +161,16 @@ def test_public_theme_imports_are_declared_public():
         )
 
 
+def test_public_product_motion_assets_are_declared_public():
+    """Anonymous product stories must receive their shared choreography."""
+    public_exact = set(POLICY["public"]["exact"])
+    caddy_public = _caddy_public_exclusions()
+    for asset in ("/scene-motion.css", "/scene-motion.js"):
+        assert asset in public_exact
+        assert asset in caddy_public
+        assert (SITE / asset.lstrip("/")).is_file()
+
+
 def test_runtime_artifact_exemption_stays_honest():
     """The existence exemption is only legitimate for genuinely gitignored
     planes. If site/live/ ever became a committed tree, the exemption would
