@@ -829,8 +829,9 @@ html[data-lang="zh"] .oew-sec-h h2{ letter-spacing:.02em; text-transform:none; f
   </div>
 
   <!-- the non-fused sentence — the design's central honesty statement -->
+  <!-- NO stance chip (§0.16): this banner rides all four mode tabs, so a chip here
+       repeated the read's verdict everywhere. The sentence is the valuable half. -->
   <div class="oew-nofuse">
-    <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
     <span>
       <span class="l-en">Four readings, shown side by side and never averaged into one score. Three say calm, one says crowded.</span>
       <span class="l-zh">四项读数并列呈现，不会合成单一评分。其中三项偏平静，一项偏拥挤。</span>
@@ -1421,7 +1422,8 @@ PAYLOAD.ticker = function(){
     + '<h3 class="oew-tk-regime"><span class="l-en">Jumpy — moves get amplified</span><span class="l-zh">剧烈 — 波动被放大</span></h3>'
     + '<p class="oew-tk-say"><span class="l-en">Dealer hedging is trading <b>with</b> the market today, so swings run larger and sell-offs can pick up speed. Don’t assume dips get bought back the way they do on calm days.</span>'
       + '<span class="l-zh">今日做市商对冲与市场<b>同向</b>，因此波动更大，抛售可能加速。不要想当然地认为回调会像平静日那样被买回。</span></p>'
-    + '<div class="oew-ic-foot" style="margin-top:12px">'
+    /* The read's ONE decision element — the page's sole data-verdict-surface (§0.16). */
+    + '<div class="oew-ic-foot" data-verdict-surface style="margin-top:12px">'
       + '<span class="oew-stance st-protect"><span class="l-en">Protect gains</span><span class="l-zh">保护利润</span></span>'
       + '<span class="oew-ic-em"><span class="l-en">expected tomorrow</span><span class="l-zh">明日预期区间</span> <b class="mono">731.84–746.02</b> <span class="mono">±0.96%</span></span>'
       + '<span class="tone"><span class="l-en">jumpy for 9 sessions</span><span class="l-zh">已剧烈 9 个交易日</span></span>'
@@ -1497,8 +1499,8 @@ PAYLOAD.ticker = function(){
       + mt('Premium','权利金','$2.6B') + mt('Same-day','当日到期','65%') + mt('New positions','新建仓位','948')
       + mt('Put/call','认沽认购比','1.29x') + mt('Net premium','净权利金','+$480M')
     + '</div></div>'
+    /* NO stance chip (§0.16) — a fact about the reading, not a second verdict on it. */
     + '<div class="oew-pfoot">'
-      + '<span class="oew-stance st-watch"><span class="l-en">Watch — don’t chase</span><span class="l-zh">观察—勿追高</span></span>'
       + '<span><span class="l-en">Size is a solid read. Direction is approximate — the signing rule recovers true buy/sell about 4 times in 5.</span>'
         + '<span class="l-zh">规模数据可靠。方向为近似值 — 签署规则约五次中有四次能还原真实买卖方向。</span></span>'
       + '<span class="oew-asof mono">2026-07-24</span>'

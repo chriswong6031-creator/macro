@@ -598,14 +598,68 @@ def test_no_banned_vocabulary_in_visible_copy(page):
 
 
 def test_every_panel_answers_so_what_do_i_do(page):
-    """Doctrine Law 1 — a panel with a footer must carry a stance."""
+    """Doctrine Law 1 — every footer answers "so what do I do?" in plain words.
+
+    A stance CHIP is one way to answer; a plain caveat sentence is another, and both
+    satisfy Law 1.  What Law 1 forbids is a footer that answers nothing.  The older
+    form of this test asserted the chip specifically ("a panel with a footer must
+    carry a stance"), which read `WORKSPACE_DESIGN_SPEC.md` §16's per-panel word
+    budget as a per-panel MANDATE.  It is a CEILING — a panel with zero chips meets
+    it exactly as well as one with a single chip (W1_DESIGN_SPEC §0.13).  Reading it
+    as a mandate is what stacked the identical "Watch — don't chase" chip down the
+    page until it read as boilerplate; the count is governed by the verdict law
+    instead (see test_exactly_one_verdict_surface).
+    """
     ws = _workspace(page)
     foots = re.findall(r'<div class="oew-pfoot">(.*?)</div>', ws, re.S)
     assert len(foots) >= 4
-    stanceless = [f for f in foots if "oew-stance" not in f]
-    # The index-levels footer is a shared caveat under four cards that each carry
-    # their own stance chip — the only sanctioned exception.
-    assert len(stanceless) <= 1, f"{len(stanceless)} panels ship without a stance"
+    # A chip, or enough prose to be a real sentence in both languages. The bar is
+    # deliberately low — it catches a footer that says NOTHING, not one that chose
+    # prose over a chip.
+    mute = [f for f in foots if "oew-stance" not in f and len(_visible_text(f).split()) < 6]
+    assert not mute, f"{len(mute)} footers answer nothing: {mute}"
+
+
+def test_exactly_one_verdict_surface(page):
+    """`OIP_MASTERPLAN.md` §3 verdict law, its machine-checkable half: *"one
+    `data-verdict-surface` marker per page; CI greps for duplicates."*
+
+    The marker sits on the Ticker name-header's `.oew-ic-foot` row (placement pinned
+    by `W1_DESIGN_SPEC.md` §5.1).  That row is inside `renderTicker()`'s JS string,
+    so this greps the WHOLE page, not `_workspace()` — the script block sits after
+    the `<!-- /oew -->` boundary.  Comments are stripped first so that prose ABOUT
+    the marker never counts as a second one.
+    """
+    stripped = re.sub(r"<!--.*?-->", " ", page, flags=re.S)
+    assert stripped.count("data-verdict-surface") == 1, (
+        f"{stripped.count('data-verdict-surface')} verdict surfaces — the law allows one"
+    )
+
+
+def test_chrome_caveats_keep_the_sentence_and_drop_the_chip(page):
+    """The two pre-existing chrome spots state their caveat and cast no second verdict.
+
+    Both duplicated the read's decision element: `.oew-nofuse` rides the persistent
+    header, so its chip repeated on all four mode tabs, and "Today's measured flow"
+    sits below the name header that already carries the marker.  The SENTENCES are
+    the valuable half — they survive verbatim in both languages, with the as-of stamp
+    where there is one.  (Follow-up flagged by `W1_DESIGN_SPEC.md` §0.13.)
+    """
+    nofuse = re.search(r'<div class="oew-nofuse">(.*?)</div>', page, re.S)
+    assert nofuse, "the non-fusion banner is gone"
+    banner = nofuse.group(1)
+    assert "oew-stance" not in banner, "non-fusion banner still ships a stance chip"
+    assert "Four readings, shown side by side and never averaged into one score." in banner
+    assert "四项读数并列呈现，不会合成单一评分。" in banner
+
+    # "Today's measured flow" is JS-built, so assert against the script source.
+    flow = re.search(r"Today’s measured flow(.*?)oew-shelf", page, re.S)
+    assert flow, "the measured-flow panel is gone"
+    seg = flow.group(1)
+    assert "oew-stance" not in seg, "measured-flow footer still ships a stance chip"
+    assert "Size is a solid read." in seg
+    assert "规模数据可靠。" in seg
+    assert "oew-asof" in seg, "measured-flow footer lost its as-of stamp"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

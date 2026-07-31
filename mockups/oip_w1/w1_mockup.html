@@ -555,8 +555,9 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
   </div>
   <!-- persistent chrome, whole-market stance — pre-existing, unchanged by W1, out of the
        §0.13 verdict-law ruling's file scope (WORKSPACE_DESIGN_SPEC.md-owned). Left as-is. -->
+  <!-- NO stance chip (§0.13 follow-up, resolved): this banner rides all four mode tabs,
+       so a chip here repeated the read's verdict everywhere. The sentence stays. -->
   <div class="oew-nofuse">
-    <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
     <span><span class="l-en">Four readings, shown side by side and never averaged into one score.</span><span class="l-zh">四项读数并列呈现，不会合成单一评分。</span></span>
   </div>
   <div class="oew-closeline" style="--oew-cov:93.5%" role="img">
@@ -784,9 +785,11 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
     </div>
   </div>
 
-  <!-- measured flow — UNCHANGED existing panel. Its stance chip predates this wave and
-       is outside the §0.13 verdict-law ruling's file scope (base-spec-owned, §5.1 item 9
-       "unchanged") — flagged as a follow-up in the ruling, not fixed here. -->
+  <!-- measured flow — existing panel. Its stance chip predated this wave and sat outside
+       the §0.13 verdict-law ruling's file scope (base-spec-owned, §5.1 item 9 "unchanged"),
+       so the ruling flagged it as a follow-up rather than fixing it here. That follow-up is
+       now RESOLVED in the base spec (WORKSPACE_DESIGN_SPEC §0.16): the chip is gone, the
+       sentence and as-of stay. The panel is otherwise unchanged. -->
   <div class="oew-panel">
     <div class="oew-phead">
       <h2 class="oew-ph-title"><span class="l-en">Today's measured flow</span><span class="l-zh">今日实测资金</span></h2>
@@ -799,7 +802,6 @@ html[data-lang="zh"] .lang-toggle .zh-opt{color:var(--text)}
       <div class="oew-mt"><span class="k"><span class="l-en">Net premium</span><span class="l-zh">净权利金</span></span><span class="v mono">−$44M</span></div>
     </div></div>
     <div class="oew-pfoot">
-      <span class="oew-stance st-watch"><span class="l-en">Watch — don't chase</span><span class="l-zh">观察—勿追高</span></span>
       <span><span class="l-en">Size is a solid read. Direction comes from tick-rule signing and is not reliable enough to read on its own.</span><span class="l-zh">规模数据可靠。方向数据来自 tick 规则签署，其本身不足以作为方向依据。</span></span>
       <span class="oew-asof mono">2026-07-29</span>
     </div>
