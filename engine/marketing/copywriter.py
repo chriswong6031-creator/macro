@@ -2071,8 +2071,8 @@ def repeated_sentence_violations(
     for sentence in mine:
         if sentence in seen:
             return [
-                f"repeated sentence: this account already posted \"{sentence[:80]}\" "
-                f"— say it a different way or drop the post"
+                f"repeated sentence: this account already posted "
+                f"\"{sentence[:80]}\". Say it a different way or drop the post"
             ]
     return []
 

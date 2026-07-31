@@ -1371,7 +1371,21 @@ def test_no_rule_message_carries_a_dash_tell():
     samples += cw.validate_copy_v2("Four up, near highs.", _ctx(type="macro"))
     samples += cw.validate_copy_v2(
         "$X held 122.", _ctx(shape="one_liner"), headline="A headline")
-    assert len(samples) >= 11, "every rule must have contributed a message"
+    # The 2026-07-30 voice laws. This test enumerates rules BY HAND, so a new
+    # guard is invisible to it until someone adds a line: all seven below were
+    # unchecked when they landed, and repeated_sentence_violations really did
+    # ship an em dash.
+    samples += cw.machine_risk_violations("I'm wrong below 33.8. Historical, not a guarantee.")
+    samples += cw.motto_violations("37.1 is my trigger, 30.9 proves me wrong.")
+    samples += cw.process_list_violations("1. I write it down. 2. I note the fact.")
+    samples += cw.number_soup_violations("held 1 then 2 then 3 then 4 then 5")
+    samples += cw.no_reaction_violations("That's the whole observation.")
+    samples += cw.repeated_sentence_violations(
+        "I am not fighting this one here.", ["I am not fighting this one here."])
+    samples += cw.stock_closer_violations(
+        "$X ripped. Strength worth respecting, not chasing.", [])
+    samples += cw.queued_voice_violations("I'm wrong below 33.8.", "signal")
+    assert len(samples) >= 19, "every rule must have contributed a message"
     for msg in samples:
         for ch in _DASHES:
             assert ch not in msg, f"dash tell in a rule message: {msg!r}"
