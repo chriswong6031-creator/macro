@@ -4,7 +4,7 @@
  "index": "Nasdaq-100",
  "benchmark": "QQQ",
  "benchmark_label": "Nasdaq-100 (QQQ)",
- "as_of": "2026-07-30",
+ "as_of": "2026-07-31",
  "source": "finviz idx_ndx + QQQ holdings; curated tech subsectors + amalgamations",
  "subsectors": {
   "semiconductors": {
@@ -32,24 +32,24 @@
      "name": "Intel Corp"
     },
     {
-     "ticker": "TXN",
-     "name": "Texas Instruments Inc"
-    },
-    {
      "ticker": "ARM",
      "name": "Arm Holdings Plc ADR"
+    },
+    {
+     "ticker": "TXN",
+     "name": "Texas Instruments Inc"
     },
     {
      "ticker": "ADI",
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "QCOM",
-     "name": "Qualcomm Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "QCOM",
+     "name": "Qualcomm Inc"
     },
     {
      "ticker": "MPWR",
@@ -106,12 +106,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "WDAY",
-     "name": "Workday Inc"
-    },
-    {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
+    },
+    {
+     "ticker": "WDAY",
+     "name": "Workday Inc"
     },
     {
      "ticker": "MSTR",
@@ -294,12 +294,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "WDC",
-     "name": "Western Digital Corp"
-    },
-    {
      "ticker": "SNDK",
      "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
     }
    ]
   },
@@ -386,24 +386,24 @@
      "name": "Intel Corp"
     },
     {
-     "ticker": "TXN",
-     "name": "Texas Instruments Inc"
-    },
-    {
      "ticker": "ARM",
      "name": "Arm Holdings Plc ADR"
+    },
+    {
+     "ticker": "TXN",
+     "name": "Texas Instruments Inc"
     },
     {
      "ticker": "ADI",
      "name": "Analog Devices Inc"
     },
     {
-     "ticker": "QCOM",
-     "name": "Qualcomm Inc"
-    },
-    {
      "ticker": "MRVL",
      "name": "Marvell Technology Inc"
+    },
+    {
+     "ticker": "QCOM",
+     "name": "Qualcomm Inc"
     },
     {
      "ticker": "MPWR",
@@ -466,12 +466,12 @@
      "name": "Seagate Technology Holdings Plc"
     },
     {
-     "ticker": "WDC",
-     "name": "Western Digital Corp"
-    },
-    {
      "ticker": "SNDK",
      "name": "Sandisk Corp"
+    },
+    {
+     "ticker": "WDC",
+     "name": "Western Digital Corp"
     }
    ]
   },
@@ -548,12 +548,12 @@
      "name": "Paychex Inc"
     },
     {
-     "ticker": "WDAY",
-     "name": "Workday Inc"
-    },
-    {
      "ticker": "ROP",
      "name": "Roper Technologies Inc"
+    },
+    {
+     "ticker": "WDAY",
+     "name": "Workday Inc"
     },
     {
      "ticker": "MSTR",
