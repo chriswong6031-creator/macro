@@ -224,6 +224,18 @@ class TestNarrativeHeatThresholds:
         assert rec is not None
         assert rec["level"] is None, f"Down basket should give level=None; got {rec['level']!r}"
 
+    def test_level_uses_the_same_precision_as_published_rel20(self):
+        """A value displayed as zero must not contradict the inclusive zero gate."""
+        tickers = ["A", "B", "C"]
+        # Two gentle winners and one offsetting loser produce ~-0.004pp over
+        # 20 days with 2/3 breadth: published rel20 rounds to -0.0.
+        mult = {"A": 1.001, "B": 1.001, "C": 0.997994}
+        rec = self._run_heat("b_rounding", tickers, mult, bench_gain=0.00)
+        assert rec is not None
+        assert rec["rel20"] == 0.0
+        assert rec["breadth"] >= 0.50
+        assert rec["level"] == "WARMING"
+
     def test_hot_rel20_but_low_breadth_gives_warming_or_none(self):
         """rel20 >= 5pp but breadth < 60% -> not HOT."""
         from engine.china_narrative_tags import narrative_heat
