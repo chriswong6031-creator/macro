@@ -43,7 +43,10 @@ def main() -> int:
 
     # Telemetry roll-up (never-raise; runs after governor)
     try:
-        from engine.marketing.telemetry import write_rollup
+        from engine.marketing.telemetry import (
+            unconfirmed_sends as _unconfirmed_sends,
+            write_rollup,
+        )
         s = write_rollup(root=None)
         if s.get("error"):
             print(
@@ -51,12 +54,22 @@ def main() -> int:
                 file=sys.stderr,
             )
         else:
+            # THE INVERSE SCAN, run alongside the roll-up (2026-07-31).
+            # `orphans` above walks METRICS ROWS and flags any with no outbox
+            # item — "we measured something we did not plan". The opposite and
+            # more damaging case, "we marked it posted and it never went out",
+            # produces no metrics row to walk, so nothing was looking for it.
+            # `posted` means Buffer ACCEPTED the item, not that it reached X.
+            _uc = _unconfirmed_sends(root=None)
             print(
                 f"marketing_telemetry: ok — "
                 f"posts={s.get('n_posts', 0)} "
                 f"rows={s.get('n_rows', 0)} "
                 f"orphans={s.get('n_orphans', 0)} "
-                f"unmeasured={s.get('n_unmeasured', 0)}"
+                f"unmeasured={s.get('n_unmeasured', 0)} "
+                f"send_confirmed={_uc.get('confirmed', 0)}/{_uc.get('posted', 0)} "
+                f"unconfirmed={_uc.get('unconfirmed', 0)} "
+                f"pending={_uc.get('pending', 0)}"
             )
     except Exception as exc:  # noqa: BLE001
         log.warning("build_marketing: telemetry write_rollup failed: %s", exc)

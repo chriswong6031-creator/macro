@@ -438,3 +438,109 @@ class TestBufferRateLimitIsNameable:
         line = next(ln for ln in out.splitlines() if "buffer-rate-limited" in ln)
         assert line.startswith("::warning title=marketing-buffer-rate-limited::")
         assert "ONE token" in line and "poller" in line
+
+
+class TestPostedIsNotProofItWentOut:
+    """`posted` means Buffer ACCEPTED the item, not that it reached X.
+
+    telemetry.join_provenance walks METRICS ROWS and flags any with no outbox
+    item (`orphans`) — "we measured something we did not plan". The opposite and
+    more damaging case, "we marked it posted and it never went out", produces no
+    metrics row to walk, so nothing was looking for it. One direction was guarded
+    because it once broke; the quiet half stayed open.
+
+    The join already existed and nothing performed it: `receipt.external_id` on
+    the posted transition is `remote_id` in post_metrics.jsonl. On the committed
+    ledgers 2026-07-31 it is 48 posted / 48 confirmed / 0 unconfirmed, so this
+    guards a live risk rather than reporting an active fire.
+    """
+
+    @staticmethod
+    def _root(tmp_path, *, ledger, metrics):
+        import json
+
+        d = tmp_path / "data" / "marketing" / "outbox"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "status_ledger.jsonl").write_text(
+            "\n".join(json.dumps(r) for r in ledger), encoding="utf-8")
+        (tmp_path / "data" / "marketing" / "post_metrics.jsonl").write_text(
+            "\n".join(json.dumps(r) for r in metrics), encoding="utf-8")
+        return tmp_path
+
+    @staticmethod
+    def _posted(item_id, external_id, at):
+        return {"id": item_id, "from": "posting", "to": "posted", "at": at,
+                "actor": "publisher", "note": "published",
+                "receipt": {"backend": "buffer", "external_id": external_id,
+                            "at": at, "booked_at": at}}
+
+    def test_a_post_with_real_metrics_is_confirmed(self, tmp_path):
+        from datetime import datetime, timezone
+
+        from engine.marketing.telemetry import unconfirmed_sends
+
+        root = self._root(
+            tmp_path,
+            ledger=[self._posted("ob-1", "buf-1", "2026-07-01T10:00:00Z")],
+            metrics=[{"remote_id": "buf-1", "metrics": {"impressions": 12}}])
+        out = unconfirmed_sends(root, now=datetime(2026, 7, 31, tzinfo=timezone.utc))
+        assert (out["posted"], out["confirmed"], out["unconfirmed"]) == (1, 1, 0)
+
+    def test_a_stale_post_with_no_metric_at_all_is_flagged(self, tmp_path, capsys):
+        from datetime import datetime, timezone
+
+        from engine.marketing.telemetry import unconfirmed_sends
+
+        root = self._root(
+            tmp_path,
+            ledger=[self._posted("ob-2", "buf-2", "2026-07-01T10:00:00Z")],
+            metrics=[])
+        out = unconfirmed_sends(root, now=datetime(2026, 7, 31, tzinfo=timezone.utc))
+        assert out["unconfirmed"] == 1
+        assert out["items"][0]["id"] == "ob-2"
+        line = capsys.readouterr().out
+        assert line.startswith("::warning title=marketing-unconfirmed-sends::")
+        assert "ACCEPTED" in line
+
+    def test_a_fresh_post_is_PENDING_not_a_fault(self, tmp_path, capsys):
+        """Buffer's analytics lag is hours. Flagging inside it would cry wolf
+        every single night on the posts that just went out."""
+        from datetime import datetime, timezone
+
+        from engine.marketing.telemetry import unconfirmed_sends
+
+        root = self._root(
+            tmp_path,
+            ledger=[self._posted("ob-3", "buf-3", "2026-07-31T09:00:00Z")],
+            metrics=[])
+        out = unconfirmed_sends(root, now=datetime(2026, 7, 31, 12, tzinfo=timezone.utc))
+        assert (out["pending"], out["unconfirmed"]) == (1, 0)
+        assert capsys.readouterr().out == ""
+
+    def test_a_polled_but_EMPTY_metrics_row_does_not_count_as_confirmation(self, tmp_path):
+        """An `ok` poll that returned no numbers is not evidence of a send."""
+        from datetime import datetime, timezone
+
+        from engine.marketing.telemetry import unconfirmed_sends
+
+        root = self._root(
+            tmp_path,
+            ledger=[self._posted("ob-4", "buf-4", "2026-07-01T10:00:00Z")],
+            metrics=[{"remote_id": "buf-4", "ok": True, "metrics": {}}])
+        out = unconfirmed_sends(root, now=datetime(2026, 7, 31, tzinfo=timezone.utc))
+        assert out["unconfirmed"] == 1
+
+    def test_it_never_raises_on_a_missing_ledger(self, tmp_path):
+        """Telemetry is never-raise; a missing file must not break the nightly."""
+        from engine.marketing.telemetry import unconfirmed_sends
+
+        out = unconfirmed_sends(tmp_path / "nope")
+        assert out["posted"] == 0 and out["unconfirmed"] == 0
+
+    def test_the_nightly_actually_runs_it(self):
+        """A scan nothing calls is the defect it was written to fix."""
+        import pathlib
+
+        src = pathlib.Path("scripts/build_marketing.py").read_text(encoding="utf-8")
+        assert "unconfirmed_sends" in src
+        assert "send_confirmed=" in src
