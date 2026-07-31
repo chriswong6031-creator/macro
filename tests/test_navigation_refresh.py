@@ -161,6 +161,15 @@ def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -
     assert "window.innerWidth > 900" in THEME_JS
 
 
+def test_mobile_ticker_input_does_not_trigger_ios_focus_zoom() -> None:
+    final_mobile_rules = REFRESH_CSS.rsplit("@media (max-width: 900px)", 1)[1]
+    assert "iOS Safari zooms the page" in final_mobile_rules
+    assert (
+        ".ticker-search .ticker-input { font-size: 16px; }"
+        in final_mobile_rules
+    )
+
+
 def test_right_edge_asset_flyouts_open_inward_without_desktop_overflow() -> None:
     assert (
         ".site-nav .nav-links > .nav-dd:nth-last-of-type(6) "
