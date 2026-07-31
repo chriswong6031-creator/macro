@@ -1,11 +1,12 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T00:26:44.872233+00:00",
-  "count": 422,
+  "generated_at": "2026-07-31T00:41:41.900955+00:00",
+  "count": 423,
   "institutions": [
     "BTIG",
     "Bank of America",
     "Blackrock",
+    "Cantor",
     "Citi",
     "Deutsche Bank",
     "Goldman Sachs",
@@ -51,6 +52,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 41,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hqvbpmk0nvg-0b267f",
+      "title": "Journal Summer July 26",
+      "institution": "Cantor",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T23:48:14Z",
+      "summary_points": [
+        "**Geopolitical Volatility Resurfaces**: Renewed Strait of Hormuz attacks reignite Middle East tensions, threatening energy markets and equity stability despite strong earnings-driven rallies (15% US equities, 24% EM outperformance).",
+        "**Fixed Income Fundamentals**: Bonds offer 4% yields (neutral allocation justified); sticky inflation erodes cash, making active portfolio construction critical amid crowded equity positioning.",
+        "**MyFutureFund Policy Gap**: Excludes self-employed professionals (business owners, consultants), creating significant retirement coverage weakness despite 800,000+ enrollments and €400m accumulated.",
+        "**Tax Inefficiency Risk**: Employer/State contributions capped at €80,000/year, diminishing scheme value for higher earners and excluding them from conventional pension tax relief.",
+        "**Personalized Retirement Planning Critical**: Standardized schemes like MyFutureFund cannot address all retirement needs; requires individualized strategy based on income, tax, family, and objectives."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 58,
       "language": "en",
       "needs_metadata": false
     },
