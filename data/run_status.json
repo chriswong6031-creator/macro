@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-31T00:53:42.267778+00:00",
+  "last_run": "2026-07-31T09:32:36.293553+00:00",
   "sources": {
     "cot": {
       "source": "cot",
@@ -348,59 +348,59 @@
     "china_macro": {
       "source": "china_macro",
       "status": "ok",
-      "rows": 2525,
-      "last_date": "2026-07-30",
+      "rows": 2526,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [
-        "frozen tail: rrr last=2025-05-07 age=449d"
+        "frozen tail: rrr last=2025-05-07 age=450d"
       ],
       "probed_at": null,
-      "elapsed_sec": 19.9,
-      "checked_at": "2026-07-30T09:10:23.475596+00:00"
+      "elapsed_sec": 16.8,
+      "checked_at": "2026-07-31T09:32:36.293594+00:00"
     },
     "china_prices": {
       "source": "china_prices",
       "status": "ok",
-      "rows": 3952,
-      "last_date": "2026-07-30",
+      "rows": 10240,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
       "elapsed_sec": 4.0,
-      "checked_at": "2026-07-30T09:10:23.475575+00:00"
+      "checked_at": "2026-07-31T09:32:36.293574+00:00"
     },
     "china_breadth": {
       "source": "china_breadth",
       "status": "ok",
       "rows": 703,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 7.9,
-      "checked_at": "2026-07-30T09:10:23.475601+00:00"
+      "elapsed_sec": 9.7,
+      "checked_at": "2026-07-31T09:32:36.293598+00:00"
     },
     "hk_prices": {
       "source": "hk_prices",
       "status": "ok",
-      "rows": 176,
-      "last_date": "2026-07-30",
+      "rows": 184,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.0,
-      "checked_at": "2026-07-30T09:10:23.475724+00:00"
+      "elapsed_sec": 0.9,
+      "checked_at": "2026-07-31T09:32:36.293694+00:00"
     },
     "hk_breadth": {
       "source": "hk_breadth",
       "status": "ok",
       "rows": 711,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 15.7,
-      "checked_at": "2026-07-30T09:10:23.475733+00:00"
+      "elapsed_sec": 14.5,
+      "checked_at": "2026-07-31T09:32:36.293702+00:00"
     },
     "smallcap_breadth": {
       "source": "smallcap_breadth",
@@ -461,12 +461,12 @@
       "source": "china_universe",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 230.9,
-      "checked_at": "2026-07-30T09:10:23.475610+00:00"
+      "elapsed_sec": 203.0,
+      "checked_at": "2026-07-31T09:32:36.293605+00:00"
     },
     "midcap_breadth": {
       "source": "midcap_breadth",
@@ -516,34 +516,34 @@
       "source": "china_margin",
       "status": "ok",
       "rows": 180,
-      "last_date": "2026-07-29",
+      "last_date": "2026-07-30",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 4.2,
-      "checked_at": "2026-07-30T09:10:23.475615+00:00"
+      "elapsed_sec": 3.2,
+      "checked_at": "2026-07-31T09:32:36.293609+00:00"
     },
     "china_connect": {
       "source": "china_connect",
       "status": "ok",
       "rows": 180,
-      "last_date": "2026-07-29",
+      "last_date": "2026-07-30",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.3,
-      "checked_at": "2026-07-30T09:10:23.475628+00:00"
+      "elapsed_sec": 2.1,
+      "checked_at": "2026-07-31T09:32:36.293620+00:00"
     },
     "china_flows": {
       "source": "china_flows",
       "status": "ok",
       "rows": 6,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 81.9,
-      "checked_at": "2026-07-30T09:10:23.475633+00:00"
+      "elapsed_sec": 85.9,
+      "checked_at": "2026-07-31T09:32:36.293624+00:00"
     },
     "china_credit": {
       "source": "china_credit",
@@ -553,19 +553,19 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 3.8,
-      "checked_at": "2026-07-30T09:10:23.475645+00:00"
+      "elapsed_sec": 3.4,
+      "checked_at": "2026-07-31T09:32:36.293631+00:00"
     },
     "hkma": {
       "source": "hkma",
-      "status": "ok",
-      "rows": 100,
-      "last_date": "2026-07-29",
-      "error": null,
+      "status": "failed",
+      "rows": 0,
+      "last_date": null,
+      "error": "ReadTimeout: HTTPSConnectionPool(host='api.hkma.gov.hk', port=443): Read timed out. (read timeout=40)",
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.6,
-      "checked_at": "2026-07-30T09:10:23.475737+00:00"
+      "elapsed_sec": 132.1,
+      "checked_at": "2026-07-31T09:32:36.293706+00:00"
     },
     "cboe_vix_futures": {
       "source": "cboe_vix_futures",
@@ -683,16 +683,16 @@
     "china_property": {
       "source": "china_property",
       "status": "ok",
-      "rows": 8055,
-      "last_date": "2026-07-30",
+      "rows": 8058,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [
-        "frozen tail: home_price last=2026-06-01 age=59d",
-        "frozen tail: climate last=2025-12-01 age=241d"
+        "frozen tail: home_price last=2026-06-01 age=60d",
+        "frozen tail: climate last=2025-12-01 age=242d"
       ],
       "probed_at": null,
-      "elapsed_sec": 13.7,
-      "checked_at": "2026-07-30T09:10:23.475654+00:00"
+      "elapsed_sec": 12.9,
+      "checked_at": "2026-07-31T09:32:36.293639+00:00"
     },
     "uncertainty_indices": {
       "source": "uncertainty_indices",
@@ -832,13 +832,13 @@
     "hk_property": {
       "source": "hk_property",
       "status": "ok",
-      "rows": 2342,
+      "rows": 2343,
       "last_date": "2026-07-27",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 4.8,
-      "checked_at": "2026-07-30T09:10:23.475769+00:00"
+      "elapsed_sec": 5.0,
+      "checked_at": "2026-07-31T09:32:36.293732+00:00"
     },
     "china_qvix": {
       "source": "china_qvix",
@@ -848,52 +848,52 @@
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 7.9,
-      "checked_at": "2026-07-30T09:10:23.475640+00:00"
+      "elapsed_sec": 19.8,
+      "checked_at": "2026-07-31T09:32:36.293627+00:00"
     },
     "hk_indices": {
       "source": "hk_indices",
       "status": "ok",
-      "rows": 1460,
-      "last_date": "2026-07-29",
-      "error": null,
-      "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 2.7,
-      "checked_at": "2026-07-30T09:10:23.475742+00:00"
-    },
-    "hk_ah_official": {
-      "source": "hk_ah_official",
-      "status": "ok",
-      "rows": 604,
+      "rows": 1461,
       "last_date": "2026-07-30",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 101.6,
-      "checked_at": "2026-07-30T09:10:23.475746+00:00"
+      "elapsed_sec": 3.1,
+      "checked_at": "2026-07-31T09:32:36.293709+00:00"
+    },
+    "hk_ah_official": {
+      "source": "hk_ah_official",
+      "status": "ok",
+      "rows": 605,
+      "last_date": "2026-07-31",
+      "error": null,
+      "notes": [],
+      "probed_at": null,
+      "elapsed_sec": 111.2,
+      "checked_at": "2026-07-31T09:32:36.293713+00:00"
     },
     "hk_connect_channels": {
       "source": "hk_connect_channels",
       "status": "ok",
-      "rows": 4895,
-      "last_date": "2026-07-29",
+      "rows": 4897,
+      "last_date": "2026-07-30",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 15.3,
-      "checked_at": "2026-07-30T09:10:23.475756+00:00"
+      "elapsed_sec": 15.0,
+      "checked_at": "2026-07-31T09:32:36.293721+00:00"
     },
     "hk_valuation": {
       "source": "hk_valuation",
       "status": "ok",
       "rows": 366,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 99.5,
-      "checked_at": "2026-07-30T09:10:23.475765+00:00"
+      "elapsed_sec": 95.1,
+      "checked_at": "2026-07-31T09:32:36.293728+00:00"
     },
     "hk_full_breadth": {
       "source": "hk_full_breadth",
@@ -903,19 +903,19 @@
       "error": "HK full main-board spot snapshot unavailable (Eastmoney flaky)",
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 38.4,
-      "checked_at": "2026-07-30T09:10:23.475774+00:00"
+      "elapsed_sec": 35.8,
+      "checked_at": "2026-07-31T09:32:36.293736+00:00"
     },
     "china_news": {
       "source": "china_news",
       "status": "ok",
       "rows": 5,
-      "last_date": "2026-07-29",
+      "last_date": "2026-07-30",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 42.7,
-      "checked_at": "2026-07-30T09:10:23.475683+00:00"
+      "elapsed_sec": 47.6,
+      "checked_at": "2026-07-31T09:32:36.293660+00:00"
     },
     "wikipedia_btc": {
       "source": "wikipedia_btc",
@@ -932,12 +932,12 @@
       "source": "hk_southbound_holdings",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-29",
+      "last_date": "2026-07-30",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 7.6,
-      "checked_at": "2026-07-30T09:10:23.475760+00:00"
+      "elapsed_sec": 4.4,
+      "checked_at": "2026-07-31T09:32:36.293724+00:00"
     },
     "farside": {
       "source": "farside",
@@ -1338,24 +1338,24 @@
     "china_pboc": {
       "source": "china_pboc",
       "status": "ok",
-      "rows": 8985,
-      "last_date": "2026-07-30",
+      "rows": 8987,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 21.1,
-      "checked_at": "2026-07-30T09:10:23.475659+00:00"
+      "elapsed_sec": 28.0,
+      "checked_at": "2026-07-31T09:32:36.293642+00:00"
     },
     "china_news_wire": {
       "source": "china_news_wire",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 3.8,
-      "checked_at": "2026-07-30T09:10:23.475688+00:00"
+      "elapsed_sec": 3.4,
+      "checked_at": "2026-07-31T09:32:36.293664+00:00"
     },
     "openfigi": {
       "source": "openfigi",
@@ -1382,46 +1382,46 @@
     "china_yield_spread": {
       "source": "china_yield_spread",
       "status": "ok",
-      "rows": 952,
-      "last_date": "2026-07-29",
-      "error": null,
-      "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 2.2,
-      "checked_at": "2026-07-30T09:10:23.475664+00:00"
-    },
-    "china_cgb_curve": {
-      "source": "china_cgb_curve",
-      "status": "ok",
-      "rows": 28,
-      "last_date": "2026-07-29",
-      "error": null,
-      "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 3.8,
-      "checked_at": "2026-07-30T09:10:23.475668+00:00"
-    },
-    "china_a_valuation": {
-      "source": "china_a_valuation",
-      "status": "ok",
-      "rows": 10460,
-      "last_date": "2026-07-29",
-      "error": null,
-      "notes": [],
-      "probed_at": null,
-      "elapsed_sec": 18.3,
-      "checked_at": "2026-07-30T09:10:23.475672+00:00"
-    },
-    "china_sectors": {
-      "source": "china_sectors",
-      "status": "ok",
-      "rows": 141007,
+      "rows": 953,
       "last_date": "2026-07-30",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 156.4,
-      "checked_at": "2026-07-30T09:10:23.475677+00:00"
+      "elapsed_sec": 2.9,
+      "checked_at": "2026-07-31T09:32:36.293646+00:00"
+    },
+    "china_cgb_curve": {
+      "source": "china_cgb_curve",
+      "status": "ok",
+      "rows": 29,
+      "last_date": "2026-07-30",
+      "error": null,
+      "notes": [],
+      "probed_at": null,
+      "elapsed_sec": 5.1,
+      "checked_at": "2026-07-31T09:32:36.293650+00:00"
+    },
+    "china_a_valuation": {
+      "source": "china_a_valuation",
+      "status": "ok",
+      "rows": 10462,
+      "last_date": "2026-07-30",
+      "error": null,
+      "notes": [],
+      "probed_at": null,
+      "elapsed_sec": 11.6,
+      "checked_at": "2026-07-31T09:32:36.293653+00:00"
+    },
+    "china_sectors": {
+      "source": "china_sectors",
+      "status": "ok",
+      "rows": 141038,
+      "last_date": "2026-07-31",
+      "error": null,
+      "notes": [],
+      "probed_at": null,
+      "elapsed_sec": 138.2,
+      "checked_at": "2026-07-31T09:32:36.293657+00:00"
     },
     "wiki_pageviews": {
       "source": "wiki_pageviews",
@@ -1437,147 +1437,147 @@
     "china_stocks": {
       "source": "china_stocks",
       "status": "ok",
-      "rows": 111723,
-      "last_date": "2026-07-30",
+      "rows": 166394,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 212.6,
-      "checked_at": "2026-07-30T09:10:23.475584+00:00"
+      "elapsed_sec": 213.4,
+      "checked_at": "2026-07-31T09:32:36.293581+00:00"
     },
     "hk_stocks": {
       "source": "hk_stocks",
       "status": "ok",
-      "rows": 3567,
-      "last_date": "2026-07-30",
+      "rows": 3724,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 27.8,
-      "checked_at": "2026-07-30T09:10:23.475729+00:00"
+      "elapsed_sec": 22.1,
+      "checked_at": "2026-07-31T09:32:36.293698+00:00"
     },
     "china_stocks_raw": {
       "source": "china_stocks_raw",
       "status": "ok",
-      "rows": 68075,
-      "last_date": "2026-07-30",
+      "rows": 90268,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 210.8,
-      "checked_at": "2026-07-30T09:10:23.475590+00:00"
+      "elapsed_sec": 209.4,
+      "checked_at": "2026-07-31T09:32:36.293586+00:00"
     },
     "china_tushare": {
       "source": "china_tushare",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 63.4,
-      "checked_at": "2026-07-30T09:10:23.475649+00:00"
+      "elapsed_sec": 49.9,
+      "checked_at": "2026-07-31T09:32:36.293635+00:00"
     },
     "china_official_corpora": {
       "source": "china_official_corpora",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 167.5,
-      "checked_at": "2026-07-30T09:10:23.475693+00:00"
+      "elapsed_sec": 156.0,
+      "checked_at": "2026-07-31T09:32:36.293668+00:00"
     },
     "china_margin_detail": {
       "source": "china_margin_detail",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 13.9,
-      "checked_at": "2026-07-30T09:10:23.475619+00:00"
+      "elapsed_sec": 11.2,
+      "checked_at": "2026-07-31T09:32:36.293613+00:00"
     },
     "china_lhb": {
       "source": "china_lhb",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 10.4,
-      "checked_at": "2026-07-30T09:10:23.475624+00:00"
+      "elapsed_sec": 9.4,
+      "checked_at": "2026-07-31T09:32:36.293616+00:00"
     },
     "hk_ah_panel": {
       "source": "hk_ah_panel",
       "status": "ok",
-      "rows": 5731,
-      "last_date": "2026-07-30",
+      "rows": 5732,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [
-        "frozen tail: pairs_meta last=1970-01-01 age=20664d"
+        "frozen tail: pairs_meta last=1970-01-01 age=20665d"
       ],
       "probed_at": null,
       "elapsed_sec": 0.2,
-      "checked_at": "2026-07-30T09:10:23.475751+00:00"
+      "checked_at": "2026-07-31T09:32:36.293717+00:00"
     },
     "hk_closes_deep": {
       "source": "hk_closes_deep",
       "status": "ok",
-      "rows": 42,
-      "last_date": "2026-07-30",
+      "rows": 43,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 11.9,
-      "checked_at": "2026-07-30T09:10:23.475778+00:00"
+      "elapsed_sec": 12.0,
+      "checked_at": "2026-07-31T09:32:36.293740+00:00"
     },
     "hk_shorts_positions": {
       "source": "hk_shorts_positions",
-      "status": "stale",
+      "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-17",
+      "last_date": "2026-07-24",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 56.1,
-      "checked_at": "2026-07-30T09:10:23.475783+00:00"
+      "elapsed_sec": 59.6,
+      "checked_at": "2026-07-31T09:32:36.293743+00:00"
     },
     "hk_shorts_turnover": {
       "source": "hk_shorts_turnover",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 5.7,
-      "checked_at": "2026-07-30T09:10:23.475788+00:00"
+      "elapsed_sec": 6.5,
+      "checked_at": "2026-07-31T09:32:36.293747+00:00"
     },
     "hk_universe": {
       "source": "hk_universe",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 1.5,
-      "checked_at": "2026-07-30T09:10:23.475792+00:00"
+      "elapsed_sec": 1.2,
+      "checked_at": "2026-07-31T09:32:36.293750+00:00"
     },
     "hk_placements": {
       "source": "hk_placements",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 10.6,
-      "checked_at": "2026-07-30T09:10:23.475796+00:00"
+      "elapsed_sec": 9.5,
+      "checked_at": "2026-07-31T09:32:36.293754+00:00"
     },
     "polygon_gex_accrual": {
       "status": "ok",
@@ -1659,12 +1659,12 @@
       "source": "china_filings",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 539.8,
-      "checked_at": "2026-07-30T09:10:23.475807+00:00"
+      "elapsed_sec": 528.6,
+      "checked_at": "2026-07-31T09:32:36.293760+00:00"
     },
     "cleveland_nowcast": {
       "source": "cleveland_nowcast",
@@ -1758,45 +1758,45 @@
       "source": "hk_cbbc",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-29",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 177.4,
-      "checked_at": "2026-07-30T09:10:23.475825+00:00"
+      "elapsed_sec": 190.3,
+      "checked_at": "2026-07-31T09:32:36.293774+00:00"
     },
     "hk_cbbc_sld": {
       "source": "hk_cbbc_sld",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 30.6,
-      "checked_at": "2026-07-30T09:10:23.475829+00:00"
+      "elapsed_sec": 67.0,
+      "checked_at": "2026-07-31T09:32:36.293780+00:00"
     },
     "hk_hkexnews": {
       "source": "hk_hkexnews",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 18.1,
-      "checked_at": "2026-07-30T09:10:23.475803+00:00"
+      "elapsed_sec": 12.9,
+      "checked_at": "2026-07-31T09:32:36.293757+00:00"
     },
     "hk_gdelt": {
       "source": "hk_gdelt",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 157.7,
-      "checked_at": "2026-07-30T09:10:23.475834+00:00"
+      "elapsed_sec": 118.6,
+      "checked_at": "2026-07-31T09:32:36.293783+00:00"
     },
     "intraday_flow_nightly": {
       "status": "ok",
@@ -1957,67 +1957,67 @@
       "source": "china_board_breadth",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 239.8,
-      "checked_at": "2026-07-30T09:10:23.475605+00:00"
+      "elapsed_sec": 155.2,
+      "checked_at": "2026-07-31T09:32:36.293602+00:00"
     },
     "china_holder_counts": {
       "source": "china_holder_counts",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 8.0,
-      "checked_at": "2026-07-30T09:10:23.475697+00:00"
+      "elapsed_sec": 7.9,
+      "checked_at": "2026-07-31T09:32:36.293671+00:00"
     },
     "china_funding": {
       "source": "china_funding",
       "status": "ok",
-      "rows": 2347,
-      "last_date": "2026-07-30",
+      "rows": 2348,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 5.9,
-      "checked_at": "2026-07-30T09:10:23.475701+00:00"
+      "elapsed_sec": 6.7,
+      "checked_at": "2026-07-31T09:32:36.293675+00:00"
     },
     "china_cb": {
       "source": "china_cb",
       "status": "ok",
       "rows": 251,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 18.6,
-      "checked_at": "2026-07-30T09:10:23.475706+00:00"
+      "elapsed_sec": 14.2,
+      "checked_at": "2026-07-31T09:32:36.293679+00:00"
     },
     "china_fund_issuance": {
       "source": "china_fund_issuance",
       "status": "ok",
-      "rows": 16,
-      "last_date": "2026-07-24",
+      "rows": 17,
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 2.0,
-      "checked_at": "2026-07-30T09:10:23.475711+00:00"
+      "elapsed_sec": 2.4,
+      "checked_at": "2026-07-31T09:32:36.293682+00:00"
     },
     "china_irm": {
       "source": "china_irm",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 102.5,
-      "checked_at": "2026-07-30T09:10:23.475812+00:00"
+      "elapsed_sec": 102.3,
+      "checked_at": "2026-07-31T09:32:36.293764+00:00"
     },
     "china_einteraction": {
       "source": "china_einteraction",
@@ -2026,42 +2026,42 @@
       "last_date": null,
       "error": "RuntimeError: china_einteraction: every attempted name failed at transport level (40/40)",
       "notes": [],
-      "probed_at": "2026-07-30T09:00:43.820940+00:00",
-      "elapsed_sec": 62.6,
-      "checked_at": "2026-07-30T09:10:23.475816+00:00"
+      "probed_at": "2026-07-31T09:23:07.958575+00:00",
+      "elapsed_sec": 62.5,
+      "checked_at": "2026-07-31T09:32:36.293767+00:00"
     },
     "china_reports": {
       "source": "china_reports",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 4.4,
-      "checked_at": "2026-07-30T09:10:23.475821+00:00"
+      "elapsed_sec": 2.9,
+      "checked_at": "2026-07-31T09:32:36.293771+00:00"
     },
     "china_omo": {
       "source": "china_omo",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 23.6,
-      "checked_at": "2026-07-30T09:10:23.475715+00:00"
+      "elapsed_sec": 20.2,
+      "checked_at": "2026-07-31T09:32:36.293688+00:00"
     },
     "china_trade_detail": {
       "source": "china_trade_detail",
       "status": "ok",
       "rows": 1,
-      "last_date": "2026-07-30",
+      "last_date": "2026-07-31",
       "error": null,
       "notes": [],
       "probed_at": null,
-      "elapsed_sec": 6.9,
-      "checked_at": "2026-07-30T09:10:23.475720+00:00"
+      "elapsed_sec": 3.8,
+      "checked_at": "2026-07-31T09:32:36.293691+00:00"
     },
     "crypto_universe": {
       "source": "crypto_universe",
@@ -2117,7 +2117,7 @@
     "china_connect": 0,
     "china_flows": 0,
     "china_credit": 0,
-    "hkma": 0,
+    "hkma": 1,
     "cboe_vix_futures": 0,
     "sovereign": 0,
     "frbsf_sentiment": 0,
@@ -2243,7 +2243,7 @@
     "china_cb": 0,
     "china_fund_issuance": 0,
     "china_irm": 0,
-    "china_einteraction": 4,
+    "china_einteraction": 5,
     "china_reports": 0,
     "china_omo": 0,
     "china_trade_detail": 0,
@@ -2253,7 +2253,7 @@
     "massive_stock_day": "2026-07-31T00:14:47.345145+00:00",
     "lbnl_queue": "2026-07-31T00:19:30.893788+00:00",
     "finnhub_altdata": "2026-07-31T00:05:16.810009+00:00",
-    "china_einteraction": "2026-07-30T09:00:43.820940+00:00"
+    "china_einteraction": "2026-07-31T09:23:07.958575+00:00"
   },
   "stale_series": [
     {
@@ -2261,32 +2261,32 @@
       "series": "rrr",
       "last_obs": "2025-05-07",
       "cadence_days": 45,
-      "age_days": 449,
-      "detected_at": "2026-07-30T08:33:18.883192+00:00"
+      "age_days": 450,
+      "detected_at": "2026-07-31T08:56:10.502246+00:00"
     },
     {
       "group": "china_property",
       "series": "home_price",
       "last_obs": "2026-06-01",
       "cadence_days": 12,
-      "age_days": 59,
-      "detected_at": "2026-07-30T08:44:39.024741+00:00"
+      "age_days": 60,
+      "detected_at": "2026-07-31T09:05:36.092770+00:00"
     },
     {
       "group": "china_property",
       "series": "climate",
       "last_obs": "2025-12-01",
       "cadence_days": 12,
-      "age_days": 241,
-      "detected_at": "2026-07-30T08:44:39.024746+00:00"
+      "age_days": 242,
+      "detected_at": "2026-07-31T09:05:36.092777+00:00"
     },
     {
       "group": "hk_ah_panel",
       "series": "pairs_meta",
       "last_obs": "1970-01-01",
       "cadence_days": 5,
-      "age_days": 20664,
-      "detected_at": "2026-07-30T08:55:11.499010+00:00"
+      "age_days": 20665,
+      "detected_at": "2026-07-31T09:17:48.231456+00:00"
     },
     {
       "group": "finra_ats",
