@@ -533,15 +533,64 @@ class TestAPlanlessNightIsAudible:
         assert "provider=914" in line
         assert "102 chart(s)" in line, "the wasted render cost is not named"
 
-    def test_the_provider_stage_names_the_credentials_to_check(self, capsys):
+    def test_a_missing_credential_names_the_credentials_to_check(self, capsys):
         """"stage=provider" makes the reader translate. An alert should not."""
         from engine.marketing.content_studio import _alarm_on_a_planless_night
 
-        _alarm_on_a_planless_night(0, {"provider": 900}, 10, {})
+        _alarm_on_a_planless_night(0, {"provider": 900}, 10, {},
+                                   {"no_provider_credential": 900})
         line = capsys.readouterr().out
-        for env in ("CODEX_ACCESS_TOKEN", "CLAUDE_CODE_OAUTH_TOKEN",
-                    "ANTHROPIC_API_KEY", "MARKETING_LLM_ENABLED"):
+        for env in ("CLAUDE_CODE_OAUTH_TOKEN", "ANTHROPIC_API_KEY",
+                    "DEEPSEEK_API_KEY", "MARKETING_LLM_ENABLED"):
             assert env in line, f"{env} is not named as a thing to check"
+
+    def test_a_served_but_empty_response_does_not_blame_credentials(self, capsys):
+        """THE NIGHT THE ALARM WAS RIGHT AND ITS ADVICE WAS WRONG (2026-07-31).
+
+        915 planned, 915 dropped, stage "provider", and the alarm said "the LLM
+        never answered — check credentials first". The run log said otherwise:
+        codex failed over as designed and DeepSeek SERVED ALL 916 CALLS, every
+        one HTTP 200. Not one credential was at fault. The model returned a
+        response the writer could not read, so `_v2_write_one` hit
+        `if not text: dropped_provider` — the same bucket as a missing key, and
+        the opposite fix.
+
+        An operator following that remedy checks four credentials, finds them
+        all working, and concludes the alarm is broken. That is worse than
+        silence: it spends the one alert they get.
+        """
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 914, "validate": 1}, 102, {},
+                                   {"provider returned no text": 914,
+                                    "banned_phrase": 1})
+        line = capsys.readouterr().out
+        assert "not a credential problem" in line.lower(), line
+        assert "DEEPSEEK_API_KEY" not in line, (
+            "still sending the operator to check a credential that worked")
+        # And it must point at the shape that actually caused it.
+        assert "thinking" in line, line
+        # The reason census rides along, so a postmortem a week later can see it.
+        assert "provider returned no text=914" in line, line
+
+    def test_a_transport_fault_is_named_as_one(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 915}, 10, {},
+                                   {"writer_exception:APIConnectionError": 915})
+        line = capsys.readouterr().out
+        assert "APIConnectionError" in line
+        assert "not a credential" in line
+
+    def test_an_unrecognised_reason_falls_back_without_misdirecting(self, capsys):
+        """Old plan artifacts carry no reasons. The alarm must still fire, and
+        must not invent a cause it cannot know."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 915}, 10, {}, {})
+        line = capsys.readouterr().out
+        assert "::error title=marketing-plan-empty::" in line
+        assert "DEEPSEEK_API_KEY" not in line, "guessing a cause it cannot know"
 
     def test_the_remedy_follows_the_DOMINANT_stage_not_the_provider_always(self, capsys):
         """A validate-dominated wipeout is a voice problem, not an outage.

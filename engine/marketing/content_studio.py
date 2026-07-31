@@ -1046,12 +1046,51 @@ _COPY_DROP_ALARM_SHARE = 0.50
 #: prints stage names makes the reader translate; naming the remedy is the whole
 #: difference between a number and an alert.
 _COPY_DROP_REMEDY: dict[str, str] = {
-    "provider": ("the LLM never answered — check credentials first "
-                 "(CODEX_ACCESS_TOKEN, the CLAUDE_CODE_OAUTH_TOKEN pool, "
-                 "ANTHROPIC_API_KEY, DEEPSEEK_API_KEY) and MARKETING_LLM_ENABLED"),
+    "provider": ("the writer got nothing usable back — see the reason breakdown, "
+                 "which says whether that was a missing credential or a served "
+                 "response with no text"),
     "validate": "the model answered and the copy laws refused it — a voice/guard problem",
     "critic": "the critic vetoed the drafts — a quality problem, not an outage",
 }
+
+#: THE STAGE IS NOT THE CAUSE, AND ON 2026-07-31 IT SENT THE READER THE WRONG WAY.
+#:
+#: The alarm fired correctly that night — 915 planned, 915 dropped, stage
+#: "provider" — and then told the operator "the LLM never answered, check
+#: credentials first". The log said otherwise: codex failed over as designed,
+#: and DeepSeek SERVED ALL 916 CALLS, every one HTTP 200. Not one credential was
+#: at fault. The model returned a response the writer could not read, so
+#: `_v2_write_one` hit `if not text: dropped_provider` — the same stage bucket as
+#: a missing key, and the opposite fix.
+#:
+#: Anyone following that remedy would have checked four credentials, found them
+#: all working, and concluded the alarm was wrong. So the remedy is keyed on the
+#: REASON the copywriter already records, and only falls back to the stage when
+#: the reasons are unrecognised.
+_PROVIDER_DROP_REMEDY: dict[str, str] = {
+    "no_provider_credential": (
+        "NO credential was visible to the step — pass CLAUDE_CODE_OAUTH_TOKEN* / "
+        "ANTHROPIC_API_KEY / DEEPSEEK_API_KEY, and check MARKETING_LLM_ENABLED"),
+    "provider returned no text": (
+        "the provider ANSWERED and returned no usable text, so this is NOT a "
+        "credential problem — check the model's response shape (a reasoning/"
+        "thinking block ahead of the text block reads as empty) and the "
+        "per-provider parse in engine/llm_auth"),
+    "not_attempted": "the writer never ran — an arming or wiring problem, not the model",
+}
+
+
+def _provider_remedy(reasons: dict[str, int]) -> str:
+    """The remedy for whichever provider-stage reason actually dominated."""
+    known = {r: n for r, n in (reasons or {}).items()
+             if r in _PROVIDER_DROP_REMEDY or r.startswith("writer_exception:")}
+    if not known:
+        return ""
+    worst = max(known, key=lambda r: known[r])
+    if worst.startswith("writer_exception:"):
+        return (f"the writer RAISED ({worst.split(':', 1)[1]}) on most items — a "
+                f"code or transport fault, not a credential")
+    return _PROVIDER_DROP_REMEDY[worst]
 
 
 def _alarm_on_a_planless_night(
@@ -1059,6 +1098,7 @@ def _alarm_on_a_planless_night(
     copy_dropped: dict[str, int],
     n_charts: int,
     sel_report: dict | None = None,
+    copy_drop_reasons: dict[str, int] | None = None,
 ) -> None:
     """A plan that produced NO POSTS must say so, loudly, and name the stage.
 
@@ -1103,7 +1143,15 @@ def _alarm_on_a_planless_night(
 
     worst = max(dropped, key=lambda k: dropped[k]) if dropped else ""
     remedy = _COPY_DROP_REMEDY.get(worst, "check content.copy.dropped in the plan")
+    if worst == "provider":
+        # Prefer the reason over the stage: they point at different subsystems.
+        remedy = _provider_remedy(copy_drop_reasons or {}) or remedy
     detail = ", ".join(f"{k}={v}" for k, v in sorted(dropped.items(), key=lambda kv: -kv[1]))
+    reasons = {str(k): int(v) for k, v in (copy_drop_reasons or {}).items()
+               if int(v or 0) > 0}
+    if reasons:
+        top = sorted(reasons.items(), key=lambda kv: -kv[1])[:3]
+        detail += "; reasons: " + ", ".join(f"{k}={v}" for k, v in top)
 
     if total_posts == 0:
         # Nothing to publish tomorrow. This is the loudest thing this module says.
@@ -3874,6 +3922,11 @@ def content_plan(
     # det = 0 on planned kinds"); `_copy_dropped` is the by-stage drop census.
     _copy_modes: dict[str, int] = {}
     _copy_dropped: dict[str, int] = {}
+    #: The same drops keyed by REASON, not stage. "provider" covers both "no
+    #: credential was visible" and "the credential worked and the model
+    #: returned nothing usable", and those have opposite fixes — see
+    #: _provider_remedy.
+    _copy_drop_reasons: dict[str, int] = {}
     _copy_written = 0
     _degenerate_dropped = 0
     _llm_required = llm_required(cfg)
@@ -4229,6 +4282,9 @@ def content_plan(
                 if post.get("mode") == "dropped":
                     _stage = str(post.get("stage") or "unknown")
                     _copy_dropped[_stage] = _copy_dropped.get(_stage, 0) + 1
+                    for _r in (post.get("reasons") or ["unknown"]):
+                        _r = str(_r)
+                        _copy_drop_reasons[_r] = _copy_drop_reasons.get(_r, 0) + 1
                     if _llm_required and str(item_dict.get("type") or "") in PLANNED_KINDS:
                         _drop_ids.add(str(item_dict.get("id")))
                         item_dict["_copy_mode"] = "dropped"
@@ -4493,7 +4549,8 @@ def content_plan(
     total_posts = len(all_items)
     signal_posts = sum(1 for i in all_items if i.type == "signal")
     n_charts = len(featured_charts)
-    _alarm_on_a_planless_night(total_posts, _copy_dropped, n_charts, _sel_report)
+    _alarm_on_a_planless_night(total_posts, _copy_dropped, n_charts, _sel_report,
+                               _copy_drop_reasons)
     n_plans = len(plans)
     n_with_charts = len(set(fc["ticker"] for fc in featured_charts))
 
@@ -4561,6 +4618,10 @@ def content_plan(
                 "written": _copy_written,
                 "modes": _copy_modes,
                 "dropped": _copy_dropped,
+                # By REASON as well as by stage: "provider" alone cannot tell a
+                # missing credential from a served-but-unreadable response, and
+                # the plan artifact is what a postmortem reads a week later.
+                "dropped_reasons": _copy_drop_reasons,
                 "shape_mix": {
                     s: sum(m.get(s, 0) for m in _shape_mix_by_account.values())
                     for s in SHAPES
