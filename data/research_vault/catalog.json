@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T04:14:21.265566+00:00",
-  "count": 433,
+  "generated_at": "2026-07-31T04:27:15.181231+00:00",
+  "count": 434,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1087,6 +1087,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zsohrw1o0bj-f750e1",
+      "title": "WBC MorningReport29Jul2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:32:29Z",
+      "summary_points": [
+        "**Geopolitical De-escalation**: US/Iran tensions eased, avoiding escalation and bombing, driving oil prices down (Brent <$85, WTI <$80), reducing inflationary pressures and impacting energy/financial sectors.",
+        "**Monetary Policy Shift**: RBA rate hike expectations pared back due to Bullock’s comments, with FOMC rate expected unchanged; Q2 CPI figures are critical data release today.",
+        "**Tech Sector Fundamentals**: AI capex sustainability concerns and intensified China competition in chip manufacturing drove chipmaker stock declines, signaling material risk for tech portfolios."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
