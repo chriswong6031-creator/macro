@@ -203,6 +203,10 @@
 <link rel="stylesheet" href="theme.css">
 {% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 <link rel="stylesheet" href="tier_preview.css">
+{% if mode != 'stocks' %}
+<link rel="preload" href="fonts/InterDisplay-600.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/JetBrainsMono-100-800.woff2" as="font" type="font/woff2" crossorigin>
+{% endif %}
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
 {# Plotly deliberately NOT loaded: neither macro.html nor us_stocks.html renders a
@@ -1697,6 +1701,11 @@
   .two-reads-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:600; white-space:nowrap; background:color-mix(in srgb,var(--info) 9%,var(--panel2)); border:1px solid color-mix(in srgb,var(--info) 28%,var(--line)); color:var(--info,var(--link)); cursor:help; }
   .two-reads-chip .tr-sep { opacity:.45; margin:0 2px; }
 </style>
+{% if mode != 'stocks' %}
+<style id="macro-attio-type">
+{% include "_macro_attio_type.css.j2" %}
+</style>
+{% endif %}
 </head>
 <body class="{{ 'page-stocks' if mode == 'stocks' else 'page-macro mx4-grid' }}">
 {% if mode != 'stocks' %}
