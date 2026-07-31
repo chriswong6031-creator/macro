@@ -528,7 +528,11 @@ def test_admin_publisher_dryrun_wrapper_no_writes(monkeypatch, tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _mover_text(pct: float = 0.5) -> str:
-    return f"$PLTR +{pct:.1f}% today. Strength worth respecting, not chasing."
+    # NOT "Strength worth respecting, not chasing" — that is a RETIRED house
+    # closer (operator 2026-07-30) and the publisher's voice gate quarantines
+    # it on sight. These tests are about auto-approve ROUTING, so the fixture
+    # copy has to be copy that would actually ship.
+    return f"$PLTR +{pct:.1f}% today, and I keep underestimating this one."
 
 
 def test_scoped_auto_approves_publisher_lane_mover(monkeypatch, tmp_path):

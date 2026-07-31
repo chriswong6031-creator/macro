@@ -2023,6 +2023,90 @@ def number_soup_violations(text: str, limit: int | None = None, kind: str = "") 
     return []
 
 
+#: A sentence shorter than this is house cadence, not a repeated line. The
+#: deadpan one-word verdicts ("Ugly." "Not ideal." "Watching, no position.")
+#: are the persona and MUST be free to recur; "I'm not fighting this one." is
+#: a template tell.
+_REPEAT_SENTENCE_MIN_WORDS = 5
+
+
+def _repeat_sentence_keys(text: str) -> list[str]:
+    """Normalized sentences of a post, long enough to be worth comparing.
+
+    NOT ``_sentences`` — that name is already taken at module scope by the
+    clarity gate's splitter, and defining it twice silently rebinds the module
+    global so ``dangling_levels`` starts calling THIS one. Three clarity tests
+    caught it; the same shadowing bug cost a whole fact-reuse budget earlier in
+    this program when a helper named ``_slot_day`` was defined twice.
+    """
+    flat = re.split(r"[.!?\n]+", str(text or ""))
+    out: list[str] = []
+    for part in flat:
+        norm = " ".join(re.sub(r"[^a-z0-9 ]+", " ", part.lower()).split())
+        if len(norm.split()) >= _REPEAT_SENTENCE_MIN_WORDS:
+            out.append(norm)
+    return out
+
+
+def repeated_sentence_violations(
+    text: str, prior_texts: Iterable[str] | None,
+) -> list[str]:
+    """A whole sentence this account has already published. [] = clean.
+
+    Whole-body Jaccard is the wrong instrument for the defect the operator
+    named. Two live queued posts read "Still heavy, down 3% on the week. I'm
+    not fighting this one. It has to reclaim 387 before it's even a
+    conversation." and the same thing about a different name at a different
+    price — a shared SENTENCE, verbatim, but only 0.67 Jaccard against a 0.80
+    threshold. Lowering that threshold to reach them would start cutting posts
+    that merely share a topic; an exact sentence match needs no tuning and
+    cannot drift.
+    """
+    mine = _repeat_sentence_keys(text)
+    if not mine:
+        return []
+    seen: set[str] = set()
+    for other in (prior_texts or []):
+        seen.update(_repeat_sentence_keys(other))
+    for sentence in mine:
+        if sentence in seen:
+            return [
+                f"repeated sentence: this account already posted \"{sentence[:80]}\" "
+                f"— say it a different way or drop the post"
+            ]
+    return []
+
+
+def queued_voice_violations(text: str, kind: str = "") -> list[str]:
+    """The voice laws, runnable against copy that is ALREADY in the queue.
+
+    The queue is a bypass around every generation-time law: 187 posts were
+    sitting in it when these laws landed on 2026-07-30, all written under the
+    rules that MANDATED the machine voice. Without a post-time screen the
+    operator's F-grade batch ships tomorrow regardless of what the writer does
+    tonight — the same lesson the study-name language gate was built for after
+    the 2026-07-27 $AVGO "POC held" post fired days after its ban.
+
+    Takes the full post text (headline and body already joined, which is how
+    the outbox stores it) rather than the writer's two fields, and needs no
+    ctx. Deliberately does NOT include the whole ``validate_copy_v2`` battery:
+    the numbers whitelist and the sibling-overlap checks need a packet the
+    queue no longer has, and a check that cannot be evaluated must not
+    quarantine.
+    """
+    out: list[str] = []
+    out += machine_risk_violations(text)
+    out += motto_violations(text)
+    out += process_list_violations(text)
+    out += number_soup_violations(text, kind=kind)
+    out += no_reaction_violations(text)
+    out += lecture_violations(text)
+    # batch_texts is empty on purpose: at publish time there is no batch, so
+    # only the RETIRED house closers are reachable, never the repeat rule.
+    out += stock_closer_violations(text, [])
+    return out
+
+
 def jargon_violations(text: str) -> list[str]:
     """Internal-machinery vocabulary in copy (gate 3f). [] = clean.
 
@@ -2141,11 +2225,26 @@ _STOCK_CLOSERS: tuple[str, ...] = (
 )
 
 
-def _closer_key(text: str) -> str:
-    """Normalize a post's final sentence for stock-closer comparison."""
+#: A truncated stock closer is only recognisable when enough of it survives.
+#: Below this, the final sentence is house cadence that happens to share a word
+#: with the banned line ("Watching." / "Not chasing.").
+_CLOSER_TRUNCATION_MIN_WORDS = 4
+
+
+def _closer_key(text: str, whole_text: bool = False) -> str:
+    """Normalize a post's final sentence for stock-closer comparison.
+
+    ``whole_text=True`` normalizes the ENTIRE post the same way instead. The
+    retired house lines are banned wherever they sit, not only as the closer,
+    so the outright-ban scan needs the whole body while the batch-collision
+    scan still needs the final sentence alone.
+    """
     body = str(text or "").strip()
     if not body:
         return ""
+    if whole_text:
+        flat = re.sub(r"[^a-z0-9 ]+", " ", body.lower())
+        return " ".join(flat.split())
     # Last sentence-ish chunk: split on terminal punctuation and newlines.
     parts = [p for p in re.split(r"[.!?\n]+", body) if p.strip()]
     if not parts:
@@ -2170,19 +2269,40 @@ def stock_closer_violations(
 
     Returns [] when clean.
     """
-    key = _closer_key(text)
-    if not key:
-        return []
-
     out: list[str] = []
+
+    # The retired house lines are banned WHEREVER they appear, not only as the
+    # closer. A live queued $TSLA post read "...down 18% on the week. Watching
+    # for a bottom setup, not catching it yet. 303 is the line that matters." —
+    # the boilerplate sat in the MIDDLE, the last sentence was clean, and an
+    # end-anchored check waved it through. The phrase is what the operator
+    # rejected; its position in the post was never the point.
+    whole = _closer_key(text, whole_text=True)
     for stock in _STOCK_CLOSERS:
-        # Substring both ways: the model both truncates and pads these.
-        if stock in key or key in stock:
+        if stock and stock in whole:
             out.append(
-                f"stock closer: the post ends on a house boilerplate line "
+                f"stock closer: the post uses a house boilerplate line "
                 f"('{stock}'). Say the stance in your own words."
             )
             break
+
+    key = _closer_key(text)
+    if not key:
+        return out
+
+    if not out:
+        for stock in _STOCK_CLOSERS:
+            # Substring the other way too: the model truncates these as well,
+            # and a truncation is only recognisable against the final sentence.
+            # The word floor is load-bearing — "Watching." is a house one-word
+            # verdict AND a substring of "watching for a bottom setup not
+            # catching it yet", so an unbounded match banned the persona.
+            if len(key.split()) >= _CLOSER_TRUNCATION_MIN_WORDS and key in stock:
+                out.append(
+                    f"stock closer: the post ends on a truncated house "
+                    f"boilerplate line ('{stock}'). Say the stance in your own words."
+                )
+                break
 
     others = [t for t in (batch_texts or []) if str(t or "").strip()]
     for other in others:

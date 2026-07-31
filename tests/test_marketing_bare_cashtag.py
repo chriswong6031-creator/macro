@@ -124,6 +124,29 @@ class TestUnknownCashtagGate:
         assert _unknown_cashtags(it) == []
 
     @_needs_store
+    def test_a_tracked_name_outside_every_us_index_is_not_fake(self):
+        """The false positive this gate shipped with, caught on the live queue.
+
+        $TEAM (Atlassian) sits in NO membership row and no earnings-calendar
+        vintage, so the first universe — index membership + earnings + heatmap
+        — called it fake and would have quarantined four legitimate CHARTED
+        signal posts. The engine holds OHLCV, tape-flow and Yahoo history for
+        it, which is the whole proof that it trades. Price stores are now the
+        widest source in the union.
+        """
+        assert _unknown_cashtags({"text": "$TEAM | 95.87 is the line"}) == []
+
+    @_needs_store
+    def test_the_price_stores_are_actually_reached(self):
+        """Guards the union, not just its result: membership alone is too narrow."""
+        import pandas as pd
+        mem = pd.read_parquet("data/universe/membership.parquet", columns=["ticker"])
+        mem_syms = {str(t).upper() for t in mem["ticker"].tolist()}
+        assert _UNIVERSE - mem_syms, (
+            "the universe adds nothing beyond index membership — the price-store "
+            "leg is not being reached")
+
+    @_needs_store
     def test_a_dollar_amount_is_not_a_cashtag(self):
         """$148 billion and $19.6 must not read as symbols."""
         it = {"text": "A $148 billion quarter, and the CEO paid $19.6 a share."}

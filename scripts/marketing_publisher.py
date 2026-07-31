@@ -61,6 +61,9 @@ if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
+from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
+from engine.marketing.copywriter import batch_body_duplicate_violations as _batch_body_duplicate_violations  # noqa: E402
+from engine.marketing.copywriter import repeated_sentence_violations as _repeated_sentence_violations  # noqa: E402
 
 log = logging.getLogger("marketing_publisher")
 
@@ -440,13 +443,29 @@ _SYMBOL_UNIVERSE_CACHE: dict[str, tuple[float, frozenset[str]]] = {}
 _SYMBOL_UNIVERSE_MIN = 500
 
 
+#: Per-symbol price stores. The filenames ARE the universe, so this costs a
+#: directory listing and reads no parquet. These are the widest and most
+#: honest source: if the engine holds a price history for a name, that name
+#: trades. Index membership alone is NOT enough — $TEAM (Atlassian) sits in no
+#: US index membership row and no earnings-calendar vintage, so a
+#: membership-only universe called it fake and would have quarantined four
+#: legitimate charted posts.
+_PRICE_STORE_DIRS = (
+    ("data", "baskets", "ohlcv"),
+    ("data", "yahoo"),
+    ("data", "tape_flow", "daily"),
+)
+
+
 def _symbol_universe(root: Path | str = ".") -> frozenset[str]:
     """Every symbol we can prove exists. Empty frozenset = "could not tell".
 
-    Union of three stores that are already maintained for other reasons, so
-    this adds no new data dependency:
-      * ``data/universe/membership.parquet`` — sp500/sp400/sp600/r2000 with an
-        ``active`` flag, the only source that knows a listing DIED;
+    Union of stores already maintained for other reasons, so this adds no new
+    data dependency:
+      * ``data/baskets/ohlcv/*.parquet`` + ``data/yahoo`` + ``data/tape_flow``
+        — one file per symbol we hold price history for, the widest source;
+      * ``data/universe/membership.parquet`` — index membership, ACTIVE rows
+        only, the one source that knows a listing DIED;
       * ``data/earnings/earnings.parquet`` — the reporting calendar;
       * ``site/marketdata/sp500_heatmap.json`` — the rendered board.
 
@@ -456,22 +475,41 @@ def _symbol_universe(root: Path | str = ".") -> frozenset[str]:
     """
     root = Path(root)
     membership = root / "data" / "universe" / "membership.parquet"
+    # Cache key folds in the price dirs' mtimes: a nightly that adds a symbol
+    # must invalidate, or a brand-new name reads as fake for the rest of the run.
+    stamps: list[float] = []
+    for parts in _PRICE_STORE_DIRS:
+        d = root.joinpath(*parts)
+        try:
+            stamps.append(d.stat().st_mtime if d.exists() else 0.0)
+        except OSError:
+            stamps.append(0.0)
     try:
-        mtime = membership.stat().st_mtime if membership.exists() else 0.0
+        stamps.append(membership.stat().st_mtime if membership.exists() else 0.0)
     except OSError:
-        mtime = 0.0
-    cache_key = str(membership)
+        stamps.append(0.0)
+    mtime = max(stamps) if stamps else 0.0
+
+    cache_key = str(root.resolve()) if root.exists() else str(root)
     hit = _SYMBOL_UNIVERSE_CACHE.get(cache_key)
     if hit is not None and hit[0] == mtime:
         return hit[1]
 
     symbols: set[str] = set()
+    for parts in _PRICE_STORE_DIRS:
+        d = root.joinpath(*parts)
+        try:
+            if d.is_dir():
+                symbols |= {f.stem.upper() for f in d.glob("*.parquet")}
+        except OSError as exc:
+            log.warning("[publisher] price store %s unreadable: %s", d, exc)
     try:
         import pandas as pd  # noqa: PLC0415
         if membership.exists():
             df = pd.read_parquet(membership, columns=["ticker", "active"])
-            # ACTIVE only. A delisted row is exactly the $N case: the ticker is
-            # in the file, it just does not trade any more.
+            # ACTIVE only. One ticker holds one row per index, and a name that
+            # MIGRATES is active=False on the row it left — so "alive" is
+            # active on ANY row, never active on every row.
             live = df[df["active"].astype(bool)]
             symbols |= {str(t).upper() for t in live["ticker"].tolist()}
         earnings = root / "data" / "earnings" / "earnings.parquet"
@@ -1377,6 +1415,12 @@ def main(argv: list[str] | None = None) -> int:
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
     forward_booked = deferred_no_media = 0
+    # The 2026-07-30 voice/chart/symbol gates. Plain ints like every other
+    # counter in this function: an earlier draft wrote into a `counters` dict
+    # that was never defined anywhere, which would have raised NameError the
+    # first time a gate actually fired.
+    quarantined_bare_cashtag = quarantined_unknown_cashtag = 0
+    quarantined_voice_laws = quarantined_run_duplicate = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -1591,6 +1635,14 @@ def main(argv: list[str] | None = None) -> int:
                     "ungated this run", _ht_exc)
         _ht_orphan_status = None
 
+    # Texts already cleared THIS RUN, per account. The generation-time batch
+    # dedup cannot see across vintages, so a queue holding several nights of
+    # copy ships the same sentence repeatedly: a live queue had "I'm not
+    # fighting this one. It has to reclaim X before it's even a conversation."
+    # on three different names, all clearing every other gate. Per account
+    # because a repeat across two desks is a repeat no reader ever sees.
+    _run_texts: dict[str, list[str]] = {}
+
     for it in approved_due:
         iid = it["id"]
         account = it.get("account", "")
@@ -1791,6 +1843,46 @@ def main(argv: list[str] | None = None) -> int:
             quarantined += 1
             continue
 
+        # -- voice gate: same argument, newer laws ---------------------------
+        # The queue held 187 posts written under the rules that MANDATED the
+        # machine voice ("I'm wrong below 33.8", "historical, not a
+        # guarantee"). Those rules were retired 2026-07-30 after the operator
+        # graded a batch F, but retiring a rule does not rewrite copy already
+        # enqueued — without this screen the graded-F batch posts tomorrow no
+        # matter what the writer does tonight.
+        _voice = _queued_voice_violations(text, str(it.get("kind") or ""))
+        if _voice:
+            reason = "voice laws (queue vintage): " + "; ".join(_voice[:2])
+            print(f"::warning title=marketing-voice-gate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_voice[0][:120]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by voice gate: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            quarantined_voice_laws += 1
+            continue
+
+        # -- run dedup: the queue is not a bypass around "don't repeat yourself"
+        # The FIRST of a near-duplicate pair posts; the clones do not. Terminal
+        # by design — the defect is the copy itself, so waiting cannot fix it.
+        _prior = _run_texts.get(account) or []
+        _dupe = (_batch_body_duplicate_violations(text, _prior)
+                 or _repeated_sentence_violations(text, _prior))
+        if _dupe:
+            reason = "near-duplicate of a post already cleared this run: " + _dupe[0]
+            print(f"::warning title=marketing-run-duplicate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_dupe[0][:110]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by run dedup: %s", iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            quarantined_run_duplicate += 1
+            continue
+        _run_texts.setdefault(account, []).append(text)
+
         # -- headline-shape gate: fragment headlines are vintage-proof too ---
         # validate_copy 4f (#3907) rejects fragment headlines ("Circling",
         # "is close", "Radar check on") at GENERATION time, but the queue is
@@ -1990,8 +2082,7 @@ def main(argv: list[str] | None = None) -> int:
                         iid, account, it.get("kind"), _bare)
             OB.transition(iid, "quarantined", actor="publisher",
                           note=f"bare cashtag post: names {_bare} with no chart")
-            counters["quarantined_bare_cashtag"] = counters.get(
-                "quarantined_bare_cashtag", 0) + 1
+            quarantined_bare_cashtag += 1
             continue
 
         # A cashtag no live store can vouch for is a factual error, not a
@@ -2007,8 +2098,7 @@ def main(argv: list[str] | None = None) -> int:
                         iid, account, it.get("kind"), _unknown)
             OB.transition(iid, "quarantined", actor="publisher",
                           note=f"unknown cashtag(s): {', '.join(_unknown)}")
-            counters["quarantined_unknown_cashtag"] = counters.get(
-                "quarantined_unknown_cashtag", 0) + 1
+            quarantined_unknown_cashtag += 1
             continue
 
         if _missing_required_media(it, pub_cfg, media_paths):
@@ -2258,6 +2348,8 @@ def main(argv: list[str] | None = None) -> int:
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
+        "quarantined_bare_cashtag=%d quarantined_unknown_cashtag=%d "
+        "quarantined_voice_laws=%d quarantined_run_duplicate=%d "
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
         "substance_shadow=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
@@ -2266,6 +2358,8 @@ def main(argv: list[str] | None = None) -> int:
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
+        quarantined_bare_cashtag, quarantined_unknown_cashtag,
+        quarantined_voice_laws, quarantined_run_duplicate,
         quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
         skipped_channel,
         skipped_halt, parked_dark,
@@ -2292,6 +2386,10 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_cadence": skipped_cadence,
             "cadence_shadow": shadow_cadence,
             "deferred_cross_account": deferred_xa,
+            "quarantined_bare_cashtag": quarantined_bare_cashtag,
+            "quarantined_unknown_cashtag": quarantined_unknown_cashtag,
+            "quarantined_voice_laws": quarantined_voice_laws,
+            "quarantined_run_duplicate": quarantined_run_duplicate,
             "quarantined_frame": quarantined_frame,
             "skipped_filler": skipped_filler,
             "quarantined_substance": quarantined_substance,

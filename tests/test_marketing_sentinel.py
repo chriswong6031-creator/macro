@@ -2302,12 +2302,22 @@ def _pg_seed(root: Path, *, text: str, kind: str = "watchlist",
     return item["id"]
 
 
-def _pg_run(monkeypatch, root: Path, fake) -> int:
+def _pg_run(monkeypatch, root: Path, fake, *, voice_gate: bool = False) -> int:
     import scripts.marketing_publisher as pub
 
     monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1")
     monkeypatch.setenv("BUFFER_TOKEN", "test-token")
     monkeypatch.setattr(pub, "_make_publisher", lambda backend, *, token, cfg: fake)
+    if not voice_gate:
+        # The fixtures above are VERBATIM live posts, kept verbatim on purpose so
+        # the frame threshold is pinned against real copy rather than a
+        # paraphrase. They predate the 2026-07-30 voice laws and carry five
+        # prices each, so the voice gate quarantines them before the FRAME gate
+        # — the gate under test here — ever sees them. Neutralising it keeps
+        # each test measuring its own seam; the voice gate has its own suite in
+        # tests/test_marketing_voice_laws.py, and one test below deliberately
+        # leaves it armed to prove it still fires on this same corpus.
+        monkeypatch.setattr(pub, "_queued_voice_violations", lambda text, kind="": [])
     return pub.main(["--live", "--root", str(root),
                      "--now", _PG_NOW.strftime("%Y-%m-%dT%H:%M:%SZ")])
 
@@ -2326,6 +2336,27 @@ class TestPublisherFrameGate:
         fake = _PGFakePublisher()
         assert _pg_run(monkeypatch, tmp_path, fake) == 0
         assert fake.calls == [], "a template-frame repeat reached the network"
+        assert current_statuses(tmp_path)[pending] == "quarantined"
+
+    def test_the_voice_gate_fires_on_this_same_live_corpus(self, monkeypatch, tmp_path):
+        """The gate the other tests here neutralise, left armed on purpose.
+
+        _REAL_FRAME_B is a post flagship ACTUALLY SHIPPED on 2026-07-25. It
+        carries five prices, which is the "number soup" the operator named
+        ("shut up with all of these numbers, its literally so AI like"). With
+        no sibling to trip the frame gate it would post today; the voice gate
+        is what stops it. If this test ever goes green-by-passing, the
+        neutralisation in _pg_run has quietly become a hole rather than a
+        scope decision.
+        """
+        from engine.marketing.outbox import current_statuses
+
+        _pg_write_cfg(tmp_path)
+        pending = _pg_seed(tmp_path, text=_REAL_FRAME_B)
+
+        fake = _PGFakePublisher()
+        assert _pg_run(monkeypatch, tmp_path, fake, voice_gate=True) == 0
+        assert fake.calls == [], "pre-law live copy reached the network"
         assert current_statuses(tmp_path)[pending] == "quarantined"
 
     def test_a_genuinely_different_read_still_posts(self, monkeypatch, tmp_path):
