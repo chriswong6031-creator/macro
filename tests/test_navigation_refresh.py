@@ -76,7 +76,10 @@ def test_global_cycles_uses_accessible_in_panel_drill() -> None:
     assert "data-nav-drill-panel" in NAV
     assert "data-nav-drill-back" in NAV
     assert 'aria-expanded="false"' in NAV
+    assert "data-nav-drill-panel inert" in NAV
     assert "initNavDrills()" in THEME_JS
+    assert "panel.toggleAttribute('inert', !isOpen)" in THEME_JS
+    assert "panel.setAttribute('inert', '')" in THEME_JS
 
 
 def test_market_folding_reuses_canonical_menu_dom() -> None:

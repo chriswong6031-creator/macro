@@ -641,7 +641,9 @@
       else {
         if (returnTrigger) returnTrigger.setAttribute('aria-expanded', 'false');
       }
-      if (panel) panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      if (panel) {
+        panel.toggleAttribute('inert', !isOpen);
+      }
       if (isOpen && panel) {
         var first = panel.querySelector('[data-nav-drill-back], a, button');
         if (first) window.setTimeout(function () { first.focus(); }, 80);
@@ -657,7 +659,9 @@
       openPanel.classList.remove('is-open');
       if (trigger) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); }
       var panel = openPanel.querySelector(':scope > [data-nav-drill-panel]');
-      if (panel) panel.setAttribute('aria-hidden', 'true');
+      if (panel) {
+        panel.setAttribute('inert', '');
+      }
     });
   }
 
