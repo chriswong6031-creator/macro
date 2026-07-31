@@ -2,6 +2,13 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-07-31",
+      "tickers": [
+        "EME",
+        "SNDK"
+      ]
+    },
+    {
       "as_of": "2026-07-30",
       "tickers": [
         "LII",
@@ -111,30 +118,6 @@
         "TMUS",
         "TSLA",
         "VST",
-        "WMT",
-        "XEL"
-      ]
-    },
-    {
-      "as_of": "2026-07-24",
-      "tickers": [
-        "CRM",
-        "CVI",
-        "ENOV",
-        "FBRT",
-        "GPI",
-        "IBM",
-        "INTU",
-        "KMT",
-        "LKFN",
-        "MOS",
-        "PI",
-        "REZI",
-        "ROST",
-        "SMCI",
-        "STEP",
-        "VST",
-        "WAB",
         "WMT",
         "XEL"
       ]
