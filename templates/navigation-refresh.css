@@ -407,7 +407,7 @@ html[data-lang="zh"] .nav-mega-h { letter-spacing: .02em; }
 
 /* Profile-aware animated ticker search */
 .nav-search.ticker-search {
-  width: 124px;
+  width: 128px;
   max-width: none;
   height: 40px;
   z-index: 110;
@@ -1343,7 +1343,7 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
 
 /* The compact control sits at the right edge, as in the approved mockup. It
    expands left over reserved whitespace so the menu does not jump. */
-.nav-search.ticker-search { width: 124px; }
+.nav-search.ticker-search { width: 128px; }
 .nav-search.ticker-search.open {
   width: 340px;
   justify-self: end;
@@ -1785,7 +1785,7 @@ body > nav.site-nav {
   color: #4d5768;
   background: transparent;
   font-size: 12.5px;
-  font-weight: 530;
+  font-weight: 450;
   line-height: 1;
   white-space: nowrap;
   transition: color .16s ease, background .16s ease, transform .16s ease;
@@ -2266,7 +2266,7 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
 .nav-search.ticker-search {
   position: relative;
   z-index: 110;
-  width: 112px;
+  width: 128px;
   max-width: none;
   height: 38px;
   flex: none;
@@ -2294,6 +2294,7 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
   gap: 7px;
   justify-content: center;
   padding: 0 10px;
+  overflow: hidden;
 }
 
 .ticker-search .search-trigger:hover {
@@ -2321,7 +2322,11 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
 .ticker-search .search-glyph { width: 15px; height: 15px; }
 
 .ticker-search .idle-ticker {
-  min-width: 54px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--mock-ink-2);
   font: 720 11px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, sans-serif;
   letter-spacing: .025em;
@@ -2515,43 +2520,5 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
-  }
-}
-
-/* Desktop country/market maps are click-owned. Keep this final in the file so
-   it decisively overrides the legacy generic :hover / :focus-within flyout
-   rules without changing Research's hover-safe interaction. */
-@media (min-width: 901px) {
-  .site-nav .nav-links > .nav-market-dd:not(.nav-click-open):hover > .nav-market-menu,
-  .site-nav .nav-links > .nav-market-dd:not(.nav-click-open):focus-within > .nav-market-menu,
-  .topbar .nav-links > .nav-market-dd:not(.nav-click-open):hover > .nav-market-menu,
-  .topbar .nav-links > .nav-market-dd:not(.nav-click-open):focus-within > .nav-market-menu {
-    display: none;
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transform: translateY(12px);
-  }
-
-  .site-nav .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu,
-  .topbar .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu {
-    display: grid;
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-    transform: translateY(0);
-    animation: mockupMenuSwap .24s cubic-bezier(.2, .76, .2, 1) both;
-  }
-
-  .site-nav .nav-links > .nav-market-dd.nav-click-open > .nav-link .caret,
-  .topbar .nav-links > .nav-market-dd.nav-click-open > .nav-link .caret {
-    transform: rotate(180deg);
-  }
-}
-
-@media (min-width: 901px) and (prefers-reduced-motion: reduce) {
-  .site-nav .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu,
-  .topbar .nav-links > .nav-market-dd.nav-click-open > .nav-market-menu {
-    animation: none;
   }
 }

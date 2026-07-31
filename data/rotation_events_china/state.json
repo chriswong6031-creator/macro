@@ -1,4 +1,33 @@
 {
- "active": {},
+ "active": {
+  "cn_tech:cn_semis->cn_software": {
+   "pair_id": "cn_tech:cn_semis->cn_software",
+   "sector": "cn_tech",
+   "from_leg": "cn_semis",
+   "to_leg": "cn_software",
+   "started": "2026-07-31",
+   "lapse_count": 0,
+   "last_receipts": {
+    "blowoff": {
+     "peak_date": "2026-06-30",
+     "runup_pct": 0.4707,
+     "runup_z": 2.81,
+     "drawdown_pct": 0.3031,
+     "qualified_by": "z"
+    },
+    "turn": {
+     "low_date": "2026-07-24",
+     "off_low_pct": 0.116,
+     "reclaimed": true
+    },
+    "ratio": {
+     "ratio_chg_10s": 0.1765,
+     "inflected": false,
+     "ratio_20s_high": true
+    },
+    "asof": "2026-07-31"
+   }
+  }
+ },
  "closed": {}
 }
