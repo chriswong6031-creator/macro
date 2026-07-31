@@ -2,7 +2,7 @@
 slug: market-terminal
 family: product
 title: "Market Terminal & Browser Charting"
-description: "Chart markets in your browser with watchlists, indicators, key statistics and research context. Core terminal access is free; live options requires a plan."
+description: "Browser charting with five complementary technical systems, 31 advanced indicator modules, watchlists and research context. Core access is free."
 product_name: "Market Terminal"
 eyebrow: "Browser charting workspace"
 order: 1
