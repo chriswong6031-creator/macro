@@ -950,6 +950,47 @@ def _slot_day_num(slot: Any) -> int | None:
 #: not, so a handful of fallbacks is already the failure, not noise.
 _LEGACY_FALLBACK_ALARM_SHARE = 0.10
 
+#: The ONE ladder day that can reach the outbox. outbox.emit_from_content_plan
+#: takes `day_prefix="D1"` and skips every other slot with one unconditional
+#: `continue`, and the governor takes that default.
+_EMIT_DAY = "D1"
+
+
+def _is_writable_day(slot: object, cfg: dict | None = None) -> bool:
+    """Should the MODEL be paid to write copy for this slot?
+
+    THE 93% THAT WAS THROWN AWAY (operator, 2026-07-31: "why in the hell would
+    you need 915 posts planned?"). The planner books a SEVEN-DAY forward ladder,
+    and the writer was handed every slot on it. On the 2026-07-31 nightly that
+    was 915 posts across six enabled desks — while `_sel_report["after_budget"]`,
+    the count of slots that can actually emit, was 65.
+
+    The other 850 were not a buffer. Nothing reads a previous plan: `content_plan`
+    builds from `plan_account` every night, so today's D2 never becomes tomorrow's
+    D1 — tomorrow regenerates the whole ladder from scratch. So the model was paid
+    for seven days of copy, six of which were overwritten before they could ever
+    be read, every single night.
+
+    Writable now:
+      * the EMIT day (D1) — the only ladder slots the outbox will take;
+      * every NON-ladder slot (THEME-, MOVER-, and any publish-time lane) —
+        `_slot_day` returns "" for these and they ship through their own path,
+        so excluding them would silence live reach content. This is the part a
+        naive `slot.startswith("D1-")` filter would get wrong.
+
+    Forward ladder slots keep the deterministic template copy `plan_account`
+    already gave them, so the admin preview still shows a populated week; they
+    are simply not sent to a model to be written in prose that nothing will read.
+
+    `copywriter.llm.write_forward_days: true` restores the old behaviour for
+    anyone who wants to pay for it.
+    """
+    llm_cfg = ((cfg or {}).get("copywriter") or {}).get("llm") or {}
+    if bool(llm_cfg.get("write_forward_days", False)):
+        return True
+    day = _slot_day(slot)
+    return day in ("", _EMIT_DAY)
+
 #: Share of writer drops at which a night is reported as broken rather than picky.
 #: The writer rejecting a third of a plan is editing; rejecting most of it is an
 #: outage wearing an editorial costume.
@@ -3908,7 +3949,14 @@ def content_plan(
                 pass
 
             contexts: list[dict] = []
+            # ITEMS THE WRITER IS ACTUALLY ASKED TO WRITE, in context order.
+            # `posts` comes back index-aligned to `contexts`, so every zip below
+            # pairs against THIS list, not against `queue` — see the note on
+            # _is_writable_day for why they are no longer the same thing.
+            _ctx_items: list[dict] = []
             for item_dict in queue:
+                if not _is_writable_day(item_dict.get("slot"), cfg):
+                    continue
                 ticker = item_dict.get("ticker", "")
                 type_id = item_dict.get("type", "")
                 facts_data: dict = {}
@@ -4012,6 +4060,7 @@ def content_plan(
                 # slot 0 and repeats verbatim night to night.
                 ctx["as_of"] = today
                 contexts.append(ctx)
+                _ctx_items.append(item_dict)
 
             # Phase 3: the WRITER. Per-post model calls (write_posts_llm_v2 —
             # contract §Writer API); each result is
@@ -4067,7 +4116,7 @@ def content_plan(
             # first, deleted after the zips so queue↔posts stays index-aligned.
             _drop_ids: set[str] = set()
 
-            for _idx, (item_dict, post) in enumerate(zip(queue, posts)):
+            for _idx, (item_dict, post) in enumerate(zip(_ctx_items, posts)):
                 if not isinstance(post, dict):
                     continue
                 if post.get("mode") == "dropped":
@@ -4097,7 +4146,7 @@ def content_plan(
                     if _tkr and _txt:
                         _sibling_texts.setdefault(_tkr, []).append(_txt)
 
-            for item_dict, post in zip(queue, posts):
+            for item_dict, post in zip(_ctx_items, posts):
                 if str(item_dict.get("id")) in _drop_ids:
                     continue  # writer dropped it; deleted from the queue below
                 # Confluence signal posts keep the win_rate_hook copy — it is the

@@ -2164,3 +2164,68 @@ class TestLectureRegister:
         laws = " ".join((cfg.get("copywriter") or {}).get("copy_laws") or [])
         assert "NEVER lecture" in laws
         assert "banned superiority constructions" in laws
+
+
+class TestTheWriterIsPaidOnlyForCopyThatCanShip:
+    """915 posts written, 65 able to emit, every night.
+
+    Operator, 2026-07-31: "why in the hell would you need 915 posts planned?"
+
+    The planner books a SEVEN-DAY forward ladder and the writer was handed every
+    slot on it. On the 2026-07-31 nightly that was 915 posts across six enabled
+    desks, while `_sel_report["after_budget"]` — the slots that can actually
+    emit — was 65.
+
+    The other 850 were not a buffer. Nothing reads a previous plan: content_plan
+    builds from plan_account every night, so today's D2 never becomes tomorrow's
+    D1. Six days of model-written prose were overwritten before anything could
+    read them, nightly.
+    """
+
+    def test_the_emit_day_is_written(self):
+        from engine.marketing.content_studio import _is_writable_day
+
+        assert _is_writable_day("D1-S01", {}) is True
+
+    def test_forward_ladder_days_are_not(self):
+        from engine.marketing.content_studio import _is_writable_day
+
+        for slot in ("D2-S01", "D3-S14", "D7-S28"):
+            assert _is_writable_day(slot, {}) is False, slot
+
+    def test_publish_time_reach_slots_are_still_written(self):
+        """The part a naive slot.startswith("D1-") filter gets WRONG.
+
+        THEME/MOVER items ship through the publish-time lane, not the D1 emit —
+        the outbox provenance census has movers in it. Excluding them to save
+        tokens would silence live reach content.
+        """
+        from engine.marketing.content_studio import _is_writable_day
+
+        for slot in ("THEME-01", "MOVER-02", "HOT-1430Z", "", None):
+            assert _is_writable_day(slot, {}) is True, slot
+
+    def test_the_old_behaviour_is_one_config_line_away(self):
+        from engine.marketing.content_studio import _is_writable_day
+
+        cfg = {"copywriter": {"llm": {"write_forward_days": True}}}
+        assert _is_writable_day("D5-S01", cfg) is True
+
+    def test_writer_results_are_zipped_to_the_WRITTEN_items_not_the_queue(self):
+        """The alignment bug this change would otherwise introduce.
+
+        `posts` comes back index-aligned to `contexts`. Once contexts skips
+        forward-day items, `zip(queue, posts)` pairs desk D1 copy onto whatever
+        item happens to sit at that index — silently attaching the wrong text to
+        the wrong post. Both zips must read the written-items list.
+        """
+        import inspect
+
+        from engine.marketing import content_studio
+
+        src = inspect.getsource(content_studio.content_plan)
+        assert "zip(_ctx_items, posts)" in src
+        assert "zip(queue, posts)" not in src, (
+            "a zip still pairs the writer's output against the FULL queue"
+        )
+        assert src.count("_ctx_items.append(item_dict)") == 1

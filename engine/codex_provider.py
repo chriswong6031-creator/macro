@@ -275,7 +275,23 @@ def _message_from_result(result: dict[str, Any], tools: Any) -> _Message:
             raise CodexProviderError("Codex provider timeout")
         if kind == "not_installed":
             raise CodexProviderError("Codex provider not installed")
-        raise CodexProviderError(f"Codex provider error ({kind})")
+        # CARRY THE TAIL (2026-07-31). "error" is the FALLBACK classification —
+        # _classify_error returns it when the CLI's output matched neither the
+        # usage-limit nor the auth phrase lists. So `Codex provider error (error)`
+        # means "Codex failed for a reason we did not recognise", and printing
+        # only the kind discards the one field that says what it was.
+        #
+        # The nightly logged that line four times per post, for every post, on
+        # 2026-07-31; the lane then fell through to DeepSeek and the night ended
+        # with zero posts. Codex is the FIRST provider in the marketing order and
+        # the one the operator wants used, and its failures were unreadable.
+        # `raw_tail` is already on the result and already truncated by the runner.
+        tail = str(result.get("raw_tail") or "").strip().replace("\n", " ")
+        if tail:
+            raise CodexProviderError(f"Codex provider error ({kind}): {tail[:400]}")
+        raise CodexProviderError(
+            f"Codex provider error ({kind}) — no output captured; the CLI wrote "
+            f"nothing this run")
 
     _record_rate_limits(rate_limits, 200)
     final = str(result.get("final_message") or "").strip()
