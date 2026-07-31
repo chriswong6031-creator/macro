@@ -1,14 +1,16 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T10:27:49.363063+00:00",
-  "count": 447,
+  "generated_at": "2026-07-31T10:42:41.459461+00:00",
+  "count": 452,
   "institutions": [
     "Amova",
+    "Apollo",
     "BTIG",
     "Bank of America",
     "Blackrock",
     "Cantor",
     "Citi",
+    "Danske",
     "Deutsche Bank",
     "Franklin",
     "Goldman Sachs",
@@ -38,6 +40,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-8q2xt3wnjqd-8f4d09",
+      "title": "JPM FXMW Update FX FOMC",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T09:27:11Z",
+      "summary_points": [
+        "**Fed Credibility & USD Dynamics**: FOMC credibility concerns (Chair's PCE doubts, unclear inflation path) spike inflation risk premium, driving USD weakness via 2s30s twist steepening (largest single-day move in 10 years), yet short-end rates preserve USD carry insulation.",
+        "**Sustained Long-USD Position**: Long-USD trade persists despite USD setbacks due to Fed credibility issues; Iran's ToT support offsets weakness, reinforcing USD vs.",
+        "G10 low-yielders (EUR, CHF, SEK, CAD, NZD).",
+        "**Geopolitical & Flow Support**: Iran conflict heating (energy prices, risk-off) and global equity sell-off (-5.5%) correlate with +1% USD TWI gain, aligning with anti-cyclical USD properties.",
+        "**Active Long-Yielder Recommendation**: Actively recommend long-yielder basket (EUR, SEK, NZD, CAD, CHF) and dollar-long position amid Fed credibility spillover, despite risks to GBP/JPY and euro convergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-ewptkz1rvaz-0c9c98",
       "title": "JPM Oil Markets Weekly",
@@ -118,6 +141,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-axo3atno6en-8ea1e5",
+      "title": "Whitepaper Impact of AI on U.S. Labor Market 2026 R2 1",
+      "institution": "Apollo",
+      "side": "buy",
+      "desk": "",
+      "published_at": "2026-07-31T00:06:12Z",
+      "summary_points": [
+        "**AI-Driven Wage Compression**: High-exposure U.S.",
+        "occupations show 6.7% real wage decline post-2023 (24.3% for service workers, 10.7% for bottom wage quartile), with firms capturing productivity gains via wage compression—not workforce reduction.",
+        "**Quantifiable Labor Income Risk**: $28B annual aggregate labor income loss across 5.8M high-exposure workers (O*NET ≥0.5), grounding theoretical debates in concrete macroeconomic magnitude for near-term portfolio risk assessment.",
+        "**Observed Usage vs.",
+        "Theoretical Exposure**: Actual AI adoption (e.g., Claude logs) shows significantly lower exposure than theoretical models (e.g., Webb 2019), with realized usage critical for accurate risk assessment—overestimation distorts sector-specific impact forecasts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
       "language": "en",
       "needs_metadata": false
     },
@@ -1274,6 +1318,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-edqlc1dtiqt-6b70f3",
+      "title": "fed review",
+      "institution": "Danske",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:31:02Z",
+      "summary_points": [
+        "**Policy Hold**: Fed maintained rates, triggering market repricing after Chair Warsh shifted from hawkish to neutral tone.",
+        "**Tone Shift**: Neutral communication contrasted with prior hawkish stance, steepening UST curve and lifting EUR/USD above 1.14.",
+        "**Hike Expectations**: Sept rate hike probability declined to 65% as markets reassessed price stability confidence.",
+        "**Forward Guidance**: Unchanged call for 25bp hikes in Dec/March, with rates held at 4.0-4.25% through 2027."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xwjaicfpb4x-136574",
       "title": "Fed review Hold now, but dissents",
       "institution": "Nordea",
@@ -1291,6 +1355,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vgkicyvyrz8-c99773",
+      "title": "Fed to keep policy rate unchanged but a hike cant be ruled out 2026 07 29",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T05:21:03Z",
+      "summary_points": [
+        "**Fed Policy Outlook**: 32% hike probability due to oil surge (USD 3-4/bbl) and hawkish Fed Chair, conflicting with market pricing (8bps) and creating rate uncertainty.",
+        "**Geopolitical & Tech Pressures**: Middle East attack spurs oil prices; tech sector drag (SK Hynix, Kospi -8%) and SEK strength (4-5% vs EUR/USD) signal sector and currency volatility.",
+        "**Nordic GDP Momentum**: Swedish Q2 recovery (Apr/May) supports 2026 growth forecast (2.6% vs Riksbank 2.29%), though June weakness and household uncertainty persist."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
@@ -1333,6 +1416,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zik7dr0psgn-c42afc",
+      "title": "The Fed takes center stage",
+      "institution": "Natixis",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T05:17:25Z",
+      "summary_points": [
+        "**Fed Policy Divergence**: Market pricing 22 bps hikes in September (vs Fed baseline hold); Warsh’s press conference critical for reshaping rate expectations.",
+        "**Geopolitical Risk Unwinding**: Middle East tensions easing (Brent < $90) unwound risk premium, easing Euro rates (10-yr Bund 3.11%) and weighing on DXY via US consumer confidence drop to 90.8.",
+        "**Tech Credit Crisis**: Semiconductors down (-3.4%), SpaceX CDS at 185 bps (all-time high), Oracle/217 bps, CoreWeave +65 bps; critical contagion risk.",
+        "**Defensive Rotation Signal**: Consumer Staples +3% (Unilever/Coca-Cola earnings), France confidence up (86), Spain unemployment at 9.9% (2008 low); US consumer confidence down to 90.8."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
