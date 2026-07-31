@@ -1346,6 +1346,28 @@ def chart_etf_flow(df: pd.DataFrame) -> str:
 HUB_MARKER = "<!-- bitcoin-vector-landing-hub -->"
 
 
+def _hub_product_nav_html() -> str:
+    """Render the canonical authenticated navigation for ``start.html``.
+
+    The hub is assembled as a raw HTML document rather than through a page
+    template, but it must not own a third menu. Rendering the shared partial
+    here keeps the same inventory, search, responsive behavior and future page
+    additions as every other product surface.
+    """
+    env = Environment(
+        loader=FileSystemLoader(str(Path(__file__).resolve().parent.parent / "templates")),
+        autoescape=False,
+    )
+
+    def _nav_t(en: str, zh: str = "") -> str:
+        return (
+            f'<span class="l-en">{en}</span>'
+            f'<span class="l-zh">{zh or en}</span>'
+        )
+
+    return env.get_template("_site_nav.html.j2").render(t=_nav_t, nav_prefix="")
+
+
 def build_landing(site: Path, vm: dict) -> None:
     """Install the signed-in hub at start.html. Idempotent: safe to run every
     build, independent of build_site.py ordering — the hub is rendered from the
@@ -2018,6 +2040,8 @@ body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);
 html[data-lang="zh"] .hub-signin .l-en{display:none}
 html[data-lang="zh"] .hub-signin .l-zh{display:inline}
 .h{text-align:center;margin:6px 0 22px;position:relative;isolation:isolate}
+.hub-live-meta{display:flex;justify-content:center;align-items:center;margin-top:14px}
+.hub-live-meta .eyebrow{margin-bottom:0}
 /* a soft, feathered radial --bg scrim sits BEHIND the hero text (own stacking
    context via isolation) so the bright sun/moon disc never washes the headline
    out. Radial + fully transparent edges = no hard rectangular line across the body. */
@@ -3314,16 +3338,9 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<g class="sat-fine"><path d="M67 22 60 8" stroke="#c9d3e6" stroke-width="1.1" stroke-linecap="round"/><circle cx="60" cy="8" r="1.5" fill="#dfe7f5"/></g>'
         '<g transform="rotate(-17 76 14)"><line x1="74" y1="21" x2="76" y2="15" stroke="#9aa7c2" stroke-width="1.3"/><ellipse cx="76" cy="13.5" rx="8.6" ry="5" fill="url(#satDish)" stroke="#75839f" stroke-width=".8"/><circle cx="74.2" cy="12" r="1.5" fill="#5f6c88"/></g>'
         '</svg></div></div>'
-        '<div class="wrap has-new-footer">'
-        '<div class="hub-top">'
-        '<button id="hub-signin" class="hub-signin" hidden type="button"><span class="l-en">Sign in</span><span class="l-zh">登录</span></button>'
-        '<button class="theme-switch" aria-label="Toggle dark / light mode"><span class="ic sun">☀️</span><span class="ic moon">🌙</span><span class="knob"></span></button>'
-        '<div class="lang-toggle" role="group" aria-label="Language"><span class="pill"></span><span class="opt en-opt" data-l="en">EN</span><span class="opt zh-opt" data-l="zh">中文</span></div>'
-        '</div>'
-        '<header class="h"><span class="eyebrow"><span class="live"></span>'
-        + _bi('Live · <span class="hub-clock" data-loc="en">—</span>',
-              '实时 · <span class="hub-clock" data-loc="zh-CN">—</span>')
-        + '</span>'
+        + _hub_product_nav_html()
+        + '<div class="wrap has-new-footer">'
+        '<header class="h">'
         # hero stack: the personal typed greeting overlays the brand lockup in one
         # grid cell, then cross-dissolves into it (hub-greet.js). Brand is the
         # accessible content; the greeting is decorative (aria-hidden).
@@ -3334,7 +3351,11 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         + '<div class="hub-brand"><h1 class="hub-logo">' + _BRAND_MARK_SVG
         + '<span class="logo-word">MASTERMINDX</span></h1>'
         '<p>' + _bi("One disciplined view across every major market.",
-                    "一套框架，看清全球主要市场。") + '</p></div></div></header>'
+                    "一套框架，看清全球主要市场。") + '</p></div></div>'
+        '<div class="hub-live-meta"><span class="eyebrow"><span class="live"></span>'
+        + _bi('Live · <span class="hub-clock" data-loc="en">—</span>',
+              '实时 · <span class="hub-clock" data-loc="zh-CN">—</span>')
+        + '</span></div></header>'
         + globe_deck
         + '<div class="hub-views" id="hub-views" data-view="mk">'
         + _HUB_SEG_HTML

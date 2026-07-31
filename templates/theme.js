@@ -805,7 +805,10 @@
           loadingSub: '正在准备热门股票和公司匹配…',
           loadingEmpty: '最新股票库正在加载。',
           popularTitle: '热门股票',
-          popularSub: '您所选市场的近期活跃股票',
+          popularSub: '上一交易时段成交量最高的股票',
+          rankingTitle: '正在按成交量排序',
+          rankingSub: '正在读取您所选市场的上一交易时段…',
+          rankingEmpty: '正在准备成交量最高的股票。',
           selectTicker: '选择股票并在终端中打开',
           stillLoading: '仍在加载匹配市场…',
           noMatches: '没有匹配的股票代码或公司。',
@@ -826,7 +829,10 @@
         loadingSub: 'Preparing popular tickers and company matches…',
         loadingEmpty: 'The latest ticker libraries are loading.',
         popularTitle: 'Popular tickers',
-        popularSub: 'Latest active names in your markets',
+        popularSub: 'Highest-volume names from the latest session',
+        rankingTitle: 'Ranking today’s active names',
+        rankingSub: 'Reading the latest completed session across your markets…',
+        rankingEmpty: 'Preparing your highest-volume tickers.',
         selectTicker: 'Select a ticker to open Terminal',
         stillLoading: 'Still loading matching markets…',
         noMatches: 'No ticker or company matches this search.',
@@ -925,7 +931,11 @@
           lib = lib.concat(data || []);
         }).catch(function () {}).then(function () {
           pending -= 1;
-          if (box.classList.contains('open')) render();
+          /* Popular rows are one composed snapshot. Repainting after each of
+             five libraries arrives made cards repeatedly disappear, reorder
+             and replay their entrance. Wait for the complete market set; a
+             typed query can still progressively return early matches. */
+          if (box.classList.contains('open') && (pending === 0 || input.value.trim())) render();
         });
       });
     }
@@ -1044,6 +1054,14 @@
       var query = normalizeSearch(queryDisplay);
       selected = -1;
       if (!query) {
+        if (pending > 0) {
+          dropdown.innerHTML =
+            '<div class="search-drop-head"><div><div class="search-drop-title">' + esc(c.rankingTitle) + '</div>' +
+            '<div class="search-drop-sub">' + esc(c.rankingSub) + '</div></div>' +
+            '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
+            '<div class="empty-search">' + esc(c.rankingEmpty) + '</div>';
+          return;
+        }
         pageRows = popularRows();
         if (!pageRows.length) {
           dropdown.innerHTML =

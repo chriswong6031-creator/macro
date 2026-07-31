@@ -14,6 +14,26 @@ This repository is operated by multiple Claude accounts and Codex sessions. Repo
    repository. Authentication, subscriptions, data contracts, APIs, and deployment
    changes may require checking both repositories.
 
+## Navigation source-of-truth
+
+There are exactly two global navigation families:
+
+- Authenticated/product pages use `templates/_site_nav.html.j2`. Its inventory
+  lives in `templates/_navlinks.html.j2`; shared geometry, responsive behavior,
+  mega menus, ticker search and motion live in
+  `templates/navigation-refresh.css`, `templates/nav_market.js`, and
+  `templates/theme.js`.
+- Anonymous/corporate pages use `templates/_public_nav.html.j2` with
+  `templates/_public_chrome_css.html.j2` and
+  `templates/_public_chrome_js.html.j2`. The hand-authored landing page mirrors
+  that family in `templates/index.html`/`templates/landing.css`, guarded by
+  `tests/test_public_chrome.py`.
+
+Do not hand-copy or restyle a third header inside a page template. A page may
+provide a relative `nav_prefix`, but page CSS must not change the global
+header's width, typography, menu dimensions, search behavior, breakpoints or
+motion. Change the appropriate shared family and its parity tests instead.
+
 ## Workspace and git
 
 - The canonical project home is `/Users/chriswong/Documents/Cluade`.

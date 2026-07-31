@@ -66,8 +66,9 @@ def test_approved_mockup_is_the_navigation_source_of_truth() -> None:
     assert "legacy CSS-mask icon library" in MARKET_JS
     assert "{{ t('Crypto', '加密') }}" not in NAV
     assert "removeLegacyCryptoMenu(links)" in MARKET_JS
-    for label in ("Bitcoin Overview", "Allocation Strategy", "BTC Strategy"):
+    for label in ("Crypto Intelligence", "Bitcoin Vector", "Allocation"):
         assert label in MARKET_JS
+    assert 'aria-label="{{ t(' not in NAV
 
 
 def test_global_cycles_uses_accessible_in_panel_drill() -> None:
@@ -107,6 +108,38 @@ def test_search_is_profile_aware_animated_and_status_rich() -> None:
     assert "@keyframes nrFanIn" in REFRESH_CSS
     assert "html:not([data-theme=\"light\"])" in REFRESH_CSS
     assert "@media (prefers-reduced-motion: reduce)" in REFRESH_CSS
+
+
+def test_search_uses_volume_rank_and_controlled_saas_motion() -> None:
+    assert "Number(a.v || a.vol || 0)" in THEME_JS
+    assert "Highest-volume names from the latest session" in THEME_JS
+    assert "pending === 0 || input.value.trim()" in THEME_JS
+    assert "@keyframes mockupCardSettle" in REFRESH_CSS
+    assert "@keyframes mockupResultSettle" in REFRESH_CSS
+    approved = REFRESH_CSS.split("APPROVED MOCKUP — SOURCE-OF-TRUTH PORT", 1)[1]
+    assert "translate(62px, -31px)" not in approved
+    assert 'font: 720 11px/1 -apple-system' in approved
+    assert 'font: 680 12px/1 -apple-system' in approved
+
+
+def test_product_header_has_one_page_independent_geometry() -> None:
+    assert "body > nav.site-nav" in REFRESH_CSS
+    rule = REFRESH_CSS.split("body > nav.site-nav", 1)[1].split("}", 1)[0]
+    assert "width: min(1500px, calc(100vw - 32px)) !important;" in rule
+    assert (
+        "margin-left: calc((100% - min(1500px, calc(100vw - 32px))) / 2) "
+        "!important;"
+    ) in rule
+    assert "transform:" not in rule
+    assert "margin: 18px auto 16px !important;" in rule
+
+
+def test_start_hub_uses_canonical_product_navigation_and_demotes_clock() -> None:
+    source = (ROOT / "scripts" / "build_vector.py").read_text(encoding="utf-8")
+    assert 'get_template("_site_nav.html.j2")' in source
+    assert "+ _hub_product_nav_html()" in source
+    assert "'<div class=\"hub-live-meta\">" in source
+    assert "'<div class=\"hub-top\">'" not in source
 
 
 def test_search_waits_for_refresh_css_on_stale_rendered_pages() -> None:

@@ -1745,14 +1745,27 @@ html[data-lang="zh"] .nav-market-heading { letter-spacing: .02em; }
   --mock-cyan: #42a9b7;
   --mock-violet: #8671d8;
   --mock-shadow: 0 24px 70px rgba(34, 42, 61, .16), 0 2px 8px rgba(34, 42, 61, .06);
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 .site-nav,
 .topbar .wrap {
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+/* The product header has one geometry on every authenticated page. Historical
+   templates still carry local 1080/1180/1280px caps; this authoritative rule
+   intentionally defeats those page-level wrappers so Reports, Macro, baskets
+   and nested desks cannot render different-sized navigation. */
+body > nav.site-nav {
+  width: min(1500px, calc(100vw - 32px)) !important;
+  max-width: none !important;
+  margin: 18px auto 16px !important;
+  margin-left: calc((100% - min(1500px, calc(100vw - 32px))) / 2) !important;
+  padding: 0 !important;
+  box-sizing: border-box;
 }
 
 .site-nav .nav-links > .nav-dd > a.nav-link,
@@ -2298,14 +2311,15 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
 .ticker-search .idle-ticker {
   min-width: 54px;
   color: var(--mock-ink-2);
-  font: 720 10.5px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 720 11px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, sans-serif;
   letter-spacing: .025em;
 }
 
 .ticker-search .idle-ticker::after { height: 11px; background: var(--mock-blue); }
 
 .ticker-search .ticker-input {
-  font: 720 12px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 680 12px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, sans-serif;
+  letter-spacing: .01em;
 }
 
 .ticker-search .search-esc {
@@ -2348,8 +2362,8 @@ html[data-lang="zh"] .ticker-search .search-esc {
   gap: 9px;
   padding: 7px 8px;
   border-radius: 11px;
-  animation: mockupFanIn .55s cubic-bezier(.17, .76, .25, 1) forwards;
-  animation-delay: calc(var(--i) * 38ms + 80ms);
+  animation: mockupCardSettle .42s cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(var(--i) * 28ms + 54ms);
 }
 
 .result-row {
@@ -2360,8 +2374,8 @@ html[data-lang="zh"] .ticker-search .search-esc {
   border: 1px solid var(--mock-line);
   border-radius: 10px;
   background: #fafbfc;
-  animation: mockupResultIn .28s cubic-bezier(.2, .75, .2, 1) both;
-  animation-delay: calc(var(--i) * 34ms);
+  animation: mockupResultSettle .34s cubic-bezier(.22, 1, .36, 1) both;
+  animation-delay: calc(var(--i) * 24ms);
 }
 
 html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft); }
@@ -2374,14 +2388,30 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
 .search-pagination button { min-width: 26px; height: 26px; border-radius: 7px; font-size: 9px; }
 .empty-search { padding: 30px 20px 34px; font-size: 11px; }
 
-@keyframes mockupFanIn {
-  from { opacity: 0; transform: translate(62px, -31px) rotate(calc((var(--i) - 4.5) * 3.2deg)) scale(.72); }
-  to { opacity: 1; transform: translate(0, 0) rotate(calc((var(--i) - 4.5) * .22deg)) scale(1); }
+@keyframes mockupCardSettle {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(8px) scale(.985);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
 }
 
-@keyframes mockupResultIn {
-  from { opacity: 0; transform: translateX(18px) scale(.98); }
-  to { opacity: 1; transform: translateX(0) scale(1); }
+@keyframes mockupResultSettle {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    transform: translateY(6px) scale(.992);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes mockupMenuSwap {

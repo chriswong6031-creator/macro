@@ -166,3 +166,46 @@ def test_other_public_visitor_pages_have_public_chrome():
         assert '<nav class="public-nav"' in text, name
         assert '<footer class="public-footer">' in text, name
         assert '<nav class="site-nav"' not in text, name
+
+
+def test_shared_public_header_geometry_matches_landing_header():
+    landing_css = (TEMPLATES / "landing.css").read_text(encoding="utf-8")
+    public_css = (TEMPLATES / "_public_chrome_css.html.j2").read_text(encoding="utf-8")
+    assert "--maxw:1280px; --gutter:clamp(20px,4.5vw,60px)" in landing_css
+    assert (
+        ".nav-in{position:relative;max-width:var(--maxw);margin:0 auto;"
+        "padding:0 var(--gutter);height:64px;display:flex;align-items:center;gap:24px}"
+    ) in landing_css
+    for marker in (
+        "max-width:1280px",
+        "padding:0 clamp(20px,4.5vw,60px)",
+        "height:64px",
+        "gap:24px",
+        "min-height:40px",
+        "padding:8px 12px",
+        "border-radius:10px",
+        "top:calc(100% + 12px)",
+        "width:min(650px,calc(100vw - 40px))",
+    ):
+        assert marker in public_css
+    assert (
+        'font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text",'
+        '"SF Pro Display",system-ui'
+    ) in public_css
+    assert (
+        "font-family:'Inter',-apple-system,BlinkMacSystemFont,'SF Pro Text',"
+        "'SF Pro Display',system-ui"
+    ) in landing_css
+
+
+def test_agent_contract_names_only_the_two_canonical_navigation_families():
+    for name in ("AGENTS.md", "CLAUDE.md"):
+        source = (ROOT / name).read_text(encoding="utf-8")
+        assert "Navigation source-of-truth" in source
+        assert "templates/_site_nav.html.j2" in source
+        assert "templates/_public_nav.html.j2" in source
+        assert re.search(
+            r"(Never create or locally resize a third page\s+header|"
+            r"Do not hand-copy or restyle a third header)",
+            source,
+        )
