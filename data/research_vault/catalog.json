@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T23:13:59.790231+00:00",
-  "count": 489,
+  "generated_at": "2026-07-31T23:44:05.425219+00:00",
+  "count": 490,
   "institutions": [
     "Amova",
     "Apollo",
@@ -299,6 +299,26 @@
         "**Core Inflation Tracking Decline**: Core inflation tracking (red) falls to 2.42% after incorporating new national data (German, Spanish, Belgian), signaling easing underlying pressures.",
         "**Headline Inflation Stability**: Euro area headline inflation tracking (blue) remains stable at 2.87-2.89%, indicating persistent inflation despite German data revisions.",
         "**Inflation Forecast Divergence**: Goldman Sachs' July 2026 HICP forecast (2.87) is 0.03 below BBG Consensus (2.90), reflecting marginal easing in overall inflation expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-3lnaqbv5l8t-e05d6d",
+      "title": "Brazil Resilient but Gradually Less Tight Labor Market",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:14:03Z",
+      "summary_points": [
+        "**Brazil Labor Market: Resilient but Softening**: Unemployment at 5.4% (record low, below NAIRU), real wage growth moderating to 2.8% yoy, with fiscal transfers weakening labor participation.",
+        "**Monetary Policy & Inflation Pressures**: Resilient labor market sustains cost-push inflation, particularly in services, despite restrictive monetary conditions not yet triggering visible labor market inflection points.",
+        "**Demographic Labor Supply Shift**: Working-age population up 8.5mn (5.1%) vs.",
+        "active labor force up 3.9mn (3.7%), creating 4.6mn (7.4%) non-labor force increase, generating structural wage growth headwinds."
       ],
       "tags": [],
       "tickers": [],
