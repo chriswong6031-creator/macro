@@ -68,6 +68,7 @@
 {% include "_seo_head.html.j2" %}
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
+{% if mode != 'stocks' %}{% include "_lazy_heatmap_loader.html.j2" %}{% endif %}
 {% if mode == 'stocks' %}<link rel="stylesheet" href="dashboard-icons.css">{% endif %}
 {% if mode == 'stocks' %}<script defer src="dashboard-icons.js"></script>{% endif %}
 <link rel="stylesheet" href="illus.css">
@@ -4202,10 +4203,15 @@ window.__CHART_SWAP__ = {
     requestAnimationFrame(function(){requestAnimationFrame(function(){el.classList.add('cnx-in');});});
     /* Lazy-mount the China heatmap the first time the Markets dialog opens — the
        treemap needs a laid-out (visible) container, so we can't render it while hidden. */
-    if(id==='cnx-dlg-markets'&&!_hmMounted&&window.MMHeatmap&&MMHeatmap.mountScorecard){
-      _hmMounted=true;
-      try{MMHeatmap.mountScorecard('cn-hm-embed','marketdata/china_heatmap.json');}
-      catch(e){_hmMounted=false;}
+    if(id==='cnx-dlg-markets'&&!_hmMounted){
+      var mountHm=function(){
+        if(_hmMounted||!el.classList.contains('open')||!window.MMHeatmap||!MMHeatmap.mountScorecard)return;
+        _hmMounted=true;
+        try{MMHeatmap.mountScorecard('cn-hm-embed','marketdata/china_heatmap.json');}
+        catch(e){_hmMounted=false;}
+      };
+      if(window.MMHeatmap)mountHm();
+      else if(window.mmLoadHeatmap)window.mmLoadHeatmap().then(mountHm).catch(function(){});
     }
     /* Replay the ilx / Signal-Ink charts in this dialog. They're already laid out
        (stretch to their column via illus.css); ilxReveal restarts the ink draw once
@@ -4365,6 +4371,7 @@ window.__CHART_SWAP__ = {
 <script src="chart_i18n.js"></script>
 <script src="mtf.js"></script>
 <script src="tablesort.js"></script>
+{% if mode != 'macro' %}
 <script src="stocktable.js"></script>
 <script>
 /* W8-E: StockTable init — standout board table view (CN market).
@@ -4603,6 +4610,7 @@ if (document.readyState === 'loading') {
 }
 })();
 </script>
+{% endif %}
 <script>
 /* W-FCT: standout stage facet bar — grid view only; no-op when the bar is absent. */
 (function(){
@@ -4668,7 +4676,5 @@ if (document.readyState === 'loading') {
   }, true);
 })();
 </script>
-{%- if mode != 'stocks' %}<script src="heatmap.js"></script>
-{%- endif %}
 </body>
 </html>
