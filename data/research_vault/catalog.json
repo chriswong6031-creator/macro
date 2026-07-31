@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T00:56:48.578718+00:00",
-  "count": 424,
+  "generated_at": "2026-07-31T01:42:08.946560+00:00",
+  "count": 426,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -56,6 +56,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qvdktjlkmif-ea4f0c",
+      "title": "Global Forecast",
+      "institution": "UBS",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T23:59:09Z",
+      "summary_points": [
+        "**Eurozone Growth Weakness**: Germany's 2024 GDP at -0.5% and Spain's growth decelerating to 2.2% by 2026E signal deteriorating fundamentals, heightening risk for Eurozone exposure.",
+        "**Inflation Divergence**: Russia's CPI projected to fall to 6.0% (2026E) versus South Africa's rising CPI to 4.3% (2026E), highlighting geopolitical-driven inflation risks and potential EM policy shifts.",
+        "**EM Growth Resilience**: EM & Developing Economies' 2027E real GDP revised up to 4.6% (from 4.0%), indicating sustained growth momentum amid global uncertainty.",
+        "**RBA's Unwavering Policy**: RBA maintaining 4.35% target rate through 2027 signals persistent inflation concerns, supporting AUD strength while pressuring global risk assets.",
+        "**PBoC Rate Cut Expectation**: PBoC projected rate cut to 1.30% in June 2027 reflects China's economic slowdown, escalating EM debt risk and commodity volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-e4qobabjogz-ee3931",
       "title": "Blog",
       "institution": "UBS",
@@ -92,6 +113,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 58,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-6fk1ozhbnij-62e1e9",
+      "title": "er20260730BullDwellingApprovalsJun 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T23:46:31Z",
+      "summary_points": [
+        "**QLD Dominates Dwelling Approvals**: Qld's 29% YoY dwelling approvals growth outpaces Vic (8% YoY), WA (4% YoY), and leads NSW (-1% YoY) and SA (6% YoY) in strength, driving national new dwellings (19% YoY) growth.",
+        "**Detached Resilience Amid Headwinds**: Private detached approvals exceed 10k for six consecutive months, showing sector resilience despite RBA rate hikes and elevated construction costs threatening sustained growth.",
+        "**Value Decline Contrasts Volume Growth**: Total approvals rose 7.2% MoM (8.9% YoY) in volume, but value fell 5.5% MoM due to non-residential sector weakness, highlighting divergent performance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
