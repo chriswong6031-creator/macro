@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T23:41:42.664140+00:00",
-  "count": 421,
+  "generated_at": "2026-07-31T00:26:44.872233+00:00",
+  "count": 422,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -33,6 +33,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-6dqs9kf8acd-a8e23e",
+      "title": "Goldman Sachs Prime Insights Analytics At the Half Webinar Slide Pack",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T00:01:52Z",
+      "summary_points": [
+        "**2026 H1 Performance Beat**: 7.0% return (exceeding 10-yr avg 4.1%), sixth consecutive half-year above benchmark, matching 2025 H1 performance.",
+        "**AI Alpha Dominance**: 85% of gross equity L/S alpha in H1 2026 driven by AI exposure, indicating extreme concentration vs.",
+        "quant/multi-manager strategies.",
+        "**Semis Allocation Surge**: Net allocation to global Semis & Semi Equip stocks on Prime Book rose to 24% (record high), now at 19% (95th percentile vs.",
+        "5-yr history)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 41,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-0zp6mmgat4o-45583e",
       "title": "Yen Intervention Boj Hike And Carry Trade Risk",
