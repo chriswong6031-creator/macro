@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T17:28:22.639304+00:00",
-  "count": 472,
+  "generated_at": "2026-07-31T17:43:25.265196+00:00",
+  "count": 473,
   "institutions": [
     "Amova",
     "Apollo",
@@ -139,6 +139,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ebhbrchxuft-2f2ac2",
+      "title": "JPM Retail Radar Jul",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T15:16:04Z",
+      "summary_points": [
+        "**Tech Crowding Dominance**: Tech sector crowding at 75.2%ile vs healthcare's 2.6%ile, signaling overallocation and elevated correction risk amid historical peaks (2000, 2008) correlating with market tops.",
+        "**Momentum Unwind Risk**: Momentum crowding in winners (S&P 500) with high momentum-beta correlation (0.29 vs median 0.03), indicating overextension and unwind risk comparable to Feb-Mar'25.",
+        "**Tech Hardware Outflows**: Record weekly retail outflows from Tech Hardware & Equipment stocks, signaling severe retail disengagement and bearish sector risk.",
+        "**Semiconductor Overcrowding**: Semiconductors at 91.8%ile crowding (vs software 36.9%ile), reflecting extreme AI/LLM-driven concentration and heightened correction risk.",
+        "**Retail ETF Imbalance**: Retail flows at $2.2B (vs 12-mo avg $6.8B), with ETFs favored over single stocks (+$3.7B vs -$1.4B), amplifying portfolio risk amid elevated implied correlations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 29,
       "language": "en",
       "needs_metadata": false
     },
