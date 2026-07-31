@@ -1047,11 +1047,29 @@ def _confluence_census(
     if not built:
         note = "No fresh fired confluence combos today; Prophet posts only."
     elif lost:
+        # NAME THE BLOCKER, NOT JUST THE GAP (2026-07-30). "Dropped downstream"
+        # was true and useless: it described a symptom and left the operator to
+        # find the cause, which is how a lane sits dead for its whole existence
+        # while reporting nine posts a night.
+        #
+        # The cause is structural and provable from the code. This lane labels
+        # its slots `CONF-NN`, and outbox.emit_from_content_plan skips every item
+        # whose slot does not start with `D1-` (one unconditional `continue`).
+        # So a confluence post cannot reach the outbox even if it survives every
+        # queue filter — which matches the record: zero confluence items in the
+        # outbox across its entire history.
+        #
+        # Deliberately NOT "fixed" by relabelling the slot. That would start
+        # publishing copy whose win rate is a selection-on-test-half statistic
+        # this lane already had to be corrected about, and the house rule is that
+        # a lane earns publication on evidence rather than on a prefix change.
         note = (
             f"{built} confluence post(s) built and {charts_added} chart(s) "
-            f"rendered, but {lost} were dropped downstream and {survived} "
-            f"reached a desk queue. The render cost was paid for posts that "
-            f"cannot ship."
+            f"rendered; {survived} reached a desk queue. This lane CANNOT "
+            f"publish as built: it slots posts as CONF-NN and "
+            f"outbox.emit_from_content_plan emits only D1- slots, so nothing it "
+            f"produces has ever reached the outbox. Charts now defer, so the "
+            f"render cost is no longer paid for posts that cannot ship."
         )
     else:
         note = f"{survived} confluence signal post(s) live ({charts_added} charts)."
@@ -2841,10 +2859,43 @@ def content_plan(
                             "source": "confluence",
                             "combo_id": sig["combo_id"],
                         }
-                        _attach_chart_media(
-                            _conf_fc, closes=ohlcv_c, dates=ohlcv_dates,
-                            marker_index=conf_marker, as_of=today, root=root, cfg=cfg,
-                            subtitle=f"{cashtag} · confluence")
+                        # DEFER LIKE EVERY OTHER TICKER CARD (2026-07-30).
+                        #
+                        # This called _attach_chart_media UNCONDITIONALLY, so the
+                        # confluence lane rastered inline even when the governor
+                        # passed defer_media=True — the whole point of which is
+                        # that only cards on posts that SURVIVE cost a Chrome
+                        # launch (~11.5s each).
+                        #
+                        # Confluence posts do not survive. On the committed
+                        # 2026-07-30 plan the lane built 9 posts, rastered 8
+                        # cards, and put ZERO items in any desk queue; the outbox
+                        # has never held one. Worse, a card with no "_defer" blob
+                        # reads to raster_plan_media as an already-rastered
+                        # reach-lane card, so all 8 were KEPT in the artifact —
+                        # eight Chrome launches (~92s of a ~67 min budget that is
+                        # law) spent every night on pictures for posts that
+                        # cannot ship, then carried in content_plan.json as if
+                        # they had.
+                        #
+                        # Deferring makes the waste self-correcting rather than
+                        # requiring the drop to be diagnosed first: if the post
+                        # dies, raster_plan_media prunes the card and no launch is
+                        # ever paid. If the lane is fixed, the card rasters
+                        # exactly like a Prophet one. Either way this stops being
+                        # a standing charge.
+                        if not defer_media:
+                            _attach_chart_media(
+                                _conf_fc, closes=ohlcv_c, dates=ohlcv_dates,
+                                marker_index=conf_marker, as_of=today,
+                                root=root, cfg=cfg,
+                                subtitle=f"{cashtag} · confluence")
+                        else:
+                            _conf_fc["_defer"] = {
+                                "closes": ohlcv_c, "dates": ohlcv_dates,
+                                "marker_index": conf_marker,
+                                "subtitle": f"{cashtag} · confluence",
+                            }
                         featured_charts.append(_conf_fc)
                         chart_id_counter += 1
                         conf_charts_added += 1
