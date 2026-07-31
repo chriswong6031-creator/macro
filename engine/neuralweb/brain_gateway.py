@@ -5837,6 +5837,16 @@ def _tool_set_chat_preference(params: dict, user_id: str) -> dict:
 # [NEXT] suggestions contract (W6d) — split follow-up buttons off the reply
 # ---------------------------------------------------------------------------
 
+# A standalone ticker-shaped token: optional $ cashtag, 1-5 cap core, optional 1-2 cap
+# class suffix ("AAPL", "$XLF", "BRK.B").  The lookarounds keep it a whole token: no
+# start inside a word ("Apple" is prose), no partial eat of a 6+ cap word ("MARKET"),
+# no cap-run glued to digits ("COVID19"), and a bare trailing "." (sentence period)
+# still counts as the token's end while ".B"-style suffixes bind to the core first.
+_TICKER_SHAPED_RE = re.compile(
+    r"(?<![A-Za-z0-9$.])\$?[A-Z]{1,5}(?:\.[A-Z]{1,2})?(?!\.?[A-Za-z0-9])"
+)
+
+
 def _expected_lang(message: str, context: dict | None) -> str:
     """The ONE language this turn must answer in: 'zh' or 'en'.
 
@@ -5848,6 +5858,8 @@ def _expected_lang(message: str, context: dict | None) -> str:
     "Specifically asked" needs evidence, not the absence of it: any CJK is Chinese, but
     English requires real prose (two 3+ letter words), so a Chinese-profile user typing
     "AAPL?" or "XLF vs XLV" keeps their Chinese — a bare ticker is not a language choice.
+    Ticker-shaped tokens are struck before the prose count for exactly that reason:
+    symbols are the desk's shared vocabulary, not evidence of a language switch.
     Prior-turn language is deliberately never consulted: a Chinese history was dragging
     English turns' follow-up chips into Chinese.
     """
@@ -5856,7 +5868,7 @@ def _expected_lang(message: str, context: dict | None) -> str:
         return "zh"
     lang = str((context or {}).get("lang") or "").strip().lower() if isinstance(context, dict) else ""
     profile = "zh" if lang.startswith("zh") else "en"
-    if profile == "zh" and len(re.findall(r"[A-Za-z]{3,}", msg)) >= 2:
+    if profile == "zh" and len(re.findall(r"[A-Za-z]{3,}", _TICKER_SHAPED_RE.sub(" ", msg))) >= 2:
         return "en"   # wrote English prose under a Chinese profile → answer English
     return profile
 
