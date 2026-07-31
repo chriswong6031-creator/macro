@@ -25,3 +25,4 @@
 {"at":"2026-07-30T19:47:11Z","day":"2026-07-30","session":"rth","n_quotes":896,"quotes_asof":"2026-07-30T19:47:11.797028+00:00","index_ticker":"SPY","index_pct":1.66,"n_up":370,"n_down":524,"n_events":371}
 {"at":"2026-07-30T19:58:31Z","day":"2026-07-30","session":"rth","n_quotes":896,"quotes_asof":"2026-07-30T19:58:32.068412+00:00","index_ticker":"SPY","index_pct":1.65,"n_up":385,"n_down":508,"n_events":351}
 {"at":"2026-07-30T20:09:28Z","day":"2026-07-30","session":"after_hours","n_quotes":896,"quotes_asof":"2026-07-30T20:09:29.104649+00:00","index_ticker":"SPY","index_pct":1.68,"n_up":383,"n_down":510,"n_events":358}
+{"at":"2026-07-31T15:32:53Z","day":"2026-07-31","session":"rth","n_quotes":922,"quotes_asof":"2026-07-31T15:32:56.479430+00:00","index_ticker":"SPY","index_pct":-0.18,"n_up":366,"n_down":554,"n_events":138}
