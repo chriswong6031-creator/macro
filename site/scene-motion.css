@@ -1,0 +1,219 @@
+/*
+ * MastermindX scene motion
+ * Motion is semantic: observe -> cross-check -> resolve. The runtime only
+ * advances visible scenes; every selector below has a useful static endpoint.
+ */
+
+.mm-stage{position:relative;isolation:isolate}
+.mm-phase-rail{position:absolute;z-index:8;right:14px;bottom:11px;display:flex;
+  align-items:center;gap:4px;padding:4px 6px;border:1px solid var(--hair);
+  border-radius:999px;background:color-mix(in srgb,var(--panel) 90%,transparent);
+  box-shadow:0 2px 8px rgba(24,32,46,.05);pointer-events:none}
+.mm-phase-rail i{display:block;width:13px;height:2px;border-radius:3px;background:var(--hair-2);
+  transition:width .45s cubic-bezier(.22,.8,.3,1),background-color .45s,opacity .45s}
+[data-mm-phase="observe"] .mm-phase-rail i:first-child,
+[data-mm-phase="reason"] .mm-phase-rail i:nth-child(-n+2),
+[data-mm-phase="resolve"] .mm-phase-rail i,
+[data-mm-phase="hold"] .mm-phase-rail i{background:var(--pg-accent,var(--blue))}
+[data-mm-phase="reason"] .mm-phase-rail i:nth-child(2),
+[data-mm-phase="resolve"] .mm-phase-rail i:nth-child(3){width:23px}
+[data-mm-phase="hold"] .mm-phase-rail{opacity:.54}
+
+.mm-stage::before{content:"";position:absolute;z-index:7;inset:0;border-radius:inherit;
+  pointer-events:none;background:linear-gradient(90deg,transparent 0,
+  color-mix(in srgb,var(--pg-accent,var(--blue)) 18%,transparent) 50%,transparent 100%);
+  background-size:36% 100%;background-repeat:no-repeat;opacity:0;transform:translateX(-55%);
+  transition:opacity .3s}
+[data-mm-phase="observe"] .mm-stage::before{opacity:.42;animation:mm-scan 1.25s ease-out both}
+@keyframes mm-scan{to{transform:translateX(270%)}}
+
+/* Product wall: build the system, inspect each surface, then settle. */
+html[data-motion-page="dashboards"] .phero .pstage .md-tile{
+  transition:opacity .45s,transform .5s cubic-bezier(.22,.8,.3,1),box-shadow .35s,border-color .35s}
+html[data-motion-page="dashboards"] .phero .pstage[data-mm-phase="idle"] .md-tile{
+  opacity:.35;transform:translateY(10px) scale(.985)}
+html[data-motion-page="dashboards"] .phero .pstage[data-mm-phase="observe"] .md-tile{
+  animation:mm-tile-in .5s cubic-bezier(.22,.8,.3,1) both;
+  animation-delay:calc(var(--mm-i,0) * 58ms)}
+html[data-motion-page="dashboards"] .phero .pstage[data-mm-phase="reason"] .md-tv{
+  position:relative;overflow:hidden}
+html[data-motion-page="dashboards"] .phero .pstage[data-mm-phase="reason"] .md-tv::after{
+  content:"";position:absolute;inset:-30% auto -30% -24%;width:18%;transform:skewX(-14deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.82),transparent);
+  animation:mm-tile-read 1.5s ease-in-out both;animation-delay:calc(var(--mm-i,0) * 55ms)}
+html[data-motion-page="dashboards"] .phero .pstage[data-mm-phase="resolve"] .md-tile{
+  border-color:color-mix(in srgb,var(--teal) 38%,var(--hair));
+  box-shadow:0 10px 26px rgba(19,120,111,.08)}
+@keyframes mm-tile-in{from{opacity:.2;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes mm-tile-read{to{left:118%}}
+
+/* Dashboard 01: regime drifts, the gauge responds, then the stance prints. */
+html[data-motion-page="dashboards"] #regime .md-you,
+html[data-motion-page="dashboards"] #regime .md-gauge line,
+html[data-motion-page="dashboards"] #regime .md-gauge circle{
+  transition:transform 1.05s cubic-bezier(.2,.8,.2,1),opacity .45s}
+html[data-motion-page="dashboards"] #regime .md-quad .q{transition:opacity .4s,background .5s,border-color .5s,color .5s}
+html[data-motion-page="dashboards"] #regime .md-stance{transition:opacity .55s,transform .55s cubic-bezier(.22,.8,.3,1)}
+html[data-motion-page="dashboards"] #regime[data-mm-phase="idle"] .md-quad .q:not(.on),
+html[data-motion-page="dashboards"] #regime[data-mm-phase="observe"] .md-quad .q:not(.on){opacity:.34}
+html[data-motion-page="dashboards"] #regime[data-mm-phase="idle"] .md-stance,
+html[data-motion-page="dashboards"] #regime[data-mm-phase="observe"] .md-stance{opacity:.26;transform:translateY(7px)}
+html[data-motion-page="dashboards"] #regime[data-mm-phase="reason"] .md-you,
+html[data-motion-page="dashboards"] #regime[data-mm-phase="resolve"] .md-you{transform:translate(27px,-4px)}
+html[data-motion-page="dashboards"] #regime[data-mm-phase="reason"] .md-gauge line,
+html[data-motion-page="dashboards"] #regime[data-mm-phase="reason"] .md-gauge circle:first-of-type,
+html[data-motion-page="dashboards"] #regime[data-mm-phase="resolve"] .md-gauge line,
+html[data-motion-page="dashboards"] #regime[data-mm-phase="resolve"] .md-gauge circle:first-of-type{
+  transform-box:view-box;transform-origin:75px 76px;transform:rotate(13deg)}
+
+/* Dashboard 02/03: a candidate earns its lane; leadership follows. */
+html[data-motion-page="dashboards"] #lanes .thm,
+html[data-motion-page="dashboards"] #rotations .md-tc{transition:opacity .5s,transform .85s cubic-bezier(.22,.8,.3,1),box-shadow .45s}
+html[data-motion-page="dashboards"] #lanes .thm.hot{position:relative;z-index:3}
+html[data-motion-page="dashboards"] #lanes[data-mm-phase="idle"] .thm.hot,
+html[data-motion-page="dashboards"] #lanes[data-mm-phase="observe"] .thm.hot{
+  opacity:.18;transform:translate(112%,18px)}
+html[data-motion-page="dashboards"] #lanes[data-mm-phase="reason"] .thm.hot{
+  opacity:.72;transform:translate(52%,8px)}
+html[data-motion-page="dashboards"] #lanes[data-mm-phase="resolve"] .thm.hot{
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--q-green) 15%,transparent)}
+html[data-motion-page="dashboards"] #lanes .md-moved{transition:opacity .4s,transform .4s}
+html[data-motion-page="dashboards"] #lanes:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .md-moved{
+  opacity:0;transform:translateY(-4px)}
+html[data-motion-page="dashboards"] #rotations .md-tc.mv{position:relative;z-index:2}
+html[data-motion-page="dashboards"] #rotations .md-trail path{animation-play-state:paused}
+html[data-motion-page="dashboards"] #rotations[data-mm-phase="idle"] .md-tc.mv,
+html[data-motion-page="dashboards"] #rotations[data-mm-phase="observe"] .md-tc.mv{
+  opacity:.18;transform:translate(-70px,72px)}
+html[data-motion-page="dashboards"] #rotations[data-mm-phase="reason"] .md-tc.mv{
+  opacity:.76;transform:translate(-28px,30px)}
+html[data-motion-page="dashboards"] #rotations[data-mm-phase="resolve"] .md-tc.mv{
+  box-shadow:0 6px 18px rgba(19,120,111,.13)}
+html[data-motion-page="dashboards"] #rotations[data-mm-phase="reason"] .md-trail path{
+  animation:mm-route-draw 1.35s ease-out both;animation-play-state:running}
+@keyframes mm-route-draw{from{stroke-dasharray:4 160;stroke-dashoffset:160}to{stroke-dasharray:4 4;stroke-dashoffset:0}}
+
+/* Dashboard 04-09: inputs arrive, get compared, and resolve into a readable state. */
+html[data-motion-page="dashboards"] #filings .fi-row,
+html[data-motion-page="dashboards"] #flow .md-tr,
+html[data-motion-page="dashboards"] #china .md-mk,
+html[data-motion-page="dashboards"] #record .md-rc,
+html[data-motion-page="dashboards"] #beyond .md-as,
+html[data-motion-page="dashboards"] #nightly .md-eb,
+html[data-motion-page="dashboards"] #nightly .md-oc{
+  transition:opacity .45s,transform .52s cubic-bezier(.22,.8,.3,1),background-color .45s,border-color .45s}
+html[data-motion-page="dashboards"] :is(#filings,#flow,#china,#record,#beyond,#nightly)[data-mm-phase="idle"]
+  :is(.fi-row,.md-tr,.md-mk,.md-rc,.md-as,.md-eb,.md-oc),
+html[data-motion-page="dashboards"] :is(#filings,#flow,#china,#record,#beyond,#nightly)[data-mm-phase="observe"]
+  :is(.fi-row,.md-tr,.md-mk,.md-rc,.md-as,.md-eb,.md-oc){
+  opacity:.2;transform:translateY(8px)}
+html[data-motion-page="dashboards"] :is(#filings,#flow,#china,#record,#beyond,#nightly)[data-mm-phase="observe"]
+  :is(.fi-row,.md-tr,.md-mk,.md-rc,.md-as,.md-eb){
+  animation:mm-row-read .45s ease both;animation-delay:calc(var(--mm-i,0) * 115ms)}
+html[data-motion-page="dashboards"] #filings[data-mm-phase="resolve"] .fi-row:first-child,
+html[data-motion-page="dashboards"] #flow[data-mm-phase="resolve"] .md-tr:nth-child(3),
+html[data-motion-page="dashboards"] #record[data-mm-phase="resolve"] .md-rc.o{
+  background:color-mix(in srgb,var(--pg-accent) 8%,var(--panel));border-color:color-mix(in srgb,var(--pg-accent) 35%,var(--hair))}
+html[data-motion-page="dashboards"] #flow .bz i{transform-origin:left;transition:transform .85s cubic-bezier(.22,.8,.3,1)}
+html[data-motion-page="dashboards"] #flow:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .bz i{transform:scaleX(.04)}
+html[data-motion-page="dashboards"] #china .md-brd i{transform-origin:bottom;transition:transform .65s cubic-bezier(.22,.8,.3,1)}
+html[data-motion-page="dashboards"] #china:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .md-brd i{transform:scaleY(.08)}
+html[data-motion-page="dashboards"] #beyond .md-hubc{transition:transform .6s,box-shadow .6s}
+html[data-motion-page="dashboards"] #beyond[data-mm-phase="reason"] .md-hubc{
+  transform:scale(1.035);box-shadow:0 0 0 8px color-mix(in srgb,var(--teal) 10%,transparent)}
+html[data-motion-page="dashboards"] #nightly[data-mm-phase="reason"] .md-eb{
+  animation:mm-engine-check 1.55s ease both;animation-delay:calc(var(--mm-i,0) * 210ms)}
+html[data-motion-page="dashboards"] #nightly:is([data-mm-phase="idle"],[data-mm-phase="observe"],[data-mm-phase="reason"]) .md-oc{
+  opacity:.16;transform:translateX(10px)}
+html[data-motion-page="dashboards"] #nightly[data-mm-phase="resolve"] .md-oc{
+  animation:mm-output-ready .5s ease both;animation-delay:calc(var(--mm-i,0) * 140ms)}
+@keyframes mm-row-read{to{opacity:1;transform:none}}
+@keyframes mm-engine-check{50%{border-color:var(--teal);background:var(--green-wash)}}
+@keyframes mm-output-ready{from{opacity:.1;transform:translateX(12px)}to{opacity:1;transform:none}}
+
+/* Mastermind AI hero: do not spend the entrance before the artifact is visible. */
+html[data-motion-page="mastermind-ai"].mm-motion-ready .phero .pstage .ma-thread>*,
+html[data-motion-page="mastermind-ai"].mm-motion-ready .phero .pstage .ma-plot .cn,
+html[data-motion-page="mastermind-ai"].mm-motion-ready .phero .pstage .ma-plot .lvl{
+  animation-play-state:paused}
+html[data-motion-page="mastermind-ai"] .phero .pstage.mm-scene-live .ma-thread>*,
+html[data-motion-page="mastermind-ai"] .phero .pstage.mm-scene-live .ma-plot .cn,
+html[data-motion-page="mastermind-ai"] .phero .pstage.mm-scene-live .ma-plot .lvl{
+  animation-play-state:running}
+html[data-motion-page="mastermind-ai"] .phero .pstage[data-mm-phase="reason"] .ma-rcpt{
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--violet) 12%,transparent)}
+html[data-motion-page="mastermind-ai"] .phero .pstage[data-mm-phase="resolve"] .ma-stance{
+  box-shadow:0 8px 24px color-mix(in srgb,var(--violet) 11%,transparent)}
+
+/* Mastermind AI feature scenes. */
+html[data-motion-page="mastermind-ai"] :is(#everywhere,#grounded,#receipts,#stance,#draws,section.feature#lanes)
+  :is(.ma-node,.ma-tag,.ma-steps>li,.ma-st,.ma-cite,.cn,.ma-lane,.ma-outline>li){
+  transition:opacity .45s,transform .55s cubic-bezier(.22,.8,.3,1),box-shadow .45s,border-color .45s,background-color .45s}
+html[data-motion-page="mastermind-ai"] :is(#everywhere,#grounded,#receipts,#stance,#draws,section.feature#lanes)[data-mm-phase="idle"]
+  :is(.ma-node,.ma-tag,.ma-steps>li,.ma-cite,.cn,.ma-lane,.ma-outline>li),
+html[data-motion-page="mastermind-ai"] :is(#everywhere,#grounded,#receipts,#stance,#draws,section.feature#lanes)[data-mm-phase="observe"]
+  :is(.ma-node,.ma-tag,.ma-steps>li,.ma-cite,.cn,.ma-lane,.ma-outline>li){
+  opacity:.16;transform:translateY(7px)}
+html[data-motion-page="mastermind-ai"] :is(#everywhere,#grounded,#receipts,section.feature#lanes)[data-mm-phase="observe"]
+  :is(.ma-node,.ma-tag,.ma-steps>li,.ma-lane){
+  animation:mm-row-read .48s ease both;animation-delay:calc(var(--mm-i,0) * 125ms)}
+html[data-motion-page="mastermind-ai"] #everywhere .ma-core{transition:transform .65s,box-shadow .65s}
+html[data-motion-page="mastermind-ai"] #everywhere[data-mm-phase="reason"] .ma-core{
+  transform:scale(1.04);box-shadow:0 0 0 10px color-mix(in srgb,var(--violet) 10%,transparent)}
+html[data-motion-page="mastermind-ai"] #grounded .ma-spark{animation-play-state:paused}
+html[data-motion-page="mastermind-ai"] #grounded[data-mm-phase="reason"] .ma-spark{animation-play-state:running}
+html[data-motion-page="mastermind-ai"] #grounded .ma-mc{transition:opacity .45s,transform .55s}
+html[data-motion-page="mastermind-ai"] #grounded:is([data-mm-phase="idle"],[data-mm-phase="observe"]) .ma-mc{
+  opacity:.18;transform:translateY(8px)}
+html[data-motion-page="mastermind-ai"] #receipts .ma-rec-a,
+html[data-motion-page="mastermind-ai"] #receipts .ma-stance,
+html[data-motion-page="mastermind-ai"] #draws .ma-lab,
+html[data-motion-page="mastermind-ai"] #draws .ma-stance{transition:opacity .5s,transform .5s}
+html[data-motion-page="mastermind-ai"] #receipts:not([data-mm-phase="resolve"]):not([data-mm-phase="hold"]) :is(.ma-rec-a,.ma-stance,.ma-cite),
+html[data-motion-page="mastermind-ai"] #draws:not([data-mm-phase="resolve"]):not([data-mm-phase="hold"]) :is(.ma-lab,.ma-stance){
+  opacity:.08;transform:translateY(5px)}
+html[data-motion-page="mastermind-ai"] #stance[data-mm-phase="reason"] .ma-st{
+  animation:mm-stance-scan 1.6s ease both;animation-delay:calc(var(--mm-i,0) * 105ms)}
+html[data-motion-page="mastermind-ai"] #stance[data-mm-phase="resolve"] .ma-st.on{
+  transform:translateY(-2px);box-shadow:0 7px 20px color-mix(in srgb,var(--violet) 16%,transparent)}
+html[data-motion-page="mastermind-ai"] #draws.mm-scene-live .ma-plot .cn{
+  animation:mm-candle-build .38s ease both;animation-delay:calc(var(--i,0) * 28ms)}
+html[data-motion-page="mastermind-ai"] #draws .ma-plot .lvl{
+  stroke-dasharray:360;stroke-dashoffset:360;transition:stroke-dashoffset .8s ease}
+html[data-motion-page="mastermind-ai"] #draws:is([data-mm-phase="reason"],[data-mm-phase="resolve"],[data-mm-phase="hold"]) .ma-plot .lvl{stroke-dashoffset:0}
+html[data-motion-page="mastermind-ai"] section.feature#lanes[data-mm-phase="reason"] .ma-lane.deep{
+  border-color:color-mix(in srgb,var(--violet) 45%,var(--hair));box-shadow:0 10px 26px rgba(87,68,180,.1)}
+@keyframes mm-stance-scan{45%{transform:translateY(-2px);border-color:var(--violet);background:var(--violet-wash)}}
+@keyframes mm-candle-build{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* Landing: preserve its bespoke live loops, but give every vignette a shared
+   visual cadence and a calm resolved endpoint. */
+html[data-motion-page="landing"] :is(#f-terminal,#f-prophet,#f-rotations,#f-filings,#f-sits,#f-funds,#f-beyond,#ai)
+  .demo{transition:box-shadow .55s,border-color .55s}
+html[data-motion-page="landing"] :is(#f-terminal,#f-prophet,#f-rotations,#f-filings,#f-sits,#f-funds,#f-beyond,#ai)[data-mm-phase="reason"]
+  .demo{border-color:color-mix(in srgb,var(--blue) 24%,var(--hair));box-shadow:0 18px 46px rgba(35,78,175,.08)}
+html[data-motion-page="landing"] :is(#f-terminal,#f-prophet,#f-rotations,#f-filings,#f-sits,#f-funds,#f-beyond,#ai)[data-mm-phase="resolve"]
+  .live-tag i{box-shadow:0 0 0 5px color-mix(in srgb,var(--teal) 13%,transparent)}
+html[data-motion-page="landing"] #f-prophet .ph-belt{transition:border-color .5s,box-shadow .5s}
+html[data-motion-page="landing"] #f-prophet .mm-phase-rail{top:14px;bottom:auto;right:24px}
+html[data-motion-page="landing"] #f-prophet .phc{transition:transform .45s cubic-bezier(.22,.8,.3,1),border-color .45s,box-shadow .45s}
+html[data-motion-page="landing"] #f-prophet[data-mm-phase="reason"] .ph-belt{
+  box-shadow:inset 0 1px color-mix(in srgb,var(--blue) 18%,transparent)}
+html[data-motion-page="landing"] #f-prophet[data-mm-phase="reason"] .phc:nth-child(2){
+  transform:translateY(-4px);border-color:color-mix(in srgb,var(--blue) 32%,var(--hair));
+  box-shadow:0 14px 32px rgba(35,78,175,.1)}
+
+@media (max-width:700px){
+  .mm-phase-rail{right:10px;bottom:8px}
+  .mm-phase-rail i{width:9px}
+  [data-mm-phase="reason"] .mm-phase-rail i:nth-child(2),
+  [data-mm-phase="resolve"] .mm-phase-rail i:nth-child(3){width:16px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .mm-phase-rail{display:none}
+  .mm-stage::before{display:none}
+  [data-mm-scene] *{animation:none!important;transition-duration:.01ms!important}
+}
+html.mm-motion-static .mm-phase-rail,html.still .mm-phase-rail{display:none}
+html.mm-motion-static .mm-stage::before,html.still .mm-stage::before{display:none}

@@ -5,7 +5,7 @@
      plain template: templates/index.html must byte-match site/index.html
      (scripts/check_template_site_sync). EN-only for now — bilingual pass
      lands with the build wave. -->
-<html lang="en" data-lang="en">
+<html lang="en" data-lang="en" data-motion-page="landing">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -77,6 +77,7 @@
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
 <link rel="stylesheet" href="landing.css?v=e56b52b4">
+<link rel="stylesheet" href="scene-motion.css?v=0f42a9a7">
 </head>
 <body>
 
@@ -884,6 +885,7 @@
   </div>
 </footer>
 
+<script src="scene-motion.js?v=4ed60559"></script>
 <script>
 /* capture hook for visual QA (see .still CSS) */
 if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
@@ -1187,6 +1189,11 @@ LANG.onChange(applyPricing);
 })();
 
 /* ───── gentle live ticks: heatmap + econ/assets ───── */
+const motionVisible = (el, margin=96) => {
+  if (!el || document.hidden) return false;
+  const r=el.getBoundingClientRect();
+  return r.bottom >= -margin && r.top <= innerHeight + margin;
+};
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('still')) {
   const tiles = [...document.querySelectorAll('.hm')];
   tiles.forEach(t => t.dataset.b = t.dataset.v);   // real baseline: jitter stays near it
@@ -1201,7 +1208,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
     t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 420);
   };
   function heatRound(){
-    if (document.hidden) { setTimeout(heatRound, 1500); return; }
+    if (!motionVisible(tiles[0])) { setTimeout(heatRound, 1500); return; }
     const pool = [...tiles], pick = [], count = 2 + Math.floor(Math.random()*2);
     for (let k = 0; k < count && pool.length; k++) pick.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
     pick.forEach((t, k) => setTimeout(() => bumpTile(t), k*280));
@@ -1212,8 +1219,8 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
     if (row) { row.classList.add('rf'); setTimeout(() => row.classList.remove('rf'), 650); } };
   const lv = [...document.querySelectorAll('.lv')];
   setInterval(() => {
-    if (document.hidden) return;
-    const el = lv[Math.floor(Math.random()*lv.length)];
+    const live=lv.filter(el=>motionVisible(el)); if(!live.length) return;
+    const el = live[Math.floor(Math.random()*live.length)];
     let v = parseFloat(el.dataset.v) + (Math.random()*.12 - .06);
     v = Math.max(-3.5, Math.min(3.5, v));
     el.dataset.v = v.toFixed(1);
@@ -1223,8 +1230,8 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
   }, 4300);
   const lvp = [...document.querySelectorAll('.lvp')];
   setInterval(() => {
-    if (document.hidden) return;
-    const el = lvp[Math.floor(Math.random()*lvp.length)];
+    const live=lvp.filter(el=>motionVisible(el)); if(!live.length) return;
+    const el = live[Math.floor(Math.random()*live.length)];
     const d = parseInt(el.dataset.d, 10);
     let p = parseFloat(el.dataset.p) + (Math.random() - .5) * parseFloat(el.dataset.s) * 2;
     el.dataset.p = p;
@@ -1233,8 +1240,8 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
   }, 4700);
   const lvd = [...document.querySelectorAll('.lvd')];
   setInterval(() => {
-    if (document.hidden || !lvd.length) return;
-    const el = lvd[Math.floor(Math.random()*lvd.length)];
+    const live=lvd.filter(el=>motionVisible(el)); if(!live.length) return;
+    const el = live[Math.floor(Math.random()*live.length)];
     let p = parseFloat(el.dataset.p) + (Math.random() - .5) * parseFloat(el.dataset.s) * 2;
     el.dataset.p = p; el.textContent = p.toFixed(2);
     rowFlash(el);
@@ -1758,7 +1765,7 @@ const STILL = document.documentElement.classList.contains('still');
   const MOVES=[['AI Software','buy'],['Payments','alm'],['Regional Banks','sa'],
     ['AI Software','alm'],['Payments','tp'],['Regional Banks','tp']];
   let mi=0;
-  setInterval(()=>{ if(document.hidden) return;
+  setInterval(()=>{ if(!motionVisible(wrap)) return;
     const [key,target]=MOVES[mi++%MOVES.length];
     const chip=[...wrap.querySelectorAll('.thm')].find(c=>c.dataset.key===key);
     const tl=wrap.querySelector(`[data-lane="${target}"]`);
@@ -1794,7 +1801,7 @@ const STILL = document.documentElement.classList.contains('still');
   function seed(){ box.innerHTML=''; i=0; for(let k=0;k<6;k++) row(); }
   seed();
   LANG.onChange(seed);
-  if (!CALM && !STILL) setInterval(()=>{ if(!document.hidden) row(true); },3600);
+  if (!CALM && !STILL) setInterval(()=>{ if(motionVisible(box)) row(true); },3600);
 })();
 
 /* — special situations cards — */
@@ -1819,7 +1826,7 @@ const STILL = document.documentElement.classList.contains('still');
   LANG.onChange(paint);
   if (CALM || STILL) return;
   let i=2;
-  setInterval(()=>{ if(document.hidden) return;
+  setInterval(()=>{ if(!motionVisible(box)) return;
     const slot=i%2; shown[slot]=i%CARDS.length;
     const old=box.children[slot];
     old.classList.add('swap');
@@ -1840,7 +1847,7 @@ const STILL = document.documentElement.classList.contains('still');
     requestAnimationFrame(()=>requestAnimationFrame(()=>d.querySelector('i').style.setProperty('--w',r[5]+'%'))); });
   LANG.onChange(l=>box.querySelectorAll('.fd-row').forEach(d=>{ d.querySelector('.dt2').textContent=(l==='zh')?d._r[4]:d._r[3]; }));
   if (CALM || STILL) return;
-  setInterval(()=>{ if(document.hidden) return;
+  setInterval(()=>{ if(!motionVisible(box)) return;
     const bars=box.querySelectorAll('.fd-bar i');
     const b=bars[Math.floor(Math.random()*bars.length)];
     const cur=parseFloat(b.style.getPropertyValue('--w'))||40;
@@ -1894,7 +1901,7 @@ const STILL = document.documentElement.classList.contains('still');
     cmp: { xle:{en:'NEAR ZONE',zh:'接近区间'}, nvda:{en:'GATE SHUT',zh:'闸口关闭'} }
   };
   const L=()=>LANG.cur(), tx=o=>o[L()];
-  let timers=[];
+  let timers=[], active=false;
   const later=(fn,ms)=>{ const id=setTimeout(fn,ms); timers.push(id); return id; };
   const clearAll=()=>{ timers.forEach(clearTimeout); timers=[]; };
   const el=(tag,cls)=>{ const e=document.createElement(tag); if(cls) e.className=cls; return e; };
@@ -2059,12 +2066,21 @@ const STILL = document.documentElement.classList.contains('still');
   const STATIC = CALM || STILL;
   function boot(){ clearAll(); if(STATIC) renderStatic(); else { setPlaceholder(); run(); } }
   LANG.onChange(()=>{ clearAll(); thread.style.opacity='1';
-    if(STATIC) renderStatic(); else { thread.innerHTML=''; setPlaceholder(); run(); } });
+    if(STATIC) renderStatic();
+    else if(active){ thread.innerHTML=''; setPlaceholder(); run(); }
+    else { thread.innerHTML=''; setPlaceholder(); } });
   if(STATIC){ renderStatic(); return; }
   setPlaceholder();
   const sec=document.getElementById('ai');
-  const cio=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ boot(); cio.disconnect(); } }),{threshold:.2});
-  if(sec) cio.observe(sec); else boot();
+  const cio=new IntersectionObserver(es=>es.forEach(e=>{
+    const onscreen=e.isIntersecting&&e.intersectionRatio>=.12;
+    if(onscreen&&!active){ active=true; boot(); }
+    else if(!onscreen&&active){ active=false; clearAll(); thread.style.opacity='1'; }
+  }),{rootMargin:'80px 0px',threshold:[0,.12,.3]});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden) clearAll(); else if(active) boot();
+  });
+  if(sec) cio.observe(sec); else { active=true; boot(); }
 })();
 
 /* — Prophet showcase: DELAYED winning calls from the board ledger (never
