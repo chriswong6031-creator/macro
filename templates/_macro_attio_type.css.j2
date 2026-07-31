@@ -1,42 +1,31 @@
-/* Macro typography trial — Attio's live type roles, scoped to macro.html.
-   Observed 2026-07-31:
-   - Inter: UI and body copy
-   - Inter Display: headings, card titles, overlines
-   - JetBrains Mono: data, code, tickers, dates
-   Attio also uses the commercial Tiempos Text for editorial quotes. Macro has no
-   editorial-quote role, so that licensed face is intentionally not vendored. */
+/* Macro typography trial — Attio's primary type roles, scoped to macro.html.
+   Inter handles UI, body copy and market data; Inter Display handles headings,
+   card titles, overlines and ticker labels. San Francisco stays in the native
+   Apple system fallback rather than being redistributed as a webfont. */
 @font-face {
   font-family: "MX Inter Display";
-  src: url("fonts/InterDisplay-500.woff2") format("woff2");
+  src: url("/fonts/InterDisplay-500.woff2") format("woff2");
   font-style: normal;
   font-weight: 500;
   font-display: swap;
 }
 @font-face {
   font-family: "MX Inter Display";
-  src: url("fonts/InterDisplay-600.woff2") format("woff2");
+  src: url("/fonts/InterDisplay-600.woff2") format("woff2");
   font-style: normal;
   font-weight: 600;
   font-display: swap;
 }
 @font-face {
   font-family: "MX Inter Display";
-  src: url("fonts/InterDisplay-700.woff2") format("woff2");
+  src: url("/fonts/InterDisplay-700.woff2") format("woff2");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
 }
-@font-face {
-  font-family: "MX JetBrains Mono";
-  src: url("fonts/JetBrainsMono-100-800.woff2") format("woff2");
-  font-style: normal;
-  font-weight: 100 800;
-  font-display: swap;
-}
-
 /* Role tokens. Higher specificity is deliberate: later feature styles inside
    dashboard.html must consume this sheet instead of silently restoring the old
-   system-mono or text-face choices. The shared navigation keeps its own type. */
+   mono or text-face choices. The shared navigation keeps its own type. */
 html body.page-macro.mx4-grid {
   --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
@@ -44,10 +33,12 @@ html body.page-macro.mx4-grid {
   --font-display: "MX Inter Display", Inter, "PingFang SC", "Hiragino Sans GB",
     "Microsoft YaHei", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  --font-mono: "MX JetBrains Mono", "JetBrains Mono", "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", ui-monospace,
-    "SF Mono", SFMono-Regular, "Cascadia Mono", Menlo, Consolas, monospace;
-  --num: var(--font-mono);
+  --font-data: Inter, "SF Pro Text", "SF Pro Display", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  /* Legacy widgets consume --font-mono/--num; remap both to the primary stack. */
+  --font-mono: var(--font-data);
+  --num: var(--font-data);
   --trk: .06em;
 }
 html body.page-macro.mx4-grid > .grid {
@@ -170,7 +161,7 @@ html body.page-macro.mx4-grid > .grid :is(
   letter-spacing: -.005em;
 }
 
-/* Data role — one real mono face for every high-salience number family. */
+/* Data role — proportional Inter/SF typography with tabular figures for alignment. */
 html body.page-macro.mx4-grid > .grid :is(
   code,
   pre,
@@ -218,10 +209,10 @@ html body.page-macro.mx4-grid > .grid :is(
   .plv-lvl,
   .plv-since
 ) {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums slashed-zero;
-  font-feature-settings: "tnum" 1, "zero" 1;
-  letter-spacing: -.015em;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -.01em;
 }
 html body.page-macro.mx4-grid > .grid :is(
   .v-score,
@@ -232,7 +223,17 @@ html body.page-macro.mx4-grid > .grid :is(
   .rsx-froth-score,
   .sg-hero-num
 ) {
-  font-weight: 800;
+  font-weight: 700;
+}
+html body.page-macro.mx4-grid > .grid :is(
+  .mx5-mkt-ticker,
+  .mx5-ai-ticker-pill,
+  .rkc-ldr-tkr,
+  .mx5-dlg-idx-ticker
+) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 /* Existing table semantics already distinguish label and measure columns. */
@@ -241,9 +242,9 @@ html body.page-macro.mx4-grid > .grid table th {
   font-variant-numeric: normal;
 }
 html body.page-macro.mx4-grid > .grid table td:not(:first-child):not(.l) {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums slashed-zero;
-  font-feature-settings: "tnum" 1, "zero" 1;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 html body.page-macro.mx4-grid > .grid table td:first-child,
 html body.page-macro.mx4-grid > .grid table td.l {
@@ -255,7 +256,7 @@ html body.page-macro.mx4-grid > .grid table td.l {
    role system without rewriting their geometry or affecting other pages. */
 html body.page-macro.mx4-grid > .grid svg [font-family*="ui-monospace"],
 html body.page-macro.mx4-grid > .grid svg [font-family*="SF Mono"] {
-  font-family: var(--font-mono);
+  font-family: var(--font-data);
 }
 html body.page-macro.mx4-grid > .grid svg [font-family*="Inter"] {
   font-family: var(--font-display);
@@ -264,8 +265,8 @@ html body.page-macro.mx4-grid > .grid :is(.mxqm-axis-label, .mxqm-quad-label) {
   font-family: var(--font-display);
 }
 html body.page-macro.mx4-grid > .grid :is(.mxqm-odds, .fbm-chart-node) {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums slashed-zero;
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Dense labels stay calm: sentence copy carries Attio's light negative tracking;
