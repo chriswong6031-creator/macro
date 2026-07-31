@@ -1,23 +1,23 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-30",
-  "scored_total": 57,
-  "open": 80,
-  "unscored_neutral": 96,
+  "as_of": "2026-07-31",
+  "scored_total": 71,
+  "open": 82,
+  "unscored_neutral": 99,
   "overall": {
-    "n": 57,
-    "hits": 39,
+    "n": 71,
+    "hits": 53,
     "misses": 18,
-    "hit_rate": 0.684,
-    "dir_accuracy": 0.351
+    "hit_rate": 0.746,
+    "dir_accuracy": 0.423
   },
   "by_lean": {
     "constructive": {
-      "n": 32,
-      "hits": 22,
+      "n": 39,
+      "hits": 29,
       "misses": 10,
-      "hit_rate": 0.688,
-      "dir_accuracy": 0.375
+      "hit_rate": 0.744,
+      "dir_accuracy": 0.462
     },
     "neutral": {
       "n": 0,
@@ -27,11 +27,11 @@
       "dir_accuracy": null
     },
     "cautious": {
-      "n": 25,
-      "hits": 17,
+      "n": 32,
+      "hits": 24,
       "misses": 8,
-      "hit_rate": 0.68,
-      "dir_accuracy": 0.32
+      "hit_rate": 0.75,
+      "dir_accuracy": 0.375
     },
     "avoid": {
       "n": 0,
@@ -43,18 +43,18 @@
   },
   "by_conviction": {
     "low": {
-      "n": 53,
-      "hits": 35,
+      "n": 63,
+      "hits": 45,
       "misses": 18,
-      "hit_rate": 0.66,
-      "dir_accuracy": 0.302
+      "hit_rate": 0.714,
+      "dir_accuracy": 0.365
     },
     "medium": {
-      "n": 4,
-      "hits": 4,
+      "n": 8,
+      "hits": 8,
       "misses": 0,
       "hit_rate": 1.0,
-      "dir_accuracy": 1.0
+      "dir_accuracy": 0.875
     },
     "high": {
       "n": 0,
@@ -64,115 +64,115 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "57 leans scored, hit-rate 0.684 (directional accuracy 0.351).",
+  "calibration_note": "71 leans scored, hit-rate 0.746 (directional accuracy 0.423).",
   "recent": [
     {
-      "id": "2026-06-30-REZI-1",
+      "id": "2026-06-18-MCY-4",
+      "ticker": "MCY",
+      "lean": "constructive",
+      "conviction": "medium",
+      "outcome": "hit",
+      "realized": 0.0463,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "2026-07-01-REZI-3",
+      "ticker": "REZI",
+      "lean": "constructive",
+      "conviction": "medium",
+      "outcome": "hit",
+      "realized": 0.1211,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "2026-07-01-FCN-6",
+      "ticker": "FCN",
+      "lean": "constructive",
+      "conviction": "medium",
+      "outcome": "hit",
+      "realized": 0.1036,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "2026-07-02-REZI-1",
       "ticker": "REZI",
       "lean": "constructive",
       "conviction": "low",
       "outcome": "hit",
-      "realized": 0.1864,
-      "check_by": "2026-07-28"
+      "realized": 0.1379,
+      "check_by": "2026-07-30"
     },
     {
-      "id": "2026-06-30-FCN-2",
-      "ticker": "FCN",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.1294,
-      "check_by": "2026-07-28"
-    },
-    {
-      "id": "2026-06-30-LKQ-3",
-      "ticker": "LKQ",
+      "id": "2026-07-02-COIN-3",
+      "ticker": "COIN",
       "lean": "cautious",
       "conviction": "low",
       "outcome": "hit",
-      "realized": 0.0166,
-      "check_by": "2026-07-28"
+      "realized": -0.0073,
+      "check_by": "2026-07-30"
     },
     {
-      "id": "2026-06-30-ZWS-5",
-      "ticker": "ZWS",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0162,
-      "check_by": "2026-07-28"
-    },
-    {
-      "id": "2026-06-30-P-6",
-      "ticker": "P",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": -0.0657,
-      "check_by": "2026-07-28"
-    },
-    {
-      "id": "2026-06-30-LKQ-4",
-      "ticker": "LKQ",
+      "id": "2026-07-02-LRN-6",
+      "ticker": "LRN",
       "lean": "cautious",
       "conviction": "low",
       "outcome": "hit",
-      "realized": 0.0166,
-      "check_by": "2026-07-28"
+      "realized": -0.076,
+      "check_by": "2026-07-30"
     },
     {
-      "id": "2026-06-30-PRGO-5",
-      "ticker": "PRGO",
-      "lean": "cautious",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0007,
-      "check_by": "2026-07-28"
-    },
-    {
-      "id": "2026-07-14-MS-1",
-      "ticker": "MS",
+      "id": "2026-07-02-AAPL-1",
+      "ticker": "AAPL",
       "lean": "constructive",
       "conviction": "low",
       "outcome": "hit",
-      "realized": -0.0319,
-      "check_by": "2026-07-28"
+      "realized": 0.0858,
+      "check_by": "2026-07-30"
     },
     {
-      "id": "2026-06-22-WT-2",
-      "ticker": "WT",
+      "id": "2026-07-02-REZI-4",
+      "ticker": "REZI",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.1379,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "2026-07-02-FTV-5",
+      "ticker": "FTV",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0611,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "2026-07-02-BA-2",
+      "ticker": "BA",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0205,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "2026-07-02-CUBE-5",
+      "ticker": "CUBE",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0105,
+      "check_by": "2026-07-30"
+    },
+    {
+      "id": "2026-07-02-CVSA-6",
+      "ticker": "CVSA",
       "lean": "constructive",
       "conviction": "medium",
       "outcome": "hit",
-      "realized": 0.0592,
-      "check_by": "2026-07-27"
-    },
-    {
-      "id": "2026-06-22-WT-4",
-      "ticker": "WT",
-      "lean": "cautious",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.0634,
-      "check_by": "2026-07-27"
-    },
-    {
-      "id": "2026-06-22-YETI-6",
-      "ticker": "YETI",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": 0.0693,
-      "check_by": "2026-07-27"
-    },
-    {
-      "id": "2026-06-29-COKE-1",
-      "ticker": "COKE",
-      "lean": "constructive",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.0286,
-      "check_by": "2026-07-27"
+      "realized": -0.0223,
+      "check_by": "2026-07-30"
     }
   ]
 }

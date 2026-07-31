@@ -1,171 +1,172 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-29",
-  "generated_at": "2026-07-30T04:23:24.241657+00:00",
+  "as_of": "2026-07-30",
+  "generated_at": "2026-07-31T04:14:01.938712+00:00",
   "degraded": null,
   "notes": [
     {
-      "id": "2026-07-29-TMP-1",
-      "ticker": "TMP",
-      "name": null,
-      "lean": "cautious",
-      "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The stock is extended above its 200-day moving average with a blocked entry signal, cycle nearing a high, and accounting concerns; these risk flags outweigh the momentum and earnings edge, tilting relative prospects negative over the next month.",
-      "evidence": [
-        "verdict: Extended \u2014 don't chase; wait for a pullback",
-        "cycle_blocked: true (nearing a high)",
-        "entry axis blocked, z -1.47",
-        "quality axis z -1.8, accounting watch"
-      ],
-      "dissent": "Momentum remains strong (alpha z 1.55) and the selection axis is elevated, which could drive further upside if the cycle continues.",
-      "falsifier": {
-        "text": "If TMP makes a new 20-day high and cycle indicators turn favourable, the cautious lean would be invalidated.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "TMP",
-          "vs": "SPY",
-          "op": ">",
-          "threshold": 0.05,
-          "horizon_d": 30
-        }
-      },
-      "check_by": "2026-09-09",
-      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
-    },
-    {
-      "id": "2026-07-29-LLY-2",
-      "ticker": "LLY",
+      "id": "2026-07-30-ARWR-1",
+      "ticker": "ARWR",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "While LLY shows leader-level selection and positive entry, weak fundamentals and an imminent earnings binary event (8 days) create offsetting risks, leaving no clear directional edge relative to the S&P 500.",
+      "horizon_d": 15,
+      "thesis": "Strong momentum (alpha z=2.14) meets extreme extension, but the only caution is overbought conditions \u2014 no bearish reversal signal. Sit out the chase, let the pullback develop, but do not short because momentum can persist.",
       "evidence": [
-        "verdict: Leader \u00b7 weak fundamentals \u2014 higher-risk, band neutral",
-        "cautions: accounting watch, earnings in 8d, weak fundamentals",
-        "quality axis z -0.8"
+        "entry axis blocked: over 200dma, RSI, lottery-spike, volatility squeeze",
+        "momentum alpha z=2.14 (context tier)",
+        "board state FRESH BUY but blocked",
+        "cycle_blocked flag (BUY ZONE note)",
+        "earnings 7d binary risk noted in cautions"
       ],
-      "dissent": "The leadership profile and positive SUE (z 1.89) could overcome the fundamental concerns, especially if earnings catalyse further upside.",
+      "dissent": "SUE z=-2.26 (84d stale) flashes fundamental disappointment; if confirmed by next earnings, momentum could snap sharply.",
       "falsifier": {
-        "text": "If LLY breaks above its recent highs with expanding relative strength after earnings, the neutral stance would be too cautious.",
+        "text": "A daily close below the 200-day moving average (approx 65) would break the persistent uptrend structure and remove the neutral-on-strength premise.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-09-09",
-      "engine_verdict": "Leader \u00b7 weak fundamentals \u2014 higher-risk"
+      "check_by": "2026-08-20",
+      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
     },
     {
-      "id": "2026-07-29-CASY-3",
+      "id": "2026-07-30-TMP-2",
+      "ticker": "TMP",
+      "name": null,
+      "lean": "neutral",
+      "conviction": "low",
+      "horizon_d": 20,
+      "thesis": "Mixed selection signals and weak quality (accounting watch, quality z=-1.8) offset decent momentum; entry not extreme, but no clear edge. No fade, no chase \u2014 watch range-bound behaviour.",
+      "evidence": [
+        "SUE z=-0.08 (neutral), revision z=0.9, momentum z=1.58 \u2014 no strong directional signal",
+        "board HOLD \u2014 EXTENDED, not blocked",
+        "quality axis accounting watch, z=-1.8",
+        "no cycle block, no macro sensitivity"
+      ],
+      "dissent": "Positive revisions and momentum could drive a breakout above the recent high, turning the neutral stance constructive.",
+      "falsifier": {
+        "text": "A weekly close above 105 (new high on above-average volume) would shift the balance to constructive; a weekly close below 85 would shift it to cautious.",
+        "check": {
+          "kind": "soft",
+          "reason": "neutral lean \u2014 not scored"
+        }
+      },
+      "check_by": "2026-08-27",
+      "engine_verdict": "Neutral \u2014 no clear edge"
+    },
+    {
+      "id": "2026-07-30-SHOO-3",
+      "ticker": "SHOO",
+      "name": null,
+      "lean": "constructive",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "Stock is building a base with favourable selection scores (SUE, revisions, momentum all positive) and non-blocked entry; the accounting flag tempers conviction but does not invalidate the pullback accumulation pattern.",
+      "evidence": [
+        "SUE z=0.69 (61d fresh), revision z=0.79, momentum z=1.26 \u2014 positive selection",
+        "entry axis unblocked, pullback presence, off-high 0%",
+        "board state FRESH BUY, urgency now",
+        "quality axis accounting watch flag"
+      ],
+      "dissent": "Accounting watch could signal hidden quality deterioration; a sharp reassessment would undermine the base-building thesis and lead to a re-rating lower.",
+      "falsifier": {
+        "text": "A daily close below the 50-day moving average (approx 45.50) would invalidate the base-building pattern and suggest a deeper pullback.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "SHOO",
+          "vs": "SPY",
+          "op": "<",
+          "threshold": -0.05,
+          "horizon_d": 15
+        }
+      },
+      "check_by": "2026-08-20",
+      "engine_verdict": "Constructive \u2014 building a base"
+    },
+    {
+      "id": "2026-07-30-CASY-4",
       "ticker": "CASY",
       "name": null,
       "lean": "cautious",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "CASY is extended with a blocked entry, cycle nearing a high, and a crowded narrative basket; despite clean quality, the risk of reversal outweighs the residual selection edge, calling for a defensive stance.",
+      "horizon_d": 15,
+      "thesis": "Stock is showing early topping signals: cycle near a high, entry blocked, price off high and in a caution state. Bearish risk is present even though selection (SUE, insider) remains positive historically.",
       "evidence": [
-        "verdict: Extended \u2014 don't chase; wait for a pullback, band low",
-        "cycle_blocked: true",
-        "entry axis blocked, z -0.73",
-        "cautions: stressed tape, cycle nearing a high, crowded basket"
+        "cycle_blocked true, caution 'cycle: NEARING A HIGH'",
+        "entry axis blocked: off-high, over-200dma, RSI, vol-squeeze",
+        "board state TOP WATCH, dir caution, off high -5.3%",
+        "score low (4), band low"
       ],
-      "dissent": "The stock has strong SUE (z 2.01) and clean accounting, which could attract dip-buyers if any pullback proves shallow.",
+      "dissent": "SUE z=2.02 (stale) and validated insider presence suggest underlying fundamental strength; a sharp bounce back above the prior high would flip the pattern back to bullish trend continuation.",
       "falsifier": {
-        "text": "If CASY holds above its 50-day moving average and cycle signals roll off in the next two weeks, the cautious lean would be challenged.",
+        "text": "A weekly close above 916 (the prior high) would negate the topping pattern and shift the view to neutral.",
         "check": {
           "kind": "rel_return",
           "subject_ticker": "CASY",
           "vs": "SPY",
           "op": ">",
           "threshold": 0.05,
-          "horizon_d": 30
+          "horizon_d": 15
         }
       },
-      "check_by": "2026-09-09",
+      "check_by": "2026-08-20",
       "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
     },
     {
-      "id": "2026-07-29-KSS-4",
-      "ticker": "KSS",
+      "id": "2026-07-30-BEN-5",
+      "ticker": "BEN",
+      "name": null,
+      "lean": "cautious",
+      "conviction": "low",
+      "horizon_d": 15,
+      "thesis": "Extension combined with cycle near a high, entry blocked, and accounting watch flags points to a rolling-over setup; the 8-day earnings binary adds event risk, reinforcing a cautious stance.",
+      "evidence": [
+        "cycle_blocked true, caution 'cycle: NEARING A HIGH'",
+        "entry axis blocked (urgency, off-high, RSI, over-200dma)",
+        "board state TOP WATCH, dir caution, off high -3.7%",
+        "quality axis accounting watch",
+        "earnings in 8d listed as binary event caution"
+      ],
+      "dissent": "Strong revisions (z=1.11) and momentum (z=1.13) could fuel a final burst above the high before any rollover, rendering the cautious lean premature.",
+      "falsifier": {
+        "text": "A daily close above 34.50 (the recent high) would indicate the extension is being absorbed bullishly and invalidate the rollover thesis.",
+        "check": {
+          "kind": "rel_return",
+          "subject_ticker": "BEN",
+          "vs": "SPY",
+          "op": ">",
+          "threshold": 0.05,
+          "horizon_d": 15
+        }
+      },
+      "check_by": "2026-08-20",
+      "engine_verdict": "Extended \u2014 don't chase; wait for a pullback"
+    },
+    {
+      "id": "2026-07-30-HP-6",
+      "ticker": "HP",
       "name": null,
       "lean": "neutral",
       "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The name lacks a clear edge: SUE and revisions are near zero, tailwind is negative, and the verdict is neutral; high quality and unblocked entry are insufficient to generate a directional call.",
+      "horizon_d": 15,
+      "thesis": "Despite leader-label, the price action is a countertrend bounce in a deep downtrend (off high -18.7%), SUE is negative, and the accounting warn flag signals a quality red flag. Cautious until base forms or fundamentals clarify.",
       "evidence": [
-        "verdict: Neutral \u2014 no clear edge",
-        "selection axis z 0.11 (SUE -0.33, revisions -0.28)",
-        "tailwind z -0.32"
+        "board state COUNTERTREND BOUNCE, dir caution, off high -18.7%",
+        "SUE z=-0.79 (stale), negative earnings surprise component",
+        "quality axis accounting warn flag",
+        "earnings in 6d binary event caution"
       ],
-      "dissent": "Momentum (alpha z 1.13) and clean quality could aid mean reversion from a deep drawdown (-21% from high), but no catalyst shift is visible.",
+      "dissent": "Positive revisions (z=0.85) and momentum (z=1.09) could support a genuine trend reversal if the earnings event clears the accounting concerns. (softened: strong leader, momentum intact \u2014 extension is not a short (cautious-on-leader historically ~17% right); watch, don't chase)",
       "falsifier": {
-        "text": "If KSS clears its 20-day high with an uptick in SUE revisions, the neutral lean would be proven wrong, but current data suggest low probability.",
+        "text": "A weekly close above 41.50 (the prior high) would signal the bounce has become a sustainable uptrend, invalidating the cautious stance.",
         "check": {
           "kind": "soft",
           "reason": "neutral lean \u2014 not scored"
         }
       },
-      "check_by": "2026-09-09",
-      "engine_verdict": "Neutral \u2014 no clear edge"
-    },
-    {
-      "id": "2026-07-29-TNL-5",
-      "ticker": "TNL",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The verdict is constructive with an unblocked entry, decent selection, and building base characteristics; the accounting watch flag tempers conviction, but the risk/reward leans favourably relative to the market.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base, band neutral",
-        "entry axis unblocked, z 0.53",
-        "selection axis includes SUE and revisions (z 0.42), momentum intact",
-        "cautions: accounting watch"
-      ],
-      "dissent": "Accounting watch and negative tailwind could undermine the base-building narrative, and the stock is only marginally off highs (-0.9%), limiting upside if the base resolves downward.",
-      "falsifier": {
-        "text": "If TNL breaks below its recent relative low with worsening revisions, the constructive lean would be invalidated.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "TNL",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 30
-        }
-      },
-      "check_by": "2026-09-09",
-      "engine_verdict": "Constructive \u2014 building a base"
-    },
-    {
-      "id": "2026-07-29-TPR-6",
-      "ticker": "TPR",
-      "name": null,
-      "lean": "constructive",
-      "conviction": "low",
-      "horizon_d": 30,
-      "thesis": "The stock is rated constructive with a supportive entry, building a base, and positive SUE; low quality is a concern, but the lack of cycle blockage and clean accounting allow a cautious constructive lean.",
-      "evidence": [
-        "verdict: Constructive \u2014 building a base, band constructive",
-        "selection axis z 0.69, SUE z 1.22, entry unblocked",
-        "cycle_blocked: false"
-      ],
-      "dissent": "Negative quality z-score (-0.95) and a slightly negative tailwind could stall momentum, and the stock is still recovering from a -5.9% drawdown.",
-      "falsifier": {
-        "text": "If TPR fails to hold above its 50-day moving average and the quality axis deteriorates further, the constructive lean would be premature.",
-        "check": {
-          "kind": "rel_return",
-          "subject_ticker": "TPR",
-          "vs": "SPY",
-          "op": "<",
-          "threshold": -0.05,
-          "horizon_d": 30
-        }
-      },
-      "check_by": "2026-09-09",
-      "engine_verdict": "Constructive \u2014 building a base"
+      "check_by": "2026-08-20",
+      "engine_verdict": "Leader \u00b7 accounting warning \u2014 verify before buying"
     }
   ],
   "disclaimer": "Accountable AI judgment on the deterministic top picks. The cross-sectional rank has no validated forward edge; these leans are fallible, falsifiable conditionals graded against reality \u2014 never position sizes. See the track record."
