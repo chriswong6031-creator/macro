@@ -485,3 +485,4 @@
 {"id":"ob-2026-07-31-e0ba40838d","from":"queued","to":"approved","at":"2026-07-31T19:12:58Z","actor":"publisher-autoapprove","note":"auto-approved (all gates passed)","receipt":null}
 {"id":"ob-2026-07-31-e0ba40838d","from":"approved","to":"posting","at":"2026-07-31T19:12:58Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-07-31-e0ba40838d","from":"posting","to":"posted","at":"2026-07-31T19:12:59Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a6cf3bbf93d764d9380543d","external_url":null,"at":"2026-07-31T19:12:57Z","booked_at":"2026-07-31T19:12:57Z"}}
+{"id":"ob-2026-07-31-fbba080d6d","from":"queued","to":"quarantined","at":"2026-07-31T22:29:06Z","actor":"publisher","note":"account_disabled: desk not enabled in desk_network — dispatch-time park (arming = enable the desk; parked items stay parked)","receipt":null}
