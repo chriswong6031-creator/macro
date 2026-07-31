@@ -84,6 +84,39 @@ _DEFAULT_CORROBORATION_WINDOW_S = 1800
 _DEFAULT_RAIL_FLOOR = 40.0
 _DEFAULT_RAIL_MAX_ITEMS = 50
 
+#: `policy` ONLY, and the exclusions are each a measured decision rather than a
+#: judgement call — every one of these was scored before the set was written:
+#:
+#:   geopolitical  "Israel and Iran agree to ceasefire after two weeks of
+#:                 strikes" scores 36.0 and matches NO ticker, sector or macro
+#:                 key. It is also one of the most market-moving headlines a
+#:                 wire can carry. Requiring a nexus here blocks exactly the
+#:                 story this lane should be fastest on, so geopolitical is out:
+#:                 war, ceasefires and sanctions are market events as a class.
+#:   company_news  about a company by construction (43.5 / 36.0 in the live
+#:                 sample, both with tickers) — and a company whose name the
+#:                 ticker universe happens not to carry must still ship.
+#:   macro_print   a print IS the market event ("Real GDP increased at an
+#:                 annual rate of 1.5 percent" -> 52.5, macro_keys=['gdp']).
+#:
+#: That leaves `policy`, the one class that holds domestic political content
+#: which can be loud and mean nothing for a tape.
+_NEXUS_REQUIRED_CLASSES: frozenset[str] = frozenset({"policy"})
+
+
+def _no_market_nexus(scored: dict) -> bool:
+    """True when a politics-scored item demonstrates no connection to markets.
+
+    `matched` is breaking_relevance's own output — the tickers, sectors and
+    macro keys it found in the headline. An item in a class that scores on the
+    speaker rather than the content, which matched NONE of the three, is
+    political content that happens to be loud. Anything else passes.
+    """
+    if str(scored.get("event_class") or "") not in _NEXUS_REQUIRED_CLASSES:
+        return False
+    m = scored.get("matched") or {}
+    return not (m.get("tickers") or m.get("sectors") or m.get("macro_keys"))
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1400,6 +1433,35 @@ def run_press_tick(
         if s.get("salience", 0.0) < floor:
             skipped.append({"id": iid, "reason": "below_flagship_floor",
                             "salience": s.get("salience")})
+            continue
+        if _no_market_nexus(s):
+            # A MARKETS ACCOUNT DOES NOT RELAY POLITICS FOR ITS OWN SAKE.
+            #
+            # Lowering flagship_salience_floor 70 -> 30 on 2026-07-31 was right —
+            # at 70 only `macro_print + official` could ever clear (55 + 15,
+            # exactly), so the wire was a BEA-print relay and company news,
+            # tariffs and every other class were excluded by arithmetic. But the
+            # floor is a proxy for "worth posting", not for "about markets", and
+            # dropping it admitted the whole `policy` class on salience alone.
+            #
+            # That class holds both of these, and they score the same:
+            #   "Trump announces 50% tariff on Chinese semiconductors"  -> tariffs
+            #   "how much Money and Prestige the Supreme Court has lost" -> nothing
+            #
+            # The first is the reason this lane exists. The second is a political
+            # grievance with no market nexus, and the dry run on 2026-07-31 booked
+            # it to the FLAGSHIP account. The separating signal was already
+            # computed and thrown away: `matched`. The tariff item matches
+            # macro_keys=['tariffs']; the grievance matches no ticker, no sector
+            # and no macro key at all.
+            #
+            # Scoped to the two classes the floor change opened. company_news and
+            # macro_print are untouched — they are about markets by construction,
+            # and a company story whose name the universe happens not to carry
+            # must still ship.
+            skipped.append({"id": iid, "reason": "no_market_nexus",
+                            "salience": s.get("salience"),
+                            "event_class": s.get("event_class")})
             continue
         if counter["count"] >= top_k:
             skipped.append({"id": iid, "reason": "flagship_top_k_reached",
