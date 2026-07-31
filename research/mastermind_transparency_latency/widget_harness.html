@@ -65,6 +65,7 @@
     zh: Q.get('zh') === '1',
     old: Q.get('old') === '1',
     research: Q.get('research') === '1',
+    chart: Q.get('chart') === '1',
     gap: Math.max(0, parseInt(Q.get('slow') || '600', 10) || 600)
   };
   /* the widget reads document.documentElement[data-lang] in zh(); set it before it boots */
@@ -97,7 +98,19 @@ function hxEvents() {
 
   at({ type: 'meta', thread_id: 'harness-1', lane: 'pro' });
 
-  if (window.HX.research) {
+  if (window.HX.chart) {
+    /* the inline-chart path: a tool call that renders, then a real read of what it shows */
+    st('start', 'Reading your question', '正在理解您的问题');
+    st('grounding', "Loading today's market state", '载入今日市场状态');
+    st('model', 'Analyzing in depth', '深度分析中', { n: 1 });
+    at({ type: 'tool', name: 'get_quote', label_en: 'Fetching the latest quote', label_zh: '获取最新行情', detail: 'AAPL' });
+    at({ type: 'tool', name: 'render_inline_chart', label_en: 'Drawing a chart', label_zh: '绘制图表', detail: 'AAPL' });
+    /* svg deliberately EMPTY — proves the widget draws from its own bars, not the picture */
+    at({ type: 'chart', ticker: 'AAPL', timeframe: 'DAILY', svg: '' });
+    at({ type: 'tool', name: 'get_symbol_intel', label_en: 'Checking the current read', label_zh: '查看最新解读', detail: 'AAPL' });
+    st('synthesis', 'Writing your answer', '撰写回答中');
+    st('review', 'Final quality check', '最终质量核查');
+  } else if (window.HX.research) {
     /* Deep Research: the same wire, more of it — several rounds and reads spread across
        families, which is what the ledger's glyph column exists to make legible. */
     st('start', 'Reading your question', '正在理解您的问题');
@@ -193,9 +206,14 @@ function hxReader(signal) {
 
 /* ── fetch stub: /api/brain/stream replays the canned bytes; everything else is {} ── */
 (function () {
+  var realFetch = window.fetch.bind(window);
   window.fetch = function (url, opts) {
     url = String(url && url.url ? url.url : url);
     opts = opts || {};
+    /* Only /api/brain/* is canned. The widget fetches its own daily bars for the inline
+       chart from the public data plane — stubbing THAT would make every chart fall back to
+       the server picture, which is the path this harness exists to compare against. */
+    if (url.indexOf('/api/brain/') === -1) return realFetch(url, opts);
     if (url.indexOf('/api/brain/stream') !== -1) {
       return Promise.resolve({
         ok: true, status: 200,
@@ -232,6 +250,8 @@ window.MM_BRAIN_CFG = { anchor: 'br', api: '' };
       Mode switches re-run in place — no reload, so they work in preview panes that
       drop the query string. ── */
 var HX_MODES = [
+  ['Inline chart (EN)', false, false, false, true],
+  ['Inline chart (ZH)', true, false, false, true],
   ['New server (EN)', false, false, false],
   ['New server (ZH)', true, false, false],
   ['Deep research (EN)', false, false, true],
@@ -245,8 +265,11 @@ function hxPaintNav() {
   HX_MODES.forEach(function (m, i) {
     var b = document.createElement('button');
     b.textContent = m[0];
-    b.className = (window.HX.zh === m[1] && window.HX.old === m[2] && window.HX.research === m[3]) ? 'on' : '';
-    b.addEventListener('click', function () { window.HX.zh = m[1]; window.HX.old = m[2]; window.HX.research = m[3]; hxRun(); });
+    b.className = (window.HX.zh === m[1] && window.HX.old === m[2] && window.HX.research === m[3]
+                   && window.HX.chart === !!m[4]) ? 'on' : '';
+    b.addEventListener('click', function () {
+      window.HX.zh = m[1]; window.HX.old = m[2]; window.HX.research = m[3]; window.HX.chart = !!m[4]; hxRun();
+    });
     nav.appendChild(b);
   });
   var again = document.createElement('button');
@@ -255,6 +278,7 @@ function hxPaintNav() {
   nav.appendChild(again);
   document.getElementById('hx-mode').textContent =
     (window.HX.old ? 'stream: legacy (no status events)'
+      : window.HX.chart ? 'stream: inline chart (live-drawn from real bars)'
       : window.HX.research ? 'stream: research pass (3 rounds, 8 reads)' : 'stream: status + labelled tools') +
     ' · lang: ' + (window.HX.zh ? 'zh' : 'en') + ' · frame gap: ' + window.HX.gap + 'ms';
 }
@@ -274,7 +298,9 @@ function hxRun() {
        real toggle (lane forcing + placeholder + ledger mode row), not a private flag */
     var rp = document.querySelector('#mmb-root .mmb-rpill');
     if (rp && (rp.classList.contains('on') !== !!window.HX.research)) rp.click();
-    ta.value = window.HX.research
+    ta.value = window.HX.chart
+      ? (window.HX.zh ? '分析苹果的技术面' : 'analyze technicals for apple stock')
+      : window.HX.research
       ? (window.HX.zh ? '全面分析 NVDA 目前的处境' : 'Give me the full picture on NVDA right now')
       : (window.HX.zh ? '看看 AAPL 现在的结构如何？' : "What's the read on AAPL right now?");
     ta.dispatchEvent(new Event('input', { bubbles: true }));

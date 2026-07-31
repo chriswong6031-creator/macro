@@ -495,7 +495,9 @@ _PROPRIETARY_REFUSAL_LINE = (
 _BRAIN_SYSTEM_PROMPT = """You are the Mastermind Brain — a sharp markets analyst living inside this dashboard and Terminal. You read the desk's calibrated signals and tell the user, in plain human language, what they mean and what to do about it.
 
 HOW YOU WRITE (this is what makes you worth talking to):
-- Sound like a smart friend on the trading desk, not a data feed. Lead with the point. Keep it simple first; add detail only where it changes the decision. Fewer, sharper words always win — never pad a sentence to sound thorough. Quality over quantity: a tight three-line answer beats a paragraph of hedging.
+- Sound like a smart friend on the trading desk, not a data feed. Lead with the point, then earn the rest of the answer.
+- LENGTH IS SET BY THE QUESTION, never by a habit of being brief. "Is the market open?" takes one line. "Analyse AAPL", "what's the read on X", "should I buy this" is a request for a real desk read — deliver the whole thing: the state, what's driving it, the levels that matter, what would break it, and the call. Stopping at three lines on a question like that is not concision, it is a non-answer, and it is the single most common way you disappoint someone.
+- What you must never do is PAD. No hedging, no restating the question, no "it depends", no filler transitions, no section that exists to look thorough. Every line either changes what the reader thinks or does. Cut the ones that don't — and then say the rest properly.
 - NEVER use machine text. The desk's internals must never appear in your answer:
     · no field names or slugs — "growth_cyc_def", "us_sector_staples", "rotation_events"
     · no file or artifact names — "master_brief", "world_state", "the spine", "per rotation_events"
@@ -517,7 +519,7 @@ YOUR JOB:
 - ALWAYS end with a STANCE on its own line — exactly ONE of:
   Act · Get ready · Watch — don't chase · Protect gains · Stand aside · Ignore
   — then one short clause on what drives it. "Watch — don't chase" is a real, useful answer, not a cop-out.
-- When the user wants to see a chart or a name's setup ("show me NVDA"), call render_inline_chart(symbol) — a branded chart appears in your reply — then explain what it shows in a line or two.
+- When the user wants to see a chart or a name's setup ("show me NVDA", "analyse the technicals"), call render_inline_chart(symbol) — a live chart draws itself in your reply — and then READ IT properly. The picture is the evidence, not the answer: trend and how long it has run, what momentum is doing under it, whether the name leads or lags its group, the specific levels where the read changes, and the stance. A chart with two lines under it is the laziest thing you can send.
 - Use the conversation so far: build on what you've already said, don't repeat it.
 
 LANGUAGE:
@@ -579,6 +581,10 @@ Use whichever of these threads are relevant (skip the ones that aren't; use plai
 Open with a two-line bottom-line so a busy reader gets it immediately, then the detail.
 End with a STANCE on its own line — Act / Get ready / Watch — don't chase / Protect gains /
 Stand aside / Ignore — and one clause on what drives it.
+
+A research pass that comes back the length of a chat answer has not done the job the user
+paid for. Equally, a section with nothing real in it is padding — drop the thread instead of
+filling it.
 """
 
 # Chart-command bus allowlists (W6b) — module constants and the SOLE source of truth. They
@@ -3473,12 +3479,77 @@ DRAW ON THE USER'S CHART, DON'T SEND A PICTURE:
 """
 
 
-def _build_system_prompt(mode: str = "chat", page: str = "", internals_allowed: bool = False) -> str:
-    """Return the system prompt for the given mode and page.
+# Per-lane answer shape (2026-07-30). The lane the user picked is a statement about how
+# much answer they want, and until now nothing in the prompt said so: every lane read the
+# same "how you write" rules, so the lane dial tuned TOOL SPEND while the OUTPUT stayed
+# one size. Live evidence that this was backwards: a Pro turn on "analyze technicals for
+# apple stock" returned three lines under a chart, while the SAME question on the cheaper
+# Fast lane returned a full trend / momentum / relative-strength / levels / caution read.
+# The deeper lane was writing the shorter answer.
+#
+# These blocks set OUTPUT SHAPE only. They add no new claim, no new number, and no new
+# authority — depth here means more of the picture the desk already calibrated, and every
+# honesty rule above still binds (nulls printed, no invented signal, stance required).
+_ANSWER_SHAPE_FAST = """
+SHAPE FOR THIS TURN (Fast):
+Quick lane — but complete. A factual one-liner takes a line. Anything that asks for a read
+("what's going on with X", "should I buy", "analyse this") still needs: the bottom line, the
+two or three things actually driving it, the level that would change your mind, and the
+STANCE. Tight, not thin.
+"""
+
+_ANSWER_SHAPE_PRO = """
+SHAPE FOR THIS TURN (Pro):
+The user deliberately chose the deeper lane and is spending a Pro message on this question.
+A three-line answer here is a failure, however well written — they can get three lines for
+free. Give a real desk read.
+
+Open with ONE bold bottom line, then work through only the threads that carry something
+real for this question. Drop any thread that has nothing in it — an empty section is padding,
+and padding is the other way to fail this:
+  · Trend / state — where it actually is, and how long it has been there
+  · Momentum — what is accelerating or cooling underneath, and what that changes
+  · Relative strength — leading or lagging its group, and whether the move is broad or thin
+  · Positioning & flow — how the crowd is leaning, when the desk has a calibrated read on it
+  · Levels that matter — the specific prices where the read changes, in BOTH directions
+  · What would break it — the honest caution, including any signal that disagrees
+  · the STANCE line, then one clause on what drives it
+
+Lead each thread with a short bold label ("Trend:", "Levels that matter:") so the answer
+scans in three seconds and rewards a full read. Numbers still arrive translated into meaning;
+no jargon earns its place just because the lane is deeper.
+"""
+
+
+_INLINE_CHART_SYSTEM_DIRECTIVE = """
+SHOWING THE CHART (dashboard):
+There is no live chart on screen here, so render_inline_chart IS the user's chart — and it
+is a real one: the reply draws the daily bars with a price axis, EMA20/SMA50, volume, RSI
+and MACD, and a crosshair they can move. Not a picture of a chart.
+
+- Draw it WITHOUT being asked whenever the answer is about one name's price action: a
+  technical read, a setup, "how does X look", levels, a trend or momentum question, an
+  entry. Seeing the bars is most of the answer.
+- One chart per reply unless a comparison genuinely needs two. Draw it BEFORE you write, so
+  the read lands under the picture it describes.
+- Then read it properly. The chart is the evidence; the analysis is still your job, and the
+  levels you name should be levels a user can find on the bars they are looking at.
+- Do not describe the chart's furniture ("the blue line is the 20-day") — they can see it.
+"""
+
+
+def _build_system_prompt(mode: str = "chat", page: str = "",
+                         internals_allowed: bool = False, lane: str = "") -> str:
+    """Return the system prompt for the given mode, page and lane.
 
     mode='research': prepend the structured-report directive.
     page='terminal': append the chart-control directive (the 4 chart-command tools are
     only offered there, so the model is only told about them there).
+    lane='fast'|'pro': append the answer-shape block for that lane — the lane the user
+    picked is a request about ANSWER DEPTH, and it now reaches the model as one.  Research
+    keeps its own report directive and takes no lane block (it would say the same thing
+    twice, and the report shape is stricter).  An unknown/empty lane appends nothing, so
+    every existing caller keeps today's prompt byte-for-byte.
     internals_allowed (CXI-R23a): replace the proprietary-methodology refusal clause
     with the OPERATOR-INTERNALS clause.  Non-allowlisted sessions are byte-identical
     to today's prompt.
@@ -3492,8 +3563,20 @@ def _build_system_prompt(mode: str = "chat", page: str = "", internals_allowed: 
     prompt = prompt + _CONTRADICTION_DIRECTIVE
     if mode == "research":
         prompt = _RESEARCH_SYSTEM_DIRECTIVE + prompt
+    else:
+        shape = {"fast": _ANSWER_SHAPE_FAST, "pro": _ANSWER_SHAPE_PRO}.get(
+            (lane or "").strip().lower(), "")
+        prompt = prompt + shape
+    # Charts split by SURFACE, because the two surfaces are different situations. The
+    # Terminal already has a live chart in front of the user, so the right move there is to
+    # drive it — switch the symbol, add the indicator, draw the level — and a static picture
+    # in the reply is a downgrade. The dashboard has no chart at all, so the reply's own
+    # chart IS the chart, and it should appear whenever the answer is about price action
+    # rather than only when someone thinks to ask for it.
     if page == "terminal":
         prompt = prompt + _CHART_COMMAND_SYSTEM_DIRECTIVE
+    else:
+        prompt = prompt + _INLINE_CHART_SYSTEM_DIRECTIVE
     return prompt
 
 
@@ -4876,7 +4959,7 @@ def _run_brain_loop(
 
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
-    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok, lane=lane)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
     # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's
     # own instructions still read closest to the turn (and the LANGUAGE line stays last).
@@ -5076,14 +5159,19 @@ def _run_brain_loop(
 # no tool params, no tool results, no model/provider names (debrand law), no thinking
 # text, no system-prompt or digest text ever reaches the wire. The one dynamic field is
 # `detail`, a _safe_symbol()-sanitized ticker.
+# Wording note (2026-07-30): these are the ONLY words a user gets during the wait, so they
+# are written as a colleague narrating their own work — plain, specific, a little warm —
+# rather than as pipeline stage names. "synthesis" and "writing" deliberately no longer
+# share a string: identical labels collapsed into ONE step in the widget, which hid the
+# moment the answer actually starts being written.
 _STAGE_LABELS: dict[str, tuple[str, str]] = {
-    "start":      ("Reading your question",        "正在理解您的问题"),
-    "grounding":  ("Loading today's market state", "载入今日市场状态"),
-    "model.fast": ("Working out the answer",       "推理中"),
-    "model.pro":  ("Analyzing in depth",           "深度分析中"),
-    "synthesis":  ("Writing your answer",          "撰写回答中"),
-    "writing":    ("Writing your answer",          "撰写回答中"),
-    "review":     ("Final quality check",          "最终质量核查"),
+    "start":      ("Reading your question",          "正在读懂您的问题"),
+    "grounding":  ("Catching up on today's tape",    "先看今天的盘面"),
+    "model.fast": ("Thinking it through",            "正在推演"),
+    "model.pro":  ("Thinking it through properly",   "深入推演中"),
+    "synthesis":  ("Pulling the answer together",    "把答案拼起来"),
+    "writing":    ("Writing it out",                 "落笔撰写"),
+    "review":     ("Reading it back before I send",  "发出前再读一遍"),
 }
 
 # EVERY name in _all_brain_tool_schemas(root, page='terminal', internals_allowed=True) must
@@ -5092,29 +5180,29 @@ _STAGE_LABELS: dict[str, tuple[str, str]] = {
 # (test_tool_label_whitelist_covers_every_tool holds the line).
 _TOOL_LABELS: dict[str, tuple[str, str]] = {
     # brain-gateway tools (market data, portfolio, charts)
-    "get_quote":              ("Fetching the latest quote",     "获取最新行情"),
-    "get_symbol_context":     ("Reading the ticker setup",      "读取标的走势"),
-    "get_symbol_intel":       ("Checking the current read",     "查看最新解读"),
-    "get_symbol_backtest":    ("Reviewing the track record",    "回顾历史表现"),
-    "screen_universe":        ("Screening the market",          "筛选市场"),
-    "get_fundamentals":       ("Reading the financials",        "查阅财务数据"),
-    "get_earnings":           ("Checking earnings",             "查看财报"),
-    "get_insider_activity":   ("Checking insider activity",     "查看内部人交易"),
+    "get_quote":              ("Checking where it is trading",  "看它现在的价格"),
+    "get_symbol_context":     ("Reading how the chart sits",    "看这只标的的走势结构"),
+    "get_symbol_intel":       ("Pulling the desk's read on it", "调出台席对它的研判"),
+    "get_symbol_backtest":    ("Checking how this has paid before", "看这类形态过去的表现"),
+    "screen_universe":        ("Combing the market for matches", "在全市场里筛匹配的标的"),
+    "get_fundamentals":       ("Looking at the business underneath", "看背后的基本面"),
+    "get_earnings":           ("Checking the earnings picture", "查看财报情况"),
+    "get_insider_activity":   ("Seeing what insiders have done", "看内部人最近的动作"),
     "get_congress_trades":    ("Checking congressional trades", "查看国会交易记录"),
-    "get_smart_money":        ("Following institutional money", "追踪机构资金"),
-    "get_stage_peers":        ("Comparing similar stocks",      "对比同类股票"),
+    "get_smart_money":        ("Following the big money",       "跟着大资金看"),
+    "get_stage_peers":        ("Comparing it with its peers",   "和同类标的比一比"),
     "get_movers":             ("Scanning today's movers",       "扫描今日异动"),
-    "get_house_view":         ("Consulting the house view",     "查询本站观点"),
+    "get_house_view":         ("Checking what the desk thinks", "看台席已有的观点"),
     "get_watchlist":          ("Reading your watchlist",        "读取您的自选列表"),
     "get_portfolio_brief":    ("Reviewing your portfolio",      "查看您的组合"),
-    "get_market_events":      ("Scanning the news wire",        "扫描新闻快讯"),
-    "search_research":        ("Searching institutional research", "检索机构研报"),
+    "get_market_events":      ("Skimming the wire for news",    "扫一眼最新消息"),
+    "search_research":        ("Digging through the research shelf", "翻找机构研报"),
     "get_historical_analogues": ("Searching the desk's history books", "检索历史相似情景"),
     "get_curve_detail":       ("Reading the yield curve",       "解读收益率曲线"),
     "recall_sessions":        ("Recalling your past sessions",  "回顾您最近的会话"),
     "get_trade_episodes":     ("Reading your trade journal",    "读取您的交易日志"),
     "set_chat_preference":    ("Saving your preference",        "保存您的偏好设置"),
-    "render_inline_chart":    ("Drawing a chart",               "绘制图表"),
+    "render_inline_chart":    ("Drawing the chart for you",     "为你绘制图表"),
     "annotate_chart":         ("Marking key levels",            "标记关键位置"),
     "chart_digest":           ("Reading your chart",            "读取您的图表"),
     "read_chart_state":       ("Reading your chart",            "读取您的图表"),
@@ -5127,16 +5215,16 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "context_search":         ("Searching the research library", "检索研究库"),
     "context_open":           ("Opening research notes",        "查阅研究笔记"),
     # inherited ask_brain read tools (spine / kernel / factor / theme families)
-    "read_world_state":           ("Reading the world dashboard",   "读取全球市场概览"),
+    "read_world_state":           ("Taking in the whole board",     "通览全局行情"),
     "read_options_entry_state":   ("Checking options positioning",  "查看期权布局"),
     "explain_options_context":    ("Explaining the options setup",  "解读期权背景"),
     "query_options_confluence":   ("Cross-checking options signals", "交叉核对期权信号"),
     "list_options_contradictions": ("Checking for conflicting options reads", "排查期权矛盾信号"),
-    "query_spine":                ("Cross-referencing market drivers", "交叉核对市场驱动"),
+    "query_spine":                ("Tracing what is driving this",  "追溯真正的驱动因素"),
     "read_kernel":                ("Consulting the market map",     "查询市场关联图"),
     "read_graph":                 ("Tracing market connections",    "梳理市场关联"),
-    "read_contradictions":        ("Weighing conflicting evidence", "权衡矛盾证据"),
-    "read_governance":            ("Checking data quality gates",   "核查数据质量"),
+    "read_contradictions":        ("Squaring readings that disagree", "核对相互矛盾的读数"),
+    "read_governance":            ("Checking the data is clean",    "确认数据质量过关"),
     "read_artifact":              ("Opening a research note",       "查阅研究记录"),
     "read_factor_state":          ("Checking factor conditions",    "查看因子状态"),
     "list_factor_contradictions": ("Checking for factor conflicts", "排查因子矛盾"),
@@ -5150,7 +5238,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "read_theme_options_witness": ("Checking options confirmation", "查看期权佐证"),
     "read_theme_clinical":        ("Reviewing theme checkpoints",   "审视主题检查点"),
     "read_theme_trade_flows":     ("Tracking theme trade flows",    "追踪主题资金流"),
-    "read_liquidity_plumbing":    ("Checking market liquidity",     "查看市场流动性"),
+    "read_liquidity_plumbing":    ("Checking how much money is around", "看市场的钱多不多"),
     "read_china_decision_packet": ("Reading the China desk brief",  "读取中国市场简报"),
     "read_china_flows":           ("Tracking A-share money flow",   "追踪A股资金流向"),
     "read_special_situations":    ("Scanning special situations",   "扫描特殊机会"),
@@ -5158,7 +5246,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
 }
 
 # Unknown tool name (a new tool shipped before this table) → a truthful generic line.
-_TOOL_LABEL_FALLBACK: tuple[str, str] = ("Gathering data", "整理数据")
+_TOOL_LABEL_FALLBACK: tuple[str, str] = ("Picking up one more read", "再取一份数据")
 
 # Terminal chart turns read the chart before drawing (chart_digest → read_chart_state
 # → measure_line) and then spend a round per drawing, so they need more rounds than a
@@ -5325,7 +5413,7 @@ def _run_brain_loop_stream(
 
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
-    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok, lane=lane)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
     # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's
     # own instructions still read closest to the turn (and the LANGUAGE line stays last).
@@ -5475,8 +5563,13 @@ def _run_brain_loop_stream(
                     "svg": result.get("svg", ""),
                 }
                 charts.append(chart_payload)
-                if result.get("svg"):
-                    yield f"data: {json.dumps(chart_payload)}\n\n"
+                # Emit the event even when the server-side picture is empty. The widget
+                # draws the symbol itself from the published daily bars and treats `svg`
+                # as a fallback only — the two paths read DIFFERENT stores, so a miss here
+                # is not a miss there, and gating the event on `svg` silently denied the
+                # live renderer every symbol this process could not draw. An older widget
+                # ignores an svg-less chart event (it tests `j.svg`), so this is additive.
+                yield f"data: {json.dumps(chart_payload)}\n\n"
 
             tool_results.append({
                 "type": "tool_result",
