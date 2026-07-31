@@ -23,7 +23,7 @@ from lib import config  # noqa: E402
 
 # Expected family cardinalities (the enumerated universe).
 _EXPECTED_FAMILIES = {
-    "us_sector": 11, "us_basket": 46, "nasdaq_group": 8, "russell_group": 11,
+    "us_sector": 11, "us_basket": 47, "nasdaq_group": 8, "russell_group": 11,
     "cn_sector": 31, "cn_basket": 22, "country": 24, "bloc": 7,
     "flagship_band": 20,
 }

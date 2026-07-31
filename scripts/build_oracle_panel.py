@@ -4,7 +4,7 @@ Reads data from the Mac data stores (data/yahoo, data/massive_stock_day,
 data/breadth, data/themes_heatmap, site/basketdata) and writes:
 
   data/oracle/panel_s.parquet   — Tier S (sector ETFs, 1998→, survivorship-clean)
-  data/oracle/panel_m.parquet   — Tier M (268 subsectors + 40 themes + 46 baskets,
+  data/oracle/panel_m.parquet   — Tier M (268 subsectors + 40 themes + 47 baskets,
                                            2021-07→, survivorship-FLAGGED)
   data/oracle/manifest.json     — spans, node counts, per-tier coverage stats
 

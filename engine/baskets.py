@@ -10,7 +10,8 @@ two payloads the page renders client-side (like FactorWatch):
             (rebased per range) + the live σ/sort table (winRet/winZ run on it).
   BASKETS = { as_of, construction, history_note, note, categories, story,
               baskets:[ {id,name,name_zh,category,thesis,weighting,created,n_members,
-                         members:[{symbol,name,added,removed,rationale,last,ret_20d,ret_ytd}],
+                         members:[{symbol,name,added,removed,rationale,last,
+                                   ret_1d,ret_5d,ret_10d,ret_20d,ret_ytd}],
                          changelog, reference:{label,name,corr,rel_corr,n,note}, missing,
                          partial, perf:{1d/5d/20d/60d/mtd/ytd/full:{ret,rel}} } ] }
 
@@ -61,6 +62,16 @@ def _basket_extras() -> pd.DataFrame | None:
         return df.sort_index()
     except Exception as e:  # noqa: BLE001
         log.warning("basket extras unreadable: %s", e)
+        return None
+
+
+def _trailing_return(close: pd.Series, sessions: int) -> float | None:
+    """Simple trailing close return; None when the member lacks the requested window."""
+    if len(close) <= sessions:
+        return None
+    try:
+        return float(close.iloc[-1] / close.iloc[-sessions - 1] - 1.0)
+    except (TypeError, ValueError, ZeroDivisionError):
         return None
 
 
@@ -201,7 +212,7 @@ def compute_baskets() -> dict | None:
 
         perf = _perf(lvl, bench, idx, ytd_anchor, mtd_anchor)
 
-        # latest active members enriched with last / ret_20d / ret_ytd + partial flag
+        # latest active members enriched with fast + slow returns and partial flag
         last_d = idx.max()
         active, partial = [], []
         for m in members:
@@ -222,13 +233,14 @@ def compute_baskets() -> dict | None:
             short = eff_start > idx[0] + pd.Timedelta(days=PARTIAL_GAP_DAYS)      # mid-window entrant / recent IPO
             if gap or short:
                 partial.append({"symbol": t, "from": eff_start.strftime("%Y-%m-%d")})
-            r20 = float(tc.iloc[-1] / tc.iloc[-21] - 1.0) if len(tc) > 21 else None
+            trailing = {h: _trailing_return(tc, h) for h in (1, 5, 10, 20)}
             yseg = tc[tc.index >= ytd_anchor]
             ry = float(tc.iloc[-1] / yseg.iloc[0] - 1.0) if len(yseg) > 1 else None
             active.append({"symbol": t, "name": nm.get(t, (t, "—"))[0][:26],
                            "added": m["added"], "rationale": m.get("rationale", m.get("note", "")),
                            "last": round(float(tc.iloc[-1]), 2),
-                           "ret_20d": round(r20, 4) if r20 is not None else None,
+                           **{f"ret_{h}d": round(v, 4) if v is not None else None
+                              for h, v in trailing.items()},
                            "ret_ytd": round(ry, 4) if ry is not None else None})
         active.sort(key=lambda x: (x["ret_20d"] is None, -(x["ret_20d"] or 0)))
 

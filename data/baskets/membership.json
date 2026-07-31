@@ -1,8 +1,8 @@
 {
-  "version": "2026-07-03",
+  "version": "2026-07-30",
   "note": "Curated US theme baskets for monitoring rotation. Descriptive only, not a buy list.",
   "seed_date": "2023-05-09",
-  "curated": "2026-07-03",
+  "curated": "2026-07-30",
   "baskets": {
     "mag7": {
       "name": "Magnificent Seven",
@@ -3704,6 +3704,111 @@
           "action": "note",
           "date": "2026-06-21",
           "note": "GOOGL: coherence audit — KEPT but flagged. deliberate big-tech program leg: low-corr mega-cap whose quantum (Willow) exposure is tiny vs its market cap; kept as a named program participant."
+        }
+      ]
+    },
+    "gold_miners": {
+      "name": "Gold Miners",
+      "name_zh": "黄金矿业",
+      "theme": "Liquid US-listed gold producers with direct operating leverage to the gold price. Royalty/streaming companies and silver-led miners are kept out so the cycle read stays economically coherent.",
+      "category": "Materials & Mining",
+      "parent": "Materials",
+      "tags": [
+        "gold",
+        "miners",
+        "precious-metals",
+        "commodities"
+      ],
+      "etf_proxy": "GDX",
+      "etf_proxy_note": "tight — GDX is the VanEck Gold Miners ETF",
+      "created": "2026-07-30",
+      "curated": "2026-07-30",
+      "omitted": [
+        "FNV, WPM, RGLD (royalty/streaming economics rather than mine operators)",
+        "PAAS, HL, AG (material silver exposure — reserve for a separately calibrated silver sleeve)",
+        "Junior explorers and pre-production developers (financing and single-asset risk dominate metal-cycle timing)"
+      ],
+      "members": [
+        {
+          "ticker": "NEM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Newmont — largest diversified listed gold producer and core GDX holding"
+        },
+        {
+          "ticker": "AEM",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Agnico Eagle — high-quality senior producer with a deep North American asset base"
+        },
+        {
+          "ticker": "GOLD",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Barrick Mining — global senior producer with large-scale tier-one gold assets"
+        },
+        {
+          "ticker": "KGC",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Kinross Gold — liquid mid-to-senior producer with direct gold-price operating leverage"
+        },
+        {
+          "ticker": "AU",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "AngloGold Ashanti — geographically diversified senior gold producer"
+        },
+        {
+          "ticker": "GFI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Gold Fields — large global producer with liquid US ADR"
+        },
+        {
+          "ticker": "HMY",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Harmony Gold — high-beta producer with liquid US ADR"
+        },
+        {
+          "ticker": "AGI",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Alamos Gold — growing North American intermediate producer"
+        },
+        {
+          "ticker": "IAG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "IAMGOLD — intermediate producer with meaningful operating leverage"
+        },
+        {
+          "ticker": "EQX",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Equinox Gold — Americas-focused producer with high gold-cycle sensitivity"
+        },
+        {
+          "ticker": "EGO",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "Eldorado Gold — diversified intermediate producer with liquid US listing"
+        },
+        {
+          "ticker": "BTG",
+          "added": "2023-05-09",
+          "removed": null,
+          "rationale": "B2Gold — established low-cost producer with diversified operations"
+        }
+      ],
+      "thesis": "Gold producers provide operational leverage to bullion through realized prices, reserve value and margin expansion. The basket deliberately excludes royalty companies and silver-led miners so trend, breadth and cycle signals describe one economic sleeve.",
+      "weighting": "equal",
+      "changelog": [
+        {
+          "date": "2026-07-30",
+          "action": "create",
+          "note": "Added a coherent US-listed gold-producer basket; royalty/streaming and silver-led names explicitly excluded."
         }
       ]
     },

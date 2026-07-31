@@ -512,18 +512,33 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             + ycfg.get("crypto", []))
     scfg = config.load().get("stock_search", {})
     extra_names = scfg.get("extra_names", {}) or {}
+    # Render-only builds do not collect fresh per-ticker Yahoo files. The tracked
+    # basket-only deep close cache is an honest fallback for curated searchable names,
+    # so a newly added basket can ship complete stock profiles on its first render.
+    basket_extra = None
+    _bep = config.data_dir() / "baskets" / "extras.parquet"
+    if _bep.exists():
+        try:
+            basket_extra = pd.read_parquet(_bep)
+        except Exception as e:  # noqa: BLE001 — one optional cache must not break the library
+            log.warning("basket extras unreadable for stock-library fallback (%s)", e)
     for t in etfs + (scfg.get("extra_tickers", []) or []):
         if t in seen or t.startswith("^"):
             continue
         df = store.read("yahoo", t)
-        if df is None:
+        close, high = None, None
+        if df is not None:
+            close, high = df["close"], df.get("high")
+        elif basket_extra is not None and t in basket_extra:
+            close = basket_extra[t].dropna()
+        if close is None or close.empty:
             continue
         lbl = extra_names.get(t)
         if lbl:  # a real single stock: show the company name + its GICS sector
-            out.append((t, df["close"], df.get("high"),
+            out.append((t, close, high,
                         str(lbl.get("name", t)), str(lbl.get("sector", ""))))
         else:    # an ETF / macro proxy
-            out.append((t, df["close"], None, ETF_LABELS.get(t, t), "ETF / macro"))
+            out.append((t, close, None, ETF_LABELS.get(t, t), "ETF / macro"))
         seen.add(t)
     return out
 

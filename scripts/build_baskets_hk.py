@@ -195,7 +195,7 @@ def main() -> int:
     write_page(site / "baskets_hk.html", html)
     try:
         from scripts.build_theme_detail import build_detail_pages
-        build_detail_pages(data, site, env, 'hk')
+        build_detail_pages(data, site, env, 'hk', chart)
         deskjs = config.ROOT / 'templates' / 'baskets_desk.js'
         if deskjs.exists():
             (site / 'baskets_desk.js').write_text(deskjs.read_text())

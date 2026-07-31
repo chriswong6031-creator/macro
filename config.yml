@@ -2520,6 +2520,19 @@ stock_search:
     - WRB    # W.R. Berkley
     - XOM    # Exxon Mobil
     - ZTS    # Zoetis
+    # Gold Miners detail sleeve — explicit so every holding has a stock profile.
+    - NEM    # Newmont
+    - AEM    # Agnico Eagle
+    - GOLD   # Barrick Mining
+    - KGC    # Kinross Gold
+    - AU     # AngloGold Ashanti
+    - GFI    # Gold Fields
+    - HMY    # Harmony Gold
+    - AGI    # Alamos Gold
+    - IAG    # IAMGOLD
+    - EQX    # Equinox Gold
+    - EGO    # Eldorado Gold
+    - BTG    # B2Gold
     # Additional intel-hub off-desk discovery names found post-build
     - HPE    # Hewlett Packard Enterprise
     - ROST   # Ross Stores
@@ -2557,6 +2570,18 @@ stock_search:
     SMR:  {name: "NuScale Power", sector: "Utilities"}
     OKLO: {name: "Oklo", sector: "Utilities"}
     NBIS: {name: "Nebius Group", sector: "Information Technology"}
+    NEM:  {name: "Newmont", sector: "Materials"}
+    AEM:  {name: "Agnico Eagle Mines", sector: "Materials"}
+    GOLD: {name: "Barrick Mining", sector: "Materials"}
+    KGC:  {name: "Kinross Gold", sector: "Materials"}
+    AU:   {name: "AngloGold Ashanti", sector: "Materials"}
+    GFI:  {name: "Gold Fields", sector: "Materials"}
+    HMY:  {name: "Harmony Gold", sector: "Materials"}
+    AGI:  {name: "Alamos Gold", sector: "Materials"}
+    IAG:  {name: "IAMGOLD", sector: "Materials"}
+    EQX:  {name: "Equinox Gold", sector: "Materials"}
+    EGO:  {name: "Eldorado Gold", sector: "Materials"}
+    BTG:  {name: "B2Gold", sector: "Materials"}
     TSM:  {name: "Taiwan Semiconductor (ADR)", sector: "Information Technology"}
     SE:   {name: "Sea Limited (ADR)", sector: "Communication Services"}
     NU:   {name: "Nu Holdings", sector: "Financials"}

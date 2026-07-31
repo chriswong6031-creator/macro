@@ -20,7 +20,7 @@ import logging
 import numpy as np
 import pandas as pd
 
-from engine.baskets import _ew_level, _mtd_anchor, _perf  # identical EW/level/return math
+from engine.baskets import _ew_level, _mtd_anchor, _perf, _trailing_return
 
 log = logging.getLogger(__name__)
 
@@ -102,13 +102,14 @@ def compute_region_baskets(closes: pd.DataFrame | None, mem: dict | None,
             short = eff_start > idx[0] + pd.Timedelta(days=180)
             if gap or short:
                 partial.append({"symbol": t, "from": eff_start.strftime("%Y-%m-%d")})
-            r20 = float(tc.iloc[-1] / tc.iloc[-21] - 1.0) if len(tc) > 21 else None
+            trailing = {h: _trailing_return(tc, h) for h in (1, 5, 10, 20)}
             yseg = tc[tc.index >= ytd_anchor]
             ry = float(tc.iloc[-1] / yseg.iloc[0] - 1.0) if len(yseg) > 1 else None
             active.append({"symbol": t, "name": nm[t].get(name_key, t),
                            "added": m["added"], "rationale": m.get("rationale", ""),
                            "last": round(float(tc.iloc[-1]), 2),
-                           "ret_20d": round(r20, 4) if r20 is not None else None,
+                           **{f"ret_{h}d": round(v, 4) if v is not None else None
+                              for h, v in trailing.items()},
                            "ret_ytd": round(ry, 4) if ry is not None else None})
         active.sort(key=lambda x: (x["ret_20d"] is None, -(x["ret_20d"] or 0)))
 

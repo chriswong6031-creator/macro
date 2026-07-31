@@ -94,7 +94,7 @@ class TestCrosswalkIntegrity:
         assert not dangling, f"Dangling basket_ids (theme, basket): {dangling}"
 
     def test_all_46_baskets_accounted_for(self, cw, basket_ids_on_disk):
-        """All 46 baskets must appear in either basket_ids or unmapped_baskets."""
+        """All 47 baskets must appear in either basket_ids or unmapped_baskets."""
         mapped = set()
         for t in cw["themes"]:
             mapped.update(t.get("basket_ids", []))
