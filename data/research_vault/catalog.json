@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T16:13:11.574299+00:00",
-  "count": 468,
+  "generated_at": "2026-07-31T16:28:15.679397+00:00",
+  "count": 469,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,23 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-u9aizxe1fiq-f02741",
+      "title": "GS Vol Views July 31",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:07:50Z",
+      "summary_points": [
+        "**Vol Panic Index & Positioning**: Vol Panic Index at 5.1/10 (8/10 desk activity) with Semis positioning reset (long delta/short vol), signaling reduced parabolic upside risk - **Earnings/NFP Catalyst**: ~14% S&P 500 market cap earnings + July NFP implied move ~1.53% (next week) driving near-term volatility - **Macro Flows & Sentiment**: NDX’s 6th consecutive down session (longest since Nov '16) and GS call buying (21,275 QQQ 7Aug 690 calls) indicate client capitulation and hedge monetization skew - **SMH Upside Trade**: Vol compress + 100dma support (50.79) enables entry via ratio call spreads/knock-out calls (SMH 3m 25d call IV 46.83)"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-bswafebxwrt-a6e31c",
       "title": "JPM JPM International Ma",
