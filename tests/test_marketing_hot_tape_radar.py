@@ -1097,6 +1097,19 @@ class TestSafetyStack:
         "engine/marketing/copywriter.py": ("hot_tape_llm", "numeric_violations"),
         "scripts/marketing_publisher.py": (
             "hot_tape", "LANE", "BRIEF_TRIGGER", "orphaned_brief_status"),
+        # 2026-07-31, the wire reaper (outbox.expire_stale_wire). The outbox is
+        # the SHARED queue and a provenance slug is its own vocabulary, not a
+        # reach into this program — and the direction of travel is the opposite
+        # of what this guard defends against: the reference exists so the outbox
+        # can KILL a stale hot-tape item, never to widen a rule so one can post.
+        #
+        # The allowance is as narrow as the mechanism allows: every token below
+        # must appear on EVERY line of outbox.py that says "hot_tape", so the
+        # only admissible line is the _WIRE_PROVENANCES literal itself. A later
+        # edit that reaches for a hot-tape threshold, config key or helper puts
+        # the word on some other line and this test fails, exactly as intended.
+        "engine/marketing/outbox.py": (
+            "hot_tape", "_WIRE_PROVENANCES", "press_lane", "publisher_live_movers"),
     }
 
     def test_safety_modules_are_not_edited_by_this_program(self):
@@ -1203,8 +1216,11 @@ class TestLLMPhrasing:
         item = OB.read_items(root)[0]
         assert item["text"] == model_text
         stamp = item["source"]["llm"]
+        # `violations` is the STRING LIST (2026-07-31), not the count: the count
+        # made the measured validation-fallback rate undiagnosable from the queue.
+        # `violations_n` keeps the cardinality for the tally.
         assert stamp == {"mode": "llm", "provider": "oauth",
-                         "latency_ms": 812, "violations": 0}
+                         "latency_ms": 812, "violations": [], "violations_n": 0}
         assert len(calls) == 1
         # The deterministic template is what the desk falls back TO, so it must
         # arrive as the fallback argument rather than being thrown away.
@@ -1248,7 +1264,13 @@ class TestLLMPhrasing:
         assert "accumulate" not in item["text"]
         assert item["text"].startswith("$MU")             # the template posted
         assert item["source"]["llm"]["mode"] == "fallback_validation"
-        assert item["source"]["llm"]["violations"] >= 1
+        # The NAMED violations reach the queue, not just their count — the whole
+        # point of the 2026-07-31 telemetry fix is that "why did it fall back"
+        # is answerable from items.jsonl alone.
+        assert item["source"]["llm"]["violations_n"] >= 1
+        _v = item["source"]["llm"]["violations"]
+        assert isinstance(_v, list) and _v and all(isinstance(x, str) for x in _v)
+        assert any("accumulate" in x for x in _v), _v
         out = capsys.readouterr().out
         assert any(l.startswith("::warning title=hot-tape-llm-banned::")
                    for l in out.splitlines()), out
@@ -2835,3 +2857,230 @@ class TestAnUnhostedCardIsNotSilent:
         out = capsys.readouterr().out
         assert "no-bars" in out
         assert "hot-tape-unhosted-card" not in out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Chart render telemetry — a degraded picture must be distinguishable
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _stub_publish_card(monkeypatch, published: dict) -> list[dict]:
+    """Replace media_publish.publish_card with a canned result. Returns the log."""
+    from engine.marketing import media_publish as MP
+
+    calls: list[dict] = []
+
+    def _fake(svg, *, chart_id, as_of, root=None, legacy_png=None):
+        calls.append({"chart_id": chart_id, "as_of": as_of})
+        return dict(published)
+
+    monkeypatch.setattr(MP, "publish_card", _fake)
+    return calls
+
+
+def _stub_renderers(monkeypatch) -> None:
+    """Both card renderers return a trivial SVG — no Chrome, no bars, no logos."""
+    from engine.marketing import chart_render as CR
+
+    monkeypatch.setattr(CR, "render_chart_v2", lambda **kw: "<svg/>")
+    monkeypatch.setattr(CR, "render_watchlist_card", lambda *a, **kw: "<svg/>")
+    monkeypatch.setattr(CR, "chart_cta_enabled", lambda cfg: False)
+    monkeypatch.setattr(
+        RADAR, "load_bars",
+        lambda ticker, root, *, now, fetcher=None: (
+            ((["2026-01-02"], [1.0], [1.0], [1.0], [1.0], [1.0]), 0), "ok"))
+
+
+class TestChartRenderTelemetry:
+    """A LEGACY PNG AND A FULL CARD LOOKED IDENTICAL IN THE OUTBOX (2026-07-31).
+
+    publish_card returns `media_render` ("svg_raster" | "legacy_png") and both
+    of this lane's media builders dropped it on the floor, copying only the URL
+    and the PNG path. content_studio._attach_chart_media has copied it (and
+    warned on the fallback) since 2026-07-30 for the stated reason: the quality
+    of every image we post was a number nobody could see.
+    """
+
+    _URL = "https://pub-test.r2.dev/c/hot.png"
+
+    def _packet(self, **over) -> FactPacket:
+        base = dict(trigger="mover_drop", key="mover:MU:down:x:0",
+                    fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+                    ticker="MU", name=None, sector="Technology", direction="down",
+                    severity=90.0,
+                    facts={"ticker": "MU", "pct": -8.2, "price": 92.0},
+                    provenance={})
+        base.update(over)
+        return FactPacket(**base)
+
+    def _group_packet(self) -> FactPacket:
+        return self._packet(
+            trigger="sector_rout", key="sector:Semiconductors:down:x",
+            ticker=None, sector="Semiconductors",
+            facts={"sector": "Semiconductors", "group_kind": "industry",
+                   "median_pct": -7.8, "breadth_pct": 90.0, "n_members": 10,
+                   "n_down": 9,
+                   "leaders": [["MU", -9.1], ["STX", -8.4], ["AMD", -8.2]]})
+
+    def test_a_single_name_card_records_its_render_mode(self, tmp_path, monkeypatch):
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "a.svg", "media_url": self._URL,
+                                         "media_png_path": "a.png",
+                                         "media_render": "svg_raster"})
+        out = RADAR.resolve_chart(self._packet(), root=tmp_path, marketing_cfg={},
+                                  as_of=DAY, now=NOW)
+        assert out["reason"] == "ok"
+        assert out["media"]["media_render"] == "svg_raster"
+
+    def test_the_legacy_fallback_is_stamped_and_annotated(self, tmp_path,
+                                                          monkeypatch, capsys):
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "a.svg", "media_url": self._URL,
+                                         "media_png_path": "a.png",
+                                         "media_render": "legacy_png"})
+        out = RADAR.resolve_chart(self._packet(), root=tmp_path, marketing_cfg={},
+                                  as_of=DAY, now=NOW)
+        assert out["media"]["media_render"] == "legacy_png"
+        lines = [l for l in capsys.readouterr().out.splitlines()
+                 if "hot-tape-chart-legacy-fallback" in l]
+        # LINE START, or GitHub drops it (CLAUDE.md; it shipped dead five times).
+        assert lines and lines[0].startswith("::warning title="), lines
+        assert "DEGRADED legacy PNG" in lines[0]
+
+    def test_the_group_card_records_its_render_mode_too(self, tmp_path,
+                                                        monkeypatch, capsys):
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "g.svg", "media_url": self._URL,
+                                         "media_png_path": "g.png",
+                                         "media_render": "legacy_png"})
+        out = RADAR.resolve_group_card(self._group_packet(), root=tmp_path,
+                                       marketing_cfg={}, as_of=DAY, now=NOW)
+        assert out["reason"] == "ok"
+        assert out["media"]["media_render"] == "legacy_png"
+        assert any("hot-tape-chart-legacy-fallback" in l
+                   for l in capsys.readouterr().out.splitlines())
+
+    def test_a_full_raster_stays_quiet(self, tmp_path, monkeypatch, capsys):
+        """A warning that fires on healthy passes is one nobody reads."""
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "a.svg", "media_url": self._URL,
+                                         "media_png_path": "a.png",
+                                         "media_render": "svg_raster"})
+        RADAR.resolve_chart(self._packet(), root=tmp_path, marketing_cfg={},
+                            as_of=DAY, now=NOW)
+        assert "legacy-fallback" not in capsys.readouterr().out
+
+
+class TestRingCrossMemory:
+    """The write half of the threshold freshness contract (hot_tape reads it)."""
+
+    def _threshold_packet(self, sev: float = 80.0) -> FactPacket:
+        return FactPacket(
+            trigger="threshold_cross", key="threshold:AAPL:round:325.0:x",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="AAPL", name=None, sector=None, direction="down",
+            severity=sev,
+            facts={"ticker": "AAPL", "kind": "round", "level": 325.0,
+                   "cross_id": "AAPL:round:325.0"},
+            provenance={})
+
+    def test_the_row_carries_the_crossings_this_pass_saw(self):
+        row = RADAR.ring_entry(now=NOW, day=DAY,
+                               live={"quotes": {"AAPL": _quote(-9.3, 302.0, 350.0)},
+                                     "asof": NOW.isoformat()},
+                               events=[self._threshold_packet()],
+                               cfg=HT.DEFAULTS)
+        assert row[HT.RING_CROSS_IDS] == ["AAPL:round:325.0"]
+        assert row[HT.RING_CROSS_COMPLETE] is True
+        assert row[HT.RING_CROSS_MIN_SEV] == 80.0
+        # The row still carries everything the T6 claims need.
+        assert row["n_quotes"] == 1 and row["day"] == DAY
+
+    def test_an_eventless_pass_still_writes_a_memory(self):
+        """An empty COMPLETE row is the evidence that licenses the next tick's
+        "just broke" — a row that simply omitted the block would read as
+        unknown and the claim would never be earnable."""
+        row = RADAR.ring_entry(now=NOW, day=DAY, live={"quotes": {}}, events=[],
+                               cfg=HT.DEFAULTS)
+        assert row[HT.RING_CROSS_IDS] == []
+        assert row[HT.RING_CROSS_COMPLETE] is True
+
+    def test_the_radar_writes_the_memory_on_a_real_pass(self, tmp_path, monkeypatch):
+        root = _mover_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        rows = HT.load_ring(root, 0)
+        assert rows and HT.RING_CROSS_IDS in rows[-1]
+        assert rows[-1][HT.RING_CROSS_COMPLETE] is True
+
+
+class TestStaleTimingGate:
+    """The model branch has no timing gate of its own (hot_tape_llm validates
+    numbers, calls, hedging and cashtags), so the radar re-checks it: a packet
+    whose crossing was not observed in our window may not be phrased as
+    something that just happened, whoever wrote the sentence.
+    """
+
+    def _packet(self, *, fresh: bool) -> FactPacket:
+        return FactPacket(
+            trigger="threshold_cross", key="threshold:AAPL:round:325.0:x",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="AAPL", name=None, sector=None, direction="down",
+            severity=80.0,
+            facts={"ticker": "AAPL", "kind": "round", "level": 325.0,
+                   "price": 302.0, "crossed_in_window": fresh,
+                   "cross_basis": "first_seen" if fresh else "earlier"},
+            provenance={})
+
+    def test_model_copy_claiming_a_fresh_break_on_a_dead_level_falls_back(
+            self, monkeypatch, capsys):
+        _fake_phraser(monkeypatch, mode="llm", provider="anthropic",
+                      text="$AAPL just broke below $325.00 right now.")
+        out = RADAR.phrase(self._packet(fresh=False),
+                           "$AAPL trades below $325.00. Last $302.00 right now.",
+                           llm_cfg={"llm": {}})
+        assert out["mode"] == "fallback_validation"
+        assert out["text"].startswith("$AAPL trades below")
+        assert any("stale_timing" in v for v in out["violations"]), out["violations"]
+        line = [l for l in capsys.readouterr().out.splitlines()
+                if "hot-tape-llm-stale-timing" in l]
+        assert line and line[0].startswith("::warning title="), line
+
+    def test_the_same_sentence_survives_when_the_crossing_was_observed(
+            self, monkeypatch):
+        _fake_phraser(monkeypatch, mode="llm", provider="anthropic",
+                      text="$AAPL just broke below $325.00 right now.")
+        out = RADAR.phrase(self._packet(fresh=True), "template", llm_cfg={"llm": {}})
+        assert out["mode"] == "llm"
+        assert out["text"].startswith("$AAPL just broke")
+
+    def test_other_families_are_untouched(self, monkeypatch):
+        """A mover post saying "just" is about the move, not about a level."""
+        mover = FactPacket(
+            trigger="mover_drop", key="mover:MU:down:x:0",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="MU", name=None, sector=None, direction="down", severity=90.0,
+            facts={"ticker": "MU", "pct": -8.2}, provenance={})
+        assert RADAR._stale_timing_hits(mover, "$MU just cleared its worst hour") == []
+
+
+class TestGroupCardSubtitleCarriesItsUniverse:
+    """The card is copy too. Its contrarian fallback read "31 names green" —
+    the same numerator with no universe the wire copy just closed, printed into
+    an image where no downstream gate can see it."""
+
+    def _packet(self, facts: dict) -> FactPacket:
+        return FactPacket(
+            trigger="contrarian_breadth", key="contrarian:x",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker=None, name=None, sector=None, direction="up", severity=75.0,
+            facts=facts, provenance={})
+
+    def test_the_green_count_is_denominated(self):
+        subtitle = RADAR._group_card_subtitle(self._packet({
+            "n_green": 6, "n_defensive_members": 9,
+            "green": [["KO", 1.2], ["HD", 0.9]]}))
+        assert subtitle == "6 of 9 names green"
+
+    def test_a_count_with_no_universe_is_dropped_not_shipped(self):
+        assert RADAR._group_card_subtitle(self._packet({
+            "n_green": 6, "green": [["KO", 1.2]]})) is None

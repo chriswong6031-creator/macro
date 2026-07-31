@@ -34,6 +34,14 @@ Polarity contract (M2 facts only):
   never lead with a bearish fact). +1 = bullish, -1 = bearish, 0 = neutral.
   Legacy (non-M2) facts have no polarity key and use the text-marker path.
 
+Basis contract (extreme/level facts):
+  Every fact whose detection compares a price to a level carries a "basis" key
+  ∈ {"close", "intraday"} naming the series it was measured on, and its wording
+  may only claim what that series supports — "closed at a new 52-week low" for
+  close basis, "traded down to X intraday" for intraday basis. A fact detected
+  on one basis and phrased on the other is the 2026-07-28 $TSLA defect (an
+  intraday low, close-phrased, contradicted by the record's own last_close).
+
 PLAIN-LANGUAGE CONTRACT (2026-07-26 $AAPL incident).
 A fact is not raw material for the writer, it is the SENTENCE the reader ends up
 holding: copywriter ships fact texts verbatim in the LLM prompt and renders
@@ -93,6 +101,52 @@ def _month_year(date_str: str) -> str:
         return dt.strftime("%b %Y")
     except Exception:
         return date_str[:7]
+
+
+#: How old a prior extreme must be before "first since <date>" is INFORMATION.
+#:
+#: THE DEGENERATE-LOOKBACK DEFECT (2026-07-28 $ROST, 25 posts in one week).
+#: The since-date is derived from the prior extreme found INSIDE the very same
+#: 252-bar window the record is measured against. On a name printing new highs
+#: day after day, the previous high is YESTERDAY, so the clause reads "$ROST hit
+#: a new 52-week high, first since Jun 2026" on 07-28 and "first since Jul 2026"
+#: on 07-29 — a sentence that says "the last time this happened was the last
+#: time this happened". It is worse than filler: it wears the shape of a rarity
+#: claim ("first since" implies a long absence) while asserting the opposite.
+#: 60 sessions ≈ a quarter — below that the honest post is the record itself
+#: with no rarity clause at all, so the clause is SUPPRESSED, never softened and
+#: never replaced with a placeholder (see `_first_since`).
+_MIN_SINCE_SESSIONS = 60
+
+
+def _first_since(prior_date: object, age_sessions: int) -> str:
+    """Month-year label for a "first since ..." clause, or "" to suppress it.
+
+    "" means the caller must emit NO clause. Two callers used to render the
+    literal string "a while" when the prior date could not be found
+    (`_fact_sma_cross`), and that string went into the fact's `numbers` list as
+    well — so "first time since a while" was both published copy and a licensed
+    "number". A fact we cannot date does not get a date-shaped sentence.
+    """
+    if not prior_date or age_sessions < _MIN_SINCE_SESSIONS:
+        return ""
+    return _month_year(str(prior_date))
+
+
+def _last_set_at(series: list[float], value: float) -> int:
+    """Index of the LAST bar in *series* equal to *value* (-1 when absent).
+
+    LAST, not first. The old code used ``list.index()``, which finds the
+    EARLIEST bar at the extreme — on a series that touched 100.00 in January and
+    again in July, a new high today was captioned "first since Jan", which is
+    false: it was also at the high in July. The most recent touch is the only
+    date that makes "first since" true, and it is also the one that exposes the
+    degeneracy `_MIN_SINCE_SESSIONS` exists to suppress.
+    """
+    for i in range(len(series) - 1, -1, -1):
+        if series[i] == value:
+            return i
+    return -1
 
 
 def _window_label(sessions: int) -> str:
@@ -172,6 +226,20 @@ def _fact_52w_high_low(
 ) -> list[dict]:
     """Distance from 52-week high/low, and new 52-week high/low detection.
 
+    ONE BASIS PER FACT (2026-07-28 $TSLA incident). Every extreme fact carries a
+    ``"basis"`` key ∈ {"close", "intraday"} naming the price series the record
+    was DETECTED on, and its wording may only make a claim on that series. The
+    TSLA post detected a new 52-week low on ``last_low < w52_low`` — an INTRADAY
+    comparison — and the copy came out close-phrased ("down eight weeks in a
+    row ... through 306.51"), while the record's own ``last_close`` was 313.03.
+    The post asserted a close through a level the stock had not closed through,
+    on a chart that showed it. So: a close-basis record says "closed at a new
+    52-week high"; an intraday-basis record says "traded up to X intraday" and
+    whitelists only the intraday price, so no close-shaped claim has a licensed
+    number to stand on. Close basis is checked FIRST because a close record is
+    the stronger, less arguable event; the intraday branch only fires when the
+    high/low was made but not held into the bell.
+
     REQUIRES A YEAR OF BARS. This used to take ``window = min(252, n)`` and label
     whatever it found a "52-week" extreme regardless of how much history it was
     handed. The only production caller passed ``n=90``, so every one of these
@@ -195,50 +263,69 @@ def _fact_52w_high_low(
     # Use only the look-back period (exclude today's bar so today can be a record)
     lookback_h = h[n - window: n - 1]
     lookback_l = l[n - window: n - 1]
+    lookback_c = c[n - window: n - 1]
     lookback_dates = dates[n - window: n - 1]
 
-    if not lookback_h or not lookback_l:
+    if not lookback_h or not lookback_l or not lookback_c:
         return []
 
+    # Two extremes per side, one per basis. The intraday pair is the level the
+    # market quotes; the close pair is what a "closed at a new high" claim needs.
     w52_high = max(lookback_h)
     w52_low = min(lookback_l)
+    w52_high_close = max(lookback_c)
+    w52_low_close = min(lookback_c)
     last_close = c[n - 1]
     last_high = h[n - 1]
     last_low = l[n - 1]
 
     facts: list[dict] = []
 
-    # New 52-week high?
-    if last_high > w52_high:
-        # Find when the last 52w high was set
-        prev_52w_idx = lookback_h.index(w52_high) if w52_high in lookback_h else -1
-        if prev_52w_idx >= 0:
-            since_str = _month_year(lookback_dates[prev_52w_idx])
-            text = f"{ticker} hit a new 52-week high, first since {since_str}"
-        else:
-            text = f"{ticker} hit a new 52-week high"
-        price_str = _fmt_price(last_high)
-        facts.append({
-            "id": "new_52w_high",
-            "text": text,
-            "salience": 10,
-            "numbers": [price_str],
-        })
-    # New 52-week low?
+    def _since_label(series: list[float], value: float) -> str:
+        """"first since" label for the last bar of *series* that set *value*."""
+        idx = _last_set_at(series, value)
+        if idx < 0:
+            return ""
+        prior_date = lookback_dates[idx] if idx < len(lookback_dates) else ""
+        # Sessions between that bar and today's (today sits one past the slice).
+        return _first_since(prior_date, len(series) - idx)
+
+    def _record_fact(fact_id: str, text: str, price_str: str,
+                     basis: str, since: str) -> dict:
+        if since:
+            text = f"{text}, first since {since}"
+        # `since` carries a year token ("Jun 2025") into the copy, so it is
+        # whitelisted exactly like a price; suppressed clauses whitelist nothing.
+        numbers = [price_str] + ([since] if since else [])
+        return {"id": fact_id, "text": text, "salience": 10,
+                "basis": basis, "numbers": numbers}
+
+    # New 52-week high — CLOSE basis first (the stronger claim), then intraday.
+    if last_close > w52_high_close:
+        close_str = _fmt_price(last_close)
+        facts.append(_record_fact(
+            "new_52w_high",
+            f"{ticker} closed at a new 52-week high ({close_str})",
+            close_str, "close", _since_label(lookback_c, w52_high_close)))
+    elif last_high > w52_high:
+        high_str = _fmt_price(last_high)
+        facts.append(_record_fact(
+            "new_52w_high",
+            f"{ticker} traded up to {high_str} intraday, a new 52-week high",
+            high_str, "intraday", _since_label(lookback_h, w52_high)))
+    # New 52-week low — same two-basis ladder.
+    elif last_close < w52_low_close:
+        close_str = _fmt_price(last_close)
+        facts.append(_record_fact(
+            "new_52w_low",
+            f"{ticker} closed at a new 52-week low ({close_str})",
+            close_str, "close", _since_label(lookback_c, w52_low_close)))
     elif last_low < w52_low:
-        prev_52w_idx = lookback_l.index(w52_low) if w52_low in lookback_l else -1
-        if prev_52w_idx >= 0:
-            since_str = _month_year(lookback_dates[prev_52w_idx])
-            text = f"{ticker} hit a new 52-week low, first since {since_str}"
-        else:
-            text = f"{ticker} hit a new 52-week low"
-        price_str = _fmt_price(last_low)
-        facts.append({
-            "id": "new_52w_low",
-            "text": text,
-            "salience": 10,
-            "numbers": [price_str],
-        })
+        low_str = _fmt_price(last_low)
+        facts.append(_record_fact(
+            "new_52w_low",
+            f"{ticker} traded down to {low_str} intraday, a new 52-week low",
+            low_str, "intraday", _since_label(lookback_l, w52_low)))
     else:
         # Distance from 52-week high
         if w52_high > 0:
@@ -256,6 +343,13 @@ def _fact_52w_high_low(
                     "id": "near_52w_high",
                     "text": text,
                     "salience": 7,
+                    # The CITED LEVEL is the intraday high — the number every
+                    # quote page prints as "52-week high", and the one a reader
+                    # can check. So the fact is intraday-basis and its wording
+                    # stays a DISTANCE TO A LEVEL; it must never grow into a
+                    # claim about where the stock closed relative to a close
+                    # extreme it never measured (the $TSLA basis mix).
+                    "basis": "intraday",
                     "numbers": [dist_str, _fmt_price(w52_high)],
                 })
         # Distance from 52-week low
@@ -272,6 +366,9 @@ def _fact_52w_high_low(
                     "id": "near_52w_low",
                     "text": text,
                     "salience": 7,
+                    # Same rule as near_52w_high: intraday level, distance-to-a-
+                    # level wording, no close-shaped claim.
+                    "basis": "intraday",
                     "numbers": [dist_str, _fmt_price(w52_low)],
                 })
 
@@ -479,44 +576,46 @@ def _fact_sma_cross(
     was_below = c[-2] < sma[-2]
     was_above = c[-2] > sma[-2]
 
+    def _cross_fact(fact_id: str, verb: str, side_test) -> dict:
+        """Assemble a cross fact, dating it only when the date is worth having.
+
+        THE SAME DEGENERATE CLAUSE AS THE 52-WEEK FACTS, plus a placeholder.
+        The prior-side bar is searched inside this very series, so a name that
+        chops around its average produces "reclaimed its 50-day average, first
+        time since Jul 2026" two sessions after it lost it — the live $TEL post
+        of 2026-07-28. And when no prior bar was found at all, the two branches
+        rendered the literal string "a while" INTO THE COPY and into `numbers`,
+        so "first time since a while" shipped as a licensed fact. Suppressed
+        under `_MIN_SINCE_SESSIONS`, never placeheld.
+        """
+        prior_date = None
+        age = 0
+        for i in range(n - 2, -1, -1):
+            if sma[i] is not None and side_test(c[i], sma[i]):
+                prior_date = dates[i] if i < len(dates) else None
+                age = (n - 1) - i
+                break
+        since_str = _first_since(prior_date, age)
+        sma_val = _fmt_price(sma[-1])
+        text = f"{ticker} {verb} its {label} ({sma_val})"
+        if since_str:
+            text = f"{text}, first time since {since_str}"
+        return {
+            "id": fact_id,
+            "text": text,
+            "salience": 8,
+            # Both the signal (close vs SMA-of-closes) and the wording are
+            # close-basis; nothing here may speak about an intraday touch.
+            "basis": "close",
+            "numbers": [sma_val] + ([since_str] if since_str else []),
+        }
+
     if currently_above and was_below:
-        # Just crossed above — find last time it was above before this
-        last_above_date = None
-        for i in range(n - 2, -1, -1):
-            if sma[i] is not None and c[i] > sma[i]:
-                last_above_date = dates[i] if i < len(dates) else None
-                break
-        since_str = _month_year(last_above_date) if last_above_date else "a while"
-        sma_val = _fmt_price(sma[-1])
-        text = (
-            f"{ticker} reclaimed its {label} ({sma_val}), "
-            f"first time since {since_str}"
-        )
-        return {
-            "id": f"sma_{period}_reclaim",
-            "text": text,
-            "salience": 8,
-            "numbers": [sma_val, since_str],
-        }
+        return _cross_fact(f"sma_{period}_reclaim", "reclaimed",
+                           lambda close, avg: close > avg)
     if not currently_above and was_above:
-        # Just crossed below
-        last_below_date = None
-        for i in range(n - 2, -1, -1):
-            if sma[i] is not None and c[i] < sma[i]:
-                last_below_date = dates[i] if i < len(dates) else None
-                break
-        since_str = _month_year(last_below_date) if last_below_date else "a while"
-        sma_val = _fmt_price(sma[-1])
-        text = (
-            f"{ticker} lost its {label} ({sma_val}), "
-            f"first time since {since_str}"
-        )
-        return {
-            "id": f"sma_{period}_loss",
-            "text": text,
-            "salience": 8,
-            "numbers": [sma_val, since_str],
-        }
+        return _cross_fact(f"sma_{period}_loss", "lost",
+                           lambda close, avg: close < avg)
     return None
 
 

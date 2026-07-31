@@ -75,6 +75,32 @@ _FALLBACK_ACCOUNT = "flagship"
 # (priority must be an int) and which no consumer ever compared against anything.
 _BREAKING_PRIORITY = 1
 
+#: Cashtags in post copy — the SAME shape scripts/marketing_publisher.py's
+#: `_CASHTAG_RE` uses, because this gate exists to answer that gate's question
+#: one step earlier: "will the publisher call this a ticker post?"
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
+
+#: Card hosting census for one tick — read by the daemon/dry-run report so the
+#: press lane's picture coverage is a number, not an anecdote. `unhosted_refused`
+#: is the subset that cost a post (a cashtag item with no hosted card cannot ship
+#: at all: bare it would be quarantined by the publisher and text-only it would
+#: violate the every-ticker-post-carries-a-chart law).
+_MEDIA_HOST_TALLY: dict[str, int] = {
+    "cards": 0, "hosted": 0, "unhosted": 0, "unhosted_refused": 0,
+}
+
+
+def media_host_stats() -> dict:
+    """A COPY of this process's card-hosting census."""
+    return dict(_MEDIA_HOST_TALLY)
+
+
+def reset_media_host_stats() -> None:
+    """Zero the card-hosting census (tests + the dry-run report)."""
+    for k in _MEDIA_HOST_TALLY:
+        _MEDIA_HOST_TALLY[k] = 0
+
+
 _DEFAULT_FLAGSHIP_TOP_K = 3
 _DEFAULT_FLAGSHIP_FLOOR = 70.0
 _DEFAULT_CORROBORATION_WINDOW_S = 1800
@@ -643,6 +669,69 @@ def _clamp_for_x(headline: str, body: str, *, attribution: str = "",
                        tape_stamp=tape_stamp)
 
 
+def _host_card_media(
+    entry: dict,
+    svg: str,
+    *,
+    item_id: str,
+    as_of: str,
+    root: Path,
+) -> bool:
+    """Raster the press card and publish the PNG; stamp the media entry. -> hosted?
+
+    THE DEFECT THIS CLOSES (2026-07-31). This lane rendered a breaking card into
+    `payload["card_svg"]`, wrote the raw SVG to `data/marketing/outbox/media/` and
+    stopped there. Nothing in press_lane.py or breaking_summary.py ever called
+    `rasterize_svg` or `media_publish.publish_card`, so every press item shipped a
+    media[] entry with no `media_url` — and Buffer/X can only attach a HOSTED
+    image (`_media_paths_for` skips non-http paths). The card was rendered,
+    committed and unreachable: every press post went out text-only, and a press
+    item carrying a cashtag was permanently unpostable (the publisher quarantines
+    a bare cashtag post — "YOU WILL NOT SHIP THESE TEXT ONLY"). The publish
+    workflow has pip-installed boto3 since 159537bcfe for exactly this call.
+
+    ONE SEAM: `media_publish.publish_card` is the same function the hot-tape lane
+    goes through (`hot_tape_radar.resolve_chart`), so the posted PNG is a raster
+    of the SAME SVG the admin preview shows — the 2026-07-26 drift incident's
+    rule. The hot-tape card contract is copied exactly: `media_url`,
+    `media_png_path` and `media_render` land on the media entry.
+
+    FAIL-SOFT BY CONSTRUCTION: `publish_card` never raises, and the try/except is
+    the second belt — a missing Chrome, absent R2 credentials or a boto3-less
+    checkout must degrade the PICTURE, never take down the wire lane. A False
+    return puts the caller back on exactly the pre-fix behaviour (local SVG only)
+    for a cashtag-free item.
+
+    `chart_id` is the FEED item id and `as_of` the item's own as_of, so the
+    sidecar key scripts/marketing_media_backfill.py writes
+    (``<as_of>/<chart_id>``) matches what the publisher looks up — an upload that
+    fails tonight is recoverable tomorrow instead of lost.
+    """
+    try:
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+
+        published = publish_card(svg, chart_id=item_id, as_of=as_of, root=root) or {}
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=press-lane-card-publish-failed::{item_id}: "
+              f"{type(exc).__name__}: {exc}", flush=True)
+        return False
+
+    url = str(published.get("media_url") or "").strip()
+    if not url.lower().startswith(("http://", "https://")):
+        # A PNG may still have been written locally — keep the pointer so the
+        # backfill can upload it later without re-rastering.
+        if published.get("media_png_path"):
+            entry["media_png_path"] = published["media_png_path"]
+        return False
+
+    entry["media_url"] = url
+    if published.get("media_png_path"):
+        entry["media_png_path"] = published["media_png_path"]
+    if published.get("media_render"):
+        entry["media_render"] = published["media_render"]
+    return True
+
+
 def _emit_outbox_item(
     root: Path,
     item_id: str,
@@ -670,11 +759,13 @@ def _emit_outbox_item(
     near-dup and cross-account near-dup guards that live in ``enqueue``. The lane
     now goes through the front door.
 
-    Returns the item dict, or None when validation, the language gate, or the
-    queue refused it (the caller records a skip). ``dry_run`` builds and validates
-    but writes nothing — the media SVG included. ``refusal``, when supplied, is
-    filled with {"reason": ...} so the caller's skip census names the gate that
-    fired instead of a generic refusal.
+    Returns the item dict, or None when validation, the language gate, the card
+    host, or the queue refused it (the caller records a skip). ``dry_run`` builds
+    and validates but writes nothing — the media SVG, its PNG raster and the R2
+    upload included, which is why a dry run cannot report the media_unhosted
+    verdict a live run can. ``refusal``, when supplied, is filled with
+    {"reason": ...} so the caller's skip census names the gate that fired instead
+    of a generic refusal.
 
     ``text_override`` is the PLATFORM-CLAMPED post text (M1). The item still
     carries the full headline/body fields for the rail and the admin preview, but
@@ -693,6 +784,43 @@ def _emit_outbox_item(
         [{"kind": "chart_svg", "path": media_rel, "chart_id": item_id}]
         if svg else []
     )
+
+    # The text the publisher will actually screen (the M1 clamp's, when present).
+    _post_text = (text_override if text_override is not None
+                  else _ob.compose_text(headline, body))
+
+    # ── CARD RASTER + HOST ───────────────────────────────────────────────────
+    # Runs BEFORE the value gate so `has_media` is the truth (a card nobody can
+    # fetch is not media) and before make_item so the media_url rides on the item
+    # the queue stores. Skipped on dry_run: a dry run writes nothing, and this
+    # step is a Chrome raster plus an R2 upload.
+    if media and not dry_run:
+        _MEDIA_HOST_TALLY["cards"] += 1
+        if _host_card_media(media[0], svg, item_id=item_id, as_of=as_of, root=root):
+            _MEDIA_HOST_TALLY["hosted"] += 1
+        else:
+            _MEDIA_HOST_TALLY["unhosted"] += 1
+            _cashtags = sorted(set(_CASHTAG_RE.findall(_post_text)))
+            if _cashtags:
+                # A CASHTAG POST WITHOUT A PICTURE DOES NOT SHIP (operator
+                # 2026-07-30). Enqueuing it would burn a queue slot on an item
+                # the publisher quarantines as a bare cashtag post, so refuse it
+                # here where the caller's skip census can name the reason.
+                _MEDIA_HOST_TALLY["unhosted_refused"] += 1
+                print("::warning title=press-lane-card-unhosted::"
+                      f"{item_id}: card could not be hosted (no media_url) and the "
+                      f"copy names {' '.join(_cashtags)} — not enqueued", flush=True)
+                if refusal is not None:
+                    refusal["reason"] = "media_unhosted"
+                    refusal["violations"] = list(_cashtags)
+                return None
+            # No cashtag: the post is prose the publisher ships text-only, so
+            # drop the unreachable media entry rather than hand the queue a
+            # pointer to a picture that will never resolve.
+            print("::warning title=press-lane-card-unhosted::"
+                  f"{item_id}: card could not be hosted (no media_url) — posting "
+                  "text-only (no cashtag in the copy)", flush=True)
+            media = []
 
     _source: dict = {
         "lane": "press",
@@ -745,8 +873,7 @@ def _emit_outbox_item(
         item = _ob.make_item(
             account=account,
             kind="breaking",
-            text=(text_override if text_override is not None
-                  else _ob.compose_text(headline, body)),
+            text=_post_text,
             as_of=as_of,
             media=media,
             scheduled_at="immediate",
@@ -1116,6 +1243,9 @@ def run_press_tick(
     from engine.marketing.press_corroboration import corroboration_decision
 
     root = Path(root)
+    # PER-TICK card census. Zeroed here so the number this tick returns is this
+    # tick's, not a process-lifetime running total the daemon would misread.
+    reset_media_host_stats()
     breaking_cfg = cfg.get("breaking", {}) if isinstance(cfg, dict) else {}
     wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
     top_k = int(wire_cfg.get("flagship_top_k_per_day", _DEFAULT_FLAGSHIP_TOP_K))
@@ -1825,6 +1955,10 @@ def run_press_tick(
         "intelligence": intelligence,
         # XG-W5: labeling/eval corpus for this tick (host-local sink; see daemon).
         "corpus": corpus_rows,
+        # Card-hosting census for this process: {cards, hosted, unhosted,
+        # unhosted_refused}. A tally nobody reads is half a fix — the lane shipped
+        # every card unhostable for weeks precisely because no number said so.
+        "media_host": media_host_stats(),
         # The full seen-set AFTER this tick, including MIRROR-COLLAPSED emission
         # keys (M1). The daemon persists this verbatim so cross-tick dedupe works
         # for mirror pairs — recording out_item["id"] alone would miss the collapse.

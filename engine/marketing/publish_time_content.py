@@ -10,11 +10,26 @@ nightly desk uses, enqueues text-only items via the outbox, and hands them to th
 existing post-time tape gate (engine/marketing/live_verify.py) which re-verifies
 the exact number the copy claims before it may post.
 
-Import constraint (the ubuntu publish workflow installs ONLY pyyaml+pandas+
-pyarrow): every top-level import here is stdlib or an engine.marketing module
-that is itself stdlib-only (movers_source, copywriter, outbox, sentinel,
-live_verify). pandas / chart_render / logo_cache are NEVER imported at module
-top level. Items are text-only (no media → they never touch the media cap).
+Import constraint: every top-level import here is stdlib or an engine.marketing
+module that is itself stdlib-only (movers_source, copywriter, outbox, sentinel,
+live_verify). pandas / chart_render / logo_cache / media_publish are NEVER
+imported at module top level — the card path below imports them INSIDE the one
+function that needs them, so the publisher's import of this module still costs
+nothing but stdlib.
+
+EVERY ITEM THIS LANE EMITS NOW CARRIES A HOSTED CARD (2026-07-31). It used to be
+text-only "by construction", and that construction killed the lane outright:
+#4030's bare-cashtag law quarantines any post that NAMES TICKERS and ships no
+picture ("YOU WILL NOT SHIP THESE TEXT ONLY, ID RATHER YOU DESTROY THE ENTIRE
+ENGINE" — operator, 2026-07-30), and `mover`/`theme_list` are precisely the two
+kinds in that law's _TICKER_ROLLUP_KINDS. From that merge onward every item this
+lane produced was unpublishable by construction: generated, queued, quarantined,
+forever. The lane now renders and hosts its own card BEFORE it enqueues anything
+— theme_list through chart_render.render_watchlist_card (the portrait 4:5 panel
+the hot-tape group path already proved), mover through render_chart_v2 on the
+local daily bars (the hot-tape single-name tape card) — and a card that will not
+HOST means no item at all, per the chartless-DEFER law: better no post than a
+naked ticker post.
 
 Public API (a single orchestrator the publisher calls):
     generate_slot_items(root, *, cfg, now, state, approved_due, posted_counts,
@@ -59,6 +74,11 @@ _DEFAULTS: dict[str, Any] = {
     "min_abs_theme_pct": 1.0,   # floor for a theme-average claim
     "max_quote_age_min": 45,    # generation freshness gate (mirrors live_gate)
     "min_active_tiles": 25,     # flat-tape belt: skip when the board isn't moving
+    # A ticker post ships a picture or it does not ship (see the module
+    # docstring). Default ON. The OFF setting is NOT a production escape hatch —
+    # it exists so an operator can exercise the copy path on a host with no
+    # renderer and no R2 credentials.
+    "require_card": True,
 }
 
 # A tile counts as "active" for the flat-tape belt when its overlaid 1D move is
@@ -70,6 +90,47 @@ _DEFAULTS: dict[str, Any] = {
 _ACTIVE_TILE_MIN_ABS = 0.5
 
 _PROVENANCE = "publisher_live_movers"
+
+#: Folded statuses that still OCCUPY an account's next posting slot.
+#:
+#: THE DAY-CAP BUG THIS CLOSES (2026-07-31). `_live_queued_pt_today` selected on
+#: `created_at[:10] == today` with NO status filter at all, and every account it
+#: returned became a HARD skip for the rest of the run ("spacing: one post per
+#: account per slot run"). But `state["items"]` holds the item as WRITTEN — its
+#: `status` field is frozen at "queued" by outbox.make_item — while the FOLDED
+#: status lives in `state["status"]`, which this lane never read. So an item that
+#: had already posted, or been quarantined, or failed, or been recalled hours
+#: earlier still blocked its account for every remaining slot of the day. With
+#: two eligible accounts that capped the entire network at 2 items/day, which is
+#: exactly what the ledger shows: pt_generated=2 on precisely one sweep per day
+#: and 0 on all the others. The comment said "per slot RUN"; the code said "per
+#: DAY". The code now matches the comment.
+_PT_PENDING_STATUSES: frozenset[str] = frozenset({"queued", "approved"})
+
+#: In-flight: the item is mid-send in THIS run, so it holds its account's slot,
+#: but outbox.posted_today_by_account already counts it (posted/posting) and
+#: adding it to the posts-today tally again would double-charge the account.
+_PT_INFLIGHT_STATUSES: frozenset[str] = frozenset({"posting"})
+
+#: How many template variants a candidate may be re-rolled through before the
+#: lane gives up and drops it for ending on reader-bait. Bounded on purpose: the
+#: render is cheap but not free, and a bank that is bait all the way down is a
+#: copywriter defect to report, not a loop to grind.
+_MAX_TAIL_ROLLS = 4
+
+#: First-person markers. A trailing question that carries one is the AUTHOR
+#: asking about their own position ("Am I too slow here?"); one that carries none
+#: is the post asking the timeline to do its thinking ("What's your read?",
+#: "Which one breaks out first?", "Dead-cat bounce or the real dip?"). Case
+#: matters for the bare "I" — \bI\b under IGNORECASE would match the "i" in any
+#: single-letter context — so this pattern is deliberately case-sensitive and
+#: lists the lower-case pronouns explicitly.
+_FIRST_PERSON_RE = re.compile(r"\bI\b|\b(?:me|my|mine|myself|we|us|our|ours)\b")
+
+#: Rows a theme card shows. The watchlist card supports 3-10 and the copy names
+#: at most 8 cashtags, so 8 keeps the picture and the text describing the SAME
+#: names — a card listing a name the post never mentions is its own small lie.
+_CARD_MAX_ROWS = 8
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -242,13 +303,53 @@ def _empty_report(slot: str | None, *, enabled: bool, quote_source: str = "none"
 # Tape freshness + live overlay
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _heatmap_stamps(movers_data: dict | None) -> list[str]:
+    """Datable stamps for the artifacts that ACTUALLY contributed rows.
+
+    Two corrections to the single `movers_data["asof"]` this replaced.
+
+    WHICH ARTIFACT. That field is the sp500 payload's stamp only, and the sp500
+    stamp runs one session behind the themes stamp on every commit measured
+    (movers_source module docstring). Dating theme rows by it is the mixed-asof
+    failure; dating the gate by it means a themes-only universe is judged by a
+    payload that contributed nothing. Each family is now aged by its own
+    artifact, and only while that family actually has rows.
+
+    WHICH FIELD. ``asof`` is a DATE. ``live_verify._quote_age_min`` parses it to
+    midnight UTC, so at 14:00Z it is 840 minutes old and can NEVER pass a
+    45-minute gate — not even when it names today's session. The heatmap-only
+    branch was therefore unconditionally stale from the moment it was written,
+    which is what 2026-07-31 measured: every in-window sweep logged
+    pt_generated=0 / pt_dropped=1 "tape stale". ``generated_utc`` is the payload's
+    minute-resolution REFRESH instant and is the only stamp on these artifacts
+    that can express "fresh"; the date is kept behind it as the fail-closed last
+    resort for a payload that carries no refresh stamp.
+
+    KNOWN LIMIT, stated rather than hidden: generated_utc dates the WRITE, not
+    the quote. That is the same class of signal the snapshot branch above already
+    trusts in ``tape["asof"]``, and it is not the load-bearing correctness gate —
+    the per-candidate session check (a row may not claim a session it is not
+    from) and the flat-tape belt are.
+    """
+    d = movers_data or {}
+    stamps: list[str] = []
+    if d.get("sp500_tiles"):
+        stamps += [d.get("sp500_generated_utc"), d.get("sp500_asof") or d.get("asof")]
+    if d.get("theme_tiles"):
+        stamps += [d.get("themes_generated_utc"), d.get("themes_asof")]
+    if not stamps:
+        stamps = [d.get("asof")]
+    return [str(x) for x in stamps if x]
+
+
 def _tape_stale(tape: dict, movers_data: dict | None, now: datetime,
                 max_age_min: float) -> bool:
     """True when the freshest tape is older than the generation freshness gate.
 
     Precedence: if the tape carries per-ticker ts/asof (snapshot/display), use
     live_verify._quote_age_min semantics over the freshest ticker. When the tape
-    is heatmap-only (no ts, no asof), fall back to the movers heatmap's own asof.
+    is heatmap-only (no ts, no asof), fall back to the freshest stamp on the
+    heatmap artifacts that actually supplied rows (see :func:`_heatmap_stamps`).
     """
     quotes = (tape or {}).get("quotes") or {}
     asof = (tape or {}).get("asof")
@@ -259,13 +360,12 @@ def _tape_stale(tape: dict, movers_data: dict | None, now: datetime,
             ages.append(age)
     if ages:
         return min(ages) > max_age_min
-    # Heatmap-only source: no per-ticker ts and no snapshot asof — age the tiles
-    # by the sp500 heatmap asof field (movers_source.load_movers surfaces it).
-    heat_asof = (movers_data or {}).get("asof")
-    if heat_asof:
-        age = live_verify._quote_age_min({}, str(heat_asof), now)
-        if age is not None:
-            return age > max_age_min
+    # Heatmap-only source: no per-ticker ts and no snapshot asof.
+    heat_ages = [a for a in (live_verify._quote_age_min({}, st, now)
+                             for st in _heatmap_stamps(movers_data))
+                 if a is not None]
+    if heat_ages:
+        return min(heat_ages) > max_age_min
     # Nothing datable → treat as stale (fail closed: never claim a move we cannot
     # anchor to a fresh timestamp).
     return True
@@ -279,7 +379,8 @@ def _live_pct(tape_quotes: dict, ticker: str) -> float | None:
     return live_verify._f(q.get("change_pct"))
 
 
-def _overlay_movers(movers_data: dict, tape: dict) -> dict:
+def _overlay_movers(movers_data: dict, tape: dict,
+                    *, session: str | None = None) -> dict:
     """Return a COPY of the movers data with live tape pcts overlaid.
 
     For every sp500 tile and every theme member, if the tape has that ticker with
@@ -288,19 +389,40 @@ def _overlay_movers(movers_data: dict, tape: dict) -> dict:
     and members that lack a live quote — the heatmap's own 1D is stale next to a
     live feed. When the tape is heatmap-only, the tiles ARE the freshest source,
     so keep them all. Never mutates the loaded dicts in place.
+
+    `session` re-dates the rows this call actually OVERWRITES. A row whose 1D now
+    comes from the live tape no longer belongs to the heatmap's session — it
+    belongs to the tape's, and the tape has already cleared `_tape_stale`'s
+    freshness gate at this point, so it is the current session by construction.
+    Rows the tape did not cover keep the stamp their own artifact gave them; that
+    is the whole point of carrying the session per row rather than per payload.
     """
     tape_quotes = (tape or {}).get("quotes") or {}
     src = str((tape or {}).get("source") or "")
     has_feed = ("snapshot" in src) or ("display" in src)
 
-    out: dict[str, Any] = {"asof": (movers_data or {}).get("asof")}
+    # Carry the per-artifact provenance through: _heatmap_stamps reads it off the
+    # OVERLAID dict, and dropping the keys here would silently re-stale the gate.
+    out: dict[str, Any] = {
+        k: (movers_data or {}).get(k)
+        for k in ("asof", "sp500_asof", "themes_asof",
+                  "sp500_generated_utc", "themes_generated_utc",
+                  "sp500_source", "themes_source")
+    }
 
     new_sp500: list[dict] = []
     for tile in (movers_data or {}).get("sp500_tiles") or []:
         if not isinstance(tile, dict):
             continue
         tkr = tile.get("t", "")
-        lp = _live_pct(tape_quotes, tkr) if tkr else None
+        # ONLY a real feed may overwrite a tile (2026-07-31). When the tape is
+        # heatmap-derived its quotes ARE these tiles read back through
+        # live_verify._quotes_from_heatmap, so an overlay is at best a no-op —
+        # and it stopped being a no-op the moment movers_source.prefer_fresher_session
+        # started handing this function rows already improved from the newer
+        # themes payload: the round trip put the stale index number back and
+        # re-staled the row it had just fixed.
+        lp = _live_pct(tape_quotes, tkr) if (tkr and has_feed) else None
         if lp is None:
             if has_feed:
                 continue  # a live feed exists but not for this name → stale, drop
@@ -310,6 +432,8 @@ def _overlay_movers(movers_data: dict, tape: dict) -> dict:
         new_perf = dict(new_tile.get("perf") or {})
         new_perf["1D"] = lp
         new_tile["perf"] = new_perf
+        if session:
+            new_tile["asof"] = session   # the number is the tape's now, not the heatmap's
         new_sp500.append(new_tile)
     out["sp500_tiles"] = new_sp500
 
@@ -323,7 +447,11 @@ def _overlay_movers(movers_data: dict, tape: dict) -> dict:
             if not isinstance(m, dict):
                 continue
             tkr = m.get("t", "")
-            lp = _live_pct(tape_quotes, tkr) if tkr else None
+            # Feed-only, for the same reason as the tiles above: the heatmap
+            # tape is built from the S&P payload, which is the STALER of the two
+            # artifacts, so letting it overwrite a themes member would replace a
+            # current-session number with a prior-session one.
+            lp = _live_pct(tape_quotes, tkr) if (tkr and has_feed) else None
             if lp is None:
                 if has_feed:
                     continue
@@ -333,6 +461,8 @@ def _overlay_movers(movers_data: dict, tape: dict) -> dict:
             nm_perf = dict(nm.get("perf") or {})
             nm_perf["1D"] = lp
             nm["perf"] = nm_perf
+            if session:
+                nm["asof"] = session
             new_members.append(nm)
         new_tile["members"] = new_members
         new_theme.append(new_tile)
@@ -447,7 +577,8 @@ def _persona_for(cfg: dict, account: str, voice: str) -> dict:
 
 
 def _render_copy(candidate: dict, *, account: str, voice: str, persona: dict,
-                 slot: str) -> tuple[str, str, list[str]]:
+                 slot: str, has_chart: bool = False,
+                 roll: int = 0) -> tuple[str, str, list[str]]:
     """Render (text, headline, violations) for a candidate via the v3 banks.
 
     Builds a movers-desk item dict exactly like content_studio's nightly ones,
@@ -482,10 +613,18 @@ def _render_copy(candidate: dict, *, account: str, voice: str, persona: dict,
     ctx = copywriter.build_context(item, persona=persona or None, facts=facts)
     ctx["type"] = item["type"]
     ctx["voice"] = voice
-    ctx["slot"] = f"LIVE-{slot}"
-    # Text-only lane: exclude template variants that claim an attached chart
-    # ("Chart below", "levels are on the chart") — see copywriter._variant_allowed.
-    ctx["has_chart"] = False
+    # `roll` perturbs the variant-selection hash and NOTHING else: copywriter
+    # keys ticker posts on f"{ticker}|{account}|{slot}", so a suffix here rotates
+    # deterministically onto a different template without touching the item's own
+    # slot label (which stays LIVE-<slot> on the outbox row). See
+    # _render_copy_unbaited for why a re-roll is ever needed.
+    ctx["slot"] = f"LIVE-{slot}" if not roll else f"LIVE-{slot}-r{roll}"
+    # has_chart gates the variants that REFER to an attached picture ("Chart
+    # below", "levels are on the chart") — see copywriter._variant_allowed. It was
+    # pinned False because this lane shipped text-only; now that every item
+    # carries a hosted card, pinning it False would ban the copy that describes
+    # the card actually attached to the post.
+    ctx["has_chart"] = bool(has_chart)
     if item["type"] == "theme_list":
         # Selection identity only (theme_list skips the ticker-cashtag copy law):
         # a theme item carries ticker "" and a single-context render would always
@@ -499,6 +638,257 @@ def _render_copy(candidate: dict, *, account: str, voice: str, persona: dict,
     body = post.get("body", "") or ""
     text = f"{headline}\n\n{body}" if headline and body else (headline or body)
     return text, headline, list(post.get("violations") or [])
+
+
+def _tail_is_bait(text: str) -> bool:
+    """True when the post ENDS on a question that costs the author nothing.
+
+    THE DEFECT (operator voice law, 2026-07-31). All four `publisher_live_movers`
+    posts that have ever gone out ended on an unanswered engagement question:
+    "Dead-cat bounce or the real dip?", "Which one breaks out first?", "Watching,
+    not chasing. What's your read?". The house voice is a concrete fact plus a
+    reaction that COSTS the author — a stance that can later be shown to have
+    been wrong, or a named watch-condition. A question handed to the timeline is
+    the opposite: it commits to nothing and can never be wrong.
+
+    A POSITIVE test, not a blocklist of the four strings that were caught. A
+    banned-phrase list scoped to one postmortem is a regression pin, not a sweep:
+    the fifth bait line nobody has written yet would sail through it. The rule is
+    instead about WHO the question is about. A post may still end on "?" — and a
+    theme_list MUST, because copywriter.validate_copy requires it — as long as the
+    final sentence is the author asking about their own position ("Am I too slow
+    here?", "Does that cost me the snapback?"). No first-person marker in the
+    final sentence means the question is aimed outward, and that is bait.
+
+    A post that does not end on a question is not this rule's business at all:
+    "Tape check. Not touching it yet." is already a stance.
+    """
+    body = str(text or "").strip()
+    if not body.endswith("?"):
+        return False
+    # Final sentence only. The bait line is welded on AFTER a stance in the worst
+    # observed case ("Watching, not chasing. What's your read?"), so scanning the
+    # whole block for a first-person marker would pass the very post that drew the
+    # complaint.
+    parts = re.split(r"(?<=[.!?])\s+", body)
+    last = parts[-1] if parts else body
+    return _FIRST_PERSON_RE.search(last) is None
+
+
+def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
+                          persona: dict, slot: str,
+                          has_chart: bool) -> tuple[str, str, list[str], bool]:
+    """(text, headline, violations, bait) — copy that does not end on reader-bait.
+
+    The bait can come from a template bank this lane does not own: exactly one
+    variant in copywriter's mover pool ends "…Watching, not chasing. What's your
+    read?", and the deterministic picker lands on it for some ticker/account/slot
+    triples. Dropping the candidate outright would spend a post to punish a
+    template, so the lane re-rolls the variant hash instead (see `roll`) and only
+    gives up after _MAX_TAIL_ROLLS. The returned `bait` flag is the give-up
+    signal; the caller drops and tallies it, which is what surfaces a bank that
+    has gone bait all the way down.
+
+    The last attempt's text/violations are returned on failure so the caller's
+    existing empty-copy and violation branches still see a real render.
+    """
+    text = headline = ""
+    violations: list[str] = ["empty render"]
+    for attempt in range(_MAX_TAIL_ROLLS):
+        text, headline, violations = _render_copy(
+            candidate, account=account, voice=voice, persona=persona,
+            slot=slot, has_chart=has_chart, roll=attempt)
+        if not text or violations:
+            # Not a bait decision: hand these straight back so the caller reports
+            # the real reason (empty_copy / copy_violation) rather than "bait".
+            return text, headline, violations, False
+        if not _tail_is_bait(text):
+            return text, headline, violations, False
+    return text, headline, violations, True
+
+
+def _cand_session(cand: dict) -> str | None:
+    """ISO date of the session the candidate's ROWS describe, or None.
+
+    Movers carry the stamp of the sp500 tile they came from (possibly re-dated by
+    movers_source.prefer_fresher_session or by the live overlay); themes carry the
+    single session all their members agree on, and None when they disagree. None
+    is refused upstream — an undatable claim is not publishable.
+    """
+    if cand.get("type") == "mover":
+        src = cand.get("_mover_data") or {}
+    else:
+        src = cand.get("_theme_data") or {}
+    return str(src.get("asof") or "") or None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The picture — a ticker post ships one or it does not ship
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _slug(s: str) -> str:
+    """Lower-case, hyphenated, filesystem/URL-safe fragment of a label."""
+    return re.sub(r"[^a-z0-9]+", "-", str(s or "").lower()).strip("-") or "x"
+
+
+def _theme_card_title(cand: dict) -> str:
+    """The card's hero line. Plain words, and it says nothing the post does not."""
+    theme = str(cand.get("_theme_name") or "").strip()
+    direction = str((cand.get("_theme_data") or {}).get("direction") or "")
+    verb = "selling off" if direction == "down" else "bid up"
+    return f"{theme} {verb}".strip() if theme else f"A group {verb}"
+
+
+def _theme_card_subtitle(cand: dict) -> str | None:
+    """The panel's caption: the breadth fact, straight out of the theme item.
+
+    Deliberately NOT a second stance. The post text carries the read, and a card
+    that argues alongside it can contradict it; every number here is one the
+    theme item already authorised, so the picture cannot invent anything.
+    """
+    tl = cand.get("_theme_data") or {}
+    members = tl.get("members") or []
+    agg = tl.get("agg_pct")
+    if not members or agg is None:
+        return None
+    way = "lower" if str(tl.get("direction") or "") == "down" else "higher"
+    try:
+        return f"{len(members)} names {way}, average {float(agg):+.1f}%"
+    except (TypeError, ValueError):
+        return None
+
+
+def _resolve_card(cand: dict, *, root: Path, cfg: dict, as_of: str,
+                  now: datetime, slot: str) -> dict[str, Any]:
+    """Draw + host the card for one candidate. {"media", "published", "reason"}.
+
+    SAME CONTRACT AS scripts/hot_tape_radar.resolve_group_card / resolve_chart,
+    on purpose: that lane already proved both renderers against this exact
+    publish_card seam (SVG + PNG on disk, PNG to R2, public https URL back), and
+    one shared contract is what keeps the two from drifting into two lookalike
+    card families the way the 2026-07-26 incident did.
+
+      * theme_list → render_watchlist_card. A price chart was never the answer
+        for a group; the watchlist panel is the card written for exactly this
+        ("a plain multi-ticker text post … as a screenshot of a premium SaaS
+        watchlist panel"). Rows come straight off the theme item, so the picture
+        cannot name a ticker or a number the copy did not already authorise.
+      * mover → render_chart_v2 on local daily bars, configured byte-identically
+        to the hot-tape TAPE card: no marker, no highlight disc, no SETUP pill.
+        This post reports the tape, it does not claim an entry.
+
+    Bars come from the DEFAULT curated trees (data/baskets/ohlcv, data/stocks) —
+    2,993 committed parquets that a shallow ubuntu checkout already carries. This
+    lane deliberately does NOT opt into data/massive_stock_day: that store is
+    neither split-adjusted nor kept current, and every name this lane can pick is
+    an S&P 500 constituent, so the curated trees cover the universe.
+
+    NEVER raises. Every failure path returns media=None with a named reason, and
+    the caller drops the candidate rather than shipping it bare.
+    """
+    out: dict[str, Any] = {"media": None, "published": {}, "reason": "no-card"}
+    kind = str(cand.get("type") or "")
+    try:
+        from engine.marketing.chart_render import chart_cta_enabled  # noqa: PLC0415
+        cta = chart_cta_enabled(cfg)
+    except Exception as exc:  # noqa: BLE001
+        out["reason"] = f"renderer-unavailable: {exc}"
+        return out
+
+    stamp = now.strftime("%H%M")
+    rows: list[dict] = []
+    ticker = ""
+    if kind == "theme_list":
+        chart_id = f"ptlive-theme-{_slug(cand.get('_theme_name') or '')}-{stamp}Z"
+        rows = [
+            {"ticker": str(m.get("ticker") or ""), "price": None,
+             "pct_change": m.get("pct")}
+            for m in ((cand.get("_theme_data") or {}).get("members") or [])[:_CARD_MAX_ROWS]
+            if m.get("ticker")
+        ]
+        if not rows:
+            out["reason"] = "no-rows"
+            return out
+        try:
+            from engine.marketing.chart_render import render_watchlist_card  # noqa: PLC0415
+            svg = render_watchlist_card(
+                _theme_card_title(cand), rows,
+                as_of=as_of,
+                subtitle=_theme_card_subtitle(cand),
+                logo_root=root,
+                # Portrait 4:5 — the tallest image X renders un-cropped in a
+                # phone timeline, and the geometry the group card already uses.
+                width=1080, height=1350, cta=cta,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("publish_time_content: theme card render failed for %s: %s",
+                        chart_id, exc)
+            out["reason"] = "render-failed"
+            return out
+    else:
+        ticker = str(cand.get("ticker") or "").upper()
+        if not ticker:
+            out["reason"] = "no-ticker"
+            return out
+        chart_id = f"ptlive-mover-{ticker.lower()}-{stamp}Z"
+        try:
+            from engine.marketing.chart_render import (  # noqa: PLC0415
+                load_ohlcv_windowed,
+                render_chart_v2,
+            )
+            windowed = load_ohlcv_windowed(ticker, root)
+            if not windowed or not windowed[0] or not windowed[0][0]:
+                out["reason"] = "no-bars"
+                return out
+            (dates, o, h, low, c, volume), warmup = windowed
+            svg = render_chart_v2(
+                ticker=ticker, dates=dates, o=o, h=h, l=low, c=c, volume=volume,
+                timeframe="DAILY",
+                marker_index=None, highlight_index=None, pct_from_index=None,
+                show_indicators=True, indicators=("volume", "macd"),
+                warmup=warmup, volume_overlay=True, subpanel_h=190, height=880,
+                company_name=str((cand.get("_mover_data") or {}).get("name") or ticker),
+                logo_root=root, cta=cta,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.warning("publish_time_content: mover card render failed for %s: %s",
+                        chart_id, exc)
+            out["reason"] = "render-failed"
+            return out
+
+    try:
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+        published = publish_card(svg, chart_id=chart_id, as_of=as_of, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("publish_time_content: publish_card failed for %s: %s",
+                    chart_id, exc)
+        published = {}
+    out["published"] = dict(published or {})
+    out["published"]["chart_id"] = chart_id
+
+    url = str((published or {}).get("media_url") or "").strip()
+    if not url.lower().startswith(("http://", "https://")):
+        # Buffer fetches a URL; a repo path is not something X can load. No hosted
+        # PNG means no picture, and no picture means no post.
+        out["reason"] = "no-media-url"
+        return out
+
+    entry: dict[str, Any] = {
+        "kind": "chart_svg",
+        "path": (published.get("svg_path")
+                 or f"data/marketing/outbox/media/{as_of}/{chart_id}.svg"),
+        "chart_id": chart_id,
+        "media_url": url,
+    }
+    if kind == "theme_list":
+        entry["tickers"] = [r["ticker"] for r in rows]
+    else:
+        entry["ticker"] = ticker
+    if published.get("media_png_path"):
+        entry["media_png_path"] = published["media_png_path"]
+    out["media"] = entry
+    out["reason"] = "ok"
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -522,19 +912,49 @@ def _existing_today_items(state: dict, today: str) -> list[dict]:
     return out
 
 
-def _live_queued_pt_today(state: dict, today: str) -> list[dict]:
-    """This-lane items already queued today (kind mover/theme_list, provenance
-    publisher_live_movers, created today). They may still auto-approve this run,
-    so they count toward posts-today and the per-account one-per-run law."""
+def _live_pt_today(state: dict, today: str,
+                   statuses: frozenset[str]) -> list[dict]:
+    """This lane's items created today whose FOLDED status is in `statuses`.
+
+    THE FOLDED STATUS IS THE ONLY ONE THAT MEANS ANYTHING HERE. `state["items"]`
+    is the item as WRITTEN — outbox.make_item pins `status` to "queued" at
+    creation and nothing ever rewrites that row — while every later transition
+    lands in `state["status"]`, which fold_state computes from the ledger. Reading
+    the item's own field (or, as this did, reading no status at all) makes a
+    posted / quarantined / failed / recalled item indistinguishable from a live
+    one for the rest of the day. See _PT_PENDING_STATUSES for what that cost.
+    """
+    status_map = (state or {}).get("status") or {}
     out: list[dict] = []
-    for it in (state.get("items") or {}).values():
+    for iid, it in ((state or {}).get("items") or {}).items():
         if it.get("provenance") != _PROVENANCE:
             continue
         if it.get("kind") not in {"mover", "theme_list"}:
             continue
-        if str(it.get("created_at") or "")[:10] == today:
-            out.append(it)
+        if str(it.get("created_at") or "")[:10] != today:
+            continue
+        if status_map.get(iid, str(it.get("status") or "queued")) not in statuses:
+            continue
+        out.append(it)
     return out
+
+
+def _live_pending_pt_today(state: dict, today: str) -> list[dict]:
+    """Items this lane already made today that NO other counter sees yet.
+
+    queued/approved only: they have not posted, so posted_today_by_account does
+    not count them, and they may still auto-approve this very run — so they are
+    charged against the day's cap here. Including posting/posted would
+    double-charge, since that function already counts both.
+    """
+    return _live_pt_today(state, today, _PT_PENDING_STATUSES)
+
+
+def _live_occupying_pt_today(state: dict, today: str) -> list[dict]:
+    """Items still holding their account's next posting slot (queued/approved/
+    posting). This is the set that BLOCKS an account for the rest of the run —
+    and it is a strict subset of "created today", which is what it used to be."""
+    return _live_pt_today(state, today, _PT_PENDING_STATUSES | _PT_INFLIGHT_STATUSES)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -588,10 +1008,24 @@ def generate_slot_items(
 
         dropped: list[dict] = []
 
+        # `today` is the CURRENT US SESSION date. Inside this lane's window
+        # (13:30-22:00 UTC == 09:30-18:00 ET) the UTC date and the ET date are the
+        # same calendar day, so `now`'s UTC date names the session without a tz
+        # lookup. Hoisted above the loads because every row-session comparison
+        # below needs it.
+        today = now.strftime("%Y-%m-%d")
+
         # ── Load tape + heatmap ─────────────────────────────────────────────
         tape = live_verify.load_live_quotes(r)
         quote_source = str(tape.get("source") or "none")
-        movers_data = movers_source.load_movers(r)
+        # prefer_fresher_session re-dates every S&P row the themes payload also
+        # carries. The sp500 close cache ran one session behind the finviz capture
+        # on every commit measured, so without this the whole mover family is
+        # refused as stale-session on any heatmap-only sweep while the identical
+        # numbers sit in the themes payload, dated correctly.
+        _raw_movers = movers_source.load_movers(r)
+        movers_data = (movers_source.prefer_fresher_session(_raw_movers)
+                       if _raw_movers else None)
         if not movers_data:
             return _empty_report(slot, enabled=True, quote_source=quote_source,
                                  drop=[{"reason": "no_heatmap",
@@ -605,7 +1039,10 @@ def generate_slot_items(
                                                   f"{pt['max_quote_age_min']}m ({quote_source})"}])
 
         # ── Live overlay + candidates ───────────────────────────────────────
-        overlaid = _overlay_movers(movers_data, tape)
+        # session=today re-dates only the rows the tape actually overwrote — the
+        # tape has already cleared the freshness gate above, so a row it supplies
+        # belongs to the current session by construction.
+        overlaid = _overlay_movers(movers_data, tape, session=today)
 
         # ── Gate 3: flat-tape belt ──────────────────────────────────────────
         # The market must actually be MOVING before we claim anything did: a
@@ -640,9 +1077,9 @@ def generate_slot_items(
                                         "detail": "no mover/theme cleared the min_abs floors"}])
 
         # ── Today-state (ledger-based) ──────────────────────────────────────
-        today = now.strftime("%Y-%m-%d")
+        # (`today` is hoisted above the artifact loads — see there.)
         posted_today = outbox.posted_today_by_account(state, today)
-        for it in _live_queued_pt_today(state, today):
+        for it in _live_pending_pt_today(state, today):
             acct = it.get("account", "")
             posted_today[acct] = posted_today.get(acct, 0) + 1
         # This run's already-selected approved_due items also consume a slot.
@@ -654,8 +1091,11 @@ def generate_slot_items(
         # Accounts that already have an approved_due item this run (spacing law:
         # one post per account per slot run).
         due_accounts = {it.get("account", "") for it in (approved_due or [])}
-        # Accounts with a live-lane item already queued today (one per run).
-        for it in _live_queued_pt_today(state, today):
+        # Accounts whose slot is still OCCUPIED by one of this lane's items
+        # (queued/approved/posting). An item that already posted, quarantined,
+        # failed or was recalled does NOT hold the account — that conflation is
+        # what capped the whole network at 2 posts/day (see _PT_PENDING_STATUSES).
+        for it in _live_occupying_pt_today(state, today):
             due_accounts.add(it.get("account", ""))
 
         # ── Eligible accounts (deterministic, config order) ─────────────────
@@ -700,6 +1140,7 @@ def generate_slot_items(
 
         generated: list[str] = []
         would_generate: list[dict] = []
+        cards_unhosted = 0          # tallied, then annotated once at the end
         accepted_texts: list[frozenset[str]] = []
         assigned_accounts: set[str] = set()
         acct_cursor = 0
@@ -718,6 +1159,22 @@ def generate_slot_items(
             lead_ticker = (cand["ticker"] if cand["type"] == "mover"
                            else cand.get("_lead_ticker", ""))
             lead_cashtag = f"${lead_ticker}" if lead_ticker else ""
+
+            # ── Session gate: never claim a session these rows are not from ──
+            # Every template in the mover/theme banks says "today" in its own
+            # words, and this lane cannot rewrite copywriter's banks. So a row
+            # from a prior session has exactly one honest outcome here: skip it.
+            # (The freshness gate above asks "is the ARTIFACT fresh"; this asks
+            # the different and load-bearing question "is the ROW from the
+            # session the copy is about" — the mixed-asof law.)
+            cand_session = _cand_session(cand)
+            if cand_session != today:
+                dropped.append({
+                    "reason": "stale_session",
+                    "detail": f"{lead_cashtag or cand['type']}: rows dated "
+                              f"{cand_session or 'unknown'}, not {today}",
+                })
+                continue
 
             # ── Per-day dedupe (any account/status) ─────────────────────────
             if cand["type"] == "mover":
@@ -789,12 +1246,44 @@ def generate_slot_items(
             voice = voice_by_id.get(chosen, "authoritative desk")
             persona = _persona_for(cfg or {}, chosen, voice)
 
+            # ── The picture, BEFORE the copy ────────────────────────────────
+            # Order matters twice over. A card that will not host means no item,
+            # so paying for the render before the copy costs nothing on the drop
+            # path; and the copy's has_chart flag — which template variants may
+            # say "levels are on the chart" — can only be answered honestly once
+            # the card actually exists. Rendered in dry-run too: a dry run that
+            # skipped the card would report items that could never ship.
+            card: dict[str, Any] = {"media": None, "published": {},
+                                    "reason": "require_card disabled"}
+            if pt["require_card"]:
+                card = _resolve_card(cand, root=r, cfg=cfg or {}, as_of=today,
+                                     now=now, slot=slot)
+                if not card.get("media"):
+                    cards_unhosted += 1
+                    dropped.append({
+                        "reason": "no_card",
+                        "detail": f"{lead_cashtag or cand['type']}: "
+                                  f"{card.get('reason')}",
+                    })
+                    continue
+
             # ── Copy (reuse-only) ───────────────────────────────────────────
             try:
-                text, headline, violations = _render_copy(
-                    cand, account=chosen, voice=voice, persona=persona, slot=slot)
+                text, headline, violations, bait = _render_copy_unbaited(
+                    cand, account=chosen, voice=voice, persona=persona,
+                    slot=slot, has_chart=bool(card.get("media")))
             except Exception as exc:  # noqa: BLE001
                 dropped.append({"reason": "copy_error", "detail": f"{lead_cashtag}: {exc}"})
+                continue
+            if bait:
+                # Every variant this candidate could reach ended on a question
+                # aimed at the reader. Reported, not shipped — the voice law is
+                # not negotiable and a bank that is bait all the way down is a
+                # copywriter defect to fix, not a post to make.
+                dropped.append({"reason": "bait_tail",
+                                "detail": f"{lead_cashtag or cand['type']}: "
+                                          f"{_MAX_TAIL_ROLLS} variants all ended "
+                                          f"on reader-bait"})
                 continue
             if not text:
                 dropped.append({"reason": "empty_copy", "detail": lead_cashtag})
@@ -836,6 +1325,10 @@ def generate_slot_items(
                     kind=cand["type"],
                     text=text,
                     as_of=today,
+                    # The hosted card. A rollup kind with no media[] is exactly
+                    # what the bare-cashtag law quarantines, so this list is the
+                    # difference between a publishable item and a dead one.
+                    media=([card["media"]] if card.get("media") else None),
                     scheduled_at="immediate",
                     slot=f"LIVE-{slot}",
                     priority=6,   # operator-approved D1 items are priority 5 → sort first
@@ -895,6 +1388,17 @@ def generate_slot_items(
                 assigned_accounts.discard(chosen)
                 accepted_texts.pop()
 
+        if cards_unhosted:
+            # Bare line-start print, NEVER through `log` — this module's logger
+            # prefixes every record, and GitHub silently drops an annotation that
+            # does not start the line. flush because stdout is block-buffered when
+            # piped in Actions.
+            print(f"::warning title=publish-time-card-unhosted::"
+                  f"{cards_unhosted} publish-time mover/theme candidate(s) dropped "
+                  f"in slot {slot}: the card would not render or host, and a post "
+                  f"that names tickers ships a picture or does not ship",
+                  flush=True)
+
         return {
             "enabled": True,
             "generated": generated,
@@ -902,6 +1406,7 @@ def generate_slot_items(
             "dropped": dropped,
             "quote_source": quote_source,
             "slot": slot,
+            "cards_unhosted": cards_unhosted,
         }
 
     except Exception as exc:  # noqa: BLE001
@@ -958,6 +1463,9 @@ def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> di
             "slot_run": slot,
             "generated_at": _iso_now(now),
             "quote_source": quote_source,
+            # The SESSION the rows belonged to, recorded so an audit can tell a
+            # "today" claim from a re-dated one without re-deriving it.
+            "session_asof": _cand_session(cand),
             "ticker": cand["ticker"],
             "baseline_pct": (cand.get("_mover_data") or {}).get("pct"),
         }
@@ -966,6 +1474,7 @@ def _build_source(cand: dict, slot: str, now: datetime, quote_source: str) -> di
         "slot_run": slot,
         "generated_at": _iso_now(now),
         "quote_source": quote_source,
+        "session_asof": _cand_session(cand),
         "ticker": cand.get("_lead_ticker", ""),
         "baseline_pct": cand.get("_lead_pct"),
         "theme": cand.get("_theme_name", ""),

@@ -207,6 +207,47 @@ def _fmt_pct(v: float, decimals: int = 1) -> str:
     return f"{sign}{v:.{decimals}f}%"
 
 
+#: Ratio band outside which a count says nothing. Mirrors
+#: ``content_studio._DEFAULT_DEGENERATE_BAND`` deliberately BY VALUE, not by
+#: import: content_studio imports this module, so reading the constant back out
+#: of it would be a cycle. The consumer-side gate stays the second net; this is
+#: the first, and the two must agree or a count the studio would drop still gets
+#: to be the digit a post is built around before the studio ever sees it.
+_VACUOUS_COUNT_BAND: tuple[float, float] = (0.05, 0.95)
+
+
+def _is_vacuous_count(numerator: object, denominator: object) -> bool:
+    """True when a count saturates (or empties) its universe, or has no universe.
+
+    A DENOMINATOR THE NUMERATOR CANNOT MOVE AGAINST IS NOT A DENOMINATOR
+    (2026-07-28: four posts opened "231 of 231 names ... showing bullish
+    momentum setups" and then argued "zero triggers" in the next sentence).
+
+    WHAT THE DATA ACTUALLY CARRIES (investigated 2026-07-31 against the live
+    site/factordata/tech_confluence.json): ``universe_n`` is 232 and IS the real
+    scanned universe — the artifact carries no larger population to promote it
+    to. The vacuity is on the NUMERATOR side: ``now`` is keyed by every one of
+    those 232 names and counts a name as "active" if ANY of ~100 long combos is
+    firing, which on every day observed is all 232. So the fact is structurally
+    saturated and there is no denominator repair available; the only honest
+    handling is to drop it.
+
+    THE GATE IS A BAND, NOT A STRICT INEQUALITY. ``0 < n < universe`` is a
+    knife-edge: 231 of 232 clears it and is exactly as vacuous as 232 of 232,
+    and one name dropping off the screen was all it took to re-arm the sentence
+    this rule exists to kill.
+    """
+    try:
+        num, den = float(numerator), float(denominator)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return True
+    if den <= 0:
+        return True  # no universe at all — the denominator law drops it anyway
+    lo, hi = _VACUOUS_COUNT_BAND
+    ratio = num / den
+    return ratio >= hi or ratio <= lo
+
+
 def _count_block(n_moving: object, n_tracked: object, noun: str) -> dict:
     """The structured denominator a count fact carries (masterplan §4).
 
@@ -309,7 +350,7 @@ def macro_facts(root: PathLike) -> dict:
         _nm, _nt = _cb.get("n_moving"), _cb.get("n_tracked")
         if not isinstance(_nm, int) or not isinstance(_nt, int):
             break
-        if not 0 < _nm < _nt:
+        if _is_vacuous_count(_nm, _nt):
             break  # saturated either way: a definition, not a breadth read
         _breadth_clause = f"{_nm} of {_nt} sectors closed green today."
         _breadth_numbers = [str(_nm), str(_nt)]
@@ -606,7 +647,9 @@ def breadth_facts(root: PathLike) -> dict:
         # here, at the producer, so it can never be the digit a macro or
         # watchlist post is built around; the configurable degenerate band in
         # content_studio.drop_degenerate_facts is the second net, not the first.
-        if 0 < n_active < universe_int:
+        # `_is_vacuous_count` (not `0 < n < universe`) because 231-of-232 is the
+        # same non-fact as 231-of-231 — see that helper for the live artifact.
+        if not _is_vacuous_count(n_active, universe_int):
             n_str = str(n_active)
             u_str = str(universe_int)
             text = (
@@ -640,12 +683,13 @@ def breadth_facts(root: PathLike) -> dict:
                         combo_fires[i] += 1
 
         _top_count_peek = combo_fires.most_common(1)[0][1] if combo_fires else 0
-        if combo_fires and 0 < _top_count_peek < universe_int:
+        if combo_fires and not _is_vacuous_count(_top_count_peek, universe_int):
             # Same law as breadth_active: the count ships with its universe or it
             # does not ship ("firing on 62 names" alone tells the reader nothing
             # about whether that is a lot), AND it does not ship saturated — a
             # setup firing on every name we track describes the screen, not the
-            # tape.
+            # tape. Band, not strict inequality: "firing on 230 of the 232 names
+            # we track" is a screen definition wearing an observation's clothes.
             _top_idx, top_count = combo_fires.most_common(1)[0]
             top_count_str = str(top_count)
             u_str = str(universe_int)

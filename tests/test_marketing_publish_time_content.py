@@ -115,6 +115,40 @@ def _gen(tmp: Path, cfg: dict, *, now: datetime = NOW, live: bool = True,
         posted_counts={}, cap=cap, live=live, account_filter=account_filter)
 
 
+#: The GENUINE card resolver, captured before any fixture can patch it. The
+#: autouse stub below replaces pt._resolve_card for every test in this file, so a
+#: fixture that tried to "un-stub" by reading the attribute at call time would
+#: just re-install the stub.
+_REAL_RESOLVE_CARD = pt._resolve_card
+
+
+#: A hosted card, the shape _resolve_card returns on its happy path.
+def _fake_card(cand, *, root, cfg, as_of, now, slot):
+    tag = (cand.get("ticker") or cand.get("_lead_ticker") or "x").lower()
+    return {
+        "media": {"kind": "chart_svg", "chart_id": f"stub-{tag}",
+                  "path": f"data/marketing/outbox/media/{as_of}/stub-{tag}.svg",
+                  "media_url": f"https://cards.example/{tag}.png"},
+        "published": {"chart_id": f"stub-{tag}"},
+        "reason": "ok",
+    }
+
+
+@pytest.fixture(autouse=True)
+def _stub_card(monkeypatch):
+    """Every pre-existing test in this file predates the card requirement.
+
+    From 2026-07-31 the lane refuses to enqueue a mover/theme item whose card
+    cannot be HOSTED (a rollup with no picture is quarantined by the
+    bare-cashtag law, so shipping one is shipping a dead item). Under tmp_path
+    there is no R2 and no renderer, so without a stub every one of those tests
+    would be asserting the drop path instead of the behaviour it was written for.
+    The card path itself is covered for real — renderers live, publish_card
+    mocked — in section 12 below.
+    """
+    monkeypatch.setattr(pt, "_resolve_card", _fake_card)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Overlay
 # ─────────────────────────────────────────────────────────────────────────────
@@ -394,7 +428,8 @@ def test_duplicate_result_reported_when_dedupe_bypassed(tmp_path, monkeypatch):
     # enqueue's own id-dedupe (same text → same sha1 id) is the last line and
     # must return 'duplicate' (idempotent), which the module reports quietly.
     monkeypatch.setattr(pt, "_existing_today_items", lambda state, today: [])
-    monkeypatch.setattr(pt, "_live_queued_pt_today", lambda state, today: [])
+    monkeypatch.setattr(pt, "_live_pending_pt_today", lambda state, today: [])
+    monkeypatch.setattr(pt, "_live_occupying_pt_today", lambda state, today: [])
     rep2 = _gen(tmp_path, only_flagship)
     assert rep2["generated"] == []
     assert any(d["reason"] == "duplicate" and gen_id in d["detail"]
@@ -841,3 +876,410 @@ def test_two_accounts_on_one_per_call_lane_never_emit_identical_text(tmp_path):
     assert len(movers) == 2
     assert movers[0]["account"] != movers[1]["account"]
     assert movers[0]["text"] != movers[1]["text"], "two desks emitted identical copy"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. The picture. A mover/theme post ships one or it does not ship.
+#
+# THE DEFECT: this lane was text-only BY CONSTRUCTION ("Items are text-only (no
+# media ...)", and chart_render was imported nowhere). #4030's bare-cashtag law
+# then made a ticker-naming rollup with no picture unpublishable, so from that
+# merge on every item this lane produced was generated, queued and quarantined.
+# ─────────────────────────────────────────────────────────────────────────────
+
+@pytest.fixture
+def real_card(monkeypatch):
+    """Un-stub _resolve_card and mock only the two things tmp_path cannot give:
+    the R2 upload and the network logo fetch. The renderers run for real."""
+    from engine.marketing import chart_render, media_publish
+    monkeypatch.setattr(pt, "_resolve_card", _REAL_RESOLVE_CARD)  # un-stub
+    monkeypatch.setattr(chart_render, "resolve_color_logo", lambda t, r: None)
+    return media_publish
+
+
+def _hosted(**over):
+    def _publish_card(svg, *, chart_id, as_of, root=None, legacy_png=None):
+        out = {"svg_path": f"data/marketing/outbox/media/{as_of}/{chart_id}.svg",
+               "media_png_path": f"data/marketing/outbox/media/{as_of}/{chart_id}.png",
+               "media_url": f"https://cards.example/{as_of}/{chart_id}.png"}
+        out.update(over)
+        return out
+    return _publish_card
+
+
+def _theme_fixture(tmp: Path) -> None:
+    _write_themes(tmp, [_theme_tile("Artificial Intelligence", {
+        "NVDA": 0.0, "AMD": 0.0, "SMCI": 0.0, "MU": 0.0, "AVGO": 0.0})])
+    _write_snapshot(tmp, {
+        "NVDA": (120.0, 117.0, 2.6), "AMD": (150.0, 144.0, 4.2),
+        "SMCI": (40.0, 37.0, 8.1), "MU": (100.0, 96.0, 4.1),
+        "AVGO": (170.0, 165.0, 3.0)})
+
+
+def test_theme_list_item_ships_a_hosted_card(tmp_path, monkeypatch, real_card):
+    """PINS: a theme_list item carries a media[] entry with a public https URL.
+
+    Pre-fix this asserts on `[]` — make_item was never handed media at all — so
+    the `len(...) == 1` line is the mutation check for the whole card lane.
+    """
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    _theme_fixture(tmp_path)
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    tl = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
+
+    assert len(tl["media"]) == 1, tl["media"]
+    entry = tl["media"][0]
+    assert entry["kind"] == "chart_svg"
+    assert entry["chart_id"].startswith("ptlive-theme-")
+    assert entry["media_url"].startswith("https://")
+    # The picture names the SAME tickers the copy does — a card listing a name
+    # the post never mentions is its own small lie.
+    import re as _re
+    assert set(entry["tickers"]) <= set(
+        t.lstrip("$") for t in _re.findall(r"\$[A-Z]{1,5}", tl["text"]))
+
+
+def test_mover_item_ships_a_tape_chart_card(tmp_path, monkeypatch, real_card):
+    """PINS: a mover item carries a single-name chart card keyed to its ticker."""
+    from engine.marketing import chart_render
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+
+    n = 320
+    dates = [f"2025-{1 + (i // 28) % 12:02d}-{1 + i % 28:02d}" for i in range(n)]
+    closes = [100.0 + (i % 17) * 0.7 for i in range(n)]
+    bars = (dates, closes, [c + 1 for c in closes], [c - 1 for c in closes],
+            closes, [1_000_000.0] * n)
+    monkeypatch.setattr(chart_render, "load_ohlcv_windowed",
+                        lambda t, r, **kw: (bars, 60))
+
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, name="Intuitive", sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    mv = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "mover")
+    assert len(mv["media"]) == 1, mv["media"]
+    assert mv["media"][0]["ticker"] == "ISRG"
+    assert mv["media"][0]["chart_id"].startswith("ptlive-mover-isrg-")
+    assert mv["media"][0]["media_url"].startswith("https://")
+
+
+def test_a_card_that_will_not_host_blocks_the_enqueue(tmp_path, monkeypatch,
+                                                      real_card, capsys):
+    """PINS the chartless-DEFER law: a rendered-but-unhosted card means NO item.
+
+    publish_card returns without a media_url (exactly what an ubuntu runner with
+    no R2 credentials produces). Nothing may be enqueued, the drop must name the
+    reason, the tally must count it, and the annotation must START the line.
+    Pre-fix the lane enqueued a text-only item here and the assertion on
+    `read_items == []` fails.
+    """
+    monkeypatch.setattr(real_card, "publish_card",
+                        lambda svg, **kw: {"svg_path": "x.svg"})   # no media_url
+    _theme_fixture(tmp_path)
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"] == []
+    assert outbox.read_items(tmp_path) == []
+    assert rep["cards_unhosted"] >= 1, rep
+    no_card = [d for d in rep["dropped"] if d["reason"] == "no_card"]
+    assert no_card and "no-media-url" in no_card[0]["detail"], rep["dropped"]
+
+    ann = [ln for ln in capsys.readouterr().out.splitlines()
+           if "publish-time-card-unhosted" in ln]
+    assert ann, "no annotation emitted"
+    # A logger-prefixed annotation is silently dropped by GitHub — it must be a
+    # bare print that STARTS the line.
+    assert ann[0].startswith("::warning title=publish-time-card-unhosted::"), ann[0]
+
+
+def test_missing_bars_drop_the_mover_rather_than_ship_it_bare(tmp_path, monkeypatch,
+                                                              real_card):
+    """PINS: no local daily bars → no card → no post (not a bare ticker post)."""
+    from engine.marketing import chart_render
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    monkeypatch.setattr(chart_render, "load_ohlcv_windowed", lambda t, r, **kw: None)
+
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"] == []
+    assert outbox.read_items(tmp_path) == []
+    assert any(d["reason"] == "no_card" and "no-bars" in d["detail"]
+               for d in rep["dropped"]), rep["dropped"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13. The day-cap bug: a DEAD item may not hold its account hostage
+#
+# _live_queued_pt_today selected on created_at alone with NO status filter, and
+# every account it returned was a hard skip. `state["items"]` freezes `status` at
+# "queued" forever (the folded status lives in `state["status"]`), so a posted or
+# quarantined item blocked its account for the REST OF THE DAY — the comment said
+# "one per account per slot RUN". With two eligible accounts that capped the
+# whole network at 2 posts/day, which is what the ledger shows.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_ONLY_FLAGSHIP = dict(accounts=[{"id": "flagship", "voice": "authoritative desk"}],
+                      channels={"flagship": "c1"})
+
+
+def _seed_lane_item(tmp: Path, *, status: str) -> str:
+    """One publisher_live_movers item created TODAY on flagship, folded to
+    `status`. Text is deliberately far from any tape copy so the near-dup gate
+    never becomes the reason a later assertion passes."""
+    it = outbox.make_item(
+        account="flagship", kind="mover",
+        text="Gold cleared its downtrend line on the strongest volume in weeks.",
+        as_of=TODAY, provenance="publisher_live_movers",
+        source={"ticker": "GLD"}, now=NOW)
+    outbox.enqueue(it, root=tmp, max_per_account_day=99)
+    ladder = {"approved": ["approved"],
+              "posted": ["approved", "posting", "posted"],
+              "quarantined": ["quarantined"],
+              "queued": []}[status]
+    for to in ladder:
+        outbox.transition(it["id"], to, actor="t", root=tmp, now=NOW)
+    return it["id"]
+
+
+@pytest.mark.parametrize("status,expect_generation", [
+    ("posted", True),        # consumed its slot hours ago — must not block
+    ("quarantined", True),   # dead — must not block
+    ("queued", False),       # still occupying the account's next slot — blocks
+    ("approved", False),     # ditto
+])
+def test_only_a_slot_occupying_lane_item_blocks_its_account(
+        tmp_path, status, expect_generation):
+    """PINS both halves. The `posted`/`quarantined` rows fail on the pre-fix tree
+    (every created-today item blocked); the `queued`/`approved` rows are the
+    spacing law the fix must NOT loosen."""
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+    _seed_lane_item(tmp_path, status=status)
+
+    rep = _gen(tmp_path, _cfg(**_ONLY_FLAGSHIP), cap=5)
+    if expect_generation:
+        assert rep["generated"], rep["dropped"]
+    else:
+        assert rep["generated"] == []
+        assert any(d["reason"] == "no_account" for d in rep["dropped"]), rep
+
+
+def test_a_posted_lane_item_is_not_double_charged_to_the_day_cap(tmp_path):
+    """A posted item is already counted by outbox.posted_today_by_account, so the
+    lane must not add it a second time. cap=2 with ONE posted item leaves exactly
+    one slot; charging it twice would leave none."""
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+    _seed_lane_item(tmp_path, status="posted")
+
+    rep = _gen(tmp_path, _cfg(**_ONLY_FLAGSHIP), cap=2)
+    assert rep["generated"], rep["dropped"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 14. Freshness anchor + the session a claim may make
+#
+# load_movers took `asof` from sp500_heatmap.json only, and that stamp runs one
+# session behind themes_heatmap.json on every commit measured. _tape_stale then
+# aged the whole heatmap-only branch by it — and by a DATE, which at 14:05Z is
+# 845 minutes old and can never pass a 45-minute gate. Result on 2026-07-31:
+# every in-window sweep logged pt_generated=0 / pt_dropped=1 "tape stale".
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_sp500_meta(tmp: Path, tiles, *, asof, generated_utc=None):
+    p = tmp / "site" / "marketdata"
+    p.mkdir(parents=True, exist_ok=True)
+    payload = {"asof": asof, "tiles": tiles, "source": "daily-close"}
+    if generated_utc:
+        payload["generated_utc"] = generated_utc
+    (p / "sp500_heatmap.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _write_themes_meta(tmp: Path, tiles, *, asof, generated_utc=None):
+    p = tmp / "site" / "marketdata"
+    p.mkdir(parents=True, exist_ok=True)
+    payload = {"asof": asof, "tiles": tiles, "source": "finviz-themes"}
+    if generated_utc:
+        payload["generated_utc"] = generated_utc
+    (p / "themes_heatmap.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
+# The heatmap builders write generated_utc as "YYYY-MM-DD HH:MM" (space, no zone).
+_GEN_UTC = NOW.strftime("%Y-%m-%d %H:%M")
+_YESTERDAY = "2026-07-22"
+
+
+def test_a_fresh_generated_utc_clears_the_gate_a_date_asof_never_could(tmp_path):
+    """PINS the freshness anchor. Heatmap-only sweep, no live snapshot: the gate
+    must age the payload by its REFRESH stamp. Pre-fix it aged by the sp500
+    `asof` date, which is 845 minutes old at 14:05Z, so 'tape stale' fired on
+    every sweep and this assertion fails."""
+    _write_sp500_meta(tmp_path, [_tile("ISRG", -14.0, sector="Health Care")],
+                      asof=_YESTERDAY, generated_utc=_GEN_UTC)
+    rep = _gen(tmp_path, _cfg(), live=False)
+    assert not any(d["reason"] == "tape stale" for d in rep["dropped"]), rep["dropped"]
+
+
+def test_stale_session_rows_may_not_ship_a_today_claim(tmp_path):
+    """PINS the mixed-asof law. The payload is FRESH (generated minutes ago) but
+    its rows are dated to the PRIOR session, and every mover/theme template says
+    "today" in its own words. The honest outcome is to skip, not to publish."""
+    _write_sp500_meta(tmp_path, [_tile("ISRG", -14.0, sector="Health Care")],
+                      asof=_YESTERDAY, generated_utc=_GEN_UTC)
+    rep = _gen(tmp_path, _cfg(), live=False)
+
+    assert rep["generated"] == [] and rep["would_generate"] == []
+    stale = [d for d in rep["dropped"] if d["reason"] == "stale_session"]
+    assert stale, rep["dropped"]
+    assert _YESTERDAY in stale[0]["detail"]
+    assert outbox.read_items(tmp_path) == []
+
+
+def test_the_fresher_themes_read_re_dates_a_mover_and_revives_it(tmp_path):
+    """PINS the (c) arm: where themes_heatmap carries the SAME row a session
+    fresher, prefer it — that is what keeps the mover family alive on a
+    heatmap-only sweep instead of refusing all of it as stale-session."""
+    _write_sp500_meta(tmp_path, [_tile("ISRG", -9.0, sector="Health Care")],
+                      asof=_YESTERDAY, generated_utc=_GEN_UTC)
+    _write_themes_meta(tmp_path, [_theme_tile("Health", {
+        "ISRG": -14.0, "A": -0.1, "B": -0.1, "C": -0.1})],
+        asof=TODAY, generated_utc=_GEN_UTC)
+
+    rep = _gen(tmp_path, _cfg(max_per_run=4), live=False)
+    movers = [g for g in rep["would_generate"] if g["kind"] == "mover"]
+    assert movers, (rep["would_generate"], rep["dropped"])
+    assert movers[0]["ticker"] == "ISRG"
+    # ...and it quotes the FRESHER number, not the index board's stale one.
+    assert "-14.0%" in movers[0]["text"], movers[0]["text"]
+    assert not any(d["reason"] == "stale_session" and "ISRG" in d["detail"]
+                   for d in rep["dropped"]), rep["dropped"]
+
+
+def test_a_theme_whose_members_span_two_sessions_is_refused(tmp_path):
+    """A theme aggregate that averages two sessions is undatable, so theme_lists
+    reports asof=None and this lane refuses it rather than guessing."""
+    from engine.marketing import movers_source
+    tiles = [{"t": "AI", "name": "AI", "sector": "AI", "perf": {"1D": -2.0},
+              "members": [
+                  {"t": "NVDA", "perf": {"1D": -3.0}, "asof": TODAY},
+                  {"t": "AMD", "perf": {"1D": -4.0}, "asof": TODAY},
+                  {"t": "MU", "perf": {"1D": -2.0}, "asof": _YESTERDAY},
+                  {"t": "AVGO", "perf": {"1D": -1.5}, "asof": _YESTERDAY},
+              ]}]
+    out = movers_source.theme_lists({"theme_tiles": tiles}, min_members=4)
+    assert out and out[0]["asof"] is None, out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 15. The tail. A post ends on a stance that COSTS the author, never on bait.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_the_four_historical_bait_tails_are_all_caught(tmp_path):
+    """The exact strings from the four live publisher_live_movers posts, plus a
+    stance tail that must NOT be caught. A blocklist of these four would be a
+    regression pin; _tail_is_bait is a positive test (is the final question about
+    the AUTHOR?), so the fifth bait line nobody has written yet is caught too."""
+    for bait in ("Dead-cat bounce or the real dip?",
+                 "Which one breaks out first?",
+                 "$LII -19.6%\n\nLII crashed today. Watching, not chasing. What's your read?",
+                 "Who leads this group higher?",
+                 "So which is it, a top or a pause?"):
+        assert pt._tail_is_bait(bait), bait
+    for ok in ("Tape check. Not touching it yet.",
+               "I want one quiet close before I touch this group. Am I too slow here?",
+               "Passing on the whole group here. Does that cost me the snapback?"):
+        assert not pt._tail_is_bait(ok), ok
+
+
+def test_a_bait_tail_is_re_rolled_onto_another_variant(tmp_path, monkeypatch):
+    """PINS the re-roll. One variant in copywriter's mover bank ends "...What's
+    your read?" and this lane cannot edit that bank, so it rotates the variant
+    hash instead of spending the post. The stub is bait ONLY on the first roll."""
+    from engine.marketing import copywriter
+
+    def _rolled(contexts):
+        out = []
+        for ctx in contexts:
+            baity = "-r" not in str(ctx.get("slot") or "")
+            out.append({
+                "headline": "$ISRG -14.0%",
+                "body": ("ISRG fell today. What's your read?" if baity
+                         else "ISRG fell today. I'm not touching it. Am I too slow?"),
+                "violations": [], "mode": "deterministic"})
+        return out
+
+    monkeypatch.setattr(copywriter, "write_posts_deterministic", _rolled)
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    mv = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "mover")
+    assert "What's your read?" not in mv["text"]
+    assert mv["text"].rstrip().endswith("Am I too slow?")
+    # The ITEM's slot label is untouched by the re-roll — only the copy hash moved.
+    assert mv["slot"] == "LIVE-AM"
+
+
+def test_copy_that_is_bait_on_every_variant_is_dropped(tmp_path, monkeypatch):
+    """A bank that is bait all the way down is a copywriter defect to report, not
+    a post to make."""
+    from engine.marketing import copywriter
+    monkeypatch.setattr(copywriter, "write_posts_deterministic", lambda ctxs: [
+        {"headline": "$ISRG -14.0%", "body": "ISRG fell today. What's your read?",
+         "violations": [], "mode": "deterministic"} for _ in ctxs])
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"] == []
+    assert outbox.read_items(tmp_path) == []
+    assert any(d["reason"] == "bait_tail" for d in rep["dropped"]), rep["dropped"]
+
+
+def test_generated_theme_copy_never_ends_on_reader_bait(tmp_path, monkeypatch,
+                                                        real_card):
+    """End to end, through the real v3 banks: the shipped theme post ends on a
+    tail whose final question is about the author. Pre-fix the bank's tail was
+    "Which one breaks out first?" and this fails."""
+    monkeypatch.setattr(real_card, "publish_card", _hosted())
+    _theme_fixture(tmp_path)
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    tl = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "theme_list")
+    assert tl["text"].rstrip().endswith("?")        # copywriter's theme_list law
+    assert not pt._tail_is_bait(tl["text"]), tl["text"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 16. The workflow has to be able to MAKE a picture
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_marketing_publish_workflow_can_render_and_host_a_card():
+    """PINS defect 2. The publish job runs on ubuntu-latest with a pip line that
+    had neither a rasteriser fallback nor an S3 client, and no R2 credentials in
+    the publisher step's env — so every card this lane renders would fail to host
+    and every candidate would be dropped."""
+    import yaml
+    root = Path(__file__).resolve().parents[1]
+    wf = yaml.safe_load(
+        (root / ".github" / "workflows" / "marketing-publish.yml").read_text(
+            encoding="utf-8"))
+    job = wf["jobs"]["publish"]
+    assert job["runs-on"] == "ubuntu-latest"
+
+    install = next(st for st in job["steps"] if st.get("name") == "install deps")
+    for pkg in ("pillow", "boto3", "pyarrow", "pyyaml"):
+        assert pkg in install["run"], install["run"]
+
+    publisher = next(st for st in job["steps"]
+                     if str(st.get("name", "")).startswith("run publisher"))
+    for key in ("R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY",
+                "R2_BUCKET"):
+        assert key in publisher["env"], sorted(publisher["env"])
+        assert "secrets." + key in publisher["env"][key]

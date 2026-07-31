@@ -135,8 +135,24 @@ jobs:
       - name: install deps
         # pyyaml: config/marketing.yml load. pandas+pyarrow: the tape gate's
         # earnings-day guard reads data/earnings/earnings.parquet (fail-soft —
-        # the guard degrades open if the import or file is missing).
-        run: pip install --quiet pyyaml pandas pyarrow
+        # the guard degrades open if the import or file is missing), and pyarrow
+        # is also chart_render's no-pandas parquet reader for the mover card's
+        # daily bars.
+        #
+        # pillow + boto3 JOIN 2026-07-31, with the R2 block on the publisher step
+        # below. THIS LANE NOW RENDERS ITS OWN CARDS AT PUBLISH TIME:
+        # engine/marketing/publish_time_content builds a watchlist card for every
+        # theme_list and a tape chart for every mover, because a mover/theme post
+        # with no picture is quarantined outright by the bare-cashtag law
+        # (scripts/marketing_publisher._TICKER_ROLLUP_KINDS) and the lane was
+        # therefore structurally dead. Rendering is only half the job:
+        #   * pillow — media_publish.publish_card falls back to the legacy PIL
+        #     raster when no Chrome is available to raster the SVG, and without it
+        #     a runner with no browser produces NO png at all, i.e. no post;
+        #   * boto3 — publish_chart_png needs an S3 client, and without one the
+        #     upload fail-softs to None on every card, which under the new law
+        #     means every candidate is dropped rather than shipped bare.
+        run: pip install --quiet pyyaml pandas pyarrow pillow boto3
 
       - name: humanizing jitter
         # Spread posts off perfectly round cron times (Actions cron is already
@@ -212,6 +228,25 @@ jobs:
           # Breaking dispatch: empty on every scheduled sweep, so the normal
           # ladder run is byte-identical to before this input existed.
           POST_NOW_ITEM: ${{ inputs.post_now_item }}
+
+          # ── R2: WHERE THE PUBLISH-TIME CARD BECOMES A PICTURE ──────────────
+          # Same arming contract, and the same failure mode, as the press wire
+          # (marketing-press-wire.yml): publish_card writes the SVG and the PNG
+          # locally, then publish_chart_png needs a client (boto3, added to the
+          # install line above) AND these credentials to produce the public https
+          # URL Buffer fetches — a repo path is not something X can load.
+          #
+          # Absent either, the upload fail-softs to None. Before 2026-07-31 that
+          # was silent and the post shipped text-only; now the lane refuses to
+          # enqueue an unhosted card at all (chartless DEFER), so an unconfigured
+          # secret here means the mover/theme lane generates NOTHING and says so
+          # with a ::warning per sweep rather than posting a naked ticker list.
+          # Unconfigured repo secrets resolve to "" and are treated as absent, so
+          # these lines are inert until the secrets land.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           # --live is safe here: with MARKETING_PUBLISH_ENABLED unset the runner
           # runs DRY-RUN, posts nothing, and writes no status transitions.

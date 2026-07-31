@@ -37,7 +37,7 @@ Public API:
     load_config(root) / load_pack(root)
     in_window(now, cfg) / session_phase(now) / quotes_fresh(live, now, cfg)
     bridge_ok(pack, now)
-    load_ring / append_ring / compact_ring
+    load_ring / append_ring / compact_ring / cross_memory_row
     load_fired / append_fired
     detect_events(...) -> list[FactPacket]
     brief_key(alert_key) / build_brief_packet(alert_row, ...) -> FactPacket | None
@@ -165,7 +165,41 @@ DEFAULTS: dict[str, Any] = {
             "refire_ratio": 2.0,
             "adv_rank_max": 300,
         },
-        "threshold": {"min_price": 15.0},
+        "threshold": {
+            "min_price": 15.0,
+            # FRESHNESS MEMORY (2026-07-31 defect: a dead price phrased as an
+            # event). A crossing test here is `prev_close < level <= price` —
+            # a condition about the WHOLE DAY, not about this tick — so it
+            # stays true from the moment the level is crossed until the close.
+            # On 2026-07-29 that shipped "$AAPL right now: just broke below
+            # $325.00" at 16:00Z on a level the tape gapped through at the
+            # open, ~6.5 hours earlier (the same pass had already said the
+            # name was 11% below its all-time high, i.e. nowhere near 325).
+            #
+            # "Just broke" is licensed by ONE piece of evidence: the same
+            # crossing was NOT true at the previous tick. That evidence lives
+            # in the ring (`xk` — the crossing ids this lane saw last pass),
+            # and it is only trustworthy when the prior row is COMPLETE at or
+            # above its own severity floor and recent enough to be "the last
+            # tick". Anything else — no ring, a gap in the ring, a crossing
+            # below the row's floor — resolves to UNKNOWN, and unknown says
+            # "trades below 325", never "just broke below 325".
+            #
+            # cross_memory_min_severity is what keeps the ledger small: this
+            # detector finds ~200-400 crossings a pass across a 900-name plane
+            # (measured on the shipped pack: 195 at severity 60, 166 at 70, 34
+            # at 80), and the emit path only ever ships the top few by
+            # severity. Remembering the 60s would multiply an append-only,
+            # 81-commits-a-day ledger by ~10 to license copy no reader ever
+            # sees. Lower it (and pay the bytes) if the wire desk starts
+            # shipping mid-cap round crosses.
+            "cross_memory_min_severity": 80.0,
+            "cross_memory_max_ids": 400,
+            # How old the prior tick may be and still count as "the last
+            # tick". The radar runs */5; 15 minutes tolerates two missed
+            # crons before the claim degrades to the standing form.
+            "cross_window_min": 15,
+        },
         "streak": {"min_len": 5, "min_rarity_days": 365},
         "earnings": {
             # The gap AT the open on a BMO reporter, or the next open after an
@@ -906,6 +940,12 @@ def _detect_group_moves(
                 parent_of[industry] = sector
 
     candidates: dict[tuple[str, str], FactPacket] = {}
+    #: (kind, label) -> members whose mcap the pack could not supply. Keyed by
+    #: the PAIR because a sector and an industry may share a label and they are
+    #: different groups. Collected here and annotated ONCE below, for the groups
+    #: that actually emit: this runs 81 times a day over every sector AND
+    #: industry, and a per-group warning on every pass is a console nobody reads.
+    dropped_dollars: dict[tuple[str, str], list[str]] = {}
     for (kind, label), members in sorted(groups.items()):
         floor = min_industry if kind == "industry" else min_sector
         pcts: list[tuple[str, float]] = []
@@ -940,22 +980,44 @@ def _detect_group_moves(
         leaders = [[s, round(p, 2)] for s, p in ordered[:5]]
 
         dollars: float | None = None
-        with_mcap = 0
+        missing_mcap: list[str] = []
         acc = 0.0
         for sym, pct in pcts:
             mcap = _num(_pack_rec(pack, sym).get("mcap_usd"))
-            if mcap is not None:
-                with_mcap += 1
-                acc += mcap * pct / 100.0
-        # SIGN GUARD (reviewer M8). The aggregate is a cap-WEIGHTED sum while
-        # the trigger is a MEDIAN, so one green mega-cap can flip the net
-        # positive inside a group the median calls a rout. "$41 billion gone"
-        # rendered off a +$41B aggregate is a lie with a minus sign glued on;
-        # when the sign disagrees with the direction we simply have no dollar
-        # translation and the copy falls back to leaders (or refuses).
-        if (pcts and with_mcap / float(len(pcts)) >= 0.70
+            if mcap is None:
+                missing_mcap.append(sym)
+                continue
+            acc += mcap * pct / 100.0
+        # EVERY MEMBER OR NO DOLLARS (2026-07-31 defect; was a 70% coverage
+        # floor). The old gate let up to 30% of a group's members fall out of
+        # the sum with no trace, and the shipped result is a figure that moves
+        # against its own tape: the same industry, the same five names, the
+        # same session printed "median +11.8% ... roughly $148 billion in fresh
+        # market value" at 15:27 and "median +13.4% ... roughly $135 billion"
+        # at 19:03. A reader can only conclude one of the two numbers is wrong;
+        # in fact both were "right" over silently different member sets.
+        #
+        # With full coverage the base is pinned by construction — mcap_usd is a
+        # nightly pack field, constant through the session — so the sum is a
+        # fixed-weight function of the moves and CANNOT shrink while the moves
+        # grow. That is the property the copy implies, so it is the property
+        # the fact must have. A missing cap now kills the dollar claim and is
+        # COUNTED (facts.dollar_missing_caps + the annotation below): the
+        # fail-open-hides-a-probe-crash law says a total that can quietly lose
+        # a member is worse than no total, and the copy already has a leaders
+        # fallback for exactly this.
+        #
+        # SIGN GUARD (reviewer M8), unchanged. The aggregate is a cap-WEIGHTED
+        # sum while the trigger is a MEDIAN, so one green mega-cap can flip the
+        # net positive inside a group the median calls a rout. "$41 billion
+        # gone" rendered off a +$41B aggregate is a lie with a minus sign glued
+        # on; when the sign disagrees with the direction we have no dollar
+        # translation either.
+        if (pcts and not missing_mcap
                 and (direction == "down") == (acc < 0)):
             dollars = round(acc)
+        if missing_mcap:
+            dropped_dollars[(kind, label)] = list(missing_mcap)
 
         facts: dict[str, Any] = {
             "sector": label,
@@ -966,6 +1028,10 @@ def _detect_group_moves(
             ("n_down" if direction == "down" else "n_up"): len(agree),
             "leaders": leaders,
             "dollar_moved_usd": dollars,
+            # The counted tally. A number nobody can see is how a silently
+            # shrinking sum survived: this one rides on the packet, into the
+            # outbox item's source block, where a post-mortem can read it.
+            "dollar_missing_caps": len(missing_mcap),
             "index_pct": index_pct,
         }
         packet = FactPacket(
@@ -1001,6 +1067,23 @@ def _detect_group_moves(
     # a fired industry's parent sector re-emits the same names next pass.
     out.extend(p for k, p in candidates.items()
                if k not in suppressed and p.key not in fired)
+
+    # THE LOST MEMBER HAS TO BE AUDIBLE. A dropped dollar claim is a quality
+    # regression with a cause (a pack record with no mcap_usd), and the cause
+    # is fixable in the nightly builder — but only by someone who can see it.
+    # Bare print, line start, flushed: this module runs inside the radar's
+    # Actions step and every logger here prefixes, which GitHub then drops.
+    for packet in out:
+        names_missing = dropped_dollars.get(
+            (str(packet.facts.get("group_kind") or ""), str(packet.sector or "")))
+        if not names_missing:
+            continue
+        print(f"::warning title=hot-tape-group-dollars-dropped::"
+              f"{packet.sector}: {len(names_missing)} of "
+              f"{packet.facts.get('n_members')} members have no mcap_usd in the "
+              f"pack ({', '.join(sorted(names_missing)[:8])}) - the dollar "
+              f"translation is withheld rather than summed over a silently "
+              f"smaller group", flush=True)
     return out
 
 
@@ -1378,6 +1461,102 @@ def _detect_earnings(
     return out
 
 
+#: Ring-row keys carrying this lane's threshold freshness memory. Named once
+#: because they are a CROSS-MODULE contract: :func:`cross_memory_row` writes
+#: them from the radar's ring entry and :func:`_prior_cross_state` reads them
+#: back on the next tick. A row missing them is not "no crossings last tick",
+#: it is "we do not know" — see the fail-closed note in _prior_cross_state.
+RING_CROSS_IDS = "xk"
+RING_CROSS_COMPLETE = "xk_full"
+RING_CROSS_MIN_SEV = "xk_min_sev"
+
+#: What the freshness gate concluded, stamped on every threshold packet so a
+#: post-mortem can tell a soft claim caused by an old crossing apart from one
+#: caused by a missing memory. Only ``first_seen`` licenses "just broke".
+CROSS_FIRST_SEEN = "first_seen"
+CROSS_EARLIER = "earlier"
+CROSS_UNKNOWN = "unknown"
+
+
+def _cross_id(sym: Any, kind: Any, level: Any) -> str:
+    """The day-scoped identity of ONE level crossing (ring memory key).
+
+    Deliberately NOT the fired key: that one carries the date, and the ring row
+    already carries its own day. Short because it is written ~34-400 times a
+    row, 81 rows a day, into an append-only ledger that is committed.
+    """
+    return f"{str(sym).upper()}:{kind}:{level}"
+
+
+def cross_memory_row(events: list[FactPacket] | None, cfg: dict | None = None) -> dict:
+    """The freshness-memory block for THIS pass's ring row.
+
+    The radar folds this into its snapshot entry so the NEXT pass can tell a
+    level crossed five minutes ago from one crossed at the opening bell. See
+    the ``cross_memory_min_severity`` note in DEFAULTS for why this is a floor
+    and not the whole crossing set.
+
+    ``xk_full`` is the load-bearing field: it says "this list is COMPLETE at or
+    above ``xk_min_sev``". Without it a truncated list would read as "that
+    crossing was not there last tick", which is exactly the false "just broke"
+    this memory exists to prevent.
+    """
+    floor = float(_c(cfg, "detectors.threshold.cross_memory_min_severity", 80.0))
+    cap = int(_c(cfg, "detectors.threshold.cross_memory_max_ids", 400))
+    ids: list[str] = []
+    for packet in (events or []):
+        if getattr(packet, "trigger", "") != "threshold_cross":
+            continue
+        cross_id = str((getattr(packet, "facts", {}) or {}).get("cross_id") or "")
+        if cross_id and float(getattr(packet, "severity", 0.0) or 0.0) >= floor:
+            ids.append(cross_id)
+    ids = sorted(set(ids))
+    complete = len(ids) <= cap
+    return {
+        RING_CROSS_IDS: ids[:cap],
+        RING_CROSS_COMPLETE: complete,
+        RING_CROSS_MIN_SEV: floor,
+    }
+
+
+def _prior_cross_state(
+    ring: list[dict] | None, now: datetime, cfg: dict | None
+) -> dict | None:
+    """What the PREVIOUS tick knew about level crossings, or None for unknown.
+
+    Returns ``{"ids": set[str], "at": iso, "min_sev": float}``.
+
+    FAIL CLOSED, EVERY BRANCH. None is returned when there is no ring, when the
+    newest same-day row is not ours to trust (no memory block, an incomplete
+    one), or when it is older than ``cross_window_min`` — because in all of
+    those cases "the crossing is absent from the prior tick" means nothing, and
+    reading absence as freshness is the defect (a missed cron would turn every
+    hours-old level into "just broke"). The caller degrades to the standing
+    phrasing, which is always true.
+    """
+    rows = [r for r in (ring or []) if isinstance(r, dict)]
+    if not rows:
+        return None
+    day = _day(now)
+    same_day = [r for r in rows
+                if str(r.get("day") or str(r.get("at") or "")[:10]) == day]
+    if not same_day:
+        return None
+    row = same_day[-1]
+    if not bool(row.get(RING_CROSS_COMPLETE)):
+        return None
+    at = _parse_iso_dt(row.get("at"))
+    if at is None:
+        return None
+    window = float(_c(cfg, "detectors.threshold.cross_window_min", 15))
+    age_min = (_utc(now) - at).total_seconds() / 60.0
+    if age_min < 0 or age_min > window:
+        return None
+    ids = {str(x) for x in (row.get(RING_CROSS_IDS) or []) if x}
+    return {"ids": ids, "at": str(row.get("at") or ""),
+            "min_sev": float(_num(row.get(RING_CROSS_MIN_SEV)) or 0.0)}
+
+
 def _detect_thresholds(
     quotes: dict,
     pack: dict | None,
@@ -1388,10 +1567,12 @@ def _detect_thresholds(
     demo: bool,
     bridged: bool,
     quotes_asof: Any,
+    ring: list[dict] | None = None,
 ) -> list[FactPacket]:
     """threshold_cross: correction / bear / new ATH / round number / mcap (§2 T2)."""
     out: list[FactPacket] = []
     min_price = float(_c(cfg, "detectors.threshold.min_price", 15.0))
+    prior = _prior_cross_state(ring, now, cfg)
     day = _day(now)
     names = {
         str(t.get("t") or "").upper(): str(t.get("name") or "")
@@ -1457,16 +1638,6 @@ def _detect_thresholds(
             key = f"threshold:{sym}:{kind}:{level}:{day}"
             if key in fired:
                 continue
-            facts: dict[str, Any] = {
-                "ticker": sym,
-                "kind": kind,
-                "price": round(price, 2),
-                "prev_close": round(prev, 2),
-                "pct": round((price - prev) / prev * 100.0, 2) if prev else None,
-                "direction": direction,
-                "sector": rec.get("sector") or None,
-            }
-            facts.update(extra)
             # A ROUND NUMBER IS NOT AN EVENT THE WAY A RECORD IS (reviewer M2).
             # Correction / bear / new-ATH / mcap crossings are tape; "$LLY
             # cleared $1,200" is arithmetic about a price that moves through a
@@ -1480,6 +1651,42 @@ def _detect_thresholds(
             mcap = _num(rec.get("mcap_usd"))
             if mcap is not None and mcap >= 5e11:
                 severity += 10.0
+            severity = _clamp(severity)
+
+            # WHEN DID THIS ACTUALLY CROSS? (2026-07-31 defect, see the
+            # DEFAULTS note.) The test above is `prev_close` vs the live price,
+            # which is true for the rest of the session once the level goes —
+            # so on its own it can only support "trades below 325", never
+            # "just broke below 325". The prior tick's memory is the only
+            # evidence that upgrades it, and only when that memory is
+            # trustworthy for THIS crossing: complete, recent, and at or above
+            # its own severity floor. Everything else is UNKNOWN, and unknown
+            # keeps the standing phrasing.
+            cross_id = _cross_id(sym, kind, level)
+            if prior is None or severity < float(prior.get("min_sev") or 0.0):
+                basis = CROSS_UNKNOWN
+            elif cross_id in prior["ids"]:
+                basis = CROSS_EARLIER
+            else:
+                basis = CROSS_FIRST_SEEN
+
+            facts: dict[str, Any] = {
+                "ticker": sym,
+                "kind": kind,
+                "price": round(price, 2),
+                "prev_close": round(prev, 2),
+                "pct": round((price - prev) / prev * 100.0, 2) if prev else None,
+                "direction": direction,
+                "sector": rec.get("sector") or None,
+                "cross_id": cross_id,
+                "cross_basis": basis,
+                # The one leaf the copy layer reads. A bool, so the numeric
+                # gate cannot license a figure off it (_f/_walk_packet both
+                # drop bools) and the LLM desk sees a flag, not a number.
+                "crossed_in_window": basis == CROSS_FIRST_SEEN,
+                "prior_tick_at": (prior or {}).get("at") or None,
+            }
+            facts.update(extra)
             out.append(FactPacket(
                 trigger="threshold_cross",
                 key=key,
@@ -1489,7 +1696,7 @@ def _detect_thresholds(
                 name=names.get(sym) or None,
                 sector=rec.get("sector") or None,
                 direction=direction,
-                severity=_clamp(severity),
+                severity=severity,
                 facts=facts,
                 provenance=_provenance(pack, quotes_asof, quote, bridged, demo),
             ))
@@ -1690,6 +1897,15 @@ def _detect_contrarian(
 
     sectors_green: list[str] = []
     green: list[list[Any]] = []
+    # THE UNIVERSE THE COUNT MOVES AGAINST (2026-07-31). "31 names across
+    # Utilities and Consumer Defensive are green" is a numerator with no
+    # denominator — 31 of how many? — which is the exact defect the desk feeds
+    # closed for their own breadth line (market_facts.DENOMINATOR LAW, and the
+    # "18 groups on the move today" string it names). It is counted here, in
+    # the FACT, because the copy layer cannot invent a number the packet does
+    # not carry: this is every live-quoted member of the sectors that qualified,
+    # green and red alike, so the reader can see how broad "green" actually is.
+    n_universe = 0
     for sector in defensives:
         members = [(str(t.get("t") or "").upper(), _tile_pct(t, quotes))
                    for t in tiles if str(t.get("sector") or "") == sector]
@@ -1698,6 +1914,7 @@ def _detect_contrarian(
             continue
         if statistics.median([p for _, p in pcts]) > 0:
             sectors_green.append(sector)
+            n_universe += len(pcts)
             green.extend([s, round(p, 2)] for s, p in pcts if p > 0)
     if len(sectors_green) < 2 or len(green) < min_green:
         return out
@@ -1722,6 +1939,7 @@ def _detect_contrarian(
             "green": green[:8],
             "sectors_green": sectors_green,
             "n_green": len(green),
+            "n_defensive_members": n_universe,
         },
         provenance=_provenance(pack, quotes_asof, None, bridged, demo),
     ))
@@ -1793,8 +2011,11 @@ def detect_events(
     `earnings` is the calendar view the RADAR read from
     data/earnings/earnings.parquet ({"asof", "tickers": {SYM: {next_date,
     next_time, eps_forecast, surprises}}}) — this module never opens a parquet.
-    `ring` is accepted and reserved for the P2 "$X added in 3 hours" claims
-    (masterplan T6); v1 detectors do not read it.
+    `ring` is this lane's intraday memory. The THRESHOLD detector reads it (a
+    "just broke below 325" claim is licensed only by the prior tick not having
+    that crossing — see :func:`_prior_cross_state`); the P2 "$X added in 3
+    hours" claims (masterplan T6) are still to come. Passing no ring is safe
+    and costs only phrasing: every crossing degrades to the standing form.
     """
     try:
         t = _utc(now)
@@ -1818,7 +2039,8 @@ def detect_events(
             ("earnings", lambda: _detect_earnings(*common, earn, fired_rows, t, cfg,
                                                   demo, bridged, quotes_asof)),
             ("mover", lambda: _detect_movers(*common, fired_rows, t, cfg, demo, bridged, quotes_asof)),
-            ("threshold", lambda: _detect_thresholds(*common, fired, t, cfg, demo, bridged, quotes_asof)),
+            ("threshold", lambda: _detect_thresholds(*common, fired, t, cfg, demo, bridged,
+                                                     quotes_asof, list(ring or []))),
             ("streak", lambda: _detect_streaks(*common, fired, t, cfg, demo, bridged, quotes_asof)),
             ("signal", lambda: _detect_signals(*common, list(plan_signals or []), fired, t,
                                                cfg, demo, bridged, quotes_asof)),
@@ -2070,7 +2292,15 @@ def build_brief_packet(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def severity_account(packet: FactPacket, cfg: dict | None = None) -> str:
-    """Wire desk by default; flagship mirrors only the biggest events."""
+    """Wire desk by default; flagship mirrors only the biggest events.
+
+    PURE ROUTING — it answers "which desk OWNS this event", never "is that desk
+    armed". Liveness is :func:`live_account`, deliberately a separate call for
+    the reason wire_routing states in capitals: LIVENESS IS NOT ROUTING. An
+    emitter that consulted desk_network here would silently rewrite the routing
+    table every time an operator flipped a switch, and the config would stop
+    describing the system.
+    """
     try:
         floor = float(_c(cfg, "emit.flagship_severity_floor", 85))
         if float(packet.severity) >= floor:
@@ -2079,6 +2309,98 @@ def severity_account(packet: FactPacket, cfg: dict | None = None) -> str:
     except Exception as exc:  # noqa: BLE001
         log.warning("hot_tape.severity_account failed: %s", exc)
         return str(_c(cfg, "emit.account", "mastermind_news"))
+
+
+#: Accounts this process has already announced as dark. The radar ticks every
+#: five minutes and books up to three items a pass, so an unarmed target would
+#: otherwise print the same annotation hundreds of times a day and bury the
+#: Actions summary it exists to fill. Keyed by account, not by (event, account):
+#: the operator's action is the same one desk_network flip either way.
+_WARNED_DARK_ACCOUNTS: set[str] = set()
+
+
+def reset_dark_account_warnings() -> None:
+    """Clear the once-per-process dark-account warning set (tests)."""
+    _WARNED_DARK_ACCOUNTS.clear()
+
+
+def live_account(
+    candidate: str,
+    *,
+    marketing_cfg: dict | None,
+    root: Any = None,
+    fallbacks: tuple[str, ...] = (),
+) -> str:
+    """``candidate`` if desk_network has it armed, else the first armed fallback.
+
+    THE GRAVE THIS CLOSES. ``emit.account`` defaults to ``mastermind_news``,
+    which is wired-but-DARK on purpose (``desk_network`` disabled) — and
+    :func:`severity_account` routes every sub-85 event there, i.e. most of the
+    lane's volume. Each of those items was rendered (a Chrome raster), phrased
+    (an LLM call), uploaded to R2, and enqueued — and then quarantined at
+    dispatch with reason ``account_disabled``, 19 of them on 2026-07-31 alone.
+    The whole pipeline ran, paid, and posted nothing. ``wire_routing`` was
+    built precisely to stop this, and the hot-tape lane never called it.
+
+    Resolution uses ``wire_routing._enabled_accounts`` — the SAME liveness read
+    the press wire uses, deliberately not a second implementation, because two
+    answers to "is this desk armed" is how a routing table starts lying. It is
+    private by name only; the alternative is a duplicate accounts-model read in
+    this file, and the brief that ordered this fix named it as the seam.
+
+    THREE ANSWERS, NOT TWO. ``_enabled_accounts`` returns None when the accounts
+    model could not be consulted, and an empty set when the config carries no
+    ``desk_network`` roster at all. NEITHER is evidence that ``candidate`` is
+    dark, so both keep the candidate untouched and print nothing. Rerouting a
+    correctly-configured desk's volume on the strength of an import failure or a
+    config-less checkout (every unit-test fixture is one) would be a silent,
+    invisible redirection — a worse fault than the one being fixed.
+
+    THE CONFIG OVERRIDE KEEPS WORKING: an operator who points ``emit.account`` at
+    an ENABLED desk gets that desk, unconditionally and silently. This function
+    only ever moves an item off a target the accounts model says is off.
+    """
+    acct = str(candidate or "").strip()
+    if not acct:
+        return acct
+    try:
+        from engine.marketing import wire_routing as _wr  # noqa: PLC0415
+
+        live = _wr._enabled_accounts(marketing_cfg, root)
+        if not live:
+            # None (unknown) or empty (no roster) — see the docstring. Not proof.
+            return acct
+        if acct in live:
+            return acct
+        # Ladder: the caller's own preferences first (flagship mirror desk, wire
+        # desk), then wire_routing's configured default, then any armed desk —
+        # sorted so the choice is deterministic across runs rather than
+        # dict-order roulette.
+        ladder = [str(f or "").strip() for f in fallbacks]
+        ladder.append(_wr.default_account(marketing_cfg))
+        ladder.extend(sorted(live))
+        target = next((f for f in ladder if f and f in live), "")
+        if not target:
+            return acct
+        if acct not in _WARNED_DARK_ACCOUNTS:
+            _WARNED_DARK_ACCOUNTS.add(acct)
+            # Start-of-line bare print (house law): routed through a logger this
+            # annotation is prefixed and GitHub drops it silently — and a lane
+            # quietly posting as a different desk than its config names is
+            # exactly what must not be silent.
+            print(
+                f"::warning title=hot-tape-dark-account::hot-tape routes to "
+                f"{acct!r}, which is not enabled in desk_network — posting as "
+                f"{target!r} instead so the item is not enqueued to a grave "
+                f"(items addressed to a dark desk quarantine at dispatch with "
+                f"reason account_disabled). Arm the desk in desk_network, or "
+                f"point hot_tape emit.account at a live one.",
+                flush=True,
+            )
+        return target
+    except Exception as exc:  # noqa: BLE001 — routing must never break a pass
+        log.warning("hot_tape.live_account failed (%s) — keeping %r", exc, acct)
+        return acct
 
 
 def packet_to_source(packet: FactPacket, media: dict | None = None) -> dict:

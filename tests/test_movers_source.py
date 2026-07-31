@@ -646,3 +646,124 @@ def test_theme_question_deterministic_across_processes():
                            cwd=".")
         outs.append(r.stdout.strip())
     assert outs[0] == outs[1] == outs[2], f"question selection not deterministic: {outs}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 25-30: session provenance + direction-consistent tails (2026-07-31)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_pair(tmp, *, sp_asof, th_asof, sp_pct=-9.0, th_pct=-14.0):
+    import json
+    md = tmp / "site" / "marketdata"
+    md.mkdir(parents=True, exist_ok=True)
+    (md / "sp500_heatmap.json").write_text(json.dumps({
+        "asof": sp_asof, "generated_utc": "2026-07-31 11:58", "source": "daily-close",
+        "tiles": [{"t": "ISRG", "name": "Intuitive", "sector": "Health Care",
+                   "perf": {"1D": sp_pct}}]}), encoding="utf-8")
+    (md / "themes_heatmap.json").write_text(json.dumps({
+        "asof": th_asof, "generated_utc": "2026-07-31 11:58", "source": "finviz-themes",
+        "tiles": [{"t": "MED", "name": "Medtech", "sector": "Medtech",
+                   "perf": {"1D": -2.0},
+                   "members": [{"t": "ISRG", "perf": {"1D": th_pct}},
+                               {"t": "SYK", "perf": {"1D": -2.0}},
+                               {"t": "BSX", "perf": {"1D": -1.5}},
+                               {"t": "MDT", "perf": {"1D": -1.1}}]}]}),
+        encoding="utf-8")
+
+
+def test_load_movers_dates_each_row_by_its_own_artifact(tmp_path):
+    """PINS defect 4's root: the two payloads stamp DIFFERENT sessions and the
+    single payload-level `asof` (sp500's) mislabels every theme row by a day."""
+    from engine.marketing.movers_source import load_movers
+    _write_pair(tmp_path, sp_asof="2026-07-30", th_asof="2026-07-31")
+    d = load_movers(tmp_path)
+
+    assert d["sp500_asof"] == "2026-07-30"
+    assert d["themes_asof"] == "2026-07-31"
+    assert d["asof"] == d["sp500_asof"]                 # legacy alias unchanged
+    assert d["sp500_generated_utc"] == "2026-07-31 11:58"
+    assert d["sp500_tiles"][0]["asof"] == "2026-07-30"  # per ROW, not per payload
+    assert d["theme_tiles"][0]["members"][0]["asof"] == "2026-07-31"
+
+
+def test_prefer_fresher_session_re_dates_only_the_shared_rows(tmp_path):
+    """PINS the (c) arm and its blast radius: the shared name takes the fresher
+    read AND the fresher session; nothing else is touched, and the function is
+    OPT-IN so press/desk_planner keeps the payload it dates its claims with."""
+    from engine.marketing.movers_source import load_movers, prefer_fresher_session
+    _write_pair(tmp_path, sp_asof="2026-07-30", th_asof="2026-07-31")
+    raw = load_movers(tmp_path)
+    out = prefer_fresher_session(raw)
+
+    tile = out["sp500_tiles"][0]
+    assert tile["perf"]["1D"] == -14.0 and tile["asof"] == "2026-07-31"
+    # The source payload is untouched — this returns a copy.
+    assert raw["sp500_tiles"][0]["perf"]["1D"] == -9.0
+    assert out["asof"] == "2026-07-30"
+
+
+def test_prefer_fresher_session_is_a_no_op_when_themes_is_not_fresher(tmp_path):
+    """Fail closed: equal or older themes stamps change nothing."""
+    from engine.marketing.movers_source import load_movers, prefer_fresher_session
+    _write_pair(tmp_path, sp_asof="2026-07-31", th_asof="2026-07-31")
+    out = prefer_fresher_session(load_movers(tmp_path))
+    assert out["sp500_tiles"][0]["perf"]["1D"] == -9.0
+    assert out["sp500_tiles"][0]["asof"] == "2026-07-31"
+
+
+def test_theme_facts_direction_word_follows_the_number_not_a_default():
+    """PINS the direction-mismatch defect. The item carries NO `direction` key,
+    which used to default to "down" — so a +7.7% theme printed "(4 names lower)",
+    a sentence contradicting the figure inside it, on a live account."""
+    from engine.marketing.movers_source import theme_facts
+    item = {"theme": "Crypto & Blockchain", "agg_pct": 7.7,
+            "members": [{"ticker": t, "pct": 7.0}
+                        for t in ("RIOT", "MARA", "HUT", "CLSK")]}
+    text = next(f["text"] for f in theme_facts(item)["facts"] if f["id"] == "theme_agg")
+    assert "+7.7%" in text
+    assert "higher" in text and "lower" not in text, text
+
+
+def test_a_direction_label_cannot_override_the_sign():
+    """Even an explicit, WRONG label loses to the number."""
+    from engine.marketing.movers_source import theme_facts, _direction_of
+    assert _direction_of(7.7, "down") == "up"
+    assert _direction_of(-1.0, "up") == "down"
+    assert _direction_of(None, "up") == "up"          # unparseable → the label
+    item = {"theme": "X", "agg_pct": 7.7, "direction": "down",
+            "members": [{"ticker": "A", "pct": 7.0}]}
+    text = next(f["text"] for f in theme_facts(item)["facts"] if f["id"] == "theme_agg")
+    assert "higher" in text, text
+
+
+def test_every_tail_costs_the_author_and_is_direction_keyed():
+    """PINS defect 5's table. Each tail must (a) end on "?" — copywriter requires
+    it of a theme_list body — (b) put the question on the AUTHOR, and (c) carry no
+    banned language. The pre-fix pools ("Which one breaks out first?") fail (b)."""
+    from engine.marketing import movers_source as ms
+    from engine.marketing.copywriter import banned_language
+    from engine.marketing.publish_time_content import _tail_is_bait
+
+    for pool in (ms._TAIL_DOWN, ms._TAIL_UP):
+        assert len(pool) >= 4
+        for tail in pool:
+            assert tail.rstrip().endswith("?"), tail
+            assert not _tail_is_bait(tail), tail
+            assert banned_language(tail) == [], (tail, banned_language(tail))
+    assert not (set(ms._TAIL_DOWN) & set(ms._TAIL_UP))
+
+
+def test_theme_tail_pool_is_keyed_to_the_aggregate_sign():
+    """A down theme may never draw an up tail, and vice versa."""
+    from engine.marketing import movers_source as ms
+
+    def _tiles(sign):
+        return [{"t": "AI", "name": "AI", "sector": "AI", "perf": {"1D": 0.0},
+                 "members": [{"t": t, "perf": {"1D": sign * p}}
+                             for t, p in (("NVDA", 4.1), ("AMD", 3.2),
+                                          ("SMCI", 2.8), ("AVGO", 2.2))]}]
+
+    up = ms.theme_lists({"theme_tiles": _tiles(1.0)}, min_members=4)
+    down = ms.theme_lists({"theme_tiles": _tiles(-1.0)}, min_members=4)
+    assert up and up[0]["direction"] == "up" and up[0]["question"] in ms._TAIL_UP
+    assert down and down[0]["direction"] == "down" and down[0]["question"] in ms._TAIL_DOWN

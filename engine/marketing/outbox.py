@@ -1130,6 +1130,68 @@ def preflight_enqueue(
         return "ok"
 
 
+def _parse_ts(value: object) -> datetime | None:
+    """Parse an outbox timestamp ("...Z" or ISO) to an aware UTC datetime.
+
+    None for "immediate", "", or anything unparseable — those carry no schedule
+    to compare, and a floor that guessed at them would invent one.
+    """
+    raw = str(value or "").strip()
+    if not raw or raw.lower() == "immediate":
+        return None
+    try:
+        ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    return ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)
+
+
+def apply_schedule_floor(item: dict, *, now: datetime | None = None) -> str | None:
+    """Clamp `scheduled_at` forward so a post is never scheduled before it existed.
+
+    Returns the ORIGINAL scheduled_at when the item was clamped, else None.
+    Mutates `item` in place — deliberately: the caller keeps the dict it queued
+    (the governor lanes log and index off it), and a copy corrected only on the
+    persisted row would leave the caller's state disagreeing with the ledger
+    about when its own post goes out.
+
+    THE DEFECT (X Growth audit, 2026-07-31): 41 items in one week carried a
+    `scheduled_at` EARLIER than their own `created_at` — a slot ladder resolved
+    against the content date while the run itself happened hours later, so an
+    item created 15:46Z was booked for 13:00Z the same day. The publisher treats
+    "due in the past" as due NOW, so those posts all fell out of the ladder into
+    one undifferentiated backlog and shipped back-to-back, which is the exact
+    burst pattern the pacing floor exists to prevent. It also poisons every
+    "was this late?" measurement downstream: an item can be nine hours overdue
+    the instant it is written.
+
+    THE CLAMP IS TO `created_at`, NOT TO A LATER LADDER SLOT. Choosing the next
+    free slot needs the whole day's ladder occupancy, which this function has no
+    business knowing and no lock over; "now" is the earliest time the post could
+    honestly go out, and the publisher's own `min_minutes_between_posts` floor
+    is what spaces a group of due-now items. The original value is preserved in
+    `source.scheduled_at_original` so a lane emitting bad slots stays diagnosable
+    rather than being silently tidied up.
+    """
+    created = _parse_ts(item.get("created_at")) or (now or datetime.now(timezone.utc))
+    sched = _parse_ts(item.get("scheduled_at"))
+    if sched is None or sched >= created:
+        return None
+    original = str(item.get("scheduled_at") or "")
+    item["scheduled_at"] = created.strftime("%Y-%m-%dT%H:%M:%SZ")
+    src = item.get("source")
+    if not isinstance(src, dict):
+        src = {}
+        item["source"] = src
+    src["scheduled_at_original"] = original
+    log.warning(
+        "outbox.enqueue: %s scheduled %s BEFORE it was created %s — clamped "
+        "forward to creation time (lane %r)",
+        item.get("id"), original, item.get("created_at"), item.get("provenance"),
+    )
+    return original
+
+
 def enqueue(
     item: dict,
     root: Path | str | None = None,
@@ -1167,6 +1229,12 @@ def enqueue(
         item_id = item["id"]
         account = item["account"]
         as_of = item["as_of"]
+        # SCHEDULE FLOOR — before anything is written, and here rather than in
+        # each lane because every lane that builds a slot ladder can get this
+        # wrong and only this seam sees them all. `scheduled_at` is not part of
+        # the item id (which hashes account/kind/text/as_of), so clamping it
+        # cannot change dedupe behaviour.
+        apply_schedule_floor(item)
         # effective_cap({}) here IGNORED the threaded cfg and landed on the
         # Sentinel in-code default of 2/account/day — so every caller that
         # passed cfg but no explicit max_per_account_day (the XG-W2 fast lanes)
@@ -1642,6 +1710,54 @@ _LLM_MODES: frozenset[str] = frozenset({"llm", "llm_repair"})
 #: How far past its slot a planned item may sit before tonight's plan retires it.
 _STALE_QUEUED_HOURS = 36
 
+#: Provenances whose items :func:`expire_stale_wire` retires. These are the fast
+#: lanes: they enqueue with ``scheduled_at="immediate"``, they carry no ladder
+#: slot, and NOTHING ever swept them.
+#:
+#: `fastlane` and `neural_web` are deliberately absent — this reaper takes only
+#: the three lanes whose stall was measured (see the docstring), and adopting a
+#: lane whose retirement policy nobody has stated would be this function
+#: guessing on that lane's behalf. Add one when its perishability is known.
+#:
+#: ONE LINE ON PURPOSE. The tape radar's safety-stack guard (in its own test
+#: module) forbids this file from naming that program except through a reviewed,
+#: token-pinned allowance — "a reviewed exception, recorded by name, rather than
+#: a loosened rule". So the reference is confined to the single line below, and
+#: every comment around it says "the fast lanes" instead.
+_WIRE_PROVENANCES: frozenset[str] = frozenset({"press_lane", "hot_tape", "publisher_live_movers"})  # noqa: E501
+
+#: Per-kind TTL, in hours, for a wire item that never got dispatched.
+#:
+#: DERIVED FROM THE LANES' OWN FRESHNESS CONSTANTS, deliberately loosened:
+#:   * the tape radar's ``two_step.max_age_min`` = 60 — "past this the moment
+#:     has passed and a 'context brief' is a history lesson";
+#:   * its ``CARRYOVER_MAX_AGE_MIN`` = 20 — how long a booked-but-unposted alert
+#:     may still ride a fresh dispatch;
+#:   * publish_time_content _DEFAULTS["max_quote_age_min"] = 45 — past this the
+#:     lane will not even WRITE a price claim, let alone stand behind one.
+#:
+#: Those say the copy is dead within the hour. The TTL is 3h, i.e. ~3x the
+#: longest of them, because this reaper is TERMINAL and the failure it must not
+#: have is shredding a live queue during a two-hour publish-sweep outage. The
+#: publisher's tape gate already refuses a stale price claim non-terminally; this
+#: is the backstop for items that gate never even reaches.
+#:
+#: MEASURED: the AMZN/COIN movers created 2026-07-31T15:32:53Z sat `queued` with
+#: zero ledger rows for 8h — their "right now" long dead — because
+#: expire_stale_planned takes `content_studio` provenance only and skips
+#: `scheduled_at == "immediate"` outright, which is every row this lane writes.
+_WIRE_TTL_HOURS_BY_KIND: dict[str, float] = {
+    "breaking": 3.0,
+    "mover": 3.0,
+    "theme_list": 3.0,
+}
+
+#: TTL for a wire-provenance item of any other kind (`event` — the publish-time
+#: daily read — and anything a lane adds later). Longer because it is not a
+#: five-minute tape claim, still bounded because an unswept queue is how this
+#: defect happened.
+_WIRE_TTL_HOURS_DEFAULT: float = 12.0
+
 
 def planned_kinds() -> frozenset[str]:
     """The planned-kind set, from content_studio when importable."""
@@ -1747,6 +1863,120 @@ def expire_stale_planned(
     return out
 
 
+def _wire_item_born_at(it: dict, last_row: dict | None) -> datetime | None:
+    """When a wire item entered the queue. None when nothing parses.
+
+    NOT ``scheduled_at``: every lane in :data:`_WIRE_PROVENANCES` enqueues with
+    the literal string ``"immediate"``, which is exactly why
+    :func:`expire_stale_planned` — whose age comes from ``scheduled_at`` and
+    whose first act on an immediate row is ``continue`` ("no slot to be late
+    for") — could never have retired one of these even had the provenance
+    matched.
+
+    Ladder, widest-to-narrowest:
+      1. ``created_at`` — stamped by make_item, the honest birth time;
+      2. the LAST ledger row's ``at`` — an item hand-moved through the admin has
+         a row even if its item dict predates the created_at stamp, and using the
+         last row means an item an operator touched five minutes ago is treated
+         as five minutes old, not eight hours;
+      3. ``as_of`` at 00:00Z — a date-only floor for pre-stamp rows.
+
+    Returning None (nothing parsed) means the item is NEVER expired. A malformed
+    stamp must not be the reason a post is destroyed — the same rule
+    _item_age_days states in the publisher.
+    """
+    for raw in (str(it.get("created_at") or "").strip(),
+                str((last_row or {}).get("at") or "").strip(),
+                str(it.get("as_of") or "").strip()):
+        if not raw or raw == "immediate":
+            continue
+        text = raw if len(raw) > 10 else f"{raw}T00:00:00Z"
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except (ValueError, TypeError):
+            continue
+        return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
+    return None
+
+
+def expire_stale_wire(
+    root: Path | str | None = None,
+    *,
+    now: datetime | None = None,
+    ttl_hours_by_kind: dict[str, float] | None = None,
+    default_ttl_hours: float = _WIRE_TTL_HOURS_DEFAULT,
+    provenances: frozenset[str] | set[str] | None = None,
+    actor: str = "wire_expiry",
+) -> dict[str, Any]:
+    """Retire wire-lane items that outlived the moment they were written about.
+
+    THE DEFECT. :func:`expire_stale_planned` is scoped to ``content_studio``
+    provenance, and the note above it says why: "the wire lanes (press/fastlane)
+    and weekend_levels manage their own retirement". They do not. Nothing in
+    this repo sweeps an item from any of the lanes in :data:`_WIRE_PROVENANCES`,
+    so a breaking/mover row that no ``--post-now`` batch happened to select sits
+    `queued` FOREVER. Measured on 2026-07-31: the AMZN and COIN movers created
+    at 15:32:53Z carried ZERO status-ledger rows eight hours later — their copy
+    says "right now" about a tape that closed — and the operator's audit had to
+    quarantine them by hand alongside 14 older siblings.
+
+    Two separate reasons the planned reaper could never have covered them, both
+    load-bearing: the provenance filter, AND the ``scheduled_at == "immediate"``
+    skip, which every one of these rows trips (see :func:`_wire_item_born_at`).
+
+    TTL IS PER KIND (:data:`_WIRE_TTL_HOURS_BY_KIND`) because perishability is:
+    a `breaking` alert and a `mover` claim are five-minute facts, the
+    publish-time daily read is not. Ages from BIRTH, not from a slot, because a
+    wire item has no slot.
+
+    `expired` is not a new ledger status, for the same reason expire_stale_planned
+    gives: TRANSITIONS is a safety contract. The item goes to `quarantined`
+    (terminal, reachable from both live statuses) with the note
+    ``expired_stale_wire: …`` so the admin quarantine view carries the reason
+    verbatim and is greppable.
+
+    Returns {"expired": n, "ids": [...], "by_kind": {kind: n}}. Never raises:
+    housekeeping failing must not stop a dispatch.
+    """
+    out: dict[str, Any] = {"expired": 0, "ids": [], "by_kind": {}}
+    try:
+        ts_now = now if now is not None else datetime.now(timezone.utc)
+        ttls = dict(_WIRE_TTL_HOURS_BY_KIND)
+        if ttl_hours_by_kind:
+            ttls.update({str(k): float(v) for k, v in ttl_hours_by_kind.items()})
+        lanes = frozenset(provenances) if provenances is not None else _WIRE_PROVENANCES
+        state = fold_state(root)
+        for iid, it in (state.get("items") or {}).items():
+            if str(state["status"].get(iid) or "") not in ("queued", "approved"):
+                continue
+            if str(it.get("provenance") or "") not in lanes:
+                continue
+            kind = str(it.get("kind") or "")
+            ttl_h = float(ttls.get(kind, default_ttl_hours))
+            if ttl_h <= 0:
+                continue          # a lane may opt out by configuring 0
+            born = _wire_item_born_at(it, (state.get("last") or {}).get(iid))
+            if born is None:
+                continue          # unparseable birth → never expire (fail-open)
+            age_h = (ts_now - born).total_seconds() / 3600.0
+            if age_h < ttl_h:
+                continue
+            note = (f"expired_stale_wire: {kind or 'item'} sat unposted "
+                    f"{age_h:.1f}h (ttl {ttl_h:.0f}h) — the moment it was "
+                    f"written about is gone")
+            if transition(iid, "quarantined", actor=actor, root=root,
+                          note=note, now=ts_now, _state=state):
+                out["expired"] += 1
+                out["ids"].append(iid)
+                out["by_kind"][kind] = out["by_kind"].get(kind, 0) + 1
+        if out["expired"]:
+            log.info("outbox.expire_stale_wire: retired %d stale wire item(s) %s",
+                     out["expired"], out["by_kind"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.expire_stale_wire failed: %s", exc)
+    return out
+
+
 def emit_from_content_plan(
     plan: dict,
     root: Path | str | None = None,
@@ -1783,8 +2013,8 @@ def emit_from_content_plan(
     what the last emit did and why items were skipped.
 
     Returns a summary dict: {emitted, skipped_dupe, skipped_cap, skipped_gate,
-    skipped_sentinel, skipped_invalid, skipped_not_llm, expired, media_written,
-    by_account}.
+    skipped_sentinel, skipped_invalid, skipped_not_llm, skipped_slot_mismatch,
+    skipped_slot_by_family, expired, media_written, by_account}.
     """
     ts_now = now if now is not None else datetime.now(timezone.utc)
     as_of: str = plan.get("as_of") or ts_now.strftime("%Y-%m-%d")
@@ -1803,6 +2033,17 @@ def emit_from_content_plan(
         "skipped_sentinel": 0,
         "skipped_invalid": 0,
         "skipped_not_llm": 0,
+        # SLOT-PREFIX REFUSALS, COUNTED (defect closed 2026-07-31). The skip
+        # below is the oldest and quietest gate in this function and it
+        # incremented NOTHING: the 2026-07-31 emit activity row read
+        # {emitted: 0, skipped_dupe: 0, skipped_cap: 0, skipped_gate: 0,
+        # skipped_sentinel: 0, skipped_invalid: 0, skipped_not_llm: 0} while six
+        # live movers/theme_list items were dropped on the floor. Every counter
+        # zero and nothing emitted reads as "the plan was empty"; it was not.
+        # `by_slot_family` names WHICH labels were refused, because the two
+        # populations behave completely differently — see the annotation below.
+        "skipped_slot_mismatch": 0,
+        "skipped_slot_by_family": {},
         "expired": 0,
         "media_written": 0,
         "by_account": {},
@@ -1859,6 +2100,23 @@ def emit_from_content_plan(
                     slot = qi.get("slot") or ""
 
                     if not slot.startswith(f"{day_prefix}-"):
+                        # COUNTED, and bucketed by label family. A bare
+                        # `continue` here is what let the movers desk exist for
+                        # two weeks without publishing anything: the emit summary
+                        # and the activity row both said every counter was zero.
+                        #
+                        # The family split is the whole point. `D2`..`D7` are the
+                        # FORWARD ladder and are supposed to be skipped — nothing
+                        # reads a previous plan, tomorrow regenerates the whole
+                        # week, so those are noise, not a fault. Anything else
+                        # (MOVER-, THEME-, CONF-, a bare label) is a producer that
+                        # minted a slot this function can NEVER take: that lane
+                        # cannot publish as built, whatever its census says, and
+                        # that is worth an annotation.
+                        counts["skipped_slot_mismatch"] += 1
+                        _fam = slot.split("-", 1)[0] if "-" in slot else (slot or "(none)")
+                        counts["skipped_slot_by_family"][_fam] = (
+                            counts["skipped_slot_by_family"].get(_fam, 0) + 1)
                         continue
 
                     # The live gate protects the ENTRY CLAIM, so it only bars an
@@ -2112,6 +2370,31 @@ def emit_from_content_plan(
                 f"(copywriter.llm.required). [{_breakdown}]",
                 flush=True,
             )
+
+    # UNEMITTABLE SLOT LABELS — one annotation per emit, and only for the
+    # families that can never resolve. A `D2`..`D7` skip is the designed forward
+    # ladder (regenerated nightly, never emitted) and must NOT raise an alarm, or
+    # this fires every night on ~800 items and stops being read. A non-day label
+    # means a producer built posts on a slot this function refuses by
+    # construction — the movers desk shipped MOVER-NN/THEME-NN for two weeks and
+    # published nothing, and the silence was the reason nobody saw it.
+    #
+    # Same bare-print rules as above: "::" first on the line, flush=True, never
+    # through this module's logger (tests/test_gh_annotation_line_start.py).
+    _unemittable = {
+        fam: n for fam, n in counts["skipped_slot_by_family"].items()
+        if not (len(fam) >= 2 and fam[0] == "D" and fam[1:].isdigit())
+    }
+    if _unemittable:
+        _fam_breakdown = ", ".join(
+            f"{k}={v}" for k, v in sorted(_unemittable.items()))
+        print(
+            f"::warning title=marketing_unemittable_slots::"
+            f"{sum(_unemittable.values())} plan item(s) for {as_of} carry a slot "
+            f"label the outbox can never emit — emit takes {day_prefix}- only, so "
+            f"these lanes publish NOTHING as built. [{_fam_breakdown}]",
+            flush=True,
+        )
 
     _append_activity(root, {
         "at": ts_now.strftime("%Y-%m-%dT%H:%M:%SZ"),

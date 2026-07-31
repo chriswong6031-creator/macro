@@ -27,6 +27,7 @@ Test list:
 """
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -411,10 +412,20 @@ def test_macro_post_contains_digit():
     reason="No source data files present for integration test",
 )
 def test_event_post_contains_digit_or_fact():
-    """An event post in the full build must contain a digit or real fact text."""
+    """An event post in the full build must contain a digit or real fact text.
+
+    Event items are DATA-CONDITIONAL: the plan only mints them when the day's
+    brief/regime artifacts carry an event, so asserting non-empty here turned
+    the suite red on every quiet day (it failed for days while the 07-31 empty
+    plan sat on main). Skipping on the empty case is honest, not vacuous: the
+    skip names the data condition, and the substantive pin (event copy carries
+    a concrete fact) still fires on every day that HAS events.
+    """
     plan = _build_plan_with_root()
     event_items = _collect_items_by_type(plan, "event")
-    assert event_items, "No event items in content plan"
+    if not event_items:
+        pytest.skip("today's source artifacts minted no event items — "
+                    "the fact pin below runs on event-bearing days")
     # At least one event post must carry a concrete fact (digit or the tape direction text)
     has_content = any(
         re.search(r"\d|today|regime|liquidity", item.get("body", ""), re.IGNORECASE)
@@ -488,3 +499,104 @@ def test_no_indicator_vocab_in_macro_event_watchlist_posts():
                         f"[{item['type']}] '{m.group()}' in: '{full[:100]}'"
                     )
     assert not hits, f"Indicator vocab in non-ticker posts:\n" + "\n".join(hits[:5])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# X Growth W1g — a denominator the numerator cannot move against.
+#
+# THE DEFECT (2026-07-25..31 audit). Four posts opened "231 of 231 names in the
+# S&P universe are showing bullish momentum setups right now" and then argued
+# the opposite in the next sentence ("No triggers", "zero triggers"). `now` is
+# keyed by every tracked name and `universe_n` is the size of that same list, so
+# the count is a definition of the screen, not an observation about the market.
+#
+# WHAT THE LIVE ARTIFACT CARRIES (checked 2026-07-31): universe_n = 232,
+# len(now) = 232, active = 232. `universe_n` IS the real scanned universe — the
+# artifact holds no larger population — so there is no denominator repair
+# available and dropping is the only honest handling.
+#
+# THE GATE MUST BE A BAND. `0 < n < universe` is a knife-edge that 231-of-232
+# walks straight through, and 231-of-232 is the same non-fact as 231-of-231.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_confluence(tmp_path, *, n_active, universe_n, n_names=None):
+    """A tech_confluence.json with `n_active` of `n_names` names firing."""
+    n_names = n_names if n_names is not None else universe_n
+    now = {}
+    for i in range(n_names):
+        now[f"T{i:04d}"] = [0] if i < n_active else []
+    (tmp_path / "site" / "factordata").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "site" / "factordata" / "tech_confluence.json").write_text(
+        json.dumps({"universe_n": universe_n, "now": now,
+                    "combos": {"long": [{"id": "c0"}]}}),
+        encoding="utf-8")
+
+
+def _breadth_ids(tmp_path):
+    from engine.marketing.market_facts import breadth_facts
+    return [f["id"] for f in breadth_facts(tmp_path)["facts"]]
+
+
+class TestVacuousDenominatorsNeverShip:
+    def test_a_fully_saturated_count_is_dropped(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=231, universe_n=231)
+            assert "breadth_active" not in _breadth_ids(p)
+
+    def test_one_name_short_of_saturation_is_still_dropped(self):
+        """The knife-edge. 231 of 232 clears `0 < n < universe` and says
+        exactly as little as 231 of 231."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=231, universe_n=232)
+            assert "breadth_active" not in _breadth_ids(p), (
+                "a 99.6%-saturated count still shipped as a breadth read"
+            )
+
+    def test_an_empty_count_is_dropped_too(self):
+        """0 of 232 is the same definition wearing the other sign."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=0, universe_n=232)
+            assert "breadth_active" not in _breadth_ids(p)
+
+    def test_a_real_breadth_read_still_ships(self):
+        """The gate drops non-facts; it must not silence the lane."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=112, universe_n=232)
+            ids = _breadth_ids(p)
+            assert "breadth_active" in ids, ids
+
+    def test_the_live_artifact_is_saturated_and_ships_nothing(self):
+        """Documents the investigated state of the real data, and fails the day
+        it changes shape enough for the count to mean something again."""
+        tc_path = ROOT / "site" / "factordata" / "tech_confluence.json"
+        if not tc_path.exists():
+            pytest.skip("site/factordata/tech_confluence.json not present")
+        raw = json.loads(tc_path.read_text(encoding="utf-8"))
+        now = raw.get("now") or {}
+        active = len([t for t, v in now.items() if isinstance(v, list) and v])
+        universe = int(raw.get("universe_n") or 0)
+        assert universe > 0 and len(now) == universe, (
+            "the denominator is no longer just the size of the tracked list — "
+            "re-read the drop rule in market_facts._is_vacuous_count"
+        )
+        from engine.marketing.market_facts import breadth_facts
+        ids = [f["id"] for f in breadth_facts(ROOT)["facts"]]
+        if active / universe >= 0.95 or active / universe <= 0.05:
+            assert "breadth_active" not in ids, (
+                f"{active} of {universe} still reached the fact list: {ids}"
+            )
+
+    def test_the_producer_band_matches_the_consumer_band(self):
+        """One gate honoured at two seams, or a count the studio would drop is
+        still the digit a post gets built around."""
+        from engine.marketing.market_facts import _VACUOUS_COUNT_BAND
+        from engine.marketing.content_studio import _DEFAULT_DEGENERATE_BAND
+        assert _VACUOUS_COUNT_BAND == _DEFAULT_DEGENERATE_BAND

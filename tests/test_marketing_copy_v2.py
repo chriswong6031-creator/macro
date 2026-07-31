@@ -39,6 +39,16 @@ Covers:
   32-35. Prompt pins: shapes, corpus exemplars, anti-exemplars, rounding law.
   36-39. market_facts denominators + the jargon-free source scan.
   40.    The dry run imports and refuses to write.
+  46-51. The 2026-07-31 PROMPT AUTOPSY, one class per defect. These read the
+         PROMPT, not a post: the finding was that the system prompt fights
+         itself, and no amount of output-side testing can see that.
+           46. The prompt never prescribes a phrase its own validators kill.
+           47. Per-shape number budgets the contracts and the validator agree on.
+           48. Every payload key is named in the prompt (AST introspection).
+           49. The persona card rides the system prompt and outranks the
+               house VOICE defaults inside its declared caps.
+           50. Invented levels: a target the fact packet never carried.
+           51. Repeated closers across the 7-day history, not just the batch.
 """
 from __future__ import annotations
 
@@ -1385,7 +1395,14 @@ def test_no_rule_message_carries_a_dash_tell():
     samples += cw.stock_closer_violations(
         "$X ripped. Strength worth respecting, not chasing.", [])
     samples += cw.queued_voice_violations("I'm wrong below 33.8.", "signal")
-    assert len(samples) >= 19, "every rule must have contributed a message"
+    # The 2026-07-31 prompt-autopsy guards, added the same way.
+    samples += cw.invented_level_violations(
+        "I want 151 before leaning toward 190, then 228.",
+        _ctx(entry_str="151", t1_str="190"))
+    samples += cw.repeated_closer_violations(
+        "$Y gave it back. Watching, no position.",
+        [{"text": "$X held. Watching, no position.", "date": "2026-07-28"}])
+    assert len(samples) >= 21, "every rule must have contributed a message"
     for msg in samples:
         for ch in _DASHES:
             assert ch not in msg, f"dash tell in a rule message: {msg!r}"
@@ -2388,3 +2405,452 @@ class TestTheEngagementLoopReachesPostsNotJustReplies:
 
         assert "_learned_shape_preference(" in inspect.getsource(
             content_studio.assign_shapes)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 46-51. The 2026-07-31 PROMPT AUTOPSY. Six defects, all of them proved by
+# reading the prompt the writer actually sends rather than by reading a post.
+#
+# The autopsy's finding was not "the model writes badly". It was that the
+# system prompt fights itself: it ordered phrases its own validators kill, it
+# ordered three numbers under a budget of two, it shipped a persona codex it
+# never mentioned, and its account-invariant VOICE absolutes outvoted the
+# persona cards 24 tokens to 1. Every test below is a pin on one of those.
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _prompt_self_contradictions(prompt: str) -> list[tuple[str, list[str]]]:
+    """Every PRESCRIPTIVE paragraph of *prompt* that carries banned language.
+
+    The scan the operator asked for, run through the module's own validators
+    rather than a hand-written phrase list, so a ban added to
+    ``machine_risk_violations`` or ``banned_language`` tomorrow is screened here
+    the same night with no test edit.
+    """
+    out: list[tuple[str, list[str]]] = []
+    for para in cw.prescriptive_prompt_paragraphs(prompt):
+        hits = cw.banned_language(para) + cw.machine_risk_violations(para)
+        if hits:
+            out.append((para.split("\n", 1)[0][:70], hits))
+    return out
+
+
+class TestPromptDoesNotFightItself:
+    """Autopsy defect 1: HEDGES MUST BIND prescribed what HARD BANS forbids.
+
+    The shipped block ordered "On a signal post with no base rate, be honest
+    about what you will DO instead: 'not financial advice', 'size
+    appropriately', ...". Both of those are rejected by
+    ``machine_risk_violations``, and 'size appropriately' is a ``_STOCK_CLOSERS``
+    entry as well. An obedient model wrote them, got a violation list, burned
+    its one repair turn, and was dropped at stage=validate. Nothing in the repo
+    could see it, because a prompt is allowed to QUOTE the phrases it bans.
+    """
+
+    def test_no_prescriptive_paragraph_carries_a_phrase_the_validators_kill(self):
+        assert _prompt_self_contradictions(cw._v2_system_prompt({})) == []
+
+    def test_the_scan_really_sees_the_contradiction_that_shipped(self):
+        """MUTATION CHECK. A guard that cannot see the defect it was written for
+        is a green light, so the retired text is fed through the same helper."""
+        shipped = (
+            "HEDGES MUST BIND. An uncertainty tail may only be about a stat "
+            "that is actually in the post. On a signal post with no base rate, "
+            "be honest about what you will DO instead: 'not financial advice', "
+            "'size appropriately', 'do your own work'.\n\n"
+            "HARD BANS (a validator rejects these, obey exactly):\n"
+            "- Compliance caveats are banned too: 'size appropriately'.\n"
+        )
+        hits = [h for _head, msgs in _prompt_self_contradictions(shipped)
+                for h in msgs]
+        assert any("size appropriately" in h for h in hits), hits
+        assert any("not financial advice" in h for h in hits), hits
+        # ...and the HARD BANS paragraph, whose job IS to quote them, is silent.
+        heads = [head for head, _ in _prompt_self_contradictions(shipped)]
+        assert not any(h.startswith("HARD BANS") for h in heads), heads
+
+    def test_the_honest_hedge_is_taught_in_lawful_voice_instead(self):
+        """Deleting the contradiction is half the fix. The model still has to be
+        told HOW to be honest, or it reaches for a caveat again."""
+        prompt = cw._v2_system_prompt({})
+        assert "HEDGES MUST BIND" in prompt
+        for move in ("the condition you are waiting on",
+                     "the level that changes the read",
+                     "what you do not know"):
+            assert move in prompt, move
+        assert "the base rate IS the hedge" in prompt
+
+    def test_the_bans_themselves_are_still_in_the_prompt(self):
+        """The fix is a rewrite of the ORDER, never a relaxation of the ban."""
+        prompt = cw._v2_system_prompt({})
+        assert "Compliance caveats are banned" in prompt
+        assert "size appropriately" in prompt  # as a ban, in HARD BANS
+        assert cw.machine_risk_violations("size appropriately") != []
+
+
+class TestPerShapeNumberBudget:
+    """Autopsy defect 2: the contracts ordered more numbers than the budget allowed."""
+
+    def test_a_stack_may_carry_the_three_numbers_its_contract_orders(self):
+        text = ("Copper closed at 4.87.\n"
+                "The five year average sits at 3.90.\n"
+                "That gap is 24% and it is why the miners stopped caring "
+                "about the dollar.")
+        ctx = _ctx(type="macro", shape="stack",
+                   numbers_whitelist=["4.87", "3.90", "24%"])
+        assert cw.number_soup_violations(text, shape="stack") == []
+        assert cw.validate_copy_v2(text, ctx) == []
+
+    def test_the_same_three_numbers_in_one_line_are_still_soup(self):
+        """one_liner and caption stay tight: the budget is a property of the
+        FORM, and three figures in one dense line is the salad the law names."""
+        text = "Copper closed at 4.87 against a 3.90 average, a 24% gap."
+        ctx = _ctx(type="macro", shape="one_liner",
+                   numbers_whitelist=["4.87", "3.90", "24%"])
+        assert cw.number_soup_violations(text, shape="one_liner") != []
+        assert any("number soup" in v for v in cw.validate_copy_v2(text, ctx))
+
+    def test_the_pre_fix_flat_budget_rejected_the_obedient_stack(self):
+        """MUTATION CHECK for the whole defect: with no shape threaded, the
+        stack the contract ORDERS is rejected. That was production."""
+        text = ("Copper closed at 4.87.\n"
+                "The five year average sits at 3.90.\n"
+                "That gap is 24% and it is the whole story.")
+        assert cw.number_soup_violations(text) != []
+        assert cw.number_soup_violations(text, shape="stack") == []
+
+    @pytest.mark.parametrize("shape,expected", [
+        ("one_liner", 2), ("two_part", 2), ("caption", 2), ("stack", 3),
+        ("list", 6),
+    ])
+    def test_the_budget_table_is_the_one_the_contracts_quote(self, shape, expected):
+        """The contract prose is rendered FROM the budget dict, so a one-sided
+        edit to either half cannot happen: the number the model reads and the
+        number the validator enforces are the same object."""
+        assert cw.number_budget_for(shape=shape) == expected
+        assert f"at most {expected} numbers" in cw.SHAPE_CONTRACT[shape].lower()
+
+    def test_a_kind_budget_and_a_shape_budget_do_not_cancel_each_other(self):
+        """A receipt written as a list is still a receipt. `max`, not a
+        precedence rule, or the wider claim silently loses."""
+        assert cw.number_budget_for(kind="receipt", shape="one_liner") == 4
+        assert cw.number_budget_for(kind="signal", shape="list") == 6
+        assert cw.number_budget_for(kind="receipt", shape="list") == 6
+
+    def test_every_contract_demands_logic_between_its_numbers(self):
+        """A budget alone licenses the salad it was meant to stop: three
+        numbers with no argument between them is still three claims."""
+        for shape in ("stack", "list", "one_liner"):
+            body = cw.SHAPE_CONTRACT[shape].lower()
+            assert "measured against" in body or "read against each other" in body, shape
+        assert "data dump" in cw.SHAPE_CONTRACT["stack"].lower()
+
+
+class TestPayloadContract:
+    """Autopsy defect 3: the payload shipped keys the prompt never named."""
+
+    @staticmethod
+    def _payload_dict_keys() -> set[str]:
+        """String keys of every dict literal inside ``_v2_item_payload``.
+
+        AST rather than a call, because the point is to catch a key that a
+        future edit ADDS: a runtime call only reports the keys a given fixture
+        happens to populate, and every optional key in that payload is None on
+        some item.
+        """
+        import inspect
+
+        tree = ast.parse(inspect.getsource(cw._v2_item_payload).lstrip())
+        keys: set[str] = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Dict):
+                for k in node.keys:
+                    if isinstance(k, ast.Constant) and isinstance(k.value, str):
+                        keys.add(k.value)
+        return keys
+
+    def test_every_payload_key_is_declared_in_the_contract(self):
+        """Fails when someone adds a payload key without a contract line. That
+        is the whole mechanism: `codex`, `franchise`, `lead_with`, `pack` and
+        `win_rate` all reached the model for months with no line explaining
+        them, and an unexplained JSON key reads as decoration."""
+        undeclared = self._payload_dict_keys() - set(cw.V2_PAYLOAD_CONTRACT_KEYS)
+        assert undeclared == set(), f"payload keys with no contract line: {undeclared}"
+
+    def test_every_declared_key_actually_has_a_bullet_in_the_prompt(self):
+        """Declaring a key in the tuple and forgetting the prose would make the
+        test above vacuous, so the prompt is checked for a bullet whose LABEL
+        (everything before the colon) names the key."""
+        block = cw._V2_PAYLOAD_CONTRACT_BLOCK
+        missing = [
+            key for key in cw.V2_PAYLOAD_CONTRACT_KEYS
+            if not re.search(r"(?m)^- [^\n:]*\b" + re.escape(key) + r"\b[^\n]*:",
+                             block)
+        ]
+        assert missing == [], f"declared but unexplained: {missing}"
+
+    def test_the_contract_reaches_the_system_prompt(self):
+        prompt = cw._v2_system_prompt({})
+        assert "PAYLOAD CONTRACT" in prompt
+        assert cw._V2_PAYLOAD_CONTRACT_BLOCK.strip() in prompt
+
+    def test_the_keys_that_shipped_dark_now_carry_their_binding_force(self):
+        """Each of these was named by the autopsy with the force it must carry.
+        A contract line that merely REPEATS the key name teaches nothing."""
+        prompt = cw._v2_system_prompt({})
+        assert "lead_with" in prompt and "Open from it" in prompt
+        assert "worn_out_phrases" in prompt and "Not discouraged, banned" in prompt
+        assert "open_promises" in prompt and "most human move available" in prompt
+        assert "win_rate" in prompt and "IT is the hedge" in prompt
+        # And the level keys carry the invented_level law in prose, so the
+        # validator below is not the model's first news of it.
+        assert "A target we did not give you is a fabricated trade" in prompt
+
+
+class TestPersonaCardOutranksTheHouseDefaults:
+    """Autopsy defect 4: ~4,400 invariant tokens against a ~180 token card."""
+
+    CARD = {
+        "name": "Meagan",
+        "voice": ("Growth Manager, the crowd translator. Signature habits, one "
+                  "per post at most: an okay so opener, one parenthetical "
+                  "aside, at most one exclamation. She is the only desk allowed "
+                  "an exclamation at all."),
+        "example_lines": [
+            "okay so the Fed did the thing everyone swore they wouldn't.",
+            "Everyone asked for a soft landing and is now interrogating every "
+            "good data point like it committed a crime.",
+            "the room is calmer than the tape is.",
+        ],
+    }
+
+    def test_the_card_rides_the_system_prompt(self):
+        prompt = cw._v2_system_prompt({}, persona_card=self.CARD)
+        assert "THIS ACCOUNT'S CARD" in prompt
+        assert "Meagan" in prompt
+        assert "only desk allowed an exclamation" in prompt
+
+    def test_the_generic_ban_became_a_default_the_card_can_override(self):
+        """The shipped prompt said "No puns. No exclamation marks." flatly, next
+        to a card whose registered habit is one exclamation per post. The bigger
+        block won, and five desks converged on one voice."""
+        prompt = cw._v2_system_prompt({}, persona_card=self.CARD)
+        assert "No puns. No exclamation marks." not in prompt
+        assert "card-granted habits" in prompt
+        assert "the card wins" in prompt
+        assert "OUTRANKS the house VOICE defaults" in prompt
+
+    def test_a_habit_no_card_registers_is_still_not_available(self):
+        """DEFAULTS-UNLESS-CARD is not a licence. The override is scoped to what
+        the card declares, and the deterministic expression_dial pass still
+        strips an unwhitelisted quirk whatever the prompt says."""
+        prompt = cw._v2_system_prompt({}, persona_card=self.CARD)
+        assert "A habit no card registers is not yours to use" in prompt
+        assert "inside the caps this card names" in prompt
+
+    def test_the_whole_example_set_rides_not_the_first_two(self):
+        """`example_lines` was cut to [:2] in the payload. The card is the
+        smallest thing in a 4,400 token prompt; there was no budget argument."""
+        prompt = cw._v2_system_prompt({}, persona_card=self.CARD)
+        for line in self.CARD["example_lines"]:
+            assert line in prompt, line
+
+    def test_an_absent_card_leaves_the_prompt_byte_identical(self):
+        """Every non-writer caller (the dry run, the exemplar-store pin tests)
+        passes no card and must see exactly the pre-change prompt."""
+        assert cw._v2_system_prompt({}, persona_card=None) == cw._v2_system_prompt({})
+        assert cw.persona_prompt_section(None) == ""
+        assert cw.persona_prompt_section({"name": "", "voice": "", "example_lines": []}) == ""
+
+    def test_the_writer_really_sends_a_PER_ACCOUNT_system_prompt(self, monkeypatch):
+        """End to end through `write_posts_llm_v2`, capturing what the provider
+        is handed as `system`. A card that only exists in a helper is a card the
+        model never reads."""
+        seen: list[str] = []
+
+        def handler(system, user, max_tokens):  # noqa: ANN001
+            if _is_critic(system):
+                return json.dumps({"verdict": "pass", "reasons": []})
+            seen.append(system)
+            return json.dumps({"text": "$ARES held 122 into the close. Fine by me."})
+
+        _arm(monkeypatch, handler)
+        cfg = dict(ARMED_CFG)
+        cfg["personas"] = {
+            "meagan": {"name": "Meagan", "voice_notes": self.CARD["voice"],
+                       "example_lines": list(self.CARD["example_lines"])},
+            "sophia": {"name": "Sophia", "voice_notes": "zero exclamations ever.",
+                       "example_lines": ["Three headlines, one thread."]},
+        }
+        ctxs = [_chart_ctx(account="meagan"), _chart_ctx(account="sophia")]
+        cw.write_posts_llm_v2(ctxs, cfg)
+
+        assert len(seen) == 2, seen
+        assert any("Meagan" in s and "only desk allowed an exclamation" in s
+                   for s in seen), "Meagan's card never reached a system turn"
+        assert any("Sophia" in s and "zero exclamations ever" in s for s in seen)
+        assert seen[0] != seen[1], "both desks got the same prompt"
+        # The third example line proves the [:2] truncation is gone.
+        assert any(self.CARD["example_lines"][2] in s for s in seen)
+
+
+class TestInventedLevels:
+    """Autopsy defect 5: a target the fact packet never carried.
+
+    The live post: Kelly's $TPR read "I want 151 before leaning toward 190,
+    then 228" on a plan whose only forward level was T1 189.63. 190 is that T1
+    in display form. 228 was a 52-week-high CHART FACT promoted to a price
+    objective, which is why the whitelist rule passed it: a number can be true
+    as a fact and a fabrication as a target.
+    """
+
+    @staticmethod
+    def _signal_ctx(**over):
+        base = dict(type="signal", shape="one_liner",
+                    numbers_whitelist=["151", "190", "228"],
+                    entry_str="151", t1_str="190", t2_str="", inv_str="140")
+        base.update(over)
+        return _ctx(**base)
+
+    def test_the_shipped_ladder_is_rejected_on_the_number_it_invented(self):
+        v = cw.invented_level_violations(
+            "I want 151 before leaning toward 190, then 228.", self._signal_ctx())
+        assert len(v) == 1, v
+        assert "invented_level" in v[0] and "228" in v[0], v
+
+    def test_the_licensed_legs_of_that_same_ladder_are_not_touched(self):
+        """151 is the entry and 190 is T1. A gate that cries wolf on the packet's
+        own levels stops meaning anything."""
+        assert cw.invented_level_violations(
+            "I want 151 before leaning toward 190.", self._signal_ctx()) == []
+
+    def test_the_exact_value_behind_the_display_form_is_licensed_too(self):
+        """T1 189.63 prints as 190 under the rounding law; a model that writes
+        either has written the level we gave it."""
+        ctx = self._signal_ctx(numbers_whitelist=["189.63", "190"])
+        assert cw.invented_level_violations("target 189.63", ctx) == []
+        assert cw.invented_level_violations("target 190", ctx) == []
+
+    def test_a_whitelisted_chart_fact_is_still_not_a_target(self):
+        """THE WHOLE DEFECT IN ONE ASSERTION. 228 is in numbers_whitelist, so
+        the numbers law passes it. Being true is not being a target."""
+        ctx = self._signal_ctx()
+        assert "228" in ctx["numbers_whitelist"]
+        assert cw._extract_number_tokens("targeting 228") == ["228"]
+        assert not [v for v in cw.validate_copy_v2("$ARES targeting 228.",
+                                                   dict(ctx, ticker="ARES",
+                                                        cashtag="$ARES"))
+                    if "whitelist" in v.lower()]
+        assert any("invented_level" in v for v in cw.validate_copy_v2(
+            "$ARES targeting 228.", dict(ctx, ticker="ARES", cashtag="$ARES")))
+
+    def test_target_LANGUAGE_no_slot_word_introduces_is_seen_now(self):
+        """`price_slot_tokens` reads entry / target / t1 / stop / below / above /
+        at / near. "toward", "looking for" and a "then" ladder are none of
+        those, which is how both legs walked past the level rule."""
+        ctx = self._signal_ctx()
+        assert cw.price_slot_tokens("leaning toward 228") == []
+        assert cw.invented_level_violations("leaning toward 228", ctx) != []
+        assert cw.invented_level_violations("looking for 228 next", ctx) != []
+
+    def test_the_ladder_walks_past_the_first_continuation(self):
+        ctx = self._signal_ctx()
+        v = cw.invented_level_violations(
+            "toward 190, then 228, then 260.", ctx)
+        assert len(v) == 2, v
+        assert any("228" in x for x in v) and any("260" in x for x in v)
+
+    def test_a_duration_after_a_target_word_is_not_a_level(self):
+        """A gate that cries wolf stops meaning anything (the copy_review
+        doctrine), so the non-level nouns are shared with the slot rule."""
+        ctx = self._signal_ctx()
+        for text in ("targeting 20 sessions of this",
+                     "up to 3 names in the group",
+                     "toward 12% on the year"):
+            assert cw.invented_level_violations(text, ctx) == [], text
+
+    def test_an_item_with_no_plan_levels_falls_back_to_its_packet(self):
+        """A chart post has no plan to contradict, so the honest bar is the
+        packet. It still closes the language half of the hole."""
+        ctx = _ctx(type="chart", numbers_whitelist=["45", "34.4"])
+        assert cw.invented_level_violations("target 45", ctx) == []
+        assert cw.invented_level_violations("toward 44", ctx) != []
+
+    def test_the_message_never_says_whitelist(self):
+        """Callers grep violation lists by substring to tell a licensing failure
+        from a budget failure. This is a third thing from either."""
+        v = cw.invented_level_violations("toward 228", self._signal_ctx())
+        assert v and "whitelist" not in v[0].lower(), v
+
+
+class TestRepeatedClosers:
+    """Autopsy defect 6: 27% of a week closed on one of nine sentences.
+
+    'Watching, no position.' five times, 'Patience, annoyingly, is the play.'
+    five times. Every one cleared every gate: `_STOCK_CLOSERS` bans the closers
+    the prompt once MANDATED and these were not those; the batch-collision arm
+    compares against ONE night's plan; and `repeated_sentence_violations` has a
+    five-word floor that 'Watching, no position.' sits under by two words.
+    """
+
+    RECENT = [
+        {"text": "$CUBI held the line into the close. Watching, no position.",
+         "date": "2026-07-28"},
+    ]
+
+    def test_a_closer_this_account_used_this_week_is_rejected(self):
+        v = cw.repeated_closer_violations(
+            "$GPI gave the whole move back. Watching, no position.", self.RECENT)
+        assert v and "repeated closer" in v[0], v
+
+    def test_the_other_pool_sentence_the_operator_quoted(self):
+        recent = [{"text": "Near entry, nothing has triggered. Patience, "
+                           "annoyingly, is the play.", "date": "2026-07-27"}]
+        assert cw.repeated_closer_violations(
+            "$X sat there all day. Patience, annoyingly, is the play.", recent)
+
+    def test_the_existing_gates_really_did_miss_it(self):
+        """MUTATION CHECK on the mechanism claim, not on the fix. If any of
+        these three had caught the pool sentence, this guard would be redundant
+        and the right change would have been a smaller one."""
+        post = "$GPI gave the whole move back. Watching, no position."
+        assert cw.stock_closer_violations(post, []) == [], "mandate list caught it"
+        assert cw.stock_closer_violations(
+            post, [r["text"] for r in self.RECENT]) != [], "batch arm sees ONE night"
+        assert cw.repeated_sentence_violations(
+            post, [r["text"] for r in self.RECENT]) == [], "5-word floor caught it"
+
+    def test_a_one_or_two_word_verdict_stays_free_to_recur(self):
+        """The deadpan verdicts ARE the persona and the operator has never
+        complained about one, so the closer floor is three words."""
+        for verdict in ("Ugly.", "Not ideal."):
+            recent = [{"text": f"$X broke down. {verdict}", "date": "2026-07-28"}]
+            assert cw.repeated_closer_violations(
+                f"$Y broke down too. {verdict}", recent) == [], verdict
+
+    def test_it_fires_through_validate_copy_v2_on_the_recent_it_already_reads(self):
+        """`recent` is the durable 7-day history validate_copy_v2 already
+        threads for the codex frequency caps. No new plumbing, no new source."""
+        ctx = _ctx(type="chart", numbers_whitelist=[])
+        post = "$GPI gave the whole move back. Watching, no position."
+        assert not any("repeated closer" in v
+                       for v in cw.validate_copy_v2(ctx=ctx, text=post))
+        assert any("repeated closer" in v for v in cw.validate_copy_v2(
+            post, ctx, recent=list(self.RECENT)))
+
+    def test_no_history_is_no_claim_rather_than_a_false_pass(self):
+        assert cw.repeated_closer_violations("Anything at all here.", None) == []
+        assert cw.repeated_closer_violations("Anything at all here.", []) == []
+
+    def test_the_seven_day_window_is_the_one_the_history_carries(self):
+        """The window is not asserted in this module, it is INHERITED: the
+        writer seeds `recent` from persona_memory.recent_posts(days=7). Pinning
+        that seam is what stops a future 1-day seed making this gate vacuous."""
+        import inspect
+
+        from engine.marketing import persona_memory
+
+        assert "days: int = 7" in inspect.getsource(persona_memory.recent_posts) \
+            or "days=7" in inspect.getsource(persona_memory.recent_posts)
+        assert "recent_posts(" in inspect.getsource(cw.memory_recent_seed)
+        assert "memory_recent_seed(" in inspect.getsource(cw.write_posts_llm_v2)

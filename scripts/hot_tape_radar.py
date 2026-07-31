@@ -680,6 +680,36 @@ def llm_config(root: Path) -> dict:
     return {"llm": block}
 
 
+#: Phrases that assert a crossing happened MOMENTS AGO. The template layer
+#: chooses between these and the standing form off `facts.crossed_in_window`
+#: (hot_tape_wire._milestone_clause); a model handed the same packet has no
+#: such gate — hot_tape_llm's validator checks numbers, calls, hedging and
+#: cashtags, and none of those can see that "just broke below 325" is a claim
+#: about a level the tape gapped through at the opening bell.
+_JUST_HAPPENED_PHRASES: tuple[str, ...] = (
+    "just broke", "just cleared", "just crossed", "just slipped",
+    "just traded through", "just fell through", "just went through",
+    "just dropped below", "just topped", "enters correction",
+    "moments ago", "just now",
+)
+
+
+def _stale_timing_hits(packet: HT.FactPacket, text: str) -> list[str]:
+    """Freshness-claiming phrases in `text` that the packet cannot support.
+
+    Only threshold crossings carry the receipt, and only when the prior tick
+    proved the level went inside our own window. Everything else — an unknown
+    memory, a level crossed at the open — may say where the price stands and
+    nothing about when it got there.
+    """
+    if str(getattr(packet, "trigger", "")) != "threshold_cross":
+        return []
+    if bool((getattr(packet, "facts", {}) or {}).get("crossed_in_window")):
+        return []
+    body = (text or "").lower()
+    return [p for p in _JUST_HAPPENED_PHRASES if p in body]
+
+
 def phrase(packet: HT.FactPacket, fallback_text: str, *, llm_cfg: dict) -> dict:
     """Phrase one packet through the P2 LLM wire desk. ALWAYS returns text.
 
@@ -688,11 +718,20 @@ def phrase(packet: HT.FactPacket, fallback_text: str, *, llm_cfg: dict) -> dict:
     (numbers trace to the FactPacket, no calls, no hedging, cashtag policy),
     the deterministic template otherwise. The try/except here is belt only.
 
-    ONE EXTRA GATE ON THE MODEL BRANCH: the LLM module's call-language list is
-    narrower than this desk's own :data:`hot_tape_wire.WIRE_BANNED` — it has no
-    "accumulate", "load up", "calls", "puts" or "bid" — and gate 0.4 is a house
-    law, not a per-module preference. Model copy that trips the wider list falls
-    back to the template, so the deterministic floor still holds.
+    TWO EXTRA GATES ON THE MODEL BRANCH.
+
+    LANGUAGE: the LLM module's call-language list is narrower than this desk's
+    own :data:`hot_tape_wire.WIRE_BANNED` — it has no "accumulate", "load up",
+    "calls", "puts" or "bid" — and gate 0.4 is a house law, not a per-module
+    preference. Model copy that trips the wider list falls back to the
+    template, so the deterministic floor still holds.
+
+    TIMING: a threshold packet whose crossing was NOT observed inside our own
+    tick window may not be phrased as something that just happened (see
+    :func:`_stale_timing_hits` and hot_tape_wire._milestone_clause). The
+    template already refuses it; a model re-writing the same packet would
+    otherwise put "just broke below $325.00" back on a level the tape gapped
+    through at the open.
     """
     result: dict = {}
     try:
@@ -716,6 +755,16 @@ def phrase(packet: HT.FactPacket, fallback_text: str, *, llm_cfg: dict) -> dict:
                   "- the deterministic template posted instead", flush=True)
             text, mode = fallback_text, "fallback_validation"
             violations = violations + [f"wire_banned:'{w}'" for w in hits]
+    if mode == "llm":
+        stale = _stale_timing_hits(packet, text)
+        if stale:
+            print("::warning title=hot-tape-llm-stale-timing::model copy for "
+                  f"{packet.key} claimed a crossing just happened "
+                  f"({','.join(stale)}) on a level whose first-cross time is "
+                  f"{(packet.facts or {}).get('cross_basis')} - the "
+                  "deterministic template posted instead", flush=True)
+            text, mode = fallback_text, "fallback_validation"
+            violations = violations + [f"stale_timing:'{w}'" for w in stale]
     return {
         "text": text,
         "mode": mode,
@@ -838,7 +887,16 @@ def ring_entry(
     events: list,
     cfg: dict,
 ) -> dict:
-    """One compact snapshot row: breadth + the index, for the T6 "$X in 3h" claims."""
+    """One compact snapshot row: breadth + the index, for the T6 "$X in 3h" claims.
+
+    It also carries this lane's THRESHOLD FRESHNESS MEMORY (``xk`` /
+    ``xk_full`` / ``xk_min_sev``, built by :func:`HT.cross_memory_row`). A
+    crossing test is `prev_close` vs the live price, so it stays true all
+    session once the level goes; the only evidence that a level went in the
+    last five minutes is that the PREVIOUS row did not carry it. Without this
+    block every threshold post degrades to "trades below 325" — which is why
+    the row is written on EVERY pass, eventless ones included.
+    """
     quotes = live.get("quotes") if isinstance(live.get("quotes"), dict) else {}
     n_up = n_dn = 0
     for q in quotes.values():
@@ -851,7 +909,7 @@ def ring_entry(
             n_dn += 1
     index_sym = str(_cfg(cfg, "detectors.contrarian.index_ticker", "SPY")).upper()
     index_q = quotes.get(index_sym) if isinstance(quotes, dict) else None
-    return {
+    entry = {
         "at": now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "day": day,
         "session": HT.session_phase(now),
@@ -863,6 +921,8 @@ def ring_entry(
         "n_down": n_dn,
         "n_events": len(events or []),
     }
+    entry.update(HT.cross_memory_row(events or [], cfg))
+    return entry
 
 
 def roll_ring(root: Path, entry: dict, *, day: str) -> None:
@@ -1039,10 +1099,42 @@ def _group_card_subtitle(packet: HT.FactPacket) -> str | None:
     agree = f.get("n_down") if str(packet.direction) == "down" else f.get("n_up")
     median = _f(f.get("median_pct"))
     if agree is None or n_members is None or median is None:
-        n_green = f.get("n_green")
-        return f"{n_green} names green" if n_green else None
+        # A COUNT CARRIES ITS UNIVERSE (2026-07-31). "31 names green" on a card
+        # is the same numerator-with-no-universe defect as "18 groups on the
+        # move today": the reader cannot tell broad from narrow. The contrarian
+        # packet now carries the denominator; without it the card runs with no
+        # subtitle rather than with half a fact.
+        n_green, n_all = f.get("n_green"), f.get("n_defensive_members")
+        if n_green and n_all:
+            return f"{n_green} of {n_all} names green"
+        return None
     way = "lower" if str(packet.direction) == "down" else "higher"
     return f"{agree} of {n_members} {way}, median {median:+.1f}%"
+
+
+def _stamp_render_mode(entry: dict, published: dict, chart_id: str) -> None:
+    """Copy publish_card's render telemetry onto the media entry, and warn.
+
+    THE DEGRADED IMAGE HAS TO BE AUDIBLE — the same law content_studio's
+    ``_attach_chart_media`` follows, and the reason it exists there: when a
+    card is rastered by the legacy PIL fallback instead of headless Chrome the
+    post carries a visibly worse picture (no candles, no indicators, no footer
+    CTA), and the outbox entry looked IDENTICAL to a full SVG raster. Two lanes
+    write cards through one seam; only one of them could tell you what it got.
+
+    Bare print, line start, flushed: this runs inside an Actions step and every
+    logger in this repo prefixes, which makes GitHub drop the annotation.
+    """
+    mode = str(published.get("media_render") or "")
+    if mode:
+        entry["media_render"] = mode
+    if mode == "legacy_png":
+        print(f"::warning title=hot-tape-chart-legacy-fallback::"
+              f"{chart_id}: the SVG raster produced nothing, so this post "
+              f"carries the DEGRADED legacy PNG (no candles, no indicators, "
+              f"no footer CTA). Chrome is the rasteriser; a fallback here "
+              f"means it failed or timed out, not that the card is fine.",
+              flush=True)
 
 
 def resolve_group_card(
@@ -1126,6 +1218,7 @@ def resolve_group_card(
     }
     if published.get("media_png_path"):
         entry["media_png_path"] = published["media_png_path"]
+    _stamp_render_mode(entry, published or {}, chart_id)
     out["media"] = entry
     out["reason"] = "ok"
     return out
@@ -1226,6 +1319,7 @@ def resolve_chart(
     }
     if published.get("media_png_path"):
         entry["media_png_path"] = published["media_png_path"]
+    _stamp_render_mode(entry, published or {}, chart_id)
     out["media"] = entry
     out["reason"] = "ok"
     return out
@@ -1436,7 +1530,13 @@ def book_packet(
             "mode": phrased["mode"],
             "provider": phrased["provider"],
             "latency_ms": phrased["latency_ms"],
-            "violations": len(phrased["violations"]),
+            # THE STRINGS, NOT THE COUNT (2026-07-31). phrase() hands back the
+            # named violations and this stored `len(...)`, so the measured 52%
+            # validation-fallback rate was a number with no cause attached —
+            # undiagnosable from the queue, which is the only place it is
+            # recorded. Top 5: items.jsonl is read on every publisher pass.
+            "violations": [str(v) for v in (phrased["violations"] or [])][:5],
+            "violations_n": len(phrased["violations"] or []),
         }
 
     rc = OB.enqueue(item, root, cfg=marketing_cfg)
@@ -1532,6 +1632,21 @@ def emit(
         if account == flagship_account and flagship_budget <= 0:
             # Budget spent this pass: the event still ships, on the wire desk.
             account = wire_account
+        # LIVENESS, AFTER ROUTING AND AFTER THE MIRROR BUDGET. `emit.account`
+        # defaults to mastermind_news, a desk that is DARK in desk_network, so
+        # every sub-85 event was rendered, phrased, uploaded and enqueued only
+        # to be quarantined at dispatch with account_disabled — 19 items on
+        # 2026-07-31 alone. wire_routing exists to catch exactly this and this
+        # lane never asked it. No-op (and silent) whenever the target IS armed,
+        # or whenever liveness cannot be established: see HT.live_account.
+        #
+        # NOT charged to flagship_budget below. That budget bounds intentional
+        # MIRRORS — "only the biggest events get a second desk" — and a fallback
+        # is a rescue, not a mirror. The volume valve for a rescued item is
+        # where it always was: emit.max_per_run / max_per_day here, and the
+        # publisher's per-account daily cap and cadence resolver downstream.
+        account = HT.live_account(account, marketing_cfg=marketing_cfg, root=root,
+                                  fallbacks=(flagship_account, wire_account))
 
         result = book_packet(packet, account=account, root=root, cfg=cfg,
                              marketing_cfg=marketing_cfg, llm_cfg=llm, now=now,
@@ -1577,6 +1692,16 @@ def emit(
             break
         if _over_day_cap():
             break
+        # Same liveness resolution as the alert loop above, and it belongs HERE
+        # rather than in pending_briefs (which is where the hardcoded
+        # `emit.account` fallback lives) for one reason: this is the function
+        # that holds `marketing_cfg`, and desk_network lives in marketing.yml,
+        # not in hot_tape.yml. Resolving at the booking seam covers the alert's
+        # inherited account AND that fallback with one call, and a brief posted
+        # to a grave is worse than an alert posted to one — it is the second
+        # half of a pair whose first half went out on a live desk.
+        account = HT.live_account(account, marketing_cfg=marketing_cfg, root=root,
+                                  fallbacks=(flagship_account, wire_account))
         result = book_packet(packet, account=account, root=root, cfg=cfg,
                              marketing_cfg=marketing_cfg, llm_cfg=llm, now=now,
                              as_of=as_of, dry_run=dry_run, fetcher=fetcher, pack=pack)

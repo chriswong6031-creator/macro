@@ -597,3 +597,222 @@ def test_the_source_default_is_codex_first_too():
     assert '["codex", "oauth", "anthropic", "deepseek"]' in src
     assert '"gpt-5.6-terra"' in src
     assert '"gpt-5.6-luna"' not in src
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 19. THE PROMPT STATES EVERY LAW THE VALIDATOR ENFORCES
+#
+# THE DEFECT (measured 2026-07-31: ~90% of armed attempts fell back).
+# SYSTEM_PROMPT stated 9 laws; `validate_wire_copy` also enforced the whole
+# `copywriter.banned_language()` house list, the AI-tell markers from
+# config/press.yml and 24 call-violation words the prompt never mentioned — with
+# no repair turn, so one unmentioned word cost the entire post. These tests are
+# INTROSPECTIVE on purpose: they read the validator's own lists, so a term added
+# upstream tomorrow fails here unless it also reaches the model.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_every_banned_term_the_validator_enforces_is_stated_in_the_prompt():
+    from engine.marketing.copywriter import banned_language
+
+    prompt = htl.build_system_prompt()
+    terms = htl._banned_language_terms()
+    # A rename upstream would empty this list and make the loop vacuous.
+    assert len(terms) >= 40, f"the house banned list read as {len(terms)} terms"
+    for term in terms:
+        # Each term really IS a rejection (the list is the validator's, not a
+        # decorative copy)…
+        assert banned_language(f"The tape shows {term} today."), term
+        # …and the model is told about it.
+        assert term in prompt, f"banned term never stated to the model: {term!r}"
+
+
+def test_every_call_and_hedge_word_the_validator_enforces_is_in_the_prompt():
+    prompt = htl.build_system_prompt()
+    calls = htl._call_language_terms()
+    hedges = htl._hedge_language_terms()
+    assert len(calls) >= 24, len(calls)
+    assert hedges, hedges
+    for term in calls:
+        assert htl.call_violations(f"We {term} the move."), term
+        assert term in prompt, f"call word never stated to the model: {term!r}"
+    for term in hedges:
+        assert htl.hedge_violations(f"It {term} lower."), term
+        assert term in prompt, f"hedge word never stated to the model: {term!r}"
+
+
+def test_every_ai_tell_the_validator_enforces_is_in_the_prompt():
+    prompt = htl.build_system_prompt()
+    phrases = (yaml.safe_load((ROOT / "config" / "press.yml").read_text(encoding="utf-8"))
+               .get("validators", {}).get("ai_tell_phrases") or [])
+    assert phrases, "config/press.yml must supply the AI-tell lexicon"
+    for phrase in phrases:
+        assert str(phrase) in prompt, f"AI tell never stated to the model: {phrase!r}"
+    # The two PATTERN rules have no phrase list, so they are stated in words.
+    assert "Moreover," in prompt
+    assert "not only" in prompt
+
+
+def test_the_generated_prompt_still_carries_the_hand_written_half():
+    # The generated block is ADDITIVE — the exemplars and the numbers law are
+    # what make the register, and appending laws must not displace them.
+    prompt = htl.build_system_prompt()
+    assert prompt.startswith(htl.SYSTEM_PROMPT.rstrip()[:80])
+    for exemplar in htl.HOUSE_EXEMPLARS:
+        assert exemplar in prompt
+    assert "ALLOWED NUMBERS" in prompt
+    assert "270 characters maximum" in prompt
+
+
+def test_the_prompt_the_provider_receives_is_the_generated_one(monkeypatch):
+    # The generated prompt is worthless if the call still ships the constant.
+    _arm(monkeypatch)
+    entry = BY_ID["P1"]
+    seen = _record_calls(monkeypatch, [entry["good_phrasing"]])
+    out = htl.phrase_or_fallback(entry["packet"], entry["trigger"],
+                                 entry["fallback_text"], cfg=ARMED_CFG)
+    assert out["mode"] == "llm"
+    assert len(seen) == 1
+    system = seen[0]["system"]
+    assert system != htl.SYSTEM_PROMPT
+    assert "HOUSE BANNED LANGUAGE" in system
+    assert "diamond hands" in system      # a term only the generated half states
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 20. ONE REPAIR TURN before the template wins
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _FakeResp:
+    def __init__(self, text: str):
+        self.content = [type("B", (), {"type": "text", "text": text})()]
+        self.stop_reason = "end_turn"
+
+
+class _FakeClient:
+    """Records every messages.create kwarg and answers with scripted texts."""
+
+    def __init__(self, texts, log):
+        self._texts = list(texts)
+        self._log = log
+        self.messages = self
+
+    def create(self, **kwargs):
+        self._log.append(kwargs)
+        return _FakeResp(self._texts.pop(0) if self._texts else "")
+
+
+def _record_calls(monkeypatch, texts):
+    """Arm make_call so it DRIVES the module's own _do_call. Returns the log."""
+    log: list[dict] = []
+    client = _FakeClient(texts, log)
+
+    def _make_call(providers, do_call, context=None):
+        text, reason, _resp = do_call(client, "fake-model")
+        return text, reason, "oauth"
+
+    monkeypatch.setattr(llm_auth, "make_call", _make_call)
+    return log
+
+
+def test_a_violating_draft_is_repaired_instead_of_falling_back(monkeypatch):
+    _arm(monkeypatch)
+    entry = BY_ID["P1"]
+    # Draft 1 hedges ("seems like") — the corpus's 95-view shape. Draft 2 is the
+    # house exemplar, which clears every gate.
+    draft = "$SNDK seems like it will keep falling."
+    seen = _record_calls(monkeypatch, [draft, entry["good_phrasing"]])
+
+    out = htl.phrase_or_fallback(entry["packet"], entry["trigger"],
+                                 entry["fallback_text"], cfg=ARMED_CFG)
+
+    assert out["mode"] == "llm_repair", out
+    assert out["text"] == entry["good_phrasing"]
+    assert out["text"] != entry["fallback_text"], "the template must NOT have won"
+    assert len(seen) == 2, "exactly one repair turn"
+    # The repair turn names the failures and carries the rejected draft back.
+    repair_msgs = seen[1]["messages"]
+    assert [m["role"] for m in repair_msgs] == ["user", "assistant", "user"]
+    assert repair_msgs[1]["content"] == draft
+    assert "REJECTED" in repair_msgs[2]["content"]
+    assert "seems" in repair_msgs[2]["content"]
+    # A repaired post is model copy on the timeline, not a fallback.
+    stats = htl.fallback_stats()
+    assert stats["llm_repair"] == 1 and stats["fallback_validation"] == 0
+    assert stats["fallback_rate"] == 0.0
+
+
+def test_a_repair_that_still_violates_falls_back_and_reports_both_lists(monkeypatch):
+    _arm(monkeypatch)
+    entry = BY_ID["P1"]
+    seen = _record_calls(monkeypatch, [
+        "$SNDK seems like it will keep falling.",
+        "$SNDK might fall further from here.",
+    ])
+    out = htl.phrase_or_fallback(entry["packet"], entry["trigger"],
+                                 entry["fallback_text"], cfg=ARMED_CFG)
+    assert out["mode"] == "fallback_validation"
+    assert out["text"] == entry["fallback_text"]
+    assert len(seen) == 2, "still exactly ONE repair — never a loop"
+    assert any(v.startswith("repair:") for v in out["violations"]), out["violations"]
+    assert any("seems" in v and not v.startswith("repair:") for v in out["violations"])
+
+
+def test_the_repair_turn_respects_the_per_run_call_cap(monkeypatch):
+    _arm(monkeypatch)
+    entry = BY_ID["P1"]
+    seen = _record_calls(monkeypatch, ["$SNDK seems like it will keep falling."])
+    out = htl.phrase_or_fallback(entry["packet"], entry["trigger"],
+                                 entry["fallback_text"],
+                                 cfg={"enabled": True, "max_calls_per_run": 1})
+    assert out["mode"] == "fallback_validation"
+    assert len(seen) == 1, "the cap forbids the second call"
+
+
+def test_a_raising_repair_turn_still_posts_the_template(monkeypatch):
+    _arm(monkeypatch)
+    entry = BY_ID["P1"]
+    calls = {"n": 0}
+
+    def _make_call(providers, do_call, context=None):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return "$SNDK seems like it will keep falling.", None, "oauth"
+        raise RuntimeError("provider exploded on the repair")
+
+    monkeypatch.setattr(llm_auth, "make_call", _make_call)
+    out = htl.phrase_or_fallback(entry["packet"], entry["trigger"],
+                                 entry["fallback_text"], cfg=ARMED_CFG)
+    assert out["mode"] == "fallback_validation"
+    assert out["text"] == entry["fallback_text"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 21. The AI-tell gate is HARD, and says so out loud when it cannot run
+#
+# It was documented as a soft polish screen while its result was appended to the
+# hard reject list — hard in effect, soft in sourcing. An unreadable
+# config/press.yml silently loosened a live gate and nothing said so.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_an_ai_tell_still_rejects_the_copy():
+    entry = BY_ID["P1"]
+    tell = entry["good_phrasing"] + " It is a testament to the selloff."
+    violations = htl.validate_wire_copy(tell, entry["packet"])
+    assert any("ai_tell" in v for v in violations), violations
+
+
+def test_an_unreadable_ai_tell_lexicon_fails_LOUD(monkeypatch, capsys):
+    from engine.marketing import wire_voice
+
+    def _boom(*a, **kw):
+        raise FileNotFoundError("config/press.yml")
+
+    monkeypatch.setattr(wire_voice, "ai_tell_lexicon", _boom)
+    entry = BY_ID["P1"]
+    # The post still ships (a style screen may not stop a fired event) …
+    assert htl.validate_wire_copy(entry["good_phrasing"], entry["packet"]) == []
+    # … but the disarmed gate is announced at the START of the line.
+    lines = capsys.readouterr().out.splitlines()
+    hits = [ln for ln in lines if "hot_tape_ai_tell_lexicon" in ln]
+    assert hits, f"no annotation printed; stdout was {lines}"
+    assert hits[0].startswith("::warning title=hot_tape_ai_tell_lexicon::"), hits[0]

@@ -894,3 +894,226 @@ class TestFiftyTwoWeekFactsNeedAYear:
         assert "load_ohlcv(ticker, _ohlcv_root_cw, n=252)" in src, (
             "the fact lane is loading a short window again"
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# X Growth W1g — the degenerate "first since" clause, and one basis per fact.
+#
+# TWO LIVE DEFECTS, both from the 2026-07-25..31 audit.
+#
+# (1) DEGENERATE LOOKBACK. "first since <date>" was derived from the prior
+#     extreme found INSIDE the same 252-bar window the record is measured
+#     against, so on consecutive record days the prior extreme is YESTERDAY:
+#     "$ROST hit a new 52-week high, first since Jun 2026" on 07-28, then
+#     "first since Jul 2026" on 07-29 — 25 posts in one week asserting rarity
+#     while describing its opposite. The SMA branch had the same shape plus a
+#     placeholder: with no prior bar found it rendered the literal string
+#     "a while" into the copy AND into the fact's licensed numbers.
+#
+# (2) BASIS MIXING. The $TSLA post detected a 52-week low with
+#     `last_low < w52_low` (INTRADAY) and shipped close-phrased copy ("through
+#     306.51") that the record's own last_close (313.03) contradicts.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Words that only a CLOSE-basis detection may license.
+_CLOSE_WORDS = ("closed", "close above", "close below", "through")
+#: Words that only an INTRADAY-basis detection may license.
+_INTRADAY_WORDS = ("intraday", "traded up to", "traded down to", "traded above",
+                   "traded below")
+
+
+def _year_of_bars(n=260, *, base=100.0):
+    """n sessions of flat OHLC at *base* (dates are real trading days)."""
+    dates = _make_dates(n)
+    o = [base] * n
+    h = [base + 0.5] * n
+    l = [base - 0.5] * n
+    c = [base] * n
+    return dates, o, h, l, c
+
+
+class TestSinceClauseIsNotDegenerate:
+    def test_a_fresh_prior_extreme_emits_no_since_clause(self):
+        """The $ROST case: yesterday's high cannot date today's record."""
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        n = 260
+        dates, _o, h, l, c = _year_of_bars(n)
+        # The prior high is set 3 sessions ago and today takes it out.
+        h[n - 4] = 110.0
+        c[n - 4] = 110.0
+        c[n - 1] = 120.0
+        h[n - 1] = 120.0
+        facts = _fact_52w_high_low("ROST", dates, h, l, c)
+        rec = [f for f in facts if f["id"] == "new_52w_high"]
+        assert rec, f"no record fact built: {facts}"
+        assert "first since" not in rec[0]["text"], (
+            f"a 3-session-old prior high still got a rarity clause: "
+            f"{rec[0]['text']!r}"
+        )
+
+    def test_a_genuinely_old_prior_extreme_keeps_its_date(self):
+        """Suppression must not swallow the case the clause exists for."""
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        n = 260
+        dates, _o, h, l, c = _year_of_bars(n)
+        # Prior high 200 sessions back; nothing since.
+        h[n - 200] = 110.0
+        c[n - 200] = 110.0
+        c[n - 1] = 120.0
+        h[n - 1] = 120.0
+        facts = _fact_52w_high_low("OLD", dates, h, l, c)
+        rec = [f for f in facts if f["id"] == "new_52w_high"]
+        assert rec, f"no record fact built: {facts}"
+        assert "first since" in rec[0]["text"], rec[0]["text"]
+        # And the date it names is whitelisted, because it carries a year token.
+        label = rec[0]["text"].split("first since ")[1]
+        assert label in rec[0]["numbers"], rec[0]
+
+    def test_the_since_date_is_the_most_recent_touch_not_the_first(self):
+        """`.index()` found the EARLIEST bar at the extreme, which overstates
+        the gap: a level touched in January AND July is not 'first since Jan'."""
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        n = 260
+        dates, _o, h, l, c = _year_of_bars(n)
+        h[10] = 110.0            # earliest touch
+        c[10] = 110.0
+        h[n - 3] = 110.0         # most recent touch — 3 sessions ago
+        c[n - 3] = 110.0
+        c[n - 1] = 120.0
+        h[n - 1] = 120.0
+        rec = [f for f in _fact_52w_high_low("TWICE", dates, h, l, c)
+               if f["id"] == "new_52w_high"]
+        assert rec and "first since" not in rec[0]["text"], (
+            f"dated off the earliest touch, not the most recent: {rec}"
+        )
+
+    def test_no_placeholder_string_ever_reaches_copy_or_numbers(self):
+        """`_fact_sma_cross` rendered 'first time since a while' when it could
+        not find a prior bar — in the text AND in the licensed numbers."""
+        from engine.marketing.chart_facts import _fact_sma_cross
+        n = 60
+        dates = _make_dates(n)
+        # Below the 50-day for its whole life (a steady decline keeps every
+        # close under the trailing mean), then one bar pops above it: the
+        # backward search finds NO earlier bar above the average.
+        c = [100.0 - 0.1 * i for i in range(n - 1)] + [140.0]
+        fact = _fact_sma_cross("TEST", dates, c, 50, "50-day average")
+        assert fact is not None, "no cross detected — fixture is wrong"
+        assert "a while" not in fact["text"], fact["text"]
+        assert "a while" not in fact["numbers"], fact["numbers"]
+        assert "first time since" not in fact["text"], fact["text"]
+
+    def test_a_fresh_moving_average_cross_emits_no_since_clause(self):
+        """The live $TEL post: 'first close above the 50-day since Jul 2026',
+        written days after it lost that same average."""
+        from engine.marketing.chart_facts import _fact_sma_cross
+        n = 70
+        dates = _make_dates(n)
+        c = [100.0] * n
+        c[n - 6] = 130.0          # above the average 5 sessions ago
+        c[n - 1] = 130.0          # and again today
+        fact = _fact_sma_cross("TEL", dates, c, 50, "50-day average")
+        assert fact is not None
+        assert "first time since" not in fact["text"], fact["text"]
+
+    def test_the_suppression_floor_is_a_quarter(self):
+        from engine.marketing.chart_facts import _MIN_SINCE_SESSIONS
+        assert _MIN_SINCE_SESSIONS >= 60, (
+            "a shorter floor lets 'first since last month' back in"
+        )
+
+
+class TestExtremeFactsCarryOneBasis:
+    def _tsla_bars(self):
+        """The $TSLA shape: an intraday low below the 52-week low, closing well
+        above it."""
+        n = 260
+        dates, _o, h, l, c = _year_of_bars(n, base=400.0)
+        # An earlier trough sets both prior lows; today's bar takes out the
+        # INTRADAY low only and closes back above the prior closing low.
+        l[n - 100] = 310.00
+        c[n - 100] = 312.00
+        h[n - 100] = 315.00
+        l[n - 1] = 306.51        # intraday low takes out the low
+        c[n - 1] = 313.03        # but the CLOSE is above the prior closing low
+        h[n - 1] = 314.00
+        return dates, h, l, c
+
+    def test_an_intraday_record_never_speaks_in_closes(self):
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        dates, h, l, c = self._tsla_bars()
+        rec = [f for f in _fact_52w_high_low("TSLA", dates, h, l, c)
+               if f["id"] == "new_52w_low"]
+        assert rec, "no 52-week low detected — fixture is wrong"
+        fact = rec[0]
+        assert fact["basis"] == "intraday", fact
+        low = fact["text"].lower()
+        for word in _CLOSE_WORDS:
+            assert word not in low, (
+                f"intraday-basis fact makes a close claim ({word!r}): "
+                f"{fact['text']!r}"
+            )
+        assert "306.51" in fact["text"], fact["text"]
+        # The close is NOT licensed: a writer cannot build "closed through X"
+        # out of a number the packet never handed it.
+        assert "313.03" not in fact["numbers"], fact["numbers"]
+
+    def test_a_close_record_says_closed(self):
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        n = 260
+        dates, _o, h, l, c = _year_of_bars(n)
+        c[n - 1] = 130.0
+        h[n - 1] = 131.0
+        rec = [f for f in _fact_52w_high_low("UP", dates, h, l, c)
+               if f["id"] == "new_52w_high"]
+        assert rec and rec[0]["basis"] == "close", rec
+        assert "closed" in rec[0]["text"], rec[0]["text"]
+        for word in _INTRADAY_WORDS:
+            assert word not in rec[0]["text"].lower(), rec[0]["text"]
+
+    def test_every_basis_bearing_fact_is_self_consistent(self):
+        """Whole-engine sweep: no fact may be detected on one basis and phrased
+        on the other, whatever the tape does."""
+        from engine.marketing.chart_facts import compute_facts
+        n = 260
+        seen = 0
+        for scenario in ("high_close", "low_intraday", "chop"):
+            dates, o, h, l, c = _year_of_bars(n)
+            if scenario == "high_close":
+                c[n - 1] = 130.0
+                h[n - 1] = 131.0
+            elif scenario == "low_intraday":
+                l[n - 1] = 60.0
+                c[n - 1] = 99.0
+            else:
+                c[n - 1] = 100.4
+                h[n - 1] = 100.9
+            v = [1_000_000.0] * n
+            for fact in compute_facts("X", dates, o, h, l, c, v)["facts"]:
+                basis = fact.get("basis")
+                if basis is None:
+                    continue
+                seen += 1
+                low = fact["text"].lower()
+                banned = _CLOSE_WORDS if basis == "intraday" else _INTRADAY_WORDS
+                for word in banned:
+                    assert word not in low, (
+                        f"[{scenario}] {fact['id']} is {basis}-basis but says "
+                        f"{word!r}: {fact['text']!r}"
+                    )
+        # NOT VACUOUS: on the pre-fix engine no fact carried a basis at all, so
+        # the sweep above would pass by examining nothing.
+        assert seen >= 3, (
+            f"only {seen} basis-bearing fact(s) across three scenarios — the "
+            f"sweep is passing because it has nothing to check"
+        )
+
+    def test_the_record_facts_declare_a_basis_at_all(self):
+        """A fact with no basis key is one no downstream gate can check."""
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        n = 260
+        dates, _o, h, l, c = _year_of_bars(n)
+        c[n - 1] = 130.0
+        h[n - 1] = 131.0
+        for fact in _fact_52w_high_low("UP", dates, h, l, c):
+            assert fact.get("basis") in ("close", "intraday"), fact

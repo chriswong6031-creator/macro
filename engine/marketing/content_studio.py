@@ -1019,10 +1019,16 @@ def _is_writable_day(slot: object, cfg: dict | None = None) -> bool:
 
     Writable now:
       * the EMIT day (D1) — the only ladder slots the outbox will take;
-      * every NON-ladder slot (THEME-, MOVER-, and any publish-time lane) —
-        `_slot_day` returns "" for these and they ship through their own path,
-        so excluding them would silence live reach content. This is the part a
+      * every NON-ladder slot (any publish-time lane) — `_slot_day` returns ""
+        for these and the publish-time lanes ship through their own path, so
+        excluding them would silence live reach content. This is the part a
         naive `slot.startswith("D1-")` filter would get wrong.
+
+        THEME-/MOVER- were listed here and no longer exist: those labels were
+        the movers desk's, and "their own path" was a belief, not a path — the
+        outbox skips every non-D1 slot, so those items shipped nowhere. The
+        movers desk now takes real D1 rungs at distribution, which lands it in
+        the first bullet.
 
     Forward ladder slots keep the deterministic template copy `plan_account`
     already gave them, so the admin preview still shows a populated week; they
@@ -1602,8 +1608,10 @@ def assign_shapes(
     `caption` is assigned ONLY to a chart-bearing item and only where the mixer
     wanted a one_liner — a caption with no image is a post with no content
     (contract §Shapes: "REQUIRES media attached at emit"). Publish-time reach
-    items (mover/theme_list, non-D slots) are left alone: they are wire register
-    with their own template banks and no shape contract.
+    items (mover/theme_list) are left alone: they are wire register with their
+    own template banks and no shape contract. The exclusion is by KIND (the
+    `PLANNED_KINDS` test below), not by slot — reach items now sit on real D1
+    ladder rungs like everything else, because a non-D slot cannot be emitted.
     """
     by_day: dict[str, list[dict]] = {}
     for item in queue or []:
@@ -2979,9 +2987,40 @@ def content_plan(
     _REACH_CHART_CAP = 8
     _ticker_charts_n = len(featured_charts)
 
-    def _reach_headroom() -> bool:
-        """True while the reach lanes still have budget of their own."""
-        return (len(featured_charts) - _ticker_charts_n) < _REACH_CHART_CAP
+    # THE MOVERS/THEME RESERVE (defect closed 2026-07-31; cap TOTAL unchanged).
+    #
+    # The three reach lanes drew on one 8-card allowance in SOURCE ORDER, and
+    # confluence is written first. On the 2026-07-31 plan it took all 8 and the
+    # movers/theme desk got zero cards. That is the worst possible split of this
+    # budget, for a reason stated by the confluence lane's own census note
+    # (`_confluence_census`, ~line 1288): a confluence post slots itself CONF-NN
+    # and the outbox emits only D1- slots, so NOTHING confluence renders has ever
+    # reached the outbox or a timeline. Its cards are deliberately deferred for
+    # exactly that reason.
+    #
+    # A mover/theme card is the opposite: `theme_list` and `mover` are in the
+    # publisher's `_TICKER_ROLLUP_KINDS`, and `_bare_cashtag_post` refuses to
+    # ship a cashtag-bearing post with no picture ("YOU WILL NOT SHIP THESE TEXT
+    # ONLY" — operator, 2026-07-30). So a chartless mover is not a plainer post,
+    # it is an UNPUBLISHABLE one. Giving the publishable lane the smaller half of
+    # a budget spent by the unpublishable one is backwards.
+    #
+    # Reserved rather than reordered: the movers block reads `featured_charts`
+    # and `chart_id_counter` that this block also advances, and moving ~350 lines
+    # to reorder two producers is a far bigger change than fencing off the six
+    # cards the movers desk can actually mint (up to 2 movers + 4 themes).
+    # Confluence keeps what is left (2), still deferred, still free if it dies.
+    _REACH_MOVERS_RESERVE = 6
+
+    def _reach_headroom(reserve: int = 0) -> bool:
+        """True while the reach lanes still have budget of their own.
+
+        ``reserve`` is the slice of the cap the CALLER may not take — the movers/
+        theme desk passes 0 (it may use the whole allowance), confluence passes
+        `_REACH_MOVERS_RESERVE` so it cannot starve a lane that can publish.
+        """
+        return (len(featured_charts) - _ticker_charts_n) < (
+            _REACH_CHART_CAP - max(0, reserve))
 
     confluence_posts_added: list[dict] = []  # for the summary block
     conf_charts_added = 0
@@ -3056,9 +3095,12 @@ def content_plan(
                     combo_id=sig["combo_id"],
                 )
 
-                # Attempt v2 chart for this confluence ticker
-                # Only if we have headroom under the total cap
-                if _reach_headroom() and _ohlcv_root_conf:
+                # Attempt v2 chart for this confluence ticker.
+                # Only under the confluence SHARE of the reach cap: this lane
+                # cannot publish what it renders (CONF-NN slots never emit), so
+                # it must not spend the cards the movers/theme desk needs to be
+                # publishable at all (see `_REACH_MOVERS_RESERVE`).
+                if _reach_headroom(_REACH_MOVERS_RESERVE) and _ohlcv_root_conf:
                     from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2
                     _windowed = load_ohlcv_windowed(conf_ticker, _ohlcv_root_conf)
                     ohlcv, _warmup = _windowed if _windowed else (None, 0)
@@ -3209,6 +3251,29 @@ def content_plan(
         # Fail-soft: confluence unavailable — Prophet posts unchanged
         pass
 
+    # ── Strip neural_web mover/theme_list stubs ──────────────────────────────
+    # The tilt-based queue builder creates stub mover/theme_list items for every
+    # account. These have no real data and would produce empty-token copy. Only
+    # movers_desk items may represent those types in the final plan.
+    #
+    # RUNS BEFORE THE INJECTION BELOW, and the order is load-bearing. It used to
+    # run after, which meant the movers desk looked at a D1 ladder that was still
+    # 28/28 booked — every rung the allocator had handed to a stub it was about
+    # to delete — found no free rung, and dropped all six real reach items on the
+    # floor. (Invisible until now: the desk's slots were MOVER-NN/THEME-NN, which
+    # the outbox refuses anyway, so "seated" and "dropped" published the same
+    # nothing.) Stripping first hands the injection exactly the rungs the tilt
+    # allocated to `mover`/`theme_list` in the first place — the real posts land
+    # where the allocator planned for them.
+    for _acct_row in account_rows:
+        _acct_row["queue"] = [
+            _it for _it in _acct_row["queue"]
+            if not (
+                _it.get("type") in ("mover", "theme_list")
+                and _it.get("provenance") != "movers_desk"
+            )
+        ]
+
     # ── Movers/theme desk — inject mover + theme_list items ──────────────────
     # Load heatmap data once; attach movers summary to content.movers block.
     # mover items get a real ticker from top_movers; theme_list items carry
@@ -3222,6 +3287,13 @@ def content_plan(
         "note": "Heatmap data unavailable; mover/theme posts not generated.",
     }
     _mover_item_counter = 1
+    # Declared OUTSIDE the fail-soft try below on purpose: the `all_items` fold
+    # after it must run whatever the block raised. Anything already seated on a
+    # desk queue when a later step (chart render, media attach) blew up is still
+    # a queued post, and the plan summary has to say so.
+    _seated_movers: list[dict] = []
+    _seated_themes: list[dict] = []
+    _reach_unseated = 0
 
     try:
         from engine.marketing.movers_source import (
@@ -3308,7 +3380,15 @@ def content_plan(
                     "body": _mv_body,
                     "provenance": "movers_desk",
                     "chart_id": None,
-                    "slot": f"MOVER-{_mover_item_counter:02d}",
+                    # EMPTY UNTIL DISTRIBUTION — a real `D1-S<n>` ladder rung is
+                    # assigned below, exactly as the filing/house-pick lane does.
+                    # This used to read f"MOVER-{n:02d}", which meant the item
+                    # could not be emitted at all: outbox.emit_from_content_plan
+                    # skips every slot that does not start with "D1-" (one bare
+                    # `continue`), so the Movers desk published NOTHING in its
+                    # entire existence while every content_plan.json since
+                    # 2026-07-19 carried mover+theme_list items in the queues.
+                    "slot": "",
                     "status": "drafted",
                     "_mover_facts": _mv_facts,
                     "_mover_data": _mv,
@@ -3343,7 +3423,7 @@ def content_plan(
                     "body": _tl_body,
                     "provenance": "movers_desk",
                     "chart_id": None,
-                    "slot": f"THEME-{_mover_item_counter:02d}",
+                    "slot": "",   # real D1 ladder rung assigned at distribution
                     "status": "drafted",
                     "_theme_data": _tl,
                     "_theme_facts": _tl_facts,
@@ -3351,15 +3431,91 @@ def content_plan(
                 _theme_items_for_queue.append(_tl_item_dict)
                 _mover_item_counter += 1
 
+            # ── Distribution: real desks, REAL D1 LADDER RUNGS ────────────────
+            # Round-robin across the desks so the WHOLE network posts reach
+            # content — and each desk gets a DISTINCT theme / mover (different
+            # cashtags => inherently distinctness-safe, no substantially-similar
+            # cross-account risk). Cold-start reach comes from breadth of
+            # coverage across the network, not one desk.
+            #
+            # THIS RUNS BEFORE THE CARD RENDERERS BELOW, and both reasons are
+            # defects it closes:
+            #   1. the slot. Every item minted here used to carry MOVER-NN /
+            #      THEME-NN and outbox.emit_from_content_plan drops any slot that
+            #      is not "D1-…", so the desk has never published a post. Seating
+            #      the item first means the ladder rung — the thing that decides
+            #      whether it can ship at all — is settled before a single card
+            #      is rendered for it, and an item the ladder cannot seat costs
+            #      no render (same rule the filing/house-pick lane follows).
+            #   2. the account. The card entries below copy `_tl_item["account"]`
+            #      into featured_charts; when distribution ran AFTER them, every
+            #      theme card was stamped with enabled_rows[0] while the post it
+            #      belongs to had been round-robined to a different desk.
+            #
+            # RUNG CHOICE — EARLIEST FREE, deliberately NOT "market hours". The
+            # ladder is a Pacific clock (S1 = 4:00 AM … S28 = 5:30 PM PT) and the
+            # nightly builds this plan AFTER the close, so every market-hours
+            # rung for D1 is already in the past — and a past rung means DUE NOW:
+            # the publisher's `_is_due` treats due-in-the-past as due, enqueue
+            # clamps a scheduled_at earlier than its own created_at forward to
+            # creation, and the publisher's min-gap floor does the spacing. The
+            # earliest free rung is therefore the soonest this post can honestly
+            # go out, which is exactly what a perishable "$X +5.2% today" needs.
+            # A market-hours rung on any PRE-close run would instead be a real
+            # future time — parking perishable copy, which is the failure that
+            # quarantined two hot-tape movers on 2026-07-31 when their "right
+            # now" died in an 8-hour queued stall. A desk whose D1 ladder is full
+            # drops the item rather than double-book a time (§5.5: an empty rung
+            # stays empty).
+            if enabled_rows:
+                # Round-robin across ENABLED desks only — a planned desk must
+                # never receive reach content (F3d).
+                _n_acct = len(enabled_rows)
+                # Interleave movers and themes so early desks get a mix.
+                from itertools import zip_longest as _zip_longest  # noqa: PLC0415
+                _reach_items = []
+                for _m, _t in _zip_longest(_mover_items_for_queue, _theme_items_for_queue):
+                    if _t is not None:
+                        _reach_items.append(_t)
+                    if _m is not None:
+                        _reach_items.append(_m)
+
+                # Per-desk pool of D1 rungs nothing has booked yet — same
+                # computation the filing lane runs a few hundred lines below.
+                _reach_free: dict[str, list[str]] = {}
+                for _row in enabled_rows:
+                    _used = {
+                        str(_it.get("slot") or "").split("-", 1)[1]
+                        for _it in (_row.get("queue") or [])
+                        if str(_it.get("slot") or "").startswith("D1-")
+                    }
+                    _reach_free[str(_row.get("id") or "")] = [
+                        _s for _s in _LADDER_SLOTS if _s not in _used]
+
+                for _idx, _item in enumerate(_reach_items):
+                    _acct = enabled_rows[_idx % _n_acct]
+                    _pool = _reach_free.get(str(_acct.get("id") or "")) or []
+                    if not _pool:
+                        _reach_unseated += 1
+                        continue
+                    _item["account"] = _acct.get("id", "flagship")
+                    _item["slot"] = f"D1-{_pool.pop(0)}"
+                    _acct["queue"].append(_item)
+                    if _item.get("type") == "mover":
+                        _seated_movers.append(_item)
+                    else:
+                        _seated_themes.append(_item)
+
             # ── Watchlist card rendering for theme_list items ─────────────────
             # Each theme_list item gets an SVG watchlist card: rows from theme members
             # {ticker, price, pct_change}, subtitle = the item's stance line (question).
             # Card goes into featured_charts the same way signal charts do; chart_id
-            # is attached to the item dict.
+            # is attached to the item dict. SEATED items only — a card for a post
+            # no desk queued is render budget spent on nothing.
             if _reach_headroom():
                 try:
                     from engine.marketing.chart_render import render_watchlist_card as _rwc
-                    for _tl_item in _theme_items_for_queue:
+                    for _tl_item in _seated_themes:
                         if not _reach_headroom():
                             break
                         _tl_data = _tl_item.get("_theme_data") or {}
@@ -3410,28 +3566,11 @@ def content_plan(
                 except Exception:  # noqa: BLE001
                     pass  # fail-soft: watchlist card unavailable; theme posts unchanged
 
-            # Distribute reach items round-robin across the desks so the WHOLE
-            # network posts reach content — and each desk gets a DISTINCT theme /
-            # mover (different cashtags => inherently distinctness-safe, no
-            # substantially-similar cross-account risk). Cold-start reach comes
-            # from breadth of coverage across the network, not one desk.
-            if enabled_rows:
-                # Round-robin across ENABLED desks only — a planned desk must
-                # never receive reach content (F3d).
-                _n_acct = len(enabled_rows)
-                # Interleave movers and themes so early desks get a mix.
-                from itertools import zip_longest as _zip_longest  # noqa: PLC0415
-                _reach_items = []
-                for _m, _t in _zip_longest(_mover_items_for_queue, _theme_items_for_queue):
-                    if _t is not None:
-                        _reach_items.append(_t)
-                    if _m is not None:
-                        _reach_items.append(_m)
-                for _idx, _item in enumerate(_reach_items):
-                    _acct = enabled_rows[_idx % _n_acct]
-                    _item["account"] = _acct.get("id", "flagship")
-                    _acct["queue"].append(_item)
-
+            # THE CENSUS IS WHAT WAS SEATED, not what was minted. A minted item
+            # the ladder could not take is not a post; reporting it as one is the
+            # same false-supply reading the MOVER-NN slot bug produced for two
+            # weeks (queues full of items, outbox empty, census saying "2 mover
+            # posts, 4 theme_list posts generated" every night).
             _movers_summary = {
                 "movers": [
                     {
@@ -3439,7 +3578,7 @@ def content_plan(
                         "pct": it["_mover_data"]["pct"],
                         "sector": it["_mover_data"].get("sector", ""),
                     }
-                    for it in _mover_items_for_queue
+                    for it in _seated_movers
                 ],
                 "theme_lists": [
                     {
@@ -3448,19 +3587,23 @@ def content_plan(
                         "agg_pct": it["_theme_data"]["agg_pct"],
                         "n_members": len(it["_theme_data"]["members"]),
                     }
-                    for it in _theme_items_for_queue
+                    for it in _seated_themes
                 ],
+                "unseated": _reach_unseated,
                 "note": (
-                    f"{len(_mover_items_for_queue)} mover posts, "
-                    f"{len(_theme_items_for_queue)} theme_list posts generated "
-                    f"from heatmap data."
+                    f"{len(_seated_movers)} mover posts, "
+                    f"{len(_seated_themes)} theme_list posts queued on the D1 "
+                    f"ladder from heatmap data"
+                    + (f"; {_reach_unseated} dropped (no free D1 rung)."
+                       if _reach_unseated else ".")
                 ),
             }
 
-            # mover items: attempt v2 chart (same as Prophet signal flow)
+            # mover items: attempt v2 chart (same as Prophet signal flow).
+            # SEATED movers only — see the distribution block above.
             if closes_loader is not None:
                 from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2, render_signal_chart
-                for _mv_item in _mover_items_for_queue:
+                for _mv_item in _seated_movers:
                     _mv_ticker = _mv_item["ticker"]
                     if not _reach_headroom():
                         break
@@ -3529,20 +3672,41 @@ def content_plan(
     except Exception:  # noqa: BLE001
         pass  # fail-soft — movers unavailable; Prophet posts unchanged
 
-    # ── Strip neural_web mover/theme_list stubs ──────────────────────────────
-    # The tilt-based queue builder creates stub mover/theme_list items for every
-    # account.  These have no real data and would produce empty-token copy.
-    # The movers injection block above has already added real movers_desk items
-    # to account_rows[0].  Remove all neural_web mover/theme_list items so only
-    # movers_desk items represent those types in the final plan.
-    for _acct_row in account_rows:
-        _acct_row["queue"] = [
-            _it for _it in _acct_row["queue"]
-            if not (
-                _it.get("type") in ("mover", "theme_list")
-                and _it.get("provenance") != "movers_desk"
-            )
-        ]
+    # ── Movers/theme items join `all_items` (the plan's own census) ───────────
+    # THE BLIND SPOT THIS CLOSES. `all_items` is what feeds `distinctness()`,
+    # `total_posts` and `signal_posts`, and the movers desk was the only producer
+    # that appended straight to `acct_row["queue"]` without extending it. So a
+    # night whose ONLY output was reach content reported `total_posts: 0` — the
+    # identical false-empty reading the DeepSeek outage produced, which is the
+    # signal `_alarm_on_a_planless_night` exists to fire on. It also meant the
+    # cross-desk distinctness check never saw a single mover or theme post.
+    #
+    # Built from the SEATED dicts (they carry the final account + D1 slot) and
+    # keyed by `id`, which is what the two post-budget reconciliations below
+    # filter on — an item the reuse budget or the writer deletes from a queue
+    # drops out of `all_items` with everything else. `chart_id` is snapshotted
+    # here and may be filled in on the queue dict afterwards; nothing reads
+    # `ContentItem.chart_id` (distinctness reads type/account/ticker/body, the
+    # chart census reads `featured_charts`), so the two cannot disagree where it
+    # would matter.
+    for _reach_dict in (*_seated_movers, *_seated_themes):
+        all_items.append(ContentItem(
+            id=str(_reach_dict.get("id") or ""),
+            type=str(_reach_dict.get("type") or ""),
+            account=str(_reach_dict.get("account") or ""),
+            cashtag=str(_reach_dict.get("cashtag") or ""),
+            ticker=str(_reach_dict.get("ticker") or ""),
+            headline=str(_reach_dict.get("headline") or ""),
+            body=str(_reach_dict.get("body") or ""),
+            provenance=str(_reach_dict.get("provenance") or "movers_desk"),
+            chart_id=_reach_dict.get("chart_id"),
+            slot=str(_reach_dict.get("slot") or ""),
+            status=str(_reach_dict.get("status") or "drafted"),
+        ))
+
+    # (The neural_web mover/theme_list stub strip that used to sit here now
+    # runs BEFORE the movers injection — that block explains why the order
+    # is load-bearing.)
 
     # ── Fact-locked filing lanes + house picks (XG-E2) ───────────────────────
     # Masterplan §10 lanes 6 and 7 (insider Form 4, politician trades), plus the

@@ -642,14 +642,29 @@ def test_graded_receipts_mixed_from_done_then_invalidated():
 
 
 def test_graded_receipts_freshness_gate():
-    """Signal older than 14 days → excluded from receipts."""
-    from engine.marketing.receipt_source import graded_receipts
+    """Signal older than the configured window → excluded from receipts.
+
+    The window is config-owned (`copywriter.receipt_max_age_days`, widened
+    14→30 on 2026-07-31 because resolved plans mature at 21-22 days and a
+    14-day window starved the desk to zero forever). Pinning a literal age
+    here re-created the starvation bug as a test failure, so the stale
+    fixture is derived from the live window instead.
+    """
+    from engine.marketing.receipt_source import graded_receipts, receipt_max_age_days
+    beyond = receipt_max_age_days() + 5
     plan = _make_signal_plan(
-        "OLD", entry=100.0, inv=90.0, signal_date=_old_date(20),
+        "OLD", entry=100.0, inv=90.0, signal_date=_old_date(beyond),
         phase="invalidated",
     )
     receipts = graded_receipts([plan])
     assert receipts == [], f"Expected empty receipts for stale plan, got {receipts}"
+    # And the boundary the other way: inside the window still counts.
+    fresh = _make_signal_plan(
+        "NEW", entry=100.0, inv=90.0,
+        signal_date=_old_date(max(receipt_max_age_days() - 5, 1)),
+        phase="invalidated",
+    )
+    assert graded_receipts([fresh]), "a within-window resolution must produce a receipt"
 
 
 def test_graded_receipts_deduplicate_richest():
@@ -1393,8 +1408,12 @@ def _movers_desk_items(monkeypatch, tmp_path, tiles, themes) -> list[dict]:
 
     md = tmp_path / "site" / "marketdata"
     md.mkdir(parents=True, exist_ok=True)
+    # asof must be TODAY: the mover lane's session-staleness law (2026-07-31)
+    # refuses to build "today" claims from a non-today session, so a pinned
+    # historical date here would silently shrink the item count and starve the
+    # clarity-gate sample this test exists to exercise.
     (md / "sp500_heatmap.json").write_text(json.dumps({
-        "asof": "2026-07-24",
+        "asof": date.today().isoformat(),
         "tiles": [{"t": t, "name": t, "sector": "Information Technology",
                    "perf": {"1D": pct}} for t, pct in tiles],
     }), encoding="utf-8")
@@ -1406,9 +1425,16 @@ def _movers_desk_items(monkeypatch, tmp_path, tiles, themes) -> list[dict]:
     }), encoding="utf-8")
 
     from engine.marketing.content_studio import content_plan
+    # Two desks, not one: reach items seat on REAL free D1 rungs since the
+    # 2026-07-31 slot fix, and a single desk carrying an entire day's planned
+    # queue legitimately exhausts its ladder (drop is designed + counted as
+    # content.movers.unseated). Production runs 6+ desks; two is the smallest
+    # fixture that seats all four stance/tone forks this test asserts on.
     cfg = {"desk_network": {"stage": "A", "accounts": [
         {"id": "flagship", "kind": "branded", "beat": "What changed",
          "voice": "authoritative desk"},
+        {"id": "founder", "kind": "personal", "beat": "Conviction and cost",
+         "voice": "dry, receipts-forward"},
     ]}}
     plan = content_plan(cfg, [], closes_loader=None, root=tmp_path)
     return [it for row in plan["accounts"] for it in row["queue"]
@@ -1452,15 +1478,20 @@ def test_mover_and_theme_copy_survives_the_clarity_gate(monkeypatch, tmp_path):
 def test_every_movers_desk_question_survives_the_clarity_gate():
     """Both reply-bait pools land verbatim in theme bodies — walk all of them.
 
-    A single content_plan run only reaches the questions its theme names hash
-    to, so the pools are walked directly to cover the ones the tapes miss.
-    """
-    from engine.marketing.movers_source import _QUESTION_DOWN, _QUESTION_UP
+    A single content_plan run only reaches the tails its theme names hash to,
+    so the pools are walked directly to cover the ones the tapes miss.
 
-    pools = list(_QUESTION_DOWN) + list(_QUESTION_UP)
+    Renamed from _QUESTION_* to _TAIL_* on 2026-07-31, when the reply-bait
+    pools were replaced by stance / watch-condition tails (see movers_source:
+    a question aimed at the READER costs the author nothing). The clarity gate
+    is unchanged and every line still has to pass it.
+    """
+    from engine.marketing.movers_source import _TAIL_DOWN, _TAIL_UP
+
+    pools = list(_TAIL_DOWN) + list(_TAIL_UP)
     bad = [f"{v} in {q!r}" for q in pools for v in _clarity_gate_violations(q)]
-    assert len(pools) >= 8, f"only {len(pools)} questions walked — guard is vacuous"
-    assert not bad, "movers-desk reply-bait trips the gate:\n" + "\n".join(bad)
+    assert len(pools) >= 8, f"only {len(pools)} tails walked — guard is vacuous"
+    assert not bad, "movers-desk tails trip the gate:\n" + "\n".join(bad)
 
 
 def test_through_is_not_treated_as_a_level_preposition():

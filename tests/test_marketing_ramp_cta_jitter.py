@@ -630,6 +630,20 @@ class TestPublishTimeLaneRamp:
     # Monday 2026-07-27, 14:05 UTC == 10:05 ET → the AM slot, mid-session.
     NOW = datetime(2026, 7, 27, 14, 5, 0, tzinfo=timezone.utc)
 
+    @pytest.fixture(autouse=True)
+    def _stub_publish_time_card(self, monkeypatch):
+        """The publish-time lane now refuses to enqueue a mover/theme item whose
+        card cannot be hosted (2026-07-31). These tests are about the RAMP tiers,
+        run under tmp_path with no renderer and no R2, so the card is stubbed to
+        its happy path and the tier assertions keep measuring the tier."""
+        from engine.marketing import publish_time_content as _ptc
+        monkeypatch.setattr(_ptc, "_resolve_card", lambda cand, **kw: {
+            "media": {"kind": "chart_svg", "chart_id": "stub",
+                      "path": "data/marketing/outbox/media/stub.svg",
+                      "media_url": "https://cards.example/stub.png"},
+            "published": {"chart_id": "stub"}, "reason": "ok"})
+
+
     @classmethod
     def _write_fixtures(cls, tmp) -> None:
         import json
@@ -1173,6 +1187,19 @@ class TestPublishTimeLaneRevival:
     `0 >= -1` — True for every account, every run. The auto-approved mover/theme
     lane therefore generated NOTHING from 2026-07-24 onward. The existing suite
     only ever passed cap=2, which is why it survived."""
+
+    @pytest.fixture(autouse=True)
+    def _stub_publish_time_card(self, monkeypatch):
+        """The publish-time lane now refuses to enqueue a mover/theme item whose
+        card cannot be hosted (2026-07-31). These tests are about the RAMP tiers,
+        run under tmp_path with no renderer and no R2, so the card is stubbed to
+        its happy path and the tier assertions keep measuring the tier."""
+        from engine.marketing import publish_time_content as _ptc
+        monkeypatch.setattr(_ptc, "_resolve_card", lambda cand, **kw: {
+            "media": {"kind": "chart_svg", "chart_id": "stub",
+                      "path": "data/marketing/outbox/media/stub.svg",
+                      "media_url": "https://cards.example/stub.png"},
+            "published": {"chart_id": "stub"}, "reason": "ok"})
 
     def test_unlimited_cap_does_not_block_every_account(self, tmp_path):
         """THE REGRESSION: at cap=-1 the lane must still generate."""

@@ -21,6 +21,17 @@ cannot attach — the post would silently go out text-only.
 Only items that are still decidable are touched. Anything posted, posting or
 quarantined is terminal and left exactly as it is.
 
+SUPERSEDE, NEVER APPEND (X Growth W1g, 2026-07-31). The replacement and the
+retirement are ONE operation, `engine.marketing.rewrite.apply_rewrite`, and the
+retirement goes FIRST. This script used to enqueue the new copy and then
+quarantine the old — which cannot work, because `outbox.enqueue` rejects
+near-duplicates against a same-account 7-day corpus and a rewrite of a post is
+by construction a near-duplicate of that post. Every headline-only rewrite it
+attempted was refused as "duplicate" and the stale copy stayed queued (the
+script's own "original left queued" warning was the symptom). Retiring the
+original first drops it out of that corpus, because `_enqueue_ctx` excludes dead
+ids — see the module docstring in `engine/marketing/rewrite.py`.
+
     # show what would change, touch nothing
     python3 -m scripts.marketing_requeue_stale_copy --as-of 2026-07-26
 
@@ -74,8 +85,9 @@ def main(argv: list[str] | None = None) -> int:
 
     from engine.marketing import weekend_levels as wl  # noqa: PLC0415
     from engine.marketing.outbox import (  # noqa: PLC0415
-        enqueue, fold_state, transition, effective_cap,
+        fold_state, effective_cap,
     )
+    from engine.marketing.rewrite import apply_rewrite  # noqa: PLC0415
 
     if args.lane != "weekend_levels":
         log.error("only the weekend_levels lane is supported (got %r)", args.lane)
@@ -105,10 +117,14 @@ def main(argv: list[str] | None = None) -> int:
 
     # Regenerate copy ONLY. with_media=False: the existing cards are already
     # rendered and hosted; re-rendering here would drop their public URL.
+    # skip_if_queued=False: this lane's idempotence guard exists to stop a
+    # SECOND generation run duplicating a day. A rewrite is the opposite case —
+    # it only ever runs against items that are already queued, and it supersedes
+    # them one for one below.
     fresh = wl.build_items(
         root, tickers=tickers, as_of=args.as_of, account=args.account,
         schedule=schedule, max_items=len(tickers), cfg=_load_cfg(root),
-        with_media=False,
+        with_media=False, skip_if_queued=False,
     )
     fresh_by_ticker = {str(i["source"].get("ticker") or ""): i for i in fresh}
 
@@ -145,19 +161,16 @@ def main(argv: list[str] | None = None) -> int:
     cap = effective_cap(_load_cfg(root))
     done = 0
     for old, new in planned:
-        # Enqueue the replacement FIRST: if that fails, the original is still
-        # queued and the day still has content, rather than an empty slot.
-        res = enqueue(new, root=root, max_per_account_day=cap)
-        if res != "queued":
-            log.warning("  %-6s enqueue returned %r — original left queued",
-                        old["source"].get("ticker"), res)
+        res = apply_rewrite(
+            old["id"], new, root=root, actor="requeue_stale_copy",
+            note=f"superseded by {new['id']} (stale copy: pre-fix headline)",
+            max_per_account_day=cap,
+        )
+        if not res["ok"]:
+            log.warning("  %-6s rewrite refused (%s) — original untouched",
+                        old["source"].get("ticker"), res["outcome"])
             continue
-        ok = transition(old["id"], "quarantined", actor="requeue_stale_copy",
-                        root=root,
-                        note=f"superseded by {new['id']} (stale copy: pre-fix headline)")
-        if not ok:
-            log.warning("  %-6s could not quarantine %s — BOTH are now queued, "
-                        "fix by hand", old["source"].get("ticker"), old["id"])
+        if res["outcome"] == "unchanged":
             continue
         done += 1
 

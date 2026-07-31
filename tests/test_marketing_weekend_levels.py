@@ -251,3 +251,195 @@ def test_render_chart_v2_draws_the_cited_level():
         level_overlay={"price": 5.0, "label": "52-wk low"},
     )
     assert "52-wk low" not in svg2
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# X Growth W1g — the double slate, and the retired v1 writer.
+#
+# (a) IDEMPOTENCE. This lane ran twice for as_of=2026-07-26 (a 03:13 batch and a
+#     09:52 batch) and wrote EIGHT items each time: a second, contradictory post
+#     for every slot, deleted by the operator by hand. A re-run must add zero
+#     new slots — and must not spend eight Chrome rasters discovering that.
+#
+# (b) NO SILENT TEMPLATE FALLBACK. write_copy called `copywriter.write_posts_llm`,
+#     the retired v1 BATCH path whose documented failure mode is a silent 100%
+#     template fallback (one call for the whole batch; a truncated reply returns
+#     None and every post reverts to template prose). On `write_posts_llm_v2`,
+#     an armed lane that produces no model copy DROPS the post — `watchlist` is
+#     a planned kind and the no-fallback law covers it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_ARMED_CFG = {"copywriter": {"llm": {"enabled": True}}}
+
+
+def _queue_a_weekend_item(root, as_of="2026-07-26", account="flagship"):
+    from engine.marketing.outbox import enqueue, make_item
+    item = make_item(
+        account=account, kind="watchlist",
+        text="$NVDA into the week\n\nClosed 120.00, holding its 20-day average.",
+        as_of=as_of, provenance="weekend_levels",
+        source={"ticker": "NVDA", "lane": "weekend_levels"},
+    )
+    assert enqueue(item, root=root) == "queued"
+    return item
+
+
+class TestWeekendLaneIsIdempotent:
+    def test_a_second_same_day_run_adds_zero_new_slots(self, tmp_path):
+        for t in ("NVDA", "AAPL", "TSLA"):
+            _seed_parquet(tmp_path, t, [float(x) for x in range(1, 121)])
+        tickers = ["NVDA", "AAPL", "TSLA"]
+
+        first = wl.build_items(tmp_path, tickers=tickers, as_of="2026-07-26")
+        assert first, "first run built nothing — fixture is wrong"
+        from engine.marketing.outbox import enqueue
+        for it in first:
+            assert enqueue(it, root=tmp_path, max_per_account_day=8) == "queued"
+
+        second = wl.build_items(tmp_path, tickers=tickers, as_of="2026-07-26")
+        assert second == [], (
+            f"the 09:52 re-run built {len(second)} more item(s) for a day that "
+            f"already has {len(first)}"
+        )
+
+    def test_the_guard_is_scoped_to_that_account_and_that_day(self, tmp_path):
+        for t in ("NVDA", "AAPL"):
+            _seed_parquet(tmp_path, t, [float(x) for x in range(1, 121)])
+        _queue_a_weekend_item(tmp_path, as_of="2026-07-26", account="flagship")
+        # A different content day is untouched...
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-27")
+        # ...and so is a different desk.
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26",
+                              account="cici")
+
+    def test_a_quarantined_batch_re_arms_the_lane(self, tmp_path):
+        """The honest recovery from a bad slate is to quarantine it; dead items
+        must not keep the lane locked out of the day."""
+        from engine.marketing.outbox import transition
+        _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
+        item = _queue_a_weekend_item(tmp_path)
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26") == []
+        transition(item["id"], "quarantined", actor="operator", root=tmp_path)
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26")
+
+    def test_the_rewrite_path_can_still_regenerate_a_queued_day(self, tmp_path):
+        """skip_if_queued=False is what the supersede lane passes; without it a
+        rewrite could never regenerate the copy it exists to replace."""
+        _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
+        _queue_a_weekend_item(tmp_path)
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26",
+                              skip_if_queued=False)
+
+
+class TestWeekendWriterNeverFallsBackToTemplates:
+    def test_it_calls_the_v2_per_item_writer(self, monkeypatch):
+        """The v1 batch path is the one with the documented silent-fallback
+        failure mode; this lane must not be on it."""
+        import engine.marketing.copywriter as cw
+        seen = {}
+
+        def _fake_v2(contexts, cfg, *, root=None):
+            seen["n"] = len(contexts)
+            return [{"mode": "llm", "headline": "$NVDA into the week",
+                     "body": "Closed 120.00 and held its 20-day average."}
+                    for _ in contexts]
+
+        monkeypatch.setattr(cw, "write_posts_llm_v2", _fake_v2, raising=True)
+        monkeypatch.setattr(cw, "write_posts_llm",
+                            lambda *a, **k: pytest.fail("v1 batch writer called"),
+                            raising=True)
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        specs = [{"ticker": "NVDA", "lv": {"last": 120.0, "sma20": 118.0,
+                                           "sma50": 110.0, "lo52": 90.0,
+                                           "hi52": 130.0, "wk_pct": 1.0,
+                                           "above20": True, "above50": True,
+                                           "pct_from_hi": -7.0, "pct_from_lo": 33.0},
+                  "headline": "$NVDA floor", "body": "Floor body copy."}]
+        out = wl.write_copy(specs, _ARMED_CFG)
+        assert seen.get("n") == 1
+        assert out == [("$NVDA into the week",
+                        "Closed 120.00 and held its 20-day average.")]
+
+    def test_an_armed_lane_with_no_copy_drops_the_post(self, tmp_path, monkeypatch):
+        """EMPTY LLM → DROPPED, NOT TEMPLATED. Pre-fix this shipped the floor."""
+        import engine.marketing.copywriter as cw
+        monkeypatch.setattr(
+            cw, "write_posts_llm_v2",
+            lambda contexts, cfg, root=None: [
+                {"mode": "dropped", "reasons": ["no_provider_credential"],
+                 "stage": "provider"} for _ in contexts],
+            raising=True)
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
+        items = wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26",
+                               cfg=_ARMED_CFG, with_media=False)
+        assert items == [], (
+            f"a dropped post was replaced with template copy: "
+            f"{[i['text'] for i in items]}"
+        )
+
+    def test_a_writer_that_raises_drops_rather_than_templates(self, tmp_path,
+                                                              monkeypatch):
+        import engine.marketing.copywriter as cw
+
+        def _boom(*_a, **_k):
+            raise RuntimeError("provider construction blew up")
+
+        monkeypatch.setattr(cw, "write_posts_llm_v2", _boom, raising=True)
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26",
+                              cfg=_ARMED_CFG, with_media=False) == []
+
+    def test_one_drop_costs_one_post_not_the_batch(self, tmp_path, monkeypatch):
+        """The whole reason for per-item calls: isolation."""
+        import engine.marketing.copywriter as cw
+
+        def _one_bad(contexts, cfg, root=None):
+            out = []
+            for i, ctx in enumerate(contexts):
+                if i == 0:
+                    out.append({"mode": "dropped", "reasons": ["critic"],
+                                "stage": "critic"})
+                else:
+                    tk = str(ctx.get("ticker") or "")
+                    out.append({"mode": "llm",
+                                "headline": f"${tk} into the week",
+                                "body": f"{tk} closed at 120.00 and held the "
+                                        f"20-day average into the weekend."})
+            return out
+
+        monkeypatch.setattr(cw, "write_posts_llm_v2", _one_bad, raising=True)
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        for t in ("NVDA", "AAPL"):
+            _seed_parquet(tmp_path, t, [float(x) for x in range(1, 121)])
+        items = wl.build_items(tmp_path, tickers=["NVDA", "AAPL"],
+                               as_of="2026-07-26", cfg=_ARMED_CFG, with_media=False)
+        assert [i["source"]["ticker"] for i in items] == ["AAPL"], items
+
+    def test_a_mute_lane_is_not_a_drop(self, tmp_path, monkeypatch):
+        """Nobody armed the writer (no flag, no env) — the floor still ships, or
+        every local run and every unarmed nightly posts an empty weekend."""
+        monkeypatch.delenv("MARKETING_LLM_ENABLED", raising=False)
+        _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
+        items = wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26",
+                               cfg=_ARMED_CFG, with_media=False)
+        assert len(items) == 1, items
+        assert not wl.lane_armed(_ARMED_CFG)
+
+    def test_model_copy_that_breaks_the_compliance_bar_is_dropped(
+            self, tmp_path, monkeypatch):
+        """_assert_clean still runs, and a failure is a DROP now, not a
+        substitution."""
+        import engine.marketing.copywriter as cw
+        monkeypatch.setattr(
+            cw, "write_posts_llm_v2",
+            lambda contexts, cfg, root=None: [
+                {"mode": "llm", "headline": "$NVDA is a no-brainer",
+                 "body": "Back up the truck, this is easy money."}
+                for _ in contexts],
+            raising=True)
+        monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+        _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26",
+                              cfg=_ARMED_CFG, with_media=False) == []

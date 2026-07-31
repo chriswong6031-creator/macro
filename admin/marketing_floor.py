@@ -113,6 +113,13 @@ _ACTIVITY_WORDS: dict[str, str] = {
     "quarantined_unknown_cashtag": "pulled — named a ticker no price store knows",
     "quarantined_voice_laws": "pulled — reads machine-written",
     "quarantined_run_duplicate": "pulled — repeats a post already sent today",
+    # The wire reaper (2026-07-31). Says WHY in the operator's terms — the copy
+    # was fine, the queue never moved — because a recurring count here is a
+    # DISPATCH fault, not a writing fault, and the two get fixed in different
+    # places. Named "aged out" rather than "expired" for the same reason
+    # rate_limited is "waiting out a rate limit": the word has to carry the
+    # cause, not the mechanism.
+    "expired_wire": "aged out of the queue before anyone sent it",
 }
 
 # Counters that mean "a post did NOT go out because of this" — the ones that sum
@@ -124,6 +131,9 @@ _LOSS_COUNTERS = frozenset({
     "quarantined_frame", "quarantined_substance", "deferred_no_media",
     "deferred_immediate", "deferred_cross_account", "tape_quarantined",
     "tape_skipped", "pt_dropped", "stuck_posting",
+    # A post the desk wrote and nobody sent is a loss like any other — it is
+    # only invisible because it died before the dispatch loop rather than in it.
+    "expired_wire",
 })
 
 # Lanes that draw an LLM on the marketing side. Config path → the lane's job in
