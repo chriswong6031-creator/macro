@@ -234,3 +234,450 @@ a{color:var(--link)}
   .axis-row{grid-template-columns:1fr auto 22px}.axis-name{font-size:12px}.axis-state{font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){.ilx-path,.ilx-bar{animation:none!important}}
+
+
+body.crypto-page,
+body.page-vector {
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", Inter, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-data: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-data);
+  --num: var(--font-data);
+  --deck-accent: var(--info);
+  --deck-glass: color-mix(in srgb, var(--panel) 86%, transparent);
+  --deck-border: color-mix(in srgb, var(--text) 12%, transparent);
+  --deck-shadow: 0 8px 32px rgba(0, 0, 0, .34),
+    inset 0 1px 0 color-mix(in srgb, #fff 7%, transparent);
+  --deck-hover-shadow: 0 12px 36px rgba(0, 0, 0, .40),
+    inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent);
+  font-family: var(--font-data);
+  font-size: 14px;
+  line-height: 1.48;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-theme="light"] body.crypto-page,
+html[data-theme="light"] body.page-vector {
+  --deck-glass: rgba(255, 255, 255, .80);
+  --deck-border: rgba(28, 36, 48, .08);
+  --deck-shadow: 0 4px 20px rgba(20, 30, 50, .08),
+    inset 0 1px 0 rgba(255, 255, 255, .92);
+  --deck-hover-shadow: 0 8px 28px rgba(20, 30, 50, .12),
+    inset 0 1px 0 rgba(255, 255, 255, .96);
+}
+
+body.crypto-page :is(h1, h2, h3, .hero-word, .hero-stance),
+body.page-vector :is(h1, h2, h3, .stance, .decision-action, .exposure-band) {
+  font-family: var(--font-display);
+}
+
+body.crypto-page :is(.num, .rank, .asset b, .market-value, .market-change,
+  .reading, .meter-score b, .exposure-big b, .lane-symbol, .lane-price,
+  .equity b, .eq-price, .event-date, .deriv-fact b),
+body.page-vector :is(.num, .live-price, .live-change, .meter-score,
+  .exposure-band, .risk-context b, .axis-micro b, .complex-symbol,
+  .complex-value, .fold-stat, .metric .v, .fact .v, .vtm-date, .vtm-price) {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Shared page rhythm: the Macro/Commodities centered command surface. */
+body.crypto-page,
+html body.page-vector {
+  padding-top: 24px;
+}
+
+.crypto-rail,
+.vector-wrap {
+  width: min(1320px, calc(100% - 40px));
+  margin-inline: auto;
+  padding: 18px 0 72px;
+}
+
+body.crypto-page .crypto-shelf,
+body.page-vector .shelf {
+  margin-top: 16px;
+  border: 1px solid var(--deck-border);
+  border-radius: 16px;
+  background: var(--deck-glass);
+  box-shadow: var(--deck-shadow);
+  backdrop-filter: saturate(165%) blur(18px);
+  -webkit-backdrop-filter: saturate(165%) blur(18px);
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+body.crypto-page .crypto-shelf:hover,
+body.page-vector .shelf:hover {
+  border-color: color-mix(in srgb, var(--text) 18%, transparent);
+  box-shadow: var(--deck-hover-shadow);
+}
+
+body.crypto-page .crypto-shelf::before,
+body.page-vector .shelf::before {
+  display: none;
+}
+
+body.crypto-page .shelf-pad,
+body.page-vector .shelf-inner {
+  padding: 18px 20px;
+}
+
+body.crypto-page .shelf-head,
+body.page-vector .shelf-head {
+  gap: 9px;
+  margin-bottom: 13px;
+}
+
+body.crypto-page :is(.shelf-index, .shelf-kicker),
+body.page-vector .shelf-kicker {
+  color: var(--muted);
+  font-family: var(--font-data);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .13em;
+}
+
+body.crypto-page .shelf-index,
+body.page-vector .shelf-kicker {
+  color: var(--deck-accent);
+}
+
+body.crypto-page .shelf-title,
+body.page-vector .shelf-title {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: .005em;
+}
+
+body.crypto-page .shelf-sub,
+body.page-vector .shelf-sub {
+  font-size: 11px;
+}
+
+body.crypto-page :is(.market-board, .triptych, .heat-layout, .deriv-fold,
+  .alloc-grid, .lane-grid, .equity-grid, .calendar-grid),
+body.page-vector :is(.decision-grid, .axis-board, .watch-grid, .complex-grid,
+  .study-list) {
+  overflow: hidden;
+  border-color: var(--line);
+  border-radius: 12px;
+}
+
+body.crypto-page :is(.market-row, .sensor, .deriv-fact, .asset-lane, .equity, .event),
+body.page-vector :is(.axis-row, .watch-item, .complex-card, .study-fold) {
+  transition: background .16s ease, border-color .16s ease;
+}
+
+body.crypto-page :is(.market-row:not(.market-head), .asset-lane, .equity, .event):hover,
+body.page-vector :is(.axis-row, .watch-item, .complex-card):hover {
+  background: color-mix(in srgb, var(--panel2) 70%, transparent);
+}
+
+body.crypto-page :is(.live-chip, .history-chip),
+body.page-vector :is(.asof-chip, .change-chip, .strategy-tab, .vtm-btn, .vtm-tag) {
+  border-radius: 999px;
+}
+
+body.crypto-page :focus-visible,
+body.page-vector :focus-visible {
+  outline-color: var(--deck-accent);
+}
+
+/* Crypto Intelligence: turn the oversized editorial cover into the same compact
+   page header + dominant stance pattern used by Commodities. */
+body.crypto-page {
+  --crypto: var(--info);
+  --crypto-soft: color-mix(in srgb, var(--info) 10%, transparent);
+  --crypto-line: color-mix(in srgb, var(--info) 30%, var(--line));
+}
+
+body.crypto-page .hero {
+  background: var(--deck-glass);
+}
+
+body.crypto-page .hero-grid {
+  grid-template-columns: minmax(310px, .82fr) minmax(480px, 1.18fr);
+  gap: 30px;
+  align-items: center;
+  padding: 26px 28px;
+}
+
+body.crypto-page .hero-word {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+body.crypto-page .hero-stance {
+  max-width: 690px;
+  margin-top: 18px;
+  color: var(--text);
+  font-size: clamp(38px, 5vw, 62px);
+  line-height: .96;
+  font-weight: 800;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+
+body.crypto-page .hero-copy {
+  max-width: 58ch;
+  margin-top: 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+body.crypto-page .hero-meta {
+  margin-top: 16px;
+}
+
+body.crypto-page .live-chip {
+  padding: 4px 10px;
+  border-color: var(--line);
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel2) 55%, transparent);
+}
+
+body.crypto-page .hero-viz {
+  padding-left: 28px;
+}
+
+body.crypto-page .hero-stats {
+  gap: 8px;
+  border: 0;
+  background: transparent;
+}
+
+body.crypto-page .hero-stat {
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel2) 72%, transparent);
+}
+
+body.crypto-page .hero-stat:last-child {
+  border-right: 1px solid var(--line);
+}
+
+body.crypto-page .hero-stat b {
+  font-size: 18px;
+}
+
+body.crypto-page .market-head {
+  background: color-mix(in srgb, var(--panel2) 72%, transparent);
+}
+
+body.crypto-page .compact-market {
+  background: transparent;
+  gap: 8px;
+  padding: 10px;
+}
+
+body.crypto-page .compact-asset {
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--panel2) 68%, transparent);
+}
+
+body.crypto-page .sensor {
+  min-height: 150px;
+}
+
+body.crypto-page .heat-meter,
+body.crypto-page .alloc-side {
+  background: color-mix(in srgb, var(--panel2) 62%, transparent);
+}
+
+body.crypto-page .meter-rail,
+body.crypto-page .alloc-bar {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+body.crypto-page .alloc-top h3 {
+  font-size: 21px;
+}
+
+body.crypto-page .alloc-key {
+  border-color: var(--line);
+}
+
+body.crypto-page .lane-symbol {
+  font-size: 28px;
+  letter-spacing: -.035em;
+}
+
+body.crypto-page .lane-state {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 650;
+}
+
+body.crypto-page .event h3 {
+  font-size: 12.5px;
+}
+
+/* Bitcoin Vector: preserve orange as the asset/data cue, while page structure,
+   focus and shelf hierarchy use the shared Mastermind blue accent. */
+body.page-vector {
+  --btc-structural: var(--deck-accent);
+}
+
+body.page-vector .shelf::before {
+  background: var(--btc-structural);
+}
+
+body.page-vector .hero {
+  padding: 24px 26px 20px;
+  background: transparent;
+}
+
+body.page-vector .wordmark {
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: .04em;
+}
+
+body.page-vector .wordmark .mark {
+  font-family: var(--font-display);
+  font-size: 22px;
+}
+
+body.page-vector .hero-read {
+  grid-template-columns: minmax(0, 1fr) 270px;
+  gap: 24px;
+  margin: 24px 0 10px;
+}
+
+body.page-vector .stance {
+  max-width: 900px;
+  font-size: clamp(40px, 5.2vw, 66px);
+  line-height: .95;
+  font-weight: 800;
+  letter-spacing: -.04em;
+}
+
+body.page-vector .hero-summary {
+  margin-top: 12px;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+body.page-vector .master-meter {
+  padding: 15px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--panel2) 68%, transparent);
+}
+
+body.page-vector .tape-shell {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+body.page-vector .what-changed {
+  margin-top: 12px;
+}
+
+body.page-vector .decision-main,
+body.page-vector .decision-detail {
+  padding: 22px 24px;
+}
+
+body.page-vector .decision-action {
+  font-size: clamp(28px, 3.2vw, 42px);
+}
+
+body.page-vector .level,
+body.page-vector :is(.study-card, .metric, .fact, .chart-card, .equity-box, .vtm-readout) {
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel2) 56%, transparent);
+}
+
+body.page-vector .study-body {
+  background: color-mix(in srgb, var(--bg) 46%, transparent);
+}
+
+body.page-vector .strategy-tab.on {
+  color: var(--deck-accent);
+  border-color: color-mix(in srgb, var(--deck-accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--deck-accent) 9%, transparent);
+}
+
+body.page-vector .all-alerts {
+  color: var(--link);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.crypto-page .crypto-shelf,
+  body.page-vector .shelf,
+  body.crypto-page :is(.market-row, .sensor, .asset-lane, .equity, .event),
+  body.page-vector :is(.axis-row, .watch-item, .complex-card, .study-fold) {
+    transition: none;
+  }
+}
+
+@media (max-width: 1050px) {
+  body.crypto-page .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .crypto-rail,
+  .vector-wrap {
+    width: min(100% - 24px, 1320px);
+    padding-top: 10px;
+  }
+
+  body.crypto-page .hero-grid,
+  body.page-vector .hero {
+    padding: 20px 18px;
+  }
+
+  body.crypto-page .hero-viz {
+    padding-left: 0;
+  }
+
+  body.crypto-page .hero-stance,
+  body.page-vector .stance {
+    font-size: 40px;
+  }
+
+  body.page-vector .master-meter {
+    border: 1px solid var(--line);
+    padding: 14px 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .crypto-rail,
+  .vector-wrap {
+    width: calc(100% - 16px);
+  }
+
+  body.crypto-page .crypto-shelf,
+  body.page-vector .shelf {
+    margin-top: 12px;
+    border-radius: 13px;
+  }
+
+  body.crypto-page .hero-stance,
+  body.page-vector .stance {
+    font-size: 35px;
+  }
+
+  body.crypto-page .hero-stats {
+    gap: 7px;
+  }
+}
