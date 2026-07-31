@@ -73,6 +73,7 @@
     "aebe286974455ce19dbd56b897a40aee9e3dd4a8": "2026-07-31T19:00:57.574746+00:00",
     "b0f941c8e2f1f19d610cdb4573073cfb361e16b0": "2026-07-30T23:39:13.478726+00:00",
     "b335e018dacfe71b817d2f8e7648dfa00150926d": "2026-07-31T04:36:05.323258+00:00",
+    "b35354b5343f7576608a44bdad33bdbce97d3de5": "2026-07-31T21:32:25.902288+00:00",
     "b38a94b1804163a6816cd58dd7bdc699c5156f49": "2026-07-30T23:39:13.478726+00:00",
     "b7917b4b5087160b0b071b5a3c91a0466d0182a1": "2026-07-31T20:21:46.975998+00:00",
     "ba3ca2d8a8075a5dde8e14993ba666595c734fc2": "2026-07-31T17:54:40.596641+00:00",
@@ -92,6 +93,7 @@
     "e0ffb5773e55caf2a74bec3c67d6ed8f53ce8bf2": "2026-07-31T14:30:10.223340+00:00",
     "e31dd022db67d1619cb66093ff65ff6de81cbe8d": "2026-07-31T04:36:05.323258+00:00",
     "e56975441e4a485edc112b2fec6d0f158c384556": "2026-07-31T12:07:46.333088+00:00",
+    "ebd3e03bb314bacd2643d938109f7c3e2ad66d65": "2026-07-31T21:32:25.902288+00:00",
     "eda8a1ed1b0307bbdb8697ab21fb9e68be0e62f4": "2026-07-31T19:00:57.574746+00:00",
     "ee32be38eca2e5aaf9fc17d9d47fec00a375dd0b": "2026-07-31T07:27:04.256025+00:00",
     "ee9eea9b7061caa52ed63a40f03b706fa2dadf93": "2026-07-31T14:30:10.223340+00:00",
@@ -105,86 +107,80 @@
     "fd66817577d85e52a1bb993f903b7b6483e06a70": "2026-07-31T14:30:10.223340+00:00"
   },
   "corroboration": {
-    "claim:company_news:sec:technology": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
-      "sources": [
-        "host:cnbc.com"
-      ]
-    },
-    "claim:none:sec:technology": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+    "claim:none:tic:NVDA": {
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:marketwatch.com"
       ]
     },
-    "claim:none:tic:AAPL": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+    "head:to facilitate positive adjustment to competition from imports of quartz surface ": {
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
-        "host:marketwatch.com"
+        "host:whitehouse.gov"
       ]
     },
     "truth:117005796425040371": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117006290013696288": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117009581290419286": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117010030683816088": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011270507732212": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011459082239407": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460046411651": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460524966016": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117014253232654593": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117015146759027639": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016403652131870": {
-      "first_ts": "2026-07-31T20:21:46.975998+00:00",
+      "first_ts": "2026-07-31T21:32:25.902288+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -196,14 +192,14 @@
   },
   "providers": {
     "cnn_truth_backfill": {
-      "etag": "\"c38c36252cf217d37abf206ab27260b8-3\"",
+      "etag": "\"d2e8195ce200a15d3c410fc69a1409ee-3\"",
       "fail_count": 0,
-      "last_modified": "Fri, 31 Jul 2026 19:49:45 GMT",
-      "last_poll_ts": 1785529308.7362545
+      "last_modified": "Fri, 31 Jul 2026 21:15:13 GMT",
+      "last_poll_ts": 1785533547.4826174
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785529308.3458972
+      "last_poll_ts": 1785533547.2879608
     },
     "twitterapiio": {
       "cursors": {
@@ -230,27 +226,27 @@
         "BRICSinfo": 1785529309.1772199,
         "CoinDesk": 1785492254.740735,
         "Cointelegraph": 1785492254.740735,
-        "DeItaone": 1785529309.1772199,
-        "FirstSquawk": 1785529309.1772199,
+        "DeItaone": 1785533547.9652672,
+        "FirstSquawk": 1785533547.9652672,
         "HormuzLetter": 1785492254.740735,
         "NewsWire_US": 1785529309.1772199,
         "Osint613": 1785529309.1772199,
         "StockMKTNewz": 1785529309.1772199,
-        "WHPressPool": 1785529309.1772199,
+        "WHPressPool": 1785533547.9652672,
         "WatcherGuru": 1785529309.1772199,
         "WhaleInsider": 1785529309.1772199,
-        "financialjuice": 1785529309.1772199,
+        "financialjuice": 1785533547.9652672,
         "rawsalerts": 1785529309.1772199,
         "remarks": 1785529309.1772199,
         "tradfi": 1785529309.1772199,
         "unusual_whales": 1785529309.1772199,
-        "zerohedge": 1785529309.1772199
+        "zerohedge": 1785533547.9652672
       },
       "spend": {
         "2026-07": {
-          "requests": 352,
+          "requests": 357,
           "tweets": 1660,
-          "usd": 0.28935
+          "usd": 0.2901
         }
       }
     }
@@ -263,40 +259,40 @@
     ]
   },
   "schema": "press_wire.cursors/v1",
-  "updated_at": "2026-07-31T20:21:46Z",
+  "updated_at": "2026-07-31T21:32:25Z",
   "wire": {
     "bea_news": {
       "etag": "\"fc82db231f20dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 12:30:00 GMT",
-      "last_poll_ts": 1785529307.7929459
+      "last_poll_ts": 1785533546.746614
     },
     "bls_news": {
       "etag": "\"80ba6c61e820dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 12:30:33 GMT",
-      "last_poll_ts": 1785529307.6928954
+      "last_poll_ts": 1785533546.6588833
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785529308.2639346
+      "last_poll_ts": 1785533547.2081566
     },
     "fed_press": {
       "etag": "\"927a7ee7f420dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 14:00:11 GMT",
-      "last_poll_ts": 1785529307.6372669
+      "last_poll_ts": 1785533546.6033595
     },
     "marketwatch_top": {
-      "etag": "W/\"20a0-q97kGiXbjwVLQb7mrg/F2jDyCtw\"",
+      "etag": "W/\"20a1-rhUVOEPWyg8W8jDsZPaRUBtCcqs\"",
       "fail_count": 0,
-      "last_poll_ts": 1785529308.2984927
+      "last_poll_ts": 1785533547.2458162
     },
     "whitehouse_actions": {
-      "etag": "\"75a6166912b815a60434f7e9879f422f\"",
+      "etag": "\"4fa5d405a97f3dd45fb406a706d2a8ea\"",
       "fail_count": 0,
-      "last_modified": "Fri, 31 Jul 2026 19:55:19 GMT",
-      "last_poll_ts": 1785529308.0654495
+      "last_modified": "Fri, 31 Jul 2026 18:18:59 GMT",
+      "last_poll_ts": 1785533547.0312288
     }
   }
 }
