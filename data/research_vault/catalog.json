@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T10:42:41.459461+00:00",
-  "count": 452,
+  "generated_at": "2026-07-31T10:57:38.574451+00:00",
+  "count": 453,
   "institutions": [
     "Amova",
     "Apollo",
@@ -40,6 +40,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-0natz1tlzak-bf2676",
+      "title": "JPM Europe Equity Research Today’s Morning Meeting",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T10:38:44Z",
+      "summary_points": [
+        "**European Style Rotation Shift**: Kospi down 40%, SOX 30%, reversal in momentum/growth factors; J.P.",
+        "Morgan QMI contraction signals early rotation to Value/Quality/Low Vol, underweight Growth/Risk.",
+        "**Adyen Positive Catalyst**: 16.6% Q2 customer growth (outperforming peers), 27% processed volume growth potential, FY26 revenue 20-22% YoY; strong fundamentals support upside.",
+        "**URW Retail Property Outperformance**: Lowest shopping center vacancy in a decade, 9% sustainable yield, inflation-linked earnings growth, US exposure as key differentiator.",
+        "**Prudential's China/HK Sales Downgrade**: Lowered forecasts for Chinese subsidiary and Hong Kong sales, signaling fundamental risk in critical markets."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-8q2xt3wnjqd-8f4d09",
       "title": "JPM FXMW Update FX FOMC",
