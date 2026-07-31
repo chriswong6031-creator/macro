@@ -641,7 +641,9 @@
       else {
         if (returnTrigger) returnTrigger.setAttribute('aria-expanded', 'false');
       }
-      if (panel) panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      if (panel) {
+        panel.toggleAttribute('inert', !isOpen);
+      }
       if (isOpen && panel) {
         var first = panel.querySelector('[data-nav-drill-back], a, button');
         if (first) window.setTimeout(function () { first.focus(); }, 80);
@@ -657,7 +659,9 @@
       openPanel.classList.remove('is-open');
       if (trigger) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); }
       var panel = openPanel.querySelector(':scope > [data-nav-drill-panel]');
-      if (panel) panel.setAttribute('aria-hidden', 'true');
+      if (panel) {
+        panel.setAttribute('inert', '');
+      }
     });
   }
 
@@ -942,6 +946,10 @@
 
     function go(x) {
       if (!x) return;
+      /* Collapse the search before Terminal mounts. Keeping the expanded input
+         alive under the overlay squeezed long exchange-qualified symbols (for
+         example 600519.SS) into the compact nav lane. */
+      closeSearch();
       try {
         if (window.mmTrack) window.mmTrack('search', {
           ticker: x.t,
@@ -1124,6 +1132,7 @@
 
     function openSearch() {
       box.classList.add('open');
+      document.body.classList.add('nav-search-focus');
       trigger.setAttribute('aria-expanded', 'true');
       loadLibs();
       page = 0;
@@ -1133,6 +1142,7 @@
 
     function closeSearch() {
       box.classList.remove('open');
+      document.body.classList.remove('nav-search-focus');
       trigger.setAttribute('aria-expanded', 'false');
       input.blur();
       selected = -1;

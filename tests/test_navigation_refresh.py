@@ -57,7 +57,7 @@ def test_approved_mockup_is_the_navigation_source_of_truth() -> None:
         "height: 58px",
         "font-size: 15px",
         "font-weight: 650",
-        "width: 276px",
+        "width: 300px",
     ):
         assert marker in REFRESH_CSS
 
@@ -76,7 +76,10 @@ def test_global_cycles_uses_accessible_in_panel_drill() -> None:
     assert "data-nav-drill-panel" in NAV
     assert "data-nav-drill-back" in NAV
     assert 'aria-expanded="false"' in NAV
+    assert "data-nav-drill-panel inert" in NAV
     assert "initNavDrills()" in THEME_JS
+    assert "panel.toggleAttribute('inert', !isOpen)" in THEME_JS
+    assert "panel.setAttribute('inert', '')" in THEME_JS
 
 
 def test_market_folding_reuses_canonical_menu_dom() -> None:
@@ -104,7 +107,7 @@ def test_search_is_profile_aware_animated_and_status_rich() -> None:
     ):
         assert marker in THEME_JS
 
-    assert ".nav-search.ticker-search.open { width: 340px; }" in REFRESH_CSS
+    assert ".nav-search.ticker-search.open { width: 300px; }" in REFRESH_CSS
     assert "@keyframes nrFanIn" in REFRESH_CSS
     assert "html:not([data-theme=\"light\"])" in REFRESH_CSS
     assert "@media (prefers-reduced-motion: reduce)" in REFRESH_CSS
@@ -116,6 +119,12 @@ def test_search_uses_volume_rank_and_controlled_saas_motion() -> None:
     assert "pending === 0 || input.value.trim()" in THEME_JS
     assert "@keyframes mockupCardSettle" in REFRESH_CSS
     assert "@keyframes mockupResultSettle" in REFRESH_CSS
+    assert "filter: blur(" not in REFRESH_CSS.split("@keyframes mockupCardSettle", 1)[1].split("@keyframes mockupMenuSwap", 1)[0]
+    assert "closeSearch();" in THEME_JS.split("function go(x)", 1)[1].split("function rank(", 1)[0]
+    assert "document.body.classList.add('nav-search-focus')" in THEME_JS
+    assert "document.body.classList.remove('nav-search-focus')" in THEME_JS
+    assert ".ticker-symbol," in REFRESH_CSS
+    assert "text-overflow: ellipsis;" in REFRESH_CSS
     approved = REFRESH_CSS.split("APPROVED MOCKUP — SOURCE-OF-TRUTH PORT", 1)[1]
     assert "translate(62px, -31px)" not in approved
     assert 'font: 720 11px/1 -apple-system' in approved
@@ -143,6 +152,7 @@ def test_start_hub_uses_canonical_product_navigation_and_demotes_clock() -> None
 
     rendered = (ROOT / "site" / "start.html").read_text(encoding="utf-8")
     assert 'class="site-nav"' in rendered
+    assert 'body class="hub-page"' in rendered
     assert 'class="hub-live-meta"' in rendered
     assert 'class="hub-top"' not in rendered
 

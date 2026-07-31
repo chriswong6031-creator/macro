@@ -2254,19 +2254,22 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
   padding: 0;
 }
 
-/* Search geometry and animation are the exact approved values. */
+/* Search geometry and motion keep the approved composition, but use one short,
+   GPU-friendly settle. The earlier 420ms width + 420ms panel + blurred-card
+   sequence made opening and closing feel queued rather than direct. */
 .nav-search.ticker-search {
   position: relative;
   z-index: 110;
-  width: 96px;
+  width: 112px;
   max-width: none;
   height: 38px;
   flex: none;
   overflow: visible;
-  transition: width .42s cubic-bezier(.22, .78, .2, 1);
+  transition: width .2s cubic-bezier(.2, .82, .2, 1);
+  will-change: width;
 }
 
-.nav-search.ticker-search.open { width: 276px; }
+.nav-search.ticker-search.open { width: 300px; }
 
 .ticker-search .search-trigger,
 .ticker-search .search-expanded {
@@ -2296,9 +2299,12 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
 .ticker-search .search-expanded {
   gap: 8px;
   padding: 0 8px 0 11px;
+  min-width: 0;
+  overflow: hidden;
   transform: scaleX(.58);
   transform-origin: right center;
-  transition: opacity .18s ease, transform .42s cubic-bezier(.22, .78, .2, 1), border-color .18s ease, visibility .18s;
+  transition: opacity .12s ease, transform .2s cubic-bezier(.2, .82, .2, 1), border-color .14s ease, visibility .12s;
+  will-change: opacity, transform;
 }
 
 .ticker-search.open .search-expanded {
@@ -2318,6 +2324,12 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .menu-count {
 .ticker-search .idle-ticker::after { height: 11px; background: var(--mock-blue); }
 
 .ticker-search .ticker-input {
+  flex: 1 1 auto;
+  width: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font: 680 12px/1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", Inter, ui-sans-serif, sans-serif;
   letter-spacing: .01em;
 }
@@ -2345,9 +2357,10 @@ html[data-lang="zh"] .ticker-search .search-esc {
   color: var(--mock-ink);
   background: var(--mock-surface);
   box-shadow: 0 28px 70px rgba(28, 36, 55, .22), 0 4px 12px rgba(28, 36, 55, .08);
-  transform: translateY(-11px) scale(.97);
+  transform: translateY(-7px) scale(.985);
   transform-origin: 92% 0;
-  transition: opacity .23s ease, transform .42s cubic-bezier(.2, .82, .2, 1), visibility .23s;
+  transition: opacity .14s ease, transform .2s cubic-bezier(.2, .82, .2, 1), visibility .14s;
+  will-change: opacity, transform;
 }
 
 .search-drop-head { padding: 16px 17px 12px; border-color: var(--mock-line); }
@@ -2362,8 +2375,8 @@ html[data-lang="zh"] .ticker-search .search-esc {
   gap: 9px;
   padding: 7px 8px;
   border-radius: 11px;
-  animation: mockupCardSettle .42s cubic-bezier(.22, 1, .36, 1) both;
-  animation-delay: calc(var(--i) * 28ms + 54ms);
+  animation: mockupCardSettle .22s cubic-bezier(.2, .82, .2, 1) both;
+  animation-delay: calc(var(--i) * 14ms + 20ms);
 }
 
 .result-row {
@@ -2374,11 +2387,21 @@ html[data-lang="zh"] .ticker-search .search-esc {
   border: 1px solid var(--mock-line);
   border-radius: 10px;
   background: #fafbfc;
-  animation: mockupResultSettle .34s cubic-bezier(.22, 1, .36, 1) both;
-  animation-delay: calc(var(--i) * 24ms);
+  animation: mockupResultSettle .2s cubic-bezier(.2, .82, .2, 1) both;
+  animation-delay: calc(var(--i) * 12ms);
 }
 
 html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft); }
+.fan-card > span:nth-child(2),
+.result-row > span:nth-child(2) { min-width: 0; overflow: hidden; }
+.ticker-symbol,
+.ticker-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .ticker-symbol { color: var(--mock-ink); font-size: 11px; font-weight: 780; }
 .ticker-name { margin-top: 2px; color: #929dae; font-size: 8.5px; }
 .market-code { padding: 3px 5px; border-radius: 5px; color: #8a95a7; background: #eef1f5; font-size: 7.5px; }
@@ -2391,12 +2414,10 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
 @keyframes mockupCardSettle {
   from {
     opacity: 0;
-    filter: blur(4px);
-    transform: translateY(8px) scale(.985);
+    transform: translateY(5px) scale(.99);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translateY(0) scale(1);
   }
 }
@@ -2404,12 +2425,10 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
 @keyframes mockupResultSettle {
   from {
     opacity: 0;
-    filter: blur(3px);
-    transform: translateY(6px) scale(.992);
+    transform: translateY(4px) scale(.995);
   }
   to {
     opacity: 1;
-    filter: blur(0);
     transform: translateY(0) scale(1);
   }
 }
