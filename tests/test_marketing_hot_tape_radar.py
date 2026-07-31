@@ -803,6 +803,44 @@ class TestSuspectHistoryCard:
         assert "hot-tape DROP" in out                 # refused later, on the bars
 
 
+class TestRemoteQuotePlane:
+    """The VPS live plane is config-driven and must never fire in a bare checkout.
+
+    The radar reads a REMOTE quote source (config.yml ``live.public_quotes_url``)
+    because every repo-local artifact is written by a throttled GitHub lane. That
+    source is a bonus, never a dependency, and it must not turn a unit test into a
+    web request — hence "no config, no remote".
+    """
+
+    def test_a_root_without_config_yml_resolves_to_no_remote_source(self, tmp_path):
+        RADAR.remote_quote_urls.cache_clear()
+        assert RADAR.remote_quote_urls(tmp_path) == ()
+
+    def test_the_shipped_config_arms_the_plane(self):
+        RADAR.remote_quote_urls.cache_clear()
+        urls = RADAR.remote_quote_urls(REPO_ROOT)
+        assert urls and all(u.startswith("https://") for u in urls)
+
+    def test_an_operator_can_disable_it_with_an_empty_value(self, tmp_path):
+        (tmp_path / "config.yml").write_text('live:\n  public_quotes_url: ""\n')
+        RADAR.remote_quote_urls.cache_clear()
+        assert RADAR.remote_quote_urls(tmp_path) == ()
+
+    def test_load_quotes_passes_the_resolved_urls_through(self, tmp_path, monkeypatch):
+        """The wiring itself — a resolver nothing calls is the shape that ships dead."""
+        (tmp_path / "config.yml").write_text('live:\n  public_quotes_url: "https://vps/q"\n')
+        RADAR.remote_quote_urls.cache_clear()
+        seen: dict = {}
+
+        def _spy(root, *, remote_urls=None, **kw):
+            seen["urls"] = remote_urls
+            return {"quotes": {}, "asof": None, "source": "none", "feed_delay_min": 0.0}
+
+        monkeypatch.setattr(RADAR.LV, "load_live_quotes", _spy)
+        RADAR.load_quotes(tmp_path, now=NOW, cfg={}, demo=False)
+        assert seen["urls"] == ("https://vps/q",)
+
+
 class TestPerQuoteStaleness:
     """m4 — the freshness gate reads the FRESHEST quote, so a merge that passes
     still carries entries hours old, and a detector cannot tell them apart."""

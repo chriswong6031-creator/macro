@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 from collectors.base import Adapter
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -29,6 +29,31 @@ log = logging.getLogger(__name__)
 # while QQQ recovered on a retry 10s later. The window flaps per-request, so one spaced
 # extra attempt after a real cooldown beats more rapid-fire retries.
 CHAIN_429_COOLDOWN_S = 60.0
+
+
+# ── WRITE-SIDE SESSION GATE (M7, review 2026-07-29) ───────────────────────────
+# Both adapters below stamp their one-row snapshot with `pd.Timestamp(date.today())`
+# unconditionally, so a run on a Saturday/Sunday/holiday RECOMPUTES every field off a
+# stale carried-forward chain and lands it as a genuine-looking observation. That is how
+# data/cboe/{gex,putcall}.parquet each came to hold 13 non-session rows of 39 — rows that
+# corrupt `.iloc[-1]`, rolling means, percentile windows, POSITIONAL "n-session" lookbacks
+# and maturity `len()` gates all over the estate (#3721 class).
+#
+# Every READER now session-filters, so the historical rows are harmless and are left in
+# place — no backfill, no rewrite. This gate stops NEW ones landing: on a non-session day
+# the adapter returns nothing and the store simply does not advance, which is the honest
+# outcome (there was no session, so there is no observation).
+def _session_gated(frames: dict, adapter: str) -> dict:
+    """Drop a whole snapshot when today is not an NYSE session."""
+    today = date.today()
+    if nyse_calendar.is_session(today):
+        return frames
+    # Bare line-start print: a logger prefix would push "::" off column 0 and GitHub
+    # would drop the annotation (tests/test_gh_annotation_line_start.py).
+    print(f"::notice title=cboe-session-gate::{adapter}: {today} is not an NYSE session "
+          f"- snapshot discarded rather than stamped as an observation", flush=True)
+    log.info("cboe: %s skipped — %s is not a trading session", adapter, today)
+    return {}
 
 
 class PutCallAdapter(Adapter):
@@ -75,7 +100,7 @@ class PutCallAdapter(Adapter):
             "index_put_vol": [put_idx], "index_call_vol": [call_idx],
             "equity_put_vol": [put_eq], "equity_call_vol": [call_eq],
         }, index=[pd.Timestamp(date.today())])
-        return {"putcall": snap.dropna(axis=1, how="all")}
+        return _session_gated({"putcall": snap.dropna(axis=1, how="all")}, "PutCallAdapter")
 
 
 # underlyings scored daily for the GEX/magnets layer (engine/gex_engine.py). Indices
@@ -185,7 +210,10 @@ class GexAdapter(Adapter):
                     log.info("gex: %s recovered on the post-cooldown sweep", sym)
                 except Exception as e:  # noqa: BLE001 — coverage tripwire makes this loud
                     log.warning("gex: %s failed after cooldown too: %s", sym, e)
-        return out
+        # #3721 weekend-row gate stays the LAST thing this adapter does, so the
+        # post-cooldown recovery sweep (#4014) is gated too — a Saturday recovery row
+        # is as fabricated as a Saturday first-pass row.
+        return _session_gated(out, "GexAdapter")
 
 
 # ------------------------------------------------------------------ session coverage

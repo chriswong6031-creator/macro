@@ -35,6 +35,20 @@ def test_hover_gap_has_pointer_grace_without_geometry_change() -> None:
     assert "top: calc(100% + 7px)" not in TEMPLATE_CSS
 
 
+def test_menu_entrance_animation_cannot_restart_across_hover_gap() -> None:
+    hover_rule = TEMPLATE_CSS.split(
+        ".site-nav .nav-dd:hover > .nav-dd-menu.mega-menu,", 1
+    )[1].split("}", 1)[0]
+    assert "display: grid;" in hover_rule
+    assert "animation:" not in hover_rule
+
+    persistent_open_rule = TEMPLATE_CSS.split(
+        ".site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,", 1
+    )[1].split("}", 1)[0]
+    assert "animation: mockupMenuSwap" in persistent_open_rule
+    assert "(prefers-reduced-motion: reduce)" in TEMPLATE_CSS
+
+
 def test_hover_gap_assets_remain_byte_identical() -> None:
     assert TEMPLATE_CSS == SITE_CSS
     assert TEMPLATE_JS == SITE_JS

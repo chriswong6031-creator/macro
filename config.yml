@@ -639,6 +639,19 @@ live:
   # Empty string = no Worker; live.js then falls back to the static snapshot below.
   # Override without a commit via the GitHub repo VARIABLE LIVE_QUOTES_WORKER_URL.
   quotes_worker_url: ""
+  # The VPS live plane's public quote artifact, read by marketing lanes that opt in
+  # (engine/marketing/live_verify.remote_quote_urls -> load_live_quotes(remote_urls=)).
+  # Since VPS_LIVE_PRIMARY=true the repo-local quote artifacts are all written by
+  # throttled GitHub lanes; this one is not, and measured 31 SECONDS old on
+  # 2026-07-30T13:41Z while the live-data branch snapshot was 83 MINUTES old.
+  # Merged freshest-wins, never substituted, and fail-soft — an unreachable host
+  # degrades a consumer to its repo-local sources rather than breaking it.
+  # SCOPE: this is the 34-symbol DISPLAY set (indices/ETFs/futures/FX/crypto), NOT
+  # the ~2,100-name universe; the full snapshot is not web-addressable by design
+  # (app/deploy/Caddyfile @reg_asset). It cannot feed a single-name gate — a lane
+  # needing coverage still fetches its own tape (hot_tape_radar.refresh_live_snapshot).
+  # Set to "" (or []) to turn the remote source off estate-wide with no code change.
+  public_quotes_url: "https://www.mastermind-x.com/live/quotes.json"
   # Live Tape (Phase 1, research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md): when true
   # (default) the browser opens the same-origin /ws/tape websocket (app/tape.py,
   # served by macro-api behind Caddy) for the six macro.html futures/index/yield

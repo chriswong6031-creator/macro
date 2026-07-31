@@ -21,11 +21,20 @@ DESIGN CHOICES (documented here because some thresholds are OURS):
   • gravity: implemented as spec §6.5 exactly.
   • stability_pct: computed from the walls ladder's per-strike net_mn values,
     filtered to strikes within ±20% of spot.
-  • oi_delta_clusters: derived from day-over-day gex_<KEY>.parquet history (stored
-    by lib.store); empty lists when history is unavailable or too short.  The
-    per-name parquet carries 'spot' + 'net_gex_bn' per date — the by-strike history
-    is NOT stored (the daily collector only writes the summary row), so oi_delta
-    computation falls back to empty lists with a note.
+  • oi_delta_clusters: LIT as of the OIP E3 wave (2026-07-29) from the per-strike
+    Polygon chain snapshots (data/polygon_gex/chains/{date}.parquet, stored since
+    2026-06-15), NOT from the Cboe gex_<KEY>.parquet summary history — that store
+    only ever carried 'spot' + 'net_gex_bn' per date and has no per-strike rows.
+    Matched-contract day-over-day open-interest change, session-filtered, with a
+    same-vintage refusal and vintage stamps.  All of that lives in
+    engine/positioning_persistence.py; this module only shapes the payload.  Names
+    outside the Polygon universe (SPX, NDX, RUT, GLD, TLT, HYG, NFLX, BABA, UBER,
+    GME, ARKK among the board's keys) still get empty lists plus an honest note.
+  • wall_persistence / net_gex_pctile / deep_history: additive OIP E3 fields —
+    how long the heaviest open-interest strike either side of the price has held,
+    where today's net dealer gamma sits in the name's OWN stored daily record, and
+    the window/spread of the multi-year index rebuild for the four index ETFs it
+    covers.  Young windows and staleness are printed in plain words, never hidden.
   • regime_passport: propagated verbatim from gex_engine._gamma_regime_passport via
     gex_model.build_model → summary['regime_passport'] → compute_gex_state source_passport.
     Falls back to _make_regime_passport (identical logic, basis='assumption') when the
@@ -64,12 +73,18 @@ _CLOSE_FLIP_PCT = 0.005  # |dist_to_flip_pct| / 100 < 0.5%
 # The constant term is 0.001 $mn ($1,000) — NOT 1.0 $mn ($1,000,000).
 _NOISE_FLOOR_MULTIPLIER = 100.0  # noise_floor = max(0.001, spot * _NOISE_FLOOR_MULTIPLIER / 1e6)
 
-# ── oi_delta fallback note ────────────────────────────────────────────────────
-_OI_DELTA_NOTE = (
-    "Day-over-day per-strike OI history not stored by the daily collector; "
-    "per-strike oi_delta_clusters require the Cboe strike-level parquet — "
-    "falling back to empty lists."
+# ── oi_delta hard-degrade note (only when the derivation itself is unavailable) ──
+# The per-state honest notes live in engine/positioning_persistence.py; this pair is
+# the last resort for "the reader could not run at all" (no pandas, no store dir, an
+# unexpected error) so the payload still says something true instead of nothing.
+# DUPLICATED ON PURPOSE from engine.positioning_persistence.OI_DELTA_UNAVAILABLE_*: this
+# branch fires only when importing that module FAILS (no pandas), so it cannot import the
+# strings either. tests/test_positioning_persistence.py pins the two pairs equal.
+_OI_DELTA_UNAVAILABLE_EN = (
+    "Open-interest change could not be read for this name, so no build or unwind "
+    "strikes are shown."
 )
+_OI_DELTA_UNAVAILABLE_ZH = "本标的未平仓量变化暂时无法读取，因此不显示新增或平仓行权价。"
 
 
 # ── regime passport ───────────────────────────────────────────────────────────
@@ -408,20 +423,114 @@ def _triggers(
     return cascade_trigger, upside_trigger
 
 
-# ── oi_delta clusters (from history parquet) ──────────────────────────────────
+# ── oi_delta clusters (from the per-strike chain snapshots) ───────────────────
 
 def _oi_delta_clusters(key: str) -> dict:
-    """Attempt to derive new_oi / exit_oi clusters from per-strike day-over-day history.
+    """Matched-contract day-over-day open-interest build / unwind strikes for `key`.
 
-    The daily Cboe collector writes SUMMARY-level rows to data/cboe/gex_<KEY>.parquet
-    (columns: spot, net_gex_bn, …) — it does NOT write per-strike OI snapshots.
-    Without per-strike historical data we cannot compute strike-level OI deltas.
+    Delegates to engine.positioning_persistence, which owns the store reads, the
+    session filter, the same-vintage refusal and the plain-word notes.  A name the
+    Polygon chain store does not cover — or a store that is absent entirely — comes
+    back with empty lists and a note saying so; nothing here fabricates a zero.
 
-    Returns {"new_oi": [], "exit_oi": [], "note": <str>} when history is unavailable
-    or the parquet lacks per-strike OI columns.  A future collector upgrade that writes
-    a strike-level table would plug in here.
+    Returns {"new_oi": [...], "exit_oi": [...], "prior_snapshot", "latest_snapshot",
+    "matched_contracts", "same_vintage", "note_en", "note_zh"}.  The two list keys
+    are the pre-existing schema fields and keep their shape.
     """
-    return {"new_oi": [], "exit_oi": [], "note": _OI_DELTA_NOTE}
+    try:
+        from engine import positioning_persistence as pp  # noqa: PLC0415
+        return pp.load().clusters(key)
+    except Exception as e:  # noqa: BLE001 — a store problem must never break a payload
+        log.warning("gex_state: oi_delta_clusters unavailable for %s: %s", key, e)
+        return {"new_oi": [], "exit_oi": [],
+                "prior_snapshot": None, "latest_snapshot": None,
+                "sessions_apart": None, "sessions_behind": None, "stale": False,
+                "matched_contracts": 0, "same_vintage": False, "snapshot_spot": None,
+                "note_en": _OI_DELTA_UNAVAILABLE_EN,
+                "note_zh": _OI_DELTA_UNAVAILABLE_ZH}
+
+
+def _spot_divergence(snapshot_spot: float | None, board_spot: float | None,
+                     rows: list | None = None) -> tuple[str, str] | None:
+    """EN/ZH disclosure when the snapshot source's price differs from the board's.
+
+    Only the payload layer can compute this: the positioning module has the snapshot
+    price, this function has the board's `spot`.
+
+    TWO trigger conditions, per the review adjudication:
+      * DISTANCE — the two prices differ by more than SPOT_DIVERGENCE_PCT (measured
+        2026-07-29 over the 302 roots that emit a payload: median 0.582%, 97 past 2%,
+        worst 18.6% — UCTT 77.50 snapshot vs 95.25 board);
+      * DIRECTION — a listed strike falls BETWEEN the two prices, so sign(K - snapshot)
+        != sign(K - board) and above/below reads the opposite way against the payload's
+        own spot. This fires at ANY magnitude: a sign flip breaks the reader's mental
+        model regardless of how small the gap is. Measured 99 of 2,259 emitted cluster
+        rows are sign-flipped, and the distance threshold alone caught only 77.
+    """
+    try:
+        from engine import positioning_persistence as pp  # noqa: PLC0415
+        flip = pp.rows_cross_the_board_price(rows, snapshot_spot, board_spot)
+        return pp.spot_divergence_note(snapshot_spot, board_spot, force=flip)
+    except Exception as e:  # noqa: BLE001
+        log.warning("gex_state: spot divergence note unavailable: %s", e)
+        return None
+
+
+def _wall_persistence(key: str, call_wall: float | None,
+                      put_wall: float | None) -> dict | None:
+    """How long the heaviest open-interest strike either side of the price has held.
+
+    NOT a persistence count for this payload's call_wall / put_wall: those are
+    dollar-gamma walls from the Cboe chain and no store has ever persisted a wall
+    LEVEL, so a same-source count for them is not computable.  What IS emitted is the
+    OPEN-INTEREST wall from the Polygon per-strike snapshots — signing-free, one source
+    on both sides — plus `matches_board_wall` per side so a consumer can see when the
+    two readings land on the same strike and when they do not.  Relabelling one as the
+    other would be the mixed-source class.
+
+    None when the chain store does not cover the name (the honest null — the field is
+    simply absent from the payload rather than carrying a made-up count).
+    """
+    try:
+        from engine import positioning_persistence as pp  # noqa: PLC0415
+        block = pp.load().wall_persistence(key)
+    except Exception as e:  # noqa: BLE001
+        log.warning("gex_state: wall_persistence unavailable for %s: %s", key, e)
+        return None
+    if block is None:
+        return None
+    for side, board_level in (("call_side", call_wall), ("put_side", put_wall)):
+        s = block.get(side)
+        if not isinstance(s, dict):
+            continue
+        s = dict(s)
+        oi_level = s.get("level")
+        s["matches_board_wall"] = (
+            None if (oi_level is None or board_level is None)
+            else bool(abs(float(oi_level) - float(board_level)) < 1e-6))
+        s["board_wall"] = (float(board_level) if board_level is not None else None)
+        block[side] = s
+    return block
+
+
+def _own_history_percentile(model: dict, net_gex_bn: float | None) -> dict | None:
+    """Where today's net dealer gamma sits in the name's OWN stored daily record."""
+    try:
+        from engine import positioning_persistence as pp  # noqa: PLC0415
+        return pp.net_gex_percentile(model.get("history"), net_gex_bn)
+    except Exception as e:  # noqa: BLE001
+        log.warning("gex_state: net_gex percentile unavailable: %s", e)
+        return None
+
+
+def _deep_history(key: str) -> dict | None:
+    """Window + spread of the multi-year index rebuild, for the roots it covers."""
+    try:
+        from engine import positioning_persistence as pp  # noqa: PLC0415
+        return pp.deep_history_context(key)
+    except Exception as e:  # noqa: BLE001
+        log.warning("gex_state: deep history unavailable for %s: %s", key, e)
+        return None
 
 
 # ── main entry point ──────────────────────────────────────────────────────────
@@ -517,8 +626,10 @@ def compute_gex_state(
         by_strike, spot, gamma_flip, call_wall, put_wall
     )
 
-    # ── oi_delta_clusters ─────────────────────────────────────────────────────
+    # ── oi_delta_clusters + OIP E3 positioning persistence ───────────────────
     oi_delta_clusters = _oi_delta_clusters(key)
+    wall_persistence = _wall_persistence(key, call_wall, put_wall)
+    deep_history = _deep_history(key)
 
     # ── regime_passport (copy verbatim from engine summary) ──────────────────
     source_passport = summary.get("regime_passport")
@@ -532,6 +643,7 @@ def compute_gex_state(
 
     # ── assemble payload ──────────────────────────────────────────────────────
     net_gex_bn = summary.get("net_gex_bn")
+    net_gex_pctile = _own_history_percentile(model, net_gex_bn)
 
     payload: dict[str, Any] = {
         "schema": "options_structure.gex_state/v1",
@@ -552,15 +664,34 @@ def compute_gex_state(
         "gravity_up_pct": gravity_up_pct,
         "cascade_trigger": float(cascade_trigger) if cascade_trigger is not None else None,
         "upside_trigger": float(upside_trigger) if upside_trigger is not None else None,
+        # BACK-COMPAT: new_oi / exit_oi keep their names, position and list shape —
+        # they were always present (always empty until the OIP E3 wave lit them).
+        # Everything after them is ADDITIVE: vintage stamps + the plain-word EN/ZH
+        # pair, so a consumer reading only the two lists is unaffected.
         "oi_delta_clusters": {
             "new_oi": oi_delta_clusters.get("new_oi", []),
             "exit_oi": oi_delta_clusters.get("exit_oi", []),
+            "prior_snapshot": oi_delta_clusters.get("prior_snapshot"),
+            "latest_snapshot": oi_delta_clusters.get("latest_snapshot"),
+            "sessions_apart": oi_delta_clusters.get("sessions_apart"),
+            "sessions_behind": oi_delta_clusters.get("sessions_behind"),
+            "stale": bool(oi_delta_clusters.get("stale", False)),
+            "matched_contracts": oi_delta_clusters.get("matched_contracts", 0),
+            "same_vintage": bool(oi_delta_clusters.get("same_vintage", False)),
+            # The price the row-level dist_pct values are measured against — the snapshot
+            # source's own, NOT this payload's `spot` (which comes from the Cboe chain).
+            "snapshot_spot": oi_delta_clusters.get("snapshot_spot"),
+            "note_en": oi_delta_clusters.get("note_en"),
+            "note_zh": oi_delta_clusters.get("note_zh"),
         },
         "regime_passport": regime_passport,
         "authority_tier": "display",
         "reliability": {
             "levels": "display-only-until-gate",
             "regime": "assumption-signed",
+            # Open-interest CHANGE is the signing-free read in this payload: it is a
+            # count of contracts, so it carries no dealer-sign assumption at all.
+            "oi_delta": "reliable — matched-contract, signing-free open-interest change",
             "note": (
                 "Direction soft — sign not NBBO-confirmed. "
                 "All levels are descriptive maps, not forecasts. "
@@ -569,5 +700,34 @@ def compute_gex_state(
             ),
         },
     }
+
+    # ── cross-source price disclosure (B1b) ──────────────────────────────────
+    # Both positioning blocks measure strike distance and the above/below-price split
+    # against the SNAPSHOT source's price (single-source internal consistency), while
+    # this payload's top-level `spot` is the Cboe one. When the two diverge materially
+    # the block says so in plain words rather than leaving a reader to discover that
+    # dist_pct's sign disagrees with (K - spot).
+    cluster_rows = (payload["oi_delta_clusters"]["new_oi"]
+                    + payload["oi_delta_clusters"]["exit_oi"])
+    div = _spot_divergence(oi_delta_clusters.get("snapshot_spot"), spot, cluster_rows)
+    if div is not None:
+        payload["oi_delta_clusters"]["spot_note_en"] = div[0]
+        payload["oi_delta_clusters"]["spot_note_zh"] = div[1]
+
+    # Additive, absent rather than faked when the source does not cover the name.
+    if wall_persistence is not None:
+        wall_rows = [s for s in (wall_persistence.get("call_side"),
+                                 wall_persistence.get("put_side"))
+                     if isinstance(s, dict) and s.get("level") is not None]
+        wdiv = _spot_divergence(wall_persistence.get("snapshot_spot"), spot,
+                                [{"K": s["level"]} for s in wall_rows])
+        if wdiv is not None:
+            wall_persistence["spot_note_en"] = wdiv[0]
+            wall_persistence["spot_note_zh"] = wdiv[1]
+        payload["wall_persistence"] = wall_persistence
+    if net_gex_pctile is not None:
+        payload["net_gex_pctile"] = net_gex_pctile
+    if deep_history is not None:
+        payload["deep_history"] = deep_history
 
     return payload

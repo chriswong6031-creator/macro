@@ -104,6 +104,13 @@ _DATA_DIRS = {
                   # kept CURRENT by daily.yml's collect job (fetch_r2 restore ->
                   # wiki_pageviews upsert -> outcome-gated publish-back). See
                   # reports/slf048-wiki-attention-phase0.md §Nightly wiring.
+    "index_gex_history",  # OIP E3c: reconstructed index dealer-gamma history
+                  # (data/index_gex_history/<ROOT>.parquet, ~210 KB each, GIT-TRACKED).
+                  # Small enough to commit, so R2 is the OFFSITE copy rather than the
+                  # delivery path — the only producer is a weekly M1/launchd job on the
+                  # host that holds the ThetaData store, and a lost host means a lost
+                  # rebuild input. Not in DEFAULT_DIRS: the ops lane publishes it
+                  # explicitly (--dirs index_gex_history), never the nightly render.
 }
 # A data-dir tree with fewer files than this is a PARTIAL CHECKOUT (the parquets are
 # gitignored — a CI runner checkout holds just the committed _manifest.json +
@@ -111,6 +118,13 @@ _DATA_DIRS = {
 # objects with 2-file stubs; refuse instead. Only the store host (the Mac main
 # checkout, where the backfill materialises the parquets) may publish these dirs.
 _DATA_DIR_MIN_FILES = 100
+# Per-dir floor overrides for SMALL data-dir stores. The 100-file default is calibrated
+# for the per-ticker parquet stores; a whole-store dir with a fixed, tiny file count
+# would be refused forever. index_gex_history is exactly 4 root parquets + the manifest,
+# so the floor is 5 — "all four roots AND the manifest". 4 would have passed a
+# three-roots-plus-manifest tree, which is precisely the partial rebuild this guard is
+# for; the count is a whole-store floor, not a parquet count.
+_DATA_DIR_MIN_FILES_OVERRIDE = {"index_gex_history": 5}
 # History-append stores whose R2 objects hold DEEP history (data/attention/*.parquet:
 # backfilled 2015-07→ SLF-048 2026-07-06; gitignored since same day). The nightly
 # collect job materialises the store via scripts/fetch_r2 BEFORE the wiki_pageviews
@@ -125,8 +139,17 @@ _DATA_DIR_MIN_FILES = 100
 #    this also covers the empty-remote case the per-file guard can't compare against.
 # Deliberately NOT in DEFAULT_DIRS: only the collect job's gated lane (or a host-side
 # ATTENTION_STORE publish) touches it.
-_APPEND_ONLY_DIRS = {"attention"}
-_DATA_DIR_MIN_BYTES = {"attention": 15_000_000}
+# index_gex_history is the SAME shape as attention: a deep-history store (2017->, one
+# parquet per index root) whose only producer is a host-bound job, so R2 holds the sole
+# offsite copy of ~10 years of reconstruction. A truncated rebuild (a mid-write
+# _backfill_state.json, one unreadable year) yields a valid-but-short parquet, so it gets
+# both of attention's fences as well: per FILE, refuse an upload smaller than the R2
+# object; per DIR, refuse a tree under the bytes floor. The four parquets measure ~210 KB
+# each (~846 KB with the manifest), so 600 KB is the floor a genuine store clears and a
+# one-or-two-root rebuild does not. The builder's own shrink guard is the first fence;
+# these are the ones that survive a builder bypass.
+_APPEND_ONLY_DIRS = {"attention", "index_gex_history"}
+_DATA_DIR_MIN_BYTES = {"attention": 15_000_000, "index_gex_history": 600_000}
 _CT = {".json": "application/json", ".js": "application/javascript",
        ".html": "text/html; charset=utf-8", ".csv": "text/csv"}
 
@@ -246,8 +269,9 @@ def _data_dir_syncable(d: str, n_files: int, total_bytes: int | None = None) -> 
     data/<dir>, gitignored) exist in full ONLY on the store host — a CI runner
     checkout holds just the committed JSON stubs, and syncing those would overwrite
     the R2 store's full-history objects.  Site dirs are always syncable."""
-    if d in _DATA_DIRS and n_files < _DATA_DIR_MIN_FILES:
-        return False, (f"only {n_files} file(s) locally (< {_DATA_DIR_MIN_FILES}) — "
+    min_files = _DATA_DIR_MIN_FILES_OVERRIDE.get(d, _DATA_DIR_MIN_FILES)
+    if d in _DATA_DIRS and n_files < min_files:
+        return False, (f"only {n_files} file(s) locally (< {min_files}) — "
                        "partial checkout, the parquet store is not materialised here")
     floor = _DATA_DIR_MIN_BYTES.get(d)
     if d in _DATA_DIRS and floor and total_bytes is not None and total_bytes < floor:

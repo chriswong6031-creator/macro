@@ -69,10 +69,39 @@ TIERS = (
 
 
 def _workflow_blob() -> str:
+    """Text of every workflow's `run:` STEPS ONLY — never its comments.
+
+    This used to be the raw file text, so a suite named in a YAML COMMENT counted as
+    "run by CI" (OIP E8, 2026-07-29: a `# Anti-rot: tests/test_x.py` line in render.yml
+    made the census report a wholly-unwired suite as covered — the census's own vacuous
+    green, in the tool whose entire job is finding dark tests).  Parsing the YAML and
+    concatenating `run:` scalars keeps prose out of the verdict.
+
+    Fail-open per file: an unparseable workflow falls back to its raw text, because
+    over-reporting coverage for one file is better than crashing a reporting tool.
+    """
     paths = sorted(WORKFLOWS.glob("*.yml"))
     if CI_MANIFEST.exists():
         paths.append(CI_MANIFEST)
-    return "\n".join(p.read_text(errors="ignore") for p in paths)
+    chunks: list[str] = []
+    for p in paths:
+        raw = p.read_text(errors="ignore")
+        try:
+            doc = yaml.safe_load(raw) or {}
+            runs: list[str] = []
+            for job in (doc.get("jobs") or {}).values():
+                if not isinstance(job, dict):
+                    continue
+                for step in job.get("steps") or []:
+                    if isinstance(step, dict) and isinstance(step.get("run"), str):
+                        runs.append(step["run"])
+                    # reusable-workflow / composite indirection: keep `with:` values too
+                    if isinstance(step, dict) and isinstance(step.get("with"), dict):
+                        runs += [str(v) for v in step["with"].values()]
+            chunks.append("\n".join(runs))
+        except Exception:  # noqa: BLE001 — reporting tool: never crash on one bad file
+            chunks.append(raw)
+    return "\n".join(chunks)
 
 
 def _ci_paths() -> list[str]:

@@ -208,6 +208,32 @@ def _run_selftest(root: Path) -> int:
     }
     _test("invalid horizon_role enum", reg7, "horizon_role")
 
+    # --- Test 8: producer path that does not exist (review M9) ---------------------
+    # Added 2026-07-29. `live-options-flow-current` named
+    # `collectors/live_options_flow_poller.py` — a file that has never existed in this
+    # repo — and the check could not see it because `storage: r2` exempted the row from
+    # the producer-exists rule. `storage` describes where the ARTIFACT lives, not its
+    # producer script, so the exemption is gone and this selftest pins the rule for BOTH
+    # storage kinds: an r2 row must be judged exactly like a git row.
+    for _storage in ("git", "r2"):
+        reg8 = copy.deepcopy(base_reg)
+        reg8["artifacts"][f"_selftest_phantom_producer_{_storage}"] = {
+            "path": f"data/_selftest/phantom_{_storage}.json",
+            "format": "json",
+            "producer": "collectors/this_file_has_never_existed.py",
+            "owner_program": "engine-fix",
+            "cadence": "daily-engine",
+            "storage": _storage,
+            "asof_field": "asof",
+            "freshness_sla_hours": 30,
+            "schema": "none",
+            "tier": "display",
+            "horizon_role": "context",
+            "weights": "none",
+        }
+        _test(f"producer path does not exist (storage={_storage})",
+              reg8, "producer file not found")
+
     print()
     if all_passed:
         print("selftest PASSED — all synthetic violations caught")

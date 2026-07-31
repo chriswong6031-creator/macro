@@ -63,7 +63,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 5 |
 | nw-rails | 7 |
-| options-alpha | 7 |
+| options-alpha | 8 |
 | options-intelligence-program | 6 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 29 |
@@ -101,7 +101,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 341 |
+| display | 342 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 79 |
@@ -111,6 +111,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | storage | count |
 |---|---|
 | git | 494 |
+| git+r2 | 1 |
 | gitignored-local | 15 |
 | r2 | 10 |
 
@@ -586,9 +587,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 2 | 2 |
 | prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | daily-engine | display | 2 | 1 |
 | options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
-| options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
@@ -723,9 +724,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
+| gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 3 | 0 |
 | options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 3 | 0 |
+| polygon-gex-chains | `data/polygon_gex/chains/<DATE>.parquet` | parquet | collect | display | 3 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
-| gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 2 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |

@@ -75,6 +75,133 @@ def test_load_live_quotes_empty_root(tmp_path):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# The VPS remote plane (opt-in `remote_urls`, PR: hot-tape quote source)
+#
+# The load-bearing property is that this source is OPT-IN and MERGED. Every test
+# below pins one way it could stop being either.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _remote_payload(asof: str, quotes: dict) -> dict:
+    return {"asof": asof, "meta": {"delayed_min": 15}, "quotes": quotes}
+
+
+def test_remote_source_is_opt_in_no_network_by_default(tmp_path, monkeypatch):
+    """The default call must not touch the network — the publisher never asked.
+
+    live_verify sits in the import closure of the publisher and of prophet_live's
+    VPS lane; a default-on fetch would add a network round trip (and a new way to
+    hang) to two callers that are healthy on repo-local files.
+    """
+    called: list[str] = []
+    monkeypatch.setattr(lv, "_fetch_json", lambda url, t: called.append(url))
+    lv.load_live_quotes(tmp_path)
+    assert called == []
+
+
+def test_remote_quotes_merge_and_win_when_fresher(tmp_path, monkeypatch):
+    (tmp_path / "data" / "marketing").mkdir(parents=True)
+    (tmp_path / "data" / "marketing" / "live_quotes_snapshot.json").write_text(json.dumps(
+        {"asof": "2026-07-23T13:00:00+00:00",
+         "quotes": {"SPY": {"price": 1.0, "changePct": -1.0, "ts": 1_000},
+                    "ROST": {"price": 9.0, "changePct": 2.0, "ts": 1_000}}}))
+    monkeypatch.setattr(lv, "_fetch_json", lambda url, t: _remote_payload(
+        "2026-07-23T14:59:00+00:00",
+        {"SPY": {"price": 5.0, "changePct": 0.5, "ts": 9_000}}))
+
+    out = lv.load_live_quotes(tmp_path, remote_urls=("https://x/live/quotes.json",))
+    assert out["quotes"]["SPY"]["price"] == 5.0     # fresher remote won
+    assert out["quotes"]["ROST"]["price"] == 9.0    # untouched — merged, not substituted
+    assert "vps" in out["source"]
+
+
+def test_remote_quotes_never_displace_a_fresher_local_quote(tmp_path, monkeypatch):
+    """Freshest-wins arbitrates BOTH ways: being remote earns no precedence."""
+    (tmp_path / "data" / "marketing").mkdir(parents=True)
+    (tmp_path / "data" / "marketing" / "live_quotes_snapshot.json").write_text(json.dumps(
+        {"asof": "2026-07-23T14:59:00+00:00",
+         "quotes": {"SPY": {"price": 7.0, "changePct": 1.0, "ts": 9_000}}}))
+    monkeypatch.setattr(lv, "_fetch_json", lambda url, t: _remote_payload(
+        "2026-07-23T13:00:00+00:00", {"SPY": {"price": 1.0, "changePct": -9.0, "ts": 1_000}}))
+
+    out = lv.load_live_quotes(tmp_path, remote_urls=("https://x/live/quotes.json",))
+    assert out["quotes"]["SPY"]["price"] == 7.0
+
+
+def test_remote_asof_does_not_relabel_untimed_heatmap_tiles(tmp_path, monkeypatch):
+    """A seconds-fresh remote must not re-date the untimed book to now.
+
+    `asof` is the fallback AGE for every quote with no ts_ms — the heatmap's
+    pct-only tiles. Publishing the remote's asof would hand a half-hour-old pct to
+    the same-day move gate as if it were live: the 2026-07-28 tape-gate incident
+    with the sign flipped.
+    """
+    stale_local = "2026-07-23T13:00:00+00:00"   # 2h before NOW
+    fresh_remote = "2026-07-23T14:59:30+00:00"  # 30s before NOW
+    (tmp_path / "site" / "marketdata").mkdir(parents=True)
+    (tmp_path / "site" / "live").mkdir(parents=True)
+    (tmp_path / "site" / "marketdata" / "sp500_heatmap.json").write_text(json.dumps(
+        {"asof": stale_local, "tiles": [{"ticker": "MSFT", "pct": -2.5}]}))
+    # A local artifact with a ts-carrying quote, so `asof` is populated at all.
+    (tmp_path / "site" / "live" / "quotes.json").write_text(json.dumps(
+        {"asof": stale_local,
+         "quotes": {"AAPL": {"price": 3.0, "changePct": 1.0, "ts": 1_000}}}))
+    monkeypatch.setattr(lv, "_fetch_json", lambda url, t: _remote_payload(
+        fresh_remote, {"SPY": {"price": 5.0, "changePct": 0.5, "ts": 9_000}}))
+
+    out = lv.load_live_quotes(tmp_path, remote_urls=("https://x/live/quotes.json",))
+    # THE INVARIANT: the view's asof is still the local artifact's, not the remote's.
+    assert out["asof"] == stale_local
+    # So the untimed tile ages out against real local time instead of being laundered.
+    assert out["quotes"]["MSFT"]["ts_ms"] is None
+    age = lv._quote_age_min(out["quotes"]["MSFT"], out["asof"], NOW)
+    assert age is not None and age > 100
+    # ...while the remote's own quote, which carries its own ts, is present.
+    assert out["quotes"]["SPY"]["price"] == 5.0
+
+
+def test_remote_failure_degrades_to_repo_local(tmp_path, monkeypatch):
+    (tmp_path / "data" / "marketing").mkdir(parents=True)
+    (tmp_path / "data" / "marketing" / "live_quotes_snapshot.json").write_text(json.dumps(
+        {"asof": "2026-07-23T14:55:00+00:00",
+         "quotes": {"ROST": {"price": 9.0, "changePct": 2.0, "ts": 5_000}}}))
+    monkeypatch.setattr(lv, "_fetch_json", lambda url, t: None)  # unreachable host
+
+    out = lv.load_live_quotes(tmp_path, remote_urls=("https://x/live/quotes.json",))
+    assert out["quotes"]["ROST"]["price"] == 9.0
+    assert "vps" not in out["source"]   # names what was READ, not what was attempted
+
+
+def test_fetch_json_never_raises(monkeypatch):
+    """Every network failure mode collapses to None, including a non-dict body."""
+    def _boom(*a, **k):
+        raise OSError("connection reset")
+    monkeypatch.setattr("urllib.request.urlopen", _boom)
+    assert lv._fetch_json("https://x/live/quotes.json", 1.0) is None
+
+
+def test_remote_quote_urls_resolution_and_off_switch():
+    assert lv.remote_quote_urls(None) == (lv.PUBLIC_QUOTES_URL,)
+    assert lv.remote_quote_urls({}) == (lv.PUBLIC_QUOTES_URL,)
+    assert lv.remote_quote_urls({"live": {"public_quotes_url": "https://a"}}) == ("https://a",)
+    assert lv.remote_quote_urls({"live": {"public_quotes_url": ["https://a", "https://b"]}}) \
+        == ("https://a", "https://b")
+    # The operator's off switch — both spellings, no code change.
+    assert lv.remote_quote_urls({"live": {"public_quotes_url": ""}}) == ()
+    assert lv.remote_quote_urls({"live": {"public_quotes_url": []}}) == ()
+    # Malformed -> the estate default, never an exception.
+    assert lv.remote_quote_urls({"live": {"public_quotes_url": 42}}) == (lv.PUBLIC_QUOTES_URL,)
+
+
+def test_shipped_config_key_matches_the_module_default():
+    """config.yml is the operator's surface; a drifted default is a silent repoint."""
+    import pathlib
+    import yaml
+    root = pathlib.Path(__file__).resolve().parent.parent
+    loaded = yaml.safe_load((root / "config.yml").read_text(encoding="utf-8"))
+    assert lv.remote_quote_urls(loaded) == (lv.PUBLIC_QUOTES_URL,)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Signal gates
 # ─────────────────────────────────────────────────────────────────────────────
 

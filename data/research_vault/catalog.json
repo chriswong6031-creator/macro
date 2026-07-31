@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-30T23:11:47.390792+00:00",
-  "count": 420,
+  "generated_at": "2026-07-30T23:41:42.664140+00:00",
+  "count": 421,
   "institutions": [
     "BTIG",
     "Bank of America",
@@ -1699,6 +1699,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-gxoaun4ai3m-f2cc92",
+      "title": "JPM JPM International Ma",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-29T07:40:00Z",
+      "summary_points": [
+        "Missing Document**: No source material provided for extraction **Critical Input Gap**: Absence of actual document content prevents identification of fundamentals/data/technical points **Action Required**: Provide document text to proceed with analysis per specified criteria"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },

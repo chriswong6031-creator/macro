@@ -1859,7 +1859,22 @@ html:not([data-theme="light"]) .ticker-search {
   .topbar .nav-dd:hover > .nav-dd-menu.mega-menu,
   .topbar .nav-dd:focus-within > .nav-dd-menu.mega-menu {
     display: grid;
+  }
+
+  /* Play the entrance once for the persistent JS-owned open state. Binding
+     this keyframe to raw :hover made it restart whenever the pointer crossed
+     the intentional trigger-to-panel air gap, producing a visible flash even
+     though nav-hover-open correctly kept the menu alive. */
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu {
     animation: mockupMenuSwap .34s cubic-bezier(.2, .76, .2, 1) both;
+  }
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: reduce) {
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu {
+    animation: none;
   }
 }
 
@@ -1923,8 +1938,30 @@ html[data-lang="zh"] .nav-dd-menu.mega-menu .section-label { letter-spacing: .02
   transition: background .16s ease, transform .16s ease;
 }
 
-.nav-dd-menu.mega-menu .mega-item:hover,
-.nav-dd-menu.mega-menu .nav-market-item:hover {
+/* These exact-menu links also match theme.css's older aurora hover selector.
+   Suppress its gradient wash and glowing left rail here so the live menu keeps
+   the same quiet interaction language as the approved mockup. */
+.nav-dd-menu.mega-menu :is(a, button):is(
+  .mega-item,
+  .nav-market-item,
+  .rail-link,
+  .nav-market-rail-item,
+  .nav-rail-item
+)::before,
+.nav-dd-menu.mega-menu :is(a, button):is(
+  .mega-item,
+  .nav-market-item,
+  .rail-link,
+  .nav-market-rail-item,
+  .nav-rail-item
+)::after {
+  content: none;
+  opacity: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.nav-dd-menu.mega-menu :is(a, button):is(.mega-item, .nav-market-item):hover {
   border-color: transparent;
   color: var(--mock-ink);
   background: var(--mock-surface-hover);
@@ -2091,9 +2128,11 @@ html:not([data-theme="light"]) .nav-dd-menu.mega-menu .rail-link,
 html:not([data-theme="light"]) .nav-dd-menu.mega-menu .nav-market-rail-item,
 html:not([data-theme="light"]) .nav-dd-menu.mega-menu .nav-rail-item { color: #d7deea; }
 
-.nav-dd-menu.mega-menu .rail-link:hover,
-.nav-dd-menu.mega-menu .nav-market-rail-item:hover,
-.nav-dd-menu.mega-menu .nav-rail-item:hover {
+.nav-dd-menu.mega-menu :is(a, button):is(
+  .rail-link,
+  .nav-market-rail-item,
+  .nav-rail-item
+):hover {
   border-color: transparent;
   color: var(--mock-blue-deep);
   background: transparent;

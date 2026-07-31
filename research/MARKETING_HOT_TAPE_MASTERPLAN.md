@@ -258,11 +258,70 @@ about the cron expression. When tuning any intraday lane, measure delivery first
 (`gh api "/repos/:owner/:repo/actions/runs?created=<from>..<to>&event=schedule"`)
 and treat the crontab as an upper bound that reality will not honour.
 
+#### §3.6a Delivery VERIFIED, and the interval is a trailing sleep (2026-07-30)
+
+The poller works, and the honest number is **~11 min, not 5**. Measured on run
+`30556666110` (the session bootstrapped 15:26Z), counted from its own pass banners:
+
+| | passes | span | mean gap |
+|---|---|---|---|
+| half 1 | 20 | 15:26:59Z → 18:56:20Z | **11.0 min** |
+| half 2 | 7 | 19:03:46Z → 20:09:28Z | 11.0 min |
+| **session** | **27** | 4h42m | — |
+
+Against **6 delivered scheduled runs in the whole 8h window on 2026-07-29**, that
+is the fix working: 27 passes from one bootstrap tick, and the cron's delivery
+rate no longer bounds the lane.
+
+**Why 11 and not 5.** `PASS_INTERVAL_S: "300"` is a `sleep` *between* passes, not a
+period — the delivered gap is 300s **plus the pass's own runtime**. Measured that
+runtime grows through the session: the first three gaps are ~6.4 min (a ~1.4 min
+pass), the rest ~11.7 min (a ~6.7 min pass) as more events fire and more cards
+render. So the cadence degrades exactly when the tape is busiest, which is the
+wrong way round.
+
+**Gate 0.1 is nevertheless met.** At an 11.0 min gap the mean wait to be looked at
+is ~5.5 min, plus ~1 min radar and ~3 min dispatch → **~9.5 min mean, ~15 min
+tail**, inside the ≤20 min gate. Recorded rather than tuned: closing 11 → 5 means
+deadline-scheduling the loop (sleep to the next 5-minute boundary instead of a
+fixed 300s) and is only worth doing if the tail approaches the gate. **Do not
+quote "5-minute cadence" for this lane** — the shipped, measured figure is ~11 min,
+degrading to ~12 under load.
+
 ## §4 Data inventory — have vs need
 
 | Capability | Source | Status |
 |---|---|---|
-| 5-min live quotes, ~2.1k names | radar self-fetch (primary, 2026-07-30) + live-data branch + site/live + heatmap | HAVE (freshness-safe merge since #3913; the radar no longer depends on another lane's commit cadence, and the ceiling allows for the feed's declared ~15-min delay) |
+| 5-min live quotes, ~2.1k names | radar self-fetch (primary, 2026-07-30) + VPS live plane (macro floor, 2026-07-30) + live-data branch + site/live + heatmap | HAVE (freshness-safe merge since #3913; the radar no longer depends on another lane's commit cadence, and the ceiling allows for the feed's declared ~15-min delay) |
+
+**§4.1 The quote-source ladder, and what each rung is actually for.** Re-derived
+2026-07-30 after a Prophet Live live-verification flagged the shared seam as
+starved. Every rung is merged freshest-wins by
+`live_verify._merge_quotes`, so a stale rung can never displace a fresh one:
+
+| rung | coverage | freshness | written by |
+|---|---|---|---|
+| radar self-fetch | ≤900 names (the actionable universe) | seconds | **this lane** |
+| VPS live plane (`live.public_quotes_url`) | **34 macro symbols only** | ~30s | VPS systemd timer |
+| `live-data` branch snapshot | ~2,100 names | throttled GH lane | live-quotes.yml |
+| `site/live` + heatmap | ~30 / ~500 | throttled GH lane | fastpath / nightly |
+
+Rungs 3 and 4 are all written by GitHub lanes, so **they inherit the delivery rate
+§3.6 measures** — on 2026-07-30T13:41Z the branch snapshot was 83 minutes old
+against a 27-minute radar ceiling. That is why rung 1 exists and why it is
+primary.
+
+**Rung 2 is a macro floor, not a coverage source — do not mistake it for one.**
+`https://www.mastermind-x.com/live/quotes.json` is the 34-symbol DISPLAY set:
+indices, ETFs, futures, FX, crypto, and *no single-name equity at all*. The
+~2,100-name `quotes_full.json` behind it is deliberately not web-addressable
+(`app/deploy/Caddyfile` exempts only `/live/quotes.json`, `/live/breadth.json`,
+`/live/release_publications.json` from the `@reg_asset` default-deny route). What
+it buys is that the contrarian detector's index proxy (`SPY`) and every macro
+reference stay current even when both the self-fetch and the GitHub lanes are
+down — measured 31 seconds old while the branch was 83 minutes old. What it
+cannot do is verify a single-name claim. A consumer that needs coverage still
+fetches its own tape.
 | Sector membership + sizes | sp500_heatmap tiles (503, sector+size) | HAVE |
 | Daily bars, 20k names | data/massive_stock_day | HAVE |
 | Earnings calendar + AH/BMO flag | data/earnings/earnings.parquet (1,364) | HAVE |

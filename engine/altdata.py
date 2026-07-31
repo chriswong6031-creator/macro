@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from lib import config
+from lib import config, nyse_calendar
 from engine import altdata_models as models
 
 log = logging.getLogger(__name__)
@@ -531,7 +531,24 @@ def unusual_options(min_oi: float = 5000.0, mult_hot: float = 3.0, top: int = 20
     the put/call volume split gives the lean. Display/context only."""
     import glob
     d = config.data_dir() / "polygon_gex" / "chains"
-    files = sorted(glob.glob(str(d / "*.parquet")))[-12:]
+    # SESSION GUARD (#3721 class, OIP E8 2026-07-29): the chains directory carries a
+    # snapshot for non-session days too (11 of 39 files as of this writing). Those
+    # snapshots re-record the previous session's volume/OI, so a weekend file enters the
+    # window as a near-duplicate day — it lands in `ratio.iloc[-1]` as "today" AND in
+    # the `ratio.iloc[:-1].median()` baseline, biasing the surge multiple toward 1.0 and
+    # letting `by_day.index.max()` publish a Saturday as the reference day. Filter the
+    # FILENAMES (the store's dates live there) before taking the last 12.
+    # Fail-open: session_dates returns the list unchanged if filtering would empty it.
+    import os
+    files = nyse_calendar.session_dates(
+        sorted(glob.glob(str(d / "*.parquet"))),
+        key=lambda f: os.path.basename(f).removesuffix(".parquet"),
+        # keep_unparseable=True: these are PATHS, and a name this key cannot parse is a
+        # file we must not silently drop from the window (contrast options_stamp, which
+        # passes real date objects and sets False).
+        keep_unparseable=True,
+        label="polygon_gex/chains",
+    )[-12:]
     if len(files) < 2:
         return []
     frames = []

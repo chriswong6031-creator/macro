@@ -87,10 +87,81 @@ time-varying signal.  `regime_passport` must be preserved in all consumers.
 | `gravity_up_pct` | float\|null | % | Upward gravity strength |
 | `cascade_trigger` | float\|null | USD | Price below which cascade acceleration may occur |
 | `upside_trigger` | float\|null | USD | Price above which upside acceleration may occur |
-| `oi_delta_clusters` | dict | — | `{new_oi: [...], exit_oi: [...]}` — new/exit OI strike clusters |
+| `oi_delta_clusters` | dict | contracts | `{new_oi: [...], exit_oi: [...]}` — build/unwind OI strike clusters (LIT by OIP E3, see below) |
 | `regime_passport` | dict | — | `{basis, structurally_constant, is_index_product, verdict, note}` |
 | `authority_tier` | string | — | Always `"display"` in Package A |
-| `reliability` | dict | — | `{levels, regime, note}` |
+| `reliability` | dict | — | `{levels, regime, oi_delta, note}` |
+| `wall_persistence` | dict\|**absent** | — | OIP E3b — sessions-at-level for the open-interest wall each side of the price |
+| `net_gex_pctile` | dict\|**absent** | % | OIP E3d — today's net GEX inside the root's OWN accrued daily record |
+| `deep_history` | dict\|**absent** | $B | OIP E3d — window + spread of the multi-year index rebuild (SPY/QQQ/IWM/DIA only) |
+
+### 1.1 OIP E3 additions (2026-07-29) — additive only
+
+Back-compat law: every field above `wall_persistence` keeps its name, position and type
+(pinned by `tests/test_gex_state.py::TestE3BackCompat`). The terminal GEX tab and the
+crypto-cockpit COIN/MSTR shelf read this schema, so E3 only ADDS.
+
+The three new blocks are **omitted, never null-filled**, when their source does not cover
+the root — an absent key reads as "not covered", a null-filled block reads as "measured
+and empty". Coverage is partial by construction: `data/polygon_gex/chains` holds ~370
+names against the board's ~691, so SPX, NDX, RUT, GLD, TLT, HYG, ARKK, NFLX, BABA, UBER
+and GME receive the honest empty plus a plain-word note.
+
+`oi_delta_clusters` was structurally empty from Package C until this wave (the note in
+`engine/gex_state.py` said so). It is now derived in `engine/positioning_persistence.py`
+from matched-contract day-over-day open interest across the two most recent **session**
+snapshots. Row shape: `K`, `right` (`"call"`/`"put"`), `oi_prior`, `oi_now`, `oi_delta`,
+`oi_delta_pct` (**a percent**: 1000 → 1500 is `50.0`), `dist_pct`, `contracts`. Block
+siblings: `prior_snapshot`, `latest_snapshot`, `matched_contracts`, `same_vintage`,
+`note_en`, `note_zh`.
+
+Three properties are load-bearing and tested:
+
+* **Matched contracts only.** Joined on `strike_ticker` (the OCC contract id). A contract
+  present on one side only — a new listing or an expiry — is not a change in open
+  interest, and counting it would fabricate a build or an unwind.
+* **Same-vintage refusal, per name.** The snapshot filename is a run stamp, not the open
+  interest vintage: consecutive files can carry byte-identical readings (measured
+  2026-07-29: 2026-07-25 / 26 / 27 are one reading; 7 of 10 names repeat between
+  2026-06-15 and 2026-06-16). Two identical vintages make the window unmeasurable, not
+  flat — so the lists come back empty with `same_vintage: true` and a note. The guard is
+  per NAME because one root can repeat while the rest of the file advances.
+* **Session filtering first.** The store contains weekend and holiday files (11 of the 40
+  on disk at 2026-07-30 — the store grows one file per calendar day, so read the ratio as a
+  dated snapshot, not a constant). Every dated read goes through
+  `lib.nyse_calendar.is_session` before any delta or percentile.
+
+`reliability.oi_delta` marks the open-interest change as the one **signing-free reliable**
+field in this schema — it is a count of contracts and carries no dealer-sign assumption.
+It stays descriptive: no fused score and no direction language beyond build/unwind facts.
+
+**Standing-kill compliance.** `research/DO_NOT_REBUILD.md` carries *"DOI (options delta-OI
+family) | DEAD | Options→NW entry-intelligence W-E1 gauntlet"*. That is a **promotion**
+verdict — the family earns no rank/size/gate authority — not a build gate: display-tier
+context ships freely and a null never blocks accrual (CLAUDE.md §Epistemics), and the OIP
+masterplan §8 lists matched-contract day-over-day ΔOI among the estate's two RELIABLE
+instruments. What stays closed and must not reappear here: any scored path, and
+sector-level ΔOI aggregation (the specific construction W-E1 killed).
+
+`wall_persistence` is **not** a persistence count for `call_wall` / `put_wall`. Those are
+dollar-gamma walls from the Cboe chain and no store has ever persisted a wall LEVEL, so a
+same-source count for them is not computable today. This block counts the
+open-interest wall (heaviest call OI above the price, heaviest put OI below it) from the
+Polygon snapshots. Each side carries its own `level`, `sessions_at_level`, a plain-word
+EN/ZH pair, and `matches_board_wall` — `true` / `false` when both levels exist, `null`
+when either is missing — so a consumer can see when the open-interest wall and the
+dollar-gamma wall land on the same strike, instead of one silently standing in for the
+other.
+
+`deep_history` reports the rebuild's window and distribution spread but **no percentile of
+today's value**: the rebuild is a ThetaData reconstruction while today's value comes from
+the Cboe chain, and placing one inside the other is the cross-source comparison
+`engine/market_gamma`'s SCALE NOTE already refuses. Measured against that exact pair
+(reconstruction vs `data/cboe/gex_<ROOT>`, `audit_overlap`, 2026-07-29, 12 shared dates):
+SPY raw corr 0.9329 / same-spot 0.9956 (n=8) / mean abs diff **2.0585 $bn**; QQQ 0.7618 /
+0.9933 (n=7) / 1.2896; IWM 0.4850 / 0.9655 (n=8) / 0.3366; DIA has no `cboe/gex_DIA`
+store at all. Close enough to be comparable context, not close enough to be one
+distribution.
 
 ---
 

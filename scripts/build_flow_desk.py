@@ -53,7 +53,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from jinja2 import Environment, FileSystemLoader
-from lib import config
+from lib import config, options_coverage
 from lib.pages import write_page  # noqa: E402
 from engine.flow_cohorts import build_cohorts
 from engine.ledger_lane import nightly_advance_enabled
@@ -271,6 +271,28 @@ def build_market_tide(flow_rows: list[dict], data_dir: Path) -> dict:
         "spark": spark,
         "coverage_note": f"{n_covered} names · EOD · direction approx",
         "lag_note": "EOD; built after market close",
+        # OIP R8 — the shared options coverage object, ADDITIVE. This desk published its
+        # coverage as a STRING only, so no machine could read it and no surface could put
+        # it beside the workspace's or the board's. `coverage_note` is untouched; this is
+        # the same fact in the family's one comparable shape (lib/options_coverage.py),
+        # persisted into site/flow_desk.json. Surfaces adopt it in a later OIP wave.
+        "coverage_v1": options_coverage.coverage_object(
+            universe_name_en="Names with options tape",
+            universe_name_zh="有期权成交数据的标的",
+            # M8 (review): passing n_covered as BOTH sides published a fabricated
+            # "100%" — the desk does not know its own denominator (options_flow only
+            # has files for names that traded), and lib/options_coverage's contract is
+            # that an unknown universe is None so coverage_pct comes back None.
+            universe_n=None,
+            covered_n=n_covered,
+            asof=asof_date,
+            sources=[
+                options_coverage.source(
+                    "options_flow", "Options tape", "期权成交",
+                    asof=asof_date, n=n_covered,
+                ),
+            ],
+        ),
     }
 
 

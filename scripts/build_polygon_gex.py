@@ -24,7 +24,7 @@ import pandas as pd
 
 from collectors.polygon_options import PolygonOptions
 from engine.gex_engine import compute_gex
-from lib import config, store
+from lib import config, store, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -96,6 +96,20 @@ def accrue(as_of=None) -> dict:
     log.info("polygon: snapshotting %d underlyings (%d anchors + baskets=%s)",
              len(symbols), len(cfg["gex"].get("symbols") or []),
              cfg["gex"].get("include_baskets", False))
+    # WRITE-SIDE SESSION GATE (M7, review 2026-07-29). The chains directory carried 11
+    # non-session snapshot FILES of 39, and the per-underlying summaries ~11 non-session
+    # dates of 39. A snapshot taken when the market never opened re-records the previous
+    # session's OI/volume off a stale spot, then enters every reader as a duplicate day:
+    # altdata.unusual_options counted it as both "today" and part of its own baseline,
+    # options_stamp's ΔOI window lost a real session to it, and iv_rank's n_obs inflated.
+    # Readers all session-filter now, so historical files stay put — this stops NEW ones.
+    if not nyse_calendar.is_session(asof):
+        # Bare line-start print (never a logger — see tests/test_gh_annotation_line_start).
+        print(f"::notice title=polygon-session-gate::{asof} is not an NYSE session - "
+              f"chain snapshot and summaries skipped, store left unadvanced", flush=True)
+        log.info("polygon: %s is not a trading session — nothing accrued", asof)
+        return {"status": "non_session", "date": asof.isoformat()}
+
     raw = client.snapshot(symbols, asof)
     if raw.empty:
         log.warning("polygon: snapshot empty — nothing accrued")

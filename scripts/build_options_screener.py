@@ -53,7 +53,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config, nyse_calendar  # noqa: E402
+from lib import config, nyse_calendar, options_coverage, options_units  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -123,10 +123,33 @@ def _load_skew_lookup() -> dict[str, dict]:
         df = pd.read_parquet(SKEW_PATH)
         if df.empty:
             return {}
+        # SESSION GUARD (#3721 class, OIP E8 2026-07-29): _load_gex_summary below was
+        # fixed for this in #F3-17 but these two snapshot lookups were missed — and
+        # options_skew/snapshots.parquet carried 8 non-session dates of 28, so the
+        # drop_duplicates(keep="last") below could hand every row a Saturday recompute
+        # as its skew reading. Fail-open (lib.nyse_calendar.session_rows).
+        df = nyse_calendar.session_rows(df, "date", label="options_skew/snapshots")
         # latest date per underlying
         df = df.sort_values("date")
         # whole-row take: groupby.last() is per-column last-VALID and can mix dates
         latest = df.sort_values("date").drop_duplicates("underlying", keep="last")
+        # MINOR-SCOPE (review 2026-07-29): this whole function is wrapped in a bare
+        # `except -> return {}`, so a store missing the `skew` column used to cost every
+        # ticker BOTH skew_pp and skew_tenor_d. Degrade per-FIELD instead: absent column
+        # -> skew_pp None, tenor still published.
+        if "skew" not in latest.columns:
+            print("::warning title=options-unit-seam::options_skew/snapshots.parquet has "
+                  "no 'skew' column - skew_pp degraded to null; tenor still published",
+                  flush=True)
+        # UNIT SEAM (the ×100 class). Guard the LATEST CROSS-SECTION, not the whole store:
+        # the realistic flip lands on the newest vintage while correct history sits behind
+        # it, and a whole-store median dilutes it below any threshold — measured, this
+        # store's median moves 0.0356 -> 0.0376 under a newest-vintage ×100 (a MISS) while
+        # the latest cross-section goes 0.0436 -> 3.95 (CAUGHT). `skew` is a DIFFERENCE of
+        # two vols, so it uses the difference ceiling; the shared level ceiling left only
+        # 1.19× margin. It is a FRACTION here and becomes skew_pp (×100) below.
+        if "skew" in latest.columns:
+            options_units.guard_iv_difference(latest["skew"], "options_skew.skew (latest)")
         out: dict[str, dict] = {}
         for _, row in latest.iterrows():
             underlying = str(row["underlying"]).upper()
@@ -167,9 +190,19 @@ def _load_ivspread_lookup() -> dict[str, float | None]:
         df = pd.read_parquet(IVSPREAD_PATH)
         if df.empty:
             return {}
+        # SESSION GUARD (#3721 class, OIP E8): 6 non-session dates of 21 in this store —
+        # same reasoning as the skew lookup above.
+        df = nyse_calendar.session_rows(df, "date", label="options_ivspread/snapshots")
         df = df.sort_values("date")
         # whole-row take: groupby.last() is per-column last-VALID and can mix dates
         latest = df.sort_values("date").drop_duplicates("underlying", keep="last")
+        # UNIT SEAM: latest cross-section, DIFFERENCE ceiling — see the skew lookup above.
+        if "ivspread_rel" in latest.columns:
+            options_units.guard_iv_difference(latest["ivspread_rel"],
+                                              "options_ivspread.ivspread_rel (latest)")
+        else:
+            print("::warning title=options-unit-seam::options_ivspread/snapshots.parquet "
+                  "has no 'ivspread_rel' column - ivspread_pp degraded to null", flush=True)
         out: dict[str, float | None] = {}
         for _, row in latest.iterrows():
             underlying = str(row["underlying"]).upper()
@@ -578,6 +611,24 @@ def build_screener_rows(
             "ivspread_pp": ivspread_pp,
         })
 
+    # ── UNIT SEAM (the ×100 class, hit twice) ────────────────────────────────
+    # One aggregate check per field rather than per ticker, so a flip produces one
+    # annotation instead of 400. Both directions are covered: the summary store's iv30
+    # is a FRACTION that this builder multiplies by 100 into row["iv30"], while its
+    # dist_to_flip_pct is ALREADY percent and must pass through untouched. Getting
+    # either backwards ships a plausible-looking number 100× off. Non-fatal by design —
+    # see lib/options_units.py for why a hard failure is the wrong response.
+    # `rows` IS the latest cross-section (one row per ticker), so this is already the
+    # right denominator. iv30 is an IV LEVEL -> level ceiling.
+    options_units.guard_iv_level(
+        [r["iv30"] / 100.0 for r in rows if r.get("iv30") is not None],
+        "polygon_gex.summary.iv30 (latest, pre-×100)",
+    )
+    options_units.guard_percent_scale(
+        [r["dist_to_flip_pct"] for r in rows if r.get("dist_to_flip_pct") is not None],
+        "polygon_gex.summary.dist_to_flip_pct (latest, pass-through)",
+    )
+
     # Sort: by gross_premium_mn desc (most active first), then ticker
     rows.sort(key=lambda r: (-(r["gross_premium_mn"] or 0), r["ticker"]))
 
@@ -598,6 +649,33 @@ def build_screener_rows(
         "n_relvol": n_relvol,
         "built": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
     }
+    # OIP R8 — the shared options coverage object, ADDITIVE. Every key above is
+    # untouched (the page reads them by explicit name and never iterates), and this
+    # rides into site/screenerdata/rows.json alongside them. One comparable shape across
+    # the four options-family builders — see lib/options_coverage.py. Its per-source
+    # rows carry the SAME counts the page already stamps, so page and object cannot
+    # disagree. Surfaces adopt it in a later OIP wave.
+    _rows_asof = max((r["asof"] for r in rows if r.get("asof")), default=None)
+    coverage["coverage_v1"] = options_coverage.coverage_object(
+        universe_name_en="Names in the options scanner",
+        universe_name_zh="期权筛选表内的标的",
+        # M8 (review): len(rows) on both sides published a fabricated "100%". `rows` is
+        # what we COVERED (names with a polygon_gex summary present); the scanner's
+        # intended universe is not counted here, so the denominator is honestly unknown.
+        universe_n=None,
+        covered_n=len(rows),
+        asof=_rows_asof,
+        sources=[
+            options_coverage.source("polygon_gex", "Option chains", "期权链",
+                                    asof=_rows_asof, n=len(rows)),
+            options_coverage.source("options_flow", "Options tape", "期权成交",
+                                    asof=_rows_asof, n=n_relvol),
+            options_coverage.source("options_skew", "Put-call skew", "看跌看涨偏度",
+                                    asof=_rows_asof, n=n_skew),
+            options_coverage.source("options_ivspread", "Volatility vs peers", "波动率对比同业",
+                                    asof=_rows_asof, n=n_ivspread),
+        ],
+    )
     return rows, coverage
 
 

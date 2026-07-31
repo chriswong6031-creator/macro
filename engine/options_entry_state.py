@@ -102,6 +102,7 @@ import pandas as pd
 
 from engine import gex_confirm
 from engine.greeks import bs_greeks
+from lib import nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -438,11 +439,18 @@ def _compute_vanna_hedge_5d(root: Path, ticker: str) -> float | None:
         sdf = pd.read_parquet(summary_path)
     except Exception:
         return None
+    # SESSION GUARD (#3721 class, OIP E8 2026-07-29): the summary store accrues rows on
+    # non-session days (~11 of 39 dates), and those rows RECOMPUTE iv30/net_vex off a
+    # stale carried-forward spot. The positional -6 lookback below is documented as
+    # "5 rows earlier" but is USED as a 5-trading-day change, so weekend rows silently
+    # shorten the window (a Sat+Sun pair turns "5 sessions" into 3). Filter first so
+    # position and session agree. Fail-open (see lib.nyse_calendar.session_rows).
+    sdf = nyse_calendar.session_rows(sdf, label=f"polygon_gex/summary_{ticker}")
     if sdf.empty or len(sdf) < 6:
         return None
     if "net_vex" not in sdf.columns or "iv30" not in sdf.columns:
         return None
-    # Latest row and the row 5 positions earlier (by DataFrame position, not calendar days)
+    # Latest SESSION row and the row 5 sessions earlier (positional, post-filter)
     latest = sdf.iloc[-1]
     prior = sdf.iloc[-6]  # index -6 gives the row 5 steps before -1
 
@@ -485,6 +493,10 @@ def _load_gex_summaries(root: Path) -> dict[str, dict]:
             continue
         if df.empty:
             continue
+        # SESSION GUARD (#3721 class): a non-session summary row would be published as
+        # this ticker's `asof` — the exact shape #F3-17 fixed in build_options_screener
+        # (observed live: 2026-07-26, a Sunday, stamped as a row's asof).
+        df = nyse_calendar.session_rows(df, label=f"polygon_gex/summary_{sym}")
         row = df.iloc[-1]
         asof_val = str(row.name.date()) if hasattr(row.name, "date") else str(row.name)[:10]
         spot = _safe_float(row.get("spot"))
@@ -539,6 +551,10 @@ def _load_skew_snapshots(root: Path) -> dict[str, dict]:
         return {}
     if df.empty:
         return {}
+    # SESSION GUARD (#3721 class): options_skew/snapshots.parquet carried 8 non-session
+    # dates of 28 on 2026-07-29. Both the "latest" pick and the LOOKBACK_TRADING_DAYS
+    # positional lookback below are session-semantic, so filter before either.
+    df = nyse_calendar.session_rows(df, "date", label="options_skew/snapshots")
     # Sort by date and pick latest per underlying
     df = df.sort_values("date")
     out: dict[str, dict] = {}
@@ -580,6 +596,9 @@ def _load_ivspread_snapshots(root: Path) -> dict[str, dict]:
         return {}
     if df.empty:
         return {}
+    # SESSION GUARD (#3721 class): options_ivspread/snapshots.parquet carried 6
+    # non-session dates of 21 on 2026-07-29 — same reasoning as the skew loader above.
+    df = nyse_calendar.session_rows(df, "date", label="options_ivspread/snapshots")
     df = df.sort_values("date")
     out: dict[str, dict] = {}
     for ticker, grp in df.groupby("underlying", sort=False):
