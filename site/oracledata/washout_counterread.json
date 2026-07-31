@@ -1,45 +1,42 @@
 {
  "schema": "washout_counterread.v1",
- "as_of": "2026-07-29",
+ "as_of": "2026-07-30",
  "show": false,
- "growth_score": 76.9,
+ "growth_score": 70.9,
  "growth_band": "caution",
  "growth_extreme": false,
  "price_depths": [
   {
    "index": "SPY",
    "metric": "price_63d_drawdown_pctile",
-   "drawdown_pct": -3.72,
-   "depth_pctile": 73.6,
+   "drawdown_pct": -2.1,
+   "depth_pctile": 63.8,
    "extreme": false,
    "n_hist": 2520
   },
   {
    "index": "QQQ",
    "metric": "price_63d_drawdown_pctile",
-   "drawdown_pct": -11.22,
-   "depth_pctile": 90.4,
-   "extreme": true,
+   "drawdown_pct": -8.29,
+   "depth_pctile": 84.1,
+   "extreme": false,
    "n_hist": 2520
   },
   {
    "index": "XLK",
    "metric": "price_63d_drawdown_pctile",
-   "drawdown_pct": -15.86,
-   "depth_pctile": 95.1,
-   "extreme": true,
+   "drawdown_pct": -11.24,
+   "depth_pctile": 88.8,
+   "extreme": false,
    "n_hist": 2520
   }
  ],
- "price_hits": [
-  "QQQ",
-  "XLK"
- ],
+ "price_hits": [],
  "ihm_depths": [
   {
    "index": "QQQ",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 3.2,
+   "depth_pctile": 4.0,
    "reason": "low_depth",
    "washout_turn": false,
    "extreme": true
@@ -47,7 +44,7 @@
   {
    "index": "SOXX",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 1.4,
+   "depth_pctile": 1.6,
    "reason": "low_depth",
    "washout_turn": true,
    "extreme": true
@@ -55,7 +52,7 @@
   {
    "index": "MAG7",
    "metric": "ihm_macd_hist_depth_pctile",
-   "depth_pctile": 17.6,
+   "depth_pctile": 17.5,
    "reason": "washout_turn",
    "washout_turn": true,
    "extreme": true
