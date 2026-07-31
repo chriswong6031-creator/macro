@@ -66,10 +66,8 @@ def _research_menu(html: str) -> str:
     return html[start:]
 
 
-def test_requested_submenus_use_complete_semantic_icon_set() -> None:
-    html = (ROOT / "site" / "macro.html").read_text(encoding="utf-8")
-    menu = _requested_menu(html)
-    families = {
+def _submenu_families(menu: str) -> set[str]:
+    return {
         name.removeprefix("submenu-icon-")
         for name in re.findall(
             r'class="submenu-icon (submenu-icon-[a-z]+)"',
@@ -77,9 +75,51 @@ def test_requested_submenus_use_complete_semantic_icon_set() -> None:
         )
     }
 
-    assert families == EXPECTED_EMITTED_ICON_FAMILIES
-    assert menu.count('class="submenu-icon ') == EXPECTED_EMITTED_ICON_COUNT
-    assert not any(mark in menu for mark in LEGACY_SUBMENU_MARKS)
+
+def _drawn_icon_families() -> set[str]:
+    """Families product-nav-icons.css actually draws.
+
+    A `submenu-icon-<family>` class with no rule in the stylesheet still lays
+    out its 16px box, so the row ships with a blank gap where the icon belongs.
+    The stylesheet — not this module's hand-maintained constants — is the
+    honest authority on which families a menu may reference.
+    """
+    css = (ROOT / "templates" / "product-nav-icons.css").read_text(encoding="utf-8")
+    return {
+        name.removeprefix(".submenu-icon-")
+        for name in re.findall(r"\.submenu-icon-[a-z]+", css)
+    }
+
+
+def test_requested_submenu_icons_are_all_drawn_by_the_stylesheet() -> None:
+    """Every icon the nav partial references must have a stylesheet rule.
+
+    Deliberately a TEMPLATE-vs-CSS contract, never a rendered-page one. The
+    predecessor of this test read the RENDERED site/macro.html and asserted it
+    equalled the constants above, which made it unsatisfiable inside any nav PR:
+    render.yml's region_of() maps `templates/*` to scope `all` (line 473), so a
+    nav edit re-renders site/*.html only AFTER merge — inside the source PR the
+    partial is new while the ~3.5k committed pages still carry the previous nav.
+    Measured 2026-07-30 against #4123, which drops flow_leaders from the Options
+    flyout: the partial no longer emits submenu-icon-leader, every shipped page
+    still does, and the old assertion failed on `leader` for a PR that was
+    correct. The exact emitted set stays pinned — render-independently — by
+    test_jinja_nav_partial_preserves_submenu_icon_markup_on_rerender below.
+
+    Both inputs here move in the SAME commit, so this covers the authoring bug
+    nothing else caught: adding a row with a new icon family and forgetting the
+    stylesheet, which ships a blank gap in the menu.
+    """
+    partial = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
+    menu = _requested_menu(partial)
+    drawn = _drawn_icon_families()
+
+    assert drawn, "product-nav-icons.css defines no .submenu-icon-* rules at all"
+    undrawn = _submenu_families(menu) - drawn
+    assert not undrawn, (
+        "nav partial references icon families with no product-nav-icons.css "
+        f"rule, so they ship as blank gaps: {sorted(undrawn)}"
+    )
 
 
 def test_template_and_site_share_the_same_submenu_icon_markup() -> None:
@@ -122,13 +162,7 @@ def test_jinja_nav_partial_preserves_research_icon_markup_on_rerender() -> None:
 def test_jinja_nav_partial_preserves_submenu_icon_markup_on_rerender() -> None:
     partial = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
     menu = _requested_menu(partial)
-    families = {
-        name.removeprefix("submenu-icon-")
-        for name in re.findall(
-            r'class="submenu-icon (submenu-icon-[a-z]+)"',
-            menu,
-        )
-    }
+    families = _submenu_families(menu)
 
     # Crypto is intentionally composed inside the exact Other Assets mega-menu
     # at runtime, so the fresh template no longer emits a duplicate top-level
@@ -139,6 +173,16 @@ def test_jinja_nav_partial_preserves_submenu_icon_markup_on_rerender() -> None:
 
 
 def test_all_rendered_menus_preserve_custom_icon_markup() -> None:
+    """Post-render drift audit over the SHIPPED pages.
+
+    Every assertion here has to survive the render lag described on
+    test_requested_submenu_icons_are_all_drawn_by_the_stylesheet: a nav PR
+    leaves these pages a full generation behind until the post-merge scope=all
+    render catches up. So this pins only what holds at every point in that lag —
+    a floor, not an exact count, and membership in the stylesheet rather than
+    equality with the current partial's set.
+    """
+    drawn = _drawn_icon_families()
     rendered = 0
     for page in (ROOT / "site").rglob("*.html"):
         html = page.read_text(encoding="utf-8")
@@ -151,5 +195,9 @@ def test_all_rendered_menus_preserve_custom_icon_markup() -> None:
         assert not any(mark in submenu for mark in LEGACY_SUBMENU_MARKS), page
         assert '<span class="nm-ic">' not in research, page
         assert 'class="nm-ic research-icon ' in research, page
+        # A shipped page may lag the partial, but never reference an icon the
+        # stylesheet does not draw — that is a blank gap in front of a user.
+        undrawn = _submenu_families(submenu) - drawn
+        assert not undrawn, f"{page}: undrawn icon families {sorted(undrawn)}"
 
     assert rendered >= 3000
