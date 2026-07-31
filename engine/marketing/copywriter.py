@@ -1998,7 +1998,17 @@ def no_reaction_violations(text: str) -> list[str]:
 # "shut up with all of these numbers" was aimed at SPECULATIVE level stacks on
 # forward-looking posts ("I want 151 before leaning toward 190, then 228"), so
 # the budget is per-kind rather than global.
-_NUMBER_BUDGET: dict[str, int] = {"receipt": 4}
+#: Kinds whose numbers ARE the fact, so the house "one number per post" law
+#: would delete the post rather than tighten it.
+#:
+#: `earnings` joins 2026-07-31 on the same reasoning as `receipt`: an earnings
+#: post exists to say what a company printed AGAINST what was expected, and an
+#: actual without its estimate is not a smaller claim, it is an unfalsifiable
+#: one. Four admits the EPS pair and one derived surprise with a token spare.
+#: It does NOT admit the six the fast lane used to emit (EPS pair, EPS surprise,
+#: revenue pair, revenue surprise) — that is a data dump, and the copy was
+#: rewritten to state the revenue leg in words instead.
+_NUMBER_BUDGET: dict[str, int] = {"receipt": 4, "earnings": 4}
 _NUMBER_BUDGET_DEFAULT = 2
 
 

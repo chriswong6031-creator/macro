@@ -298,8 +298,11 @@ def _build_earnings_copy(event: dict[str, Any]) -> dict[str, Any]:
             rev_surp_pct = (rev_actual - rev_est) / abs(rev_est) * 100.0
             rev_sign = "+" if rev_surp_pct >= 0 else ""
             rev_surp_str = f"{rev_sign}{rev_surp_pct:.1f}%"
-            whitelist.append(rev_surp_str)
-        whitelist.extend([rev_a_str, rev_e_str])
+        # The revenue FIGURES are computed (the card still draws them) but no
+        # longer appear in the post's words, so they must NOT be whitelisted.
+        # The whitelist is what certifies a number as vouched-for; listing one
+        # the copy never says widens the certificate for nothing, which is the
+        # quiet direction for a guard to weaken in.
 
     # ── Scorekeeper-voice copy ───────────────────────────────────────────────
     # Persona: "everything resolves to a number; emoji budget: 1 (🧾)"
@@ -310,18 +313,37 @@ def _build_earnings_copy(event: dict[str, Any]) -> dict[str, Any]:
         "rth": "Earnings out.",
     }.get(session, "Earnings out.")
 
-    headline = f"🧾 {cashtag}{q_label} earnings: {verdict}."
+    # SIX NUMBERS AND NO POINT OF VIEW (2026-07-31). This template emitted
+    # "🧾 $AAPL (Q3 2026) earnings: BEAT. / EPS $2.11 vs $1.98 est (+6.6%).
+    # Rev $98.40B vs $97.10B est (+1.3%). After-hours earnings drop." — six
+    # distinct figures against a house budget of two, an emoji lead, a shouted
+    # verdict, and not one word that costs us anything. It is the machine voice
+    # the operator graded F, and the lane is only dark by accident: nothing runs
+    # `--lane earnings`, so it has never been seen on a timeline.
+    #
+    # Rewritten to the two laws it was breaking:
+    #   * NUMBERS ARE THE POINT, BUT ONLY THE ONES THAT ARE. The EPS pair and
+    #     its surprise are the claim; the revenue pair is the same claim told
+    #     twice, so it goes into WORDS. Three figures, inside the budget of four
+    #     that `earnings` now carries for exactly this reason.
+    #   * A FACT PLUS A REACTION THAT COSTS US. "We don't trade the print"
+    #     concedes that we are not acting on the thing we just reported, which
+    #     is the admission the house voice is built on, and it is true.
+    # A VERB, NOT A LABEL. `verdict` is BEAT/MISS/INLINE — a machine token, and
+    # lowercasing it straight into a sentence produced "$AAPL miss on the
+    # Q3 2026", which is not English and reads exactly as generated as it is.
+    _verb = {"BEAT": "beat", "MISS": "missed"}.get(verdict, "came in line")
+    _period = q_label.strip("() ") or "the quarter"
+    headline = f"{cashtag} {_verb} on {_period}."
 
-    body_parts = [
-        f"EPS ${eps_a_str} vs ${eps_e_str} est ({surp_str}).",
-    ]
+    body_parts = [f"EPS ${eps_a_str} against ${eps_e_str} expected, {surp_str}."]
     if rev_a_str and rev_e_str:
-        rev_line = f"Rev ${rev_a_str} vs ${rev_e_str} est"
-        if rev_surp_str:
-            rev_line += f" ({rev_surp_str})"
-        rev_line += "."
-        body_parts.append(rev_line)
+        # The revenue LEG in words: same fact, no second pair of figures.
+        _rev_dir = ("came in ahead too" if (rev_surp_str or "").startswith("+")
+                    else "came in light")
+        body_parts.append(f"Revenue {_rev_dir}.")
     body_parts.append(session_note)
+    body_parts.append("We don't trade the print, we trade what the tape does with it.")
     body = " ".join(body_parts)
 
     # Dedupe whitelist

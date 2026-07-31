@@ -569,3 +569,115 @@ def test_fmt_rev_unit_suffix_format() -> None:
     assert not comma_numbers, (
         f"Body contains comma-grouped numbers {comma_numbers!r} — use unit suffixes"
     )
+
+
+class TestTheEarningsPostObeysTheHouseVoice:
+    """It emitted six numbers and no point of view, and nobody had seen it.
+
+    The lane is dark by accident — nothing runs `--lane earnings`; the only
+    systemd unit drives `--lane press`. Driven by hand on 2026-07-31 it produced:
+
+        🧾 $AAPL (Q3 2026) earnings: BEAT.
+        EPS $2.11 vs $1.98 est (+6.6%). Rev $98.40B vs $97.10B est (+1.3%).
+        After-hours earnings drop.
+
+    Six distinct figures against a house budget of two, an emoji lead, a shouted
+    machine token for a verdict, and not one word that costs us anything. Arming
+    the lane in that state would have re-introduced the exact voice this whole
+    program removed.
+    """
+
+    @staticmethod
+    def _emit(tmp_path, **kw):
+        import json
+        from datetime import datetime, timezone
+
+        from engine.marketing.earnings_feed import _event_id
+        from engine.marketing.fastlane import run_tick
+
+        ev = {"id": _event_id(kw.get("ticker", "AAPL"), "Q3 2026", "t"),
+              "ticker": kw.get("ticker", "AAPL"), "when": "2026-07-31T20:30:00",
+              "eps_actual": kw.get("eps_actual", 2.11),
+              "eps_est": kw.get("eps_est", 1.98),
+              "rev_actual": kw.get("rev_actual", 98.4e9),
+              "rev_est": kw.get("rev_est", 97.1e9),
+              "quarter": kw.get("quarter", "Q3 2026"), "source": "t"}
+        run_tick([ev], root=tmp_path,
+                 now=datetime(2026, 7, 31, 21, 0, tzinfo=timezone.utc),
+                 universe={ev["ticker"]}, dry_run=False, cta=True, spool=False)
+        for f in (tmp_path / "data" / "marketing" / "outbox").glob("items*.jsonl"):
+            for line in f.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    return json.loads(line)["text"]
+        raise AssertionError("the earnings lane emitted nothing")
+
+    def test_it_clears_the_number_budget(self, tmp_path):
+        from engine.marketing.copywriter import number_soup_violations
+
+        text = self._emit(tmp_path)
+        assert not number_soup_violations(text, kind="earnings"), text
+
+    def test_the_verdict_reads_as_english_not_as_a_token(self, tmp_path):
+        """`verdict` is BEAT/MISS/INLINE. Lowercasing it into a sentence gave
+        "$AAPL miss on the Q3 2026", which is not English."""
+        beat = self._emit(tmp_path / "a", eps_actual=2.11, eps_est=1.98)
+        miss = self._emit(tmp_path / "b", eps_actual=1.80, eps_est=1.98)
+        assert "beat on Q3 2026" in beat, beat
+        assert "missed on Q3 2026" in miss, miss
+        assert "miss on the" not in miss
+
+    def test_a_missing_quarter_still_reads(self, tmp_path):
+        text = self._emit(tmp_path, quarter=None)
+        assert "on the quarter." in text, text
+
+    def test_the_revenue_leg_is_words_not_a_second_pair_of_figures(self, tmp_path):
+        """Same claim told twice is a data dump, not a stronger post."""
+        ahead = self._emit(tmp_path / "a", rev_actual=98.4e9, rev_est=97.1e9)
+        light = self._emit(tmp_path / "b", rev_actual=92.0e9, rev_est=97.1e9)
+        assert "Revenue came in ahead too." in ahead
+        assert "Revenue came in light." in light
+        for text in (ahead, light):
+            assert "B vs $" not in text, "the revenue figures are back in the copy"
+
+    def test_it_carries_a_reaction_that_costs_something(self, tmp_path):
+        """The house voice law: a fact PLUS a reaction that costs you."""
+        text = self._emit(tmp_path)
+        assert "don't trade the print" in text, text
+
+    def test_it_passes_the_shared_guards(self, tmp_path):
+        from engine.marketing.copywriter import banned_language
+        from engine.marketing.value_gate import evaluate
+
+        text = self._emit(tmp_path)
+        assert not banned_language(text), text
+        hl, bd = text.split("\n\n", 1)
+        assert evaluate(hl, bd, kind="earnings", has_media=True).verdict == "pass"
+
+    def test_the_whitelist_does_not_vouch_for_numbers_the_copy_never_says(self, tmp_path):
+        """The whitelist CERTIFIES a figure as ours. Listing one the post never
+        prints widens the certificate for nothing — the quiet direction for a
+        guard to weaken in."""
+        import json
+
+        from datetime import datetime, timezone
+
+        from engine.marketing.earnings_feed import _event_id
+        from engine.marketing.fastlane import run_tick
+
+        ev = {"id": _event_id("AAPL", "Q3 2026", "wl"), "ticker": "AAPL",
+              "when": "2026-07-31T20:30:00", "eps_actual": 2.11, "eps_est": 1.98,
+              "rev_actual": 98.4e9, "rev_est": 97.1e9, "quarter": "Q3 2026",
+              "source": "t"}
+        run_tick([ev], root=tmp_path,
+                 now=datetime(2026, 7, 31, 21, 0, tzinfo=timezone.utc),
+                 universe={"AAPL"}, dry_run=False, cta=True, spool=False)
+        for f in (tmp_path / "data" / "marketing" / "outbox").glob("items*.jsonl"):
+            for line in f.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                wl = (item.get("source") or {}).get("numbers_whitelist") or []
+                text = item["text"]
+                for token in wl:
+                    assert str(token) in text, (
+                        f"whitelisted {token!r} never appears in the post")
