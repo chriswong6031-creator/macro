@@ -129,14 +129,26 @@ class TestPlanWiring:
             "a cut must leave the plan through the same reconciliation as every "
             "other drop, or all_items and the queues diverge")
 
-    def test_it_only_audits_the_shipping_day(self):
-        """D1 is the only day that has ever enqueued; auditing the forward tail
-        spends model calls judging posts that cannot post."""
+    def test_it_audits_the_forward_tail_too(self):
+        """WAS: "D1 is the only day that has ever enqueued; auditing the forward
+        tail spends model calls judging posts that cannot post."
+
+        That premise was false for the EVERGREEN kinds. Watchlist and receipt
+        copy is forward-booked to the full seven-day horizon deliberately, and a
+        forward-booked post reaches its slot and ships. The D1 pin left 73
+        watchlist posts unjudged on the 2026-07-30 plan.
+
+        The scope now comes from config (auditor.max_day, 0 = whole horizon),
+        so the cost lever stays available without a code change.
+        """
         import inspect
         from engine.marketing import content_studio
         src = inspect.getsource(content_studio)
-        seg = src[src.index("copy_auditor as _auditor"):][:2000]
-        assert 'startswith("D1-")' in seg
+        seg = src[src.index("copy_auditor as _auditor"):][:2600]
+        assert 'startswith("D1-")' not in seg, (
+            "the auditor is hard-pinned to D1 again -- the evergreen forward "
+            "tail ships unjudged when it is")
+        assert "max_audit_day" in seg, "scope must be resolved from config"
 
     def test_it_audits_per_account(self):
         """'Does this feed read like a bot' is a question about ONE timeline.
@@ -163,3 +175,56 @@ class TestPlanWiring:
         seg = src[src.index("copy_auditor as _auditor"):][:3000]
         for field in ('"codes"', '"note"', '"text"'):
             assert field in seg, f"cut record missing {field}"
+
+
+class TestAuditScopeCoversTheForwardTail:
+    """The D1 pin exempted the part of the plan that actually ships as written.
+
+    `drop_stale_forward_bookings` keeps EVERGREEN copy (watchlist, receipt) at
+    the full seven-day horizon on purpose -- "a level that has held 23 sessions
+    still reads true on Friday" -- and its own docstring records that such a
+    post reaches its slot: "by the time one of those posts reached its slot the
+    tape had moved, so the publisher's live-tape gate refused it." Reaching the
+    slot is shipping.
+
+    On the 2026-07-30 plan the pin left 73 watchlist posts written,
+    forward-booked and never judged. Watchlist is both the biggest kind (97 of
+    187 queued) and where the repetition the operator named actually lives.
+    """
+
+    def test_the_shipped_default_reads_the_whole_horizon(self):
+        import yaml
+        from engine.marketing.copy_auditor import max_audit_day
+        cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
+        assert max_audit_day(cfg) is None, (
+            "the auditor is capped again -- the evergreen forward tail ships "
+            "unjudged when it is"
+        )
+
+    def test_zero_and_junk_mean_no_limit_but_a_positive_n_still_caps(self):
+        from engine.marketing.copy_auditor import max_audit_day
+        for value in (0, -3, "nonsense", None):
+            assert max_audit_day(
+                {"copywriter": {"llm": {"auditor": {"max_day": value}}}}) is None, value
+        for value in (1, 7):
+            assert max_audit_day(
+                {"copywriter": {"llm": {"auditor": {"max_day": value}}}}) == value
+
+    def test_the_old_d1_behaviour_is_still_reachable(self):
+        """Cost lever, not a one-way door: max_day 1 restores the old scope."""
+        from engine.marketing.copy_auditor import max_audit_day
+        assert max_audit_day(
+            {"copywriter": {"llm": {"auditor": {"max_day": 1}}}}) == 1
+
+    def test_evergreen_kinds_really_do_keep_the_forward_horizon(self):
+        """The premise, pinned: if this changes, the widening loses its reason.
+
+        watchlist/receipt must NOT be perishable, or there is no forward tail
+        to audit and the D1 pin would have been correct all along.
+        """
+        import yaml
+        from engine.marketing.content_studio import perishable_kinds
+        cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
+        perish = set(perishable_kinds(cfg))
+        assert "watchlist" not in perish, "watchlist became perishable"
+        assert "receipt" not in perish, "receipt became perishable"

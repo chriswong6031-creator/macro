@@ -177,8 +177,52 @@ _KEYWORD_HIT_BONUS = 5.0   # per additional keyword hit beyond the first
 _TICKER_MATCH_BONUS = 10.0 # per matched ticker (capped at 3)
 _TICKER_MATCH_CAP = 3
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Routine-restatement demotion (operator 2026-07-30)
+# ─────────────────────────────────────────────────────────────────────────────
+# The taxonomy scores by TOPIC, not by newsworthiness: a GDP *release* and a GDP
+# *third-estimate revision* both match "gdp" and score identically, so a routine
+# restatement of a quarter that ended months ago cleared the wire at the same
+# salience as the print itself. The operator, reading one on the live account:
+# a BEA restatement with no reaction and no chart, at 1-4 views.
+#
+# The wire is a RELAY by charter (breaking_summary.validate_summary rejects
+# stance words outright; wire_voice's prompt says "no interpretation, no
+# stance"), and that is the right design for a genuine flash: speed and accuracy
+# are the product, and an LLM inventing implications about someone else's news
+# is exactly the fabrication risk the charter exists to stop. So the fix is NOT
+# to make the wire editorialise. It is to stop relaying things that are not news.
+#
+# A DEMOTION, never a kill: a benchmark revision genuinely can move a market. A
+# demoted item still posts when tier, keyword strength or ticker matches carry
+# it back over the threshold, which is what "big revision" looks like in the
+# score. Scoped to macro_print ON PURPOSE — a COMPANY revising guidance is real
+# news, and "revised" is a normal word in that context.
+_MACRO_REVISION_MARKERS: tuple[str, ...] = (
+    "second estimate", "third estimate", "final estimate", "advance estimate",
+    "benchmark revision", "annual revision", "comprehensive revision",
+    "revised estimate", "revised reading", "revised figure", "revised data",
+    "previously reported", "prior estimate", "initially reported",
+    "restated", "restatement",
+)
+_MACRO_REVISION_PENALTY = 20.0
+
 # Default salience threshold (overridden by cfg["salience_threshold"])
 _DEFAULT_THRESHOLD = 60.0
+
+
+def macro_revision_penalty(event_class: str, text_lower: str) -> tuple[float, str]:
+    """(penalty, marker) for a macro print that only RESTATES a published one.
+
+    Returns (0.0, "") for every other class and for a first-release print, so
+    the historical score of everything else is untouched.
+    """
+    if event_class != "macro_print":
+        return 0.0, ""
+    for marker in _MACRO_REVISION_MARKERS:
+        if marker in text_lower:
+            return _MACRO_REVISION_PENALTY, marker
+    return 0.0, ""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Static mega-cap + ETF fallback universe (used when parquet unavailable)
@@ -510,8 +554,17 @@ def score_item(
     # 5. Market-hours weight
     mhw = _market_hours_weight(now)
 
-    # Salience = (base + tier_bonus + kw_bonus + ticker_bonus) * mhw, capped 0–100
-    raw_salience = (base_sal + tier_bonus + kw_bonus + ticker_bonus) * mhw
+    # 5b. Routine-restatement demotion. Applied INSIDE the parenthesis, before
+    # the market-hours weight, so a restatement is demoted by the same
+    # proportion at 3am as at the open — the item's newsworthiness does not
+    # depend on what time it crossed.
+    revision_penalty, revision_marker = macro_revision_penalty(event_class, full_lower)
+
+    # Salience = (base + tier_bonus + kw_bonus + ticker_bonus - revision) * mhw,
+    # capped 0-100
+    raw_salience = (
+        base_sal + tier_bonus + kw_bonus + ticker_bonus - revision_penalty
+    ) * mhw
     salience = min(100.0, max(0.0, raw_salience))
 
     # 6. CTA suppress (tragedy keyword, deterministic)
@@ -532,6 +585,12 @@ def score_item(
         "tier_bonus": tier_bonus,
         "kw_bonus": kw_bonus,
         "ticker_bonus": ticker_bonus,
+        # Named, and named with the MARKER that fired: "why did the GDP item not
+        # post" has to be answerable from the breakdown, not from re-deriving
+        # the score by hand. 0.0 / "" on every item that is not a restatement,
+        # so the historical shape of this dict is unchanged for existing readers.
+        "revision_penalty": revision_penalty,
+        "revision_marker": revision_marker,
         "market_hours_weight": mhw,
         "raw": raw_salience,
         "capped": salience,

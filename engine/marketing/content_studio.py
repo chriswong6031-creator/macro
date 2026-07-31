@@ -3850,8 +3850,17 @@ def content_plan(
     # reconciliation below, so a cut post leaves the plan the same way every
     # other drop does.
     #
-    # D1 ONLY: D1 is the sole day that has ever enqueued, so auditing the
-    # evergreen forward tail would spend calls judging posts that cannot post.
+    # SCOPE: the whole plan horizon by default (copywriter.llm.auditor.max_day,
+    # 0 = no limit). This was pinned to D1 in code on the reasoning that "D1 is
+    # the sole day that has ever enqueued, so auditing the evergreen forward
+    # tail would spend calls judging posts that cannot post." That is wrong for
+    # the evergreen kinds: drop_stale_forward_bookings keeps watchlist/receipt
+    # copy at the full seven-day horizon ON PURPOSE, and its own docstring
+    # records that such a post reaches its slot ("by the time one of those posts
+    # reached its slot the tape had moved"). Reaching the slot is shipping. On
+    # the 2026-07-30 plan the D1 pin left 73 watchlist posts written,
+    # forward-booked and never judged — and watchlist is both the biggest kind
+    # and the one carrying the repetition the operator named.
     #
     # Per ACCOUNT, because "does this feed read like a bot" is a question about
     # one timeline. Judging six desks in one window would let a repeat across
@@ -3863,15 +3872,24 @@ def content_plan(
         from engine.marketing import copy_auditor as _auditor  # noqa: PLC0415
 
         _win = _auditor.window_size(cfg)
+        _max_day = _auditor.max_audit_day(cfg)
+        _audit_report["max_day"] = _max_day
         for _row in account_rows:
             _aid = str(_row.get("id") or "")
             _queue = _row.get("queue") or []
-            _d1 = [d for d in _queue if str(d.get("slot") or "").startswith("D1-")]
-            if not _d1:
+            # An unparseable slot is AUDITED, not skipped: the auditor is the
+            # last read of the copy, and silently exempting a post because its
+            # label did not parse is exactly how the D1 pin hid 73 of them.
+            _in_scope = [
+                d for d in _queue
+                if _max_day is None
+                or (_slot_day_num(d.get("slot")) or 1) <= _max_day
+            ]
+            if not _in_scope:
                 continue
             _cut_ids: set[str] = set()
-            for _off in range(0, len(_d1), _win):
-                _chunk = _d1[_off:_off + _win]
+            for _off in range(0, len(_in_scope), _win):
+                _chunk = _in_scope[_off:_off + _win]
                 _res = _auditor.audit_batch(
                     [{"account": _aid, "kind": d.get("type"),
                       "text": f"{d.get('headline') or ''}\n{d.get('body') or ''}".strip()}
@@ -3896,9 +3914,12 @@ def content_plan(
             if _cut_ids:
                 _row["queue"] = [d for d in _queue if str(d.get("id")) not in _cut_ids]
                 _audit_report["cut"] += len(_cut_ids)
+        # Counted over the SAME scope the auditor read. This used to hard-code
+        # D1 and would now report "kept: 19" for a run that judged 92 — a
+        # console number that quietly contradicts the work done.
         _audit_report["kept"] = sum(
             1 for r in account_rows for d in (r.get("queue") or [])
-            if str(d.get("slot") or "").startswith("D1-"))
+            if _max_day is None or (_slot_day_num(d.get("slot")) or 1) <= _max_day)
     except Exception as exc:  # noqa: BLE001 — an auditor must never break a night
         _audit_report["error"] = f"{type(exc).__name__}: {exc}"
         print(f"::warning title=marketing-auditor-failed::batch audit did not "

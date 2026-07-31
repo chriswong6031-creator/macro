@@ -344,3 +344,22 @@ def window_size(cfg: dict | None = None) -> int:
     except (TypeError, ValueError):
         return _DEFAULT_WINDOW
     return max(2, min(n, 40))
+
+
+def max_audit_day(cfg: dict | None = None) -> int | None:
+    """Deepest plan day the auditor reads. None = the whole horizon.
+
+    The auditor used to be pinned to D1 in code. That silently exempted the
+    EVERGREEN forward tail, which is the part of the plan that ships as
+    written: ``drop_stale_forward_bookings`` keeps watchlist/receipt copy at the
+    full seven-day horizon deliberately, and a forward-booked post really does
+    reach its slot. On the 2026-07-30 plan that was 73 unjudged watchlist posts.
+
+    ``0`` (the shipped default) and any non-positive value mean "no limit"; a
+    positive N restores a D1..DN cap.
+    """
+    try:
+        n = int(_audit_cfg(cfg).get("max_day", 0))
+    except (TypeError, ValueError):
+        return None
+    return n if n > 0 else None
