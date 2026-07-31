@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T20:51:33.038879+00:00",
-  "count": 476,
+  "generated_at": "2026-07-31T21:13:46.143058+00:00",
+  "count": 483,
   "institutions": [
     "Amova",
     "Apollo",
@@ -43,6 +43,110 @@
   ],
   "items": [
     {
+      "id": "marketdesk-6pchnzpd3si-dd5aa6",
+      "title": "Euro Weekly Digest",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:51:29Z",
+      "summary_points": [
+        "**Q2 GDP & Wage Dynamics**: EA GDP +0.4% q/q (exceeding ECB’s 0.2% forecast), driven by resilient domestic demand; wage tracker confirms stable pressures through Q1-2027 with no second-round inflation risk.",
+        "**Credit Flows & Geopolitical Resilience**: June bank lending survey shows EUR 46B monthly flows (corporate loans EUR 26B), defying geopolitical risks; contradicts growth concerns and signals ECB rate hike potential.",
+        "**ECB Policy Divergence & Rate Outlook**: Kazimir signals potential additional hike amid sticky inflation, while Patsalides remains uncertain; market pricing at ~2.75% vs.",
+        "DB forecast of 2.5%.",
+        "**Iran Shock Geopolitical Risk**: Iran-related disruptions pose severe threats to European growth, energy markets, and fiscal policy, elevating systemic risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-aygwqpcjmir-470f38",
+      "title": "Wiwynn (6669)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:24:00Z",
+      "summary_points": [
+        "**AI Server Demand Acceleration**: 32% CAGR revenue growth (2026-28E) driven by US CSP AI spending (21% CAGR), agentic AI demand (June revenue +33% MoM), and new GPU/ASIC server adoption; Q3 revenue expected +28% QoQ.",
+        "**Profitability Scalability**: Revenue projected to surge from 950.7M NT$ (12/25) to 2,173.0M NT$ (12/28E), with EBITDA rising 131% (66,608M to 131,055M NT$) and free cash flow expanding to 43,014M NT$.",
+        "**AI Server Margin Leadership**: AI server full racks show 402% GM growth in 2026E; ASIC AI servers drive higher gross margins (lower GPU cost, better customization) vs.",
+        "consensus (Goldman 5% GP vs.",
+        "Bloomberg 3%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vh36al96seq-6aecac",
+      "title": "Japan July Tokyo CPI New Core CPI Accelerates in Line With Market Forecast on Rise in Non Durable Goods Prices",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:23:46Z",
+      "summary_points": [
+        "**Core Inflation Acceleration**: Tokyo CPI core at +2.0% yoy (new core), driven by non-durable (food/detergent) and durable goods (memory prices), with energy inflation accelerating to +1.9% yoy.",
+        "**Energy Inflation Driver**: Global core CPI (ex food/alcohol/energy) rose to +1.3% yoy, fueled by energy price hikes (electricity/gas from fuel imports), pushing core CPI to +1.9% (vs +1.1% June).",
+        "**Base-Year Revision Impact**: National core CPI forecast (+1.8% yoy) and new core (+1.9% yoy) are provisional; revised data pending August 7 base-year adjustment (expected August 14).",
+        "**Structural Inflation Persistence**: Core (ex freshfood) and new core metrics show sustained inflation above 2% through 2024-2025, indicating structural risks beyond temporary policy exclusions (e.g., tuition, water charges)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-m8pd7djihdu-c9c210",
+      "title": "Maxell Ltd. (6810.T) Large 1Q beat vs",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:47Z",
+      "summary_points": [
+        "**Sell rating despite target raise**: Goldman Sachs maintains Sell rating with ¥1,900 target (up from ¥1,800), underscoring material risks including over-optimistic auto output recovery, consumer electronics margin improvement, and yen depreciation despite earnings beat.",
+        "**Deteriorating financial health**: Rising net debt/equity (12.7%→23.7%) and declining EV/EBITDA (5.2→2.1) signal deteriorating fundamentals, conflicting with projected EBITDA growth and earnings beat.",
+        "**Price target divergence**: Target price (¥1,900) below closing price (¥2,070), with historical targets consistently lower, indicating bearish sentiment and potential downside risk.",
+        "**Operational instability**: Slowing EBITDA growth (5.4% in Q1) and volatile free cash flow (9.1→10.9→7.2→7.8) conflict with improving EBIT margins (6.1%→11.0%), revealing execution risks.",
+        "**Key risk factors**: Unreflected cost recovery in Energy segment, uncertainty around ASSB/coated separators growth drivers, and projector business downsizing threaten medium-term visibility despite management plans."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eqb2epqgniz-9fc0c1",
+      "title": "Rightmove Plc (RMV.L) 1H26 results review A positive call after the revenue downgrade",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:42Z",
+      "summary_points": [
+        "**Revenue downgrade with offsetting catalysts**: H1 revenue guidance down 6–10% (new homes -10% vs consensus -8%), but management buybacks (€330m by 2027), agency growth (1–2% agent numbers despite rising rates), and AI-driven products provide near-term upside.",
+        "**Resilient 1H26 earnings beat**: Adj EBIT (155.1m) beat consensus (154.0m) by 1.1m with margin expansion to 68.7% (vs 68.0%), despite slight revenue miss (225.8m vs 226.5m).",
+        "**Goldman Sachs upgrade & bullish target**: Rating upgraded from 'N' to 'B' with 12-month target (523p) above current price (461.9p), signaling improving confidence and upside potential.",
+        "**Critical risk factors**: UK housing market volatility, intensified competition (Zoopla/OnTheMarket), agent cost pressures, and AI disintermediation threaten near-term execution.",
+        "**Buyback-driven EPS uplift**: Increased 2027 buyback assumptions (€330m) elevate adjusted EPS growth to +2.2% (vs prior -0.5%) over FY26-30E, countering revenue revisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-1t2sy5jalvf-e1af45",
       "title": "Meta Platforms Inc. (META) Q2'26 Review Core Business Provides Evidence of Near Term ROIC but Lack of Visibility into Long ...",
       "institution": "Goldman Sachs",
@@ -80,6 +184,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xo0vdqrv3g6-68957a",
+      "title": "Euro Area Belgian Inflation Below Expectations",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:42Z",
+      "summary_points": [
+        "**German Data Pivotal for Euro Area Inflation**: German regional HICP lifts core to 2.7% yoy (headline 2.9%), driving final Euro area headline forecast upgrade to 2.89% yoy (core 2.45% yoy), overriding earlier forecasts.",
+        "**Goldman Tracker vs Consensus Gap**: GS July HICP Tracker (2.89) trails Bloomberg Consensus (2.90) for all-items, with 0.04-point gap in Energy/Food/Alc&Tobac.",
+        "(2.36 vs 2.40), signaling near-term inflation moderation pressure.",
+        "**Country-Specific Inflation Divergence**: Germany’s GS Tracker (2.9) exceeds Consensus (2.8), while France’s Tracker (2.1) is 0.1 above Consensus (2.0), highlighting uneven inflation trajectories across core Eurozone economies.",
+        "**Core Inflation Moderation Signal**: Core HICP forecast revised downward to 2.45% yoy (vs prior 2.46%), with energy/food components showing 0.04-point gap, indicating potential easing in underlying inflation momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-eejnqbk6snn-74e55a",
+      "title": "BoE—MPC Votes 6 3 to Hold, Notes Little Evidence So Far of Second Round Effects and Reiterates Guidance",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:33Z",
+      "summary_points": [
+        "**Policy Divergence**: 6-3 MPC vote to hold rate with dissenters (Pill, Greene, Mann) advocating 25bp hike; MPC emphasizes \"little evidence of second-round effects\" in wages/prices, signaling cautious inflation stance.",
+        "**Inflation Projection**: Central inflation forecast peaks at 3.2% (Q4), 0.1pp below expectations; MPC reiterates readiness to act, while dissenters argue proactive hikes reduce second-round risk.",
+        "**Bank Rate Guidance**: Rate expected unchanged through 2026 amid inflation risk premium; Lombardelli stresses need for \"significant\" second-round effects evidence before adjustment.",
+        "**Dissenters' Stance**: Core argument for proactive 25bp hike to preempt second-round inflation effects, contrasting MPC's current wait-and-see approach."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
