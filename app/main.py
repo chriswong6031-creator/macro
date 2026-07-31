@@ -171,10 +171,25 @@ def _commit() -> str:
         return "unknown"
 
 
+# The build this PROCESS is serving — captured once at import. The VPS pull loop
+# advances the /opt/macro checkout every 3 minutes, but macro-api restarts only
+# when the deploy regex matches its own code (app/deploy/update.sh), so a
+# per-request _commit() reports the CHECKOUT, not the running code: observed live
+# 2026-07-31, health flipped to a freshly pulled sha while the pid was still
+# serving the import from six minutes earlier.
+_PROCESS_COMMIT = _commit()
+
+
 @app.get("/api/health")
 def health() -> dict:
-    """Liveness + which build is being served. Unauthenticated."""
-    return {"status": "ok", "commit": _commit()}
+    """Liveness + which build is being served. Unauthenticated.
+
+    ``commit`` is the build the running process imported; ``checkout`` is the
+    working tree at request time. They differ whenever the pull loop has
+    advanced /opt/macro past the last macro-api restart — visible drift, so an
+    operator confirming an API deploy reads the truthful field.
+    """
+    return {"status": "ok", "commit": _PROCESS_COMMIT, "checkout": _commit()}
 
 
 # ── First-party analytics collector — POST /api/collect ─────────────────────────
@@ -690,7 +705,9 @@ def status() -> dict:
     else:
         checks["terminal_data"] = {"status": "missing"}
 
-    return {"status": "ok", "commit": _commit(), "checks": checks}
+    # Top-level commit = the running process's build (same contract as /api/health);
+    # the live checkout sha is already reported by checks["site"] above.
+    return {"status": "ok", "commit": _PROCESS_COMMIT, "checks": checks}
 
 
 # ---- auth: secretless — verify the access token against Supabase ------------
