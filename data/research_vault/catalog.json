@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T21:13:46.143058+00:00",
-  "count": 483,
+  "generated_at": "2026-07-31T21:28:45.978065+00:00",
+  "count": 484,
   "institutions": [
     "Amova",
     "Apollo",
@@ -143,6 +143,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-vhszjmzadnc-fde448",
+      "title": "Technology Semiconductor Capital Equipment Semiconductors Read across from 2QCY26 Hyperscalers and Semi players results to...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:19Z",
+      "summary_points": [
+        "**Hyperscaler Capex Surge**: Microsoft, Amazon, Alphabet, Meta raised 2026 capex guidance (Amazon $220bn, Alphabet $195-205bn), driving semiconductor equipment demand; TSMC FY26 revenue growth upgraded to >40%.",
+        "**Semiconductor Capex Revisions**: Goldman Sachs raises FY26 semiconductor capex to $60-64bn (vs.",
+        "$52-56bn), with WFE spending forecast at $150bn (Lam Research); Samsung memory supply tightness extends to 2027.",
+        "**Geopolitical Tech Dominance**: Western tech dominance reinforced as China’s WFE spending remains flat, non-Western entrants face EUV barriers, and EUV/advanced DUV demand surges from TSMC N2 investments.",
+        "**Testing Demand Catalysts**: Accelerator volume growth from foundry/memory capacity ramps and chiplet/advanced packaging proliferation increase probe-card demand and yield risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
