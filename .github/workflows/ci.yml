@@ -1220,6 +1220,11 @@ on:
       - "tests/test_marketing_copy_v2.py"
       - "tests/test_marketing_voice_laws.py"
       - "tests/test_marketing_publisher_names.py"
+      - "tests/test_chart_facts.py"
+      - "tests/test_confluence_source.py"
+      - "tests/test_confluence_honesty.py"
+      - "tests/test_tech_confluence.py"
+      - "tests/test_chart_since_setup.py"
       - "tests/test_marketing_selection.py"
       - "tests/test_marketing_press_wire.py"
       - "tests/test_marketing_x_intel.py"
@@ -1279,6 +1284,11 @@ on:
       - "tests/test_marketing_bare_cashtag.py"
       - "tests/test_marketing_voice_laws.py"
       - "tests/test_marketing_publisher_names.py"
+      - "tests/test_chart_facts.py"
+      - "tests/test_confluence_source.py"
+      - "tests/test_confluence_honesty.py"
+      - "tests/test_tech_confluence.py"
+      - "tests/test_chart_since_setup.py"
       - ".github/workflows/marketing-copy-dryrun.yml"
       # chart coverage (#3895, 2026-07-28): every ticker-bearing post carries an
       # illustration; the live gate picks the card VARIANT rather than vetoing it;
@@ -1412,6 +1422,11 @@ on:
       - "tests/test_marketing_copy_v2.py"
       - "tests/test_marketing_voice_laws.py"
       - "tests/test_marketing_publisher_names.py"
+      - "tests/test_chart_facts.py"
+      - "tests/test_confluence_source.py"
+      - "tests/test_confluence_honesty.py"
+      - "tests/test_tech_confluence.py"
+      - "tests/test_chart_since_setup.py"
       - "scripts/marketing_copy_dryrun.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;

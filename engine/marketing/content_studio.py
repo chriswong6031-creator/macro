@@ -3628,7 +3628,20 @@ def content_plan(
                         from engine.marketing.chart_facts import compute_facts
                         from engine.marketing.chart_render import load_ohlcv
                         _ohlcv_root_cw: str = str(root) if root is not None else "."
-                        _ohlcv = load_ohlcv(ticker, _ohlcv_root_cw, n=90)
+                        # 252 BARS, NOT 90. chart_facts._fact_52w_high_low takes
+                        # `window = min(252, n)` and then LABELS the result a
+                        # "52-week high/low" — so a 90-bar load made it emit a
+                        # ~4-month extreme under a 52-week name. Measured on the
+                        # live stores: MSFT's real 52-week high is 551.05 and the
+                        # 90-bar window reported 466.32 (18.2% low), CDW 18.6%,
+                        # META 14.9%, TSLA 10.0%. Copy already in the queue read
+                        # "$TSLA ... New 52-week low" and "$AAPL -0.6% off the
+                        # 52-week high at 334.99" — claims a follower can
+                        # disprove in one click, on an account whose whole
+                        # product is being right about levels.
+                        # The CHART still draws its own 90-bar window; this is the
+                        # fact layer, and a year is what the word means.
+                        _ohlcv = load_ohlcv(ticker, _ohlcv_root_cw, n=252)
                         if _ohlcv is not None:
                             _od, _oo, _oh, _ol, _oc, _ov = _ohlcv
                             facts_data = compute_facts(ticker, _od, _oo, _oh, _ol, _oc, _ov)
