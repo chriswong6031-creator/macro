@@ -42,7 +42,7 @@
       '#draws', 'section.feature#lanes'
     ],
     'market-terminal': [
-      '.phero .pstage', '#charting', '#indicators', '#watchlists', '#dossier',
+      '.phero .pstage', '#charting', '#watchlists', '#dossier',
       '#signals', '#options', '#ai'
     ]
   };
@@ -69,7 +69,9 @@
     scene.querySelectorAll(
       '.md-tile,.fi-row,.md-tr,.md-mk,.md-rc,.md-as,.md-eb,.md-oc,' +
       '.ma-node,.ma-tag,.ma-steps>li,.ma-st,.ma-cite,.ma-outline>li,' +
-      '.mt-row,.mt-k,.mt-dn,.cd,.r,.thm'
+      '.mt-row,.mt-k,.mt-dn,.cd,.r,.thm,.mt-tf .pn,.mt-wl .gp,' +
+      '.mt-dos .tabs span,.mt-dos .fr,.mt-read .seg,.mt-read .c,' +
+      '.mt-gx .sr,.mt-fl .fr,.mt-tools span,.mt-thread>.msg'
     ).forEach(function (item, itemIndex) {
       item.style.setProperty('--mm-i', itemIndex);
     });
