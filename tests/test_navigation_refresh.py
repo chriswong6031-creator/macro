@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NAV = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
 THEME_JS = (ROOT / "templates" / "theme.js").read_text(encoding="utf-8")
+SITE_THEME_JS = (ROOT / "site" / "theme.js").read_text(encoding="utf-8")
 MARKET_JS = (ROOT / "templates" / "nav_market.js").read_text(encoding="utf-8")
 REFRESH_CSS = (ROOT / "templates" / "navigation-refresh.css").read_text(encoding="utf-8")
 
@@ -168,6 +169,32 @@ def test_mobile_ticker_input_does_not_trigger_ios_focus_zoom() -> None:
         ".ticker-search .ticker-input { font-size: 16px; }"
         in final_mobile_rules
     )
+
+
+def test_search_preserves_chinese_ime_spaces_and_localizes_results() -> None:
+    for source in (THEME_JS, SITE_THEME_JS):
+        for marker in (
+            'maxlength="80"',
+            "compositionstart",
+            "compositionend",
+            "e.isComposing",
+            "e.keyCode === 229",
+            "normalizeSearch",
+            "nameChinese",
+            "x.z || x.zh || x.cn || x.name_zh",
+            "股票搜索结果",
+            "没有匹配的股票代码或公司。",
+            "displayName(x)",
+            "document.addEventListener('langchange', applySearchLocale)",
+        ):
+            assert marker in source
+        assert "input.value = input.value.toUpperCase().replace" not in source
+
+    ticker_input_rule = REFRESH_CSS.split(
+        ".ticker-search .ticker-input {", 1
+    )[1].split("}", 1)[0]
+    assert "text-transform: none;" in ticker_input_rule
+    assert 'html[data-lang="zh"] .ticker-search .search-esc' in REFRESH_CSS
 
 
 def test_right_edge_asset_flyouts_open_inward_without_desktop_overflow() -> None:

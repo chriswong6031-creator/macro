@@ -293,6 +293,22 @@ def _limited_rec(ticker: str, c: pd.Series, name: str, sector: str) -> dict:
     }
 
 
+def _search_index_row(
+    ticker: str,
+    name: str,
+    sector: str,
+    status: str,
+    *,
+    name_zh: str | None = None,
+) -> dict:
+    """Build a compact bilingual row for the global ticker-search manifest."""
+    row = {"t": ticker, "n": str(name or ticker).strip(), "s": sector, "st": status}
+    chinese = str(name_zh or "").strip()
+    if chinese and chinese.lower() != "nan":
+        row["z"] = chinese
+    return row
+
+
 def _write_verified_index(outdir: Path, index: list[dict]) -> list[dict]:
     """Write search manifest rows only when the matching detail JSON exists."""
     verified, missing = [], []
@@ -2119,7 +2135,9 @@ def main(betas: dict | None = None) -> dict | None:
             # "analysis pending" detail page (renderLimited), but it NEVER enters
             # scoring / boards / profiles (accrual without authority).
             (outdir / f"{_safe(ticker)}.json").write_text(json.dumps(rec, default=str))
-            index.append({"t": ticker, "n": name, "s": sector, "st": "LIMITED"})
+            index.append(_search_index_row(
+                ticker, name, sector, "LIMITED", name_zh=_HK_NAMES_ZH.get(ticker),
+            ))
             limited += 1
             continue
         # HK Confirming-Turn witness bypass: upgrade COUNTERTREND BOUNCE when
@@ -2140,7 +2158,9 @@ def main(betas: dict | None = None) -> dict | None:
                 pass
         safe = _safe(ticker)
         (outdir / f"{safe}.json").write_text(json.dumps(rec, default=str))
-        idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        idx = _search_index_row(
+            ticker, name, sector, rec["ladder"]["state"], name_zh=_HK_NAMES_ZH.get(ticker),
+        )
         if rec.get("global_beta", {}).get("beta") is not None:
             idx["gb"] = rec["global_beta"]["beta"]
         index.append(idx)
