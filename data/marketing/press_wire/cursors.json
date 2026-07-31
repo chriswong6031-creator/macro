@@ -12,6 +12,7 @@
     "14fb3bd6bece99548ad5b6f69e8d7aca183846e7": "2026-07-31T17:54:40.596641+00:00",
     "180945a0931844b853b835655368d7f772099664": "2026-07-31T14:30:10.223340+00:00",
     "1c030a3c383c7f04e39880e9b701633300513e94": "2026-07-30T20:18:38.435589+00:00",
+    "20fbab9140cd08b995d70e26f2fa1c4347ce3b30": "2026-07-31T19:00:57.574746+00:00",
     "22643900cd4e38d8b198e159008e2b765540ab64": "2026-07-30T23:39:13.478726+00:00",
     "2322cf748b700c38b5bd2e6faf0f989ce658ce09": "2026-07-30T21:35:10.749027+00:00",
     "24de10f96880ee5544c1d2774edc3d4aa9776d88": "2026-07-30T22:40:28.966436+00:00",
@@ -36,6 +37,7 @@
     "4e3ddf40f820547aa7dea0a7839f5a287a003b08": "2026-07-31T10:04:12.944246+00:00",
     "501e661192641de2c9e9672e378dafa1d8840176": "2026-07-31T10:04:12.944246+00:00",
     "50be4319b9dc922ea573c98585d25812f0e59cb7": "2026-07-31T14:30:10.223340+00:00",
+    "562ba6b2b71b16eea0cf58f46945681d42cc2071": "2026-07-31T19:00:57.574746+00:00",
     "5b035604106fb7868451b36723c82e5c839cf9e6": "2026-07-30T19:02:00.739296+00:00",
     "5c455c1003bc95b24fb27019b21bcaa990f60e8b": "2026-07-30T22:40:28.966436+00:00",
     "5d167b6092213e0144cbec07b34841a61b516926": "2026-07-30T23:39:13.478726+00:00",
@@ -43,8 +45,10 @@
     "5f7f5ad0ceca5ced182d6a67fc4435ee73e3da3a": "2026-07-31T17:54:40.596641+00:00",
     "617fb0860aac58c6654419ca72dda11f584e04cb": "2026-07-31T16:17:05.721809+00:00",
     "61e8478db8205037c6c4d4199d15d011f37f4f21": "2026-07-31T17:54:40.596641+00:00",
+    "661cc86d6211b3ed455e4dca69dbd157a7415d94": "2026-07-31T19:00:57.574746+00:00",
     "6a17f017b5dc9ac8c7e1152747a54625983eca67": "2026-07-31T17:54:40.596641+00:00",
     "6fcb52d556cb200e32c7635bca1fe981be79a7e7": "2026-07-30T23:39:13.478726+00:00",
+    "75fedf28553af52fe4ed85d9021b0c1350fe712a": "2026-07-31T19:00:57.574746+00:00",
     "7b4ce1c41527ff1af9d00bafe35170689efb6d31": "2026-07-31T16:17:05.721809+00:00",
     "7b68ed54a6553b06564cfd9a87bb50d3e0588b02": "2026-07-31T16:17:05.721809+00:00",
     "7e765a13850125ca09889e53dc1cd4ab46463fbb": "2026-07-31T04:36:05.323258+00:00",
@@ -70,6 +74,7 @@
     "a83ae4fb321c493d6f5eb25c1befda876c0ae9e2": "2026-07-31T17:54:40.596641+00:00",
     "a9d1e9af7ba022e46957139aa443cf79b6ed2656": "2026-07-31T17:54:40.596641+00:00",
     "acfefd79f46b4eada9e15e3d247b40ed963fde4f": "2026-07-31T11:59:29.559585+00:00",
+    "aebe286974455ce19dbd56b897a40aee9e3dd4a8": "2026-07-31T19:00:57.574746+00:00",
     "b0f941c8e2f1f19d610cdb4573073cfb361e16b0": "2026-07-30T23:39:13.478726+00:00",
     "b335e018dacfe71b817d2f8e7648dfa00150926d": "2026-07-31T04:36:05.323258+00:00",
     "b38a94b1804163a6816cd58dd7bdc699c5156f49": "2026-07-30T23:39:13.478726+00:00",
@@ -82,6 +87,7 @@
     "c3eaf5dc06de2a188c85ea2eea35e929205a07d0": "2026-07-31T10:04:12.944246+00:00",
     "ca6668c452eb6d4031162f61c26d2e7da6a41395": "2026-07-31T04:36:05.323258+00:00",
     "ca9bba6444885c8f32d759d3878341999c39774c": "2026-07-30T21:35:10.749027+00:00",
+    "cbb7f3b783c1808fafee2624d2c168620555c6a0": "2026-07-31T19:00:57.574746+00:00",
     "ced6a4a08426cd0d0715ac63440e026bc32b5dfc": "2026-07-31T16:17:05.721809+00:00",
     "cfda24e7e8a2a32a7bf6451157b51fd4598815ab": "2026-07-31T16:17:05.721809+00:00",
     "d05421e22cd82352982c6445b2c21f525dc0a7dc": "2026-07-31T14:30:10.223340+00:00",
@@ -90,6 +96,7 @@
     "e0ffb5773e55caf2a74bec3c67d6ed8f53ce8bf2": "2026-07-31T14:30:10.223340+00:00",
     "e31dd022db67d1619cb66093ff65ff6de81cbe8d": "2026-07-31T04:36:05.323258+00:00",
     "e56975441e4a485edc112b2fec6d0f158c384556": "2026-07-31T12:07:46.333088+00:00",
+    "eda8a1ed1b0307bbdb8697ab21fb9e68be0e62f4": "2026-07-31T19:00:57.574746+00:00",
     "ee32be38eca2e5aaf9fc17d9d47fec00a375dd0b": "2026-07-31T07:27:04.256025+00:00",
     "ee9eea9b7061caa52ed63a40f03b706fa2dadf93": "2026-07-31T14:30:10.223340+00:00",
     "eee93a529615309f3fb9209fb7ac2deba54786e7": "2026-07-30T20:18:38.435589+00:00",
@@ -104,122 +111,104 @@
     "fd66817577d85e52a1bb993f903b7b6483e06a70": "2026-07-31T14:30:10.223340+00:00"
   },
   "corroboration": {
-    "claim:geopolitical:sec:technology": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+    "claim:company_news:sec:technology": {
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:cnbc.com"
       ]
     },
-    "claim:macro_print:mac:inflation": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+    "claim:company_news:tic:MSFT": {
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
-        "host:cnbc.com"
+        "host:marketwatch.com"
       ]
     },
     "claim:none:mac:rates": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
-      "sources": [
-        "host:marketwatch.com"
-      ]
-    },
-    "claim:none:sec:industrials": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:cnbc.com"
       ]
     },
-    "claim:none:sec:technology": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+    "claim:none:sec:financials": {
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:marketwatch.com"
       ]
     },
-    "claim:none:tic:CVX": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
-      "sources": [
-        "host:marketwatch.com"
-      ]
-    },
-    "head:fifa tests the limits of private equity in sports with world cup subsidiary sale": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+    "head:investors may want to focus on front end of yield curve as street anticipates ne": {
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:cnbc.com"
       ]
     },
-    "head:i feel lucky im 71 and inherited 20000 what should i do with this money": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+    "head:lindes postearnings slide is a buying opportunity heres why": {
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
-        "host:marketwatch.com"
+        "host:cnbc.com"
       ]
     },
-    "head:lets elect candidates who will make the wealthy pay taxes": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
-      "sources": [
-        "host:marketwatch.com"
-      ]
-    },
-    "head:spiderman brand new day sets domestic box office preview record with 72 million": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+    "head:the sp 500 is stuck at a key battleground level this obscure index could determi": {
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:cnbc.com"
       ]
     },
     "truth:117005796425040371": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117006290013696288": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117009581290419286": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117010030683816088": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011270507732212": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011459082239407": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460046411651": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460524966016": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117014253232654593": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117015146759027639": {
-      "first_ts": "2026-07-31T17:54:40.596641+00:00",
+      "first_ts": "2026-07-31T19:00:57.574746+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -231,14 +220,14 @@
   },
   "providers": {
     "cnn_truth_backfill": {
-      "etag": "\"7d459bda553b16f4669622876eee98c5-3\"",
+      "etag": "\"d91c26b9fbd30629ad0457185a0c44fc-3\"",
       "fail_count": 0,
-      "last_modified": "Fri, 31 Jul 2026 17:28:35 GMT",
-      "last_poll_ts": 1785520482.9607062
+      "last_modified": "Fri, 31 Jul 2026 18:41:49 GMT",
+      "last_poll_ts": 1785524459.3817852
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785520482.4664161
+      "last_poll_ts": 1785524459.1567402
     },
     "twitterapiio": {
       "cursors": {
@@ -265,27 +254,27 @@
         "BRICSinfo": 1785520483.3234138,
         "CoinDesk": 1785492254.740735,
         "Cointelegraph": 1785492254.740735,
-        "DeItaone": 1785520483.3234138,
-        "FirstSquawk": 1785520483.3234138,
+        "DeItaone": 1785524459.8556314,
+        "FirstSquawk": 1785524459.8556314,
         "HormuzLetter": 1785492254.740735,
         "NewsWire_US": 1785520483.3234138,
         "Osint613": 1785520483.3234138,
         "StockMKTNewz": 1785520483.3234138,
-        "WHPressPool": 1785520483.3234138,
+        "WHPressPool": 1785524459.8556314,
         "WatcherGuru": 1785520483.3234138,
         "WhaleInsider": 1785520483.3234138,
-        "financialjuice": 1785520483.3234138,
+        "financialjuice": 1785524459.8556314,
         "rawsalerts": 1785520483.3234138,
         "remarks": 1785520483.3234138,
         "tradfi": 1785520483.3234138,
         "unusual_whales": 1785520483.3234138,
-        "zerohedge": 1785520483.3234138
+        "zerohedge": 1785524459.8556314
       },
       "spend": {
         "2026-07": {
-          "requests": 332,
+          "requests": 337,
           "tweets": 1660,
-          "usd": 0.28635
+          "usd": 0.2871
         }
       }
     }
@@ -298,40 +287,40 @@
     ]
   },
   "schema": "press_wire.cursors/v1",
-  "updated_at": "2026-07-31T17:54:40Z",
+  "updated_at": "2026-07-31T19:00:57Z",
   "wire": {
     "bea_news": {
       "etag": "\"fc82db231f20dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 12:30:00 GMT",
-      "last_poll_ts": 1785520481.4888632
+      "last_poll_ts": 1785524458.621954
     },
     "bls_news": {
       "etag": "\"80ba6c61e820dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 12:30:33 GMT",
-      "last_poll_ts": 1785520481.3567636
+      "last_poll_ts": 1785524458.444459
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785520481.7829738
+      "last_poll_ts": 1785524459.0714316
     },
     "fed_press": {
       "etag": "\"927a7ee7f420dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 14:00:11 GMT",
-      "last_poll_ts": 1785520481.2369485
+      "last_poll_ts": 1785524458.390577
     },
     "marketwatch_top": {
-      "etag": "W/\"1fb5-HNBdSyY7M4Fdfv1/5T/upu32Ug4\"",
+      "etag": "W/\"200b-J93NxwFvA7tU4fsP9KhUcRqrcDo\"",
       "fail_count": 0,
-      "last_poll_ts": 1785520482.020292
+      "last_poll_ts": 1785524459.1119928
     },
     "whitehouse_actions": {
-      "etag": "\"a54a6ab296761a19cc82c37409d9bf2c\"",
+      "etag": "\"40e627be4f14d232cabbab7c73bb441b\"",
       "fail_count": 0,
-      "last_modified": "Fri, 31 Jul 2026 13:18:33 GMT",
-      "last_poll_ts": 1785520481.7266922
+      "last_modified": "Fri, 31 Jul 2026 18:24:38 GMT",
+      "last_poll_ts": 1785524458.9026542
     }
   }
 }
