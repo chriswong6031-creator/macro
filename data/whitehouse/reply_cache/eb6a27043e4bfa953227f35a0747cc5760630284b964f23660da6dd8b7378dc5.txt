@@ -1,0 +1,61 @@
+{
+  "activate": true,
+  "importance": 65,
+  "banner_days": 5,
+  "tone": "mixed",
+  "banner_title": "Trump imposes 4-year quartz tariff-rate quota — homebuilders face cost headwinds, domestic miners shielded",
+  "banner_title_zh": "特朗普实施四年期石英关税配额——房屋建筑商面临成本压力，本土矿商获保护",
+  "summary": "The White House is imposing a 4-year tariff-rate quota on quartz surface product imports, primarily affecting non-FTA partners like China and India, after the ITC found imports caused serious injury to US producers. The measure exempts Canada, Mexico, FTA allies, and most developing nations, creating a targeted shield for domestic quartz manufacturers while raising input costs for countertop fabricators and homebuilders.",
+  "summary_zh": "白宫对石英表面产品进口实施为期四年的关税配额，主要针对中国、印度等非自贸协定伙伴国，此前国际贸易委员会裁定进口对美国生产商造成严重损害。该措施豁免了加拿大、墨西哥、自贸协定盟友及多数发展中国家，为本土石英制造商提供了精准保护，同时推高了台面加工商和房屋建筑商的原材料成本。",
+  "analysis": "This proclamation enacts a Section 201 safeguard measure in the form of a tariff-rate quota (TRQ) on quartz surface products (QSP) for 4 years, with annual liberalization steps. The ITC found that surging imports—concentrated from non-FTA suppliers like China and India—were a substantial cause of serious injury to domestic QSP producers. The TRQ creates a two-tier tariff structure: a lower duty on a set volume of imports, and a prohibitive over-quota rate designed to restrict supply. The measure excludes imports from FTA partners (Canada, Mexico, Australia, Korea, CAFTA-DR, Colombia, Panama, Peru, Singapore, Israel) and most developing countries with minimal import share, meaning the burden falls almost entirely on a handful of large Asian exporters.\n\nWhy it matters for markets: This action artificially constricts the US supply of quartz slabs and fabricated countertops, raising prices for downstream users—homebuilders, kitchen/bath remodelers, and home-improvement retailers—at a time when housing-affordability concerns are already acute. Conversely, it is a clear tailwind for the two domestic quartz-surface producers (Cambria, a private company, and the publicly-traded Caesarstone, which has US manufacturing) and for domestic engineered-stone fabricators that can source within the quota or from exempt countries. The market read is mixed because the winners are small and few, while the cost headwinds diffuse across the broad housing-construction and consumer-discretionary ecosystem.\n\nThe transmission mechanism is straightforward: import arbitrage closes, domestic capacity utilization rises, and domestic producers gain pricing power on the ~$2 billion US quartz-countertop market. Downstream, builders and retailers face margin compression, which they may try to pass on to homebuyers via higher closing costs or to consumers via higher kitchen-remodel prices—though demand is interest-rate sensitive and could weaken. The key uncertainty is the size of the quota and the within- and over-quota tariff rates, which are detailed only in the Annex (not fully included in the text). If the quota volume is generous, market disruption may be limited; if it is highly restrictive, price spikes and substitution to alternative materials (natural stone, porcelain) could be significant.\n\nThe 4-year duration with built-in annual liberalization suggests a negotiated temporary shield, but importers will try to circumvent by rerouting product through exempt countries or switching to just-under-the-threshold developing nations. Commerce Department monitoring for 'surges' from exempt developing countries introduces a latent risk of future expansion. For now, the action is a classic Washington 'concentrated benefits, diffuse costs' story—sharply positive for a handful of domestic producers, modestly negative for the large housing and consumer sectors.",
+  "sectors": [
+    {
+      "name": "Homebuilding & Residential Construction",
+      "impact": "headwind",
+      "rationale": "Quartz countertops are a staple in new homes; import restrictions raise material costs for builders like D.R. Horton, Lennar, and Pulte."
+    },
+    {
+      "name": "Building Products & Home Improvement Retail",
+      "impact": "headwind",
+      "rationale": "Retailers like Home Depot and Lowe's, and kitchen/bath dealers, face higher wholesale quartz costs and potential demand destruction if remodel budgets blow out."
+    },
+    {
+      "name": "Domestic Quartz & Engineered Stone Producers",
+      "impact": "tailwind",
+      "rationale": "The TRQ directly shields US-based quartz-slab manufacturers from import competition, boosting volumes and pricing power."
+    },
+    {
+      "name": "Natural Stone & Alternative Surface Materials",
+      "impact": "tailwind",
+      "rationale": "If quartz becomes materially more expensive, granite, marble, and newer porcelain-slab imports excluded from the order could gain substitution demand."
+    }
+  ],
+  "tickers": [
+    {
+      "symbol": "CAES",
+      "direction": "benefit",
+      "rationale": "Caesarstone Ltd., though Israeli-domiciled, has significant US manufacturing capacity and is the only publicly-traded pure-play quartz surface producer directly shielded from non-FTA imports."
+    },
+    {
+      "symbol": "DHI",
+      "direction": "hurt",
+      "rationale": "D.R. Horton, the largest US homebuilder by volume, faces rising input costs for countertops in its entry-level and move-up homes, squeezing already tight margins."
+    },
+    {
+      "symbol": "LEN",
+      "direction": "hurt",
+      "rationale": "Lennar, a top-three US homebuilder with significant single-family and multifamily exposure, will see higher material costs for quartz countertops in its standard included features."
+    },
+    {
+      "symbol": "HD",
+      "direction": "hurt",
+      "rationale": "Home Depot is a major seller of quartz countertop fabrication services and materials; a tight import supply and higher prices risk dampening kitchen-remodel project demand."
+    },
+    {
+      "symbol": "LOW",
+      "direction": "hurt",
+      "rationale": "Lowe's competes aggressively in the installed kitchen-countertop market and faces wholesale-cost pressure on quartz products sourced from non-exempt countries."
+    }
+  ],
+  "confidence": "high"
+}

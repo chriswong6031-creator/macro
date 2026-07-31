@@ -437,6 +437,18 @@
       "at": "2026-07-30T22:19:12.403300+00:00",
       "activated": false,
       "importance": 50
+    },
+    "https://www.whitehouse.gov/?p=47074": {
+      "id": "wh-2026-07-31-to-facilitate-positive-adjustment-to-competition-from-imports-of-quartz-surface-",
+      "at": "2026-07-31T21:22:22.349006+00:00",
+      "activated": true,
+      "importance": 65
+    },
+    "https://www.whitehouse.gov/?p=47075": {
+      "id": "wh-2026-07-31-icymi-confirm-todd-blanche-as-attorney-general",
+      "at": "2026-07-31T21:22:25.274033+00:00",
+      "activated": false,
+      "importance": 10
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

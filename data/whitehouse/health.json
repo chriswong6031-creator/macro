@@ -1,10 +1,23 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-07-31T19:51:46.922824+00:00",
-  "posts_seen": 11,
-  "seen_total": 73,
-  "evaluated": 0,
-  "activated": 0,
+  "as_of": "2026-07-31T21:22:25.275627+00:00",
+  "posts_seen": 13,
+  "seen_total": 75,
+  "evaluated": 2,
+  "activated": 1,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": []
+  "gate_scores": [
+    {
+      "id": "wh-2026-07-31-to-facilitate-positive-adjustment-to-competition-from-imports-of-quartz-surface-",
+      "importance": 65,
+      "activated": true,
+      "degraded_reason": "served_by:deepseek"
+    },
+    {
+      "id": "wh-2026-07-31-icymi-confirm-todd-blanche-as-attorney-general",
+      "importance": 10,
+      "activated": false,
+      "degraded_reason": "served_by:deepseek"
+    }
+  ]
 }
