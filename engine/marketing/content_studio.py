@@ -2360,7 +2360,36 @@ def content_plan(
                             (cfg or {}).get("marketing", {}).get("m2_overlays_always", False)
                         )
                         _m2_ovl = item_dict.get("m2_overlays") or {}  # (1) manual seam
-                        if _m2_cfg_always and not _m2_ovl:
+                        # OVERLAYS ARE ON BY DEFAULT (operator 2026-07-30).
+                        #
+                        # This used to build ONLY when marketing.m2_overlays_always
+                        # was set, and that key is set NOWHERE — so `_m2_ovl` was
+                        # {} on every nightly render and avwap_overlay/poc_overlay
+                        # went to the renderer as None every single time. The
+                        # renderer supports both; the call site never asked.
+                        #
+                        # The consequence was a chart that did not support its own
+                        # copy. A post reads "held 219.90, the average price paid
+                        # since the Jun 26 volume spike" (an AVWAP) or "dipped back
+                        # to 283.85, the most-traded price of the past four months"
+                        # (a POC) and the picture drew neither — just candles, a
+                        # 50 SMA and a MACD pane. The reader had to take the claim
+                        # on faith, on a program whose first law is that a ticker
+                        # post ships a picture.
+                        #
+                        # These are the two structural levels chart_facts actually
+                        # computes its facts FROM (fact ids avwap_hold /
+                        # avwap_reclaim / poc_level / poc_retest_hold /
+                        # in_value_area), so drawing them is drawing the subject of
+                        # the post. build_m2_overlays is fail-soft and returns
+                        # {"avwap_overlay": None, "poc_overlay": None} on any error,
+                        # so a bad load costs the overlay, never the chart.
+                        # The config key is now an OPT-OUT: set it false to disable.
+                        _m2_want = bool(
+                            (cfg or {}).get("marketing", {})
+                            .get("m2_overlays_always", True)
+                        ) or _m2_cfg_always
+                        if _m2_want and not _m2_ovl:
                             try:
                                 from engine.marketing.chart_render import build_m2_overlays as _bm2
                                 _m2_ovl = _bm2(

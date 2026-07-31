@@ -603,3 +603,74 @@ def test_tape_chart_posts_survive_without_ohlcv_via_the_markerless_card():
     assert "BUY" in marked
     assert "BUY" not in markerless
     assert markerless.startswith("<svg") and "polyline" in markerless
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The chart has to draw the thing the copy is about.
+#
+# render_chart_v2 has supported avwap_overlay / poc_overlay all along. The
+# nightly call site built them ONLY when marketing.m2_overlays_always was set,
+# and that key is set NOWHERE -- so both went to the renderer as None on every
+# chart ever produced. A post read "held 219.90, the average price paid since
+# the Jun 26 volume spike" (an AVWAP) or "dipped back to 283.85, the most-traded
+# price of the past four months" (a POC) and the picture drew neither.
+#
+# On a program whose first law is that a ticker post ships a picture, a picture
+# that does not support its own claim is the defect wearing a disguise.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestChartDrawsWhatTheCopyClaims:
+    def test_the_nightly_builds_overlays_by_default(self):
+        """Opt-OUT now. The config key was opt-in and nobody ever opted in."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert 'get("m2_overlays_always", True)' in src, (
+            "overlays are opt-in again; they were dark on every chart the last "
+            "time this defaulted to False"
+        )
+
+    def test_overlays_reach_the_renderer(self):
+        """Wiring, not intent: the kwargs must actually be passed."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert "avwap_overlay=_m2_ovl.get" in src
+        assert "poc_overlay=_m2_ovl.get" in src
+
+    def test_build_m2_overlays_returns_both_for_a_real_ticker(self):
+        """Exercised against real OHLCV, not a mock: the levels must compute."""
+        import pytest
+        pytest.importorskip("pandas", reason="CI packs install minimal deps")
+        from engine.marketing.chart_render import build_m2_overlays, load_ohlcv_windowed
+        loaded = load_ohlcv_windowed("CVI", ".")
+        if not loaded:
+            pytest.skip("no OHLCV for the fixture ticker in this checkout")
+        (dates, o, h, l, c, v), _warm = loaded
+        ovl = build_m2_overlays("CVI", dates, o, h, l, c, v, ".")
+        assert ovl.get("avwap_overlay"), "AVWAP overlay did not build"
+        assert ovl.get("poc_overlay"), "POC overlay did not build"
+        assert "poc" in ovl["poc_overlay"], ovl["poc_overlay"].keys()
+
+    def test_the_drawn_chart_actually_labels_the_levels(self):
+        """End to end: render and assert the labels are IN the SVG.
+
+        A kwarg that is passed but silently ignored looks identical to a fix.
+        """
+        import pytest
+        pytest.importorskip("pandas", reason="CI packs install minimal deps")
+        from engine.marketing.chart_render import (
+            build_m2_overlays, load_ohlcv_windowed, render_chart_v2)
+        loaded = load_ohlcv_windowed("CVI", ".")
+        if not loaded:
+            pytest.skip("no OHLCV for the fixture ticker in this checkout")
+        (dates, o, h, l, c, v), warm = loaded
+        ovl = build_m2_overlays("CVI", dates, o, h, l, c, v, ".")
+        svg = render_chart_v2(
+            ticker="CVI", dates=dates, o=o, h=h, l=l, c=c, volume=v,
+            timeframe="DAILY", warmup=warm, volume_overlay=True,
+            subpanel_h=190, height=880, company_name="CVI", logo_root=".",
+            avwap_overlay=ovl.get("avwap_overlay"),
+            poc_overlay=ovl.get("poc_overlay"), cta=True,
+        )
+        assert "POC" in svg, "the POC level is not labelled on the chart"
+        assert "AVWAP" in svg, "the anchored VWAP is not labelled on the chart"
