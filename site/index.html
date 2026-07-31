@@ -885,7 +885,7 @@
   </div>
 </footer>
 
-<script src="scene-motion.js?v=4ed60559"></script>
+<script src="scene-motion.js?v=0a3b3969"></script>
 <script>
 /* capture hook for visual QA (see .still CSS) */
 if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
@@ -1193,6 +1193,16 @@ const motionVisible = (el, margin=96) => {
   if (!el || document.hidden) return false;
   const r=el.getBoundingClientRect();
   return r.bottom >= -margin && r.top <= innerHeight + margin;
+};
+const motionReasonBeat = (el, fn, fallbackMs) => {
+  const scene=el&&el.closest('[data-mm-scene]');
+  if(scene){
+    scene.addEventListener('mm:phase',event=>{
+      if(event.detail&&event.detail.phase==='reason') fn();
+    });
+  } else {
+    setInterval(()=>{ if(motionVisible(el)) fn(); },fallbackMs);
+  }
 };
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('still')) {
   const tiles = [...document.querySelectorAll('.hm')];
@@ -1765,7 +1775,7 @@ const STILL = document.documentElement.classList.contains('still');
   const MOVES=[['AI Software','buy'],['Payments','alm'],['Regional Banks','sa'],
     ['AI Software','alm'],['Payments','tp'],['Regional Banks','tp']];
   let mi=0;
-  setInterval(()=>{ if(!motionVisible(wrap)) return;
+  const move=()=>{
     const [key,target]=MOVES[mi++%MOVES.length];
     const chip=[...wrap.querySelectorAll('.thm')].find(c=>c.dataset.key===key);
     const tl=wrap.querySelector(`[data-lane="${target}"]`);
@@ -1777,7 +1787,8 @@ const STILL = document.documentElement.classList.contains('still');
     chip.classList.add('hot');
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ chip.classList.add('mov'); chip.style.transform=''; }));
     setTimeout(()=>chip.classList.remove('mov','hot'),950);
-  },4200);
+  };
+  motionReasonBeat(wrap,move,4200);
 })();
 
 /* — filings feed (illustrative names, not real people) — */
@@ -1801,7 +1812,7 @@ const STILL = document.documentElement.classList.contains('still');
   function seed(){ box.innerHTML=''; i=0; for(let k=0;k<6;k++) row(); }
   seed();
   LANG.onChange(seed);
-  if (!CALM && !STILL) setInterval(()=>{ if(motionVisible(box)) row(true); },3600);
+  if (!CALM && !STILL) motionReasonBeat(box,()=>row(true),3600);
 })();
 
 /* — special situations cards — */
@@ -1826,13 +1837,14 @@ const STILL = document.documentElement.classList.contains('still');
   LANG.onChange(paint);
   if (CALM || STILL) return;
   let i=2;
-  setInterval(()=>{ if(!motionVisible(box)) return;
+  const swap=()=>{
     const slot=i%2; shown[slot]=i%CARDS.length;
     const old=box.children[slot];
     old.classList.add('swap');
     setTimeout(()=>{ if(box.children[slot]===old) box.replaceChild(card(CARDS[shown[slot]]),old); },420);
     i++;
-  },6200);
+  };
+  motionReasonBeat(box,swap,6200);
 })();
 
 /* — 13F flow bars — */
@@ -1847,12 +1859,13 @@ const STILL = document.documentElement.classList.contains('still');
     requestAnimationFrame(()=>requestAnimationFrame(()=>d.querySelector('i').style.setProperty('--w',r[5]+'%'))); });
   LANG.onChange(l=>box.querySelectorAll('.fd-row').forEach(d=>{ d.querySelector('.dt2').textContent=(l==='zh')?d._r[4]:d._r[3]; }));
   if (CALM || STILL) return;
-  setInterval(()=>{ if(!motionVisible(box)) return;
+  const updateBar=()=>{
     const bars=box.querySelectorAll('.fd-bar i');
     const b=bars[Math.floor(Math.random()*bars.length)];
     const cur=parseFloat(b.style.getPropertyValue('--w'))||40;
     b.style.setProperty('--w',Math.max(18,Math.min(92,cur+(Math.random()*14-7)))+'%');
-  },3800);
+  };
+  motionReasonBeat(box,updateBar,3800);
 })();
 
 /* — btc cycle arc — */
