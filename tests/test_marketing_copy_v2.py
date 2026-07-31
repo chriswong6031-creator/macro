@@ -2309,3 +2309,82 @@ class TestTheReceiptsDeskCanActuallyProduce:
         _alarm_on_starved_receipts(
             [self._plan("A", days_ago=21, resolved=True)], 2, 30, "2026-07-31")
         assert capsys.readouterr().out == ""
+
+
+class TestTheEngagementLoopReachesPostsNotJustReplies:
+    """Everything measured about which posts work stopped before the posts.
+
+    The learning lane harvests labels, scores cells and writes a scorecard
+    nightly; `learned_rules` turns a cell into an applicable rule with a
+    promotion gate. `reply_producer` consults that seam for `reply_family`.
+    THE POST PATH CONSULTED IT FOR NOTHING — content_studio referenced neither
+    the scorecard nor learned_rules, so the feedback reached replies and stopped.
+    `format_preference` sat in learned_rules.KINDS the whole time with no reader.
+
+    Built dark BY CONSTRUCTION rather than by judgement: `active_for` returns []
+    unless `learning.learned_rules.enabled`, and the promotion gate under it is
+    min_evidence_n=30 plus a cleared labels n-floor. On today's scorecard that is
+    0 of 18 cells — so this is currently a no-op, which is the correct state for
+    it to be in, not a reason to leave the joint unbuilt.
+    """
+
+    def test_it_is_silent_while_consumption_is_disarmed(self):
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        assert _learned_shape_preference(account="flagship", cfg={}) == []
+        assert _learned_shape_preference(
+            account="flagship",
+            cfg={"learning": {"learned_rules": {"enabled": False}}}) == []
+
+    def test_an_armed_promoted_rule_narrows_the_menu(self, monkeypatch):
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        monkeypatch.setattr(LR, "active_for", lambda kind, **kw: (
+            [{"kind": "format_preference", "value": ["stack", "two_part"],
+              "path": "p"}] if kind == "format_preference" else []))
+        assert _learned_shape_preference(account="flagship", cfg={}) == [
+            "stack", "two_part"]
+
+    def test_a_rule_naming_an_unknown_shape_is_dropped_not_honoured(self, monkeypatch):
+        """Honouring it would stamp a shape the writer has no template for."""
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        monkeypatch.setattr(LR, "active_for", lambda kind, **kw: [
+            {"kind": "format_preference", "value": ["nonsense"], "path": "p"}])
+        assert _learned_shape_preference(account="flagship", cfg={}) == []
+
+    def test_it_can_only_NARROW_and_never_empties_the_menu(self, monkeypatch):
+        """A learned preference filters a deterministic plan. It must not become
+        a model choosing the day's content, and it must not leave the mixer with
+        nothing to assign."""
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import assign_shapes
+
+        monkeypatch.setattr(LR, "active_for", lambda kind, **kw: [
+            {"kind": "format_preference", "value": ["stack"], "path": "p"}])
+        queue = [{"slot": f"D1-S{i:02d}", "type": "signal", "ticker": "AAA"}
+                 for i in range(5)]
+        mix = assign_shapes(queue, account="flagship", as_of="2026-07-31", cfg={})
+        assert all(i.get("shape") for i in queue), "an item was left unstamped"
+        assert set(mix) <= {"stack", "caption"}, mix
+
+    def test_a_broken_learning_lane_cannot_stop_a_plan_being_built(self, monkeypatch):
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        def _boom(*a, **k):
+            raise RuntimeError("scorecard unreadable")
+
+        monkeypatch.setattr(LR, "active_for", _boom)
+        assert _learned_shape_preference(account="flagship", cfg={}) == []
+
+    def test_the_post_path_actually_calls_the_seam(self):
+        """The whole defect was a seam with no caller."""
+        import inspect
+
+        from engine.marketing import content_studio
+
+        assert "_learned_shape_preference(" in inspect.getsource(
+            content_studio.assign_shapes)

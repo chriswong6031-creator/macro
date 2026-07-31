@@ -1564,17 +1564,72 @@ def assign_shapes(
             continue
         by_day.setdefault(day, []).append(item)
 
+    # THE ENGAGEMENT LOOP'S ONE MISSING JOINT (2026-07-31).
+    #
+    # The learning lane harvests labels, scores cells and writes a scorecard
+    # nightly; `learned_rules` turns a cell into an applicable rule with a
+    # promotion gate on it. `reply_producer` consults that seam for
+    # `reply_family`. THE POST PATH CONSULTED IT FOR NOTHING — content_studio
+    # referenced neither the scorecard nor learned_rules, so everything measured
+    # about which posts work reached replies and stopped. `format_preference`
+    # has been in learned_rules.KINDS the whole time with no reader.
+    #
+    # DARK BY CONSTRUCTION, AND NOT BY MY JUDGEMENT. `active_for` returns [] when
+    # `learning.learned_rules.enabled` is false (the default), and its own
+    # docstring is explicit that a caller "therefore needs no flag check of its
+    # own and cannot forget one". The promotion gate underneath it is stricter
+    # than anything I would have invented: min_evidence_n=30 and the cell must
+    # have cleared the labels n-floor. Today that is 0 of 18 cells, so this is a
+    # no-op — which is correct, not a reason to leave the joint unbuilt. It arms
+    # itself when the evidence arrives instead of waiting for someone to notice.
+    #
+    # It may only NARROW. A learned preference removes shapes from the mixer's
+    # menu; it can never invent one, and it can never empty the menu (an empty
+    # intersection falls back to the full set). That keeps this a filter on a
+    # deterministic plan rather than a model choosing the day's content — the
+    # house line between display-tier and authority.
+    _allowed = _learned_shape_preference(account=account, cfg=cfg)
+
     mix: dict[str, int] = {}
     for day in sorted(by_day, key=lambda d: (len(d), d)):
         items = by_day[day]
         shapes = shape_plan(len(items), account=account, as_of=f"{as_of}|{day}",
                             cfg=cfg, prior_mix=prior_mix)
         for item, shape in zip(items, shapes):
+            if _allowed and shape not in _allowed:
+                shape = _allowed[0]
             if shape == "one_liner" and item.get("chart_id"):
                 shape = "caption"
             item["shape"] = shape
             mix[shape] = mix.get(shape, 0) + 1
     return mix
+
+
+def _learned_shape_preference(*, account: str, cfg: dict | None) -> list[str]:
+    """Shapes an ARMED, EVIDENCED learned rule allows for this account.
+
+    [] means "no opinion" — which is the answer whenever consumption is disarmed
+    (the default), no rule has cleared the promotion gate, or anything at all
+    goes wrong. Never raises: a learning lane that cannot answer must not be able
+    to stop a plan from being built.
+    """
+    try:
+        from engine.marketing import learned_rules as _lr  # noqa: PLC0415
+
+        allowed: list[str] = []
+        for rule in _lr.active_for("format_preference", account=account, cfg=cfg):
+            value = rule.get("value")
+            if isinstance(value, list):
+                allowed.extend(str(v) for v in value)
+        # Intersect with the shapes the mixer can actually produce, preserving
+        # the rule's own order. A rule naming a shape we do not have is dropped
+        # rather than honoured into a KeyError.
+        return [s for s in dict.fromkeys(allowed) if s in SHAPES]
+    except Exception as exc:  # noqa: BLE001
+        import logging  # noqa: PLC0415
+        logging.getLogger(__name__).warning(
+            "content_studio: learned shape preference unavailable (%s)", exc)
+        return []
 
 
 # ── 14-day shape ledger (nightly-only write) ──────────────────────────────────
