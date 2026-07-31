@@ -1278,6 +1278,21 @@ def main(argv: list[str] | None = None) -> int:
             if not args.dry_run:
                 _touch_heartbeat(now)
         except Exception as exc:  # noqa: BLE001
+            # A DAEMON THAT SWALLOWS EVERY TICK LOOKS IDENTICAL TO A QUIET DAY.
+            # Continuing is right — one bad poll must not kill the loop — but the
+            # only trace was a `logger.error`, and this repo's builders log with a
+            # prefixing format, so GitHub drops it from the Actions summary and
+            # the workflow still exits 0. A lane erroring on EVERY pass would show
+            # up as nothing at all.
+            #
+            # Demonstrated the hard way (2026-07-31): adding a `spool` kwarg to
+            # _run_one_tick without updating a stub made every tick raise
+            # TypeError here, and the visible result was simply zero posts.
+            print(f"::warning title=marketing-fastlane-tick-error::"
+                  f"lane={args.lane} tick raised and was skipped: "
+                  f"{type(exc).__name__}: {exc}. The loop continues, so a lane "
+                  f"failing every pass reports no posts rather than an error.",
+                  flush=True)
             logger.error("[fastlane_daemon] tick error (continuing): %s", exc)
 
         if args.once:

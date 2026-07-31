@@ -743,9 +743,28 @@ class TestB1LanguageLaw:
         result = run_press_tick(items, root=str(ROOT), now=now,
                                 cfg=marketing_cfg, press_cfg=press_cfg, state={},
                                 seen_ids=set(), dry_run=True)
-        assert not result["emitted"], (
-            "an em dash in the source headline reaches the post text verbatim; "
-            "the lane must refuse it rather than queue an unpostable item")
+        # ASSERT THE CONTRACT, NOT A SIDE EFFECT OF THE FLOOR.
+        #
+        # This used to read `assert not result["emitted"]`, which held only while
+        # wire.flagship_salience_floor was 70.0 — a value so high that items[0]
+        # was the ONLY fixture item that could clear it, so refusing it emptied
+        # the whole tick. The floor moved to 30.0 (2026-07-31: 70 was the exact
+        # arithmetic ceiling of macro_print+official, which is why this wire only
+        # ever posted BEA prints), a clean sibling item now also clears, and the
+        # blanket assertion started failing while the gate it guards was working
+        # perfectly.
+        #
+        # What must be true is narrower and stronger, and does not move with a
+        # calibration knob: the em-dash item specifically does not enter the
+        # queue, NOTHING that enters carries banned language, and the skip census
+        # names the gate rather than a generic refusal.
+        banned_language = _banned()
+        for emit in result["emitted"]:
+            assert banned_language(emit["text"]) == [], (
+                "an em dash in the source headline reached the post text "
+                "verbatim; the lane must refuse it rather than queue an "
+                "unpostable item: " + emit["text"])
+            assert "—" not in emit["text"], emit["text"]
         reasons = [s.get("reason") for s in result["skipped"]]
         assert "banned_language" in reasons, reasons
         row = next(s for s in result["skipped"] if s.get("reason") == "banned_language")

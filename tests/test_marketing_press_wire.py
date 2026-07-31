@@ -635,7 +635,14 @@ class TestFloorDiagnostic:
     """
 
     def test_fires_when_the_floor_blocked_the_whole_tick(self):
+        # SETS ITS OWN UNREACHABLE FLOOR. This used to read the live config and
+        # rely on it being 70.0 — i.e. the test only passed while production was
+        # misconfigured, and it broke the moment the floor was fixed (2026-07-31,
+        # 70 was the exact ceiling of macro_print+official, which is why the wire
+        # only ever posted BEA prints). A diagnostic test must construct the
+        # condition it reports on.
         cfg = _live_press_cfg()
+        cfg["wire"]["flagship_salience_floor"] = 999.0
         line = PW.floor_diagnostic(
             cfg, [{"reason": "below_flagship_floor", "salience": 45.0}], [])
         assert line is not None and line.startswith("::notice")
@@ -666,6 +673,7 @@ class TestFloorDiagnostic:
         from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
 
         cfg = _live_press_cfg()
+        cfg["wire"]["flagship_salience_floor"] = 999.0   # construct the condition
         line = PW.floor_diagnostic(
             cfg, [{"reason": "below_flagship_floor", "salience": 62.0}], [])
         assert line is not None, "fixture no longer trips the diagnostic"
@@ -703,7 +711,12 @@ class TestFloorDiagnostic:
         assert _TIER_BONUS.get("x_relay") == 8.0
         assert policy_base + _TIER_BONUS["mirror"] >= 60.0
         assert policy_base + _TIER_BONUS["aggregator"] < 60.0
-        assert policy_base + _TIER_BONUS["mirror"] < 70.0
+        # The flagship floor moved 70 -> 30 on 2026-07-31 because 70 was exactly
+        # macro_print(55) + official(15), so it admitted ONE class and nothing
+        # else. What this line pins is the arithmetic that made 70 wrong, not the
+        # value itself: a mirror policy post is 62, which is why it could never
+        # clear a 70 floor and can clear a 30 one.
+        assert policy_base + _TIER_BONUS["mirror"] == 62.0
 
 
 # ---------------------------------------------------------------------------
@@ -1221,3 +1234,71 @@ class TestM11PerHandleCadenceGate:
         assert PW.run(root, now=NOW + timedelta(seconds=30)) == 0
         assert calls == ["DeItaone"], (
             f"the second run re-polled the handle inside its interval: {calls}")
+
+
+class TestTheFloorAdmitsMoreThanOneEventClass:
+    """The wire posted BEA prints and nothing else, for arithmetic reasons.
+
+    wire.flagship_salience_floor was 70.0. Against breaking_relevance's taxonomy:
+
+        macro_print  55 + official 15 = 70   <- clears, EXACTLY
+        policy       50 + mirror   12 = 62   <- never
+        geopolitical 40 + official 15 = 55   <- never
+        company_news 30 + mirror   12 = 42   <- never
+
+    A floor set at the exact ceiling of ONE class silently reduced a six-source
+    news wire to an official-macro-print relay. The record matches: two items
+    booked in the lane's whole life, both BEA prints (GDP advance estimate,
+    personal income/outlays). Trump, the White House and every company story were
+    excluded by construction — the pollers ran, scored, and could not clear the
+    bar. A live tick now books a Truth Social policy post and a CNBC company
+    story that were previously impossible.
+    """
+
+    def _floor(self):
+        cfg = _live_press_cfg()
+        return float(cfg["wire"]["flagship_salience_floor"])
+
+    def test_more_than_one_event_class_can_reach_the_floor(self):
+        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
+
+        floor = self._floor()
+        best_bonus = max(float(_TIER_BONUS.get(t, 0.0))
+                         for t in ("mirror", "x_relay", "official", "wire"))
+        reachable = [str(row[0]) for row in _CLASS_TAXONOMY
+                     if float(row[1]) + best_bonus >= floor]
+        assert len(reachable) >= 3, (
+            f"only {reachable} can reach flagship_salience_floor={floor:g} — the "
+            "floor is back at the ceiling of one class and the wire is a "
+            "single-source relay again"
+        )
+
+    def test_a_trump_policy_post_from_the_mirror_can_clear_it(self):
+        """The president's own post is direct-quote/mirror — the one item type
+        this lane exists to carry — and it scores 62 at best."""
+        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
+
+        policy_base = next(float(row[1]) for row in _CLASS_TAXONOMY
+                           if row[0] == "policy")
+        assert policy_base + _TIER_BONUS["mirror"] >= self._floor()
+
+    def test_a_company_story_can_clear_it(self):
+        """"Apple drops 7%, Amazon surges 12% as investors pick AI winners" is a
+        company_news item — worth 30 base, and previously unpostable."""
+        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
+
+        base = next(float(row[1]) for row in _CLASS_TAXONOMY
+                    if row[0] == "company_news")
+        assert base + _TIER_BONUS["wire"] >= self._floor()
+
+    def test_volume_is_still_bounded_by_top_k_not_by_the_floor(self):
+        """Lowering the floor cannot flood the account: flagship_top_k_per_day
+        is what caps volume, and it is unchanged. The floor only decides WHICH
+        items compete for those slots."""
+        cfg = _live_press_cfg()
+        assert int(cfg["wire"]["flagship_top_k_per_day"]) <= 3
+
+    def test_unclassified_noise_still_does_not_clear_it(self):
+        """A live tick scores its `none`-class rows at 4.8-7.2. The floor must
+        stay well above that band or the wire starts relaying anything."""
+        assert self._floor() >= 20.0
