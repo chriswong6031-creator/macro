@@ -239,7 +239,27 @@ def compose_post(item: dict, *, cfg: dict | None = None) -> dict:
     inside the character budget.  A long lead point used to kill the post
     outright; the second point is a worse lead than the first and a much better
     one than nothing.
+
+    TWO STAGES USED TO DISAGREE ABOUT "USABLE" (2026-07-30).  Selection asked
+    only "does it FIT" (character budget); admission — value_gate's `gift` leg,
+    armed the same day — asks "is there a POST here at all" (a word floor).  A
+    report whose first fitting point was four words therefore produced a draft
+    that the gate then abstained on, and the post was lost even when point two
+    was a full paragraph.  Neither stage was wrong on its own; they were reading
+    different definitions, and the lane paid for it in silence.
+
+    So selection now applies the gate's own floor as a PREFERENCE: walk for the
+    first point that both fits and clears it.  The floor is imported, never
+    re-declared, so raising it in one place moves both stages together.  If no
+    point clears it we still return the first that fits, unchanged — that keeps
+    this function from growing a second, quieter drop of its own, and leaves the
+    refusal where it belongs, with the gate that announces it.
     """
+    # Lazy, like every other engine.marketing import in this file: the thin CI
+    # lane's minimal env is the contract that keeps these modules importable
+    # without pandas, and a top-level import here would be the thing that breaks it.
+    from engine.marketing.value_gate import MIN_BODY_WORDS  # noqa: PLC0415
+
     limit = int(_get(cfg, "short_max_chars"))
     institution = _clean(item.get("institution")) or "An institution"
     raw_points = [p for p in (item.get("summary_points") or []) if str(p or "").strip()]
@@ -248,12 +268,20 @@ def compose_post(item: dict, *, cfg: dict | None = None) -> dict:
 
     headline = f"{institution}, in our read:"
     room = max(0, limit - len(headline) - 2)
+    fits: list[tuple[int, str]] = []
     for index, raw in enumerate(raw_points):
         candidate = _clean(strip_filing_label(raw))
         body = _truncate_sentences(candidate, room)
-        if body:
+        if not body:
+            continue
+        fits.append((index, body))
+        if len(body.split()) >= MIN_BODY_WORDS:
             return {"headline": headline, "body": body, "reason": "",
                     "point_index": index}
+    if fits:
+        index, body = fits[0]
+        return {"headline": headline, "body": body, "reason": "",
+                "point_index": index}
     return {"headline": "", "body": "",
             "reason": "no summary point fits a post at the character budget"}
 
@@ -488,11 +516,26 @@ def build_items(pieces: Iterable[dict], *, cfg: dict | None = None,
             )
             if would_block:
                 verdict = source.get("value_gate") or {}
-                print("::notice title=research-lane-value-gate::"
-                      f"{rid}/{fmt}: would abstain "
-                      f"({','.join(verdict.get('reasons') or [])}) — "
-                      f"enforce={verdict.get('enforced')}", flush=True)
-                if _ob._value_gate_enforced(cfg):
+                # SAY WHICH IT IS. This line read "would abstain … enforce=True"
+                # in both modes, so once the gate was armed the log described a
+                # dropped post in the conditional voice — the operator reads a
+                # rehearsal and the lane is actually losing output. Shadow mode
+                # keeps "would abstain"; an armed refusal says so, at ::warning,
+                # because a post that does not ship is not a notice.
+                enforced = _ob._value_gate_enforced(cfg, KIND)
+                why = ",".join(verdict.get("reasons") or [])
+                if enforced:
+                    print("::warning title=research-lane-value-gate::"
+                          f"{rid}/{fmt}: ABSTAINED, not posted ({why})", flush=True)
+                elif not _ob.value_gate_kind_is_measured(cfg, KIND):
+                    print("::notice title=research-lane-value-gate::"
+                          f"{rid}/{fmt}: abstains on an UNMEASURED kind ({KIND}) — "
+                          f"recorded, post ships ({why})", flush=True)
+                else:
+                    print("::notice title=research-lane-value-gate::"
+                          f"{rid}/{fmt}: would abstain ({why}) — "
+                          "shadow mode, post ships", flush=True)
+                if enforced:
                     skipped.append({"id": rid, "format": fmt,
                                     "reason": "value_gate: "
                                               + ",".join(verdict.get("reasons") or [])})

@@ -510,6 +510,23 @@ data/marketing/learning_host/
 # the JSON queue. Verify with `git check-ignore data/marketing/outbox/media/X/Y.png`
 # (ignored) vs `.../Y.svg` (NOT ignored) after any edit here.
 data/marketing/outbox/media/**/*.png
+# HOT-TAPE intraday renders (2026-07-30). The rule above deliberately keeps
+# chart SVGs committed because the admin console previews render from them --
+# and that was correct when a night produced ~29 of them. scripts/hot_tape_radar.py
+# then armed the P1 radar, which renders a card for EVERY candidate it evaluates
+# (before it knows whether the post will ship) on every intraday sweep: 8,068
+# hottape-*.svg landed in ONE day, all of them tracked, 420 MB in the media tree.
+# That is what has been printing "too many unreachable loose objects" on every
+# git command here.
+#
+# Same argument the PNG rule already makes: the delivery plane is the public R2
+# URL on the item, the local file is a throwaway render input. The admin console
+# previews the NIGHTLY chart-NNN.svg snapshots, which stay committed -- this
+# pattern is deliberately hottape-scoped and must NOT swallow those. Verify with
+#   git check-ignore data/marketing/outbox/media/X/hottape-a-b-0000Z.svg (ignored)
+#   git check-ignore data/marketing/outbox/media/X/chart-001.svg          (NOT ignored)
+# after any edit here.
+data/marketing/outbox/media/**/hottape-*.svg
 # Publish-workflow-local fetch of the live-data branch quotes (tape gate input);
 # ephemeral per-run, never committed.
 data/marketing/live_quotes_snapshot.json

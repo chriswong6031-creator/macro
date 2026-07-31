@@ -885,3 +885,133 @@ def test_shapes_literal_never_drifts_between_the_two_modules():
     from engine.marketing import content_studio as cs
     from engine.marketing import copywriter as cw
     assert tuple(cs.SHAPES) == tuple(cw.SHAPES)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Perishability (operator 2026-07-30)
+# The planner books a SEVEN-day forward queue. Copy claiming something about the
+# current tape is false by the time a D5 slot arrives, so the publisher's
+# live-tape gate refused it and logged `tape_skipped` — that counter fired on
+# every sweep of 2026-07-29 and is why ZERO posts went out that day. The gate
+# was right; pre-writing perishable copy a week ahead was the bug.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestPerishableForwardBookings:
+    def _rows(self):
+        return [{"id": "flagship", "queue": [
+            {"id": "a", "type": "signal",    "slot": "D1-S1"},
+            {"id": "b", "type": "signal",    "slot": "D4-S3"},
+            {"id": "c", "type": "watchlist", "slot": "D6-S2"},
+            {"id": "d", "type": "education", "slot": "D7-S9"},
+            {"id": "e", "type": "macro",     "slot": "D2-S1"},
+            {"id": "f", "type": "receipt",   "slot": "D5-S4"},
+        ]}]
+
+    def test_perishable_kinds_are_dropped_past_day_one(self):
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = self._rows()
+        counts = drop_stale_forward_bookings(rows, cfg=None)
+        assert counts["dropped_perishable_forward"] == 2
+        assert counts["by_kind"] == {"signal": 1, "macro": 1}
+
+    def test_evergreen_kinds_keep_the_full_horizon(self):
+        """A level that has held 23 sessions still reads true on Friday."""
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = self._rows()
+        drop_stale_forward_bookings(rows, cfg=None)
+        kept = [i["id"] for i in rows[0]["queue"]]
+        assert "c" in kept and "d" in kept and "f" in kept   # watchlist/education/receipt
+
+    def test_day_one_perishable_survives(self):
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = self._rows()
+        drop_stale_forward_bookings(rows, cfg=None)
+        assert "a" in [i["id"] for i in rows[0]["queue"]]
+
+    def test_an_unparseable_slot_is_never_dropped(self):
+        """Fail OPEN on a slot-format change: dropping on a parse failure would
+        silently empty the whole queue if the ladder label ever moved."""
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = [{"id": "x", "queue": [
+            {"id": "n", "type": "signal", "slot": None},
+            {"id": "m", "type": "signal", "slot": "weird-format"},
+        ]}]
+        counts = drop_stale_forward_bookings(rows, cfg=None)
+        assert counts["dropped_perishable_forward"] == 0
+        assert len(rows[0]["queue"]) == 2
+
+    def test_config_drives_the_rule(self):
+        from engine.marketing.content_studio import (
+            drop_stale_forward_bookings, perishable_kinds, perishable_max_day)
+        cfg = {"selection": {"perishable_kinds": ["watchlist"], "perishable_max_day": 2}}
+        assert perishable_kinds(cfg) == frozenset({"watchlist"})
+        assert perishable_max_day(cfg) == 2
+        rows = self._rows()
+        counts = drop_stale_forward_bookings(rows, cfg=cfg)
+        # only the D6 watchlist now; signals/macro are evergreen under this cfg
+        assert counts["by_kind"] == {"watchlist": 1}
+
+    def test_shipped_config_is_the_d1_only_rule(self):
+        import yaml, pathlib
+        from engine.marketing.content_studio import perishable_kinds, perishable_max_day
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        assert perishable_max_day(cfg) == 1
+        assert {"signal", "chart", "macro", "event"} <= perishable_kinds(cfg)
+        # evergreen kinds must NOT be in the perishable set
+        assert not ({"watchlist", "education", "receipt"} & perishable_kinds(cfg))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Failed-signal disposal (operator 2026-07-30)
+# A planned signal whose entry the live gate cannot stand behind used to be
+# RE-TYPED into a watchlist post. Measured on the live plan: 168 of 335
+# watchlist posts were demoted signals (39 of 57 on the shipping day) and 125
+# had failed for AGE alone. They all wore the same proximity copy, which is
+# where the batch auditor's "mechanically uniform" verdict came from.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestFailedSignalDisposal:
+    def test_the_shipped_rule_demotes_only_real_states(self):
+        import yaml, pathlib
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        allowed = set((cfg.get("selection") or {}).get("demotable_gate_reasons") or [])
+        assert allowed == {"runaway", "underwater"}, (
+            "stale and unverified must NOT demote — there is nothing honest to "
+            "post about a three-week-old idea or a name we cannot price")
+
+    def test_gate_reasons_classify_as_expected(self):
+        """The disposal rule keys on this classifier; pin its buckets."""
+        from engine.marketing.copywriter import watch_reason_from_gate
+        assert watch_reason_from_gate("signal is 13d old (max 10d)") == "stale"
+        assert watch_reason_from_gate(
+            "ran away +14.9% — no longer actionable (last=283.87, entry=247.10)") == "runaway"
+        assert watch_reason_from_gate(
+            "underwater -2.2% (last=393.35, entry=402.30)") == "underwater"
+        assert watch_reason_from_gate("no close data — cannot verify") == "unverified"
+
+    def test_unrecognised_prose_falls_to_stale_and_is_therefore_dropped(self):
+        """Fail-safe direction: an unknown failure drops rather than becoming
+        filler, because we cannot say what would be true about it."""
+        import yaml, pathlib
+        from engine.marketing.copywriter import watch_reason_from_gate
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        allowed = set((cfg.get("selection") or {}).get("demotable_gate_reasons") or [])
+        assert watch_reason_from_gate("something nobody has seen before") == "stale"
+        assert "stale" not in allowed
+
+    def test_the_report_records_what_was_dropped_and_why(self):
+        """Supply-honest volume is only auditable if the plan prints the loss."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert '"signals_dropped_not_demoted"' in src
+        assert '"signals_dropped_by_reason"' in src
+        assert '"demotable_gate_reasons"' in src
+
+    def test_dropped_signals_never_reach_the_writer(self):
+        """A dead idea must not cost a model call: the drop happens after the
+        gate and before Phase 2 builds a context."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        drop_at = src.index("_stale_dropped = [d for d in queue")
+        phase2_at = src.index("# Phase 2: build all contexts")
+        assert drop_at < phase2_at, "the drop must precede context building"

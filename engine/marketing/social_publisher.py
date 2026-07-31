@@ -64,6 +64,23 @@ log = logging.getLogger(__name__)
 
 BUFFER_GRAPHQL_ENDPOINT = "https://api.buffer.com"
 BUFFER_TOKEN_ENV = "BUFFER_TOKEN"
+
+
+class BufferRateLimited(RuntimeError):
+    """Buffer answered 429 — we are out of quota, not offline.
+
+    RuntimeError on purpose: every existing caller catches broadly and turns a
+    transport failure into a fail-soft "did not send", and that must not change.
+    What changes is that the reason is now nameable, because the two failures
+    need opposite responses — a rate limit is self-inflicted (the publisher and
+    the metrics poller share one token and one 24h allowance) and is fixed by
+    spacing our own calls out, while an outage is Buffer's and is fixed by
+    waiting.
+    """
+
+    def __init__(self, message: str, *, retry_after: str = "") -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
 _HTTP_TIMEOUT_S = 15
 _MAX_RESPONSE_BYTES = 2 * 1024 * 1024  # a hostile/broken response must not OOM
 
@@ -186,6 +203,23 @@ class Receipt:
     error       human-readable failure string — None on success.
     backend     backend name, e.g. "buffer".
     at          iso8601 UTC timestamp of the attempt.
+    retryable   True when the attempt failed for a reason that will PASS LATER
+                and nothing about the post itself is wrong. Today that means one
+                thing: Buffer answered 429. It defaults False, so every existing
+                construction site and every caller keeps its exact behaviour.
+
+                WHY IT HAD TO EXIST. `ok=False` was the only signal, and the
+                publisher's one response to it is `transition(iid, "failed")` —
+                and `failed` is in outbox._DEAD_STATUSES, so nothing ever picks
+                the item up again. A rate limit therefore DELETED the post. Three
+                flagship posts died exactly that way on 2026-07-30 ("http_error
+                429: Too many requests from this client"), and each was a
+                perfectly good post that simply arrived while the shared Buffer
+                token was out of quota.
+
+                That risk grows with volume, which this change set increases: the
+                press wire's salience floor moved 70 -> 30 the same day, so the
+                wire books where it used to book nothing.
     """
     ok: bool
     external_id: str | None
@@ -193,6 +227,7 @@ class Receipt:
     error: str | None
     backend: str
     at: str
+    retryable: bool = False
 
 
 @dataclass
@@ -481,8 +516,45 @@ class BufferPublisher:
                 "Accept": "application/json",
             },
         )
-        with urlopen(req, timeout=_HTTP_TIMEOUT_S) as resp:  # noqa: S310
-            raw = resp.read(_MAX_RESPONSE_BYTES + 1)
+        try:
+            with urlopen(req, timeout=_HTTP_TIMEOUT_S) as resp:  # noqa: S310
+                raw = resp.read(_MAX_RESPONSE_BYTES + 1)
+        except HTTPError as exc:
+            # A 429 IS NOT A NETWORK BLIP, AND IT USED TO LOOK LIKE ONE.
+            #
+            # Buffer authenticates as ONE personal token, and BOTH the publisher
+            # (`publish`) and the engagement poller (`fetch_post_metrics`) go
+            # through this method with it. They share one 24h quota: a metrics
+            # sweep over a few hundred posted items can spend the allowance the
+            # publisher needs to post at all, and the publisher's failure then
+            # arrives as a generic transport error that the public callers turn
+            # into a fail-soft "did not send".
+            #
+            # Fail-soft is right — a rate limit must never crash a sweep — but
+            # INDISTINGUISHABLE is not. "Buffer refused us because we are out of
+            # quota" and "Buffer is down" call for opposite responses, and the
+            # first is self-inflicted and fixable by spacing the poller out.
+            #
+            # BufferRateLimited subclasses RuntimeError, so every existing
+            # `except Exception` caller keeps its current fail-soft behaviour
+            # unchanged; the difference is that the reason is now on the record.
+            if getattr(exc, "code", None) == 429:
+                retry_after = ""
+                try:
+                    retry_after = str(exc.headers.get("Retry-After") or "")
+                except Exception:  # noqa: BLE001
+                    retry_after = ""
+                print("::warning title=marketing-buffer-rate-limited::"
+                      "Buffer returned 429 — the publisher and the engagement "
+                      "poller share ONE token and ONE 24h quota, so this is most "
+                      "likely our own polling spending the posting allowance"
+                      + (f" (Retry-After: {retry_after})" if retry_after else ""),
+                      flush=True)
+                raise BufferRateLimited(
+                    "Buffer rate limit (429)"
+                    + (f"; retry after {retry_after}" if retry_after else ""),
+                    retry_after=retry_after) from exc
+            raise
         if len(raw) > _MAX_RESPONSE_BYTES:
             raise ValueError("Buffer response exceeded size cap")
         return json.loads(raw.decode("utf-8"))
@@ -783,13 +855,21 @@ class BufferPublisher:
             # until the beta adds one (then request it in _CREATE_POST_MUTATION).
             return Receipt(True, post_id, None, None, self.backend, at)
 
+        except BufferRateLimited as exc:
+            # BEFORE HTTPError, or this is unreachable dead code: _transport
+            # raises this INSTEAD of the HTTPError for a 429, but a future
+            # caller reaching Buffer another way may still surface the raw
+            # HTTPError, so the code branch below stays as the backstop.
+            return Receipt(False, None, None, f"rate_limited: {exc}",
+                           self.backend, at, retryable=True)
         except HTTPError as exc:
             detail = ""
             try:
                 detail = exc.read(_MAX_RESPONSE_BYTES).decode("utf-8", "replace")[:300]
             except Exception:  # noqa: BLE001
                 pass
-            return Receipt(False, None, None, f"http_error {exc.code}: {detail}", self.backend, at)
+            return Receipt(False, None, None, f"http_error {exc.code}: {detail}",
+                           self.backend, at, retryable=exc.code == 429)
         except URLError as exc:
             return Receipt(False, None, None, f"network_error: {exc.reason}", self.backend, at)
         except Exception as exc:  # noqa: BLE001

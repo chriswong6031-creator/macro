@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import logging
 import os
 import re
@@ -60,6 +61,9 @@ if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
+from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
+from engine.marketing.copywriter import batch_body_duplicate_violations as _batch_body_duplicate_violations  # noqa: E402
+from engine.marketing.copywriter import repeated_sentence_violations as _repeated_sentence_violations  # noqa: E402
 
 log = logging.getLogger("marketing_publisher")
 
@@ -378,6 +382,20 @@ _CHART_BEARING_KINDS: frozenset[str] = frozenset({
     "signal", "chart", "watchlist", "receipt",
 })
 
+# ROLLUPS: not about ONE name, but about the basket they enumerate — so a post
+# that lists $ALL $ERIE $TRV is about those three, and shipping it bare is the
+# text-only failure the operator named. Distinct from _CHART_BEARING_KINDS
+# because a rollup only owes a picture when one was actually BUILT for it (see
+# _missing_required_media, which requires a non-empty media[] first).
+#
+# `macro`, `education`, `event`, `wire` and `breaking` are deliberately ABSENT.
+# A breadth read may mention $SPY in passing; that is not a post about $SPY, and
+# holding it for an upload strangles the desks' non-ticker voice for a rule
+# written about rollups.
+_TICKER_ROLLUP_KINDS: frozenset[str] = frozenset({
+    "theme_list", "mover",
+})
+
 # A ticker post whose chart never resolves may not defer forever. Past this age
 # the publisher gives up and QUARANTINES it instead of shipping it bare: an
 # entry-timing read this stale is not worth posting even if the picture finally
@@ -386,7 +404,11 @@ _CHART_BEARING_KINDS: frozenset[str] = frozenset({
 # number: one is an upload race, the other a misconfiguration).
 _MEDIA_DEFER_MAX_AGE_DAYS = 3
 
-_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}\b")
+#: Cashtags in post copy. `$ALL` / `$ERIE` / `$BRK.B` — 1-5 letters with an
+#: optional class suffix. Deliberately not anchored to the item's
+#: `source.ticker`: the posts the bare-cashtag gate catches carry their tickers
+#: ONLY in the text.
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
 
 
 def _item_age_days(it: dict, now: datetime) -> int:
@@ -426,6 +448,215 @@ def _item_ticker(it: dict) -> str:
     return hit.group(0).lstrip("$") if hit else ""
 
 
+#: (path, mtime) -> symbols. The membership store is rewritten nightly; a
+#: publisher run must not re-read a 3,500-row parquet per item.
+_SYMBOL_UNIVERSE_CACHE: dict[str, tuple[float, frozenset[str]]] = {}
+
+#: Below this the universe is not credible enough to refuse a post on — a
+#: truncated or half-written parquet must not silently quarantine the night.
+_SYMBOL_UNIVERSE_MIN = 500
+
+
+#: Per-symbol price stores. The filenames ARE the universe, so this costs a
+#: directory listing and reads no parquet. These are the widest and most
+#: honest source: if the engine holds a price history for a name, that name
+#: trades. Index membership alone is NOT enough — $TEAM (Atlassian) sits in no
+#: US index membership row and no earnings-calendar vintage, so a
+#: membership-only universe called it fake and would have quarantined four
+#: legitimate charted posts.
+_PRICE_STORE_DIRS = (
+    ("data", "baskets", "ohlcv"),
+    ("data", "yahoo"),
+    ("data", "tape_flow", "daily"),
+)
+
+
+def _symbol_universe(root: Path | str = ".") -> frozenset[str]:
+    """Every symbol we can prove exists. Empty frozenset = "could not tell".
+
+    Union of stores already maintained for other reasons, so this adds no new
+    data dependency:
+      * ``data/baskets/ohlcv/*.parquet`` + ``data/yahoo`` + ``data/tape_flow``
+        — one file per symbol we hold price history for, the widest source;
+      * ``data/universe/membership.parquet`` — index membership, ACTIVE rows
+        only, the one source that knows a listing DIED;
+      * ``data/earnings/earnings.parquet`` — the reporting calendar;
+      * ``site/marketdata/sp500_heatmap.json`` — the rendered board.
+
+    Returns EMPTY (not a partial set) when the stores are missing or too small
+    to trust, because a half-loaded universe would read as "these symbols do
+    not exist" and quarantine a whole night's posts.
+    """
+    root = Path(root)
+    membership = root / "data" / "universe" / "membership.parquet"
+    # Cache key folds in the price dirs' mtimes: a nightly that adds a symbol
+    # must invalidate, or a brand-new name reads as fake for the rest of the run.
+    stamps: list[float] = []
+    for parts in _PRICE_STORE_DIRS:
+        d = root.joinpath(*parts)
+        try:
+            stamps.append(d.stat().st_mtime if d.exists() else 0.0)
+        except OSError:
+            stamps.append(0.0)
+    try:
+        stamps.append(membership.stat().st_mtime if membership.exists() else 0.0)
+    except OSError:
+        stamps.append(0.0)
+    mtime = max(stamps) if stamps else 0.0
+
+    cache_key = str(root.resolve()) if root.exists() else str(root)
+    hit = _SYMBOL_UNIVERSE_CACHE.get(cache_key)
+    if hit is not None and hit[0] == mtime:
+        return hit[1]
+
+    symbols: set[str] = set()
+    for parts in _PRICE_STORE_DIRS:
+        d = root.joinpath(*parts)
+        try:
+            if d.is_dir():
+                symbols |= {f.stem.upper() for f in d.glob("*.parquet")}
+        except OSError as exc:
+            log.warning("[publisher] price store %s unreadable: %s", d, exc)
+    try:
+        import pandas as pd  # noqa: PLC0415
+        if membership.exists():
+            df = pd.read_parquet(membership, columns=["ticker", "active"])
+            # ACTIVE only. One ticker holds one row per index, and a name that
+            # MIGRATES is active=False on the row it left — so "alive" is
+            # active on ANY row, never active on every row.
+            live = df[df["active"].astype(bool)]
+            symbols |= {str(t).upper() for t in live["ticker"].tolist()}
+        earnings = root / "data" / "earnings" / "earnings.parquet"
+        if earnings.exists():
+            symbols |= {
+                str(t).upper()
+                for t in pd.read_parquet(earnings, columns=[]).index.tolist()
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[publisher] symbol universe load failed: %s", exc)
+    try:
+        heatmap = root / "site" / "marketdata" / "sp500_heatmap.json"
+        if heatmap.exists():
+            data = json.loads(heatmap.read_text(encoding="utf-8"))
+            symbols |= {
+                str(t.get("t", "")).upper()
+                for t in (data.get("tiles") or []) if t.get("t")
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[publisher] heatmap universe load failed: %s", exc)
+
+    out = frozenset(symbols) if len(symbols) >= _SYMBOL_UNIVERSE_MIN else frozenset()
+    _SYMBOL_UNIVERSE_CACHE[cache_key] = (mtime, out)
+    return out
+
+
+#: Cashtags that are correct FinTwit usage but are NOT equities, so they appear
+#: in no equity price store, no index membership file and no earnings calendar.
+#: Without this the gate accuses a perfectly standard macro post of naming a
+#: fake ticker and quarantines it TERMINALLY: $VIX, $SPX, $DXY, $BTC and $ETH
+#: all failed on the first live check of the gate shipped earlier today.
+#: ETFs ($SPY/$QQQ/$TLT/$GLD) need no entry — they are real listings and the
+#: price stores already carry them.
+_NON_EQUITY_CASHTAGS: frozenset[str] = frozenset({
+    # Index / volatility / rates / dollar
+    "SPX", "NDX", "DJI", "DJIA", "RUT", "VIX", "VVIX", "MOVE", "DXY", "TNX",
+    "TYX", "IRX", "US10Y", "US02Y", "US30Y", "COMP", "NYA", "SOX", "BKX",
+    # Majors + crypto, both common in this desk's macro and crypto copy
+    "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "BNB", "LTC", "AVAX", "LINK",
+    "EUR", "JPY", "GBP", "CNY", "CNH", "AUD", "CAD", "CHF", "MXN",
+    # Commodities quoted as cashtags
+    "WTI", "BRENT", "GOLD", "SILVER", "COPPER", "NATGAS", "CL", "NG", "HG",
+})
+
+
+def _unknown_cashtags(it: dict, root: Path | str = ".") -> list[str]:
+    """Cashtags in the copy that no live store can vouch for. [] = all fine.
+
+    Operator 2026-07-30, on a filing post that shipped `$N`: "Wtf is N? Theres
+    no ticker called N. This post also makes zero sense." N is in the
+    membership file with ``active=False`` — it has not traded in years, and the
+    filing lane never checked.
+
+    Returns [] when the universe is unavailable: a post is never refused on the
+    strength of a store we could not read. The check has to be able to say "I
+    looked it up and it is not there", not "I do not know".
+    """
+    universe = _symbol_universe(root)
+    if not universe:
+        return []
+    found = _CASHTAG_RE.findall(str(it.get("text") or ""))
+    seen: list[str] = []
+    for tag in found:
+        sym = tag.lstrip("$").upper()
+        if sym in _NON_EQUITY_CASHTAGS:
+            continue          # real, just not an equity in our stores
+        if sym not in universe and sym not in seen:
+            seen.append(sym)
+    return seen
+
+
+def _deferral_covers(it: dict) -> bool:
+    """True when :func:`_missing_required_media` would take this item.
+
+    The two gates hand off to each other, and until 2026-07-31 the handoff was
+    an assumption rather than a check: _bare_cashtag_post stepped aside for any
+    item carrying a media[] entry, on the grounds that the deferral gate owns
+    "a chart was built and the URL is missing". The deferral gate owns only the
+    kinds in these two sets, so the assumption was false for every other kind
+    and the item fell through both.
+
+    Derived from the same frozensets the deferral gate reads, so the two cannot
+    drift apart: widening one widens this.
+    """
+    kind = str(it.get("kind") or "")
+    return kind in _CHART_BEARING_KINDS or kind in _TICKER_ROLLUP_KINDS
+
+
+def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
+    """A post that names tickers and ships no picture. Returns the tickers, or "".
+
+    OPERATOR LAW, 2026-07-30, stated in these words after seeing the live
+    account: "YOU WILL NOT SHIP THESE TEXT ONLY, ID RATHER YOU DESTROY THE
+    ENTIRE ENGINE THAN SHIP TEXT ONLY, CUZ NO ONE CARES ABOUT THESE TICKER POSTS
+    IF UR GOING TO SHIP THEM NAKED WITH NO CHARTS."
+
+    :func:`_missing_required_media` could not enforce that. It keys on
+    ``_CHART_BEARING_KINDS`` (signal/chart/watchlist/receipt) AND requires a
+    ``media[]`` entry to already exist — it defers a post whose chart was BUILT
+    and failed to upload. The posts actually reaching the timeline were
+    `theme_list` and `mover`: not chart-bearing kinds, carrying no media at all,
+    so both conditions missed and they auto-posted bare. Measured on the live
+    flagship account: "Insurance - Property & Casualty: 7 of 7 names lower right
+    now, median -3.9%. Worst: $ERIE -6.1%, $TRV -4.6%, $ALL -4.1%" — 3 views.
+    Its siblings drew 1, 2 and 4.
+
+    So the rule is keyed on what the operator actually said: a post that NAMES
+    TICKERS ships a picture, whatever kind it claims to be. A post with no
+    cashtag (macro prose, education, a breadth read) is unaffected.
+    """
+    if not _media_enabled_cfg(pub_cfg) or media_paths:
+        # Media globally off → nothing can resolve a picture and gating on that
+        # would wedge every ticker post, same reasoning as the deferral gate.
+        return ""
+    if (any(isinstance(m, dict) for m in (it.get("media") or []))
+            and _deferral_covers(it)):
+        # A chart exists but has no URL yet — that is the DEFERRAL case above,
+        # which is recoverable via the backfill. Not this rule's business.
+        #
+        # ONLY when the deferral gate will ACTUALLY take it (2026-07-31). This
+        # used to step aside for any non-empty media[], on the reasoning that
+        # the deferral gate owns that case. It owns only the kinds it lists,
+        # and `breaking` is deliberately in neither _CHART_BEARING_KINDS nor
+        # _TICKER_ROLLUP_KINDS — so a breaking post with cashtags and a card
+        # whose upload failed fell between the two gates and SHIPPED BARE, the
+        # one outcome both rules exist to prevent. `breaking` is the kind the
+        # hot-tape and press lanes emit, i.e. most of the account's volume,
+        # and the press wire could not host a card at all until this change.
+        return ""
+    found = _CASHTAG_RE.findall(str(it.get("text") or ""))
+    return " ".join(sorted(set(found))) if found else ""
+
+
 def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> bool:
     """True when this is a ticker post that HAS a chart and cannot reach it.
 
@@ -446,11 +677,40 @@ def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> 
     """
     if not _media_enabled_cfg(pub_cfg) or media_paths:
         return False
-    if str(it.get("kind") or "").strip().lower() not in _CHART_BEARING_KINDS:
-        return False
     if not any(isinstance(m, dict) for m in (it.get("media") or [])):
         return False
-    return bool(_item_ticker(it))
+    kind = str(it.get("kind") or "").strip().lower()
+    if kind in _CHART_BEARING_KINDS:
+        return bool(_item_ticker(it))
+    # ROLLUP kinds whose post is ABOUT the names it lists (2026-07-30).
+    #
+    # The kind list above was the whole test, and it left a hole exactly where
+    # the operator's complaint lives. A `theme_list` or `mover` rollup whose
+    # chart WAS rendered and whose R2 upload then failed carries a media[] dict
+    # with no media_url. It is not a chart-bearing kind, so this gate waved it
+    # through; and _bare_cashtag_post treats a built-but-unresolved chart as the
+    # recoverable DEFERRAL case, so that waved it through too. Both gates
+    # deferred to the other and the post shipped BARE with $ALL $ERIE $TRV in it
+    # — the precise failure that drew "ID RATHER YOU DESTROY THE ENTIRE ENGINE
+    # THAN SHIP TEXT ONLY".
+    #
+    # SCOPED TO THE ROLLUPS, NOT TO "ANY CASHTAG". The first version of this
+    # returned on `_CASHTAG_RE.search(text)` alone, which quietly overrode the
+    # contract stated at _CHART_BEARING_KINDS: a breadth post reading "231 of 231
+    # names above the 200-day. Even $SPY is stretched." names a ticker IN PASSING
+    # and is not about it. Holding that for an upload is how a text-only voice
+    # gets strangled by a rule written for rollups, and
+    # tests/test_marketing_forward_booking.py pins it as a contract precisely so
+    # a later widening has to argue with something. THE KIND DECIDES, NOT THE
+    # TEXT — the same principle the set above rests on.
+    #
+    # Deferring (not quarantining) is right here for the same reason it is right
+    # above: the chart exists, so the URL is recoverable by the backfill, and the
+    # bounded _MEDIA_DEFER_MAX_AGE_DAYS escape still quarantines it if the
+    # picture never arrives.
+    if kind not in _TICKER_ROLLUP_KINDS:
+        return False
+    return bool(_CASHTAG_RE.search(str(it.get("text") or "")))
 
 
 def _chart_ids_for(it: dict) -> str:
@@ -1247,6 +1507,16 @@ def main(argv: list[str] | None = None) -> int:
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
     forward_booked = deferred_no_media = 0
+    # The 2026-07-30 voice/chart/symbol gates. Plain ints like every other
+    # counter in this function: an earlier draft wrote into a `counters` dict
+    # that was never defined anywhere, which would have raised NameError the
+    # first time a gate actually fired.
+    quarantined_bare_cashtag = quarantined_unknown_cashtag = 0
+    quarantined_voice_laws = quarantined_run_duplicate = 0
+    #: Sends refused for quota, not for content — requeued rather than failed.
+    #: Counted separately because "3 failed" and "3 will retry next sweep" are
+    #: opposite facts and the summary line was reporting them as the same one.
+    rate_limited = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -1461,6 +1731,14 @@ def main(argv: list[str] | None = None) -> int:
                     "ungated this run", _ht_exc)
         _ht_orphan_status = None
 
+    # Texts already cleared THIS RUN, per account. The generation-time batch
+    # dedup cannot see across vintages, so a queue holding several nights of
+    # copy ships the same sentence repeatedly: a live queue had "I'm not
+    # fighting this one. It has to reclaim X before it's even a conversation."
+    # on three different names, all clearing every other gate. Per account
+    # because a repeat across two desks is a repeat no reader ever sees.
+    _run_texts: dict[str, list[str]] = {}
+
     for it in approved_due:
         iid = it["id"]
         account = it.get("account", "")
@@ -1661,6 +1939,46 @@ def main(argv: list[str] | None = None) -> int:
             quarantined += 1
             continue
 
+        # -- voice gate: same argument, newer laws ---------------------------
+        # The queue held 187 posts written under the rules that MANDATED the
+        # machine voice ("I'm wrong below 33.8", "historical, not a
+        # guarantee"). Those rules were retired 2026-07-30 after the operator
+        # graded a batch F, but retiring a rule does not rewrite copy already
+        # enqueued — without this screen the graded-F batch posts tomorrow no
+        # matter what the writer does tonight.
+        _voice = _queued_voice_violations(text, str(it.get("kind") or ""))
+        if _voice:
+            reason = "voice laws (queue vintage): " + "; ".join(_voice[:2])
+            print(f"::warning title=marketing-voice-gate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_voice[0][:120]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by voice gate: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            quarantined_voice_laws += 1
+            continue
+
+        # -- run dedup: the queue is not a bypass around "don't repeat yourself"
+        # The FIRST of a near-duplicate pair posts; the clones do not. Terminal
+        # by design — the defect is the copy itself, so waiting cannot fix it.
+        _prior = _run_texts.get(account) or []
+        _dupe = (_batch_body_duplicate_violations(text, _prior)
+                 or _repeated_sentence_violations(text, _prior))
+        if _dupe:
+            reason = "near-duplicate of a post already cleared this run: " + _dupe[0]
+            print(f"::warning title=marketing-run-duplicate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_dupe[0][:110]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by run dedup: %s", iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            quarantined_run_duplicate += 1
+            continue
+        _run_texts.setdefault(account, []).append(text)
+
         # -- headline-shape gate: fragment headlines are vintage-proof too ---
         # validate_copy 4f (#3907) rejects fragment headlines ("Circling",
         # "is close", "Radar check on") at GENERATION time, but the queue is
@@ -1845,6 +2163,44 @@ def main(argv: list[str] | None = None) -> int:
         # waiver silently converted a charted entry-timing read into a naked call
         # — the one failure mode the gate exists for. A deferred item is not
         # refused, it retries the moment the media backfill lands.
+        # A post that NAMES TICKERS ships a picture (operator 2026-07-30). Unlike
+        # the deferral below there is no chart coming — nothing was rendered — so
+        # this quarantines rather than waits. It runs FIRST because the deferral
+        # gate structurally cannot see these: they are not chart-bearing kinds
+        # and carry no media[] entry.
+        _bare = _bare_cashtag_post(it, pub_cfg, media_paths)
+        if _bare:
+            print(f"::warning title=marketing-bare-cashtag::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — names {_bare} "
+                  f"with no chart. A ticker post ships a picture or it does not "
+                  f"ship.", flush=True)
+            log.warning("item %s (%s/%s) quarantined — bare cashtags %s, no media",
+                        iid, account, it.get("kind"), _bare)
+            if live:
+                _outbox.transition(
+                    iid, "quarantined", actor="publisher", root=root,
+                    note=f"bare cashtag post: names {_bare} with no chart")
+            quarantined_bare_cashtag += 1
+            continue
+
+        # A cashtag no live store can vouch for is a factual error, not a
+        # styling problem, so it is quarantined outright — the copy cannot be
+        # repaired by waiting. Silent when the universe is unreadable.
+        _unknown = _unknown_cashtags(it)
+        if _unknown:
+            print(f"::warning title=marketing-unknown-cashtag::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — "
+                  f"{', '.join('$' + s for s in _unknown)} not in any live "
+                  f"symbol store (delisted or never existed).", flush=True)
+            log.warning("item %s (%s/%s) quarantined — unknown cashtags %s",
+                        iid, account, it.get("kind"), _unknown)
+            if live:
+                _outbox.transition(
+                    iid, "quarantined", actor="publisher", root=root,
+                    note=f"unknown cashtag(s): {', '.join(_unknown)}")
+            quarantined_unknown_cashtag += 1
+            continue
+
         if _missing_required_media(it, pub_cfg, media_paths):
             _charts = _chart_ids_for(it)
             _age_days = _item_age_days(it, now)
@@ -2021,6 +2377,31 @@ def main(argv: list[str] | None = None) -> int:
             log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
                      receipt.external_id,
                      (f" (scheduled {send_scheduled_at})" if booked_at > now else ""))
+        elif getattr(receipt, "retryable", False):
+            # A RATE LIMIT IS NOT A VERDICT ON THE POST.
+            #
+            # `failed` is in outbox._DEAD_STATUSES — nothing ever picks an item
+            # up again — so treating a 429 as a failure DELETED the post. Three
+            # flagship posts died that way on 2026-07-30 ("http_error 429: Too
+            # many requests from this client"), each a perfectly good post that
+            # arrived while the shared Buffer token was out of quota. The
+            # publisher and the engagement poller authenticate as ONE token and
+            # share ONE 24h allowance, so a metrics sweep can spend the posting
+            # budget — this is self-inflicted and transient, and both halves of
+            # that sentence say "retry", not "discard".
+            #
+            # Back to `approved`, which the legality table already allows
+            # (failed -> approved was reachable, just never used), so the next
+            # scheduled sweep re-picks it with every gate re-evaluated: the tape
+            # gate will refuse it if the number has gone stale in the meantime,
+            # which is exactly the check that should decide a retry, not this one.
+            _outbox.transition(iid, "approved", actor="publisher", root=root,
+                               note=f"rate_limited, requeued for the next sweep: "
+                                    f"{receipt.error or 'buffer 429'}",
+                               receipt={"backend": receipt.backend,
+                                        "error": receipt.error, "at": receipt.at})
+            rate_limited += 1
+            log.warning("item %s RATE-LIMITED, requeued: %s", iid, receipt.error)
         else:
             _outbox.transition(iid, "failed", actor="publisher", root=root,
                                note=receipt.error or "publish failed",
@@ -2087,19 +2468,87 @@ def main(argv: list[str] | None = None) -> int:
             f"arming it would have dropped every one.",
             flush=True,
         )
+    # ── SILENT-NIGHT ALARM ───────────────────────────────────────────────────
+    # THE failure mode this system actually has. Every other annotation in this
+    # file names a PER-ITEM reason; the aggregate "the whole night produced
+    # nothing" was silent, so on 2026-07-29 zero posts went out and the operator
+    # found out by looking at the account instead of at the run. A machine that
+    # cannot tell you it failed is not autonomous, it is just unattended.
+    #
+    # Fires on the shape that matters: candidates existed and none of them
+    # posted. A genuinely empty queue is NOT an alarm (nothing was due), it is a
+    # supply problem the plan lane reports on its own.
+    _blocked = {
+        # Phrased as a WAIT, not a loss, because that is what it now is: the
+        # item went back to approved and the next sweep re-picks it. Reading
+        # "failed" here for what is really "Buffer was out of quota for a few
+        # minutes" is precisely the confusion that let three posts be discarded
+        # on 2026-07-30 without anyone noticing they were recoverable.
+        "waiting out a Buffer rate limit": rate_limited,
+        "held for a chart": deferred_no_media,
+        "no fresh quote to verify the price claim": tape_skipped,
+        "price claim contradicted the tape": tape_quarantined,
+        "named tickers with no chart": quarantined_bare_cashtag,
+        "named a ticker no price store knows": quarantined_unknown_cashtag,
+        "reads machine-written": quarantined_voice_laws,
+        "repeats a post already sent": quarantined_run_duplicate,
+        "same skeleton as a recent post": quarantined_frame,
+        "over the desk's daily cap": skipped_cap,
+        "too soon after the last post": skipped_cadence,
+        "no channel wired": skipped_channel,
+        "desk halted": skipped_halt,
+        "below the salience floor": skipped_floor,
+        "other quarantine": quarantined,
+    }
+    _considered = posted + would_post + sum(_blocked.values())
+    # Supply that never even reached the loop. A night also goes silent when
+    # every post sits unapproved: with auto-approve off and nobody awake, the
+    # gate counters all read zero and an in-loop-only trigger stays quiet about
+    # the exact outcome it exists to report. Counted separately so the message
+    # can say WHICH shape it is.
+    try:
+        _waiting = sum(1 for _s in statuses.values()
+                       if str(_s) in ("queued", "approved"))
+    except Exception:  # noqa: BLE001 — an alarm must never break the run
+        _waiting = 0
+    if live and posted == 0 and (_considered > 0 or _waiting > 0):
+        _top = sorted(_blocked.items(), key=lambda kv: -kv[1])[:3]
+        _why = ", ".join(f"{n} {label}" for label, n in _top if n)
+        if not _why:
+            _why = (f"{_waiting} post(s) still waiting for approval"
+                    if _waiting else "no reason recorded")
+        # ::error, not ::warning — a silent night is the outcome this whole
+        # program exists to prevent, and it must not read like routine noise in
+        # the Actions summary. Bare line-start print: a logger prefix makes
+        # GitHub drop the annotation entirely.
+        print(
+            f"::error title=marketing-zero-posted::NOTHING POSTED. "
+            f"{_considered} post(s) reached the dispatch loop and "
+            f"{_waiting} were still waiting; none went out. "
+            f"Top reasons: {_why}. Check the Marketing Floor for the full "
+            f"loss ledger.",
+            flush=True,
+        )
+        log.error("SILENT NIGHT: considered=%d waiting=%d posted=0 top_reasons=%s",
+                  _considered, _waiting, _top)
+
     log.info(
-        "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
+        "%s complete | posted=%d failed=%d rate_limited=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
+        "quarantined_bare_cashtag=%d quarantined_unknown_cashtag=%d "
+        "quarantined_voice_laws=%d quarantined_run_duplicate=%d "
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
         "substance_shadow=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
         "stuck_posting=%d auto_approved=%d",
-        mode, posted, failed, quarantined, would_post,
+        mode, posted, failed, rate_limited, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
+        quarantined_bare_cashtag, quarantined_unknown_cashtag,
+        quarantined_voice_laws, quarantined_run_duplicate,
         quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
         skipped_channel,
         skipped_halt, parked_dark,
@@ -2114,6 +2563,7 @@ def main(argv: list[str] | None = None) -> int:
             "cap": cap,
             "posted": posted,
             "failed": failed,
+            "rate_limited": rate_limited,
             "quarantined": quarantined,
             "would_post": would_post,
             "tape_quarantined": tape_quarantined,
@@ -2126,6 +2576,10 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_cadence": skipped_cadence,
             "cadence_shadow": shadow_cadence,
             "deferred_cross_account": deferred_xa,
+            "quarantined_bare_cashtag": quarantined_bare_cashtag,
+            "quarantined_unknown_cashtag": quarantined_unknown_cashtag,
+            "quarantined_voice_laws": quarantined_voice_laws,
+            "quarantined_run_duplicate": quarantined_run_duplicate,
             "quarantined_frame": quarantined_frame,
             "skipped_filler": skipped_filler,
             "quarantined_substance": quarantined_substance,

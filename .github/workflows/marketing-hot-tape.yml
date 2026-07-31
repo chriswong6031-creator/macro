@@ -215,7 +215,21 @@ jobs:
         # the 2026-07-26 silent-mute shape. The install is seconds, not the ~40s
         # pandas costs, and the module keeps its import LAZY so the thin CI lane
         # (pytest+pyyaml+jinja2, no anthropic) still collects.
-        run: pip install --quiet pyyaml requests pyarrow anthropic
+        #
+        # boto3 joins 2026-07-31, and its absence is why this lane has never put
+        # a picture on a post. The step below hands the runner a full set of R2
+        # secrets; media_publish.publish_chart_png needs boto3 to spend them, and
+        # without it takes the one branch that only log.warning()s:
+        #   "media_publish: boto3 not installed — cannot upload chart PNG"
+        # publish_card then returns media_url=None, hot_tape_radar reads that as
+        # `no-media-url`, sets media=None, and the post goes to the outbox with
+        # no media[] entry at all. Measured on 2026-07-30: 8,081 cards rendered
+        # and committed (392 MB), ZERO rows in media_urls.jsonl, and all 19
+        # hot-tape posts chartless — one of which reached the live account naming
+        # $COHR $GLW $JBL with no picture, the exact thing the operator's chart
+        # law forbids. The backfill lane cannot heal these: it attaches URLs to
+        # media[] entries, and these items have none.
+        run: pip install --quiet pyyaml requests pyarrow anthropic boto3
 
       - name: run the radar (session-long, one pass every PASS_INTERVAL_S)
         id: radar

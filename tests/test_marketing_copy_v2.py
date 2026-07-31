@@ -1125,12 +1125,43 @@ def test_a_two_digit_level_in_a_price_slot_must_be_licensed():
 
 
 @pytest.mark.parametrize("text,expect_tokens", [
-    ("Entry 34.4, first target 41.2, out below 31.8.", []),
+    # The three-level form ("Entry 34.4, first target 41.2, out below 31.8")
+    # used to live here as a PASSING case. It is licensed by the slot rule and
+    # still is — but it is now number soup on its own count, so it moved to the
+    # test below. These cases keep the slot rule pinned at a human number budget.
     ("In at 45. T1 41.2.", []),
     ("$ARES at 45 near 34.4", []),
 ])
 def test_price_slot_rule_passes_the_packet_levels(text, expect_tokens):
     assert cw.validate_copy_v2(text, _levels_ctx()) == expect_tokens
+
+
+def test_a_licensed_level_triple_is_still_number_soup():
+    """Every level is in the packet and it STILL does not ship.
+
+    Operator 2026-07-30 on exactly this shape: "190 here, 228 there, and then
+    125, shut up with all of these numbers, its literally so AI like". The
+    whitelist rule answers "is this number true"; the number budget answers "is
+    this a post a person would write". Both have to pass.
+    """
+    violations = cw.validate_copy_v2(
+        "Entry 34.4, first target 41.2, out below 31.8.", _levels_ctx())
+    assert any("number soup" in v for v in violations), violations
+    # ...and it is ONLY the budget complaining — the levels are licensed.
+    assert not [v for v in violations if "whitelist" in v.lower()], violations
+
+
+def test_a_receipt_may_carry_its_entry_exit_and_result():
+    """A receipt's numbers ARE its content, so it gets a wider budget.
+
+    The house Scorekeeper exemplar the operator kept reads "$QCOM: T1 hit
+    +9.6%, runner stopped at 177" — three numbers, and correct. The "shut up
+    with all of these numbers" ruling was aimed at speculative level stacks on
+    forward-looking posts, so the budget is per-kind.
+    """
+    text = "Entry 34.4. First target hit at 41.2, up 9.6%."
+    assert cw.number_soup_violations(text, kind="receipt") == []
+    assert cw.number_soup_violations(text, kind="signal"), "signal budget is tighter"
 
 
 @pytest.mark.parametrize("text", [
@@ -1340,7 +1371,21 @@ def test_no_rule_message_carries_a_dash_tell():
     samples += cw.validate_copy_v2("Four up, near highs.", _ctx(type="macro"))
     samples += cw.validate_copy_v2(
         "$X held 122.", _ctx(shape="one_liner"), headline="A headline")
-    assert len(samples) >= 11, "every rule must have contributed a message"
+    # The 2026-07-30 voice laws. This test enumerates rules BY HAND, so a new
+    # guard is invisible to it until someone adds a line: all seven below were
+    # unchecked when they landed, and repeated_sentence_violations really did
+    # ship an em dash.
+    samples += cw.machine_risk_violations("I'm wrong below 33.8. Historical, not a guarantee.")
+    samples += cw.motto_violations("37.1 is my trigger, 30.9 proves me wrong.")
+    samples += cw.process_list_violations("1. I write it down. 2. I note the fact.")
+    samples += cw.number_soup_violations("held 1 then 2 then 3 then 4 then 5")
+    samples += cw.no_reaction_violations("That's the whole observation.")
+    samples += cw.repeated_sentence_violations(
+        "I am not fighting this one here.", ["I am not fighting this one here."])
+    samples += cw.stock_closer_violations(
+        "$X ripped. Strength worth respecting, not chasing.", [])
+    samples += cw.queued_voice_violations("I'm wrong below 33.8.", "signal")
+    assert len(samples) >= 19, "every rule must have contributed a message"
     for msg in samples:
         for ch in _DASHES:
             assert ch not in msg, f"dash tell in a rule message: {msg!r}"
@@ -1997,3 +2042,349 @@ def test_every_marketing_lane_is_authorized_in_the_capability_manifest():
             continue
         missing = lanes - set(cap.get("allowed_lanes") or [])
         assert not missing, f"{cap_id} does not authorize {sorted(missing)}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stock closers (operator, 2026-07-30)
+# The house prompt PRESCRIBED two closers verbatim — as a copy law, in the VOICE
+# block, and as the up-mover exemplar. The model obeyed: a live 8-post sample
+# closed five of six passing posts with the identical sentence, which the
+# operator read and called bot-like. These pin the ban so a prompt edit cannot
+# reintroduce it silently.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestStockClosers:
+    def test_the_retired_up_mover_closer_is_banned(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        v = stock_closer_violations(
+            "$GPI holds 311 for 18 sessions. Strength worth respecting, not chasing here.")
+        assert v and "stock closer" in v[0]
+
+    def test_the_retired_down_mover_closer_is_banned(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        v = stock_closer_violations(
+            "$ISRG down 14%. Watching for a bottom setup, not catching it yet.")
+        assert v and "stock closer" in v[0]
+
+    def test_a_truncated_variant_is_still_caught(self):
+        """The model pads and trims these; matching must not be exact-only."""
+        from engine.marketing.copywriter import stock_closer_violations
+        assert stock_closer_violations("$VST up 9%. Strength worth respecting, not chasing.")
+
+    def test_two_posts_sharing_a_closer_collide(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        v = stock_closer_violations(
+            "$AAA held the line. Chart's below.",
+            ["$BBB broke down. Chart's below."])
+        assert v and "batch closer collision" in v[0]
+
+    def test_distinct_closers_pass(self):
+        from engine.marketing.copywriter import stock_closer_violations
+        assert stock_closer_violations(
+            "$LKFN sits 1.9% below its 64.5 high. I respect the strength, but I'm not chasing.",
+            ["$FDS held 245 for 23 sessions. I'm not paying up here."]) == []
+
+    def test_the_prompt_no_longer_prescribes_the_retired_closers(self):
+        """The ban is worthless while the prompt still hands the model the line."""
+        import inspect
+        from engine.marketing import copywriter
+        src = inspect.getsource(copywriter)
+        # The phrases may appear in the ban list and in explanatory comments, but
+        # never as an instruction to WRITE them.
+        for bad in ("Up movers: 'strength worth respecting",
+                    "Down movers: 'watching for a bottom setup"):
+            assert bad not in src, f"prompt still prescribes a retired closer: {bad!r}"
+
+    def test_the_copy_law_asks_for_a_stance_not_a_sentence(self):
+        import yaml, pathlib
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        laws = " ".join((cfg.get("copywriter") or {}).get("copy_laws") or [])
+        assert 'movers carry "watching for a bottom setup' not in laws
+        assert "banned closers" in laws
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Lecture register (operator, 2026-07-30)
+# "no one likes being lectured... we want to provide value without making it
+# seem like we are superior to others, or cocky/arrogant/ego vibes." Most desks
+# are women and a superior register reads worse from them and costs follows.
+# The tell is grammatical person: say what I DID, never what YOU get wrong.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestLectureRegister:
+    def test_second_person_accusation_is_flagged(self):
+        """The exact LLM post the operator would have rejected."""
+        from engine.marketing.copywriter import lecture_violations
+        assert lecture_violations(
+            "If you can't name what proves you wrong before the trade, you're not "
+            "managing risk. You're waiting for the market to explain it with your money.")
+
+    def test_superiority_comparisons_are_flagged(self):
+        from engine.marketing.copywriter import lecture_violations
+        for line in (
+            "Win, lose, or nothing happened, the result gets posted. Anyone can show winners.",
+            "Early looks identical to wrong for longer than anyone admits.",
+            "The half of trading nobody talks about. Direction is the fun half.",
+            "Most people never name their stop.",
+        ):
+            assert lecture_violations(line), f"not flagged: {line!r}"
+
+    def test_teacher_voice_openers_are_flagged(self):
+        from engine.marketing.copywriter import lecture_violations
+        assert lecture_violations("Plain English: what's a 'setup'?")
+
+    def test_first_person_practice_passes(self):
+        """The register we WANT must not be suppressed."""
+        from engine.marketing.copywriter import lecture_violations
+        for line in (
+            "Turns out doing nothing is still a position. I didn't take a trade, so "
+            "there's no win or loss to dress up.",
+            "I had no clean market fact to post today, so I didn't force one.",
+            "I'm not sure yet, and I'm not forcing a trade without a price level.",
+            "$LKFN sits 1.9% below its high. I respect the strength, but I'm not chasing.",
+        ):
+            assert lecture_violations(line) == [], f"false positive: {line!r}"
+
+    def test_a_genuine_question_to_the_reader_still_passes(self):
+        """Engagement bait is a different problem; this check must not eat it."""
+        from engine.marketing.copywriter import lecture_violations
+        assert lecture_violations(
+            "$LII crashed -19.6% today. Watching, not chasing. What's your read?") == []
+        assert lecture_violations("You can see the level on the chart below.") == []
+
+    def test_the_prompt_forbids_lecturing(self):
+        import inspect
+        from engine.marketing import copywriter
+        src = inspect.getsource(copywriter)
+        assert "NEVER LECTURE" in src
+        # the old education exemplar WAS the lecture register in one line
+        assert "Almost nobody has a stop" not in src
+
+    def test_the_copy_law_forbids_lecturing(self):
+        import yaml, pathlib
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        laws = " ".join((cfg.get("copywriter") or {}).get("copy_laws") or [])
+        assert "NEVER lecture" in laws
+        assert "banned superiority constructions" in laws
+
+
+class TestTheWriterIsPaidOnlyForCopyThatCanShip:
+    """915 posts written, 65 able to emit, every night.
+
+    Operator, 2026-07-31: "why in the hell would you need 915 posts planned?"
+
+    The planner books a SEVEN-DAY forward ladder and the writer was handed every
+    slot on it. On the 2026-07-31 nightly that was 915 posts across six enabled
+    desks, while `_sel_report["after_budget"]` — the slots that can actually
+    emit — was 65.
+
+    The other 850 were not a buffer. Nothing reads a previous plan: content_plan
+    builds from plan_account every night, so today's D2 never becomes tomorrow's
+    D1. Six days of model-written prose were overwritten before anything could
+    read them, nightly.
+    """
+
+    def test_the_emit_day_is_written(self):
+        from engine.marketing.content_studio import _is_writable_day
+
+        assert _is_writable_day("D1-S01", {}) is True
+
+    def test_forward_ladder_days_are_not(self):
+        from engine.marketing.content_studio import _is_writable_day
+
+        for slot in ("D2-S01", "D3-S14", "D7-S28"):
+            assert _is_writable_day(slot, {}) is False, slot
+
+    def test_publish_time_reach_slots_are_still_written(self):
+        """The part a naive slot.startswith("D1-") filter gets WRONG.
+
+        THEME/MOVER items ship through the publish-time lane, not the D1 emit —
+        the outbox provenance census has movers in it. Excluding them to save
+        tokens would silence live reach content.
+        """
+        from engine.marketing.content_studio import _is_writable_day
+
+        for slot in ("THEME-01", "MOVER-02", "HOT-1430Z", "", None):
+            assert _is_writable_day(slot, {}) is True, slot
+
+    def test_the_old_behaviour_is_one_config_line_away(self):
+        from engine.marketing.content_studio import _is_writable_day
+
+        cfg = {"copywriter": {"llm": {"write_forward_days": True}}}
+        assert _is_writable_day("D5-S01", cfg) is True
+
+    def test_writer_results_are_zipped_to_the_WRITTEN_items_not_the_queue(self):
+        """The alignment bug this change would otherwise introduce.
+
+        `posts` comes back index-aligned to `contexts`. Once contexts skips
+        forward-day items, `zip(queue, posts)` pairs desk D1 copy onto whatever
+        item happens to sit at that index — silently attaching the wrong text to
+        the wrong post. Both zips must read the written-items list.
+        """
+        import inspect
+
+        from engine.marketing import content_studio
+
+        src = inspect.getsource(content_studio.content_plan)
+        assert "zip(_ctx_items, posts)" in src
+        assert "zip(queue, posts)" not in src, (
+            "a zip still pairs the writer's output against the FULL queue"
+        )
+        assert src.count("_ctx_items.append(item_dict)") == 1
+
+
+class TestTheReceiptsDeskCanActuallyProduce:
+    """It drew budget nightly and emitted nothing, because of one constant.
+
+    Measured on the live board 2026-07-31 (site/prophet/index.json, 63 plans):
+    every plan that had actually RESOLVED — a profit level DONE, or invalidated —
+    was 21 to 22 days old. The receipt window was 14, so it admitted zero of
+    them. The supply existed; the gate was cutting it off.
+
+    Structural, not a bad week: Prophet's swing horizon is 2-4 weeks, so a window
+    shorter than the horizon it grades can only ever be empty.
+    """
+
+    @staticmethod
+    def _plan(ticker, *, days_ago, resolved, today="2026-07-31"):
+        from datetime import date, timedelta
+
+        y, m, d = (int(x) for x in today.split("-"))
+        sig = (date(y, m, d) - timedelta(days=days_ago)).isoformat()
+        plan = {"asset": ticker, "entry": 100.0, "invalidation": 85.0,
+                "targets": [115.0], "_signal_date": sig, "phase": "triggered_pre_t1",
+                "profit_plan": [{"status": "PENDING", "price": 115.0}]}
+        if resolved:
+            plan["profit_plan"] = [{"status": "DONE", "price": 115.0}]
+        return plan
+
+    def test_a_three_week_old_resolution_is_now_a_receipt(self):
+        from engine.marketing.receipt_source import graded_receipts
+
+        plans = [self._plan("MS", days_ago=21, resolved=True)]
+        assert graded_receipts(plans, today="2026-07-31"), (
+            "a 21-day-old resolved plan still yields no receipt — the window is "
+            "back under Prophet's own 2-4 week horizon and the desk is starved"
+        )
+
+    def test_the_window_is_config_driven_and_the_reader_exists(self):
+        """A config key nothing reads is a lie in a config file."""
+        import yaml
+
+        from engine.marketing.receipt_source import receipt_max_age_days
+
+        cfg = yaml.safe_load(open("config/marketing.yml", encoding="utf-8"))
+        assert receipt_max_age_days(cfg) >= 30
+        assert receipt_max_age_days({"copywriter": {"receipt_max_age_days": 45}}) == 45
+        assert receipt_max_age_days({}) >= 30           # falls back, never to 0
+        assert receipt_max_age_days({"copywriter": {"receipt_max_age_days": 0}}) >= 30
+
+    def test_resolution_is_asked_WITHOUT_the_freshness_window(self):
+        """Zero-because-quiet and zero-because-starved must be distinguishable."""
+        from engine.marketing.receipt_source import _is_resolved
+
+        assert _is_resolved(self._plan("A", days_ago=99, resolved=True)) is True
+        assert _is_resolved({"asset": "B", "phase": "invalidated"}) is True
+        assert _is_resolved(self._plan("C", days_ago=1, resolved=False)) is False
+        assert _is_resolved({}) is False
+
+    def test_a_starved_desk_announces_itself(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_starved_receipts
+
+        plans = [self._plan("MS", days_ago=21, resolved=True)]
+        _alarm_on_starved_receipts(plans, 0, 14, "2026-07-31")
+        line = capsys.readouterr().out
+        assert line.startswith("::warning title=marketing-receipts-starved::")
+        assert "RESOLVED" in line and "receipt_max_age_days" in line
+
+    def test_a_genuinely_quiet_week_stays_silent(self, capsys):
+        """Nothing resolved is fine and self-correcting. Do not cry wolf."""
+        from engine.marketing.content_studio import _alarm_on_starved_receipts
+
+        _alarm_on_starved_receipts(
+            [self._plan("A", days_ago=2, resolved=False)], 0, 30, "2026-07-31")
+        assert capsys.readouterr().out == ""
+
+    def test_a_producing_desk_stays_silent(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_starved_receipts
+
+        _alarm_on_starved_receipts(
+            [self._plan("A", days_ago=21, resolved=True)], 2, 30, "2026-07-31")
+        assert capsys.readouterr().out == ""
+
+
+class TestTheEngagementLoopReachesPostsNotJustReplies:
+    """Everything measured about which posts work stopped before the posts.
+
+    The learning lane harvests labels, scores cells and writes a scorecard
+    nightly; `learned_rules` turns a cell into an applicable rule with a
+    promotion gate. `reply_producer` consults that seam for `reply_family`.
+    THE POST PATH CONSULTED IT FOR NOTHING — content_studio referenced neither
+    the scorecard nor learned_rules, so the feedback reached replies and stopped.
+    `format_preference` sat in learned_rules.KINDS the whole time with no reader.
+
+    Built dark BY CONSTRUCTION rather than by judgement: `active_for` returns []
+    unless `learning.learned_rules.enabled`, and the promotion gate under it is
+    min_evidence_n=30 plus a cleared labels n-floor. On today's scorecard that is
+    0 of 18 cells — so this is currently a no-op, which is the correct state for
+    it to be in, not a reason to leave the joint unbuilt.
+    """
+
+    def test_it_is_silent_while_consumption_is_disarmed(self):
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        assert _learned_shape_preference(account="flagship", cfg={}) == []
+        assert _learned_shape_preference(
+            account="flagship",
+            cfg={"learning": {"learned_rules": {"enabled": False}}}) == []
+
+    def test_an_armed_promoted_rule_narrows_the_menu(self, monkeypatch):
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        monkeypatch.setattr(LR, "active_for", lambda kind, **kw: (
+            [{"kind": "format_preference", "value": ["stack", "two_part"],
+              "path": "p"}] if kind == "format_preference" else []))
+        assert _learned_shape_preference(account="flagship", cfg={}) == [
+            "stack", "two_part"]
+
+    def test_a_rule_naming_an_unknown_shape_is_dropped_not_honoured(self, monkeypatch):
+        """Honouring it would stamp a shape the writer has no template for."""
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        monkeypatch.setattr(LR, "active_for", lambda kind, **kw: [
+            {"kind": "format_preference", "value": ["nonsense"], "path": "p"}])
+        assert _learned_shape_preference(account="flagship", cfg={}) == []
+
+    def test_it_can_only_NARROW_and_never_empties_the_menu(self, monkeypatch):
+        """A learned preference filters a deterministic plan. It must not become
+        a model choosing the day's content, and it must not leave the mixer with
+        nothing to assign."""
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import assign_shapes
+
+        monkeypatch.setattr(LR, "active_for", lambda kind, **kw: [
+            {"kind": "format_preference", "value": ["stack"], "path": "p"}])
+        queue = [{"slot": f"D1-S{i:02d}", "type": "signal", "ticker": "AAA"}
+                 for i in range(5)]
+        mix = assign_shapes(queue, account="flagship", as_of="2026-07-31", cfg={})
+        assert all(i.get("shape") for i in queue), "an item was left unstamped"
+        assert set(mix) <= {"stack", "caption"}, mix
+
+    def test_a_broken_learning_lane_cannot_stop_a_plan_being_built(self, monkeypatch):
+        from engine.marketing import learned_rules as LR
+        from engine.marketing.content_studio import _learned_shape_preference
+
+        def _boom(*a, **k):
+            raise RuntimeError("scorecard unreadable")
+
+        monkeypatch.setattr(LR, "active_for", _boom)
+        assert _learned_shape_preference(account="flagship", cfg={}) == []
+
+    def test_the_post_path_actually_calls_the_seam(self):
+        """The whole defect was a seam with no caller."""
+        import inspect
+
+        from engine.marketing import content_studio
+
+        assert "_learned_shape_preference(" in inspect.getsource(
+            content_studio.assign_shapes)

@@ -39,6 +39,7 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
+from datetime import date
 from pathlib import Path
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
@@ -108,15 +109,50 @@ def r2_key_for(as_of: str, chart_id: str, png_bytes: bytes) -> str:
     return f"{media_publish.R2_MARKETING_PREFIX}/{safe_as_of}/{safe_id}-{digest}.png"
 
 
-def _iter_missing(items: list[dict], as_of: str | None) -> list[tuple[dict, dict]]:
+def _older_than(as_of: object, max_age_days: int, today: date | None = None) -> bool:
+    """Is this item's as_of further back than the age bound? Unparseable → False.
+
+    Fail-OPEN on a bad date (treat it as in range): dropping an item because its
+    date did not parse would silently shrink the recovery set, which is the one
+    thing this script exists not to do.
+    """
+    try:
+        parts = str(as_of or "")[:10].split("-")
+        d = date(int(parts[0]), int(parts[1]), int(parts[2]))
+    except Exception:  # noqa: BLE001
+        return False
+    return ((today or date.today()) - d).days > max_age_days
+
+
+def _iter_missing(items: list[dict], as_of: str | None,
+                  max_age_days: int | None = None,
+                  today: date | None = None) -> list[tuple[dict, dict]]:
     """[(item, media_entry)] for every media entry with no public media_url.
 
     An entry that already carries an http(s) media_url is left alone — this
     script only ever fills a hole, it never re-uploads a working image.
+
+    `max_age_days` bounds the sweep, and exists because this lane got a SCHEDULE
+    (2026-07-30). A hole that could not be filled is retried on every run
+    forever: the sidecar records successes, so a chart whose SVG is missing or
+    unrasterizable is permanently in `missing` and permanently re-attempted. That
+    is harmless once and unbounded growth on a cron. A chart older than the bound
+    is not recoverable in any useful sense anyway — its post's slot is long gone.
+    None = no bound.
+
+    AN EXPLICIT `as_of` OVERRIDES THE BOUND. Asking for a specific date IS the
+    statement that the date is wanted, so combining the two must not silently
+    return nothing — an operator rescuing a week-old day would run the lane,
+    watch it report "0 to publish", and reasonably conclude the outbox was
+    already clean. The bound exists to stop an UNATTENDED sweep chasing dead
+    history, and a named date is not unattended.
     """
     out: list[tuple[dict, dict]] = []
+    bound = None if as_of else max_age_days
     for it in items:
         if as_of and str(it.get("as_of") or "") != as_of:
+            continue
+        if bound is not None and _older_than(it.get("as_of"), bound, today):
             continue
         for m in it.get("media") or []:
             if not isinstance(m, dict):
@@ -136,6 +172,11 @@ def main() -> int:
                     help="Report what is missing; no rasterize, no upload, no write.")
     ap.add_argument("--limit", type=int, default=0,
                     help="Stop after N uploads (0 = no limit).")
+    ap.add_argument("--max-age-days", type=int, default=None,
+                    help="Ignore items older than N days (default: no bound). "
+                         "The scheduled lane passes this so an unfillable hole "
+                         "is not re-attempted forever; a manual --as-of rescue "
+                         "of an older date is unaffected.")
     args = ap.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s",
@@ -146,7 +187,7 @@ def main() -> int:
     from engine.marketing.ledgers import append_jsonl, read_jsonl  # noqa: PLC0415
 
     items = read_jsonl(root / "data" / "marketing" / "outbox" / "items.jsonl")
-    missing = _iter_missing(items, args.as_of)
+    missing = _iter_missing(items, args.as_of, args.max_age_days)
     already = load_sidecar(root)
 
     # Dedup by R2 key: several items legitimately share one chart_id (the same

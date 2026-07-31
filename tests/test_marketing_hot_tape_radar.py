@@ -5,8 +5,11 @@ Pins the integration half of research/MARKETING_HOT_TAPE_MASTERPLAN.md §0:
   0.5  the existing safety stack is untouched AND exercised (kill switch off by
        default, outbox transition legality, enqueue dedupe on a second pass)
   0.6  EVERY TICKER POST CARRIES A CHART — a single-name event whose card cannot
-       be drawn and hosted is DROPPED, never enqueued bare; sector/contrarian
-       breadth posts ship text-only in P1
+       be drawn and hosted is DROPPED, never enqueued bare. Since 2026-07-31
+       that covers GROUP posts too: sector/contrarian breadth used to ship
+       text-only, which the publisher's chart law then quarantined for naming
+       cashtags, so the whole family died in the queue. They now carry a
+       watchlist card and are dropped on the same terms if it cannot be hosted.
   0.7  every new suite is named in a run line in the lane it belongs to, plus
        ci.yml trigger paths for every new file — a suite that ships dark is the
        unrun-suite rot class, so this suite PINS ITS OWN WIRING (below)
@@ -189,6 +192,30 @@ def _fired_rows(root: Path) -> list[dict]:
     return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x]
 
 
+def _stub_group_card(monkeypatch,
+                     *, media_url: str = "https://pub-test.r2.dev/c/grp.png") -> list[dict]:
+    """Stand in for the group card's raster + upload. Returns the CALL LOG."""
+    calls: list[dict] = []
+
+    def _fake(packet, *, root, marketing_cfg, as_of, now, **kw):
+        calls.append({"key": packet.key, "trigger": packet.trigger,
+                      "rows": RADAR.group_rows(packet)})
+        chart_id = (f"hottape-{packet.trigger}-{RADAR._slug(packet.sector or 'market')}"
+                    f"-{now.strftime('%H%M')}Z")
+        return {
+            "media": {"kind": "chart_svg",
+                      "path": f"data/marketing/outbox/media/{as_of}/{chart_id}.svg",
+                      "chart_id": chart_id,
+                      "tickers": [r["ticker"] for r in RADAR.group_rows(packet)],
+                      "media_url": media_url},
+            "published": {"chart_id": chart_id, "media_url": media_url},
+            "reason": "ok",
+        }
+
+    monkeypatch.setattr(RADAR, "resolve_group_card", _fake)
+    return calls
+
+
 def _stub_chart(monkeypatch, *, media_url: str = "https://pub-test.r2.dev/c/hot.png") -> list[dict]:
     """Stand in for the Chrome raster + R2 upload with the shape they return.
 
@@ -330,8 +357,23 @@ class TestChartLaw:
         assert OB.read_items(root) == []
         assert "no-media-url" in capsys.readouterr().out
 
-    def test_sector_event_ships_text_only(self, tmp_path, capsys):
-        """A breadth post is about a GROUP — lawful without a card in P1."""
+    def test_sector_event_carries_a_watchlist_card(self, tmp_path, capsys, monkeypatch):
+        """A breadth post owes a picture too — it just is not a price chart.
+
+        THE RULE THIS REPLACES, and why. A group post used to ship text-only,
+        on the reasoning that a breadth read is not about one name and has no
+        chart to draw. Correct about the chart, wrong about the law: the copy
+        NAMES its movers ("Best: $SNDK +21.1%, $WDC +15.2%"), and the
+        publisher's chart law refuses any post that names tickers without a
+        picture, whatever kind it claims to be (operator 2026-07-30). Two rules
+        that were each right in isolation, and between them the entire group
+        family was unpublishable — 19 queued on 2026-07-30, all 19 quarantined,
+        none ever seen.
+
+        The picture is render_watchlist_card, the third member of the same card
+        family, whose rows come straight out of the packet.
+        """
+        calls = _stub_group_card(monkeypatch)
         root = _sector_root(tmp_path)
 
         assert RADAR.run(root, now=NOW, fetcher=_no_fetch) == 0
@@ -339,13 +381,39 @@ class TestChartLaw:
         items = OB.read_items(root)
         assert len(items) == 1, items
         assert items[0]["kind"] == "breaking"
-        assert items[0]["media"] == []
         assert items[0]["source"]["trigger"] in ("sector_rout", "sector_rip")
         assert items[0]["source"]["ticker"] is None
         # One story, one post: the industry and its parent sector both qualify
         # here and the detector emits only the more extreme of the pair.
         assert "Technology" in items[0]["text"]
         assert "hot-tape DROP" not in capsys.readouterr().out
+
+        assert len(calls) == 1, "the group card was not drawn"
+        media = items[0]["media"]
+        assert len(media) == 1, media
+        assert media[0]["kind"] == "chart_svg"
+        assert media[0]["media_url"].startswith("https://")
+        # Keyed on the GROUP, not a ticker — there is no one name to key on.
+        assert media[0]["chart_id"].startswith("hottape-sector_")
+        assert media[0]["tickers"], "the card must record the names it shows"
+
+    def test_a_group_post_with_no_card_is_dropped_like_any_other(self, tmp_path,
+                                                                 monkeypatch, capsys):
+        """The chart law is not softer for a group.
+
+        Without this, widening needs_chart would have been a downgrade: the
+        family would ask for a picture, fail to get one, and ship bare anyway —
+        which is exactly the state the publisher quarantines.
+        """
+        def _hostless(packet, *, root, marketing_cfg, as_of, now, **kw):
+            return {"media": None, "published": {}, "reason": "no-media-url"}
+        monkeypatch.setattr(RADAR, "resolve_group_card", _hostless)
+        root = _sector_root(tmp_path)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+
+        assert OB.read_items(root) == []
+        assert "no-media-url" in capsys.readouterr().out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -370,7 +438,8 @@ class TestDedupe:
         assert "hot-tape BOOKED" not in out
         assert len(HT.load_ring(root)) == 2       # the ring still advances
 
-    def test_sector_event_fires_once_per_direction_per_day(self, tmp_path, capsys):
+    def test_sector_event_fires_once_per_direction_per_day(self, tmp_path, capsys, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         # Regression pin for the granularity flip-flop: the fired-key filter in
         # _detect_group_moves must run AFTER the industry/parent overlap
         # suppression, or a fired group's rival (the same names at the other
@@ -497,13 +566,14 @@ def _emit_three(root: Path, packets: list) -> list[str]:
 
 
 class TestFlagshipBudget:
-    def test_only_the_top_event_mirrors_to_flagship(self, tmp_path):
+    def test_only_the_top_event_mirrors_to_flagship(self, tmp_path, monkeypatch):
         """Three routs clear the floor in one sweep; exactly one may mirror.
 
         Group routs carry base severity 80-90, so a floor alone routes EVERY
         routine rout to the flagship and leaves the wire desk dark — measured on
         the 2026-07-28 tape, three industry routs in one sweep.
         """
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -519,8 +589,9 @@ class TestFlagshipBudget:
         accounts = [by_id[i]["account"] for i in booked]
         assert accounts == ["flagship", "mastermind_news", "mastermind_news"], accounts
 
-    def test_a_deduped_flagship_event_does_not_burn_the_budget(self, tmp_path):
+    def test_a_deduped_flagship_event_does_not_burn_the_budget(self, tmp_path, monkeypatch):
         """The budget is spent on a POST, not on an attempt."""
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -544,7 +615,8 @@ class TestFlagshipBudget:
                  (root / "data/marketing/hot_tape_fired.jsonl").read_text().splitlines() if x]
         assert [f["item_id"] for f in fired].count(None) == 1
 
-    def test_run_cap_stops_at_three(self, tmp_path):
+    def test_run_cap_stops_at_three(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         extra = _sector_packet("Oil & Gas Midstream", -2.90, 86.0,
@@ -553,7 +625,7 @@ class TestFlagshipBudget:
         booked = _emit_three(root, [_P_TOP, _P_MID, _P_LOW, extra])
         assert len(booked) == 3
 
-    def test_a_near_identical_rout_is_refused_by_the_existing_guard(self, tmp_path):
+    def test_a_near_identical_rout_is_refused_by_the_existing_guard(self, tmp_path, monkeypatch):
         """Gate 0.5, unchanged and load-bearing for this lane.
 
         Two desks posting the same sentence about different groups is the
@@ -561,6 +633,7 @@ class TestFlagshipBudget:
         radar does not get an exemption: it logs the skip, records the fire with
         NO item_id, and the day's emit budget is untouched.
         """
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         twin = _sector_packet("Semiconductors", -6.90, 88.0,
@@ -580,7 +653,8 @@ class TestDemoBlastRadius:
     """M5 — demo relaxes EVERY threshold at once, and with the publisher armed
     those are real posts. One item, wire desk, never the flagship."""
 
-    def test_two_flagship_events_in_demo_book_one_wire_post(self, tmp_path):
+    def test_two_flagship_events_in_demo_book_one_wire_post(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -598,7 +672,8 @@ class TestDemoBlastRadius:
         assert len(items) == 1
         assert items[0]["account"] == "mastermind_news"
 
-    def test_the_same_events_outside_demo_keep_the_normal_budget(self, tmp_path):
+    def test_the_same_events_outside_demo_keep_the_normal_budget(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         booked = _emit_three(root, [_P_TOP, _P_MID])
@@ -632,6 +707,85 @@ class TestTerminalEnqueueVerdicts:
         assert "hot-tape DETECT" not in out         # the cooldown holds …
         assert len(calls) == 1                      # … so nothing is re-rendered
         assert len(_fired_rows(root)) == 1
+
+    def test_a_duplicate_costs_no_render_at_all(self, tmp_path, monkeypatch, capsys):
+        """The card is drawn AFTER the copy is known to be publishable.
+
+        The fired ledger stops a re-DETECT, but it cannot help the first time a
+        packet is offered against copy the outbox already holds. resolve_chart
+        is a Chrome raster plus an R2 upload and it used to run BEFORE enqueue,
+        so that first offer paid full price for an image the dedupe guard was
+        always going to refuse — charged to a nightly render budget that is law.
+
+        Nothing enqueue rejects on depends on the picture, so the verdict is
+        available before the render. Here the fired ledger is deliberately wiped
+        so the packet IS re-detected: the only thing standing between it and a
+        second raster is the preflight.
+        """
+        root = _mover_root(tmp_path)
+        calls = _stub_chart(monkeypatch)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        assert len(OB.read_items(root)) == 1
+        assert len(calls) == 1, "the first, legitimate render"
+        capsys.readouterr()
+
+        # Wipe the cooldown memory: force the radar to offer the same event again.
+        (root / HT.FIRED_REL).unlink()
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        out = capsys.readouterr().out
+        assert "hot-tape DETECT" in out, "the packet must actually be re-offered"
+        assert len(calls) == 1, (
+            "the duplicate was re-rendered — a Chrome raster and an R2 upload "
+            "spent on a post the outbox refuses on text alone"
+        )
+        assert "preflight, no render" in out
+        assert len(OB.read_items(root)) == 1, "and nothing extra was queued"
+
+    def test_the_preflight_answers_exactly_what_enqueue_would(self, tmp_path):
+        """A preflight that disagrees with the gate is worse than none.
+
+        It would either waste the render it promised to save, or drop a post
+        enqueue would have taken. Both callers therefore run the SAME
+        `_rejection_reason` over the SAME `_enqueue_ctx`; this pins that they
+        agree on every code, not just on the happy path.
+        """
+        import inspect
+
+        src = inspect.getsource(OB)
+        assert src.count("def _rejection_reason") == 1
+        # Both paths must go through the one definition.
+        assert "_rejection_reason(" in inspect.getsource(OB.preflight_enqueue)
+        assert "_rejection_reason(" in inspect.getsource(OB.enqueue)
+        assert "_enqueue_ctx(" in inspect.getsource(OB.preflight_enqueue)
+        assert "_enqueue_ctx(" in inspect.getsource(OB.enqueue)
+
+        # And it agrees in fact, not only in structure.
+        item = OB.make_item(account="mastermind_x", kind="breaking",
+                            text="A one-off line about $MU and its tape.",
+                            as_of="2026-07-30", provenance="hot_tape")
+        assert OB.preflight_enqueue(
+            account="mastermind_x", kind="breaking", text=item["text"],
+            as_of="2026-07-30", root=tmp_path) == "ok"
+        assert OB.enqueue(item, tmp_path) == "queued"
+        # Now the same copy is a duplicate to BOTH.
+        assert OB.preflight_enqueue(
+            account="mastermind_x", kind="breaking", text=item["text"],
+            as_of="2026-07-30", root=tmp_path) == "duplicate"
+        assert OB.enqueue(item, tmp_path) == "duplicate"
+
+    def test_the_preflight_fails_OPEN_and_can_never_cause_an_outage(self):
+        """It may only skip work. It may never be the reason a post is lost."""
+        import inspect
+
+        src = inspect.getsource(OB.preflight_enqueue)
+        tail = src.split("except Exception")[-1]
+        assert 'return "ok"' in tail, (
+            "a preflight that cannot read the corpus must assume the post is "
+            "fine — at worst that costs one wasted render"
+        )
 
     def test_a_cap_rejection_is_recorded_too(self, tmp_path, monkeypatch):
         root = _mover_root(tmp_path)
@@ -1778,9 +1932,24 @@ class TestCIWiring:
         # anthropic joined for the P2 wire desk (§10 E1): engine/llm_auth builds
         # every provider on anthropic.Anthropic, DeepSeek included, so an armed
         # lane without it is mute by construction. pandas is still barred.
+        #
+        # boto3 joined 2026-07-31 and it is NOT optional decoration: the step
+        # below is handed four R2 secrets, and without the client
+        # media_publish.publish_chart_png returns None on every card, so
+        # resolve_chart reports `no-media-url` and book_packet DROPS the post
+        # rather than ship it bare. That is a whole day of single-name posts
+        # deleted by a missing package, at full green — 2026-07-30 rendered
+        # 8,081 cards and hosted none of them.
         installs = [l for l in text.splitlines() if l.strip().startswith("run: pip install")]
         assert installs == [
-            "        run: pip install --quiet pyyaml requests pyarrow anthropic"], installs
+            "        run: pip install --quiet pyyaml requests pyarrow anthropic boto3"], installs
+        # The two halves of that line stated as rules, so a future edit reads
+        # WHY the string is what it is rather than just re-pinning it.
+        assert "pandas" not in installs[0], "pandas is barred from the intraday path"
+        assert "boto3" in installs[0], (
+            "without boto3 this lane holds R2 credentials it cannot spend and "
+            "every ticker post it detects is dropped for a missing picture"
+        )
 
     def test_the_radar_step_carries_the_llm_arming_and_credential_block(self):
         """An armed lane with no visible credential is MUTE, not off (§10 E1).
@@ -2531,3 +2700,138 @@ class TestTheLogReportsTheCeilingItApplied:
         assert "effective_max_quote_age_min(live, cfg)" not in body, (
             "a raw-config ceiling resolution is back — in demo it prints a "
             "threshold the gate never applied")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The render litter.
+#
+# This lane renders a card for EVERY candidate it evaluates, BEFORE it knows
+# whether the post will ship, on every intraday sweep. In one day that wrote
+# 8,068 hottape-*.svg into data/marketing/outbox/media/<date>/ -- a directory
+# that is COMMITTED, because the nightly chart-NNN.svg snapshots there feed the
+# admin console preview. Result: 420 MB in the media tree, ~8k new TRACKED files
+# per day, and a git that had begun printing "too many unreachable loose
+# objects" on every command in the repo.
+#
+# Two halves to the fix. .gitignore now excludes hottape-*.svg specifically
+# (chart-NNN.svg stays committed, deliberately). This is the other half: without
+# a sweep the files still pile up on the runner's disk forever.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestHotTapeRenderSweep:
+    def _tree(self, tmp_path, days):
+        base = tmp_path / "data" / "marketing" / "outbox" / "media"
+        for day, n in days.items():
+            d = base / day
+            d.mkdir(parents=True, exist_ok=True)
+            for i in range(n):
+                (d / f"hottape-mover_pop-aaa{i}-1400Z.svg").write_text("<svg/>")
+            # A nightly snapshot in the same directory, which must SURVIVE.
+            (d / "chart-001.svg").write_text("<svg/>")
+        return base
+
+    def _sweep(self, root, now):
+        from scripts.hot_tape_radar import sweep_hot_tape_renders
+        return sweep_hot_tape_renders(root, now=now)
+
+    def test_stale_render_litter_is_removed(self, tmp_path):
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-20": 40, "2026-07-21": 5})
+        n = self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc))
+        assert n == 45, n
+        assert not list(base.rglob("hottape-*"))
+
+    def test_the_committed_nightly_snapshots_are_never_touched(self, tmp_path):
+        """chart-NNN.svg feeds the admin preview and is committed ON PURPOSE."""
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-20": 10, "2026-07-21": 10})
+        self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc))
+        survivors = sorted(p.name for p in base.rglob("chart-*.svg"))
+        assert survivors == ["chart-001.svg", "chart-001.svg"], survivors
+
+    def test_recent_days_are_retained(self, tmp_path):
+        """Today and yesterday stay readable for an operator in the console."""
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-29": 7, "2026-07-30": 9})
+        n = self._sweep(tmp_path, datetime(2026, 7, 30, 20, 0, tzinfo=timezone.utc))
+        assert n == 0, f"swept {n} files inside the retention window"
+        assert len(list(base.rglob("hottape-*"))) == 16
+
+    def test_a_non_date_directory_is_left_alone(self, tmp_path):
+        """An unparseable name must not be treated as infinitely old."""
+        from datetime import datetime, timezone
+        base = tmp_path / "data" / "marketing" / "outbox" / "media" / "scratch"
+        base.mkdir(parents=True)
+        (base / "hottape-x-y-0000Z.svg").write_text("<svg/>")
+        assert self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc)) == 0
+        assert (base / "hottape-x-y-0000Z.svg").exists()
+
+    def test_a_missing_tree_is_not_an_error(self, tmp_path):
+        from datetime import datetime, timezone
+        assert self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc)) == 0
+
+    def test_the_radar_actually_calls_the_sweep(self):
+        """A helper nothing invokes is the leak with extra steps."""
+        import inspect
+        import scripts.hot_tape_radar as htr
+        assert "sweep_hot_tape_renders(root, now=ts)" in inspect.getsource(htr.run)
+
+    def test_the_gitignore_is_hottape_scoped(self):
+        """It must NOT swallow the nightly snapshots the console renders from."""
+        from pathlib import Path
+        rules = Path(".gitignore").read_text(encoding="utf-8")
+        assert "data/marketing/outbox/media/**/hottape-*.svg" in rules
+        assert "data/marketing/outbox/media/**/*.svg" not in rules, (
+            "a blanket .svg ignore would silently stop committing the chart "
+            "snapshots the admin console previews from"
+        )
+
+
+class TestAnUnhostedCardIsNotSilent:
+    """8,081 cards, zero annotations.
+
+    A drop for a missing media URL prints one stdout line among hundreds and
+    the pass exits 0, so the lane reads healthy. That is exactly how
+    2026-07-30 spent a session rendering cards it could not host — the R2
+    client was not installed, every upload returned None, and nothing in the
+    Actions summary said so.
+
+    The retry is deliberate (an upload that blipped should come back next
+    pass), which is precisely why the loss has to be visible: without the
+    annotation, a blip and a day-long outage look identical from outside.
+    """
+
+    def test_a_dropped_card_raises_a_github_annotation(self, tmp_path, monkeypatch,
+                                                       capsys):
+        def _hostless(packet, *, root, marketing_cfg, as_of, now, fetcher=None, **kw):
+            return {"media": None, "published": {}, "reason": "no-media-url"}
+        monkeypatch.setattr(RADAR, "resolve_chart", _hostless)
+        monkeypatch.setattr(RADAR, "resolve_group_card", _hostless)
+
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+
+        out = capsys.readouterr().out
+        line = next((l for l in out.splitlines()
+                     if "hot-tape-unhosted-card" in l), None)
+        assert line is not None, out
+        # The annotation law: bare, at the START of the line, or GitHub drops it.
+        assert line.startswith("::warning title=hot-tape-unhosted-card::"), line
+        # It must name the cause an operator can act on.
+        assert "boto3" in line and "R2_" in line, line
+
+    def test_a_clean_pass_stays_quiet(self, tmp_path, monkeypatch, capsys):
+        """A warning that fires on healthy passes is one nobody reads."""
+        _stub_chart(monkeypatch)
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+        assert "hot-tape-unhosted-card" not in capsys.readouterr().out
+
+    def test_a_no_bars_drop_does_not_raise_it(self, tmp_path, capsys):
+        """Scoped to cards that were DRAWN and lost.
+
+        A name with no bars never reaches the renderer, so it cost nothing and
+        says nothing about R2. Folding it in here would point the operator at
+        the wrong subsystem on every quiet day.
+        """
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+        out = capsys.readouterr().out
+        assert "no-bars" in out
+        assert "hot-tape-unhosted-card" not in out

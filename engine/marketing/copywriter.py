@@ -1283,26 +1283,22 @@ def validate_copy(
                 f"target / stop slot has to come from the packet)"
             )
 
-    # 6. Signal posts: invalidation / "what would change" + disclosure
-    if ctx.get("type") == "signal":
-        lower = full_text.lower()
-        has_invalidation = any(word in lower for word in (
-            "invalidat", "stop", "below", "above", "what would change",
-            "kills it", "closes below", "breaks below", "breaks above",
-        ))
-        if not has_invalidation:
-            violations.append(
-                "signal post missing invalidation / 'what would change' phrase"
-            )
-        has_disclosure = any(phrase in lower for phrase in (
-            "size appropriately", "not financial advice", "historical",
-            "not a guarantee", "do your own", "position sizing",
-            "publicly", "track it", "grade", "receipt",
-        ))
-        if not has_disclosure:
-            violations.append(
-                "signal post missing honesty disclosure / historical caveat"
-            )
+    # 6. Signal posts: the machine-voice constructions, banned.
+    #
+    # This step used to REQUIRE an invalidation phrase and an honesty caveat on
+    # every signal post. That mandate is why the house voice sounded like a
+    # machine: stack a level, a stance, a "what proves me wrong" and a "not a
+    # guarantee" into 275 chars and you get "37.1 is my trigger, 30.9 proves me
+    # wrong. One pattern isn't a guarantee" by construction. The operator graded
+    # a batch built under it F and named both halves ("no human will ever say
+    # that"; "so cringe and disgusting"). The 167 validate-stage drops in that
+    # same build were the writer reaching for human phrasing and being rejected.
+    #
+    # Risk is still welcome on a signal post. It is now the writer's job to say
+    # it like a person, and the guard's job to reject the two forms that read as
+    # generated. See config copy_laws (the "never write that a number proves YOU
+    # wrong" law) and memory marketing-voice-fact-plus-cost.
+    violations.extend(machine_risk_violations(full_text))
 
     # 6b. Expression dial + codex quirk whitelist + AM-R1 detection (XG-W1).
     # Returns [] for every account without a persona codex, so the six desks that
@@ -1791,6 +1787,472 @@ _JARGON_PATTERNS: tuple[tuple[str, str], ...] = (
 )
 
 
+"""Lecture register (operator, 2026-07-30).
+
+The operator read the education posts and called them terrible, useless, and
+lecturing: "no one likes being lectured... we want to provide value without
+making it seem like we are superior to others, or cocky/arrogant/ego vibes."
+Most desks are women, and a superior register reads worse from them and costs
+follows.
+
+The template bank was built on it — "The difference between those two sentences
+is most of trading", "Anyone can show winners", "Early looks identical to wrong
+for longer than anyone admits", "The half of trading nobody talks about". But
+the LLM inherits it too, because nothing forbade it: a live sample produced both
+"Turns out doing nothing is still a position. I didn't take a trade, so there's
+no win or loss to dress up" (right) and "If you can't name what proves you wrong
+before the trade, you're not managing risk. You're waiting for the market to
+explain it with your money" (wrong, and worse than the template — it accuses
+the reader directly).
+
+The tell is grammatical person. A good post says what I DID. A lecture says what
+YOU are doing wrong, or what MOST PEOPLE fail to grasp. That is what this
+checks; the open-ended half ("does this feel superior?") belongs to the critic.
+
+A plain question to the reader ("what's your read?") is not a lecture and must
+keep passing — engagement bait is a different problem and this check must not
+suppress it.
+"""
+_LECTURE_PATTERNS: tuple[tuple[str, str], ...] = (
+    # Superiority comparisons: we know, they don't.
+    ("most people", r"\bmost (?:people|traders|of you)\b"),
+    ("nobody/no one", r"\b(?:nobody|no one) (?:talks about|admits|does|gets|understands|tells you)\b"),
+    ("anyone can", r"\banyone can\b"),
+    ("than anyone admits", r"\bthan (?:anyone|most people|anybody) (?:admits|thinks|realizes)\b"),
+    ("everyone else", r"\b(?:everyone|everybody) else\b"),
+    ("the part most skip", r"\bthe part (?:most|that most)\b"),
+    # Second-person prescription: telling the reader what they are doing wrong.
+    ("you should/need/must", r"\byou (?:should|need to|have to|must|ought to)\b"),
+    ("if you can't/don't", r"\bif you (?:can'?t|don'?t|didn'?t|aren'?t|won'?t)\b"),
+    ("you're not X-ing", r"\byou'?re not\b"),
+    ("your problem", r"\byou'?re (?:waiting|hoping|guessing|gambling|kidding)\b"),
+    # Definitional teacher-voice openers.
+    ("plain english:", r"\bplain english\s*:"),
+    ("what X actually means", r"\bwhat .{0,24} actually means\b"),
+)
+
+
+def lecture_violations(text: str) -> list[str]:
+    """Copy that lectures the reader or claims superiority over them. [] = clean.
+
+    Flags the two constructions the operator named: comparisons that put the
+    desk above "most people", and second-person prescriptions that tell the
+    reader what they are doing wrong. First-person practice statements ("I
+    didn't take a trade", "I'm waiting") are the intended register and pass.
+    """
+    low = str(text or "").lower()
+    out: list[str] = []
+    for label, pattern in _LECTURE_PATTERNS:
+        if re.search(pattern, low):
+            out.append(
+                f"lecture register '{label}': say what you did, not what the "
+                f"reader gets wrong"
+            )
+    return out[:2]
+
+
+"""The machine-voice constructions, banned by name (operator 2026-07-30).
+
+Every pattern below is quoted from a post the operator read and rejected. This
+guard replaced a MANDATE that required two of them, so it is deliberately narrow:
+it rejects the generated FORM of stating risk, never the act of stating risk. "If
+it loses 33.8 the whole thing was noise" passes. "I'm wrong below 33.8" does not.
+"""
+_MACHINE_RISK_PATTERNS: tuple[tuple[str, str], ...] = (
+    # "no human will ever say that" — risk attached to the author's ego.
+    ("I'm wrong below/above X", r"\bi'?m wrong (?:below|above|under|over)\b"),
+    ("X proves me wrong", r"\b(?:proves?|prove) me wrong\b"),
+    ("what would prove me wrong", r"\bwhat would prove (?:me|this|it) wrong\b"),
+    ("X invalidates me", r"\binvalidates? (?:me|my (?:read|thesis|call))\b"),
+    ("my trigger / my invalidation", r"\bmy (?:trigger|invalidation|line in the sand)\b"),
+    # Boilerplate caveats. An honest caveat that costs the author something is
+    # welcome and unmatched by these — this rejects the compliance-desk forms.
+    ("historical, not a guarantee", r"\bhistorical,? not a guarantee\b"),
+    ("isn't a guarantee", r"\b(?:isn'?t|is not|are not|aren'?t) a guarantee\b"),
+    ("past performance", r"\bpast performance\b"),
+    ("size appropriately", r"\bsize (?:appropriately|accordingly)\b"),
+    ("not financial advice", r"\bnot financial advice\b"),
+)
+
+# A terse symmetrical two-beat clause pair, both halves short, joined by a comma
+# — "37.1 is my trigger, 30.9 proves me wrong". The operator: "so cringe and
+# disgusting, like you're writing a poem". Requires BOTH halves under ~34 chars
+# so ordinary compound sentences do not trip it.
+_MOTTO_RE = re.compile(
+    r"(?:^|(?<=[.!?]\s))([^.!?,\n]{6,34}),\s([^.!?,\n]{6,34})[.!?](?:\s|$)"
+)
+_MOTTO_HINGE = (
+    "is my", "proves", "kills", "matters more", "beats", "means", "wins",
+    "is the", "not the", "never the",
+)
+
+# "1. I write down the market's current story. 2. I note the fact that..."
+# A numbered list of what the MARKET did is fine (Kelly's "1) breadth narrowed
+# 2) oil didn't believe the headline" is a house signature); a numbered list of
+# how the AUTHOR thinks is what drew "what is this dogshit". The person after
+# the marker is the whole difference, so the gap between markers must allow
+# sentence punctuation — an earlier [^.\n] version matched nothing at all.
+_PROCESS_LIST_RE = re.compile(
+    r"(?:^|\s)(?:1[.)]|first,)\s*(?:i|my|we)\b[\s\S]{0,140}?"
+    r"(?:^|\s)(?:2[.)]|second,)\s*(?:i|my|we)\b",
+    re.IGNORECASE,
+)
+
+# The operator on "that's the whole observation, no target, no thesis, just
+# noting that the level is still doing its job": "absolutely hate it when you
+# observe something and then no reaction to it, then why even post, shut up
+# then? no one wants to hear you provide zero value." These are the phrases that
+# ANNOUNCE the absence of a take. The open-ended half of this class (a post that
+# is merely dull) is not enumerable and belongs to the batch auditor.
+_NO_REACTION_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("that's the whole observation", r"\bthat'?s the (?:whole|entire) (?:observation|point|post|thing)\b"),
+    ("no target, no thesis", r"\bno (?:target|thesis|call|position|trade)s?,? (?:and )?no (?:target|thesis|call|position|trade)\b"),
+    ("just noting", r"\b(?:just|merely|simply) (?:noting|observing|flagging|pointing out)\b"),
+    ("nothing to add", r"\b(?:nothing|no) (?:more )?to (?:add|say|do) (?:here|about it)\b"),
+    ("make of it what you will", r"\bmake of (?:it|that) what you will\b"),
+    ("no view", r"\b(?:i have|i've got) no (?:view|opinion|take)\b"),
+    # The CDW case: a symmetrical either/or that resolves to nothing. Operator:
+    # "i literally cant comprehend what this is saying."
+    ("symmetrical either/or", r"\beither that'?s .{4,60} or it'?s .{4,60}\b"),
+    ("don't know which", r"\b(?:don'?t|do not) know which (?:one )?(?:yet|it is)\b"),
+)
+
+# Cashtags and years are not "numbers in the copy"; prices, percentages and
+# counts are. $19.6 is a price the moment it sits next to a ticker, so the
+# cashtag strip runs first and the dollar amount is then counted. List
+# enumerators are structure, not figures — Kelly's "1) ... 2) ... 3)" must not
+# read as three numbers.
+_CASHTAG_STRIP_RE = re.compile(r"\$[A-Za-z]{1,5}(?:\.[A-Za-z])?\b")
+_LIST_MARKER_STRIP_RE = re.compile(r"(?:^|(?<=[\s(]))\d{1,2}[.)](?=\s)")
+_YEAR_STRIP_RE = re.compile(r"\b(?:19|20)\d{2}\b")
+_NUMBER_TOKEN_RE = re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3})*(?:\.\d+)?%?(?![\w])")
+
+
+def machine_risk_violations(text: str) -> list[str]:
+    """Risk stated in the generated register rather than a human one. [] = clean.
+
+    Replaced the mandate that used to REQUIRE these phrases on every signal post
+    (see ``validate_copy_v2`` step 6). Stating risk is still encouraged; stating
+    it as "I'm wrong below 33.8" or "historical, not a guarantee" is not.
+    """
+    low = str(text or "").lower()
+    out: list[str] = []
+    for label, pattern in _MACHINE_RISK_PATTERNS:
+        if re.search(pattern, low):
+            out.append(
+                f"machine risk phrasing '{label}': risk belongs to the setup, "
+                f"not your ego, and never as boilerplate"
+            )
+    return out[:2]
+
+
+def motto_violations(text: str) -> list[str]:
+    """Fortune-cookie cadence: two short symmetrical clauses. [] = clean.
+
+    Narrow by design. Both halves must be short AND the second must hinge on a
+    verdict verb, so "Semis led again, breadth sat it out again" (a fact pair)
+    passes while "37.1 is my trigger, 30.9 proves me wrong" does not.
+    """
+    body = str(text or "")
+    for match in _MOTTO_RE.finditer(body):
+        second = match.group(2).lower()
+        if any(hinge in second for hinge in _MOTTO_HINGE):
+            return [
+                f"motto cadence '{match.group(0).strip()}': write a sentence a "
+                f"person would text, not an aphorism"
+            ]
+    return []
+
+
+def process_list_violations(text: str) -> list[str]:
+    """A numbered list of the author's own thinking. [] = clean."""
+    if _PROCESS_LIST_RE.search(str(text or "")):
+        return [
+            "numbered process list: a numbered list of what the market did is "
+            "fine, a numbered list of how you think is not"
+        ]
+    return []
+
+
+def no_reaction_violations(text: str) -> list[str]:
+    """Copy that announces it has no take. [] = clean.
+
+    Only the phrases that SAY so. A post that is merely dull reads clean here
+    and is the batch auditor's problem — this guard exists so the specific
+    self-cancelling forms the operator quoted can never ship again.
+    """
+    low = str(text or "").lower()
+    out: list[str] = []
+    for label, pattern in _NO_REACTION_PATTERNS:
+        if re.search(pattern, low):
+            out.append(
+                f"no-reaction post '{label}': a fact with no reaction is not a "
+                f"post; give a reaction that costs you something or cut it"
+            )
+    return out[:2]
+
+
+# A RECEIPT is a result post: entry, exit and outcome are the content, not
+# ornament, and the house Scorekeeper exemplar the operator kept carries three
+# ("$QCOM: T1 hit +9.6%, runner stopped at 177. Net positive."). The operator's
+# "shut up with all of these numbers" was aimed at SPECULATIVE level stacks on
+# forward-looking posts ("I want 151 before leaning toward 190, then 228"), so
+# the budget is per-kind rather than global.
+#: Kinds whose numbers ARE the fact, so the house "one number per post" law
+#: would delete the post rather than tighten it.
+#:
+#: `earnings` joins 2026-07-31 on the same reasoning as `receipt`: an earnings
+#: post exists to say what a company printed AGAINST what was expected, and an
+#: actual without its estimate is not a smaller claim, it is an unfalsifiable
+#: one. Four admits the EPS pair and one derived surprise with a token spare.
+#: It does NOT admit the six the fast lane used to emit (EPS pair, EPS surprise,
+#: revenue pair, revenue surprise) — that is a data dump, and the copy was
+#: rewritten to state the revenue leg in words instead.
+_NUMBER_BUDGET: dict[str, int] = {"receipt": 4, "earnings": 4}
+_NUMBER_BUDGET_DEFAULT = 2
+
+
+def number_soup_violations(text: str, limit: int | None = None, kind: str = "") -> list[str]:
+    """More numbers than a person would put in one post. [] = clean.
+
+    Counts DISTINCT number tokens: a gain repeated in the headline and the body
+    is one number the reader has to hold, not two. Cashtags, list enumerators
+    ("1)", "2)") and years are structure, not figures, and are stripped first.
+    """
+    if limit is None:
+        limit = _NUMBER_BUDGET.get(str(kind or "").strip().lower(), _NUMBER_BUDGET_DEFAULT)
+    stripped = _CASHTAG_STRIP_RE.sub(" ", str(text or ""))
+    stripped = _LIST_MARKER_STRIP_RE.sub(" ", stripped)
+    stripped = _YEAR_STRIP_RE.sub(" ", stripped)
+    found = list(dict.fromkeys(_NUMBER_TOKEN_RE.findall(stripped)))
+    if len(found) > limit:
+        return [
+            f"number soup ({len(found)} numbers: {', '.join(found[:5])}): one "
+            f"number per post, and only when the number IS the point"
+        ]
+    return []
+
+
+#: A sentence shorter than this is house cadence, not a repeated line. The
+#: deadpan one-word verdicts ("Ugly." "Not ideal." "Watching, no position.")
+#: are the persona and MUST be free to recur; "I'm not fighting this one." is
+#: a template tell.
+_REPEAT_SENTENCE_MIN_WORDS = 5
+
+
+def _repeat_sentence_keys(text: str) -> list[str]:
+    """Normalized sentences of a post, long enough to be worth comparing.
+
+    NOT ``_sentences`` — that name is already taken at module scope by the
+    clarity gate's splitter, and defining it twice silently rebinds the module
+    global so ``dangling_levels`` starts calling THIS one. Three clarity tests
+    caught it; the same shadowing bug cost a whole fact-reuse budget earlier in
+    this program when a helper named ``_slot_day`` was defined twice.
+    """
+    flat = re.split(r"[.!?\n]+", str(text or ""))
+    out: list[str] = []
+    for part in flat:
+        norm = " ".join(re.sub(r"[^a-z0-9 ]+", " ", part.lower()).split())
+        if len(norm.split()) >= _REPEAT_SENTENCE_MIN_WORDS:
+            out.append(norm)
+    return out
+
+
+def repeated_sentence_violations(
+    text: str, prior_texts: Iterable[str] | None,
+) -> list[str]:
+    """A whole sentence this account has already published. [] = clean.
+
+    Whole-body Jaccard is the wrong instrument for the defect the operator
+    named. Two live queued posts read "Still heavy, down 3% on the week. I'm
+    not fighting this one. It has to reclaim 387 before it's even a
+    conversation." and the same thing about a different name at a different
+    price — a shared SENTENCE, verbatim, but only 0.67 Jaccard against a 0.80
+    threshold. Lowering that threshold to reach them would start cutting posts
+    that merely share a topic; an exact sentence match needs no tuning and
+    cannot drift.
+    """
+    mine = _repeat_sentence_keys(text)
+    if not mine:
+        return []
+    seen: set[str] = set()
+    for other in (prior_texts or []):
+        seen.update(_repeat_sentence_keys(other))
+    for sentence in mine:
+        if sentence in seen:
+            return [
+                f"repeated sentence: this account already posted "
+                f"\"{sentence[:80]}\". Say it a different way or drop the post"
+            ]
+    return []
+
+
+"""The cost families, and the monoculture guard over them.
+
+The fact-plus-cost law fixed the "no reaction" defect and immediately grew a new
+one. A live 8-post run under the new prompt passed 8/8 with zero drops -- and
+SEVEN of the eight said the same thing:
+
+    "I missed the bounce" / "I missed the run" / "I missed the move" /
+    "I missed the turn" / "I missed the start" / "I leaned on the bounce too
+    early" / "catching this early has cost me before"
+
+That is the retired stock closer one level up. Prescribing a REACTION rather
+than a sentence did not stop the model converging: the two operator-approved
+exemplars both happen to be regret-shaped, so "the cost" collapsed to "I was
+late". A feed where every post is the same confession reads exactly as bot-like
+as one where every post ends on the same clause, and it makes the desk sound
+like it never gets anything right.
+
+A cost has to actually vary. These families are the enumerable ones; the guard
+below fires when a single family owns too much of one account's batch.
+"""
+    # ONE family, not two. A first cut split "missed it" from "passed on it" and
+    # the guard then called a batch clean in which seven of eight posts were
+    # some flavour of "I am not in this": "I didn't buy the dip", "expensive to
+    # watch without me", "I've been early on the slide", "I passed on the
+    # breakout". Splitting a semantic cluster across families is how a
+    # monoculture guard reports health it cannot see. These all cost the writer
+    # the same thing — the admission of being outside the move — so they count
+    # together.
+_COST_FAMILIES: tuple[tuple[str, str], ...] = (
+    ("outside-the-move",
+     r"\b(?:i|we)\s+(?:missed|was late|were late|didn'?t catch|got there late|"
+     r"passed|didn'?t buy|didn'?t take|talked myself out of|sat (?:this |it )?out)\b"
+     r"|\bmissed the (?:move|run|bounce|turn|start|trade|streak)\b"
+     r"|\bwithout me\b|\btoo clever\b"
+     r"|\b(?:been|was|am)\s+early\b"
+     r"|\b(?:not|never)\s+(?:in|fishing|chasing)\s+(?:it|this)\b"
+     r"|\bfrom the sidelines?\b"),
+    ("no-explanation", r"\b(?:i|we)\s+(?:don'?t|do not)\s+(?:have|know)\b.{0,40}"
+                       r"\b(?:explanation|why|idea)\b|\bnot going to invent\b"),
+    ("was-wrong", r"\b(?:i|we)\s+(?:was|were|got it)\s+wrong\b|\bmy read was\b"),
+    ("it-hurt", r"\btuition\b|\bstopped out\b|\bit cost me\b|\btook the loss\b"),
+    ("still-unsure", r"\b(?:i|we)'?m not sure\b|\bstill don'?t (?:know|trust)\b"),
+)
+
+#: A family may own at most this share of one account's batch before it reads as
+#: a tic. 0.5 lets a genuinely regretful day stay honest without letting one
+#: confession become the house voice.
+_COST_FAMILY_MAX_SHARE = 0.5
+
+
+def cost_family(text: str) -> str:
+    """Which admission a post makes, or "" when it makes none of the known ones."""
+    low = str(text or "").lower()
+    for name, pattern in _COST_FAMILIES:
+        if re.search(pattern, low):
+            return name
+    return ""
+
+
+def cost_monoculture(texts: Iterable[str]) -> dict[str, Any]:
+    """Which cost family is eating the batch. {} when the mix is healthy.
+
+    Batch-level ON PURPOSE: no single post here is wrong, and the per-post
+    guards cannot see a pattern that only exists across a feed. Returns the
+    offending family and its share so the caller can report it in plain words.
+    """
+    seen = [cost_family(t) for t in (texts or [])]
+    named = [s for s in seen if s]
+    if len(named) < 4:          # too small a sample to call a monoculture
+        return {}
+    counts: dict[str, int] = {}
+    for s in named:
+        counts[s] = counts.get(s, 0) + 1
+    family, n = max(counts.items(), key=lambda kv: kv[1])
+    share = n / len(seen)
+    if share > _COST_FAMILY_MAX_SHARE:
+        return {"family": family, "count": n, "of": len(seen), "share": round(share, 3)}
+    return {}
+
+
+#: The trim never takes an account below this many posts. A batch in which
+#: EVERY post makes the same admission solves to keep=0 — mathematically right,
+#: operationally a self-inflicted silent night, which is the one outcome this
+#: whole program exists to prevent. A slightly repetitive feed beats an empty
+#: one; the ::warning says which it was.
+_COST_TRIM_MIN_KEEP = 3
+
+
+def trim_cost_monoculture(
+    texts: list[str], *, max_share: float = _COST_FAMILY_MAX_SHARE,
+    min_keep: int = _COST_TRIM_MIN_KEEP,
+) -> list[int]:
+    """Indices to CUT so no one cost family owns more than ``max_share``. [] = fine.
+
+    Deterministic on purpose. The auditor's ``repetitive`` criterion already
+    describes this defect ("four posts that each say 'respect the move, don't
+    chase' in different wordings are three posts too many"), but that depends on
+    a model noticing, and three rounds of prompt work moved the live share only
+    from 0.88 to 0.62 — the input mix is the cause, not the wording. Every item
+    in a watchlist batch is "a level on a name we do not hold", so "I'm outside
+    the move" is the reaction the material invites and the model converges on it.
+
+    Keeps the EARLIEST posts of the crowded family (they are the highest-salience
+    items in a plan queue) and cuts from the tail until the share is legal. Per
+    the supply-honest volume law an empty rung stays empty: nothing is re-typed
+    to replace what this removes, the account simply posts less and reads better.
+    """
+    fams = [cost_family(t) for t in (texts or [])]
+    named = [f for f in fams if f]
+    if len(named) < 4:
+        return []
+    counts: dict[str, int] = {}
+    for f in named:
+        counts[f] = counts.get(f, 0) + 1
+    family, n = max(counts.items(), key=lambda kv: kv[1])
+    total = len(fams)
+    if not 0 < max_share < 1:
+        return []
+    if n <= int(total * max_share):
+        return []
+    # CUTTING SHRINKS THE DENOMINATOR TOO. A first version kept
+    # int(total * max_share) and left 4 of 7 (0.571) still over a 0.5 cap,
+    # because it measured the share against the batch it was about to change.
+    # Solve for the keep count k directly:
+    #     k / (total - (n - k)) <= s   ->   k <= s * (total - n) / (1 - s)
+    keep = int(max_share * (total - n) / (1.0 - max_share))
+    idxs = [i for i, f in enumerate(fams) if f == family]
+    cut = sorted(idxs[max(0, keep):])
+    # Floor: never trim the account below min_keep posts.
+    surviving = total - len(cut)
+    if surviving < min_keep:
+        give_back = min(len(cut), min_keep - surviving)
+        cut = cut[give_back:]
+    return cut
+
+
+def queued_voice_violations(text: str, kind: str = "") -> list[str]:
+    """The voice laws, runnable against copy that is ALREADY in the queue.
+
+    The queue is a bypass around every generation-time law: 187 posts were
+    sitting in it when these laws landed on 2026-07-30, all written under the
+    rules that MANDATED the machine voice. Without a post-time screen the
+    operator's F-grade batch ships tomorrow regardless of what the writer does
+    tonight — the same lesson the study-name language gate was built for after
+    the 2026-07-27 $AVGO "POC held" post fired days after its ban.
+
+    Takes the full post text (headline and body already joined, which is how
+    the outbox stores it) rather than the writer's two fields, and needs no
+    ctx. Deliberately does NOT include the whole ``validate_copy_v2`` battery:
+    the numbers whitelist and the sibling-overlap checks need a packet the
+    queue no longer has, and a check that cannot be evaluated must not
+    quarantine.
+    """
+    out: list[str] = []
+    out += machine_risk_violations(text)
+    out += motto_violations(text)
+    out += process_list_violations(text)
+    out += number_soup_violations(text, kind=kind)
+    out += no_reaction_violations(text)
+    out += lecture_violations(text)
+    # batch_texts is empty on purpose: at publish time there is no batch, so
+    # only the RETIRED house closers are reachable, never the repeat rule.
+    out += stock_closer_violations(text, [])
+    return out
+
+
 def jargon_violations(text: str) -> list[str]:
     """Internal-machinery vocabulary in copy (gate 3f). [] = clean.
 
@@ -1882,6 +2344,123 @@ def batch_body_duplicate_violations(
     return []
 
 
+"""Closers the house prompt used to PRESCRIBE verbatim (operator, 2026-07-30).
+
+The copy law read `down movers carry "watching for a bottom setup, not catching it
+yet"; up movers "strength worth respecting, not chasing here"`, the VOICE block
+repeated both, and the up-mover EXEMPLAR ended with the second one. Triple-
+reinforced, so the model complied perfectly: a live 8-post sample closed FIVE of
+its six passing posts with the identical sentence. The operator read that batch
+and called it bot-like, which it was — but the model was obeying us, not being
+lazy. Two lines below the mandate the same config also said "never repeat a
+signature phrase across posts", so the config contradicted itself and the
+concrete instruction won.
+
+The prompt now asks for the STANCE in the writer's own words. This list is the
+enforcement: the mandate cannot come back by way of a prompt edit without a test
+going red. Entries are matched loosely (case, punctuation and leading filler
+ignored) because the model paraphrases the edges while keeping the spine.
+"""
+_STOCK_CLOSERS: tuple[str, ...] = (
+    "strength worth respecting not chasing here",
+    "strength worth respecting not chasing",
+    "watching for a bottom setup not catching it yet",
+    "watching for a bottom setup not catching it",
+    "size appropriately",
+    "proves me wrong size appropriately",
+)
+
+
+#: A truncated stock closer is only recognisable when enough of it survives.
+#: Below this, the final sentence is house cadence that happens to share a word
+#: with the banned line ("Watching." / "Not chasing.").
+_CLOSER_TRUNCATION_MIN_WORDS = 4
+
+
+def _closer_key(text: str, whole_text: bool = False) -> str:
+    """Normalize a post's final sentence for stock-closer comparison.
+
+    ``whole_text=True`` normalizes the ENTIRE post the same way instead. The
+    retired house lines are banned wherever they sit, not only as the closer,
+    so the outright-ban scan needs the whole body while the batch-collision
+    scan still needs the final sentence alone.
+    """
+    body = str(text or "").strip()
+    if not body:
+        return ""
+    if whole_text:
+        flat = re.sub(r"[^a-z0-9 ]+", " ", body.lower())
+        return " ".join(flat.split())
+    # Last sentence-ish chunk: split on terminal punctuation and newlines.
+    parts = [p for p in re.split(r"[.!?\n]+", body) if p.strip()]
+    if not parts:
+        return ""
+    tail = parts[-1].lower()
+    tail = re.sub(r"[^a-z0-9 ]+", " ", tail)
+    return " ".join(tail.split())
+
+
+def stock_closer_violations(
+    text: str, batch_texts: Iterable[str] | None = None,
+) -> list[str]:
+    """Post ends on a house stock closer, or on a closer already used in this batch.
+
+    Two distinct defects, one check:
+
+    * a closer this repo once mandated verbatim (:data:`_STOCK_CLOSERS`) — banned
+      outright, because the operator rejected exactly that copy;
+    * a closer that is fine once but appears on another post in the same plan —
+      the "repetitive posts" complaint, which the opener-stem and body-Jaccard
+      gates both miss when two posts differ everywhere except the last sentence.
+
+    Returns [] when clean.
+    """
+    out: list[str] = []
+
+    # The retired house lines are banned WHEREVER they appear, not only as the
+    # closer. A live queued $TSLA post read "...down 18% on the week. Watching
+    # for a bottom setup, not catching it yet. 303 is the line that matters." —
+    # the boilerplate sat in the MIDDLE, the last sentence was clean, and an
+    # end-anchored check waved it through. The phrase is what the operator
+    # rejected; its position in the post was never the point.
+    whole = _closer_key(text, whole_text=True)
+    for stock in _STOCK_CLOSERS:
+        if stock and stock in whole:
+            out.append(
+                f"stock closer: the post uses a house boilerplate line "
+                f"('{stock}'). Say the stance in your own words."
+            )
+            break
+
+    key = _closer_key(text)
+    if not key:
+        return out
+
+    if not out:
+        for stock in _STOCK_CLOSERS:
+            # Substring the other way too: the model truncates these as well,
+            # and a truncation is only recognisable against the final sentence.
+            # The word floor is load-bearing — "Watching." is a house one-word
+            # verdict AND a substring of "watching for a bottom setup not
+            # catching it yet", so an unbounded match banned the persona.
+            if len(key.split()) >= _CLOSER_TRUNCATION_MIN_WORDS and key in stock:
+                out.append(
+                    f"stock closer: the post ends on a truncated house "
+                    f"boilerplate line ('{stock}'). Say the stance in your own words."
+                )
+                break
+
+    others = [t for t in (batch_texts or []) if str(t or "").strip()]
+    for other in others:
+        if _closer_key(other) == key:
+            out.append(
+                "batch closer collision: another post in this plan already ends "
+                "on this exact sentence"
+            )
+            break
+    return out
+
+
 def validate_copy_v2(
     text: str,
     ctx: dict,
@@ -1937,6 +2516,15 @@ def validate_copy_v2(
         text, sibling_texts if sibling_texts is not None else ctx.get("sibling_texts")))
     violations.extend(batch_stem_violations(text, batch_texts))
     violations.extend(batch_body_duplicate_violations(text, batch_texts))
+    violations.extend(stock_closer_violations(text, batch_texts))
+    violations.extend(lecture_violations(text))
+    # The batch the operator graded F, by construction (2026-07-30). Each of
+    # these rejects a form they quoted back verbatim; see the module docstring
+    # above _MACHINE_RISK_PATTERNS.
+    violations.extend(motto_violations(text))
+    violations.extend(process_list_violations(text))
+    violations.extend(number_soup_violations(text, kind=str(ctx.get("type") or "")))
+    violations.extend(no_reaction_violations(text))
     return violations
 
 
@@ -2031,61 +2619,72 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # it) AND an honesty caveat (historical / graded / publicly) so validate_copy
     # passes. Keep both, keep it human, keep it dry (doctrine v3).
     ("signal", "authoritative desk"): [
+        # LEVELS LIVE ON THE CHART, NOT IN THE COPY (operator 2026-07-30).
+        # Every body in this family used to print entry + target + stop and then
+        # close on a compliance caveat. Three prices in 275 chars is the "number
+        # soup" the operator named ("shut up with all of these numbers, its
+        # literally so AI like"), and "I'm wrong below {inv}" drew "no human will
+        # ever say that". Since every ticker post now ships a chart by law, the
+        # picture carries the levels and the copy carries ONE number and a
+        # reaction that costs the writer something. number_soup_violations and
+        # machine_risk_violations reject the old bodies outright, so these are
+        # not a style preference — the previous bank could no longer ship.
         (
             "Flagged {cashtag} at {entry}",
-            "{top_fact}. In at {entry}, first target {t1}. "
-            "Closes back below {inv} and I'm wrong, I'm out. Historical odds, not a promise.",
+            "{top_fact}. Flagged at {entry}. I've talked myself out of setups that "
+            "looked exactly like this and regretted it, so I'm not being clever here.",
         ),
         (
             "{cashtag} | {entry} is the line",
-            # WAS "We're long from {entry}" — a first-person POSITION claim, on
-            # the flagship's live signal copy, in direct breach of AM-R1's first
-            # hard line. It shipped because AM-R1 was prose in a spec file that
-            # nothing read; the widened detectors (XG-W1) caught it on their
-            # first sweep of this bank. "We called it at" is the house framing
-            # and the honest one: we publish graded CALLS, we never claim to
-            # hold a position.
-            "{top_fact}. We called it at {entry}, looking for {t1}. "
-            "Below {inv} the idea's dead and so is my interest. Win or lose, the result posts publicly.",
+            # "We called it at" is the house framing and the honest one: we
+            # publish graded CALLS, we never claim to hold a position. (WAS
+            # "We're long from {entry}", a first-person position claim in breach
+            # of AM-R1's first hard line.)
+            "{top_fact}. We called it at {entry}. If it loses that the whole read "
+            "was noise, and I'd rather find that out than talk myself into it.",
         ),
         (
             "{cashtag} setting up again",
-            "{top_fact}. Entry {entry}, target {t1}. "
-            "A close below {inv} kills it, no debate. Historical, not a promise.",
+            "{top_fact}. Bases like this fail more often than they work and I keep "
+            "having to remind myself of that before I get comfortable.",
         ),
         (
             "Adding {cashtag} around {entry}",
-            "{top_fact}. First take {t1}. Closes below {inv} and I take the loss. "
-            "The market doesn't care about my thesis. Historical odds only.",
+            "{top_fact}. In around {entry}. I don't have a tidy explanation for why "
+            "now and I'm not going to invent one.",
         ),
         (
             "{cashtag} at {entry}. Simple read.",
-            "{top_fact}. Target {t1}, out below {inv}. "
-            "No story, just levels. Graded either way.",
+            "{top_fact}. Levels are on the chart. I've been early on this name before "
+            "and it cost me, so I'm taking it slower this time.",
         ),
     ],
 
     # ── signal / dry, receipts-forward ───────────────────────────────────────
     ("signal", "dry, receipts-forward"): [
+        # A template asserts the same sentence about every ticker it renders, so
+        # it may never carry a FACT of its own — no invented streak, no "my last
+        # three went flat". Only {top_fact} and the packet's numbers are true.
+        # The costly reaction has to come from stance, not fabricated history.
         (
             "{cashtag}, in at {entry}",
-            "{top_fact}. Entry {entry}. T1 {t1}. Out on a close below {inv}. "
-            "Result gets posted either way. Historical, not a promise.",
+            "{top_fact}. In at {entry}. I'd rather be early and quiet about it than "
+            "loud and right for one afternoon.",
         ),
         (
-            "{cashtag} | {entry} entry, {t1} target",
-            "{top_fact}. The numbers: in {entry}, first take {t1}, dead below {inv}. "
-            "No adjectives. The result posts publicly when it resolves.",
+            "{cashtag} | the call is out there",
+            "{top_fact}. It gets published whether it works or not. That's the only part "
+            "of this I actually control.",
         ),
         (
             "{cashtag} flagged at {entry}",
-            "{top_fact}. Entry {entry}, target {t1}, stop below {inv}. "
-            "Everything else is commentary. Historical odds, no guarantees.",
+            "{top_fact}. Flagged at {entry}. No adjectives, and no interest in "
+            "defending it if the chart stops cooperating.",
         ),
         (
-            "New line: {cashtag} at {entry}",
-            "{top_fact}. T1 {t1}. Below {inv} it's over and the loss goes up "
-            "like everything else. Historical, not certain.",
+            "New line: {cashtag}",
+            "{top_fact}. Out in public now, so if it doesn't work I don't get to quietly "
+            "forget I said it.",
         ),
     ],
 
@@ -2093,48 +2692,51 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("signal", "specialist"): [
         (
             "{cashtag} at {entry}, and the group's confirming",
-            "{top_fact}. The rest of the space is moving with it, which is what I want. "
-            "In {entry}, first level {t1}. Below {inv} I'm out. Historical, not a promise.",
+            "{top_fact}. The rest of the space is moving with it. I've been burned "
+            "assuming the group carries the laggard, so I'm watching more than acting.",
         ),
         (
             "{cashtag} | the setup I wait for in this group",
-            "{top_fact}. One name is noise, the group moving is a message. "
-            "Entry {entry}, target {t1}. A close below {inv} ends it. Win or lose, the result posts publicly.",
+            "{top_fact}. One name moving is noise. I ignored this exact tell earlier "
+            "in the year because I thought I knew better.",
         ),
         (
             "{cashtag} in my corner at {entry}",
-            "{top_fact}. These names don't do this on nothing. Entry {entry}, T1 {t1}, "
-            "gone below {inv}. Historical odds, sizing beats conviction.",
+            "{top_fact}. In around {entry}. This is my group and that makes me softer "
+            "on it than I should be, which I'm trying to account for.",
         ),
         (
-            "{cashtag} at {entry} | the group told me first",
-            "{top_fact}. The space has been leaning this way for days. In {entry}, "
-            "first take {t1}. Below {inv} I was wrong. Historical, not certain.",
+            "{cashtag} | the group got there first",
+            "{top_fact}. The space has been leaning this way for a while and I was "
+            "slow to it. Adding it to the list of things I was too clever about.",
         ),
     ],
 
     # ── signal / educational ──────────────────────────────────────────────────
     ("signal", "educational"): [
+        # "educational" is a VOICE here, not a lesson. The operator: "no one likes
+        # being lectured... education posts show YOUR OWN working on something
+        # real". So this family shows the writer's own reasoning and its cost; it
+        # never explains a concept to the reader.
         (
             "A live one: {cashtag} at {entry}",
-            "{top_fact}. Setups in the abstract are easy, so here's a real one. "
-            "Entry {entry}, target {t1}. What proves me wrong: a close below {inv}. "
-            "The result posts publicly either way.",
+            "{top_fact}. In around {entry}. Setups in the abstract are easy and I've "
+            "been humbled plenty of times by ones that looked this clean.",
         ),
         (
-            "{cashtag} | what a setup actually looks like",
-            "{top_fact}. That's why {ticker} made the watch list. Entry {entry}, T1 {t1}, "
-            "out below {inv}. The stop is the whole risk plan. Historical, not a guarantee.",
+            "{cashtag} | this is the one I'd have skipped",
+            "{top_fact}. A year ago I'd have passed on this because it looked too "
+            "quiet. That habit cost me more than any single bad trade did.",
         ),
         (
             "Most days nothing qualifies. {cashtag} does.",
-            "{top_fact}. Entry {entry}, first target {t1}. "
-            "A close below {inv} and I was wrong, simple as that. Historical odds, not a promise.",
+            "{top_fact}. Most days I look at this list and do nothing, and the days "
+            "I forced something are the ones I'd take back.",
         ),
         (
-            "{cashtag} at {entry} | watch it with me",
-            "{top_fact}. Target {t1}, out below {inv}. Everyone has a target, "
-            "the stop is what makes it a trade. Graded either way.",
+            "{cashtag} at {entry} | watching it with you",
+            "{top_fact}. In around {entry}. I'll be wrong in public on some of these "
+            "and I'd rather that than quietly deleting the ones that don't work.",
         ),
     ],
 
@@ -2142,23 +2744,23 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("signal", "fast, reactive"): [
         (
             "{cashtag} moving. In at {entry}",
-            "{top_fact}. T1 {t1}. Quick out below {inv}. "
-            "On the board, graded either way.",
+            "{top_fact}. In at {entry}. Fast ones are where I make my worst "
+            "decisions, so I'm going smaller than the chart is tempting me to.",
         ),
         (
             "{cashtag} | live at {entry}",
-            "{top_fact}. Target {t1}. Below {inv} I'm gone. "
-            "Historical, no guarantees.",
+            "{top_fact}. Live at {entry}. Chasing this kind of move has cost me "
+            "before and I'm aware I'm close to doing it again.",
         ),
         (
-            "{cashtag} | {entry}, right now",
-            "{top_fact}. First take {t1}, dead below {inv}. "
-            "Size small, this is historical not certain.",
+            "{cashtag}, right now",
+            "{top_fact}. Levels are on the chart. Half of these fade by the close "
+            "and I've never once been good at telling which half in advance.",
         ),
         (
             "{cashtag} triggering at {entry}",
-            "{top_fact}. Looking for {t1}. Stop's below {inv}. "
-            "Posted and graded either way.",
+            "{top_fact}. Triggered around {entry}. Saying it out loud now so I can't "
+            "pretend later that I only liked the ones that worked.",
         ),
     ],
 
@@ -2166,23 +2768,23 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("signal", "pattern/history"): [
         (
             "{cashtag} is tracing something I've seen before",
-            "{top_fact}. Same shape as the last real run in {ticker}. In at {entry}, "
-            "target {t1}. A close below {inv} breaks the rhyme and I'm out. Graded either way.",
+            "{top_fact}. In around {entry}. I've read a shape like this correctly "
+            "and I've read one exactly like it wrong, which keeps me honest.",
         ),
         (
-            "{cashtag} | the precedent's worth a look at {entry}",
-            "{top_fact}. History doesn't repeat but it leaves charts. Entry {entry}, "
-            "T1 {t1}, out below {inv}. Historical odds, not prophecy.",
+            "{cashtag} | the precedent's worth a look",
+            "{top_fact}. History doesn't repeat but it leaves charts. It also leaves "
+            "the ones I pattern-matched into a loss, and I remember those better.",
         ),
         (
             "{cashtag} | pattern's live at {entry}",
-            "{top_fact}. Last time it looked like this the move followed. Target {t1}. "
-            "Below {inv} the pattern's done and so am I. Historical, not certain.",
+            "{top_fact}. Live around {entry}. The last time I leaned hard on this "
+            "shape it went nowhere for ages and I got bored out of it.",
         ),
         (
-            "{cashtag} at {entry}, same old song",
-            "{top_fact}. The shape has a track record. First level {t1}, stop below {inv}. "
-            "Rhyme, not repeat, and historical rhymes aren't guarantees.",
+            "{cashtag}, same old song",
+            "{top_fact}. Levels are on the chart. I trust the shape more than I "
+            "should and I'd rather say that out loud than pretend otherwise.",
         ),
     ],
 
@@ -2222,7 +2824,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{ticker} | where it stands",
-            "{top_fact}. {cashtag} at {entry}. Make of it what you will. I know what I make of it.",
+            "{top_fact}. {cashtag} at {entry}. I like it here and I've been wrong liking "
+            "things here before.",
         ),
         (
             "{cashtag} | the tape",
@@ -2459,7 +3062,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} That sets the tone for everything else today.",
         ),
         (
-            "One thing worth watching up top",
+            "One thing worth watching at these highs",
             "{top_fact} How this resolves decides how much risk I want on.",
         ),
         (
@@ -2477,7 +3080,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} I'll update when the picture shifts, not when the coverage does.",
         ),
         (
-            "Where things stand up top",
+            "Where things stand at the highs",
             "{top_fact} Staying selective on risk until this clears.",
         ),
         (
@@ -2535,7 +3138,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} Short version, no panel discussion required.",
         ),
         (
-            "What just shifted up top",
+            "What just shifted at the highs",
             "{top_fact} Market's still chewing. Watching the reaction more than the print.",
         ),
         (
@@ -2572,8 +3175,11 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {gain} on {target_label}",
-            "Entry {entry}, {target_label} at {t1}, {gain}. "
-            "Next level is {t2}, or the stop takes it. Either is fine.",
+            # No first-person POSITION or P&L claim here (AM-R1): we publish
+            # graded CALLS, we never say we traded one. "I trimmed earlier than
+            # I meant to" was the first draft and the dial caught it.
+            "Entry {entry}. {target_label} hit, {gain}. I nearly talked myself out "
+            "of calling this one, so I'm taking no credit for the timing.",
         ),
         (
             "{cashtag} stopped out, {loss}",
@@ -2589,7 +3195,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("receipt", "dry, receipts-forward"): [
         (
             "{cashtag} | {target_label}: {gain}",
-            "Entry {entry}. {target_label} at {t1}, {gain}. On the page.",
+            "Entry {entry}. {target_label} hit, {gain}. Posted the losing ones too, which "
+            "is the only reason this one counts for anything.",
         ),
         (
             "{cashtag} stopped, {loss}",
@@ -2645,14 +3252,15 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | said we'd post it, here it is",
-            "Entry {entry}. {target_label} at {t1}, {gain}. "
-            "The promise was the posting, not the winning.",
+            "Entry {entry}, {gain}. I said I'd post these whichever way they went, "
+            "and the ones I'd rather skip are why that promise was worth making.",
         ),
     ],
     ("receipt", "fast, reactive"): [
         (
             "{cashtag} | {target_label} tagged, {gain}",
-            "Entry {entry}. {t1} hit. {gain}. On the page, moving on.",
+            "Entry {entry}. Target hit, {gain}. Moving on before I start believing I'm "
+            "smarter than the tape.",
         ),
         (
             "{cashtag} stopped, {loss}",
@@ -3080,8 +3688,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} On the list, not in. I'll post when it triggers.",
         ),
         (
-            "{cashtag} on the radar, not the board",
-            "{top_fact} Tracking it. Setup unfinished.",
+            "{cashtag} is on my radar",
+            "{top_fact} Tracking it, nothing more. I have a habit of getting attached at "
+            "this stage and it rarely helps.",
         ),
         (
             "{cashtag} close, not triggered",
@@ -3277,7 +3886,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("event", "dry, receipts-forward"): [
         (
             "Today's event, numbers first",
-            "{top_fact} A few of my names care. Watching them, not the panel discussion.",
+            "{top_fact} A few of my names actually care about this one. I usually "
+            "overestimate how much the rest of them do.",
         ),
         # Template sentences must stay FACT-NEUTRAL: "the board barely moved" /
         # "not much drama in the numbers" are claims about the day that the
@@ -3311,13 +3921,15 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "My take on the group's reaction",
-            "{top_fact} The names voted. I read the votes, not the speeches.",
+            "{top_fact} The names have already voted on it. I've misread that vote enough "
+            "times to hold the read loosely.",
         ),
     ],
     ("event", "educational"): [
         (
-            "What today's event actually means",
-            "{top_fact} Watch how it gets priced, not how it gets covered. Different jobs.",
+            "How the group took today's event",
+            "{top_fact} The pricing and the coverage rarely agree, and I keep learning that "
+            "the hard way.",
         ),
         (
             "Why markets moved on this",
@@ -3336,7 +3948,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("event", "fast, reactive"): [
         (
             "What just happened",
-            "{top_fact} Fast take. Watching the follow-through, not the replays.",
+            "{top_fact} Fast take, so discount it accordingly. My same-day reads are the "
+            "ones I revise most.",
         ),
         (
             "Quick read on today",
@@ -3362,7 +3975,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What happened last time we saw this",
-            "{top_fact} The setup into it has precedent. The reaction is the part history grades.",
+            "{top_fact} The setup into it has precedent. The reaction never does, and I "
+            "keep forgetting that part.",
         ),
         (
             "The usual pattern after days like this",
@@ -4015,8 +4629,24 @@ def write_posts_llm(
             "'the engine', 'the system'.\n"
             "- Every post carries a level, a take, or a real question. 'Here's the chart, "
             "thoughts?' gives nothing. Give a stance: watching, leaning, respecting, "
-            "fading, waiting, not chasing. Down movers: 'watching for a bottom setup, not "
-            "catching it yet.' Up movers: 'strength worth respecting, not chasing here.'\n"
+            "fading, waiting, not chasing. Down movers admit you aren't trying to catch "
+            "the bottom yet; up movers respect the move without chasing it. Phrase that "
+            "stance FRESH every single time — these two are banned as written: 'strength "
+            "worth respecting, not chasing here' and 'watching for a bottom setup, not "
+            "catching it yet'. They were house boilerplate and the reader noticed.\n"
+            "- NEVER LECTURE. This is the fastest way to lose a follower. Say what YOU "
+            "did and what YOU are watching. Never tell the reader what they should do, "
+            "what they are getting wrong, or what 'most people' fail to grasp. Banned "
+            "outright: 'most people', 'nobody talks about', 'anyone can', 'than anyone "
+            "admits', 'you should', 'you need to', 'if you can't', \"you're not\".\n"
+            "  Wrong: \"If you can't name what proves you wrong, you're not managing "
+            "risk. You're waiting for the market to explain it with your money.\"\n"
+            "  Right: \"Turns out doing nothing is still a position. I didn't take a "
+            "trade, so there's no win or loss to dress up.\"\n"
+            "- No ego. You are not the smartest person in the room and you never imply "
+            "it. Curiosity and honest uncertainty beat authority — 'I'm not sure yet' is "
+            "a real post and a strong one. A genuine question to the reader is welcome; "
+            "a rhetorical question that sets up your own superior answer is not.\n"
             "- The default humor is deadpan understatement ('Ugly.' 'Not ideal.' 'That "
             "settles that.'). Most posts carry zero jokes; when wit shows up it carries "
             "the read, it never decorates it. One dry line, never two.\n"
@@ -4097,13 +4727,15 @@ def write_posts_llm(
             "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
             "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
             "everywhere, kickers like 'without the noise'.\n\n"
-            "EXEMPLARS (this is the target voice):\n"
+            "EXEMPLARS — these show REGISTER, not vocabulary. Never reuse a sentence "
+            "from them verbatim; write your own line at this pitch. (The old exemplars "
+            "ended on two fixed closers and every post came back wearing them.)\n"
             "- Signal: \"Flagged $AMKR at 41.20, first target 46.80. Closes back under "
             "41 and I'm wrong, I'm out. Historical odds, not a promise.\"\n"
             "- Down mover: \"$ISRG down 14% today. The dip buyers get to find out who "
-            "was early. Watching for a bottom setup, not catching it yet.\"\n"
+            "was early. I'd rather be late here than early.\"\n"
             "- Up mover: \"$VST up 9% and every target on the street just got lapped. "
-            "Strength worth respecting, not chasing here.\"\n"
+            "Nice for anyone already in. I'm not paying this price.\"\n"
             "- Theme list: \"Solar names bleeding again. $ENPH -4.2% $SEDG -5.1% "
             "$RUN -3.8% $FSLR -2.9%. Rate cuts were supposed to fix this. Which one's "
             "actually washed out?\"\n"
@@ -4111,8 +4743,14 @@ def write_posts_llm(
             "victory lap, the runner's still working.\"\n"
             "- Receipt (loss): \"Stopped out of $COIN at 198, -3.1%. Tuition paid. "
             "Next.\"\n"
-            "- Education: \"Everyone has a target. Almost nobody has a stop. The stop "
-            "is the part that decides whether you're trading or hoping.\"\n"
+            # The old education exemplar ("Everyone has a target. Almost nobody has a
+            # stop…") was the lecture register in one line, and the whole education
+            # kind came back sounding like it. Education = your own working today,
+            # not a rule for the reader.
+            "- Education (show YOUR working on something real today, never a lesson): "
+            "\"Turns out doing nothing is still a position. I didn't take a trade, so "
+            "there's no win or loss to dress up. Cash stayed cash, which beat forcing "
+            "a setup just to feel productive.\"\n"
             "- Macro: \"Growth prints keep coming in soft while inflation sits there "
             "being inflation. The soft-landing crowd went quiet this week. Patience "
             "over heroics.\"\n"
@@ -4123,8 +4761,39 @@ def write_posts_llm(
             + "\n- Use ONLY numbers from each item's numbers_whitelist, verbatim. "
             "Never invent or recompute a number.\n"
             "- Each item's cashtag(s) must appear. Body <= 275 chars. Headline <= 90 chars.\n"
-            "- Signal posts must keep an invalidation line (what would prove you wrong) "
-            "and an honesty caveat ('historical, not a guarantee').\n"
+            "- COMMITMENT IS A COST, AND IT IS THE ONE YOU KEEP SKIPPING. Most of "
+            "these posts are about names the desk does NOT hold, so the lazy cost is "
+            "always 'I'm not in it': two live runs under this prompt produced eight "
+            "posts each in which SEVEN were some flavour of missed it / passed on it "
+            "/ been early / watched it go without me. That is as bot-written as any "
+            "repeated closer, and a desk that only ever reports being outside the "
+            "move sounds like it is never right about anything.\n"
+            "  For a name you don't hold, the cost that works is going ON RECORD: "
+            "say plainly what you would need to see, or what would make you drop it, "
+            "and accept being publicly wrong. \"314 is the line. If it goes, I was "
+            "early and I'll say so.\" That costs you something and it is not regret.\n"
+            "  AT MOST ONE POST IN THREE may say you were late, passed, or missed "
+            "it. Rotate through the others instead:\n"
+            "    * no clean explanation, and you won't invent one\n"
+            "    * your read was flatly wrong\n"
+            "    * a position hurt (tuition paid, stopped out)\n"
+            "    * you still don't know, and say so\n"
+            "    * you like it and admit that makes you soft on it\n"
+            "    * you're committing to a level and can be wrong in public\n"
+            "- NEVER write that a number proves YOU wrong. 'I'm wrong below 33.8', "
+            "'30.9 proves me wrong', 'X is my trigger' are banned outright — no human "
+            "talks like this. Risk belongs to the SETUP and only when it's the point: "
+            "'if it loses 33.8 the whole thing was noise' is a person. And the "
+            "compliance caveats are banned too: 'historical, not a guarantee', 'one "
+            "pattern isn't a guarantee', 'past performance', 'size appropriately'. An "
+            "honest caveat that COSTS you ('I've been early on this twice already') is "
+            "the good version.\n"
+            "- ONE number per post, and only when the number IS the point. Two prices "
+            "in a sentence is number soup and reads as AI on sight. A post with zero "
+            "numbers and one honest reaction beats a post with four numbers and none.\n"
+            "- No motto cadence. Terse symmetrical two-beat lines ('37.1 is my trigger, "
+            "30.9 proves me wrong') read like fortune cookies. No numbered lists of your "
+            "own process ('1. I write down the market's story. 2. I note the fact...').\n"
             "- No two headlines in the batch may share their opening words or shape.\n\n"
             "OUTPUT: a JSON array, same length and order as the input, each object "
             "exactly {\"headline\": str, \"body\": str}. No markdown, no preamble."
@@ -4534,8 +5203,11 @@ _V2_SYSTEM_PROMPT_BASE = (
     "- Meme cosplay and sitcom beats: stonks, diamond hands, paper hands, "
     "apes, fam, ser, wagmi, ngmi, 'to the moon', 'let that sink in', 'checks "
     "notes', 'narrator:', 'plot twist', 'hold my beer', 'well, that happened'.\n"
-    "- Signal posts keep an invalidation line (what would prove you wrong, "
-    "with its number) and an honest caveat.\n"
+    "- Risk never attaches to your ego: 'I'm wrong below 33.8', 'proves me "
+    "wrong', 'my trigger' are banned. Compliance caveats are banned too: "
+    "'historical, not a guarantee', 'past performance', 'size appropriately'.\n"
+    "- ONE number per post. Motto cadence (two short symmetrical clauses) and "
+    "numbered lists of your own process are banned.\n"
     "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
     "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
     "everywhere, kickers like 'without the noise'.\n\n"
@@ -5141,6 +5813,32 @@ def _v2_write_one(
 
     def _call(user_msg: str) -> str:
         def _do_call(client, model):
+            # DEEPSEEK v4 THINKS BY DEFAULT, AND THAT ATE THE WHOLE BUDGET.
+            #
+            # `deepseek-v4-pro` (llm_auth's default deepseek model) returns a
+            # ThinkingBlock BEFORE the text block on the Anthropic-compat
+            # endpoint, and bills roughly 4x the output tokens for it (probed
+            # live 2026-07-26). `max_tokens` here is per_post_max_tokens, 400 by
+            # default — enough for a post, nowhere near enough for a post PLUS
+            # the model's reasoning. The response hits the cap mid-thought and
+            # carries NO text block at all.
+            #
+            # The extraction below is correct — it filters every block of
+            # type=="text" rather than reading content[0] — so this did not look
+            # like a parse bug. It looked like the provider succeeding and
+            # returning nothing: llm_auth logs "provider 'deepseek' served after
+            # fallback" and this function returns None, so the post is dropped at
+            # stage=provider with "provider returned no text". On 2026-07-31 that
+            # was 914 of 915 planned posts, every enabled desk reporting 100%
+            # dropped, and a nightly plan with total_posts=0.
+            #
+            # FIXED AT THE PROVIDER, NOT HERE. eleven call sites across
+            # engine/marketing and engine/press build their own request through
+            # this same waterfall, so patching this one would leave ten lanes
+            # carrying the defect and the next new lane inheriting it.
+            # llm_auth's deepseek client now defaults `thinking` off for every
+            # caller (see _deepseek_no_thinking there); a lane that genuinely
+            # wants reasoning still gets it by passing `thinking` explicitly.
             resp = client.messages.create(
                 model=model, max_tokens=max_tokens, system=system_prompt,
                 messages=[{"role": "user", "content": user_msg}],
@@ -5149,6 +5847,19 @@ def _v2_write_one(
                 return None, "stop_refusal", resp
             text = "".join(b.text for b in resp.content
                            if getattr(b, "type", "") == "text")
+            if not text:
+                # SAY WHAT CAME BACK INSTEAD. "provider returned no text" is true
+                # and undiagnosable: it reads as an outage when the call in fact
+                # succeeded and spent its budget on something we discarded. The
+                # block types and stop_reason are the whole diagnosis, and they
+                # cost one log line at the moment they are still in hand.
+                _blocks = [str(getattr(b, "type", "?")) for b in (resp.content or [])]
+                log.warning(
+                    "copywriter v2: %s answered with no text block "
+                    "(blocks=%s, stop_reason=%s, max_tokens=%d) — if this is a "
+                    "thinking model the reasoning consumed the budget",
+                    model, _blocks or "[]", getattr(resp, "stop_reason", "?"),
+                    max_tokens)
             return (text or None), None, resp
 
         raw, _reason, _provider = llm_auth.make_call(

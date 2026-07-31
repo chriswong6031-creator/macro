@@ -157,6 +157,12 @@ def _fact_pct_change(
     }
 
 
+#: A "52-week" claim needs a year of bars. 240 (not 252) tolerates the handful
+#: of holiday-shortened years and a store that is a few sessions short, while
+#: still refusing a 90-bar window pretending to be a year.
+_MIN_52W_BARS = 240
+
+
 def _fact_52w_high_low(
     ticker: str,
     dates: list[str],
@@ -164,9 +170,25 @@ def _fact_52w_high_low(
     l: list[float],
     c: list[float],
 ) -> list[dict]:
-    """Distance from 52-week high/low, and new 52-week high/low detection."""
+    """Distance from 52-week high/low, and new 52-week high/low detection.
+
+    REQUIRES A YEAR OF BARS. This used to take ``window = min(252, n)`` and label
+    whatever it found a "52-week" extreme regardless of how much history it was
+    handed. The only production caller passed ``n=90``, so every one of these
+    facts was a ~4-month extreme wearing a 52-week name — and on the live stores
+    that is not a rounding error: MSFT's true 52-week high is 551.05 against a
+    90-bar 466.32 (18.2% understated), CDW 18.6%, META 14.9%, TSLA 10.0%.
+
+    The caller now loads 252. This floor is the second line: a fact that cannot
+    be TRUE under its own name must not be emitted at all, whatever a future
+    caller passes. Emitting nothing is honest; emitting a disprovable claim on
+    an account whose product is being right about levels is not.
+    """
     n = len(c)
     if n < 20:
+        return []
+
+    if n < _MIN_52W_BARS:
         return []
 
     window = min(252, n)

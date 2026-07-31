@@ -1050,3 +1050,132 @@ class TestBreakingProviderRouting:
         assert block["oauth_pool_lane"] == "marketing-breaking"
         # Luna never touches a user-facing word.
         assert "luna" not in str(block).lower()
+
+
+class TestRoutineRestatementDemotion:
+    """A restatement of an already-published print is not a flash.
+
+    Operator 2026-07-30, on a BEA GDP restatement that reached the live account
+    with no reaction and no chart, at 1-4 views. The taxonomy scored it by
+    TOPIC: "gdp" matched, so a third-estimate revision of a quarter that ended
+    months ago scored exactly as high as the print itself.
+
+    The wire is a RELAY by charter (breaking_summary.validate_summary rejects
+    stance words; wire_voice's prompt says "no interpretation, no stance") and
+    that is correct for a genuine flash -- speed and accuracy are the product,
+    and an LLM inventing implications about someone else's news is the
+    fabrication risk the charter exists to stop. So the fix is admission, not
+    editorial: stop relaying things that are not news.
+    """
+
+    # 10:00 ET on a weekday: full market-hours weight, so these numbers compare.
+    NOW = datetime(2026, 7, 30, 15, 0, 0, tzinfo=timezone.utc)
+
+    def _sal(self, headline, snippet, tier="tier1"):
+        return score_item(
+            {"headline": headline, "snippet": snippet, "source_tier": tier},
+            now=self.NOW,
+        )
+
+    @pytest.mark.parametrize("headline", [
+        # The phrasings a first exact-phrase list MISSED. It was written from
+        # guesses and caught only "third estimate" -- 1 of 5 real forms. A gate
+        # calibrated against invented strings is a gate you have not tested.
+        "US Q2 GDP revised up to 3.1%",
+        "GDP growth revised to 3.1% from 3.0%",
+        "BEA revises Q2 GDP to 3.1%",
+        "Second-quarter GDP revision shows 3.1% growth",
+        "US Q2 GDP revised higher in third estimate",
+        "Payrolls restated lower for June",
+    ])
+    def test_every_real_restatement_phrasing_is_demoted(self, headline):
+        r = self._sal(headline, "Gross domestic product and payrolls data.")
+        assert r["_salience_components"]["revision_penalty"] > 0, headline
+        assert r["salience"] < 60.0, headline
+
+    def test_a_fresh_print_that_merely_mentions_a_revision_survives(self):
+        """Headline-scoped on purpose: the headline is what an item is ABOUT.
+
+        A snippet routinely cites the prior reading while the item itself is
+        the new print, so matching headline+snippet would demote the print.
+        """
+        r = self._sal(
+            "US Q3 GDP grows 2.8%",
+            "GDP rose 2.8%; the prior quarter was revised to 3.1%.",
+        )
+        assert r["_salience_components"]["revision_penalty"] == 0.0
+        assert r["_salience_components"]["revision_marker"] == ""
+
+    def test_the_live_gdp_restatement_is_demoted_below_the_emit_floor(self):
+        r = self._sal(
+            "US Q2 GDP revised to 3.1% in third estimate, BEA says",
+            "The Bureau of Economic Analysis revised second-quarter gross "
+            "domestic product growth in its third estimate.",
+        )
+        assert r["_salience_components"]["revision_penalty"] > 0
+        assert r["_salience_components"]["revision_marker"].startswith("revis")
+        assert r["salience"] < 60.0, "the restatement still clears the wire"
+
+    def test_a_first_release_print_is_untouched(self):
+        """The demotion must not cost us the print itself."""
+        first = self._sal(
+            "US Q3 GDP grows 2.8%, topping forecasts",
+            "Gross domestic product rose at a 2.8% annualized rate.",
+        )
+        assert first["_salience_components"]["revision_penalty"] == 0.0
+        assert first["_salience_components"]["revision_marker"] == ""
+        # ...and it outranks the restatement of the same series.
+        revised = self._sal(
+            "US Q2 GDP revised to 3.1% in third estimate, BEA says",
+            "The Bureau of Economic Analysis revised second-quarter gross "
+            "domestic product growth in its third estimate.",
+        )
+        assert first["salience"] > revised["salience"]
+
+    def test_a_big_revision_can_still_earn_its_way_back(self):
+        """A DEMOTION, not a kill: a benchmark revision does move markets.
+
+        Ticker strength is what "big" looks like to the scorer, so the payrolls
+        benchmark revision that cut 818,000 jobs still clears.
+        """
+        r = self._sal(
+            "Payrolls benchmark revision cuts 818,000 jobs; $SPY $QQQ $TLT slide",
+            "The annual benchmark revision showed nonfarm payrolls and the "
+            "unemployment rate were far weaker than reported.",
+        )
+        assert r["_salience_components"]["revision_penalty"] > 0, "penalty applied"
+        assert r["salience"] >= 60.0, "a market-moving revision must still post"
+
+    def test_a_company_revising_guidance_is_not_touched(self):
+        """Scoped to macro_print on purpose: 'revised' is normal company news."""
+        r = self._sal(
+            "Nike revised its full-year guidance lower",
+            "Nike revised guidance and restated its prior estimate figures.",
+        )
+        assert r["event_class"] != "macro_print"
+        assert r["_salience_components"]["revision_penalty"] == 0.0
+
+    def test_every_other_class_keeps_its_exact_score(self):
+        """The historical score of everything that is not a restatement."""
+        for headline, snippet in [
+            ("Fed cuts rates 25 basis points",
+             "The Federal Reserve decision and FOMC lowered the fed funds target."),
+            ("US CPI rises 0.4% in September",
+             "The consumer price index and inflation reading increased 0.4%."),
+            ("Trump signs executive order on tariffs",
+             "The president signed an executive order imposing tariffs."),
+        ]:
+            c = self._sal(headline, snippet)["_salience_components"]
+            assert c["revision_penalty"] == 0.0, headline
+            assert c["revision_marker"] == "", headline
+
+    def test_the_breakdown_names_the_marker_that_fired(self):
+        """'why did the GDP item not post' answerable from the breakdown alone."""
+        c = self._sal(
+            "Payrolls benchmark revision cuts 818,000 jobs",
+            "The annual benchmark revision showed nonfarm payrolls were weaker.",
+        )["_salience_components"]
+        assert c["revision_marker"].startswith("revis")
+        assert set(c) >= {"base", "tier_bonus", "kw_bonus", "ticker_bonus",
+                          "revision_penalty", "revision_marker",
+                          "market_hours_weight", "raw", "capped"}

@@ -635,7 +635,14 @@ class TestFloorDiagnostic:
     """
 
     def test_fires_when_the_floor_blocked_the_whole_tick(self):
+        # SETS ITS OWN UNREACHABLE FLOOR. This used to read the live config and
+        # rely on it being 70.0 — i.e. the test only passed while production was
+        # misconfigured, and it broke the moment the floor was fixed (2026-07-31,
+        # 70 was the exact ceiling of macro_print+official, which is why the wire
+        # only ever posted BEA prints). A diagnostic test must construct the
+        # condition it reports on.
         cfg = _live_press_cfg()
+        cfg["wire"]["flagship_salience_floor"] = 999.0
         line = PW.floor_diagnostic(
             cfg, [{"reason": "below_flagship_floor", "salience": 45.0}], [])
         assert line is not None and line.startswith("::notice")
@@ -666,6 +673,7 @@ class TestFloorDiagnostic:
         from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
 
         cfg = _live_press_cfg()
+        cfg["wire"]["flagship_salience_floor"] = 999.0   # construct the condition
         line = PW.floor_diagnostic(
             cfg, [{"reason": "below_flagship_floor", "salience": 62.0}], [])
         assert line is not None, "fixture no longer trips the diagnostic"
@@ -703,7 +711,12 @@ class TestFloorDiagnostic:
         assert _TIER_BONUS.get("x_relay") == 8.0
         assert policy_base + _TIER_BONUS["mirror"] >= 60.0
         assert policy_base + _TIER_BONUS["aggregator"] < 60.0
-        assert policy_base + _TIER_BONUS["mirror"] < 70.0
+        # The flagship floor moved 70 -> 30 on 2026-07-31 because 70 was exactly
+        # macro_print(55) + official(15), so it admitted ONE class and nothing
+        # else. What this line pins is the arithmetic that made 70 wrong, not the
+        # value itself: a mirror policy post is 62, which is why it could never
+        # clear a 70 floor and can clear a 30 one.
+        assert policy_base + _TIER_BONUS["mirror"] == 62.0
 
 
 # ---------------------------------------------------------------------------
@@ -1221,3 +1234,170 @@ class TestM11PerHandleCadenceGate:
         assert PW.run(root, now=NOW + timedelta(seconds=30)) == 0
         assert calls == ["DeItaone"], (
             f"the second run re-polled the handle inside its interval: {calls}")
+
+
+class TestTheFloorAdmitsMoreThanOneEventClass:
+    """The wire posted BEA prints and nothing else, for arithmetic reasons.
+
+    wire.flagship_salience_floor was 70.0. Against breaking_relevance's taxonomy:
+
+        macro_print  55 + official 15 = 70   <- clears, EXACTLY
+        policy       50 + mirror   12 = 62   <- never
+        geopolitical 40 + official 15 = 55   <- never
+        company_news 30 + mirror   12 = 42   <- never
+
+    A floor set at the exact ceiling of ONE class silently reduced a six-source
+    news wire to an official-macro-print relay. The record matches: two items
+    booked in the lane's whole life, both BEA prints (GDP advance estimate,
+    personal income/outlays). Trump, the White House and every company story were
+    excluded by construction — the pollers ran, scored, and could not clear the
+    bar. A live tick now books a Truth Social policy post and a CNBC company
+    story that were previously impossible.
+    """
+
+    def _floor(self):
+        cfg = _live_press_cfg()
+        return float(cfg["wire"]["flagship_salience_floor"])
+
+    def test_more_than_one_event_class_can_reach_the_floor(self):
+        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
+
+        floor = self._floor()
+        best_bonus = max(float(_TIER_BONUS.get(t, 0.0))
+                         for t in ("mirror", "x_relay", "official", "wire"))
+        reachable = [str(row[0]) for row in _CLASS_TAXONOMY
+                     if float(row[1]) + best_bonus >= floor]
+        assert len(reachable) >= 3, (
+            f"only {reachable} can reach flagship_salience_floor={floor:g} — the "
+            "floor is back at the ceiling of one class and the wire is a "
+            "single-source relay again"
+        )
+
+    def test_a_trump_policy_post_from_the_mirror_can_clear_it(self):
+        """The president's own post is direct-quote/mirror — the one item type
+        this lane exists to carry — and it scores 62 at best."""
+        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
+
+        policy_base = next(float(row[1]) for row in _CLASS_TAXONOMY
+                           if row[0] == "policy")
+        assert policy_base + _TIER_BONUS["mirror"] >= self._floor()
+
+    def test_a_company_story_can_clear_it(self):
+        """"Apple drops 7%, Amazon surges 12% as investors pick AI winners" is a
+        company_news item — worth 30 base, and previously unpostable."""
+        from engine.marketing.breaking_relevance import _CLASS_TAXONOMY, _TIER_BONUS
+
+        base = next(float(row[1]) for row in _CLASS_TAXONOMY
+                    if row[0] == "company_news")
+        assert base + _TIER_BONUS["wire"] >= self._floor()
+
+    def test_volume_is_still_bounded_by_top_k_not_by_the_floor(self):
+        """Lowering the floor cannot flood the account: flagship_top_k_per_day
+        is what caps volume, and it is unchanged. The floor only decides WHICH
+        items compete for those slots."""
+        cfg = _live_press_cfg()
+        assert int(cfg["wire"]["flagship_top_k_per_day"]) <= 3
+
+    def test_unclassified_noise_still_does_not_clear_it(self):
+        """A live tick scores its `none`-class rows at 4.8-7.2. The floor must
+        stay well above that band or the wire starts relaying anything."""
+        assert self._floor() >= 20.0
+
+
+class TestPolicyNeedsAMarketNexus:
+    """Lowering the floor 70 -> 30 opened the `policy` class on salience alone.
+
+    The floor change was right: at 70 only `macro_print + official` could ever
+    clear (55 + 15, exactly), so the wire was a BEA-print relay. But a floor is
+    a proxy for "worth posting", not for "about markets", and `policy` is base
+    50 — it clears 30 on class alone, whatever the item actually says.
+
+    Measured on the 2026-07-31 dry run off the fix branch: three items booked to
+    the FLAGSHIP account, two of them real market news (Apple/Amazon earnings,
+    Reddit on Google's AI Overviews) and one a Truth Social post about the
+    Supreme Court's "Money and Prestige". There is exactly one emit path in
+    press_lane and it is gated on `salience >= floor`, so that item scored above
+    30 and could never have cleared 70 — the floor change admitted it.
+
+    HONEST LIMIT ON THIS GUARD: the live item's headline was 452 characters (the
+    run logged "headline prefix dropped (452 > 280)") and the dry run wrote no
+    state, so its exact text is not recoverable. Scoring the truncated headline
+    puts it at 9.0 in class `none` — below the floor — which does NOT reproduce
+    the booking. So this rule is aimed at the CLASS of defect the floor change
+    created, and is pinned on constructed items below rather than on a replay of
+    the live one.
+
+    The separating signal was already computed and thrown away: `matched`.
+    """
+
+    def test_a_policy_item_matching_nothing_is_refused(self):
+        from engine.marketing.press_lane import _no_market_nexus
+
+        assert _no_market_nexus({
+            "event_class": "policy", "salience": 46.5,
+            "matched": {"tickers": [], "sectors": [], "macro_keys": []},
+        })
+
+    def test_any_single_match_is_enough(self):
+        """One connection to a market is the whole bar — this is not a quality
+        gate, it is a topicality gate."""
+        from engine.marketing.press_lane import _no_market_nexus
+
+        for key, val in (("tickers", ["NVDA"]), ("sectors", ["technology"]),
+                         ("macro_keys", ["tariffs"])):
+            m = {"tickers": [], "sectors": [], "macro_keys": []}
+            m[key] = val
+            assert not _no_market_nexus({"event_class": "policy", "matched": m}), key
+
+    def test_geopolitical_is_deliberately_exempt(self):
+        """"Israel and Iran agree to ceasefire after two weeks of strikes"
+        scores 36.0 and matches NO ticker, sector or macro key — and is one of
+        the most market-moving headlines a wire can carry. An earlier draft of
+        this rule included geopolitical and blocked exactly that story."""
+        from engine.marketing.press_lane import _no_market_nexus
+
+        assert not _no_market_nexus({
+            "event_class": "geopolitical", "salience": 36.0,
+            "matched": {"tickers": [], "sectors": [], "macro_keys": []},
+        })
+
+    def test_company_news_and_macro_prints_are_never_touched(self):
+        """Both are about markets by construction. A company story whose name
+        the ticker universe happens not to carry must still ship."""
+        from engine.marketing.press_lane import _no_market_nexus
+
+        for cls in ("company_news", "macro_print", "none", ""):
+            assert not _no_market_nexus({
+                "event_class": cls,
+                "matched": {"tickers": [], "sectors": [], "macro_keys": []},
+            }), cls
+
+    def test_the_real_headlines_this_lane_exists_for_still_post(self):
+        """End-to-end against the live scorer, not hand-made verdicts.
+
+        Every one of these is a headline the wire SHOULD carry, and each is a
+        policy-class item that would be blocked by a naive "politics is banned"
+        rule. They pass because each one genuinely touches a market.
+        """
+        import yaml
+        from pathlib import Path
+        from engine.marketing.breaking_relevance import score_item
+        from engine.marketing.press_lane import _no_market_nexus
+
+        root = Path(__file__).resolve().parent.parent
+        cfg = (yaml.safe_load((root / "config/marketing.yml").read_text()) or {})
+        bc = cfg.get("breaking", {})
+        for headline in (
+            "Trump announces 50% tariff on Chinese semiconductors",
+            "White House announces new export controls on advanced chips to China",
+            "Treasury sanctions Russian oil shipping network",
+        ):
+            s = score_item({"headline": headline, "body_snippet": "",
+                            "source_tier": "mirror", "url": "http://x",
+                            "published_at": "2026-07-31T15:00:00Z"},
+                           cfg=bc, root=root)
+            assert s["event_class"] == "policy", (headline, s["event_class"])
+            assert s["salience"] >= 30.0, (headline, s["salience"])
+            assert not _no_market_nexus(s), (
+                f"{headline!r} is the reason this lane exists and the nexus rule "
+                f"would drop it; matched={s['matched']}")

@@ -831,3 +831,66 @@ def test_m2_polarity_key_present_on_all_m2_facts(monkeypatch):
             assert "polarity" not in fact, (
                 f"legacy fact {fact['id']} unexpectedly carries polarity"
             )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# A "52-week" fact must have a year of bars behind it.
+#
+# _fact_52w_high_low took `window = min(252, n)` and then LABELLED whatever it
+# found a 52-week extreme. The only production caller passed n=90, so every one
+# of these facts was a ~4-month extreme wearing a 52-week name. Measured on the
+# live price stores the day this was found:
+#
+#     MSFT  true 52w high 551.05   90-bar high 466.32   18.2% understated
+#     CDW                179.28                151.17   18.6%
+#     META               793.65                690.88   14.9%
+#     TSLA               498.83                453.40   10.0%
+#
+# These facts carry salience 10 and 7 -- the top of the sort -- so they are what
+# the writer LEADS with, and their price goes into numbers_whitelist, so the
+# invented-number guard actively certifies the wrong figure. Copy already queued
+# read "$TSLA ... New 52-week low" and "$AAPL -0.6% off the 52-week high at
+# 334.99": claims a follower disproves in one click, on an account whose entire
+# product is being right about levels.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestFiftyTwoWeekFactsNeedAYear:
+    def _bars(self, n, *, rising=True):
+        """n synthetic sessions with a clear extreme OUTSIDE the last 90."""
+        h, l, c, dates = [], [], [], []
+        for i in range(n):
+            # A spike high early (outside a 90-bar tail) so a short window misses it.
+            base = 100.0 + (50.0 if i == 5 else 0.0) + (i * 0.01)
+            h.append(base + 1); l.append(base - 1); c.append(base)
+            dates.append(f"2025-01-{(i % 28) + 1:02d}")
+        return dates, h, l, c
+
+    def test_a_ninety_bar_window_emits_no_52_week_claim(self):
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        dates, h, l, c = self._bars(90)
+        assert _fact_52w_high_low("TEST", dates, h, l, c) == [], (
+            "a 90-bar window is still being labelled a 52-week extreme"
+        )
+
+    def test_a_full_year_still_emits(self):
+        from engine.marketing.chart_facts import _fact_52w_high_low
+        dates, h, l, c = self._bars(252)
+        out = _fact_52w_high_low("TEST", dates, h, l, c)
+        assert isinstance(out, list)   # may be empty if not near an extreme
+        for f in out:
+            assert "52-week" in f["text"], f
+
+    def test_the_floor_is_a_year_not_a_quarter(self):
+        from engine.marketing.chart_facts import _MIN_52W_BARS
+        assert _MIN_52W_BARS >= 240, (
+            "the floor no longer means 'a year' -- a shorter window would let "
+            "the disprovable claim back in"
+        )
+
+    def test_the_production_caller_loads_a_year(self):
+        """The fix is worthless if content_studio goes back to n=90."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert "load_ohlcv(ticker, _ohlcv_root_cw, n=252)" in src, (
+            "the fact lane is loading a short window again"
+        )

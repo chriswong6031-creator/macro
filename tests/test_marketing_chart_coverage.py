@@ -603,3 +603,171 @@ def test_tape_chart_posts_survive_without_ohlcv_via_the_markerless_card():
     assert "BUY" in marked
     assert "BUY" not in markerless
     assert markerless.startswith("<svg") and "polyline" in markerless
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The chart has to draw the thing the copy is about.
+#
+# render_chart_v2 has supported avwap_overlay / poc_overlay all along. The
+# nightly call site built them ONLY when marketing.m2_overlays_always was set,
+# and that key is set NOWHERE -- so both went to the renderer as None on every
+# chart ever produced. A post read "held 219.90, the average price paid since
+# the Jun 26 volume spike" (an AVWAP) or "dipped back to 283.85, the most-traded
+# price of the past four months" (a POC) and the picture drew neither.
+#
+# On a program whose first law is that a ticker post ships a picture, a picture
+# that does not support its own claim is the defect wearing a disguise.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestChartDrawsWhatTheCopyClaims:
+    def test_the_nightly_builds_overlays_by_default(self):
+        """Opt-OUT now. The config key was opt-in and nobody ever opted in."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert 'get("m2_overlays_always", True)' in src, (
+            "overlays are opt-in again; they were dark on every chart the last "
+            "time this defaulted to False"
+        )
+
+    def test_overlays_reach_the_renderer(self):
+        """Wiring, not intent: the kwargs must actually be passed."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert "avwap_overlay=_m2_ovl.get" in src
+        assert "poc_overlay=_m2_ovl.get" in src
+
+    def test_build_m2_overlays_returns_both_for_a_real_ticker(self):
+        """Exercised against real OHLCV, not a mock: the levels must compute."""
+        import pytest
+        pytest.importorskip("pandas", reason="CI packs install minimal deps")
+        from engine.marketing.chart_render import build_m2_overlays, load_ohlcv_windowed
+        loaded = load_ohlcv_windowed("CVI", ".")
+        if not loaded:
+            pytest.skip("no OHLCV for the fixture ticker in this checkout")
+        (dates, o, h, l, c, v), _warm = loaded
+        ovl = build_m2_overlays("CVI", dates, o, h, l, c, v, ".")
+        assert ovl.get("avwap_overlay"), "AVWAP overlay did not build"
+        assert ovl.get("poc_overlay"), "POC overlay did not build"
+        assert "poc" in ovl["poc_overlay"], ovl["poc_overlay"].keys()
+
+    def test_the_drawn_chart_actually_labels_the_levels(self):
+        """End to end: render and assert the labels are IN the SVG.
+
+        A kwarg that is passed but silently ignored looks identical to a fix.
+        """
+        import pytest
+        pytest.importorskip("pandas", reason="CI packs install minimal deps")
+        from engine.marketing.chart_render import (
+            build_m2_overlays, load_ohlcv_windowed, render_chart_v2)
+        loaded = load_ohlcv_windowed("CVI", ".")
+        if not loaded:
+            pytest.skip("no OHLCV for the fixture ticker in this checkout")
+        (dates, o, h, l, c, v), warm = loaded
+        ovl = build_m2_overlays("CVI", dates, o, h, l, c, v, ".")
+        svg = render_chart_v2(
+            ticker="CVI", dates=dates, o=o, h=h, l=l, c=c, volume=v,
+            timeframe="DAILY", warmup=warm, volume_overlay=True,
+            subpanel_h=190, height=880, company_name="CVI", logo_root=".",
+            avwap_overlay=ovl.get("avwap_overlay"),
+            poc_overlay=ovl.get("poc_overlay"), cta=True,
+        )
+        assert "POC" in svg, "the POC level is not labelled on the chart"
+        assert "AVWAP" in svg, "the anchored VWAP is not labelled on the chart"
+
+
+class TestChartQualityIsVisible:
+    """Which renderer drew the image we posted was a fact nobody could check.
+
+    `legacy_png` is a hand-drawn PIL line chart: no candles, no indicators, no
+    footer CTA. It exists so a Chrome-less host (CI, the ubuntu publish runner)
+    posts a picture rather than bare text.
+
+    ONE committed content_plan.json showing 15 of 23 cards as `legacy_png` was
+    read three ways in two days: as an audit finding ("65% of images are the
+    retired legacy chart"); as a REFUTED finding (a census of SVGs on disk found
+    every one v2 — but the legacy path emits a PNG, so that check could not
+    observe what it was used to rule out); and then as a live production outage.
+    It was a LOCAL plan build with Chrome contended by parallel work. Production
+    ships the real card: all 21 PNGs the nightly wrote on 2026-07-29 are
+    2000x1760, the raster size, against the legacy renderer's 1200x675.
+
+    Three readings, no instrument. The only trace of a fallback was a
+    `log.warning` — dropped by GitHub, because this repo's builders log with a
+    prefixing format and an annotation must START the line — and nothing counted
+    the share. `media_render` is the field that records the answer; this reads it.
+    """
+
+    def test_the_census_counts_the_degraded_renderer(self):
+        from engine.marketing.content_studio import _chart_quality_census
+
+        out = _chart_quality_census([
+            {"id": "chart-001", "media_render": "svg_raster"},
+            {"id": "chart-002", "media_render": "legacy_png"},
+            {"id": "chart-003", "media_render": "legacy_png"},
+        ])
+        assert out["rastered"] == 3
+        assert out["legacy_fallback"] == 2
+        assert out["legacy_share"] == pytest.approx(0.667, abs=0.001)
+        assert out["degraded_chart_ids"] == ["chart-002", "chart-003"]
+
+    def test_a_card_that_was_never_rastered_is_not_a_quality_fact(self):
+        """Deferred and pruned cards have no media_render. Counting them as
+        healthy would inflate the share; counting them as degraded would cry
+        wolf on cards no post carries."""
+        from engine.marketing.content_studio import _chart_quality_census
+
+        out = _chart_quality_census([
+            {"id": "chart-001", "media_render": "svg_raster"},
+            {"id": "chart-002"},                       # deferred, never rastered
+            {"id": "chart-003", "media_render": ""},   # ditto
+        ])
+        assert out["rastered"] == 1
+        assert out["legacy_share"] == 0.0
+
+    def test_a_degraded_batch_reaches_the_console_as_a_line_start_warning(self, capsys):
+        """CLAUDE.md: an annotation that does not start the line is dropped by
+        GitHub, which is how this shipped dead five times before #3587."""
+        from engine.marketing.content_studio import _chart_quality_census
+
+        _chart_quality_census([
+            {"id": "chart-001", "media_render": "legacy_png"},
+            {"id": "chart-002", "media_render": "svg_raster"},
+        ])
+        out = capsys.readouterr().out
+        line = next(ln for ln in out.splitlines() if "marketing-chart-quality" in ln)
+        assert line.startswith("::warning title=marketing-chart-quality::"), line
+        assert "50%" in line
+
+    def test_a_clean_batch_does_not_cry_wolf(self, capsys):
+        from engine.marketing.content_studio import _chart_quality_census
+
+        _chart_quality_census([{"id": "c", "media_render": "svg_raster"}])
+        out = capsys.readouterr().out
+        assert "::notice title=marketing-chart-quality::" in out
+        assert "::warning" not in out
+
+    def test_the_raster_retries_once_before_accepting_a_worse_picture(self):
+        """A single failed Chrome launch used to decide the image a live account
+        posts. The raster is deterministic and writes only inside its own temp
+        dir, so one retry is safe — and it is bounded at one so a genuinely
+        Chrome-less host does not pay two doomed launches per card."""
+        import inspect
+        from engine.marketing import media_publish
+
+        src = inspect.getsource(media_publish.publish_card)
+        assert "for _attempt in (1, 2)" in src, "the retry is gone"
+        assert "find_chrome()" in src, (
+            "without the no-binary short-circuit, a Chrome-less host pays two "
+            "doomed launches for every card"
+        )
+
+    # The forensic "which renderer drew this card" pin lives in
+    # tests/test_marketing_chart_png.py, not here. It rasters a real legacy card,
+    # which needs PIL — and PIL is installed by exactly one job
+    # (marketing-media-pipeline: pytest+pyyaml+pillow). Written here it guarded
+    # nothing twice over: this file's lanes install pandas/numpy but NOT pillow,
+    # so render_signal_chart_png hit its own fail-soft ("PIL/share_cards
+    # unavailable — no PNG"), returned b"", and the test asserted PNG magic bytes
+    # against an empty string. Its importorskip named numpy, which the renderer
+    # does not use, so the guard could not even skip itself out of the way.

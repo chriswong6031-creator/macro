@@ -528,7 +528,11 @@ def test_admin_publisher_dryrun_wrapper_no_writes(monkeypatch, tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _mover_text(pct: float = 0.5) -> str:
-    return f"$PLTR +{pct:.1f}% today. Strength worth respecting, not chasing."
+    # NOT "Strength worth respecting, not chasing" — that is a RETIRED house
+    # closer (operator 2026-07-30) and the publisher's voice gate quarantines
+    # it on sight. These tests are about auto-approve ROUTING, so the fixture
+    # copy has to be copy that would actually ship.
+    return f"$PLTR +{pct:.1f}% today, and I keep underestimating this one."
 
 
 def test_scoped_auto_approves_publisher_lane_mover(monkeypatch, tmp_path):
@@ -2025,3 +2029,74 @@ def test_post_now_park_plus_unknown_id_still_exits_red(monkeypatch, tmp_path):
     assert rc == 3
     assert fake.calls == []
     assert current_statuses(tmp_path)[iid] == "quarantined"   # the real one parked
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The silent night.
+#
+# Every other annotation in the publisher names a PER-ITEM reason. The aggregate
+# outcome -- "the whole night produced nothing" -- was silent, so on 2026-07-29
+# zero posts went out and the operator found out by looking at the account
+# instead of at the run. A machine that cannot tell you it failed is not
+# autonomous, it is unattended.
+#
+# These drive the publisher LOOP, not the predicates. That distinction is not
+# academic: the bare-cashtag gate shipped green while writing into a `counters`
+# dict that was never defined, because its tests only exercised the pure
+# function and never walked main().
+# ─────────────────────────────────────────────────────────────────────────────
+class TestSilentNightAlarm:
+    def test_zero_posted_with_candidates_raises_a_loud_error(
+            self, monkeypatch, tmp_path, capsys):
+        """A post exists, none go out, and the run says so at ::error level."""
+        _write_publish_cfg(tmp_path, auto_approve=False)
+        # Queued and never approved: considered, blocked, zero posted.
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0])
+
+        fake = _FakePublisher(ok=True)
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live"],
+                            fake_publisher=fake, kill_switch=True)
+        assert rc == 0
+        assert fake.calls == [], "fixture assumption: nothing should have posted"
+
+        out = capsys.readouterr().out
+        hits = [ln for ln in out.splitlines()
+                if ln.startswith("::error title=marketing-zero-posted::")]
+        # Line-START, bare print: a logger prefix makes GitHub drop it silently.
+        assert hits, f"no silent-night alarm in output:\n{out[-1500:]}"
+        assert "NOTHING POSTED" in hits[0]
+
+    def test_a_night_that_posts_stays_quiet(self, monkeypatch, tmp_path, capsys):
+        """The alarm must not cry wolf, or it gets ignored like every other one."""
+        from engine.marketing.outbox import current_statuses
+
+        _write_publish_cfg(tmp_path, auto_approve=True)
+        qid = _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1])
+
+        fake = _FakePublisher(ok=True)
+        assert _run_publisher(monkeypatch, tmp_path, ["--live"],
+                              fake_publisher=fake, kill_switch=True) == 0
+        assert current_statuses(tmp_path)[qid] == "posted", "fixture must post"
+
+        out = capsys.readouterr().out
+        assert "marketing-zero-posted" not in out, "alarm fired on a good night"
+
+    def test_an_empty_queue_is_not_an_alarm(self, monkeypatch, tmp_path, capsys):
+        """Nothing was DUE. That is a supply problem the plan lane owns, and
+        firing here would train the operator to ignore the annotation."""
+        _write_publish_cfg(tmp_path, auto_approve=True)
+
+        fake = _FakePublisher(ok=True)
+        assert _run_publisher(monkeypatch, tmp_path, ["--live"],
+                              fake_publisher=fake, kill_switch=True) == 0
+        out = capsys.readouterr().out
+        assert "marketing-zero-posted" not in out, "alarm fired on an empty queue"
+
+    def test_a_dry_run_never_alarms(self, monkeypatch, tmp_path, capsys):
+        """--live only. A dry run posting nothing is the point of a dry run."""
+        _write_publish_cfg(tmp_path, auto_approve=True)
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[2])
+
+        assert _run_publisher(monkeypatch, tmp_path, [], kill_switch=False) == 0
+        out = capsys.readouterr().out
+        assert "marketing-zero-posted" not in out

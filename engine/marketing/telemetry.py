@@ -809,3 +809,99 @@ def write_rollup(
     except Exception as exc:  # noqa: BLE001
         log.warning("telemetry.write_rollup: failed: %s", exc, exc_info=True)
         return {"error": str(exc)}
+
+
+#: How long after its booked send time a `posted` item may stay unconfirmed
+#: before we say so. Buffer's analytics lag is hours, not days; a post still
+#: showing nothing after this is more likely never to have gone out.
+_SEND_CONFIRM_GRACE_H = 36
+
+
+def unconfirmed_sends(
+    root: "Path | str | None" = None,
+    *,
+    now: "datetime | None" = None,
+    grace_hours: int = _SEND_CONFIRM_GRACE_H,
+) -> dict[str, Any]:
+    """`posted` items with no evidence they ever reached X. The INVERSE scan.
+
+    WHY THIS DIRECTION IS THE MISSING ONE. `join_provenance` walks METRICS ROWS
+    and flags any with no outbox item (`orphans`). That catches "we measured
+    something we did not plan". It cannot catch the opposite and more damaging
+    case — "we planned, marked it posted, and it never went out" — because a post
+    that never happened produces no metrics row to walk. One direction was
+    guarded because it once broke; the quiet half stayed open.
+
+    It matters because `posted` does NOT mean live. It means Buffer ACCEPTED the
+    item (see the recall machinery: an accepted post is a reservation in Buffer's
+    queue, cancellable until its send time). If Buffer then fails to send, the
+    status ledger keeps saying `posted` forever, the post counts toward every
+    volume census we publish, and nothing anywhere disagrees.
+
+    The join already existed and nothing performed it: `receipt.external_id` on
+    the `posted` transition is `remote_id` in post_metrics.jsonl. Measured on the
+    committed ledgers 2026-07-31 — 48 posted, 48 metrics-confirmed live, 0
+    unconfirmed. So this is a guard against a live risk, not a report of an
+    active fire, and it should stay quiet until something actually slips.
+
+    Returns {"posted", "confirmed", "unconfirmed", "pending", "items": [...]}.
+    `pending` is inside the grace window — analytics lag, not a fault.
+    """
+    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+
+    out: dict[str, Any] = {"posted": 0, "confirmed": 0, "unconfirmed": 0,
+                           "pending": 0, "items": []}
+    try:
+        from engine.marketing.ledgers import read_jsonl  # noqa: PLC0415
+
+        r = _repo_root(root)
+        led = read_jsonl(r / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+        met = read_jsonl(r / "data" / "marketing" / "post_metrics.jsonl")
+    except Exception as exc:  # noqa: BLE001
+        out["error"] = str(exc)[:200]
+        return out
+
+    # A remote id counts as CONFIRMED once any poll came back with real metrics.
+    confirmed_ids = {
+        str(m.get("remote_id") or "")
+        for m in met
+        if isinstance(m, dict) and (m.get("metrics") or {})
+    }
+    confirmed_ids.discard("")
+
+    ref = now or _dt.now(_tz.utc)
+    latest: dict[str, dict] = {}
+    for row in led:
+        if isinstance(row, dict) and row.get("to") == "posted" and row.get("id"):
+            latest[str(row["id"])] = row      # last posted transition wins
+
+    for item_id, row in latest.items():
+        out["posted"] += 1
+        receipt = row.get("receipt") or {}
+        remote = str(receipt.get("external_id") or "")
+        if remote and remote in confirmed_ids:
+            out["confirmed"] += 1
+            continue
+        booked = str(receipt.get("booked_at") or receipt.get("at") or row.get("at") or "")
+        try:
+            when = _dt.fromisoformat(booked.replace("Z", "+00:00"))
+            if when.tzinfo is None:
+                when = when.replace(tzinfo=_tz.utc)
+        except Exception:  # noqa: BLE001
+            when = None
+        if when is not None and (ref - when) < _td(hours=grace_hours):
+            out["pending"] += 1          # analytics lag, not a fault
+            continue
+        out["unconfirmed"] += 1
+        out["items"].append({"id": item_id, "external_id": remote or None,
+                             "booked_at": booked or None})
+
+    if out["unconfirmed"]:
+        ids = ", ".join(str(i["id"]) for i in out["items"][:5])
+        print(f"::warning title=marketing-unconfirmed-sends::"
+              f"{out['unconfirmed']} item(s) marked POSTED more than {grace_hours}h "
+              f"ago have never returned a single metric. `posted` means Buffer "
+              f"ACCEPTED the post, not that it went out — these may never have "
+              f"reached X while counting toward every volume number we publish. "
+              f"Affected: {ids}", flush=True)
+    return out

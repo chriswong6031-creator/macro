@@ -92,6 +92,16 @@ SINGLE_NAME_TRIGGERS: frozenset[str] = frozenset({
     "earnings_reaction",
 })
 
+#: Triggers whose post is about a GROUP of names, and where each one keeps its
+#: [[symbol, pct], ...] constituents. These get the watchlist card, not a price
+#: chart — see :func:`resolve_group_card` for why they get one at all.
+_GROUP_ROWS_FACT: dict[str, str] = {
+    "sector_rout": "leaders",
+    "sector_rip": "leaders",
+    "contrarian_breadth": "green",
+}
+GROUP_TRIGGERS: frozenset[str] = frozenset(_GROUP_ROWS_FACT)
+
 #: A card drawn off bars older than this is a lie about "so far today".
 MAX_BAR_AGE_DAYS = 7
 #: Snapshot ring depth: 36 x 5 min ~ the RTH session (masterplan T6 input).
@@ -132,6 +142,16 @@ def _f(v: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return f if f == f and abs(f) != float("inf") else None
+
+
+def _slug(raw: Any) -> str:
+    """A filename-safe token for a group label ("REIT - Residential" -> "reit-residential").
+
+    Used in a chart_id, which becomes a path and an R2 key, so it must never
+    emit a separator or an empty string.
+    """
+    out = "".join(ch if ch.isalnum() else "-" for ch in str(raw or "").lower())
+    return "-".join(p for p in out.split("-") if p) or "market"
 
 
 def _read_json(path: Path) -> dict | None:
@@ -755,12 +775,20 @@ def needs_chart(packet: HT.FactPacket) -> bool:
     """Does the operator's every-ticker-post-carries-a-chart law apply here?
 
     Trigger family for an alert, and the SUBJECT for a context brief: a brief
-    that names one ticker is a ticker post no matter which trigger built it,
-    while a brief about a whole group is a breadth post and ships text-only in
-    P1 exactly as its alert did.
+    that names one ticker is a ticker post no matter which trigger built it.
+
+    A GROUP post owes a picture too (2026-07-31). It used to answer False here
+    — "a breadth post ships text-only in P1 exactly as its alert did" — which
+    was true about the price chart and wrong about the law. The copy names its
+    movers, so the publisher's chart law quarantines it: 19 group posts queued
+    on 2026-07-30 and all 19 died there. The picture is the watchlist card, not
+    a chart, and it is owed only when the packet actually carries the names to
+    put on it.
     """
     if packet.trigger in SINGLE_NAME_TRIGGERS:
         return True
+    if packet.trigger in GROUP_TRIGGERS:
+        return bool(group_rows(packet))
     return packet.trigger == HT.BRIEF_TRIGGER and bool(packet.ticker)
 
 
@@ -961,6 +989,148 @@ def _is_massive_only(ticker: str, root: Path) -> bool:
         return HYDRATE_SUBDIR in str(path).replace("\\", "/")
 
 
+def group_rows(packet: HT.FactPacket) -> list[dict[str, Any]]:
+    """The names a group post is about, as watchlist-card rows.
+
+    Both group families already carry their constituents — `sector_rout` /
+    `sector_rip` in facts["leaders"], `contrarian_breadth` in facts["green"] —
+    as [[symbol, pct], ...] in the order the copy names them. That is exactly
+    render_watchlist_card's row shape minus the price, which it degrades
+    cleanly on (no pill rather than a placeholder dash).
+
+    Returns [] when the packet is not a group post or its constituents are
+    missing/unusable, which the caller reads as "no card" and drops the post.
+    """
+    fact_key = _GROUP_ROWS_FACT.get(str(packet.trigger or ""))
+    if not fact_key:
+        return []
+    rows: list[dict[str, Any]] = []
+    for entry in (packet.facts.get(fact_key) or []):
+        try:
+            sym, pct = entry[0], entry[1]
+        except (TypeError, IndexError, KeyError):
+            continue
+        ticker = str(sym or "").strip().upper().lstrip("$")
+        pct_f = _f(pct)
+        if not ticker or pct_f is None:
+            continue
+        rows.append({"ticker": ticker, "pct_change": float(pct_f), "price": None})
+    return rows
+
+
+def _group_card_title(packet: HT.FactPacket) -> str:
+    """The card's hero line. Plain words, and it says nothing the post does not."""
+    label = str(packet.sector or "").strip()
+    if str(packet.trigger) == "contrarian_breadth":
+        return "Defensive names green"
+    verb = "selling off" if str(packet.direction) == "down" else "bid up"
+    return f"{label} {verb}".strip() if label else f"A group {verb}"
+
+
+def _group_card_subtitle(packet: HT.FactPacket) -> str | None:
+    """The panel's own caption: the breadth fact, straight out of the packet.
+
+    Deliberately NOT a second stance. The post text carries the read; a card
+    that argues alongside it can contradict it, and every number here is one
+    the packet already authorised (gate 0.3).
+    """
+    f = packet.facts
+    n_members = f.get("n_members")
+    agree = f.get("n_down") if str(packet.direction) == "down" else f.get("n_up")
+    median = _f(f.get("median_pct"))
+    if agree is None or n_members is None or median is None:
+        n_green = f.get("n_green")
+        return f"{n_green} names green" if n_green else None
+    way = "lower" if str(packet.direction) == "down" else "higher"
+    return f"{agree} of {n_members} {way}, median {median:+.1f}%"
+
+
+def resolve_group_card(
+    packet: HT.FactPacket,
+    *,
+    root: Path,
+    marketing_cfg: dict,
+    as_of: str,
+    now: datetime,
+) -> dict[str, Any]:
+    """The picture for a post about a GROUP of names. Same contract as
+    :func:`resolve_chart` — {"media", "published", "reason"}.
+
+    WHY THIS EXISTS. `needs_chart` used to answer False for the whole group
+    family, on the reasoning that a breadth read is not a post about one name
+    and has no price chart to draw. True, and it made the family
+    unpublishable: the copy names its movers ("Best: $SNDK +21.1%, $WDC
+    +15.2%"), and the publisher's chart law — a post that NAMES TICKERS ships
+    a picture, whatever kind it claims to be (operator 2026-07-30) —
+    quarantines every one of them. Two rules, each right on its own, that
+    between them deleted an entire post family: 19 queued on 2026-07-30, 19
+    quarantined.
+
+    A price chart was never the answer for a group. render_watchlist_card is —
+    the third member of the same card family, written for exactly this ("a
+    plain multi-ticker text post ... as a screenshot of a premium SaaS
+    watchlist panel").
+
+    The rows come straight from the packet, so nothing here can invent a name
+    or a number. The card does read bars, but only for the per-row sparkline
+    (load_closes n=10 under logo_root), and that read is silent on a miss — a
+    name with no local history draws no sparkline rather than a made-up one.
+    """
+    out: dict[str, Any] = {"media": None, "published": {}, "reason": "no-rows"}
+    rows = group_rows(packet)
+    if not rows:
+        return out
+    try:
+        from engine.marketing.chart_render import (  # noqa: PLC0415
+            chart_cta_enabled,
+            render_watchlist_card,
+        )
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+
+        svg = render_watchlist_card(
+            _group_card_title(packet),
+            rows,
+            as_of=as_of,
+            subtitle=_group_card_subtitle(packet),
+            logo_root=root,
+            cta=chart_cta_enabled(marketing_cfg),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: group card render failed for %s: %s",
+                    packet.key, exc)
+        out["reason"] = "render-failed"
+        return out
+
+    # Keyed on the packet, not a ticker: this card is about the group.
+    chart_id = f"hottape-{packet.trigger}-{_slug(packet.sector or 'market')}-{now.strftime('%H%M')}Z"
+    try:
+        published = publish_card(svg, chart_id=chart_id, as_of=as_of, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: publish_card failed for %s: %s", chart_id, exc)
+        published = {}
+    out["published"] = dict(published or {})
+    out["published"]["chart_id"] = chart_id
+
+    url = str((published or {}).get("media_url") or "").strip()
+    if not url.lower().startswith(("http://", "https://")):
+        out["reason"] = "no-media-url"
+        return out
+
+    entry: dict[str, Any] = {
+        "kind": "chart_svg",
+        "path": (published.get("svg_path")
+                 or f"data/marketing/outbox/media/{as_of}/{chart_id}.svg"),
+        "chart_id": chart_id,
+        "tickers": [r["ticker"] for r in rows],
+        "media_url": url,
+    }
+    if published.get("media_png_path"):
+        entry["media_png_path"] = published["media_png_path"]
+    out["media"] = entry
+    out["reason"] = "ok"
+    return out
+
+
 def resolve_chart(
     packet: HT.FactPacket,
     *,
@@ -1156,17 +1326,61 @@ def book_packet(
     phrased = phrase(packet, template_text, llm_cfg=llm_cfg)
     text = phrased["text"]
 
+    # PREFLIGHT BEFORE THE PICTURE (2026-07-30).
+    #
+    # resolve_chart() below is a Chrome raster AND an R2 upload. It used to run
+    # before enqueue, so every duplicate, near-duplicate and cap rejection paid
+    # full price for an image nobody would ever see — on a nightly render budget
+    # that is law (~67 min, 4-core-bound). Nothing enqueue rejects on depends on
+    # the media: the id hashes (account, kind, text, as_of), and the dedupe and
+    # cap checks read text and account. The deciding facts are all in hand HERE.
+    #
+    # This is an optimisation, never a gate. preflight_enqueue is fail-open and
+    # reads without the outbox lock, so it can only ever skip work it was going
+    # to lose anyway; enqueue below still runs every check authoritatively. The
+    # caller records these codes in the fired ledger (_TERMINAL_ENQUEUE_CODES),
+    # so a refusal here suppresses the re-detect on the next five-minute pass
+    # exactly as a post-render refusal did.
+    if not dry_run:
+        _pre = OB.preflight_enqueue(
+            account=account, kind="breaking", text=text, as_of=as_of,
+            root=root, cfg=marketing_cfg,
+        )
+        if _pre != "ok":
+            print(f"hot-tape REFUSE {packet.key} {_pre} (preflight, no render)",
+                  flush=True)
+            return {"status": _pre, "item_id": None, "text": text}
+
     media: list[dict] = []
     published: dict[str, Any] = {}
     chart_state = "none"
     if needs_chart(packet):
+        is_group = packet.trigger in GROUP_TRIGGERS
         if dry_run:
-            # Simulation: local bars only, no fetch, no render, no upload.
-            _, reason = load_bars(str(packet.ticker or ""), root, now=now, fetcher=None)
-            if reason != "ok":
-                print(f"hot-tape DROP {packet.key} {reason}", flush=True)
-                return {"status": f"drop:{reason}", "item_id": None, "text": text}
-            chart_state = "ok(simulated)"
+            # Simulation: local inputs only, no fetch, no render, no upload.
+            if is_group:
+                # A group card needs no bars — its rows ARE the packet — so the
+                # only way it can fail is having no names, which needs_chart
+                # already refused above.
+                chart_state = "ok(simulated,group)"
+            else:
+                _, reason = load_bars(str(packet.ticker or ""), root, now=now,
+                                      fetcher=None)
+                if reason != "ok":
+                    print(f"hot-tape DROP {packet.key} {reason}", flush=True)
+                    return {"status": f"drop:{reason}", "item_id": None, "text": text}
+                chart_state = "ok(simulated)"
+        elif is_group:
+            card = resolve_group_card(packet, root=root,
+                                      marketing_cfg=marketing_cfg,
+                                      as_of=as_of, now=now)
+            if card.get("media") is None:
+                print(f"hot-tape DROP {packet.key} {card.get('reason')}", flush=True)
+                return {"status": f"drop:{card.get('reason')}", "item_id": None,
+                        "text": text}
+            media = [card["media"]]
+            published = card.get("published") or {}
+            chart_state = "ok(group)"
         else:
             card = resolve_chart(packet, root=root, marketing_cfg=marketing_cfg,
                                  as_of=as_of, now=now, fetcher=fetcher,
@@ -1288,6 +1502,15 @@ def emit(
     booked: list[str] = []
     llm = llm_cfg if isinstance(llm_cfg, dict) else {"llm": {}}
     said_capped = False
+    # Posts this pass DREW A CARD and then lost it. Counted because the loss is
+    # otherwise silent: a drop prints one stdout line among hundreds, the pass
+    # exits 0, and the lane reads healthy. That silence is how 2026-07-30 spent
+    # a whole session rendering 8,081 cards it could not host (boto3 was not
+    # installed, so every upload returned None) and shipped nothing. A rendered
+    # card is a Chrome raster, an R2 attempt and — because it happens after the
+    # copy pass — an LLM call, and a drop here is NOT recorded as fired, so the
+    # same story comes back on the next five-minute pass and pays it all again.
+    unhosted: list[str] = []
 
     def _over_day_cap() -> bool:
         nonlocal said_capped
@@ -1336,6 +1559,13 @@ def emit(
             # cap rejection came back every five minutes: re-detected, re-drawn
             # (a Chrome raster + an R2 upload each time) and re-refused.
             HT.append_fired(root, HT.fired_entry(packet, item_id=None, account=account))
+            continue
+        if status in ("drop:no-media-url", "drop:render-failed"):
+            # DELIBERATELY NOT recorded as fired: an upload that blipped should
+            # be retried on the next pass, not written off for the day. The
+            # annotation below is what keeps that retry from being invisible
+            # when it is an outage rather than a blip.
+            unhosted.append(f"{packet.key} ({status.split(':', 1)[1]})")
 
     # ── Two-step publish: the context brief for an already-posted alert ──────
     # A demo is bounded to ONE post (reviewer M5). pending_briefs already
@@ -1370,6 +1600,19 @@ def emit(
             # stops the radar rebuilding and re-refusing the same brief every
             # pass until the window closes.
             HT.append_fired(root, HT.fired_entry(packet, item_id=None, account=account))
+
+    if unhosted:
+        # BARE print, line-start, flushed — never through the logger. Every
+        # builder here logs with a prefixing format, so log.warning("::warning")
+        # emits "WARNING ::warning" and GitHub silently drops it: the call
+        # reviews as an alarm and produces nothing in the Actions summary.
+        print(f"::warning title=hot-tape-unhosted-card::{len(unhosted)} post(s) "
+              f"drew a card this pass and could not host it, so they were "
+              f"dropped: {'; '.join(unhosted[:5])}"
+              f"{' ...' if len(unhosted) > 5 else ''}. Every one of these cost a "
+              f"raster and a copy pass and will be retried next pass. If this "
+              f"repeats, the R2 upload is failing (check boto3 is installed and "
+              f"R2_* are set), not the tape.", flush=True)
     return booked
 
 
@@ -1605,6 +1848,66 @@ def _parse_iso(raw: Any) -> datetime | None:
 # Entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Hot-tape render litter older than this is swept at the start of each pass.
+#: 2 days keeps today and yesterday available for an operator looking at a card
+#: in the console, and throws away everything the R2 URL already owns.
+_HOT_TAPE_RENDER_RETENTION_DAYS = 2
+
+
+def sweep_hot_tape_renders(
+    root: "Path | str",
+    *,
+    now: datetime | None = None,
+    retention_days: int = _HOT_TAPE_RENDER_RETENTION_DAYS,
+) -> int:
+    """Delete stale hottape-*.svg/.png render inputs. Returns files removed.
+
+    THE LEAK (2026-07-30): this lane renders a card for EVERY candidate it
+    evaluates, before it knows whether the post will ship, on every intraday
+    sweep. In one day that wrote 8,068 hottape-*.svg into
+    data/marketing/outbox/media/<date>/ -- a directory that is COMMITTED, because
+    the nightly chart-NNN.svg snapshots there feed the admin console preview.
+    420 MB in the media tree, ~8k new tracked files per day, and a git that had
+    started printing "too many unreachable loose objects" on every command.
+
+    The .gitignore now excludes hottape-*.svg specifically (the nightly
+    chart-NNN.svg snapshots stay committed). This is the other half: without a
+    sweep the files still accumulate on the runner's disk forever.
+
+    Deletes ONLY files matching the hottape- prefix. Never raises: a sweep
+    failure must not cost the radar its pass.
+    """
+    from pathlib import Path as _P
+    base = _P(root) / "data" / "marketing" / "outbox" / "media"
+    ts = now or datetime.now(timezone.utc)
+    cutoff = (ts - timedelta(days=retention_days)).date()
+    removed = 0
+    try:
+        if not base.is_dir():
+            return 0
+        for day_dir in base.iterdir():
+            if not day_dir.is_dir():
+                continue
+            try:
+                day = date.fromisoformat(day_dir.name)
+            except (ValueError, TypeError):
+                continue          # not a date-named dir: leave it alone
+            if day >= cutoff:
+                continue
+            for f in list(day_dir.glob("hottape-*")):
+                try:
+                    f.unlink()
+                    removed += 1
+                except OSError:
+                    pass
+    except Exception as exc:  # noqa: BLE001 — never cost the radar its pass
+        log.warning("hot_tape_radar: render sweep failed: %s", exc)
+        return removed
+    if removed:
+        log.info("hot_tape_radar: swept %d stale render file(s)", removed)
+    return removed
+
+
 def run(
     root: Path,
     *,
@@ -1623,6 +1926,9 @@ def run(
     ts = now or datetime.now(timezone.utc)
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
+
+    # Sweep this lane's own render litter before doing anything else.
+    sweep_hot_tape_renders(root, now=ts)
     cfg = HT.load_config(root)
 
     if not bool(_cfg(cfg, "enabled", True)):

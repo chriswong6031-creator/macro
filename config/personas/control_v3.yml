@@ -33,8 +33,8 @@ voice_codex:
 beat: "baseline engine lane"
 tilt:
   signal: 0.30
-  chart: 0.13
-  education: 0.10
+  chart: 0.23
+  education: 0.00  # OFF 2026-07-30 (was 0.10)
   macro: 0.11
   receipt: 0.08
   watchlist: 0.06

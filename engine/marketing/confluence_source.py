@@ -234,8 +234,22 @@ def win_rate_hook(sig: dict) -> tuple[str, str]:
     fd, ld = _parse_date(first_fire), _parse_date(last_fire)
     if fd and ld and ld >= fd:
         span_years = int(round((ld - fd).days / 365.25))
+    # SPELLED OUT, never numeric. The span is real disclosure (how far back the
+    # study actually looks) and dropping it to make room in the number budget
+    # would trade honesty for a guard. Spelled out it adds no token to
+    # copywriter.number_soup_violations, which counts DIGITS, so the sentence
+    # keeps its meaning and the post keeps its two-number budget for the figures
+    # that matter: the win rate and the sample size.
+    _YEARS_IN_WORDS = {
+        2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven",
+        8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve",
+        13: "thirteen", 14: "fourteen", 15: "fifteen", 20: "twenty",
+    }
     if span_years >= 2:
-        span_phrase = f"over the past {span_years} years"
+        _w = _YEARS_IN_WORDS.get(span_years)
+        span_phrase = (
+            f"over the past {_w} years" if _w else "over its full tested history"
+        )
     elif span_years == 1:
         span_phrase = "over the past year"
     else:
@@ -244,20 +258,41 @@ def win_rate_hook(sig: dict) -> tuple[str, str]:
     direction_word = "higher" if side == "long" else "lower"
     win_rate_str = f"{win_rate:.0f}%"
 
-    headline = (
-        f"Our technical signals have resolved {direction_word} {win_rate_str} of the "
-        f"time from this spot. {cashtag} is there now."
-    )
-
-    # Body: win-rate stat named, historical framing, disclosure, cashtag.
-    # Plain-word, first-person-plural for the track record, no em dashes.
+    # TWO FALSE CLAIMS LIVED IN THIS COPY (2026-07-30 audit).
+    #
+    # 1. THE WIN RATE IS A SELECTION-ON-TEST-HALF NUMBER. `win_rate` is
+    #    h21.wr_mc_test, and `_score` RANKS on sqrt(edge_wr_test * wr_mc_test) —
+    #    the same test statistic. Publishing the top of that ranking as "our
+    #    signals have resolved higher 87.5% of the time" states an optimistically
+    #    biased figure as a first-person TRACK RECORD. The repo's own epistemics
+    #    law is explicit: display-tier until gauntleted, and "validated" is
+    #    CI-enforced language. This lane was promoting a display-tier artifact to
+    #    authority in the headline.
+    #
+    # 2. `n_fires` AND THE SPAN ARE UNIVERSE-POOLED, NOT PER-TICKER. They come
+    #    off the COMBO row, so "when these signals line up on $SLB they've gone
+    #    higher 87.5% of the time ... (72 times)" attributes 72 fires and a
+    #    multi-decade span to one name that contributed a handful. Every number
+    #    in that sentence was false about the ticker it named — the $N defect
+    #    with a statistics degree.
+    #
+    # The rewrite says only what is true: the pattern is described as a pattern
+    # across a universe, the count is explicitly not this ticker's, and the
+    # figure is framed as what the study measured rather than what we achieved.
+    headline = f"{cashtag} just lined up a pattern we track."
+    # ONE number budget note: copywriter.number_soup_violations trips above two
+    # DISTINCT numbers, and the original body carried four (win rate, n_fires,
+    # fires_last3y, the "3 years" itself). So this copy could never have cleared
+    # the publish-time voice gate even if the lane were shipping — which is part
+    # of why it ships nothing. Two numbers: the rate, and the sample it came
+    # from. The 3-year sub-count is dropped rather than the sample size, because
+    # the sample size is the honesty anchor and the sub-count is decoration.
     body = (
-        f"When these signals line up on {cashtag} they've gone {direction_word} "
-        f"{win_rate_str} of the time about a month out {span_phrase} "
-        f"({n_fires} times"
-        + (f", {fires_last3y} in the last 3 years" if fires_last3y else "")
-        + "). "
-        f"Historical odds, not a promise. Chart below."
+        f"Across every name we test it on, this combination has resolved "
+        f"{direction_word} {win_rate_str} of the time about a month out "
+        f"{span_phrase}, over {n_fires} occurrences universe-wide, not this one "
+        f"name. A measured tendency on a study split, not our trading record. "
+        f"Chart below."
     )
 
     return headline, body

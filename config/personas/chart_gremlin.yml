@@ -33,13 +33,13 @@ voice_codex:
   zh: false
 beat: "chart structure + volume, one clean read per post"
 tilt:
-  signal: 0.30
+  signal: 0.38
   chart: 0.28
   mover: 0.10
   theme_list: 0.04
   receipt: 0.06
   event: 0.06
-  education: 0.08
+  education: 0.00  # OFF 2026-07-30 (was 0.08)
   macro: 0.04
   watchlist: 0.04
 pipeline: llm
