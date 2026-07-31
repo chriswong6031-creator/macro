@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T16:43:16.674773+00:00",
-  "count": 470,
+  "generated_at": "2026-07-31T17:13:20.642402+00:00",
+  "count": 471,
   "institutions": [
     "Amova",
     "Apollo",
@@ -60,6 +60,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-qwceou4vfo4-117b9b",
+      "title": "Euro Area German Headline At Consensus",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:15:26Z",
+      "summary_points": [
+        "**German Core CPI Downgrade**: German core CPI at 2.36% (down from 2.45%) triggers downgrades to Euro area core HICP (2.42%, down 3bp) and headline inflation forecast (2.87%, down 2bp).",
+        "**Core Inflation Tracking Decline**: Core inflation tracking (red) falls to 2.42% after incorporating new national data (German, Spanish, Belgian), signaling easing underlying pressures.",
+        "**Headline Inflation Stability**: Euro area headline inflation tracking (blue) remains stable at 2.87-2.89%, indicating persistent inflation despite German data revisions.",
+        "**Inflation Forecast Divergence**: Goldman Sachs' July 2026 HICP forecast (2.87) is 0.03 below BBG Consensus (2.90), reflecting marginal easing in overall inflation expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
