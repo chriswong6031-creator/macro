@@ -131,6 +131,31 @@ def test_search_uses_volume_rank_and_controlled_saas_motion() -> None:
     assert 'font: 680 12px/1 -apple-system' in approved
 
 
+def test_compact_search_contains_exchange_qualified_tickers() -> None:
+    """Long idle examples such as 600519.SS must stay inside the pill."""
+    approved = REFRESH_CSS.split("APPROVED MOCKUP — SOURCE-OF-TRUTH PORT", 1)[1]
+    search_rule = approved.split(".nav-search.ticker-search {", 1)[1].split("}", 1)[0]
+    trigger_rule = approved.split(".ticker-search .search-trigger {", 1)[1].split("}", 1)[0]
+    idle_rule = approved.split(".ticker-search .idle-ticker {", 1)[1].split("}", 1)[0]
+
+    assert "width: 128px;" in search_rule
+    assert "overflow: hidden;" in trigger_rule
+    assert "flex: 1 1 auto;" in idle_rule
+    assert "min-width: 0;" in idle_rule
+    assert "overflow: hidden;" in idle_rule
+    assert "text-overflow: ellipsis;" in idle_rule
+    assert "white-space: nowrap;" in idle_rule
+    assert "600519.SS" in THEME_JS
+
+
+def test_top_level_menu_labels_use_regular_weight() -> None:
+    approved = REFRESH_CSS.split("APPROVED MOCKUP — SOURCE-OF-TRUTH PORT", 1)[1]
+    selector = ".site-nav .nav-links > .nav-dd > a.nav-link,"
+    nav_rule = approved.split(selector, 1)[1].split("}", 1)[0]
+    assert "font-weight: 450;" in nav_rule
+    assert "font-weight: 530;" not in nav_rule
+
+
 def test_product_header_has_one_page_independent_geometry() -> None:
     assert "body > nav.site-nav" in REFRESH_CSS
     rule = REFRESH_CSS.split("body > nav.site-nav", 1)[1].split("}", 1)[0]
