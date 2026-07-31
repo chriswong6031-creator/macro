@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T22:13:52.832245+00:00",
-  "count": 486,
+  "generated_at": "2026-07-31T22:29:03.110662+00:00",
+  "count": 487,
   "institutions": [
     "Amova",
     "Apollo",
@@ -178,6 +178,26 @@
         "**Goldman Sachs upgrade & bullish target**: Rating upgraded from 'N' to 'B' with 12-month target (523p) above current price (461.9p), signaling improving confidence and upside potential.",
         "**Critical risk factors**: UK housing market volatility, intensified competition (Zoopla/OnTheMarket), agent cost pressures, and AI disintermediation threaten near-term execution.",
         "**Buyback-driven EPS uplift**: Increased 2027 buyback assumptions (€330m) elevate adjusted EPS growth to +2.2% (vs prior -0.5%) over FY26-30E, countering revenue revisions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pbbbcafx6ef-4e8ea7",
+      "title": "Dominion Energy Inc. (D) First Take 2Q EPS Beat vs. GSe Street but CVOW timing pushed and budget raised",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:39Z",
+      "summary_points": [
+        "**EPS Beat & CVOW Execution Risk**: Q2 2026 EPS ($0.79) beat consensus ($0.70), but CVOW project delay to end-2027 and $11.65bn budget hike signal heightened execution risk despite earnings strength.",
+        "**Regulatory Catalysts & Guidance**: Reaffirmed 2026 EPS guidance ($3.45-$3.69) and 5%-7% CAGR through 2030; DESC rate updates, Millstone, and NEE merger approvals (4Q 2027) drive near-term catalysts.",
+        "**Contracted Assets Momentum**: Contracted Assets segment fueled 513% Operating Net Income growth ($31M vs $8M), offsetting DESC weakness; D beat estimates ($712M vs $625M) on $556M higher other income.",
+        "**Rating Divergence & Confidence Erosion**: Global Buy (50%) exceeds Hold/Sell, but price target drops (68.00 → 54.00) and multiple removals signal deteriorating analyst confidence despite bullish sentiment."
       ],
       "tags": [],
       "tickers": [],
