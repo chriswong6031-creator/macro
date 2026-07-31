@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T10:57:38.574451+00:00",
-  "count": 453,
+  "generated_at": "2026-07-31T11:12:41.926291+00:00",
+  "count": 454,
   "institutions": [
     "Amova",
     "Apollo",
@@ -58,6 +58,27 @@
       "tickers": [],
       "top_pick": true,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tvloprdwzie-4dddb2",
+      "title": "Deutsche Bank Research, Europe",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T10:36:11Z",
+      "summary_points": [
+        "**SILTRONIC: 300mm Wafer Shortage** AI-driven demand surge creates 300mm wafer shortage, pricing above LTA, LTA renewals boosting sales (fundamentals, supply chain dynamics).",
+        "**ANDRITZ: Record Backlog & Q2 Beat** Q2 revenue +9% YoY, EBITA +15% YoY, record order backlog (EUR 12.6B) drives FY27-28E upgrade (data releases, fundamentals).",
+        "**SCHNEIDER: Semiconductor/DC Order Surge** Triple-digit order growth in data center/semiconductor verticals, target raised to EUR320 (execution on track, margin actions).",
+        "**OUTOKUMPU: EBITDA Cut & Flat Guidance** Q2 results softer, EBITDA estimates cut 8-9% (FY26-28E), PT reduced to €5.0 amid flat Q3 guidance (risk factor).",
+        "**AMUNDI: $24.4B Net Flows Beat** 15% adjusted net income beat, $24.4B net flows ahead of consensus, AUM up 14% YoY (flows, data release)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
