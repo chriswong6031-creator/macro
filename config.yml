@@ -6296,6 +6296,26 @@ intl:
   macro:
     fred_base_url: https://fred.stlouisfed.org/graph/fredgraph.csv
     retries: 3
+    # Keyless official overrides. Each is fetched independently after the FRED
+    # operational plane; parser/unit/release-period failure keeps the fallback
+    # or last-known-good parquet and records the error in provenance.json.
+    official_series:
+      ez_depo_rate:
+        provider: ecb
+        flow: FM
+        series_key: D.U2.EUR.4F.KR.DFR.LEV
+        start_period: "1999-01-01"
+        unit: PCPA
+        timeout_s: 20
+        release_period_semantics: Daily effective policy-rate observation
+      EZ_unemployment:
+        provider: eurostat
+        dataset: une_rt_m
+        since: "2000-01"
+        unit: PC_ACT
+        timeout_s: 20
+        params: {geo: EA21, s_adj: SA, age: TOTAL, unit: PC_ACT, sex: T}
+        release_period_semantics: Monthly seasonally adjusted unemployment rate, current euro-area composition
     extra_series:                  # stored_col: FRED id (Eurozone policy/liquidity, periphery, US anchor)
       ez_depo_rate: ECBDFR         # ECB deposit facility rate (policy)
       ez_refi_rate: ECBMRRFR       # ECB main refinancing rate

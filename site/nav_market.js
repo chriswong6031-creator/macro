@@ -168,6 +168,15 @@
     'cycle.html': 'Where the economy is heading',
     'macro_context.html': 'Growth, inflation and liquidity now'
   };
+
+  /* Country macro hrefs live in _navlinks.html.j2.  Read those canonical
+     anchors here so the adaptive wide menu, folded rail and mobile accordion
+     all inherit the same destinations (including ../ prefixes on deep pages). */
+  function intlCountryHref(key, fallback) {
+    var anchor = document.querySelector('[data-intl-country="' + key + '"]');
+    return anchor ? anchor.getAttribute('href') : fallback;
+  }
+
   var MARKET_MENU = {
     us: {
       title: 'United States',
@@ -295,11 +304,11 @@
       ],
       railTitle: 'Regions',
       rail: [
-        ['Japan', 'Tokyo market overview', 'intl.html#japan', 'dashboard'],
-        ['South Korea', 'Seoul market overview', 'intl.html#south-korea', 'dashboard'],
-        ['Europe', 'Continental markets', 'intl.html#europe', 'dashboard'],
-        ['United Kingdom', 'London market overview', 'intl.html#united-kingdom', 'dashboard'],
-        ['India', 'Indian market overview', 'intl.html#india', 'dashboard']
+        ['Japan', 'BoJ, wages, JGBs and yen', intlCountryHref('jp', 'japan.html'), 'dashboard'],
+        ['South Korea', 'BOK, exports, credit and won', intlCountryHref('kr', 'south_korea.html'), 'dashboard'],
+        ['Euro Area', 'EA21, ECB, HICP and bank credit', intlCountryHref('ez', 'euro_area.html'), 'dashboard'],
+        ['United Kingdom', 'BoE, services inflation and gilts', intlCountryHref('gb', 'united_kingdom.html'), 'dashboard'],
+        ['India', 'RBI, food inflation, credit and rupee', intlCountryHref('in', 'india.html'), 'dashboard']
       ],
       note: ['One global lens', 'Country context without a maze of nested menus.']
     },

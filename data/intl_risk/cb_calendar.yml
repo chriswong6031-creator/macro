@@ -57,6 +57,23 @@ banks:
       - 2026-12-18  # Dec 17-18
     source: "https://www.boj.or.jp/en/mopo/mpmsche_minu/m_ref/mref250731a.pdf"
 
+  # Source: https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301
+  # (verified 2026-07-30; date = Monetary Policy Board decision day)
+  BOK:
+    name_en: Bank of Korea Monetary Policy Board
+    name_zh: 韩国银行金融通货委员会
+    country: KR
+    dates:
+      - 2026-01-15
+      - 2026-02-26
+      - 2026-04-10
+      - 2026-05-28
+      - 2026-07-16
+      - 2026-08-27
+      - 2026-10-22
+      - 2026-11-26
+    source: "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+
   # Source: https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates
   # (decision announcement day; MPC vote ends Wednesday, published Thursday at noon)
   BoE:
@@ -73,6 +90,20 @@ banks:
       - 2026-11-05
       - 2026-12-17
     source: "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+
+  # Source: https://www.rbi.org.in/scripts/Annualpolicy.aspx
+  # (verified 2026-07-30; date = third/final meeting day and resolution date)
+  RBI:
+    name_en: Reserve Bank of India Monetary Policy Committee
+    name_zh: 印度储备银行货币政策委员会
+    country: IN
+    dates:
+      - 2026-04-08  # Apr 6-8
+      - 2026-06-05  # Jun 3-5
+      - 2026-08-05  # Aug 3-5
+      - 2026-10-07  # Oct 5-7
+      - 2026-12-04  # Dec 2-4
+    source: "https://www.rbi.org.in/scripts/Annualpolicy.aspx"
 
   # Source: https://www.snb.ch/en/the-snb/mandates-goals/monetary-policy/decisions
   # SNB meets quarterly (Mar/Jun/Sep/Dec). Mar + Jun confirmed 2026-07-12.
