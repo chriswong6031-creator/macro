@@ -17,9 +17,20 @@
      Research Reports Center — Aurora-Glass (mx5 design family).
      Accent = intelligence blue/indigo (the reports desk's own identity;
      macro's green is market-state semantics and would misread here).
-     Display face = editorial serif for TITLES ONLY (Georgia + CJK serif
-     fallbacks, self-hosted/system → zero network cost), against Inter UI.
+     Typography = San Francisco on Apple platforms, with the self-hosted Inter
+     family as the consistent cross-platform fallback.
      ═══════════════════════════════════════════════════════════════════ */
+  body{
+    --rc-sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display",Inter,system-ui,
+      "Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-family:var(--rc-sans);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  html[data-lang="zh"] body{
+    --rc-sans:"PingFang SC","Hiragino Sans GB",-apple-system,BlinkMacSystemFont,
+      "SF Pro Text",Inter,"Microsoft YaHei","Noto Sans CJK SC",sans-serif;
+  }
   .rc-shell{
     --rc-accent:      var(--info);
     --rc-accent-2:    #6366f1;
@@ -30,7 +41,7 @@
     --rc-glass-hover: 0 16px 42px -14px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.07);
     --rc-blur:        blur(18px) saturate(140%);
     --rc-radius:      18px;
-    --rc-serif:       Georgia,"Songti SC","Noto Serif SC","Source Han Serif SC","Times New Roman",serif;
+    --rc-display:     var(--rc-sans);
     position:relative; z-index:1; max-width:1080px; margin:0 auto;
   }
   [data-theme="light"] .rc-shell{
@@ -39,7 +50,7 @@
     --rc-glass-shadow:0 8px 26px -12px rgba(20,30,50,.16), inset 0 1px 0 rgba(255,255,255,.9);
     --rc-glass-hover: 0 12px 34px -12px rgba(20,30,50,.22), inset 0 1px 0 rgba(255,255,255,.9);
   }
-  html[data-lang="zh"] .rc-serif-on{ letter-spacing:0; }
+  html[data-lang="zh"] .rc-display-on{ letter-spacing:0; }
 
   /* ── Aurora backdrop — indigo/blue research haze (calm, offset from macro's green) ── */
   .rc-aurora{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
@@ -59,8 +70,8 @@
     color:var(--rc-accent); margin:0 0 12px; }
   .rc-mast .rc-eyebrow::before{ content:""; width:22px; height:1.5px; border-radius:2px;
     background:linear-gradient(90deg, var(--rc-accent), transparent); }
-  .rc-mast h1{ font-family:var(--rc-serif); font-size:44px; font-weight:600; line-height:1.02;
-    letter-spacing:-.015em; margin:0 0 12px; color:var(--text); }
+  .rc-mast h1{ font-family:var(--rc-display); font-size:44px; font-weight:800; line-height:1.02;
+    letter-spacing:-.035em; margin:0 0 12px; color:var(--text); }
   .rc-mast .rc-lede{ font-size:15.5px; line-height:1.62; color:var(--rc-ink-2);
     margin:0; max-width:70ch; }
   .rc-mast .rc-deskstat{ display:flex; flex-wrap:wrap; gap:6px 16px; align-items:center;
@@ -88,8 +99,8 @@
   @keyframes rcPulse{ 0%,100%{ box-shadow:0 0 0 0 color-mix(in srgb, var(--rc-accent) 55%, transparent); }
     50%{ box-shadow:0 0 0 5px color-mix(in srgb, var(--rc-accent) 0%, transparent); } }
   .rc-feat-kicker time{ color:var(--muted); font-weight:600; letter-spacing:.06em; }
-  .rc-feat-title{ font-family:var(--rc-serif); font-size:30px; font-weight:600; line-height:1.12;
-    letter-spacing:-.01em; margin:0 0 12px; }
+  .rc-feat-title{ font-family:var(--rc-display); font-size:30px; font-weight:700; line-height:1.12;
+    letter-spacing:-.025em; margin:0 0 12px; }
   .rc-feat-title a{ color:var(--text); }
   .rc-feat:hover .rc-feat-title a{ color:var(--rc-accent); }
   .rc-feat-dek{ font-size:14px; line-height:1.62; color:var(--rc-ink-2); margin:0 0 18px;
@@ -171,15 +182,19 @@
   .rc-arch-h .rule{ flex:1; height:1px; background:linear-gradient(90deg, var(--rc-glass-brd), transparent); }
 
   .rc-tl{ position:relative; margin:8px 0 0; padding-left:0; }
-  .rc-tl::before{ content:""; position:absolute; left:31px; top:14px; bottom:14px; width:2px;
+  .rc-tl::before{ content:""; position:absolute; left:74px; top:34px; bottom:28px; width:2px;
     background:linear-gradient(180deg, color-mix(in srgb, var(--rc-accent) 55%, transparent),
       color-mix(in srgb, var(--rc-accent-2) 40%, transparent) 45%, transparent);
     border-radius:2px; }
-  .rc-node{ display:grid; grid-template-columns:64px minmax(0,1fr); gap:16px; align-items:start;
+  .rc-node{ display:grid; grid-template-columns:82px minmax(0,1fr); gap:16px; align-items:start;
     padding:9px 0; position:relative; }
   .rc-node.hide{ display:none; }
-  .rc-rail{ position:relative; text-align:center; padding-top:16px; }
-  .rc-rail .dot{ position:absolute; left:23px; top:22px; width:15px; height:15px; border-radius:50%;
+  .rc-rail{ position:relative; display:grid; grid-template-columns:minmax(0,1fr) 15px;
+    column-gap:7px; align-items:start; padding-top:12px; min-width:0; }
+  .rc-date{ grid-column:1; grid-row:1; display:block; min-width:0; text-align:right;
+    font-variant-numeric:tabular-nums; }
+  .rc-rail .dot{ grid-column:2; grid-row:1; position:relative; left:auto; top:5px;
+    width:15px; height:15px; border-radius:50%;
     background:var(--bg); border:2px solid var(--rc-accent);
     box-shadow:0 0 0 4px color-mix(in srgb, var(--rc-accent) 14%, transparent); z-index:1;
     transition:box-shadow .18s ease, border-color .18s ease; }
@@ -197,8 +212,8 @@
     transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
   .rc-card:hover{ transform:translateY(-2px); border-color:color-mix(in srgb, var(--rc-accent) 40%, var(--rc-glass-brd));
     box-shadow:var(--rc-glass-hover); }
-  .rc-card-title{ font-family:var(--rc-serif); font-size:19px; font-weight:600; line-height:1.22;
-    letter-spacing:-.005em; margin:0 0 6px; color:var(--text); }
+  .rc-card-title{ font-family:var(--rc-display); font-size:19px; font-weight:700; line-height:1.22;
+    letter-spacing:-.015em; margin:0 0 6px; color:var(--text); }
   .rc-card:hover .rc-card-title{ color:var(--rc-accent); }
   .rc-card-dek{ font-size:13px; line-height:1.55; color:var(--rc-ink-2); margin:0 0 11px;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
@@ -212,7 +227,8 @@
   .rc-empty{ display:none; margin:26px auto; padding:34px 20px; text-align:center;
     border-radius:14px; }
   .rc-empty.on{ display:block; }
-  .rc-empty .big{ font-family:var(--rc-serif); font-size:19px; color:var(--text); margin:0 0 6px; }
+  .rc-empty .big{ font-family:var(--rc-display); font-size:19px; font-weight:700;
+    color:var(--text); margin:0 0 6px; }
   .rc-empty p{ font-size:13px; color:var(--muted); margin:0 0 16px; }
 
   @media(prefers-reduced-motion:reduce){
@@ -232,9 +248,10 @@
     .rc-mast .rc-lede{ font-size:14px; }
     .rc-feat{ padding:20px 18px; }
     .rc-feat-title{ font-size:24px; }
-    .rc-node{ grid-template-columns:50px minmax(0,1fr); gap:11px; }
-    .rc-tl::before{ left:24px; }
-    .rc-rail .dot{ left:17px; width:13px; height:13px; }
+    .rc-node{ grid-template-columns:68px minmax(0,1fr); gap:10px; }
+    .rc-tl::before{ left:61px; }
+    .rc-rail{ grid-template-columns:minmax(0,1fr) 13px; column-gap:5px; }
+    .rc-rail .dot{ width:13px; height:13px; }
     .rc-rail .day{ font-size:18px; }
     .rc-card{ padding:15px 15px; }
     .rc-card-title{ font-size:17px; }
@@ -250,7 +267,7 @@
 
   <header class="rc-mast">
     <p class="rc-eyebrow">{{ t('Research Desk', '研究台') }}</p>
-    <h1 class="rc-serif-on">{{ t('Research Reports', '研究报告') }}</h1>
+    <h1 class="rc-display-on">{{ t('Research Reports', '研究报告') }}</h1>
     <p class="rc-lede">{{ t('In-depth, source-grounded reads on the events that move the macro picture — FOMC days, regime shifts, cross-asset dislocations. Each is written from the dashboard’s own data plus primary sources, in either language.',
           '围绕撼动宏观全局的市场事件，撰写有据可查的深度报告 —— FOMC 决议日、范式转变、跨资产错位。每篇均结合本仪表盘数据与一手来源，支持中英双语阅读。') }}</p>
     {% if stats and stats.n_reports %}
@@ -272,7 +289,7 @@
         <span class="rc-kick-dot"></span>{{ t('Latest briefing', '最新简报') }}
         <time>· {{ latest.mon }} {{ latest.day }}, {{ latest.year }}</time>
       </span>
-      <h2 class="rc-feat-title rc-serif-on"><a href="{{ latest.slug }}.html"><span class="l-en">{{ latest.title_en }}</span><span class="l-zh">{{ latest.title_zh }}</span></a></h2>
+      <h2 class="rc-feat-title rc-display-on"><a href="{{ latest.slug }}.html"><span class="l-en">{{ latest.title_en }}</span><span class="l-zh">{{ latest.title_zh }}</span></a></h2>
       <p class="rc-feat-dek"><span class="l-en">{{ latest.dek_en }}</span><span class="l-zh">{{ latest.dek_zh }}</span></p>
       <div class="rc-feat-tags">
         {% for tg in latest.tags %}<span class="chip tag-{{ tg.key }}"><span class="l-en">{{ tg.en }}</span><span class="l-zh">{{ tg.zh }}</span></span>{% endfor %}
@@ -342,10 +359,12 @@
          data-search="{{ (r.title_en ~ ' ' ~ r.dek_en ~ ' ' ~ r.title_zh ~ ' ' ~ r.dek_zh) | lower }}">
       <div class="rc-rail">
         <span class="dot" aria-hidden="true"></span>
-        <span class="mo">{{ r.mon }}</span><span class="day">{{ r.day }}</span><span class="yr">{{ r.year }}</span>
+        <time class="rc-date" datetime="{{ r.date }}">
+          <span class="mo">{{ r.mon }}</span><span class="day">{{ r.day }}</span><span class="yr">{{ r.year }}</span>
+        </time>
       </div>
       <a class="rc-card" href="{{ r.slug }}.html">
-        <div class="rc-card-title rc-serif-on"><span class="l-en">{{ r.title_en }}</span><span class="l-zh">{{ r.title_zh }}</span></div>
+        <div class="rc-card-title rc-display-on"><span class="l-en">{{ r.title_en }}</span><span class="l-zh">{{ r.title_zh }}</span></div>
         <div class="rc-card-dek"><span class="l-en">{{ r.dek_en }}</span><span class="l-zh">{{ r.dek_zh }}</span></div>
         <div class="rc-card-foot">
           <div class="rc-card-tags">
