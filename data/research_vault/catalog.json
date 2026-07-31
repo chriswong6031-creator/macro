@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-07-31T11:42:43.296658+00:00",
-  "count": 455,
+  "generated_at": "2026-07-31T11:57:51.599643+00:00",
+  "count": 456,
   "institutions": [
     "Amova",
     "Apollo",
@@ -365,6 +365,23 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2higjqlodn1-3b0200",
+      "title": "latamdaily20260730",
+      "institution": "Scotiabank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T23:45:50Z",
+      "summary_points": [
+        "**Mexico Q2 2026 GDP**: 1.5% quarterly growth (strongest since Q3 2024), reversing 2025 weakness; annual growth 2.2% - **Sectoral momentum**: Broad-based rebound across primary (+3.3% qoq), secondary (+1.6% qoq), tertiary (+1.5% qoq) sectors - **Key drivers**: Services and agriculture led recovery, signaling structural improvement beyond temporary factors - **Trend reversal**: H1 2026 growth (1.2%) exceeds H1 2025, confirming sustained momentum after 2025 underperformance"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
       "language": "en",
       "needs_metadata": false
     },
