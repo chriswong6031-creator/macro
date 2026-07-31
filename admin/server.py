@@ -19,9 +19,13 @@ double-submit CSRF header and a same-origin Origin + JSON Content-Type.
 """
 from __future__ import annotations
 
+import hashlib
 import ipaddress
 import json
 import re
+import threading
+import time
+from collections import OrderedDict
 from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -52,6 +56,90 @@ from .paths import STATIC
 _CTYPES = {".html": "text/html; charset=utf-8",
            ".css": "text/css; charset=utf-8",
            ".js": "application/javascript; charset=utf-8"}
+
+# The SPA bundle is public (the authenticated data is not), so give it
+# content-addressed URLs and let the browser/edge keep each immutable revision.
+# index.html itself remains no-store and always points at the current hashes.
+_STATIC_ASSET_NAMES = ("app.js", "styles.css")
+_STATIC_ASSET_VERSIONS = {
+    name: hashlib.sha256((STATIC / name).read_bytes()).hexdigest()[:12]
+    for name in _STATIC_ASSET_NAMES
+}
+
+# Page panels are read-only snapshots assembled from files and integrations. Several
+# take hundreds of milliseconds (or more on the VPS) to fold, while a human commonly
+# switches away and back within a few seconds. Keep serialized successful responses
+# briefly in-process. Browser caching remains forbidden because these payloads contain
+# private operator data; the session guard runs before this cache is consulted.
+_API_CACHE_TTL_S = 15.0
+_API_CACHE_MAX_ENTRIES = 256
+_API_RESPONSE_CACHE: OrderedDict[str, tuple[float, bytes]] = OrderedDict()
+_API_RESPONSE_CACHE_LOCK = threading.Lock()
+_API_RESPONSE_CACHE_GENERATION = 0
+_API_CACHE_BYPASS_PATHS = {
+    "/api/session",
+    "/api/auth-check",
+    "/api/live_runs",
+    "/api/analytics/fp/realtime",
+}
+
+
+def _cacheable_api_get(path: str, query: dict) -> bool:
+    return (
+        path.startswith("/api/")
+        and path not in _API_CACHE_BYPASS_PATHS
+        and (query.get("force") or ["0"])[0].lower() not in {"1", "true", "yes", "on"}
+    )
+
+
+def _cached_api_body(key: str) -> bytes | None:
+    now = time.monotonic()
+    with _API_RESPONSE_CACHE_LOCK:
+        cached = _API_RESPONSE_CACHE.get(key)
+        if cached is None:
+            return None
+        expires_at, body = cached
+        if expires_at <= now:
+            _API_RESPONSE_CACHE.pop(key, None)
+            return None
+        _API_RESPONSE_CACHE.move_to_end(key)
+        return body
+
+
+def _store_api_body(key: str, body: bytes, generation: int) -> None:
+    now = time.monotonic()
+    with _API_RESPONSE_CACHE_LOCK:
+        if generation != _API_RESPONSE_CACHE_GENERATION:
+            return
+        expired = [k for k, (expires_at, _) in _API_RESPONSE_CACHE.items()
+                   if expires_at <= now]
+        for old_key in expired:
+            _API_RESPONSE_CACHE.pop(old_key, None)
+        _API_RESPONSE_CACHE[key] = (now + _API_CACHE_TTL_S, body)
+        _API_RESPONSE_CACHE.move_to_end(key)
+        while len(_API_RESPONSE_CACHE) > _API_CACHE_MAX_ENTRIES:
+            _API_RESPONSE_CACHE.popitem(last=False)
+
+
+def _clear_response_cache() -> None:
+    global _API_RESPONSE_CACHE_GENERATION
+    with _API_RESPONSE_CACHE_LOCK:
+        _API_RESPONSE_CACHE.clear()
+        _API_RESPONSE_CACHE_GENERATION += 1
+
+
+def _response_cache_generation() -> int:
+    with _API_RESPONSE_CACHE_LOCK:
+        return _API_RESPONSE_CACHE_GENERATION
+
+
+def _server_cache_namespace(server) -> str:
+    namespace = getattr(server, "_admin_cache_namespace", None)
+    if namespace is None:
+        # Object ids may be reused after a short-lived test/dev server shuts down.
+        namespace = f"{id(server):x}-{time.monotonic_ns():x}"
+        setattr(server, "_admin_cache_namespace", namespace)
+    return namespace
 
 # Content-Security-Policy for the console document + every API response. default-src
 # 'none' is the floor. script-src/style-src keep 'unsafe-inline' because the hand-rolled
@@ -247,13 +335,13 @@ def _integrations() -> dict:
     }
 
 
-def _repo_summary() -> dict:
+def _repo_summary(cfg: dict | None = None) -> dict:
     gh = github_api.available()
     return {
         "repo": f"{gh.get('owner')}/{gh.get('repo')}" if gh.get("owner") else None,
         "github_ok": gh["ok"],
         "has_token": gh["has_token"],
-        "site_url": config_store.get_value("notify.site_url"),
+        "site_url": config_store.get_value("notify.site_url", cfg),
         "ga_configured": ga4.status()["configured"],
         "deployed": settings.deployed(),
         "auth_enabled": settings.auth_enabled(),
@@ -262,16 +350,66 @@ def _repo_summary() -> dict:
     }
 
 
+def _summary_payload() -> dict:
+    """Build the landing snapshot while parsing the large config only once."""
+    def _safe(fn):
+        try:
+            return fn()
+        except Exception as exc:  # noqa: BLE001
+            return {"error": str(exc)}
+
+    shared_cfg = _safe(config_store.read_config)
+    if not isinstance(shared_cfg, dict) or set(shared_cfg) == {"error"}:
+        shared_cfg = None
+
+    result = {
+        "meta": _safe(lambda: _repo_summary(shared_cfg)),
+        "flags": _safe(lambda: flags.snapshot(shared_cfg)),
+        "brief": _safe(lambda: brief.panel(shared_cfg)),
+        "health": _safe(health.summary),
+        "cost": _safe(lambda: ai_cost.estimate(shared_cfg)),
+        "git": _safe(gitops.status),
+        "system": _safe(system.snapshot),
+        "services": _safe(services.status),
+        "experiments": _safe(experiments.alert_summary),
+    }
+    if isinstance(result["health"], dict) and "error" not in result["health"]:
+        result["health"] = {
+            k: v for k, v in result["health"].items()
+            if k not in ("source_rows", "markets")
+        }
+    if isinstance(result["cost"], dict) and "error" not in result["cost"]:
+        result["cost"] = {
+            k: result["cost"].get(k)
+            for k in ("monthly_usd", "effective_daily_usd")
+        }
+    return result
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "MacroAdmin/2.0"
 
     # ---- low-level helpers --------------------------------------------------
     def _json(self, obj, code: int = 200, cookies: list[str] | None = None) -> None:
         body = json.dumps(obj, default=str).encode()
+        cache_key = getattr(self, "_response_cache_key", None)
+        cache_status = None
+        if code == 200 and cache_key:
+            key, generation = cache_key
+            _store_api_body(key, body, generation)
+            cache_status = "MISS"
+        self._response_cache_key = None
+        self._json_body(body, code=code, cookies=cookies, cache_status=cache_status)
+
+    def _json_body(self, body: bytes, code: int = 200,
+                   cookies: list[str] | None = None,
+                   cache_status: str | None = None) -> None:
         self.send_response(code)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        if cache_status:
+            self.send_header("X-Admin-Cache", cache_status)
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Security-Policy", _CSP)
         for c in (cookies or []):
@@ -311,10 +449,21 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"error": "not found"}, 404)
             return
         body = p.read_bytes()
+        if name == "index.html":
+            for asset_name, version in _STATIC_ASSET_VERSIONS.items():
+                body = body.replace(
+                    asset_name.encode(),
+                    f"{asset_name}?v={version}".encode(),
+                )
         self.send_response(200)
         self.send_header("Content-Type", _CTYPES.get(p.suffix, "application/octet-stream"))
         self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
+        if name in _STATIC_ASSET_VERSIONS:
+            version = _STATIC_ASSET_VERSIONS[name]
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+            self.send_header("ETag", f'"{version}"')
+        else:
+            self.send_header("Cache-Control", "no-store")
         self.send_header("X-Content-Type-Options", "nosniff")
         self.send_header("X-Frame-Options", "DENY")
         self.send_header("Content-Security-Policy", _CSP)
@@ -440,6 +589,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         u = urlparse(self.path)
         path, q = u.path, parse_qs(u.query)
+        self._response_cache_key = None
         try:
             g = self._guard(write=False)
             if g:
@@ -468,38 +618,22 @@ class Handler(BaseHTTPRequestHandler):
             if settings.auth_enabled() and not self._authed():
                 return self._json({"error": "authentication required"}, 401)
 
+            if _cacheable_api_get(path, q):
+                cache_key = f"{_server_cache_namespace(self.server)}:{self.path}"
+                cached_body = _cached_api_body(cache_key)
+                if cached_body is not None:
+                    return self._json_body(cached_body, cache_status="HIT")
+                self._response_cache_key = (cache_key, _response_cache_generation())
+
             # Caddy uses this same-origin, cookie-authenticated probe before
             # serving /research-tools/* from the generated site tree.
             if path == "/api/auth-check":
                 return self._json({"ok": True, "authenticated": True})
 
             if path == "/api/summary":
-                # Each component is isolated so one failing sub-call degrades ONE landing
-                # tile instead of 500-ing the whole page. health + cost are PROJECTED to the
-                # few fields the landing tiles read — the Health/AI-Cost tabs fetch the full
-                # /api/health and /api/cost respectively (this dropped the payload ~104KB->~12KB).
-                def _safe(fn):
-                    try:
-                        return fn()
-                    except Exception as exc:  # noqa: BLE001
-                        return {"error": str(exc)}
-                _health = _safe(health.summary)
-                _cost = _safe(ai_cost.estimate)
-                if isinstance(_health, dict) and "error" not in _health:
-                    _health = {k: v for k, v in _health.items() if k not in ("source_rows", "markets")}
-                if isinstance(_cost, dict) and "error" not in _cost:
-                    _cost = {k: _cost.get(k) for k in ("monthly_usd", "effective_daily_usd")}
-                return self._json({
-                    "meta": _safe(_repo_summary),
-                    "flags": _safe(flags.snapshot),
-                    "brief": _safe(brief.panel),
-                    "health": _health,
-                    "cost": _cost,
-                    "git": _safe(gitops.status),
-                    "system": _safe(system.snapshot),
-                    "services": _safe(services.status),
-                    "experiments": _safe(experiments.alert_summary),
-                })
+                # Each component is isolated so one failure degrades one landing tile.
+                # The full Health/AI-Cost tabs still fetch their dedicated endpoints.
+                return self._json(_summary_payload())
             if path == "/api/flags":
                 return self._json(flags.snapshot())
             if path == "/api/brain/guest":
@@ -833,6 +967,7 @@ class Handler(BaseHTTPRequestHandler):
     # ---- POST ---------------------------------------------------------------
     def do_POST(self):
         path = urlparse(self.path).path
+        self._response_cache_key = None
         try:
             g = self._guard(write=True)
             if g:
@@ -845,6 +980,7 @@ class Handler(BaseHTTPRequestHandler):
                 if not ok:
                     return self._json({"ok": False, "error": err or "login failed"}, 401)
                 csrf = auth.new_csrf()
+                _clear_response_cache()
                 return self._json({"ok": True},
                                   cookies=self._set_cookies(auth.mint_session(), csrf))
             if path == "/api/logout":
@@ -860,6 +996,10 @@ class Handler(BaseHTTPRequestHandler):
                 if not auth.csrf_ok(self._cookie_val(auth.CSRF_COOKIE),
                                     self.headers.get(auth.CSRF_HEADER)):
                     return self._json({"ok": False, "error": "CSRF token missing/invalid"}, 403)
+
+            # A successful write may change any composed panel. Clearing the small
+            # in-process cache keeps operator actions immediately self-consistent.
+            _clear_response_cache()
 
             if path == "/api/flags/toggle":
                 flag_path = b.get("path")

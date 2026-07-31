@@ -1,5 +1,6 @@
 """admin.server — live localhost round-trip over the read-only routes (no external network)."""
 import json
+import re
 import sys
 import threading
 import urllib.error
@@ -9,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from admin.server import Handler, _host_only, _int_param
+from admin.server import Handler, _clear_response_cache, _host_only, _int_param
 
 
 def _server():
@@ -22,6 +23,11 @@ def _server():
 def _get(port, path):
     with urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=10) as r:
         return r.status, r.read()
+
+
+def _get_with_headers(port, path):
+    with urllib.request.urlopen(f"http://127.0.0.1:{port}{path}", timeout=10) as r:
+        return r.status, r.read(), dict(r.headers)
 
 
 def test_static_and_local_api_routes():
@@ -51,6 +57,100 @@ def test_static_and_local_api_routes():
             assert e.code == 404
     finally:
         httpd.shutdown(); httpd.server_close()
+
+
+def test_static_bundle_is_content_versioned_and_immutable():
+    httpd, port = _server()
+    try:
+        _, index, index_headers = _get_with_headers(port, "/")
+        app_match = re.search(rb'app\.js\?v=([0-9a-f]{12})', index)
+        css_match = re.search(rb'styles\.css\?v=([0-9a-f]{12})', index)
+        assert app_match and css_match
+        assert index_headers["Cache-Control"] == "no-store"
+
+        _, _, app_headers = _get_with_headers(
+            port, f"/app.js?v={app_match.group(1).decode()}"
+        )
+        assert app_headers["Cache-Control"] == "public, max-age=31536000, immutable"
+        assert app_headers["ETag"] == f'"{app_match.group(1).decode()}"'
+    finally:
+        httpd.shutdown(); httpd.server_close()
+
+
+def test_read_only_api_response_is_reused_briefly(monkeypatch):
+    from admin import server
+
+    calls = 0
+
+    def fake_health():
+        nonlocal calls
+        calls += 1
+        return {"healthy": True, "call": calls}
+
+    monkeypatch.setattr(server.health, "summary", fake_health)
+    _clear_response_cache()
+    httpd, port = _server()
+    try:
+        _, first, first_headers = _get_with_headers(port, "/api/health?cache_test=1")
+        _, second, second_headers = _get_with_headers(port, "/api/health?cache_test=1")
+        assert json.loads(first)["call"] == 1
+        assert json.loads(second)["call"] == 1
+        assert calls == 1
+        assert first_headers["X-Admin-Cache"] == "MISS"
+        assert second_headers["X-Admin-Cache"] == "HIT"
+        # Private API data is still forbidden from browser/edge caches.
+        assert second_headers["Cache-Control"] == "no-store"
+    finally:
+        _clear_response_cache()
+        httpd.shutdown(); httpd.server_close()
+
+
+def test_summary_parses_large_config_once(monkeypatch):
+    from admin import server
+
+    shared = {"notify": {"site_url": "https://example.test"}}
+    reads = 0
+    consumers = []
+
+    def read_config():
+        nonlocal reads
+        reads += 1
+        return shared
+
+    def uses_config(cfg=None):
+        consumers.append(cfg)
+        return {}
+
+    monkeypatch.setattr(server.config_store, "read_config", read_config)
+    monkeypatch.setattr(server, "_repo_summary", uses_config)
+    monkeypatch.setattr(server.flags, "snapshot", uses_config)
+    monkeypatch.setattr(server.brief, "panel", uses_config)
+    monkeypatch.setattr(server.ai_cost, "estimate", uses_config)
+    monkeypatch.setattr(server.health, "summary", lambda: {})
+    monkeypatch.setattr(server.gitops, "status", lambda: {})
+    monkeypatch.setattr(server.system, "snapshot", lambda: {})
+    monkeypatch.setattr(server.services, "status", lambda: {})
+    monkeypatch.setattr(server.experiments, "alert_summary", lambda: {})
+
+    result = server._summary_payload()
+
+    assert reads == 1
+    assert consumers == [shared, shared, shared, shared]
+    assert set(result) == {
+        "meta", "flags", "brief", "health", "cost", "git", "system",
+        "services", "experiments",
+    }
+
+
+def test_spa_reuses_recent_reads_and_prefetches_nav_targets():
+    source = (Path(__file__).resolve().parent.parent
+              / "admin" / "static" / "app.js").read_text()
+    assert "const API_CACHE_TTL_MS = 15000" in source
+    assert "function clearApiCache()" in source
+    assert "generation === API_CACHE_GENERATION" in source
+    assert 'it.addEventListener("pointerenter", () => scheduleTabPrefetch(id)' in source
+    assert 'it.addEventListener("pointerleave", cancelTabPrefetch' in source
+    assert 'neural_web: ["/api/neural_web/lobes"]' in source
 
 
 def _post(port, path, body, headers=None, host=None):

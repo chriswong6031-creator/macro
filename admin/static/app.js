@@ -13,6 +13,39 @@ const getCookie = (name) => { const m = document.cookie.match(new RegExp("(?:^|;
 
 let SESSION = { auth_enabled: false, authenticated: true, deployed: false, integrations: {} };
 
+/* Keep recent read-only panel snapshots in this tab. A VPS round trip is noticeable
+   even when the underlying fold is cheap, and operators commonly switch between the
+   same two or three pages. Writes clear the cache; genuinely live polls bypass it. */
+const API_CACHE = new Map();
+const API_CACHE_TTL_MS = 15000;
+const API_CACHE_MAX_ENTRIES = 40;
+let API_CACHE_GENERATION = 0;
+const API_CACHE_BYPASS = new Set([
+  "/api/live_runs",
+  "/api/analytics/fp/realtime",
+]);
+
+function apiCacheable(path, opts) {
+  if (opts || !String(path || "").startsWith("/api/")) return false;
+  const pathname = String(path).split("?", 1)[0];
+  if (API_CACHE_BYPASS.has(pathname)) return false;
+  const qs = new URLSearchParams(String(path).split("?")[1] || "");
+  return !["1", "true", "yes", "on"].includes((qs.get("force") || "").toLowerCase());
+}
+
+function apiCacheStore(path, entry) {
+  API_CACHE.delete(path);
+  API_CACHE.set(path, entry);
+  while (API_CACHE.size > API_CACHE_MAX_ENTRIES) {
+    API_CACHE.delete(API_CACHE.keys().next().value);
+  }
+}
+
+function clearApiCache() {
+  API_CACHE_GENERATION += 1;
+  API_CACHE.clear();
+}
+
 /* ---- lobe popup (system map hover) -------------------------------------- */
 let NW_LOBE_BY_ID = {};
 let _lobeTip = null;
@@ -80,11 +113,38 @@ function wireLobeTipNode(el) {
 }
 
 async function api(path, opts) {
-  const r = await fetch(path, opts);
-  if (r.status === 401) { showLogin(); throw new Error("auth required"); }
-  return r.json().catch(() => ({ error: "bad json" }));
+  const cacheable = apiCacheable(path, opts);
+  if (cacheable) {
+    const cached = API_CACHE.get(path);
+    if (cached && cached.pending) return cached.pending;
+    if (cached && cached.expiresAt > Date.now()) {
+      API_CACHE.delete(path);
+      API_CACHE.set(path, cached);
+      return cached.value;
+    }
+    API_CACHE.delete(path);
+  }
+
+  const generation = API_CACHE_GENERATION;
+  const request = (async () => {
+    const r = await fetch(path, opts);
+    if (r.status === 401) {
+      clearApiCache();
+      showLogin();
+      throw new Error("auth required");
+    }
+    const value = await r.json().catch(() => ({ error: "bad json" }));
+    if (cacheable && generation === API_CACHE_GENERATION) {
+      if (r.ok) apiCacheStore(path, { value, expiresAt: Date.now() + API_CACHE_TTL_MS });
+      else API_CACHE.delete(path);
+    }
+    return value;
+  })();
+  if (cacheable) apiCacheStore(path, { pending: request, expiresAt: 0 });
+  return request;
 }
 function post(path, body) {
+  clearApiCache();
   const headers = { "Content-Type": "application/json" };
   const csrf = getCookie("admin_csrf");
   if (csrf) headers["X-CSRF-Token"] = csrf;
@@ -186,6 +246,76 @@ const NAV_GROUPS = [
   { label: "Config", items: [["features", "Features"], ["brief", "AI Brief"], ["vector", "BTC Override"]] },
 ];
 const TAB_LABELS = Object.fromEntries(NAV_GROUPS.flatMap(g => g.items));
+const TAB_PREFETCH_PATHS = {
+  experiments: ["/api/experiments"],
+  site_gate: ["/api/site_gate"],
+  vector: ["/api/vector_override"],
+  analytics: ["/api/analytics/fp/overview?minutes=1440"],
+  users: ["/api/users", "/api/users/recent?limit=50"],
+  revenue: ["/api/revenue"],
+  features: ["/api/flags"],
+  brief: ["/api/brief"],
+  deploy: ["/api/deploy"],
+  health: ["/api/health"],
+  cost: ["/api/cost"],
+  content: ["/api/content"],
+  neural_web: ["/api/neural_web/lobes"],
+  orchestrator: ["/api/orchestrator", "/api/prophet"],
+  prophet: ["/api/prophet", "/api/prophet/trade-memory"],
+  marketing_overview: ["/api/marketing/overview"],
+  marketing_departments: ["/api/marketing/departments"],
+  marketing_campaigns: ["/api/marketing/campaigns"],
+  marketing_channels: ["/api/marketing/channels"],
+  marketing_ads: ["/api/marketing/ad-central"],
+  marketing_experiments: ["/api/marketing/experiments"],
+  marketing_lobes: ["/api/marketing/lobes"],
+  marketing_content: ["/api/marketing/content"],
+  marketing_lab: ["/api/marketing/lab"],
+  marketing_reply_queue: ["/api/marketing/reply-queue"],
+  marketing_health: ["/api/marketing/health"],
+  marketing_learning: ["/api/marketing/learning"],
+  marketing_outbox: ["/api/marketing/outbox", "/api/marketing/rejections"],
+  marketing_publish: ["/api/marketing/publish"],
+  marketing_sentinel: ["/api/marketing/sentinel"],
+  marketing_allies: ["/api/marketing/allies"],
+  marketing_radar: ["/api/marketing/radar"],
+  marketing_seo: ["/api/marketing/seo"],
+  mastermind_ai: ["/api/mastermind_ai"],
+  mastermind_logs: [
+    "/api/mastermind_ai/response_logs?limit=300",
+    "/api/mastermind_ai/response_logs/eval_summary",
+  ],
+  alerts: ["/api/alerts"],
+  support_tickets: ["/api/support_tickets?page=1&page_size=50"],
+  email_center: [
+    "/api/email_center/mail",
+    "/api/email_center?segment=all&page=1&page_size=50",
+  ],
+  long_hold: ["/api/long_hold"],
+  context_lobe: ["/api/context_lobe"],
+  chronicle: ["/api/chronicle/overview"],
+  personas: ["/api/personas/roster"],
+  causal_lab: ["/api/causal_lab"],
+  metabolism: ["/api/metabolism"],
+  codex: ["/api/codex"],
+};
+
+function prefetchTab(id) {
+  (TAB_PREFETCH_PATHS[id] || []).forEach(path => {
+    api(path).catch(() => {}); // advisory only; the normal renderer owns errors
+  });
+}
+
+let PREFETCH_TIMER = null;
+function scheduleTabPrefetch(id) {
+  clearTimeout(PREFETCH_TIMER);
+  PREFETCH_TIMER = setTimeout(() => prefetchTab(id), 100);
+}
+function cancelTabPrefetch() {
+  clearTimeout(PREFETCH_TIMER);
+  PREFETCH_TIMER = null;
+}
+
 let CURRENT = "overview";
 let SUMMARY = null;
 let RT_TIMER = null;
@@ -381,6 +511,9 @@ function renderSidebar() {
     g.items.forEach(([id, label]) => {
       const it = h(`<div class="nav-item" data-tab="${id}">${ICONS[id] || ""}<span>${esc(label)}</span></div>`);
       if (id === CURRENT) it.classList.add("active");
+      it.addEventListener("pointerenter", () => scheduleTabPrefetch(id), { passive: true });
+      it.addEventListener("pointerleave", cancelTabPrefetch, { passive: true });
+      it.addEventListener("focusin", () => prefetchTab(id));
       it.onclick = () => go(id);
       grp.appendChild(it);
     });
