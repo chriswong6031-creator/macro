@@ -103,7 +103,6 @@ banks:
       - 2026-08-05  # Aug 3-5
       - 2026-10-07  # Oct 5-7
       - 2026-12-04  # Dec 2-4
-      - 2027-02-05  # Feb 3-5
     source: "https://www.rbi.org.in/scripts/Annualpolicy.aspx"
 
   # Source: https://www.snb.ch/en/the-snb/mandates-goals/monetary-policy/decisions
