@@ -323,6 +323,7 @@ def test_thetadata_eod_deliberately_carries_no_coverage_probe():
 
 OPT_KEYS = {
     "options_hub/oi_movers.json":   (200, _lm(14.7), None),   # nightly, healthy
+    "options_hub/oi_change.json":   (200, _lm(14.7), None),   # R3 OI suite, same lane
     "live_flow/meta.json":          (200, _lm(1.0), None),    # RTH cycle, healthy
     "levels_ledger/index.json":     (200, _lm(3.0), None),    # pre-open seal, healthy
     "options_hub/gex_history/SPY/2026-06-30.json": (200, _lm(38.7), None),
@@ -338,7 +339,8 @@ def _opt(objects=None, **kw):
         else:
             objs[k] = v
     kw.setdefault("anchors", ["stockdata", "chinastockdata",
-                              "options_hub", "live_flow", "levels_ledger"])
+                              "options_hub", "options_hub_oi",
+                              "live_flow", "levels_ledger"])
     return _probe(objs, **kw)
 
 
@@ -349,7 +351,7 @@ def test_options_planes_are_live_config_anchors():
     from lib import config
     from scripts.audit_r2 import DEFAULT_ANCHORS
     cfg_anchors = config.load()["r2_data_plane"]["anchors"]
-    for a in ("options_hub", "live_flow", "levels_ledger"):
+    for a in ("options_hub", "options_hub_oi", "live_flow", "levels_ledger"):
         assert a in DEFAULT_ANCHORS
         assert a in cfg_anchors, (
             f"{a} dropped from config r2_data_plane.anchors — the options plane "
@@ -359,6 +361,7 @@ def test_options_planes_are_live_config_anchors():
 def test_options_plane_candidates_are_beacon_objects():
     from scripts.audit_r2 import _candidates
     assert _candidates("options_hub") == ["options_hub/oi_movers.json"]
+    assert _candidates("options_hub_oi") == ["options_hub/oi_change.json"]
     assert _candidates("live_flow") == ["live_flow/meta.json"]
     assert _candidates("levels_ledger") == ["levels_ledger/index.json"]
 
@@ -381,6 +384,22 @@ def test_per_anchor_budget_trips_missed_options_hub_nightly():
     r = _opt({"options_hub/oi_movers.json": (200, _lm(86.75), None)})
     assert r["ok"] is False
     assert any("R2 STALE: options_hub" in f and "68" in f for f in r["fail_reasons"])
+
+
+def test_oi_suite_dead_step_trips_while_lane_beacon_stays_fresh():
+    """The failure options_hub_oi exists to catch: the 16:45 lane keeps putting
+    oi_movers.json (options_hub healthy) while the OI-suite step is silently
+    dead and oi_change.json goes stale. A freshest-of candidate under the
+    options_hub anchor could never see this."""
+    r = _opt({"options_hub/oi_change.json": (200, _lm(86.75), None)})
+    assert r["ok"] is False
+    assert any("R2 STALE: options_hub_oi" in f and "68" in f for f in r["fail_reasons"])
+    assert not any("R2 STALE: options_hub " in f for f in r["fail_reasons"])
+
+
+def test_oi_suite_monday_clears_its_own_budget():
+    r = _opt({"options_hub/oi_change.json": (200, _lm(62.75), None)})
+    assert r["ok"] is True, r["fail_reasons"]
 
 
 def test_live_flow_overnight_quiet_is_ok_dead_poller_trips():
