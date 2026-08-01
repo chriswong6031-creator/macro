@@ -2,7 +2,6 @@
   "corpus_rowed": {
     "00bc2884dc3c34ae946dca0639aed258ce29460f": "2026-08-01T01:08:01.242641+00:00",
     "01a4aa471120d8422ddf0666dd85cf7f2df20cd5": "2026-07-31T17:54:40.596641+00:00",
-    "024bc4e1120fe257a15e84be50a42a92bf3d9965": "2026-07-31T10:04:12.944246+00:00",
     "03087bffb692b3cc070af294a82915ce0080cdd3": "2026-08-01T01:08:01.242641+00:00",
     "0364f041e4d82bd69a53acebc886465f24ccfcf5": "2026-08-01T01:08:01.242641+00:00",
     "03a8c671c389b4cd69f2557875d60f556e765288": "2026-07-31T17:54:40.596641+00:00",
@@ -50,6 +49,7 @@
     "1d333baed02b83c5894279acc3b85bceba75757d": "2026-08-01T01:08:01.242641+00:00",
     "1d5998b6ac93ed087df6ed7fc7a6bd85bf2a3a5c": "2026-08-01T01:08:01.242641+00:00",
     "1ecd00a7540c2d3587c155efcac83b9dea33c57e": "2026-08-01T01:08:01.242641+00:00",
+    "1ece16c158e91b864693c8818cdfc0b8749f34c9": "2026-08-01T10:47:51.121736+00:00",
     "1f2f8dc441ef9200aaddb5b08034702ab46933ad": "2026-08-01T01:08:01.242641+00:00",
     "1fc5c4f7792418788b724abaae777bfdd6c05ef4": "2026-08-01T01:08:01.242641+00:00",
     "208d924aea67a77302070e1cc1e76fea5a3411a2": "2026-08-01T01:08:01.242641+00:00",
@@ -70,7 +70,6 @@
     "2c316a85194f7716afa1539636eb3f6406836582": "2026-08-01T01:08:01.242641+00:00",
     "2c3b5103147fab9b6c41b3e336d063251f9895ec": "2026-08-01T01:08:01.242641+00:00",
     "2ce70a6ad1d97195dbedeac8db85c0cc980d44cf": "2026-07-31T22:34:38.296169+00:00",
-    "2d3b00a64246566b8fffad4aaaa0a16ce17b5364": "2026-07-31T10:04:12.944246+00:00",
     "2e14f9cad6b9c7fd6f3947bc34f9b9d2aaabc4af": "2026-08-01T01:08:01.242641+00:00",
     "2e42eb4263c6739f65eb615f56d5130e60bd6e09": "2026-07-31T16:17:05.721809+00:00",
     "2f1330d87b7ed3b7f8723c08aae0548b4a52c082": "2026-07-31T16:17:05.721809+00:00",
@@ -96,7 +95,6 @@
     "372c0ba62f5de304dd756ef8ed3fff87b8dfe834": "2026-08-01T01:08:01.242641+00:00",
     "383ebc8f433c81947d794f4c5aed6707cc5e2ed3": "2026-08-01T01:08:01.242641+00:00",
     "38576e36b85193b970b35b0f64bd5c8bf08ace39": "2026-08-01T01:08:01.242641+00:00",
-    "38c15a3cdf8370ed88370e01c9a5d858689bdc00": "2026-07-31T10:04:12.944246+00:00",
     "38db23b9d27f7fe8c1774ae9974e546c41dd7f9b": "2026-08-01T07:03:19.379343+00:00",
     "3969b7030bfb7327f8e0b34c346e41db3eb0a341": "2026-08-01T09:12:06.826995+00:00",
     "39a59e7721a15c14c04adeb7e04e5552186996ba": "2026-08-01T01:08:01.242641+00:00",
@@ -113,7 +111,6 @@
     "40263436e3bea25459559ed234ff6a7f989400ec": "2026-08-01T07:03:19.379343+00:00",
     "402b53b763afb15cfb82f6944c448d2ff3fc003b": "2026-08-01T01:08:01.242641+00:00",
     "4159fed158112ef018c3c3ae9a9745b69b3f342e": "2026-08-01T01:08:01.242641+00:00",
-    "41baa2a900379fbb50731fcc1ebabebc9c248c47": "2026-07-31T10:04:12.944246+00:00",
     "42109b011d5d4004fe8a91be13a74bd440b1c44b": "2026-08-01T01:08:01.242641+00:00",
     "424d3e48fd3032198e3acda9903a95225c406946": "2026-08-01T01:08:01.242641+00:00",
     "429e3fa4b2f5106da044955cbd56fa72ce09caea": "2026-08-01T01:08:01.242641+00:00",
@@ -131,15 +128,11 @@
     "4c51b9b04b3d0307c9aa8f86b73589effd42b43c": "2026-07-31T14:30:10.223340+00:00",
     "4c845f99dc2093e6eec77337643184b052293de7": "2026-08-01T04:30:31.162979+00:00",
     "4d04a604eefea400547e07442da25a4d0e725fbc": "2026-08-01T07:03:19.379343+00:00",
-    "4d473d35154d913733a41d34feab89ec371d74bb": "2026-07-31T10:04:12.944246+00:00",
     "4d9f3150e9c19d68554ca2fb33070769e170f6ee": "2026-08-01T04:30:31.162979+00:00",
     "4dacaab2d1d6bb011096f2e7c6185279042e8e78": "2026-08-01T01:08:01.242641+00:00",
     "4dfc1e1ea8672c56337b3ab47a3db9ab85bd4e63": "2026-07-31T17:54:40.596641+00:00",
-    "4e1e9dd2eb863c4ec646752d2ed8c14716ed8213": "2026-07-31T10:04:12.944246+00:00",
-    "4e3ddf40f820547aa7dea0a7839f5a287a003b08": "2026-07-31T10:04:12.944246+00:00",
     "4ff51054826af05ce9ae34603d34c554502cd7c8": "2026-08-01T01:08:01.242641+00:00",
     "50072ff17d850a28e17d12964369b10f62bed1ae": "2026-08-01T01:08:01.242641+00:00",
-    "501e661192641de2c9e9672e378dafa1d8840176": "2026-07-31T10:04:12.944246+00:00",
     "5040e4fab297ebdbf3dd4e6bcbd37ddb53466d3c": "2026-08-01T04:30:31.162979+00:00",
     "50be4319b9dc922ea573c98585d25812f0e59cb7": "2026-07-31T14:30:10.223340+00:00",
     "511192a2dd3366602de256ee53d20fae87ba4986": "2026-08-01T01:08:01.242641+00:00",
@@ -352,7 +345,6 @@
     "c0160557f419c435ae7eec6af25d06fba816cfe7": "2026-07-31T11:59:29.559585+00:00",
     "c257224d2408928cfce4638b53ed06a0f657687a": "2026-08-01T04:30:31.162979+00:00",
     "c2a48421263a9e4160d144f05202f6ccc25eae0f": "2026-08-01T01:08:01.242641+00:00",
-    "c3eaf5dc06de2a188c85ea2eea35e929205a07d0": "2026-07-31T10:04:12.944246+00:00",
     "c4b1c42ef1b12bc3e43852d21098106eb59e201a": "2026-08-01T01:08:01.242641+00:00",
     "c57dc9b51574c54843d2f3da7de60f9cfb236d87": "2026-08-01T01:08:01.242641+00:00",
     "c5a9e32bcac26e5a0521f86eb11dd4069a12c3e2": "2026-08-01T01:08:01.242641+00:00",
@@ -436,7 +428,6 @@
     "ef8c6fcc94035d6005133c08b6fac4a267a3ef95": "2026-08-01T01:08:01.242641+00:00",
     "efaaa8f3a588ed8d38edb51c92cd238132e75826": "2026-08-01T01:08:01.242641+00:00",
     "f0be871895d461ae29e5b1e982dfc3b0ff98e3d3": "2026-08-01T01:08:01.242641+00:00",
-    "f14d008e5599413b15c6ded1b05959f6d80aeeb6": "2026-07-31T10:04:12.944246+00:00",
     "f1529da3959c3972fcb112717f6d78d9a44f6dc2": "2026-08-01T04:30:31.162979+00:00",
     "f1a2c99c37cd15482b22c1efa51dac5c9c2eeec6": "2026-08-01T09:12:06.826995+00:00",
     "f31ab6eee83fd6c7eff49e7d13567a7b29c84f3a": "2026-08-01T04:30:31.162979+00:00",
@@ -473,191 +464,98 @@
     "ffd8ef8dee5884fd3ed12618fea7fefb5e874f09": "2026-08-01T01:08:01.242641+00:00"
   },
   "corroboration": {
-    "claim:geopolitical:sec:technology": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+    "claim:none:sec:communication": {
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "claim:none:sec:energy": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "claim:none:sec:financials": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:deitaone"
-      ]
-    },
-    "claim:none:sec:healthcare": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "claim:none:sec:industrials": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "claim:none:sec:technology": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:deitaone",
-        "x:firstsquawk",
-        "x:financialjuice",
-        "x:bricsinfo"
-      ]
-    },
-    "head:burnham faces criticism over plans for mayors to get share of income tax": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:china is rapidly closing the satellite gap with the us expanding its surveillanc": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:china warmest library welcomes homeless honours late regular with statue scmp": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:families face higher costs as backtoschool season nears": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:just in elon mentions kekius maximus for the first time in over a year under a p": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:whaleinsider"
-      ]
-    },
-    "head:just in us treasury joined japan in buying yen for the first time in over a deca": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:whaleinsider"
-      ]
-    },
-    "head:just in xrp ledger 330 to ship next week with five amendments including batch pr": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:whaleinsider"
-      ]
-    },
-    "head:the moment of russian drone striking a residential highrise building in odesa th": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:trouble at lunchtime as hong kong private club spat escalates": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:uk temperatures to cool with chilly start to the weekend for many": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
-      "sources": [
-        "x:firstsquawk"
+        "host:cnbc.com"
       ]
     },
     "truth:117005796425040371": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117006290013696288": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117009581290419286": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117010030683816088": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011270507732212": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011459082239407": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460046411651": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460524966016": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117014253232654593": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117015146759027639": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016403652131870": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016448991757333": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016718142773652": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016718934084117": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117017726186229508": {
-      "first_ts": "2026-08-01T09:12:06.826995+00:00",
+      "first_ts": "2026-08-01T10:47:51.121736+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -669,14 +567,14 @@
   },
   "providers": {
     "cnn_truth_backfill": {
-      "etag": "\"3b68d6e5c3c90275cd10127dd67d5f56-3\"",
+      "etag": "\"9d0be4950394a42877b5f390e171d4a1-3\"",
       "fail_count": 0,
-      "last_modified": "Sat, 01 Aug 2026 05:24:03 GMT",
-      "last_poll_ts": 1785575528.9177105
+      "last_modified": "Sat, 01 Aug 2026 10:18:43 GMT",
+      "last_poll_ts": 1785581274.808845
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785575528.464156
+      "last_poll_ts": 1785581274.3958745
     },
     "twitterapiio": {
       "cursors": {
@@ -701,23 +599,23 @@
       },
       "last_poll": {
         "BRICSinfo": 1785575529.0057058,
-        "CoinDesk": 1785537280.1147075,
-        "Cointelegraph": 1785537280.1147075,
-        "DeItaone": 1785575529.0057058,
-        "FirstSquawk": 1785575529.0057058,
-        "HormuzLetter": 1785537280.1147075,
+        "CoinDesk": 1785581275.0176852,
+        "Cointelegraph": 1785581275.0176852,
+        "DeItaone": 1785581275.0176852,
+        "FirstSquawk": 1785581275.0176852,
+        "HormuzLetter": 1785581275.0176852,
         "NewsWire_US": 1785575529.0057058,
         "Osint613": 1785575529.0057058,
         "StockMKTNewz": 1785575529.0057058,
-        "WHPressPool": 1785575529.0057058,
+        "WHPressPool": 1785581275.0176852,
         "WatcherGuru": 1785575529.0057058,
         "WhaleInsider": 1785575529.0057058,
-        "financialjuice": 1785575529.0057058,
+        "financialjuice": 1785581275.0176852,
         "rawsalerts": 1785575529.0057058,
         "remarks": 1785575529.0057058,
         "tradfi": 1785575529.0057058,
         "unusual_whales": 1785575529.0057058,
-        "zerohedge": 1785575529.0057058
+        "zerohedge": 1785581275.0176852
       },
       "spend": {
         "2026-07": {
@@ -726,9 +624,9 @@
           "usd": 0.29355
         },
         "2026-08": {
-          "requests": 60,
+          "requests": 68,
           "tweets": 1200,
-          "usd": 0.18
+          "usd": 0.1812
         }
       }
     }
@@ -742,40 +640,40 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-01T09:12:06Z",
+  "updated_at": "2026-08-01T10:47:51Z",
   "wire": {
     "bea_news": {
       "etag": "\"fc82db231f20dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 12:30:00 GMT",
-      "last_poll_ts": 1785575527.735214
+      "last_poll_ts": 1785581273.6322157
     },
     "bls_news": {
       "etag": "\"80ba6c61e820dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 12:30:33 GMT",
-      "last_poll_ts": 1785575527.5441313
+      "last_poll_ts": 1785581273.475914
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785575528.1660683
+      "last_poll_ts": 1785581274.1004958
     },
     "fed_press": {
       "etag": "\"927a7ee7f420dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 14:00:11 GMT",
-      "last_poll_ts": 1785575527.4587116
+      "last_poll_ts": 1785581271.805702
     },
     "marketwatch_top": {
-      "etag": "W/\"2091-CZBMauXbZR5oBYy2LuqEJYWFJZQ\"",
+      "etag": "W/\"2091-0Zm1LieHlVw1h80mU9y8qyFdxgo\"",
       "fail_count": 0,
-      "last_poll_ts": 1785575528.3711243
+      "last_poll_ts": 1785581274.2222466
     },
     "whitehouse_actions": {
       "etag": "\"34a52cac5505dc40e7fd6e4e47eebc2b\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 17:38:11 GMT",
-      "last_poll_ts": 1785575528.0881948
+      "last_poll_ts": 1785581273.9205022
     }
   }
 }
