@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T17:50:33.960920+00:00",
-  "count": 543,
+  "generated_at": "2026-08-01T18:15:58.918837+00:00",
+  "count": 544,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1974,6 +1974,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-avzwwusaly1-d9b9a7",
+      "title": "Agri 310726 Agri Bites report 31Jul26",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T23:44:09Z",
+      "summary_points": [
+        "**Geopolitical & Input Cost Pressures**: Middle East conflict intensifies energy volatility, sustaining elevated agricultural commodity prices while increasing farm input costs; 2026/27 milk price forecast at $9.50/kg amid wide uncertainty.",
+        "**El Niño-Driven Supply Shock**: Rising El Niño probability (2026/27) risks dry conditions, reducing NZ dairy production (earlier cow dry-offs) and tightening global supply, supporting dairy prices despite 2026f dip (-6.4%).",
+        "**USITC Lamb Investigation Risk**: USITC investigates NZ lamb imports for injury to US industry (70% of US market); decision 13 Nov 2026, with potential tariffs/quotas on 2027 Q1 exports.",
+        "**Dairy Price Outlook**: NZ dairy prices forecast to dip 6.4% YoY in 2026f before rebounding, contrasting with robust beef prices peaking +17.4% YoY in 2026f.",
+        "**SOI-Price Technical Linkage**: SOI (Southern Oscillation Index) correlates with FAO Food Price Index (18m lag), providing quantifiable timing signal for commodity price movements."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 17,
       "language": "en",
       "needs_metadata": false
     },
