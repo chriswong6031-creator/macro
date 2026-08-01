@@ -1555,6 +1555,263 @@ class TestOutboxBatchDecide:
         assert res["decided"] == 0
 
 
+#: Two pieces of copy that pass banned_language + queued_voice_violations as of
+#: 2026-08-01. Held as constants because a voice-law change that starts failing
+#: them should fail these tests LOUDLY — the point of the edit path is that the
+#: real gates run, so a fixture that dodges them proves nothing.
+_CLEAN_A = ("Chip supply is loosening and the tape finally believes it. Orders "
+            "up, lead times down, and the group stopped selling off on good "
+            "news. Watching whether it holds through next week.")
+_CLEAN_B = ("Rates backed up again and the long end did the work. I keep "
+            "underestimating how fast that repricing runs. Watching the 10y "
+            "for a stall.")
+
+
+class TestOutboxDecisionRoundTrip:
+    """The operator's decision must MOVE the post, not just be recorded.
+
+    Pins the defect found 2026-08-01: `decide_outbox` wrote a decisions.jsonl
+    row and nothing in production ever called `outbox.apply_decisions`, so an
+    approved post stayed `queued` forever — and the approval desk, which defers
+    to any human decision, stopped looking at it too.
+    """
+
+    def _queued(self, tmp_path, text=_CLEAN_A, **kw):
+        from engine.marketing.outbox import enqueue
+        item = _make_ob_item(tmp_path, text=text, **kw)
+        assert enqueue(item, root=tmp_path, max_per_account_day=20) == "queued"
+        return item
+
+    def test_operator_approve_dispatches(self, tmp_path):
+        """approve → the ledger actually says `approved` (was: still queued)."""
+        from engine.marketing.outbox import current_statuses
+        item = self._queued(tmp_path)
+        assert marketing.decide_outbox(item["id"], "approve", root=tmp_path) is True
+        assert current_statuses(tmp_path)[item["id"]] == "approved"
+
+    def test_operator_hold_writes_no_transition(self, tmp_path):
+        """hold is the queued status plus a decision — never a ledger move."""
+        from engine.marketing.outbox import current_statuses, fold_state
+        item = self._queued(tmp_path, text=_CLEAN_B)
+        assert marketing.decide_outbox(item["id"], "hold", root=tmp_path) is True
+        assert current_statuses(tmp_path)[item["id"]] == "queued"
+        assert item["id"] in fold_state(tmp_path)["held"]
+
+    def test_operator_reject_quarantines(self, tmp_path):
+        from engine.marketing.outbox import current_statuses
+        item = self._queued(tmp_path)
+        res = marketing.reject_outbox(item["id"], reason="reads templated",
+                                      root=tmp_path)
+        assert res["ok"] is True
+        assert current_statuses(tmp_path)[item["id"]] == "quarantined"
+
+    def test_approve_applies_only_the_clicked_post(self, tmp_path):
+        """One click moves ONE post.
+
+        The ledger carries months of never-applied approve rows; a global sweep
+        from a button would re-arm all of them at once.
+        """
+        from engine.marketing.outbox import current_statuses, record_decision
+        a = self._queued(tmp_path, text=_CLEAN_A)
+        b = self._queued(tmp_path, text=_CLEAN_B)
+        # A stale dead-letter approval recorded some other day, never applied.
+        assert record_decision(b["id"], "approve", actor="admin", root=tmp_path)
+        marketing.decide_outbox(a["id"], "approve", root=tmp_path)
+        st = current_statuses(tmp_path)
+        assert st[a["id"]] == "approved"
+        assert st[b["id"]] == "queued"
+
+    def test_batch_approve_dispatches_every_id(self, tmp_path):
+        from engine.marketing.outbox import current_statuses
+        a = self._queued(tmp_path, text=_CLEAN_A)
+        b = self._queued(tmp_path, text=_CLEAN_B)
+        res = marketing.decide_outbox_batch([a["id"], b["id"]], "approve",
+                                            root=tmp_path)
+        assert res["decided"] == 2
+        st = current_statuses(tmp_path)
+        assert st[a["id"]] == "approved" and st[b["id"]] == "approved"
+
+    def test_desk_defers_to_the_operator_and_the_post_still_moves(self, tmp_path):
+        """The approval desk skips a post a human ruled on — and that is now
+        safe, because the human's ruling is what advanced it."""
+        from engine.marketing import approval_desk
+        from engine.marketing.outbox import current_statuses, fold_state
+        item = self._queued(tmp_path)
+        marketing.decide_outbox(item["id"], "approve", root=tmp_path)
+        assert approval_desk._human_has_spoken(item["id"], fold_state(tmp_path))
+        assert current_statuses(tmp_path)[item["id"]] == "approved"
+
+
+class TestOutboxEdit:
+    """Editing a queued post: real validators in, supersession out."""
+
+    def _queued(self, tmp_path, text=_CLEAN_A, **kw):
+        from engine.marketing.outbox import enqueue
+        item = _make_ob_item(tmp_path, text=text, **kw)
+        assert enqueue(item, root=tmp_path, max_per_account_day=20) == "queued"
+        return item
+
+    # ── the happy path ────────────────────────────────────────────────────
+    def test_clean_edit_supersedes_and_approves(self, tmp_path):
+        from engine.marketing.outbox import current_statuses, fold_state
+        item = self._queued(tmp_path)
+        res = marketing.edit_outbox_item(item["id"], _CLEAN_B, root=tmp_path)
+        assert res["ok"] is True, res
+        assert res["id"] != item["id"]
+        assert res["approved"] is True
+        st = current_statuses(tmp_path)
+        assert st[item["id"]] == "quarantined"      # original left the queue
+        assert st[res["id"]] == "approved"          # successor is cleared
+        new = fold_state(tmp_path)["items"][res["id"]]
+        assert new["text"] == _CLEAN_B
+        assert new["source"]["supersedes"] == item["id"]
+        assert new["source"]["text_original"] == _CLEAN_A
+        assert new["source"]["edited_by"] == "operator-edit"
+
+    def test_edit_carries_the_slot_media_and_desk(self, tmp_path):
+        from engine.marketing.outbox import enqueue, fold_state, make_item
+        item = make_item(
+            account="research_a", kind="signal", text=_CLEAN_A,
+            as_of=_AS_OF_OB, provenance="content_studio", now=_FIXED_NOW_OB,
+            slot="D1-S5", scheduled_at="2026-07-19T17:30:00Z", priority=3,
+            media=[{"kind": "chart_svg", "path": "media/x.svg", "chart_id": "c-1"}],
+        )
+        enqueue(item, root=tmp_path, max_per_account_day=20)
+        res = marketing.edit_outbox_item(item["id"], _CLEAN_B, root=tmp_path)
+        assert res["ok"] is True, res
+        new = fold_state(tmp_path)["items"][res["id"]]
+        assert new["account"] == "research_a"
+        assert new["slot"] == "D1-S5"
+        assert new["priority"] == 3
+        assert new["media"][0]["chart_id"] == "c-1"
+
+    # ── refusals ──────────────────────────────────────────────────────────
+    def test_banned_language_returned_verbatim(self, tmp_path):
+        from engine.marketing.outbox import current_statuses
+        item = self._queued(tmp_path)
+        res = marketing.edit_outbox_item(
+            item["id"], "Rates backed up again — the long end did the work.",
+            root=tmp_path)
+        assert res["ok"] is False
+        assert res["reason"] == "rejected"
+        assert "em dash (U+2014)" in res["violations"]   # the engine's own string
+        assert current_statuses(tmp_path)[item["id"]] == "queued"
+
+    def test_cashtag_added_to_an_unhosted_post_is_refused(self, tmp_path):
+        """A ticker with no picture is a post the publisher silently holds
+        back. The operator has to learn that here, while he can still undo it."""
+        from engine.marketing.outbox import current_statuses
+        item = self._queued(tmp_path)                     # kind=signal, no media
+        res = marketing.edit_outbox_item(
+            item["id"], _CLEAN_B + " $AVGO", root=tmp_path)
+        assert res["ok"] is False
+        assert res["reason"] == "rejected"
+        assert any("$AVGO" in v and "chart law" in v for v in res["violations"]), res
+        assert current_statuses(tmp_path)[item["id"]] == "queued"
+
+    def test_cashtag_allowed_when_the_post_has_a_hosted_chart(self, tmp_path):
+        from engine.marketing.outbox import enqueue, make_item
+        item = make_item(
+            account="flagship", kind="signal", text=_CLEAN_A, as_of=_AS_OF_OB,
+            provenance="content_studio", now=_FIXED_NOW_OB,
+            media=[{"kind": "chart_svg", "path": "media/x.svg", "chart_id": "c-1",
+                    "media_url": "https://cdn.example.com/c-1.png"}],
+        )
+        enqueue(item, root=tmp_path, max_per_account_day=20)
+        res = marketing.edit_outbox_item(item["id"], _CLEAN_B + " $AVGO",
+                                         root=tmp_path)
+        assert res["ok"] is True, res
+
+    def test_a_cleared_post_is_not_editable(self, tmp_path):
+        from engine.marketing.outbox import transition
+        item = self._queued(tmp_path)
+        transition(item["id"], "approved", actor="t", root=tmp_path)
+        res = marketing.edit_outbox_item(item["id"], _CLEAN_B, root=tmp_path)
+        assert res["ok"] is False and res["reason"] == "not_editable"
+
+    def test_unknown_id(self, tmp_path):
+        res = marketing.edit_outbox_item("ob-2026-07-19-nope000000", _CLEAN_B,
+                                         root=tmp_path)
+        assert res["ok"] is False and res["reason"] == "not_found"
+
+    def test_empty_and_over_length(self, tmp_path):
+        item = self._queued(tmp_path)
+        assert marketing.edit_outbox_item(item["id"], "   ", root=tmp_path)["reason"] == "empty"
+        long = "a" * 400
+        assert marketing.edit_outbox_item(item["id"], long, root=tmp_path)["reason"] == "too_long"
+
+    def test_unchanged_copy_is_refused(self, tmp_path):
+        item = self._queued(tmp_path)
+        res = marketing.edit_outbox_item(item["id"], _CLEAN_A, root=tmp_path)
+        assert res["ok"] is False and res["reason"] == "unchanged"
+
+    def test_whitespace_only_edit_is_refused_before_it_costs_the_slot(self, tmp_path):
+        """`_item_id` hashes the NORMALIZED text, so a whitespace-only change
+        produces a successor with the SAME id — which enqueue refuses as a
+        duplicate AFTER the original has been retired. Raw-text comparison
+        would let that through and delete the post."""
+        from engine.marketing.outbox import current_statuses, make_item
+        item = self._queued(tmp_path)
+        spaced = _CLEAN_A.replace(". ", ".  ")
+        assert make_item(account=item["account"], kind=item["kind"], text=spaced,
+                         as_of=item["as_of"], provenance="content_studio")["id"] == item["id"]
+        res = marketing.edit_outbox_item(item["id"], spaced, root=tmp_path)
+        assert res["ok"] is False and res["reason"] == "unchanged"
+        assert current_statuses(tmp_path)[item["id"]] == "queued"
+
+    def test_duplicate_of_a_live_sibling_leaves_the_original_alive(self, tmp_path):
+        """The one refusal that is about a DIFFERENT post is checked before the
+        original is retired — otherwise fixing a typo empties the slot."""
+        from engine.marketing.outbox import current_statuses
+        a = self._queued(tmp_path, text=_CLEAN_A)
+        self._queued(tmp_path, text=_CLEAN_B)
+        res = marketing.edit_outbox_item(a["id"], _CLEAN_B + " Still watching.",
+                                         root=tmp_path)
+        assert res["ok"] is False and res["reason"] == "duplicate"
+        assert current_statuses(tmp_path)[a["id"]] == "queued"
+
+    # ── the dry run ───────────────────────────────────────────────────────
+    def test_validate_reports_violations_and_writes_nothing(self, tmp_path):
+        from engine.marketing.outbox import read_items, read_ledger
+        item = self._queued(tmp_path)
+        before = (len(read_items(tmp_path)), len(read_ledger(tmp_path)))
+        res = marketing.validate_outbox_text(
+            item["id"], "Rates backed up — again.", root=tmp_path)
+        assert res["ok"] is True
+        assert res["clean"] is False
+        assert "em dash (U+2014)" in res["violations"]
+        assert (len(read_items(tmp_path)), len(read_ledger(tmp_path))) == before
+
+    def test_validate_clean_copy_is_clean(self, tmp_path):
+        item = self._queued(tmp_path)
+        res = marketing.validate_outbox_text(item["id"], _CLEAN_B, root=tmp_path)
+        assert res["ok"] is True and res["clean"] is True and res["over"] is False
+
+    def test_validate_counts_codepoints_not_utf16_units(self, tmp_path):
+        item = self._queued(tmp_path)
+        res = marketing.validate_outbox_text(item["id"], "📈" * 10, root=tmp_path)
+        assert res["chars"] == 10
+
+
+class TestOutboxHistoryHonesty:
+    """The history block must not print a window length as a total."""
+
+    def test_history_total_counts_every_terminal_item(self, tmp_path):
+        from engine.marketing.outbox import enqueue, make_item, transition
+        for i in range(55):
+            it = make_item(account="flagship", kind="signal",
+                           text=f"Terminal history post number {i} of the run.",
+                           as_of=_AS_OF_OB, provenance="content_studio",
+                           now=_FIXED_NOW_OB)
+            enqueue(it, root=tmp_path, max_per_account_day=200)
+            transition(it["id"], "quarantined", actor="t", root=tmp_path,
+                       note="operator batch rejection")
+        r = marketing.outbox(tmp_path)
+        assert len(r["history"]) == 50          # the window is unchanged
+        assert r["history_total"] == 55         # the truth is now reported
+        assert r["history"][0]["note"] == "operator batch rejection"
+
+
 class TestOutboxActivityPayload:
     """The panel surfaces pipeline activity + per-item attempts."""
 
@@ -3504,3 +3761,348 @@ class TestIntelligenceApproveRoute:
         finally:
             httpd.shutdown()
             httpd.server_close()
+
+
+# ---------------------------------------------------------------------------
+# PUBLISHER PANEL — the "what goes out next" + triage payload (2026-08-01).
+#
+# Three defects these pin, all operator-reported:
+#   1. The page had NO view of what is about to go out. `next_dispatch` did not
+#      exist; the only way to see it was to click "Run dry-run".
+#   2. "Needs attention" shipped every quarantined row with the FULL post body
+#      (114 KB for ~190 corpses) and the render mapped them unbounded — "goes on
+#      forever, and there's nothing i can do about it". The rows are now slim
+#      (no body, an excerpt instead) and carry the age + attempt count the
+#      triage groups need.
+#   3. A capped list could under-report the wall it summarises, so the honest
+#      totals ship alongside every capped list.
+# ---------------------------------------------------------------------------
+
+class TestPublisherNextDispatch:
+    @staticmethod
+    def _seed(tmp_path):
+        """flagship: one approved (early slot) + one approved (later slot);
+        research_a: one queued (must NOT appear); one quarantined; one failed."""
+        from engine.marketing.outbox import enqueue, record_decision, transition
+
+        def _mk(account, text, sched, media=None, as_of="2026-08-01"):
+            it = _make_ob_item(tmp_path, account=account, text=text, as_of=as_of)
+            it["scheduled_at"] = sched
+            if media:
+                it["media"] = media
+            enqueue(it, root=tmp_path)
+            return it
+
+        late = _mk("flagship", "Later approved post.", "2026-08-01T20:15:00Z")
+        early = _mk("flagship", "Earlier approved post.", "2026-08-01T14:00:00Z",
+                    media=[{"kind": "chart_svg", "path": "data/x/chart-1.svg",
+                            "chart_id": "chart-1", "ticker": "ARLO"}])
+        queued = _mk("research_a", "Still queued, nobody approved it.", "2026-08-01T14:00:00Z")
+        quar = _mk("research_a", "Blocked post with a long body " + ("x" * 400),
+                   "2026-08-01T14:00:00Z")
+        # research_b, not flagship: enqueue() enforces the per-desk daily cap
+        # (2 on the sentinel default), so a third flagship item is refused
+        # outright and would never reach the ledger.
+        fail = _mk("research_b", "Send failed once.", "2026-08-01T14:00:00Z")
+
+        for it in (late, early):
+            record_decision(it["id"], "approve", actor="operator", root=tmp_path)
+            transition(it["id"], "approved", actor="actuator", root=tmp_path)
+        transition(quar["id"], "quarantined", actor="actuator", root=tmp_path,
+                   note="account_disabled: desk not enabled in desk_network")
+        transition(fail["id"], "approved", actor="actuator", root=tmp_path)
+        transition(fail["id"], "failed", actor="actuator", root=tmp_path,
+                   note="http_error 429 Too many requests")
+        return {"late": late, "early": early, "queued": queued,
+                "quar": quar, "fail": fail}
+
+    def test_next_dispatch_lists_only_approved_in_slot_order(self, tmp_path):
+        ids = self._seed(tmp_path)
+        r = marketing.publisher(root=tmp_path)
+        assert r["ok"] is True
+        nd = r["next_dispatch"]
+        assert [x["id"] for x in nd] == [ids["early"]["id"], ids["late"]["id"]], \
+            "next_dispatch must be approved-only, ordered by scheduled_at asc"
+        assert ids["queued"]["id"] not in {x["id"] for x in nd}
+        assert r["next_dispatch_total"] == 2
+
+    def test_next_dispatch_card_carries_what_the_preview_needs(self, tmp_path):
+        ids = self._seed(tmp_path)
+        r = marketing.publisher(root=tmp_path)
+        early = next(x for x in r["next_dispatch"] if x["id"] == ids["early"]["id"])
+        assert early["text"] == "Earlier approved post."
+        assert early["chars"] == len("Earlier approved post.")
+        assert early["media_n"] == 1
+        assert early["media_path"] == "data/x/chart-1.svg"
+        assert early["media_label"] == "ARLO"
+        # no config in tmp root → no channel ids → the blocker travels with the row
+        assert early["channel_ok"] is False
+        assert early["due_at_next_slot"] in (True, False)
+
+    def test_next_slot_utc_is_published_for_the_countdown(self, tmp_path):
+        self._seed(tmp_path)
+        r = marketing.publisher(root=tmp_path)
+        assert r["next_slot_utc"] is None or r["next_slot_utc"].endswith("Z")
+
+    def test_cold_outbox_still_carries_the_new_keys(self, tmp_path):
+        """An empty root must not make the render fall back to its "cannot list
+        them" degradation path — absent means "this build cannot say", and a
+        cold outbox CAN say: nothing."""
+        r = marketing.publisher(root=tmp_path)
+        assert r["ok"] is True
+        assert r["next_dispatch"] == []
+        assert r["next_dispatch_total"] == 0
+        assert r["quarantined_total"] == 0
+
+
+class TestPublisherTriagePayload:
+    def test_terminal_rows_are_slim_and_carry_the_triage_fields(self, tmp_path):
+        ids = TestPublisherNextDispatch._seed(tmp_path)
+        r = marketing.publisher(root=tmp_path)
+        row = next(x for x in r["quarantined"] if x["id"] == ids["quar"]["id"])
+        # The post body is what made this section 114 KB. It is not drawn for a
+        # dead row and must not be shipped for one.
+        assert "text" not in row, "a terminal row must not carry the full post body"
+        assert row["excerpt"].startswith("Blocked post with a long body")
+        assert len(row["excerpt"]) <= 111
+        # The reason IS the grouping key — it must survive verbatim.
+        assert row["note"] == "account_disabled: desk not enabled in desk_network"
+        assert row["at"]
+        assert row["as_of"] == "2026-08-01"
+        assert row["attempts"] == 0
+
+    def test_failed_items_are_separated_with_their_attempt_count(self, tmp_path):
+        ids = TestPublisherNextDispatch._seed(tmp_path)
+        r = marketing.publisher(root=tmp_path)
+        assert [x["id"] for x in r["failed_dead"]] == [ids["fail"]["id"]]
+        # attempts < MAX means the retry is still open, which is what lets the
+        # render classify the row as ALIVE and give it a real action.
+        assert r["failed_dead"][0]["attempts"] == 1
+        assert r["failed_dead_total"] == 1
+        assert r["failed_dead"][0]["note"] == "http_error 429 Too many requests"
+
+    def test_capped_list_never_under_reports_its_total(self, monkeypatch, tmp_path):
+        """The header reads "N to act on · M closed" off these totals. A capped
+        list that also capped the count would let the wall shrink on screen while
+        staying exactly as large in the ledger."""
+        from engine.marketing.outbox import enqueue, transition
+        # One per desk — enqueue() caps each desk at 2/day.
+        for i, acct in enumerate(("flagship", "research_a", "research_b")):
+            it = _make_ob_item(tmp_path, account=acct, text=f"blocked {i}")
+            enqueue(it, root=tmp_path)
+            transition(it["id"], "quarantined", actor="actuator", root=tmp_path,
+                       note="queue-quality sweep")
+        monkeypatch.setattr(marketing, "_PUBLISHER_DEAD_N", 1)
+        r = marketing.publisher(root=tmp_path)
+        assert len(r["quarantined"]) == 1
+        assert r["quarantined_total"] == 3
+
+
+class TestSentinelLiveArmState:
+    """The Sentinel hero sold `publish_enabled` — a boolean baked into last
+    night's report at ~03:51 UTC — as LIVE state, printing "nothing leaves the
+    building. This is the safe resting state" on mornings the publisher posted
+    with real Buffer receipts. The payload now carries the same live repo-variable
+    read the Publisher uses, so the two pages cannot disagree."""
+
+    _REPORT = {
+        "as_of": "2026-08-01", "produced_at": "2026-08-01T03:51:22Z",
+        "plan_status": "pass", "publish_enabled": False,
+        "counts": {"items": 5, "passed": 4, "quarantined_policy": 1},
+        "reasons_histogram": {"near_dup": 1}, "quarantined": [], "checks": {},
+    }
+
+    def _seed(self, tmp_path):
+        d = tmp_path / "data" / "marketing"
+        d.mkdir(parents=True)
+        (d / "sentinel_report.json").write_text(json.dumps(self._REPORT), encoding="utf-8")
+        return tmp_path
+
+    def test_live_arm_state_is_carried_and_can_contradict_the_report(
+            self, monkeypatch, tmp_path):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": True, "has_token": True})
+        monkeypatch.setattr(github_api, "get_repo_variable", lambda n: "1")
+        r = marketing.sentinel(self._seed(tmp_path))
+        assert r["ok"] is True
+        # The report's own record is preserved verbatim — it is the honest
+        # statement of what the GATE saw.
+        assert r["publish_enabled"] is False
+        # …and the live truth disagrees with it, which is the whole point.
+        assert r["arm_state"]["enabled"] is True
+
+    def test_arm_state_present_on_the_accruing_path(self, monkeypatch, tmp_path):
+        from admin import github_api
+        monkeypatch.setattr(github_api, "available",
+                            lambda: {"ok": False, "has_token": False})
+        r = marketing.sentinel(tmp_path)     # no report file at all
+        assert r["ok"] is True
+        assert "arm_state" in r
+        assert r["arm_state"]["enabled"] in (True, False, None)
+
+    def test_unreadable_switch_is_unknown_not_dark(self, monkeypatch, tmp_path):
+        from admin import github_api
+
+        def boom():
+            raise RuntimeError("api exploded")
+
+        monkeypatch.setattr(github_api, "available", boom)
+        r = marketing.sentinel(self._seed(tmp_path))
+        assert r["ok"] is True
+        assert r["arm_state"]["enabled"] is None, \
+            "an unreadable kill-switch is UNKNOWN — never rendered as the safe state"
+        assert r["arm_state"]["error"]
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-01 operator audit — Content Studio payload (C2, C5)
+#
+# The operator's standing question 5 ("is the machine healthy — planned →
+# written → validated → emitted, with drop reasons ranked") was answerable from
+# bytes already parsed into memory: content_plan.json's ``content.copy`` block
+# has carried written / auditor / dropped / dropped_reasons since 2026-07-31 and
+# content() never read ``cp["content"]`` at all.
+# ---------------------------------------------------------------------------
+class TestContentFunnelAndChartPayload:
+
+    @staticmethod
+    def _seed(tmp_path, *, copy_block=None, items=None, charts=None,
+              chart_ids=("chart-001", None)):
+        mkt = tmp_path / "data" / "marketing"
+        mkt.mkdir(parents=True, exist_ok=True)
+        plan = json.loads(json.dumps(MINIMAL_CONTENT_PLAN))
+        if copy_block is not None:
+            plan["content"] = {"copy": copy_block}
+        if charts is not None:
+            plan["featured_charts"] = charts
+        # Point the flagship queue's two posts at the requested chart ids.
+        q = plan["accounts"][0]["queue"]
+        for post, cid in zip(q, chart_ids):
+            post["chart_id"] = cid
+        (mkt / "content_plan.json").write_text(json.dumps(plan), encoding="utf-8")
+        if items is not None:
+            ob = mkt / "outbox"
+            ob.mkdir(parents=True, exist_ok=True)
+            (ob / "items.jsonl").write_text(
+                "".join(json.dumps(r) + "\n" for r in items), encoding="utf-8")
+        return tmp_path
+
+    def test_funnel_is_served_from_the_copy_block(self, tmp_path):
+        root = self._seed(tmp_path, copy_block={
+            "written": 6,
+            "auditor": {"ran": True, "kept": 5, "cut": 1, "unaudited": 0},
+            "dropped": {"provider": 36, "validate": 35, "critic": 1},
+            "dropped_reasons": {"provider returned no text": 36,
+                                "em dash (U+2014)": 5},
+            "n_validated": 12, "n_fallback": 0, "signals_killed_by_gate": 4,
+            "modes": {"llm": 2, "llm_repair": 4},
+            "note": "12 posts written by copywriter",
+        }, items=[
+            {"id": "ob-1", "as_of": "2026-07-18", "account": "flagship"},
+            {"id": "ob-2", "as_of": "2026-07-18", "account": "research_a"},
+            {"id": "ob-old", "as_of": "2026-07-01", "account": "flagship"},
+        ])
+        f = marketing.content(root)["funnel"]
+        assert f["planned"] == 3          # the QUEUE length, not summary.total_posts
+        assert f["claimed"] == 3          # the header's own claim, kept beside it
+        assert f["written"] == 6
+        assert f["audit_kept"] == 5 and f["audit_cut"] == 1
+        assert f["emitted"] == 2          # today's plan day only — Floor's measure
+        assert f["drop_reasons"]["provider returned no text"] == 36
+        assert f["dropped"] == {"provider": 36, "validate": 35, "critic": 1}
+        assert f["n_validated"] == 12
+        assert f["modes"] == {"llm": 2, "llm_repair": 4}
+
+    def test_the_funnel_never_clamps_a_non_monotone_pair(self, tmp_path):
+        """Live 2026-08-01: written=6 under an auditor that kept 7.
+
+        The builder ships both numbers untouched — it computes NO loss, so it
+        cannot manufacture one. The honesty guard lives in the render, which
+        refuses to print a loss wherever out exceeds in.
+        """
+        root = self._seed(tmp_path, copy_block={
+            "written": 6,
+            "auditor": {"ran": True, "kept": 7, "cut": 0},
+        })
+        f = marketing.content(root)["funnel"]
+        assert f["written"] == 6 and f["audit_kept"] == 7
+        assert "lost" not in f and "loss" not in f
+
+    def test_an_unmeasured_station_is_none_never_zero(self, tmp_path):
+        """None means "no pass wrote this number"; 0 means "we checked"."""
+        root = self._seed(tmp_path, copy_block={})     # copy block with nothing in it
+        f = marketing.content(root)["funnel"]
+        assert f["written"] is None
+        assert f["audit_kept"] is None                  # auditor.ran is falsey
+        # An ABSENT rail is not an EMPTY rail: _read_jsonl fail-softs a missing
+        # file to [], which would report a confident 0 for a number no pass ever
+        # measured on this host.
+        assert f["emitted"] is None
+        assert f["planned"] == 3
+
+    def test_a_present_but_empty_rail_reports_zero_not_null(self, tmp_path):
+        """The inverse: the file exists and holds nothing for this plan day.
+        That IS a measured zero and must not hide behind an em dash."""
+        root = self._seed(tmp_path, copy_block={"written": 2}, items=[
+            {"id": "ob-old", "as_of": "2026-07-01", "account": "flagship"}])
+        assert marketing.content(root)["funnel"]["emitted"] == 0
+
+    def test_an_unrun_auditor_reports_null_not_a_kept_count(self, tmp_path):
+        root = self._seed(tmp_path, copy_block={
+            "written": 4, "auditor": {"ran": False, "kept": 0, "cut": 0}})
+        f = marketing.content(root)["funnel"]
+        assert f["audit_kept"] is None and f["audit_cut"] is None
+
+    def test_the_floor_and_the_studio_agree_on_emitted(self, tmp_path):
+        """Both read outbox items whose as_of equals the plan's, so the two
+        pages can never disagree about how many posts reached the rail."""
+        from admin import marketing_floor as mf
+        root = self._seed(tmp_path, copy_block={"written": 2}, items=[
+            {"id": "ob-1", "as_of": "2026-07-18", "account": "flagship"},
+            {"id": "ob-2", "as_of": "2026-07-18", "account": "flagship"},
+            {"id": "ob-3", "as_of": "2026-07-17", "account": "flagship"},
+        ])
+        studio = marketing.content(root)["funnel"]["emitted"]
+        floor_line = {s["id"]: s for s in mf.floor(root)["line"]}
+        assert studio == floor_line["enqueued"]["out"] == 2
+
+    def test_only_referenced_charts_are_shipped(self, tmp_path):
+        """~686 KB of inline SVG shipped on every mount and never rendered.
+
+        The Studio looks a chart up BY id (chartById[post.chart_id]); a chart no
+        post references can only ever be downloaded and discarded.
+        """
+        charts = [
+            {"id": "chart-001", "svg": "<svg>used</svg>"},
+            {"id": "chart-404", "svg": "<svg>" + ("x" * 5000) + "</svg>"},
+            {"id": "chart-405", "svg": "<svg>" + ("y" * 5000) + "</svg>"},
+        ]
+        root = self._seed(tmp_path, charts=charts, chart_ids=("chart-001", None))
+        r = marketing.content(root)
+        assert [c["id"] for c in r["featured_charts"]] == ["chart-001"]
+        assert r["featured_charts_dropped"] == 2
+        assert "chart-404" not in json.dumps(r)
+
+    def test_a_chart_with_no_id_survives_the_filter(self, tmp_path):
+        """Fail OPEN: dropping a chart the render might key differently is worse
+        than a big payload."""
+        charts = [{"svg": "<svg>no id</svg>"}, {"id": "chart-404", "svg": "<svg/>"}]
+        root = self._seed(tmp_path, charts=charts, chart_ids=(None, None))
+        r = marketing.content(root)
+        assert len(r["featured_charts"]) == 1
+        assert r["featured_charts"][0]["svg"] == "<svg>no id</svg>"
+
+    def test_an_accruing_repo_still_carries_the_funnel_key(self, tmp_path):
+        """The render reads d.funnel unconditionally; absent must be an honest
+        null, not a KeyError."""
+        r = marketing.content(tmp_path)
+        assert r["ok"] is True and r["funnel"] is None
+
+    def test_the_funnel_never_raises_on_a_malformed_copy_block(self, tmp_path):
+        for junk in ("not a dict", 42, [], {"auditor": "nope", "dropped": 7,
+                                           "dropped_reasons": ["a", "b"]}):
+            root = self._seed(tmp_path, copy_block=junk)
+            f = marketing.content(root)["funnel"]
+            assert f["planned"] == 3
+            assert f["drop_reasons"] == {} and f["dropped"] == {}

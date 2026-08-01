@@ -5666,3 +5666,418 @@ button.obx-btn-reject:hover:not(:disabled) {
   .flr-key { grid-template-columns: minmax(0, 1fr); }
   .flr-key-load { text-align: left; }
 }
+
+/* ===== FLOOR SUITE — Floor + Content Studio components =====================
+   The shared operator components (C1 status chip, C2 liveness gutter, C3 reason
+   chip, C4 bounded list, C5 post card) are defined ONCE in the FLOOR SUITE block
+   below this one. Two lanes wrote them concurrently from the same spec and every
+   shared selector came out byte-identical, so the duplicate set was collapsed
+   rather than left to drift. This block holds only what is unique to the Floor
+   and the Content Studio: the supply funnel, the drop-reason panel, the answer
+   bar, and the demoted intraday rail.
+
+   --loss (#d08a4e) is promoted here from Floor-only to console-wide. Its meaning
+   is fixed and narrow: MATERIAL STOPPED HERE — expected, measurable, the subject
+   of the page. --warn = a rule tripped and you can act. --bad = something broke.
+
+   One exception to "defined once": `.st-scheduled` below. The canonical block
+   omits it and the Floor's chips use it. */
+
+/* ---- C1 (partial) · the one status class the canonical block does not set -- */
+.st-approved,
+.st-scheduled { background: var(--ok-bg);   color: var(--ok);   border-color: rgba(61,220,132,.28); }
+
+/* ---- C7 · supply funnel (Content Studio hero) ---------------------------- */
+/* The ONLY ordered station markers in the suite: this content genuinely is a
+   sequence and the order carries information (which station leaks). Nowhere else
+   gets decorative 01/02/03. */
+.fn { margin: 4px 0 18px; }
+.fn-rail {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface);
+  box-shadow: var(--shadow-card); overflow: hidden;
+}
+.fn-cell {
+  position: relative; text-align: left; background: transparent; border: 0;
+  border-left: 1px solid var(--grid); padding: 14px 15px 13px; cursor: pointer; color: inherit;
+  font: inherit; transition: background var(--dur) var(--ease);
+}
+.fn-cell:first-child { border-left: 0; }
+.fn-cell:hover { background: var(--surface2); }
+.fn-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.fn-ord { position: absolute; top: 9px; right: 11px; font-family: var(--mono); font-size: 10px; color: var(--faint); }
+.fn-name { font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.fn-n {
+  font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15;
+  margin-top: 3px; font-variant-numeric: tabular-nums;
+}
+.fn-n.is-zero { color: var(--loss); }
+.fn-what { font-size: 11.5px; color: var(--faint); line-height: 1.4; margin-top: 1px; }
+.fn-yield { height: 4px; border-radius: 2px; background: var(--grid); margin: 10px 0 7px; overflow: hidden; }
+.fn-yield i { display: block; height: 100%; background: var(--loss); border-radius: 2px; }  /* fills with what DIED */
+.fn-lost { font-size: 16px; font-weight: 700; color: var(--loss); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.fn-lost-word, .fn-lost-none { font-size: 11px; color: var(--faint); line-height: 1.35; }
+.fn-break {
+  display: inline-block; margin-top: 7px; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .08em; color: var(--loss);
+  border: 1px solid color-mix(in srgb, var(--loss) 35%, transparent);
+  background: color-mix(in srgb, var(--loss) 12%, transparent);
+  border-radius: 4px; padding: 1px 6px;
+}
+@supports not (color: color-mix(in srgb, red 10%, transparent)) {
+  .fn-break { border-color: rgba(208,138,78,.35); background: rgba(208,138,78,.12); }
+}
+.fn-cell.is-cold { background: repeating-linear-gradient(135deg, transparent 0 6px, rgba(255,255,255,.012) 6px 12px); }
+.fn-cell.is-cold .fn-n { color: var(--faint); }
+/* THE HONESTY GUARD, drawn: a station whose out exceeds its upstream in. It
+   prints NO loss figure and the footer says why. Never clamp. */
+.fn-cell.is-odd { box-shadow: inset 0 0 0 1px rgba(255,184,77,.35); }
+.fn-odd-word { font-size: 11px; color: var(--warn); line-height: 1.35; }
+.fn-foot { margin-top: 10px; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+@media (max-width: 820px) {
+  .fn-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fn-cell:nth-child(3) { border-left: 0; }
+}
+
+/* ---- C8 · drop-reason panel ---------------------------------------------- */
+.dz-row {
+  display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: start;
+  padding: 11px 0; border-bottom: 1px solid var(--grid);
+}
+.dz-row:last-child { border-bottom: 0; }
+.dz-n {
+  font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--loss);
+  text-align: right; line-height: 1.2; font-variant-numeric: tabular-nums;
+}
+.dz-title { font-size: 13px; font-weight: 650; color: var(--text); }
+.dz-what  { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin-top: 2px; }
+.dz-raw   { margin-top: 6px; }
+.dz-raw summary { font-size: 11px; color: var(--faint); cursor: pointer; }
+.dz-raw-body {
+  margin-top: 6px; display: flex; flex-direction: column; gap: 4px;
+  font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.5;
+}
+.dz-dead { font-size: 11.5px; color: var(--faint); white-space: nowrap; align-self: center; }
+@media (max-width: 640px) {
+  .dz-row { grid-template-columns: 52px minmax(0, 1fr); }
+  .dz-row > :nth-child(3) { grid-column: 1 / -1; justify-self: start; }
+}
+
+/* ---- FLOOR · the answer bar --------------------------------------------- */
+/* Five cells, one per operator question, above the line. A missing datum prints
+   an em dash and "not measured" — never a 0, which reads as "checked, nothing
+   there". Every cell is a real <button> with a focus ring. */
+.flr-ans {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0;
+  border: 1px solid var(--border); border-radius: var(--r-md); background: var(--surface);
+  box-shadow: var(--shadow-card); overflow: hidden; margin: 4px 0 14px;
+}
+.flr-ans-cell {
+  text-align: left; background: transparent; border: 0; border-left: 1px solid var(--grid);
+  padding: 12px 14px 11px; cursor: pointer; color: inherit; font: inherit;
+  transition: background var(--dur) var(--ease);
+}
+.flr-ans-cell:first-child { border-left: 0; }
+.flr-ans-cell:hover { background: var(--surface2); }
+.flr-ans-cell:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.flr-ans-q {
+  font-size: 10px; font-weight: 650; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muted);
+}
+.flr-ans-n {
+  font-size: 24px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2;
+  margin-top: 3px; font-variant-numeric: tabular-nums;
+}
+.flr-ans-n.is-null { color: var(--faint); }
+.flr-ans-n.is-you  { color: var(--accent-cyan); }
+.flr-ans-n.is-loss { color: var(--loss); }
+.flr-ans-s { font-size: 11px; color: var(--faint); line-height: 1.4; margin-top: 2px; }
+.flr-ans-go { font-size: 11px; color: var(--muted); margin-top: 5px; }
+@media (max-width: 900px) {
+  .flr-ans { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .flr-ans-cell:nth-child(odd) { border-left: 0; }
+}
+
+/* ---- CONTENT STUDIO · the demoted intraday rail -------------------------- */
+/* Was concatenated FIRST, above the page's own title: up to 12 full-text cards
+   before the operator saw the plan. Now last and closed — with one honest
+   exception, a genuinely hot story opens it (see csIntelRail). */
+.cs-intel > summary {
+  cursor: pointer; padding: 9px 12px; border: 1px solid var(--border);
+  border-radius: var(--r-sm); background: var(--surface);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 13px; font-weight: 600; color: var(--text);
+}
+.cs-intel > summary:hover { border-color: var(--accent); }
+.cs-intel > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cs-intel[open] > summary { margin-bottom: 10px; }
+.cs-intel-body { padding-left: 2px; }
+
+/* =========================================================================
+   FLOOR SUITE — shared operator components (status chip, liveness gutter,
+   reason chips, bounded lists, post card) + the Publisher/Sentinel surfaces
+   built on them.
+
+   THE SIGNATURE IS LIVENESS, NOT STATUS. Every row on the five Floor pages is
+   exactly one of three things and the console used to draw all three the same
+   way: alive-and-waiting-on-you, alive-and-waiting-on-the-machine, or dead.
+   Dead things looked alive, so alive things got buried under them — that is
+   every operator complaint about these pages in one sentence. The .lv gutter
+   encodes it in 3px of treatment, readable without reading a word: solid cyan
+   = your call is owed, dim green = the machine's turn, dashed + 55% = dead.
+   It extends the .obx-edge-*::before idiom rather than inventing a mechanism.
+
+   Colour ruling (three near-adjacent warm hues, so this is not optional):
+     --loss = material stopped here (expected, measurable, the page's subject)
+     --warn = a rule tripped, and you can act
+     --bad  = something is broken
+   ========================================================================= */
+
+/* ---- C1 · status chip -------------------------------------------------- */
+.st { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 9px; border-radius: 6px;
+      font-size: 11.5px; font-weight: 600; white-space: nowrap; border: 1px solid transparent; }
+.st i { font-style: normal; font-weight: 400; opacity: .72; }
+/* ALIVE — waiting on you */
+.st-queued { background: rgba(56,224,212,.12); color: var(--accent-cyan); border-color: rgba(56,224,212,.28); }
+.st-held   { background: var(--warn-bg); color: var(--warn); border-color: rgba(255,184,77,.28); }
+/* ALIVE — waiting on the machine */
+.st-approved, .st-scheduled { background: var(--ok-bg); color: var(--ok); border-color: rgba(61,220,132,.28); }
+.st-posting { background: var(--warn-bg); color: var(--warn); border-color: rgba(255,184,77,.28); }
+/* DEAD */
+.st-posted, .st-failed, .st-quarantined, .st-recalled, .st-expired {
+  background: var(--surface2); border-color: var(--border); }
+.st-posted      { color: var(--ok); }        /* dead, but the good kind */
+.st-failed      { color: var(--bad); }
+.st-quarantined { color: var(--bad); opacity: .8; }
+.st-recalled    { color: var(--warn); opacity: .8; }
+.st-expired     { color: var(--faint); }
+
+/* ---- C2 · liveness gutter (THE SIGNATURE) ------------------------------ */
+.lv { position: relative; padding-left: 14px; }
+.lv::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; }
+.lv-you::before  { background: var(--accent-cyan); }
+.lv-mach::before { background: var(--ok); opacity: .45; }
+.lv-dead         { opacity: .55; transition: opacity var(--dur) var(--ease); }
+.lv-dead::before { background: none; border-left: 3px dashed var(--faint); }
+.lv-dead:hover, .lv-dead:focus-within { opacity: 1; }
+/* A dead ROW (single-line excerpt) is struck. A dead CARD (full copy) is not:
+   275 struck characters are unreadable, and the gutter already carries it. */
+.lv-dead.lv-row .pc-excerpt {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--faint) 55%, transparent);
+  text-decoration-thickness: 1px;
+}
+@supports not (color: color-mix(in srgb, red 10%, transparent)) {
+  .lv-dead.lv-row .pc-excerpt { text-decoration-color: rgba(95,107,126,.55); }
+}
+
+/* ---- C3 · reason chip -------------------------------------------------- */
+.rz { display: inline-flex; align-items: baseline; gap: 5px; padding: 2px 8px; border-radius: 5px;
+      font-size: 11px; font-family: var(--sans); line-height: 1.5;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--muted); }
+.rz b    { font-weight: 650; color: var(--text); }
+.rz code { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.rz-hot   { background: var(--warn-bg); border-color: rgba(255,184,77,.30); }
+.rz-hard  { background: var(--bad-bg);  border-color: rgba(255,107,107,.30); }
+.rz-inert { opacity: .75; }
+
+/* ---- C4 · bounded list (kills the 187-row wall) ------------------------ */
+.bl-more { margin-top: 7px; background: transparent; border: 1px dashed var(--border);
+  border-radius: var(--r-sm); color: var(--muted); font: inherit; font-size: 12px; padding: 5px 11px;
+  cursor: pointer; transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.bl-more:hover { border-color: var(--accent); color: var(--text); border-style: solid; }
+.bl-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bl-tail { margin-top: 6px; font-size: 11px; color: var(--faint); }
+.bl-more-tr td { border: 0; padding-top: 6px; }
+
+/* ---- C5 · post card ---------------------------------------------------- */
+.pc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md);
+      padding: 12px 14px 11px; margin-bottom: 9px; box-shadow: var(--shadow-card); }
+.pc-top { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; }
+.pc-state { margin-left: auto; }
+.pc-when { font-family: var(--mono); font-size: 11px; color: var(--muted); }   /* a figure → mono */
+.pc-desk { font-size: 11px; color: var(--faint); }                             /* a word → sans */
+/* Compose well. THE CORRECTION: proportional, because X is proportional and
+   this is a PREVIEW, not a code listing — setting it in mono makes the operator
+   judge length and line breaks against the wrong shape. Mono stays for figures:
+   ids, counts, timestamps, char budgets. */
+.pc-body { background: #0d1117; border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 13px 10px; }
+.pc-text { margin: 0; font-family: var(--sans); font-size: 13.5px; line-height: 1.5; color: var(--text);
+           white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
+.pc-excerpt { font-family: var(--sans); font-size: 12.5px; color: var(--muted); }
+.pc-reasons { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pc-act { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+
+/* ---- Publisher §3 · next dispatches ------------------------------------ */
+#pub-next .pc { margin-bottom: 10px; }
+.pub-nd-cd { margin-left: 10px; font-family: var(--mono); font-size: 12px; color: var(--accent-cyan); }
+.pub-jump-flash { box-shadow: 0 0 0 2px var(--accent); }
+
+/* ---- Publisher §4 · triaged "needs attention" -------------------------- */
+.pub-tri-grp { border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface2); margin-bottom: 8px; padding: 0; }
+.pub-tri-grp > summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; cursor: pointer; list-style: none; }
+.pub-tri-grp > summary::-webkit-details-marker { display: none; }
+.pub-tri-grp[open] > summary { border-bottom: 1px solid var(--grid); }
+.pub-tri-ico { font-size: 13px; width: 16px; text-align: center; color: var(--muted); }
+.pub-tri-title { font-size: 13px; font-weight: 650; color: var(--text); }
+.pub-tri-n { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--loss);
+  font-variant-numeric: tabular-nums; }
+.pub-tri-you .pub-tri-n { color: var(--warn); }
+.pub-tri-act-slot { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.pub-tri-what { font-size: 11.5px; color: var(--muted); line-height: 1.5; padding: 9px 12px 2px; }
+.pub-tri-grp .bl { padding: 4px 12px 11px; }
+.pub-tri-row { padding: 7px 0; border-bottom: 1px solid var(--grid); }
+.pub-tri-row:last-child { border-bottom: 0; }
+.pub-tri-meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.pub-tri-id { font-family: var(--mono); font-size: 10.5px; color: var(--muted); }
+.pub-tri-desk { font-size: 11px; color: var(--faint); }
+.pub-tri-when, .pub-tri-age { font-family: var(--mono); font-size: 10.5px; color: var(--faint);
+  font-variant-numeric: tabular-nums; }
+.pub-tri-receipt { font-size: 11px; color: var(--accent-cyan); }
+.pub-tri-note { margin-top: 3px; font-family: var(--mono); font-size: 10.5px; color: var(--muted);
+  line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.pub-tri-act { margin-top: 6px; display: flex; align-items: center; gap: 8px; }
+.pub-tri-msg { font-size: 11px; color: var(--muted); }
+.dz-dead { font-size: 11.5px; color: var(--faint); white-space: nowrap; align-self: center; }
+
+/* ---- Publisher · engagement column ------------------------------------- */
+.pub-met { white-space: nowrap; }
+.pub-met-n { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
+.pub-met-l { font-size: 10.5px; color: var(--faint); }
+
+/* ---- Sentinel · counts that open the rows they count ------------------- */
+.sent-trip-link { background: transparent; border: 0; font: inherit; color: inherit; cursor: pointer;
+  padding: 0 4px; border-radius: var(--r-sm); transition: background var(--dur) var(--ease); }
+.sent-trip-link:hover { background: var(--surface2); }
+.sent-trip-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sent-check-link { display: block; width: 100%; text-align: left; font: inherit; color: inherit;
+  cursor: pointer; }
+.sent-check-link:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sent-check-go { display: block; margin-top: 6px; font-size: 10.5px; color: var(--accent-cyan); }
+.sent-fbar { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
+.sent-fbar-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 11.5px; padding: 3px 11px; cursor: pointer;
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease); }
+.sent-fbar-chip:hover { border-color: var(--accent); color: var(--text); }
+.sent-fbar-chip.on { border-color: var(--accent); color: var(--text); background: var(--surface); }
+.sent-fbar-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sent-flag-card.hidden { display: none; }
+.sent-flag-fix { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--grid);
+  font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+/* The cleared-to-post cards keep their grid, now inside the bounded list. */
+.sent-passed-grid-wrap .bl-body,
+.sent-passed-grid-wrap .bl-rest {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;
+}
+.sent-passed-grid-wrap .bl-rest[hidden] { display: none; }
+.sent-pass-desks { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.sent-pass-desk { font-size: 11.5px; color: var(--faint); }
+.sent-pass-desk b { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
+
+@media (max-width: 640px) {
+  .pub-tri-grp > summary { gap: 6px; }
+  .pub-tri-act-slot { margin-left: 0; width: 100%; }
+  .pc-act { gap: 6px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv-dead { transition: none; }
+  .pub-jump-flash { transition: none; }
+}
+
+/* ===== FLOOR SUITE — OUTBOX lane (dead-post triage, desk slots, edit sheet) ==
+   Page-local classes for the Outbox only. The shared vocabulary (.st, .lv, .rz,
+   .bl, .pc) lives in the Floor-suite block above and is NOT redefined here. */
+
+/* The live/dark pill. The header used to hardcode "nothing posts externally"
+   while the ledger recorded daily Buffer receipts; when the last day carries
+   real posts the pill says so, in the colour of a thing that is on. */
+.obx-live-pill { color: var(--ok); border-color: rgba(61,220,132,.32); }
+.obx-live-pill .obx-shadow-dot { background: var(--ok); }
+
+/* Bulk-approve staleness note — why the count is smaller than the list. */
+.obx-gstale {
+  font-size: 11.5px; color: var(--warn); line-height: 1.45; max-width: 46ch;
+}
+
+/* The two review zones. Nothing decorative: the section headings and the
+   liveness gutters carry the split. */
+.obx-zone { margin-bottom: 20px; }
+.obx-zone-quiet { opacity: .8; }
+
+/* Per-desk slot meters, folded away inside the limits card. */
+.obx-desk-slots > summary {
+  font-size: 11.5px; color: var(--muted); cursor: pointer; margin-top: 10px;
+}
+.obx-desk-slots > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.obx-desk-slots-body {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 14px; margin-top: 8px;
+}
+.obx-desk-slot { display: flex; align-items: center; gap: 9px; }
+.obx-desk-slot-id { font-size: 11px; color: var(--faint); min-width: 92px; }
+
+/* ---- Dead posts ---------------------------------------------------------
+   Grouped by reason, collapsed, and visibly terminal. The operator's words:
+   the old flat list "showed me DEAD rows in a way that read as pending
+   garbage". A group carries exactly one action or one honest dead-label. */
+.obx-dead > summary {
+  font-size: 12.5px; color: var(--muted); cursor: pointer; padding: 9px 0;
+  list-style: none;
+}
+.obx-dead > summary::-webkit-details-marker { display: none; }
+.obx-dead > summary::before { content: "▸ "; color: var(--faint); }
+.obx-dead[open] > summary::before { content: "▾ "; }
+.obx-dead > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.obx-dead-body { margin-top: 4px; }
+.obx-dead-group {
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  background: var(--surface); padding: 11px 13px; margin-bottom: 9px;
+}
+.obx-dead-ghead { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.obx-dead-ico { font-size: 13px; color: var(--muted); }
+.obx-dead-title { font-size: 13px; font-weight: 650; color: var(--text); }
+.obx-dead-n {
+  font-family: var(--mono); font-size: 12px; color: var(--loss);
+  font-variant-numeric: tabular-nums;
+}
+.obx-dead-ghead .flr-blk-go, .obx-dead-ghead .dz-dead { margin-left: auto; }
+.obx-dead-what { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: 3px 0 8px; }
+.obx-dead-row { padding: 7px 0; border-top: 1px solid var(--grid); }
+.obx-dead-row:first-child { border-top: 0; }
+.obx-dead-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.obx-dead-meta code { font-family: var(--mono); font-size: 10.5px; color: var(--faint); }
+.obx-dead-note { margin-top: 5px; }
+.obx-dead-rc { margin-top: 4px; font-size: 11px; }
+.obx-dead-rc a { color: var(--accent); }
+
+/* Posted receipts read the same shape as a dead row — a posted post IS dead,
+   it is just the good kind, so it keeps the gutter and loses the strike. */
+.obx-posted-list .obx-dead-row { border-top: 1px solid var(--grid); }
+.obx-posted-row.lv-dead.lv-row .pc-excerpt { text-decoration: none; }
+
+/* ---- Edit sheet (C6) ----------------------------------------------------
+   Reuses the allies-dialog contract verbatim (backdrop click + Esc close,
+   role=dialog aria-modal) so there is one modal idiom in this console. */
+.obe-body { padding: 14px 18px 4px; }
+.obe-ta {
+  width: 100%; box-sizing: border-box; min-height: 150px; resize: vertical;
+  background: #0d1117; border: 1px solid var(--border); border-radius: var(--r-sm);
+  color: var(--text); font-family: var(--sans); font-size: 13.5px; line-height: 1.5;
+  padding: 11px 12px;
+}
+.obe-ta:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(106,141,255,.15); }
+.obe-ta.is-bad { border-color: var(--bad); }
+.obe-meter { display: flex; align-items: center; gap: 10px; margin-top: 9px; }
+.obe-meter .obx-meter-bar { flex: 1; }
+.obe-findings { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.obe-orig { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--grid); }
+.obe-msg { font-size: 12px; color: var(--muted); margin-right: auto; }
+.obe-msg.is-bad { color: var(--warn); }
+.obe-msg.is-ok  { color: var(--ok); }
+
+@media (max-width: 640px) {
+  .obx-dead-ghead .flr-blk-go, .obx-dead-ghead .dz-dead { margin-left: 0; width: 100%; }
+  .obx-desk-slots-body { grid-template-columns: minmax(0, 1fr); }
+}

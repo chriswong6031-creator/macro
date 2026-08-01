@@ -26,7 +26,7 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -233,13 +233,34 @@ def _plan_posts(cp: dict | None) -> list[dict]:
 # ---------------------------------------------------------------------------
 # 1 · THE PRODUCTION LINE
 # ---------------------------------------------------------------------------
+def _is_model_mode(mode: Any) -> bool:
+    """Is this ``_copy_mode`` value a MODEL writing, or a house lane?
+
+    WHITELIST, NOT BLACKLIST (2026-08-01 audit, defect F4).  The old rule was
+    "anything that is not deterministic/template/absent is a model", so every
+    NEW deterministic lane the engine grew was silently promoted into the
+    model-written share the strip exists to police.  Live 2026-08-01 by_mode was
+    ``{no writer reached: 149, llm_repair: 3, llm: 2, movers_desk: 2}`` and the
+    console reported "4 written by a model (llm_repair, llm, movers_desk)" —
+    movers_desk is a deterministic desk lane, and its raw slug was printed to
+    the operator as if it were a model name.
+
+    A model mode is one the copywriter stamps when an LLM produced the words:
+    ``llm``, ``llm_repair``, ``llm:<tier>``.  Everything else non-empty is a
+    house lane and is counted, named, and reported as such.
+    """
+    m = str(mode or "").strip().lower()
+    return bool(m) and (m == "llm" or m.startswith(("llm:", "llm_", "llm-")))
+
+
 def _authorship(posts: list[dict]) -> dict:
     """Who wrote tonight's words.
 
     ``_copy_mode`` is stamped by the copywriter on every post it touches. The
     values that matter to the operator: an LLM mode (the law), ``deterministic``
-    (a house template — a DEFECT on a planned kind since W1), or absent (the
-    post never reached a writer).
+    (a house template — a DEFECT on a planned kind since W1), a named house lane
+    (deterministic too, but a lane rather than the generic template), or absent
+    (the post never reached a writer).
     """
     total = len(posts)
     modes = Counter()
@@ -260,13 +281,23 @@ def _authorship(posts: list[dict]) -> dict:
         elif not mode:
             no_writer_on_planned += 1
 
-    llm = sum(n for m, n in modes.items()
-              if m not in ("deterministic", "template", "no writer reached"))
+    model_modes = sorted(m for m in modes if _is_model_mode(m))
+    house_modes = sorted(
+        m for m in modes
+        if m != "no writer reached" and not _is_model_mode(m)
+        and m not in ("deterministic", "template"))
+    llm = sum(n for m, n in modes.items() if _is_model_mode(m))
+    house = sum(modes[m] for m in house_modes)
     return {
         "total": total,
         "by_mode": dict(modes.most_common()),
         "llm_posts": llm,
         "llm_share": round(llm / total, 4) if total else None,
+        # Named model modes and named deterministic house lanes, kept apart so
+        # the UI never prints "written by a model (movers_desk)".
+        "model_modes": model_modes,
+        "house_lane_modes": house_modes,
+        "house_lane_posts": house,
         "template_on_planned_kind": template_on_planned,
         "no_writer_on_planned_kind": no_writer_on_planned,
         # Stated as law, not as taste — a reviewer reading the panel should know
@@ -412,17 +443,44 @@ def _activity_ledger(row: dict | None) -> dict:
 def _station(sid: str, name: str, what: str, out: int | None,
              prior: int | None, loss_word: str | None = None,
              goto: str | None = None, detail: str | None = None) -> dict:
-    """One station on the line: what arrived, what left, what died here."""
+    """One station on the line: what arrived, what left, what died here.
+
+    NON-MONOTONE COUNTERS ARE NEVER CLAMPED (2026-08-01 audit, defect F1).
+    These counters are written by different passes over different post sets:
+    ``written`` counts plan posts carrying ``_copy_mode`` while ``cleared`` is
+    the sentinel's ``counts.passed`` measured over the WHOLE plan queue.  On the
+    live 2026-08-01 plan that produced a station taking 7 in and emitting 137
+    out.  The old body did ``lost = max(0, prior - out)``, which turned that
+    impossible transition into a confident "nothing lost here" and then let the
+    NEXT station charge a fabricated 128-post loss to an enqueue gap that does
+    not exist (defect F2).  A funnel that silently clamps a non-monotone pair is
+    a lie in layout form.
+
+    So: when ``out > in`` the station is marked ``odd`` and publishes NO loss and
+    NO yield, and every station from there down carries ``chain_ok: False`` —
+    their own ``lost`` is arithmetic over a denominator that means something
+    different, and callers (the blocker ranker, the UI) must refuse to spend it.
+    """
+    odd = (isinstance(out, int) and isinstance(prior, int) and out > prior)
     lost = None
-    if isinstance(out, int) and isinstance(prior, int):
-        lost = max(0, prior - out)
+    if isinstance(out, int) and isinstance(prior, int) and not odd:
+        lost = prior - out
     yld = None
-    if isinstance(out, int) and isinstance(prior, int) and prior > 0:
+    if isinstance(out, int) and isinstance(prior, int) and prior > 0 and not odd:
         yld = round(out / prior, 4)
     return {
         "id": sid, "name": name, "what": what,
         "in": prior, "out": out, "lost": lost, "yield": yld,
         "loss_word": loss_word, "goto": goto, "detail": detail,
+        "odd": odd,
+        "odd_note": (
+            f"{name} reports {out} out of {prior} in. These two counters were "
+            "written by different passes over different post sets, so they do "
+            "not nest — read them on their own, not as a chain."
+        ) if odd else None,
+        # Set by floor() once the whole line is built: False from the first odd
+        # station onward, because everything downstream inherits its denominator.
+        "chain_ok": True,
     }
 
 
@@ -469,6 +527,39 @@ def floor(root=None) -> dict:  # noqa: PLR0912, PLR0915
         awaiting = by_status.get("queued", 0)
         approved = by_status.get("approved", 0)
 
+        # --- glance answers (defect F6) --------------------------------------
+        # ``publisher`` and ``awaiting_review`` were being computed and shipped
+        # with ZERO readers in app.js. The Floor's answer bar reads this block:
+        # five figures for the operator's five standing questions. Every value is
+        # None when it is not measurable — the UI prints an em dash and "not
+        # measured", never a 0, because a 0 reads as "checked, nothing there".
+        _all_final = Counter(
+            str((final.get(str(it.get("id"))) or {}).get("to")
+                or it.get("status") or "queued")
+            for it in items if isinstance(it, dict))
+        posted_recent_at: list[str] = []
+        for row in ledger:
+            if isinstance(row, dict) and row.get("to") == "posted" and row.get("at"):
+                posted_recent_at.append(str(row["at"]))
+        posted_recent_at.sort()
+        _today_utc = _utcnow().strftime("%Y-%m-%d")
+        posted_today = sum(1 for a in posted_recent_at if a[:10] == _today_utc)
+        # 72h window: the honest evidence that the plant CAN post, used to
+        # de-escalate the host-local "Nothing can post" blocker (defect F5).
+        _cut = (_utcnow() - timedelta(hours=72)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        posted_recently = any(a >= _cut for a in posted_recent_at)
+        today_block = {
+            "going_out": (awaiting + approved) if enqueued is not None else None,
+            "awaiting_review": awaiting if enqueued is not None else None,
+            "went_out_today": posted_today,
+            "last_post_at": posted_recent_at[-1] if posted_recent_at else None,
+            "blocked_total": _all_final.get("quarantined", 0) + _all_final.get("failed", 0),
+            "blocked_today": sum(
+                1 for it in today_items
+                if _status(it) in ("quarantined", "failed")),
+            "posted_recently": posted_recently,
+        }
+
         act = _last_activity(repo)
         ledger_block = _activity_ledger(act)
 
@@ -500,6 +591,17 @@ def floor(root=None) -> dict:  # noqa: PLR0912, PLR0915
                      "approved but still waiting", goto="marketing_publish"),
         ]
 
+        # Propagate the non-monotone break down the line (defect F1/F2). The
+        # first station whose out exceeds its in changed the denominator; from
+        # there down, a `lost` figure is arithmetic over two different post sets
+        # and must not be spent by the blocker ranker or drawn as a leak.
+        _chain = True
+        for st in line:
+            if st.get("odd"):
+                _chain = False
+            st["chain_ok"] = _chain
+        line_odd = [st["id"] for st in line if st.get("odd")]
+
         # The break point = the station that loses the most POSTS, not the
         # biggest percentage. A late station with 2 in and 0 out is a 100% loss
         # and is nobody's emergency; the station shedding 404 posts is where the
@@ -511,6 +613,12 @@ def floor(root=None) -> dict:  # noqa: PLR0912, PLR0915
                 continue
             if st["lost"] <= 0:
                 continue
+            # A loss measured downstream of a non-monotone station is arithmetic
+            # over a denominator that means something else. Never crown it the
+            # biggest leak — that is how the 128-post phantom enqueue gap became
+            # the operator's rank-1 instruction (defect F2).
+            if not st.get("chain_ok", True):
+                continue
             share = st["lost"] / st["in"] if st["in"] > 0 else 0.0
             if (st["lost"], share) > worst:
                 worst, break_at = (st["lost"], share), st["id"]
@@ -518,7 +626,9 @@ def floor(root=None) -> dict:  # noqa: PLR0912, PLR0915
         authorship = _authorship(posts)
         pub = _publisher_state(repo)
         blockers = _blockers(repo, line=line, authorship=authorship, pub=pub,
-                             rpt=rpt, cp=cp, ledger_block=ledger_block)
+                             rpt=rpt, cp=cp, ledger_block=ledger_block,
+                             break_at=break_at,
+                             posted_recently=posted_recently)
 
         return {
             "ok": True,
@@ -528,6 +638,10 @@ def floor(root=None) -> dict:  # noqa: PLR0912, PLR0915
             "plan_claimed_total": claimed,
             "line": line,
             "break_at": break_at,
+            # Stations whose out exceeds their in. Non-empty => the UI must print
+            # the "these counters do not nest" sentence instead of a chain verdict.
+            "line_odd": line_odd,
+            "today": today_block,
             "blockers": blockers,
             "authorship": authorship,
             "publisher": pub,
@@ -576,6 +690,10 @@ def _auditor_block(cp: dict | None) -> dict:
         "makes_no_sense": "does not parse on its own",
         "has_errors": "numbers or output that are wrong",
         "no_value": "true but worthless",
+        # Added with the auditor's `esoteric` criterion (2026-08-01). Without a
+        # word here the fallback prints the raw slug, and a raw slug on an
+        # operator surface is the banned vocabulary the design doctrine names.
+        "esoteric": "gestures at macro without naming a print",
     }
     kept, cut = int(blk.get("kept") or 0), int(blk.get("cut") or 0)
     total = kept + cut
@@ -639,14 +757,28 @@ def _publisher_state(repo: Path) -> dict:
         token = bool(os.environ.get("BUFFER_TOKEN", "").strip())
         armv = arm_state()
         kill = armv.get("enabled") is True
+        # HOST SCOPE IS PART OF THE FACT (2026-08-01 audit, defect F5).
+        # ``token_present`` reads THIS process's environment and ``arm_state()``
+        # needs a GitHub token to read the repo variable.  On the operator's Mac
+        # both come back false/None while the self-hosted runner posts daily —
+        # and the Floor rendered that as a rank-1 "Nothing can post" STOP.  A
+        # host-local absence is evidence about this host, not about the plant,
+        # so it ships labelled and the blocker ranker de-escalates it whenever
+        # the ledger shows posts actually going out.
+        arm_readable = armv.get("enabled") is not None
         return {
             "backend": pub_cfg.get("backend"),
             "token_present": token,
+            "token_scope": "this admin host",
+            "arm_readable": arm_readable,
             "channels_wired": wired,
             "channels_total": len(channels),
             "kill_switch_on": kill,
             "arm_state": armv,
             "armed": bool(token and wired and kill),
+            # True when every negative in this dict is a local blindness rather
+            # than an observed "off".
+            "host_local_only": bool(not token or not arm_readable),
         }
     except Exception as exc:  # noqa: BLE001
         return {"armed": False, "error": f"publisher state unreadable: {exc}"}
@@ -654,7 +786,8 @@ def _publisher_state(repo: Path) -> dict:
 
 def _blockers(repo: Path, *, line: list[dict], authorship: dict, pub: dict,
               rpt: dict | None, cp: dict | None,
-              ledger_block: dict) -> list[dict]:  # noqa: PLR0912, PLR0915
+              ledger_block: dict, break_at: str | None = None,
+              posted_recently: bool = False) -> list[dict]:  # noqa: PLR0912, PLR0915
     """What is stopping the factory right now, worst first.
 
     Each blocker states the cost in posts where a cost is knowable, and names
@@ -683,11 +816,44 @@ def _blockers(repo: Path, *, line: list[dict], authorship: dict, pub: dict,
                                "(no GitHub token to read the repo variable)")
             else:
                 missing.append("the publish switch is off")
-        add("stop", "Nothing can post",
-            "The publisher is dark: " + "; ".join(missing) + ".",
-            "Open the Publisher checklist and clear each line. Until then the "
-            "whole line downstream of the gate is decorative.",
-            goto="marketing_publish")
+        # DE-ESCALATE A HOST-LOCAL BLINDNESS (2026-08-01 audit, defect F5).
+        # Every negative above can be a fact about the ADMIN process rather than
+        # about the plant: the operator's Mac has neither BUFFER_TOKEN nor a
+        # GitHub token, while the self-hosted runner posts daily. Rendering that
+        # as a rank-1 "Nothing can post" STOP told the operator the exact
+        # opposite of the truth. When the ledger shows posts inside the last 72h,
+        # this is a console blindness, and it says so.
+        if posted_recently and pub.get("host_local_only"):
+            add("watch", "This console cannot see the publish switch",
+                "Posts went out in the last three days, so the publisher is "
+                "working. What is missing is local: " + "; ".join(missing) + ". "
+                "Those are facts about this admin process, not about the runner "
+                "that actually posts.",
+                "Nothing to fix in the plant. To read the switch from here, give "
+                "this host a GitHub token; the Publisher page shows the same "
+                "checklist with the same caveat.",
+                goto="marketing_publish")
+        else:
+            add("stop", "Nothing can post",
+                "The publisher is dark: " + "; ".join(missing) + ".",
+                "Open the Publisher checklist and clear each line. Until then the "
+                "whole line downstream of the gate is decorative.",
+                goto="marketing_publish")
+
+    # --- the line's own arithmetic --------------------------------------
+    # Surfaced as a blocker, not swallowed: an operator reading a funnel needs
+    # to know when two of its counters were written by different passes. The
+    # honest fix is upstream measurement, so this one names no button.
+    _odd = [st for st in line if st.get("odd")]
+    if _odd:
+        st = _odd[0]
+        add("watch", "Two stations on this line do not nest",
+            st.get("odd_note") or (
+                f"{st['name']} reports more out than in."),
+            "There is nothing to clear here — the counters need to be measured "
+            "over the same post set upstream. Until then read the stations from "
+            f"{st['name']} onward on their own, not as a chain.",
+            owner="engine")
 
     # --- desks switched off ---------------------------------------------
     disabled = (((rpt or {}).get("checks") or {}).get("kill_switch") or {}).get("accounts_disabled") or []
@@ -711,7 +877,13 @@ def _blockers(repo: Path, *, line: list[dict], authorship: dict, pub: dict,
             cost=tmpl, goto="marketing_models")
     nowriter = authorship.get("no_writer_on_planned_kind") or 0
     if nowriter:
-        add("watch", "Some planned posts never reached a writer",
+        # RANK MUST AGREE WITH THE LINE (2026-08-01 audit, defect F3). The line
+        # tagged `written` as the "biggest leak" in loud copy while this — the
+        # blocker for that exact loss — sat at severity `watch`, ranked 5th of 6.
+        # One screen said "start here" and "this is fine" about the same 149
+        # posts. Whichever station the line crowns, its blocker leads.
+        add("high" if break_at == "written" else "watch",
+            "Some planned posts never reached a writer",
             f"{nowriter} planned posts have no writer stamp at all — they were "
             "allocated a slot and then dropped before any model saw them.",
             "This is the no-fallback law behaving correctly under a dead "
@@ -734,7 +906,19 @@ def _blockers(repo: Path, *, line: list[dict], authorship: dict, pub: dict,
 
     # --- cleared but never enqueued ------------------------------------
     for st in line:
-        if st["id"] == "enqueued" and isinstance(st.get("lost"), int) and st["lost"] > 0:
+        if st["id"] != "enqueued":
+            continue
+        # DO NOT SPEND A FIGURE FROM A BROKEN CHAIN (2026-08-01 audit, defect F2).
+        # This blocker's cost is `cleared - enqueued`. On the live plan `cleared`
+        # was the sentinel's count over the WHOLE queue (137) while `written` had
+        # measured 7, so the 128 charged here was ~130 posts that never got copy
+        # at all — already charged upstream to the `written` station AND to the
+        # "never reached a writer" blocker. Triple-counted, and it sent the
+        # operator hunting an enqueue gap that does not exist. When the upstream
+        # chain is not comparable, this blocker does not fire at all.
+        if not st.get("chain_ok", True):
+            continue
+        if isinstance(st.get("lost"), int) and st["lost"] > 0:
             add("high", "Cleared posts never reached the rail",
                 f"{st['lost']} posts passed the gate and never became outbox "
                 "items, so no human ever saw them and they cannot post.",
