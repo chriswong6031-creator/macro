@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "coverage": {
-    "end": "2026-07-31",
+    "end": "2026-08-01",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 8 week(s) have events so far; chronicle event store begins 2025-07-22; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-01"
+    "start": "2026-05-02"
   },
   "iso_week": "2026-W31",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 258,
+          "n_events": 328,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -23,6 +23,16 @@
               "source_ref": "marketdesk-bms7cauktyp-277d6e",
               "tickers": [],
               "title": "Goldman Sachs: Japan Portfolio Strategy Trigger warnings Lessons from the July August 2024 sell off",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-31",
+              "id": "cev-research_vault-32f68ca29d0d",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-0natz1tlzak-bf2676",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
               "weight_hint": 3
             },
             {
@@ -54,16 +64,74 @@
               "tickers": [],
               "title": "J.P. Morgan: JPM JPM Chips for Break",
               "weight_hint": 3
+            }
+          ]
+        },
+        {
+          "n_events": 3,
+          "source": "risk_band",
+          "theme": "risk",
+          "top_events": [
+            {
+              "date": "2026-07-31",
+              "id": "cev-risk_band-5f63770b7eb0",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-31",
+              "tickers": [],
+              "title": "Risk radar: caution → watch",
+              "weight_hint": 2
             },
             {
-              "date": "2026-07-29",
-              "id": "cev-research_vault-837a11f89077",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-tsseepkd2yv-59aabc",
+              "date": "2026-07-27",
+              "id": "cev-risk_band-8489299a6c95",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-27",
               "tickers": [],
-              "title": "J.P. Morgan: JPM JPM US Market Intell",
-              "weight_hint": 3
+              "title": "Risk radar: caution → watch",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-28",
+              "id": "cev-risk_band-c0c1fbc1d50d",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-28",
+              "tickers": [],
+              "title": "Risk radar: watch → caution",
+              "weight_hint": 2
+            }
+          ]
+        },
+        {
+          "n_events": 2,
+          "source": "prophet_ledger",
+          "theme": null,
+          "top_events": [
+            {
+              "date": "2026-07-29",
+              "id": "cev-prophet_ledger-3c460da0528e",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "FBRT-BULL-20260713",
+              "tickers": [
+                "FBRT"
+              ],
+              "title": "Prophet close: FBRT BULL → INVALIDATED (-7.7% in 16d)",
+              "weight_hint": 2
+            },
+            {
+              "date": "2026-07-31",
+              "id": "cev-prophet_ledger-f3a46ac4ce2c",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "COIN-BULL-20260702",
+              "tickers": [
+                "COIN"
+              ],
+              "title": "Prophet close: COIN BULL → INVALIDATED (-11.6% in 29d)",
+              "weight_hint": 2
             }
           ]
         },
@@ -95,47 +163,18 @@
           ]
         },
         {
-          "n_events": 2,
-          "source": "risk_band",
-          "theme": "risk",
-          "top_events": [
-            {
-              "date": "2026-07-27",
-              "id": "cev-risk_band-8489299a6c95",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-27",
-              "tickers": [],
-              "title": "Risk radar: caution → watch",
-              "weight_hint": 2
-            },
-            {
-              "date": "2026-07-28",
-              "id": "cev-risk_band-c0c1fbc1d50d",
-              "kind": "state_flip",
-              "source": "risk_band",
-              "source_ref": "risk_radar_forward_log#2026-07-28",
-              "tickers": [],
-              "title": "Risk radar: watch → caution",
-              "weight_hint": 2
-            }
-          ]
-        },
-        {
           "n_events": 1,
-          "source": "prophet_ledger",
-          "theme": null,
+          "source": "macro_release",
+          "theme": "claims",
           "top_events": [
             {
-              "date": "2026-07-29",
-              "id": "cev-prophet_ledger-3c460da0528e",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "FBRT-BULL-20260713",
-              "tickers": [
-                "FBRT"
-              ],
-              "title": "Prophet close: FBRT BULL → INVALIDATED (-7.7% in 16d)",
+              "date": "2026-07-30",
+              "id": "cev-macro_release-7ac656fa4a6f",
+              "kind": "print",
+              "source": "macro_release",
+              "source_ref": "claims#2026-07-30",
+              "tickers": [],
+              "title": "Macro print: claims = +197 (2026-07-30)",
               "weight_hint": 2
             }
           ]
@@ -389,18 +428,7 @@
           "n_events": 1,
           "source": "macro_release",
           "theme": "claims",
-          "top_events": [
-            {
-              "date": "2026-07-09",
-              "id": "cev-macro_release-767b37d2ecfe",
-              "kind": "print",
-              "source": "macro_release",
-              "source_ref": "claims#2026-07-09",
-              "tickers": [],
-              "title": "Macro print: claims = +215 (2026-07-09)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         },
         {
           "n_events": 1,
@@ -428,20 +456,7 @@
           "n_events": 1,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-07-02",
-              "id": "cev-prophet_ledger-8d6e6ad65ebe",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "SYK-BULL-20260518",
-              "tickers": [
-                "SYK"
-              ],
-              "title": "Prophet close: SYK BULL → EXPIRED (-1.1% in 45d)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W27"
@@ -476,20 +491,7 @@
           "n_events": 1,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-05-11",
-              "id": "cev-prophet_ledger-a71792cf3f1e",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "U-BULL-20260327",
-              "tickers": [
-                "U"
-              ],
-              "title": "Prophet close: U BULL → EXPIRED (-16.1% in 45d)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W20"
@@ -500,20 +502,7 @@
           "n_events": 1,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-05-04",
-              "id": "cev-prophet_ledger-a8ba873f0e43",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "KKR-BULL-20260318",
-              "tickers": [
-                "KKR"
-              ],
-              "title": "Prophet close: KKR BULL → EXPIRED (+6.4% in 47d)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W19"
