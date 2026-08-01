@@ -1,6 +1,6 @@
-"""engine.chronicle.adapters — 5 of the 6 W0 source-file adapters.
+"""engine.chronicle.adapters — 5 of the 7 Chronicle source adapters.
 
-(regime_flip — adapter 6 — lives in state_log.py because it derives from the
+(regime_flip lives in state_log.py because it derives from the
 state_log.jsonl forward-capture ledger rather than a directly-committed source
 file: world_state.json genuinely has no committed dated history, so state_log
 exists to capture one dated snapshot per nightly run. risk_band moved HERE in
@@ -21,6 +21,10 @@ individual row/item is skipped (counted, not fatal) rather than aborting the
 whole adapter, so one bad line never blanks an otherwise-good source.
 
 No LLM calls. No network. Read-only over committed repo artifacts.
+
+The evidence-addressed earnings-call adapter lives in earnings_calls.py beside
+the nightly-only projection it reads; this module retains the five original
+direct-source adapters.
 """
 from __future__ import annotations
 

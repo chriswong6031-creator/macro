@@ -4,10 +4,11 @@ Usage:
     python -m scripts.build_chronicle             # incremental nightly append
     python -m scripts.build_chronicle --rebuild    # regenerate events.jsonl +
                                                     # rollups from sources +
-                                                    # existing state_log rows
+                                                    # existing forward ledgers
                                                     # (byte-stable modulo
                                                     # generated_at; never
-                                                    # touches state_log.jsonl)
+                                                    # touches state_log.jsonl or
+                                                    # earnings_call_events.jsonl)
 
 Mirrors scripts/build_marketing.py's thinness. Never-raise: exits 0 with a
 warning message on error so the nightly pipeline continues. Prints the binding
@@ -32,9 +33,10 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Build the Chronicle market-context timeline spine.")
     parser.add_argument(
         "--rebuild", action="store_true",
-        help="Regenerate events.jsonl + rollups from sources + existing state_log "
-             "rows (byte-stable modulo generated_at). Never deletes or rewrites "
-             "state_log.jsonl (forward ledger — nightly is the sole advancer).",
+        help="Regenerate events.jsonl + rollups from sources + existing forward "
+             "ledgers (byte-stable modulo generated_at). Never deletes or rewrites "
+             "state_log.jsonl or earnings_call_events.jsonl (nightly is their "
+             "sole advancer).",
     )
     args = parser.parse_args(argv)
 
@@ -53,11 +55,13 @@ def main(argv=None) -> int:
     report = result.get("adapter_report") or {}
     per_adapter = " ".join(f"{name}={info.get('count', 0)}" for name, info in sorted(report.items()))
     mode = "rebuild" if result.get("rebuild") else "incremental"
+    call_sync = result.get("earnings_call_sync") or {}
     print(
         f"chronicle_governor: ok — mode={mode} "
         f"total={result.get('total_events', 0)} added={result.get('added', 0)} "
         f"state_appended={result.get('state_appended')} "
         f"state_reason={result.get('state_reason')} "
+        f"earnings_call_sync={call_sync.get('reason')} "
         f"elapsed_s={result.get('elapsed_s')} [{per_adapter}]"
     )
     return 0

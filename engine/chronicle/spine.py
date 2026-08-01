@@ -1,12 +1,15 @@
 """engine.chronicle.spine — event assembly + events.jsonl IO (W0).
 
 Design note (byte-stable regeneration, masterplan §0 gates 1+2): every W0
-source EXCEPT state_log.jsonl is already a full snapshot or a full append-only
-ledger (catalog.json is the current full vault snapshot; the prophet ledger,
-release forward ledger and risk_radar forward log are full append-only
-ledgers; the earnings parquet is a full current snapshot). So ``build_events``
-always fully recomputes the event set from {catalog, prophet ledger, forward
-ledger, risk_radar forward log, earnings parquet, CURRENT state_log rows} on
+source EXCEPT the two Chronicle-owned forward ledgers is already a full
+snapshot or a full append-only ledger (catalog.json is the current full vault
+snapshot; the prophet ledger, release forward ledger and risk_radar forward
+log are full append-only ledgers; the earnings parquet is a full current
+snapshot; and earnings_call_events.jsonl is the last-good committed projection
+of the mutable R2 score generation). So ``build_events`` always fully
+recomputes the event set from {catalog, prophet ledger, forward ledger,
+risk_radar forward log, earnings parquet, CURRENT earnings-call rows, CURRENT
+state_log rows} on
 every run — incremental and --rebuild alike. Because event ids are stable
 hashes of (source, source_ref, date), unchanged sources yield an identical id
 set every time, which is exactly what makes gate 1 (byte-stable rebuild) and
@@ -31,7 +34,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from . import adapters, state_log
+from . import adapters, earnings_calls, state_log
 
 log = logging.getLogger(__name__)
 
@@ -55,6 +58,7 @@ REBUILD_SOURCES: tuple[str, ...] = (
     "data/release_forecast/forward_ledger.jsonl",
     "data/earnings/earnings.parquet",
     "data/risk_radar/forward_log.jsonl",
+    "data/chronicle/earnings_call_events.jsonl",
     "data/chronicle/state_log.jsonl",
 )
 
@@ -63,6 +67,7 @@ _SOURCE_ADAPTERS: tuple[tuple[str, object], ...] = (
     ("prophet_ledger", adapters.adapt_prophet_ledger),
     ("macro_release", adapters.adapt_macro_release),
     ("earnings", adapters.adapt_earnings),
+    ("earnings_call", earnings_calls.adapt_earnings_calls),
     ("risk_band", adapters.adapt_risk_band),
 )
 

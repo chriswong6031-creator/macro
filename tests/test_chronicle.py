@@ -76,6 +76,7 @@ def _make_fixture_root(tmp_path: Path) -> Path:
     (root / "data" / "prophet").mkdir(parents=True)
     (root / "data" / "release_forecast").mkdir(parents=True)
     (root / "data" / "earnings").mkdir(parents=True)
+    (root / "data" / "chronicle").mkdir(parents=True)
     (root / "data" / "risk_radar").mkdir(parents=True)
     (root / "data" / "neuralweb").mkdir(parents=True)
 
@@ -139,6 +140,8 @@ def _make_fixture_root(tmp_path: Path) -> Path:
         index=pd.Index(["TST"], name="ticker"),
     )
     df.to_parquet(root / "data" / "earnings" / "earnings.parquet")
+    (root / "data" / "chronicle" / "earnings_call_events.jsonl").write_text(
+        "", encoding="utf-8")
 
     # B6: risk_band's real source — a committed, dated, source-native ledger
     # with a genuine state change (1 flip expected).
@@ -312,6 +315,7 @@ def test_per_adapter_exact_event_counts(tmp_path):
         "prophet_ledger": 1,
         "macro_release": 1,
         "earnings": 1,
+        "earnings_call": 0,
         "regime_flip": 0,
         "risk_band": 1,
     }, counts
@@ -573,7 +577,10 @@ def test_adapters_fail_soft_on_missing_sources(tmp_path):
     result = build_and_write(root=tmp_path, rebuild=True)
     assert not result.get("error"), "governor must never raise on an empty fixture root"
     report = result["adapter_report"]
-    for name in ("research_vault", "prophet_ledger", "macro_release", "risk_band"):
+    for name in (
+        "research_vault", "prophet_ledger", "macro_release", "earnings_call",
+        "risk_band",
+    ):
         assert report[name]["count"] == 0
         assert report[name]["gap"], f"{name} should carry a gap note on an absent source"
     assert report["earnings"]["count"] == 0
@@ -589,6 +596,290 @@ def test_adapter_corrupt_source_is_gap_not_raise(tmp_path):
     assert not result.get("error")
     assert result["adapter_report"]["research_vault"]["gap"]
     assert result["adapter_report"]["research_vault"]["count"] == 0
+
+
+# ---------------------------------------------------------------------------
+# Wave C: healthy earnings-score -> committed call-event projection
+# ---------------------------------------------------------------------------
+
+def _healthy_call_score(**overrides):
+    row = {
+        "ticker": "TST",
+        "quarter": "Q2",
+        "year": 2026,
+        "call_date": "2026-07-20",
+        "source": "transcript",
+        "model": "qwen3-14b",
+        "sentiment": 0.55,
+        "performance": 8.0,
+        "confidence": 0.91,
+        "tone_word": "confident",
+        "positive_highlights": ["Demand accelerated across both core segments."],
+        "negative_highlights": ["Freight costs remain a near-term margin pressure."],
+        "tags": ["demand_acceleration", "margin_contraction"],
+        "source_sha256": "a" * 64,
+        "scored_at": "2026-07-20T21:05:00+00:00",
+        "source_record_id": "defeatbeta:TST:2026Q2",
+        "source_updated_at": "2026-07-20T21:00:00+00:00",
+        "source_url": "/data/tx/TST/2026Q2.json.gz",
+        "prompt_version": "equal-v2",
+        "analysis_schema_version": "earnings-qual/v2",
+        "summary": "Revenue held above plan while management kept full-year guidance.",
+        "is_context_only": True,
+        "degraded_reason": None,
+    }
+    row.update(overrides)
+    return row
+
+
+def _write_call_score_store(root: Path, rows: list[dict]) -> Path:
+    """Write the scorer's portable parquet shape without a transport manifest.
+
+    A missing manifest is the supported local-fixture shape in
+    earnings_qual.load_scores; production nightlies receive a validated v3
+    manifest from the R2 fetch step earlier in the job.
+    """
+    from engine import earnings_qual
+
+    path = earnings_qual.store_path(root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame = pd.DataFrame(
+        [earnings_qual._row_to_store(row) for row in rows],
+        columns=earnings_qual._STORE_COLUMNS,
+    )
+    frame.to_parquet(path, index=False)
+    (path.parent / "manifest.json").unlink(missing_ok=True)
+    return path
+
+
+def test_healthy_call_score_projects_with_lineage_citation_and_context(tmp_path, monkeypatch):
+    from engine.chronicle.context_pack import pack
+    from engine.chronicle.earnings_calls import (
+        CALL_EVENT_FIELDS,
+        CALL_EVENTS_REL,
+        validate_call_event,
+    )
+    from engine.chronicle.governor import build_and_write
+    from engine.chronicle.spine import load_events_jsonl
+
+    root = _make_fixture_root(tmp_path)
+    _write_call_score_store(root, [_healthy_call_score()])
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+
+    result = build_and_write(
+        root=root,
+        rebuild=False,
+        now=datetime(2026, 7, 21, 3, 0, 0, tzinfo=timezone.utc),
+    )
+    assert not result.get("error"), result
+    assert result["earnings_call_sync"]["reason"] == "updated"
+    assert result["earnings_call_sync"]["added"] == 1
+
+    rows = [
+        json.loads(line)
+        for line in (root / CALL_EVENTS_REL).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    assert len(rows) == 1
+    row = rows[0]
+    assert set(row) == set(CALL_EVENT_FIELDS)
+    assert validate_call_event(row) == []
+    assert row["source_url"] == (
+        "https://app.mastermind-x.com/data/tx/TST/2026Q2.json.gz"
+    )
+    assert row["source_sha256"] == "a" * 64
+    assert row["model"] == "qwen3-14b"
+    assert row["prompt_version"] == "equal-v2"
+    assert row["analysis_schema_version"] == "earnings-qual/v2"
+    assert row["is_context_only"] is True
+
+    events = load_events_jsonl(root / "data" / "chronicle" / "events.jsonl")
+    calls = [event for event in events if event["source"] == "earnings_call"]
+    assert len(calls) == 1
+    call = calls[0]
+    assert call["source_ref"] == "defeatbeta:TST:2026Q2"
+    assert call["links"]["source"] == row["source_url"]
+    assert call["links"]["receipt"] == "sha256:" + "a" * 64
+    assert call["weight_hint"] == 1
+
+    context = pack(
+        tickers=["TST"], horizons=("short",), token_budget=5000,
+        as_of="2026-07-20", window="1d", root=root,
+    )
+    assert len(context["lines"]) == 1
+    line = context["lines"][0]
+    assert "Revenue held above plan" in line["text"]
+    assert line["source_ref"] == "defeatbeta:TST:2026Q2"
+    assert line["source_url"] == row["source_url"]
+    assert line["receipt"] == "sha256:" + "a" * 64
+
+
+def test_degraded_score_never_replaces_last_good_call_event(tmp_path, monkeypatch):
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _write_call_score_store(root, [_healthy_call_score()])
+    first = sync_from_scores(root)
+    assert first["updated"] is True
+    before = (root / CALL_EVENTS_REL).read_bytes()
+
+    _write_call_score_store(root, [_healthy_call_score(
+        source_sha256="b" * 64,
+        source_updated_at="2026-07-21T21:00:00+00:00",
+        scored_at="2026-07-21T21:05:00+00:00",
+        degraded_reason="llm_error",
+        summary=None,
+    )])
+    second = sync_from_scores(root)
+    assert second["updated"] is False
+    assert second["degraded_rows"] == 1
+    assert second["reason"] == "no_healthy_projectable_rows"
+    assert (root / CALL_EVENTS_REL).read_bytes() == before
+
+
+def test_healthy_correction_replaces_body_under_same_stable_ids(tmp_path, monkeypatch):
+    from engine.chronicle.earnings_calls import (
+        CALL_EVENTS_REL,
+        adapt_earnings_calls,
+        load_call_events,
+        sync_from_scores,
+    )
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _write_call_score_store(root, [_healthy_call_score()])
+    assert sync_from_scores(root)["updated"] is True
+    rows_a, _ = load_call_events(root)
+    events_a, _ = adapt_earnings_calls(root)
+    assert len(rows_a) == len(events_a) == 1
+
+    _write_call_score_store(root, [_healthy_call_score(
+        source_sha256="b" * 64,
+        source_updated_at="2026-07-21T21:00:00+00:00",
+        scored_at="2026-07-21T21:05:00+00:00",
+        summary="Corrected transcript now says guidance increased.",
+        sentiment=0.7,
+    )])
+    result = sync_from_scores(root)
+    assert result["updated"] is True
+    assert result["added"] == 0
+    assert result["corrected"] == 1
+
+    rows_b, _ = load_call_events(root)
+    events_b, _ = adapt_earnings_calls(root)
+    assert len(rows_b) == len(events_b) == 1
+    assert rows_b[0]["id"] == rows_a[0]["id"]
+    assert events_b[0]["id"] == events_a[0]["id"]
+    assert rows_b[0]["source_sha256"] == "b" * 64
+    assert rows_b[0]["summary"].startswith("Corrected transcript")
+    assert (root / CALL_EVENTS_REL).read_text(encoding="utf-8").count("\n") == 1
+
+
+def test_stale_healthy_snapshot_cannot_unwind_newer_call_correction(tmp_path, monkeypatch):
+    from engine.chronicle.earnings_calls import (
+        CALL_EVENTS_REL,
+        load_call_events,
+        sync_from_scores,
+    )
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    newest = _healthy_call_score(
+        source_sha256="b" * 64,
+        source_updated_at="2026-07-21T21:00:00+00:00",
+        scored_at="2026-07-21T21:05:00+00:00",
+        summary="The corrected, newer transcript body.",
+    )
+    _write_call_score_store(root, [newest])
+    assert sync_from_scores(root)["updated"] is True
+    before = (root / CALL_EVENTS_REL).read_bytes()
+
+    # Simulate a transport rollback to an older but otherwise healthy score.
+    _write_call_score_store(root, [_healthy_call_score()])
+    result = sync_from_scores(root)
+    assert result["updated"] is False
+    assert result["reason"] == "current"
+    assert result["corrected"] == 0
+    assert (root / CALL_EVENTS_REL).read_bytes() == before
+    rows, gap = load_call_events(root)
+    assert gap is None
+    assert rows[0]["source_sha256"] == "b" * 64
+    assert rows[0]["summary"].startswith("The corrected")
+
+
+def test_score_store_outage_preserves_last_good_call_ledger(tmp_path, monkeypatch):
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    score_path = _write_call_score_store(root, [_healthy_call_score()])
+    assert sync_from_scores(root)["updated"] is True
+    before = (root / CALL_EVENTS_REL).read_bytes()
+
+    score_path.unlink()
+    result = sync_from_scores(root)
+    assert result["updated"] is False
+    assert result["reason"] == "score_store_absent"
+    assert (root / CALL_EVENTS_REL).read_bytes() == before
+
+
+def test_off_nightly_call_projection_is_byte_noop(tmp_path, monkeypatch):
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
+
+    root = _make_fixture_root(tmp_path)
+    _write_call_score_store(root, [_healthy_call_score()])
+    before = (root / CALL_EVENTS_REL).read_bytes()
+    monkeypatch.setenv("COLLECT_LANE", "render")
+
+    result = sync_from_scores(root)
+    assert result["updated"] is False
+    assert result["reason"] == "lane_gate"
+    assert (root / CALL_EVENTS_REL).read_bytes() == before
+
+
+def test_rebuild_never_rewrites_call_projection(tmp_path, monkeypatch):
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
+    from engine.chronicle.governor import build_and_write
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _write_call_score_store(root, [_healthy_call_score()])
+    assert sync_from_scores(root)["updated"] is True
+    before = (root / CALL_EVENTS_REL).read_bytes()
+
+    # A newer healthy source exists, but --rebuild must read the committed
+    # projection and leave score sync for the normal nightly.
+    _write_call_score_store(root, [_healthy_call_score(
+        source_sha256="c" * 64,
+        source_updated_at="2026-07-22T21:00:00+00:00",
+        scored_at="2026-07-22T21:05:00+00:00",
+        summary="This correction must wait for a normal nightly sync.",
+    )])
+    result = build_and_write(
+        root=root,
+        rebuild=True,
+        now=datetime(2026, 7, 23, 3, 0, 0, tzinfo=timezone.utc),
+    )
+    assert not result.get("error"), result
+    assert result["earnings_call_sync"]["reason"] == "rebuild_skipped"
+    assert (root / CALL_EVENTS_REL).read_bytes() == before
+
+
+def test_call_projection_noop_is_byte_stable(tmp_path, monkeypatch):
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _write_call_score_store(root, [_healthy_call_score()])
+    first = sync_from_scores(root)
+    assert first["updated"] is True
+    before = (root / CALL_EVENTS_REL).read_bytes()
+
+    second = sync_from_scores(root)
+    assert second["updated"] is False
+    assert second["reason"] == "current"
+    assert (root / CALL_EVENTS_REL).read_bytes() == before
 
 
 # ---------------------------------------------------------------------------
@@ -1025,6 +1316,8 @@ def test_manifest_envelope_and_row_counts(tmp_path):
     n_lines = sum(1 for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip())
     assert manifest["ledgers"]["events"]["rows"] == n_lines
     assert manifest["ledgers"]["events"]["sha256"]
+    assert manifest["ledgers"]["earnings_calls"]["rows"] == 0
+    assert manifest["ledgers"]["earnings_calls"]["present"] is True
     assert manifest["ledgers"]["state_log"]["rows"] == 1  # baseline row just appended
     assert manifest["ledgers"]["state_log"]["present"] is True
 
@@ -1679,7 +1972,7 @@ def test_vintage_guard_arms_on_full_closure_not_just_the_catalog():
     assertion never ran. Gate 1 spent its whole life in the second state — the
     committed manifest predates source_fingerprints, so every source reads as
     unknowable and the strict byte branch has never executed on a real checkout.
-    That is exactly how attesting 1 of 6 sources survived review: reading the
+    That is exactly how attesting only one source survived review: reading the
     code and running the suite both said "fine".
 
     Touches no committed artifact — the fingerprint sets here are synthetic.
@@ -1707,12 +2000,12 @@ def test_vintage_guard_arms_on_full_closure_not_just_the_catalog():
     catalog = "data/research_vault/catalog.json"
     unattested = set(_drift_against({catalog: full[catalog]}))
     assert unattested == set(spine.REBUILD_SOURCES) - {catalog}, (
-        f"catalog-only attestation should leave the other five sources unattested, "
+        f"catalog-only attestation should leave every other source unattested, "
         f"got {sorted(unattested)}"
     )
     assert unattested, (
         "catalog-only attestation reported zero drift — the gate would arm strict "
-        "byte-equality while five of six sources are unattested and free to advance. "
+        "byte-equality while the other sources are unattested and free to advance. "
         "This is the defect that reddened unrelated PRs; it must never report clean."
     )
 
@@ -1743,13 +2036,16 @@ def test_rebuild_sources_covers_every_path_the_adapters_read():
     import re
     from engine.chronicle import spine, state_log
 
-    src = (ROOT / "engine" / "chronicle" / "adapters.py").read_text(encoding="utf-8")
+    src = "\n".join(
+        (ROOT / "engine" / "chronicle" / name).read_text(encoding="utf-8")
+        for name in ("adapters.py", "earnings_calls.py")
+    )
     found = {
         "data/" + "/".join(re.findall(r'"([^"]+)"', parts))
         for parts in re.findall(r'Path\("data"\)((?:\s*/\s*"[^"]+")+)', src)
     }
     assert found, (
-        "found no `Path(\"data\") / ...` literals in engine/chronicle/adapters.py — "
+        "found no `Path(\"data\") / ...` literals in Chronicle adapter modules — "
         "the adapters changed how they name their sources and this scan now checks "
         "nothing. Re-derive the pattern before trusting a green here."
     )
@@ -1765,6 +2061,11 @@ def test_rebuild_sources_covers_every_path_the_adapters_read():
     # so the scan above cannot see it — pin it explicitly.
     assert str(state_log.STATE_LOG_REL).replace("\\", "/") in spine.REBUILD_SOURCES, (
         "state_log.jsonl feeds the regime_flip events but is not in REBUILD_SOURCES"
+    )
+    from engine.chronicle import earnings_calls
+    assert str(earnings_calls.CALL_EVENTS_REL).replace("\\", "/") in spine.REBUILD_SOURCES, (
+        "earnings_call_events.jsonl feeds the earnings_call adapter but is not in "
+        "REBUILD_SOURCES"
     )
 
 
@@ -1954,7 +2255,7 @@ def test_regen_on_committed_tree_is_deterministic():
 
     The synthetic determinism test (build twice on the fixture root) cannot see
     real-data-only nondeterminism — the full committed catalog, a
-    multi-thousand-ticker parquet and five real ledgers exercise ordering,
+    multi-thousand-ticker parquet and the real ledgers exercise ordering,
     collision and encoding paths one hand-written row per adapter never
     reaches. Two INDEPENDENT scratch roots (not a re-run in the same tree)
     must land on identical bytes. Runs on every PR regardless of source

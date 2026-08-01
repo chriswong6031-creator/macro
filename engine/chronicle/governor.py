@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from . import manifest as manifest_mod
-from . import rollups, spine, state_log
+from . import earnings_calls, rollups, spine, state_log
 
 log = logging.getLogger(__name__)
 
@@ -61,9 +61,10 @@ def build_and_write(
 ) -> dict[str, Any]:
     """Build the Chronicle store and write events.jsonl + rollups + manifest.json.
 
-    Incremental (default): appends tonight's state_log capture row (idempotent
-    by date) THEN fully recomputes events.jsonl from all sources + the now-
-    current state_log rows.
+    Incremental (default): syncs healthy evidence-addressed earnings scores into
+    the committed call-event ledger, appends tonight's state_log capture row
+    (idempotent by date), THEN fully recomputes events.jsonl from all sources +
+    the now-current Chronicle-owned ledgers.
     --rebuild: skips the state_log append and recomputes events.jsonl from all
     sources + the EXISTING state_log rows only — state_log.jsonl is never
     deleted or rewritten by rebuild (masterplan §0 gate 1 exemption).
@@ -76,6 +77,8 @@ def build_and_write(
         repo = _repo_root(root)
         now = now or datetime.now(timezone.utc)
         as_of = now.strftime("%Y-%m-%d")
+
+        earnings_call_sync = earnings_calls.sync_from_scores(repo, rebuild=rebuild)
 
         state_appended = False
         state_gap: str | None = None
@@ -91,6 +94,13 @@ def build_and_write(
         prev_ids = {e.get("id") for e in prev_events}
 
         raw_events, adapter_report = spine.build_events(repo)
+        sync_reason = str(earnings_call_sync.get("reason") or "")
+        if sync_reason not in {"", "current", "updated", "rebuild_skipped"}:
+            info = adapter_report.setdefault("earnings_call", {"count": 0, "gap": None})
+            sync_note = f"score projection sync: {sync_reason}"
+            if earnings_call_sync.get("gap"):
+                sync_note += f" ({earnings_call_sync['gap']})"
+            info["gap"] = f"{info['gap']}; {sync_note}" if info.get("gap") else sync_note
         if state_gap:
             adapter_report["state_log_capture"] = {"count": 0, "gap": state_gap}
 
@@ -143,6 +153,7 @@ def build_and_write(
             adapter_report=adapter_report,
             events_path=events_path,
             state_log_path=state_log_path,
+            earnings_call_path=repo / earnings_calls.CALL_EVENTS_REL,
             elapsed_s=elapsed,
         )
         try:
@@ -166,6 +177,7 @@ def build_and_write(
         result["added"] = added
         result["state_appended"] = state_appended
         result["state_reason"] = state_reason
+        result["earnings_call_sync"] = earnings_call_sync
         result["elapsed_s"] = round(elapsed, 3)
         result["rebuild"] = rebuild
     except Exception as exc:  # noqa: BLE001

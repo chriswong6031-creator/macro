@@ -1,8 +1,9 @@
 """engine.chronicle — market context timeline engine (Chronicle W0).
 
-Deterministic event spine + short/medium rollups + context_pack over 6
+Deterministic event spine + short/medium rollups + context_pack over 7
 committed sources (research-vault catalog, Prophet ledger closes, macro-release
-reactions, earnings surprises, risk-band flips, regime flips). No LLM calls
+reactions, earnings surprises, evidence-addressed earnings-call reads,
+risk-band flips, regime flips). No LLM calls
 anywhere in this package — W0 is 100% deterministic (house epistemics law: LLMs
 may only de-escalate calibrated keys, never originate signals/scores).
 
@@ -14,6 +15,8 @@ for the full spec. Modules:
                     macro_release, earnings, risk_band — the last reads the
                     real committed data/risk_radar/forward_log.jsonl history
                     directly, B6)
+  earnings_calls.py nightly-only healthy-score projection + committed ledger
+                    adapter (rebuild reads it but never rewrites it)
   state_log.py      forward-capture ledger + regime_flip derivation (adapter
                     6 — world_state.json has no committed dated history of
                     its own, unlike risk_band's source)
