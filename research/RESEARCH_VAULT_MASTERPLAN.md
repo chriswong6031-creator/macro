@@ -279,6 +279,57 @@ Hourly. Mirrors `btc-live.yml` cron + `earlyclose.yml` R2-secrets block; runs on
 5. Upsert catalog row + FTS corpus row (title/summary/body/institution/date).
 6. Write receipt `research_inbox/_processed/<id>.json`; publish catalog.json + corpus.sqlite to R2; commit `data/research_vault/catalog.json` to the repo (salvage-push lane).
 
+### 7b. A runner label is not a dependency guarantee (incident 2026-07-30 → 08-01)
+
+At ~13Z on 2026-07-30 the `macstudio-light` label moved to mac-builder-3 (an M1) which had
+no poppler. `shutil.which("pdftotext")` failed in every hourly run for two days. The
+pipeline degraded exactly as §5b designed — empty `body`, honest `text_layer='unavailable'`
+— and then **wrote a receipt for each document**, and receipts make re-ingestion impossible
+by design (§7). A two-day TOOLING outage therefore became permanent damage to the published
+corpus: **127 of 514 corpus rows** were bodyless when the host was healed — invisible to
+body search, and served to the Mastermind Pro full-report reader as excerpt-only under a
+note claiming the full text was "not reachable right now".
+
+The lesson generalizes past poppler: **a fail-soft that writes a receipt is not fail-soft,
+it is a permanent write.** Where a degraded ingest is recorded as done, the degradation must
+be prevented, not merely disclosed.
+
+Three-part fix (shipped 2026-08-01):
+
+- **`research-ingest.yml` preflight gate — the one FAIL-CLOSED step in a never-raise lane.**
+  Between the pip install and the ingest step, a missing `pdftotext` prints an `::error` and
+  exits 1. No receipts are written, the PDFs stay in the inbox and retry next hour, and the
+  outage shows as a red lane instead of silently maimed documents. Costs one `command -v`.
+- **`ingest._reextract_bodies` — the THIRD published-row repair** (sibling to
+  `_repair_titles` and `_refresh_sidecars`, §5c), and the only path back to a receipted row. Each run
+  re-fetches the vault PDF of up to `REEXTRACT_MAX` (50) candidates, re-runs `pdftotext`,
+  and re-stamps the measured columns. Load-bearing rules: candidacy reads the CORPUS, not
+  the catalog (`text_layer` is server-side by §6); `text_layer='unavailable'` rows come
+  first (user-visibly broken) and `text_layer IS NULL` rows (pre-probe, never measured)
+  after; **fill-only for `body`** — a row that already has text keeps it byte-for-byte, so
+  a stamping pass can never rewrite published text; facts are ALWAYS stamped (except an
+  UNKNOWN one — writing the probe's `None` over a `pages` the row already carries deletes a
+  fact instead of correcting it), which re-classifies a scan to `'none'` and **is** the
+  quiescence mechanism; a missing vault PDF
+  leaves the row completely untouched (absence of the object is not evidence about the
+  document); and a still-dead extractor aborts the whole pass at the FIRST candidate, since
+  no row may be re-stamped from an extraction that did not run. A cap that bites prints a
+  `::warning`, on the §5c precedent.
+- **Honest state for consumers.** `corpus.get_document` now projects `text_layer` (the one
+  measured column in `DOCUMENT_FIELDS`), and the brain's full-report path picks its
+  disclosure from it: `'none'` → "this is a scanned/image-only PDF, the excerpt is all the
+  text there is"; `'unavailable'`/`''`/no row → the existing "not reachable right now".
+  Same empty body, two different truths — promising a retry that can never deliver is as
+  dishonest as declaring a temporary outage permanent.
+
+**OCR verdict — not needed, and NOT here if it ever is.** As of 2026-08-01 the corpus holds
+**zero** `text_layer='none'` documents: every bodyless row was the host fault above, which
+is why re-extraction (not OCR) is the correct repair and why the 127 rows heal for free.
+If genuinely scan-only PDFs ever appear, the designated home is the **MarketDesk extractor's
+Marker parse lane on the M1** (§14 already runs Marker over the archive) — off the render
+path, artifacts to R2 — **never** the hourly ingest lane: OCR is minutes-per-document
+compute inside a 15-minute job that must stay a light hourly cron.
+
 ## 8. Search corpus (FTS5) — reuse CXI machinery, SEPARATE db
 
 Copy the FTS5 pattern from `engine/context_index/schema.py` (contentless FTS5 + triggers)

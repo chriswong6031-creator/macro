@@ -1119,6 +1119,16 @@ _REPORT_EXCERPT_ONLY = (
     "opening excerpt only — say plainly that you are reading the opening pages, "
     "not the whole note."
 )
+# The OTHER reason a body comes back empty, and the note above is a false promise
+# for it: the corpus measured this PDF as image-only (text_layer 'none'), so there
+# is no fuller text to become reachable later — no retry, no repair pass, nothing.
+# 'unavailable' and '' keep the excerpt-only note, which is equally true of them:
+# our extraction did not run (a HOST fault, healed by ingest._reextract_bodies).
+_REPORT_SCAN_ONLY = (
+    " This report is a scanned/image-only PDF — the vault holds no machine-readable "
+    "text for it, so the public excerpt and summary above are all the text there "
+    "is. Say that plainly; do not imply a temporary failure."
+)
 
 # view_ratelimit.allow() keys a SECOND ledger on sha256(ip)[:16], and maps an
 # empty/'unknown' ip to the literal bucket 'noip' — every chat user would then
@@ -1326,7 +1336,13 @@ def _research_report(root: Path, report_id, *, user_ctx, now: datetime) -> dict:
     note = _REPORT_NOTE.format(
         institution=institution or _REPORT_NOTE_FALLBACK_INSTITUTION)
     if quota is None:
-        note += _REPORT_EXCERPT_ONLY
+        # No body was served. WHY there is none decides which sentence is honest:
+        # a measured 'none' is a scan (nothing more will ever exist), everything
+        # else — no corpus row at all, an unmeasured row, a host-fault
+        # 'unavailable' — is a shortfall that a later run may close.
+        layer = str((document or {}).get("text_layer") or "") \
+            if isinstance(document, dict) else ""
+        note += _REPORT_SCAN_ONLY if layer == "none" else _REPORT_EXCERPT_ONLY
 
     return {
         "schema": _REPORT_SCHEMA,

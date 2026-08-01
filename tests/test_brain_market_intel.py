@@ -1384,7 +1384,10 @@ def _stub_document(monkeypatch, body: str, *, calls: list | None = None, **over)
             calls.append(doc_id)
         row = {"doc_id": doc_id, "title": "Corpus Title", "institution": "Corpus Co",
                "side": "sell", "published_at": "2026-01-01T00:00:00Z",
-               "summary": "corpus summary", "body": body}
+               "summary": "corpus summary", "body": body,
+               # corpus.DOCUMENT_FIELDS carries the measured text-layer state; ''
+               # is the unmeasured default a pre-probe row returns.
+               "text_layer": ""}
         row.update(over)
         return row
 
@@ -1558,6 +1561,59 @@ def test_an_empty_corpus_body_is_treated_as_unreachable(tmp_path, monkeypatch):
     assert debits == []
     assert result["quota"] is None
     assert result["report"]["body_text"] == ""
+
+
+def test_a_scanned_report_is_disclosed_as_scanned_not_as_a_temporary_failure(
+        tmp_path, monkeypatch):
+    """text_layer='none' means the extractor RAN and this PDF is image-only: the
+    excerpt is all the text that will ever exist for it. Telling the user the full
+    text 'is not reachable right now' promises a retry that can never deliver."""
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "", text_layer="none")
+    debits: list = []
+    _stub_quota(monkeypatch, calls=debits)
+
+    result = _report(tmp_path, "gs-oil-1")
+
+    note = result["note"]
+    assert "scanned/image-only" in note
+    assert "all the text there is" in note
+    assert "not reachable" not in note.lower(), "a scan is not a temporary failure"
+    # Everything else about the empty-body path is unchanged: public excerpt,
+    # no body, no quota debit.
+    assert debits == []
+    assert result["quota"] is None
+    assert result["report"]["body_text"] == ""
+    assert result["report"]["excerpt_paragraphs"] == ["Opening paragraph of the note."]
+    # The note is the whole mechanism — no new key reaches the model's context.
+    assert set(result["report"]) == set(bmi.REPORT_FIELDS)
+
+
+@pytest.mark.parametrize("layer", ["unavailable", "", "thin", "full"])
+def test_every_other_empty_body_keeps_the_temporary_shortfall_note(
+        tmp_path, monkeypatch, layer):
+    """'unavailable' is a HOST fault (poppler missing on the runner, 2026-07-30)
+    that ingest._reextract_bodies repairs, and '' is simply unmeasured — for both,
+    'not reachable right now' is the true sentence."""
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "", text_layer=layer)
+    _stub_quota(monkeypatch)
+
+    note = _report(tmp_path, "gs-oil-1")["note"]
+    assert "not reachable" in note.lower()
+    assert "scanned" not in note.lower()
+
+
+def test_an_absent_corpus_row_keeps_the_temporary_shortfall_note(tmp_path, monkeypatch):
+    """No row at all says nothing about the DOCUMENT — the corpus is unreachable
+    or the id was never indexed, both of which a later read may resolve."""
+    _seed_one(tmp_path)
+    _stub_no_document(monkeypatch)
+    _stub_quota(monkeypatch)
+
+    note = _report(tmp_path, "gs-oil-1")["note"]
+    assert "not reachable" in note.lower()
+    assert "scanned" not in note.lower()
 
 
 def test_a_served_body_debits_exactly_one_view(tmp_path, monkeypatch):

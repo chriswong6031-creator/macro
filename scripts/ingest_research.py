@@ -46,9 +46,15 @@ def _report_measured(summary: dict, dry_run: bool = False) -> None:
     workflow command when ``::`` starts the line, and this CLI's logging format
     prefixes ``%(levelname)s``, which would silently swallow it.
 
-    All three conditions are WARNINGS, never failures — the hourly job's contract
-    is that a bad document never blocks the batch, and the same holds for a
-    document we merely learned something unflattering about.
+    Every condition here is a WARNING or a NOTICE, never a failure — the hourly
+    job's contract is that a bad document never blocks the batch, and the same
+    holds for a document we merely learned something unflattering about. (The one
+    fail-CLOSED gate in this lane is upstream of the CLI: the workflow refuses to
+    ingest at all on a host with no ``pdftotext``, because ingesting bodyless
+    writes receipts that freeze the damage — see research-ingest.yml.)
+
+    The re-extraction lines below describe rows that were CHANGED, so like the
+    sidecar lines they may claim nothing under --dry-run, which publishes nothing.
     """
     try:
         from engine.research_vault import catalog as catalog_mod
@@ -87,6 +93,30 @@ def _report_measured(summary: dict, dry_run: bool = False) -> None:
                   f"{summary['summaries_resynced']} corpus summary(ies) were out of "
                   f"sync with the catalog and have been resynced — a previous "
                   f"corpus publish did not land", flush=True)
+
+        if summary.get("bodies_reextracted") and not dry_run:
+            # A NOTICE, not a warning: this is the repair working. The number is
+            # also the count of rows that were invisible to body search — and
+            # served to the full-report reader as excerpt-only — until this run
+            # healed them (see ingest._reextract_bodies).
+            print(f"::notice title=research_vault::{summary['bodies_reextracted']} "
+                  f"empty body(ies) re-extracted into already-published rows "
+                  f"({summary.get('reextract_checked', 0)} re-checked)", flush=True)
+
+        if summary.get("reextract_remaining") and not dry_run:
+            # Mirrors the sidecar-cap precedent: a bound that truncates coverage
+            # must SAY so, or the notice above reads as "the backlog is drained".
+            print(f"::warning title=research_vault::body re-extraction capped — "
+                  f"{summary['reextract_remaining']} candidate row(s) not "
+                  f"re-checked this run", flush=True)
+
+        if summary.get("reextract_aborted") and not dry_run:
+            # The 2026-07-30 fault itself, still live: the pass refuses to stamp
+            # anything from an extraction that never ran, so the backlog stands
+            # until poppler is back on this host.
+            print("::warning title=research_vault::body re-extraction could not "
+                  "run — pdftotext is still unavailable on this host, so the "
+                  "bodyless rows stay bodyless (install poppler)", flush=True)
 
         if summary.get("no_text_layer"):
             print(f"::warning::research_vault: {summary['no_text_layer']} document(s) "
@@ -184,6 +214,9 @@ def main() -> int:
               f"summaries_recovered={summary.get('summaries_recovered', 0)} "
               f"(checked={summary.get('sidecars_checked', 0)}, "
               f"resynced={summary.get('summaries_resynced', 0)}) "
+              f"bodies_reextracted={summary.get('bodies_reextracted', 0)} "
+              f"(checked={summary.get('reextract_checked', 0)}, "
+              f"remaining={summary.get('reextract_remaining', 0)}) "
               f"corpus_published={summary.get('corpus_published')} "
               f"excerpts={n_excerpts} snapshot={_REPO_CATALOG}")
         _report_measured(summary)
