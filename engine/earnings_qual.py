@@ -133,7 +133,7 @@ _MAX_HIGHLIGHTS = 3
 # Config
 # --------------------------------------------------------------------------- #
 _DEFAULT_CFG: dict[str, Any] = {
-    "provider_order": ["openai_compat", "deepseek", "anthropic"],
+    "provider_order": ["openai_compat", "deepseek", "kimi", "anthropic"],
     "openai_compat": {
         "base_url": "http://localhost:8000/v1",
         "model": "qwen3-14b",
@@ -142,11 +142,20 @@ _DEFAULT_CFG: dict[str, Any] = {
         "max_tokens": 1200,
     },
     "opus_model": "claude-haiku-4-5",
-    "deepseek_model": "deepseek-v4-pro",
-    "daily_cap": 8,
+    "deepseek_model": "deepseek-v4-flash",
+    "kimi": {
+        "base_url": "https://api.moonshot.ai/v1",
+        "model": "kimi-k2.6",
+        "api_key_env": "MOONSHOT_API_KEY",
+        "timeout_s": 120,
+        "max_tokens": 1200,
+    },
+    "daily_cap": 64,
     "max_chars": 24000,
+    "tail_chars": 8000,
     "retry_on_bad_json": 1,
-    "prompt_version": "equal-v1",
+    "prompt_version": "equal-v2",
+    "analysis_schema_version": "earnings-qual/v2",
     "usage_lane": "earnings_qual",
 }
 
@@ -166,6 +175,9 @@ def load_config(root: Path | None = None) -> dict[str, Any]:
                 oc = dict(_DEFAULT_CFG["openai_compat"])
                 oc.update(loaded.get("openai_compat") or {})
                 cfg["openai_compat"] = oc
+                kimi = dict(_DEFAULT_CFG["kimi"])
+                kimi.update(loaded.get("kimi") or {})
+                cfg["kimi"] = kimi
     except Exception as exc:  # noqa: BLE001
         log.warning("earnings_qual: config load failed (%s) — using defaults", exc)
     return cfg
@@ -191,6 +203,7 @@ Return ONE JSON object and nothing else — no prose, no markdown fences. Schema
   "confidence": <float 0..1>,          // your confidence given the text provided
   "tone_word": "<one of: confident, upbeat, steady, cautious, defensive, mixed, \
 guarded, downbeat, reassuring, uncertain>",
+  "summary": "<2-4 factual sentences: numbers, guidance, key change; no advice>",
   "positive_highlights": ["<=3 short evidence phrases, each grounded in the text"],
   "negative_highlights": ["<=3 short evidence phrases, each grounded in the text"],
   "tags": ["subset of: guidance_raised, guidance_lowered, beat_and_raise, \
@@ -266,6 +279,22 @@ def _call_openai_compat(
         return None, "openai_compat_bad_shape"
 
 
+def _call_kimi(
+    system: str, user: str, kimi_cfg: dict, *, max_tokens: int
+) -> tuple[str | None, str | None]:
+    """Call Moonshot/Kimi through its OpenAI-compatible Chat Completions API."""
+
+    cfg = dict(kimi_cfg or {})
+    key_env = str(cfg.get("api_key_env") or "MOONSHOT_API_KEY")
+    api_key = os.environ.get(key_env, "") or ""
+    if not api_key:
+        return None, "kimi_unconfigured"
+    cfg["api_key_env"] = key_env
+    # Reuse the same hardened OpenAI-compatible request path.  The API key is
+    # read from cfg.api_key_env and never enters a persisted artifact.
+    return _call_openai_compat(system, user, cfg, max_tokens=max_tokens)
+
+
 def _call_llm_auth(
     system: str, user: str, cfg: dict, provider_name: str, *, max_tokens: int
 ) -> tuple[str | None, str | None]:
@@ -339,6 +368,10 @@ def _dispatch(
     for name in order:
         if name == "openai_compat":
             text, reason = _call_openai_compat(system, user, oc_cfg, max_tokens=max_tokens)
+        elif name == "kimi":
+            text, reason = _call_kimi(
+                system, user, cfg.get("kimi") or {}, max_tokens=max_tokens
+            )
         elif name in ("anthropic", "deepseek"):
             text, reason = _call_llm_auth(system, user, cfg, name, max_tokens=max_tokens)
         else:
@@ -487,6 +520,8 @@ def score_text(
     cfg: dict | None = None,
     call_date: str | None = None,
     source: str = "transcript",
+    source_record_id: str | None = None,
+    source_updated_at: str | None = None,
 ) -> dict:
     """Score one earnings-call text.  Provider-agnostic; never raises.
 
@@ -501,12 +536,15 @@ def score_text(
     cfg         : full loaded config (load_config()); loaded lazily if omitted.
     call_date   : ISO date of the call/filing (for the row + ledger join).
     source      : "transcript" | "8k".
+    source_record_id: stable upstream identity (preferred upsert key).
+    source_updated_at: upstream commit-marker/index generation timestamp.
 
     Returns a dict conforming to the §2 scores contract:
       { ticker, quarter, year, call_date, source, model, sentiment,
         performance, confidence, tone_word, positive_highlights,
-        negative_highlights, tags, source_sha256, scored_at,
-        is_context_only, degraded_reason }
+        negative_highlights, tags, summary, source_sha256, scored_at,
+        source_record_id, source_updated_at, prompt_version,
+        analysis_schema_version, is_context_only, degraded_reason }
     """
     cfg = cfg if cfg is not None else load_config()
     provider_cfg = provider_cfg or {}
@@ -530,6 +568,10 @@ def score_text(
         "tags": [],
         "source_sha256": sha,
         "scored_at": datetime.now(timezone.utc).isoformat(),
+        "source_record_id": source_record_id or None,
+        "source_updated_at": source_updated_at or None,
+        "prompt_version": str(cfg.get("prompt_version") or ""),
+        "analysis_schema_version": str(cfg.get("analysis_schema_version") or ""),
         "summary": None,           # SGA W5: call_summary from the model (optional)
         "is_context_only": True,   # SGA-R5 — ALWAYS context-only
         "degraded_reason": None,
@@ -540,7 +582,8 @@ def score_text(
         return base_row
 
     max_chars = int(cfg.get("max_chars", 24000))
-    body = str(text)[:max_chars]
+    tail_chars = int(cfg.get("tail_chars", 8000))
+    body = _bounded_transcript_text(str(text), max_chars=max_chars, tail_chars=tail_chars)
     max_tokens = int(
         (provider_cfg.get("openai_compat") or {}).get("max_tokens")
         or (cfg.get("openai_compat") or {}).get("max_tokens")
@@ -586,7 +629,39 @@ def score_text(
     base_row["positive_highlights"] = _clean_highlights(obj.get("positive_highlights"))
     base_row["negative_highlights"] = _clean_highlights(obj.get("negative_highlights"))
     base_row["tags"] = _clean_tags(obj.get("tags"))
+    raw_summary = obj.get("summary")
+    if isinstance(raw_summary, str):
+        base_row["summary"] = _scrub_advice_text(raw_summary.strip()[:1600])
+    # A parseable JSON object is not necessarily a usable score.  Treat a
+    # partial schema as retryable degradation so it never becomes the live
+    # overlay merely because the provider happened to return ``{}``.
+    if any(base_row.get(key) is None for key in (
+        "sentiment", "performance", "confidence", "tone_word",
+    )):
+        base_row["degraded_reason"] = "incomplete_schema"
     return base_row
+
+
+def _bounded_transcript_text(text: str, *, max_chars: int, tail_chars: int) -> str:
+    """Keep prepared remarks plus Q&A tail instead of truncating the tail away.
+
+    The scorer remains a compact one-pass extractor, but a long call's analyst
+    questions often contain the most useful guidance challenges.  The old
+    ``text[:max_chars]`` contract discarded that section on nearly every call.
+    """
+
+    if max_chars <= 0:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    tail = min(max(0, int(tail_chars)), max_chars // 2)
+    if tail <= 0:
+        return text[:max_chars]
+    marker = "\n\n[... middle of transcript omitted for bounded extraction ...]\n\n"
+    head = max_chars - tail - len(marker)
+    if head <= 0:
+        return text[: max_chars - tail] + text[-tail:]
+    return text[:head] + marker + text[-tail:]
 
 
 def _build_user_prompt(
@@ -638,6 +713,7 @@ _STORE_COLUMNS = [
     "source_record_id", "source_updated_at", "prompt_version",
     "analysis_schema_version",
     "summary",   # SGA W5: model call_summary (str, nullable); live scorer fills if present
+    "is_context_only", "degraded_reason",
 ]
 # JSON-encoded columns (stored as strings in parquet for portability).
 _JSON_COLUMNS = ("positive_highlights", "negative_highlights", "tags")
@@ -675,6 +751,31 @@ def load_scores(root: Path | None = None):
         return pd.DataFrame(columns=_STORE_COLUMNS)
 
 
+def _load_scores_unvalidated(root: Path | None = None):
+    """Read the producer's mutable local store without transport validation.
+
+    ``manifest.json`` is a published-generation commit marker. It necessarily
+    becomes stale between the first local upsert and the later R2 publish, so a
+    producer read-modify-write cycle must not reject its own pending local rows.
+    Consumer surfaces continue to use strict manifest validation.
+    """
+
+    import pandas as pd  # noqa: PLC0415
+
+    p = store_path(root)
+    if not p.exists():
+        return pd.DataFrame(columns=_STORE_COLUMNS)
+    try:
+        frame = pd.read_parquet(p)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("earnings_qual: mutable scores store unreadable (%s) — empty", exc)
+        return pd.DataFrame(columns=_STORE_COLUMNS)
+    for column in _STORE_COLUMNS:
+        if column not in frame.columns:
+            frame[column] = None
+    return frame[_STORE_COLUMNS]
+
+
 def _atomic_write_parquet(df, path: Path) -> None:
     """Write a parquet atomically (temp + os.replace) so a crashed write never
     leaves a truncated store."""
@@ -691,38 +792,123 @@ def _atomic_write_parquet(df, path: Path) -> None:
                 pass
 
 
-def upsert_scores(rows: list[dict], root: Path | None = None):
-    """Upsert score rows into scores.parquet keyed (ticker, quarter, year, source).
+def _merge_score_frames(existing, new_df):
+    """Return one identity-deduplicated producer frame."""
 
-    Idempotent: a later score for the same key REPLACES the prior row.  Returns
-    the number of rows written (inserted or replaced).  Atomic write.
+    import pandas as pd  # noqa: PLC0415
+
+    if existing.empty:
+        combined = new_df.copy()
+    else:
+        combined = pd.concat([existing, new_df], ignore_index=True)
+
+    def _identity(row) -> str:
+        record_id = row.get("source_record_id")
+        if record_id is not None and str(record_id).strip() and str(record_id) != "nan":
+            return f"record:{str(record_id).strip()}"
+        return "legacy:" + "|".join(
+            str(row.get(c) if row.get(c) is not None else "")
+            for c in ("ticker", "quarter", "year", "source")
+        )
+
+    combined["_identity"] = combined.apply(_identity, axis=1)
+
+    # A transient provider outage is useful as an observability receipt, but it
+    # must never replace a previously healthy score for the same source record.
+    # Among equally healthy rows, prefer the newest source/scoring timestamp and
+    # use arrival order only as a deterministic final tie-break.
+    degraded = combined["degraded_reason"].fillna("").astype(str).str.strip()
+    combined["_healthy"] = degraded.eq("")
+    source_time = combined["source_updated_at"].fillna("").astype(str).str.strip()
+    scored_time = combined["scored_at"].fillna("").astype(str).str.strip()
+    combined["_freshness"] = source_time.where(source_time.ne(""), scored_time)
+    combined["_arrival"] = range(len(combined))
+    combined = combined.sort_values(
+        ["_identity", "_healthy", "_freshness", "_arrival"],
+        kind="stable",
+    )
+    combined = combined.drop_duplicates(subset=["_identity"], keep="last")
+    combined = combined.sort_values("_arrival", kind="stable")
+    combined = combined.drop(
+        columns=["_identity", "_healthy", "_freshness", "_arrival"]
+    )
+    return combined.reset_index(drop=True)
+
+
+def _invalidate_local_manifest(root: Path | None = None) -> None:
+    """Remove the old commit marker after mutating the producer store."""
+
+    r = Path(root) if root is not None else _REPO_ROOT
+    (r / "data" / "earnings_calls" / "manifest.json").unlink(missing_ok=True)
+
+
+def merge_score_store_frame(frame, root: Path | None = None) -> int:
+    """Merge a previously local producer frame after hydrating R2 history."""
+
+    import pandas as pd  # noqa: PLC0415
+
+    if frame is None or frame.empty:
+        return 0
+    incoming = frame.copy()
+    for column in _STORE_COLUMNS:
+        if column not in incoming.columns:
+            incoming[column] = None
+    incoming = incoming[_STORE_COLUMNS]
+    existing = _load_scores_unvalidated(root)
+    combined = _merge_score_frames(existing, incoming)
+    _atomic_write_parquet(combined, store_path(root))
+    _invalidate_local_manifest(root)
+    return int(len(incoming))
+
+
+def upsert_scores(rows: list[dict], root: Path | None = None):
+    """Upsert rows by stable source record, falling back to the legacy key.
+
+    A later revision for the same ``source_record_id`` replaces its prior score.
+    Historical rows that predate that field retain the old
+    ``(ticker, quarter, year, source)`` identity.  This avoids collapsing two
+    same-quarter source events while preserving backwards compatibility.
     """
     import pandas as pd  # noqa: PLC0415
     if not rows:
         return 0
-    existing = load_scores(root)
+    existing = _load_scores_unvalidated(root)
     new_df = pd.DataFrame([_row_to_store(r) for r in rows], columns=_STORE_COLUMNS)
-    if existing.empty:
-        combined = new_df
-    else:
-        # Align existing columns to the store schema (fill missing).
-        for c in _STORE_COLUMNS:
-            if c not in existing.columns:
-                existing[c] = None
-        existing = existing[_STORE_COLUMNS]
-        combined = pd.concat([existing, new_df], ignore_index=True)
-    # New rows are appended last → keep='last' retains the fresh score.
-    key = ["ticker", "quarter", "year", "source"]
-    combined = combined.drop_duplicates(subset=key, keep="last").reset_index(drop=True)
+    combined = _merge_score_frames(existing, new_df)
     _atomic_write_parquet(combined, store_path(root))
+    _invalidate_local_manifest(root)
     return len(new_df)
 
 
 def _seen_shas(root: Path | None = None) -> set[str]:
-    df = load_scores(root)
+    # Producer completion ledger: local rows remain authoritative between a
+    # model upsert and the later manifest-last R2 publication.
+    df = _load_scores_unvalidated(root)
     if df.empty or "source_sha256" not in df.columns:
         return set()
+    # Provider-down/invalid-JSON rows are observability receipts, not completed
+    # work.  Excluding them keeps the same source retryable on the next run.
+    if "degraded_reason" in df.columns:
+        degraded = df["degraded_reason"].fillna("").astype(str).str.strip()
+        df = df[degraded == ""]
     return set(df["source_sha256"].dropna().astype(str).tolist())
+
+
+def _completed_record_shas(root: Path | None = None) -> dict[str, str]:
+    """Return healthy stable-source completions for crash-safe intake replay."""
+
+    df = _load_scores_unvalidated(root)
+    if df.empty or "source_record_id" not in df.columns:
+        return {}
+    degraded = df["degraded_reason"].fillna("").astype(str).str.strip()
+    healthy = df[degraded.eq("")]
+    out: dict[str, str] = {}
+    for _, row in healthy.iterrows():
+        record_id = str(row.get("source_record_id") or "").strip()
+        sha = str(row.get("source_sha256") or "").strip()
+        if record_id and record_id != "nan" and sha and sha != "nan":
+            out[record_id] = sha
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -966,6 +1152,8 @@ def score_new(
             cfg=cfg,
             call_date=payload.get("call_date"),
             source=payload.get("source", "transcript"),
+            source_record_id=payload.get("source_record_id"),
+            source_updated_at=payload.get("source_updated_at"),
         )
         seen.add(sha)
         scored_rows.append(row)
@@ -987,6 +1175,8 @@ def score_new(
                 cfg=cfg,
                 call_date=payload.get("call_date"),
                 source="8k",
+                source_record_id=payload.get("source_record_id"),
+                source_updated_at=payload.get("source_updated_at"),
             )
             seen.add(sha)
             scored_rows.append(row)

@@ -12,11 +12,13 @@
 # SGA-R6: the Windows worker is producer-only — it writes R2, NEVER git.
 
 # Provider waterfall.  'openai_compat' is the local Qwen path (base_url below).
-# 'anthropic'/'deepseek' route through engine/llm_auth (cloud fallback lane).
+# 'anthropic'/'deepseek' route through engine/llm_auth; Kimi uses its
+# OpenAI-compatible endpoint.  The local worker may override this order.
 # The harness tries providers in this order and stops at the first that answers.
 provider_order:
   - openai_compat        # local Qwen on the PC (primary — free, private)
-  - deepseek             # cheapest cloud fallback (metered)
+  - deepseek             # V4 Flash burst/fallback extractor (very low metered cost)
+  - kimi                 # visual/Chinese/model-diversity fallback
   - anthropic            # last-resort cloud fallback (Haiku, metered)
 
 # --- local OpenAI-compatible endpoint (the Qwen path) ---------------------------
@@ -32,24 +34,36 @@ openai_compat:
 # --- cloud fallback model ids (routed via engine/llm_auth) -----------------------
 # Cheapest lane only — earnings scoring is off the render-critical path.
 opus_model: "claude-haiku-4-5"            # 'anthropic' provider (cheap Haiku)
-deepseek_model: "deepseek-v4-pro"          # 'deepseek' provider
+deepseek_model: "deepseek-v4-flash"        # routine extraction; Pro reserved for publishable prose
 # llm_auth env-var names (waterfall credential lookups):
 oauth_token_env: "CLAUDE_CODE_OAUTH_TOKEN"
 api_key_env: "ANTHROPIC_API_KEY"
 deepseek_key_env: "DEEPSEEK_API_KEY"
 deepseek_base_url: "https://api.deepseek.com/anthropic"
 
+# Kimi/Moonshot is optional. It is not called unless MOONSHOT_API_KEY is set.
+kimi:
+  base_url: "https://api.moonshot.ai/v1"
+  model: "kimi-k2.6"
+  api_key_env: "MOONSHOT_API_KEY"
+  timeout_s: 120
+  max_tokens: 1200
+
 # --- run economics ---------------------------------------------------------------
-# ~7 calls/day rolling covers the 2,552-name/yr earnings cadence (masterplan §4).
-daily_cap: 8                               # max scores per score_new() invocation
+# A 2,000–3,500-name universe produces roughly 22–38 calls/day on average at
+# four calls/name/year, with much larger earnings-season bursts. Local Qwen can
+# absorb this cheaply; a persistent queue carries overflow across runs.
+daily_cap: 64                              # max scores per score_new() invocation
 max_chars: 24000                           # transcript is truncated to this length
+tail_chars: 8000                           # preserve Q&A tail on long calls
 retry_on_bad_json: 1                       # one retry when the model returns non-JSON
 
 # --- prompt version --------------------------------------------------------------
 # Bump when tools/earnings_worker/prompts.py changes materially.  Stored on every
 # row's scored_at context (not the row itself) and surfaced in the manifest so
 # scores from different prompt generations can be told apart at promotion time.
-prompt_version: "equal-v1"
+prompt_version: "equal-v2"
+analysis_schema_version: "earnings-qual/v2"
 
 # --- usage attribution (ai_costs ledger, cloud lanes only) -----------------------
 usage_lane: "earnings_qual"

@@ -27,7 +27,7 @@ config/earnings_qual.yml.
 """
 from __future__ import annotations
 
-PROMPT_VERSION = "equal-v1"
+PROMPT_VERSION = "equal-v2"
 
 # The pinned tag taxonomy — MUST match engine.earnings_qual.TAG_TAXONOMY and the
 # masterplan §2 list.  Unknown tags are dropped by the engine post-filter.
@@ -81,6 +81,8 @@ with a cut.
 - confidence: float in [0, 1]. How confident YOU are given the text provided. Thin \
 or ambiguous text → low confidence. This is not the company's confidence.
 - tone_word: exactly one of: {", ".join(TONE_WORDS)}.
+- summary: 2-4 factual sentences covering the reported numbers, forward guidance, \
+and the most important change versus the prior period. No advice or valuation claims.
 - positive_highlights: up to 3 short, grounded evidence phrases (the strongest \
 positives). Factual observations, never advice.
 - negative_highlights: up to 3 short, grounded evidence phrases (the clearest \
@@ -105,6 +107,7 @@ JSON schema:
   "performance": <float 0..10>,
   "confidence": <float 0..1>,
   "tone_word": "<one tone word>",
+  "summary": "<2-4 factual sentences: numbers, guidance, key change; no advice>",
   "positive_highlights": ["...", "..."],
   "negative_highlights": ["...", "..."],
   "tags": ["...", "..."]

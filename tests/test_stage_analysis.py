@@ -525,6 +525,36 @@ def test_earnings_seed_fallback_and_live_overlay(tmp_path):
     assert m2["CCC"]["present"] is True                 # live-only ticker added
 
 
+def test_degraded_or_incomplete_live_rows_never_override_seed(tmp_path):
+    dr = tmp_path
+    seed_dir = dr / "stage_analysis" / "backfill"
+    seed_dir.mkdir(parents=True)
+    pd.DataFrame([
+        {"ticker": "AAA", "quarter": "Q1", "sentiment": 0.5,
+         "performance": 7.0, "summary": "Healthy seed."},
+    ]).to_parquet(seed_dir / "earnings_seed.parquet")
+
+    live_dir = dr / "earnings_calls"
+    live_dir.mkdir(parents=True)
+    pd.DataFrame([
+        {"ticker": "AAA", "quarter": "Q2", "sentiment": None,
+         "performance": None, "summary": None, "is_context_only": True,
+         "degraded_reason": "openai_compat_error"},
+        {"ticker": "BBB", "quarter": "Q2", "sentiment": None,
+         "performance": 7.0, "summary": "Partial.", "is_context_only": True,
+         "degraded_reason": None},
+        {"ticker": "CCC", "quarter": "Q2", "sentiment": 0.2,
+         "performance": 6.0, "summary": "Wrong authority.",
+         "is_context_only": False, "degraded_reason": None},
+    ]).to_parquet(live_dir / "scores.parquet")
+    _write_scores_manifest(live_dir / "scores.parquet")
+
+    scores = sa._load_earnings_scores(dr)
+    assert scores["AAA"]["summary"] == "Healthy seed."
+    assert "BBB" not in scores
+    assert "CCC" not in scores
+
+
 # ---------------------------------------------------------------------------
 # 9. Fail-open: SPY absent -> no crash, market block still present.
 # ---------------------------------------------------------------------------

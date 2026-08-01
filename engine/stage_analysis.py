@@ -471,7 +471,8 @@ def _parse_earnings_parquet(p: Path) -> dict[str, dict]:
         return {}
     if df is None or df.empty or "ticker" not in df.columns:
         return {}
-    if p.parent.name == "earnings_calls":
+    is_live = p.parent.name == "earnings_calls"
+    if is_live:
         try:
             from engine.earnings_qual import _validate_transport_frame  # noqa: PLC0415
             valid, reason = _validate_transport_frame(
@@ -498,10 +499,30 @@ def _parse_earnings_parquet(p: Path) -> dict[str, dict]:
         tk = str(r.get("ticker") or "").strip().upper()
         if not tk:
             continue
+        if is_live:
+            # A live row only earns the right to override the committed seed
+            # when it is a healthy, context-only model result.  Provider outage
+            # receipts and partial JSON must remain invisible to the product.
+            degraded = r.get("degraded_reason")
+            if degraded is not None and not pd.isna(degraded) and str(degraded).strip():
+                continue
+            if "is_context_only" in df.columns:
+                context_only = r.get("is_context_only")
+                if context_only is not None and not pd.isna(context_only):
+                    if isinstance(context_only, str):
+                        context_ok = context_only.strip().lower() in {
+                            "1", "true", "yes", "y",
+                        }
+                    else:
+                        context_ok = bool(context_only)
+                    if not context_ok:
+                        continue
         sent = r.get("sentiment")
         perf = r.get("performance")
         sent = None if (sent is None or pd.isna(sent)) else float(sent)
         perf = None if (perf is None or pd.isna(perf)) else float(perf)
+        if is_live and (sent is None or perf is None):
+            continue
         tags = r.get("tags")
         tags = _coerce_tags(tags)
         qv = r.get("quarter")

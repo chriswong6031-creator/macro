@@ -1,8 +1,10 @@
 # Earnings-call qualitative worker (Windows PC)
 
-Standalone worker that scores earnings calls with a **local Qwen** model on the
-operator's Windows PC and publishes the results to Cloudflare R2. Part of the
-Stage Analysis program (SGA W4, rulings **SGA-R5** and **SGA-R6**).
+Standalone worker that polls Mastermind Terminal's committed transcript archive,
+scores new or corrected calls, and publishes the qualitative overlay to
+Cloudflare R2. The normal route is **local Qwen first**, with optional low-cost
+DeepSeek/Kimi/Anthropic fallbacks. Part of the Stage Analysis program (SGA W4,
+rulings **SGA-R5** and **SGA-R6**).
 
 It runs **outside** the nightly render pipeline. The Mac Studio's nightly job
 never calls the model — it only *fetches* the scores this worker publishes
@@ -31,19 +33,23 @@ You cannot bypass that filter from the worker.
 
 ## What it does each run
 
-1. Pick tickers — from `--tickers`, from the upcoming-earnings priority queue
-   (`--queue` → `data/earnings_calls/queue.json`), or `--auto` (everything
-   un-scored in the transcripts dir).
-2. Load each ticker's transcript text from `--transcripts-dir` (one JSON per
-   filing: `{ticker, quarter, year, call_date, text}`).
-3. Score it with `engine.earnings_qual.score_text` against your **local**
-   OpenAI-compatible endpoint (Qwen).
-4. Upsert rows into `data/earnings_calls/scores.parquet` (atomic write, keyed
-   `(ticker, quarter, year, source)`, never rescores the same `source_sha256`).
-5. Publish `scores.parquet` + a small `manifest.json` to R2.
+1. Fetch the current R2 score generation before writing, preserving the full
+   accumulated history on a fresh worker checkout.
+2. Read Terminal's `data/tx/index.json` commit marker and merge new/corrected
+   `SYM/YYYYQn` bodies into a durable local pending queue.
+3. Fetch only queued `.json.gz` bodies and render speaker/role-labelled text
+   directly into the scorer—no second transcript copy and no vendor scraping.
+4. Preserve both prepared remarks and the Q&A tail inside the bounded model
+   context, then route local Qwen → DeepSeek → Kimi → Anthropic as configured.
+5. Upsert by stable upstream record id. Provider failures stay pending and can
+   never overwrite a healthy score or the committed Stage seed.
+6. Attempt R2 publication on every invocation, including an idle run after an
+   earlier failed publish.
 
-`~7 calls/day rolling` covers the full US earnings cadence (~2,552 names/yr). The
-config daily cap is `8`.
+A 2,000–3,500-name universe implies roughly 22–38 calls/day on average at four
+calls per company per year, but earnings-season spikes can be hundreds per day.
+The default safety ceiling is 64 attempts per invocation; the durable queue
+carries overflow and makes repeated scheduled runs safe.
 
 ---
 
@@ -91,9 +97,8 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install pandas pyarrow requests boto3 PyYAML
 
-# 3. Point the worker at your transcript store (one JSON per filing).
-#    Schema per file: {"ticker","quarter","year","call_date","text"}
-mkdir D:\earnings\transcripts
+# 3. No transcript backfill directory is required. The default source is the
+#    already-published Terminal archive at app.mastermind-x.com/data/tx.
 ```
 
 ### R2 credentials (the 4 env vars — same quad the Mac Studio uses)
@@ -115,31 +120,40 @@ Optional endpoint overrides (avoid editing the repo config on the PC):
 | `EARNINGS_LLM_BASE_URL` | local endpoint, e.g. `http://localhost:1234/v1` |
 | `EARNINGS_LLM_MODEL` | local model id, e.g. `qwen3-14b` |
 | `LOCAL_LLM_API_KEY` | only if your server requires a bearer token |
+| `EARNINGS_PROVIDER_ORDER` | optional waterfall, e.g. `openai_compat,deepseek,kimi,anthropic` |
+| `DEEPSEEK_API_KEY` | enables the low-cost DeepSeek fallback |
+| `MOONSHOT_API_KEY` | enables the optional Kimi fallback |
+| `ANTHROPIC_API_KEY` | enables the last-resort Anthropic fallback |
+| `TERMINAL_TX_BASE_URL` | optional Terminal archive override |
 
 ---
 
 ## Running it
 
 ```powershell
-# score a specific set, against LM Studio's default port:
-python run_worker.py --tickers NVDA,AAPL,MSFT ^
-  --transcripts-dir D:\earnings\transcripts ^
+# First migration run: score a deliberate recent slice. This requires the
+# Terminal index dates extension and persists the forward cursor.
+python run_worker.py --terminal-auto --bootstrap-since 2026-07-24 ^
   --base-url http://localhost:1234/v1 --model qwen3-14b
 
-# score whatever is un-scored (bounded by the daily cap of 8):
-python run_worker.py --auto --transcripts-dir D:\earnings\transcripts
+# Every scheduled run after that: discover and score only new/corrected calls.
+python run_worker.py --terminal-auto ^
+  --base-url http://localhost:1234/v1 --model qwen3-14b
 
-# use the upcoming-earnings priority queue (data/earnings_calls/queue.json):
-python run_worker.py --queue --limit 8 --transcripts-dir D:\earnings\transcripts
+# Zero-touch fallback when the local endpoint is asleep or the queue spikes.
+python run_worker.py --terminal-auto ^
+  --provider-order openai_compat,deepseek,kimi,anthropic
 
-# local dry test — score but do NOT publish to R2:
-python run_worker.py --tickers NVDA --transcripts-dir D:\earnings\transcripts --no-publish
+# Test against a local Terminal archive and keep all writes off R2.
+python run_worker.py --terminal-auto --terminal-tx-root D:\terminal\public\data\tx ^
+  --bootstrap-since 2026-07-24 --no-publish
 ```
 
-The worker always forces the **local** endpoint first on the PC lane; it never
-calls a cloud model from the PC.
+With no provider override the CLI remains local-only. Cloud models are called
+only when explicitly added to `--provider-order` or `EARNINGS_PROVIDER_ORDER`
+and their API key is present.
 
-### Transcript file format
+### Legacy flat transcript mode
 
 `D:\earnings\transcripts\NVDA_2026Q1.json`:
 
@@ -153,28 +167,27 @@ calls a cloud model from the PC.
 }
 ```
 
-The transcript-vendor decision (Finnhub paid / FMP / EDGAR-only) is deferred to
-W6. Until a vendor is wired, you can drop 8-K Item-2.02 press-release text into
-these files (set the same schema) and the worker scores it identically; the Mac's
-cold-start lane can also pull 8-K text automatically
-(`python -m engine.earnings_qual --source 8k`).
+The flat-file `--tickers`/`--queue`/`--auto` modes remain for diagnostics and 8-K
+cold starts. They are no longer the production intake path; Terminal is the
+canonical transcript source and its stable body id/hash is the idempotency key.
 
 ---
 
 ## Scheduling (Task Scheduler)
 
-Run once a day (e.g. 18:30, after the US close, before the Mac's nightly). Create
-a Basic Task → Daily → *Start a program*:
+Run after the close and again later in the evening during earnings season. Each
+run is idempotent, and the second run drains burst overflow or retries a sleeping
+local endpoint. Create a Basic Task → Daily → *Start a program*:
 
 - **Program:** `C:\macro-dashboard\tools\earnings_worker\.venv\Scripts\python.exe`
-- **Arguments:** `run_worker.py --queue --limit 8 --transcripts-dir D:\earnings\transcripts`
+- **Arguments:** `run_worker.py --terminal-auto --limit 64`
 - **Start in:** `C:\macro-dashboard\tools\earnings_worker`
 
 Equivalent `schtasks` one-liner (PowerShell, adjust paths):
 
 ```powershell
 schtasks /Create /TN "EarningsQualWorker" /SC DAILY /ST 18:30 ^
-  /TR "C:\macro-dashboard\tools\earnings_worker\.venv\Scripts\python.exe C:\macro-dashboard\tools\earnings_worker\run_worker.py --queue --limit 8 --transcripts-dir D:\earnings\transcripts"
+  /TR "C:\macro-dashboard\tools\earnings_worker\.venv\Scripts\python.exe C:\macro-dashboard\tools\earnings_worker\run_worker.py --terminal-auto --limit 64"
 ```
 
 Make sure the task **runs whether the user is logged on or not** only if the R2
@@ -192,7 +205,10 @@ account so it inherits your user env vars. The task must **never** run git.
   truncated (raise the server `--ctx-size`) or the model is too small — use the
   14B, not a 4B.
 - **Publish no-ops silently** — the R2 env quad is missing. Set the 4 variables.
-- **Duplicate work** — the store dedups on `source_sha256`; re-running is safe and
-  cheap (already-scored text is skipped).
-- **Nothing scored** — no transcript matched your `--tickers`, or everything is
-  already scored. Check `--transcripts-dir` and the file `ticker` fields.
+- **Duplicate work** — Terminal's stable record id plus canonical body hash make
+  re-running safe; a corrected body automatically re-enters the pending queue.
+- **Nothing scored** — the first default Terminal run intentionally seeds a
+  forward-only cursor. Use `--bootstrap-since YYYY-MM-DD` on a new state file for
+  an explicit bounded catch-up; otherwise an empty queue means it is current.
+- **Publish failed once** — leave the local store intact and rerun. Even an idle
+  invocation retries R2 publication.

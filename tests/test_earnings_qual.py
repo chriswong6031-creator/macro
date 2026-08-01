@@ -78,6 +78,26 @@ def test_score_text_schema(monkeypatch):
     assert len(row["source_sha256"]) == 64   # sha256 hex
 
 
+def test_score_text_persists_source_and_prompt_lineage(monkeypatch):
+    obj = dict(_GOOD_JSON)
+    obj["summary"] = "Revenue grew while management maintained guidance."
+    _mock_reply(monkeypatch, obj)
+    row = eq.score_text(
+        "Some earnings call text.",
+        "AAPL",
+        "Q3",
+        2026,
+        call_date="2026-07-30",
+        source_record_id="defeatbeta:AAPL:2026Q3",
+        source_updated_at="2026-08-01T00:00:00Z",
+    )
+    assert row["source_record_id"] == "defeatbeta:AAPL:2026Q3"
+    assert row["source_updated_at"] == "2026-08-01T00:00:00Z"
+    assert row["prompt_version"]
+    assert row["analysis_schema_version"]
+    assert row["summary"].startswith("Revenue grew")
+
+
 def test_score_text_clips_out_of_range(monkeypatch):
     _mock_reply(monkeypatch, {
         "sentiment": 5.0,        # out of [-1,1]
@@ -245,6 +265,138 @@ def test_upsert_replaces_same_key(tmp_path):
     # same (ticker,quarter,year,source) → one row, the newer sentiment kept
     assert len(df) == 1
     assert float(df.iloc[0]["sentiment"]) == pytest.approx(0.9)
+
+
+def test_upsert_uses_source_record_id_before_legacy_quarter_key(tmp_path):
+    base = {
+        "ticker": "CLS", "quarter": "Q2", "year": 2026,
+        "call_date": "2026-07-01", "source": "transcript", "model": "qwen",
+        "sentiment": 0.1, "performance": 5.0, "confidence": 0.5,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "scored_at": "2026-07-01T00:00:00Z",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    first = dict(base, source_record_id="source:CLS:first", source_sha256="sha-first")
+    second = dict(base, source_record_id="source:CLS:second", source_sha256="sha-second")
+    assert eq.upsert_scores([first, second], root=tmp_path) == 2
+    df = eq.load_scores(tmp_path)
+    assert len(df) == 2
+    assert set(df["source_record_id"]) == {"source:CLS:first", "source:CLS:second"}
+
+
+def test_completion_ledger_is_record_scoped_not_global_text_scoped(tmp_path):
+    base = {
+        "quarter": "Q2", "year": 2026, "call_date": "2026-07-01",
+        "source": "transcript", "model": "qwen", "sentiment": 0.1,
+        "performance": 5.0, "confidence": 0.5, "tone_word": "steady",
+        "positive_highlights": [], "negative_highlights": [], "tags": [],
+        "source_sha256": "identical-rendered-text",
+        "scored_at": "2026-07-01T00:00:00Z", "is_context_only": True,
+        "degraded_reason": None,
+    }
+    eq.upsert_scores([
+        dict(base, ticker="AAA", source_record_id="source:AAA:2026Q2"),
+        dict(base, ticker="BBB", source_record_id="source:BBB:2026Q2"),
+    ], root=tmp_path)
+    assert eq._completed_record_shas(tmp_path) == {
+        "source:AAA:2026Q2": "identical-rendered-text",
+        "source:BBB:2026Q2": "identical-rendered-text",
+    }
+
+
+def test_degraded_sha_is_not_marked_seen(tmp_path):
+    row = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": None,
+        "sentiment": None, "performance": None, "confidence": None,
+        "tone_word": None, "positive_highlights": [], "negative_highlights": [],
+        "tags": [], "source_sha256": "retry-me", "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3", "is_context_only": True,
+        "degraded_reason": "openai_compat_error",
+    }
+    eq.upsert_scores([row], root=tmp_path)
+    assert "retry-me" not in eq._seen_shas(tmp_path)
+
+
+def test_degraded_revision_cannot_replace_healthy_source_record(tmp_path):
+    healthy = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "source_sha256": "old-good",
+        "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    failed_revision = dict(
+        healthy,
+        source_sha256="new-failed",
+        sentiment=None,
+        performance=None,
+        confidence=None,
+        tone_word=None,
+        degraded_reason="openai_compat_error",
+    )
+    eq.upsert_scores([healthy], root=tmp_path)
+    eq.upsert_scores([failed_revision], root=tmp_path)
+    stored = eq.load_scores(tmp_path)
+    assert len(stored) == 1
+    assert stored.iloc[0]["source_sha256"] == "old-good"
+    assert float(stored.iloc[0]["performance"]) == pytest.approx(7.0)
+
+
+def test_multiple_producer_upserts_survive_stale_transport_manifest(tmp_path):
+    from scripts.publish_earnings_r2 import _synth_manifest
+
+    first = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "source_sha256": "first",
+        "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    second = dict(
+        first,
+        ticker="MSFT",
+        source_sha256="second",
+        source_record_id="defeatbeta:MSFT:2026Q3",
+        scored_at="2026-08-01T00:01:00Z",
+    )
+    eq.upsert_scores([first], root=tmp_path)
+    scores_path = eq.store_path(tmp_path)
+    manifest_path = scores_path.parent / "manifest.json"
+    manifest_path.write_text(json.dumps(_synth_manifest(scores_path)), encoding="utf-8")
+
+    # The next producer write reads the mutable parquet directly, then removes
+    # the now-stale commit marker until the publisher regenerates it.
+    eq.upsert_scores([second], root=tmp_path)
+    assert not manifest_path.exists()
+    stored = eq.load_scores(tmp_path)
+    assert set(stored["ticker"]) == {"AAPL", "MSFT"}
+
+
+def test_parseable_but_incomplete_json_is_retryable(monkeypatch):
+    monkeypatch.setattr(
+        eq,
+        "_dispatch",
+        lambda *a, **k: ('{"sentiment": 0.2}', None, "test-model"),
+    )
+    row = eq.score_text("Revenue rose.", "AAPL", "Q3", 2026)
+    assert row["degraded_reason"] == "incomplete_schema"
+    assert row["source_sha256"]
+
+
+def test_bounded_transcript_keeps_head_and_qa_tail():
+    text = "HEAD-FACT\n" + ("middle " * 100) + "\nQ&A-TAIL-FACT"
+    bounded = eq._bounded_transcript_text(text, max_chars=120, tail_chars=30)
+    assert bounded.startswith("HEAD-FACT")
+    assert bounded.endswith("Q&A-TAIL-FACT")
+    assert "middle of transcript omitted" in bounded
+    assert len(bounded) <= 120
 
 
 # --------------------------------------------------------------------------- #
