@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": [
     "contract_id", "schema_version", "source_snapshot_id", "nct_id", "source_id",
-    "source_record_ref", "run_ref", "page_receipt_ref", "source_uri", "raw_object_key", "exact_response_sha256",
+    "source_record_ref", "run_ref", "page_receipt_ref", "source_page_study_index", "source_uri", "raw_object_key", "exact_response_sha256",
     "canonical_content_sha256", "hash_scope", "object_key_policy", "array_order_policy",
     "canonicalizer_version", "source_schema_version", "license_class", "rights_note",
     "canonical_study", "source_dataset_timestamp_raw", "source_last_update_posted_at",
@@ -22,6 +22,7 @@
     "source_record_ref": {"type": "string", "pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"},
     "run_ref": {"type": "string", "pattern": "^ctgov_run_[a-zA-Z0-9_-]+$"},
     "page_receipt_ref": {"type": "string", "pattern": "^ctgov_receipt_[a-zA-Z0-9_-]+$"},
+    "source_page_study_index": {"type": "integer", "minimum": 0},
     "source_uri": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}$"},
     "raw_object_key": {"type": "string", "pattern": "^biocatalyst/raw/clinicaltrials/v2/NCT[0-9]{8}/[a-f0-9]{64}\\.json$"},
     "exact_response_sha256": {"$ref": "#/$defs/sha256"},

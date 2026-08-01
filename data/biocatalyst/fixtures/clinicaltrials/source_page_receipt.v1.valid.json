@@ -20,12 +20,12 @@
     "status_code": 200,
     "headers": {
       "content-type": "application/json",
-      "content-length": "512",
+      "content-length": "647",
       "date": "Sat, 01 Aug 2026 15:00:04 GMT"
     },
-    "exact_response_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    "raw_response_object_key": "biocatalyst/raw/clinicaltrials/v2/pages/2026/08/ctgov_run_fixture_20260801T150000Z/0/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.json",
-    "byte_count": 512,
+    "exact_response_sha256": "f779d7770f6bd832940de3315626a05b3aa6b0a1f02448a58ed450153b02c76a",
+    "raw_response_object_key": "biocatalyst/raw/clinicaltrials/v2/pages/2026/08/ctgov_run_fixture_20260801T150000Z/0/f779d7770f6bd832940de3315626a05b3aa6b0a1f02448a58ed450153b02c76a.json",
+    "byte_count": 647,
     "study_count": 1,
     "next_page_token_sha256": null,
     "received_at": "2026-08-01T15:00:04Z"

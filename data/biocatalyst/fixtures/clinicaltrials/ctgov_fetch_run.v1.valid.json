@@ -19,7 +19,10 @@
   "source_api_version": "2.0.5",
   "receipt_refs": ["ctgov_receipt_fixture_20260801T150000Z_0"],
   "terminal_receipt_ref": "ctgov_receipt_fixture_20260801T150000Z_0",
-  "receipt_payloads_sha256": "233f2cf0fd98979421d88d3e324649f5ab24ac74b14876dc36a343947f70c550",
+  "receipt_payloads_sha256": "35bd1ac72051d9a54137cee1ce121f2c9325db12936384ff49694e5789f8c8e6",
+  "published_source_record_refs": [
+    "src:ctgov:NCT00000001:sha256:287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e"
+  ],
   "counts": {
     "configured": 1,
     "pages_attempted": 1,
@@ -27,7 +30,6 @@
     "studies_fetched": 1,
     "studies_unique": 1,
     "studies_duplicate": 0,
-    "studies_changed": 1,
     "studies_published": 1,
     "errors": 0
   },

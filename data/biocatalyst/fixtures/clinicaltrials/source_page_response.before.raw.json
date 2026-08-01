@@ -1,0 +1,29 @@
+{
+  "studies": [
+    {
+      "protocolSection": {
+        "identificationModule": {
+          "nctId": "NCT00000001",
+          "briefTitle": "Synthetic Phase 2 Study"
+        },
+        "statusModule": {
+          "overallStatus": "RECRUITING",
+          "primaryCompletionDateStruct": {
+            "date": "2026-09",
+            "type": "ESTIMATED"
+          },
+          "lastUpdatePostDateStruct": {
+            "date": "2026-07-31",
+            "type": "ACTUAL"
+          }
+        },
+        "designModule": {
+          "enrollmentInfo": {
+            "count": 120,
+            "type": "ESTIMATED"
+          }
+        }
+      }
+    }
+  ]
+}

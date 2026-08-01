@@ -61,7 +61,7 @@ Atomic read projection:
 
 Full raw objects, tokens, private object keys, absolute filesystem paths, and credentials never enter the product response. Repository data is limited to bounded synthetic or redacted fixtures.
 
-Public read snapshots carry only opaque source-snapshot IDs and content-addressed source-record IDs; they never carry private storage paths. Each projected fact has an explicit `observed`, `source_null`, `source_missing`, `not_applicable`, `parser_degraded`, or `license_restricted` state; an absent source module can never become an empty list. The projection hash binds those fact states and values to the declared source-snapshot reference and content hash. Before publication, the relational validator must also bind the source snapshot to a reconciled complete run and its exact page receipt, then bind every projected fact to its registered ClinicalTrials.gov path and canonical-source value; a degraded or restricted state cannot hide a present source value.
+Public read snapshots carry only opaque source-snapshot IDs and content-addressed source-record IDs; they never carry private storage paths. Each projected fact has an explicit `observed`, `source_null`, `source_missing`, `not_applicable`, `parser_degraded`, or `license_restricted` state; an absent source module can never become an empty list. The projection hash binds those fact states and values to the declared source-snapshot reference and content hash. Before publication, the relational validator loads the private archived page bytes, verifies their byte count and SHA-256 against the exact page receipt, strictly parses unambiguous JSON, checks the raw study count and pagination-token hash, and proves that the declared study index exactly equals the canonical source snapshot. It then requires that source-record ID in the complete run's publication manifest and binds every projected fact to its registered ClinicalTrials.gov path and canonical-source value; a degraded or restricted state cannot hide a present source value.
 
 ## 4. Source and version semantics
 
@@ -104,13 +104,15 @@ Each poll is a transaction with an immutable run receipt.
 5. Re-read `/version`; quarantine the run if the source dataset changed mid-run.
 6. Quarantine repeated tokens, page-cap exhaustion, divergent duplicate NCT bodies, upstream timestamp regression, or conflicting API timestamps.
 7. Archive raw bytes and per-study content objects.
-8. Build parser-versioned trial projections and prospective observations, binding each source snapshot and observation to the complete run, exact page receipt, query universe, response hash, source timestamp, and transaction chronology.
+8. Build parser-versioned trial projections and prospective observations, binding each source snapshot and observation to the complete run, exact archived page bytes, verified study index, page receipt, query universe, response hash, source timestamp, and transaction chronology.
 9. Produce exact add/remove/replace path diffs against the last successfully published source state, then recompute the operations from both referenced snapshots, bind both source snapshots to one NCT, bind the observed interval to the two referenced observation receipts, and reject any mismatch before publication.
-10. Reconcile page, record, duplicate, and configured-universe counts.
+10. Call `validate_ctgov_publication_bundle` with the run, ordered receipts, exact raw bytes keyed by every receipt ID, and the complete source-snapshot set. It derives fetched/unique/duplicate counts and the publication manifest from the raw studies, rejects divergent bodies for one NCT, and requires exactly one snapshot for every configured NCT.
 11. Publish the current projection by temp-write, fsync, and rename only after raw archive and receipts succeed.
 12. Advance the successful watermark only after the whole run is complete.
 
 A partial, failed, or quarantined run cannot advance the watermark or replace a good current projection. Missing from an incremental overlap query is never deletion evidence. Missing from a full reconciliation may be recorded as `not_observed_in_reconcile`, not “trial deleted.”
+
+The standalone snapshot, observation, projection, and diff validators deliberately re-verify the complete raw-page map and are suitable for the bounded B0a canary. Before B1 expands beyond that allowlist, its bulk publisher must add a validated-publication context or batch consumer that reuses the bundle's parsed pages; looping standalone validators across a full universe is prohibited.
 
 ## 6. Health and SLO accounting
 
@@ -124,7 +126,7 @@ The health projection must expose, without secrets:
 - source attribution and the source processing timestamp exposed to consumers;
 - successful watermark and overlap window;
 - pages attempted/succeeded;
-- studies fetched, unique, duplicated, changed, and published;
+- studies fetched, unique, duplicated, and published, plus change counts derived only from validated observation/diff artifacts;
 - run completeness state;
 - age and two-hour freshness budget;
 - consecutive misses;
@@ -132,7 +134,7 @@ The health projection must expose, without secrets:
 - parser/API schema versions; and
 - bounded error codes.
 
-An opportunity is one configured poll window. Success requires terminal pagination, internally consistent upstream timestamps, reconciled counts, durable raw receipts, and an atomic projection publish. The run document is not sufficient evidence on its own: the worker must call the run-to-receipts relational validator, which verifies the content-bound query manifest, page cap, ordered receipt IDs, receipt-payload hash, non-repeating pagination-token chain, terminal null token, source version, response and transaction times, status codes, and study-count sum. “Process exited zero” alone is not a successful opportunity.
+An opportunity is one configured poll window. Success requires terminal pagination, internally consistent upstream timestamps, reconciled counts, durable raw receipts, full configured-universe publication coverage, and an atomic projection publish. The run document is not sufficient evidence on its own: the worker must call the run-to-receipts relational validator, then `validate_ctgov_publication_bundle`. Together they verify the content-bound query manifest, page cap, ordered receipt IDs, receipt-payload hash, non-repeating pagination-token chain, terminal raw token, source version, every response body and transaction time, raw-derived counts, divergent duplicates, indexed study content, and exact one-to-one publication-manifest coverage. “Process exited zero” alone is not a successful opportunity.
 
 Source states:
 
@@ -158,7 +160,7 @@ The API process gets read access to the public projection only. It must not rece
 
 ## 8. Replay and correction
 
-Replay reads immutable receipts and content objects and writes to an isolated staging projection. It must reproduce source snapshots, observations, and diffs byte-for-byte for the pinned parser version before promotion. Projection publication, exact-diff publication, complete-run promotion, and evidence-claim publication must use their cross-document validators; standalone schema validation does not prove referential integrity.
+Replay reads immutable receipts, exact archived page bytes, and content objects and writes to an isolated staging projection. It must reproduce source snapshots, observations, and diffs byte-for-byte for the pinned parser version before promotion. Projection publication, exact-diff publication, complete-run promotion, and evidence-claim publication must use their cross-document validators with the raw bytes supplied; standalone schema validation does not prove referential integrity.
 
 A parser upgrade creates a new parsed projection version. It does not create a new source snapshot, source observation, or registry-change alert. Corrections append a superseding transaction record and close the prior transaction interval; they never rewrite the raw source object.
 

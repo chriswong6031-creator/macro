@@ -8,7 +8,7 @@
     "contract_id", "schema_version", "run_id", "source_id", "mode",
     "query_manifest", "started_at", "finished_at", "source_dataset_timestamp_before_raw",
     "source_dataset_timestamp_after_raw", "source_api_version", "receipt_refs",
-    "terminal_receipt_ref", "receipt_payloads_sha256", "counts",
+    "terminal_receipt_ref", "receipt_payloads_sha256", "published_source_record_refs", "counts",
     "run_state", "completeness_state", "watermark_before", "watermark_after",
     "parser_version", "code_version", "error_codes", "transaction_from", "transaction_to"
   ],
@@ -39,10 +39,15 @@
     "receipt_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^ctgov_receipt_[a-zA-Z0-9_-]+$"}},
     "terminal_receipt_ref": {"type": ["string", "null"], "pattern": "^ctgov_receipt_[a-zA-Z0-9_-]+$"},
     "receipt_payloads_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+    "published_source_record_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"}
+    },
     "counts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["configured", "pages_attempted", "pages_succeeded", "studies_fetched", "studies_unique", "studies_duplicate", "studies_changed", "studies_published", "errors"],
+      "required": ["configured", "pages_attempted", "pages_succeeded", "studies_fetched", "studies_unique", "studies_duplicate", "studies_published", "errors"],
       "properties": {
         "configured": {"type": "integer", "minimum": 0},
         "pages_attempted": {"type": "integer", "minimum": 0},
@@ -50,7 +55,6 @@
         "studies_fetched": {"type": "integer", "minimum": 0},
         "studies_unique": {"type": "integer", "minimum": 0},
         "studies_duplicate": {"type": "integer", "minimum": 0},
-        "studies_changed": {"type": "integer", "minimum": 0},
         "studies_published": {"type": "integer", "minimum": 0},
         "errors": {"type": "integer", "minimum": 0}
       }

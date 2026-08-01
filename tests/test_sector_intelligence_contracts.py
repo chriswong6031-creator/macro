@@ -19,9 +19,12 @@ from engine.sector_intelligence.contracts import (
     exact_json_diff,
     receipt_payloads_sha256,
     validate_contract,
+    validate_ctgov_publication_bundle,
     validate_ctgov_fetch_run_against_receipts,
     validate_evidence_claim_against_source_records,
+    validate_source_page_receipt_against_raw_response,
     validate_trial_observation_against_source_evidence,
+    validate_trial_source_snapshot_against_fetch_evidence,
     validate_trial_diff_against_snapshots,
     validate_trial_projection_against_source,
 )
@@ -46,6 +49,43 @@ def _load_trial_run_evidence() -> tuple[dict, list[dict], dict, list[dict]]:
     )
 
 
+def _load_trial_raw_page(*, before: bool = False) -> bytes:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    name = (
+        "source_page_response.before.raw.json"
+        if before
+        else "source_page_response.after.raw.json"
+    )
+    return (fixture_dir / name).read_bytes()
+
+
+def _rebind_receipt_to_raw(receipt: dict, raw_page_body: bytes) -> str:
+    response = receipt["response"]
+    response_hash = hashlib.sha256(raw_page_body).hexdigest()
+    object_key_prefix = response["raw_response_object_key"].rsplit("/", 1)[0]
+    response["exact_response_sha256"] = response_hash
+    response["raw_response_object_key"] = f"{object_key_prefix}/{response_hash}.json"
+    response["byte_count"] = len(raw_page_body)
+    response["headers"]["content-length"] = str(len(raw_page_body))
+    return response_hash
+
+
+def _raw_page_map(
+    receipts: list[dict],
+    *,
+    before: bool = False,
+    raw_page_body: bytes | None = None,
+) -> dict[str, bytes]:
+    assert len(receipts) == 1
+    return {
+        receipts[0]["receipt_id"]: (
+            raw_page_body
+            if raw_page_body is not None
+            else _load_trial_raw_page(before=before)
+        )
+    }
+
+
 def _validate_fixture_projection(projection: dict, source: dict) -> None:
     _, _, run, receipts = _load_trial_run_evidence()
     validate_trial_projection_against_source(
@@ -53,6 +93,7 @@ def _validate_fixture_projection(projection: dict, source: dict) -> None:
         source,
         run=run,
         receipts=receipts,
+        raw_page_bodies_by_receipt=_raw_page_map(receipts),
         repo_root=ROOT,
     )
 
@@ -516,7 +557,12 @@ def test_trial_observation_is_bound_to_run_receipt_and_source_snapshot() -> None
     _, _, run, receipts = _load_trial_run_evidence()
 
     validate_trial_observation_against_source_evidence(
-        observation, source, run, receipts, repo_root=ROOT
+        observation,
+        source,
+        run,
+        receipts,
+        raw_page_bodies_by_receipt=_raw_page_map(receipts),
+        repo_root=ROOT,
     )
     observation["run_ref"] = "ctgov_run_fabricated"
     observation["page_receipt_ref"] = "ctgov_receipt_fabricated_0"
@@ -525,7 +571,12 @@ def test_trial_observation_is_bound_to_run_receipt_and_source_snapshot() -> None
 
     with pytest.raises(ContractValidationError) as caught:
         validate_trial_observation_against_source_evidence(
-            observation, source, run, receipts, repo_root=ROOT
+            observation,
+            source,
+            run,
+            receipts,
+            raw_page_bodies_by_receipt=_raw_page_map(receipts),
+            repo_root=ROOT,
         )
 
     message = str(caught.value)
@@ -544,10 +595,17 @@ def test_observation_and_projection_reject_incomplete_fetch_evidence() -> None:
     run["run_state"] = "partial"
     run["completeness_state"] = "page_incomplete"
     run["watermark_after"] = run["watermark_before"]
+    run["counts"]["studies_published"] = 0
+    run["published_source_record_refs"] = []
 
     with pytest.raises(ContractValidationError, match="source_snapshot.complete_run"):
         validate_trial_observation_against_source_evidence(
-            observation, source, run, receipts, repo_root=ROOT
+            observation,
+            source,
+            run,
+            receipts,
+            raw_page_bodies_by_receipt=_raw_page_map(receipts),
+            repo_root=ROOT,
         )
     with pytest.raises(ContractValidationError, match="source_snapshot.complete_run"):
         validate_trial_projection_against_source(
@@ -555,6 +613,7 @@ def test_observation_and_projection_reject_incomplete_fetch_evidence() -> None:
             source,
             run=run,
             receipts=receipts,
+            raw_page_bodies_by_receipt=_raw_page_map(receipts),
             repo_root=ROOT,
         )
 
@@ -597,8 +656,12 @@ def test_trial_diff_is_recomputed_against_source_snapshots() -> None:
         after_observation,
         before_run=before_run,
         before_receipts=before_receipts,
+        before_raw_page_bodies_by_receipt=_raw_page_map(
+            before_receipts, before=True
+        ),
         after_run=after_run,
         after_receipts=after_receipts,
+        after_raw_page_bodies_by_receipt=_raw_page_map(after_receipts),
         repo_root=ROOT,
     )
 
@@ -616,8 +679,12 @@ def test_trial_diff_is_recomputed_against_source_snapshots() -> None:
             after_observation,
             before_run=before_run,
             before_receipts=before_receipts,
+            before_raw_page_bodies_by_receipt=_raw_page_map(
+                before_receipts, before=True
+            ),
             after_run=after_run,
             after_receipts=after_receipts,
+            after_raw_page_bodies_by_receipt=_raw_page_map(after_receipts),
             repo_root=ROOT,
         )
 
@@ -654,8 +721,12 @@ def test_trial_diff_timing_is_bound_to_observation_records() -> None:
             after_observation,
             before_run=before_run,
             before_receipts=before_receipts,
+            before_raw_page_bodies_by_receipt=_raw_page_map(
+                before_receipts, before=True
+            ),
             after_run=after_run,
             after_receipts=after_receipts,
+            after_raw_page_bodies_by_receipt=_raw_page_map(after_receipts),
             repo_root=ROOT,
         )
 
@@ -694,6 +765,14 @@ def test_cross_trial_diff_is_rejected() -> None:
     after_query_hash = ctgov_query_manifest_sha256(after_run["query_manifest"])
     after_run["query_manifest"]["query_sha256"] = after_query_hash
     after_receipts[0]["request"]["query_sha256"] = after_query_hash
+    after_raw_page_body = canonical_json_bytes(
+        {"studies": [after["canonical_study"]]}
+    )
+    after_response_hash = _rebind_receipt_to_raw(
+        after_receipts[0], after_raw_page_body
+    )
+    after["exact_response_sha256"] = after_response_hash
+    after_run["published_source_record_refs"] = [after["source_record_ref"]]
     after_run["receipt_payloads_sha256"] = receipt_payloads_sha256(after_receipts)
     diff["after_source_snapshot_ref"] = after["source_snapshot_id"]
     diff["after_content_sha256"] = after_hash
@@ -717,8 +796,14 @@ def test_cross_trial_diff_is_rejected() -> None:
             after_observation,
             before_run=before_run,
             before_receipts=before_receipts,
+            before_raw_page_bodies_by_receipt=_raw_page_map(
+                before_receipts, before=True
+            ),
             after_run=after_run,
             after_receipts=after_receipts,
+            after_raw_page_bodies_by_receipt=_raw_page_map(
+                after_receipts, raw_page_body=after_raw_page_body
+            ),
             repo_root=ROOT,
         )
 
@@ -761,10 +846,20 @@ def test_zero_evidence_fetch_run_cannot_be_complete() -> None:
             "pages_succeeded": 0,
             "studies_fetched": 0,
             "studies_unique": 0,
-            "studies_changed": 0,
             "studies_published": 0,
         }
     )
+
+    with pytest.raises(ContractValidationError, match="fetch_run.complete"):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_complete_fetch_run_requires_full_publication_manifest() -> None:
+    payload = _load(
+        BIOCATALYST_FIXTURE_DIR / "clinicaltrials" / "ctgov_fetch_run.v1.valid.json"
+    )
+    payload["counts"]["studies_published"] = 0
+    payload["published_source_record_refs"] = []
 
     with pytest.raises(ContractValidationError, match="fetch_run.complete"):
         validate_contract(payload, repo_root=ROOT)
@@ -883,6 +978,274 @@ def test_receipt_binds_private_raw_response_to_exact_hash() -> None:
 
     with pytest.raises(ContractValidationError, match="receipt.object_key"):
         validate_contract(payload, repo_root=ROOT)
+
+
+def test_receipt_is_verified_against_exact_archived_page_bytes() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    receipt = _load(fixture_dir / "source_page_receipt.v1.valid.json")
+    raw_page_body = _load_trial_raw_page()
+
+    parsed = validate_source_page_receipt_against_raw_response(
+        receipt, raw_page_body, repo_root=ROOT
+    )
+    assert len(parsed["studies"]) == 1
+
+    with pytest.raises(ContractValidationError, match="receipt.raw_response_hash"):
+        validate_source_page_receipt_against_raw_response(
+            receipt, raw_page_body + b" ", repo_root=ROOT
+        )
+
+
+def test_receipt_raw_study_count_and_pagination_token_are_verified() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    receipt = _load(fixture_dir / "source_page_receipt.v1.valid.json")
+    raw_page_body = _load_trial_raw_page()
+    receipt["response"]["study_count"] = 2
+
+    with pytest.raises(
+        ContractValidationError, match="receipt.raw_response_study_count"
+    ):
+        validate_source_page_receipt_against_raw_response(
+            receipt, raw_page_body, repo_root=ROOT
+        )
+
+    receipt = _load(fixture_dir / "source_page_receipt.v1.valid.json")
+    receipt["response"]["next_page_token_sha256"] = "f" * 64
+    with pytest.raises(
+        ContractValidationError, match="receipt.raw_pagination_token"
+    ):
+        validate_source_page_receipt_against_raw_response(
+            receipt, raw_page_body, repo_root=ROOT
+        )
+
+
+def test_source_snapshot_must_be_extracted_from_archived_page() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    source = _load(fixture_dir / "trial_source_snapshot.after.v1.valid.json")
+    _, _, run, receipts = _load_trial_run_evidence()
+    source["canonical_study"]["protocolSection"]["identificationModule"][
+        "briefTitle"
+    ] = "Fabricated but schema-valid title"
+    source_hash = canonical_json_sha256(source["canonical_study"])
+    source["canonical_content_sha256"] = source_hash
+    source["source_record_ref"] = f"src:ctgov:NCT00000001:sha256:{source_hash}"
+    source["raw_object_key"] = (
+        f"biocatalyst/raw/clinicaltrials/v2/NCT00000001/{source_hash}.json"
+    )
+    run["published_source_record_refs"] = [source["source_record_ref"]]
+
+    validate_contract(source, repo_root=ROOT)
+    validate_contract(run, repo_root=ROOT)
+    with pytest.raises(
+        ContractValidationError, match="raw_run.derived_manifest"
+    ):
+        validate_trial_source_snapshot_against_fetch_evidence(
+            source,
+            run,
+            receipts,
+            raw_page_bodies_by_receipt=_raw_page_map(receipts),
+            repo_root=ROOT,
+        )
+
+
+def test_source_snapshot_study_index_must_resolve_in_archived_page() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    source = _load(fixture_dir / "trial_source_snapshot.after.v1.valid.json")
+    _, _, run, receipts = _load_trial_run_evidence()
+    source["source_page_study_index"] = 1
+
+    with pytest.raises(
+        ContractValidationError, match="source_snapshot.extraction_binding"
+    ):
+        validate_trial_source_snapshot_against_fetch_evidence(
+            source,
+            run,
+            receipts,
+            raw_page_bodies_by_receipt=_raw_page_map(receipts),
+            repo_root=ROOT,
+        )
+
+
+def test_publication_bundle_proves_all_raw_pages_and_snapshots() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    source = _load(fixture_dir / "trial_source_snapshot.after.v1.valid.json")
+    _, _, run, receipts = _load_trial_run_evidence()
+    receipt_id = receipts[0]["receipt_id"]
+
+    validate_ctgov_publication_bundle(
+        run,
+        receipts,
+        {receipt_id: _load_trial_raw_page()},
+        [source],
+        repo_root=ROOT,
+    )
+
+    with pytest.raises(
+        ContractValidationError, match="raw_run.raw_page_coverage"
+    ):
+        validate_ctgov_publication_bundle(
+            run,
+            receipts,
+            {},
+            [source],
+            repo_root=ROOT,
+        )
+
+
+def test_publication_bundle_verifies_every_page_in_multi_page_run() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    source = _load(fixture_dir / "trial_source_snapshot.after.v1.valid.json")
+    _, _, run, base_receipts = _load_trial_run_evidence()
+    first = base_receipts[0]
+    second = json.loads(json.dumps(first))
+    next_token = "fixture-next-page"
+    next_token_hash = hashlib.sha256(next_token.encode("utf-8")).hexdigest()
+    first_page_body = canonical_json_bytes(
+        {"studies": [source["canonical_study"]], "nextPageToken": next_token}
+    )
+    first_hash = _rebind_receipt_to_raw(first, first_page_body)
+    first["response"]["next_page_token_sha256"] = next_token_hash
+
+    second["receipt_id"] = "ctgov_receipt_fixture_20260801T150000Z_1"
+    second["page_ordinal"] = 1
+    second["receipt_object_key"] = (
+        "biocatalyst/receipts/clinicaltrials/2026/08/"
+        "ctgov_run_fixture_20260801T150000Z/1.json"
+    )
+    second["request"]["page_token_sha256"] = next_token_hash
+    second["response"]["raw_response_object_key"] = second["response"][
+        "raw_response_object_key"
+    ].replace("/0/", "/1/")
+    second_page_body = canonical_json_bytes({"studies": []})
+    _rebind_receipt_to_raw(second, second_page_body)
+    second["response"]["study_count"] = 0
+    second["response"]["next_page_token_sha256"] = None
+
+    receipts = [first, second]
+    run["receipt_refs"] = [receipt["receipt_id"] for receipt in receipts]
+    run["terminal_receipt_ref"] = second["receipt_id"]
+    run["receipt_payloads_sha256"] = receipt_payloads_sha256(receipts)
+    run["counts"]["pages_attempted"] = 2
+    run["counts"]["pages_succeeded"] = 2
+    source["exact_response_sha256"] = first_hash
+    raw_pages = {
+        first["receipt_id"]: first_page_body,
+        second["receipt_id"]: second_page_body,
+    }
+
+    validate_ctgov_publication_bundle(
+        run, receipts, raw_pages, [source], repo_root=ROOT
+    )
+    with pytest.raises(ContractValidationError, match="raw_run.raw_page_coverage"):
+        validate_ctgov_publication_bundle(
+            run,
+            receipts,
+            {first["receipt_id"]: first_page_body},
+            [source],
+            repo_root=ROOT,
+        )
+
+
+def test_publication_bundle_rejects_divergent_duplicate_raw_study() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    source = _load(fixture_dir / "trial_source_snapshot.after.v1.valid.json")
+    _, _, run, receipts = _load_trial_run_evidence()
+    raw_page = json.loads(_load_trial_raw_page().decode("utf-8"))
+    divergent = json.loads(json.dumps(raw_page["studies"][0]))
+    divergent["protocolSection"]["identificationModule"]["briefTitle"] = (
+        "Divergent duplicate"
+    )
+    raw_page["studies"].append(divergent)
+    raw_page_body = canonical_json_bytes(raw_page)
+    response_hash = _rebind_receipt_to_raw(receipts[0], raw_page_body)
+    receipts[0]["response"]["study_count"] = 2
+    source["exact_response_sha256"] = response_hash
+    run["counts"].update(
+        {"studies_fetched": 2, "studies_unique": 1, "studies_duplicate": 1}
+    )
+    run["receipt_payloads_sha256"] = receipt_payloads_sha256(receipts)
+
+    with pytest.raises(
+        ContractValidationError, match="raw_run.divergent_duplicate"
+    ):
+        validate_trial_source_snapshot_against_fetch_evidence(
+            source,
+            run,
+            receipts,
+            raw_page_bodies_by_receipt=_raw_page_map(
+                receipts, raw_page_body=raw_page_body
+            ),
+            repo_root=ROOT,
+        )
+    with pytest.raises(
+        ContractValidationError, match="raw_run.divergent_duplicate"
+    ):
+        validate_ctgov_publication_bundle(
+            run,
+            receipts,
+            {receipts[0]["receipt_id"]: raw_page_body},
+            [source],
+            repo_root=ROOT,
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        {"query_manifest": None},
+        {"query_manifest": {"configured_nct_ids": [{}]}},
+        {"published_source_record_refs": ["valid", 1]},
+    ],
+)
+def test_fetch_run_malformed_shapes_fail_without_crashing(mutation: dict) -> None:
+    payload = _load(
+        BIOCATALYST_FIXTURE_DIR / "clinicaltrials" / "ctgov_fetch_run.v1.valid.json"
+    )
+    if mutation.get("query_manifest") == {"configured_nct_ids": [{}]}:
+        payload["query_manifest"]["configured_nct_ids"] = [{}]
+    else:
+        payload.update(mutation)
+
+    with pytest.raises(ContractValidationError):
+        validate_contract(payload, repo_root=ROOT)
+
+
+def test_raw_page_malformed_shapes_fail_without_crashing() -> None:
+    fixture_dir = BIOCATALYST_FIXTURE_DIR / "clinicaltrials"
+    base = _load(fixture_dir / "source_page_receipt.v1.valid.json")
+    cases = (
+        (b"null", 0, "receipt.raw_response_shape"),
+        (b'{"studies":[{"value":1e400}]}', 1, "receipt.raw_response_json"),
+        (
+            b'{"studies":[{"value":0.100000000000000005}]}',
+            1,
+            "receipt.raw_response_json",
+        ),
+        (b'{"studies":[{"value":"\\ud800"}]}', 1, "receipt.raw_response_json"),
+        (b'{"studies":[1]}', 1, "receipt.raw_response_study_shape"),
+        (
+            b'{"studies":[],"nextPageToken":"\\ud800"}',
+            0,
+            "receipt.raw_pagination_token",
+        ),
+    )
+    for raw_page_body, study_count, expected in cases:
+        receipt = json.loads(json.dumps(base))
+        _rebind_receipt_to_raw(receipt, raw_page_body)
+        receipt["response"]["study_count"] = study_count
+        with pytest.raises(ContractValidationError, match=expected):
+            validate_source_page_receipt_against_raw_response(
+                receipt, raw_page_body, repo_root=ROOT
+            )
+
+    receipt = json.loads(json.dumps(base))
+    receipt["response"]["headers"]["content-length"] = "9" * 5000
+    with pytest.raises(
+        ContractValidationError, match="receipt.raw_response_length"
+    ):
+        validate_source_page_receipt_against_raw_response(
+            receipt, _load_trial_raw_page(), repo_root=ROOT
+        )
 
 
 def test_complete_fetch_run_is_bound_to_terminal_receipt_chain() -> None:

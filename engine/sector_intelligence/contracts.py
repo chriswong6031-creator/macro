@@ -10,8 +10,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, time, timezone
+from decimal import Decimal, InvalidOperation
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping, Sequence
@@ -801,8 +803,11 @@ def _ctgov_fetch_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue
     issues: list[ValidationIssue] = []
     manifest = document.get("query_manifest")
     counts = document.get("counts")
+    published_refs = document.get("published_source_record_refs")
+    configured_ids = (
+        manifest.get("configured_nct_ids") if isinstance(manifest, Mapping) else None
+    )
     if isinstance(manifest, Mapping) and isinstance(counts, Mapping):
-        configured_ids = manifest.get("configured_nct_ids")
         if isinstance(configured_ids, list) and counts.get("configured") != len(configured_ids):
             issues.append(
                 ValidationIssue(
@@ -844,7 +849,6 @@ def _ctgov_fetch_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue
                 "studies_fetched",
                 "studies_unique",
                 "studies_duplicate",
-                "studies_changed",
                 "studies_published",
                 "errors",
             )
@@ -866,20 +870,49 @@ def _ctgov_fetch_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue
                         "fetched studies must reconcile to unique plus duplicate studies",
                     )
                 )
-            if counts["studies_changed"] > counts["studies_unique"]:
-                issues.append(
-                    ValidationIssue(
-                        "$.counts.studies_changed",
-                        "fetch_run.counts",
-                        "changed studies cannot exceed unique studies",
-                    )
-                )
             if counts["studies_published"] > counts["studies_unique"]:
                 issues.append(
                     ValidationIssue(
                         "$.counts.studies_published",
                         "fetch_run.counts",
                         "published studies cannot exceed unique studies",
+                    )
+                )
+        if isinstance(published_refs, list):
+            if counts.get("studies_published") != len(published_refs):
+                issues.append(
+                    ValidationIssue(
+                        "$.published_source_record_refs",
+                        "fetch_run.publication_manifest",
+                        "published-study count must equal the publication manifest length",
+                    )
+                )
+            if all(isinstance(reference, str) for reference in published_refs) and (
+                published_refs != sorted(published_refs)
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.published_source_record_refs",
+                        "fetch_run.publication_manifest",
+                        "publication manifest references must be lexicographically ordered",
+                    )
+                )
+            published_nct_ids = {
+                parts[2]
+                for reference in published_refs
+                if isinstance(reference, str)
+                and len(parts := reference.split(":")) == 5
+            }
+            if (
+                isinstance(configured_ids, list)
+                and all(isinstance(nct_id, str) for nct_id in configured_ids)
+                and not published_nct_ids.issubset(set(configured_ids))
+            ):
+                issues.append(
+                    ValidationIssue(
+                        "$.published_source_record_refs",
+                        "fetch_run.publication_manifest",
+                        "publication manifest NCT IDs must belong to the configured universe",
                     )
                 )
 
@@ -904,6 +937,18 @@ def _ctgov_fetch_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue
             and isinstance(counts.get("configured"), int)
             and counts.get("configured") > 0
             and counts.get("studies_unique") == counts.get("configured")
+            and counts.get("studies_published") == counts.get("studies_unique")
+            and isinstance(published_refs, list)
+            and all(isinstance(reference, str) for reference in published_refs)
+            and len(published_refs) == counts.get("studies_published")
+            and isinstance(configured_ids, list)
+            and all(isinstance(nct_id, str) for nct_id in configured_ids)
+            and {
+                reference.split(":")[2]
+                for reference in published_refs
+                if isinstance(reference, str) and len(reference.split(":")) == 5
+            }
+            == set(configured_ids)
             and isinstance(counts.get("pages_attempted"), int)
             and counts.get("pages_attempted") > 0
             and counts.get("pages_attempted") == counts.get("pages_succeeded")
@@ -921,17 +966,27 @@ def _ctgov_fetch_run_issues(document: Mapping[str, Any]) -> list[ValidationIssue
                     "$.run_state",
                     "fetch_run.complete",
                     "complete runs require stable source version, reconciled counts, "
-                    "no errors, terminal pagination, and an advanced watermark candidate",
+                    "full publication coverage, no errors, terminal pagination, and an "
+                    "advanced watermark candidate",
                 )
             )
-    elif document.get("watermark_after") != document.get("watermark_before"):
-        issues.append(
-            ValidationIssue(
-                "$.watermark_after",
-                "fetch_run.watermark",
-                "an incomplete run cannot advance its watermark candidate",
+    else:
+        if document.get("watermark_after") != document.get("watermark_before"):
+            issues.append(
+                ValidationIssue(
+                    "$.watermark_after",
+                    "fetch_run.watermark",
+                    "an incomplete run cannot advance its watermark candidate",
+                )
             )
-        )
+        if published_refs:
+            issues.append(
+                ValidationIssue(
+                    "$.published_source_record_refs",
+                    "fetch_run.publication_manifest",
+                    "an incomplete run cannot publish source records",
+                )
+            )
     return issues
 
 
@@ -1678,9 +1733,9 @@ def canonical_json_bytes(value: Any) -> bytes:
             sort_keys=True,
             separators=(",", ":"),
         )
-    except (TypeError, ValueError) as exc:
+        return encoded.encode("utf-8")
+    except (TypeError, ValueError, UnicodeEncodeError, RecursionError) as exc:
         raise ContractError(f"value is not canonicalizable JSON: {exc}") from exc
-    return encoded.encode("utf-8")
 
 
 def canonical_json_sha256(value: Any) -> str:
@@ -1825,6 +1880,209 @@ def receipt_payloads_sha256(receipts: Sequence[Mapping[str, Any]]) -> str:
     """Hash an ordered set of sanitized page-receipt payloads."""
 
     return canonical_json_sha256(list(receipts))
+
+
+class _DuplicateJSONKeyError(ValueError):
+    """Raised when an archived source response contains an ambiguous object."""
+
+
+def _strict_json_object(pairs: Sequence[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise _DuplicateJSONKeyError(f"duplicate JSON object key {key!r}")
+        result[key] = value
+    return result
+
+
+def _reject_nonfinite_json_constant(value: str) -> None:
+    raise ValueError(f"non-finite JSON number {value!r}")
+
+
+def _strict_json_float(value: str) -> float:
+    try:
+        exact = Decimal(value)
+        parsed = float(value)
+        round_tripped = Decimal(repr(parsed))
+    except (InvalidOperation, OverflowError, ValueError) as exc:
+        raise ValueError(f"invalid JSON number {value!r}") from exc
+    if not math.isfinite(parsed):
+        raise ValueError(f"non-finite JSON number {value!r}")
+    if round_tripped != exact:
+        raise ValueError(
+            f"JSON number {value!r} is not losslessly representable as binary64"
+        )
+    return parsed
+
+
+def validate_source_page_receipt_against_raw_response(
+    receipt: Mapping[str, Any],
+    raw_page_body: bytes | bytearray | memoryview,
+    *,
+    repo_root: Path | str | None = None,
+) -> Mapping[str, Any]:
+    """Verify one sanitized receipt against the exact archived response bytes."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_PAGE_RECEIPT_CONTRACT_ID, receipt)
+    issues: list[ValidationIssue] = []
+    if not isinstance(raw_page_body, (bytes, bytearray, memoryview)):
+        issues.append(
+            ValidationIssue(
+                "$.response.raw_response_object_key",
+                "receipt.raw_response_type",
+                "raw page evidence must be supplied as exact bytes",
+            )
+        )
+        raise ContractValidationError(_PAGE_RECEIPT_CONTRACT_ID, issues)
+
+    raw_bytes = bytes(raw_page_body)
+    response = receipt.get("response")
+    response = response if isinstance(response, Mapping) else {}
+    actual_hash = hashlib.sha256(raw_bytes).hexdigest()
+    if response.get("exact_response_sha256") != actual_hash:
+        issues.append(
+            ValidationIssue(
+                "$.response.exact_response_sha256",
+                "receipt.raw_response_hash",
+                f"archived response bytes hash to {actual_hash}",
+            )
+        )
+    if response.get("byte_count") != len(raw_bytes):
+        issues.append(
+            ValidationIssue(
+                "$.response.byte_count",
+                "receipt.raw_response_length",
+                f"archived response contains {len(raw_bytes)} bytes",
+            )
+        )
+    headers = response.get("headers")
+    content_length = headers.get("content-length") if isinstance(headers, Mapping) else None
+    content_length_is_valid = (
+        isinstance(content_length, str)
+        and len(content_length) <= 20
+        and re.fullmatch(r"[0-9]+", content_length) is not None
+        and int(content_length) == len(raw_bytes)
+    )
+    if content_length is not None and not content_length_is_valid:
+        issues.append(
+            ValidationIssue(
+                "$.response.headers.content-length",
+                "receipt.raw_response_length",
+                "content-length header must match the archived response byte count",
+            )
+        )
+
+    parsed: Any = _MISSING
+    try:
+        parsed = json.loads(
+            raw_bytes.decode("utf-8"),
+            object_pairs_hook=_strict_json_object,
+            parse_constant=_reject_nonfinite_json_constant,
+            parse_float=_strict_json_float,
+        )
+    except (
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+        ValueError,
+        RecursionError,
+    ) as exc:
+        issues.append(
+            ValidationIssue(
+                "$.response.raw_response_object_key",
+                "receipt.raw_response_json",
+                f"archived response must be unambiguous UTF-8 JSON: {exc}",
+            )
+        )
+
+    studies: Any = None
+    if parsed is not _MISSING and not isinstance(parsed, Mapping):
+        issues.append(
+            ValidationIssue(
+                "$.response.raw_response_object_key",
+                "receipt.raw_response_shape",
+                "ClinicalTrials.gov page response must be a JSON object",
+            )
+        )
+    elif isinstance(parsed, Mapping):
+        try:
+            canonical_json_bytes(parsed)
+        except ContractError as exc:
+            issues.append(
+                ValidationIssue(
+                    "$.response.raw_response_object_key",
+                    "receipt.raw_response_json",
+                    f"archived response contains unsupported JSON values: {exc}",
+                )
+            )
+        studies = parsed.get("studies")
+        if not isinstance(studies, list):
+            issues.append(
+                ValidationIssue(
+                    "$.response.study_count",
+                    "receipt.raw_response_shape",
+                    "ClinicalTrials.gov page response must contain a studies array",
+                )
+            )
+        elif response.get("study_count") != len(studies):
+            issues.append(
+                ValidationIssue(
+                    "$.response.study_count",
+                    "receipt.raw_response_study_count",
+                    f"archived response contains {len(studies)} studies",
+                )
+            )
+        if isinstance(studies, list):
+            non_object_indexes = [
+                index for index, study in enumerate(studies) if not isinstance(study, Mapping)
+            ]
+            if non_object_indexes:
+                issues.append(
+                    ValidationIssue(
+                        "$.response.study_count",
+                        "receipt.raw_response_study_shape",
+                        "every studies entry must be a JSON object; invalid indexes: "
+                        + ", ".join(str(index) for index in non_object_indexes[:10]),
+                    )
+                )
+
+        raw_next_token = parsed.get("nextPageToken")
+        expected_token_hash: str | None = None
+        if raw_next_token is not None:
+            if not isinstance(raw_next_token, str) or not raw_next_token:
+                issues.append(
+                    ValidationIssue(
+                        "$.response.next_page_token_sha256",
+                        "receipt.raw_pagination_token",
+                        "raw nextPageToken must be a non-empty string or absent",
+                    )
+                )
+            else:
+                try:
+                    encoded_next_token = raw_next_token.encode("utf-8")
+                except UnicodeEncodeError:
+                    issues.append(
+                        ValidationIssue(
+                            "$.response.next_page_token_sha256",
+                            "receipt.raw_pagination_token",
+                            "raw nextPageToken must contain valid Unicode scalar values",
+                        )
+                    )
+                else:
+                    expected_token_hash = hashlib.sha256(encoded_next_token).hexdigest()
+        if response.get("next_page_token_sha256") != expected_token_hash:
+            issues.append(
+                ValidationIssue(
+                    "$.response.next_page_token_sha256",
+                    "receipt.raw_pagination_token",
+                    "pagination-token hash must match the exact archived response",
+                )
+            )
+
+    if issues:
+        raise ContractValidationError(_PAGE_RECEIPT_CONTRACT_ID, issues)
+    assert isinstance(parsed, Mapping)
+    return parsed
 
 
 def validate_ctgov_fetch_run_against_receipts(
@@ -2114,18 +2372,147 @@ def validate_evidence_claim_against_source_records(
         raise ContractValidationError(_EVIDENCE_CLAIM_CONTRACT_ID, issues)
 
 
-def validate_trial_source_snapshot_against_fetch_evidence(
+def _validate_ctgov_raw_run_evidence(
+    run: Mapping[str, Any],
+    receipts: Sequence[Mapping[str, Any]],
+    raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
+    *,
+    repo_root: Path | str | None = None,
+) -> tuple[dict[str, Mapping[str, Any]], tuple[str, ...]]:
+    """Validate every raw page and derive the run's counts and publication refs."""
+
+    validate_ctgov_fetch_run_against_receipts(run, receipts, repo_root=repo_root)
+    receipt_ids = [receipt.get("receipt_id") for receipt in receipts]
+    expected_receipt_ids = {
+        receipt_id for receipt_id in receipt_ids if isinstance(receipt_id, str)
+    }
+    if set(raw_page_bodies_by_receipt) != expected_receipt_ids:
+        raise ContractValidationError(
+            _CTGOV_FETCH_RUN_CONTRACT_ID,
+            (
+                ValidationIssue(
+                    "$.receipt_refs",
+                    "raw_run.raw_page_coverage",
+                    "raw page bodies must exactly cover the run's receipt IDs",
+                ),
+            ),
+        )
+
+    parsed_pages: dict[str, Mapping[str, Any]] = {}
+    for receipt in receipts:
+        receipt_id = receipt["receipt_id"]
+        parsed_pages[receipt_id] = validate_source_page_receipt_against_raw_response(
+            receipt,
+            raw_page_bodies_by_receipt[receipt_id],
+            repo_root=repo_root,
+        )
+
+    issues: list[ValidationIssue] = []
+    hashes_by_nct: dict[str, set[str]] = {}
+    derived_fetched = 0
+    for receipt_id, page in parsed_pages.items():
+        studies = page["studies"]
+        for study_index, study in enumerate(studies):
+            derived_fetched += 1
+            nct_id = _resolve_json_pointer(
+                study, "/protocolSection/identificationModule/nctId"
+            )
+            path = f"$.raw_pages.{receipt_id}.studies[{study_index}]"
+            if not isinstance(nct_id, str) or not re.fullmatch(
+                r"NCT[0-9]{8}", nct_id
+            ):
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        "raw_run.study_identity",
+                        "every raw study must carry a canonical NCT ID",
+                    )
+                )
+                continue
+            try:
+                content_hash = canonical_json_sha256(study)
+            except ContractError as exc:
+                issues.append(
+                    ValidationIssue(
+                        path,
+                        "raw_run.study_content",
+                        f"raw study is not canonicalizable: {exc}",
+                    )
+                )
+                continue
+            hashes_by_nct.setdefault(nct_id, set()).add(content_hash)
+
+    divergent_nct_ids = sorted(
+        nct_id for nct_id, hashes in hashes_by_nct.items() if len(hashes) != 1
+    )
+    if divergent_nct_ids:
+        issues.append(
+            ValidationIssue(
+                "$.counts.studies_duplicate",
+                "raw_run.divergent_duplicate",
+                "one run cannot contain divergent bodies for the same NCT ID: "
+                + ", ".join(divergent_nct_ids),
+            )
+        )
+
+    configured_nct_ids = run["query_manifest"]["configured_nct_ids"]
+    if set(hashes_by_nct) != set(configured_nct_ids):
+        issues.append(
+            ValidationIssue(
+                "$.query_manifest.configured_nct_ids",
+                "raw_run.nct_coverage",
+                "raw pages must cover exactly the configured NCT universe",
+            )
+        )
+
+    derived_unique = len(hashes_by_nct)
+    derived_duplicate = derived_fetched - derived_unique
+    counts = run["counts"]
+    for field, expected in (
+        ("studies_fetched", derived_fetched),
+        ("studies_unique", derived_unique),
+        ("studies_duplicate", derived_duplicate),
+    ):
+        if counts.get(field) != expected:
+            issues.append(
+                ValidationIssue(
+                    f"$.counts.{field}",
+                    "raw_run.derived_counts",
+                    f"{field} must equal the raw-page-derived value {expected}",
+                )
+            )
+
+    derived_refs = tuple(
+        sorted(
+            f"src:ctgov:{nct_id}:sha256:{next(iter(hashes))}"
+            for nct_id, hashes in hashes_by_nct.items()
+            if len(hashes) == 1
+        )
+    )
+    if run.get("run_state") == "complete" and run[
+        "published_source_record_refs"
+    ] != list(derived_refs):
+        issues.append(
+            ValidationIssue(
+                "$.published_source_record_refs",
+                "raw_run.derived_manifest",
+                "publication manifest must be derived from the exact raw studies",
+            )
+        )
+    if issues:
+        raise ContractValidationError(_CTGOV_FETCH_RUN_CONTRACT_ID, issues)
+    return parsed_pages, derived_refs
+
+
+def _validate_trial_source_snapshot_against_validated_pages(
     source_snapshot: Mapping[str, Any],
     run: Mapping[str, Any],
     receipts: Sequence[Mapping[str, Any]],
-    *,
-    repo_root: Path | str | None = None,
+    parsed_pages: Mapping[str, Mapping[str, Any]],
 ) -> None:
-    """Bind a publishable trial source snapshot to a complete fetch transaction."""
-
-    registry = ContractRegistry(repo_root)
-    registry.validate(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, source_snapshot)
-    validate_ctgov_fetch_run_against_receipts(run, receipts, repo_root=repo_root)
+    """Bind one schema-valid snapshot to an already validated raw page set."""
 
     issues: list[ValidationIssue] = []
     if run.get("run_state") != "complete" or run.get("completeness_state") != "reconciled":
@@ -2146,6 +2533,18 @@ def validate_trial_source_snapshot_against_fetch_evidence(
                 "$.run_ref",
                 "source_snapshot.run_binding",
                 "source snapshot run reference must resolve to the supplied fetch run",
+            )
+        )
+    published_refs = run.get("published_source_record_refs")
+    if (
+        not isinstance(published_refs, list)
+        or source_snapshot.get("source_record_ref") not in published_refs
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.source_record_ref",
+                "source_snapshot.publication_manifest",
+                "source snapshot must be present in the run publication manifest",
             )
         )
 
@@ -2174,6 +2573,7 @@ def validate_trial_source_snapshot_against_fetch_evidence(
             )
         )
     else:
+        raw_page = parsed_pages[selected_receipt["receipt_id"]]
         response = selected_receipt.get("response")
         response_hash = (
             response.get("exact_response_sha256")
@@ -2209,6 +2609,35 @@ def validate_trial_source_snapshot_against_fetch_evidence(
                     )
                 )
 
+        studies = raw_page.get("studies")
+        study_index = source_snapshot.get("source_page_study_index")
+        extracted_study: Any = _MISSING
+        if (
+            isinstance(studies, list)
+            and isinstance(study_index, int)
+            and not isinstance(study_index, bool)
+            and 0 <= study_index < len(studies)
+        ):
+            extracted_study = studies[study_index]
+        if extracted_study is _MISSING:
+            issues.append(
+                ValidationIssue(
+                    "$.source_page_study_index",
+                    "source_snapshot.extraction_binding",
+                    "study index must resolve inside the exact archived page response",
+                )
+            )
+        elif not isinstance(extracted_study, Mapping) or not _canonical_json_equal(
+            extracted_study, source_snapshot.get("canonical_study")
+        ):
+            issues.append(
+                ValidationIssue(
+                    "$.canonical_study",
+                    "source_snapshot.extraction_binding",
+                    "canonical study must exactly equal the indexed archived page study",
+                )
+            )
+
     source_transaction = _parse_temporal(source_snapshot.get("transaction_from"))
     run_transaction = _parse_temporal(run.get("transaction_from"))
     receipt_transaction = _parse_temporal(
@@ -2237,12 +2666,142 @@ def validate_trial_source_snapshot_against_fetch_evidence(
         raise ContractValidationError(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, issues)
 
 
+def validate_trial_source_snapshot_against_fetch_evidence(
+    source_snapshot: Mapping[str, Any],
+    run: Mapping[str, Any],
+    receipts: Sequence[Mapping[str, Any]],
+    *,
+    raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
+    repo_root: Path | str | None = None,
+) -> None:
+    """Bind a snapshot to a published study inside exact archived page bytes."""
+
+    registry = ContractRegistry(repo_root)
+    registry.validate(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, source_snapshot)
+    parsed_pages, _ = _validate_ctgov_raw_run_evidence(
+        run,
+        receipts,
+        raw_page_bodies_by_receipt,
+        repo_root=repo_root,
+    )
+    _validate_trial_source_snapshot_against_validated_pages(
+        source_snapshot,
+        run,
+        receipts,
+        parsed_pages,
+    )
+
+
+def validate_ctgov_publication_bundle(
+    run: Mapping[str, Any],
+    receipts: Sequence[Mapping[str, Any]],
+    raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
+    source_snapshots: Sequence[Mapping[str, Any]],
+    *,
+    repo_root: Path | str | None = None,
+) -> None:
+    """Prove complete-run coverage from every raw page through every snapshot."""
+
+    registry = ContractRegistry(repo_root)
+    parsed_pages, derived_refs = _validate_ctgov_raw_run_evidence(
+        run,
+        receipts,
+        raw_page_bodies_by_receipt,
+        repo_root=repo_root,
+    )
+    if run.get("run_state") != "complete" or run.get("completeness_state") != "reconciled":
+        raise ContractValidationError(
+            _CTGOV_FETCH_RUN_CONTRACT_ID,
+            (
+                ValidationIssue(
+                    "$.run_state",
+                    "publication_bundle.complete_run",
+                    "publication bundles require a reconciled complete run",
+                ),
+            ),
+        )
+    for source_snapshot in source_snapshots:
+        registry.validate(_TRIAL_SOURCE_SNAPSHOT_CONTRACT_ID, source_snapshot)
+
+    issues: list[ValidationIssue] = []
+    configured_nct_ids = run["query_manifest"]["configured_nct_ids"]
+    counts = run["counts"]
+    snapshot_refs = [snapshot["source_record_ref"] for snapshot in source_snapshots]
+    snapshot_nct_ids = [snapshot["nct_id"] for snapshot in source_snapshots]
+    snapshot_ids = [snapshot["source_snapshot_id"] for snapshot in source_snapshots]
+    snapshot_receipt_refs = [
+        snapshot["page_receipt_ref"] for snapshot in source_snapshots
+    ]
+    if tuple(sorted(snapshot_refs)) != derived_refs or len(snapshot_refs) != len(
+        set(snapshot_refs)
+    ):
+        issues.append(
+            ValidationIssue(
+                "$.published_source_record_refs",
+                "publication_bundle.snapshot_coverage",
+                "source snapshots must exactly match the raw-derived publication manifest",
+            )
+        )
+    if set(snapshot_nct_ids) != set(configured_nct_ids) or len(
+        snapshot_nct_ids
+    ) != len(set(snapshot_nct_ids)):
+        issues.append(
+            ValidationIssue(
+                "$.query_manifest.configured_nct_ids",
+                "publication_bundle.snapshot_nct_coverage",
+                "source snapshots must cover every configured NCT exactly once",
+            )
+        )
+    if len(snapshot_ids) != len(set(snapshot_ids)):
+        issues.append(
+            ValidationIssue(
+                "$.published_source_record_refs",
+                "publication_bundle.snapshot_identity",
+                "source snapshot IDs must be unique within a publication bundle",
+            )
+        )
+    expected_receipt_ids = {receipt["receipt_id"] for receipt in receipts}
+    if not set(snapshot_receipt_refs).issubset(expected_receipt_ids):
+        issues.append(
+            ValidationIssue(
+                "$.receipt_refs",
+                "publication_bundle.snapshot_receipt",
+                "every source snapshot must resolve to a receipt in this run",
+            )
+        )
+    if counts.get("studies_published") != len(source_snapshots):
+        issues.append(
+            ValidationIssue(
+                "$.counts.studies_published",
+                "publication_bundle.snapshot_count",
+                "published-study count must equal the source snapshot count",
+            )
+        )
+    if issues:
+        raise ContractValidationError(_CTGOV_FETCH_RUN_CONTRACT_ID, issues)
+
+    for source_snapshot in source_snapshots:
+        _validate_trial_source_snapshot_against_validated_pages(
+            source_snapshot,
+            run,
+            receipts,
+            parsed_pages,
+        )
+
+
 def validate_trial_observation_against_source_evidence(
     observation: Mapping[str, Any],
     source_snapshot: Mapping[str, Any],
     run: Mapping[str, Any],
     receipts: Sequence[Mapping[str, Any]],
     *,
+    raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
     repo_root: Path | str | None = None,
 ) -> None:
     """Bind one trial observation to its source snapshot, run, and page receipt."""
@@ -2250,7 +2809,11 @@ def validate_trial_observation_against_source_evidence(
     registry = ContractRegistry(repo_root)
     registry.validate(_TRIAL_OBSERVATION_CONTRACT_ID, observation)
     validate_trial_source_snapshot_against_fetch_evidence(
-        source_snapshot, run, receipts, repo_root=repo_root
+        source_snapshot,
+        run,
+        receipts,
+        raw_page_bodies_by_receipt=raw_page_bodies_by_receipt,
+        repo_root=repo_root,
     )
 
     issues: list[ValidationIssue] = []
@@ -2407,12 +2970,19 @@ def validate_trial_projection_against_source(
     *,
     run: Mapping[str, Any],
     receipts: Sequence[Mapping[str, Any]],
+    raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
     repo_root: Path | str | None = None,
 ) -> None:
     """Bind a read projection to complete fetch evidence and exact source facts."""
 
     validate_trial_source_snapshot_against_fetch_evidence(
-        source_snapshot, run, receipts, repo_root=repo_root
+        source_snapshot,
+        run,
+        receipts,
+        raw_page_bodies_by_receipt=raw_page_bodies_by_receipt,
+        repo_root=repo_root,
     )
     registry = ContractRegistry(repo_root)
     registry.validate(_TRIAL_SNAPSHOT_CONTRACT_ID, projection)
@@ -2525,8 +3095,14 @@ def validate_trial_diff_against_snapshots(
     *,
     before_run: Mapping[str, Any],
     before_receipts: Sequence[Mapping[str, Any]],
+    before_raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
     after_run: Mapping[str, Any],
     after_receipts: Sequence[Mapping[str, Any]],
+    after_raw_page_bodies_by_receipt: Mapping[
+        str, bytes | bytearray | memoryview
+    ],
     repo_root: Path | str | None = None,
 ) -> None:
     """Recompute and bind an exact diff to source snapshots and observations."""
@@ -2536,6 +3112,7 @@ def validate_trial_diff_against_snapshots(
         before_snapshot,
         before_run,
         before_receipts,
+        raw_page_bodies_by_receipt=before_raw_page_bodies_by_receipt,
         repo_root=repo_root,
     )
     validate_trial_observation_against_source_evidence(
@@ -2543,6 +3120,7 @@ def validate_trial_diff_against_snapshots(
         after_snapshot,
         after_run,
         after_receipts,
+        raw_page_bodies_by_receipt=after_raw_page_bodies_by_receipt,
         repo_root=repo_root,
     )
     registry = ContractRegistry(repo_root)
