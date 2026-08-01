@@ -5,6 +5,7 @@ to produce structured data for `mover` and `theme_list` content types.
 
 Public API:
     load_movers(root) -> dict | None
+    prefer_fresher_session(data) -> dict
     top_movers(data, *, tf, n, min_abs) -> {gainers, losers}
     theme_lists(data, *, tf, n, min_members, min_abs_theme) -> list[dict]
     mover_facts(mover, data) -> {facts, numbers_whitelist}
@@ -12,6 +13,31 @@ Public API:
 
 All functions are deterministic and fail-soft (return None / empty on errors).
 No invented numbers — every number in the whitelist comes from real heatmap data.
+
+SESSION PROVENANCE (2026-07-31). The two heatmaps date themselves DIFFERENTLY,
+and they are systematically one calendar day apart:
+
+  * sp500_heatmap.json  `asof` = the last date in the daily CLOSE matrix
+    (engine/sp500_heatmap.build_heatmap, ``closes_sorted.index[-1]``). That cache
+    lags the live session, so at 21:25Z on 2026-07-30 the field read 2026-07-29
+    while the tile 1D it labels had already been overlaid with the 07-30 tape.
+  * themes_heatmap.json `asof` = the finviz scrape's own capture date
+    (scripts/fetch_finviz_themes: ``datetime.now(timezone.utc)``) — the session
+    actually being read.
+
+Measured over 14 consecutive commits (2026-07-30 13:34Z .. 2026-07-31 11:58Z)
+the sp500 stamp was EXACTLY one day behind the themes stamp on every single one,
+while the 1D numbers themselves agreed to 0.01pp across all 302 names the two
+payloads share. A caller that dates BOTH row families by ``data["asof"]``
+therefore mislabels the theme rows by a whole session (the mixed-asof failure),
+and any freshness gate keyed on that field fails closed forever — which is
+exactly what happened to the publish-time lane on 2026-07-31 (every in-window
+sweep: pt_generated=0, pt_dropped=1, reason "tape stale").
+
+So every ROW now carries the stamp of the artifact it actually came from, and the
+payload keeps per-artifact stamps alongside the legacy ``asof`` (still the sp500
+one, because scripts/build_movers_page and engine/press/desk_planner date their
+S&P claims with it).
 """
 from __future__ import annotations
 
@@ -24,19 +50,68 @@ PathLike = Union[str, Path]
 
 _EMPTY_FACTS: dict = {"facts": [], "numbers_whitelist": []}
 
-# Reply-bait questions by direction (doctrine v3: dry, trader-to-trader)
-_QUESTION_DOWN = [
-    "Which one comes back first?",
-    "Dead-cat bounce or the real dip?",
-    "Who's actually washed out here?",
-    "Which one do you want on sale?",
+# ─────────────────────────────────────────────────────────────────────────────
+# Post tails, by direction.
+#
+# WHAT THIS REPLACES, AND WHY (operator voice law, 2026-07-31). These were four
+# reply-bait questions per side — "Which one breaks out first?", "Dead-cat bounce
+# or the real dip?", "Who's actually washed out here?" — and all four
+# `publisher_live_movers` posts that have ever gone out ended on one. They are
+# the exact shape the voice law bans: a question aimed at the reader that costs
+# the author NOTHING. The desk names a move and then asks the timeline to do the
+# thinking; there is no position, no watch-condition, and nothing that can later
+# be shown to have been wrong.
+#
+# The replacements are stance-or-watch-condition tails that COST the author: each
+# commits to doing nothing (or to waiting for a named condition) and then says
+# the price of that choice out loud. Four constraints shape every line:
+#
+#   1. It must end with "?" — copywriter.validate_copy hard-requires a theme_list
+#      body to end on a question mark, and that validator is not in this lane's
+#      territory. A question can still cost the author when it is about the
+#      AUTHOR ("Am I too slow here?") rather than the reader ("What's your
+#      read?"). That distinction is the whole rule, and it is ENFORCED on the
+#      rendered post by publish_time_content._tail_is_bait: a trailing question
+#      carrying no first-person marker is bait, and the post is re-rolled onto
+#      another template variant rather than shipped.
+#   2. First person in the FINAL sentence, for the same reason.
+#   3. NO numbers. copywriter._NUMBER_RE screens every numeric token against the
+#      facts whitelist, so a tail inventing "two closes" or "3 days" is a copy
+#      violation that drops the whole candidate.
+#   4. Direction-keyed, and the key is the SIGN OF THE AGGREGATE (see
+#      _direction_of) — never a `direction` string a caller may have set
+#      independently of the number it labels.
+#   5. **48 CHARACTERS MAX, EACH.** This is a supply constraint, not a style
+#      preference, and it is the defect the 2026-07-31 rewrite introduced. The
+#      bank it replaced was four ~32-char reply-bait questions; the stance tails
+#      came back at up to 80 chars — 2.5× longer — and the tail is appended to a
+#      theme body that already carries a member list ("$AAPL +2.1% $MSFT +1.4%
+#      …"). copywriter.validate_copy caps headline+body at 275 chars, so the
+#      longest banks pushed the 'dry, receipts-forward' theme render to 282 and
+#      the candidate was DROPPED as a copy violation. A tail that costs the
+#      author nothing to write but costs the desk the whole post is not a voice
+#      improvement. The study's reaction-word form is a SHORT verdict — one
+#      breath — not a paragraph, so the budget and the voice law agree here.
+#      (publish_time_content._render_copy_unbaited now also re-rolls onto other
+#      variants on a too-long violation, which is the second net; this is the
+#      first, and a bank that fits should never need the net.)
+# ─────────────────────────────────────────────────────────────────────────────
+_TAIL_DOWN = [
+    "Am I too slow waiting for one quiet close?",
+    "Do I regret passing on the first bounce?",
+    "Does patience cost me the snapback here?",
+    "I'd rather be late. Am I paying for that?",
 ]
-_QUESTION_UP = [
-    "Which one breaks out first?",
-    "Real demand or a squeeze?",
-    "Who leads this group higher?",
-    "Which one's already run too far?",
+_TAIL_UP = [
+    "Do I miss it if I refuse to pay up here?",
+    "Am I too slow waiting for the pullback?",
+    "Does not chasing keep costing me money?",
+    "I want it to hold first. Too careful of me?",
 ]
+
+#: Hard ceiling every tail must satisfy — pinned in tests so a future "better"
+#: line cannot quietly reintroduce the 282-char drop. See constraint 5 above.
+_TAIL_MAX_CHARS = 48
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -57,6 +132,25 @@ def _fmt_pct(v: float) -> str:
     return f"{sign}{v:.1f}%"
 
 
+def _direction_of(pct: object, fallback: str = "down") -> str:
+    """"up" / "down" derived from the NUMBER, never from a caller's label.
+
+    Closes the direction-mismatch defect. :func:`theme_facts` used to read
+    ``theme_item["direction"]`` with a ``"down"`` DEFAULT, so a theme item built
+    without that key — every partially-constructed item in the wild, and any
+    caller that simply forgot it — printed "+7.7% on average today (8 names
+    lower)": a sentence contradicting the figure inside it, on a live account.
+    The sign of the aggregate cannot disagree with itself, so it is the sole
+    authority here; the string label survives only as the fallback for a
+    genuinely absent or unparseable number.
+    """
+    try:
+        v = float(pct)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return "down" if str(fallback) == "down" else "up"
+    return "down" if v < 0 else "up"
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # load_movers
 # ─────────────────────────────────────────────────────────────────────────────
@@ -66,11 +160,22 @@ def load_movers(root: PathLike) -> dict | None:
 
     Returns:
         {
-          "sp500_tiles": [...],   # list of {t, name, sector, industry, perf}
-          "theme_tiles": [...],   # list of {t, name, sector, perf, members}
-          "asof": str | None,
+          "sp500_tiles": [...],   # {t, name, sector, industry, perf, asof}
+          "theme_tiles": [...],   # {t, name, sector, perf, members, asof}
+          "asof": str | None,               # LEGACY alias of sp500_asof
+          "sp500_asof": str | None,         # last daily-close date in that payload
+          "themes_asof": str | None,        # finviz capture date in that payload
+          "sp500_generated_utc": str | None,
+          "themes_generated_utc": str | None,
+          "sp500_source": str, "themes_source": str,
         }
     or None if both files are missing.
+
+    Every tile (and every theme MEMBER) is stamped with an ``asof`` key naming
+    the session ITS OWN artifact dates itself to — see the module docstring for
+    why one payload-level stamp cannot honestly serve both families. The stamp is
+    purely additive: no number is touched, so the existing consumers see
+    byte-identical data plus one key.
     """
     root = Path(root)
     sp500_path = root / "site" / "marketdata" / "sp500_heatmap.json"
@@ -81,6 +186,15 @@ def load_movers(root: PathLike) -> dict | None:
 
     if sp500_data is None and themes_data is None:
         return None
+
+    def _meta(payload: object, key: str) -> str | None:
+        if not isinstance(payload, dict):
+            return None
+        v = payload.get(key)
+        return str(v) if v else None
+
+    sp500_asof = _meta(sp500_data, "asof") or _meta(sp500_data, "as_of")
+    themes_asof = _meta(themes_data, "asof") or _meta(themes_data, "as_of")
 
     sp500_tiles: list[dict] = []
     if isinstance(sp500_data, dict):
@@ -94,16 +208,101 @@ def load_movers(root: PathLike) -> dict | None:
         if not isinstance(theme_tiles, list):
             theme_tiles = []
 
-    # asof: prefer sp500 metadata if present
-    asof: str | None = None
-    if isinstance(sp500_data, dict):
-        asof = sp500_data.get("asof") or sp500_data.get("as_of")
+    # Per-ROW session stamps, written in place on the just-parsed JSON objects
+    # (nothing else holds a reference to them yet) — one attribute write per
+    # tile, no copy. setdefault so a payload that ever grows its own per-tile
+    # stamp wins over the file-level one.
+    if sp500_asof:
+        for _t in sp500_tiles:
+            if isinstance(_t, dict):
+                _t.setdefault("asof", sp500_asof)
+    if themes_asof:
+        for _t in theme_tiles:
+            if not isinstance(_t, dict):
+                continue
+            _t.setdefault("asof", themes_asof)
+            for _m in (_t.get("members") or []):
+                if isinstance(_m, dict):
+                    _m.setdefault("asof", themes_asof)
 
     return {
         "sp500_tiles": sp500_tiles,
         "theme_tiles": theme_tiles,
-        "asof": asof,
+        # LEGACY key, deliberately unchanged in meaning: build_movers_page and
+        # press.desk_planner both date their S&P claims with it.
+        "asof": sp500_asof,
+        "sp500_asof": sp500_asof,
+        "themes_asof": themes_asof,
+        "sp500_generated_utc": _meta(sp500_data, "generated_utc"),
+        "themes_generated_utc": _meta(themes_data, "generated_utc"),
+        "sp500_source": _meta(sp500_data, "source") or "",
+        "themes_source": _meta(themes_data, "source") or "",
     }
+
+
+def prefer_fresher_session(data: dict | None) -> dict:
+    """A COPY of *data* whose S&P rows carry the FRESHER of the two reads.
+
+    When ``themes_asof`` is a strictly later session than ``sp500_asof`` (the
+    standing case — see the module docstring), the themes payload holds the same
+    1D change for every name it shares with the index board, one session newer.
+    Preferring it re-dates those rows to the themes session, which is what lets a
+    publish-time mover post claim the CURRENT session instead of being refused as
+    stale on every heatmap-only sweep.
+
+    OPT-IN, and it has to stay opt-in. ``engine/press/desk_planner`` writes
+    "closed {pct}% on the session of {data['asof']}" from the payload-level
+    stamp, so quietly freshening the rows underneath it would manufacture exactly
+    the mixed-asof claim this whole change exists to prevent. The caller that
+    tracks per-row sessions (engine/marketing/publish_time_content) opts in; the
+    callers that do not, do not.
+
+    Rows the themes payload does not carry come back untouched, still stamped
+    with the older sp500 session — per row, never per payload.
+    """
+    d = dict(data or {})
+    sp_asof = str(d.get("sp500_asof") or d.get("asof") or "")
+    th_asof = str(d.get("themes_asof") or "")
+    tiles = d.get("sp500_tiles") or []
+    d["sp500_tiles"] = list(tiles)
+    if not tiles or not th_asof or th_asof <= sp_asof:
+        # Themes is not strictly fresher → nothing to prefer. A plain string
+        # compare is right: both stamps are ISO "YYYY-MM-DD" by construction, and
+        # an unparseable/absent stamp compares as "not fresher" (fail closed).
+        return d
+
+    fresher: dict[str, float] = {}
+    for tile in d.get("theme_tiles") or []:
+        if not isinstance(tile, dict):
+            continue
+        for m in tile.get("members") or []:
+            if not isinstance(m, dict):
+                continue
+            tkr = str(m.get("t") or "")
+            pct = (m.get("perf") or {}).get("1D")
+            if not tkr or pct is None or tkr in fresher:
+                continue
+            try:
+                fresher[tkr] = float(pct)
+            except (TypeError, ValueError):
+                continue
+
+    out_tiles: list[dict] = []
+    for tile in d["sp500_tiles"]:
+        if not isinstance(tile, dict):
+            continue
+        tkr = str(tile.get("t") or "")
+        if tkr not in fresher:
+            out_tiles.append(tile)
+            continue
+        nt = dict(tile)
+        perf = dict(nt.get("perf") or {})
+        perf["1D"] = fresher[tkr]
+        nt["perf"] = perf
+        nt["asof"] = th_asof
+        out_tiles.append(nt)
+    d["sp500_tiles"] = out_tiles
+    return d
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -150,7 +349,12 @@ def top_movers(
         ticker = tile.get("t", "")
         name = tile.get("name", ticker)
         sector = tile.get("sector", "")
-        eligible.append({"ticker": ticker, "name": name, "pct": pct, "sector": sector})
+        # `asof` rides the ROW, not the payload: after prefer_fresher_session a
+        # tile refreshed from the themes read carries the themes session while
+        # its index-only neighbours still carry the close-cache one, and a
+        # publish-time post has to know which session ITS name belongs to.
+        eligible.append({"ticker": ticker, "name": name, "pct": pct,
+                         "sector": sector, "asof": tile.get("asof")})
 
     if tier_map:
         eligible = [m for m in eligible if tier_map.get(m.get("ticker"), "") != "T3"]
@@ -208,8 +412,13 @@ def theme_lists(
           "tone": str,             # plain-English tone
           "members": [{ticker, pct}, ...],  # top N by abs move in direction
           "agg_pct": float,        # average of member pcts
-          "question": str,         # reply-bait question
+          "question": str,         # the direction-keyed stance / watch tail
+          "asof": str | None,      # the session ALL members share, else None
         }
+
+    ``asof`` is None when the contributing members do NOT agree on a session: an
+    aggregate that averages two sessions is the mixed-asof failure, so it gets no
+    date at all and the consumer refuses it rather than guessing.
     """
     theme_tiles = (data or {}).get("theme_tiles") or []
     if not theme_tiles:
@@ -218,6 +427,7 @@ def theme_lists(
     # Step 1: collect all member tickers+pcts per THEME across all subsector tiles
     from collections import defaultdict
     theme_members: dict[str, dict[str, float]] = defaultdict(dict)  # theme -> {ticker: pct}
+    theme_sessions: dict[str, set[str]] = defaultdict(set)          # theme -> {asof, ...}
 
     for tile in theme_tiles:
         if not isinstance(tile, dict):
@@ -241,6 +451,8 @@ def theme_lists(
             # First occurrence wins if ticker appears in multiple subsectors of same theme
             if ticker not in theme_members[theme_name]:
                 theme_members[theme_name][ticker] = pct
+                theme_sessions[theme_name].add(
+                    str(m.get("asof") or tile.get("asof") or ""))
 
     # Step 2: build theme items
     used_tickers: set[str] = set()
@@ -255,7 +467,8 @@ def theme_lists(
         if abs(agg_pct) < min_abs_theme:
             continue
 
-        direction: str = "down" if agg_pct < 0 else "up"
+        # Through the ONE helper every direction word in this module now uses.
+        direction: str = _direction_of(agg_pct)
 
         # Select members that ACTUALLY moved in the theme's direction, then show
         # the most extreme first — a "who comes back?" (down) list must lead with
@@ -273,10 +486,14 @@ def theme_lists(
             continue
         top_n_members = in_dir[:n]
 
-        # Pick question deterministically (use theme name hash for stability)
-        q_pool = _QUESTION_DOWN if direction == "down" else _QUESTION_UP
+        # Pick the tail deterministically (theme name hash for stability).
+        # THE POOL IS KEYED ON THE RECOMPUTED SIGN, never on a stored label: an
+        # "up" tail welded onto a negative aggregate is the direction-mismatch
+        # defect, and routing the choice through _direction_of(agg_pct) makes it
+        # unrepresentable rather than merely unlikely.
+        q_pool = _TAIL_DOWN if _direction_of(agg_pct) == "down" else _TAIL_UP
         # crc32 (NOT builtin hash(), which is PYTHONHASHSEED-salted per process
-        # → the question would flip run-to-run, breaking artifact reproducibility).
+        # → the tail would flip run-to-run, breaking artifact reproducibility).
         q_idx = zlib.crc32(theme_name.encode("utf-8")) % len(q_pool)
         question = q_pool[q_idx]
 
@@ -302,6 +519,11 @@ def theme_lists(
             "all_members": dict(top_n_members),   # before dedup
             "agg_pct": round(agg_pct, 2),
             "question": question,
+            # One session or nothing: a set of size 1 dates the whole aggregate;
+            # anything else averages two sessions and gets no date, so the
+            # consumer refuses it instead of publishing a claim it cannot anchor.
+            "asof": (next(iter(theme_sessions[theme_name]))
+                     if len(theme_sessions[theme_name]) == 1 else None) or None,
             "_lead_score": mean_abs + t1_boost,
         })
 
@@ -331,6 +553,7 @@ def theme_lists(
             "members": members_deduped,
             "agg_pct": item["agg_pct"],
             "question": item["question"],
+            "asof": item["asof"],
         })
 
     return result
@@ -410,7 +633,13 @@ def theme_facts(theme_item: dict) -> dict:
     theme_name = theme_item.get("theme", "")
     members = theme_item.get("members") or []
     agg_pct = theme_item.get("agg_pct")
-    direction = theme_item.get("direction", "down")
+    # THE NUMBER DECIDES. This was `theme_item.get("direction", "down")`, and the
+    # default is what shipped the defect: a theme item built without an explicit
+    # `direction` key printed "+7.7% on average today (8 names lower)" — a
+    # sentence contradicting the figure it was quoting, welded on by a default
+    # nobody could see. _direction_of recomputes from agg_pct and only falls back
+    # to the stored label when the aggregate itself is missing or unparseable.
+    direction = _direction_of(agg_pct, theme_item.get("direction", "down"))
     question = theme_item.get("question", "")
 
     if not theme_name or not members:

@@ -606,9 +606,17 @@ class TestAPlanlessNightIsAudible:
         assert "CODEX_ACCESS_TOKEN" not in line
 
     def test_a_majority_drop_that_still_ships_is_a_warning_not_an_error(self, capsys):
+        """An EDITORIAL majority drop still ships, so it stays a warning.
+
+        The stage moved from "provider" to "validate" when the outage breaker
+        landed: a provider-dominated wipeout is now an ::error by ruling (see
+        TestTheOutageBreaker), and a majority drop that the copy laws caused is
+        the case this test was always about — the writer was picky, the desks
+        published, nobody needs to be paged.
+        """
         from engine.marketing.content_studio import _alarm_on_a_planless_night
 
-        _alarm_on_a_planless_night(50, {"provider": 200}, 30, {})
+        _alarm_on_a_planless_night(50, {"validate": 200}, 30, {})
         out = capsys.readouterr().out
         assert out.startswith("::warning title=marketing-copy-drops::"), out
         assert "50 survived" in out
@@ -635,3 +643,114 @@ class TestAPlanlessNightIsAudible:
 
         src = inspect.getsource(content_studio.content_plan)
         assert "_alarm_on_a_planless_night(" in src
+
+
+class TestTheOutageBreaker:
+    """A provider-dominated night is an OUTAGE and must page, not whisper.
+
+    THE TWO NIGHTS THIS EXISTS FOR. 2026-07-30 and 2026-07-31, same fault, same
+    green CI: one provider answered HTTP 200 with a reasoning block and no text,
+    the no-fallback law deleted every item it touched, and 914 of 915 planned
+    posts died. The first night's ::warning fired exactly as designed and
+    changed nothing — which is the proof that ::warning was the wrong level.
+    GitHub renders a warning next to lint noise on a run that concluded
+    successfully, and the second night went dark the same way.
+
+    The breaker deliberately ships NO template fallback: the no-fallback law is
+    an editorial ruling and it stands. Its job is loudness plus the per-item
+    retry/failover in engine/marketing/copywriter.py, not replacement copy.
+    """
+
+    def test_a_provider_dominated_night_escalates_to_an_error(self, capsys):
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        # 60% of attempted items died at the provider stage, and posts shipped —
+        # so nothing else in this module would have raised an ::error at all.
+        _alarm_on_a_planless_night(40, {"provider": 60}, 12, {},
+                                   {"provider_no_text:deepseek": 60})
+        out = capsys.readouterr().out
+        line = next(ln for ln in out.splitlines()
+                    if "marketing-provider-outage" in ln)
+        # GitHub only parses `::` at column 0 — a logger prefix kills it silently.
+        assert line.startswith("::error title=marketing-provider-outage::"), line
+        assert "60 of 100" in line, line
+        assert "60%" in line, line
+        assert "provider_no_text:deepseek" in line, "the dominant reason is unnamed"
+        assert "provider: deepseek" in line, "the rung to pull is unnamed"
+
+    def test_a_minority_of_provider_drops_pages_nobody(self, capsys):
+        """20% is a bad night, not an outage. A breaker that trips on those is
+        a breaker nobody reads by the time one matters."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(80, {"provider": 20}, 12, {},
+                                   {"provider_no_text:deepseek": 20})
+        out = capsys.readouterr().out
+        assert "::error" not in out, out
+        assert "marketing-provider-outage" not in out, out
+
+    def test_a_validate_dominated_wipeout_is_not_an_outage(self, capsys):
+        """The breaker keys on the PROVIDER stage, not on the drop total.
+
+        A night the copy laws refused is a voice problem; paging an operator to
+        check the transport spends the one alert they get.
+        """
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(10, {"validate": 85, "provider": 5}, 12, {},
+                                   {"banned_phrase": 85})
+        out = capsys.readouterr().out
+        assert "marketing-provider-outage" not in out, out
+        assert "::warning title=marketing-copy-drops::" in out, out
+
+    def test_the_breaker_replaces_the_warning_rather_than_doubling_it(self, capsys):
+        """One cause, one census. Two spellings train the reader to skim both."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(40, {"provider": 60}, 12, {},
+                                   {"provider_no_text:deepseek": 60})
+        out = capsys.readouterr().out
+        assert "marketing-provider-outage" in out
+        assert "marketing-copy-drops" not in out, out
+
+    def test_both_silent_rungs_are_named_so_the_wrong_one_is_not_pulled(self, capsys):
+        """The copywriter tags the reason with EVERY rung that served nothing."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 900}, 40, {},
+                                   {"provider_no_text:codex+oauth": 900})
+        line = capsys.readouterr().out
+        assert "provider: codex+oauth" in line, line
+
+    def test_a_transport_wipeout_names_the_exception_not_a_provider(self, capsys):
+        """`provider_error:ConnectionError` must not read as a rung called
+        "ConnectionError" — only the no-text family carries a provider name."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 900}, 40, {},
+                                   {"provider_error:ConnectionError": 900})
+        line = capsys.readouterr().out
+        assert "provider: unrecorded" in line, line
+        assert "provider_error:ConnectionError" in line, line
+        assert "failed HARD" in line, line
+
+    def test_an_old_artifact_with_no_reasons_still_trips_the_breaker(self, capsys):
+        """Reason-less plans predate the fix; the breaker must not need them,
+        and must not invent a provider it cannot know."""
+        from engine.marketing.content_studio import _alarm_on_a_planless_night
+
+        _alarm_on_a_planless_night(0, {"provider": 915}, 10, {}, {})
+        line = capsys.readouterr().out
+        assert "::error title=marketing-provider-outage::" in line, line
+        assert "provider: unrecorded" in line, line
+        assert "DEEPSEEK_API_KEY" not in line, "guessing a cause it cannot know"
+
+    def test_the_new_reason_family_gets_a_remedy_not_a_shrug(self, capsys):
+        """`provider_no_text:<rung>` must reach the remedy table through the
+        family split — an unmapped reason falls back to the STAGE remedy, which
+        is the "check your credentials" misdirection of 2026-07-31."""
+        from engine.marketing.content_studio import _provider_remedy
+
+        remedy = _provider_remedy({"provider_no_text:deepseek": 914})
+        assert "NOT a" in remedy and "credential" in remedy, remedy
+        assert "provider_order" in remedy, remedy

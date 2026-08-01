@@ -274,8 +274,14 @@ _RUN_WORD = {"up": "the climb", "down": "the slide"}
 _RUN_COLOR = {"up": "green", "down": "red"}
 _LEADERS_LABEL = {"up": "Best", "down": "Worst"}
 _ONE_DAY_MOVE = {"up": "gain", "down": "drop"}
+#: Milestone verbs come in PAIRS: one that claims the crossing just happened
+#: and one that only claims where the price stands. Which one a post gets is
+#: decided by `facts.crossed_in_window`, never by the template — see
+#: :func:`_milestone_clause`.
 _MILESTONE_VERB = {"up": "just cleared", "down": "just broke below"}
+_MILESTONE_VERB_STANDING = {"up": "trades above", "down": "trades below"}
 _MCAP_VERB = {"up": "just crossed", "down": "just slipped back under"}
+_MCAP_VERB_STANDING = {"up": "sits above", "down": "sits below"}
 #: When the report landed. A fragment, always following the cashtag, so the
 #: sentence reads "$AAPL reported after yesterday's close and is up 6.0%".
 _REPORT_WHEN = {"bmo": "reported before the bell",
@@ -293,7 +299,8 @@ def static_strings() -> list[str]:
     for bank in WIRE_BANK.values():
         out.extend(tpl for tpl, _ in bank)
     for table in (_DIR_VERB, _DIR_WORD, _RUN_WORD, _RUN_COLOR, _LEADERS_LABEL,
-                  _ONE_DAY_MOVE, _MILESTONE_VERB, _MCAP_VERB, _REPORT_WHEN,
+                  _ONE_DAY_MOVE, _MILESTONE_VERB, _MILESTONE_VERB_STANDING,
+                  _MCAP_VERB, _MCAP_VERB_STANDING, _REPORT_WHEN,
                   _EPS_VERDICT):
         out.extend(table.values())
     for markers in _LIVE_MARKERS.values():
@@ -318,7 +325,7 @@ _STATIC_CLAUSE_FRAGMENTS: tuple[str, ...] = (
     "in market value", "the level our engine flagged in last night's plan",
     "the level our engine flagged in our", "plan", "Watching how it holds.",
     "Still green:", "are green", "Green across", "Median", "median", "Last",
-    "crossed", "just traded through", "through", "again", "is up", "is down",
+    "crossed", "traded through", "through", "again", "is up", "is down",
     # T4 earnings reaction
     "EPS came in at", "consensus", "surprise",
     # Two-step context brief (codex): mechanism, affected names, what to watch
@@ -480,32 +487,55 @@ def _leaders_clause(packet: Any, f: dict) -> str | None:
 
 
 def _milestone_clause(packet: Any, f: dict) -> str | None:
-    """D8 — pseudo-official milestone language, with the level attached."""
+    """D8 — pseudo-official milestone language, with the level attached.
+
+    "JUST" IS A CLAIM ABOUT TIME AND IT NEEDS A RECEIPT (2026-07-31).
+
+    The threshold detector compares the live price against yesterday's close,
+    so its crossing test stays true for the rest of the session once the level
+    goes. Phrasing that as an event shipped "$AAPL right now: just broke below
+    $325.00" at 16:00Z on a level the tape gapped through at the open — in the
+    same sweep that had the name 11% below its all-time high, i.e. more than
+    $20 under the level it was supposedly breaking. Both sentences were
+    arithmetically correct; only one of them was about now.
+
+    ``facts.crossed_in_window`` is the receipt (the prior tick did not have
+    this crossing). Without it the clause still ships — it just says where the
+    price STANDS, which is the honest half of the same fact.
+    """
     kind = str(f.get("kind") or "")
     direction = str(getattr(packet, "direction", "down"))
+    fresh = bool(f.get("crossed_in_window"))
     if kind in ("correction", "bear"):
         from_ath = fmt_pct(f.get("pct_from_ath_live"), signed=False)
         ath, ath_date = fmt_price(f.get("ath")), fmt_date(f.get("ath_date"), "full")
         if not (from_ath and ath and ath_date):
             return None
-        head = ("officially enters correction territory" if kind == "correction"
+        # "enters" is the event form; "is officially in" is the state. Bear was
+        # already stateful, so only correction has a pair to choose from.
+        head = ("officially enters correction territory" if (kind == "correction" and fresh)
+                else "is officially in correction territory" if kind == "correction"
                 else "is officially in bear market territory")
         return f"{head}, {from_ath} below the record close of {ath} set {ath_date}"
     if kind == "ath":
         ath, ath_date = fmt_price(f.get("ath")), fmt_date(f.get("ath_date"), "full")
         if not (ath and ath_date):
             return None
-        return f"just cleared its record close of {ath} from {ath_date}"
+        verb = "just cleared" if fresh else "trades above"
+        return f"{verb} its record close of {ath} from {ath_date}"
     if kind == "round":
         level = fmt_price(f.get("level"))
         if not level:
             return None
-        return f"{_MILESTONE_VERB.get(direction, 'just crossed')} {level}"
+        table = _MILESTONE_VERB if fresh else _MILESTONE_VERB_STANDING
+        return f"{table.get(direction, 'trades through')} {level}"
     if kind == "mcap":
         milestone = fmt_big(f.get("milestone_usd"))
         if not milestone:
             return None
-        return f"{_MCAP_VERB.get(direction, 'just crossed')} {milestone} in market value"
+        table = _MCAP_VERB if fresh else _MCAP_VERB_STANDING
+        return (f"{table.get(direction, 'trades through')} {milestone} "
+                "in market value")
     return None
 
 
@@ -572,6 +602,14 @@ def _mechanism_clause(packet: Any, f: dict) -> str | None:
     thing we can compute honestly from our own data: whether the peer group
     moved WITH the subject or did not. Everything it says is a leaf of the
     packet, so "why it matters" never becomes "what we assume".
+
+    THE COUNT IS AGREEING NAMES OVER GROUP SIZE (2026-07-31). It used to read
+    "{n_peers} names are trading together", which was the same two-defects-in-
+    one string the desk feeds shipped as "18 groups on the move today": a
+    numerator with no universe, AND the wrong number in it — n_peers is the
+    SIZE of the peer group, not a count of names that moved, so a group where
+    5 of 12 names agreed was described as 12 names trading together. n_agree
+    was already in the packet and simply never rendered.
     """
     mech = f.get("mechanism") if isinstance(f.get("mechanism"), dict) else None
     if not mech:
@@ -579,12 +617,14 @@ def _mechanism_clause(packet: Any, f: dict) -> str | None:
     group = str(mech.get("group") or "").strip()
     median = fmt_pct(mech.get("peer_median_pct"))
     n = fmt_count(mech.get("n_peers"))
-    if not group or not median or not n:
+    agree = fmt_count(mech.get("n_agree"))
+    if not group or not median or not n or not agree:
         return None
     if str(mech.get("kind")) == "group":
-        return f"This is a group move: {n} names are trading together, median {median}"
-    return (f"The rest of {group} is not following: {n} names, median {median}, "
-            "so this is one name and not the group")
+        return (f"This is a group move: {agree} of {n} names are trading "
+                f"together, median {median}")
+    return (f"The rest of {group} is not following: {agree} of {n} names moved "
+            f"with it, median {median}, so this is one name and not the group")
 
 
 def _affected_clause(packet: Any, f: dict) -> str | None:
@@ -675,6 +715,11 @@ def build_slots(packet: Any) -> dict[str, str | None]:
         "index_cashtag": f"${str(f.get('index_ticker') or 'SPY').upper()}",
         "index_pct": fmt_pct(f.get("index_pct")),
         "n_green": fmt_count(f.get("n_green")),
+        # The universe behind n_green. None when the detector could not supply
+        # it, which drops the only variant that makes a count claim rather than
+        # shipping "31 names are green" with no 31-of-what (see the note on
+        # _CONTRARIAN_VARIANTS).
+        "n_defensive": fmt_count(f.get("n_defensive_members")),
         "sector_label": str(f.get("sector")) if f.get("sector") else None,
         "median_pct": fmt_pct(f.get("median_pct")),
         "level": fmt_price(f.get("level")),
@@ -733,10 +778,25 @@ _STREAK_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
      ("streak_clause", "live_marker")),
 )
 
+#: "JUST" IS A CLAIM ABOUT TIME AND THIS FAMILY HAS NO RECEIPT FOR IT
+#: (2026-07-31, adversarial review). The signal_fired detector in
+#: engine/marketing/hot_tape.py tests ``prev_close < entry <= price`` against the
+#: LIVE quote, which stays true for the rest of the session once the level goes
+#: — and the packet is re-detected on every five-minute pass and may be booked
+#: hours later. So "just traded through" shipped the exact class of unlicensed
+#: freshness claim :func:`_milestone_clause` was rewritten to kill, on the one
+#: family that never grew the ``crossed_in_window`` leaf which licenses it there.
+#:
+#: The immediacy the copy needs is carried LAWFULLY by ``{live_marker}`` ("so far
+#: today", "right now", "in premarket trading"): a statement about WHEN we are
+#: looking, not about when the crossing happened. Should the signal_fired packet
+#: ever grow a fresh-cross receipt (the prior tick did not have this crossing, as
+#: threshold_cross gets from the ring), the event wording may come back — but
+#: behind that bool and a VERB PAIR, never as a bare template like this one was.
 _SIGNAL_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("{cashtag} crossed {level} {live_marker}, {flagged_clause}. Watching how it holds.",
      ("flagged_clause", "live_marker")),
-    ("{cashtag} just traded through {level} {live_marker}. {flagged_clause_cap}.",
+    ("{cashtag} traded through {level} {live_marker}. {flagged_clause_cap}.",
      ("flagged_clause", "live_marker")),
     ("{cashtag} {live_marker} at {price}, through {level}. {flagged_clause_cap}.",
      ("flagged_clause", "live_marker")),
@@ -745,8 +805,13 @@ _SIGNAL_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
 _CONTRARIAN_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("{index_cashtag} is {index_pct} {live_marker}. Still green: {green_list}.",
      ("green_list", "live_marker")),
-    ("{index_cashtag} is {index_pct} {live_marker}, and {n_green} names across "
-     "{sectors_clause} are green. {green_list}.",
+    # A COUNT CARRIES ITS UNIVERSE OR IT DOES NOT SHIP (2026-07-31). This shape
+    # used to read "and 31 names across Utilities and Consumer Defensive are
+    # green" — 31 of how many? The denominator slot is a REQUIRED device here,
+    # so a packet that cannot supply it renders one of the other two variants
+    # (which make no count claim) instead of a bare numerator.
+    ("{index_cashtag} is {index_pct} {live_marker}, and {n_green} of "
+     "{n_defensive} names across {sectors_clause} are green. {green_list}.",
      ("green_list", "live_marker")),
     ("{index_cashtag} {index_pct} {live_marker}. Green across {sectors_clause}: "
      "{green_list}.",
@@ -912,6 +977,11 @@ LLM_FACT_KEYS: frozenset[str] = frozenset({
     # identity + labels
     "ticker", "name", "sector", "subject_label", "kind", "dir", "direction",
     "mechanism", "report_when", "index_ticker", "rsi_band", "plan_as_of",
+    # A BOOL, and forwarded on purpose: it is what licenses "just broke below"
+    # over "trades below", and a model that cannot see it would phrase the
+    # freshness claim the template just refused. Bools are dropped by both
+    # numeric walkers, so it can never license a figure.
+    "crossed_in_window",
     # the tape
     "pct", "pct_today", "price", "level", "median_pct", "index_pct",
     "pct_from_ath_live", "ath", "ath_date", "biggest_1d",
@@ -920,8 +990,8 @@ LLM_FACT_KEYS: frozenset[str] = frozenset({
     "streak_extends", "len_today", "since", "window_start",
     "rsi_live", "rsi_since",
     # groups
-    "n_up", "n_down", "n_members", "n_green", "sectors_green",
-    "leaders", "green", "peers", "watch",
+    "n_up", "n_down", "n_members", "n_green", "n_defensive_members",
+    "sectors_green", "leaders", "green", "peers", "watch",
 })
 
 

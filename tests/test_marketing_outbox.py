@@ -1408,6 +1408,60 @@ def test_emit_stamps_tape_claim_source(tmp_path):
     assert mover_item["source"]["baseline_pct"] == -14.2
 
 
+def test_emit_stamps_the_plans_targets_not_just_entry_and_invalidation(tmp_path):
+    """THE DEFECT (approval-desk concern #1, 11 of 185 items on the 2026-07-31
+    corpus): the plan-block loop copied direction/entry/invalidation and stopped.
+
+    The copywriter whitelists `plan["targets"][0]` and `[1]` as t1/t2 and the
+    signal templates literally print "T1 {target1}", so a post that obeyed its
+    own plan reached approval_desk with a level the item's source could not
+    account for and was read as `invented_level`. The desk has read
+    `source.t1`/`.t2`/`.target` defensively since it was built (its
+    `_LEVEL_SOURCE_KEYS` comment says so outright) waiting for an emitter to
+    stamp them.
+
+    `targets` is a LIST in the plan's own shape, so positional derivation is the
+    part that has to work; the flat `t1`/`t2`/`target` keys are for lanes that
+    build a plan block by hand.
+    """
+    from engine.marketing.outbox import emit_from_content_plan, read_items
+
+    plan = _make_plan_fixture()
+    sig = plan["accounts"][0]["queue"][0]
+    assert sig["type"] == "signal"
+    sig["_plan"] = {"id": "prophet-NVDA-1", "direction": "BULL",
+                    "entry": 950.0, "invalidation": 899.0,
+                    "targets": [1010.0, 1080.0], "target": 1010.0}
+
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+    src = next(i["source"] for i in read_items(tmp_path)
+               if (i.get("source") or {}).get("plan_item_id") == sig["id"])
+
+    assert src["t1"] == 1010.0, src
+    assert src["t2"] == 1080.0, src
+    assert src["target"] == 1010.0, src
+    # Unchanged neighbours — the new stamps must not have displaced the old ones.
+    assert src["entry"] == 950.0 and src["invalidation"] == 899.0, src
+
+
+def test_emit_omits_absent_targets_rather_than_stubbing_them(tmp_path):
+    """A plan with no targets must produce NO t1/t2/target keys. A stubbed None
+    would read to the approval desk as "the plan asserted a level and it is
+    empty", which is a different and worse claim than "there is no target" —
+    the same omit-never-stub rule the W1 telemetry block above follows."""
+    from engine.marketing.outbox import emit_from_content_plan, read_items
+
+    plan = _make_plan_fixture()
+    sig = plan["accounts"][0]["queue"][0]
+    sig["_plan"] = {"id": "prophet-NVDA-1", "direction": "BULL", "entry": 950.0}
+
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+    src = next(i["source"] for i in read_items(tmp_path)
+               if (i.get("source") or {}).get("plan_item_id") == sig["id"])
+
+    assert "t1" not in src and "t2" not in src and "target" not in src, src
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # F6: slot_datetime — real per-day advisory times (D2..D7 no longer read day-1)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1482,3 +1536,373 @@ class TestSlotDatetime:
         from engine.marketing.outbox import _scheduled_at_for_slot
         assert _scheduled_at_for_slot("D2-PM", "2026-07-20") == "2026-07-21T17:30:00Z"
         assert _scheduled_at_for_slot("MOVER-01", "2026-07-20") == "immediate"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Slot-prefix refusals are COUNTED, and the unemittable ones are ANNOUNCED
+# (X Growth wave 1, 2026-07-31)
+#
+# The skip on a non-D1 slot is the oldest gate in emit_from_content_plan and it
+# incremented nothing: the 2026-07-31 activity row read every counter zero while
+# six live movers/theme_list items were discarded, which reads identically to
+# "the plan was empty". These pin the counter, the family split, and the two
+# opposite annotation behaviours (forward ladder = silence, non-day label =
+# ::warning at line start).
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _slot_plan(as_of: str, slots: list[str]) -> dict:
+    """A plan whose queue is one distinct item per slot label."""
+    return {
+        "as_of": as_of,
+        "accounts": [
+            {
+                "id": "flagship",
+                "queue": [
+                    {
+                        "id": f"post-slot-{n:03d}",
+                        "type": "macro",
+                        "account": "flagship",
+                        "cashtag": "",
+                        "ticker": "",
+                        "headline": f"Slot probe {n}.",
+                        "body": _DISTINCT_TEXTS[n % len(_DISTINCT_TEXTS)],
+                        "provenance": "neural_web",
+                        "chart_id": None,
+                        "slot": slot,
+                        "status": "drafted",
+                    }
+                    for n, slot in enumerate(slots)
+                ],
+            }
+        ],
+        "featured_charts": [],
+    }
+
+
+class TestSkippedSlotMismatch:
+    def test_non_d1_slot_is_counted_not_silent(self, tmp_path):
+        """THE DEFECT: a MOVER-/THEME- slot vanished through a bare `continue`.
+
+        Pins the counter itself — pre-fix this key did not exist, so the emit
+        summary could not distinguish "nothing to say" from "six posts thrown
+        away".
+        """
+        from engine.marketing.outbox import emit_from_content_plan
+
+        plan = _slot_plan(_AS_OF, ["MOVER-01", "THEME-02", "D1-AM"])
+        result = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG,
+                                        day_prefix="D1")
+
+        assert result["emitted"] == 1
+        assert result["skipped_slot_mismatch"] == 2, result
+
+    def test_family_breakdown_separates_ladder_from_unemittable(self, tmp_path):
+        """THREE kinds of skip, one counter, and the breakdown is what tells
+        them apart in the activity row:
+
+          * `D2`..`D7` — the forward ladder, regenerated nightly by design;
+          * `CONF` — confluence, deliberately and permanently unemittable (see
+            `test_confluence_is_counted_but_never_alarms`);
+          * `MOVER`/`THEME`/a bare label — a lane that can never publish and did
+            not mean to be in that state.
+
+        All three are COUNTED here. Only the third is an alarm — that split is
+        pinned by the two annotation tests below, not by this one.
+        """
+        from engine.marketing.outbox import emit_from_content_plan
+
+        plan = _slot_plan(_AS_OF, ["D2-AM", "D7-PM", "MOVER-01", "CONF-01",
+                                   "THEME-03", "D1-AM"])
+        result = emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG,
+                                        day_prefix="D1")
+
+        assert result["skipped_slot_mismatch"] == 5, result
+        assert result["skipped_slot_by_family"] == {
+            "D2": 1, "D7": 1, "MOVER": 1, "CONF": 1, "THEME": 1,
+        }, result
+
+    def test_counter_reaches_the_activity_row(self, tmp_path):
+        """The activity row is the surface an operator actually reads; a counter
+        that only lives in the return value would have left the same silence."""
+        from engine.marketing.outbox import emit_from_content_plan
+
+        emit_from_content_plan(_slot_plan(_AS_OF, ["MOVER-01", "D1-AM"]),
+                               root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+
+        rows = [
+            json.loads(line)
+            for line in (tmp_path / "data" / "marketing" / "outbox" /
+                         "activity.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        emit_rows = [r for r in rows if r.get("lane") == "emit"]
+        assert emit_rows, rows
+        assert emit_rows[-1]["skipped_slot_mismatch"] == 1
+        assert emit_rows[-1]["skipped_slot_by_family"] == {"MOVER": 1}
+
+    def test_unemittable_family_warns_at_line_start(self, tmp_path, capsys):
+        """A non-day label gets a GitHub annotation, and it must START the line —
+        this module's logger prefixes its records, so a logged annotation is
+        silently dropped by Actions (tests/test_gh_annotation_line_start.py)."""
+        from engine.marketing.outbox import emit_from_content_plan
+
+        emit_from_content_plan(_slot_plan(_AS_OF, ["MOVER-01", "THEME-02", "D1-AM"]),
+                               root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+
+        out = capsys.readouterr().out
+        hits = [ln for ln in out.splitlines()
+                if "marketing_unemittable_slots" in ln]
+        assert hits, out
+        assert hits[0].startswith("::warning title=marketing_unemittable_slots::"), hits
+        assert "MOVER=1" in hits[0] and "THEME=1" in hits[0]
+
+    def test_forward_ladder_alone_raises_no_alarm(self, tmp_path, capsys):
+        """~800 D2..D7 items are skipped every night BY DESIGN. Warning on them
+        would fire nightly and train the operator to ignore the annotation that
+        matters."""
+        from engine.marketing.outbox import emit_from_content_plan
+
+        result = emit_from_content_plan(_slot_plan(_AS_OF, ["D2-AM", "D3-PM", "D1-AM"]),
+                                        root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+
+        assert result["skipped_slot_mismatch"] == 2
+        assert "marketing_unemittable_slots" not in capsys.readouterr().out
+
+    def test_confluence_is_counted_but_never_alarms(self, tmp_path, capsys):
+        """CONF- IS ALARM FATIGUE, AND IT WAS INTENTIONAL-AND-WRONG
+        (adversarial review, 2026-07-31).
+
+        The warning was built to catch a lane that went dark by ACCIDENT — the
+        movers desk shipped MOVER-NN for two weeks and published nothing.
+        Confluence is the opposite case: content_studio slots it CONF-NN knowing
+        emit takes D1- only, and its census note refuses to "fix" that by
+        relabelling the slot, because publication has to be earned on evidence
+        rather than on a prefix change. So this annotation fired EVERY nightly
+        on a state nobody intends to change, which is precisely how an operator
+        learns to scroll past the annotation on the night a real lane dies.
+
+        Counted, never alarmed — and the MOVER half of the second case is the
+        anti-vacuity control: a version of this that simply stopped warning
+        would pass the first assertion and fail the second.
+        """
+        from engine.marketing.outbox import emit_from_content_plan
+
+        result = emit_from_content_plan(
+            _slot_plan(_AS_OF, ["CONF-01", "CONF-02", "D1-AM"]),
+            root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+
+        assert result["skipped_slot_by_family"] == {"CONF": 2}, result
+        assert "marketing_unemittable_slots" not in capsys.readouterr().out
+
+    def test_a_real_dark_lane_still_warns_alongside_confluence(self, tmp_path,
+                                                              capsys):
+        """The exclusion is per FAMILY, not "any unemittable label present". A
+        MOVER item in the same emit must still raise the alarm, and the
+        annotation must not name CONF — a breakdown listing a family nobody can
+        act on is the fatigue coming back through the message body."""
+        from engine.marketing.outbox import emit_from_content_plan
+
+        emit_from_content_plan(
+            _slot_plan(_AS_OF, ["CONF-01", "MOVER-02", "D1-AM"]),
+            root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+
+        hits = [ln for ln in capsys.readouterr().out.splitlines()
+                if ln.startswith("::warning title=marketing_unemittable_slots::")]
+        assert hits, "a genuinely dark lane stopped warning"
+        assert "MOVER=1" in hits[0], hits
+        assert "CONF" not in hits[0], hits
+        # The count in the headline is the unemittable-and-actionable count, not
+        # the raw skip total (which is 2 here).
+        assert hits[0].startswith(
+            "::warning title=marketing_unemittable_slots::1 plan item(s)"), hits
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The movers desk actually REACHES the outbox (X Growth wave 1, 2026-07-31)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_heatmaps(root: Path) -> None:
+    """Minimal sp500 + themes heatmap fixtures — enough supply for 2 movers and
+    2 theme lists (movers_source needs |pct| >= 3.0 and >= 4 theme members)."""
+    md = root / "site" / "marketdata"
+    md.mkdir(parents=True, exist_ok=True)
+    (md / "sp500_heatmap.json").write_text(json.dumps({
+        "asof": _AS_OF,
+        "tiles": [
+            {"t": "AAPL", "name": "Apple", "sector": "Technology",
+             "perf": {"1D": 7.5}},
+            {"t": "NVDA", "name": "NVIDIA", "sector": "Technology",
+             "perf": {"1D": -9.1}},
+            {"t": "AMD", "name": "AMD", "sector": "Technology",
+             "perf": {"1D": -6.2}},
+        ],
+    }), encoding="utf-8")
+    (md / "themes_heatmap.json").write_text(json.dumps({
+        "tiles": [
+            {"t": "aicompute", "name": "Compute",
+             "sector": "Artificial Intelligence", "perf": {"1D": -3.0},
+             "members": [{"t": "NVDA", "perf": {"1D": -4.5}},
+                         {"t": "AMD", "perf": {"1D": -6.2}},
+                         {"t": "SMCI", "perf": {"1D": -5.1}},
+                         {"t": "AVGO", "perf": {"1D": -3.8}},
+                         {"t": "MRVL", "perf": {"1D": -2.5}}]},
+            {"t": "biotech", "name": "Biotech Core",
+             "sector": "Healthcare & Biotech", "perf": {"1D": 2.5},
+             "members": [{"t": "AMGN", "perf": {"1D": 4.2}},
+                         {"t": "BIIB", "perf": {"1D": 3.1}},
+                         {"t": "REGN", "perf": {"1D": 2.8}},
+                         {"t": "GILD", "perf": {"1D": 1.9}},
+                         {"t": "VRTX", "perf": {"1D": 2.2}}]},
+        ],
+    }), encoding="utf-8")
+
+
+def test_movers_desk_items_reach_the_outbox(tmp_path):
+    """END TO END, and it is the whole defect: content_plan mints mover /
+    theme_list posts and emit_from_content_plan must QUEUE them.
+
+    Pre-fix the movers desk stamped MOVER-NN / THEME-NN, emit dropped every slot
+    that is not "D1-", and the desk published nothing from 2026-07-19 onward
+    while every plan carried its items. The assertion is on outbox KINDS, so it
+    fails on the pre-fix engine no matter how the plan is shaped.
+    """
+    from engine.marketing.content_studio import content_plan
+    from engine.marketing.outbox import emit_from_content_plan, read_items
+    from tests.test_marketing_content import _SAMPLE_ACCOUNTS, _SAMPLE_PLANS
+
+    _write_heatmaps(tmp_path)
+    cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS},
+           "sentinel": {"max_posts_per_account_per_day": 8}}
+    plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None, root=tmp_path)
+
+    reach = [it for acct in plan["accounts"] for it in acct["queue"]
+             if it.get("provenance") == "movers_desk"]
+    assert reach, "fixture produced no movers-desk items"
+    assert all(str(it["slot"]).startswith("D1-") for it in reach), (
+        f"reach items still carry an unemittable slot: "
+        f"{[it['slot'] for it in reach]}")
+
+    emit_from_content_plan(plan, root=tmp_path, cfg=cfg, day_prefix="D1")
+    kinds = {i["kind"] for i in read_items(tmp_path)}
+    assert {"mover", "theme_list"} & kinds, (
+        f"movers desk reached no outbox item; kinds={sorted(kinds)}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# X Growth W1g — a post may not be scheduled before it existed.
+#
+# THE DEFECT (2026-07-25..31 audit): 41 items shipped with `scheduled_at`
+# EARLIER than their own `created_at` — a D1 slot ladder resolved against the
+# CONTENT date while the run itself happened hours later, so an item written at
+# 15:46Z was booked for 13:00Z the same day. The publisher reads "due in the
+# past" as due NOW, so the whole ladder collapsed into one undifferentiated
+# backlog and posted back-to-back, and every "was this late?" measurement
+# downstream was poisoned at birth.
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestScheduleFloorAtEnqueue:
+    def _backdated(self, *, text="Backdated slot test about $PLTR levels."):
+        from engine.marketing.outbox import make_item
+        return make_item(
+            account="flagship", kind="signal", text=text, as_of=_AS_OF,
+            provenance="content_studio", slot="D1-S1",
+            # created 12:00Z (_FIXED_NOW), booked for 09:00Z the same day
+            scheduled_at="2026-07-19T09:00:00Z", now=_FIXED_NOW,
+        )
+
+    def test_a_slot_before_creation_is_clamped_forward(self, tmp_path):
+        from engine.marketing.outbox import enqueue, read_items
+        item = self._backdated()
+        assert enqueue(item, root=tmp_path) == "queued"
+        row = read_items(root=tmp_path)[0]
+        assert row["scheduled_at"] >= row["created_at"], (
+            f"queued a post scheduled {row['scheduled_at']} before it was "
+            f"created {row['created_at']}"
+        )
+        assert row["scheduled_at"] == "2026-07-19T12:00:00Z", row["scheduled_at"]
+
+    def test_the_original_slot_is_preserved_for_diagnosis(self, tmp_path):
+        """Silently tidying a lane's bad slots hides the lane that emits them."""
+        from engine.marketing.outbox import enqueue, read_items
+        assert enqueue(self._backdated(), root=tmp_path) == "queued"
+        row = read_items(root=tmp_path)[0]
+        assert (row.get("source") or {}).get("scheduled_at_original") == \
+            "2026-07-19T09:00:00Z", row.get("source")
+
+    def test_a_future_slot_is_left_exactly_alone(self, tmp_path):
+        from engine.marketing.outbox import make_item, enqueue, read_items
+        item = make_item(
+            account="flagship", kind="signal",
+            text="Future slot test about $NVDA and the tape.", as_of=_AS_OF,
+            provenance="content_studio", slot="D1-S6",
+            scheduled_at="2026-07-19T22:00:00Z", now=_FIXED_NOW,
+        )
+        assert enqueue(item, root=tmp_path) == "queued"
+        assert read_items(root=tmp_path)[0]["scheduled_at"] == "2026-07-19T22:00:00Z"
+
+    def test_immediate_is_not_a_time_and_is_never_rewritten(self, tmp_path):
+        from engine.marketing.outbox import make_item, enqueue, read_items
+        item = make_item(
+            account="flagship", kind="signal",
+            text="Immediate post about $AMD and the chip tape.", as_of=_AS_OF,
+            provenance="content_studio", scheduled_at="immediate", now=_FIXED_NOW,
+        )
+        assert enqueue(item, root=tmp_path) == "queued"
+        assert read_items(root=tmp_path)[0]["scheduled_at"] == "immediate"
+
+    def test_the_clamp_does_not_change_the_item_id(self, tmp_path):
+        """The id hashes (account, kind, text, as_of) — if the clamp fed into it,
+        dedupe would break for every clamped item."""
+        from engine.marketing.outbox import enqueue, read_items
+        item = self._backdated()
+        wanted = item["id"]
+        assert enqueue(item, root=tmp_path) == "queued"
+        assert read_items(root=tmp_path)[0]["id"] == wanted
+
+    def test_the_caller_sees_the_same_schedule_the_ledger_does(self, tmp_path):
+        """The clamp mutates in place on purpose: the governor lanes log and
+        index off the dict they handed in."""
+        from engine.marketing.outbox import enqueue
+        item = self._backdated()
+        assert enqueue(item, root=tmp_path) == "queued"
+        assert item["scheduled_at"] == "2026-07-19T12:00:00Z", item["scheduled_at"]
+
+    def test_a_rejected_duplicate_comes_back_untouched(self, tmp_path):
+        """THE MUTATION ORDER (adversarial review, 2026-07-31).
+
+        The clamp used to run at the TOP of enqueue, ahead of
+        `_rejection_reason`. Since it deliberately rewrites the caller's own
+        dict, a duplicate or over-cap item was handed back rewritten: a
+        scheduled_at it never got, a `source.scheduled_at_original` breadcrumb
+        pointing at a row that does not exist, and a WARNING in the log about a
+        post nobody queued. Nothing is written for a rejected item, so nothing
+        should be rewritten for one either.
+
+        Asserted on a SECOND dict with identical content — the id hashes
+        (account, kind, text, as_of) and excludes scheduled_at, so this is a
+        real duplicate of the first, which is exactly the shape the mutation
+        leaked through.
+        """
+        from engine.marketing.outbox import enqueue
+
+        assert enqueue(self._backdated(), root=tmp_path) == "queued"
+
+        dupe = self._backdated()
+        assert enqueue(dupe, root=tmp_path) == "duplicate"
+        assert dupe["scheduled_at"] == "2026-07-19T09:00:00Z", dupe["scheduled_at"]
+        assert "scheduled_at_original" not in (dupe.get("source") or {}), dupe
+
+    def test_a_capped_out_item_comes_back_untouched(self, tmp_path):
+        """The other rejection path, because `_rejection_reason` returns several
+        verdicts and a fix that only moved the clamp past the dedupe check would
+        pass the test above and still rewrite an over-cap item."""
+        from engine.marketing.outbox import enqueue
+
+        assert enqueue(self._backdated(text="First post about $PLTR levels."),
+                       root=tmp_path, max_per_account_day=1) == "queued"
+
+        over = self._backdated(
+            text="A completely separate note on $MU memory pricing today.")
+        assert enqueue(over, root=tmp_path, max_per_account_day=1) == "cap_exceeded"
+        assert over["scheduled_at"] == "2026-07-19T09:00:00Z", over["scheduled_at"]
+        assert "scheduled_at_original" not in (over.get("source") or {}), over

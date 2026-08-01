@@ -533,6 +533,24 @@ def test_validate_copy_fails_for_unrelated_cashtag_in_theme_list():
     assert invalid_v, f"Expected cashtag violation for $TSLA (not in member list), got: {violations}"
 
 
+def _synthetic_closes_loader(ticker: str):
+    """A closes_loader that always answers — 60 sessions of monotone bars.
+
+    A MOVER POST CANNOT EXIST WITHOUT A CARD (content_studio's card-less unseat
+    pass, 2026-07-31): `mover` is a bare-cashtag kind, so a chartless one is
+    terminally quarantined at dispatch, and the plan now UNSEATS it rather than
+    emitting it. `closes_loader=None` therefore means zero mover posts by
+    construction — the assertion below would be testing the absence of the lane,
+    not the content of its copy. Feeding a loader is what puts a mover in the
+    plan at all.
+    """
+    base = 100.0
+    dates = [f"2026-05-{d:02d}" for d in range(1, 31)] + \
+            [f"2026-06-{d:02d}" for d in range(1, 31)]
+    closes = [base + i * 0.5 for i in range(len(dates))]
+    return dates, closes
+
+
 def test_mover_posts_carry_real_pct():
     """Mover posts in the full plan must contain the real move %."""
     sp500_path = ROOT / "site" / "marketdata" / "sp500_heatmap.json"
@@ -541,7 +559,7 @@ def test_mover_posts_carry_real_pct():
 
     from engine.marketing.content_studio import content_plan
     cfg, plans = _make_test_cfg()
-    plan = content_plan(cfg, plans, closes_loader=None, root=ROOT)
+    plan = content_plan(cfg, plans, closes_loader=_synthetic_closes_loader, root=ROOT)
 
     mover_items = _get_all_queue_items(plan, "mover")
     assert mover_items, "No mover posts in content plan"
@@ -564,16 +582,22 @@ def test_no_indicator_vocab_in_mover_theme_posts():
 
     from engine.marketing.content_studio import content_plan
     cfg, plans = _make_test_cfg()
-    plan = content_plan(cfg, plans, closes_loader=None, root=ROOT)
+    # A loader, not None: a chartless mover is UNSEATED (see
+    # _synthetic_closes_loader), so `closes_loader=None` would silently take the
+    # `mover` half of this sweep dark while the theme half kept it green.
+    plan = content_plan(cfg, plans, closes_loader=_synthetic_closes_loader, root=ROOT)
 
+    seen = 0
     for type_id in ("mover", "theme_list"):
         items = _get_all_queue_items(plan, type_id)
+        seen += len(items)
         for item in items:
             full = (item.get("headline", "") + " " + item.get("body", "")).lower()
             m = _INDICATOR_VOCAB.search(full)
             assert m is None, (
                 f"[{type_id}] Indicator vocab '{m.group()}' found in: {full[:100]}"
             )
+    assert seen, "no mover/theme posts to sweep — this guard would be vacuous"
 
 
 def test_no_dup_headlines_across_mover_theme_posts():
@@ -585,11 +609,14 @@ def test_no_dup_headlines_across_mover_theme_posts():
 
     from engine.marketing.content_studio import content_plan
     cfg, plans = _make_test_cfg()
-    plan = content_plan(cfg, plans, closes_loader=None, root=ROOT)
+    # See test_no_indicator_vocab_in_mover_theme_posts: without a loader the
+    # mover half of this comparison is empty and the dup check is half-blind.
+    plan = content_plan(cfg, plans, closes_loader=_synthetic_closes_loader, root=ROOT)
 
     mover_items = _get_all_queue_items(plan, "mover")
     theme_items = _get_all_queue_items(plan, "theme_list")
     all_items = mover_items + theme_items
+    assert all_items, "no mover/theme posts built — dup check would be vacuous"
     headlines = [i.get("headline", "").lower().strip() for i in all_items]
     assert len(headlines) == len(set(headlines)), (
         f"Duplicate headlines in mover/theme posts: "
@@ -646,3 +673,294 @@ def test_theme_question_deterministic_across_processes():
                            cwd=".")
         outs.append(r.stdout.strip())
     assert outs[0] == outs[1] == outs[2], f"question selection not deterministic: {outs}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 25-30: session provenance + direction-consistent tails (2026-07-31)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_pair(tmp, *, sp_asof, th_asof, sp_pct=-9.0, th_pct=-14.0):
+    import json
+    md = tmp / "site" / "marketdata"
+    md.mkdir(parents=True, exist_ok=True)
+    (md / "sp500_heatmap.json").write_text(json.dumps({
+        "asof": sp_asof, "generated_utc": "2026-07-31 11:58", "source": "daily-close",
+        "tiles": [{"t": "ISRG", "name": "Intuitive", "sector": "Health Care",
+                   "perf": {"1D": sp_pct}}]}), encoding="utf-8")
+    (md / "themes_heatmap.json").write_text(json.dumps({
+        "asof": th_asof, "generated_utc": "2026-07-31 11:58", "source": "finviz-themes",
+        "tiles": [{"t": "MED", "name": "Medtech", "sector": "Medtech",
+                   "perf": {"1D": -2.0},
+                   "members": [{"t": "ISRG", "perf": {"1D": th_pct}},
+                               {"t": "SYK", "perf": {"1D": -2.0}},
+                               {"t": "BSX", "perf": {"1D": -1.5}},
+                               {"t": "MDT", "perf": {"1D": -1.1}}]}]}),
+        encoding="utf-8")
+
+
+def test_load_movers_dates_each_row_by_its_own_artifact(tmp_path):
+    """PINS defect 4's root: the two payloads stamp DIFFERENT sessions and the
+    single payload-level `asof` (sp500's) mislabels every theme row by a day."""
+    from engine.marketing.movers_source import load_movers
+    _write_pair(tmp_path, sp_asof="2026-07-30", th_asof="2026-07-31")
+    d = load_movers(tmp_path)
+
+    assert d["sp500_asof"] == "2026-07-30"
+    assert d["themes_asof"] == "2026-07-31"
+    assert d["asof"] == d["sp500_asof"]                 # legacy alias unchanged
+    assert d["sp500_generated_utc"] == "2026-07-31 11:58"
+    assert d["sp500_tiles"][0]["asof"] == "2026-07-30"  # per ROW, not per payload
+    assert d["theme_tiles"][0]["members"][0]["asof"] == "2026-07-31"
+
+
+def test_prefer_fresher_session_re_dates_only_the_shared_rows(tmp_path):
+    """PINS the (c) arm and its blast radius: the shared name takes the fresher
+    read AND the fresher session; nothing else is touched, and the function is
+    OPT-IN so press/desk_planner keeps the payload it dates its claims with."""
+    from engine.marketing.movers_source import load_movers, prefer_fresher_session
+    _write_pair(tmp_path, sp_asof="2026-07-30", th_asof="2026-07-31")
+    raw = load_movers(tmp_path)
+    out = prefer_fresher_session(raw)
+
+    tile = out["sp500_tiles"][0]
+    assert tile["perf"]["1D"] == -14.0 and tile["asof"] == "2026-07-31"
+    # The source payload is untouched — this returns a copy.
+    assert raw["sp500_tiles"][0]["perf"]["1D"] == -9.0
+    assert out["asof"] == "2026-07-30"
+
+
+def test_prefer_fresher_session_is_a_no_op_when_themes_is_not_fresher(tmp_path):
+    """Fail closed: equal or older themes stamps change nothing."""
+    from engine.marketing.movers_source import load_movers, prefer_fresher_session
+    _write_pair(tmp_path, sp_asof="2026-07-31", th_asof="2026-07-31")
+    out = prefer_fresher_session(load_movers(tmp_path))
+    assert out["sp500_tiles"][0]["perf"]["1D"] == -9.0
+    assert out["sp500_tiles"][0]["asof"] == "2026-07-31"
+
+
+def test_theme_facts_direction_word_follows_the_number_not_a_default():
+    """PINS the direction-mismatch defect. The item carries NO `direction` key,
+    which used to default to "down" — so a +7.7% theme printed "(4 names lower)",
+    a sentence contradicting the figure inside it, on a live account."""
+    from engine.marketing.movers_source import theme_facts
+    item = {"theme": "Crypto & Blockchain", "agg_pct": 7.7,
+            "members": [{"ticker": t, "pct": 7.0}
+                        for t in ("RIOT", "MARA", "HUT", "CLSK")]}
+    text = next(f["text"] for f in theme_facts(item)["facts"] if f["id"] == "theme_agg")
+    assert "+7.7%" in text
+    assert "higher" in text and "lower" not in text, text
+
+
+def test_a_direction_label_cannot_override_the_sign():
+    """Even an explicit, WRONG label loses to the number."""
+    from engine.marketing.movers_source import theme_facts, _direction_of
+    assert _direction_of(7.7, "down") == "up"
+    assert _direction_of(-1.0, "up") == "down"
+    assert _direction_of(None, "up") == "up"          # unparseable → the label
+    item = {"theme": "X", "agg_pct": 7.7, "direction": "down",
+            "members": [{"ticker": "A", "pct": 7.0}]}
+    text = next(f["text"] for f in theme_facts(item)["facts"] if f["id"] == "theme_agg")
+    assert "higher" in text, text
+
+
+def test_every_tail_costs_the_author_and_is_direction_keyed():
+    """PINS defect 5's table. Each tail must (a) end on "?" — copywriter requires
+    it of a theme_list body — (b) put the question on the AUTHOR, and (c) carry no
+    banned language. The pre-fix pools ("Which one breaks out first?") fail (b)."""
+    from engine.marketing import movers_source as ms
+    from engine.marketing.copywriter import banned_language
+    from engine.marketing.publish_time_content import _tail_is_bait
+
+    for pool in (ms._TAIL_DOWN, ms._TAIL_UP):
+        assert len(pool) >= 4
+        for tail in pool:
+            assert tail.rstrip().endswith("?"), tail
+            assert not _tail_is_bait(tail), tail
+            assert banned_language(tail) == [], (tail, banned_language(tail))
+    assert not (set(ms._TAIL_DOWN) & set(ms._TAIL_UP))
+
+
+def test_every_tail_fits_the_length_budget():
+    """PINS the supply regression. Fails pre-fix (longest bank entry was 80).
+
+    The tail is appended to a theme body that already carries a member list, and
+    copywriter.validate_copy caps headline+body at 275 characters. The 2026-07-31
+    stance rewrite came back at up to 80 chars against the retired bank's 32 —
+    2.5× — which pushed the 'dry, receipts-forward' theme render to 282 and got
+    the candidate dropped as a copy violation. A tail that costs the desk the
+    whole post is not a voice improvement, and the study's reaction-word form is
+    a SHORT verdict anyway.
+    """
+    from engine.marketing import movers_source as ms
+    assert ms._TAIL_MAX_CHARS <= 48
+    over = [(len(t), t) for pool in (ms._TAIL_DOWN, ms._TAIL_UP) for t in pool
+            if len(t) > ms._TAIL_MAX_CHARS]
+    assert not over, f"tails over {ms._TAIL_MAX_CHARS} chars: {over}"
+
+
+def test_theme_tail_pool_is_keyed_to_the_aggregate_sign():
+    """A down theme may never draw an up tail, and vice versa."""
+    from engine.marketing import movers_source as ms
+
+    def _tiles(sign):
+        return [{"t": "AI", "name": "AI", "sector": "AI", "perf": {"1D": 0.0},
+                 "members": [{"t": t, "perf": {"1D": sign * p}}
+                             for t, p in (("NVDA", 4.1), ("AMD", 3.2),
+                                          ("SMCI", 2.8), ("AVGO", 2.2))]}]
+
+    up = ms.theme_lists({"theme_tiles": _tiles(1.0)}, min_members=4)
+    down = ms.theme_lists({"theme_tiles": _tiles(-1.0)}, min_members=4)
+    assert up and up[0]["direction"] == "up" and up[0]["question"] in ms._TAIL_UP
+    assert down and down[0]["direction"] == "down" and down[0]["question"] in ms._TAIL_DOWN
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The reach desk's SEATING contract (content_studio movers/theme block).
+#
+# Two adversarial-review findings, both about a reach item that costs a D1 rung
+# and delivers nothing:
+#
+#   1. CHARTLESS SEATED MOVER. Seating runs before the card renderers (so the
+#      rung is settled before a card is paid for) and the renderers are fail-soft.
+#      `mover`/`theme_list` are bare-cashtag kinds, so a chartless one is
+#      TERMINALLY quarantined at dispatch — it consumed a rung and a day-cap slot
+#      on its way to being deleted, while the census still counted it as supply.
+#   2. ROUND-ROBIN DROPS ON A FULL DESK. `enabled_rows[_idx % _n_acct]` was
+#      resolved before anyone asked whether that desk had a rung, so one full
+#      desk dropped its share of the batch while its neighbours sat on free
+#      rungs — reported as "no free D1 rung", which was false of the network.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_REACH_MEMBERS = [("NVDA", -1.0), ("AMD", -1.2), ("SMCI", -1.4),
+                  ("MU", -1.1), ("AVGO", -1.3)]
+
+
+def _reach_root(tmp_path, *, n_themes: int = 3):
+    """A minimal root the movers desk can read: an S&P board + N theme tiles."""
+    import json
+    md = tmp_path / "site" / "marketdata"
+    md.mkdir(parents=True, exist_ok=True)
+    (md / "sp500_heatmap.json").write_text(json.dumps({
+        "asof": "2026-07-31",
+        "tiles": [{"t": t, "name": t, "sector": "Tech", "perf": {"1D": p}}
+                  for t, p in _REACH_MEMBERS]}), encoding="utf-8")
+    (md / "themes_heatmap.json").write_text(json.dumps({"tiles": [
+        {"t": f"T{i}", "name": f"Theme {i}", "sector": f"Theme {i}",
+         "perf": {"1D": -1.2 - i},
+         "members": [{"t": f"{t}{i}", "perf": {"1D": p}} for t, p in _REACH_MEMBERS]}
+        for i in range(n_themes)]}), encoding="utf-8")
+    return tmp_path
+
+
+def _reach_plan(tmp_path, monkeypatch, *, n_slots: int, n_themes: int = 3,
+                closes_loader=None):
+    """Run content_plan over a tiny D1 ladder with one FULL desk + one open one.
+
+    `full_desk` has no mover/theme weight, so the allocator books its rungs with
+    other kinds and the stub-strip frees nothing; `open_desk` is mover/theme
+    heavy, so stripping its stubs hands the reach injection real rungs. That is
+    the exact shape the round-robin defect needs: index 0 lands on the full desk.
+
+    The ladder is shrunk (28 rungs → `n_slots`) because a 28-rung desk is never
+    full in a unit fixture, and "the desk was full" is the condition under test.
+    """
+    import engine.marketing.content_studio as cs
+    import engine.marketing.chart_render as cr
+    # No network in a unit test: the logo fetch would reach the CDN.
+    monkeypatch.setattr(cr, "resolve_color_logo", lambda t, r: None, raising=False)
+    monkeypatch.setattr(cr, "resolve_logo", lambda t, r: None, raising=False)
+    monkeypatch.setattr(cs, "_LADDER_SLOTS", [f"S{i}" for i in range(1, n_slots + 1)])
+    _reach_root(tmp_path, n_themes=n_themes)
+    cfg = {"desk_network": {"stage": "A", "accounts": [
+        {"id": "full_desk", "kind": "branded", "beat": "A",
+         "voice": "authoritative desk", "enabled": True, "tilt": {"education": 1.0}},
+        {"id": "open_desk", "kind": "generic", "beat": "B",
+         "voice": "fast, reactive", "enabled": True,
+         "tilt": {"mover": 0.5, "theme_list": 0.5}},
+    ]}}
+    plan = cs.content_plan(cfg, [], closes_loader=closes_loader, root=tmp_path)
+    census = (plan.get("content") or {}).get("movers") or plan.get("movers") or {}
+    return plan, census
+
+
+def _d1_items(plan, type_id=None):
+    out = []
+    for acct in plan.get("accounts", []):
+        for it in acct.get("queue", []):
+            if str(it.get("slot") or "").startswith("D1-") and (
+                    type_id is None or it.get("type") == type_id):
+                out.append((acct["id"], it))
+    return out
+
+
+def test_a_full_desk_hands_its_reach_item_to_the_next_desk(tmp_path, monkeypatch):
+    """FINDING 2. Fails pre-fix: with the desk index fixed before the pool was
+    consulted, one of the three themes was dropped as "no free D1 rung" while
+    `open_desk` still had a rung, and only two seated."""
+    plan, census = _reach_plan(tmp_path, monkeypatch, n_slots=6, n_themes=3)
+    assert "no_free_rung" not in (census.get("unseated_reasons") or {}), census
+    assert len(census["theme_lists"]) == 3, census
+
+
+def test_no_free_rung_is_never_reported_while_a_desk_still_has_one(tmp_path,
+                                                                   monkeypatch):
+    """The invariant, not one lucky configuration. `no_free_rung` is honest ONLY
+    when the whole network is out of rungs — that is what the reason says, and a
+    census that says it while a neighbour has headroom sends the next reader to
+    add ladder capacity for an allocation bug."""
+    for n_slots in (2, 3, 5, 6):
+        plan, census = _reach_plan(tmp_path / f"n{n_slots}", monkeypatch,
+                                   n_slots=n_slots, n_themes=3)
+        if (census.get("unseated_reasons") or {}).get("no_free_rung"):
+            assert sum((census.get("free_rungs") or {}).values()) == 0, (
+                f"n_slots={n_slots}: dropped a reach item for 'no free rung' "
+                f"with {census.get('free_rungs')} still free"
+            )
+
+
+def test_a_chartless_reach_item_is_unseated_and_leaves_no_queue_entry(
+        tmp_path, monkeypatch):
+    """FINDING 1. The renderer RAISES — the fail-soft path that produced the
+    defect — so every seated theme ends card-less.
+
+    Fails pre-fix: the items stayed on their desks with a real D1 rung, the
+    census reported them as queued supply, and every one of them would have been
+    terminally quarantined at dispatch by the bare-cashtag law.
+    """
+    import engine.marketing.chart_render as cr
+
+    def _boom(*a, **kw):
+        raise RuntimeError("watchlist renderer down")
+
+    monkeypatch.setattr(cr, "render_watchlist_card", _boom)
+    plan, census = _reach_plan(tmp_path, monkeypatch, n_slots=6, n_themes=3)
+
+    assert _d1_items(plan, "theme_list") == [], _d1_items(plan, "theme_list")
+    assert _d1_items(plan, "mover") == [], _d1_items(plan, "mover")
+    assert census["theme_lists"] == [] and census["movers"] == [], census
+    assert (census.get("unseated_reasons") or {}).get("no_card"), census
+
+
+def test_an_unseated_reach_item_returns_its_rung_uncollided(tmp_path, monkeypatch):
+    """The other half of "unseat": the rung goes BACK, and nothing double-books
+    it. A returned rung that a later producer also claims would put two posts on
+    one clock time — the failure §5.5 ("an empty rung stays empty") forbids."""
+    import engine.marketing.chart_render as cr
+    monkeypatch.setattr(cr, "render_watchlist_card",
+                        lambda *a, **kw: (_ for _ in ()).throw(RuntimeError("down")))
+    plan, _census = _reach_plan(tmp_path, monkeypatch, n_slots=6, n_themes=3)
+    for acct in plan.get("accounts", []):
+        slots = [str(it.get("slot")) for it in acct.get("queue", [])
+                 if str(it.get("slot") or "").startswith("D1-")]
+        assert len(slots) == len(set(slots)), (acct["id"], sorted(slots))
+
+
+def test_the_census_note_names_its_plan_time_boundary(tmp_path, monkeypatch):
+    """FINDING 3. The census is built before `apply_reuse_budget`, which can
+    still DELETE a seated mover — so the note must say the number is a plan-time
+    reading and point at where the cuts are reported, instead of claiming a
+    final "queued" count it cannot know."""
+    _plan, census = _reach_plan(tmp_path, monkeypatch, n_slots=6, n_themes=3)
+    note = census["note"]
+    assert "at plan time" in note, note
+    assert "reuse-budget" in note, note

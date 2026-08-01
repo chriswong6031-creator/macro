@@ -631,6 +631,90 @@ publish:
     flagship: true
 
 # ─────────────────────────────────────────────────────────────────────────────
+# AUTONOMOUS APPROVAL DESK — engine/marketing/approval_desk.py
+# Wired into scripts/marketing_publisher.py's sweep, between the publish-time
+# generators and the candidate selection.
+#
+# WHY IT EXISTS. `publish.auto_approve_scope: kinds` above confines the
+# auto-approve pass to the publish-time lane, so the nine PLANNED kinds
+# (signal, chart, education, macro, receipt, watchlist, event, congress,
+# insider) were left to the operator-approve path: the admin UI writes
+# data/marketing/outbox/decisions.jsonl and outbox.apply_decisions turns an
+# `approve` row into a transition. THAT FILE HAS ZERO ROWS IN REPO HISTORY.
+# Every planned post that ever reached X was hand-moved by an agent session,
+# and the rest sat queued until a reaper retired them. The desk is the operator
+# instruction "closely audit them, then approve them so they go out quickly
+# without me" written as a machine gate: six named checks, three verdicts
+# (approve / quarantine with the evidence in the note / leave it for a human).
+#
+# The desk is an ADDITIONAL bar, never a bypass. Everything an approved item
+# faced before — the live tape gate, the chart law, near-dup, the voice gates,
+# the per-account cap, the spacing floor — still runs at dispatch.
+# ─────────────────────────────────────────────────────────────────────────────
+approval_desk:
+  # SHIPS TRUE. The operator asked for the autonomy explicitly, so this line is
+  # the kill switch rather than the arming switch: `false` returns the planned
+  # kinds to the (empty) manual-approval path they have been stuck in. A
+  # MISSING block also reads as enabled — deleting the key must not silently
+  # disarm a desk somebody asked for.
+  enabled: true
+
+  # Per-sweep approval ceiling. A trickle valve, not a quality bound: the
+  # measured nightly plan is ~218 items across seven desks, and clearing all of
+  # them in one sweep hands the dispatch loop a backlog that the daily caps and
+  # the 4-minute spacing floor then meter out over DAYS — which lets queue order
+  # decide what ships and buries the freshest reads behind the stalest. 40 per
+  # sweep against a ~30-sweep day keeps the approved pool near what the lane can
+  # actually drain. Overflow is not rejected: it stays `queued` and is re-audited
+  # next sweep against fresher evidence.
+  max_approvals_per_sweep: 40
+
+  # The kinds the desk polices. `breaking` is absent (it has a working
+  # all-gates-passed immediate path and a TTL in minutes); `mover` and
+  # `theme_list` are absent (kind-scoped auto-approve already clears them
+  # seconds after generation); `wire`, `earnings`, `reply` and `news` lanes own
+  # their own admission.
+  kinds:
+    - signal
+    - chart
+    - education
+    - macro
+    - receipt
+    - watchlist
+    - event
+    - congress
+    - insider
+
+  # Liveness. Matches outbox._STALE_QUEUED_HOURS (36) on purpose, so the desk's
+  # bar and the nightly reaper's bar are ONE number. The desk RUNS
+  # outbox.expire_stale_planned at this age (filling the gap that it only ever
+  # ran at nightly emit, never during the trading day) and then applies the same
+  # bar itself to the planned items that reaper does not cover — chiefly the
+  # weekend_levels watchlist lane, which is a planned kind on a real ladder slot
+  # and was swept by nobody.
+  ttl_hours: 36
+
+  # Per-kind override, only meaningful when STRICTER than ttl_hours above (the
+  # reaper has already taken anything older in the covered set). Ships empty:
+  # nothing about liveness changes until an operator says a kind perishes faster.
+  ttl_hours_by_kind: {}
+
+  # Same-account near-dup bar for the desk's dedup check, against what this
+  # account actually POSTED in the last 7 days. Deliberately LOOSER than the
+  # publisher's post-time gate (outbox._NEAR_DUP_JACCARD = 0.7), which still
+  # runs on everything the desk approves: at 0.85 the desk refuses to bless the
+  # obvious repeats, and the tighter gate stays the last word before the network.
+  dedup_jaccard: 0.85
+
+  # Max |target / quoted price - 1|, in percent, before a printed target is a
+  # hard fail. Every kind the desk polices is SWING-HORIZON (2-4 weeks) — the
+  # intraday kinds are all out of scope — so there is no horizon to branch on.
+  # Past 35% over that window the number is almost always a chart fact (a
+  # 52-week high, a prior cycle peak) that the writer promoted into a price
+  # objective. Measured example: "$LPG at 43.91 ... Target 68.41" (+55.8%).
+  max_target_move_pct: 35
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Cadence resolver (XG-W2) — the PER-ACCOUNT posting law
 # engine/marketing/cadence_resolver.py; wired into scripts/marketing_publisher.py
 #
@@ -1332,7 +1416,7 @@ copywriter:
       name: "The Desk"
       voice_notes: >
         Senior PM texting a smart friend. Terse, bone-dry, unimpressed; has seen
-        enough cycles that nothing on the screen surprises him. Says the fact,
+        enough cycles that nothing much surprises him any more. Says the fact,
         says the take, stops. The occasional one-word verdict ("Ugly.") is his
         whole personality. Mixes "I" for the read and "we" for the shop's calls.
         No exclamation marks, ever. Emoji budget: 0-1 (a rare 📌 or 👀).
@@ -1434,7 +1518,7 @@ copywriter:
     sophia:
       name: "Sophia"
       voice_notes: >
-        Marketing Lead, the narrative architect. Polished, narrative, measured,
+        Marketing Lead, the story architect. Polished, story-led, measured,
         with zero exclamations ever. Calm confidence, one elegant image at most,
         sparing questions. She writes about the story the market currently
         believes, who needs it to stay true, and the fact that changes its
@@ -1454,7 +1538,7 @@ copywriter:
         conditional confidence, fragments where they sharpen the rhythm. Pointed
         questions only when they are answerable. Her job is the variable that
         confirms or breaks the popular claim: what moved first, what is already
-        priced, which market finances the story, and what would prove it wrong.
+        priced, which market finances the story, and what would break the claim.
         Signature habits, one per post: a numbered micro-list, or chart-detective
         framing. Never a number she cannot verify, never a hedging softener
         ("kinda", "maybe"), never condescension. Emoji budget: 1 (🔍 📊)

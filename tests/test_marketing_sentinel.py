@@ -2317,7 +2317,15 @@ def _pg_run(monkeypatch, root: Path, fake, *, voice_gate: bool = False) -> int:
         # each test measuring its own seam; the voice gate has its own suite in
         # tests/test_marketing_voice_laws.py, and one test below deliberately
         # leaves it armed to prove it still fires on this same corpus.
-        monkeypatch.setattr(pub, "_queued_voice_violations", lambda text, kind="": [])
+        # **_ on purpose: this is a NEUTRALISER, not a contract pin. The real
+        # signature grew a `shape=` argument on 2026-07-31 (the publisher now
+        # threads `source.shape` through so a 3-number `stack` is judged at its
+        # own number budget) and this stub broke eleven unrelated frame/filler
+        # tests with a TypeError. A stub whose job is "return no violations"
+        # must not re-pin the callee's parameter list — that belongs to
+        # tests/test_marketing_voice_laws.py.
+        monkeypatch.setattr(pub, "_queued_voice_violations",
+                            lambda text, kind="", **_: [])
     return pub.main(["--live", "--root", str(root),
                      "--now", _PG_NOW.strftime("%Y-%m-%dT%H:%M:%SZ")])
 

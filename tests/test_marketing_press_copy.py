@@ -657,7 +657,13 @@ def test_full_tick_emits_keyless_with_voice():
     prov = emit["source"]
     # Attribution present, register derived, format recorded.
     assert "on Truth Social" in body
-    assert prov["register"] == "people"
+    # `speaker`, not `people`, since the 2026-07-31 attribution law: this fixture
+    # IS a Truth Social item (source=trumpstruth + truth_status_id), so its
+    # provenance licenses the speaker register and its "TRUMP:" hooks. The old
+    # `people` value was topic-keyed and reached the SAME pool from any ordinary
+    # wire story — which is how a MarketWatch item shipped datelined "White
+    # House, minutes ago:".
+    assert prov["register"] == "speaker"
     assert prov["wire_format"] in ("flash", "wire_deep")
     # The composed post is within the flash budget.
     assert wf.validate_length(body, prov["wire_format"]) == []
@@ -878,3 +884,438 @@ class TestPlatformClamp:
         assert result["emitted"]
         for emit in result["emitted"]:
             assert validate_postable(emit["text"], None, False) == [], emit["text"]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 11. ATTRIBUTION LAW — a dateline is a factual claim about provenance
+#
+# THE INCIDENT (2026-07-31, PUBLISHED): `_OPENERS_DEFAULT` held four
+# speaker/venue hooks ("🚨 TRUMP:", "TRUMP:", "🇺🇸 TRUMP:", "White House, minutes
+# ago:") and `_REGISTER_POOLS` pointed BOTH `people` and `markets` at that pool.
+# `derive_register` returns `markets` for every ordinary wire story, so the hook
+# was drawn by hash from a pool with nothing to do with the item's source: a
+# MarketWatch story about three Fed dissenters posted on the flagship datelined
+# "White House, minutes ago:" — a fabricated attribution on a finance account.
+#
+# These tests fail on the pre-fix module: the wire-item sweep below draws a
+# TRUMP/White House hook within a handful of ids from the old shared pool.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: Anything that names a speaker or a venue. Independent of the module's own
+#: `_ATTRIBUTIVE_OPENERS` on purpose — a test that reuses the guard's regex
+#: passes for free the day the regex stops matching.
+_DATELINE_MARKS = ("trump", "white house", "president said", "oval office")
+
+
+def _has_dateline(text: str) -> bool:
+    low = str(text or "").lower()
+    return any(m in low for m in _DATELINE_MARKS)
+
+
+def _wire_item(iid: str) -> dict:
+    """The 2026-07-31 item, verbatim in shape: an ordinary wire story."""
+    return {
+        "id": iid, "source": "marketwatch_top", "source_name": "MarketWatch",
+        "source_tier": "wire", "url": "https://www.marketwatch.com/story/fed-dissent",
+        "headline": "Three Fed officials dissent from the rate decision",
+        "body_snippet": "Three regional presidents voted against the hold.",
+        "event_class": "macro_print", "corroboration_class": "hearsay",
+        "salience": 62.0, "matched": {"tickers": []},
+    }
+
+
+def _truth_item(iid: str) -> dict:
+    """A genuine Truth Social post of Trump's own (the trumpstruth mirror)."""
+    return {
+        "id": iid, "source": "trumpstruth",
+        "source_name": "Truth Social (via trumpstruth.org)", "source_tier": "mirror",
+        "url": "https://truthsocial.com/users/realDonaldTrump/statuses/1",
+        "mirror_url": "https://trumpstruth.org/statuses/1",
+        "truth_status_id": "1", "author": "Donald J. Trump",
+        "headline": "Trump says tariffs on China rise Monday",
+        "body_snippet": "The tariffs go up.", "event_class": "policy",
+        "corroboration_class": "direct-quote", "salience": 80.0,
+        "matched": {"tickers": []},
+    }
+
+
+class TestAttributionLaw:
+    def test_a_markets_wire_item_can_never_draw_a_speaker_opener(self):
+        # 40 distinct ids, walking the no-repeat window: every reachable slot of
+        # the markets pool is exercised. Not one may name a speaker or a venue.
+        recent: list[str] = []
+        drawn = set()
+        for i in range(40):
+            it = _wire_item(f"mw:{i}")
+            assert wv.derive_register(it) == "markets"
+            opener, register = wv.select_opener(it, account="flagship",
+                                                recent_openers=recent)
+            recent.append(opener)
+            drawn.add(opener)
+            assert not _has_dateline(opener), (
+                f"wire item {it['id']} drew the fabricated dateline {opener!r}")
+        # …and the pool is still a rotating pool, not one surviving phrase.
+        assert len(drawn) >= 3, drawn
+
+    def test_a_truth_social_item_still_draws_the_speaker_hook(self):
+        # The other direction, and the reason this is a provenance rule rather
+        # than a deletion: an item that IS Trump's own post keeps the hook.
+        assert wv.derive_register(_truth_item("t:0")) == "speaker"
+        drawn = {wv.select_opener(_truth_item(f"t:{i}"), account="flagship",
+                                  recent_openers=[])[0] for i in range(40)}
+        assert any("TRUMP" in o for o in drawn), drawn
+
+    def test_the_white_house_dateline_needs_the_white_house_feed(self):
+        wh = {"id": "wh:1", "source": "whitehouse_actions",
+              "source_name": "White House presidential actions",
+              "url": "https://www.whitehouse.gov/presidential-actions/x",
+              "headline": "Executive order signed", "body_snippet": "",
+              "event_class": "policy", "matched": {}}
+        assert wv.derive_register(wh) == "white_house"
+        drawn = {wv.select_opener(dict(wh, id=f"wh:{i}"), recent_openers=[])[0]
+                 for i in range(40)}
+        assert any("White House" in o for o in drawn), drawn
+
+    def test_a_story_about_the_white_house_is_not_a_white_house_source(self):
+        # The exact confusion the incident rested on: provenance is read from
+        # where the item CAME from, never from what it is about.
+        it = _wire_item("mw:about-wh")
+        it["headline"] = "White House weighs new tariffs, sources say"
+        it["body_snippet"] = "Trump is said to favor the move."
+        assert wv.source_provenance(it) == ""
+        assert wv.derive_register(it) == "markets"
+        for i in range(40):
+            opener, _ = wv.select_opener(dict(it, id=f"mw:wh:{i}"), recent_openers=[])
+            assert not _has_dateline(opener), opener
+
+    def test_a_config_override_cannot_reintroduce_a_fabricated_dateline(self):
+        # `wire.opener_pools` is a live edit surface. The filter in select_opener
+        # is what makes the law hold there too.
+        cfg = {"opener_pools": {"markets": ["TRUMP:", "White House, minutes ago:"]}}
+        opener, register = wv.select_opener(_wire_item("mw:cfg"), cfg=cfg,
+                                            recent_openers=[])
+        assert register == "markets"
+        assert opener == "", opener
+
+    def test_a_truth_mirror_repointed_at_another_author_loses_the_hook(self):
+        # Fail-closed: `author:` is a config field. A mirror aimed at somebody
+        # else must not keep stamping "TRUMP:" on their words.
+        it = _truth_item("t:other")
+        it["author"] = "Jerome Powell"
+        assert wv.source_provenance(it) == ""
+        for i in range(40):
+            opener, _ = wv.select_opener(dict(it, id=f"t:other:{i}"), recent_openers=[])
+            assert not _has_dateline(opener), opener
+
+    def test_no_opener_pool_ships_an_unguarded_attribution(self):
+        # The sweep, mechanically: every pool the module ships is either
+        # non-attributive or reachable only through its provenance register.
+        for register, pool in wv._REGISTER_POOLS.items():
+            for opener in pool:
+                needed = wv.opener_requires_provenance(opener)
+                if needed:
+                    assert register in ("speaker", "white_house"), (
+                        f"{register} pool ships the attributive opener {opener!r}")
+                else:
+                    assert not _has_dateline(opener), (
+                        f"{register} pool ships {opener!r}, which reads as a "
+                        "dateline but no provenance rule guards it")
+
+    def test_the_composed_press_body_of_a_wire_item_carries_no_dateline(self):
+        # End to end through the tick: the bodies that would have POSTED. Eight
+        # distinct wire stories, because one item is one opener draw and the
+        # pre-fix pool put a dateline in 4 of its 9 slots — a single-item version
+        # of this test passes by luck on the hash and pins nothing.
+        now = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+        press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+        marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+        press_cfg["wire"]["flagship_top_k_per_day"] = 20
+        press_cfg["wire"]["flagship_salience_floor"] = 10.0
+        _stories = (
+            "Three Fed officials dissent from the rate decision",
+            "Retail sales fall for a second month",
+            "Jobless claims drop to a four-week low",
+            "Factory orders rise more than forecast",
+            "Housing starts slide as rates bite",
+            "Consumer confidence slips in July",
+            "Industrial production edges higher",
+            "Trade deficit narrows on softer imports",
+        )
+        items = []
+        for i, hl in enumerate(_stories):
+            it = dict(_wire_item(f"mw:tick:{i}"),
+                      published_at="2026-07-27T13:59:00Z", headline=hl)
+            it["body_snippet"] = f"{hl}, the report showed."
+            items.append(it)
+        result = run_press_tick(items, root=str(ROOT), now=now, cfg=marketing_cfg,
+                                press_cfg=press_cfg, state={}, seen_ids=set(),
+                                dry_run=True)
+        bodies = [e.get("body", "") for e in result["emitted"]]
+        bodies += [r.get("en", "") for r in result["rail"]]
+        assert bodies, "the fixture must produce at least one composed body"
+        for body in bodies:
+            assert "White House, minutes ago" not in body, body
+            assert not body.startswith("TRUMP:"), body
+            assert "🚨 TRUMP:" not in body, body
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 12. THE PRESS CARD IS RASTERED AND HOSTED
+#
+# THE DEFECT (2026-07-31): `_emit_outbox_item` wrote the raw SVG to disk and
+# stopped. Nothing in press_lane.py or breaking_summary.py called rasterize_svg
+# or media_publish.publish_card, so every press item carried a media[] entry
+# with no `media_url` — and Buffer/X can only attach a HOSTED image. Every press
+# post shipped text-only, and a press item naming a cashtag was permanently
+# unpostable (the publisher quarantines a bare cashtag post).
+#
+# All three tests fail on the pre-fix module: no media_url is ever stamped, and
+# a cashtag item with an unhostable card enqueues happily.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_CARD_SVG = "<svg width='10' height='10'></svg>"
+
+
+def _emit(root, monkeypatch, published, *, body, item_id="feed-1", refusal=None):
+    """Run the emit path with `media_publish.publish_card` stubbed."""
+    from engine.marketing import media_publish, press_lane
+
+    seen: list[dict] = []
+
+    def _fake_publish_card(svg, *, chart_id, as_of, root=None, legacy_png=None):
+        seen.append({"svg": svg, "chart_id": chart_id, "as_of": as_of})
+        return dict(published)
+
+    monkeypatch.setattr(media_publish, "publish_card", _fake_publish_card)
+    press_lane.reset_media_host_stats()
+    now = datetime(2026, 7, 31, 14, 0, tzinfo=timezone.utc)
+    item = press_lane._emit_outbox_item(
+        Path(root), item_id, "flagship", "Three Fed officials dissent", body,
+        _CARD_SVG,
+        {"url": "https://www.marketwatch.com/story/fed-dissent",
+         "source_headline": "Three Fed officials dissent"},
+        now, story_key="k", cta_suppress=False, dry_run=False, cfg={},
+        spool=False, refusal=refusal if refusal is not None else {},
+    )
+    return item, seen
+
+
+class TestPressCardMedia:
+    _HOSTED = {
+        "svg_path": "data/marketing/outbox/media/2026-07-31/feed-1.svg",
+        "media_png_path": "data/marketing/outbox/media/2026-07-31/feed-1.png",
+        "media_url": "https://cdn.mastermind-x.com/charts/2026-07-31/feed-1.png",
+        "media_render": "svg_raster",
+    }
+
+    def test_the_emitted_item_carries_a_hosted_media_url(self, tmp_path, monkeypatch):
+        from engine.marketing import press_lane
+
+        item, seen = self._emit_hosted(tmp_path, monkeypatch)
+        assert item is not None
+        entry = item["media"][0]
+        # The hot-tape card contract, copied exactly.
+        assert entry["media_url"] == self._HOSTED["media_url"]
+        assert entry["media_png_path"] == self._HOSTED["media_png_path"]
+        assert entry["media_render"] == "svg_raster"
+        # One seam, and it is handed the SAME svg the lane rendered, keyed so the
+        # backfill sidecar (<as_of>/<chart_id>) can heal a failed upload later.
+        assert len(seen) == 1
+        assert seen[0]["svg"] == _CARD_SVG
+        assert seen[0]["chart_id"] == "feed-1"
+        assert seen[0]["as_of"] == item["as_of"]
+        assert press_lane.media_host_stats()["hosted"] == 1
+
+    def _emit_hosted(self, tmp_path, monkeypatch):
+        return _emit(tmp_path, monkeypatch, self._HOSTED,
+                     body="Rare triple dissent at the Fed. $SPY watches the vote.")
+
+    def test_a_cashtag_item_whose_host_failed_is_not_enqueued(self, tmp_path,
+                                                              monkeypatch, capsys):
+        from engine.marketing import outbox as OB
+        from engine.marketing import press_lane
+
+        refusal: dict = {}
+        item, _seen = _emit(
+            tmp_path, monkeypatch, {"svg_path": "x.svg"},   # no media_url
+            body="Rare triple dissent at the Fed. $SPY watches the vote.",
+            refusal=refusal,
+        )
+        assert item is None, "a cashtag post with no picture must not enqueue"
+        assert refusal["reason"] == "media_unhosted"
+        assert OB.read_items(Path(tmp_path)) == []
+        assert press_lane.media_host_stats()["unhosted_refused"] == 1
+        lines = capsys.readouterr().out.splitlines()
+        hits = [ln for ln in lines if "press-lane-card-unhosted" in ln]
+        assert hits, lines
+        assert hits[0].startswith("::warning title=press-lane-card-unhosted::"), hits[0]
+
+    def test_a_cashtag_free_item_whose_host_failed_still_posts_text_only(
+            self, tmp_path, monkeypatch, capsys):
+        from engine.marketing import press_lane
+
+        item, _seen = _emit(
+            tmp_path, monkeypatch, {},
+            body="Three regional presidents voted against the hold -- MarketWatch",
+        )
+        assert item is not None, "prose with no cashtag must keep flowing"
+        # No pointer to a picture nothing can fetch.
+        assert item["media"] == []
+        assert press_lane.media_host_stats()["unhosted"] == 1
+        assert press_lane.media_host_stats()["unhosted_refused"] == 0
+        hits = [ln for ln in capsys.readouterr().out.splitlines()
+                if ln.startswith("::warning title=press-lane-card-unhosted::")]
+        assert hits, "an unhosted card is announced even when the post still ships"
+
+    def test_a_raising_publisher_never_takes_down_the_lane(self, tmp_path,
+                                                           monkeypatch, capsys):
+        from engine.marketing import media_publish, press_lane
+
+        def _boom(*a, **kw):
+            raise RuntimeError("boto3 missing")
+
+        monkeypatch.setattr(media_publish, "publish_card", _boom)
+        press_lane.reset_media_host_stats()
+        now = datetime(2026, 7, 31, 14, 0, tzinfo=timezone.utc)
+        item = press_lane._emit_outbox_item(
+            Path(tmp_path), "feed-2", "flagship", "Fed holds rates",
+            "Three regional presidents voted against the hold -- MarketWatch",
+            _CARD_SVG, {"url": "u", "source_headline": "Fed holds rates"}, now,
+            story_key="k2", cta_suppress=False, dry_run=False, cfg={}, spool=False,
+        )
+        # Fail-soft to the pre-fix behaviour for a cashtag-free item.
+        assert item is not None
+        assert item["media"] == []
+        out = capsys.readouterr().out
+        assert "::warning title=press-lane-card-publish-failed::" in out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13. A TRANSIENT REFUSAL IS NOT A PERMANENT KILL
+#
+# THE DEFECT (adversarial review, 2026-07-31). run_press_tick added EVERY
+# outbox refusal to the permanent `seen` ledger under a comment asserting that
+# "every refusal reason is a stable property of the copy, so a retry cannot
+# change the answer". `media_unhosted` is not: it fires when the Chrome raster
+# loses a race, when the R2 upload blips, when boto3/R2_* are missing on the
+# host. One flaky raster therefore suppressed a breaking cashtag story for the
+# entire life of the ledger, and the LLM spend that produced its copy bought
+# nothing.
+#
+# Both halves are pinned here: the retry (an unhosted item comes back next
+# tick) and the alarm (a host that is genuinely down still surfaces, rather
+# than re-rendering and re-paying in silence forever).
+# ─────────────────────────────────────────────────────────────────────────────
+
+_TICK_NOW = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+
+
+def _refusing_tick(monkeypatch, reason, *, state, seen, calls=None):
+    """One press tick whose outbox emission always refuses with `reason`.
+
+    `_emit_outbox_item` is the seam because the refusal it returns is precisely
+    what the caller under test branches on; driving the real card host from here
+    would test media_publish, not the seen-ledger law.
+    """
+    from engine.marketing import press_lane
+
+    def _refuse(root, item_id, account, headline, body, svg, provenance, now,
+                **kw):
+        if calls is not None:
+            calls.append(item_id)
+        _refusal = kw.get("refusal")
+        if _refusal is not None:
+            _refusal["reason"] = reason
+        return None
+
+    monkeypatch.setattr(press_lane, "_emit_outbox_item", _refuse)
+    press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+    marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+    return run_press_tick(_emitting_items(), root=str(ROOT), now=_TICK_NOW,
+                          cfg=marketing_cfg, press_cfg=press_cfg, state=state,
+                          seen_ids=seen, dry_run=True)
+
+
+class TestTransientRefusalsRetry:
+    def test_an_unhosted_item_is_not_burned_into_the_seen_ledger(self, monkeypatch):
+        state: dict = {}
+        calls: list[str] = []
+        result = _refusing_tick(monkeypatch, "media_unhosted",
+                                state=state, seen=set(), calls=calls)
+        assert "trumpstruth:strong" in calls, calls
+        assert result["emitted"] == []
+        reasons = [r["reason"] for r in result["skipped"]]
+        assert "media_unhosted" in reasons, result["skipped"]
+        # THE PIN. Pre-fix the emission key was in `_seen`, so every later tick
+        # deduped the story away and it could never be retried.
+        assert "truth:strong" not in set(result["_seen"]), result["_seen"]
+
+    def test_the_next_tick_actually_re_attempts_it(self, monkeypatch):
+        state: dict = {}
+        calls: list[str] = []
+        seen: set = set()
+        for _ in range(2):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen, calls=calls)
+            seen = set(result["_seen"])
+        # Two ticks, two genuine attempts — not one attempt and one dedupe skip.
+        assert calls.count("trumpstruth:strong") == 2, calls
+
+    def test_a_copy_property_refusal_still_never_comes_back(self, monkeypatch):
+        """The invariant the old blanket comment was RIGHT about, kept intact:
+        banned language is decided by the text and gives the same answer
+        forever, so re-generating it burns billed spend on a known outcome."""
+        state: dict = {}
+        calls: list[str] = []
+        seen: set = set()
+        for _ in range(2):
+            result = _refusing_tick(monkeypatch, "banned_language",
+                                    state=state, seen=seen, calls=calls)
+            seen = set(result["_seen"])
+        assert "truth:strong" in seen, seen
+        assert calls.count("trumpstruth:strong") == 1, calls
+
+    def test_a_genuinely_dead_host_still_alarms(self, monkeypatch, capsys):
+        """The retry must not be silent — a host that is down re-renders and
+        re-pays every tick, and that has to reach the Actions summary."""
+        state: dict = {}
+        seen: set = set()
+        for _ in range(_TRANSIENT_ALARM_AT := 3):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen)
+            seen = set(result["_seen"])
+        assert state["transient_refusals"]["truth:strong"] == _TRANSIENT_ALARM_AT
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "press-lane-transient-refusal-stuck" in ln]
+        assert lines, "three consecutive environment refusals must alarm"
+        # House law: the annotation STARTS the line or GitHub drops it silently.
+        assert lines[0].startswith(
+            "::warning title=press-lane-transient-refusal-stuck::"), lines[0]
+
+    def test_the_alarm_holds_its_fire_through_a_blip(self, monkeypatch, capsys):
+        """One or two failed ticks is a raster race, not an outage."""
+        from engine.marketing import press_lane
+
+        state: dict = {}
+        seen: set = set()
+        for _ in range(press_lane._TRANSIENT_RETRY_ALARM_AT - 1):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen)
+            seen = set(result["_seen"])
+        assert "press-lane-transient-refusal-stuck" not in capsys.readouterr().out
+
+    def test_a_settled_refusal_clears_the_streak(self, monkeypatch):
+        """The tally counts CONSECUTIVE environment refusals. A story that then
+        refuses on its copy is settled, and its counter must not linger to
+        alarm on some unrelated later story."""
+        from engine.marketing import press_lane
+
+        state: dict = {}
+        seen: set = set()
+        result = _refusing_tick(monkeypatch, "media_unhosted",
+                                state=state, seen=seen)
+        assert state["transient_refusals"]["truth:strong"] == 1
+        result = _refusing_tick(monkeypatch, "banned_language",
+                                state=state, seen=set(result["_seen"]))
+        assert "truth:strong" not in state["transient_refusals"]
+        assert press_lane._TRANSIENT_RETRY_ALARM_AT >= 2

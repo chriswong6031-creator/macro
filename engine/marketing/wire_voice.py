@@ -30,9 +30,12 @@ regexes are imported LAZILY inside functions so the thin marketing-engine CI lan
 
 Public API:
     derive_register(item) -> str
+    source_provenance(item) -> str          # "trump_truth" | "white_house" | ""
+    opener_requires_provenance(opener) -> str
     select_opener(item, *, account, recent_openers, cfg=None) -> tuple[str, str]
     key_phrase_prompt_law() -> str
     ai_tell_hits(text, *, root=None, cfg=None) -> list[str]
+    ai_tell_lexicon(root=None, cfg=None) -> list[str]   # strict: raises
     resolve_llm_tier(item, *, cfg) -> str      # "flagship" | "volume"
     resolve_model_key(item, *, cfg) -> str
     compose_post(*, opener, summary, attribution, tape_stamp="") -> str
@@ -50,17 +53,70 @@ from typing import Any
 # which is the compliant lead for a direct quote.
 # ─────────────────────────────────────────────────────────────────────────────
 
-# Default / markets-macro register.
+# ATTRIBUTION LAW (2026-07-31 postmortem — a FABRICATED DATELINE SHIPPED LIVE).
+#
+# This pool used to hold four hooks that ASSERT who said a thing or where it was
+# said: "🚨 TRUMP:", "TRUMP:", "🇺🇸 TRUMP:" and "White House, minutes ago:". The
+# pool was mapped to BOTH the `people` and the `markets` registers, and
+# derive_register returns `markets` for every ordinary wire story — so the hook
+# was drawn by hash from a pool whose contents had nothing to do with the item's
+# source. On 2026-07-31 a MarketWatch story about three Fed dissenters posted on
+# the flagship datelined "White House, minutes ago:". That is a fabricated
+# attribution on a finance account: nobody at the White House said it, and the
+# item had never been near a White House feed.
+#
+# The rule now: an opener that names a SPEAKER or a VENUE is a dateline, and a
+# dateline is a factual claim about provenance. It may attach ONLY to an item
+# whose own source IS that speaker/venue (see `source_provenance`). Ordinary wire
+# items draw from non-attributive pools, which say only what is true of every
+# item on this lane — that it just crossed a wire.
+#
+# Enforcement is belt AND braces: the pools below are separated by provenance,
+# AND `select_opener` filters any attributive opener out of a pool the item's
+# provenance does not license — which also covers a `wire.opener_pools` config
+# override that re-introduces one.
+
+# Default / markets-macro register. NON-ATTRIBUTIVE by construction: every hook
+# here is a statement about the wire ("this just crossed"), which is true of
+# every item this lane processes, and about nothing else.
 _OPENERS_DEFAULT: tuple[str, ...] = (
-    "🚨 TRUMP:",
     "Now crossing.",
-    "White House, minutes ago:",
     "On the tape:",
     "New this hour:",
     "Heads up:",
+    "",  # summary leads, no hook
+)
+
+# Statement/people register (a policy item, or a direct quote whose speaker feed
+# we could NOT confirm). Non-attributive: without confirmed provenance the copy
+# may report that a statement crossed, never stamp it with a name.
+_OPENERS_PEOPLE: tuple[str, ...] = (
+    "Now crossing.",
+    "On the wires:",
+    "New this hour:",
+    "Heads up:",
+    "",
+)
+
+# SPEAKER register — Trump's own post, reached ONLY through a Truth Social
+# provenance check (the trumpstruth / CNN-archive mirrors, a truth_status_id, or
+# a truthsocial.com/trumpstruth.org URL). These hooks assert "Trump said this",
+# so the item's source has to BE Trump saying it.
+_OPENERS_SPEAKER_TRUMP: tuple[str, ...] = (
+    "🚨 TRUMP:",
     "TRUMP:",
     "🇺🇸 TRUMP:",
-    "",  # speaker/summary leads, no hook
+    "",  # the quote leads on its own — always compliant
+)
+
+# VENUE register — the official White House feed (whitehouse_actions /
+# whitehouse.gov). "White House, minutes ago:" is a dateline and needs the
+# dateline's source.
+_OPENERS_WHITE_HOUSE: tuple[str, ...] = (
+    "White House, minutes ago:",
+    "Now crossing.",
+    "New this hour:",
+    "",
 )
 
 # Geopolitical register — graver, no emoji siren, no CTA energy (tragedy tone law
@@ -74,13 +130,16 @@ _OPENERS_GEOPOLITICAL: tuple[str, ...] = (
     "",
 )
 
-# Company / earnings register.
+# Company / earnings register. "Company wire:" was removed in the 2026-07-31
+# attribution sweep: it datelines the item to a corporate newswire release, and
+# most company_news items on this lane are a REPORTER's story about a company
+# (MarketWatch, CNBC), not a company's own wire. The remaining hooks claim only
+# that the item crossed a wire, which is true of all of them.
 _OPENERS_COMPANY: tuple[str, ...] = (
     "On the tape:",
     "Now crossing.",
     "Just out:",
     "New this hour:",
-    "Company wire:",
     "",
 )
 
@@ -93,26 +152,129 @@ _OPENERS_CRYPTO: tuple[str, ...] = (
     "",
 )
 
-# Exec-voice / claims register (Dimon-class, bank calls).
+# Exec-voice / claims register (Dimon-class, bank calls). "Street desk:" was
+# removed in the same sweep: it datelines the item to a sell-side trading desk,
+# and a claims item is typically an executive on a call or a conference stage —
+# a desk that never touched it.
 _OPENERS_CLAIMS: tuple[str, ...] = (
     "On the wires:",
     "Now crossing.",
     "New this hour:",
-    "Street desk:",
     "",
 )
 
-# register -> pool. derive_register maps event_class + matched + route to one of
-# these keys; the pool is chosen here.
+# register -> pool. derive_register maps provenance + event_class + matched +
+# route to one of these keys; the pool is chosen here. `speaker` and
+# `white_house` are PROVENANCE registers — derive_register can only return them
+# for an item whose own source is that speaker/venue.
 _REGISTER_POOLS: dict[str, tuple[str, ...]] = {
     "topics": _OPENERS_GEOPOLITICAL,       # geopolitical
     "companies": _OPENERS_COMPANY,
     "crypto": _OPENERS_CRYPTO,
     "claims": _OPENERS_CLAIMS,
-    "people": _OPENERS_DEFAULT,
+    "speaker": _OPENERS_SPEAKER_TRUMP,
+    "white_house": _OPENERS_WHITE_HOUSE,
+    "people": _OPENERS_PEOPLE,
     "markets": _OPENERS_DEFAULT,
     "brief_candidates": _OPENERS_GEOPOLITICAL,
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Attribution guard — which openers are datelines, and what licenses them
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: (pattern, provenance token) for every opener that ASSERTS a speaker or venue.
+#: An opener matching one of these may be used ONLY when `source_provenance`
+#: returns the paired token for the item. The scan runs over whatever pool is in
+#: effect — including a config override — so a hook re-added by config to the
+#: markets pool is dropped rather than posted.
+_ATTRIBUTIVE_OPENERS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"\btrump\b", re.IGNORECASE), "trump_truth"),
+    (re.compile(r"white\s*house", re.IGNORECASE), "white_house"),
+)
+
+#: Feed keys / URL marks that make a "TRUMP:" dateline TRUE. Both Truth Social
+#: mirrors carry the status id; the URL marks catch a future mirror key.
+_TRUTH_SOURCE_KEYS: frozenset[str] = frozenset({"trumpstruth", "cnn_truth_backfill"})
+_TRUTH_URL_MARKS: tuple[str, ...] = ("truthsocial.com", "trumpstruth.org", "truth social")
+
+#: Feed keys / URL marks that make a "White House" dateline TRUE — the official
+#: presidential-actions feed (config/press_sources.yml wire_rss references).
+_WHITE_HOUSE_SOURCE_KEYS: frozenset[str] = frozenset(
+    {"whitehouse_actions", "whitehouse", "white_house"}
+)
+_WHITE_HOUSE_URL_MARKS: tuple[str, ...] = ("whitehouse.gov", "white house")
+
+
+def _prov_blob(item: dict) -> str:
+    """The provenance-bearing strings of an item, lowered and joined.
+
+    Deliberately NOT the headline or the body: a story ABOUT the White House is
+    exactly the item that must never draw a White House dateline (the 2026-07-31
+    incident). Only fields that describe where the item CAME FROM are read.
+    """
+    parts = (
+        item.get("source"), item.get("source_name"), item.get("url"),
+        item.get("mirror_url"), item.get("feed_url"),
+    )
+    return " ".join(str(p or "") for p in parts).lower()
+
+
+def source_provenance(item: dict) -> str:
+    """The attribution this item's own SOURCE supports.
+
+    Returns "trump_truth" (a Truth Social post of Trump's own), "white_house"
+    (the official White House feed), or "" (an ordinary wire item — no speaker
+    or venue attribution is licensed).
+
+    Fail-CLOSED: anything unrecognised is "", which costs a distinctive hook and
+    never invents a dateline. The author check on the Truth path is the same
+    posture — the mirrors are Trump-only by config today, but `author:` is a
+    config field, and a mirror re-pointed at another account must not keep
+    stamping "TRUMP:" on someone else's words.
+    """
+    blob = _prov_blob(item)
+    src = str(item.get("source") or "").strip().lower()
+
+    is_truth = (
+        src in _TRUTH_SOURCE_KEYS
+        or bool(str(item.get("truth_status_id") or "").strip())
+        or any(mark in blob for mark in _TRUTH_URL_MARKS)
+    )
+    if is_truth:
+        who = f"{item.get('author', '')} {item.get('x_handle', '')}".strip().lower()
+        # No author declared at all -> the feed key/URL already identified the
+        # surface, so the mirror's own configured owner stands. A DECLARED author
+        # that is not Trump revokes the hook.
+        if not who or "trump" in who:
+            return "trump_truth"
+        return ""
+
+    if src in _WHITE_HOUSE_SOURCE_KEYS or any(
+        mark in blob for mark in _WHITE_HOUSE_URL_MARKS
+    ):
+        return "white_house"
+    return ""
+
+
+def opener_requires_provenance(opener: str) -> str:
+    """The provenance token an opener asserts, or "" when it asserts none."""
+    text = str(opener or "")
+    if not text.strip():
+        return ""
+    for pattern, token in _ATTRIBUTIVE_OPENERS:
+        if pattern.search(text):
+            return token
+    return ""
+
+
+def _opener_allowed(opener: str, item: dict, provenance: str | None = None) -> bool:
+    """True when this item's source licenses this opener's attribution claim."""
+    needed = opener_requires_provenance(opener)
+    if not needed:
+        return True
+    prov = source_provenance(item) if provenance is None else provenance
+    return prov == needed
 
 # Crypto instrument cashtags that flip a company/none item into the crypto register.
 _CRYPTO_TICKERS: frozenset[str] = frozenset(
@@ -134,12 +296,20 @@ def derive_register(item: dict) -> str:
     pipeline. Precedence:
         route=="brief_candidates"     -> brief_candidates (HormuzLetter long-form)
         event_class=="geopolitical"   -> topics
+        SOURCE provenance             -> speaker / white_house  (attribution law)
         event_class=="company_news"   -> companies  (m1: wins over crypto ticker —
                                          COIN/CRCL/HOOD/MSTR earnings are company_news,
                                          not a crypto-instrument item)
         crypto ticker/keyword         -> crypto     (reserved for NON-equity crypto)
         corroboration_class=="claims" -> claims
         else                          -> people (statement lane) / markets
+
+    PROVENANCE OUTRANKS TOPIC (2026-07-31). The attributive registers are keyed
+    on where the item came FROM, never on what it is about — a wire story about
+    the White House is the exact item that must not draw a White House dateline.
+    They sit BELOW the geopolitical branch on purpose: the tragedy-tone law owns
+    a grave story whoever said it, and a siren-emoji speaker hook on a war
+    headline is the tone violation that register exists to prevent.
     """
     route = str(item.get("route", "") or "")
     if route == "brief_candidates":
@@ -148,6 +318,12 @@ def derive_register(item: dict) -> str:
     event_class = str(item.get("event_class", "none") or "none")
     if event_class == "geopolitical":
         return "topics"
+
+    provenance = source_provenance(item)
+    if provenance == "trump_truth":
+        return "speaker"
+    if provenance == "white_house":
+        return "white_house"
 
     # m1: when the classifier already calls this company_news, companies wins — a
     # "COIN earnings" item is a company item that happens to carry a crypto-adjacent
@@ -214,10 +390,22 @@ def select_opener(
 
     Returns (opener, register). The caller records the returned opener into the
     account's recent list (see the daemon state) so the next call sees it.
+
+    ATTRIBUTION FILTER (2026-07-31): before anything is selected, every opener
+    that asserts a speaker or a venue is dropped unless this item's own source
+    licenses that claim. The register split already keeps the attributive pools
+    out of ordinary items' reach; this second pass is what makes the law hold for
+    a `wire.opener_pools` config override too, which is a live edit surface that
+    could otherwise put "TRUMP:" back in front of a MarketWatch story.
     """
     register = derive_register(item)
     pool = _opener_pool(register, cfg)
+    provenance = source_provenance(item)
+    pool = tuple(o for o in pool if _opener_allowed(o, item, provenance))
     if not pool:
+        # Every hook in the pool claimed provenance this item lacks. Leading with
+        # the summary is always compliant, so that is the fallback — never a
+        # dateline the item cannot support.
         return "", register
 
     recent = list(recent_openers or [])
@@ -299,6 +487,35 @@ def _load_ai_tell_phrases(root: Any = None, cfg: dict | None = None) -> list[str
         return [str(p) for p in phrases]
     except Exception:  # noqa: BLE001
         return []
+
+
+def ai_tell_lexicon(root: Any = None, cfg: dict | None = None) -> list[str]:
+    """The AI-tell phrase list, RAISING when it cannot be read.
+
+    `_load_ai_tell_phrases` is fail-soft by design (a style screen must not stop
+    the wire), but "returned []" and "could not read config/press.yml" are then
+    the same value — which is how a caller that treats the screen as a HARD gate
+    silently loosens it when the file goes missing. This is the strict door for
+    those callers (hot_tape_llm._ai_tell_violations): it raises on an unreadable
+    or empty lexicon so the caller can say so out loud instead of passing
+    everything.
+    """
+    if isinstance(cfg, dict):
+        phrases = _load_ai_tell_phrases(root, cfg)
+        if phrases:
+            return phrases
+
+    import yaml  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    if root is None:
+        root = Path(__file__).resolve().parents[2]
+    press_yml = Path(root) / "config" / "press.yml"
+    data = yaml.safe_load(press_yml.read_text(encoding="utf-8")) or {}
+    phrases = ((data.get("validators") or {}).get("ai_tell_phrases")) or []
+    if not phrases:
+        raise ValueError(f"{press_yml}: validators.ai_tell_phrases is empty or absent")
+    return [str(p) for p in phrases]
 
 
 def ai_tell_hits(text: str, *, root: Any = None, cfg: dict | None = None) -> list[str]:

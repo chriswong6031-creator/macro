@@ -27,6 +27,7 @@ Test list:
 """
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -411,10 +412,20 @@ def test_macro_post_contains_digit():
     reason="No source data files present for integration test",
 )
 def test_event_post_contains_digit_or_fact():
-    """An event post in the full build must contain a digit or real fact text."""
+    """An event post in the full build must contain a digit or real fact text.
+
+    Event items are DATA-CONDITIONAL: the plan only mints them when the day's
+    brief/regime artifacts carry an event, so asserting non-empty here turned
+    the suite red on every quiet day (it failed for days while the 07-31 empty
+    plan sat on main). Skipping on the empty case is honest, not vacuous: the
+    skip names the data condition, and the substantive pin (event copy carries
+    a concrete fact) still fires on every day that HAS events.
+    """
     plan = _build_plan_with_root()
     event_items = _collect_items_by_type(plan, "event")
-    assert event_items, "No event items in content plan"
+    if not event_items:
+        pytest.skip("today's source artifacts minted no event items — "
+                    "the fact pin below runs on event-bearing days")
     # At least one event post must carry a concrete fact (digit or the tape direction text)
     has_content = any(
         re.search(r"\d|today|regime|liquidity", item.get("body", ""), re.IGNORECASE)
@@ -424,6 +435,91 @@ def test_event_post_contains_digit_or_fact():
         f"No event post carries concrete content. Sample bodies: "
         f"{[i['body'][:100] for i in event_items[:3]]}"
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE EVENT LANE'S MINT, PINNED DETERMINISTICALLY
+#
+# Review-of-tests finding (2026-07-31): the integration test above is the event
+# lane's ONLY coverage, and it skips whenever the build produces no event items.
+# That skip is honest about the data, but it makes a CODE regression — the
+# driver table stops resolving, the fact id is renamed, the allocator's `event`
+# weight is dropped — indistinguishable from a quiet morning. Every green run
+# that skips proves nothing, and the lane can go dark for weeks in silence.
+#
+# The two halves of the mint are deterministic and are pinned from fixtures
+# here. The THIRD half — the writer turning an event fact into an event post —
+# is LLM-gated (MARKETING_LLM_ENABLED is never set in this suite, and the
+# keyless writer drops the LLM-required kinds), which is the real reason the
+# integration test finds an empty plan; that one stays an honest skip.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: A `why_the_tape_moved` direction with a plain-English translation in
+#: market_facts._DRIVER_PLAIN. Written out rather than imported so a silent
+#: rename of the label breaks THIS test instead of passing vacuously against
+#: whatever key the table happens to hold.
+_EVENT_DRIVER = "credit spreads widening — stress"
+
+
+def _write_event_brief(root: Path, *, available: bool = True,
+                       direction: str = _EVENT_DRIVER) -> None:
+    """The minimal daily_brief.json shape that mints an event fact."""
+    (root / "site" / "neuralwebdata").mkdir(parents=True, exist_ok=True)
+    (root / "site" / "neuralwebdata" / "daily_brief.json").write_text(
+        json.dumps({"why_the_tape_moved": {
+            "available": available,
+            "primary": {"direction": direction, "coherence": "supported"}}}),
+        encoding="utf-8")
+
+
+def test_an_event_bearing_brief_mints_an_event_fact(tmp_path):
+    """Data -> fact. Fails when the mint path breaks, on any day of the week."""
+    from engine.marketing.market_facts import event_facts
+
+    _write_event_brief(tmp_path)
+    out = event_facts(tmp_path)
+    assert _fact_shape_ok(out), out
+    ids = [f["id"] for f in out["facts"]]
+    assert "event_catalyst" in ids, ids
+    text = next(f["text"] for f in out["facts"] if f["id"] == "event_catalyst")
+    # The SAME substantive assertion the integration test makes — a concrete
+    # fact, not desk shorthand — so this pin is a true stand-in on a quiet day.
+    assert re.search(r"\d|today|regime|liquidity", text, re.IGNORECASE), text
+    # And never the raw internal label.
+    assert _EVENT_DRIVER not in text, text
+
+
+def test_an_unknown_driver_label_refuses_rather_than_shipping_shorthand(tmp_path):
+    """The lane's own rule (`_plain_driver_read` returns None => SKIP): an
+    untranslated label must fall back, never reach a reader as desk jargon."""
+    from engine.marketing.market_facts import event_facts
+
+    _write_event_brief(tmp_path, direction="gamma pin unwind — dealer flip")
+    out = event_facts(tmp_path)
+    assert "event_catalyst" not in [f["id"] for f in out["facts"]]
+    assert "gamma pin unwind" not in json.dumps(out)
+
+
+def test_an_event_less_brief_falls_back_instead_of_going_dark(tmp_path):
+    """`available: False` is a quiet day, and a quiet day still gets macro
+    context — the fallback is the behaviour, not an accident of the data."""
+    from engine.marketing.market_facts import event_facts, macro_facts
+
+    _write_event_brief(tmp_path, available=False)
+    assert event_facts(tmp_path) == macro_facts(tmp_path)
+
+
+def test_the_allocator_still_mints_event_slots(tmp_path):
+    """Fact -> SLOT. The other half a quiet-day skip cannot see: if `event`
+    ever falls out of the tilt (or is dropped unconditionally rather than only
+    under publish.publish_time_read), the lane goes dark and every run of the
+    integration test above skips green."""
+    from engine.marketing.content_studio import plan_account
+
+    account = {"id": "flagship", "kind": "flagship", "voice": "authoritative desk"}
+    items = plan_account(account, _SAMPLE_PLANS, tilt=_SAMPLE_ACCOUNTS[0]["tilt"])
+    assert [i for i in items if i.type == "event"], \
+        sorted({i.type for i in items})
 
 
 def test_no_invented_numbers_in_macro_posts():
@@ -488,3 +584,188 @@ def test_no_indicator_vocab_in_macro_event_watchlist_posts():
                         f"[{item['type']}] '{m.group()}' in: '{full[:100]}'"
                     )
     assert not hits, f"Indicator vocab in non-ticker posts:\n" + "\n".join(hits[:5])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# X Growth W1g — a denominator the numerator cannot move against.
+#
+# THE DEFECT (2026-07-25..31 audit). Four posts opened "231 of 231 names in the
+# S&P universe are showing bullish momentum setups right now" and then argued
+# the opposite in the next sentence ("No triggers", "zero triggers"). `now` is
+# keyed by every tracked name and `universe_n` is the size of that same list, so
+# the count is a definition of the screen, not an observation about the market.
+#
+# WHAT THE LIVE ARTIFACT CARRIES (checked 2026-07-31): universe_n = 232,
+# len(now) = 232, active = 232. `universe_n` IS the real scanned universe — the
+# artifact holds no larger population — so there is no denominator repair
+# available and dropping is the only honest handling.
+#
+# THE GATE MUST BE A BAND. `0 < n < universe` is a knife-edge that 231-of-232
+# walks straight through, and 231-of-232 is the same non-fact as 231-of-231.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _write_confluence(tmp_path, *, n_active, universe_n, n_names=None):
+    """A tech_confluence.json with `n_active` of `n_names` names firing."""
+    n_names = n_names if n_names is not None else universe_n
+    now = {}
+    for i in range(n_names):
+        now[f"T{i:04d}"] = [0] if i < n_active else []
+    (tmp_path / "site" / "factordata").mkdir(parents=True, exist_ok=True)
+    (tmp_path / "site" / "factordata" / "tech_confluence.json").write_text(
+        json.dumps({"universe_n": universe_n, "now": now,
+                    "combos": {"long": [{"id": "c0"}]}}),
+        encoding="utf-8")
+
+
+def _breadth_ids(tmp_path):
+    from engine.marketing.market_facts import breadth_facts
+    return [f["id"] for f in breadth_facts(tmp_path)["facts"]]
+
+
+class TestVacuousDenominatorsNeverShip:
+    def test_a_fully_saturated_count_is_dropped(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=231, universe_n=231)
+            assert "breadth_active" not in _breadth_ids(p)
+
+    def test_one_name_short_of_saturation_is_still_dropped(self):
+        """The knife-edge. 231 of 232 clears `0 < n < universe` and says
+        exactly as little as 231 of 231."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=231, universe_n=232)
+            assert "breadth_active" not in _breadth_ids(p), (
+                "a 99.6%-saturated count still shipped as a breadth read"
+            )
+
+    def test_an_empty_count_is_dropped_too(self):
+        """0 of 232 has no members to name and is indistinguishable from a
+        broken screen. This is the ONE survivor of the deleted low arm."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=0, universe_n=232)
+            assert "breadth_active" not in _breadth_ids(p)
+
+    def test_a_washout_ships_it_is_the_rarest_print_the_lane_has(self):
+        """11 of 232 is a WASHOUT, and a washout is information.
+
+        Adversarial-review finding (2026-07-31). The gate was symmetric —
+        `ratio <= 0.05` — but the diagnosed defect was SATURATION only. The low
+        arm was assumed, never measured, and it deleted the rarest and most
+        newsworthy print this lane can produce: 231-of-232 says nothing because
+        it cannot be otherwise, while 11-of-232 says the screen almost emptied,
+        which is checkable and concrete. Fails pre-fix (11/232 = 4.7% ≤ 5%).
+        """
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=11, universe_n=232)
+            assert "breadth_active" in _breadth_ids(p), (
+                "a washout was deleted as a 'degenerate' count"
+            )
+
+    def test_the_low_arm_is_gone_across_the_whole_thin_range(self):
+        """Directly on the predicate, so the pin survives a breadth_facts
+        refactor. Everything from one lone name up to the saturation ceiling is
+        a real fraction; only 0-of-N and no-universe are vacuous."""
+        from engine.marketing.market_facts import _is_vacuous_count
+        for n in (1, 2, 5, 11, 23, 116, 219):
+            assert not _is_vacuous_count(n, 232), f"{n} of 232 was dropped"
+        assert _is_vacuous_count(0, 232)      # nothing to name
+        assert _is_vacuous_count(5, 0)        # no universe
+        assert _is_vacuous_count(221, 232)    # 95.3% — saturated
+        assert _is_vacuous_count(232, 232)
+
+    def test_a_real_breadth_read_still_ships(self):
+        """The gate drops non-facts; it must not silence the lane."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            _write_confluence(p, n_active=112, universe_n=232)
+            ids = _breadth_ids(p)
+            assert "breadth_active" in ids, ids
+
+    def test_the_tracked_list_denominator_is_gated_on_the_RATIO_not_the_shape(self):
+        """The live artifact's shape — `len(now) == universe_n` — driven from a
+        FIXTURE, both ways round.
+
+        WHY THIS IS NOT THE LIVE FILE ANY MORE (review-of-tests, 2026-07-31).
+        This pin used to hard-assert `len(now) == universe` against the
+        committed site/factordata/tech_confluence.json, which was true at 232/232
+        the day it was written and turns red the first morning one name drops a
+        leg — a data-day bomb in a suite about a code rule. Worse, its
+        non-saturated arm asserted nothing at all: with `active` and `len(now)`
+        identical by construction on that file, only the saturated branch could
+        ever execute.
+
+        The rule under test is a RATIO rule, so the fixture supplies both
+        ratios on the shape the live data actually has.
+        """
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            # Saturated: every tracked name firing, denominator = the list size.
+            _write_confluence(p, n_active=232, universe_n=232)
+            assert "breadth_active" not in _breadth_ids(p), (
+                "232 of 232 is a definition of the screen, not a breadth read")
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td)
+            # SAME shape, ordinary ratio — the arm the live-file version of this
+            # test could never reach. It must ship, or the gate is a mute button.
+            _write_confluence(p, n_active=140, universe_n=232)
+            assert "breadth_active" in _breadth_ids(p), (
+                "a 60%-active read was dropped along with the vacuous ones")
+
+    def test_the_live_artifact_agrees_with_the_producers_own_rule(self):
+        """SMOKE READ of the committed artifact — no equality assert.
+
+        Whatever shape the data has on any given morning, the fact list must
+        agree with `_is_vacuous_count` about it. That is a statement about the
+        CODE (one rule, honoured at the seam that reads the file) and it holds on
+        a saturated day, a washout day and an ordinary day alike, so it can never
+        go red merely because the tape changed.
+        """
+        tc_path = ROOT / "site" / "factordata" / "tech_confluence.json"
+        if not tc_path.exists():
+            pytest.skip("site/factordata/tech_confluence.json not present")
+        raw = json.loads(tc_path.read_text(encoding="utf-8"))
+        now = raw.get("now") or {}
+        active = len([t for t, v in now.items() if isinstance(v, list) and v])
+        universe = int(raw.get("universe_n") or 0)
+        from engine.marketing.market_facts import _is_vacuous_count, breadth_facts
+        ids = [f["id"] for f in breadth_facts(ROOT)["facts"]]
+        assert ("breadth_active" in ids) is not _is_vacuous_count(active, universe), (
+            f"{active} of {universe}: the fact list and the drop rule disagree "
+            f"about the live artifact ({ids})")
+
+    def test_the_producer_saturation_arm_matches_the_consumer_band(self):
+        """BOTH nets are saturation-only now, and this pin holds them together.
+
+        market_facts deleted its low arm first (a washout is information — see
+        the two tests above); the fix-wave then brought content_studio's
+        `_DEFAULT_DEGENERATE_BAND` to the same ruling (lo=0.0, and
+        `is_degenerate_count` treats a non-positive lo as NO low arm, so a
+        "0 of N" no-triggers read survives the second net too). If either side
+        regrows a low arm, a washout that clears the producer dies silently in
+        `drop_degenerate_facts` — this test is what makes that divergence loud.
+        """
+        from engine.marketing.market_facts import (
+            _VACUOUS_COUNT_BAND, _VACUOUS_COUNT_MAX_RATIO,
+        )
+        from engine.marketing.content_studio import (
+            _DEFAULT_DEGENERATE_BAND, is_degenerate_count,
+        )
+        assert _VACUOUS_COUNT_MAX_RATIO == _DEFAULT_DEGENERATE_BAND[1]
+        assert _VACUOUS_COUNT_BAND[1] == _VACUOUS_COUNT_MAX_RATIO
+        # Neither net has a low arm.
+        assert _VACUOUS_COUNT_BAND[0] == 0.0
+        assert _DEFAULT_DEGENERATE_BAND[0] == 0.0
+        # The washout and the no-triggers read both clear the consumer net.
+        assert not is_degenerate_count(11, 232)
+        assert not is_degenerate_count(0, 232)
+        # Saturation still dies there.
+        assert is_degenerate_count(232, 232)

@@ -187,11 +187,46 @@ _PRICE_SLOT_RE = re.compile(
 #: duration or a tally, not a level ("held above 20 sessions", "over 10 names").
 #: The gate stays narrow on purpose: a gate that cries wolf stops meaning
 #: anything (the copy_review doctrine).
+#:
+#: THE MOTION-PREPOSITION OVER-FIRE (2026-07-31 adversarial review). Wave 1 gave
+#: `_TARGET_SLOT_RE` the motion prepositions `toward|towards|up to|looking for|
+#: aiming for|en route to`. Those words are NOT price vocabulary the way
+#: `entry|target|t1|stop` are — English uses them for magnitudes of every kind —
+#: so three ordinary sentences started rejecting as `invented_level`:
+#:
+#:     "Volume ran up to 3 million shares"   -> invented_level '3'
+#:     "Grinding toward 5 straight weeks"    -> invented_level '5'
+#:     "toward 2 handles"                    -> invented_level '2'
+#:
+#: The unit / multiplier / tally nouns below are the minimal rule that closes
+#: all three. It is deliberately the SAME noun test the slot rule already ran
+#: rather than a second mechanism, because the discriminator is identical: a
+#: price is written BARE ("toward 190"), and a count is written with the thing
+#: it counts ("toward 5 straight weeks"). The two other discriminators the
+#: review floated — "require a decimal point or a $ prefix for the new
+#: prepositions" — were measured and rejected: they would unpin
+#: `toward 228` / `toward 44` / `looking for 228 next`, which ARE the defect-5
+#: regression pins (a fabricated target is nearly always a bare integer), and a
+#: `$` override would newly false-fire on "up to $3 million in volume".
+#:
+#: `handles` is PLURAL ONLY, on purpose. "toward 2 handles" is a move of two
+#: points; "toward the 190 handle" names a price zone and must stay catchable.
 _SLOT_NON_LEVEL_NOUNS: frozenset[str] = frozenset({
     "session", "sessions", "day", "days", "week", "weeks", "month", "months",
     "year", "years", "time", "times", "name", "names", "stock", "stocks",
     "sector", "sectors", "group", "groups", "ticker", "tickers", "point",
     "points", "bps", "minute", "minutes", "hour", "hours", "of",
+    # Magnitude multipliers: "up to 3 million shares", "toward 2 billion".
+    "million", "millions", "billion", "billions", "trillion", "trillions",
+    "thousand", "thousands",
+    # What gets counted: share/contract/lot tallies, not prices.
+    "share", "shares", "contract", "contracts", "lot", "lots", "trade",
+    "trades", "setup", "setups", "candle", "candles", "bar", "bars",
+    # Move units. Plural only — see the note above.
+    "handles", "percent", "pct",
+    # Streak adjectives that sit BETWEEN the count and its noun:
+    # "5 straight weeks", "3 consecutive closes", "4 more names".
+    "straight", "consecutive", "more", "other", "closes",
 })
 
 
@@ -832,6 +867,27 @@ def build_context(
         "loss_pct_str": loss_pct_str or "",
         "target_label": target_label,
         "stop_str": stop_str or "",
+        # THE RECEIPT'S OWN TARGET (2026-07-31 adversarial review). `target_str`
+        # was computed above, folded into `numbers_whitelist` and into the
+        # levels-first ordering, and then NEVER RETURNED — the receipt block
+        # emitted only `stop_str`. `_LEVEL_CTX_KEYS` names "target_str", so
+        # `allowed_level_tokens` was asking for a key build_context did not
+        # publish, and the failure was silent and asymmetric:
+        #
+        #   a receipt whose ticker is still on the Prophet board picks up
+        #   entry_str/t1_str from `_plan` and reads fine;
+        #   a receipt whose plan has ROLLED OFF the board (which is most of
+        #   them — the window is 30 days and the board turns over faster) has
+        #   no `_plan`, so levels = {stop_str} ALONE. The set is non-empty, so
+        #   invented_level takes the STRICT branch, and the receipt's own
+        #   target — the number the post exists to report, present in
+        #   `numbers_whitelist` and in `_receipt["target"]` — is called
+        #   invented. "I said 172 on QCOM three weeks ago and it hit 190" was
+        #   rejected for writing 190.
+        #
+        # Exact-value provenance stays out of the whitelist (contract
+        # §Rounding); this is the DISPLAY form, same as every other *_str.
+        "target_str": target_str or "",
         # Confluence
         "win_rate": win_rate,
         "win_rate_str": win_rate_str or "",
@@ -1378,32 +1434,74 @@ _PLATFORM_MAX_CHARS = 280
 _LIST_MIN_ROWS, _LIST_MAX_ROWS = 2, 6
 _LIST_MAX_READ_LINES = 1
 
+# NUMBER SALAD BY CONSTRUCTION (prompt autopsy 2026-07-31, defect 2). The shape
+# contracts and the number budget used to contradict each other in the same
+# request. SHAPE_CONTRACT["stack"] ordered "today's number, then the bigger
+# number, then the one that reframes it" — three numbers, minimum — and
+# SHAPE_CONTRACT["list"] ordered "2 to 6 rows, each row carries a ticker or a
+# number", while `number_soup_violations` enforced `_NUMBER_BUDGET_DEFAULT = 2`
+# on EVERY shape. A model that obeyed the stack contract exactly was rejected
+# for obeying it, burned its one repair turn, and was dropped. That is the same
+# self-cancelling failure as the HEDGES block below: an instruction whose
+# compliance is a rejection.
+#
+# TWO HALVES TO THE FIX and both are needed. (1) The budget is now per shape and
+# it is the budget each contract IMPLIES: a stack of three escalating lines gets
+# three, a list of up to six rows gets six, and the single-line shapes keep the
+# house default because three figures in one dense line IS the salad the law
+# exists to stop. (2) The contract prose is rendered FROM this dict, so the
+# number the model reads and the number the validator enforces cannot drift
+# apart again by a one-sided edit — and each contract now demands the NARRATIVE
+# LOGIC between the numbers (the second number is the base the first is measured
+# against, never a second unrelated claim), which is what actually separates an
+# argument from a data dump. A budget alone would have licensed the salad.
+_SHAPE_NUMBER_BUDGET: dict[str, int] = {
+    "one_liner": 2,
+    "two_part": 2,
+    "caption": 2,
+    "stack": 3,
+    "list": _LIST_MAX_ROWS,
+}
+
 #: One line each, in the writer's own terms. Kept as data so the prompt and the
 #: validator cannot drift apart — the prompt renders these verbatim.
 SHAPE_CONTRACT: dict[str, str] = {
     "one_liner": (
         "ONE_LINER: a single line, no line breaks at all, 140 characters max, "
         "no headline. This is the default human post shape (48.6% of the real "
-        "corpus). One thought, said once, with the number in it."
+        "corpus). One thought, said once, with the number in it. At most "
+        f"{_SHAPE_NUMBER_BUDGET['one_liner']} numbers, and a second one only "
+        "when it is what the first is measured against."
     ),
     "two_part": (
         "TWO_PART: a headline line (90 chars max), then ONE BLANK LINE, then the "
         "body (275 chars max). The blank line is the beat before the payoff. "
-        "This is a real winner shape at ~17% of the corpus, not the default."
+        "This is a real winner shape at ~17% of the corpus, not the default. At "
+        f"most {_SHAPE_NUMBER_BUDGET['two_part']} numbers across both parts."
     ),
     "stack": (
         "STACK: 2 to 5 lines separated by single newlines, no blank lines, no "
-        "headline, 275 chars total. Each line escalates or enumerates: today's "
-        "number, then the bigger number, then the one that reframes it."
+        f"headline, 275 chars total, at most {_SHAPE_NUMBER_BUDGET['stack']} "
+        "numbers in the whole post. The lines are ONE argument, not three "
+        "separate claims: line 1 is today's number, line 2 is the base it is "
+        "measured against (the prior print, the average, the same week a year "
+        "ago), line 3 says what the two of them together change. A line that "
+        "adds a number without saying what it is measured against is a data "
+        "dump, and a data dump is the shape a person scrolls past."
     ),
     "list": (
         "LIST: 2 to 6 rows, one per line, single newlines, no blank lines, no "
-        "headline, 275 chars total. Each row carries a ticker or a number. At "
-        "most one closing read line."
+        f"headline, 275 chars total, at most {_SHAPE_NUMBER_BUDGET['list']} "
+        "numbers in the whole post. Each row carries a ticker or a number, and "
+        "every row measures the SAME thing over the SAME window so the rows can "
+        "be read against each other. Six unrelated facts stacked is not a list, "
+        "it is a dump. At most one closing read line, and it says what the rows "
+        "add up to."
     ),
     "caption": (
         "CAPTION: 90 characters max, one line, no headline. A chart is attached "
-        "and it does the talking. Say the one thing the chart cannot."
+        "and it does the talking. Say the one thing the chart cannot. At most "
+        f"{_SHAPE_NUMBER_BUDGET['caption']} numbers, and usually one."
     ),
 }
 
@@ -1878,8 +1976,23 @@ _MACHINE_RISK_PATTERNS: tuple[tuple[str, str], ...] = (
 # — "37.1 is my trigger, 30.9 proves me wrong". The operator: "so cringe and
 # disgusting, like you're writing a poem". Requires BOTH halves under ~34 chars
 # so ordinary compound sentences do not trip it.
+# A DECIMAL POINT IS NOT A SENTENCE END (2026-07-31 adversarial review). The
+# clause classes were a bare ``[^.!?,\n]``, so the '.' inside a PRICE ended the
+# clause and the whole rule went blind on the exact post its own docstring
+# quotes as the fixture: "37.1 is my trigger, 30.9 proves me wrong." matched
+# nothing, while the digit-only rewrite "371 is my trigger, 309 proves me wrong"
+# matched fine. Motto cadence is a thing writers do WITH LEVELS, so "blind to
+# any clause containing a price" is blind to most of the class. Found by the
+# per-rule sample bank in tests/test_marketing_copy_v2.py, which is what a
+# silenced rule looks like when the counter stops being a total.
+#
+# The exemption is deliberately `\d.\d` ONLY — a period between two digits.
+# Sentence-ending periods, ellipses and abbreviations still close a clause, so
+# the rule stays a two-clause rule and does not start spanning sentences.
+_MOTTO_CLAUSE = r"(?:[^.!?,\n]|(?<=\d)\.(?=\d))"
 _MOTTO_RE = re.compile(
-    r"(?:^|(?<=[.!?]\s))([^.!?,\n]{6,34}),\s([^.!?,\n]{6,34})[.!?](?:\s|$)"
+    r"(?:^|(?<=[.!?]\s))(" + _MOTTO_CLAUSE + r"{6,34}),\s("
+    + _MOTTO_CLAUSE + r"{6,34})[.!?](?:\s|$)"
 )
 _MOTTO_HINGE = (
     "is my", "proves", "kills", "matters more", "beats", "means", "wins",
@@ -2012,23 +2125,53 @@ _NUMBER_BUDGET: dict[str, int] = {"receipt": 4, "earnings": 4}
 _NUMBER_BUDGET_DEFAULT = 2
 
 
-def number_soup_violations(text: str, limit: int | None = None, kind: str = "") -> list[str]:
+def number_budget_for(kind: str = "", shape: str = "") -> int:
+    """The distinct-number budget one post is allowed. The SINGLE source of truth.
+
+    Two independent reasons a post may carry more than the house default, and
+    the wider of the two wins:
+
+    * its KIND — a receipt's or an earnings post's numbers ARE the fact
+      (:data:`_NUMBER_BUDGET`);
+    * its SHAPE — a stack or a list is a multi-row form whose own contract
+      orders more than two numbers (:data:`_SHAPE_NUMBER_BUDGET`).
+
+    ``max`` rather than a precedence rule because both claims are true at once:
+    a receipt written as a list is still a receipt, and clamping it back to the
+    shape budget would reject the exact post the kind budget exists to admit.
+    An unknown kind or shape contributes the default, never a KeyError.
+    """
+    by_kind = _NUMBER_BUDGET.get(str(kind or "").strip().lower(), _NUMBER_BUDGET_DEFAULT)
+    by_shape = _SHAPE_NUMBER_BUDGET.get(
+        str(shape or "").strip().lower(), _NUMBER_BUDGET_DEFAULT)
+    return max(by_kind, by_shape)
+
+
+def number_soup_violations(text: str, limit: int | None = None, kind: str = "",
+                           shape: str = "") -> list[str]:
     """More numbers than a person would put in one post. [] = clean.
 
     Counts DISTINCT number tokens: a gain repeated in the headline and the body
     is one number the reader has to hold, not two. Cashtags, list enumerators
     ("1)", "2)") and years are structure, not figures, and are stripped first.
+
+    `shape` closes the 2026-07-31 autopsy's defect 2: the budget was flat at two
+    for every shape while SHAPE_CONTRACT ordered three numbers for a stack and
+    up to six rows for a list, so an obedient post was rejected for obedience.
+    A caller that passes no shape gets exactly the pre-fix behaviour, which is
+    what keeps the publisher's post-time screen and the older lanes unmoved.
     """
     if limit is None:
-        limit = _NUMBER_BUDGET.get(str(kind or "").strip().lower(), _NUMBER_BUDGET_DEFAULT)
+        limit = number_budget_for(kind=kind, shape=shape)
     stripped = _CASHTAG_STRIP_RE.sub(" ", str(text or ""))
     stripped = _LIST_MARKER_STRIP_RE.sub(" ", stripped)
     stripped = _YEAR_STRIP_RE.sub(" ", stripped)
     found = list(dict.fromkeys(_NUMBER_TOKEN_RE.findall(stripped)))
     if len(found) > limit:
         return [
-            f"number soup ({len(found)} numbers: {', '.join(found[:5])}): one "
-            f"number per post, and only when the number IS the point"
+            f"number soup ({len(found)} numbers: {', '.join(found[:5])}, budget "
+            f"{limit} for this shape and kind): every number after the first has "
+            f"to be what the one before it is measured against, not a new claim"
         ]
     return []
 
@@ -2223,7 +2366,8 @@ def trim_cost_monoculture(
     return cut
 
 
-def queued_voice_violations(text: str, kind: str = "") -> list[str]:
+def queued_voice_violations(text: str, kind: str = "",
+                            shape: str | None = None) -> list[str]:
     """The voice laws, runnable against copy that is ALREADY in the queue.
 
     The queue is a bypass around every generation-time law: 187 posts were
@@ -2239,12 +2383,26 @@ def queued_voice_violations(text: str, kind: str = "") -> list[str]:
     the numbers whitelist and the sibling-overlap checks need a packet the
     queue no longer has, and a check that cannot be evaluated must not
     quarantine.
+
+    ``shape`` CLOSES A HALF-APPLIED FIX (2026-07-31 adversarial review). The
+    per-shape number budget landed in ``validate_copy_v2`` and stopped there, so
+    the writer and this post-time screen disagreed about the same post: a
+    ``stack`` carrying the three numbers its own SHAPE_CONTRACT orders passed
+    generation and was then quarantined by the queue screen under the flat
+    default of two. A gate that rejects obedience is worse than no gate — it
+    teaches the desk to stop obeying. The two screens now compute the budget the
+    same way, from the same ``number_budget_for``.
+
+    The default is ``None``, not ``""``: an outbox row that carries no recorded
+    shape gets exactly the pre-fix budget, which is what keeps every older
+    caller (tests/test_confluence_source.py, the reply lanes) unmoved. Only a
+    caller that KNOWS the shape widens the budget.
     """
     out: list[str] = []
     out += machine_risk_violations(text)
     out += motto_violations(text)
     out += process_list_violations(text)
-    out += number_soup_violations(text, kind=kind)
+    out += number_soup_violations(text, kind=kind, shape=str(shape or ""))
     out += no_reaction_violations(text)
     out += lecture_violations(text)
     # batch_texts is empty on purpose: at publish time there is no batch, so
@@ -2461,6 +2619,211 @@ def stock_closer_violations(
     return out
 
 
+# ── Welded tails across DAYS, not just across one plan (autopsy defect 6) ─────
+#
+# A week of shipped posts closed 27% of the time on one of NINE sentences:
+# "Watching, no position." five times, "Patience, annoyingly, is the play."
+# five times, and seven more of the same kind. Every one of those posts cleared
+# every gate this module had, and correctly so:
+#
+#   * `_STOCK_CLOSERS` bans the closers the house prompt once MANDATED, and
+#     these were not on that list;
+#   * `stock_closer_violations`' collision arm compares against `batch_texts`,
+#     which is ONE night's plan. Five uses spread over five nights collide with
+#     nothing;
+#   * `repeated_sentence_violations` does reach back across days, but its
+#     `_REPEAT_SENTENCE_MIN_WORDS = 5` floor exists to protect the deadpan
+#     one-word verdicts, and "Watching, no position." is three words. The
+#     sentence that welded the feed shut sat exactly underneath the floor.
+#
+# So this is the day-spanning closer gate, and it is deliberately NOT the same
+# instrument as `repeated_sentence_violations`: it compares FINAL SENTENCE to
+# FINAL SENTENCE only, which is what lets its floor drop to three words without
+# touching the mid-post cadence that floor was protecting. "Ugly." and "Not
+# ideal." (one and two words) stay free to recur forever, because a one-beat
+# verdict IS the persona and the operator has never complained about one.
+#
+# THE HISTORY IT READS. `recent` is this account's durable post history, seeded
+# by `memory_recent_seed` -> `persona_memory.recent_posts(days=7)`. That is a
+# real seven days, so the window the operator measured is the window enforced.
+# A caller that passes no `recent` (the publisher's post-time screen, a lane
+# with no memory store on disk) gets [] rather than a false pass claim — the gap
+# is documented here rather than papered over with the plan's own day, which
+# would only ever catch a same-night repeat that the batch arm already has.
+_REPEAT_CLOSER_MIN_WORDS = 3
+
+
+def repeated_closer_violations(
+    text: str, recent: Iterable[dict] | None,
+) -> list[str]:
+    """This account already ended a post on this sentence in the last 7 days.
+
+    `recent` is the `{"text", "date"}` history `validate_copy_v2` already
+    threads for the codex frequency caps. Returns [] when clean, and [] when
+    there is no history to compare against.
+    """
+    key = _closer_key(text)
+    if not key or len(key.split()) < _REPEAT_CLOSER_MIN_WORDS:
+        return []
+    for row in (recent or []):
+        prior = row.get("text") if isinstance(row, dict) else row
+        if not str(prior or "").strip():
+            continue
+        if _closer_key(str(prior)) == key:
+            return [
+                f"repeated closer: this account already ended a post on "
+                f"\"{key[:70]}\" in the last 7 days. A closer that comes back "
+                f"every few days is the tell; end it in your own words for THIS "
+                f"post or cut the last line"
+            ]
+    return []
+
+
+# ── Invented ladders: a target the fact packet never carried (defect 5) ───────
+#
+# THE POST THAT PROVED IT. Kelly's $TPR signal printed "I want 151 before
+# leaning toward 190, then 228" on a plan whose only forward level was T1
+# 189.63. "190" is legitimate (189.63 in display form IS 190). "228" was
+# invented whole, and it passed every gate:
+#
+#   * the whitelist rule (validate_copy step 5) asks "is this number in the
+#     packet", and 228 WAS in the packet, as a 52-week-high chart fact. A number
+#     can be true as a fact and a fabrication as a target;
+#   * `price_slot_tokens` only recognises entry / target / t1 / t2 / stop /
+#     below / above / under / over / at / near. "leaning toward 190" and "then
+#     228" are target language that no slot word introduces, so the level arm
+#     never looked at either token.
+#
+# This gate closes the SEMANTIC half the whitelist cannot see: a number the post
+# asks the reader to aim at must come from the plan's own forward levels
+# (entry / t1 / t2 / invalidation / stop), not from anywhere else in the packet.
+# Rejection reason carries the literal token `invented_level` so the drop stage
+# is greppable in the nightly report.
+#
+# THE LADDER IS THE WHOLE POINT. "190, then 228" is two targets, and only the
+# first is introduced by a target word. So a hit licenses a scan forward through
+# `then` / `and then` / `next` continuations, each of which inherits the target
+# semantics of the number it follows. `then` is NOT a target word on its own —
+# "held for three sessions, then gave it back" must stay legal — which is why it
+# only fires as a continuation of a slot that already matched.
+_TARGET_SLOT_RE = re.compile(
+    r"\b(?:targets?|targeting|t1|t2|tp\d?|entry|stop|toward|towards|"
+    r"looking for|aiming for|up to|en route to)\b"
+    r"[\s:=]*\$?\s*"
+    r"(\d+(?:,\d{3})*(?:\.\d+)?)(?![\d.]*\s*(?:%|x\b))",
+    re.IGNORECASE,
+)
+_TARGET_LADDER_RE = re.compile(
+    r"\A[\s,]*(?:and\s+)?(?:then|next)\s+\$?\s*"
+    r"(\d+(?:,\d{3})*(?:\.\d+)?)(?![\d.]*\s*(?:%|x\b))",
+    re.IGNORECASE,
+)
+
+#: The ctx fields that ARE the plan's forward levels. Nothing else licenses a
+#: target: `numbers_whitelist` deliberately does not appear here, because the
+#: whole defect is a chart fact being promoted to a price objective.
+_LEVEL_CTX_KEYS: tuple[str, ...] = (
+    "entry_str", "t1_str", "t2_str", "inv_str", "stop_str", "target_str",
+)
+
+
+def allowed_level_tokens(ctx: dict) -> set[str]:
+    """Every display form of this item's forward levels. Empty set = no levels.
+
+    Both the display string the packet carries and the display form of its own
+    numeric value, so a model that writes "190" against a t1_str of "190" and a
+    model that writes "189.63" against the same level both clear. Nothing else
+    widens the set.
+    """
+    out: set[str] = set()
+    for key in _LEVEL_CTX_KEYS:
+        raw = str((ctx or {}).get(key) or "").strip()
+        if not raw:
+            continue
+        out.add(raw)
+        val = _finite(raw.replace(",", ""))
+        if val is not None:
+            out.add(f"{val:.2f}")
+            disp = format_display_price(val)
+            if disp:
+                out.add(disp)
+    return out
+
+
+def _level_is_allowed(token: str, allowed: set[str]) -> bool:
+    """True when *token* is one of the packet's levels, or rounds to one."""
+    tok = str(token or "").strip()
+    if tok in allowed:
+        return True
+    val = _finite(tok.replace(",", ""))
+    if val is None:
+        return False
+    if f"{val:.2f}" in allowed:
+        return True
+    disp = format_display_price(val)
+    return bool(disp and disp in allowed)
+
+
+def invented_level_violations(text: str, ctx: dict) -> list[str]:
+    """A target/level the fact packet never carried. [] = clean.
+
+    Fires on the number, not on the sentence: a post may carry as many levels as
+    its budget allows, provided every one of them came from the plan.
+
+    TWO STRICTNESSES, and which one applies is a property of the ITEM.
+
+    * The item HAS forward levels (a signal, a receipt, anything build_context
+      gave an entry / t1 / t2 / invalidation / stop). Then a target must be one
+      of THOSE. This is the $TPR case exactly: 228 was a legitimate 52-week-high
+      fact sitting in `numbers_whitelist`, and promoting a fact to a price
+      objective is the fabrication, not the number itself.
+    * The item has NO forward levels (a chart or macro post: there is no plan to
+      contradict). Then the bar falls back to the packet's own numbers, which is
+      the honest bar available. It still closes half the hole, because the
+      target LANGUAGE this gate reads ("toward 228", "then 260") is language no
+      slot word introduces, so `price_slot_tokens` never looked at those tokens
+      on any kind of item.
+
+    Deliberately never says the word "whitelist": callers grep violation lists
+    by substring to tell a licensing failure from a budget failure, and this is
+    a third thing from either.
+    """
+    src = str(text or "")
+    levels = allowed_level_tokens(ctx)
+    allowed = levels or {str(n) for n in ((ctx or {}).get("numbers_whitelist") or [])}
+    source = "this item's plan levels" if levels else "this item's fact packet"
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def _report(tok: str) -> None:
+        if tok in seen or _level_is_allowed(tok, allowed):
+            return
+        seen.add(tok)
+        have = ", ".join(sorted(allowed)) if allowed else "none"
+        out.append(
+            f"invented_level '{tok}': a level the reader is asked to aim at has "
+            f"to come from {source} (this item carries: {have}). Write the level "
+            f"you were given or write no level at all"
+        )
+
+    for m in _TARGET_SLOT_RE.finditer(src):
+        nxt = re.match(r"\s*([A-Za-z']+)", src[m.end():])
+        if nxt and nxt.group(1).lower() in _SLOT_NON_LEVEL_NOUNS:
+            continue  # a duration or a tally, not a level
+        _report(m.group(1))
+        # Walk the ladder: "190, then 228, then 260" is three targets.
+        pos = m.end()
+        while True:
+            step = _TARGET_LADDER_RE.match(src[pos:])
+            if not step:
+                break
+            after = re.match(r"\s*([A-Za-z']+)", src[pos + step.end():])
+            if not (after and after.group(1).lower() in _SLOT_NON_LEVEL_NOUNS):
+                _report(step.group(1))
+            pos += step.end()
+    return out[:3]
+
+
 def validate_copy_v2(
     text: str,
     ctx: dict,
@@ -2486,6 +2849,8 @@ def validate_copy_v2(
       sibling divergence         gate 3(b) — one fact on two accounts
       batch opener collision     gate 3(i) — "Watching $X right now" x3
       batch body duplication     gate 3(i) — same sentence, different opener
+      invented level             autopsy 5 — "toward 190, then 228" off-packet
+      repeated closer            autopsy 6 — the same tail 5x in 7 days
 
     `text` is the SHAPED post (it may contain newlines). `headline` is optional
     and only for callers that already split: passing a non-empty one on any
@@ -2523,8 +2888,17 @@ def validate_copy_v2(
     # above _MACHINE_RISK_PATTERNS.
     violations.extend(motto_violations(text))
     violations.extend(process_list_violations(text))
-    violations.extend(number_soup_violations(text, kind=str(ctx.get("type") or "")))
+    # `shape` is threaded so the budget matches the contract the model was
+    # handed (autopsy defect 2): a stack ordered to escalate across three
+    # numbers was being rejected by a flat budget of two.
+    violations.extend(number_soup_violations(
+        text, kind=str(ctx.get("type") or ""), shape=shape))
     violations.extend(no_reaction_violations(text))
+    # Autopsy defect 5: a target that came from nowhere in the packet.
+    violations.extend(invented_level_violations(text, ctx))
+    # Autopsy defect 6: the same final sentence this account used inside the
+    # 7-day durable history `recent` already carries for the frequency caps.
+    violations.extend(repeated_closer_violations(text, recent))
     return violations
 
 
@@ -5092,12 +5466,97 @@ def _anti_exemplar_block() -> str:
     return "\n".join(out)
 
 
+# THE PAYLOAD CONTRACT (autopsy defect 3, 2026-07-31).
+#
+# `_v2_item_payload` shipped `codex{worldview, franchises, restraint,
+# open_promises, worn_out_phrases}`, `franchise`, `lead_with`, `pack`,
+# `win_rate`, `example_lines` and the four plan levels into every user turn, and
+# the system prompt named NONE of them. Verified programmatically: a scan of the
+# prompt text for each key returned zero hits for all of the above. The model
+# received a persona codex, a phrase-fatigue list and a promise ledger with no
+# statement of what any of them BIND, which is worse than not sending them: an
+# unexplained JSON key is read as decoration, and `worn_out_phrases` read as
+# decoration is a list of phrases the model may cheerfully reuse.
+#
+# So the prompt now carries a line per key saying what force it has. This tuple
+# is the authoritative list and the prompt is checked against it by
+# `tests/test_marketing_copy_v2.py`: a key added to the payload without a
+# contract line turns that test red, which is the only mechanism that keeps a
+# payload and a prompt from drifting apart again. Nested keys are listed with
+# their parent's name because that is how they appear in the JSON the model
+# reads.
+V2_PAYLOAD_CONTRACT_KEYS: tuple[str, ...] = (
+    "account", "persona", "kind", "shape", "shape_contract", "angle",
+    "cashtag", "cashtags", "facts", "entry", "t1", "t2", "invalidation",
+    "win_rate", "numbers_whitelist", "pack", "lead_with", "sibling_texts",
+    "franchise", "codex",
+    # nested
+    "text", "count", "example_lines", "worldview", "franchises", "restraint",
+    "open_promises", "worn_out_phrases",
+)
+
+_V2_PAYLOAD_CONTRACT_BLOCK = (
+    "PAYLOAD CONTRACT. Your item is a JSON object. Every key in it binds you, "
+    "and this is exactly how:\n"
+    "- account: which desk is posting. It is not content; never name it.\n"
+    "- persona.voice: the register you write in. It is the card below, in "
+    "short form.\n"
+    "- persona.example_lines: lines this person has actually written. "
+    "Calibration for the register, never lines to reuse or paraphrase.\n"
+    "- kind: what class of post this is (signal, chart, receipt, macro, "
+    "earnings, wire...). It sets what the post is FOR.\n"
+    "- shape / shape_contract: the form, assigned. Write exactly that form; the "
+    "contract text is repeated in the item so you cannot miss it.\n"
+    "- angle: the job this post does. Write that job.\n"
+    "- cashtag / cashtags: the tickers this post is about. If a cashtag is "
+    "present it must appear in the post, spelled exactly as given.\n"
+    "- facts / facts[].text: what our engine actually computed, already in "
+    "display form. These are the ONLY facts you may state.\n"
+    "- facts[].count: a count's numerator AND its denominator, as fields so you "
+    "never have to guess one. If you use the count you write both.\n"
+    "- entry / t1 / t2 / invalidation: this item's plan levels. A number you "
+    "ask the reader to aim at, buy at or bail at comes from THESE four and "
+    "nowhere else, not from facts, not from the whitelist, not from arithmetic "
+    "of your own. A target we did not give you is a fabricated trade and the "
+    "post is rejected for it.\n"
+    "- win_rate: the base rate behind this setup. When it is present, IT is the "
+    "hedge. Print it and let it carry the uncertainty; you need no other "
+    "caveat, and a caveat instead of the number is a worse post.\n"
+    "- numbers_whitelist: every number you are allowed to type, verbatim. Not a "
+    "list of numbers to use, a fence around the ones that exist.\n"
+    "- pack: streak rarity, since-dates and 52-week distance when we have them. "
+    "Context you may lean on; never a level.\n"
+    "- lead_with: this post exists because THIS fact fired. Open from it. If it "
+    "is present and your first line is about something else, the post is wrong "
+    "however good the line is.\n"
+    "- sibling_texts: what another desk already posted about this same fact "
+    "today. Share no six-word run with any of them.\n"
+    "- franchise: a recurring format this desk owns. Its `contract` is what the "
+    "format requires of you; its `rule`, when present, is a hard condition, not "
+    "advice.\n"
+    "- persona: the whole card this desk posts as. The two keys above are its "
+    "working parts and the card is spelled out again further down.\n"
+    "- codex: this person's cognitive layer, five keys deep:\n"
+    "- codex.worldview: how this person actually reads markets. It decides what "
+    "they NOTICE in the facts, which is upstream of how they say it.\n"
+    "- codex.franchises: the formats this person is known for.\n"
+    "- codex.restraint: what this person will not do. It outranks anything you "
+    "think would be funnier.\n"
+    "- codex.open_promises: things this account said it would follow up on. A "
+    "callback to your own earlier post is the most human move available to you "
+    "here, and almost nothing else on this list buys as much credibility. If "
+    "one of these fits tonight's fact, close the loop out loud.\n"
+    "- codex.worn_out_phrases: wording this account has already used to death. "
+    "Banned for this post. Not discouraged, banned.\n\n"
+)
+
+
 #: The v2 system prompt. v1's persona/voice/clarity/ban content is the base
 #: (masterplan §4: "v1's system prompt content is the base"); what is NEW is the
 #: shape contract, the angle, the sibling-divergence rule, the denominator law,
-#: the rounding examples, the corpus shape truth, and the anti-exemplars. What
-#: is GONE is v1's two-line assumption and its batch-JSON framing — this prompt
-#: writes ONE post.
+#: the rounding examples, the corpus shape truth, the anti-exemplars, the
+#: payload contract and the per-account persona section. What is GONE is v1's
+#: two-line assumption and its batch-JSON framing — this prompt writes ONE post.
 _V2_SYSTEM_PROMPT_BASE = (
     "You're a trader posting on X. Not a research desk, not a brand, not a "
     "model. You've lost real money before and you find the whole circus mildly "
@@ -5108,6 +5567,8 @@ _V2_SYSTEM_PROMPT_BASE = (
     "You write ONE post. The item you are given carries the account's persona, "
     "the facts our engine computed, the shape this post must take, and the "
     "angle it must work. The engine decides WHAT. You decide how it is said.\n\n"
+
+    + _V2_PAYLOAD_CONTRACT_BLOCK +
 
     "SHAPE IS ASSIGNED, NOT CHOSEN. Your item names one of these and you write "
     "exactly that:\n"
@@ -5159,12 +5620,34 @@ _V2_SYSTEM_PROMPT_BASE = (
     "68% of real posts use bare integers; strict two-decimal figures appear in "
     "5.9%. Over-precision is the loudest bot tell in this business.\n\n"
 
+    # THIS BLOCK USED TO PRESCRIBE WHAT THE VALIDATOR KILLS (autopsy defect 1,
+    # 2026-07-31). It ordered the model to write 'not financial advice', 'size
+    # appropriately' and 'do your own work' on any signal post with no base
+    # rate, while the HARD BANS block sixty lines down banned compliance caveats
+    # and `machine_risk_violations` rejects both of the first two by regex. The
+    # model was being told, in one system prompt, to write the phrase that would
+    # get its post repaired and then dropped: a guaranteed repair turn, a
+    # guaranteed validate-stage drop, and no way for an obedient model to win.
+    # The honest-uncertainty move is expressed in the house's own voice now: a
+    # condition to watch, a level that changes the read, or an admission of what
+    # the writer does not know. Every example below clears every gate in this
+    # module, which is the property `tests/test_marketing_copy_v2.py`'s
+    # prompt-vs-its-own-bans scan exists to keep true.
     "HEDGES MUST BIND. An uncertainty tail may only be about a stat that is "
     "actually in the post: 'that 78% is history, not a promise' needs the 78%. "
     "A floating 'Historical, not a promise.' on a post with no base rate is "
-    "banned. On a signal post with no base rate, be honest about what you will "
-    "DO instead: 'not financial advice', 'size appropriately', 'I'll post how "
-    "it ends either way', 'do your own work'.\n\n"
+    "banned, and so is any compliance-desk phrasing. On a post with no base "
+    "rate, honesty is a CONDITION, a LEVEL or an ADMISSION, never a caveat:\n"
+    "- the condition you are waiting on: 'this only matters if it holds "
+    "through the close'.\n"
+    "- the level that changes the read: 'under 33.8 the whole thing is a "
+    "different conversation'.\n"
+    "- what you do not know: 'no idea who is doing the buying, and that is the "
+    "part I would want before sizing up'.\n"
+    "- what you will do next, said plainly: 'I'll post how it ends either "
+    "way'.\n"
+    "If you have a base rate, the base rate IS the hedge. Print it and let it "
+    "do the work: '11 of 14 since March, which is also 3 that did not'.\n\n"
 
     "NEVER NARRATE THE MACHINERY. The reader cannot see our screen, our board, "
     "our plan or our grading. Banned outright: 'the screen', 'on my screen', "
@@ -5172,7 +5655,21 @@ _V2_SYSTEM_PROMPT_BASE = (
     "'our model', 'the engine', 'on the page', 'the read's up top'. Show a "
     "receipt, never explain that receipts exist.\n\n"
 
-    "VOICE (this is the bar; match it, don't drift formal):\n"
+    # DEFAULTS, NOT ABSOLUTES (autopsy defect 4). This block is ~4,400 tokens of
+    # account-invariant instruction against a ~180-token persona card buried in
+    # the user JSON, 24:1, and where the two disagreed the bigger block won by
+    # sheer volume. It said "No exclamation marks" flatly while Meagan's own
+    # registered habit is "at most one exclamation. She is the only desk allowed
+    # an exclamation at all", so the one thing that made one of five desks sound
+    # like a different person was instructed away before the card was read. The
+    # card is now IN this system prompt (see `persona_prompt_section`) and it
+    # OUTRANKS these defaults inside the caps it declares. The deterministic
+    # `expression_dial` pass is what keeps that from becoming a licence: a quirk
+    # the card does not register is still stripped and still rejected.
+    "VOICE. These are the HOUSE DEFAULTS. Where THIS ACCOUNT'S CARD below "
+    "registers a signature habit that contradicts one of them, the card wins, "
+    "inside the cap the card names and nowhere else. A habit no card registers "
+    "is not yours to use:\n"
     "- X is casual. Contractions always. Fragments are fine. Short is good, "
     "but natural-short, the way people type, not clipped telegraph style. "
     "Three fragments in a row is a telegram, not a voice.\n"
@@ -5187,7 +5684,9 @@ _V2_SYSTEM_PROMPT_BASE = (
     "consensus flips, euphoria at highs, and our own stopped-out trades. NEVER "
     "at named people, the reader, or politics.\n"
     "- The cheese test: if the line would survive with a laughing emoji "
-    "appended, cut it. No puns. No exclamation marks.\n"
+    "appended, cut it. By default no puns and no exclamation marks: both are "
+    "card-granted habits, so use one only if your card names it, once, and "
+    "never twice in the same post.\n"
     "- Macro: write only what the data plainly shows. Never a regime label or "
     "an internal score. If the facts are thin, say less.\n\n"
 
@@ -5287,13 +5786,159 @@ def store_exemplar_block(cfg: dict | None, *, root: Any = None,
     return "\n".join(lines) if len(lines) > 1 else ""
 
 
-def _v2_system_prompt(cfg: dict, *, root: Any = None) -> str:
-    """The system prompt, this deployment's copy_laws, and the pinned exemplars."""
+# ── The prompt-vs-its-own-bans scan (autopsy defect 1's regression pin) ──────
+#
+# The prompt has to be able to QUOTE the phrases it bans, or a ban list cannot
+# be written at all. That is exactly what made defect 1 invisible for months:
+# "size appropriately" appearing in the prompt is normal, and nobody could tell
+# the two occurrences apart by grep because one was a ban and the other was an
+# ORDER to write it.
+#
+# So the scan is paragraph-scoped, and these are the paragraph heads whose JOB
+# is to quote banned material. Everything else in the prompt is PRESCRIPTIVE:
+# what it contains, it is asking for. A banned phrase in a prescriptive
+# paragraph is a self-cancelling instruction and the test that reads this fails.
+# Adding a head here is the way to make that test go quiet, which is the point:
+# it costs an explicit, reviewable claim that the new paragraph quotes rather
+# than prescribes.
+#
+# EVERY HEAD HERE IS LOAD-BEARING, AND THAT IS ENFORCED (2026-07-31 adversarial
+# review). A mutation sweep — drop one head, re-run the scan — found four
+# entries that suppressed nothing. Two of them were dead by CONSTRUCTION and are
+# now gone:
+#
+#   "EXEMPLARS (real posts"        the corpus block is subtracted from the
+#   "THESE SHIPPED FROM THIS DESK" prompt BY VALUE before the paragraph split
+#                                  (see prescriptive_prompt_paragraphs), so all
+#                                  that survived the subtraction was the bare
+#                                  header line — house text, which has to pass
+#                                  the scan like any other order. Exempting it
+#                                  only hid a future typo.
+#
+# The other two the sweep named are kept, because the sweep ran against
+# ``_v2_system_prompt({})`` and neither paragraph EXISTS in that prompt:
+#
+#   "OTHER LAWS"        emitted only when cfg carries copy_laws. Against the
+#                       SHIPPED config/marketing.yml (36 laws, most of them ban
+#                       lists) dropping this head produces a hit. Measured, not
+#                       assumed; pinned by a test.
+#   "RATIFIED EXEMPLARS" emitted only when the exemplar store has an active
+#                       version pin. This deployment ships that store dark, so
+#                       the sweep saw nothing. The block is OTHER PEOPLE'S posts
+#                       and is NOT value-subtracted, so arming the pin would put
+#                       third-party copy under the scan and turn an operator
+#                       ratification into a red test about data rather than
+#                       about our own orders.
+#
+# BLAST RADIUS, so a future edit knows what it is holding: "VOICE." suppresses
+# exactly ONE bullet — "Never a regime label or an internal score" — worth one
+# hit ("banned vocab: 'regime'"). "THE COLD-READ LAW" holds two ('vwap', 'point
+# of control'), "NEVER NARRATE THE MACHINERY" four, and "HARD BANS" is the ban
+# list itself (~48). Deleting a head is a claim that its paragraph ORDERS
+# nothing it quotes; make that claim explicitly or leave the head alone.
+_PROMPT_BAN_QUOTING_HEADS: tuple[str, ...] = (
+    "THE COLD-READ LAW",          # "not 'the anchored VWAP', not 'the point of control'"
+    "NEVER NARRATE THE MACHINERY",
+    "VOICE.",                     # one bullet: "Never a regime label or an internal score"
+    "HARD BANS",
+    "RATIFIED EXEMPLARS",         # other accounts' posts, quoted for register
+    "OTHER LAWS",                 # config-supplied copy_laws, often ban lists
+)
+
+
+def prescriptive_prompt_paragraphs(prompt: str) -> list[str]:
+    """The paragraphs of *prompt* that ORDER something, not the ones that quote.
+
+    Blank-line separated, because that is how :data:`_V2_SYSTEM_PROMPT_BASE` is
+    assembled: every bulleted block is one paragraph with single newlines inside
+    it, so a head match identifies a whole block.
+
+    The two exemplar blocks are subtracted by VALUE before the split rather than
+    filtered by head, and they have to be: a `two_part` exemplar contains a
+    blank line of its own (the shape IS a blank line), so blank-line splitting
+    tears the exemplar block into fragments and the fragments after the first
+    carry no head to match. Subtracting the exact generated string is the only
+    form of this that cannot be defeated by an exemplar's own shape.
+    """
+    src = str(prompt or "")
+    for quoted in (_exemplar_block(), _anti_exemplar_block()):
+        if quoted:
+            src = src.replace(quoted, "")
+    out: list[str] = []
+    for para in re.split(r"\n[ \t]*\n", src):
+        body = para.strip()
+        if not body:
+            continue
+        if any(body.startswith(head) for head in _PROMPT_BAN_QUOTING_HEADS):
+            continue
+        out.append(body)
+    return out
+
+
+def persona_prompt_section(persona_card: dict | None) -> str:
+    """This account's card, rendered for the SYSTEM turn. "" when there is none.
+
+    AUTOPSY DEFECT 4: THE PERSONA WAS OUTVOTED 24 TO 1. The account-invariant
+    base prompt is ~4,400 tokens; the card was ~180 tokens of JSON in the middle
+    of the user turn's item, under a key the prompt never named. Where the two
+    disagreed the base won every time, and it disagreed on exactly the details
+    that make one desk sound unlike another: "No exclamation marks" against
+    Meagan's registered one-per-post exclamation, "No puns" against cards whose
+    signature is wordplay. Five desks converged on one voice, which is the
+    finding the operator has been reporting as "every post sounds the same".
+
+    Moving the card into the SYSTEM turn does three things the user-turn copy
+    could not. It sits in the same register as the laws it is allowed to
+    override, so "the card wins" is a statement about two neighbouring
+    paragraphs rather than about two different turns. It is present for the
+    REPAIR turn too, which restates only the violations. And it sits between the
+    house laws and the ratified exemplars, so the account's own lines are the
+    last register the model reads before the corpus register.
+
+    `example_lines` are NOT truncated here. The old payload cut them to [:2],
+    which on a two-line card was invisible and on a richer one silently deleted
+    the calibration; the card is the smallest thing in this prompt and there is
+    no budget argument for clipping it.
+    """
+    card = persona_card or {}
+    name = str(card.get("name") or "").strip()
+    voice = " ".join(str(card.get("voice") or "").split())
+    lines = [str(l).strip() for l in (card.get("example_lines") or []) if str(l).strip()]
+    if not (name or voice or lines):
+        return ""
+
+    out = ["THIS ACCOUNT'S CARD. This is who is posting, and it OUTRANKS the "
+           "house VOICE defaults above wherever the two disagree, inside the "
+           "caps this card names. A habit this card does not register is not "
+           "available to you, however well it would fit."]
+    if name:
+        out.append(f"Name: {name}")
+    if voice:
+        out.append(f"Register: {voice}")
+    if lines:
+        out.append("Lines this person has actually written. Match the rhythm "
+                   "and the stance, never the words or the numbers:")
+        out.extend(f'  "{l}"' for l in lines)
+    return "\n".join(out)
+
+
+def _v2_system_prompt(cfg: dict, *, root: Any = None,
+                      persona_card: dict | None = None) -> str:
+    """The system prompt, this deployment's copy_laws, and the pinned exemplars.
+
+    `persona_card` makes the prompt PER ACCOUNT (autopsy defect 4). Omitting it
+    returns byte-for-byte what this function returned before the card existed,
+    which is what keeps the exemplar-store pin tests and every non-writer caller
+    unmoved.
+    """
     out = _V2_SYSTEM_PROMPT_BASE
     laws = (cfg or {}).get("copy_laws") or []
     if laws:
         out += ("\n\nOTHER LAWS (from config, obey exactly):\n"
                 + "\n".join(f"- {law}" for law in laws))
+    card_block = persona_prompt_section(persona_card)
+    if card_block:
+        out += "\n\n" + card_block
     block = store_exemplar_block(cfg, root=root)
     if block:
         out += "\n\n" + block
@@ -5305,6 +5950,14 @@ def _v2_system_prompt(cfg: dict, *, root: Any = None) -> str:
 _V2_STAT_KEYS = (
     "items", "llm", "llm_repair", "repairs",
     "dropped_provider", "dropped_validate", "dropped_critic",
+    # PROVIDER-RESILIENCE COUNTERS. `repairs` counts EDITORIAL second turns
+    # (violations, critic reject) and says nothing about the transport, so a
+    # night where every item silently bought a second provider call looked
+    # identical to a clean one. These two are the cost side of the 07-31 fix and
+    # the first number to look at when the spend jumps: a healthy night is ~0
+    # of both, and a night where `provider_failovers` tracks `items` is a rung
+    # that is down and should be pulled from the order.
+    "provider_retries", "provider_failovers",
 )
 _V2_STATS: dict[str, int] = {k: 0 for k in _V2_STAT_KEYS}
 #: The writer runs items in parallel and every worker bumps these. ``d[k] += 1``
@@ -5571,7 +6224,18 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
                 or ["codex", "oauth", "anthropic", "deepseek"],
                 "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
                 "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
-                "client_max_retries": llm_cfg.get("client_max_retries", 0),
+                # SDK RETRIES MUST NOT BECOME THE RETRY MECHANISM (house memory
+                # "SDK retries defeat failover walks"). The waterfall walk is
+                # this lane's retry for hard errors and the explicit empty-text
+                # recovery in `_v2_write_one` is its retry for textless 200s;
+                # an SDK that also retries the same dead credential twice just
+                # delays both by seconds per item across ~900 items. 0 is the
+                # default and the clamp keeps a config line from quietly
+                # reinstating the SDK's 2. (Measured while building this: the
+                # SDK inspects HTTP status only, so it would never have retried
+                # the 07-31 HTTP-200-no-text response at any setting — the clamp
+                # is about hard errors, not about that outage.)
+                "client_max_retries": _v2_client_max_retries(llm_cfg),
                 "client_timeout_s": llm_cfg.get("client_timeout_s", 60.0),
             },
             opus_model=model_id,
@@ -5601,7 +6265,23 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
         _bump("dropped_provider", len(contexts))
         return results
 
-    system_prompt = _v2_system_prompt(cfg, root=root)
+    # THE SYSTEM PROMPT IS PER ACCOUNT NOW (autopsy defect 4), and it is built
+    # ONCE PER ACCOUNT rather than once per item: `_v2_system_prompt` reads the
+    # exemplar store off disk, and a 60-post night must not pay for that 60
+    # times. The cache is keyed on the account, guarded because the items run in
+    # a thread pool, and it is a local (not a module global) so nothing survives
+    # the call and no test can be polluted by another test's personas.
+    _prompt_cache: dict[str, str] = {}
+    _prompt_cache_lock = threading.Lock()
+
+    def _prompt_for(account_key: str, card: dict | None) -> str:
+        with _prompt_cache_lock:
+            hit = _prompt_cache.get(account_key)
+            if hit is None:
+                hit = _v2_system_prompt(cfg, root=root, persona_card=card)
+                _prompt_cache[account_key] = hit
+            return hit
+
     try:
         max_tokens = int(llm_cfg.get("per_post_max_tokens", 400))
     except (TypeError, ValueError):
@@ -5655,14 +6335,23 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
                 "name": persona_raw.get("name") or ctx.get("persona_name") or persona_id,
                 "voice": str(persona_raw.get("voice_notes")
                              or ctx.get("voice_notes") or "").strip(),
-                "example_lines": (persona_raw.get("example_lines")
-                                  or ctx.get("example_lines") or [])[:2],
+                # THE CARD'S FULL SET, not [:2] (autopsy defect 4). The example
+                # lines are the only account-specific calibration in a ~4,400
+                # token prompt and they cost a couple of hundred tokens; there
+                # was never a budget reason to clip the one thing that makes
+                # this desk sound like itself.
+                "example_lines": list(persona_raw.get("example_lines")
+                                      or ctx.get("example_lines") or []),
             } if (persona_raw or ctx.get("persona_name")) else None
             payload = _v2_item_payload(
                 ctx, persona_card=persona_card,
                 codex_by_account=codex_by_account,
                 memory_by_account=memory_by_account,
             )
+            # PER-ACCOUNT SYSTEM PROMPT. The card rides the SYSTEM turn so it is
+            # present on the repair turn too (which restates only violations)
+            # and sits beside the house defaults it is allowed to override.
+            system_prompt = _prompt_for(persona_id, persona_card)
             return _v2_write_one(
                 ctx, payload, providers=providers, system_prompt=system_prompt,
                 max_tokens=max_tokens, cfg=cfg,
@@ -5744,6 +6433,29 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
     return results
 
 
+#: Hard ceiling on SDK-level retries for the writer's clients. See the WHY at
+#: the call site in write_posts_llm_v2.
+_V2_MAX_CLIENT_RETRIES = 1
+
+
+def _v2_client_max_retries(llm_cfg: dict) -> int:
+    """Config's ``client_max_retries``, clamped to [0, 1]. Never raises.
+
+    A bad value must land on the SAFE default rather than on an exception: this
+    is read inside the provider-construction try block, so a TypeError here
+    would be caught as "provider construction failed", empty the waterfall, and
+    turn one unparseable config line into a whole mute night — the exact failure
+    mode this wave exists to stop.
+    """
+    try:
+        want = int(llm_cfg.get("client_max_retries", 0) or 0)
+    except (TypeError, ValueError):
+        log.warning("copywriter v2: client_max_retries=%r is not an int — using 0",
+                    llm_cfg.get("client_max_retries"))
+        return 0
+    return min(_V2_MAX_CLIENT_RETRIES, max(0, want))
+
+
 def _v2_model_id(llm_cfg: dict) -> str:
     """Resolve the writer's model id from config.yml's llm_models block."""
     model_key = str(llm_cfg.get("model_key", "marketing_copy"))
@@ -5811,7 +6523,40 @@ def _v2_write_one(
     account_id = str(ctx.get("account", ""))
     kind = str(ctx.get("type", ""))
 
-    def _call(user_msg: str) -> str:
+    # PROVIDER-FAULT STATE FOR THIS ONE ITEM. `_call` records the last
+    # provider-side fault here so the drop below can NAME it.
+    #
+    # On 07-30 and again on 07-31 every one of 914 drops read "provider returned
+    # no text", and in the plan census that string is indistinguishable from
+    # "the model looked at this post and had nothing to say". There was nothing
+    # in the artifact that separated one editorial miss from a provider serving
+    # nothing 914 times in a row, which is exactly why two consecutive dark
+    # nights shipped through green runs. `provider_no_text:<provider>` is that
+    # separation, and it carries the provider because the batch-level breaker in
+    # content_studio has no other way to learn which rung broke (it sees the
+    # reason census and nothing else).
+    fault: dict[str, Any] = {}
+
+    def _messages_create(client, model, user_msg: str, *, cap: int,
+                         extra_body: dict | None):
+        """One raw request. Kept separate so the retry is provably the SAME call."""
+        kw: dict[str, Any] = {
+            "model": model, "max_tokens": cap, "system": system_prompt,
+            "messages": [{"role": "user", "content": user_msg}],
+        }
+        if extra_body:
+            kw["extra_body"] = extra_body
+        return client.messages.create(**kw)
+
+    def _do_call_factory(user_msg: str, *, same_provider_retry: bool):
+        """Build the make_call callback for one turn.
+
+        `same_provider_retry` is the per-item cost cap made explicit: the FIRST
+        walk may buy one extra call from whichever provider served nothing, the
+        failover walk below may not. Three calls is the hard ceiling for an item
+        (primary, primary retry, one failover rung) — with 915 planned posts a
+        node, an uncapped recovery is its own outage.
+        """
         def _do_call(client, model):
             # DEEPSEEK v4 THINKS BY DEFAULT, AND THAT ATE THE WHOLE BUDGET.
             #
@@ -5839,32 +6584,146 @@ def _v2_write_one(
             # llm_auth's deepseek client now defaults `thinking` off for every
             # caller (see _deepseek_no_thinking there); a lane that genuinely
             # wants reasoning still gets it by passing `thinking` explicitly.
-            resp = client.messages.create(
-                model=model, max_tokens=max_tokens, system=system_prompt,
-                messages=[{"role": "user", "content": user_msg}],
-            )
+            #
+            # AND THE SAME-SHAPED FAULT FROM ANY OTHER PROVIDER IS HANDLED BELOW.
+            # That per-provider fix closes DeepSeek. The failure CLASS is "any
+            # Anthropic-compatible endpoint that emits a reasoning block ahead of
+            # text under a small max_tokens cap", and this lane sends 400 tokens
+            # to four different rungs. So a textless response now buys one more
+            # attempt here (llm_auth.empty_text_retry_plan picks thinking-off or
+            # a doubled budget, whichever the client can actually use) before the
+            # item is allowed to die.
+            resp = _messages_create(client, model, user_msg,
+                                    cap=max_tokens, extra_body=None)
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "stop_refusal", resp
-            text = "".join(b.text for b in resp.content
-                           if getattr(b, "type", "") == "text")
-            if not text:
-                # SAY WHAT CAME BACK INSTEAD. "provider returned no text" is true
-                # and undiagnosable: it reads as an outage when the call in fact
-                # succeeded and spent its budget on something we discarded. The
-                # block types and stop_reason are the whole diagnosis, and they
-                # cost one log line at the moment they are still in hand.
-                _blocks = [str(getattr(b, "type", "?")) for b in (resp.content or [])]
-                log.warning(
-                    "copywriter v2: %s answered with no text block "
-                    "(blocks=%s, stop_reason=%s, max_tokens=%d) — if this is a "
-                    "thinking model the reasoning consumed the budget",
-                    model, _blocks or "[]", getattr(resp, "stop_reason", "?"),
-                    max_tokens)
-            return (text or None), None, resp
+            text = llm_auth.response_text(resp)
+            if text:
+                return text, None, resp
 
-        raw, _reason, _provider = llm_auth.make_call(
-            providers, _do_call, context="marketing_copy_v2")
-        return _v2_extract_text(raw or "")
+            # SAY WHAT CAME BACK INSTEAD. "provider returned no text" is true
+            # and undiagnosable: it reads as an outage when the call in fact
+            # succeeded and spent its budget on something we discarded. The
+            # block types and stop_reason are the whole diagnosis, and they
+            # cost one log line at the moment they are still in hand.
+            diag = llm_auth.empty_text_diagnosis(resp) or {}
+            log.warning(
+                "copywriter v2: %s answered with no text block "
+                "(blocks=%s, stop_reason=%s, max_tokens=%d) — if this is a "
+                "thinking model the reasoning consumed the budget",
+                model, diag.get("blocks") or "[]", diag.get("stop_reason", "?"),
+                max_tokens)
+            if not (same_provider_retry and diag.get("retryable")):
+                return None, None, resp
+
+            plan = llm_auth.empty_text_retry_plan(client, max_tokens)
+            _bump("provider_retries")
+            try:
+                resp2 = _messages_create(
+                    client, model, user_msg,
+                    cap=int(plan["max_tokens"]), extra_body=plan["extra_body"])
+            except TypeError as exc:
+                # A client whose signature advertises extra_body and then refuses
+                # the value. Swallowed on purpose: raising here would hand
+                # make_call a "transport error" and send it cascading down the
+                # whole waterfall, which is the opposite of the bounded recovery
+                # this function is allowed to spend.
+                log.warning("copywriter v2: %s rejected the %s retry (%s: %s)",
+                            model, plan["how"], type(exc).__name__, exc)
+                return None, None, resp
+            text2 = llm_auth.response_text(resp2)
+            if text2:
+                log.info("copywriter v2: %s recovered on the %s retry "
+                         "(first response was %s)",
+                         model, plan["how"], diag.get("blocks") or "[]")
+                return text2, None, resp2
+            log.warning("copywriter v2: %s still returned no text after the %s "
+                        "retry (blocks=%s, stop_reason=%s) — failing over",
+                        model, plan["how"],
+                        (llm_auth.empty_text_diagnosis(resp2) or {}).get("blocks"),
+                        getattr(resp2, "stop_reason", "?"))
+            return None, None, resp2
+
+        return _do_call
+
+    def _call(user_msg: str) -> str:
+        """One writer turn across the waterfall. "" on every provider fault.
+
+        THE GAP THIS CLOSES. `make_call` treats any call that does not RAISE as
+        a success, so a provider that answers HTTP 200 with no text ends the
+        walk — the three healthy rungs underneath it are never tried, and the
+        item dies holding a working credential list. That is the 07-30/07-31
+        shape: DeepSeek served every call, 200 every time, and codex/oauth/
+        anthropic were never asked. So the textless case gets an explicit
+        one-rung failover here, in the caller, where the per-item budget is
+        known — make_call itself must keep treating a served response as served,
+        because every other consumer depends on that.
+        """
+        fault.clear()
+        try:
+            raw, reason, served = llm_auth.make_call(
+                providers, _do_call_factory(user_msg, same_provider_retry=True),
+                context="marketing_copy_v2")
+        except Exception as exc:  # noqa: BLE001 — connection/5xx after a FULL walk
+            # make_call re-raises the last hard error only once it has tried
+            # EVERY provider, so the ladder failover for this class already
+            # happened and there is nothing left to try. It is still worth its
+            # own reason: "the transport broke" and "the model said nothing" send
+            # an operator to different places.
+            fault["reason"] = f"provider_error:{type(exc).__name__}"
+            log.warning("copywriter v2: every provider failed hard (%s: %s)",
+                        type(exc).__name__, exc)
+            return ""
+        if raw:
+            return _v2_extract_text(raw)
+
+        if reason == "stop_refusal":
+            # THE MODEL LOOKED AT THIS ITEM AND DECLINED. That is an editorial
+            # outcome, not a fault, and it must never trigger a failover: a
+            # prompt one provider refuses is a prompt the next one refuses too,
+            # so failing over would multiply every refusal by the depth of the
+            # waterfall and turn a content problem into a spend problem.
+            fault["reason"] = "provider_refusal"
+            return ""
+        if reason:
+            # rate_limited_all / auth_invalid_all / no_provider — make_call
+            # already walked everything. Nothing to fail over to.
+            fault["reason"] = f"provider_unavailable:{reason}"
+            return ""
+
+        # LADDER FAILOVER, ONE RUNG. Reuse the order build_providers produced
+        # rather than re-deriving it: that order carries key-pool balancing and
+        # cross-process cooling, and a freshly guessed order throws both away.
+        candidate = llm_auth.first_usable(
+            llm_auth.providers_after(providers, served))
+        # NAME EVERY RUNG THAT SERVED NOTHING, not just the last one. The
+        # breaker downstream turns this into "provider: X", and an operator who
+        # pulls X from provider_order when X AND the rung under it were both
+        # silent gets a second dark night — two silent rungs is a prompt/budget
+        # diagnosis, one silent rung is a provider diagnosis, and the census is
+        # the only place that distinction survives.
+        tried = [str(served or "unknown")]
+        if candidate is not None:
+            _bump("provider_failovers")
+            log.warning("copywriter v2: provider '%s' served no text — failing "
+                        "over to '%s' for this item",
+                        served, candidate.get("name"))
+            try:
+                raw2, _reason2, served2 = llm_auth.make_call(
+                    [candidate],
+                    _do_call_factory(user_msg, same_provider_retry=False),
+                    context="marketing_copy_v2_failover")
+            except Exception as exc:  # noqa: BLE001 — the failover is best effort
+                log.warning("copywriter v2: failover provider '%s' failed "
+                            "(%s: %s)", candidate.get("name"),
+                            type(exc).__name__, exc)
+                raw2, served2 = None, str(candidate.get("name") or "")
+            if raw2:
+                return _v2_extract_text(raw2)
+            tried.append(str(served2 or candidate.get("name") or "unknown"))
+
+        fault["reason"] = "provider_no_text:" + "+".join(tried)
+        return ""
 
     def _shape_and_check(text: str) -> tuple[str, str, str, list[str]]:
         """Dial pass, then every deterministic gate. -> (text, hl, body, violations).
@@ -5894,7 +6753,13 @@ def _v2_write_one(
     text = _call(_v2_user_message(payload))
     if not text:
         _bump("dropped_provider")
-        return {"mode": "dropped", "reasons": ["provider returned no text"],
+        # The reason `_call` recorded, never a generic string: the whole point of
+        # the fault dict is that a night's census can tell "the model rejected
+        # this post" from "the provider returned nothing 915 times". The legacy
+        # wording stays as the fallback so an artifact written by an older build
+        # still reads the same in content_studio's remedy table.
+        return {"mode": "dropped",
+                "reasons": [fault.get("reason") or "provider returned no text"],
                 "stage": "provider"}
 
     repaired = False

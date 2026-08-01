@@ -87,13 +87,21 @@ _STATUS_PATH: dict[str, tuple[str, ...]] = {
 def _seed_item(tmp_path: Path, *, ticker: str, as_of: str, kind: str = "watchlist",
                account: str = "flagship", text: str | None = None,
                status: str | None = None, scheduled_at: str = "immediate",
-               provenance: str = "content_studio") -> str:
+               provenance: str = "content_studio",
+               now: datetime = _FIXED_NOW) -> str:
     """Enqueue one outbox item through the CANONICAL path and return its id.
 
     Written with make_item/enqueue/transition rather than hand-rolled JSONL so
     the fixture exercises the same schema and the same status machine the
     nightly does — a hand-built row that drifts from make_item would make these
     tests pass against a shape that does not exist in production.
+
+    `now` stamps `created_at`. A test that wants an item PAST ITS SLOT must move
+    the creation time back rather than the slot time back: `enqueue` clamps a
+    `scheduled_at` earlier than its own `created_at` forward (the X Growth W1g
+    schedule floor — 41 live posts were booked before they existed), so a
+    backdated slot on a fresh item is no longer a state the queue can hold. An
+    item goes stale in production by SITTING there, which is what this models.
     """
     from engine.marketing.outbox import make_item, enqueue, transition
     item = make_item(
@@ -105,7 +113,7 @@ def _seed_item(tmp_path: Path, *, ticker: str, as_of: str, kind: str = "watchlis
         slot="D1-S1",
         provenance=provenance,
         source={"ticker": ticker},
-        now=_FIXED_NOW,
+        now=now,
     )
     assert enqueue(item, root=tmp_path, max_per_account_day=99) == "queued"
     for step in _STATUS_PATH[status or "queued"]:
@@ -375,7 +383,12 @@ def test_degenerate_gate_reads_structured_fields_too():
     assert dropped == 1
 
     assert is_degenerate_count(231, 231) is True
-    assert is_degenerate_count(1, 231) is True        # <= 5% is degenerate too
+    # Saturation-only (fix-wave ruling, mirroring market_facts): the default
+    # band's low arm is gone because a washout ("1 of 231") is the rarest and
+    # most newsworthy breadth print, not noise. A positive lo remains a config
+    # opt-in — pinned in test_degenerate_band_is_configurable.
+    assert is_degenerate_count(1, 231) is False
+    assert is_degenerate_count(0, 231) is False       # "no triggers" is information
     assert is_degenerate_count(18, 30) is False
     assert is_degenerate_count(5, 0) is False         # unknown denominator != degenerate
 
@@ -575,10 +588,14 @@ def test_planned_item_36h_past_its_slot_is_quarantined(tmp_path):
     """A post written against a two-night-old close must not still be pending."""
     from engine.marketing.outbox import expire_stale_planned, fold_state
 
+    # Created two nights ago, each booked AFTER its own creation — the shape a
+    # queue actually reaches when a post sits unposted, not a slot backdated
+    # past its creation (which enqueue now clamps forward).
+    _written = _FIXED_NOW - timedelta(hours=50)
     stale = _seed_item(tmp_path, ticker="FDS", as_of=_YESTERDAY,
-                       scheduled_at=_sched(48))
+                       scheduled_at=_sched(48), now=_written)
     fresh = _seed_item(tmp_path, ticker="TEL", as_of=_YESTERDAY,
-                       scheduled_at=_sched(2))
+                       scheduled_at=_sched(2), now=_written)
 
     out = expire_stale_planned(tmp_path, now=_FIXED_NOW)
     assert out["expired"] == 1 and out["ids"] == [stale]
@@ -592,15 +609,25 @@ def test_planned_item_36h_past_its_slot_is_quarantined(tmp_path):
 
 
 def test_expiry_leaves_immediate_and_foreign_lanes_alone(tmp_path):
-    """No slot to be late for; and the wire lanes retire their own items."""
+    """No slot to be late for, and another reaper owns the wire lanes.
+
+    The docstring used to say "the wire lanes … retire their own items", which
+    was simply untrue — nothing swept them and they sat queued forever (see
+    tests/test_marketing_wire_expiry.py). This function's SCOPE is unchanged and
+    still correct; only the claim about who covers the rest was wrong.
+    outbox.expire_stale_wire is that cover, and weekend_levels still has none.
+    """
     from engine.marketing.outbox import expire_stale_planned, fold_state
 
+    _written = _FIXED_NOW - timedelta(hours=50)
     imm = _seed_item(tmp_path, ticker="AAPL", as_of=_YESTERDAY,
-                     scheduled_at="immediate")
+                     scheduled_at="immediate", now=_written)
     wire = _seed_item(tmp_path, ticker="MSFT", as_of=_YESTERDAY, kind="breaking",
-                      provenance="press_lane", scheduled_at=_sched(48))
+                      provenance="press_lane", scheduled_at=_sched(48),
+                      now=_written)
     weekend = _seed_item(tmp_path, ticker="AMD", as_of=_YESTERDAY,
-                         provenance="weekend_levels", scheduled_at=_sched(48))
+                         provenance="weekend_levels", scheduled_at=_sched(48),
+                         now=_written)
 
     assert expire_stale_planned(tmp_path, now=_FIXED_NOW)["expired"] == 0
     status = fold_state(tmp_path)["status"]
@@ -612,7 +639,7 @@ def test_emit_runs_the_expiry_pass_first(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan, fold_state
 
     stale = _seed_item(tmp_path, ticker="FDS", as_of=_YESTERDAY,
-                       scheduled_at=_sched(48))
+                       scheduled_at=_sched(48), now=_FIXED_NOW - timedelta(hours=50))
     result = emit_from_content_plan(
         _plan(_plan_item(id="p1")), root=tmp_path, cfg=_emit_cfg(True),
         day_prefix="D1", now=_FIXED_NOW)

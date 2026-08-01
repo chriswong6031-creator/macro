@@ -535,7 +535,15 @@ _DEFAULT_TICKER_COOLDOWN_DAYS = 3      # watchlist / chart / caption exposure
 _DEFAULT_SIGNAL_COOLDOWN_DAYS = 5      # a directional call with entry/stop
 _DEFAULT_MAX_ACCOUNTS_PER_TICKER_DAY = 2
 _DEFAULT_MAX_SIGNAL_ACCOUNTS_PER_DAY = 1
-_DEFAULT_DEGENERATE_BAND: tuple[float, float] = (0.05, 0.95)
+# Low arm 0.0 = saturation-only (fix-wave ruling, mirrors market_facts): the
+# diagnosed defect was "231 of 231" — a denominator the numerator cannot move
+# against. The symmetric 5% floor this shipped with was NEW suppression that
+# deleted washouts ("11 of 232 showing momentum"), the rarest and most
+# newsworthy breadth print. A washout is information; only saturation is
+# vacuous. ratio<=0.0 is unreachable for a positive count, and a 0-of-N read
+# ("no triggers") is likewise information, not noise. Config can still narrow
+# via selection.degenerate_stat_band.
+_DEFAULT_DEGENERATE_BAND: tuple[float, float] = (0.0, 0.95)
 
 #: Folded outbox statuses that count as EXPOSURE — the name reached, or is about
 #: to reach, a timeline. `quarantined`/`failed`/`recalled` deliberately do NOT:
@@ -817,7 +825,11 @@ def is_degenerate_count(
         return False
     ratio = num / den
     lo, hi = band
-    return ratio >= hi or ratio <= lo
+    # lo<=0 disables the low arm entirely: with an inclusive <=, a lo of 0.0
+    # would still swallow the "0 of N" washout the saturation-only ruling
+    # explicitly protects ("no triggers is information too"). A positive lo
+    # remains a config opt-in with its original inclusive semantics.
+    return ratio >= hi or (lo > 0 and ratio <= lo)
 
 
 def _fact_is_degenerate(fact: dict, *, band: tuple[float, float]) -> bool:
@@ -1019,10 +1031,16 @@ def _is_writable_day(slot: object, cfg: dict | None = None) -> bool:
 
     Writable now:
       * the EMIT day (D1) — the only ladder slots the outbox will take;
-      * every NON-ladder slot (THEME-, MOVER-, and any publish-time lane) —
-        `_slot_day` returns "" for these and they ship through their own path,
-        so excluding them would silence live reach content. This is the part a
+      * every NON-ladder slot (any publish-time lane) — `_slot_day` returns ""
+        for these and the publish-time lanes ship through their own path, so
+        excluding them would silence live reach content. This is the part a
         naive `slot.startswith("D1-")` filter would get wrong.
+
+        THEME-/MOVER- were listed here and no longer exist: those labels were
+        the movers desk's, and "their own path" was a belief, not a path — the
+        outbox skips every non-D1 slot, so those items shipped nowhere. The
+        movers desk now takes real D1 rungs at distribution, which lands it in
+        the first bullet.
 
     Forward ladder slots keep the deterministic template copy `plan_account`
     already gave them, so the admin preview still shows a populated week; they
@@ -1041,6 +1059,20 @@ def _is_writable_day(slot: object, cfg: dict | None = None) -> bool:
 #: The writer rejecting a third of a plan is editing; rejecting most of it is an
 #: outage wearing an editorial costume.
 _COPY_DROP_ALARM_SHARE = 0.50
+
+#: Share of PROVIDER-STAGE drops at which the night is called an outage rather
+#: than a bad night. Same number as the drop alarm above, and deliberately so —
+#: what changes is the SEVERITY and the diagnosis, not the trip point.
+#:
+#: WHY A SECOND, LOUDER GATE (07-30 and 07-31, both through green CI). The
+#: existing gate fires at ::warning, which GitHub renders next to lint noise and
+#: which nobody reads on a run that concluded successfully. A provider that
+#: serves nothing is not a picky writer: with the no-fallback law armed, every
+#: item it touches is deleted, so a provider-dominated night is the difference
+#: between "we published less" and "we published nothing, and will again
+#: tomorrow unless someone moves". The second night is the proof that ::warning
+#: was the wrong level — the first night's warning existed and changed nothing.
+_PROVIDER_OUTAGE_SHARE = 0.50
 
 #: Stage → what an operator should actually go and check. A drop census that
 #: prints stage names makes the reader translate; naming the remedy is the whole
@@ -1076,21 +1108,91 @@ _PROVIDER_DROP_REMEDY: dict[str, str] = {
         "credential problem — check the model's response shape (a reasoning/"
         "thinking block ahead of the text block reads as empty) and the "
         "per-provider parse in engine/llm_auth"),
+    # The reasons below are FAMILIES: the copywriter writes them suffixed
+    # (`provider_no_text:deepseek`, `provider_error:ConnectionError`) and
+    # `_drop_reason_family` strips the suffix before the lookup. The suffix is
+    # not decoration — the breaker has no other channel through which to learn
+    # WHICH rung broke, because the reason census is the only per-drop detail
+    # that reaches this module.
+    "provider_no_text": (
+        "the provider ANSWERED and returned no usable text, so this is NOT a "
+        "credential problem. The writer already spent its one same-provider "
+        "retry and its one failover rung on each item, so every rung named in "
+        "the reason served nothing: pull the named provider out of "
+        "copywriter.llm.provider_order and check the model's response shape (a "
+        "reasoning/thinking block ahead of the text block reads as empty under "
+        "a small per_post_max_tokens)"),
+    "provider_error": (
+        "every provider in the waterfall failed HARD (connection/5xx) for these "
+        "items — a transport or endpoint problem, not a credential; the "
+        "exception type is in the reason"),
+    "provider_unavailable": (
+        "the waterfall had nothing left to try — every rung was rate-limited, "
+        "401'd, or absent; the make_call reason is in the suffix"),
+    "provider_refusal": (
+        "the MODEL refused these prompts (stop_reason=refusal) — an editorial "
+        "or prompt problem, not an outage, and deliberately never failed over"),
     "not_attempted": "the writer never ran — an arming or wiring problem, not the model",
 }
+
+#: Reason families whose suffix is a PROVIDER NAME (as opposed to an exception
+#: type or a make_call reason). Only these may be read as "which rung broke".
+_PROVIDER_TAGGED_FAMILIES = frozenset({"provider_no_text"})
+
+
+def _drop_reason_family(reason: str) -> str:
+    """`provider_no_text:deepseek` -> `provider_no_text`; anything else unchanged.
+
+    Legacy reasons carry no suffix and several contain no colon at all
+    ("provider returned no text"), so the split has to be conditional on the
+    head naming a family this module knows. Splitting unconditionally would
+    rewrite "writer_exception:APIConnectionError" into a bucket whose remedy
+    cannot name the exception, which is the one useful thing it carries.
+    """
+    head = str(reason).split(":", 1)[0]
+    return head if head in _PROVIDER_DROP_REMEDY else str(reason)
+
+
+def _is_provider_reason(reason: str) -> bool:
+    """True for any reason the provider-stage remedy table can speak to."""
+    return (_drop_reason_family(reason) in _PROVIDER_DROP_REMEDY
+            or str(reason).startswith("writer_exception:"))
 
 
 def _provider_remedy(reasons: dict[str, int]) -> str:
     """The remedy for whichever provider-stage reason actually dominated."""
-    known = {r: n for r, n in (reasons or {}).items()
-             if r in _PROVIDER_DROP_REMEDY or r.startswith("writer_exception:")}
+    known = {r: n for r, n in (reasons or {}).items() if _is_provider_reason(r)}
     if not known:
         return ""
-    worst = max(known, key=lambda r: known[r])
+    worst = str(max(known, key=lambda r: known[r]))
     if worst.startswith("writer_exception:"):
         return (f"the writer RAISED ({worst.split(':', 1)[1]}) on most items — a "
                 f"code or transport fault, not a credential")
-    return _PROVIDER_DROP_REMEDY[worst]
+    return _PROVIDER_DROP_REMEDY[_drop_reason_family(worst)]
+
+
+def _dominant_provider_fault(reasons: dict[str, int]) -> tuple[str, str, int]:
+    """(reason, provider, count) for the largest provider-family drop reason.
+
+    `provider` is "" unless the winning reason belongs to a family whose suffix
+    really is a provider name — naming "ConnectionError" as the provider would
+    send an operator looking for a rung that does not exist.
+    """
+    best_r, best_n = "", 0
+    for r, n in (reasons or {}).items():
+        try:
+            n = int(n or 0)
+        except (TypeError, ValueError):
+            continue
+        if n <= best_n or not _is_provider_reason(str(r)):
+            continue
+        best_r, best_n = str(r), n
+    if not best_r:
+        return "", "", 0
+    provider = ""
+    if _drop_reason_family(best_r) in _PROVIDER_TAGGED_FAMILIES and ":" in best_r:
+        provider = best_r.split(":", 1)[1].strip()
+    return best_r, provider, best_n
 
 
 def _alarm_on_a_planless_night(
@@ -1134,6 +1236,14 @@ def _alarm_on_a_planless_night(
     thinking consumed max_tokens (see llm_auth._deepseek_no_thinking). Naming the
     variables costs nothing when the guess is right and is quickly falsified when
     it is wrong, which is the better failure of the two.
+
+    AND IT NOW CARRIES THE OUTAGE BREAKER. The same fault ran on 07-30 and again
+    on 07-31 shape-for-shape, because a plan that came out empty is only ONE of
+    the ways a provider fault shows up — and the loudest one. A night where the
+    provider eats 60% of the plan still ships 40% of it, still reports
+    total_posts > 0, and used to say so at ::warning. The breaker below keys on
+    the PROVIDER share alone, escalates to ::error, and names the rung — see
+    `_PROVIDER_OUTAGE_SHARE`.
     """
     dropped = {str(k): int(v) for k, v in (copy_dropped or {}).items() if int(v or 0) > 0}
     n_dropped = sum(dropped.values())
@@ -1153,6 +1263,33 @@ def _alarm_on_a_planless_night(
         top = sorted(reasons.items(), key=lambda kv: -kv[1])[:3]
         detail += "; reasons: " + ", ".join(f"{k}={v}" for k, v in top)
 
+    # ── THE OUTAGE BREAKER ────────────────────────────────────────────────────
+    # Fires on the PROVIDER share alone, ahead of either branch below, because
+    # the two questions are different and only one of them is actionable
+    # tonight: "is there anything to publish" (plan-empty) versus "is the supply
+    # chain broken, and which rung" (this). On a dark night both are true and
+    # both print — two annotations with different titles, not two spellings of
+    # one fact. There is deliberately NO template fallback attached: the
+    # no-fallback law is an editorial ruling and it stands. The breaker's whole
+    # job is to be loud enough that the per-item retry/failover in
+    # engine/marketing/copywriter.py is not the only thing standing between a
+    # provider fault and a second silent night.
+    provider_n = dropped.get("provider", 0)
+    provider_share = provider_n / considered
+    tripped = provider_share > _PROVIDER_OUTAGE_SHARE
+    if tripped:
+        worst_reason, worst_provider, worst_n = _dominant_provider_fault(reasons)
+        print(f"::error title=marketing-provider-outage::"
+              f"the copy lane's PROVIDER stage lost {provider_n} of {considered} "
+              f"planned posts ({provider_share * 100:.0f}%, breaker trips above "
+              f"{_PROVIDER_OUTAGE_SHARE * 100:.0f}%). Dominant reason: "
+              f"{worst_reason or 'unrecorded'}"
+              f"{f' ({worst_n})' if worst_n else ''}; provider: "
+              f"{worst_provider or 'unrecorded'}. Dropped posts are never "
+              f"templated, so this is lost supply, not lighter copy. "
+              f"{_provider_remedy(reasons) or 'check content.copy.dropped_reasons in the plan'}.",
+              flush=True)
+
     if total_posts == 0:
         # Nothing to publish tomorrow. This is the loudest thing this module says.
         print(f"::error title=marketing-plan-empty::"
@@ -1162,7 +1299,10 @@ def _alarm_on_a_planless_night(
         return
 
     share = n_dropped / considered
-    if share >= _COPY_DROP_ALARM_SHARE:
+    # `not tripped`: when the breaker already spoke at ::error, repeating the
+    # same census at ::warning is the "two alarms for one cause" this module's
+    # docstring warns about — it trains the reader to skim both.
+    if share >= _COPY_DROP_ALARM_SHARE and not tripped:
         print(f"::warning title=marketing-copy-drops::"
               f"the writer lost {n_dropped} of {considered} posts "
               f"({share * 100:.0f}%; {detail}). {total_posts} survived. "
@@ -1602,8 +1742,10 @@ def assign_shapes(
     `caption` is assigned ONLY to a chart-bearing item and only where the mixer
     wanted a one_liner — a caption with no image is a post with no content
     (contract §Shapes: "REQUIRES media attached at emit"). Publish-time reach
-    items (mover/theme_list, non-D slots) are left alone: they are wire register
-    with their own template banks and no shape contract.
+    items (mover/theme_list) are left alone: they are wire register with their
+    own template banks and no shape contract. The exclusion is by KIND (the
+    `PLANNED_KINDS` test below), not by slot — reach items now sit on real D1
+    ladder rungs like everything else, because a non-D slot cannot be emitted.
     """
     by_day: dict[str, list[dict]] = {}
     for item in queue or []:
@@ -2979,9 +3121,40 @@ def content_plan(
     _REACH_CHART_CAP = 8
     _ticker_charts_n = len(featured_charts)
 
-    def _reach_headroom() -> bool:
-        """True while the reach lanes still have budget of their own."""
-        return (len(featured_charts) - _ticker_charts_n) < _REACH_CHART_CAP
+    # THE MOVERS/THEME RESERVE (defect closed 2026-07-31; cap TOTAL unchanged).
+    #
+    # The three reach lanes drew on one 8-card allowance in SOURCE ORDER, and
+    # confluence is written first. On the 2026-07-31 plan it took all 8 and the
+    # movers/theme desk got zero cards. That is the worst possible split of this
+    # budget, for a reason stated by the confluence lane's own census note
+    # (`_confluence_census`, ~line 1288): a confluence post slots itself CONF-NN
+    # and the outbox emits only D1- slots, so NOTHING confluence renders has ever
+    # reached the outbox or a timeline. Its cards are deliberately deferred for
+    # exactly that reason.
+    #
+    # A mover/theme card is the opposite: `theme_list` and `mover` are in the
+    # publisher's `_TICKER_ROLLUP_KINDS`, and `_bare_cashtag_post` refuses to
+    # ship a cashtag-bearing post with no picture ("YOU WILL NOT SHIP THESE TEXT
+    # ONLY" — operator, 2026-07-30). So a chartless mover is not a plainer post,
+    # it is an UNPUBLISHABLE one. Giving the publishable lane the smaller half of
+    # a budget spent by the unpublishable one is backwards.
+    #
+    # Reserved rather than reordered: the movers block reads `featured_charts`
+    # and `chart_id_counter` that this block also advances, and moving ~350 lines
+    # to reorder two producers is a far bigger change than fencing off the six
+    # cards the movers desk can actually mint (up to 2 movers + 4 themes).
+    # Confluence keeps what is left (2), still deferred, still free if it dies.
+    _REACH_MOVERS_RESERVE = 6
+
+    def _reach_headroom(reserve: int = 0) -> bool:
+        """True while the reach lanes still have budget of their own.
+
+        ``reserve`` is the slice of the cap the CALLER may not take — the movers/
+        theme desk passes 0 (it may use the whole allowance), confluence passes
+        `_REACH_MOVERS_RESERVE` so it cannot starve a lane that can publish.
+        """
+        return (len(featured_charts) - _ticker_charts_n) < (
+            _REACH_CHART_CAP - max(0, reserve))
 
     confluence_posts_added: list[dict] = []  # for the summary block
     conf_charts_added = 0
@@ -3056,9 +3229,12 @@ def content_plan(
                     combo_id=sig["combo_id"],
                 )
 
-                # Attempt v2 chart for this confluence ticker
-                # Only if we have headroom under the total cap
-                if _reach_headroom() and _ohlcv_root_conf:
+                # Attempt v2 chart for this confluence ticker.
+                # Only under the confluence SHARE of the reach cap: this lane
+                # cannot publish what it renders (CONF-NN slots never emit), so
+                # it must not spend the cards the movers/theme desk needs to be
+                # publishable at all (see `_REACH_MOVERS_RESERVE`).
+                if _reach_headroom(_REACH_MOVERS_RESERVE) and _ohlcv_root_conf:
                     from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2
                     _windowed = load_ohlcv_windowed(conf_ticker, _ohlcv_root_conf)
                     ohlcv, _warmup = _windowed if _windowed else (None, 0)
@@ -3209,6 +3385,29 @@ def content_plan(
         # Fail-soft: confluence unavailable — Prophet posts unchanged
         pass
 
+    # ── Strip neural_web mover/theme_list stubs ──────────────────────────────
+    # The tilt-based queue builder creates stub mover/theme_list items for every
+    # account. These have no real data and would produce empty-token copy. Only
+    # movers_desk items may represent those types in the final plan.
+    #
+    # RUNS BEFORE THE INJECTION BELOW, and the order is load-bearing. It used to
+    # run after, which meant the movers desk looked at a D1 ladder that was still
+    # 28/28 booked — every rung the allocator had handed to a stub it was about
+    # to delete — found no free rung, and dropped all six real reach items on the
+    # floor. (Invisible until now: the desk's slots were MOVER-NN/THEME-NN, which
+    # the outbox refuses anyway, so "seated" and "dropped" published the same
+    # nothing.) Stripping first hands the injection exactly the rungs the tilt
+    # allocated to `mover`/`theme_list` in the first place — the real posts land
+    # where the allocator planned for them.
+    for _acct_row in account_rows:
+        _acct_row["queue"] = [
+            _it for _it in _acct_row["queue"]
+            if not (
+                _it.get("type") in ("mover", "theme_list")
+                and _it.get("provenance") != "movers_desk"
+            )
+        ]
+
     # ── Movers/theme desk — inject mover + theme_list items ──────────────────
     # Load heatmap data once; attach movers summary to content.movers block.
     # mover items get a real ticker from top_movers; theme_list items carry
@@ -3222,6 +3421,25 @@ def content_plan(
         "note": "Heatmap data unavailable; mover/theme posts not generated.",
     }
     _mover_item_counter = 1
+    # Declared OUTSIDE the fail-soft try below on purpose: the `all_items` fold
+    # after it must run whatever the block raised. Anything already seated on a
+    # desk queue when a later step (chart render, media attach) blew up is still
+    # a queued post, and the plan summary has to say so.
+    _seated_movers: list[dict] = []
+    _seated_themes: list[dict] = []
+    _reach_unseated = 0
+    #: Why each reach item lost its rung, split by cause. "the ladder was full"
+    #: (a distribution problem, fixed by rungs or desks) and "the card never
+    #: rendered" (a render problem, fixed by budget or bars) cost the desk the
+    #: identical slot and were reported as one number, so neither was ever
+    #: actionable from the census alone.
+    _reach_unseated_reasons: dict[str, int] = {}
+    #: Per-desk pool of D1 rungs nothing has booked yet — built at distribution
+    #: and MUTATED by the card-less unseat pass after the try block. Declared out
+    #: here because that pass must run even when the movers block raised on its
+    #: way to (or inside) the card renderers, which is exactly the case that
+    #: leaves an item seated with chart_id still None.
+    _reach_free: dict[str, list[str]] = {}
 
     try:
         from engine.marketing.movers_source import (
@@ -3308,7 +3526,15 @@ def content_plan(
                     "body": _mv_body,
                     "provenance": "movers_desk",
                     "chart_id": None,
-                    "slot": f"MOVER-{_mover_item_counter:02d}",
+                    # EMPTY UNTIL DISTRIBUTION — a real `D1-S<n>` ladder rung is
+                    # assigned below, exactly as the filing/house-pick lane does.
+                    # This used to read f"MOVER-{n:02d}", which meant the item
+                    # could not be emitted at all: outbox.emit_from_content_plan
+                    # skips every slot that does not start with "D1-" (one bare
+                    # `continue`), so the Movers desk published NOTHING in its
+                    # entire existence while every content_plan.json since
+                    # 2026-07-19 carried mover+theme_list items in the queues.
+                    "slot": "",
                     "status": "drafted",
                     "_mover_facts": _mv_facts,
                     "_mover_data": _mv,
@@ -3343,7 +3569,7 @@ def content_plan(
                     "body": _tl_body,
                     "provenance": "movers_desk",
                     "chart_id": None,
-                    "slot": f"THEME-{_mover_item_counter:02d}",
+                    "slot": "",   # real D1 ladder rung assigned at distribution
                     "status": "drafted",
                     "_theme_data": _tl,
                     "_theme_facts": _tl_facts,
@@ -3351,15 +3577,112 @@ def content_plan(
                 _theme_items_for_queue.append(_tl_item_dict)
                 _mover_item_counter += 1
 
+            # ── Distribution: real desks, REAL D1 LADDER RUNGS ────────────────
+            # Round-robin across the desks so the WHOLE network posts reach
+            # content — and each desk gets a DISTINCT theme / mover (different
+            # cashtags => inherently distinctness-safe, no substantially-similar
+            # cross-account risk). Cold-start reach comes from breadth of
+            # coverage across the network, not one desk.
+            #
+            # THIS RUNS BEFORE THE CARD RENDERERS BELOW, and both reasons are
+            # defects it closes:
+            #   1. the slot. Every item minted here used to carry MOVER-NN /
+            #      THEME-NN and outbox.emit_from_content_plan drops any slot that
+            #      is not "D1-…", so the desk has never published a post. Seating
+            #      the item first means the ladder rung — the thing that decides
+            #      whether it can ship at all — is settled before a single card
+            #      is rendered for it, and an item the ladder cannot seat costs
+            #      no render (same rule the filing/house-pick lane follows).
+            #   2. the account. The card entries below copy `_tl_item["account"]`
+            #      into featured_charts; when distribution ran AFTER them, every
+            #      theme card was stamped with enabled_rows[0] while the post it
+            #      belongs to had been round-robined to a different desk.
+            #
+            # RUNG CHOICE — EARLIEST FREE, deliberately NOT "market hours". The
+            # ladder is a Pacific clock (S1 = 4:00 AM … S28 = 5:30 PM PT) and the
+            # nightly builds this plan AFTER the close, so every market-hours
+            # rung for D1 is already in the past — and a past rung means DUE NOW:
+            # the publisher's `_is_due` treats due-in-the-past as due, enqueue
+            # clamps a scheduled_at earlier than its own created_at forward to
+            # creation, and the publisher's min-gap floor does the spacing. The
+            # earliest free rung is therefore the soonest this post can honestly
+            # go out, which is exactly what a perishable "$X +5.2% today" needs.
+            # A market-hours rung on any PRE-close run would instead be a real
+            # future time — parking perishable copy, which is the failure that
+            # quarantined two hot-tape movers on 2026-07-31 when their "right
+            # now" died in an 8-hour queued stall. A desk whose D1 ladder is full
+            # drops the item rather than double-book a time (§5.5: an empty rung
+            # stays empty).
+            if enabled_rows:
+                # Round-robin across ENABLED desks only — a planned desk must
+                # never receive reach content (F3d).
+                _n_acct = len(enabled_rows)
+                # Interleave movers and themes so early desks get a mix.
+                from itertools import zip_longest as _zip_longest  # noqa: PLC0415
+                _reach_items = []
+                for _m, _t in _zip_longest(_mover_items_for_queue, _theme_items_for_queue):
+                    if _t is not None:
+                        _reach_items.append(_t)
+                    if _m is not None:
+                        _reach_items.append(_m)
+
+                # Per-desk pool of D1 rungs nothing has booked yet — same
+                # computation the filing lane runs a few hundred lines below.
+                # (Declared above the try; filled here.)
+                for _row in enabled_rows:
+                    _used = {
+                        str(_it.get("slot") or "").split("-", 1)[1]
+                        for _it in (_row.get("queue") or [])
+                        if str(_it.get("slot") or "").startswith("D1-")
+                    }
+                    _reach_free[str(_row.get("id") or "")] = [
+                        _s for _s in _LADDER_SLOTS if _s not in _used]
+
+                # THE ROUND-ROBIN INDEX IS A STARTING POINT, NOT AN ASSIGNMENT
+                # (defect closed 2026-07-31). `enabled_rows[_idx % _n_acct]` used
+                # to be final: the desk was chosen before anyone asked whether it
+                # had a rung, so a single full desk dropped its whole share of the
+                # reach batch while its neighbours sat on twenty-odd empty rungs.
+                # The drop then reported "no free D1 rung", which was true of that
+                # ONE desk and false of the network — the census read like a
+                # capacity problem when it was an allocation problem.
+                #
+                # Now the item is OFFERED to each desk in turn starting at the
+                # round-robin position and the first one with a free rung takes
+                # it. Fairness is untouched (the walk still starts one desk
+                # further along per item, so the lead desk still rotates), and
+                # "unseated" now means what it says: every enabled desk is full.
+                for _idx, _item in enumerate(_reach_items):
+                    _seated_ok = False
+                    for _off in range(_n_acct):
+                        _acct = enabled_rows[(_idx + _off) % _n_acct]
+                        _pool = _reach_free.get(str(_acct.get("id") or "")) or []
+                        if not _pool:
+                            continue
+                        _item["account"] = _acct.get("id", "flagship")
+                        _item["slot"] = f"D1-{_pool.pop(0)}"
+                        _acct["queue"].append(_item)
+                        if _item.get("type") == "mover":
+                            _seated_movers.append(_item)
+                        else:
+                            _seated_themes.append(_item)
+                        _seated_ok = True
+                        break
+                    if not _seated_ok:
+                        _reach_unseated += 1
+                        _reach_unseated_reasons["no_free_rung"] = (
+                            _reach_unseated_reasons.get("no_free_rung", 0) + 1)
+
             # ── Watchlist card rendering for theme_list items ─────────────────
             # Each theme_list item gets an SVG watchlist card: rows from theme members
             # {ticker, price, pct_change}, subtitle = the item's stance line (question).
             # Card goes into featured_charts the same way signal charts do; chart_id
-            # is attached to the item dict.
+            # is attached to the item dict. SEATED items only — a card for a post
+            # no desk queued is render budget spent on nothing.
             if _reach_headroom():
                 try:
                     from engine.marketing.chart_render import render_watchlist_card as _rwc
-                    for _tl_item in _theme_items_for_queue:
+                    for _tl_item in _seated_themes:
                         if not _reach_headroom():
                             break
                         _tl_data = _tl_item.get("_theme_data") or {}
@@ -3410,57 +3733,14 @@ def content_plan(
                 except Exception:  # noqa: BLE001
                     pass  # fail-soft: watchlist card unavailable; theme posts unchanged
 
-            # Distribute reach items round-robin across the desks so the WHOLE
-            # network posts reach content — and each desk gets a DISTINCT theme /
-            # mover (different cashtags => inherently distinctness-safe, no
-            # substantially-similar cross-account risk). Cold-start reach comes
-            # from breadth of coverage across the network, not one desk.
-            if enabled_rows:
-                # Round-robin across ENABLED desks only — a planned desk must
-                # never receive reach content (F3d).
-                _n_acct = len(enabled_rows)
-                # Interleave movers and themes so early desks get a mix.
-                from itertools import zip_longest as _zip_longest  # noqa: PLC0415
-                _reach_items = []
-                for _m, _t in _zip_longest(_mover_items_for_queue, _theme_items_for_queue):
-                    if _t is not None:
-                        _reach_items.append(_t)
-                    if _m is not None:
-                        _reach_items.append(_m)
-                for _idx, _item in enumerate(_reach_items):
-                    _acct = enabled_rows[_idx % _n_acct]
-                    _item["account"] = _acct.get("id", "flagship")
-                    _acct["queue"].append(_item)
+            # (The census used to be built HERE, between the two card renderers.
+            # It now runs after the unseat pass below the try — see there.)
 
-            _movers_summary = {
-                "movers": [
-                    {
-                        "ticker": it["ticker"],
-                        "pct": it["_mover_data"]["pct"],
-                        "sector": it["_mover_data"].get("sector", ""),
-                    }
-                    for it in _mover_items_for_queue
-                ],
-                "theme_lists": [
-                    {
-                        "theme": it["_theme_data"]["theme"],
-                        "direction": it["_theme_data"]["direction"],
-                        "agg_pct": it["_theme_data"]["agg_pct"],
-                        "n_members": len(it["_theme_data"]["members"]),
-                    }
-                    for it in _theme_items_for_queue
-                ],
-                "note": (
-                    f"{len(_mover_items_for_queue)} mover posts, "
-                    f"{len(_theme_items_for_queue)} theme_list posts generated "
-                    f"from heatmap data."
-                ),
-            }
-
-            # mover items: attempt v2 chart (same as Prophet signal flow)
+            # mover items: attempt v2 chart (same as Prophet signal flow).
+            # SEATED movers only — see the distribution block above.
             if closes_loader is not None:
                 from engine.marketing.chart_render import load_ohlcv_windowed, render_chart_v2, render_signal_chart
-                for _mv_item in _mover_items_for_queue:
+                for _mv_item in _seated_movers:
                     _mv_ticker = _mv_item["ticker"]
                     if not _reach_headroom():
                         break
@@ -3529,20 +3809,191 @@ def content_plan(
     except Exception:  # noqa: BLE001
         pass  # fail-soft — movers unavailable; Prophet posts unchanged
 
-    # ── Strip neural_web mover/theme_list stubs ──────────────────────────────
-    # The tilt-based queue builder creates stub mover/theme_list items for every
-    # account.  These have no real data and would produce empty-token copy.
-    # The movers injection block above has already added real movers_desk items
-    # to account_rows[0].  Remove all neural_web mover/theme_list items so only
-    # movers_desk items represent those types in the final plan.
-    for _acct_row in account_rows:
-        _acct_row["queue"] = [
-            _it for _it in _acct_row["queue"]
-            if not (
-                _it.get("type") in ("mover", "theme_list")
-                and _it.get("provenance") != "movers_desk"
-            )
-        ]
+    # ── UNSEAT every card-less reach item ────────────────────────────────────
+    # THE DEFECT (reproduced end-to-end 2026-07-31). Seating runs BEFORE the two
+    # card renderers — deliberately, so the ladder rung is settled before a card
+    # is paid for — and both renderers are fail-soft: the theme loop is wrapped in
+    # `except Exception: pass`, the mover loop `continue`s on absent bars and
+    # `break`s when the reach budget runs out, and neither runs at all when
+    # `closes_loader` is None or the block above raised on its way here. Any of
+    # those leaves the item sitting on a real D1 rung with `chart_id` still None.
+    #
+    # `mover` and `theme_list` are bare-cashtag kinds — they are in the
+    # publisher's `_TICKER_ROLLUP_KINDS`, and `_bare_cashtag_post` refuses to ship
+    # a cashtag-bearing post with no picture ("YOU WILL NOT SHIP THESE TEXT ONLY"
+    # — operator, 2026-07-30). So a chartless mover is not a plainer post, it is a
+    # post that is TERMINALLY QUARANTINED at dispatch. It still consumed its
+    # desk's rung and its share of the day cap on the way there, and the census
+    # still counted it as queued supply — a plan that reports six reach posts and
+    # delivers four, with no line anywhere saying which two died or why.
+    #
+    # SAME LAW AS THE PUBLISH-TIME LANE, which already refuses to build an item
+    # whose card would not host ("better no post than a naked ticker post" —
+    # publish_time_content's module header). The plan must never EMIT a chartless
+    # mover/theme either. Unseating is the plan-time form of that law: the item
+    # leaves the queue, its rung goes back to the pool for a producer that can
+    # actually fill it, and the drop is counted with its reason.
+    #
+    # RUNS OUTSIDE THE TRY on purpose. The case that most reliably produces a
+    # card-less seated item is the renderer raising, which jumps straight to the
+    # `except: pass` above — a pass placed inside the block would be skipped by
+    # exactly the failure it exists to clean up.
+
+    # "Carded" is CHART PRESENT IN `featured_charts`, not merely `chart_id` set.
+    # The mover loop stamps `_mv_item["chart_id"]` a few statements before it
+    # appends the chart dict, and `_attach_chart_media` sits between the two — so
+    # a raise there leaves an id pointing at a card that was never rendered, and
+    # a `chart_id is not None` test would call that item carded and ship it bare.
+    _chart_ids_rendered = {str(_fc.get("id") or "") for _fc in featured_charts}
+
+    def _reach_is_carded(_it: dict) -> bool:
+        _cid = str(_it.get("chart_id") or "")
+        return bool(_cid) and _cid in _chart_ids_rendered
+
+    _reach_cardless: list[dict] = []
+    for _seated_list in (_seated_movers, _seated_themes):
+        _kept = [_it for _it in _seated_list if _reach_is_carded(_it)]
+        _reach_cardless.extend(_it for _it in _seated_list if not _reach_is_carded(_it))
+        _seated_list[:] = _kept
+
+    if _reach_cardless:
+        _rows_by_id = {str(_r.get("id") or ""): _r for _r in enabled_rows}
+        for _it in _reach_cardless:
+            _acct_id = str(_it.get("account") or "")
+            _row = _rows_by_id.get(_acct_id)
+            if _row is not None:
+                # Identity comparison, not id-field equality: the queue holds the
+                # very dict object seated above, and two producers could in
+                # principle mint the same id string.
+                _row["queue"] = [_q for _q in (_row.get("queue") or []) if _q is not _it]
+            # Return the rung to the pool, earliest-first order preserved. The
+            # filing lane below recomputes its own pool from the queues, so it
+            # sees the freed rung either way; this keeps `_reach_free` honest for
+            # anything that reads it after this point and makes the "returned"
+            # half of the fix inspectable rather than incidental.
+            _slot_str = str(_it.get("slot") or "")
+            if _slot_str.startswith("D1-"):
+                _rung = _slot_str.split("-", 1)[1]
+                _pool_back = _reach_free.get(_acct_id)
+                if _pool_back is not None and _rung not in _pool_back:
+                    _pool_back.append(_rung)
+                    _pool_back.sort(
+                        key=lambda _s: _LADDER_SLOTS.index(_s)
+                        if _s in _LADDER_SLOTS else len(_LADDER_SLOTS))
+            _it["slot"] = ""
+            _it["status"] = "unseated_no_card"
+            _reach_unseated += 1
+            _reach_unseated_reasons["no_card"] = (
+                _reach_unseated_reasons.get("no_card", 0) + 1)
+
+        # Bare line-start print, NEVER through a logger — every builder here logs
+        # with a prefixing format, so `log.warning("::warning …")` emits
+        # "WARNING ::warning …" and GitHub silently drops it. flush because
+        # stdout is block-buffered when piped in Actions.
+        print(f"::warning title=reach-cardless-unseated::"
+              f"{len(_reach_cardless)} mover/theme_list reach item(s) ended "
+              f"card-less and were unseated (D1 rungs returned to the pool). A "
+              f"bare-cashtag post with no picture is terminally quarantined at "
+              f"dispatch, so emitting it would spend a day-cap slot on nothing.",
+              flush=True)
+
+    # ── The movers census — SEATED AND CARDED, at plan time ──────────────────
+    # THE CENSUS IS WHAT WAS SEATED, not what was minted. A minted item the
+    # ladder could not take is not a post; reporting it as one is the same
+    # false-supply reading the MOVER-NN slot bug produced for two weeks (queues
+    # full of items, outbox empty, census saying "2 mover posts, 4 theme_list
+    # posts generated" every night).
+    #
+    # MOVED OUT OF THE TRY BLOCK (2026-07-31). It used to be built between the
+    # two card renderers, which meant it was a snapshot of a moment that had not
+    # finished happening: the mover chart loop ran after it, and the card-less
+    # unseat pass above runs after that. Building it here is the first point at
+    # which `_seated_movers` / `_seated_themes` are final.
+    #
+    # "AT PLAN TIME" IS THE HONEST QUALIFIER, and the note says so. `apply_reuse_
+    # budget` runs several hundred lines below and can still DELETE a seated
+    # mover from its desk's queue (the ×5-ARES fix), and the v2 writer can drop
+    # one more. Those cuts have their own counters in the plan summary and this
+    # block cannot see them — it is upstream of both. Naming the boundary is the
+    # fix; pretending the number is final is what made it wrong.
+    if _movers_data is not None:
+        _movers_summary = {
+            "movers": [
+                {
+                    "ticker": it["ticker"],
+                    "pct": it["_mover_data"]["pct"],
+                    "sector": it["_mover_data"].get("sector", ""),
+                }
+                for it in _seated_movers
+            ],
+            "theme_lists": [
+                {
+                    "theme": it["_theme_data"]["theme"],
+                    "direction": it["_theme_data"]["direction"],
+                    "agg_pct": it["_theme_data"]["agg_pct"],
+                    "n_members": len(it["_theme_data"]["members"]),
+                }
+                for it in _seated_themes
+            ],
+            "unseated": _reach_unseated,
+            "unseated_reasons": dict(_reach_unseated_reasons),
+            # Rungs still unbooked when distribution finished, per desk. THE
+            # AUDIT FOR `no_free_rung`: that reason is only honest when the whole
+            # network is out of rungs, and this is the number that says whether
+            # it was. Pre-2026-07-31 the round-robin index was final, so a single
+            # full desk dropped its share of the batch while this map still
+            # showed twenty-odd free rungs on its neighbours — the census read
+            # like a capacity problem when it was an allocation problem. (Cards
+            # returned by the unseat pass are added back here, so a desk can show
+            # headroom that only opened up after the renderers ran.)
+            "free_rungs": {_k: len(_v) for _k, _v in _reach_free.items()},
+            "note": (
+                f"{len(_seated_movers)} mover posts, "
+                f"{len(_seated_themes)} theme_list posts seated on the D1 "
+                f"ladder with a card, at plan time; reuse-budget cuts are "
+                f"reported separately"
+                + (f". {_reach_unseated} unseated ("
+                   + ", ".join(f"{_k}={_v}" for _k, _v
+                               in sorted(_reach_unseated_reasons.items()))
+                   + ")." if _reach_unseated else ".")
+            ),
+        }
+
+    # ── Movers/theme items join `all_items` (the plan's own census) ───────────
+    # THE BLIND SPOT THIS CLOSES. `all_items` is what feeds `distinctness()`,
+    # `total_posts` and `signal_posts`, and the movers desk was the only producer
+    # that appended straight to `acct_row["queue"]` without extending it. So a
+    # night whose ONLY output was reach content reported `total_posts: 0` — the
+    # identical false-empty reading the DeepSeek outage produced, which is the
+    # signal `_alarm_on_a_planless_night` exists to fire on. It also meant the
+    # cross-desk distinctness check never saw a single mover or theme post.
+    #
+    # Built from the SEATED dicts (they carry the final account + D1 slot) and
+    # keyed by `id`, which is what the two post-budget reconciliations below
+    # filter on — an item the reuse budget or the writer deletes from a queue
+    # drops out of `all_items` with everything else. `chart_id` is snapshotted
+    # here and may be filled in on the queue dict afterwards; nothing reads
+    # `ContentItem.chart_id` (distinctness reads type/account/ticker/body, the
+    # chart census reads `featured_charts`), so the two cannot disagree where it
+    # would matter.
+    for _reach_dict in (*_seated_movers, *_seated_themes):
+        all_items.append(ContentItem(
+            id=str(_reach_dict.get("id") or ""),
+            type=str(_reach_dict.get("type") or ""),
+            account=str(_reach_dict.get("account") or ""),
+            cashtag=str(_reach_dict.get("cashtag") or ""),
+            ticker=str(_reach_dict.get("ticker") or ""),
+            headline=str(_reach_dict.get("headline") or ""),
+            body=str(_reach_dict.get("body") or ""),
+            provenance=str(_reach_dict.get("provenance") or "movers_desk"),
+            chart_id=_reach_dict.get("chart_id"),
+            slot=str(_reach_dict.get("slot") or ""),
+            status=str(_reach_dict.get("status") or "drafted"),
+        ))
+
+    # (The neural_web mover/theme_list stub strip that used to sit here now
+    # runs BEFORE the movers injection — that block explains why the order
+    # is load-bearing.)
 
     # ── Fact-locked filing lanes + house picks (XG-E2) ───────────────────────
     # Masterplan §10 lanes 6 and 7 (insider Form 4, politician trades), plus the

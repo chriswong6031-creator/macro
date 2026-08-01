@@ -438,3 +438,83 @@ class TestTheTwoGatesHandOffWithoutAGap:
         assert "_CHART_BEARING_KINDS" in src and "_TICKER_ROLLUP_KINDS" in src, (
             "a hand-copied kind list will drift from the gate it mirrors"
         )
+
+
+class TestProseThatMentionsATickerIsNotATickerPost:
+    """The gate's OVER-REACH, closed 2026-07-31 — the mirror of the hole above.
+
+    `_bare_cashtag_post` ran `_CASHTAG_RE.findall` unconditionally over EVERY
+    kind, with no media entry required. So a macro read ending "…even $SPY is
+    stretched" — for which no lane builds a chart and none ever will — was
+    QUARANTINED. Terminal, on a post that owes nothing.
+
+    That silently overrode the contract stated at `_TICKER_ROLLUP_KINDS`, in
+    those words: "`macro`, `education`, `event`, `wire` and `breaking` are
+    deliberately ABSENT. A breadth read may mention $SPY in passing; that is not
+    a post about $SPY, and holding it for an upload strangles the desks'
+    non-ticker voice for a rule written about rollups." `_missing_required_media`
+    refused the same widening for the same reason — "THE KIND DECIDES, NOT THE
+    TEXT" — and this gate now says it too.
+
+    THE SPLIT: the kind decides only when NO card was ever built. An item whose
+    lane DID draw a card and could not host it owes a picture whatever kind it
+    claims to be, which is the hole TestTheTwoGatesHandOffWithoutAGap pins and
+    which stays closed (every fixture there carries an unhosted media entry).
+    """
+
+    CFG = {"media_enabled": True}
+
+    # A real breadth read: the ticker is the last four characters of a sentence
+    # about 231 other names.
+    PROSE = ("231 of 231 names are above their 200-day for the first time since "
+             "March. Even $SPY looks stretched here.")
+    # A real rollup: the post IS the names it lists.
+    ROLLUP = ("Insurance - Property & Casualty: 7 of 7 names lower right now, "
+              "median -3.9%. Worst: $ERIE -6.1%, $TRV -4.6%.")
+
+    def _bare(self, kind, text, media=()):
+        from scripts.marketing_publisher import _bare_cashtag_post
+        return _bare_cashtag_post(
+            {"kind": kind, "text": text, "media": list(media)}, self.CFG, [])
+
+    @pytest.mark.parametrize("kind", ["macro", "education", "event", "wire",
+                                      "earnings", "congress", "insider"])
+    def test_prose_with_a_passing_cashtag_and_no_card_ships(self, kind):
+        assert self._bare(kind, self.PROSE) == "", (
+            f"a {kind} post is being strangled for naming a ticker in passing")
+
+    @pytest.mark.parametrize("kind", ["mover", "theme_list", "signal", "chart",
+                                      "watchlist", "receipt", "breaking"])
+    def test_a_ticker_post_with_no_card_is_still_refused(self, kind):
+        """The operator law is not weakened — only scoped."""
+        assert self._bare(kind, self.ROLLUP) == "$ERIE $TRV", kind
+
+    def test_the_live_mover_that_started_this_is_still_blocked(self):
+        """The concrete regression: a `mover` naming one name, no card."""
+        assert self._bare("mover", "$AMZN is down 4.1% right now.") == "$AMZN"
+
+    def test_a_built_card_that_never_hosted_still_binds_on_every_kind(self):
+        """The scope change must not re-open the hole it sits next to.
+
+        A lane that DREW a card decided this post owes a picture. That decision
+        outranks the kind table, so an unhosted entry is refused even on the
+        kinds excused above.
+        """
+        unhosted = [{"kind": "chart_svg", "chart_id": "c1", "path": "media/c1.svg"}]
+        for kind in ("macro", "education", "event", "wire", "earnings"):
+            assert self._bare(kind, self.PROSE, unhosted) == "$SPY", kind
+
+    def test_the_scope_set_is_derived_from_the_deferral_gate_s_sets(self):
+        """Widening the deferral gate must widen this one, or they drift."""
+        from scripts.marketing_publisher import (
+            _BARE_CASHTAG_KINDS, _CHART_BEARING_KINDS, _TICKER_ROLLUP_KINDS)
+
+        assert _CHART_BEARING_KINDS <= _BARE_CASHTAG_KINDS
+        assert _TICKER_ROLLUP_KINDS <= _BARE_CASHTAG_KINDS
+        # `breaking` is in THIS set and not in the deferral gate's, on purpose:
+        # the hot-tape group posts owe a picture, but a backfill cannot rescue
+        # one after the moment has passed.
+        assert "breaking" in _BARE_CASHTAG_KINDS
+        assert "breaking" not in (_CHART_BEARING_KINDS | _TICKER_ROLLUP_KINDS)
+        # And the prose kinds are OUT, which is the whole fix.
+        assert not (_BARE_CASHTAG_KINDS & {"macro", "education", "event", "wire"})

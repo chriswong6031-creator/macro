@@ -396,6 +396,24 @@ _TICKER_ROLLUP_KINDS: frozenset[str] = frozenset({
     "theme_list", "mover",
 })
 
+# Kinds whose post is REFUSED for naming a ticker with no card of any sort —
+# the scope of :func:`_bare_cashtag_post`'s no-media-at-all branch. DERIVED from
+# the two sets above (widening either widens this) plus `breaking`.
+#
+# `breaking` is here and NOT in _TICKER_ROLLUP_KINDS on purpose. The deferral
+# gate's question is "can the backfill still rescue this?", and for a breaking
+# item the answer is no — the moment is gone long before a backfill runs. This
+# gate's question is "does this post owe a picture?", and for the hot-tape group
+# posts the answer is yes: 19 of them queued bare on 2026-07-30 and every one
+# was quarantined here, which is why the radar now draws each a card.
+#
+# Everything else in outbox.KINDS — macro, education, event, wire, earnings,
+# congress, insider — is deliberately OUT. See the long note in
+# _bare_cashtag_post for why, and for the uncomfortable congress/insider case.
+_BARE_CASHTAG_KINDS: frozenset[str] = (
+    _CHART_BEARING_KINDS | _TICKER_ROLLUP_KINDS | frozenset({"breaking"})
+)
+
 # A ticker post whose chart never resolves may not defer forever. Past this age
 # the publisher gives up and QUARANTINES it instead of shipping it bare: an
 # entry-timing read this stale is not worth posting even if the picture finally
@@ -631,15 +649,49 @@ def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
     Its siblings drew 1, 2 and 4.
 
     So the rule is keyed on what the operator actually said: a post that NAMES
-    TICKERS ships a picture, whatever kind it claims to be. A post with no
-    cashtag (macro prose, education, a breadth read) is unaffected.
+    TICKERS ships a picture. A post with no cashtag (macro prose, education, a
+    breadth read) is unaffected.
+
+    TWO CASES, AND ONLY ONE OF THEM IGNORES THE KIND (defect closed 2026-07-31):
+
+    * A CARD WAS BUILT (media[] holds a dict) and its URL never resolved. The
+      producing lane decided this post owes a picture; shipping it without one
+      is the violation regardless of kind, so every kind is covered. That is the
+      hole `breaking` fell through, and it stays closed.
+    * NO CARD AT ALL. Here the KIND decides, exactly as it decides for
+      :func:`_missing_required_media` — see the contract stated at
+      ``_TICKER_ROLLUP_KINDS``: "`macro`, `education`, `event`, `wire` … are
+      deliberately ABSENT. A breadth read may mention $SPY in passing; that is
+      not a post about $SPY, and holding it for an upload strangles the desks'
+      non-ticker voice for a rule written about rollups."
+
+      This function ran ``_CASHTAG_RE.findall`` unconditionally over EVERY kind,
+      which quietly overrode that contract at the one seam where it has teeth:
+      a macro read ending "even $SPY is stretched", for which no lane builds a
+      chart and none ever will, was QUARANTINED — terminal, on a post that owes
+      nothing. `_missing_required_media` refused the same widening by text
+      ("THE KIND DECIDES, NOT THE TEXT"); this gate now says the same thing.
+
+      `breaking` IS in scope here on purpose, unlike in the deferral gate: the
+      hot-tape group posts that drew the operator's complaint are `breaking`,
+      19 of them queued and quarantined on 2026-07-30, and the radar now draws
+      each one a card precisely to satisfy this gate. Dropping `breaking` would
+      re-open the outage.
+
+      `congress`/`insider` are OUT, deliberately and uncomfortably: their posts
+      ARE about one name, but no lane builds them a chart, so putting them in
+      scope would not hold a filing post pending a picture — it would kill the
+      filings desk outright. That is a product decision, not a gate fix.
     """
     if not _media_enabled_cfg(pub_cfg) or media_paths:
         # Media globally off → nothing can resolve a picture and gating on that
         # would wedge every ticker post, same reasoning as the deferral gate.
         return ""
-    if (any(isinstance(m, dict) for m in (it.get("media") or []))
-            and _deferral_covers(it)):
+    _built_a_card = any(isinstance(m, dict) for m in (it.get("media") or []))
+    if not _built_a_card and str(it.get("kind") or "") not in _BARE_CASHTAG_KINDS:
+        # Prose that mentions a ticker in passing and never claimed a picture.
+        return ""
+    if _built_a_card and _deferral_covers(it):
         # A chart exists but has no URL yet — that is the DEFERRAL case above,
         # which is recoverable via the backfill. Not this rule's business.
         #
@@ -1264,6 +1316,56 @@ def main(argv: list[str] | None = None) -> int:
         return _outbox.effective_cap_for(cfg, account, _post_date,
                                          root=root, ramp=_ramp)
 
+    # ── Wire reaper: retire fast-lane items whose moment is gone ─────────────
+    # The nightly emit calls outbox.expire_stale_planned, which is scoped to
+    # content_studio provenance AND skips scheduled_at == "immediate" — so the
+    # fast lanes (outbox._WIRE_PROVENANCES: the press wire, the tape radar and
+    # this file's own publish-time mover generator), which write nothing BUT
+    # immediate rows, were swept by nobody. Their stale rows are not
+    # inert: they sit in the near-dup corpus vetoing tonight's coverage of the
+    # same story, and they clog the admin queue with "right now" copy about a
+    # tape that closed hours ago (AMZN/COIN movers, 2026-07-31, 8h queued with
+    # zero ledger rows).
+    #
+    # HERE, not in the nightly emit, because the publish sweep is the lane that
+    # actually owns wire dispatch and it runs on the ladder — a reaper that only
+    # ran at plan time would leave a full trading day unswept. Before the fold
+    # below so the run's own candidate set never sees an item this pass retired.
+    # DRY-RUN NEVER MUTATES: quarantine is terminal and a projection must not
+    # destroy the queue it is projecting.
+    #
+    # POST-NOW IS EXEMPT (#3960 minor). This pass runs here, ahead of the fold,
+    # for the reason above — and post-now id resolution does not happen until
+    # ~250 lines below it. Without the exemption the operator's own
+    # `--post-now <id>` on a breaking item that took a while to get a human
+    # decision is self-defeating: the run summoned to send it quarantines it
+    # (TERMINALLY) on the way in, and the dispatch it was called for finds
+    # nothing. The pass is NOT reordered — the fold below must still never see
+    # an item this sweep retired — the named ids are simply spared, which is the
+    # narrowest possible fix and cannot widen the reaper's blast radius.
+    expired_wire = 0
+    if live:
+        try:
+            _wire_expiry = _outbox.expire_stale_wire(root, now=now,
+                                                     exempt_ids=post_now)
+            expired_wire = int(_wire_expiry.get("expired") or 0)
+            if expired_wire:
+                # Bare line-start print (house law): a logger prefix makes GitHub
+                # drop the annotation. A retirement is a LOSS — the desk wrote
+                # these posts and nobody sent them — so it is a warning, not a
+                # notice, and it names the kinds so "why did the movers vanish"
+                # is answerable from the Actions summary alone.
+                print(f"::warning title=marketing-wire-expired::{expired_wire} "
+                      f"wire item(s) quarantined as expired_stale_wire "
+                      f"{_wire_expiry.get('by_kind') or {}} — they sat queued past "
+                      f"their kind's TTL and their copy no longer describes the "
+                      f"tape. A recurring count here means the dispatch lane is "
+                      f"not picking wire items up, not that the copy was bad.",
+                      flush=True)
+        except Exception as _wire_exc:  # noqa: BLE001 — housekeeping never breaks a run
+            log.warning("wire expiry unavailable (%s) — queue unswept this pass",
+                        _wire_exc)
+
     state = _outbox.fold_state(root)
     items_by_id = state["items"]
     statuses = state["status"]
@@ -1307,10 +1409,14 @@ def main(argv: list[str] | None = None) -> int:
         pt_dropped = len(_pt_report.get("dropped") or [])
         log.info(
             "publish-time generation | enabled=%s slot=%s quotes=%s "
-            "generated=%d would_generate=%d dropped=%d",
+            "generated=%d would_generate=%d dropped=%d cards_deferred_dry_run=%d",
             _pt_report.get("enabled"), _pt_report.get("slot") or "-",
             _pt_report.get("quote_source"), pt_generated,
             len(_pt_report.get("would_generate") or []), pt_dropped,
+            # A dry sweep resolves no cards (contract: live=False writes
+            # NOTHING); without this count an operator reading the dry log
+            # cannot tell deferred-by-design from a dead card lane.
+            int(_pt_report.get("cards_deferred_dry_run") or 0),
         )
         for _d in (_pt_report.get("dropped") or []):
             log.info("  pt drop: %s — %s", _d.get("reason"), _d.get("detail"))
@@ -1362,6 +1468,72 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as _read_exc:  # noqa: BLE001
         log.warning("publish-time read unavailable (%s) — legacy flow unaffected",
                     _read_exc)
+
+    # ── AUTONOMOUS APPROVAL DESK (engine/marketing/approval_desk.py) ─────────
+    # THE PLANNED KINDS HAD NO PATH TO LIVE. `publish.auto_approve_scope: kinds`
+    # deliberately confines the pass below to the publish-time lane, so signal /
+    # chart / education / macro / receipt / watchlist / event / congress /
+    # insider items were left to the operator-approve path — the admin UI
+    # writing decisions.jsonl, which outbox.apply_decisions turns into a
+    # transition. THAT FILE HAS ZERO ROWS IN REPO HISTORY: every planned post
+    # that ever went out was hand-moved by an agent session, and the rest sat
+    # queued until a reaper retired them.
+    #
+    # The desk audits each queued planned item against six named checks and
+    # either approves it (actor `approval-desk`, note listing the checks that
+    # passed), quarantines it with the evidence in the note, or LEAVES IT
+    # QUEUED for a human when it cannot verify the claim. It is an ADDITIONAL
+    # bar, never a bypass: every gate below — the live tape gate, the chart law,
+    # near-dup, the voice gates, the cap, the spacing floor — still runs on
+    # anything it approves.
+    #
+    # HERE, between the publish-time generators and the auto-approve pass, for
+    # two reasons. The pass below seeds its per-account budget from items
+    # already `approved`, so the desk has to have finished before it counts;
+    # and the candidate set below the pass is what actually dispatches, so an
+    # item approved here goes out in THIS sweep rather than waiting for the
+    # next one. DRY-RUN NEVER MUTATES — the desk only reports what it would do.
+    desk_approved = desk_quarantined = desk_held = desk_capped = 0
+    desk_expired = desk_disabled = 0
+    try:
+        from engine.marketing import approval_desk as _desk  # noqa: PLC0415
+        _desk_tally = _desk.run(
+            root, cfg=cfg, now=now, live=live, account=args.account,
+            media_enabled=_media_enabled_cfg(pub_cfg), state=state,
+        )
+        desk_approved = int(_desk_tally.get("approved") or 0)
+        desk_quarantined = int(_desk_tally.get("quarantined") or 0)
+        desk_held = int(_desk_tally.get("held") or 0)
+        desk_capped = int(_desk_tally.get("capped") or 0)
+        desk_expired = int(_desk_tally.get("expired") or 0)
+        desk_disabled = 1 if _desk_tally.get("status") == "disabled" else 0
+        log.info(
+            "approval desk | status=%s considered=%d approved=%d quarantined=%d "
+            "held=%d capped=%d expired=%d by_check=%s",
+            _desk_tally.get("status"), int(_desk_tally.get("considered") or 0),
+            desk_approved, desk_quarantined, desk_held, desk_capped,
+            desk_expired, _desk_tally.get("by_check") or {},
+        )
+        if live and (desk_approved or desk_quarantined or desk_expired):
+            # Bare line-start print (house law): a logger prefix makes GitHub
+            # drop the annotation entirely. ::notice, not ::warning — this is
+            # the desk doing the job it was armed for, and the losses it names
+            # are already itemised on the Marketing Floor's loss ledger.
+            print(f"::notice title=marketing-approval-desk::approval desk "
+                  f"cleared {desk_approved}, quarantined {desk_quarantined}, "
+                  f"held {desk_held} for human review, capped {desk_capped} "
+                  f"and retired {desk_expired} planned post(s) "
+                  f"{_desk_tally.get('by_check') or {}}. A HELD item is one the "
+                  f"desk could not VERIFY, not one it judged bad — that is the "
+                  f"queue a human still owns.", flush=True)
+            # Re-fold so the auto-approve pass's budget and the candidate set
+            # below both see the desk's transitions.
+            state = _outbox.fold_state(root)
+            items_by_id = state["items"]
+            statuses = state["status"]
+    except Exception as _desk_exc:  # noqa: BLE001
+        log.warning("approval desk unavailable (%s) — planned items stay queued "
+                    "for the operator, legacy flow unaffected", _desk_exc)
 
     # ── OPTIONAL auto-approve: queued → approved for items that pass ALL gates ─
     # Gated OFF by default; enabled by publish.auto_approve OR --auto-approve.
@@ -1946,7 +2118,23 @@ def main(argv: list[str] | None = None) -> int:
         # graded a batch F, but retiring a rule does not rewrite copy already
         # enqueued — without this screen the graded-F batch posts tomorrow no
         # matter what the writer does tonight.
-        _voice = _queued_voice_violations(text, str(it.get("kind") or ""))
+        #
+        # THE SHAPE TRAVELS WITH THE ITEM (adversarial review, 2026-07-31). The
+        # number budget inside this screen is per SHAPE as well as per kind:
+        # SHAPE_CONTRACT ORDERS three numbers for a `stack`, up to six rows for a
+        # list. Calling with no shape made this gate re-judge every queued post
+        # at the shapeless default of two — so an obedient 3-number stack was
+        # written by the LLM, paid for, queued, and then TERMINALLY quarantined
+        # here for doing exactly what the prompt demanded. The shape has been
+        # persisted at `source.shape` since W1 telemetry
+        # (outbox.emit_from_content_plan), so the fix is to hand it over, not to
+        # loosen the budget. A pre-W1 item carries no shape and gets the
+        # unchanged shapeless behaviour.
+        _voice_src = it.get("source") if isinstance(it.get("source"), dict) else {}
+        _voice = _queued_voice_violations(
+            text, str(it.get("kind") or ""),
+            shape=str(_voice_src.get("shape") or ""),
+        )
         if _voice:
             reason = "voice laws (queue vintage): " + "; ".join(_voice[:2])
             print(f"::warning title=marketing-voice-gate::item {iid} "
@@ -2390,18 +2578,76 @@ def main(argv: list[str] | None = None) -> int:
             # budget — this is self-inflicted and transient, and both halves of
             # that sentence say "retry", not "discard".
             #
-            # Back to `approved`, which the legality table already allows
-            # (failed -> approved was reachable, just never used), so the next
-            # scheduled sweep re-picks it with every gate re-evaluated: the tape
-            # gate will refuse it if the number has gone stale in the meantime,
-            # which is exactly the check that should decide a retry, not this one.
-            _outbox.transition(iid, "approved", actor="publisher", root=root,
-                               note=f"rate_limited, requeued for the next sweep: "
-                                    f"{receipt.error or 'buffer 429'}",
-                               receipt={"backend": receipt.backend,
-                                        "error": receipt.error, "at": receipt.at})
-            rate_limited += 1
-            log.warning("item %s RATE-LIMITED, requeued: %s", iid, receipt.error)
+            # Back to `approved`, so the next scheduled sweep re-picks it with
+            # every gate re-evaluated: the tape gate will refuse it if the number
+            # has gone stale in the meantime, which is exactly the check that
+            # should decide a retry, not this one.
+            #
+            # ROUTED THROUGH `failed`, AND BOTH LEGS CHECKED (defect closed
+            # 2026-07-31). The first cut of this branch called
+            # transition(iid, "approved") directly — on an item THIS LOOP had
+            # moved to `posting` twenty lines earlier, and
+            # TRANSITIONS["posting"] is {posted, failed, quarantined}. So the
+            # call was ILLEGAL: transition() logged "illegal transition
+            # 'posting'->'approved'" and returned False, the return was never
+            # inspected, and `rate_limited += 1` ran anyway. The item stayed in
+            # `posting` FOREVER — reported by the next run's stuck_posting scan
+            # and never reposted (the no-double-post guarantee) — which is the
+            # very loss this branch exists to prevent, one state to the left.
+            # It had not fired yet only because no 429 had landed since.
+            #
+            # posting -> failed -> approved is the ONLY legal walk from
+            # in-flight back to postable, so it is the walk we take, and each
+            # leg's return value gates the next.
+            #
+            # THE DAILY CAP IS NOT DOUBLE-CHARGED. Two counters decide an
+            # account's day and neither moves here: outbox.posted_today_by_account
+            # counts ids whose FOLDED status is posted/posting with a ledger row
+            # dated today, and this walk ends on `approved` (the intermediate
+            # `failed` row is folded over by the `approved` row appended
+            # microseconds later — the fold keeps only the last transition per
+            # id); and the in-loop `posted_today[account]` / `_cadence_history`
+            # bumps live in the receipt.ok branch alone. Correct in both
+            # directions: nothing was sent, so no slot was spent, and the retry
+            # competes for tomorrow's slots on equal terms.
+            #
+            # KNOWN COST, ACCEPTED: fold_state counts transitions INTO `failed`
+            # as `attempts`, so a rate limit now burns one of the
+            # MAX_POST_ATTEMPTS (2) that outbox.apply_decisions spends before it
+            # quarantines an operator re-approval. That path only triggers for an
+            # item sitting AT `failed` when a fresh approve arrives, and this one
+            # leaves `failed` immediately — but an item that later genuinely
+            # fails reaches the human-look bar sooner. A post that has burned
+            # three dispatch attempts deserves that look.
+            _rl_err = receipt.error or "buffer 429"
+            _rl_receipt = {"backend": receipt.backend, "error": receipt.error,
+                           "at": receipt.at}
+            _rl_failed = _outbox.transition(
+                iid, "failed", actor="publisher", root=root,
+                note=f"rate_limited (transient), not a verdict on the post: {_rl_err}",
+                receipt=_rl_receipt)
+            _rl_requeued = _rl_failed and _outbox.transition(
+                iid, "approved", actor="publisher", root=root,
+                note=f"requeued for the next sweep after a rate limit: {_rl_err}",
+                receipt=_rl_receipt)
+            if _rl_requeued:
+                rate_limited += 1
+                log.warning("item %s RATE-LIMITED, requeued: %s", iid, receipt.error)
+            else:
+                # An unrequeued item is stranded mid-flight and NOTHING else in
+                # this system will move it — the next run's stuck_posting scan
+                # reports it and deliberately refuses to repost it. Bare
+                # line-start print: a logger prefix makes GitHub drop the
+                # annotation (house law), and this is the one outcome an
+                # operator has to act on by hand.
+                print(f"::warning title=publisher-requeue-stuck::item {iid} "
+                      f"({account}) hit a rate limit and could NOT be requeued "
+                      f"({'posting->failed' if not _rl_failed else 'failed->approved'} "
+                      f"refused). It is stranded mid-post and will not retry on "
+                      f"its own — re-arm it from the admin Outbox. Error: "
+                      f"{_rl_err}", flush=True)
+                log.error("item %s RATE-LIMITED and STRANDED: failed=%s approved=%s",
+                          iid, _rl_failed, _rl_requeued)
         else:
             _outbox.transition(iid, "failed", actor="publisher", root=root,
                                note=receipt.error or "publish failed",
@@ -2498,6 +2744,20 @@ def main(argv: list[str] | None = None) -> int:
         "no channel wired": skipped_channel,
         "desk halted": skipped_halt,
         "below the salience floor": skipped_floor,
+        # Retired BEFORE the loop rather than inside it, and counted here anyway:
+        # a night where eight wire posts aged out and none went out is exactly
+        # the silent night this alarm exists for, and leaving them out of
+        # _considered would let it pass in silence.
+        "aged out of the queue unposted": expired_wire,
+        # The approval desk's own losses. Same reasoning as expired_wire: they
+        # happen BEFORE the dispatch loop, so an in-loop-only trigger would let
+        # a night where the desk held every planned post pass in silence — and
+        # "nothing could be verified" is the single most important thing the
+        # operator could learn from such a night.
+        "quarantined by the approval desk": desk_quarantined,
+        "held by the approval desk for a human": desk_held,
+        "over the approval desk's per-sweep limit": desk_capped,
+        "retired by the approval desk as expired": desk_expired,
         "other quarantine": quarantined,
     }
     _considered = posted + would_post + sum(_blocked.values())
@@ -2542,6 +2802,8 @@ def main(argv: list[str] | None = None) -> int:
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
         "substance_shadow=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
+        "expired_wire=%d desk_approved=%d desk_quarantined=%d desk_held=%d "
+        "desk_capped=%d desk_expired=%d desk_disabled=%d "
         "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, rate_limited, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
@@ -2552,6 +2814,9 @@ def main(argv: list[str] | None = None) -> int:
         quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
         skipped_channel,
         skipped_halt, parked_dark,
+        expired_wire,
+        desk_approved, desk_quarantined, desk_held, desk_capped, desk_expired,
+        desk_disabled,
         len(stuck_posting),
         len(auto_approved),
     )
@@ -2588,6 +2853,21 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_halt": skipped_halt,
             "halted_accounts": sorted(_halts),
             "parked_dark": parked_dark,
+            # The wire reaper's tally. A counter, not a footnote: these are
+            # posts the desk WROTE and nobody sent, and the Floor's loss ledger
+            # is the only surface that says so.
+            "expired_wire": expired_wire,
+            # The approval desk's tally. `desk_disabled` is a 0/1 COUNTER rather
+            # than a status string on purpose: the Floor's loss ledger renders
+            # numbers and silently SKIPS everything else, so a string here would
+            # be another tinted pane — a night with the desk switched off would
+            # read exactly like a night where it ran and cleared nothing.
+            "desk_approved": desk_approved,
+            "desk_quarantined": desk_quarantined,
+            "desk_held": desk_held,
+            "desk_capped": desk_capped,
+            "desk_expired": desk_expired,
+            "desk_disabled": desk_disabled,
             "dark_accounts": (None if _dark is None else sorted(_dark)),
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),
