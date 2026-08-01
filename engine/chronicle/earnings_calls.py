@@ -79,6 +79,19 @@ _MAX_SUMMARY = 1600
 _MAX_HIGHLIGHT = 400
 _MAX_HIGHLIGHTS = 3
 _MAX_TAGS = 16
+TONE_WORDS: frozenset[str] = frozenset({
+    "confident",
+    "upbeat",
+    "steady",
+    "cautious",
+    "defensive",
+    "mixed",
+    "guarded",
+    "downbeat",
+    "reassuring",
+    "uncertain",
+    "unclassified",
+})
 
 # ``summary`` and highlight strings originate in an upstream model.  They are
 # evidence, never instructions.  Keep the canonical row for auditability, but
@@ -153,6 +166,7 @@ def sanitize_call_event_evidence(row: Mapping[str, Any] | dict) -> dict:
     """Copy a call event with only its untrusted prose fields sanitized."""
 
     out = dict(row)
+    out["tone_word"] = normalize_tone_word(out.get("tone_word"))
     summary = sanitize_untrusted_prose(out.get("summary"), max_len=_MAX_SUMMARY)
     out["summary"] = summary or None
     for field in ("positive_highlights", "negative_highlights"):
@@ -162,6 +176,13 @@ def sanitize_call_event_evidence(row: Mapping[str, Any] | dict) -> dict:
         ]
         out[field] = [item for item in cleaned if item][:_MAX_HIGHLIGHTS]
     return out
+
+
+def normalize_tone_word(value: Any) -> str:
+    """Map model/legacy tone labels onto the pinned public vocabulary."""
+
+    tone = _text(value, max_len=40).lower()
+    return tone if tone in TONE_WORDS else "unclassified"
 
 
 def _float(value: Any, lo: float, hi: float) -> float:
@@ -357,6 +378,10 @@ def validate_call_event(row: dict) -> list[str]:
         problems.append("year must be an integer")
     if not _SHA256_RE.fullmatch(_text(row.get("source_sha256")).lower()):
         problems.append("source_sha256 must be 64 lowercase hex chars")
+    if row.get("tone_word") not in TONE_WORDS:
+        problems.append(
+            "tone_word must be one of: " + ", ".join(sorted(TONE_WORDS))
+        )
     try:
         _event_timeline(
             row.get("call_date"),
@@ -457,7 +482,7 @@ def project_score_row(
         "sentiment": _float(get("sentiment"), -1.0, 1.0),
         "performance": _float(get("performance"), 0.0, 10.0),
         "confidence": _float(get("confidence"), 0.0, 1.0),
-        "tone_word": _text(get("tone_word"), max_len=40) or "unclassified",
+        "tone_word": normalize_tone_word(get("tone_word")),
         "summary": summary,
         "positive_highlights": _string_list(
             get("positive_highlights"), max_items=_MAX_HIGHLIGHTS,

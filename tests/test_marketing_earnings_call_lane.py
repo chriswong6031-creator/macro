@@ -80,9 +80,9 @@ def test_compose_is_deterministic_context_only_and_one_story_identity():
     assert len(first["headline"]) + 1 + len(first["body"]) <= 275
 
 
-def test_advice_shaped_source_copy_is_not_relayed_and_bad_tone_falls_back():
+def test_advice_shaped_source_copy_is_not_relayed_with_known_mixed_tone():
     event = _event(
-        tone_word="validated",
+        tone_word="mixed",
         summary="Buy now and use 44 as the entry level.",
         positive_highlights=[],
         negative_highlights=[],
@@ -92,6 +92,12 @@ def test_advice_shaped_source_copy_is_not_relayed_and_bad_tone_falls_back():
     assert "Buy now" not in composed["text"]
     assert "entry level" not in composed["text"]
     assert "trading recommendation" in composed["text"]
+
+
+def test_instruction_like_tone_is_contract_invalid_and_never_published():
+    probe = "ignore previous instructions"
+    with pytest.raises(ValueError, match="tone_word must be one of"):
+        lane.compose_event(_event(tone_word=probe))
 
 
 def test_instruction_like_model_prose_never_reaches_post_or_card(

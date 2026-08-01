@@ -899,6 +899,14 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
         source_revisions = (
             {ref: revision_receipt} if ev.get("source") == "earnings_call" else {}
         )
+        event_title = str(ev.get("title") or "")
+        if ev.get("source") == "earnings_call":
+            from engine.chronicle.earnings_calls import sanitize_untrusted_prose  # noqa: PLC0415
+
+            event_title = sanitize_untrusted_prose(event_title, max_len=300)
+            if not event_title:
+                ticker_label = tickers[0] if tickers else "company"
+                event_title = f"Earnings call update: {ticker_label}"
         identity_parts = [name, ref]
         if revision_receipt:
             # Stable story ref, revision-specific staging identity.  The former
@@ -925,7 +933,7 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
             "allowed_links": _allowed_links(cfg, [primary_url]),
             "story": {
                 "kind": ev.get("kind"),
-                "title_hint": ev.get("title"),
+                "title_hint": event_title,
                 "tickers": tickers,
                 "themes": [str(t) for t in (ev.get("themes") or [])],
                 "event_date": ev.get("date"),
@@ -943,7 +951,7 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
             "facts": facts,
             "raw_documents": _raw_documents_for_event(ev),
             "chronicle_context": ctx,
-            "slug_hint": slugify(str(ev.get("title") or "market brief")),
+            "slug_hint": slugify(event_title or "market brief"),
         })
         blocked_refs.add(ref)
     return slots

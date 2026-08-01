@@ -87,7 +87,7 @@ def _write_earnings_event(
         "scored_at": "2026-07-26T20:05:00Z",
         "model": "fixture", "prompt_version": "fixture-v1",
         "analysis_schema_version": "fixture-v1", "sentiment": 0.2,
-        "performance": 6.0, "confidence": 0.8, "tone_word": "constructive",
+        "performance": 6.0, "confidence": 0.8, "tone_word": "confident",
         "summary": "Services demand accelerated after guidance.",
         "positive_highlights": [], "negative_highlights": [], "tags": [],
         "is_context_only": True, "degraded_reason": None,
