@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T08:18:05.737052+00:00",
-  "count": 514,
+  "generated_at": "2026-08-01T10:15:04.950007+00:00",
+  "count": 516,
   "institutions": [
     "Amova",
     "Apollo",
@@ -685,6 +685,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-d3yccq8x4xy-dd7f4e",
+      "title": "EM in Focus EM Output Gaps — Significant Room to Grow, But Mixed Picture",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:15:17Z",
+      "summary_points": [
+        "**China's Structural Spare Capacity**: Persistent negative output gap since 2020 with declining potential output, signaling structural slowdown despite semiconductor-led growth; significant spare capacity contrasts with broader EM trends.",
+        "**Taiwan Semiconductor Distortion**: Traditional gap estimates overstate positive gaps due to semiconductor-driven growth (limited spillovers), diverging from EM fundamentals and risking misallocation.",
+        "**Wage-Inflation Linkage**: Positive output gaps correlate strongly with wage growth (y=1.93x + 2.14) and core inflation (y=0.63x + 1.12), with lagged gap data (Q5-2025) reflecting past conditions in policy decisions.",
+        "**Russia/China Structural Stress**: Russia shows sanctions-driven output collapse (2022-2024) and China exhibits declining potential output, indicating persistent geopolitical and structural risks for EM portfolios.",
+        "**Brazil's Inflation Risk**: Above-potential output (BRA) with tight labor markets driving wage growth, contrasting with CEEMEA's spare capacity; signals inflationary pressure despite regional slack."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-3lnaqbv5l8t-e05d6d",
       "title": "Brazil Resilient but Gradually Less Tight Labor Market",
       "institution": "Goldman Sachs",
@@ -742,6 +763,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zzg7lsqg8jx-f32d11",
+      "title": "USA Q2 GDP Below Expectations but Composition Strong",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:31Z",
+      "summary_points": [
+        "**Q2 GDP Miss**: Real GDP +1.5% annualized (below expectations), driven by strong consumer spending (+3.2%) and nonresidential investment (+8.4%), but offset by Federal government spending (-0.3pp) due to SPR drawdowns.",
+        "**Core PCE Inflation Anchor**: Core PCE MoM +0.13% (vs.",
+        "11% headline), YoY 3.29%; Dallas Fed trimmed mean at 3.67%, critical for Fed policy and signaling benign core inflation.",
+        "**AI Hardware Drag**: Private domestic sales divergence shows AI hardware imports significantly suppressing domestic demand recovery (blue line rising faster than black line post-Q2 2024).",
+        "**Labor Market Cooling**: Initial claims declining to ~190k (multi-decade low), continuing claims peaked at 1,950k (Jul-25) then fell to ~1,800k (Jul-26), signaling softening labor market momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
