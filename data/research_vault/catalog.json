@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T10:15:04.950007+00:00",
-  "count": 516,
+  "generated_at": "2026-08-01T10:22:36.167530+00:00",
+  "count": 517,
   "institutions": [
     "Amova",
     "Apollo",
@@ -805,6 +805,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-h4ywziluzqu-48fe1e",
+      "title": "Turkiye Roughly Stable Reserves",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:27Z",
+      "summary_points": [
+        "**Geopolitical Reserve Erosion**: TCBM gross FX assets, gold, and FX liquidity declined sharply (-$42.3bn, -$38.9bn, -$4.0bn) since Iran war onset, signaling severe reserve depletion and critical financial stability risk.",
+        "**FX Liquidity Vulnerability**: FX liquidity fell $4.0bn since Iran war began (to $52.6bn), reducing central bank capacity to manage short-term volatility and intervene—key technical risk for portfolio managers.",
+        "**Gold vs.",
+        "FX Deposit Divergence**: Gold deposits show sustained positive valuation-adjusted growth (hedge against FX volatility), while FX deposits (excl.",
+        "gold) remain negative, indicating persistent outflows/depreciation pressure."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
