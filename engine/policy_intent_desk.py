@@ -43,11 +43,11 @@ log = logging.getLogger(__name__)
 SCHEMA = "policy_intent_desk.v1"
 DISCLAIMER = (
     "Policy intent desk — realpolitik, context only, never scored or sized. Each lean is "
-    "a fallible, FALSIFIABLE judgement (proxy vs SPY, with a check-by date), not a trade "
+    "a fallible, CHECKABLE judgement (proxy vs SPY, with a check-by date), not a trade "
     "or a position size. Intent is inferred from interests; treat it as a hypothesis with "
     "a track record, not an oracle.")
 DISCLAIMER_ZH = (
-    "意图台 —— 现实政治、仅供参考，从不评分或定仓。每条判断都是可证伪、会出错的判断"
+    "意图台 —— 现实政治、仅供参考，从不评分或定仓。每条判断都是可检验、会出错的判断"
     "（代理标的 vs SPY，附核查日期），并非交易或仓位大小。意图由利益推断而来；请将其"
     "视为有战绩记录的假设，而非神谕。")
 
@@ -246,8 +246,12 @@ _SCHEMA_TAIL = (
     "     evidence: array of strings — cite the specific theater / lever / prediction.\n"
     "     dissent: string — the single strongest contrary case.\n"
     "     dissent_zh: string — faithful 简体中文 translation of dissent (preserve tickers).\n"
-    "     falsifier_text: string — one concrete condition that would prove it wrong.\n"
-    "     falsifier_text_zh: string — faithful 简体中文 translation of falsifier_text.\n"
+    "     falsifier_text: string — one concrete condition that would prove it wrong, "
+    "phrased as the plain condition itself (e.g. 'XLE lags SPY by 5% before the check-by "
+    "date'). This text is shown to users under a 'Changes this read' label: never write "
+    "the words 'falsified', 'falsify' or 'refuted' in it.\n"
+    "     falsifier_text_zh: string — faithful 简体中文 translation of falsifier_text. Same "
+    "display rule: write it as a plain 改判条件-style condition, never with the word 证伪.\n"
     "  confidence: \"low\" | \"medium\" | \"high\".\n"
     "Every *_zh field is REQUIRED and must be natural Simplified Chinese, not English."
 )

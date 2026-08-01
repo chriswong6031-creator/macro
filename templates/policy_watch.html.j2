@@ -165,13 +165,13 @@
   <!-- ================= INTENT DESK (LLM, accountable) ================= -->
   {% if desk %}
   <h2 class="sec">🤖 {{ t('Intent Desk — accountable realpolitik leans', '意图台 — 可问责的现实政治判断') }}</h2>
-  <p class="lede" style="color:var(--muted)">{{ t('An LLM reads the sourced intel + live market state and emits dated, FALSIFIABLE leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.',
-      '由LLM读取来源情报+实时市场状态，给出有日期、可证伪的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。') }}</p>
+  <p class="lede" style="color:var(--muted)">{{ t('An LLM reads the sourced intel + live market state and emits dated, CHECKABLE leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.',
+      '由LLM读取来源情报+实时市场状态，给出有日期、可检验的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。') }}</p>
   {% if desk.regime_context %}<div class="callout">{{ bl(desk.regime_context, desk.regime_context_zh) }}</div>{% endif %}
   {% if desk.track_record and desk.track_record.overall and desk.track_record.overall.n %}
   <div class="led-stat">
     <span><b>{{ desk.track_record.overall.n }}</b> {{ t('scored', '已评分') }}</span>
-    {% if desk.track_record.overall.hit_rate is not none %}<span><b>{{ (desk.track_record.overall.hit_rate*100)|round|int }}%</b> {{ t('not falsified', '未被证伪') }}</span>{% endif %}
+    {% if desk.track_record.overall.hit_rate is not none %}<span><b>{{ (desk.track_record.overall.hit_rate*100)|round|int }}%</b> {{ t('holding', '仍成立') }}</span>{% endif %}
     {% if desk.track_record.open %}<span>{{ desk.track_record.open }} {{ t('open', '未结') }}</span>{% endif %}
     <span class="conf">{{ bl(desk.track_record.calibration_note, desk.track_record.calibration_note_zh) }}</span>
   </div>
@@ -188,7 +188,7 @@
       </div>
       <div class="cch">{{ bl(th.thesis, th.thesis_zh) }}</div>
       {% if th.dissent %}<div class="cch" style="color:var(--muted)"><b>{{ t('Dissent', '反方') }}:</b> {{ bl(th.dissent, th.dissent_zh) }}</div>{% endif %}
-      {% if th.falsifier and th.falsifier.text %}<div class="crp"><b>{{ t('Falsifier', '证伪条件') }}:</b> {{ bl(th.falsifier.text, th.falsifier.text_zh) }}</div>{% endif %}
+      {% if th.falsifier and th.falsifier.text %}<div class="crp"><b>{{ t('Changes this read', '改判条件') }}:</b> {{ bl(th.falsifier.text, th.falsifier.text_zh) }}</div>{% endif %}
     </div>
     {% endfor %}
   </div>
@@ -220,7 +220,7 @@
   </div>
   {% endif %}
 
-  <h3 class="sub">{{ t('Reform task forces — dated, falsifiable', '改革工作组 — 有日期、可证伪') }}</h3>
+  <h3 class="sub">{{ t('Reform task forces — dated, checkable', '改革工作组 — 有日期、可检验') }}</h3>
   <div class="cards">
     {% for tf in intel.fed.task_forces %}
     <div class="card">
@@ -303,7 +303,7 @@
   </table>
 
   <!-- ================= PREDICTION LEDGER ================= -->
-  <h2 class="sec">🎯 {{ t('Falsifiable prediction ledger', '可证伪预测台账') }}</h2>
+  <h2 class="sec">🎯 {{ t('Accountable prediction ledger', '可问责预测台账') }}</h2>
   <p class="lede" style="color:var(--muted)">{{ t('The accountability spine: each call has a measurable outcome and a check-by date. Outcomes get scored over time so this layer earns a track record instead of being vibes. Policy-action calls (high-confidence, track explicit directives) are scored separately from market-outcome calls (lower-confidence inference).',
       '问责脊柱：每条判断都有可衡量的结果与核查日期。结果将随时间被评分，使该层积累真实战绩而非凭感觉。政策行动类判断（高置信、追踪明确指令）与市场结果类判断（低置信、属推断）分开评分。') }}</p>
   <div class="led-stat">
