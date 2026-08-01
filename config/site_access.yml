@@ -51,6 +51,12 @@ public:
     - /favicon.ico
     - /apple-touch-icon.png
     - /robots.txt
+    # IndexNow ownership proof (engine/marketing/indexnow.py). The file contains
+    # only the submission key, which is PUBLIC by protocol design: ownership is
+    # demonstrated by serving the same string the API call carries, so a secret
+    # here would defeat the mechanism. Bing/Yandex/Seznam fetch it on every
+    # submission — if it is not public, no URL we push is ever accepted.
+    - /88bb90b05303e3cf469878ebc4dc7543.txt
     - /sitemap.xml
     # Public machine-readable discovery documents. They contain marketing
     # metadata only; no generated signals or protected data.
