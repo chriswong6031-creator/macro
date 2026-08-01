@@ -1,7 +1,7 @@
 {
   "schema": "us_track_history/v1",
-  "as_of": "2026-07-30",
-  "generated": "2026-07-31T04:19:49.052468+00:00",
+  "as_of": "2026-07-31",
+  "generated": "2026-08-01T03:48:09.875132+00:00",
   "cohort_rollup": {
     "horizons": {
       "h5": {
@@ -110,10 +110,23 @@
       },
       "h21": {
         "accruing": true,
-        "raw_n": 0,
-        "effective_n": 0,
-        "reason": "no matured rows for 21d horizon yet",
-        "cohort_series": []
+        "raw_n": 70,
+        "effective_n": 1,
+        "win_rate": 0.4714,
+        "avg_excess": 0.0165,
+        "med_excess": -0.0044,
+        "wilson_lo": 0.0,
+        "wilson_hi": 0.7935,
+        "cohort_series": [
+          {
+            "week": "2026-06-29/2026-07-05",
+            "raw_n": 70,
+            "effective_n": 1,
+            "win_rate": 0.4714,
+            "avg_excess": 0.0165,
+            "med_excess": -0.0044
+          }
+        ]
       },
       "h63": {
         "accruing": true,
@@ -125,10 +138,60 @@
     },
     "accruing": false,
     "return_distribution_21d": {
-      "accruing": true,
-      "reason": "no matured 21d rows yet",
-      "bins": [],
-      "raw_n": 0
+      "raw_n": 70,
+      "bins": [
+        {
+          "lo": -0.2899,
+          "hi": -0.2254,
+          "count": 2
+        },
+        {
+          "lo": -0.2254,
+          "hi": -0.1609,
+          "count": 1
+        },
+        {
+          "lo": -0.1609,
+          "hi": -0.0964,
+          "count": 5
+        },
+        {
+          "lo": -0.0964,
+          "hi": -0.0319,
+          "count": 13
+        },
+        {
+          "lo": -0.0319,
+          "hi": 0.0326,
+          "count": 24
+        },
+        {
+          "lo": 0.0326,
+          "hi": 0.0972,
+          "count": 11
+        },
+        {
+          "lo": 0.0972,
+          "hi": 0.1617,
+          "count": 8
+        },
+        {
+          "lo": 0.1617,
+          "hi": 0.2262,
+          "count": 1
+        },
+        {
+          "lo": 0.2262,
+          "hi": 0.2907,
+          "count": 2
+        },
+        {
+          "lo": 0.2907,
+          "hi": 0.3552,
+          "count": 3
+        }
+      ],
+      "accruing": true
     }
   },
   "board_series": {
@@ -212,13 +275,29 @@
         "as_of": "2026-07-30",
         "total": 0,
         "by_lane": {}
+      },
+      {
+        "as_of": "2026-07-31",
+        "total": 0,
+        "by_lane": {}
       }
     ],
     "accruing": false
   },
   "failure_mix": {
-    "data_gap": true,
-    "reason": "us_attribution.parquet absent \u2014 SA-R15 data_gap sentinel",
-    "mix": []
+    "data_gap": false,
+    "mix": {
+      "outcome_cause": {
+        "mixed": 24,
+        "idio_alpha": 23,
+        "idio_break": 19,
+        "beta_tailwind": 4
+      },
+      "process_fault": {
+        "clean": 61,
+        "premature_stop_noise": 9
+      }
+    },
+    "raw_n": 70
   }
 }

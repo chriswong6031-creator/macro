@@ -1,14 +1,151 @@
 {
   "schema": "standout_audit.scoreboard.v1",
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "note": "CIs are cluster-unit (entry-date-collapsed) and descriptive only. No significance claims. Cells with effective_n<3 print state='ACCRUING'.",
   "timing_basis": [
     "board_tenure"
   ],
-  "timing_basis_note": "signaled_too_late fires only on board_tenure_days > A2_SIGNALED_TOO_LATE_TENURE. Extension-percentile and ticks-since-cross clauses NOT wired (columns absent).",
-  "buy_lane_rows": 0,
-  "all_lanes_rows": 0,
-  "strata": {},
+  "timing_basis_note": "signaled_too_late fires only on board_tenure_days > A2_SIGNALED_TOO_LATE_TENURE. Spec's extension-percentile (>=85th) and ticks-since-cross clauses are NOT wired \u2014 the required graded extension/freshness columns are absent from retro_grades schema.",
+  "buy_lane_rows": 34,
+  "all_lanes_rows": 70,
+  "strata": {
+    "by_lane": {
+      "buy": {
+        "raw_n": 34,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "laggards": {
+        "raw_n": 12,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "watch": {
+        "raw_n": 24,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      }
+    },
+    "by_quad_hard_label": {
+      "nan": {
+        "raw_n": 34,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      }
+    },
+    "by_vol_regime": {
+      "nan": {
+        "raw_n": 34,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      }
+    },
+    "by_risk_radar_state": {
+      "nan": {
+        "raw_n": 34,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      }
+    },
+    "by_outcome_cause": {
+      "beta_tailwind": {
+        "raw_n": 2,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "idio_alpha": {
+        "raw_n": 10,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "idio_break": {
+        "raw_n": 6,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "mixed": {
+        "raw_n": 16,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      }
+    },
+    "by_process_fault": {
+      "clean": {
+        "raw_n": 33,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "premature_stop_noise": {
+        "raw_n": 1,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      }
+    },
+    "by_sector": {
+      "Consumer Discretionary": {
+        "raw_n": 1,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Consumer Staples": {
+        "raw_n": 1,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Energy": {
+        "raw_n": 2,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Financials": {
+        "raw_n": 4,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Health Care": {
+        "raw_n": 2,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Industrials": {
+        "raw_n": 10,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Information Technology": {
+        "raw_n": 2,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Materials": {
+        "raw_n": 2,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Real Estate": {
+        "raw_n": 1,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      },
+      "Utilities": {
+        "raw_n": 9,
+        "effective_n": 1,
+        "state": "ACCRUING"
+      }
+    },
+    "upstream_concordance": {
+      "risk_radar_state": {
+        "organ": "risk_radar_state",
+        "description": "no risk-off stamped but outcome was break/macro-headwind",
+        "n_concordant_cells": 28,
+        "n_discordant": 6,
+        "raw_n": 34,
+        "effective_n": 1,
+        "discordance_rate": 0.1765,
+        "state": "ACCRUING"
+      }
+    }
+  },
   "coverage_monitor": {
     "frozen_baseline": null,
     "frozen_baseline_note": "Not yet frozen. Will be anchored at first sensor-maturity date.",

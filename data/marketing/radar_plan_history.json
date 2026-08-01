@@ -2,6 +2,39 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-01",
+      "tickers": [
+        "AMCR",
+        "ARES",
+        "ARLO",
+        "AVNT",
+        "BDC",
+        "CASY",
+        "CBOE",
+        "CDW",
+        "CSR",
+        "CUBI",
+        "CVI",
+        "CWK",
+        "EQT",
+        "HSY",
+        "JBLU",
+        "KMT",
+        "KWR",
+        "LKFN",
+        "LPG",
+        "MSFT",
+        "NSSC",
+        "PI",
+        "ROST",
+        "SHOO",
+        "SONO",
+        "TEAM",
+        "TEL",
+        "TPR"
+      ]
+    },
+    {
       "as_of": "2026-07-31",
       "tickers": [
         "EME",
@@ -98,25 +131,6 @@
         "IP",
         "ROST",
         "SW",
-        "VST",
-        "WMT",
-        "XEL"
-      ]
-    },
-    {
-      "as_of": "2026-07-25",
-      "tickers": [
-        "CRM",
-        "ENOV",
-        "FDS",
-        "IBM",
-        "KMT",
-        "LKFN",
-        "MOS",
-        "ROST",
-        "SONO",
-        "TMUS",
-        "TSLA",
         "VST",
         "WMT",
         "XEL"

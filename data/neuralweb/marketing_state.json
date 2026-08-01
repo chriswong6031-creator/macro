@@ -1,6 +1,6 @@
 {
   "schema": "marketing.state/v1",
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "lobe": {
     "id": "marketing",
     "name": "Marketing",
@@ -82,12 +82,12 @@
       ],
       "total_envelope_usd": 0
     },
-    "opportunity_queue_depth": 38,
+    "opportunity_queue_depth": 27,
     "self_improvement": {
       "loop_state": "observing",
       "open_hypotheses": [],
       "last_review": null,
-      "next_review": "2026-08-06"
+      "next_review": "2026-08-07"
     },
     "guardrails": {
       "self_deception_checks": [
@@ -206,7 +206,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Retire if a simpler governance mechanism achieves equivalent attribution accuracy with lower inference cost over 90 days.",
       "scorecard": {
@@ -301,7 +301,7 @@
       "clock": {
         "cadence": "daily",
         "last_review": null,
-        "next_review": "2026-07-31"
+        "next_review": "2026-08-01"
       },
       "retirement_test": "Retire if a managed external execution platform provides equivalent reliability, auditability, and cost transparency.",
       "scorecard": {
@@ -397,7 +397,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Retire if opportunity detection recall falls below 60% on major events for two consecutive quarters.",
       "scorecard": {
@@ -503,7 +503,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Retire a specific product when it generates fewer than 10 qualified acquisition events per month for 60 days.",
       "scorecard": {
@@ -609,7 +609,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Retire if creative output fails distinctness checks or produces zero qualified-reach events for 30 consecutive days.",
       "scorecard": {
@@ -730,7 +730,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Retire a channel adapter if it produces warnings, policy flags, or zero qualified-reach events for 60 days.",
       "scorecard": {
@@ -831,7 +831,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Redesign if day-30 retained-contribution forecast is negative for two consecutive cohort reviews.",
       "scorecard": {
@@ -931,7 +931,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Retire a partner if they produce zero incremental retained contributions after two payout cycles.",
       "scorecard": {
@@ -1047,7 +1047,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Redesign if attribution methodology fails holdout validation on two consecutive quarter reviews.",
       "scorecard": {
@@ -1153,7 +1153,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "The auditor is never retired; it may be redesigned if it generates more than 5% false-positive quarantines per month.",
       "scorecard": {
@@ -1250,7 +1250,7 @@
       "clock": {
         "cadence": "weekly",
         "last_review": null,
-        "next_review": "2026-08-06"
+        "next_review": "2026-08-07"
       },
       "retirement_test": "Retire if indexed dossier pages produce fewer than 10 qualified organic acquisition events per month for 60 consecutive days.",
       "scorecard": {
@@ -1331,12 +1331,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.4,
-          "chart": 0.12,
+          "chart": 0.17,
           "mover": 0.1,
           "theme_list": 0.09,
           "receipt": 0.08,
           "event": 0.06,
-          "education": 0.05,
+          "education": 0.0,
           "macro": 0.05,
           "watchlist": 0.05
         },
@@ -1359,12 +1359,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.38,
-          "chart": 0.12,
+          "chart": 0.17,
           "mover": 0.1,
           "theme_list": 0.1,
           "receipt": 0.1,
           "event": 0.05,
-          "education": 0.05,
+          "education": 0.0,
           "macro": 0.04,
           "watchlist": 0.06
         },
@@ -1387,12 +1387,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.39,
-          "chart": 0.11,
+          "chart": 0.17,
           "mover": 0.11,
           "theme_list": 0.12,
           "receipt": 0.06,
           "event": 0.07,
-          "education": 0.06,
+          "education": 0.0,
           "macro": 0.04,
           "watchlist": 0.04
         },
@@ -1415,12 +1415,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.36,
-          "chart": 0.14,
+          "chart": 0.22,
           "mover": 0.1,
           "theme_list": 0.09,
           "receipt": 0.08,
           "event": 0.07,
-          "education": 0.08,
+          "education": 0.0,
           "macro": 0.04,
           "watchlist": 0.04
         },
@@ -1443,12 +1443,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.42,
-          "chart": 0.1,
+          "chart": 0.14,
           "mover": 0.12,
           "theme_list": 0.12,
           "receipt": 0.05,
           "event": 0.08,
-          "education": 0.04,
+          "education": 0.0,
           "macro": 0.03,
           "watchlist": 0.04
         },
@@ -1471,12 +1471,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.37,
-          "chart": 0.13,
+          "chart": 0.2,
           "mover": 0.09,
           "theme_list": 0.08,
           "receipt": 0.09,
           "event": 0.05,
-          "education": 0.07,
+          "education": 0.0,
           "macro": 0.05,
           "watchlist": 0.07
         },
@@ -1499,12 +1499,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.34,
-          "chart": 0.1,
+          "chart": 0.15,
           "mover": 0.12,
           "theme_list": 0.1,
           "receipt": 0.07,
           "event": 0.09,
-          "education": 0.05,
+          "education": 0.0,
           "macro": 0.08,
           "watchlist": 0.05
         },
@@ -1526,13 +1526,13 @@
         "voice": "educational",
         "corpus": "full",
         "tilt": {
-          "signal": 0.3,
-          "chart": 0.14,
+          "signal": 0.38,
+          "chart": 0.22,
           "mover": 0.0,
           "theme_list": 0.06,
           "receipt": 0.08,
           "event": 0.0,
-          "education": 0.16,
+          "education": 0.0,
           "macro": 0.16,
           "watchlist": 0.1
         },
@@ -1555,12 +1555,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.3,
-          "chart": 0.13,
+          "chart": 0.28,
           "mover": 0.0,
           "theme_list": 0.07,
           "receipt": 0.08,
           "event": 0.0,
-          "education": 0.15,
+          "education": 0.0,
           "macro": 0.18,
           "watchlist": 0.09
         },
@@ -1583,12 +1583,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.32,
-          "chart": 0.18,
+          "chart": 0.3,
           "mover": 0.0,
           "theme_list": 0.05,
           "receipt": 0.12,
           "event": 0.0,
-          "education": 0.12,
+          "education": 0.0,
           "macro": 0.14,
           "watchlist": 0.07
         },
@@ -1611,12 +1611,12 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.29,
-          "chart": 0.15,
+          "chart": 0.27,
           "mover": 0.0,
           "theme_list": 0.09,
           "receipt": 0.07,
           "event": 0.0,
-          "education": 0.12,
+          "education": 0.0,
           "macro": 0.2,
           "watchlist": 0.08
         },
@@ -1642,10 +1642,10 @@
           "event": 0.24,
           "mover": 0.14,
           "macro": 0.1,
-          "chart": 0.08,
+          "chart": 0.11,
           "theme_list": 0.06,
           "receipt": 0.04,
-          "education": 0.03,
+          "education": 0.0,
           "watchlist": 0.03
         },
         "mix_observed": {},
@@ -1667,11 +1667,11 @@
         "corpus": "full",
         "tilt": {
           "signal": 0.28,
-          "education": 0.16,
+          "education": 0.0,
           "macro": 0.14,
           "receipt": 0.12,
           "event": 0.08,
-          "chart": 0.08,
+          "chart": 0.24,
           "theme_list": 0.08,
           "mover": 0.03,
           "watchlist": 0.03
@@ -1690,14 +1690,14 @@
   },
   "pipeline": {
     "opportunities": {
-      "open": 38,
+      "open": 27,
       "scored": 114,
       "newest": [
         {
           "id": "radar-confluence-PGR-2026-07-30",
           "problem_or_desire": "$PGR: confluence combo Weekly long-term uptrend + weekly reclaims 100-day line + reclaims 35-day line firing, test WR 65%",
           "expected_value": 0.55,
-          "score": 0.488172,
+          "score": 0.444057,
           "half_life_class": "weekly_signal",
           "status": "open"
         },
@@ -1705,7 +1705,7 @@
           "id": "radar-prophet-CSR-2026-07-29",
           "problem_or_desire": "$CSR: active Prophet plan CSR-BULL-20260729, phase pre_trigger, conviction 58",
           "expected_value": 0.6,
-          "score": 0.482344,
+          "score": 0.438756,
           "half_life_class": "weekly_signal",
           "status": "open"
         },
@@ -1713,7 +1713,7 @@
           "id": "radar-confluence-NUE-2026-07-29",
           "problem_or_desire": "$NUE: confluence combo Weekly reclaims 7-day line + momentum burst + Ichimoku bull cross + RSI crosses above 50 firing, test WR 69%",
           "expected_value": 0.55,
-          "score": 0.442149,
+          "score": 0.402193,
           "half_life_class": "weekly_signal",
           "status": "open"
         }
@@ -1738,30 +1738,30 @@
       ]
     },
     "publications": {
-      "total": 49,
-      "receipts": 49,
+      "total": 56,
+      "receipts": 56,
       "corrections": 0,
       "newest": [
         {
-          "id": "pub-ob-2026-07-30-85765fdcaa",
+          "id": "pub-ob-2026-08-01-170b51e475",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-07-30T15:58:16Z"
+          "published_at": "2026-08-01T01:10:21Z"
         },
         {
-          "id": "pub-ob-2026-07-30-50793ec427",
+          "id": "pub-ob-2026-08-01-382435f0ed",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-07-30T15:38:14Z"
+          "published_at": "2026-08-01T01:10:21Z"
         },
         {
-          "id": "pub-ob-2026-07-30-8c1d04d6af",
+          "id": "pub-ob-2026-07-31-e0ba40838d",
           "channel": "x",
           "account": "flagship",
           "status": "clean",
-          "published_at": "2026-07-30T15:38:14Z"
+          "published_at": "2026-07-31T19:12:57Z"
         }
       ]
     },
@@ -1985,12 +1985,12 @@
     }
   ],
   "content": {
-    "total_posts": 0,
+    "total_posts": 155,
     "signal_posts": 0,
-    "charts": 102,
+    "charts": 111,
     "accounts": 13,
     "state": "present",
-    "as_of": "2026-07-31"
+    "as_of": "2026-08-01"
   },
   "notes": [
     "deterministic v1 substrate; agent actuation staged",
@@ -2000,7 +2000,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/marketing_governor.py",
-  "produced_at": "2026-07-31T04:54:11Z",
-  "inputs_hash": "sha256:8f61badaa1e5bbb2c2eb77dee7791ae285ecc362387afbac53b8cebe47bf1202",
+  "produced_at": "2026-08-01T03:51:34Z",
+  "inputs_hash": "sha256:3cdd53fe2ce4a6e4c63e5723ee9a36d6ffb2056ef8d8482d61cdf63f9cfb329a",
   "tier": "display"
 }
