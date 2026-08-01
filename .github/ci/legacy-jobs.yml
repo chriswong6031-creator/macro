@@ -249,7 +249,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install jsonschema pytest pandas numpy pyyaml
+        run: pip install jsonschema pytest pandas numpy pyyaml requests
       - name: signal §7 contract tests
         run: python -m pytest tests/test_validate_signals.py -q
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
@@ -2829,8 +2829,9 @@ jobs:
       - name: install deps
         # fastapi + httpx for the TestClient; pypdf + reportlab so the watermark
         # HAPPY path is exercised too (the code degrades if they're absent, but CI
-        # proves the real stamp path as well).
-        run: pip install pytest fastapi httpx pypdf reportlab
+        # proves the real stamp path as well). pyyaml closes the Brain gateway's
+        # Fundamental Forensics package import in this isolated environment.
+        run: pip install pytest fastapi httpx pypdf reportlab pyyaml
       - name: research vault serving-API security tests
         run: python -m pytest tests/test_research_api.py -q
 
