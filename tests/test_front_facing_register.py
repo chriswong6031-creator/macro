@@ -14,10 +14,13 @@ Scope is exactly the surfaces that sweep fixed — template/JS needle scans plus
 per-emitter regression pins on the display phrases that were removed.  It is a
 regression fence, not a repo-wide vocabulary sweep: the Calibration Lab
 (measurement.html, engine/calibration_hub.py, engine/desk_placebo.py) is the
-sanctioned technical home and stays out of scope, as do dated archival report
-pages (report_*.html.j2), registry artifacts (signal lab / experiments /
-neural-web governance graphs), LLM-internal prompt framing, and quoted external
-news headlines.
+sanctioned technical home and stays out of scope, as do registry artifacts
+(signal lab / experiments / neural-web governance graphs), LLM-internal prompt
+framing, and quoted external news headlines.  The dated archival reports
+(report_*.html.j2) were deferred by the first sweep as an editorial question;
+the retroactive-edit decision landed with this PR — semantic conditions kept
+verbatim, register vocabulary swapped — so the four report templates are now
+inside the fence.
 """
 from __future__ import annotations
 
@@ -44,6 +47,11 @@ CLEAN_TEMPLATES = [
     # paired plain-copy JS (site/ copies are byte-locked to these by
     # scripts/check_template_site_sync.py, so pinning templates/ pins both)
     "ai_desk.js", "aidesk_lean.js", "ai_desk_thematic.js",
+    # dated archival reports, de-registered retroactively (semantic conditions
+    # verbatim; EN "Kill:" stays, 证伪 -> 改判条件 family, falsifiable ->
+    # checkable/可检验; dashboards retitled to the accountability family)
+    "report_second_act.html.j2", "report_haven_audition.html.j2",
+    "report_relapse_jul8.html.j2", "report_bessent_jun24.html.j2",
 ]
 
 
