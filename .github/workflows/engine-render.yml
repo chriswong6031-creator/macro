@@ -749,7 +749,7 @@ jobs:
           # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): refuse to
           # commit staged `Updated upstream / Stashed changes` blocks or unmerged
           # index entries — a conflicted autostash apply is the known source.
-          push_staged_clean site/ templates/ || exit 1
+          push_staged_heal site/ templates/ || exit 1
           git commit -m "engine-render: regime recompute + re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
           # --autostash: we commit site/ ONLY, leaving the render's throwaway data/ writes
           # unstaged; a plain `pull --rebase` refuses on a dirty tree and silently failed
@@ -816,6 +816,9 @@ jobs:
                     || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
                 else
                   git reset -q -- site/ templates/ || true
+                  # restore offenders' worktree bytes too (word-split safe:
+                  # no tracked path contains whitespace)
+                  for f in $PUSH_STAGED_OFFENDERS; do git checkout HEAD -- "$f" 2>/dev/null || true; done
                   echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped; pushing the guarded render commit only"
                 fi
               fi

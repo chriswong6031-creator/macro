@@ -1056,7 +1056,7 @@ jobs:
           # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): commit_index
           # writes the INDEX verbatim, so staged `Updated upstream / Stashed changes`
           # blocks (a conflicted autostash apply) would ship to main. Refuse instead.
-          push_staged_clean site/ templates/ || exit 1
+          push_staged_heal site/ templates/ || exit 1
           commit_index "$RENDER_MESSAGE"
           RENDER_COMMIT=$(git rev-parse HEAD)
           RENDER_PARENT=$(git rev-parse "$RENDER_COMMIT^")
@@ -1168,6 +1168,9 @@ jobs:
                     || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
                 else
                   git reset -q -- site/ templates/ || true
+                  # restore offenders' worktree bytes too (word-split safe:
+                  # no tracked path contains whitespace)
+                  for f in $PUSH_STAGED_OFFENDERS; do git checkout HEAD -- "$f" 2>/dev/null || true; done
                   echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped; pushing the guarded render commit only"
                 fi
               fi

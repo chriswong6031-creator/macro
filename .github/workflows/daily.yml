@@ -2397,11 +2397,21 @@ jobs:
             perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
             if CHRONICLE_PUBLISH=$(push_metadata_replay_commit "$CHRONICLE_PARENT" origin/main \
                 "$CHRONICLE_COMMIT" "$CHRONICLE_MESSAGE" "${RUNNER_TEMP:-/tmp}/chronicle-replay.idx"); then
+              # A replay whose tree equals origin/main means the chronicle content
+              # already landed (e.g. a prior attempt's push worked but its alarm
+              # misread it) — pushing it would create an empty duplicate commit.
+              if [ "$(git rev-parse "$CHRONICLE_PUBLISH^{tree}")" = "$(git rev-parse origin/main^{tree})" ]; then
+                echo "chronicle content already on origin/main — nothing to push"
+                push_won; exit 0
+              fi
               if push_do origin "$CHRONICLE_PUBLISH:refs/heads/main"; then
                 echo "pushed chronicle artifacts on attempt $PUSH_ATTEMPT (metadata replay — dirty render tree untouched)"
                 push_won; exit 0
               fi
             else
+              # data/chronicle is single-writer: a replay conflict means another
+              # writer touched it on main — anomalous, surface it while retrying.
+              echo "::warning title=chronicle replay conflict::newer main changed data/chronicle differently (single-writer contract broken?) — retrying"
               PUSH_FAIL_CLASS="rebase-conflict"
             fi
             push_backoff
@@ -2601,28 +2611,16 @@ jobs:
           # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): a conflicted
           # autostash apply anywhere upstream of this step leaves `Updated upstream /
           # Stashed changes` blocks that the broad `git add` above stages VERBATIM —
-          # 1,707 pages reached main exactly that way. First try to heal: restore each
-          # offending path WHOLESALE from HEAD (the parent commit is guard-clean, so
-          # this serves the prior nightly's copy — the same restore semantic as the
-          # #4167 emergency heal); a marker-born NEW file has no HEAD copy and is
-          # deleted. If the index still scans dirty afterwards, hard-fail: the Pages
-          # artifact upload below runs on always(), so a polluted tree must never
-          # survive to the deploy either.
-          if ! push_staged_clean data/ site/ reports/ templates/; then
-            printf '%s\n' "$PUSH_STAGED_OFFENDERS" | while IFS= read -r f; do
-              [ -n "$f" ] || continue
-              git checkout HEAD -- "$f" 2>/dev/null || git rm -q -f --ignore-unmatch -- "$f" 2>/dev/null || true
-            done
-            if ! push_staged_clean data/ site/ reports/ templates/; then
-              printf '%s\n' "$PUSH_STAGED_OFFENDERS" | while IFS= read -r f; do
-                if [ -n "$f" ]; then git rm -q -f --ignore-unmatch -- "$f" 2>/dev/null || true; rm -f -- "$f" 2>/dev/null || true; fi
-              done
-              echo "::error title=conflict markers persist::tree still scanned dirty after the HEAD restore — offending paths deleted outright; refusing to commit this tree. Inspect the push_staged_clean output above."
-              exit 1
-            fi
-            echo "::warning title=conflict markers healed::marker-polluted path(s) restored from HEAD before the engine commit (prior nightly copy served for those pages — see the offender list above)"
-            if git diff --cached --quiet; then echo "no engine output changes after conflict heal"; exit 0; fi
+          # 1,707 pages reached main exactly that way. push_staged_heal restores
+          # display-tier offenders (site/, templates/, reports/) wholesale from HEAD
+          # (same restore semantic as #4167) and FAILS CLOSED on ledger-tier data/
+          # offenders or a still-dirty re-scan — sweeping the polluted files from the
+          # tree first, because the Pages artifact upload below runs on always() and
+          # must never ship marker bytes.
+          if ! push_staged_heal data/ site/ reports/ templates/; then
+            exit 1
           fi
+          if git diff --cached --quiet; then echo "no engine output changes after conflict heal"; exit 0; fi
           git commit -m "engine: regime update $(date -u +%F)"
           # best-effort push (see commit-data). The deploy below uses the uploaded
           # artifact, so it never depends on this commit landing.
@@ -2687,7 +2685,11 @@ jobs:
                     || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
                 else
                   git reset -q -- site/ templates/ || true
-                  echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped; pushing the guarded engine commit only"
+                  # restore the offenders' worktree bytes too — the always()
+                  # Pages artifact below ships the WORKING TREE, not the commit
+                  # (word-split is safe: no tracked path contains whitespace)
+                  for f in $PUSH_STAGED_OFFENDERS; do git checkout HEAD -- "$f" 2>/dev/null || true; done
+                  echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped and offenders restored from HEAD; pushing the guarded engine commit only"
                 fi
               fi
               if push_do; then echo "pushed engine outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
@@ -2818,7 +2820,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed factor series on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -2923,7 +2925,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed factor intelligence outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -3051,7 +3053,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed oracle Time Machine feed on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -3170,7 +3172,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed tech-lab artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -3406,15 +3408,36 @@ jobs:
           git add data/marketing/learning 2>/dev/null || true
           if git diff --cached --quiet; then echo "no marketing learning changes"; exit 0; fi
           HALTED=$(python3 -c "import json,pathlib;p=pathlib.Path('data/marketing/learning/halts.json');d=json.loads(p.read_text()) if p.exists() else {};print(','.join(sorted(a for a,r in (d.get('accounts') or {}).items() if isinstance(r,dict) and r.get('state')=='halted')) or 'none')" 2>/dev/null || echo "unknown")
+          # METADATA-ONLY PUSH (P0 d29e4dd44d/#4167, same shape as the chronicle
+          # step): this push runs while the SIBLING data/marketing/ paths that
+          # "commit standout audit US artifacts" broad-adds NEXT are still dirty
+          # — a `pull --rebase --autostash` here could conflict its re-apply,
+          # exit 0, and hand that step a marker-polluted tree. Replay in a temp
+          # index and push the object id; the dirty tree is never touched.
+          LEARNING_PARENT=$(git rev-parse HEAD)
           git commit -m "marketing-learning: labels + scorecard + desk health $(date -u +%F) (halted: ${HALTED})"
+          LEARNING_COMMIT=$(git rev-parse HEAD)
+          LEARNING_MESSAGE=$(git log -1 --format=%B "$LEARNING_COMMIT")
           PUSH_ALARM=420
           push_retry_init "marketing learning artifacts"
           while push_attempt; do
             perl -e 'alarm 120; exec @ARGV or die' -- git fetch origin main || true
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
-              if push_do; then echo "pushed marketing learning artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
+            if LEARNING_PUBLISH=$(push_metadata_replay_commit "$LEARNING_PARENT" origin/main \
+                "$LEARNING_COMMIT" "$LEARNING_MESSAGE" "${RUNNER_TEMP:-/tmp}/learning-replay.idx"); then
+              if [ "$(git rev-parse "$LEARNING_PUBLISH^{tree}")" = "$(git rev-parse origin/main^{tree})" ]; then
+                echo "marketing learning content already on origin/main — nothing to push"
+                push_won; exit 0
+              fi
+              if push_do origin "$LEARNING_PUBLISH:refs/heads/main"; then
+                echo "pushed marketing learning artifacts on attempt $PUSH_ATTEMPT (metadata replay — dirty marketing tree untouched)"
+                push_won; exit 0
+              fi
+            else
+              PUSH_FAIL_CLASS="rebase-conflict"
             fi
+            push_backoff
           done
+          push_lost
           echo "::warning title=marketing_learning::could not push learning artifacts (they advance again tomorrow)"
           exit 0
       - name: commit standout audit US artifacts
@@ -3449,6 +3472,12 @@ jobs:
           # is gitignored and must never appear here.
           git add data/marketing/personas 2>/dev/null || true
           if git diff --cached --quiet; then echo "no standout audit US changes"; exit 0; fi
+          # Fail-closed conflict gate (P0 d29e4dd44d/#4167): the marketing
+          # learning push above runs while these paths sit dirty — if its pull
+          # machinery ever regresses to a conflicted autostash apply, this add
+          # would stage the markers. Heal display paths, die on ledger paths.
+          push_staged_heal data/ site/ || exit 1
+          if git diff --cached --quiet; then echo "no standout audit US changes after conflict heal"; exit 0; fi
           git commit -m "standout-audit-us: nightly US attribution + fitness card $(date -u +%F)"
           # best-effort rebase-push (own files — no other job writes these paths)
           PUSH_ALARM=420
@@ -3458,7 +3487,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed standout audit US artifacts on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -3548,7 +3577,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed stock briefs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -3765,7 +3794,7 @@ jobs:
             # on shared JSONL paths (trial_ledger, governance, machine_registry)
             # surfaces as a conflict → the retry re-runs cleanly instead of
             # silently dropping the causal job's committed rows.
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && push_autostash_ok; then
               if push_do; then echo "pushed cortex outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -3913,7 +3942,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && push_autostash_ok; then
               if push_do; then echo "pushed causal outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -3960,7 +3989,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash origin main && push_autostash_ok; then
               if push_do; then echo "pushed sf forward outputs on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -4017,7 +4046,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 420; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "pushed active build map on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase
@@ -4085,7 +4114,7 @@ jobs:
           push_retry_init "ledger heartbeat state"
           while push_attempt; do
             perl -e 'alarm 60; exec @ARGV or die' -- git fetch origin main || true
-            if perl -e 'alarm 120; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main; then
+            if perl -e 'alarm 120; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; then
               if push_do; then echo "heartbeat state pushed on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
             fi
             push_abort_rebase

@@ -27,6 +27,7 @@ What must stay true:
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import textwrap
 from pathlib import Path
@@ -45,7 +46,11 @@ MID_MARKER = "=" * 7
 
 
 def run_sh(body: str, cwd: Path) -> subprocess.CompletedProcess:
-    """Source the library into a `bash -e` shell (GitHub's shell) and run body."""
+    """Source the library and run body under `bash -eo pipefail`.
+
+    (GitHub's default step shell is `bash -e` WITHOUT pipefail — this harness
+    is deliberately stricter, so a pass here never hides a production abort.)
+    """
     script = f'. "{LIB}"\n' + textwrap.dedent(body)
     return subprocess.run(
         ["bash", "-eo", "pipefail", "-c", script],
@@ -209,11 +214,53 @@ def test_a_bare_equals_underline_is_not_a_marker(repo: Path):
 
 def test_clean_index_passes_and_exports_empty_offenders(repo: Path):
     _stage(repo, "good.html", "all clean\n")
+    # prime the variable so the assertion distinguishes "reset to empty" from
+    # "never touched" — an unset var would also print off=[]
     r = run_sh(
-        'push_retry_init t; push_staged_clean; echo "off=[$PUSH_STAGED_OFFENDERS]"', repo
+        'push_retry_init t; PUSH_STAGED_OFFENDERS=stale-sentinel; '
+        'push_staged_clean; echo "off=[$PUSH_STAGED_OFFENDERS]"',
+        repo,
     )
     assert r.returncode == 0, r.stderr
     assert "off=[]" in r.stdout
+
+
+def test_heal_restores_display_paths_and_passes(tmp_path: Path):
+    """push_staged_heal: a polluted site/ page is restored WHOLESALE from HEAD."""
+    r = tmp_path / "healrepo"
+    _seed_repo(r)
+    (r / "site").mkdir()
+    clean = "line1\nline2\nline3\n"
+    (r / "site" / "page.html").write_text(clean, encoding="utf-8")
+    git(r, "add", "site/page.html")
+    git(r, "commit", "-q", "-m", "base")
+    _stage(r, "site/page.html", f"line1\n{OPEN_MARKER}\nours\n{MID_MARKER}\ntheirs\n{CLOSE_MARKER}\nline3\n")
+    out = run_sh("push_retry_init t; if push_staged_heal site/; then echo rc=0; else echo rc=1; fi", r)
+    assert out.returncode == 0, out.stderr
+    assert "rc=0" in out.stdout, out.stdout
+    assert any(l.startswith("::warning title=conflict markers healed") for l in out.stdout.splitlines())
+    assert (r / "site" / "page.html").read_text(encoding="utf-8") == clean, (
+        "the offender must be byte-identical to HEAD after the heal"
+    )
+    assert not git(r, "status", "--porcelain").stdout.strip()
+
+
+def test_heal_dies_on_ledger_paths_and_sweeps_them(tmp_path: Path):
+    """data/ offenders are never auto-healed (PIT law) — fail closed, sweep the file."""
+    r = tmp_path / "ledgerrepo"
+    _seed_repo(r)
+    (r / "data").mkdir()
+    (r / "data" / "ledger.jsonl").write_text('{"day":1}\n', encoding="utf-8")
+    git(r, "add", "data/ledger.jsonl")
+    git(r, "commit", "-q", "-m", "base")
+    _stage(r, "data/ledger.jsonl", f'{{"day":1}}\n{OPEN_MARKER}\nours\n{MID_MARKER}\ntheirs\n{CLOSE_MARKER}\n')
+    out = run_sh("push_retry_init t; if push_staged_heal data/; then echo rc=0; else echo rc=1; fi", r)
+    assert out.returncode == 0, out.stderr
+    assert "rc=1" in out.stdout, out.stdout
+    assert any(l.startswith("::error title=ledger conflict") for l in out.stdout.splitlines())
+    assert not (r / "data" / "ledger.jsonl").exists(), (
+        "the polluted ledger must be swept so an always() artifact cannot ship it"
+    )
 
 
 def test_the_real_polluted_tree_is_refused_end_to_end(tmp_path: Path):
@@ -252,40 +299,93 @@ def _step_script(workflow: str, job: str, name: str) -> str:
     raise AssertionError(f"{workflow}:{job} step {name!r} not found")
 
 
+SWEPT_WORKFLOWS = [
+    "daily.yml", "render.yml", "engine-render.yml",
+    "closing-bell.yml", "earlyclose.yml", "asia-close.yml", "weekly.yml",
+]
+
+
+def _code(script: str) -> str:
+    """The script with comment lines removed — census keys must never match a
+    comment (deleting an explanatory comment must not drop a lane)."""
+    return "\n".join(
+        l for l in script.splitlines() if not l.lstrip().startswith("#")
+    )
+
+
 def _loop_scripts() -> list[tuple[str, str]]:
-    """(label, script) for each render-family commit step, resolved tolerantly:
-    step names drift, so locate by content — the push loop that pulls with
-    --autostash and carries a broad site/templates follow-up add."""
+    """(label, script) for each step that both pulls with --autostash and
+    broad-adds a site/ pathspec — the exact shape that shipped d29e4dd44d.
+    Located structurally (non-comment code), not by step name or comment text."""
     out = []
-    for wf_name in [
-        "daily.yml", "render.yml", "engine-render.yml",
-        "closing-bell.yml", "earlyclose.yml", "asia-close.yml",
-    ]:
+    for wf_name in SWEPT_WORKFLOWS:
         doc = yaml.safe_load((WF / wf_name).read_text(encoding="utf-8"))
         for job_name, job in doc["jobs"].items():
             for step in job.get("steps", []):
-                script = step.get("run") or ""
-                if "pull --rebase --autostash" in script and "git add site/ templates/" in script:
-                    out.append((f"{wf_name}:{job_name}:{step.get('name')}", script))
+                code = _code(step.get("run") or "")
+                if "pull --rebase --autostash" in code and re.search(
+                    r"^\s*git add [^\n]*\bsite/", code, re.M
+                ):
+                    out.append((f"{wf_name}:{job_name}:{step.get('name')}", code))
     return out
 
 
 def test_every_render_family_pull_is_wrapped_with_the_autostash_guard():
     scripts = _loop_scripts()
-    assert len(scripts) >= 6, [s[0] for s in scripts]
-    for label, script in scripts:
-        for line in script.splitlines():
+    # engine + standout-audit + the 7 site-file offrender/factor/brief lanes in
+    # daily.yml, plus render, engine-render, closing-bell, earlyclose,
+    # asia-close ×2, weekly
+    assert len(scripts) >= 15, [s[0] for s in scripts]
+    for label, code in scripts:
+        for line in code.splitlines():
             if "pull --rebase --autostash" in line and "if" in line.split("pull")[0]:
                 assert "push_autostash_ok" in line, (
                     f"{label}: pull condition lost the push_autostash_ok wrap:\n{line}"
                 )
 
 
+# The lanes where a polluted tree CAN reach a commit or an always() artifact:
+# broad adds that either follow a pull in the same step (render-sync
+# follow-ups) or sit in jobs whose earlier machinery pulls/dirties the tree.
+GATE_REQUIRED = [
+    ("daily.yml", "engine"),
+    ("daily.yml", "standout_audit_us"),
+    ("render.yml", "render"),
+    ("engine-render.yml", "engine-render"),
+    ("closing-bell.yml", "closingbell"),
+    ("earlyclose.yml", "earlyclose"),
+    ("asia-close.yml", "asia"),
+    ("weekly.yml", "weekly-report"),
+]
+
+
 def test_every_render_family_broad_commit_is_gated_by_the_staged_scan():
     scripts = _loop_scripts()
-    for label, script in scripts:
-        assert "push_staged_clean" in script, (
-            f"{label}: broad-add commit step lost its push_staged_clean gate"
+    by_job: dict[tuple[str, str], list[str]] = {}
+    for label, code in scripts:
+        wf, job, _ = label.split(":", 2)
+        by_job.setdefault((wf, job), []).append(code)
+    for key in GATE_REQUIRED:
+        assert key in by_job, f"{key} vanished from the census — check the discriminator"
+        assert any(
+            "push_staged_heal" in code or "push_staged_clean" in code
+            for code in by_job[key]
+        ), f"{key}: broad-add commit step lost its conflict gate"
+
+
+def test_no_swept_lane_regrows_an_unguarded_autostash_pull_before_a_broad_add():
+    """The chronicle/marketing shape: an early narrow-commit step that pulls
+    over a dirty tree inside a job whose LATER step broad-adds. Both converted
+    steps must stay metadata-only (no pull at all)."""
+    for wf_name, job, step_name in [
+        ("daily.yml", "engine", "commit chronicle artifacts"),
+        ("daily.yml", "standout_audit_us", "commit marketing learning artifacts (XG-W6)"),
+    ]:
+        code = _code(_step_script(wf_name, job, step_name))
+        assert "push_metadata_replay_commit" in code, f"{wf_name}:{step_name}"
+        assert "pull --rebase" not in code, (
+            f"{wf_name}:{step_name} must never pull — it runs over a dirty tree "
+            "whose paths a later step in the same job broad-adds (P0 d29e4dd44d)"
         )
 
 
@@ -303,12 +403,11 @@ def test_chronicle_push_never_touches_the_dirty_render_tree():
 
 def test_daily_engine_commit_heals_then_hard_fails():
     script = _step_script("daily.yml", "engine", "commit engine outputs")
-    assert "push_staged_clean data/ site/ reports/ templates/" in script
-    assert 'git checkout HEAD -- "$f"' in script, "the HEAD-restore heal disappeared"
-    assert "conflict markers persist" in script, "the hard-fail branch disappeared"
-    persist_branch = script.split("conflict markers persist", 1)[1]
-    assert "exit 1" in persist_branch.split("git commit", 1)[0], (
-        "the persist branch must hard-fail BEFORE the engine commit"
+    code = _code(script)
+    assert "push_staged_heal data/ site/ reports/ templates/" in code
+    heal_call = code.split("push_staged_heal", 1)[1]
+    assert "exit 1" in heal_call.split("git commit", 1)[0], (
+        "a failed heal must hard-fail BEFORE the engine commit"
     )
 
 
@@ -316,5 +415,13 @@ def test_guard_functions_exist_in_the_library():
     lib = LIB.read_text(encoding="utf-8")
     assert "push_autostash_ok()" in lib
     assert "push_staged_clean()" in lib
+    assert "push_staged_heal()" in lib
     # scoped drop: only git's own entry, matched by exact subject
     assert '= "autostash" ]' in lib
+    # the scan must read WORKTREE bytes of changed paths, never index objects —
+    # a --cached grep on the blobless render checkout hydrates ~594MB of
+    # promised blobs, or silently passes when the promisor call fails
+    assert "--cached --name-only" in lib, "changed-path enumeration disappeared"
+    assert "git grep -l --cached" not in lib, (
+        "index-object grep reintroduced — fail-open + promisor hydration (P0 review finding 1)"
+    )

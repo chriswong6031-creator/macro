@@ -393,7 +393,7 @@ jobs:
           MSG="earlyclose: provisional EOD render ${SESSION_DATE} (scope=fast)"$'\n\n'"provisional close (delayed feed); nightly is canonical"$'\n'"EARLYCLOSE=1 lane - site/ + regime/market-state snapshot pointers (fastpath idiom); ledgers discarded per FT-R5"$'\n\n'"Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>"
           # Fail-closed conflict gate (P0 2026-08-01, d29e4dd44d / #4167): refuse to
           # commit staged conflict markers or unmerged index entries.
-          push_staged_clean site/ templates/ data/ || exit 1
+          push_staged_heal site/ templates/ data/ || exit 1
           git commit -m "$MSG"
           push_retry_init "earlyclose rendered site"
           while push_attempt; do
@@ -438,6 +438,9 @@ jobs:
                     || echo "::warning::render-sync commit failed (non-fatal)"
                 else
                   git reset -q -- site/ templates/ || true
+                  # restore offenders' worktree bytes too (word-split safe:
+                  # no tracked path contains whitespace)
+                  for f in $PUSH_STAGED_OFFENDERS; do git checkout HEAD -- "$f" 2>/dev/null || true; done
                   echo "::warning title=render-sync skipped::post-rebase site/templates scanned dirty (conflict markers) — follow-up commit skipped"
                 fi
               fi

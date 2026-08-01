@@ -260,33 +260,105 @@ push_abort_rebase() {
 # ---------------------------------------------------------------------------
 
 push_autostash_ok() {
-  [ -n "$(git ls-files -u | head -1)" ] || return 0
+  # A stored `autostash`-subject entry after a pull means the re-apply FAILED
+  # (conflicted, or refused over an untracked file — git stores the entry in
+  # both cases). Drop it by exact subject match only — anything else (operator
+  # stashes, retired-worktree parks) is foreign and must survive. Doing this
+  # unconditionally also sweeps entries leaked by earlier unguarded runs.
+  local dropped=""
+  if [ "$(git log -g --format=%gs -1 refs/stash 2>/dev/null)" = "autostash" ]; then
+    git stash drop -q 2>/dev/null && dropped=1 || true
+  fi
+  if [ -z "$(git ls-files -u | head -1)" ]; then
+    [ -z "$dropped" ] || echo "::warning title=autostash entry dropped::pull left a stored autostash entry (re-apply failed without tree conflicts, or a prior run leaked one) — dropped; post-commit leftovers are throwaway by lane contract"
+    return 0
+  fi
   local n
   n=$(git ls-files -u | cut -f2 | sort -u | wc -l | tr -d ' ')
   PUSH_FAIL_CLASS="autostash-conflict"
   echo "::warning title=conflicted autostash apply::pull --rebase --autostash re-applied the dirty tree with conflicts in ${n} path(s) — discarding post-commit leftovers and retrying on a clean tree (this lane's outputs are already committed; origin is authoritative for the rest)"
   git reset --hard HEAD >/dev/null
-  # The conflicted apply stores its entry at stash@{0}. Drop it by exact
-  # subject match only — git names its own entries "autostash"; anything else
-  # (operator stashes, retired-worktree parks) is foreign and must survive.
-  if [ "$(git log -g --format=%gs -1 refs/stash 2>/dev/null)" = "autostash" ]; then
-    git stash drop -q 2>/dev/null || true
-  fi
   return 1
 }
 
 # $@ = pathspecs to scan (empty = the whole index). Sets PUSH_STAGED_OFFENDERS
 # to the newline-joined offending paths on failure.
+#
+# The scan covers ONLY paths whose STAGED content differs from HEAD:
+#   * HEAD is guard-clean by induction (every writer to main passes this gate
+#     or the full-tree ci.yml/pages.yml python scans);
+#   * `--name-only` diffs compare OIDs — no blob content is read — and the
+#     changed paths' bytes are then read from the WORKING TREE, never from
+#     index objects. This matters on render.yml's blobless managed checkout,
+#     where a `git grep --cached` over unchanged entries would hydrate ~594 MB
+#     of promised blobs via the promisor — or silently scan nothing when the
+#     promisor call fails. At every call site the gate runs immediately after
+#     its `git add`, so worktree bytes ARE the staged bytes.
+# Fail-closed: if the changed-path enumeration itself fails, the gate refuses.
+# Lone `=======` lines are deliberately out of scope (setext underlines); a
+# stash/rebase conflict always writes the `<<<<<<< ` / `>>>>>>> ` lines this
+# scans for, and the committed-tree python scans keep the full grammar.
 push_staged_clean() {
-  local unmerged staged offenders count
-  unmerged=$(git ls-files -u | cut -f2 | sort -u)
-  staged=$(git grep -l --cached -E '^(<<<<<<< |>>>>>>> )' -- "$@" 2>/dev/null || true)
+  local unmerged changed staged offenders count f
+  unmerged=$(git -c core.quotePath=false ls-files -u -- "$@" | cut -f2 | sort -u)
+  if ! changed=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=d -- "$@"); then
+    PUSH_STAGED_OFFENDERS=""
+    echo "::error title=conflict scan failed::git diff --cached could not enumerate staged paths — refusing to commit an unverified tree"
+    return 1
+  fi
+  staged=$(printf '%s\n' "$changed" | awk '
+    NF {
+      f = $0; found = 0
+      while ((getline line < f) > 0) {
+        if (line ~ /^(<<<<<<< |\|\|\|\|\|\|\| |>>>>>>> )/) { found = 1; break }
+      }
+      close(f)
+      if (found) print f
+    }')
   offenders=$(printf '%s\n%s\n' "$unmerged" "$staged" | sed '/^$/d' | sort -u)
   PUSH_STAGED_OFFENDERS="$offenders"
   [ -n "$offenders" ] || return 0
   count=$(printf '%s\n' "$offenders" | wc -l | tr -d ' ')
   echo "::error title=conflict markers staged::refusing to commit — ${count} path(s) carry unresolved conflict markers or unmerged index entries (first: $(printf '%s\n' "$offenders" | head -3 | tr '\n' ' ')); a conflicted autostash apply upstream of this commit is the known cause (d29e4dd44d / #4167)"
   return 1
+}
+
+# Heal-or-die commit gate for the broad-add lanes. Display-tier offenders
+# (site/, templates/, reports/) are restored WHOLESALE from HEAD — the same
+# serve-the-prior-copy semantic as the #4167 emergency heal; the next render
+# re-freshens them. Ledger-tier offenders (data/) are NEVER auto-healed: the
+# forward ledgers are append-only and nightly-sole-advanced, so a HEAD restore
+# would silently delete the day (a permanent PIT hole) — fail closed instead.
+# On any failure path the offending files are swept from the working tree so
+# an `if: always()` Pages-artifact upload can never ship the polluted bytes.
+push_staged_heal() {
+  push_staged_clean "$@" && return 0
+  [ -n "$PUSH_STAGED_OFFENDERS" ] || return 1   # enumeration failure: nothing safe to heal
+  local f ledger=""
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in
+      data/*) ledger=1 ;;
+      *) git checkout HEAD -- "$f" 2>/dev/null || git rm -q -f --ignore-unmatch -- "$f" 2>/dev/null || true ;;
+    esac
+  done <<EOF_HEAL
+$PUSH_STAGED_OFFENDERS
+EOF_HEAL
+  if [ -n "$ledger" ] || ! push_staged_clean "$@"; then
+    [ -z "$ledger" ] || echo "::error title=ledger conflict::data/ path(s) carry conflict markers — ledger-tier files are never auto-healed (a HEAD restore silently deletes the day); failing closed"
+    # Sweep only what STILL scans dirty — display paths healed above keep
+    # their clean HEAD copies in the artifact.
+    push_staged_clean "$@" >/dev/null 2>&1 || true
+    while IFS= read -r f; do
+      if [ -n "$f" ]; then git rm -q -f --ignore-unmatch -- "$f" 2>/dev/null || true; rm -f -- "$f" 2>/dev/null || true; fi
+    done <<EOF_SWEEP
+$PUSH_STAGED_OFFENDERS
+EOF_SWEEP
+    echo "::error title=conflict markers persist::refusing to commit — offending files swept from the tree so no always() artifact ships them; this run's output for those paths is forfeited"
+    return 1
+  fi
+  echo "::warning title=conflict markers healed::display-tier offender(s) restored from HEAD before the commit (prior copy served; next render re-freshens)"
+  return 0
 }
 
 # One-line plain-word reason for the current class (used in the retry log line).
