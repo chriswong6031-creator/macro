@@ -1,6 +1,6 @@
 {
   "schema": "seo_scorecard.v1",
-  "as_of": "2026-08-01T04:07:21Z",
+  "as_of": "2026-08-01T04:09:03Z",
   "health_score": 86,
   "issue_counts_by_severity": {
     "critical": 0,
@@ -9,11 +9,11 @@
     "low": 1
   },
   "deltas_vs_prior": {
-    "health_score": 7,
+    "health_score": 0,
     "critical": 0,
-    "high": -239,
-    "medium": 224,
-    "low": -1
+    "high": 0,
+    "medium": 0,
+    "low": 0
   },
   "families_summary": {
     "core": {
