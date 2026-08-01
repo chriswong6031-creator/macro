@@ -1,9 +1,9 @@
 {
   "schema": "neuralweb.daily_brief.v1",
-  "produced_at": "2026-08-01T21:35:42.108453+00:00",
+  "produced_at": "2026-08-01T21:45:22.630991+00:00",
   "as_of": "2026-07-31",
   "status": "warn",
-  "phase": "engine",
+  "phase": "final",
   "did_the_brain_run": {
     "cortex_status": "degraded",
     "tool_call_batches": 0,
