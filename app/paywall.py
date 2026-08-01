@@ -250,15 +250,16 @@ def invalidate_entitlement(user_id: str) -> None:
         _ENT_CACHE.pop(user_id, None)
 
 
-def enforce_site_full(user: dict[str, Any]) -> dict[str, Any]:
+def enforce_site_full(user: dict[str, Any], *, always: bool = False) -> dict[str, Any]:
     """FastAPI dependency policy for premium API surfaces.
 
     Static Caddy matching cannot cover /api/* because those requests are proxied
     before file serving. Premium APIs call this same authority explicitly.
     During staging (PAYWALL_ENABLED=0) the existing registered-user behavior is
-    unchanged; once armed, errors and missing features fail closed.
+    unchanged unless ``always=True``. Premium payload routes that launch ahead
+    of the global wall use that flag and fail closed in every environment.
     """
-    if not _enabled():
+    if not always and not _enabled():
         return user
     user_id = str(user.get("id") or "")
     if not user_id:

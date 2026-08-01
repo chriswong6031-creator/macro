@@ -24,7 +24,7 @@ context_snapshot(ticker, date=None, root=None) -> dict
 context_frame(tickers, date=None, root=None) -> pd.DataFrame
     Vectorised version: one row per ticker, one column per dimension field.
 
-DIMENSIONS (10 total)
+DIMENSIONS (11 total)
 ---------------------
 personality  PIT labels parquet (223 deep names) at date; production JSON
              when date is None / within 5 trading-days of its as_of; else absent.
@@ -46,6 +46,9 @@ options      data/options_skew/snapshots.parquet + data/polygon_gex per-ticker
              summaries; 2026-06+; absent-tolerant.
 spine        data/neuralweb/spine_index.parquet rows for (symbol=ticker,
              as_of<=date) last 5; absent-tolerant.
+forensics    private Filing Forensics state current filing-review
+             findings. Snapshot-only and available no earlier than the
+             artifact's generated_at clock; display/context authority only.
 
 CI-RUNNER SAFETY
 ----------------
@@ -74,6 +77,8 @@ from datetime import date as _date_type
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
+
+from engine.fundamental_forensics.private_state import load_state
 
 import pandas as pd
 
@@ -159,6 +164,15 @@ def _present(value: Any, as_of: str | None, basis: str, coverage: float | None =
     if coverage is not None:
         r["coverage"] = coverage
     return r
+
+
+def _finite_or_none(value: Any) -> float | None:
+    """Small JSON-number coercer used by optional snapshot dimensions."""
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        return None
+    return out if pd.notna(out) and out not in (float("inf"), float("-inf")) else None
 
 
 # ---------------------------------------------------------------------------
@@ -883,6 +897,77 @@ def _spine_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Filing Forensics dimension
+# ---------------------------------------------------------------------------
+
+def _fundamental_forensics_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
+    """Read the compact display-only Filing Forensics snapshot.
+
+    The broad-universe v1 projection is not a historical vintage store.  To
+    prevent a current snapshot leaking backwards, it is unavailable for query
+    dates before its explicit generated_at clock.  The canonical accession-level
+    engine can later supply true historical replay behind this same dimension.
+    """
+    try:
+        state = load_state(root)
+    except Exception as e:  # noqa: BLE001
+        return _absent(f"fundamental forensics state unreadable: {e}")
+    if state is None:
+        return _absent("private fundamental forensics state absent")
+    if state.get("schema") != "fundamental_forensics_state.v1":
+        return _absent("fundamental forensics state schema unsupported")
+
+    generated_ts = _coerce_date(state.get("generated_at"))
+    if generated_ts is None:
+        return _absent("fundamental forensics generated_at missing")
+    # context_snapshot dates are timezone-naive normalized days; compare the
+    # artifact clock on the same day basis after preserving its explicit date.
+    if generated_ts.tzinfo is not None:
+        generated_ts = generated_ts.tz_localize(None)
+    if date_ts.tzinfo is not None:
+        date_ts = date_ts.tz_localize(None)
+    if date_ts < generated_ts:
+        return _absent(
+            f"snapshot generated {generated_ts.date()} is unavailable for historical date {date_ts.date()}"
+        )
+
+    company = (state.get("companies") or {}).get(ticker.upper())
+    if not isinstance(company, dict):
+        return _absent(f"no fundamental forensics coverage for {ticker.upper()}")
+    findings = company.get("findings") or []
+    compact = [
+        {
+            "id": item.get("id"),
+            "detector": item.get("detector"),
+            "priority": item.get("priority"),
+            "topic": item.get("topic"),
+            "title": item.get("title_en"),
+            "summary": item.get("summary_en"),
+            "period_current": item.get("period_current"),
+            "period_prior": item.get("period_prior"),
+            "display_only": True,
+        }
+        for item in findings[:5]
+        if isinstance(item, dict)
+    ]
+    coverage = company.get("coverage") or {}
+    return _present(
+        value={
+            "action": (company.get("action") or {}).get("en"),
+            "latest_period": company.get("latest_period"),
+            "latest_filed": company.get("latest_filed"),
+            "findings": compact,
+            "workbench_url": f"fundamental_forensics.html?symbol={ticker.upper()}",
+            "display_only": True,
+            "authority": "context_only",
+        },
+        as_of=company.get("latest_filed") or str(generated_ts.date()),
+        basis="normalized_projection_snapshot_not_pit",
+        coverage=_finite_or_none(coverage.get("metrics_pct")),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
@@ -928,6 +1013,7 @@ def context_snapshot(
         "short_int":   _short_int_dim(ticker, date_ts, root_p),
         "options":     _options_dim(ticker, date_ts, root_p),
         "spine":       _spine_dim(ticker, date_ts, root_p),
+        "forensics":   _fundamental_forensics_dim(ticker, date_ts, root_p),
     }
 
     return {

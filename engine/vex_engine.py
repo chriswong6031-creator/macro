@@ -24,6 +24,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
+from engine.greeks import SQRT2PI
 from engine.options_hub import MULT, _f  # same contract multiplier + rounding helper
 
 SCHEMA = "options_hub.vex/v1"
@@ -43,26 +44,57 @@ def _empty_vex(root: str, asof: str) -> dict:
     }
 
 
-def _find_vex_flip(by_k: pd.DataFrame, spot: float) -> float | None:
-    """Interpolated strike where cumulative net VEX (bottom strike upward) crosses zero,
-    nearest to spot. Mirrors options_hub._find_gamma_flip's convention for VEX.
+def _find_vex_flip(g: pd.DataFrame, spot: float) -> float | None:
+    """Zero-vega-exposure spot — the hypothetical price at which the book, RE-PRICED
+    there, carries zero net dealer VEX. Same ±25% / 101-point grid the gamma flip uses.
+
+    ⚠️ HISTORY — do not revert. Until 2026-08-01 this summed ``vex_net`` along the
+    STRIKE ladder and returned the cumulative zero-crossing, faithfully mirroring
+    ``options_hub._find_gamma_flip`` — which was itself the wrong estimator. The bug
+    propagated here through that function's (false) docstring claim to mirror
+    ``gex_engine._gamma_flip``. Analysis: charting-app
+    ``docs/audits/2026-08-01-market-structure-core/gamma-flip-defect-rca.md``.
+
+    Vega is call/put-identical, so under the dealer-sign convention net VEX at a trial
+    spot is (call-side vega·OI) − (put-side vega·OI) with every contract re-valued at
+    that spot; the crossing is where the two balance. Returns the crossing nearest
+    spot, or ``None`` when the profile never changes sign over the grid.
     """
-    if by_k.empty:
+    if not (spot and spot > 0) or g.empty:
         return None
-    d = by_k.sort_values("K")
-    ks = d["K"].to_numpy(float)
-    cum = np.cumsum(d["vex_net"].to_numpy(float))
-    crossings: list[float] = []
-    for i in range(1, len(cum)):
-        a, b = cum[i - 1], cum[i]
-        if a == 0.0:
-            crossings.append(ks[i - 1])
-        elif (a < 0) != (b < 0):
-            x0, x1 = ks[i - 1], ks[i]
-            crossings.append(x0 - a * (x1 - x0) / (b - a) if b != a else x0)
-    if not crossings:
+    c = pd.DataFrame({
+        "K": pd.to_numeric(g["K"], errors="coerce"),
+        "T": pd.to_numeric(g.get("T"), errors="coerce"),
+        "iv": pd.to_numeric(g.get("iv"), errors="coerce"),
+        "oi": pd.to_numeric(g["oi_prev"], errors="coerce"),
+        "is_call": g["is_call"].astype(bool),
+    }).dropna(subset=["K", "T", "iv", "oi"])
+    w, maxT = 0.25, 365.0 / 365.0
+    c = c[(c["T"] > 0) & (c["T"] <= maxT)
+          & c["K"].between(spot * (1 - w), spot * (1 + w))
+          & (c["iv"] > 0) & (c["oi"] > 0)]
+    if len(c) < 20:
         return None
-    return min(crossings, key=lambda x: abs(x - spot))
+
+    K = c["K"].to_numpy(float); T = c["T"].to_numpy(float)
+    sig = c["iv"].to_numpy(float); oi = c["oi"].to_numpy(float)
+    sgn = np.where(c["is_call"].to_numpy(bool), 1.0, -1.0)
+    sqrtT = np.sqrt(T)
+    grid = spot * np.linspace(0.75, 1.25, 101)
+    net = np.empty(len(grid))
+    for i, Sx in enumerate(grid):
+        d1 = (np.log(Sx / K) + 0.5 * sig * sig * T) / (sig * sqrtT)
+        # vega = S·pdf(d1)·√T  (r = q = 0, matching gex_engine DEFAULTS)
+        vega = Sx * np.exp(-0.5 * d1 * d1) / SQRT2PI * sqrtT
+        net[i] = float(np.sum(sgn * vega * oi * MULT * VEX_PM))
+    flips: list[float] = []
+    for i in range(len(grid) - 1):
+        if net[i] == 0.0 or (net[i] < 0) != (net[i + 1] < 0):
+            x0, x1, y0, y1 = grid[i], grid[i + 1], net[i], net[i + 1]
+            flips.append(x0 - y0 * (x1 - x0) / (y1 - y0) if y1 != y0 else x0)
+    if not flips:
+        return None
+    return float(min(flips, key=lambda f: abs(f - spot)))
 
 
 def compute_vex(greeks_df: pd.DataFrame, oi_prev_df: pd.DataFrame, asof: str, root: str) -> dict:
@@ -103,6 +135,16 @@ def compute_vex(greeks_df: pd.DataFrame, oi_prev_df: pd.DataFrame, asof: str, ro
 
     g["is_call"] = g["right"].str.upper() == "C"
     g["K"] = g["strike"].astype(float)
+    # T + iv are needed by the spot-grid VEX flip (they were never prepared here while
+    # the flip was a cumulative-across-strikes sum). Same derivation as compute_gex.
+    _today = pd.Timestamp(asof).date()
+    g["T"] = pd.to_numeric(
+        pd.to_datetime(g["expiration"]).dt.date.map(lambda e: (e - _today).days / 365.0),
+        errors="coerce",
+    ).clip(lower=0.0)
+    g["iv"] = pd.to_numeric(
+        g.get("implied_vol", pd.Series(np.nan, index=g.index)), errors="coerce"
+    )
 
     raw_vega = (pd.to_numeric(g["vega"], errors="coerce")
                 if "vega" in g.columns else pd.Series(np.nan, index=g.index))
@@ -117,7 +159,7 @@ def compute_vex(greeks_df: pd.DataFrame, oi_prev_df: pd.DataFrame, asof: str, ro
     net_vex_mm = float(g["_net_vex"].sum() / 1e6)
 
     by_k = g.groupby("K").agg(vex_net=("_net_vex", "sum")).reset_index()
-    vex_flip = _find_vex_flip(by_k, spot)
+    vex_flip = _find_vex_flip(g, spot)
 
     above = by_k[(by_k["K"] > spot) & (by_k["vex_net"] > 0)]
     below = by_k[(by_k["K"] < spot) & (by_k["vex_net"] < 0)]

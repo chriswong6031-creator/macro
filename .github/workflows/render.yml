@@ -122,6 +122,7 @@ on:
       - "scripts/build_flow_desk.py"
       - "scripts/build_flow_leaders.py"
       - "scripts/build_foresight.py"
+      - "scripts/build_fundamental_forensics.py"
       - "scripts/build_forex.py"
       - "scripts/build_gex_board.py"
       - "scripts/build_hk.py"
@@ -469,7 +470,7 @@ jobs:
               # OIP E8 leaf-page narrowing — rationale in the step's YAML comment block.
               templates/options.html.j2|templates/options_screener.html.j2|scripts/build_options_command.py|scripts/build_options_screener.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|templates/government_revenue.html.j2|scripts/build_baskets.py|scripts/build_methodology.py|scripts/build_government_revenue.py) echo baskets;;
-              templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|scripts/build_site.py) echo macro;;
+              templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|templates/fundamental_forensics.*|scripts/build_site.py|scripts/build_fundamental_forensics.py) echo macro;;
               templates/special_situations.html.j2|templates/_special_situations_*.html.j2|scripts/build_special_situations.py) echo sits;;
               templates/*|scripts/build_*.py|config.yml|lib/*) echo all;;
               *) echo skip;;

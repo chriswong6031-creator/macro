@@ -42,6 +42,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from engine import gex_engine as _gex_engine
+
 log = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------------- #
@@ -645,31 +647,46 @@ def _empty_gex(root: str, asof: str) -> dict:
 
 
 def _find_gamma_flip(g: pd.DataFrame, spot: float) -> float | None:
-    """Gamma flip = nearest zero-crossing of cumulative net_gex sorted by strike.
+    """Zero-gamma spot — the hypothetical price at which the book, RE-PRICED there,
+    carries zero net dealer gamma. Delegates to ``engine.gex_engine._gamma_flip``.
 
-    Returns None if no crossing found (always on one side of gamma regime boundary).
-    Mirrors gex_engine._gamma_flip but uses pre-computed per-row _net_gex.
+    ⚠️ HISTORY — do not "simplify" this back. Until 2026-08-01 this function summed
+    ``_net_gex`` along the STRIKE ladder and returned the cumulative zero-crossing,
+    with gammas frozen at today's spot and no strike window. That is a different
+    mathematical object: it answers "at which strike does cumulative exposure change
+    sign", not "at which SPOT does the regime change". Its docstring claimed to mirror
+    ``gex_engine._gamma_flip``, which is what let the divergence survive review.
+
+    Measured live on 2026-08-01 before the repair: SPY published 275.0 against a spot
+    of 741.69, QQQ 249.8 against 683.55, SPX 8676.93 against 7437.63 (above both its
+    own walls), IWM ``None`` — while ``gex_state``, which reaches the correct grid
+    method through ``gex_model.build_model``, published SPY 752.2 against 750.72.
+    All of those are one bug in three regimes set by the sign of net GEX and the depth
+    of the ladder. Full analysis: charting-app
+    ``docs/audits/2026-08-01-market-structure-core/gamma-flip-defect-rca.md``.
+
+    Note the deliberate semantic change: the grid method re-derives gamma from ``iv``
+    at each trial spot rather than trusting the feed's ``gamma`` column (gamma at the
+    CURRENT spot is meaningless at a hypothetical one). An iv-sparse root therefore
+    moves from a confidently-wrong number to an honest ``None``.
     """
-    by_k = (g.groupby("K")["_net_gex"]
-             .sum()
-             .sort_index()
-             .reset_index())
-    if len(by_k) < 4:
+    if not (spot and spot > 0):
         return None
-
-    # cumulative sum from lowest strike upward
-    by_k["cum"] = by_k["_net_gex"].cumsum()
-    crossings = []
-    arr = by_k["cum"].to_numpy(float)
-    ks  = by_k["K"].to_numpy(float)
-    for i in range(len(arr) - 1):
-        if arr[i] == 0.0 or (arr[i] < 0) != (arr[i + 1] < 0):
-            y0, y1, x0, x1 = arr[i], arr[i + 1], ks[i], ks[i + 1]
-            cross = x0 - y0 * (x1 - x0) / (y1 - y0) if (y1 - y0) != 0 else x0
-            crossings.append(float(cross))
-    if not crossings:
+    c = pd.DataFrame({
+        "K": pd.to_numeric(g["K"], errors="coerce"),
+        "T": pd.to_numeric(g["T"], errors="coerce"),
+        "iv": pd.to_numeric(g["iv"], errors="coerce"),
+        "oi": pd.to_numeric(g["oi_prev"], errors="coerce"),
+        "is_call": g["is_call"].astype(bool),
+    })
+    cfg = dict(_gex_engine.DEFAULTS)
+    # Same ±25% strike / 365-day / iv>0 / oi>0 window the engine applies to its own
+    # input, so the flip is computed over the population the engine expects.
+    c = _gex_engine._window(c, float(spot), cfg)
+    if c.empty:
         return None
-    return min(crossings, key=lambda c: abs(c - spot))
+    flip, _dist_pct, _regime = _gex_engine._gamma_flip(c, float(spot), cfg)
+    return flip
 
 
 # --------------------------------------------------------------------------- #

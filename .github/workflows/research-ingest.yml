@@ -26,6 +26,12 @@ name: research-ingest
 # bad PDF/sidecar never aborts the batch (engine/research_vault/ingest.py).
 on:
   workflow_dispatch:
+    inputs:
+      publish_forensics:
+        description: "Build and publish the private Filing Forensics launch state"
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: "0 * * * *"   # top of every hour — mirrors btc-live.yml
 
@@ -72,6 +78,14 @@ jobs:
             echo "::error title=research-ingest::pdftotext (poppler) missing on runner ${RUNNER_NAME} — refusing to ingest bodyless (docs stay in the inbox and retry next hour). Fix: brew install poppler on this host. Precedent: 2026-07-30 the macstudio-light label moved to a poppler-less M1 and 127 docs ingested with empty bodies."
             exit 1
           fi
+      - name: bootstrap Filing Forensics private state
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_forensics }}
+        # Manual launch/recovery hook. The normal refresh owner is daily.yml;
+        # this path lets an operator publish the first private object immediately
+        # after deploy without waiting for the multi-hour nightly engine.
+        run: |
+          pip install --quiet pandas pyarrow jinja2
+          python -m scripts.build_fundamental_forensics --publish-private
       - name: research vault ingest (hourly)
         id: ingest
         run: |

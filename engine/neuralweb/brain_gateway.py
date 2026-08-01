@@ -42,6 +42,7 @@ from pathlib import Path
 from typing import Any, Generator
 
 from lib.tiers import normalize_tier
+from engine.fundamental_forensics.private_state import load_state
 
 log = logging.getLogger(__name__)
 
@@ -1683,7 +1684,12 @@ def _scalar(value: Any) -> Any:
     return value
 
 
-def _tool_get_fundamentals(params: dict, root: Path) -> dict:
+def _tool_get_fundamentals(
+    params: dict,
+    root: Path,
+    *,
+    include_forensics: bool = False,
+) -> dict:
     """Read site/stockdata/{SYM}.json — profile, valuation, financials, quality, revisions.
 
     Baked nightly by the SEO ticker-pages program.  {en,zh}-blob fields are un-nested to
@@ -1769,6 +1775,46 @@ def _tool_get_fundamentals(params: dict, root: Path) -> dict:
         },
         "source": src,
     }
+    # The filing-review state is a paid payload.  Callers must opt in only after
+    # proving the same active ``site_full`` entitlement used by the workbench API.
+    # Keeping the default False prevents direct/unit callers and future free tools
+    # from accidentally turning this otherwise-public fundamentals tool into a
+    # side door around the premium boundary.
+    if not include_forensics:
+        return out
+
+    # Add only compact, context-class filing-review output.  Even for entitled
+    # users the Brain receives a bounded review prompt and deep link, never raw
+    # filing facts, evidence payloads, or a new company score/rank.
+    try:
+        ff_state = load_state(root)
+        if ff_state is None:
+            return out
+        ff_company = (ff_state.get("companies") or {}).get(symbol)
+        if ff_state.get("schema") == "fundamental_forensics_state.v1" and isinstance(ff_company, dict):
+            ff_findings = [
+                {
+                    "detector": item.get("detector"),
+                    "priority": item.get("priority"),
+                    "title": item.get("title_en"),
+                    "summary": item.get("summary_en"),
+                    "period_current": item.get("period_current"),
+                    "display_only": True,
+                }
+                for item in (ff_company.get("findings") or [])[:3]
+                if isinstance(item, dict)
+            ]
+            out["filing_forensics"] = {
+                "action": (ff_company.get("action") or {}).get("en"),
+                "latest_filed": ff_company.get("latest_filed"),
+                "coverage": ff_company.get("coverage"),
+                "findings": ff_findings,
+                "workbench_url": f"fundamental_forensics.html?symbol={symbol}",
+                "authority": "context_only",
+                "display_only": True,
+            }
+    except Exception:  # noqa: BLE001 — optional context must never break the tool
+        pass
     return out
 
 
@@ -3264,7 +3310,20 @@ def _dispatch_brain_tool(
             return _tool_annotate_chart(tool_params)
         # Finance tool suite (W6d)
         if tool_name == "get_fundamentals":
-            return _tool_get_fundamentals(tool_params, root)
+            ent = _resolve_tier(user_id, root=root) if user_id else {}
+            tier = str(ent.get("tier") or "free").strip().lower()
+            status = str(ent.get("status") or "none").strip().lower()
+            features = {str(item) for item in (ent.get("features") or [])}
+            include_forensics = (
+                tier != "free"
+                and status in {"active", "trialing"}
+                and "site_full" in features
+            )
+            return _tool_get_fundamentals(
+                tool_params,
+                root,
+                include_forensics=include_forensics,
+            )
         if tool_name == "get_earnings":
             return _tool_get_earnings(tool_params, root)
         if tool_name == "get_insider_activity":
@@ -3767,7 +3826,7 @@ _TIER_CACHE_LOCK = __import__("threading").Lock()
 def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
     """Resolve tier + status for a user_id via PostgREST.
 
-    Returns {tier, status, current_period_end}.
+    Returns {tier, status, current_period_end, features}.
     Fail-safe: table missing / key absent / error → {tier: 'free', status: 'active'}.
     Cache TTL: 60s (from config/brain.yml tier_cache_ttl_seconds).
 
@@ -3784,7 +3843,12 @@ def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
         if hit and hit[1] > now:
             return hit[0]
 
-    _FREE = {"tier": "free", "status": "active", "current_period_end": None}
+    _FREE = {
+        "tier": "free",
+        "status": "active",
+        "current_period_end": None,
+        "features": [],
+    }
 
     supabase_url = os.environ.get("SUPABASE_URL", "").rstrip("/")
     service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
@@ -3794,7 +3858,8 @@ def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
     try:
         url = (
             f"{supabase_url}/rest/v1/user_entitlements"
-            f"?user_id=eq.{urllib.parse.quote(user_id)}&select=tier,status,current_period_end"
+            f"?user_id=eq.{urllib.parse.quote(user_id)}"
+            "&select=tier,status,current_period_end,features"
         )
         req = urllib.request.Request(
             url,
@@ -3811,7 +3876,13 @@ def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
             tier = normalize_tier(r.get("tier")) or "free"
             status = r.get("status") or "active"
             cpe = r.get("current_period_end")
-            result: dict = {"tier": tier, "status": status, "current_period_end": cpe}
+            features = r.get("features") if isinstance(r.get("features"), list) else []
+            result: dict = {
+                "tier": tier,
+                "status": status,
+                "current_period_end": cpe,
+                "features": features,
+            }
         else:
             result = _FREE
     except Exception as exc:  # noqa: BLE001

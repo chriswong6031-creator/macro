@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/fundamental_forensics_run.schema.json",
+  "title": "Fundamental Forensics deterministic run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "run_id", "entity_cik", "entity_name", "as_of", "recorded_at",
+    "computed_at", "knowledge_clock", "vintage_policy", "mapping_version",
+    "mapping_available_at", "detector_pack_version", "detector_pack_available_at",
+    "source_scope", "source_limitations", "coverage", "filings", "fact_occurrences",
+    "issues", "observations", "statement_vintages", "selected_vintage_ids", "findings"
+  ],
+  "properties": {
+    "schema": {"const": "fundamental_forensics.run/v1"},
+    "run_id": {"type": "string", "pattern": "^ffrun_[a-f0-9]{64}$"},
+    "entity_cik": {"$ref": "#/$defs/cik"},
+    "entity_name": {"type": "string"},
+    "as_of": {"$ref": "#/$defs/timestamp"},
+    "recorded_at": {"$ref": "#/$defs/timestamp"},
+    "computed_at": {"$ref": "#/$defs/timestamp"},
+    "knowledge_clock": {"enum": ["source_event", "recorded"]},
+    "vintage_policy": {"enum": ["first_reported", "latest_known"]},
+    "mapping_version": {"type": "string", "minLength": 1},
+    "mapping_available_at": {"$ref": "#/$defs/timestamp"},
+    "detector_pack_version": {"type": "string", "minLength": 1},
+    "detector_pack_available_at": {"$ref": "#/$defs/timestamp"},
+    "source_scope": {"const": "sec_companyfacts_standard_entitywide_annual_v1"},
+    "source_limitations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "filings": {"type": "array", "items": {"$ref": "#/$defs/filing"}},
+    "fact_occurrences": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
+    "issues": {"type": "array", "items": {"$ref": "#/$defs/issue"}},
+    "observations": {"type": "array", "items": {"$ref": "#/$defs/observation"}},
+    "statement_vintages": {"type": "array", "items": {"$ref": "#/$defs/vintage"}},
+    "selected_vintage_ids": {"type": "array", "items": {"type": "string", "pattern": "^vintage_[a-f0-9]{64}$"}, "uniqueItems": true},
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}, "minItems": 5, "maxItems": 5}
+  },
+  "$defs": {
+    "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+    "date": {"type": "string", "format": "date"},
+    "timestamp": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "nullableTimestamp": {"anyOf": [{"$ref": "#/$defs/timestamp"}, {"type": "null"}]},
+    "nullableDate": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]},
+    "decimal": {"type": "string", "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_fact_records", "distinct_fact_occurrences", "facts_with_source_clock",
+        "normalized_observations", "normalization_issues", "statement_vintages",
+        "selected_statement_vintages", "findings_triggered", "findings_clear",
+        "findings_not_evaluable"
+      ],
+      "properties": {
+        "source_fact_records": {"type": "integer", "minimum": 0},
+        "distinct_fact_occurrences": {"type": "integer", "minimum": 0},
+        "facts_with_source_clock": {"type": "integer", "minimum": 0},
+        "normalized_observations": {"type": "integer", "minimum": 0},
+        "normalization_issues": {"type": "integer", "minimum": 0},
+        "statement_vintages": {"type": "integer", "minimum": 0},
+        "selected_statement_vintages": {"type": "integer", "minimum": 0},
+        "findings_triggered": {"type": "integer", "minimum": 0},
+        "findings_clear": {"type": "integer", "minimum": 0},
+        "findings_not_evaluable": {"type": "integer", "minimum": 0}
+      }
+    },
+    "filing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filing_id", "entity_cik", "accession", "form", "filing_date", "report_date", "source_event_at", "primary_document", "is_xbrl", "is_inline_xbrl"],
+      "properties": {
+        "filing_id": {"type": "string", "pattern": "^filing_[a-f0-9]{64}$"},
+        "entity_cik": {"$ref": "#/$defs/cik"},
+        "accession": {"type": "string", "minLength": 1},
+        "form": {"type": ["string", "null"]},
+        "filing_date": {"$ref": "#/$defs/nullableDate"},
+        "report_date": {"$ref": "#/$defs/nullableDate"},
+        "source_event_at": {"$ref": "#/$defs/nullableTimestamp"},
+        "primary_document": {"type": ["string", "null"]},
+        "is_xbrl": {"type": ["boolean", "null"]},
+        "is_inline_xbrl": {"type": ["boolean", "null"]}
+      }
+    },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact_id", "entity_cik", "entity_name", "taxonomy", "concept", "unit", "value", "period_start", "period_end", "accession", "form", "filed", "reported_fy", "reported_fp", "frame", "filing_id", "source_event_at", "recorded_at", "pit_eligible", "source_record_count"],
+      "properties": {
+        "fact_id": {"type": "string", "pattern": "^fact_[a-f0-9]{64}$"},
+        "entity_cik": {"$ref": "#/$defs/cik"},
+        "entity_name": {"type": "string"},
+        "taxonomy": {"type": "string"},
+        "concept": {"type": "string"},
+        "unit": {"type": "string"},
+        "value": {"$ref": "#/$defs/decimal"},
+        "period_start": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]},
+        "period_end": {"$ref": "#/$defs/date"},
+        "accession": {"type": ["string", "null"]},
+        "form": {"type": ["string", "null"]},
+        "filed": {"$ref": "#/$defs/nullableDate"},
+        "reported_fy": {"type": ["integer", "null"]},
+        "reported_fp": {"type": ["string", "null"]},
+        "frame": {"type": ["string", "null"]},
+        "filing_id": {"anyOf": [{"type": "string", "pattern": "^filing_[a-f0-9]{64}$"}, {"type": "null"}]},
+        "source_event_at": {"$ref": "#/$defs/nullableTimestamp"},
+        "recorded_at": {"$ref": "#/$defs/timestamp"},
+        "pit_eligible": {"type": "boolean"},
+        "source_record_count": {"type": "integer", "minimum": 1}
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issue_id", "code", "metric", "entity_cik", "accession", "period_end", "fact_ids", "detail"],
+      "properties": {
+        "issue_id": {"type": "string", "pattern": "^normissue_[a-f0-9]{64}$"},
+        "code": {"const": "ambiguous_metric"},
+        "metric": {"type": "string"},
+        "entity_cik": {"$ref": "#/$defs/cik"},
+        "accession": {"type": ["string", "null"]},
+        "period_end": {"$ref": "#/$defs/date"},
+        "fact_ids": {"type": "array", "items": {"type": "string", "pattern": "^fact_[a-f0-9]{64}$"}, "minItems": 2, "uniqueItems": true},
+        "detail": {"type": "string", "minLength": 1}
+      }
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observation_id", "entity_cik", "metric", "value", "unit", "period_type", "period_start", "period_end", "accession", "source_event_at", "recorded_at", "mapping_version", "mapping_rule_id", "mapping_tier", "mapping_rule_available_at", "fact_ids"],
+      "properties": {
+        "observation_id": {"type": "string", "pattern": "^observation_[a-f0-9]{64}$"},
+        "entity_cik": {"$ref": "#/$defs/cik"},
+        "metric": {"type": "string"},
+        "value": {"$ref": "#/$defs/decimal"},
+        "unit": {"type": "string"},
+        "period_type": {"enum": ["duration", "instant"]},
+        "period_start": {"anyOf": [{"$ref": "#/$defs/date"}, {"type": "null"}]},
+        "period_end": {"$ref": "#/$defs/date"},
+        "accession": {"type": "string", "minLength": 1},
+        "source_event_at": {"$ref": "#/$defs/nullableTimestamp"},
+        "recorded_at": {"$ref": "#/$defs/timestamp"},
+        "mapping_version": {"type": "string"},
+        "mapping_rule_id": {"type": "string"},
+        "mapping_tier": {"enum": ["A", "B"]},
+        "mapping_rule_available_at": {"$ref": "#/$defs/timestamp"},
+        "fact_ids": {"type": "array", "items": {"type": "string", "pattern": "^fact_[a-f0-9]{64}$"}, "minItems": 1, "uniqueItems": true}
+      }
+    },
+    "vintage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vintage_id", "entity_cik", "accession", "period_end", "source_event_at", "recorded_at", "metric_observation_ids"],
+      "properties": {
+        "vintage_id": {"type": "string", "pattern": "^vintage_[a-f0-9]{64}$"},
+        "entity_cik": {"$ref": "#/$defs/cik"},
+        "accession": {"type": "string"},
+        "period_end": {"$ref": "#/$defs/date"},
+        "source_event_at": {"$ref": "#/$defs/nullableTimestamp"},
+        "recorded_at": {"$ref": "#/$defs/timestamp"},
+        "metric_observation_ids": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "string", "pattern": "^observation_[a-f0-9]{64}$"}}
+      }
+    },
+    "findingInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["metric", "period_end", "value", "observation_id", "fact_ids"],
+      "properties": {
+        "metric": {"type": "string"},
+        "period_end": {"$ref": "#/$defs/date"},
+        "value": {"$ref": "#/$defs/decimal"},
+        "observation_id": {"type": "string", "pattern": "^observation_[a-f0-9]{64}$"},
+        "fact_ids": {"type": "array", "items": {"type": "string", "pattern": "^fact_[a-f0-9]{64}$"}, "minItems": 1, "uniqueItems": true}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finding_id", "detector_id", "detector_version", "detector_rule_available_at", "entity_cik", "state", "applicability", "formula", "thresholds", "derived_values", "period_ends", "inputs", "missing_inputs", "evidence_observation_ids", "evidence_fact_ids", "source_ready_at", "recorded_ready_at", "computed_at", "limitations", "display_only", "authority"],
+      "properties": {
+        "finding_id": {"type": "string", "pattern": "^finding_[a-f0-9]{64}$"},
+        "detector_id": {"enum": ["margin_compression_despite_revenue_growth", "receivables_stretch", "inventory_build", "capital_intensity_rising", "accruals_trending_up"]},
+        "detector_version": {"type": "string"},
+        "detector_rule_available_at": {"$ref": "#/$defs/timestamp"},
+        "entity_cik": {"$ref": "#/$defs/cik"},
+        "state": {"enum": ["triggered", "clear", "not_evaluable"]},
+        "applicability": {"enum": ["applicable", "insufficient_evidence"]},
+        "formula": {"type": "string", "minLength": 1},
+        "thresholds": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/decimal"}},
+        "derived_values": {"type": "object", "additionalProperties": {"$ref": "#/$defs/decimal"}},
+        "period_ends": {"type": "array", "items": {"$ref": "#/$defs/date"}, "uniqueItems": true},
+        "inputs": {"type": "array", "items": {"$ref": "#/$defs/findingInput"}},
+        "missing_inputs": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "evidence_observation_ids": {"type": "array", "items": {"type": "string", "pattern": "^observation_[a-f0-9]{64}$"}, "uniqueItems": true},
+        "evidence_fact_ids": {"type": "array", "items": {"type": "string", "pattern": "^fact_[a-f0-9]{64}$"}, "uniqueItems": true},
+        "source_ready_at": {"$ref": "#/$defs/nullableTimestamp"},
+        "recorded_ready_at": {"$ref": "#/$defs/nullableTimestamp"},
+        "computed_at": {"$ref": "#/$defs/timestamp"},
+        "limitations": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "display_only": {"const": true},
+        "authority": {"const": "review_priority_only"}
+      }
+    }
+  }
+}

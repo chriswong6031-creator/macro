@@ -142,6 +142,31 @@ if ! cmp -s "$APP_DIR/app/deploy/macro-api.service" /etc/systemd/system/macro-ap
 	fi
 fi
 
+# Serving dependencies: reconcile against a content stamp on every cron pass,
+# not only the first pull that changed requirements.txt. A transient PyPI error
+# therefore retries next tick, and the API never restarts into code whose declared
+# dependencies failed to install. api-setup.sh writes the same stamp on provision.
+API_DEPS_UPDATED=0
+API_DEPS_OK=1
+API_REQ_STAMP=/opt/macro-api/.requirements.sha256
+API_REQ_HASH=$(sha256sum "$APP_DIR/app/requirements.txt" | cut -d' ' -f1)
+API_INSTALLED_REQ_HASH=$(cat "$API_REQ_STAMP" 2>/dev/null || true)
+if [ "$API_REQ_HASH" != "$API_INSTALLED_REQ_HASH" ]; then
+	if [ -x /opt/macro-api/.venv/bin/pip ] \
+		&& /opt/macro-api/.venv/bin/pip install -q -r "$APP_DIR/app/requirements.txt"; then
+		API_REQ_TMP=$(mktemp /opt/macro-api/.requirements.XXXXXX)
+		printf '%s\n' "$API_REQ_HASH" > "$API_REQ_TMP"
+		chmod 0644 "$API_REQ_TMP"
+		mv -f "$API_REQ_TMP" "$API_REQ_STAMP"
+		API_DEPS_UPDATED=1
+		RECONCILED=1
+		echo "macro-update: macro-api dependencies reconciled"
+	else
+		API_DEPS_OK=0
+		echo "macro-update: macro-api dependency reconciliation FAILED; keeping the running API" >&2
+	fi
+fi
+
 # macro-api: restart ONLY when its own code changed (avoid blipping /api on every
 # site/ render commit). "Its own code" = every Python module import-cached by the
 # running uvicorn, because sys.modules pins the OLD module object for the life of
@@ -175,6 +200,9 @@ fi
 #                          API-cached too and must not need a second fix. Omitting
 #                          it silently froze download caps / anti-scrape limits —
 #                          #3654 escaped only because it also touched app/research.py.
+#   fundamental_forensics/ app/forensics.py imports private_state through the
+#                          package, whose __init__ loads the pure kernel modules;
+#                          all are therefore pinned in macro-api sys.modules.
 #   context_index/         brain_gateway → packet.build_packet, which top-level
 #                          imports fusion/gitinfo/lexical/structured. Named, not
 #                          globbed: ingest/chunking/health/schema/sources are
@@ -204,13 +232,15 @@ fi
 #     schemas/implementations only and never calls run(), so those ~90 modules are
 #     NOT in the API's sys.modules. Adding them would restart /api on nearly every
 #     engine commit — exactly what this narrow list exists to prevent.
-if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$'; then
+if [ "$API_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|doctrine|analyst_doctrine|market_packet|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/(codex_provider|llm_auth|portfolio_brief|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|user_prefs|tiers)\.py)$' || [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	# Verified restart, not fire-and-forget: on 2026-07-30 the old one-liner
 	# (`... && systemctl restart macro-api || true`) left the API on its 5-hour-old
 	# PID after a matching deploy, and the `|| true` destroyed every trace of why.
 	# Log the PID transition, and retry once when the restart failed or the PID
 	# provably did not change — all output lands in macro-update.log.
-	if systemctl is-enabled macro-api >/dev/null 2>&1; then
+	if [ "$API_DEPS_OK" -ne 1 ]; then
+		echo "macro-update: macro-api restart skipped because dependency reconciliation failed" >&2
+	elif systemctl is-enabled macro-api >/dev/null 2>&1; then
 		PRE_PID="$(systemctl show -p MainPID --value macro-api 2>/dev/null || echo '?')"
 		API_RESTART_RC=0
 		systemctl restart macro-api || API_RESTART_RC=$?

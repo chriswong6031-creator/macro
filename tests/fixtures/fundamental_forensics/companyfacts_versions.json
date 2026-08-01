@@ -1,0 +1,128 @@
+{
+  "cik": 1,
+  "entityName": "DETERMINISTIC FIXTURE CORP",
+  "facts": {
+    "us-gaap": {
+      "RevenueFromContractWithCustomerExcludingAssessedTax": {
+        "label": "Revenue",
+        "description": "Revenue from contracts with customers.",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 1000, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15", "frame": "CY2022"},
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 1000, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15", "frame": "CY2022"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 1050, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15", "frame": "CY2023"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 1060, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15", "frame": "CY2023"},
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 1120, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15", "frame": "CY2024"}
+          ]
+        }
+      },
+      "Revenues": {
+        "label": "Revenues",
+        "description": "Legacy standard revenue alias.",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 1000, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15", "frame": "CY2022"}
+          ]
+        }
+      },
+      "GrossProfit": {
+        "label": "Gross Profit",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 500, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 500, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 500, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 500, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      },
+      "AccountsReceivableNetCurrent": {
+        "label": "Accounts Receivable, Net, Current",
+        "units": {
+          "USD": [
+            {"end": "2022-12-31", "val": 100, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"end": "2023-12-31", "val": 120, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"end": "2023-12-31", "val": 121, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"end": "2024-12-31", "val": 155, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      },
+      "InventoryNet": {
+        "label": "Inventory, Net",
+        "units": {
+          "USD": [
+            {"end": "2022-12-31", "val": 100, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"end": "2023-12-31", "val": 125, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"end": "2023-12-31", "val": 126, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"end": "2024-12-31", "val": 165, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      },
+      "PaymentsToAcquirePropertyPlantAndEquipment": {
+        "label": "Payments to Acquire Property, Plant, and Equipment",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 100, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 120, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 121, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 155, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      },
+      "OperatingIncomeLoss": {
+        "label": "Operating Income (Loss)",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 200, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 210, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 211, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 215, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      },
+      "NetIncomeLoss": {
+        "label": "Net Income (Loss)",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 100, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 120, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 121, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 160, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      },
+      "NetCashProvidedByUsedInOperatingActivities": {
+        "label": "Net Cash Provided by Operating Activities",
+        "units": {
+          "USD": [
+            {"start": "2022-01-01", "end": "2022-12-31", "val": 110, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 100, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"start": "2023-01-01", "end": "2023-12-31", "val": 101, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"start": "2024-01-01", "end": "2024-12-31", "val": 70, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      },
+      "Assets": {
+        "label": "Assets",
+        "units": {
+          "USD": [
+            {"end": "2022-12-31", "val": 1000, "accn": "0000000001-23-000001", "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2023-02-15"},
+            {"end": "2023-12-31", "val": 1100, "accn": "0000000001-24-000001", "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2024-02-15"},
+            {"end": "2023-12-31", "val": 1110, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"},
+            {"end": "2024-12-31", "val": 1200, "accn": "0000000001-25-000001", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-02-15"}
+          ]
+        }
+      }
+    },
+    "fixture": {
+      "CustomerCount": {
+        "label": "Customer Count",
+        "units": {
+          "customers": [
+            {"end": "2024-12-31", "val": 42, "accn": "0000000001-25-999999", "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2025-03-01"}
+          ]
+        }
+      }
+    }
+  }
+}

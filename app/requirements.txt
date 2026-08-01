@@ -8,6 +8,10 @@ pydantic>=2.0,<3.0
 # Reviewed serving-boundary policy (config/site_access.yml). Imported at API
 # startup by app/paywall.py, so this is a hard serving-tier dependency.
 PyYAML>=6.0,<7.0
+# Private Research Vault / Filing Forensics object reads. The serving process
+# imports boto3 lazily, but it is a hard dependency once a paid R2-backed route
+# is requested; pin it here so a fresh API install cannot degrade to 503.
+boto3>=1.34,<2.0
 # Auth is secretless (verifies tokens via Supabase /auth/v1/user using stdlib
 # urllib) — no JWT library needed.
 # W8b PR2: ask-the-brain — LLM client for the request-scoped cortex loop.
