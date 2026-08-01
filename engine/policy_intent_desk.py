@@ -43,11 +43,11 @@ log = logging.getLogger(__name__)
 SCHEMA = "policy_intent_desk.v1"
 DISCLAIMER = (
     "Policy intent desk — realpolitik, context only, never scored or sized. Each lean is "
-    "a fallible, FALSIFIABLE judgement (proxy vs SPY, with a check-by date), not a trade "
+    "a fallible, checkable judgement (proxy vs SPY, with a check-by date), not a trade "
     "or a position size. Intent is inferred from interests; treat it as a hypothesis with "
     "a track record, not an oracle.")
 DISCLAIMER_ZH = (
-    "意图台 —— 现实政治、仅供参考，从不评分或定仓。每条判断都是可证伪、会出错的判断"
+    "意图台 —— 现实政治、仅供参考，从不评分或定仓。每条判断都是可核查、会出错的判断"
     "（代理标的 vs SPY，附核查日期），并非交易或仓位大小。意图由利益推断而来；请将其"
     "视为有战绩记录的假设，而非神谕。")
 
