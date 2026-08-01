@@ -1,18 +1,19 @@
 """Build the Research Vault page -> site/research_vault.html.
 
 RV W3. A flagship, gated vault + feed of third-party institutional research PDFs.
-The page is an SSR shell + client hydrate:
+The page is an SSR shell + live client paint:
 
   • At build time we read ``data/research_vault/catalog.json`` (the snapshot the
     hourly ingest job commits) IF present, and bake it into the page as a
     ``<script id="rv-catalog" type="application/json">`` island — so the feed +
-    Top Picks paint instantly and are crawlable for SEO.
+    Top Picks remain crawlable for SEO and available as a network fallback.
   • If the catalog is absent or empty, we bake an empty ``{items:[]}`` and the
-    client renders an honest empty state ("Institutional research is being
-    onboarded"). We NEVER bake fake sample data (house law).
-  • On load, ``site/research_vault_app.js`` refreshes from GET /api/research/catalog
-    (hourly-fresh) and drives all interaction (feed/lanes/tree/facets/search + the
-    auth-gated pdf.js viewer with quota-metered download).
+    client renders an honest empty state ("No institutional reports are available
+    yet"). We NEVER bake fake sample data (house law).
+  • On load, ``site/research_vault_app.js`` paints from GET /api/research/catalog
+    (hourly-fresh) before revealing interactive data, then drives all interaction
+    (feed/lanes/tree/facets/search + the auth-gated pdf.js viewer with quota-metered
+    download). A failed live read exposes the bake with an explicit snapshot label.
 
 Fully static + additive: depends on no live JSON at build time, so it can never
 break the daily build (a missing catalog degrades to the empty state). Bilingual
@@ -32,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from engine.research_vault import catalog as catalog_mod  # noqa: E402
 from engine.research_vault.sidecar import clean_title  # noqa: E402
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
@@ -259,6 +261,8 @@ def render(catalog: dict | None = None) -> str:
     baked_catalog = dict(catalog)
     baked_catalog["items"] = _preview_items(list(catalog.get("items") or []))
     baked_catalog["count"] = len(catalog.get("items") or [])
+    baked_catalog["preview"] = True
+    baked_catalog["summary"] = catalog_mod.public_summary(catalog)
     # ensure_ascii=False keeps CJK readable; </script> is escaped so a
     # title/summary containing it can't break out of the island.
     catalog_json = json.dumps(baked_catalog, ensure_ascii=False).replace("</", "<\\/")

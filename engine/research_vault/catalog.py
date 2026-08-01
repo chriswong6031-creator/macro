@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from engine.research_vault.sidecar import clean_title
@@ -147,6 +147,67 @@ def coverage(catalog: dict) -> dict[str, dict]:
             "pct": (100.0 * filled / total) if total else 0.0,
         }
     return out
+
+
+def public_summary(catalog: dict, now: datetime | None = None) -> dict[str, Any]:
+    """Return public-safe whole-vault aggregates for preview and full clients.
+
+    The public catalog route deliberately truncates ``items`` to three reports for
+    non-Pro readers. Deriving hero totals from that slice makes "3 reports / 3
+    desks" look like a whole-vault fact. These aggregates are computed from the
+    complete catalog before truncation and reveal no report body or gated summary.
+    ``now`` is injectable so the rolling seven-day boundary is deterministic in
+    tests and matches the client's UTC-date comparison.
+    """
+    current = now or datetime.now(timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=timezone.utc)
+    cutoff = (current.astimezone(timezone.utc) - timedelta(days=7)).date().isoformat()
+    items = [item for item in (catalog.get("items") or []) if isinstance(item, dict)]
+    week = [
+        item for item in items
+        if str(item.get("published_at") or "").split("T", 1)[0] >= cutoff
+    ]
+
+    week_desks = {
+        str(item.get("institution") or "").strip()
+        for item in week
+        if str(item.get("institution") or "").strip() not in ("", "Unknown")
+    }
+    institution_counts: dict[str, int] = {}
+    for item in items:
+        name = str(item.get("institution") or "").strip()
+        if name and name != "Unknown":
+            institution_counts[name] = institution_counts.get(name, 0) + 1
+
+    theme_pool = week if week else items
+    theme_counts: dict[str, int] = {}
+    top_theme = ""
+    top_count = 0
+    for item in theme_pool:
+        tags = item.get("tags") if isinstance(item.get("tags"), list) else []
+        for raw in tags:
+            theme = str(raw or "").strip()
+            if not theme:
+                continue
+            theme_counts[theme] = theme_counts.get(theme, 0) + 1
+            if theme_counts[theme] > top_count:
+                top_theme, top_count = theme, theme_counts[theme]
+
+    institutions = [
+        {"name": name, "count": count}
+        for name, count in sorted(
+            institution_counts.items(), key=lambda pair: (-pair[1], pair[0])
+        )
+    ]
+    return {
+        "total": len(items),
+        "new_this_week": len(week),
+        "desks_this_week": len(week_desks),
+        "highlighted": sum(1 for item in items if item.get("top_pick")),
+        "most_covered_theme": top_theme,
+        "institutions": institutions,
+    }
 
 
 def coverage_lines(cov: dict[str, dict]) -> tuple[list[str], list[str]]:
