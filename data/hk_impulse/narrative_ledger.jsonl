@@ -74,3 +74,7 @@
 {"date": "2026-07-31", "ticker": "9988.HK", "slug": "alibaba", "name_en": "Alibaba", "attention_shock_z": -0.637, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
 {"date": "2026-07-31", "ticker": "0700.HK", "slug": "tencent", "name_en": "Tencent", "attention_shock_z": 3.227, "tone_pctile": null, "narrative_state": "attention_spike", "asof_freshness": "ok", "organ": "hk_narrative"}
 {"date": "2026-07-31", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": -0.585, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "ok", "organ": "hk_narrative"}
+{"date": "2026-08-01", "ticker": "9988.HK", "slug": "alibaba", "name_en": "Alibaba", "attention_shock_z": -0.637, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-08-01", "ticker": "0700.HK", "slug": "tencent", "name_en": "Tencent", "attention_shock_z": 3.227, "tone_pctile": null, "narrative_state": "attention_spike", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-08-01", "ticker": "3690.HK", "slug": "meituan", "name_en": "Meituan", "attention_shock_z": -0.764, "tone_pctile": 32.9, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}
+{"date": "2026-08-01", "ticker": "1024.HK", "slug": "kuaishou", "name_en": "Kuaishou", "attention_shock_z": -0.585, "tone_pctile": null, "narrative_state": "quiet", "asof_freshness": "degraded", "organ": "hk_narrative"}

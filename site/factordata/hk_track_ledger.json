@@ -10,7 +10,7 @@
  },
  "summary": {
   "state": "accruing",
-  "n_calls": 345,
+  "n_calls": 347,
   "n_logged": 334,
   "n_matured": 0,
   "n_beat": 0,
@@ -214,8 +214,8 @@
   },
   {
    "t": "2888.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Standard Chartered",
+   "sec": "Financials & Banks",
    "grp": "watch",
    "d": "2026-07-30",
    "e": null,
@@ -252,8 +252,8 @@
   },
   {
    "t": "0392.HK",
-   "nm": "Beijing Enterprises",
-   "sec": "Industrials & Transport",
+   "nm": null,
+   "sec": null,
    "grp": "watch",
    "d": "2026-07-30",
    "e": null,
@@ -822,8 +822,8 @@
   },
   {
    "t": "2888.HK",
-   "nm": null,
-   "sec": null,
+   "nm": "Standard Chartered",
+   "sec": "Financials & Banks",
    "grp": "watch",
    "d": "2026-07-28",
    "e": null,

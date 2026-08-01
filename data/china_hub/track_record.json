@@ -1,9 +1,9 @@
 {
   "schema": "intel_hub.track_record.v1",
-  "as_of": "2026-07-31",
-  "generated_at": "2026-07-31T10:23:16.916883+00:00",
+  "as_of": "2026-08-01",
+  "generated_at": "2026-08-01T10:03:41.451454+00:00",
   "is_context_only": true,
-  "n_snapshots": 2122,
+  "n_snapshots": 2212,
   "horizons": {
     "5": {
       "n_matured": 227,
@@ -109,12 +109,12 @@
     },
     "21": {
       "n_matured": 35,
-      "opportunity_ic_pooled": 0.4618,
+      "opportunity_ic_pooled": 0.4629,
       "opportunity_ic_daily": {
         "n_days": 2
       },
       "opportunity_ic": null,
-      "edge_ic_pooled": 0.6264,
+      "edge_ic_pooled": 0.6289,
       "by_stage": {
         "consensus": {
           "n": 3,
@@ -138,8 +138,8 @@
         },
         "early": {
           "n": 16,
-          "mean_fwd_rel": 0.0591,
-          "hit_rate": 0.75
+          "mean_fwd_rel": 0.071,
+          "hit_rate": 0.812
         }
       },
       "by_source": {},
