@@ -111,7 +111,8 @@
    '在决定买多少之前，先决定你愿意亏多少。仓位是结果，不是起点。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Go deeper in the lesson on <a href="', '在这节课中深入了解 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t(', or turn a stop into a target with the <a href="', '，或用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('.', '把止损换算成目标。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Go deeper in the lesson on <a href="' ~ rel ~ 'learn/risk/position-sizing.html">position sizing</a>, or turn a stop into a target with the <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">risk-to-reward calculator</a>.',
+   '在这节课中深入了解 <a href="' ~ rel ~ 'learn/risk/position-sizing.html">仓位管理</a>，或用 <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">盈亏比计算器</a>把止损换算成目标。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

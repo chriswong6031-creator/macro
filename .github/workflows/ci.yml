@@ -1572,6 +1572,10 @@ on:
       # (the #3592 Legal footer column never reached them) with main staying green.
       - "scripts/build_free_content.py"
       - "tests/test_free_content.py"
+      # i18n split-tag guard (2026-07-30). Its SUBJECTS — site/** and templates/**
+      # — already trigger above, so the guarded change always reaches it; this
+      # line only covers a PR that edits the guard itself.
+      - "tests/test_i18n_split_tag_guard.py"
       - "content/seo/**"
       - "templates/seo_base.html.j2"
       - "templates/seo_article.html.j2"

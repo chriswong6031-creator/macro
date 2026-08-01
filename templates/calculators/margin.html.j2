@@ -101,7 +101,8 @@
    '购买力是借来的操控范围，而非额外的资本——杠杆会放大亏损，而正是亏损引来追缴。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Size a leveraged trade off risk with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t(', or go deeper in the lesson on <a href="', '为杠杆交易按风险定仓，或在这节课中深入了解 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t('.', '。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Size a leveraged trade off risk with the <a href="' ~ rel ~ 'tools/calculators/position-size.html">position size calculator</a>, or go deeper in the lesson on <a href="' ~ rel ~ 'learn/risk/position-sizing.html">position sizing</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/position-size.html">仓位计算器</a>为杠杆交易按风险定仓，或在这节课中深入了解 <a href="' ~ rel ~ 'learn/risk/position-sizing.html">仓位管理</a>。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

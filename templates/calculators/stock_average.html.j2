@@ -125,7 +125,8 @@
    '摊低成本会在拉低成本价的同时放大你的仓位。只有当你持有这只股票的理由依然成立时，更低的保本价才值得拥有。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a cost basis into a plan with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t(', or measure a completed trade with the <a href="', '把成本价化为计划，或用 <a href="') }}{{ rel }}tools/calculators/trade-profit.html">{{ t('trade profit calculator', '交易盈亏计算器') }}</a>{{ t('.', '衡量一笔已完成的交易。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a cost basis into a plan with the <a href="' ~ rel ~ 'tools/calculators/position-size.html">position size calculator</a>, or measure a completed trade with the <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">trade profit calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/position-size.html">仓位计算器</a>把成本价化为计划，或用 <a href="' ~ rel ~ 'tools/calculators/trade-profit.html">交易盈亏计算器</a>衡量一笔已完成的交易。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

@@ -147,7 +147,8 @@
    '时间是最强大的变量。将收益率翻倍很难；将年数翻倍往往是可能的。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how compounding interacts with drawdowns in <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>, and explore growth rates with the <a href="', '在 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a> 中了解复利与回撤的关系，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', 'CAGR计算器') }}</a>{{ t('. For long-run thinking, <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a> is the companion piece.', '探索增长率。长期思维的配套阅读：<a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a>。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how compounding interacts with drawdowns in <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">Why a 50% loss needs a 100% gain</a>, and explore growth rates with the <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR calculator</a>. For long-run thinking, <a href="/blog/compound-growth-for-traders.html">Compound growth for traders</a> is the companion piece.',
+   '在 <a href="/blog/why-a-50-percent-loss-needs-a-100-percent-gain.html">为什么亏损50%需要盈利100%才能回本</a> 中了解复利与回撤的关系，或用 <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR计算器</a>探索增长率。长期思维的配套阅读：<a href="/blog/compound-growth-for-traders.html">交易者的复利增长</a>。') }}</p>
 {% endblock %}
 
 {% block calc_script %}
