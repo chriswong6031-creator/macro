@@ -1,15 +1,15 @@
 {
   "date": "2026-07-31",
-  "generated_utc": "2026-08-01 01:31",
+  "generated_utc": "2026-08-01 03:36",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
     "tiers": {
       "leading": {
         "asof": "2026-07-31",
-        "index": 94.7678986032173,
+        "index": 94.76789860321732,
         "mom6": 0.3272239880686669,
-        "trend": 0.5782291034359678,
+        "trend": 0.578229103435966,
         "diffusion": 100.0,
         "n_legs": 4,
         "direction": "rising",
@@ -2269,9 +2269,9 @@
       },
       "lagging": {
         "asof": "2026-06-30",
-        "index": 93.08862432878897,
+        "index": 93.08862432878894,
         "mom6": 0.6895405510982613,
-        "trend": 0.014849205830394367,
+        "trend": 0.014849205830394842,
         "diffusion": 50.0,
         "n_legs": 4,
         "direction": "rising",
@@ -4165,7 +4165,7 @@
       "initial_claims_4wk": 202750.0,
       "continued_claims": 1782000.0,
       "claims_yoy_pct": -8.568207440811726,
-      "claims_z": -1.8937247791655172,
+      "claims_z": -1.8937247791653002,
       "claims_trend": "falling",
       "indeed_postings": 102.09,
       "indeed_chg_3m_pct": -0.6520046710782434,
@@ -4183,22 +4183,22 @@
       "read": "transitory (flexible-led)"
     },
     "risk_appetite": {
-      "vrp": 3.6185059830638426,
+      "vrp": 3.618505983063839,
       "vrp_pctile": 0.36507936507936506,
       "vrp_state": "normal",
-      "realized_vol": 12.371493788054321,
+      "realized_vol": 12.371493788054325,
       "vix_term": 0.8406939740420086,
       "vix_term_state": "contango (calm)",
       "vix_term_lead_lag": "coincident",
       "skew": 139.9,
       "skew_pctile": 0.1875,
-      "stock_bond_corr": 0.52481377737374,
+      "stock_bond_corr": 0.5248137773737395,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 1.0741510976547142,
+      "roro": 1.074151097654499,
       "roro_state": "risk-on",
-      "vol_target_scalar": 0.969971792055295,
+      "vol_target_scalar": 0.9699717920552947,
       "news_sentiment": 0.015339049510657787,
-      "news_sentiment_z": 0.6531442349350338,
+      "news_sentiment_z": 0.653144234935035,
       "news_sentiment_state": "optimistic"
     },
     "drawdown_risk": {
@@ -4338,7 +4338,7 @@
   "fear_euphoria": {
     "fe_score": 100,
     "band": "Euphoria",
-    "roro": 1.0741510976547142,
+    "roro": 1.074151097654499,
     "roro_state": "risk-on",
     "legs": [
       {
