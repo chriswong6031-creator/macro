@@ -2054,6 +2054,9 @@
         <span class="hkx-bear" style="width:{{ (_cb.bear_outstanding / _tot * 100)|int }}%"></span>
       </div>
       {% endif %}
+      {% if cbbc_map.sld_banner %}
+      <div style="font-size:11px;color:var(--warn);margin-top:4px"><span class="l-en">{{ cbbc_map.sld_banner.en }}</span><span class="l-zh">{{ cbbc_map.sld_banner.zh }}</span></div>
+      {% endif %}
       {% endif %}
       {# W1 freshness banner — OUTSIDE the bellwethers gate: the engine-crash
          path returns bellwethers: [] WITH a banner, and that is exactly the
@@ -2423,6 +2426,15 @@
             {% endif %}
             {% if cbbc_map and cbbc_map.banner %}
             <div style="font-size:11px;color:var(--warn);margin-top:6px"><span class="l-en">{{ cbbc_map.banner.en }}</span><span class="l-zh">{{ cbbc_map.banner.zh }}</span></div>
+            {% endif %}
+            {% if cbbc_map and cbbc_map.sld_banner %}
+            <div style="font-size:11px;color:var(--warn);margin-top:6px"><span class="l-en">{{ cbbc_map.sld_banner.en }}</span><span class="l-zh">{{ cbbc_map.sld_banner.zh }}</span></div>
+            {% endif %}
+            {% if cbbc_map and (cbbc_map.sld_freshness == 'stale' or cbbc_map.sld_pdftotext_available is sameas false) %}
+            <div style="font-size:10.5px;color:var(--muted);margin-top:4px">
+              <span class="l-en">Forced-buy/sell price levels come from exchange listing documents (~21 filings per weekday); newest document on file: {{ cbbc_map.sld_max_issue_date or '—' }}.{% if cbbc_map.sld_pdftotext_available is sameas false %} The document reader on our data host failed its last run — being fixed.{% endif %}</span>
+              <span class="l-zh">强制买卖价位来自交易所上市文件（每个交易日约21份）；库中最新文件日期：{{ cbbc_map.sld_max_issue_date or '—' }}。{% if cbbc_map.sld_pdftotext_available is sameas false %}数据主机的文件读取工具上次运行失败，正在修复。{% endif %}</span>
+            </div>
             {% endif %}
           </div>
         </div>

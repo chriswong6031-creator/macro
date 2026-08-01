@@ -25,7 +25,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -1175,3 +1175,136 @@ class TestEngineW2Fields:
         assert "call_level_coverage" in row, "Ledger should include call_level_coverage"
         assert row["magnet_below"] is True
         assert row["nearest_magnet_pct"] == pytest.approx(-3.5)
+
+
+# ---------------------------------------------------------------------------
+# SLD store staleness — keyed to max(issue_date), NOT sld_coverage fetched_at
+# ---------------------------------------------------------------------------
+
+class TestSldStaleness:
+    """Data-keyed staleness for the call-levels store.
+
+    During 2026-07-10..07-31 the no-poppler M1 froze call_levels.parquet at
+    issue_date 2026-07-28 while sld_coverage.json's fetched_at advanced
+    nightly — a fetched_at-keyed gate is blind to exactly this failure, so
+    the verdict keys to max(issue_date) in the data itself.
+    """
+
+    @staticmethod
+    def _write_store(tmp_path, issue_dates, coverage: dict | None = None):
+        from collectors.hk_cbbc_sld import _CL_COLUMNS
+        d = tmp_path / "hk_cbbc"
+        d.mkdir(parents=True, exist_ok=True)
+        rows = []
+        for i, iso in enumerate(issue_dates):
+            rows.append({
+                "stock_code": f"5{i:04d}", "call_price": 100.0 + i,
+                "strike_price": None, "bull_bear": "bull",
+                "underlying_name": "TENCENT", "issuer": "Issuer X",
+                "issue_date": iso, "entitlement_ratio": None,
+            })
+        pd.DataFrame(rows, columns=_CL_COLUMNS).to_parquet(
+            d / "call_levels.parquet", index=False)
+        if coverage is not None:
+            (d / "sld_coverage.json").write_text(json.dumps(coverage))
+
+    @staticmethod
+    def _df(issue_dates):
+        from collectors.hk_cbbc_sld import _CL_COLUMNS
+        rows = [{
+            "stock_code": f"5{i:04d}", "call_price": 100.0 + i,
+            "strike_price": None, "bull_bear": "bull",
+            "underlying_name": "TENCENT", "issuer": "Issuer X",
+            "issue_date": iso, "entitlement_ratio": None,
+        } for i, iso in enumerate(issue_dates)]
+        return pd.DataFrame(rows, columns=_CL_COLUMNS)
+
+    def test_incident_pin_frozen_store_is_stale(self):
+        """Literal 2026-07 incident geometry: newest filing 07-28, today 08-01.
+
+        Three business days (07-29/30/31) with zero filings from a market that
+        files ~21 every weekday — that is dead extraction, not a quiet tape.
+        """
+        from engine.hk_cbbc import _sld_data_freshness
+        df = self._df(["20260710", "20260728"])
+        assert _sld_data_freshness(df, today=date(2026, 8, 1)) == ("2026-07-28", "stale")
+
+    def test_fresh_and_slow_boundaries(self):
+        """Business-day lag 0/1 → fresh, 2 → slow (no banner tier yet).
+
+        Fixed `today` throughout: mixing a fixture date with the wall clock
+        would make the assertion drift into a time bomb.
+        """
+        from engine.hk_cbbc import _sld_data_freshness
+        today = date(2026, 8, 1)  # Saturday
+        assert _sld_data_freshness(self._df(["20260731"]), today=today) == ("2026-07-31", "fresh")
+        assert _sld_data_freshness(self._df(["20260730"]), today=today) == ("2026-07-30", "fresh")
+        assert _sld_data_freshness(self._df(["20260729"]), today=today) == ("2026-07-29", "slow")
+
+    def test_weekend_does_not_inflate_lag(self):
+        """Friday filing read on Monday = 1 business day: weekends are not
+        evidence of dead extraction, so the lag must skip them."""
+        from engine.hk_cbbc import _sld_data_freshness
+        assert _sld_data_freshness(self._df(["20260724"]),
+                                   today=date(2026, 7, 27)) == ("2026-07-24", "fresh")
+
+    def test_missing_and_unknown(self):
+        """No store vs rows-without-dates are different defects — neither is a
+        frozen store, so neither may fire a false staleness banner."""
+        from engine.hk_cbbc import _sld_data_freshness
+        from collectors.hk_cbbc_sld import _CL_COLUMNS
+        assert _sld_data_freshness(None) == (None, "missing")
+        assert _sld_data_freshness(pd.DataFrame(columns=_CL_COLUMNS)) == (None, "missing")
+        assert _sld_data_freshness(self._df(["", ""])) == (None, "unknown")
+
+    def test_frozen_store_fires_banner_despite_fresh_fetched_at(self, tmp_path):
+        """fetched_at is fresh here BY CONSTRUCTION (now-UTC) while the data is
+        14 days old — this pins that the gate keys to the data, not the fetch
+        stamp, which is the exact shape of the 2026-07 incident."""
+        import engine.hk_cbbc as eng
+        frozen = (date.today() - timedelta(days=14)).strftime("%Y%m%d")
+        self._write_store(tmp_path, [frozen], coverage={
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+            "call_levels_in_store": 1,
+        })
+        snap = eng.run(data_root=tmp_path)
+        assert snap["sld_freshness"] == "stale"
+        banner = snap["sld_banner"]
+        assert isinstance(banner, dict)
+        assert banner["en"] and banner["zh"]
+        assert snap["sld_max_issue_date"] in banner["en"]
+        for token in ("SLD", "pdftotext", "poppler", "parquet", "issue_date"):
+            assert token not in banner["en"], f"jargon {token!r} leaked into EN banner"
+            assert token not in banner["zh"], f"jargon {token!r} leaked into ZH banner"
+
+    def test_fresh_store_no_banner(self, tmp_path):
+        """A store filed today is healthy — no banner, no false alarm."""
+        import engine.hk_cbbc as eng
+        self._write_store(tmp_path, [date.today().strftime("%Y%m%d")],
+                          coverage={"call_levels_in_store": 1})
+        snap = eng.run(data_root=tmp_path)
+        assert snap["sld_freshness"] == "fresh"
+        assert snap["sld_banner"] is None
+
+    def test_missing_store_fail_open(self, tmp_path):
+        """Launch state (no store at all) must never block the render."""
+        import engine.hk_cbbc as eng
+        snap = eng.run(data_root=tmp_path)
+        assert snap["sld_freshness"] == "missing"
+        assert snap["sld_banner"] is None
+        assert isinstance(snap["bellwethers"], list)
+
+    def test_pdftotext_flag_passthrough_fail_open(self, tmp_path):
+        """The collector-side field ships in open PR #4177; the engine must read
+        it fail-open so it works both before and after that lands."""
+        import engine.hk_cbbc as eng
+        today_str = date.today().strftime("%Y%m%d")
+
+        after = tmp_path / "after"
+        self._write_store(after, [today_str], coverage={
+            "call_levels_in_store": 1, "pdftotext_available": False})
+        assert eng.run(data_root=after)["sld_pdftotext_available"] is False
+
+        before = tmp_path / "before"   # pre-#4177 coverage shape: no such key
+        self._write_store(before, [today_str], coverage={"call_levels_in_store": 1})
+        assert eng.run(data_root=before)["sld_pdftotext_available"] is None
