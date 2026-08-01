@@ -2408,7 +2408,9 @@
     snapshotPlanCtas();                        // idempotent; MMOnboard.applyChrome may arrive first
     var tier = me.tier || "free";
     var interval = me.interval || null;
-    var best = (tier === "unlimited") || (tier === "pro" && interval === "annual");
+    // Lifetime/comp grants carry interval null — they hold the top plan and must never
+    // be nav-upsold (mirrors the proTop predicate on the pricing cards below).
+    var best = (tier === "unlimited") || (tier === "pro" && interval !== "monthly");
     var start = "/start.html";
 
     // 1) hide the nav "Log in"
