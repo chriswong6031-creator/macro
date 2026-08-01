@@ -992,6 +992,11 @@ jobs:
           # swallowed into a green run ships stamps that pin returning browsers to the old
           # bytes for a year (#3617/#3624), which is exactly the state we cannot see.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
+      - name: guard — finalized site has no dead references
+        # externalize_css can create and prune content-addressed stylesheets. Validate the
+        # exact post-normalization tree that would be committed, not only the pre-pass.
+        if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
+        run: python3 scripts/check_site_asset_refs.py site
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
         if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
         env:
@@ -1174,6 +1179,10 @@ jobs:
               bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               python3 scripts/check_conflict_markers.py --file site/start.html
               python3 scripts/check_start_runtime.py --heal-from origin/main
+              # A rebase can combine this run's stale page with main's newer deletion of
+              # its content-addressed asset. Recheck the actual post-rebase tree before
+              # creating a heal commit or pushing it to the live branch.
+              python3 scripts/check_site_asset_refs.py site
               if ! git diff --quiet -- site/ templates/; then
                 # push_staged_clean: never bake conflict markers into the follow-up
                 # commit (P0 d29e4dd44d/#4167). On a dirty scan: unstage and push the

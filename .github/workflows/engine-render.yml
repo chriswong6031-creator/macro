@@ -629,8 +629,8 @@ jobs:
           exit 0
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
-        # WITHOUT node, so this guard failed on every render there 07-18 — and because the
-        # commit step is if: always(), unverified JS shipped to main (the VPS serves main).
+        # WITHOUT node, so this guard failed on every render there 07-18; the historical
+        # always-publish path still shipped that unverified JS. Publication is now gated.
         # setup-node installs into the runner tool cache: works on Linux AND a Mac fallback.
         uses: actions/setup-node@v4
         with:
@@ -643,12 +643,11 @@ jobs:
       - name: guard — market-state board coherence (ui.ms_board_coherence)
         # A freshly rendered board whose verdict/score/thesis/notes disagree means the
         # render itself is broken (engine or template regression) — restore last-good
-        # boards from checkout HEAD so the commit step (if: always()) can't ship them,
-        # then fail RED for visibility. The rebase-race hybrid variant (2026-07-07,
+        # boards from checkout HEAD, then fail RED for visibility. The rebase-race
+        # hybrid variant (2026-07-07,
         # commit 5bf116a3b3) is healed separately inside the push loop below.
-        # !cancelled(): the commit below ships even when the JS guard fails, so this heal
-        # must not be skippable by an earlier step failure (07-18: a failing JS guard
-        # silently skipped both this guard and the shim inject).
+        # !cancelled() keeps the heal visible even when an earlier guard failed; the
+        # success-gated finalization/commit steps still refuse to publish that tree.
         if: ${{ !cancelled() }}
         run: |
           python3 scripts/check_ms_board_coherence.py && exit 0
@@ -694,12 +693,10 @@ jobs:
           echo "::error title=engine-render stockdata publish failed::R2 sync failed after 3 attempts"
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
-        # always(), NOT !cancelled() — same reasoning as render.yml: the commit below is
-        # if: always(), so a CANCELLED engine-render still pushes site/ to main, and
-        # !cancelled() skipped this normalization first → raw un-externalized pages live
-        # on a 60s-TTL document. Idempotent normalizers, ~5s over 237 pages, so they are
-        # safe to run inside the cancellation window. Guards above stay !cancelled().
-        if: always()
+        # A cancelled, timed-out, or guard-failed engine render must keep the last-good
+        # committed site live. Normalize only a tree whose builders and first-pass guards
+        # succeeded, then re-run the dead-reference guard on the finalized bytes below.
+        if: ${{ success() }}
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
@@ -708,8 +705,14 @@ jobs:
           # swallowed into a green run pins returning browsers to the old bytes for a year
           # (#3617/#3624). See render.yml for the full rationale.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
+      - name: guard — finalized site has no dead references
+        # externalize_css can create and prune content-addressed stylesheets. Validate the
+        # exact post-normalization tree that would be committed, not only the pre-pass.
+        if: ${{ success() }}
+        run: python3 scripts/check_site_asset_refs.py site
       - name: commit rendered site (site/ ONLY — never data/, so every ledger stays pristine)
-        if: always()
+        # Fail closed: no cancelled run or failed guard is allowed to mutate main.
+        if: ${{ success() }}
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
@@ -811,6 +814,10 @@ jobs:
               bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               python3 scripts/check_conflict_markers.py --file site/start.html
               python3 scripts/check_start_runtime.py --heal-from origin/main
+              # A rebase can combine this run's stale page with main's newer deletion of
+              # its content-addressed asset (2026-08-01 crypto.html -> 94a4f2e3.css).
+              # Recheck the actual post-rebase tree before creating a heal commit or push.
+              python3 scripts/check_site_asset_refs.py site
               if ! git diff --quiet -- site/ templates/; then
                 # push_staged_clean: never bake conflict markers into the follow-up
                 # commit (P0 d29e4dd44d/#4167). On a dirty scan: unstage and push the
