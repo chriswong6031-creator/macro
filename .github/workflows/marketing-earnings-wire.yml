@@ -162,6 +162,7 @@ jobs:
         # failed tick is strictly safer than losing it.
         run: |
           set -uo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
 
@@ -178,7 +179,7 @@ jobs:
             # once main advances mid-run. The outbox ledgers carry merge=union,
             # so a concurrent append resolves instead of conflicting.
             git fetch --depth 20 origin main || true
-            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+            if git pull --rebase --autostash origin main && push_autostash_ok && git push origin HEAD:main; then
               echo "marketing-earnings-wire: pushed on attempt $i"
               exit 0
             fi

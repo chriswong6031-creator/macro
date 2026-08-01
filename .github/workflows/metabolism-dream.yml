@@ -116,6 +116,7 @@ jobs:
 
       - name: commit + push dream artifacts (only on change)
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # Guard: only add files that exist (dry-run / paused no-op never writes them).
@@ -156,7 +157,7 @@ jobs:
                    <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
             | while IFS= read -r f; do rm -f -- "$f" || true; done
           for _i in 1 2 3; do
-            if git pull --rebase --autostash origin main && git push; then
+            if git pull --rebase --autostash origin main && push_autostash_ok && git push; then
               echo "dream pushed on attempt $_i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true
@@ -176,6 +177,7 @@ jobs:
       - name: commit + push digest artifacts (only on change)
         continue-on-error: true
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # Guard: only add files that exist (dry-run / paused no-op never writes them).
@@ -199,7 +201,7 @@ jobs:
                    <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
             | while IFS= read -r f; do rm -f -- "$f" || true; done
           for _i in 1 2 3; do
-            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+            if git pull --rebase --autostash origin main && push_autostash_ok && git push origin HEAD:main; then
               echo "digest pushed on attempt $_i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true

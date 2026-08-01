@@ -90,6 +90,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
 
           AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
           FR="$(printf '%s' "${FORCE_RUN:-false}" | tr '[:upper:]' '[:lower:]')"
@@ -131,7 +132,7 @@ jobs:
             # F2(b): replace single-shot push with 5-attempt retry loop so a lost race
             # does not silently drop audit/governance records on the ephemeral runner.
             for _i in 1 2 3 4 5; do
-              if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+              if git pull --rebase --autostash origin main && push_autostash_ok && git push origin HEAD:main; then
                 echo "audit records pushed on attempt $_i"
                 break
               fi

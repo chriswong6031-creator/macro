@@ -69,6 +69,7 @@ jobs:
       - name: commit catalog snapshot (salvage-push)
         if: always()
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/research_vault/catalog.json data/research_vault/excerpts.json 2>/dev/null || true
@@ -82,7 +83,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            git pull --rebase --autostash -X theirs origin main && git push && exit 0
+            git pull --rebase --autostash -X theirs origin main && push_autostash_ok && git push && exit 0
             echo "push attempt $i failed; retrying"; sleep $((i*3))
           done
           echo "::warning::could not push research_vault catalog after 5 attempts (non-fatal)"

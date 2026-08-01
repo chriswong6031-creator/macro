@@ -283,8 +283,9 @@ jobs:
       - name: salvage push (job cancelled mid-publish — one bounded attempt)
         if: cancelled() && steps.commitdata.outputs.committed == 'true'
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           perl -e 'alarm 90; exec @ARGV or die' -- git fetch origin main || true
-          perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main || true
+          { perl -e 'alarm 180; exec @ARGV or die' -- git pull --rebase --autostash -X theirs origin main && push_autostash_ok; } || true
           perl -e 'alarm 120; exec @ARGV or die' -- git push \
             && echo "salvage push landed the collections" \
             || echo "::warning::salvage push failed — tonight's collections stay uncommitted"

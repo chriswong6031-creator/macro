@@ -65,6 +65,7 @@ jobs:
       # crossed its expiry). The idempotent writes mean a quiet hour is a clean no-op.
       - name: commit + push (only on change)
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # data/qledger: the W5 adapter appends each activated alert's claim to the
@@ -92,4 +93,4 @@ jobs:
           comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                    <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
             | while IFS= read -r f; do rm -f -- "$f" || true; done
-          git pull --rebase --autostash -X theirs origin main && git push
+          git pull --rebase --autostash -X theirs origin main && push_autostash_ok && git push
