@@ -1798,6 +1798,27 @@ try:
 except ImportError:
     pass  # app/research.py not yet present — vault routes unavailable until RV W2
 
+# Warm the SHARED corpus cache off the request path (Analyst OS W4). The chat
+# tool's mode="report" and the vault routes now read one process-wide copy
+# (engine/research_vault/corpus.py); without this, the first report call in a
+# cold process pays the full R2 download INSIDE a chat turn. Best-effort daemon
+# thread: no creds / no R2 → the fetch no-ops and report mode serves excerpts.
+try:
+    from engine.research_vault import corpus as _rv_corpus  # noqa: E402
+    from app.research import _build_store as _rv_store  # noqa: E402
+
+    def _warm_corpus() -> None:
+        try:
+            conn = _rv_corpus.corpus_connection(store_factory=_rv_store)
+            if conn is not None:
+                conn.close()
+        except Exception:  # noqa: BLE001 — warmth is optional, never load-bearing
+            pass
+
+    threading.Thread(target=_warm_corpus, name="rv-corpus-warm", daemon=True).start()
+except Exception:  # noqa: BLE001
+    pass
+
 # ---------------------------------------------------------------------------
 # Billing spine router (MNZ W2 — app/billing.py): /api/billing/checkout|webhook|portal.
 # Included after require_user is defined (app/billing._current_user lazy-imports it),

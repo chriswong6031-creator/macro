@@ -17,6 +17,13 @@ from lib import config
 
 log = logging.getLogger(__name__)
 
+# The Codex tier that carries this lane (operator directive 2026-07-31). Kept as a
+# literal rather than an import of engine.codex_provider.TERRA_MODEL: that module
+# pulls in the codex_lane runner, and a deepseek host must not pay that import just
+# to name a default. tests/test_news_translate_render_gate.py pins the two equal.
+CODEX_TERRA_MODEL = "gpt-5.6-terra"
+DEFAULT_DEEPSEEK_MODEL = "deepseek-chat"
+
 SYSTEM_ZH = (
     "You are a professional financial-news translator. Translate each English "
     "headline or short summary into concise, natural Simplified Chinese. Preserve "
@@ -57,12 +64,66 @@ def _cfg() -> dict:
     if not cfg:
         cfg = {
             "enabled": False,
+            "provider": "deepseek",
             "api_key_env": "DEEPSEEK_API_KEY",
             "base_url": "https://api.deepseek.com/anthropic",
-            "model": "deepseek-chat",
+            "model": DEFAULT_DEEPSEEK_MODEL,
             "cache_dir": "data/news_translation/cache",
         }
     return cfg
+
+
+def _provider(cfg: dict) -> str:
+    """Which transport this config selects: "codex" or "deepseek" (the default).
+
+    One provider at a time, chosen by config — deliberately NOT a failover chain.
+    An unreachable provider degrades this lane to cache-only, which is the same
+    honest fallback an unkeyed host has always had.
+    """
+    return str(cfg.get("provider") or "deepseek").strip().lower()
+
+
+def _model(cfg: dict) -> str:
+    """The model id sent on the wire, defaulted per provider.
+
+    Without the per-provider default a codex config that omits `model` would send
+    "deepseek-chat"; ``codex_provider.translate_model`` maps that to Terra anyway,
+    so the call would work while the usage ledger recorded a model that never ran.
+    """
+    return str(cfg.get("model") or (
+        CODEX_TERRA_MODEL if _provider(cfg) == "codex" else DEFAULT_DEEPSEEK_MODEL))
+
+
+def translator_ready(cfg: dict | None = None) -> tuple[bool, str]:
+    """Whether the CONFIGURED translator can actually run here -> (ready, reason).
+
+    Callers used to preflight with a bare ``config.secret("DEEPSEEK_API_KEY")``.
+    That reads as a correct check and is wrong under any other provider: on a
+    codex host it warns about a key nothing needs while the lane works fine, and
+    it would stay silent in the one case that matters — codex selected and not
+    attached. Asking the translator keeps the check from drifting away from the
+    client it is checking.
+
+    ``reason`` is an operator sentence in both directions; the ready form names
+    the provider and model actually in force, so a log line proves WHICH
+    translator ran rather than which one the config hoped for.
+    """
+    cfg = cfg if cfg is not None else _cfg()
+    provider = _provider(cfg)
+    if provider == "codex":
+        try:
+            from engine import codex_provider as _codex  # noqa: PLC0415
+        except Exception as e:  # noqa: BLE001
+            return (False, f"codex provider import failed ({type(e).__name__}: {e})")
+        if not _codex.is_available():
+            return (False, "no attached Codex account on this host (codex CLI "
+                           "missing, no login under CODEX_HOME, or "
+                           "CODEX_PROVIDER_ENABLED is off)")
+        return (True, f"codex/{_model(cfg)}")
+    env = str(cfg.get("api_key_env") or "DEEPSEEK_API_KEY")
+    if not config.secret(env):
+        return (False, f"{env} is not set on this host")
+    return (True, f"{provider}/{_model(cfg)}")
 
 
 def _api_fill_allowed(cfg: dict) -> bool:
@@ -123,7 +184,7 @@ def _create_kwargs(cfg: dict, system: str, user: str) -> dict:
     one hung endpoint reads to the monitor as a dead daemon.
     """
     kwargs: dict = {
-        "model": cfg.get("model", "deepseek-chat"),
+        "model": _model(cfg),
         "max_tokens": int(cfg.get("max_tokens", 3000)),
         "system": system,
         "messages": [{"role": "user", "content": user}],
@@ -146,10 +207,16 @@ def _record_usage(cfg: dict, resp) -> None:
         return
     try:
         from lib import ai_costs as _ac  # noqa: PLC0415
-        _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
+        if _provider(cfg) == "codex":
+            # infer_provider only knows base_url shapes, and the codex path has no
+            # base_url — it would file an attached-subscription turn as metered
+            # claude_api. Same vocabulary llm_auth._capture_usage uses for codex.
+            _prov, _basis = "codex", "subscription"
+        else:
+            _prov, _basis = _ac.infer_provider(cfg.get("base_url"))
         _ac.record_response_usage(lane=str(cfg.get("usage_lane", "news-translate")),
                                   response=resp,
-                                  model=cfg.get("model", "deepseek-chat"),
+                                  model=_model(cfg),
                                   provider=_prov, cost_basis=_basis)
     except Exception:  # noqa: BLE001
         pass
@@ -194,7 +261,48 @@ def _write_cache(pairs: list[tuple[str, str | None]], cfg: dict) -> None:
             pass
 
 
+def _codex_client(cfg: dict):
+    """The attached Codex subscription, wearing the Anthropic client shape.
+
+    Operator directive 2026-07-31: the zh wire-headline pass runs on the embedded
+    codex subscription instead of DEEPSEEK_API_KEY, which was never provisioned on
+    the press host — the lane looked armed in config and shipped English forever.
+    ``CodexClient`` exposes the same ``messages.create(model=, max_tokens=, system=,
+    messages=)`` surface, so the batch JSON-array protocol above is untouched: only
+    the transport moves. Tier is Terra, which already carries the hot-tape wire.
+
+    The import is lazy because ``engine.codex_provider`` drags in the codex_lane
+    runner; a deepseek host must neither pay that import nor fail on it.
+
+    Unavailable is a NORMAL outcome, not an error: a runner with no codex login
+    returns None here and the lane degrades to cache-only, exactly as an unkeyed
+    host always has.
+    """
+    try:
+        from engine import codex_provider as _codex  # noqa: PLC0415
+    except Exception as e:  # noqa: BLE001
+        log.warning("news translation codex provider unavailable: %s", e)
+        return None
+    if not _codex.is_available():
+        log.warning("news translation: provider is codex but no attached account "
+                    "on this host — translation degrades to cache-only")
+        return None
+    try:
+        kw: dict = {"timeout_s": max(1, int(float(cfg.get("timeout_s") or 60)))}
+        # Optional: headline translation is mechanical, so a lane on a short tick
+        # budget can spend less thinking time per turn.
+        effort = str(cfg.get("codex_reasoning_effort") or "").strip()
+        if effort:
+            kw["reasoning_effort"] = effort
+        return _codex.CodexClient(**kw)
+    except Exception as e:  # noqa: BLE001
+        log.warning("news translation codex client init failed: %s", e)
+        return None
+
+
 def _client(cfg: dict):
+    if _provider(cfg) == "codex":
+        return _codex_client(cfg)
     key = config.secret(cfg.get("api_key_env", "DEEPSEEK_API_KEY"))
     if not key:
         return None

@@ -431,15 +431,28 @@ wire:
   # scripts/marketing_fastlane_daemon.py::_zh_cfg.
   #
   # DEFAULT IS OFF IN CODE: deleting this key disarms the spend. It also stays
-  # dark on its own when news_translation is disabled or DEEPSEEK_API_KEY is
-  # absent on the host, and an item without `zh` renders as English plus a plain
+  # dark on its own when news_translation is disabled, or when the host cannot
+  # reach the provider this lane is routed to — which since 2026-07-31 is the
+  # ATTACHED CODEX SUBSCRIPTION (Terra), not DEEPSEEK_API_KEY. _zh_cfg overrides
+  # the global config.yml provider for this lane alone: the VPS has the codex
+  # login and no DeepSeek key, the nightly/render runners are the exact inverse.
+  # news_translate.translator_ready() answers per-provider and the daemon logs the
+  # real reason once a tick; an item without `zh` renders as English plus a plain
   # "英文原文" marker — never a blank or a faked translation.
+  # Override keys if the lane ever needs the metered endpoint back:
+  # zh_provider (codex|deepseek), zh_model, zh_effort.
   zh_enabled: true
   # Per-tick budget. The tick has ~75s and its heartbeat only touches afterwards,
   # so the zh pass may never be what makes a healthy daemon look dead. Items past
   # the cap keep English + the marker and roll into the next tick.
   zh_per_tick: 16
-  zh_timeout_s: 20
+  # 45s, raised from 20 on 2026-07-31 with the move to codex: a codex turn is a CLI
+  # process spawn PLUS the model call, where the old budget only had to cover an
+  # HTTP round trip (deepseek needed ~20s). Sized for Terra at low effort. A
+  # timeout still fails soft — the batch returns None and the items ship English
+  # with the marker — so a budget that is too small is silently ineffective rather
+  # than loud, which is exactly why it is set generously here.
+  zh_timeout_s: 45
   # Wire bodies run to the wire_deep budget; the shared 360 default would cut them
   # off mid-sentence.
   zh_max_chars: 700

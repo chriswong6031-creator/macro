@@ -7,10 +7,17 @@ turn on hosts where a Codex login is already attached.
 
 Security boundary
 -----------------
-Codex is deliberately reduced to a text model here: shell, web search and
-sub-agents are disabled; the sandbox is read-only; user configuration and
-repository rules are ignored; and the working directory is the system temp
-directory.  The credential is never read by Python and never logged.
+Codex is deliberately reduced here: shell, web search and sub-agents are
+disabled; the sandbox is read-only; user configuration and repository rules are
+ignored; and the working directory is the system temp directory.  The credential
+is never read by Python and never logged.
+
+The ONE tool that can be enabled is ``view_image``, and only on a call that
+carries image blocks (operator directive 2026-07-31 — chat vision runs on the
+attached Codex subscription rather than metered Anthropic).  Such a call gets a
+throwaway temp directory as its cwd, holding just the decoded attachments, and
+that directory is deleted when the call returns.  Image URLs are never fetched
+server-side; the model is told it cannot see them.
 
 The provider auto-discovers either a trusted-automation environment credential
 (``CODEX_ACCESS_TOKEN`` / ``CODEX_API_KEY``) or the attached login under
@@ -19,6 +26,7 @@ login simply omit this provider from the waterfall.
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -39,6 +47,23 @@ TERRA_MODEL = "gpt-5.6-terra"
 LUNA_MODEL = "gpt-5.6-luna"
 
 _FALSE_VALUES = {"0", "false", "no", "off", "disabled"}
+
+# Vision (operator directive 2026-07-31): chat vision is served by the attached
+# Codex SUBSCRIPTION, not by metered Anthropic. The CLI has no inline-image
+# request field — its `view_image` tool reads a LOCAL FILE under the turn's
+# working directory — so an image block is staged to disk inside a throwaway
+# sandbox that IS the cwd for that one call, and deleted in a finally.
+# media type → the extension the staged file gets.
+VISION_MEDIA_TYPES: dict[str, str] = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+}
+# Decoded-byte ceiling per image. The gateway already caps attachments at ~3.5MB;
+# this is the provider's own floor-level guard so a caller that skips that check
+# cannot push an arbitrary blob onto this host's disk.
+VISION_MAX_IMAGE_BYTES = 3_500_000
 
 
 def provider_enabled() -> bool:
@@ -160,9 +185,15 @@ def _plain(value: Any) -> Any:
         out = {}
         for key, item in value.items():
             if key == "source" and isinstance(item, dict) and item.get("type") == "base64":
+                # Backstop only. Top-level image blocks are staged to disk by
+                # _stage_image_inputs BEFORE the prompt is built, so anything
+                # still carrying a base64 source here sits in a position the
+                # vision path does not handle (e.g. nested inside a tool_result).
+                # Serialising the payload into the prompt would be worse than
+                # failing over, so this stays a hard unsupported-input error.
                 raise CodexUnsupportedInput(
-                    "400 unsupported request feature: inline image input is not "
-                    "supported by the Codex CLI fallback"
+                    "400 unsupported request feature: inline image input in this "
+                    "position is not supported by the Codex CLI provider"
                 )
             out[str(key)] = _plain(item)
         return out
@@ -207,14 +238,183 @@ def _tool_contract(tools: Any) -> str:
     )
 
 
-def _build_prompt(system: Any, messages: Any, tools: Any) -> str:
-    """Build one isolated chat turn for ``codex exec``."""
+# ---------------------------------------------------------------------------
+# Vision: stage image blocks as files the CLI's view_image tool can open
+# ---------------------------------------------------------------------------
+
+def _attr(obj: Any, name: str) -> Any:
+    """Read a field from either a plain dict block or an SDK block object."""
+    if isinstance(obj, dict):
+        return obj.get(name)
+    return getattr(obj, name, None)
+
+
+def _source_fields(source: Any) -> dict[str, Any]:
+    """Normalise an image ``source`` (dict or SDK object) to a plain dict."""
+    if isinstance(source, dict):
+        return source
+    if source is None:
+        return {}
+    return {
+        name: getattr(source, name)
+        for name in ("type", "media_type", "data", "url")
+        if hasattr(source, name)
+    }
+
+
+def _is_image_block(block: Any) -> bool:
+    return str(_attr(block, "type") or "") == "image"
+
+
+def _has_image_input(messages: Any) -> bool:
+    """True when any top-level message content list carries an image block."""
+    for message in messages or []:
+        content = _attr(message, "content")
+        if isinstance(content, (list, tuple)) and any(_is_image_block(b) for b in content):
+            return True
+    return False
+
+
+def _stage_image_block(block: Any, index: int, tmpdir: str) -> tuple[dict[str, str], bool]:
+    """One Anthropic image block → (text block for the prompt, wrote_a_file).
+
+    base64 sources are decoded and written to ``<tmpdir>/img_<index>.<ext>``; the
+    replacement text points the model at that path and tells it to call
+    ``view_image``.  https sources are NOT fetched — doing so server-side would
+    hand a caller an SSRF primitive — so the model is told the image exists but
+    could not be attached, and must say it cannot see it.
+
+    Raises CodexUnsupportedInput for shapes this path cannot serve, so the
+    waterfall fails over to a natively multimodal provider instead of answering
+    a picture it never received.
+    """
+    source = _source_fields(_attr(block, "source"))
+    source_type = str(source.get("type") or "")
+
+    if source_type == "base64":
+        media_type = str(source.get("media_type") or "").strip().lower()
+        extension = VISION_MEDIA_TYPES.get(media_type)
+        if not extension:
+            raise CodexUnsupportedInput(
+                "400 unsupported request feature: image media type "
+                f"{media_type or '(missing)'} is not supported by the Codex vision path"
+            )
+        try:
+            raw = base64.b64decode(str(source.get("data") or ""), validate=True)
+        except Exception as exc:  # noqa: BLE001
+            raise CodexUnsupportedInput(
+                "400 unsupported request feature: image payload is not valid base64"
+            ) from exc
+        if not raw:
+            raise CodexUnsupportedInput(
+                "400 unsupported request feature: image payload is empty"
+            )
+        if len(raw) > VISION_MAX_IMAGE_BYTES:
+            raise CodexUnsupportedInput(
+                "400 unsupported request feature: image is larger than the "
+                f"{VISION_MAX_IMAGE_BYTES}-byte Codex vision limit"
+            )
+        name = f"img_{index}.{extension}"
+        Path(tmpdir, name).write_bytes(raw)
+        return (
+            {"type": "text", "text": (
+                f"Image {index} is saved at ./{name} — use the view_image tool to "
+                "look at it before answering."
+            )},
+            True,
+        )
+
+    if source_type == "url":
+        url = str(source.get("url") or "").strip()
+        return (
+            {"type": "text", "text": (
+                f"Image {index} was supplied as the URL {url or '(missing)'} and could "
+                "NOT be attached to this turn — it was not downloaded and there is no "
+                "local copy. You cannot see it: say so plainly instead of guessing at "
+                "its contents."
+            )},
+            False,
+        )
+
+    raise CodexUnsupportedInput(
+        "400 unsupported request feature: unrecognised image source "
+        f"{source_type or '(missing)'} for the Codex vision path"
+    )
+
+
+def _stage_image_inputs(messages: Any) -> tuple[Any, str | None]:
+    """Rewrite image blocks into text and return ``(messages, sandbox_dir|None)``.
+
+    ``sandbox_dir`` is a fresh temp directory holding the decoded image files; it
+    is the working directory for that one CLI call so ``view_image`` can reach
+    them, and the CALLER must delete it in a ``finally``.  None means no file was
+    written (text-only turn, or url-only attachments) and view_image stays off.
+
+    Cleans up its own directory if staging raises part-way, so a rejected second
+    image never leaves the first one's bytes on disk.
+    """
+    if not _has_image_input(messages):
+        return messages, None
+
+    tmpdir = tempfile.mkdtemp(prefix="codex_vision_")
+    try:
+        rewritten: list[Any] = []
+        index = 0
+        wrote_any = False
+        for message in messages or []:
+            content = _attr(message, "content")
+            if not isinstance(content, (list, tuple)) or not any(
+                _is_image_block(b) for b in content
+            ):
+                rewritten.append(message)
+                continue
+            blocks: list[Any] = []
+            for block in content:
+                if not _is_image_block(block):
+                    blocks.append(block)
+                    continue
+                index += 1
+                text_block, wrote = _stage_image_block(block, index, tmpdir)
+                wrote_any = wrote_any or wrote
+                blocks.append(text_block)
+            rewritten.append({"role": _attr(message, "role"), "content": blocks})
+    except BaseException:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        raise
+
+    if not wrote_any:
+        shutil.rmtree(tmpdir, ignore_errors=True)
+        return rewritten, None
+    return rewritten, tmpdir
+
+
+def _build_prompt(system: Any, messages: Any, tools: Any, *, vision: bool = False) -> str:
+    """Build one isolated chat turn for ``codex exec``.
+
+    ``vision`` swaps the "no built-in tools" preamble for one that permits the
+    single tool the turn needs (view_image) — telling the model every tool is
+    disabled and then asking it to open a file is a contradiction it resolves by
+    not looking.
+    """
     plain_messages = _plain(messages or [])
+    if vision:
+        preamble = (
+            "You are serving as a text-generation provider inside an application. "
+            "Follow the application system instruction and conversation. This turn "
+            "carries image attachments, saved as files in your working directory: "
+            "call the view_image tool on each one and read it before you answer. "
+            "Do not run commands, browse, or use any other built-in tool; every "
+            "other capability is disabled for this turn."
+        )
+    else:
+        preamble = (
+            "You are serving as a text-generation provider inside an application. "
+            "Follow the application system instruction and conversation. Do not try "
+            "to inspect files, run commands, browse, or use any built-in tools; those "
+            "capabilities are disabled for this turn."
+        )
     return (
-        "You are serving as a text-generation provider inside an application. "
-        "Follow the application system instruction and conversation. Do not try "
-        "to inspect files, run commands, browse, or use any built-in tools; those "
-        "capabilities are disabled for this turn.\n\n"
+        f"{preamble}\n\n"
         f"APPLICATION SYSTEM INSTRUCTION\n{_text(system)}\n\n"
         "CONVERSATION (JSON)\n"
         f"{json.dumps(plain_messages, ensure_ascii=False, separators=(',', ':'), default=str)}"
@@ -373,36 +573,47 @@ class _Messages:
     def create(self, **kwargs: Any) -> _Message:
         requested_model = str(kwargs.get("model") or "")
         model = translate_model(requested_model)
-        prompt = _build_prompt(
-            kwargs.get("system", ""),
-            kwargs.get("messages") or [],
-            kwargs.get("tools"),
-        )
-        extra_args = [
-            "--ephemeral",
-            "--ignore-user-config",
-            "--ignore-rules",
-            "-c", 'approval_policy="never"',
-            "-c", 'web_search="disabled"',
-            "-c", "agents.enabled=false",
-            "-c", "features.shell_tool=false",
-            "-c", "tools.view_image=false",
-        ]
-        if self.reasoning_effort:
-            extra_args.extend([
-                "-c",
-                f'model_reasoning_effort="{self.reasoning_effort}"',
-            ])
-        result = run_codex(
-            prompt,
-            cwd=self.cwd or tempfile.gettempdir(),
-            timeout_s=self.timeout_s,
-            model=model,
-            sandbox="read-only",
-            network=False,
-            extra_args=extra_args,
-        )
-        return _message_from_result(result, kwargs.get("tools"))
+        # Vision turns stage their images to disk first; the sandbox directory
+        # becomes this call's cwd so view_image can open ./img_<n>.<ext>, and it
+        # is deleted in the finally below whatever the outcome — user image bytes
+        # must not outlive the request. Staging raises before the dir exists (or
+        # cleans up itself) for shapes the vision path cannot serve.
+        messages, vision_dir = _stage_image_inputs(kwargs.get("messages") or [])
+        try:
+            prompt = _build_prompt(
+                kwargs.get("system", ""),
+                messages,
+                kwargs.get("tools"),
+                vision=vision_dir is not None,
+            )
+            extra_args = [
+                "--ephemeral",
+                "--ignore-user-config",
+                "--ignore-rules",
+                "-c", 'approval_policy="never"',
+                "-c", 'web_search="disabled"',
+                "-c", "agents.enabled=false",
+                "-c", "features.shell_tool=false",
+                "-c", f"tools.view_image={'true' if vision_dir else 'false'}",
+            ]
+            if self.reasoning_effort:
+                extra_args.extend([
+                    "-c",
+                    f'model_reasoning_effort="{self.reasoning_effort}"',
+                ])
+            result = run_codex(
+                prompt,
+                cwd=vision_dir or self.cwd or tempfile.gettempdir(),
+                timeout_s=self.timeout_s,
+                model=model,
+                sandbox="read-only",
+                network=False,
+                extra_args=extra_args,
+            )
+            return _message_from_result(result, kwargs.get("tools"))
+        finally:
+            if vision_dir:
+                shutil.rmtree(vision_dir, ignore_errors=True)
 
     def stream(self, **kwargs: Any) -> _Stream:
         return _Stream(self, kwargs)

@@ -650,6 +650,10 @@ on:
       # Analyst OS W3: per-user memory tools + prefs plumbing.
       - "tests/test_brain_user_memory.py"
       - "tests/test_user_prefs.py"
+      # Analyst OS W4: news-translate suites were wired into the marketing pack
+      # (previously run by ZERO jobs); test-only edits must trigger a run too.
+      - "tests/test_news_translate_render_gate.py"
+      - "tests/test_news_translate_en.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it

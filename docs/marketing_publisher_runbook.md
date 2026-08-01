@@ -452,13 +452,20 @@ and the seen-ledger. Production desk/rail snapshots live under
    independently of that outbound switch; the configured monthly cap still
    fails closed. Explicit `--dry-run` is the non-consuming mode and therefore
    keeps the billed relay offline.
-2. **For Chinese wire items on the news.html rail (B4c), also add `DEEPSEEK_API_KEY=…`.**
-   It is NOT provisioned on the VPS today. Without it the lane still runs: items
-   ship English-only and the rail marks them 「英文原文」 rather than faking a
-   translation — but the daemon logs one `wires zh armed but DEEPSEEK_API_KEY is
-   not set` warning per tick so the gap is visible instead of silent. The pass is
-   also disarmable in config (`wire.zh_enabled: false` in `config/press_sources.yml`,
-   which defaults to OFF in code — deleting the key disarms the spend).
+2. **Chinese wire items on the news.html rail (B4c) translate via the attached
+   codex subscription (gpt-5.6-terra) — no API key to provision (operator ruling
+   2026-07-31).** The press lane's `_zh_cfg` overrides the translator to
+   provider `codex`; the service unit carries `CODEX_HOME=/var/lib/macro-codex`
+   and reads the same attached login `macro-api.service` owns (its
+   `StateDirectory` creates `auth.json` — if macro-api never attached a login,
+   zh stays in fallback). Without a reachable codex login the lane still runs:
+   items ship English-only and the rail marks them 「英文原文」 rather than
+   faking a translation — the daemon logs one `wires zh armed but …` warning
+   per tick with `translator_ready()`'s reason, so the gap is visible instead
+   of silent. The pass is disarmable in config (`wire.zh_enabled: false` in
+   `config/press_sources.yml`), and `zh_provider: deepseek` there flips the
+   lane back to the metered endpoint (which then DOES need
+   `DEEPSEEK_API_KEY=…` in `/etc/macro-live.env`).
    The lane keeps its translation cache under the gitignored
    `data/marketing/press/zh_cache/` and does NOT append to `data/ai_costs/usage.jsonl`
    (nightly is the sole ledger advancer); per-tick counts appear in the log line and
@@ -477,10 +484,11 @@ and the seen-ledger. Production desk/rail snapshots live under
    the wire running but stops outbound posts.
 
 **Intelligence Desk V2 (2026-07-29) operator notes:**
-- The same `DEEPSEEK_API_KEY` from step 2 also powers the desk's story-level
+- The same codex/terra translator from step 2 also powers the desk's story-level
   Chinese twins (`headline_zh`/`brief_zh`, and the phrased why-line when the LLM
-  pass produced one). Absent key → labeled-English fallback on every surface,
-  same as the rail.
+  pass produced one) — `_attach_desk_zh` rides the same `translate_to_zh` seam.
+  No reachable codex login → labeled-English fallback on every surface, same as
+  the rail.
 - **Alpaca/Benzinga news lane**: armed purely by env presence — add
   `ALPACA_API_KEY_ID=…` and `ALPACA_API_SECRET_KEY=…` to `/etc/macro-live.env`
   for the daemon; add the same two as GitHub repo secrets to arm the Actions

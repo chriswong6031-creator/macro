@@ -18,12 +18,21 @@ Schema v2 adds the engine-MEASURED columns from :mod:`research_vault.probe`
 They are metadata only — deliberately NOT added to the FTS table: ``first_page_text``
 is a prefix of ``body``, so indexing it would double-count those postings and
 silently reweight every BM25 score.
+
+The bottom of this module holds the PROCESS-WIDE read-through cache
+(:func:`corpus_connection`) and the by-id reader (:func:`get_document`) that both
+``app/research.py`` and the Mastermind brain read through — see the block comment
+above them for why the cache lives here rather than in the router.
 """
 from __future__ import annotations
 
 import logging
+import os
 import re
 import sqlite3
+import tempfile
+import threading
+import time
 from pathlib import Path
 
 log = logging.getLogger("research_vault.corpus")
@@ -411,3 +420,229 @@ def institutions(conn: sqlite3.Connection) -> list[str]:
         "SELECT DISTINCT institution FROM documents WHERE institution <> '' ORDER BY institution"
     ).fetchall()
     return [r["institution"] for r in rows]
+
+
+# ---------------------------------------------------------------------------
+# read-through cache + by-id reader — ONE local copy per process (W4)
+# ---------------------------------------------------------------------------
+# The corpus lives ONLY in R2. Until W4 the single fetcher was
+# ``app/research.py::_corpus_conn``; the Mastermind brain's Pro full-report answer
+# needs the same bytes and runs in the SAME FastAPI process (app/main.py imports
+# brain_gateway lazily in the request path), so a second private cache there would
+# mean two multi-MB downloads, two TTL clocks, and two writers racing over the one
+# temp file. The machinery therefore lives here and the router delegates.
+#
+# ENGINE-SIDE ONLY: this module must never import ``app/*``. The store comes from
+# ``research_vault.r2_store.build_store`` (the same env precedence the router used)
+# or from a caller-supplied factory — the router passes its own, which is what its
+# tests monkeypatch.
+#
+# Serve-stale-while-revalidate, unchanged from the router's original: a present
+# local copy is served immediately; past the TTL exactly one background thread
+# re-downloads it; only the very first call on a cold process blocks.
+
+CORPUS_KEY = "research_vault/corpus.sqlite"   # mirrors ingest CORPUS_KEY
+CORPUS_TTL = 300.0                            # seconds — local copy refresh age
+CORPUS_LOCK = threading.Lock()                # guards the three globals below
+_CACHE_DIRNAME = "research_vault_corpus"
+
+_corpus_path: Path | None = None
+_corpus_fetched_at: float = 0.0
+_corpus_refreshing: bool = False  # guarded by CORPUS_LOCK — one refresher at a time
+
+# The slug shape ``sidecar.slug`` produces, copied from app/research._DOC_ID_RE
+# INCLUDING its anchors: ``\A``/``\Z``, never ``^``/``$`` — a ``$`` also matches
+# just before a trailing newline, so "valid-id\n" would clear a ``$``-anchored
+# check. Any id failing this never reaches a SQL parameter or an R2 key.
+_DOC_ID_RE = re.compile(r"\A[a-z0-9][a-z0-9-]{0,120}\Z")
+
+# The EXACT key set :func:`get_document` returns. Literal, like every other
+# projection in this repo: a column added to ``documents`` later (the v2 probe
+# bundle, say) cannot reach a caller — or a chat context — without someone editing
+# this tuple and tripping tests/test_research_vault.py.
+DOCUMENT_FIELDS: tuple[str, ...] = (
+    "doc_id", "title", "institution", "side", "published_at", "summary", "body",
+)
+
+
+def valid_doc_id(doc_id) -> bool:
+    """True iff ``doc_id`` has the catalog slug shape (shape only, not existence).
+
+    Existence is the CALLER's gate — the router checks the catalog, the brain
+    checks the catalog. This is the cheap shape check that keeps traversal,
+    uppercase, slashes and trailing newlines out of the query in the first place.
+    """
+    return isinstance(doc_id, str) and bool(_DOC_ID_RE.match(doc_id))
+
+
+def _cache_dir() -> Path:
+    """Directory holding the local corpus copy (a function so tests can repoint it)."""
+    return Path(tempfile.gettempdir()) / _CACHE_DIRNAME
+
+
+def _default_store():
+    """The private research bucket via r2_store.build_store, or None. Never raises.
+
+    Imported lazily so this module keeps importing (and every pure-sqlite function
+    keeps working) on a box with no boto3.
+    """
+    try:
+        from engine.research_vault.r2_store import build_store  # noqa: PLC0415
+        return build_store()
+    except Exception as exc:  # noqa: BLE001 — no store → no corpus, never a raise
+        log.debug("research_vault: store unavailable (%s)", exc)
+        return None
+
+
+def _resolve_store(store_factory):
+    """Call the caller's factory (or the default) and swallow its failures."""
+    try:
+        return (store_factory or _default_store)()
+    except Exception as exc:  # noqa: BLE001
+        log.debug("research_vault: store factory failed (%s)", exc)
+        return None
+
+
+def _refresh_from_store(store_factory=None) -> Path | None:
+    """Download corpus.sqlite to the local cache path (SYNCHRONOUS). Never raises.
+
+    Returns the local path on success, None on any failure. Called inline only
+    when no local copy exists yet; otherwise it runs on a background thread so a
+    user's search never pays the multi-MB download (the corpus grows with the
+    archive — a backfilled corpus is far too large to fetch inside a request).
+
+    The store read is inside the try, unlike the router's original: a boto3
+    exception used to propagate out of the route (a 500), which contradicts
+    app/research.py's own never-raise-at-the-boundary invariant.
+    """
+    global _corpus_path, _corpus_fetched_at
+    store = _resolve_store(store_factory)
+    if store is None:
+        return None
+    try:
+        data = store.get_bytes(CORPUS_KEY)
+    except Exception as exc:  # noqa: BLE001 — a dead bucket degrades to no corpus
+        log.debug("research_vault: corpus fetch failed (%s)", exc)
+        return None
+    if not data:
+        return None
+    try:
+        tmp_dir = _cache_dir()
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        dst = tmp_dir / "corpus.sqlite"
+        tmp = dst.with_suffix(".sqlite.tmp")
+        tmp.write_bytes(data)
+        os.replace(tmp, dst)
+        with CORPUS_LOCK:
+            _corpus_path = dst
+            _corpus_fetched_at = time.monotonic()
+        return dst
+    except Exception as exc:  # noqa: BLE001 — write failure → degrade
+        log.debug("research_vault: corpus refresh failed (%s)", exc)
+        return None
+
+
+def _refresh_bg(store_factory=None) -> None:
+    """Background-thread wrapper: refresh, then clear the in-flight flag."""
+    global _corpus_refreshing
+    try:
+        _refresh_from_store(store_factory)
+    finally:
+        with CORPUS_LOCK:
+            _corpus_refreshing = False
+
+
+def corpus_connection(store_factory=None):
+    """Open the shared local corpus copy, refreshing it WITHOUT blocking the caller.
+
+    Returns a sqlite3 connection (caller closes it) or None. Never raises. A
+    present local copy is served immediately; when it is older than
+    :data:`CORPUS_TTL` a single background thread re-downloads it (dropped, not
+    queued, if one is already in flight). Only the very first call on a cold
+    process — no local copy at all — downloads inline.
+    """
+    global _corpus_refreshing
+    now = time.monotonic()
+
+    with CORPUS_LOCK:
+        have_local = _corpus_path is not None and _corpus_path.exists()
+        stale = not have_local or (now - _corpus_fetched_at) >= CORPUS_TTL
+        path = _corpus_path
+        if have_local and stale and not _corpus_refreshing:
+            _corpus_refreshing = True
+            threading.Thread(target=_refresh_bg, args=(store_factory,), daemon=True,
+                             name="rv-corpus-refresh").start()
+
+    if not have_local:
+        # First fetch ever on this process: nothing to serve yet — block once.
+        path = _refresh_from_store(store_factory)
+        if path is None:
+            return None
+
+    try:
+        return open_db(path)  # type: ignore[arg-type]
+    except Exception as exc:  # noqa: BLE001 — unreadable local copy → degrade
+        log.debug("research_vault: corpus open failed (%s)", exc)
+        return None
+
+
+def reset_cache() -> None:
+    """Forget the local copy (tests only — production never calls this).
+
+    The cache is process-wide by design, so a test that seeds its own store must
+    be able to drop a copy a previous test fetched; otherwise the first fetch of
+    the session would decide what every later test reads.
+    """
+    global _corpus_path, _corpus_fetched_at, _corpus_refreshing
+    with CORPUS_LOCK:
+        _corpus_path = None
+        _corpus_fetched_at = 0.0
+        _corpus_refreshing = False
+
+
+def get_document(doc_id: str, store_factory=None) -> dict | None:
+    """One document's stored row by id, or None. Never raises.
+
+    ``{doc_id, title, institution, side, published_at, summary, body}`` —
+    :data:`DOCUMENT_FIELDS`, built literally. ``body`` is the pdftotext extraction
+    capped at :data:`BODY_MAX_CHARS` when it was ingested; slicing it further for a
+    given surface is that surface's decision, not this reader's.
+
+    None covers every degraded case on purpose — malformed id, no store, corpus
+    unreachable, unknown id, sqlite trouble — because every caller treats them the
+    same: fall back to the public material and say so.
+    """
+    if not valid_doc_id(doc_id):
+        return None
+    try:
+        conn = corpus_connection(store_factory=store_factory)
+    except Exception as exc:  # noqa: BLE001 — belt; corpus_connection degrades already
+        log.debug("research_vault: corpus connection failed (%s)", exc)
+        return None
+    if conn is None:
+        return None
+
+    try:
+        row = conn.execute(
+            "SELECT doc_id, title, institution, side, published_at, summary, body "
+            "FROM documents WHERE doc_id = ?", (doc_id,)).fetchone()
+    except Exception as exc:  # noqa: BLE001 — corrupt/partial copy → no document
+        log.debug("research_vault: document read failed (%s)", exc)
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:  # noqa: BLE001
+            pass
+
+    if row is None:
+        return None
+    return {
+        "doc_id": row["doc_id"] or "",
+        "title": row["title"] or "",
+        "institution": row["institution"] or "",
+        "side": row["side"] or "",
+        "published_at": row["published_at"] or "",
+        "summary": row["summary"] or "",
+        "body": row["body"] or "",
+    }

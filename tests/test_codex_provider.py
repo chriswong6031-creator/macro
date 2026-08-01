@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+import os
+import tempfile
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -186,18 +190,217 @@ def test_stream_compatibility(monkeypatch):
         assert stream.get_final_message() is fake
 
 
-def test_inline_image_fails_as_provider_specific_unsupported_feature(monkeypatch):
-    with pytest.raises(cp.CodexUnsupportedInput, match="unsupported request feature"):
-        cp.CodexClient().messages.create(
+class TestChatVisionRunsOnTheCodexSubscription:
+    """Operator directive 2026-07-31: chat vision must be CODEX-routed.
+
+    This class REPLACES test_inline_image_fails_as_provider_specific_unsupported_feature,
+    which pinned the old contract (any inline image → CodexUnsupportedInput → fail over
+    to metered Anthropic). Codex is the attached FLAT-RATE subscription; Anthropic is
+    metered per image, which is exactly why the operator wants image turns here.
+
+    The Codex CLI has no inline-image request field. What it has is `view_image`, a
+    native tool that reads a LOCAL FILE under the turn's working directory — disabled
+    on every text call by `-c tools.view_image=false`. So the vision path is: decode
+    each image into a throwaway sandbox dir, make that dir the cwd for THAT call,
+    enable view_image for THAT call, point the prompt at ./img_<n>.<ext>, and delete
+    the dir in a finally. The real CLI cannot run in tests, so every assertion here
+    reads the kwargs a monkeypatched run_codex received.
+    """
+
+    # a 1x1 transparent PNG / a 1x1 JPEG-ish payload — content is irrelevant, only
+    # that the exact bytes handed in are the exact bytes written to disk.
+    PNG_B64 = (
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgYGAAAAAEAAH2FzhVAAAAAElFTkSuQmCC"
+    )
+    JPEG_B64 = "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAg="
+
+    @staticmethod
+    def _image(b64, media_type="image/png"):
+        return {"type": "image",
+                "source": {"type": "base64", "media_type": media_type, "data": b64}}
+
+    @staticmethod
+    def _capturing_run(captured, *, ok=True):
+        """A fake run_codex that snapshots the sandbox WHILE the call is in flight."""
+        def fake_run(prompt, **kwargs):
+            captured["prompt"] = prompt
+            captured.update(kwargs)
+            cwd = Path(kwargs.get("cwd") or ".")
+            sandbox = cwd.name.startswith("codex_vision_") and cwd.is_dir()
+            captured["files_at_call_time"] = sorted(p.name for p in cwd.iterdir()) if sandbox else None
+            captured["bytes_at_call_time"] = {
+                name: (cwd / name).read_bytes()
+                for name in (captured["files_at_call_time"] or [])
+            }
+            if not ok:
+                return {"ok": False, "final_message": "", "token_usage": None,
+                        "rate_limits": None, "error_kind": "error", "raw_tail": "boom"}
+            return {"ok": True, "final_message": "a candlestick chart", "token_usage": {},
+                    "rate_limits": None, "error_kind": None}
+        return fake_run
+
+    def test_images_are_written_into_the_call_sandbox_with_view_image_enabled(self, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(cp, "run_codex", self._capturing_run(captured))
+
+        response = cp.CodexClient().messages.create(
             model="claude-opus-5",
+            system="Be precise.",
             messages=[{
                 "role": "user",
-                "content": [{
-                    "type": "image",
-                    "source": {"type": "base64", "data": "not-a-real-image"},
-                }],
+                "content": [
+                    {"type": "text", "text": "what pattern is this?"},
+                    self._image(self.PNG_B64),
+                    self._image(self.JPEG_B64, "image/jpeg"),
+                ],
             }],
         )
+
+        assert response.content[0].text == "a candlestick chart"
+        # the sandbox IS the cwd, so ./img_N is reachable by view_image
+        assert Path(captured["cwd"]).name.startswith("codex_vision_")
+        assert captured["files_at_call_time"] == ["img_1.png", "img_2.jpg"]
+        assert captured["bytes_at_call_time"]["img_1.png"] == base64.b64decode(self.PNG_B64)
+        assert captured["bytes_at_call_time"]["img_2.jpg"] == base64.b64decode(self.JPEG_B64)
+
+        joined = " ".join(captured["extra_args"])
+        assert "tools.view_image=true" in joined
+        assert "tools.view_image=false" not in joined
+        # the prompt must point at the files and permit the one tool it needs
+        assert "./img_1.png" in captured["prompt"] and "./img_2.jpg" in captured["prompt"]
+        assert "use the view_image tool" in captured["prompt"]
+        assert "call the view_image tool on each one" in captured["prompt"]
+        # and must NOT carry the payload it just wrote to disk
+        assert self.PNG_B64 not in captured["prompt"]
+        assert "what pattern is this?" in captured["prompt"]
+
+    def test_the_sandbox_is_gone_after_a_successful_call(self, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(cp, "run_codex", self._capturing_run(captured))
+        cp.CodexClient().messages.create(
+            model="claude-opus-5",
+            messages=[{"role": "user", "content": [self._image(self.PNG_B64)]}],
+        )
+        assert captured["files_at_call_time"] == ["img_1.png"]  # it existed during the call
+        assert not os.path.exists(captured["cwd"]), "user image bytes must not persist on disk"
+
+    def test_the_sandbox_is_gone_after_a_failed_call(self, monkeypatch):
+        """Cleanup lives in a finally: a provider error must not leak the image either."""
+        captured = {}
+        monkeypatch.setattr(cp, "run_codex", self._capturing_run(captured, ok=False))
+        with pytest.raises(cp.CodexProviderError):
+            cp.CodexClient().messages.create(
+                model="claude-opus-5",
+                messages=[{"role": "user", "content": [self._image(self.PNG_B64)]}],
+            )
+        assert captured["files_at_call_time"] == ["img_1.png"]
+        assert not os.path.exists(captured["cwd"])
+
+    def test_a_rejected_image_leaves_nothing_behind(self, monkeypatch, tmp_path):
+        """The first image is written before the second is rejected — staging cleans up."""
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+        monkeypatch.setattr(cp, "run_codex", lambda *a, **k: pytest.fail("must not reach the CLI"))
+        with pytest.raises(cp.CodexUnsupportedInput, match="media type"):
+            cp.CodexClient().messages.create(
+                model="claude-opus-5",
+                messages=[{"role": "user", "content": [
+                    self._image(self.PNG_B64),
+                    self._image(self.PNG_B64, "image/svg+xml"),
+                ]}],
+            )
+        assert list(tmp_path.iterdir()) == []
+
+    @pytest.mark.parametrize(
+        ("block", "match"),
+        [
+            ({"type": "image", "source": {"type": "base64", "media_type": "image/svg+xml",
+                                          "data": PNG_B64}}, "media type"),
+            ({"type": "image", "source": {"type": "base64", "data": PNG_B64}}, "media type"),
+            ({"type": "image", "source": {"type": "base64", "media_type": "image/png",
+                                          "data": "not-a-real-image"}}, "not valid base64"),
+            ({"type": "image", "source": {"type": "base64", "media_type": "image/png",
+                                          "data": ""}}, "empty"),
+            ({"type": "image", "source": {"type": "file", "file_id": "f_1"}}, "unrecognised"),
+        ],
+    )
+    def test_junk_image_shapes_still_fail_over(self, monkeypatch, block, match):
+        """CodexUnsupportedInput is retained for what the vision path cannot serve —
+        it is the 400 that lets llm_auth move to the next provider."""
+        monkeypatch.setattr(cp, "run_codex", lambda *a, **k: pytest.fail("must not reach the CLI"))
+        with pytest.raises(cp.CodexUnsupportedInput, match=match):
+            cp.CodexClient().messages.create(
+                model="claude-opus-5",
+                messages=[{"role": "user", "content": [block]}],
+            )
+
+    def test_an_oversized_image_fails_over_rather_than_hitting_the_disk(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+        monkeypatch.setattr(cp, "run_codex", lambda *a, **k: pytest.fail("must not reach the CLI"))
+        huge = base64.b64encode(b"\x00" * (cp.VISION_MAX_IMAGE_BYTES + 1)).decode()
+        with pytest.raises(cp.CodexUnsupportedInput, match="larger than"):
+            cp.CodexClient().messages.create(
+                model="claude-opus-5",
+                messages=[{"role": "user", "content": [self._image(huge)]}],
+            )
+        assert list(tmp_path.iterdir()) == []
+
+    def test_an_https_image_is_never_fetched_and_the_model_is_told(self, monkeypatch):
+        """No server-side fetch (that would be an SSRF primitive). The model gets the
+        URL and an explicit statement that it cannot see it — so it says so."""
+        captured = {}
+        monkeypatch.setattr(cp, "run_codex", self._capturing_run(captured))
+        cp.CodexClient().messages.create(
+            model="claude-opus-5",
+            messages=[{"role": "user", "content": [
+                {"type": "text", "text": "read this"},
+                {"type": "image", "source": {"type": "url", "url": "https://example.com/c.png"}},
+            ]}],
+        )
+        assert "https://example.com/c.png" in captured["prompt"]
+        assert "could NOT be attached" in captured["prompt"]
+        assert "You cannot see it" in captured["prompt"]
+        # nothing was written, so the tool stays off and the cwd is the ordinary one
+        assert "tools.view_image=false" in " ".join(captured["extra_args"])
+        assert not Path(captured["cwd"]).name.startswith("codex_vision_")
+
+    def test_view_image_stays_disabled_on_a_text_only_call(self, monkeypatch):
+        """Pin the flag BOTH ways: the vision path must not leak into ordinary turns."""
+        captured = {}
+        monkeypatch.setattr(cp, "run_codex", self._capturing_run(captured))
+        cp.CodexClient(cwd="/tmp").messages.create(
+            model="claude-opus-5",
+            messages=[{"role": "user", "content": "just words"}],
+        )
+        joined = " ".join(captured["extra_args"])
+        assert "tools.view_image=false" in joined
+        assert "tools.view_image=true" not in joined
+        assert captured["cwd"] == "/tmp"
+        assert "Do not try to inspect files" in captured["prompt"]
+
+    def test_an_image_in_an_unsupported_position_still_raises(self, monkeypatch):
+        """Only top-level content blocks are staged. An image nested inside a
+        tool_result is a shape this path does not handle, and serialising its base64
+        into the prompt would be worse than failing over."""
+        monkeypatch.setattr(cp, "run_codex", lambda *a, **k: pytest.fail("must not reach the CLI"))
+        with pytest.raises(cp.CodexUnsupportedInput, match="unsupported request feature"):
+            cp.CodexClient().messages.create(
+                model="claude-opus-5",
+                messages=[{"role": "user", "content": [{
+                    "type": "tool_result", "tool_use_id": "t1",
+                    "content": [self._image(self.PNG_B64)],
+                }]}],
+            )
+
+    def test_a_streamed_vision_turn_takes_the_same_path(self, monkeypatch):
+        captured = {}
+        monkeypatch.setattr(cp, "run_codex", self._capturing_run(captured))
+        with cp.CodexClient().messages.stream(
+            model="claude-opus-5",
+            messages=[{"role": "user", "content": [self._image(self.PNG_B64)]}],
+        ) as stream:
+            assert "".join(stream.text_stream) == "a candlestick chart"
+        assert "tools.view_image=true" in " ".join(captured["extra_args"])
+        assert not os.path.exists(captured["cwd"])
 
 
 class TestACodexFailureSaysWhatWentWrong:

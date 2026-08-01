@@ -31,6 +31,12 @@ Coverage:
          nightly pool untouched, output whitelist unchanged, never written
   36-46  W2 street clusters: convergence admission, one-house exclusion, dead
          fields ignored, determinism, ambient words, honest empty, real catalog
+  47-62  W4 full-report escalation (mode='report'): the three content layers, the
+         12k exposure cap + its marker, the rights note, the excerpt-only
+         fallback charging NOTHING, one debit per served body, the per-user ip
+         bucket proved against the REAL limiter, every honest error (pro_required
+         / report_not_found / vault_unavailable / view_limit_reached), and the
+         proof that search and clusters still touch neither corpus nor ledger
 """
 from __future__ import annotations
 
@@ -786,10 +792,12 @@ def test_research_tool_schema_shape_and_attribution_instruction():
     schema = bmi.RESEARCH_TOOL_SCHEMA
     assert schema["name"] == "search_research"
     props = schema["input_schema"]["properties"]
-    # `mode` joined query/limit with the W2 street-clusters build; `required` did
-    # NOT change, so the gateway's existing query=… call site keeps working.
-    assert set(props) == {"query", "limit", "mode"}
+    # `mode` joined query/limit with the W2 street-clusters build and `report_id`
+    # with the W4 full-report escalation; `required` did NOT change either time,
+    # so the gateway's existing query=… call site keeps working.
+    assert set(props) == {"query", "limit", "mode", "report_id"}
     assert props["query"]["type"] == "string" and props["limit"]["type"] == "integer"
+    assert props["report_id"]["type"] == "string"
     assert schema["input_schema"]["required"] == ["query"]
     assert "1..8" in props["limit"]["description"] and "default 5" in props["limit"]["description"]
     description = schema["description"]
@@ -798,17 +806,33 @@ def test_research_tool_schema_shape_and_attribution_instruction():
     assert "never present" in description
 
 
-def test_research_tool_schema_offers_both_modes_and_fences_convergence():
+def test_research_tool_schema_offers_every_mode_and_fences_convergence():
     """The model must be able to reach clusters mode, and must be told what a
     convergence count is NOT — many desks agreeing is a crowding fact, not
     evidence the view is right."""
     props = bmi.RESEARCH_TOOL_SCHEMA["input_schema"]["properties"]
     assert props["mode"]["type"] == "string"
-    assert props["mode"]["enum"] == ["search", "clusters"]
+    assert props["mode"]["enum"] == ["search", "clusters", "report"]
     description = bmi.RESEARCH_TOOL_SCHEMA["description"]
     assert "clusters" in description, "the mode is unreachable if never mentioned"
     assert "crowding" in description
     assert "not evidence" in description.lower()
+
+
+def test_research_tool_schema_teaches_the_report_mode_and_its_rights_fence():
+    """mode='report' is reachable, and the model is told the three things that
+    keep it honest: ids come from results (never invented), it is metered, and
+    the material is somebody else's copyrighted work."""
+    schema = bmi.RESEARCH_TOOL_SCHEMA
+    description = schema["description"]
+    assert "mode='report'" in description, "the mode is unreachable if never mentioned"
+    assert "metered" in description
+    assert "attribute" in description.lower()
+    assert "synthesize" in description.lower()
+    report_id = schema["input_schema"]["properties"]["report_id"]
+    assert "mode='report'" in report_id["description"]
+    assert "never invent" in report_id["description"].lower()
+    assert "pro" in report_id["description"].lower(), "the tier gate is stated"
 
 
 def test_both_schemas_are_json_serialisable():
@@ -1329,3 +1353,443 @@ def test_real_catalog_clusters_are_coherent():
     # Themes are distinct: the doc-set merge folds one subject said two ways.
     themes = [c["theme"] for c in result["clusters"]]
     assert len(set(themes)) == len(themes)
+
+
+# --------------------------------------------------------------------------- #
+# 47-62  W4 — the full-report escalation (mode='report', PRO, metered)
+# --------------------------------------------------------------------------- #
+# The corpus is R2-only, so the body layer is reached through ONE seam
+# (research_vault.corpus.get_document) and every test replaces it. Nothing here
+# opens a socket; the quota ledger, where a test lets the real one run, is rooted
+# at a tmp MACRO_API_STATE_DIR.
+
+_PRO = {"user_id": "u-pro-1", "ip_hint": "203.0.113.9"}
+
+
+def _excerpts(root: pathlib.Path, mapping: dict) -> None:
+    """Write the committed public-excerpt snapshot (excerpt.write_repo_snapshot's
+    shape: {"schema": 1, "excerpts": {doc_id: [paragraph, ...]}})."""
+    directory = root / "data" / "research_vault"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "excerpts.json").write_text(
+        json.dumps({"schema": 1, "excerpts": mapping}), encoding="utf-8")
+
+
+def _stub_document(monkeypatch, body: str, *, calls: list | None = None, **over):
+    """Replace the corpus seam with a canned document row (no R2, no sqlite)."""
+    from engine.research_vault import corpus as corpus_mod
+
+    def _get_document(doc_id, store_factory=None):
+        if calls is not None:
+            calls.append(doc_id)
+        row = {"doc_id": doc_id, "title": "Corpus Title", "institution": "Corpus Co",
+               "side": "sell", "published_at": "2026-01-01T00:00:00Z",
+               "summary": "corpus summary", "body": body}
+        row.update(over)
+        return row
+
+    monkeypatch.setattr(corpus_mod, "get_document", _get_document)
+
+
+def _stub_no_document(monkeypatch, calls: list | None = None):
+    """The corpus is unreachable (no R2 creds, dead bucket, unknown row)."""
+    from engine.research_vault import corpus as corpus_mod
+
+    def _get_document(doc_id, store_factory=None):
+        if calls is not None:
+            calls.append(doc_id)
+        return None
+
+    monkeypatch.setattr(corpus_mod, "get_document", _get_document)
+
+
+def _stub_quota(monkeypatch, allowed: bool = True, *, remaining: int = 59,
+                limit: int = 60, calls: list | None = None):
+    """Replace the hourly view ledger; `calls` records every debit attempt."""
+    from engine.research_vault import view_ratelimit
+
+    def _allow(user_id, ip, root=None, now=None):
+        if calls is not None:
+            calls.append((user_id, ip, now))
+        return allowed, {"remaining": remaining if allowed else 0, "limit": limit}
+
+    monkeypatch.setattr(view_ratelimit, "allow", _allow)
+
+
+def _report(root, report_id, *, user_ctx=_PRO, **kw) -> dict:
+    return bmi.search_research(root, "", now=NOW, mode="report",
+                               report_id=report_id, user_ctx=user_ctx, **kw)
+
+
+def _seed_one(root: pathlib.Path, *, points=("**Thesis**: the range holds.",),
+              institution="Goldman Sachs", excerpt=("Opening paragraph of the note.",)):
+    _catalog(root, [_note("gs-oil-1", "Oil Tracker", points=points,
+                          institution=institution)])
+    if excerpt is not None:
+        _excerpts(root, {"gs-oil-1": list(excerpt)})
+
+
+def test_report_assembles_metadata_excerpt_and_body(tmp_path, monkeypatch):
+    """The happy path: the three layers arrive together and the envelope names
+    itself, so the model knows it is holding one note, not a search."""
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "The curve is backwardated because inventories drew.")
+    _stub_quota(monkeypatch)
+
+    result = _report(tmp_path, "gs-oil-1")
+
+    assert result["schema"] == "brain.research_report.v1"
+    assert result["asof"] == "2026-07-29T15:00:00Z"
+    report = result["report"]
+    assert set(report) == set(bmi.REPORT_FIELDS)
+    assert report["id"] == "gs-oil-1"
+    assert report["title"] == "Oil Tracker"
+    assert report["institution"] == "Goldman Sachs"
+    assert report["side"] == "sell"
+    assert report["summary_points"] == ["**Thesis**: the range holds."]
+    assert report["excerpt_paragraphs"] == ["Opening paragraph of the note."]
+    assert "inventories drew" in report["body_text"]
+    assert report["body_truncated"] is False
+    assert result["quota"] == {"remaining": 59, "limit": 60}
+
+
+def test_the_note_carries_the_attribution_and_redistribution_terms(tmp_path, monkeypatch):
+    """The chat equivalent of the PDF watermark: the rights line rides in the
+    payload, names the actual publisher, and is addressed to the model."""
+    _seed_one(tmp_path, institution="Morgan Stanley")
+    _stub_document(monkeypatch, "body text")
+    _stub_quota(monkeypatch)
+
+    note = _report(tmp_path, "gs-oil-1")["note"]
+    assert "Morgan Stanley" in note
+    assert "attribute" in note.lower()
+    assert "quote sparingly" in note.lower()
+    assert "not for redistribution" in note.lower()
+    assert "verbatim" in note.lower()
+
+
+def test_the_body_is_capped_at_twelve_thousand_chars_with_a_marker(tmp_path, monkeypatch):
+    """The exposure cap is the operator's dial (excerpt.py's rule), so it is
+    pinned mechanically — and the marker is INSIDE the budget, so the documented
+    number is the true ceiling."""
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "lorem ipsum dolor " * 4000)  # ~72k chars
+    _stub_quota(monkeypatch)
+
+    report = _report(tmp_path, "gs-oil-1")["report"]
+    assert bmi.REPORT_BODY_MAX_CHARS == 12_000
+    assert len(report["body_text"]) <= 12_000
+    assert report["body_truncated"] is True
+    assert report["body_text"].endswith(
+        "…full report continues — available in the Research Vault")
+    assert "Research Vault" in report["body_text"], "the fuller surface is named"
+
+
+def test_a_body_inside_the_cap_is_served_whole_and_unmarked(tmp_path, monkeypatch):
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "short body")
+    _stub_quota(monkeypatch)
+
+    report = _report(tmp_path, "gs-oil-1")["report"]
+    assert report["body_text"] == "short body"
+    assert report["body_truncated"] is False
+    assert "continues" not in report["body_text"]
+
+
+def test_the_whole_payload_never_carries_more_than_the_cap(tmp_path, monkeypatch):
+    """TI-R5-style whole-payload check: no key anywhere — not `body_text`, not a
+    field added later — may exceed the exposure cap, and nothing may read as a
+    desk score over somebody else's note."""
+    _seed_one(tmp_path, points=tuple(f"point {i}" for i in range(20)))
+    _stub_document(monkeypatch, "argument " * 9000)
+    _stub_quota(monkeypatch)
+
+    result = _report(tmp_path, "gs-oil-1")
+
+    def _walk(node):
+        if isinstance(node, str):
+            assert len(node) <= bmi.REPORT_BODY_MAX_CHARS
+        elif isinstance(node, dict):
+            for value in node.values():
+                _walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                _walk(value)
+
+    _walk(result)
+    blob = json.dumps(result).lower()
+    for banned in ("confidence", "conviction", "probability", "validated"):
+        assert banned not in blob
+    # Summary points keep the catalog's own clamp (8 kept, 220 chars each).
+    assert len(result["report"]["summary_points"]) == 8
+
+
+def test_an_unreachable_corpus_falls_back_to_the_excerpt_and_charges_nothing(
+        tmp_path, monkeypatch):
+    """The excerpt is ALREADY public (it renders outside the paywall on the SEO
+    pages), so serving it costs no exposure and must cost no quota either —
+    metering a public read would deny a member what the website shows anyone."""
+    _seed_one(tmp_path, excerpt=("Opening paragraph.", "Second paragraph."))
+    _stub_no_document(monkeypatch)
+    debits: list = []
+    _stub_quota(monkeypatch, calls=debits)
+
+    result = _report(tmp_path, "gs-oil-1")
+
+    assert debits == [], "the excerpt-only fallback must not debit the hourly cap"
+    assert result["quota"] is None
+    report = result["report"]
+    assert report["excerpt_paragraphs"] == ["Opening paragraph.", "Second paragraph."]
+    assert report["body_text"] == ""
+    assert report["body_truncated"] is False
+    assert "opening pages" in result["note"].lower(), "the shortfall is disclosed"
+    assert "not reachable" in result["note"].lower()
+
+
+def test_an_empty_corpus_body_is_treated_as_unreachable(tmp_path, monkeypatch):
+    """A scanned PDF with no text layer stores an empty body. That is the same
+    situation as a dead corpus — excerpt only, disclosed, unmetered."""
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "   ")
+    debits: list = []
+    _stub_quota(monkeypatch, calls=debits)
+
+    result = _report(tmp_path, "gs-oil-1")
+    assert debits == []
+    assert result["quota"] is None
+    assert result["report"]["body_text"] == ""
+
+
+def test_a_served_body_debits_exactly_one_view(tmp_path, monkeypatch):
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "the argument")
+    debits: list = []
+    _stub_quota(monkeypatch, calls=debits)
+
+    _report(tmp_path, "gs-oil-1")
+    assert len(debits) == 1
+    user_id, ip, now = debits[0]
+    assert user_id == "u-pro-1"
+    assert ip == "brain:u-pro-1", "the ip ledger key is the per-user synthetic marker"
+    assert now == NOW, "the ledger period is keyed on the caller's instant"
+
+
+def test_the_ip_ledger_bucket_is_per_user_not_one_shared_noip_bucket(
+        tmp_path, monkeypatch):
+    """Proves the synthetic marker against the REAL limiter.
+
+    view_ratelimit hashes the ip into a SECOND ledger and maps an empty/'unknown'
+    address to the literal bucket 'noip'. Passing '' (or the gateway's shared NAT
+    address) would put every chat user in one hourly counter, so one Pro member's
+    reading would deny everyone else's. With the cap forced to 1: user A is
+    allowed once then denied, and user B — who has read nothing — is still
+    allowed. Under a shared bucket B's first call would already be denied.
+    """
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path / "state"))
+    monkeypatch.setenv("RESEARCH_VIEW_HOURLY", "1")
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "the argument")
+
+    a = {"user_id": "u-alpha"}
+    b = {"user_id": "u-beta"}
+
+    assert _report(tmp_path, "gs-oil-1", user_ctx=a)["quota"] == {"remaining": 0, "limit": 1}
+    assert _report(tmp_path, "gs-oil-1", user_ctx=a)["error"] == "view_limit_reached"
+    second_user = _report(tmp_path, "gs-oil-1", user_ctx=b)
+    assert "error" not in second_user, (
+        "user B was denied on his first read — the two users shared an ip bucket")
+    assert second_user["quota"] == {"remaining": 0, "limit": 1}
+
+
+def test_a_broken_ledger_fails_OPEN_like_the_limiter_it_wraps(tmp_path, monkeypatch):
+    """view_ratelimit's own rule: a broken state dir must not lock a paying
+    subscriber out of what he bought. The debit is best-effort, so the report is
+    still served — with the remaining/limit it could not read left honestly null,
+    never invented."""
+    from engine.research_vault import view_ratelimit
+
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "the argument")
+
+    def _boom(user_id, ip, root=None, now=None):
+        raise OSError("state dir is read-only")
+
+    monkeypatch.setattr(view_ratelimit, "allow", _boom)
+    result = _report(tmp_path, "gs-oil-1")
+    assert result["report"]["body_text"] == "the argument"
+    assert result["quota"] == {"remaining": None, "limit": None}
+
+
+def test_a_denied_view_is_honest_and_leaks_no_body(tmp_path, monkeypatch):
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "the paid argument")
+    _stub_quota(monkeypatch, allowed=False, limit=60)
+
+    result = _report(tmp_path, "gs-oil-1")
+    assert result["error"] == "view_limit_reached"
+    assert result["remaining"] == 0
+    assert result["limit"] == 60
+    assert "hourly" in result["note"].lower()
+    assert "resets" in result["note"].lower()
+    assert "report" not in result, "no content is served past the cap"
+    assert "paid argument" not in json.dumps(result)
+
+
+def test_an_unknown_report_id_tells_the_model_to_search_again(tmp_path, monkeypatch):
+    _seed_one(tmp_path)
+    reads: list = []
+    _stub_document(monkeypatch, "body", calls=reads)
+    debits: list = []
+    _stub_quota(monkeypatch, calls=debits)
+
+    result = _report(tmp_path, "hallucinated-id")
+    assert result["error"] == "report_not_found"
+    assert result["report_id"] == "hallucinated-id"
+    assert "search_research" in result["note"], "the model is told how to recover"
+    assert "never guess" in result["note"].lower()
+    assert reads == [], "an id the catalog does not carry never reaches the corpus"
+    assert debits == []
+
+
+@pytest.mark.parametrize("report_id", ["", None, "  ", "../../etc/passwd", 17])
+def test_a_missing_or_malformed_report_id_is_not_found_not_a_crash(
+        tmp_path, monkeypatch, report_id):
+    _seed_one(tmp_path)
+    reads: list = []
+    _stub_document(monkeypatch, "body", calls=reads)
+    result = _report(tmp_path, report_id)
+    assert result["error"] == "report_not_found"
+    assert reads == []
+
+
+def test_no_user_ctx_is_pro_required_and_fails_closed(tmp_path, monkeypatch):
+    """The gateway owns the tier decision; this is the fail-safe under it. An
+    unmeterable serve of third-party research is exactly what the cap prevents."""
+    _seed_one(tmp_path)
+    reads: list = []
+    _stub_document(monkeypatch, "the paid argument", calls=reads)
+    debits: list = []
+    _stub_quota(monkeypatch, calls=debits)
+
+    for ctx in (None, {}, {"user_id": ""}, {"user_id": "   "}, {"ip_hint": "1.2.3.4"}):
+        result = _report(tmp_path, "gs-oil-1", user_ctx=ctx)
+        assert result["error"] == "pro_required", ctx
+        assert "Pro" in result["note"]
+        assert "report" not in result
+    assert reads == [], "no identity, no corpus read"
+    assert debits == []
+
+
+def test_a_missing_or_corrupt_catalog_reports_the_vault_unavailable(tmp_path, monkeypatch):
+    _stub_document(monkeypatch, "body")
+    missing = _report(tmp_path, "gs-oil-1")
+    assert missing["error"] == "vault_unavailable"
+    assert "could not be read" in missing["note"]
+
+    directory = tmp_path / "data" / "research_vault"
+    directory.mkdir(parents=True, exist_ok=True)
+    (directory / "catalog.json").write_text("{not json", encoding="utf-8")
+    assert _report(tmp_path, "gs-oil-1")["error"] == "vault_unavailable"
+
+
+def test_a_corpus_that_raises_never_takes_the_turn_down(tmp_path, monkeypatch):
+    """The retrieval-must-not-raise contract, extended to the new R2-backed leg."""
+    from engine.research_vault import corpus as corpus_mod
+    _seed_one(tmp_path)
+
+    def _boom(doc_id, store_factory=None):
+        raise RuntimeError("R2 is down")
+
+    monkeypatch.setattr(corpus_mod, "get_document", _boom)
+    result = _report(tmp_path, "gs-oil-1")
+    assert result["report"]["body_text"] == "", "degrades to the public excerpt"
+    assert result["quota"] is None
+
+
+def test_a_missing_or_malformed_excerpts_snapshot_still_serves_the_report(
+        tmp_path, monkeypatch):
+    """Excerpt coverage is partial (384/502 on the committed snapshot), so an
+    absent excerpt is normal — an empty list, never a failure."""
+    _seed_one(tmp_path, excerpt=None)  # no excerpts.json at all
+    _stub_document(monkeypatch, "the argument")
+    _stub_quota(monkeypatch)
+    assert _report(tmp_path, "gs-oil-1")["report"]["excerpt_paragraphs"] == []
+
+    for payload in ("[]", '{"schema": 1}', '{"schema": 1, "excerpts": []}',
+                    '{"schema": 1, "excerpts": {"gs-oil-1": "not a list"}}',
+                    "{broken"):
+        (tmp_path / "data" / "research_vault" / "excerpts.json").write_text(
+            payload, encoding="utf-8")
+        report = _report(tmp_path, "gs-oil-1")["report"]
+        assert report["excerpt_paragraphs"] == [], payload
+        assert report["body_text"] == "the argument", payload
+
+
+def test_report_mode_is_recognised_case_and_whitespace_insensitively(tmp_path, monkeypatch):
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "body")
+    _stub_quota(monkeypatch)
+    for mode in ("report", "REPORT", " Report "):
+        result = bmi.search_research(tmp_path, "", now=NOW, mode=mode,
+                                     report_id="gs-oil-1", user_ctx=_PRO)
+        assert result["schema"] == "brain.research_report.v1", mode
+
+
+def test_report_mode_ignores_the_query_and_the_short_query_gate(tmp_path, monkeypatch):
+    """A Pro member asking what ONE note argues is not searching — the 2-token
+    gate must not fire on a mode that never reads the query."""
+    _seed_one(tmp_path)
+    _stub_document(monkeypatch, "the argument")
+    _stub_quota(monkeypatch)
+    for query in ("", "x", None, "completely unrelated words"):
+        result = bmi.search_research(tmp_path, query, now=NOW, mode="report",
+                                     report_id="gs-oil-1", user_ctx=_PRO)
+        assert result["report"]["body_text"] == "the argument", query
+        assert result["note"] != "query too short"
+
+
+def test_search_and_clusters_never_reach_the_corpus_or_the_ledger(tmp_path, monkeypatch):
+    """The escalation is opt-in: the P0/W2 modes stay pure catalog reads, so a
+    plain search still costs no R2 fetch and no metered view."""
+    _catalog(tmp_path, [
+        _note("a", "Tariff One", institution="Citi"),
+        _note("b", "Tariff Two", institution="UBS"),
+        _note("c", "Tariff Three", institution="ING"),
+    ])
+    reads: list = []
+    debits: list = []
+    _stub_document(monkeypatch, "body", calls=reads)
+    _stub_quota(monkeypatch, calls=debits)
+
+    bmi.search_research(tmp_path, "tariff one", now=NOW)
+    bmi.search_research(tmp_path, "", now=NOW, mode="clusters")
+    assert reads == [] and debits == []
+
+
+@pytest.mark.skipif(
+    not (ROOT / "data" / "research_vault" / "catalog.json").exists(),
+    reason="data/research_vault/catalog.json not present in this checkout",
+)
+def test_real_catalog_report_assembles_against_the_committed_vault(monkeypatch):
+    """The committed catalog + the committed excerpt snapshot, with only the
+    R2-backed body stubbed (there is no bucket in dev). Proves the assembled
+    shape against real ids and real public excerpts, at the WALL clock like its
+    search and clusters siblings."""
+    excerpts = json.loads(
+        (ROOT / "data" / "research_vault" / "excerpts.json").read_text(encoding="utf-8")
+    )["excerpts"]
+    real_id = sorted(excerpts)[0]
+    _stub_document(monkeypatch, "REAL BODY " * 3000)
+    _stub_quota(monkeypatch)
+
+    result = bmi.search_research(ROOT, "", mode="report", report_id=real_id,
+                                 user_ctx=_PRO)
+    assert result["schema"] == "brain.research_report.v1"
+    report = result["report"]
+    assert set(report) == set(bmi.REPORT_FIELDS)
+    assert report["id"] == real_id
+    assert report["title"] and report["institution"]
+    assert report["excerpt_paragraphs"] == excerpts[real_id]
+    assert 0 < len(report["body_text"]) <= bmi.REPORT_BODY_MAX_CHARS
+    assert report["body_truncated"] is True
+    assert report["institution"] in result["note"]
