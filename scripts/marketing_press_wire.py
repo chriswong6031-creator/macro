@@ -137,8 +137,10 @@ DEFAULT_CURSORS_MAX_BYTES = 256 * 1024
 #: because THIS lane discards `run_press_tick`'s intelligence packets — only the
 #: VPS daemon advances the desk — so persisting desk identity state here would
 #: spend tracked-file bytes on something no reader ever consumes.
+#: `wire_rank_order` joins it for the same reason: this lane discards the rail, so
+#: the daemon-only wire_rank sidecar's ordering map has no reader here.
 SCORING_KEYS = ("story_spine", "signal_corpus", "source_authority",
-                "intel_claims")
+                "intel_claims", "wire_rank_order")
 
 #: Env names.
 ENV_DAEMON_ACTIVE = "PRESS_WIRE_DAEMON_ACTIVE"
