@@ -1960,7 +1960,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     if(!ERN.table||!(ERN.table.rows||[]).length)return ernEmpty();
     var dataStatus=ERN.table.data_status||'empty';
     var healthNote='';
-    if(dataStatus==='degraded')healthNote='<p class="subcap" style="color:var(--amber)">⚠ '+LT('Showing the committed latest-call fallback; fiscal quarter comparisons are unavailable until the verified history generation returns.','当前显示已提交的最近电话会回退数据；经验证的历史数据恢复前，季度对比不可用。')+'</p>';
+    if(dataStatus==='degraded')healthNote='<p class="subcap" style="color:var(--amber)">⚠ '+LT('Showing the committed latest-call fallback; fiscal quarter comparisons are unavailable until the current history generation returns.','当前显示已提交的最近电话会回退数据；最新历史数据恢复前，季度对比不可用。')+'</p>';
     else if(dataStatus==='stale')healthNote='<p class="subcap" style="color:var(--amber)">⚠ '+LT('The earnings history is stale. Latest call: ','财报历史数据已过期。最近电话会：')+esc(ERN.table.latest_call_date||'—')+'.</p>';
     var inds=ernIndustries();
     /* opt() — single-language <option> label carrying both langs on data-en/zh
