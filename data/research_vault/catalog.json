@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T00:44:18.326412+00:00",
-  "count": 493,
+  "generated_at": "2026-08-01T00:59:26.495171+00:00",
+  "count": 494,
   "institutions": [
     "Amova",
     "Apollo",
@@ -239,6 +239,26 @@
         "$52-56bn), with WFE spending forecast at $150bn (Lam Research); Samsung memory supply tightness extends to 2027.",
         "**Geopolitical Tech Dominance**: Western tech dominance reinforced as China’s WFE spending remains flat, non-Western entrants face EUV barriers, and EUV/advanced DUV demand surges from TSMC N2 investments.",
         "**Testing Demand Catalysts**: Accelerator volume growth from foundry/memory capacity ramps and chiplet/advanced packaging proliferation increase probe-card demand and yield risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-l4amhpw3cmh-6fbb17",
+      "title": "Amazon.com Inc. (AMZN) Q2'26 Earnings First Take",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:07Z",
+      "summary_points": [
+        "**AWS Growth & AI Scaling**: AWS revenue reaccelerating with 39% operating margins; AI/chip businesses exceed $25b annual runrate (triple-digit YoY), signaling scalable high-margin growth engine.",
+        "**Q2 Results & Guidance**: AWS segment revenue $42.23bn (+37% YoY) at 39.4% margin, North America revenue $116.18bn (+16% YoY) with 7.9% margin—demonstrating margin-accelerating growth.",
+        "**Valuation Target & Methodology**: $335 12m price target based on sum-of-the-parts EV/EBIT (NA/AWS) + EV/Sales (International), using NTM+1 estimates, consistently above current price ($243.62).",
+        "**Key Risks**: Scaling high-margin businesses (Advertising, Cloud, subscription) amid e-commerce/cloud competition, regulatory shifts, and macro volatility—critical for margin trajectory."
       ],
       "tags": [],
       "tickers": [],
