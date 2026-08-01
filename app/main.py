@@ -1788,6 +1788,18 @@ except ImportError:
     pass  # app/hub.py not yet present — hub routes unavailable until lane B merges
 
 # ---------------------------------------------------------------------------
+# Vertical Intelligence Workbench — Government Revenue Foresight.
+# Read-only serving of the compact official-data artifact; no request-time model
+# or procurement calculations.  Other vertical desks can reuse this router
+# boundary without coupling their specialist engines to app/main.py.
+# ---------------------------------------------------------------------------
+try:
+    from app.government_revenue import router as government_revenue_router  # noqa: E402
+    app.include_router(government_revenue_router)
+except Exception as _government_revenue_exc:  # noqa: BLE001
+    log.warning("government revenue router not mounted: %r", _government_revenue_exc)
+
+# ---------------------------------------------------------------------------
 # Research Vault serving tier (RV W2 — app/research.py)
 # /api/research/* : public catalog+search read-throughs + paid view/download gate.
 # Wrapped in try/except so this file stays green if research.py lands later.

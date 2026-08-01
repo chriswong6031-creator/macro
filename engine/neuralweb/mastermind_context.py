@@ -63,6 +63,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 log = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1731,6 +1733,103 @@ def _summarize_chronicle(repo: Path) -> tuple[dict, str | None]:
     return lobe, None
 
 
+def _government_revenue_visible_at(payload: dict, now: datetime | None) -> bool:
+    """Fail closed when a procurement artifact is newer than the replay clock."""
+    if now is None:
+        return True
+    try:
+        cutoff = pd.Timestamp(now)
+        cutoff = cutoff.tz_localize("UTC") if cutoff.tzinfo is None else cutoff.tz_convert("UTC")
+        known_at = pd.Timestamp(payload.get("known_at"))
+        as_of = pd.Timestamp(payload.get("as_of"))
+        if pd.isna(known_at) or pd.isna(as_of):
+            return False
+        known_at = (
+            known_at.tz_localize("UTC") if known_at.tzinfo is None else known_at.tz_convert("UTC")
+        )
+        as_of = as_of.tz_localize("UTC") if as_of.tzinfo is None else as_of.tz_convert("UTC")
+        return known_at <= cutoff and as_of <= cutoff
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
+def _summarize_government_revenue(
+    repo: Path,
+    now: datetime | None = None,
+) -> tuple[dict, str | None]:
+    """Compact official-procurement context for the Neural Web.
+
+    This lobe deliberately carries only coverage and aggregate weather.  The
+    sparse per-company evidence lives in ``candidate_context`` below.  No name
+    is introduced into the candidate universe and no field may rank, gate,
+    size, originate, or escalate a signal.
+    """
+    payload = _read_json(repo / "data" / "government_revenue" / "latest.json")
+    if not isinstance(payload, dict):
+        return {}, "data/government_revenue/latest.json absent or unreadable"
+    if payload.get("schema_version") != "company_government_revenue.v1":
+        return {}, "data/government_revenue/latest.json schema mismatch"
+    if not _government_revenue_visible_at(payload, now):
+        return {}, "data/government_revenue/latest.json newer than replay knowledge clock"
+    market = payload.get("market") or {}
+    coverage = payload.get("coverage") or {}
+    velocity_breadth = market.get("award_velocity_breadth") or {}
+
+    def first_present(*values: Any) -> Any:
+        return next((value for value in values if value is not None), None)
+
+    return {
+        "is_context_only": True,
+        "display_only": True,
+        "asof": payload.get("as_of"),
+        "known_at": payload.get("known_at"),
+        "workbench": payload.get("workbench") or {"id": "government_revenue"},
+        "coverage": _sparse({
+            "companies": first_present(
+                coverage.get("companies"),
+                coverage.get("companies_covered"),
+                coverage.get("entities_mapped"),
+            ),
+            "detailed_companies": first_present(
+                coverage.get("detailed_companies"),
+                coverage.get("award_detail_companies"),
+                market.get("companies_with_award_detail"),
+            ),
+            "latest_complete_month": first_present(
+                coverage.get("latest_complete_month"),
+                market.get("latest_complete_month"),
+            ),
+            "excluded_incomplete_months": coverage.get("excluded_incomplete_months"),
+        }),
+        "market": _sparse({
+            "ttm_obligations": first_present(
+                market.get("ttm_obligations"), market.get("total_ttm_obligations")
+            ),
+            "accelerating_companies": first_present(
+                market.get("accelerating_companies"), velocity_breadth.get("accelerating")
+            ),
+            "funded_capacity_observed": first_present(
+                market.get("funded_capacity_observed"),
+                market.get("funded_backlog_observed"),
+                market.get("funded_backlog"),
+            ),
+            "recompete_watch_count": market.get("recompete_watch_count"),
+        }),
+        "authority": {
+            "can_add_candidates": False,
+            "can_rank": False,
+            "can_raise_size": False,
+            "can_lower_size": False,
+            "can_gate": False,
+            "can_escalate": False,
+        },
+        "honesty_note": (
+            "official procurement context only; obligations are not recognized revenue, "
+            "award ceilings are not GAAP backlog, and DoD publication can lag 90 days"
+        ),
+    }, None
+
+
 # Registry: ordered list of (lobe_name, summarizer_fn)
 # Each fn signature: (repo: Path) -> (lobe_dict, gap_note | None)
 LOBE_SUMMARIZERS: dict[str, Any] = {
@@ -1756,6 +1855,7 @@ LOBE_SUMMARIZERS: dict[str, Any] = {
     "market_structure": _summarize_market_structure,  # MSP-W3 market-structure context lobe
     "rates_command": _summarize_rates_command,  # RCB Forward Path board lobe
     "chronicle": _summarize_chronicle,  # Chronicle W0 market-context timeline event-spine digest
+    "government_revenue": _summarize_government_revenue,  # official procurement context workbench
 }
 
 # Map summarizer lobe names to their primary artifact IDs for manifest patching
@@ -1782,6 +1882,7 @@ _LOBE_TO_ARTIFACT_IDS: dict[str, list[str]] = {
     "market_structure": ["market-structure-latest"],  # MSP-W3: reads world_state.market_structure
     "rates_command": ["rates-command-latest"],  # RCB: reads world_state.rates_command (data/rates_command/latest.json)
     "chronicle": ["chronicle-events", "chronicle-manifest"],  # Chronicle W0 event spine + manifest
+    "government_revenue": ["government-revenue-latest"],
 }
 
 
@@ -1851,6 +1952,82 @@ def _load_analyst_map(repo: Path, gap_notes: list[str]) -> dict[str, dict]:
             f"candidate_context.analyst: targets.parquet read failed — {exc}"
         )
         return {}
+
+
+_GOVERNMENT_REVENUE_METRICS = (
+    "ttm_obligations",
+    "prior_ttm_obligations",
+    "award_velocity_yoy_pct",
+    "latest_complete_month",
+    "funded_capacity_observed",
+    "potential_capacity_observed",
+    "funded_backlog",
+    "total_backlog",
+    "backlog_sample_coverage_pct",
+    "awards_visible",
+    "awards_with_current_value",
+    "backlog_scope",
+    "funding_pct",
+    "modification_impulse_90d",
+    "deobligations_90d",
+    "agency_concentration",
+    "program_concentration",
+)
+
+
+def _load_government_revenue_map(
+    repo: Path,
+    gap_notes: list[str],
+    now: datetime | None = None,
+) -> dict[str, dict]:
+    """Load the compact procurement workbench into a sparse ticker map.
+
+    Pure projection only: no score or cross-signal arithmetic is performed here.
+    The map is attached only to names already admitted by the candidate-universe
+    rule, so procurement data can never create a Prophet/Neural-Web candidate.
+    """
+    path = repo / "data" / "government_revenue" / "latest.json"
+    payload = _read_json(path)
+    if not isinstance(payload, dict):
+        gap_notes.append(
+            "candidate_context.government_revenue: latest.json absent — block omitted"
+        )
+        return {}
+    if payload.get("schema_version") != "company_government_revenue.v1":
+        gap_notes.append(
+            "candidate_context.government_revenue: latest.json schema mismatch — block omitted"
+        )
+        return {}
+    if not _government_revenue_visible_at(payload, now):
+        gap_notes.append(
+            "candidate_context.government_revenue: latest.json newer than replay clock — block omitted"
+        )
+        return {}
+    out: dict[str, dict] = {}
+    for company in payload.get("companies") or []:
+        if not isinstance(company, dict) or not company.get("ticker"):
+            continue
+        metrics = company.get("metrics") or {}
+        block = _sparse({
+            "as_of": payload.get("as_of"),
+            "known_at": payload.get("known_at"),
+            "metrics": _sparse({key: metrics.get(key) for key in _GOVERNMENT_REVENUE_METRICS}),
+            "recompete_candidates": (company.get("recompete_candidates") or [])[:3],
+            "catalyst_facts": (company.get("catalyst_facts") or [])[:3],
+            "confidence": company.get("confidence"),
+            "provenance": (company.get("provenance") or [])[:3],
+            "allowed_behavior": "annotate_only",
+            "authority": {
+                "can_add_candidates": False,
+                "can_rank": False,
+                "can_size": False,
+                "can_gate": False,
+                "can_escalate": False,
+            },
+        })
+        if block:
+            out[str(company["ticker"]).upper()] = _coerce_numpy(block)
+    return out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2001,6 +2178,8 @@ def _build_candidate_context(
     rpo_map = _load_rpo_map(repo, gap_notes)
     # Analyst targets (Build 3 — free yfinance, display/context only, PIT snapshot)
     analyst_map = _load_analyst_map(repo, gap_notes)
+    # Government Revenue Foresight — official procurement context, no candidate creation.
+    government_revenue_map = _load_government_revenue_map(repo, gap_notes, now=asof)
     # --- Standouts tickers ---
     standouts_path = repo / "site" / "factordata" / "us_standouts.json"
     standouts_tickers: set[str] = set()
@@ -2227,6 +2406,12 @@ def _build_candidate_context(
             if analyst_sparse:
                 row["analyst"] = analyst_sparse
 
+        # Official procurement facts enrich an already-admitted company only.
+        # This block is never consulted when candidate_universe is assembled.
+        government_revenue = government_revenue_map.get(str(ticker).upper())
+        if government_revenue:
+            row["government_revenue"] = government_revenue
+
         # Options row (sparse, numpy-coerced)
         if ticker in options_map:
             or_ = dict(options_map[ticker])
@@ -2363,6 +2548,10 @@ def _build_freshness(lobes: dict, lobe_manifest: list[dict]) -> dict:
             lobes.get("claim_reliability", {}).get("as_of"),
             False,
         ),
+        "government_revenue": (
+            lobes.get("government_revenue", {}).get("asof"),
+            False,
+        ),
     }
     for lobe_name, (asof, _stale_override) in asof_sources.items():
         stale = _is_stale(asof)
@@ -2423,7 +2612,10 @@ def build_context(
     lobes: dict = {}
     for lobe_name, summarizer_fn in LOBE_SUMMARIZERS.items():
         try:
-            lobe_data, gap = summarizer_fn(repo)
+            if lobe_name == "government_revenue":
+                lobe_data, gap = summarizer_fn(repo, now=now)
+            else:
+                lobe_data, gap = summarizer_fn(repo)
             lobes[lobe_name] = lobe_data
             if gap:
                 gap_notes.append(f"lobe.{lobe_name}: {gap}")
@@ -2457,6 +2649,7 @@ def build_context(
         "data/edgar/rpo.parquet",
         "data/analyst/targets.parquet",
         "data/chronicle/events.jsonl",
+        "data/government_revenue/latest.json",
     ]
 
     # ── Candidate context ─────────────────────────────────────────────────────
