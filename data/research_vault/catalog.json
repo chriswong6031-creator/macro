@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T14:30:31.456552+00:00",
-  "count": 532,
+  "generated_at": "2026-08-01T15:15:36.576158+00:00",
+  "count": 536,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,48 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-jsrqdxq1kq9-365520",
+      "title": "Asset Allocation July 31",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T14:17:45Z",
+      "summary_points": [
+        "**Q2 Earnings Growth Surge**: S&P 500 earnings growth accelerated to 33% (Q1: 25%), highest in 30 years; 8 of 11 sectors show double-digit growth (Energy 130%, Materials 54%, MCG & Tech 52%).",
+        "**Sector Rotation & Diversification**: MCG & Tech’s contribution to S&P 500 earnings growth fell from 90% to 57%, signaling broadened growth beyond tech; non-tech sectors now driving momentum.",
+        "**Record Margin Expansion**: S&P 500 margins hit a record 15.7% (from 15.2%), with Ex-MCG & Tech margins surging to near-record highs, indicating robust profitability beyond tech.",
+        "**AI Dominance in Earnings**: AI and beneficiaries account for 53% of S&P 500 earnings growth (60.5% YoY vs.",
+        "0% for rest), highlighting AI’s critical market impact."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 44,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-s1dz6nbb2mo-8d1ef0",
+      "title": "US Econ Notes July 31",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T14:17:32Z",
+      "summary_points": [
+        "**FOMC Rate Decision & Dissent Views**: FOMC holds rates steady at 3-1/2%–3-3/4% with three hawkish dissents (Hammack, Kashkari, Logan) arguing policy too accommodative; baseline implies 50bps hikes this year (25bps in Sept/Dec), signaling persistent hawkishness.",
+        "**July Employment Report & Unemployment Outlook**: Headline jobs (+65k) and private payrolls (+65k) expected to rise, but unemployment rate risks rising to 4.3% if labor force participation rebounds (last month’s LFPR drop to 61.55%).",
+        "**Fed Hawkish Speakers in August**: Schmid (Kansas City) and Musalem (St.",
+        "Louis) to deliver hawkish speeches (Aug-4, Aug-6), reinforcing rate hike expectations and pressuring bond yields/equity valuations.",
+        "**Fed Funds Rate Forecast Pivot Trigger**: DB projects Fed Funds peaking at 4.13% in 2027F, with core CPI stabilizing at 3.3% in 2026F—critical for positioning duration and rate-sensitive assets as inflation moderates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-6pchnzpd3si-dd5aa6",
       "title": "Euro Weekly Digest",
@@ -1617,6 +1659,45 @@
       "tickers": [],
       "top_pick": false,
       "pages": 41,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ivpjktpxe3e-b05952",
+      "title": "FX Focus",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T00:01:17Z",
+      "summary_points": [
+        "**BoE Domestic Disinflation Focus**: MPC prioritizes domestic inflation over Middle East escalation, maintaining 3.75% rates with 6-3 split; extended hold base case despite 3 hawkish dissenters, raising Sept hike bar only if energy shocks persist.",
+        "**Geopolitical Rate Catalyst**: Middle East conflict and US-Iran tensions drive energy shock risks; absence of de-escalation could trigger BoE hikes by Sept, threatening GBP stability amid rising G4 yields.",
+        "**GBP Vulnerability**: Currency supported by Fed credibility issues but exposed to volatility from Middle East energy shocks and potential BoE hikes—geopolitical risks outweigh domestic disinflation messaging.",
+        "**MPC Policy Split**: Hawkish/dovish division (3 hawks vs rest) hinges on energy prices; no urgency to tighten now but energy shocks could shift stance, mispricing UK rates curve (2-yr Gilt at 4.34%)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-bjn4fl7sxb3-b8573e",
+      "title": "Euro area GDP – A story of resilience",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T00:01:15Z",
+      "summary_points": [
+        "**Q2 Eurozone GDP Beat**: +0.4% Q/Q (beat MUF 0.3%/cons 0.2%), broad-based strength across major economies despite US-Iran shock.",
+        "**ECB Policy Shift**: Rate hike expected in September amid inflation risks (headline inflation likely >3.2% peak), annual growth forecast lifted to 0.8%.",
+        "**H2 Growth Risks**: Middle East escalation, gas market tightness, and weather headwinds may slow Q/Q growth to 0.2% in H2."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
