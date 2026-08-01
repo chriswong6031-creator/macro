@@ -25,8 +25,10 @@ import argparse
 import json
 import logging
 import os
+import re
 import sys
 import time
+from datetime import date as _date, datetime as _datetime, timezone as _timezone
 from pathlib import Path
 
 import pandas as pd
@@ -51,6 +53,7 @@ from engine.options_hub import (
 from engine.levels_publish import levels_payload_from_gex, LEVELS_PREFIX
 from engine.vex_engine import compute_vex
 from engine.moves_engine import moves_payload, per_ticker_calibration
+from lib.nyse_calendar import sessions_between
 
 try:
     from engine.grading_stats import wilson_ci as _wilson_ci
@@ -523,6 +526,228 @@ def _gex_history_relpath(root: str, gex_payload: dict) -> str | None:
 
 
 # --------------------------------------------------------------------------- #
+# WP-GEX-DATES (Options Superintelligence R0.10): sessions index + self-heal  #
+# --------------------------------------------------------------------------- #
+# The dated snapshots above accrue forward-only with no index, so a consumer
+# had to probe dates blind — and the plane silently lost sessions (2026-07-20
+# was never published; NB 07-18, long recorded as a second hole, is a
+# Saturday). Two additions, both INERT per root:
+#   1. gex_history/{ROOT}/dates.json — the sessions index, derived from an R2
+#      LIST of the objects that actually exist (never from a read-modify-write
+#      ledger, so the index can never promise a session that 404s at the time
+#      it is written). Conventions mirror build_flow_surface.build_dates_index:
+#      dates newest-first, latest == dates[0] (null when empty). No retention
+#      fields — EOD ladders are small and this plane keeps every session.
+#   2. Self-heal: sessions the NYSE calendar expected between the plane epoch
+#      and tonight's asof that have no object are rebuilt from the theta store
+#      (the same greeks[date] ⋈ OI[t-1] ⋈ compute_gex the missed nightly would
+#      have run) and published under their own dated key — bounded per run by
+#      GEX_HISTORY_HEAL_MAX so a long outage can never double the nightly.
+#      Healed payloads carry self_healed:true and have their history[] tail cut
+#      to sessions settled by the healed date (a late-published snapshot must
+#      not know its future).
+
+# First session the WP-GEX-SNAPSHOTS lane published (PR #2615 shipped
+# 2026-07-16 after the close; 07-16 and earlier have no dated object).
+GEX_HISTORY_EPOCH = "2026-07-17"
+
+# Max missed (root, date) snapshots rebuilt per nightly run, across all roots.
+GEX_HISTORY_HEAL_MAX: int = int(os.environ.get("GEX_HISTORY_HEAL_MAX", "40"))
+
+_SESSION_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def build_gex_dates_index(dates, *, root: str, asof: str,
+                          source: str = "build_options_hub_nightly") -> dict:
+    """The options_hub.gex_dates/v1 sessions index for one root.
+
+    Same shape law as build_flow_surface.build_dates_index (the Terminal's
+    isGexDates validator checks the identical three things): every entry a
+    session date, NEWEST FIRST, latest == dates[0] (null when empty). Non-date
+    entries are dropped and duplicates collapsed so a corrupt listing can never
+    publish a bogus session.
+    """
+    clean = sorted({d for d in (dates or [])
+                    if isinstance(d, str) and _SESSION_DATE_RE.match(d)},
+                   reverse=True)
+    return {
+        "schema": "options_hub.gex_dates/v1",
+        "root": root,
+        "dates": clean,
+        "latest": clean[0] if clean else None,
+        "count": len(clean),
+        "asof": asof,
+        "source": source,
+    }
+
+
+def is_gex_dates(x: object) -> bool:
+    """Validator twin of the Terminal's lib/gexSessions.ts isGexDates."""
+    if not isinstance(x, dict):
+        return False
+    dates = x.get("dates")
+    if not isinstance(dates, list) or not all(
+            isinstance(d, str) and _SESSION_DATE_RE.match(d) for d in dates):
+        return False
+    if dates != sorted(dates, reverse=True):
+        return False
+    latest = x.get("latest")
+    if dates:
+        if latest != dates[0]:
+            return False
+    elif latest is not None:
+        return False
+    return isinstance(x.get("root"), str)
+
+
+def _list_gex_history_dates(s3, bucket: str, root: str) -> list[str] | None:
+    """Session dates with a published snapshot under gex_history/{root}/ on R2.
+
+    Ground truth by LIST (paginated), not a ledger — dates.json is then a pure
+    projection of what exists. Returns None on any listing error so the caller
+    skips the index write rather than publishing a lie.
+    """
+    prefix = f"{R2_PREFIX}gex_history/{root}/"
+    dates: set[str] = set()
+    token = None
+    try:
+        while True:
+            kw = {"Bucket": bucket, "Prefix": prefix, "MaxKeys": 1000}
+            if token:
+                kw["ContinuationToken"] = token
+            resp = s3.list_objects_v2(**kw)
+            for obj in resp.get("Contents") or []:
+                stem = str(obj.get("Key", "")).rsplit("/", 1)[-1]
+                if stem.endswith(".json") and _SESSION_DATE_RE.match(stem[:-5]):
+                    dates.add(stem[:-5])
+            if not resp.get("IsTruncated"):
+                break
+            token = resp.get("NextContinuationToken")
+    except Exception as e:  # noqa: BLE001
+        log.warning("options_hub_builder: gex_history list failed for %s — %s", root, e)
+        return None
+    return sorted(dates, reverse=True)
+
+
+def gex_history_missed_sessions(existing, asof: str,
+                                epoch: str = GEX_HISTORY_EPOCH) -> list[str]:
+    """NYSE sessions in [epoch, asof] with no published snapshot, NEWEST first.
+
+    Pure calendar arithmetic (weekends/holidays are not holes — the long-lived
+    \"07-18 hole\" note was a Saturday). asof itself is included: a run whose
+    own dated write was suppressed leaves tonight as a miss for the next run.
+    """
+    try:
+        y1, m1, d1 = (int(p) for p in epoch.split("-"))
+        y2, m2, d2 = (int(p) for p in asof.split("-"))
+        expected = sessions_between(_date(y1, m1, d1), _date(y2, m2, d2))
+    except Exception as e:  # noqa: BLE001
+        log.warning("options_hub_builder: session calendar failed (%s) — no heal", e)
+        return []
+    have = set(existing or [])
+    return [d.isoformat() for d in reversed(expected) if d.isoformat() not in have]
+
+
+def _trim_history_to(payload: dict, session_date: str) -> dict:
+    """Cut history[] to rows settled by `session_date` (+ restate history_asof).
+
+    A healed snapshot is published LATE: its scalar history tail (attached from
+    the current polygon summary parquet) would otherwise carry sessions after
+    the date the snapshot claims to describe — future knowledge no honest
+    point-in-time artifact can hold.
+    """
+    out = dict(payload)
+    hist = out.get("history")
+    if isinstance(hist, list):
+        trimmed = [h for h in hist
+                   if isinstance(h, dict) and str(h.get("date", "")) <= session_date]
+        out["history"] = trimmed
+        cov = dict(out.get("coverage") or {})
+        cov["history_asof"] = trimmed[-1]["date"] if trimmed else None
+        out["coverage"] = cov
+    return out
+
+
+def _heal_gex_history(root: str, missed: list[str], theta_store,
+                      polygon_gex_dir: Path | None, out_dir: Path,
+                      s3, bucket: str, budget: int) -> list[str]:
+    """Rebuild + publish up to `budget` missed dated snapshots for one root.
+
+    Same compute path as the nightly that failed to run (greeks[date] ⋈
+    OI[t-1] ⋈ compute_gex), stamped self_healed:true, history tail trimmed to
+    the healed date. A date the store cannot answer for (no greeks rows, or an
+    empty ladder) is skipped silently — never write empty history — and simply
+    stays out of the index. Returns the dates actually published.
+    """
+    healed: list[str] = []
+    if not missed or budget <= 0:
+        return healed
+    greeks = _load_greeks(root, theta_store)
+    if greeks.empty:
+        return healed
+    hist = None
+    if polygon_gex_dir is not None:
+        try:
+            hist = load_gex_history_v2(root, polygon_gex_dir)
+        except Exception:  # noqa: BLE001
+            hist = None
+    for d in missed[:budget]:
+        try:
+            greeks_d = greeks[greeks["date"] == d].copy()
+            if greeks_d.empty:
+                continue
+            oi_d = _load_oi_for_date(root, d, theta_store)
+            payload = compute_gex(greeks_d, oi_d, d, root)
+            if not payload.get("by_strike"):
+                continue
+            if hist:
+                payload = _attach_gex_history(payload, hist)
+            payload = _trim_history_to(payload, d)
+            payload["self_healed"] = True
+            rel = f"gex_history/{root}/{d}.json"
+            local = out_dir / rel
+            _write_json(local, payload)
+            if _upload_r2(s3, bucket, local, f"{R2_PREFIX}{rel}"):
+                healed.append(d)
+                log.info("options_hub_builder: gex_history self-healed %s %s", root, d)
+        except Exception as e:  # noqa: BLE001
+            log.warning("options_hub_builder: gex_history heal failed %s %s — %s",
+                        root, d, e)
+    return healed
+
+
+def publish_gex_history_index(root: str, asof: str, theta_store,
+                              polygon_gex_dir: Path | None, out_dir: Path,
+                              s3, bucket: str, heal_budget: int) -> int:
+    """List the plane, heal missed sessions within budget, publish dates.json.
+
+    Returns how many snapshots were healed (the caller decrements its global
+    budget). The index is written AFTER healing so it reflects the plane as
+    this run leaves it; a listing failure skips both (no blind heal, no lying
+    index).
+    """
+    existing = _list_gex_history_dates(s3, bucket, root)
+    if existing is None:
+        return 0
+    missed = gex_history_missed_sessions(existing, asof)
+    healed = _heal_gex_history(root, missed, theta_store, polygon_gex_dir,
+                               out_dir, s3, bucket, heal_budget)
+    index = build_gex_dates_index(
+        list(existing) + healed, root=root,
+        asof=_datetime.now(_timezone.utc).isoformat(timespec="seconds"),
+    )
+    rel = f"gex_history/{root}/dates.json"
+    local = out_dir / rel
+    _write_json(local, index)
+    _upload_r2(s3, bucket, local, f"{R2_PREFIX}{rel}")
+    still = [d for d in missed if d not in healed]
+    if still:
+        log.info("options_hub_builder: gex_history %s still missing %d session(s): %s",
+                 root, len(still), still[:10])
+    return len(healed)
+
+
+# --------------------------------------------------------------------------- #
 # Moves plane inputs (graceful-absent reads of the Track Record artifacts)
 # --------------------------------------------------------------------------- #
 
@@ -695,6 +920,10 @@ def main() -> None:
     roots_timeout: list[str] = []      # roots skipped due to wall-clock budget
 
     _last_incremental: int = 0         # index of last incremental aggregate publish
+    # WP-GEX-DATES: global self-heal budget for missed dated snapshots this run.
+    # Roots are processed anchors-first, so the budget naturally goes to the
+    # index ETFs before the long tail; a long outage closes over a few nights.
+    _gex_heal_left: int = GEX_HISTORY_HEAL_MAX
 
     for _root_idx, root in enumerate(roots):
         log.info("options_hub_builder: processing %s …", root)
@@ -763,6 +992,24 @@ def main() -> None:
                 log.warning(
                     "options_hub_builder: gex_history dated snapshot failed for %s — %s",
                     root, _hist_err,
+                )
+
+            # ── WP-GEX-DATES (R0.10): sessions index + bounded self-heal ───────
+            # dates.json is a projection of the objects that actually exist (R2
+            # LIST), written after tonight's dated snapshot and any heals — the
+            # Exposure desk's date picker enumerates it instead of probing
+            # blind. INERT per root like everything else in this loop.
+            try:
+                if s3 and bucket:
+                    _healed_n = publish_gex_history_index(
+                        root, asof, theta_store, polygon_gex_dir, out_dir,
+                        s3, bucket, _gex_heal_left,
+                    )
+                    _gex_heal_left = max(0, _gex_heal_left - _healed_n)
+            except Exception as _gd_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: gex_history dates index failed for %s — %s",
+                    root, _gd_err,
                 )
 
             # ── WP-A2.5: levels.v1 (named gamma-level board) ───────────────────
