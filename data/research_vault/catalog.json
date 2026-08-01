@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T16:00:42.517425+00:00",
-  "count": 538,
+  "generated_at": "2026-08-01T16:30:46.034115+00:00",
+  "count": 539,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1796,6 +1796,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-smqg4voy8tj-7750da",
+      "title": "BoE MPC meeting July 2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T23:50:39Z",
+      "summary_points": [
+        "**BoE Policy Tension**: MPC holds rate at 3.75% (6-3), with 3 members pushing for immediate 25bp hike amid Middle East energy risks, but majority prioritizes domestic disinflation over external inflation pressures.",
+        "**Inflation & Market Misalignment**: Markets price 25bp hikes by year-end (Chart 1), yet BoE MPR projects CPI at 1.7% by Q2 2028 (below 2%), indicating current financial conditions already offset inflation, reducing need for further hikes.",
+        "**Energy Geopolitics Sensitivity**: Inflation trajectory highly vulnerable to Middle East conflict escalation; adverse energy price shocks could prolong inflation, forcing MPC to reassess policy stance.",
+        "**Inflation Persistence Risk**: Business pricing and wage pressures threaten persistent inflation, but MPC believes domestic disinflation will counterbalance external energy-driven risks, lowering immediate rate hike urgency."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
