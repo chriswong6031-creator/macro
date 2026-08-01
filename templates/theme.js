@@ -2500,14 +2500,15 @@
     usage:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19a8 8 0 1 1 15 0"/><path d="m12 14.5 3.5-3.5"/><circle cx="12" cy="19" r="1.25" fill="currentColor" stroke="none"/></svg>',
     check:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 6.5"/></svg>'
   };
-  // ── tier alias (rename migration, Phase 1) ───────────────────────────────────
-  // `insider` is the WIRE value; `essential` is the display rename's alias of it
-  // (lib/tiers.py is the server's copy of the same table). theme.js ships `immutable`
-  // with a far-future max-age, so a warm cache can still be running THIS copy after the
-  // stored value flips — every tier arriving from /api/me or /api/brain/me is made
-  // canonical on the way in, and the SD_PRICE / SD_PLAN_FEATURES / label lookups below
-  // (all keyed by the wire value) take the hop too.
-  var SD_TIER_ALIAS = { essential: 'insider' };
+  // ── tier alias (rename migration, Phase 2) ───────────────────────────────────
+  // `essential` is the WIRE value; `insider` is what the estate shipped before the
+  // rename (lib/tiers.py is the server's copy of the same table). The direction reversed
+  // in Phase 2 and the old value never expires: entitlement rows written before the flip
+  // still say `insider`, and theme.js ships `immutable` with a far-future max-age so a
+  // warm cache keeps sending it. Every tier arriving from /api/me or /api/brain/me is
+  // made canonical on the way in, and the SD_PRICE / SD_PLAN_FEATURES / label lookups
+  // below (all keyed by the wire value) take the hop too.
+  var SD_TIER_ALIAS = { insider: 'essential' };
   function _sdNormTier(t) {
     var v = String(t == null ? '' : t).trim().toLowerCase();
     return SD_TIER_ALIAS[v] || v;
@@ -2515,14 +2516,14 @@
   // Per-month display price by tier+interval, mirroring config/plans.yml (and onboard.js
   // CENTS). Billing-hero decoration only — never a gate; the upgrade sheet owns real pricing.
   var SD_PRICE = {
-    insider: { monthly: 99, annual: 75, annualYr: 900 },
+    essential: { monthly: 99, annual: 75, annualYr: 900 },
     pro:     { monthly: 149, annual: 109, annualYr: 1308 }
   };
   // Plain-word plan highlights for the Billing "what's included" summary. Kept in step
   // with plans.html.j2 / config/plans.yml; decorative only (never a gate).
   var SD_PLAN_FEATURES = {
     free:    [['US macro dashboard', '美国宏观仪表盘'], ['The Terminal — 3 indicators', 'Terminal — 3 个指标'], ['3 signals per daily list', '每个每日列表 3 条信号'], ['5 Mastermind questions a week', '每周 5 次 Mastermind 提问']],
-    insider: [['Every dashboard & all research', '全部看板与研究'], ['Full Terminal + live options', '完整 Terminal + 实时期权'], ['300 Mastermind questions a month', '每月 300 次 Mastermind 提问'], ['10 deep research questions a month', '每月 10 次深度研究提问']],
+    essential: [['Every dashboard & all research', '全部看板与研究'], ['Full Terminal + live options', '完整 Terminal + 实时期权'], ['300 Mastermind questions a month', '每月 300 次 Mastermind 提问'], ['10 deep research questions a month', '每月 10 次深度研究提问']],
     pro:     [['Everything in Essential', 'Essential 全部功能'], ['Unlimited Mastermind questions', '无限量 Mastermind 提问'], ['150 deep research questions a month', '每月 150 次深度研究提问'], ['Priority research answers', '研究问题优先解答']]
   };
   // provider mini-icon markup (Google keeps its brand colours; X/email use currentColor)
@@ -3149,7 +3150,7 @@
     var interval = p.interval || null;
     var top = (tier === 'unlimited') || (tier === 'pro' && interval === 'annual');
     if (!top) {
-      var lblKey = (tier === 'free') ? 'choosePlan' : (tier === 'insider') ? 'upgradePro' : 'switchAnnual';
+      var lblKey = (tier === 'free') ? 'choosePlan' : (tier === 'essential') ? 'upgradePro' : 'switchAnnual';
       html += '<div class="sd-plan-cta" style="margin:0 0 14px">' +
         '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-bill-up">' + _sdBl(lblKey) + '</button></div>';
     }
@@ -3392,7 +3393,7 @@
   function _sdTierLabel(tier) {
     tier = _sdNormTier(tier);
     if (tier === 'pro' || tier === 'unlimited') return _sdL('tierPro');
-    if (tier === 'insider') return _sdL('tierInsider');
+    if (tier === 'essential') return _sdL('tierInsider');
     return _sdL('tierFree');
   }
   // status chip text for a plan payload; '' when nothing meaningful to show (free/none).
@@ -3450,7 +3451,7 @@
       // Essential (any interval) → lead with the Pro upgrade (the recommended move);
       // Pro monthly → the annual switch. Free → choose a plan.
       var lblKey = !paid ? 'choosePlan'
-                 : (tier === 'insider') ? 'upgradePro'
+                 : (tier === 'essential') ? 'upgradePro'
                  : 'switchAnnual';
       cta = '<div class="sd-plan-cta">' +
           '<button type="button" class="sd-btn primary" data-sd-cta="upgrade" id="sd-up-btn">' + _sdBl(lblKey) + '</button>' +

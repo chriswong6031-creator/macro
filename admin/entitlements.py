@@ -40,9 +40,10 @@ no PAT the roster returns setup steps; with no service-role key the actions 503 
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 
-from lib.tiers import normalize_tier
+from lib.tiers import normalize_tier, tier_aliases
 
 from . import users
 
@@ -52,16 +53,16 @@ log = logging.getLogger("macro.admin.entitlements")
 # never a *pass/tier-grant* target (a pass to free is meaningless) — enforced per-action.
 #
 # These stay CANONICAL on purpose. Every inbound `tier` param below goes through
-# ``normalize_tier`` first, so the rename migration's 'essential' alias is ACCEPTED without
+# ``normalize_tier`` first, so the retired 'insider' wire value is still ACCEPTED without
 # widening what gets WRITTEN: _write_comp puts this exact string into
-# user_entitlements.tier, and a widened tuple would have let an operator action store
-# 'essential' — the one value Phase 1 must never emit.
-_GRANT_TIERS = ("insider", "pro")
-_ALL_TIERS = ("free", "insider", "pro")
+# user_entitlements.tier, and a widened tuple would have let an operator action store the
+# pre-rename value back onto a live row.
+_GRANT_TIERS = ("essential", "pro")
+_ALL_TIERS = ("free", "essential", "pro")
 _TRIALING_ACTIVE = ("active", "trialing")
 
 VALID_ACTIONS = frozenset({
-    "change_tier",    # comp tier set (insider|pro|free) — the manual upgrade/downgrade
+    "change_tier",    # comp tier set (essential|pro|free) — the manual upgrade/downgrade
     "extend_trial",   # +N days onto a real trialing Stripe sub, else a trialing comp window
     "reset_trial",    # trial_end := now + 7d (Stripe modify or trialing comp)
     "grant_pass",     # comp free pass: monthly(+30d) / annual(+365d) / lifetime(NULL end)
@@ -70,6 +71,25 @@ VALID_ACTIONS = frozenset({
 
 _PASS_DAYS = {"monthly": 30, "annual": 365, "lifetime": None}
 _DEFAULT_RESET_TRIAL_DAYS = 7
+
+# A stored tier token safe to interpolate into the roster SQL. Alias keys come from the
+# catalog (slugified), never from a request; this is the belt on that brace.
+_SAFE_TIER_TOKEN = re.compile(r"[a-z0-9_]{1,32}")
+
+
+def _tier_match_values(tier: str) -> list[str]:
+    """The canonical tier plus every stored spelling that resolves to it.
+
+    The rename does NOT back-fill history: a row keeps the pre-rename wire value until
+    Stripe next touches that subscription and the webhook recomputes it. Filtering the
+    roster on the canonical string ALONE would therefore hide paying members from the
+    operator — the same both-spellings rule app/email_segments.py applies to its audiences.
+    """
+    out = [tier]
+    for alias, canonical in sorted(tier_aliases().items()):
+        if canonical == tier and alias not in out and _SAFE_TIER_TOKEN.fullmatch(alias):
+            out.append(alias)
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -98,8 +118,8 @@ def list_users(*, tier: str | None = None, status: str | None = None,
     Base table is auth.users (the lockdown makes registration the floor, so every
     account IS a free-tier member) LEFT JOINed to user_entitlements — users who never
     touched billing surface as implicit free (tier 'free', status 'none'). Filters:
-      tier    — 'free'|'insider'|'pro' (exact; 'essential' is accepted as an alias of
-                'insider' and filters on the canonical stored value)
+      tier    — 'free'|'essential'|'pro' (exact; the pre-rename 'insider' is accepted as
+                an alias of 'essential' and filters on the canonical stored value)
       status  — 'active'|'trialing'|'past_due'|'canceled'|'none' (exact)
       search  — case-insensitive substring over email OR display name
     Pagination is server-side (LIMIT/OFFSET); a total count accompanies the page.
@@ -117,7 +137,8 @@ def list_users(*, tier: str | None = None, status: str | None = None,
     where = ["true"]
     tier = normalize_tier(tier)
     if tier in _ALL_TIERS:
-        where.append(f"coalesce(e.tier,'free') = '{tier}'")
+        wanted = ",".join(f"'{t}'" for t in _tier_match_values(tier))
+        where.append(f"coalesce(e.tier,'free') in ({wanted})")
     if status:
         # allow-list the status token; anything else is ignored (never interpolated raw)
         if status in ("active", "trialing", "past_due", "canceled", "none"):
@@ -335,10 +356,11 @@ def _set_trial(user_id: str, *, trial_end_epoch: int, comp_days: int, operator: 
                 "subscription_id": sub_id, "trial_end": trial_end_epoch,
                 "tier": ent.get("tier"), "status": ent.get("status")}
     # No trialing Stripe sub → a trialing comp window. Tier defaults to the user's current
-    # comp/paid tier if they have one, else 'insider' (a trial with no product is meaningless).
-    tier = (row or {}).get("tier") or "insider"
+    # comp/paid tier if they have one, else 'essential' (a trial with no product is
+    # meaningless). Normalised: a pre-rename row must not write its old value back.
+    tier = normalize_tier((row or {}).get("tier")) or "essential"
     if tier == "free":
-        tier = "insider"
+        tier = "essential"
     return {**_write_comp(user_id, tier, "trialing", _iso_in(comp_days),
                           operator=operator, note=f"trial {note}"),
             "mechanic": "comp"}

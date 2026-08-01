@@ -2798,6 +2798,14 @@ jobs:
         run: pip install pytest fastapi pydantic pandas numpy pyarrow pyyaml requests "stripe>=11,<13"
       - name: founding offer inventory + allotment pacing (app/billing.py)
         run: python -m pytest tests/test_billing_offers.py -v
+      # Stripe object bootstrap. Same dependency set as the step above (yaml +
+      # the pinned Stripe SDK), so run_ci_pack keeps sharing this virtualenv.
+      # test_stripe_bootstrap_products pins the RENAME path: a Product whose
+      # catalog key moved is adopted in place off config/plans.yml's
+      # legacy_product_keys, never duplicated — a CREATE there orphans the live
+      # prices, features, portal config and subscriptions.
+      - name: Stripe object bootstrap — offers + renamed-product adoption (scripts/stripe_bootstrap.py)
+        run: python -m pytest tests/test_stripe_bootstrap_offers.py tests/test_stripe_bootstrap_products.py -v
 
   site-gate:
     if: ${{ false }}

@@ -1751,7 +1751,12 @@ RENDER.users = async () => {
 
 /* ---- entitlements management (subscribers panel) ------------------------ */
 const ENT = { filter: { tier: null, status: null, search: "" }, page: 1, rows: [] };
-const ENT_TIERS = ["free", "insider", "pro"];
+const ENT_TIERS = ["free", "essential", "pro"];
+// Pre-rename wire value -> canonical tier (mirrors lib/tiers.py). Rows written before the
+// rename are never back-filled, so their counts must fold into the canonical chip; the
+// server-side filter matches both spellings (admin/entitlements._tier_match_values).
+const ENT_TIER_ALIAS = { insider: "essential" };
+function entCanonTier(t) { const v = String(t || "").trim().toLowerCase(); return ENT_TIER_ALIAS[v] || v; }
 const ENT_STATUSES = ["active", "trialing", "past_due", "canceled", "none"];
 
 function entIdentity(u) { return u.name || u.email || u.user_id; }
@@ -1778,7 +1783,7 @@ async function entLoad() {
   ENT.rows = d.users || [];
   // tier / status filter chips (from the unfiltered roster summary)
   const byTier = {}, byStatus = {};
-  (d.summary || []).forEach(r => { byTier[r.tier] = (byTier[r.tier] || 0) + r.n; byStatus[r.status] = (byStatus[r.status] || 0) + r.n; });
+  (d.summary || []).forEach(r => { const ct = entCanonTier(r.tier); byTier[ct] = (byTier[ct] || 0) + r.n; byStatus[r.status] = (byStatus[r.status] || 0) + r.n; });
   const chips = [entChip("All", !f.tier && !f.status, "entSetFilter('tier',null)")]
     .concat(ENT_TIERS.map(t => entChip(`${t} (${byTier[t] || 0})`, f.tier === t, `entSetFilter('tier',${JSON.stringify(t)})`)))
     .concat(['<span class="ent-chip-sep"></span>'])
@@ -1881,7 +1886,7 @@ function entChangeTier(i) {
       <button class="ent-x" onclick="entCloseModal()">✕</button></div>
     <div class="ent-form">
       <label>New tier
-        <select id="entTier"><option value="insider">Insider</option><option value="pro">Pro</option><option value="free">Free (downgrade)</option></select></label>
+        <select id="entTier"><option value="essential">Essential</option><option value="pro">Pro</option><option value="free">Free (downgrade)</option></select></label>
       ${_entForceBox(u)}
       <div class="ent-form-actions">
         <button class="ent-act" onclick="entCloseModal()">Cancel</button>
@@ -1929,7 +1934,7 @@ function entPass(i, kind) {
   entModal(`<div class="ent-dialog-head"><div class="ent-dialog-title">Grant ${esc(label)} pass — ${esc(u.name || u.email)}</div>
       <button class="ent-x" onclick="entCloseModal()">✕</button></div>
     <div class="ent-form">
-      <label>Tier<select id="entPassTier"><option value="insider">Insider</option><option value="pro">Pro</option></select></label>
+      <label>Tier<select id="entPassTier"><option value="essential">Essential</option><option value="pro">Pro</option></select></label>
       ${_entForceBox(u)}
       <div class="ent-form-actions">
         <button class="ent-act" onclick="entCloseModal()">Cancel</button>
@@ -2003,7 +2008,7 @@ async function revLoad(force) {
   const ai = nowB.active_by_tier_interval || {};
   const byInt = mrr.by_interval_usd || {};
   const byTier = mrr.by_tier_usd || {};
-  const REV_TIERS = ["insider", "pro"];
+  const REV_TIERS = ["essential", "pro"];
   let totMonthly = 0, totAnnual = 0;
   const tierRows = REV_TIERS.map(t => {
     const row = ai[t] || {};

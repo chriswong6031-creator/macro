@@ -174,7 +174,7 @@ def _no_live_lookups(monkeypatch):
 # --------------------------------------------------------------------------- #
 # Fixtures: Stripe objects, shaped exactly like webhook payloads (plain dicts)
 # --------------------------------------------------------------------------- #
-def sub_obj(*, status="trialing", lookup_key="insider_monthly", unit_amount=6900,
+def sub_obj(*, status="trialing", lookup_key="essential_2026_v2_monthly", unit_amount=6900,
             currency="usd", cpe=None, **extra) -> dict:
     o = {
         "id": "sub_1", "object": "subscription", "customer": "cus_1", "status": status,
@@ -199,10 +199,10 @@ def event(etype: str, obj: dict, event_id: str = "evt_1", created: int | None = 
 TRIAL_SUB = dict(status="trialing", trial_start=ep(2026, 7, 25), trial_end=ep(2026, 8, 1),
                  current_period_start=ep(2026, 7, 25))
 
-ENT_INSIDER_TRIAL = {"tier": "insider", "status": "trialing", "plan_interval": "monthly",
+ENT_INSIDER_TRIAL = {"tier": "essential", "status": "trialing", "plan_interval": "monthly",
                      "current_period_end": "2026-08-01T00:00:00+00:00",
                      "features": ["site_full", "terminal_live_options"]}
-ENT_INSIDER = {"tier": "insider", "status": "active", "plan_interval": "monthly",
+ENT_INSIDER = {"tier": "essential", "status": "active", "plan_interval": "monthly",
                "interval": "monthly", "current_period_end": "2026-08-14T00:00:00+00:00",
                "features": ["site_full", "terminal_live_options"]}
 ENT_PRO = {"tier": "pro", "status": "active", "plan_interval": "monthly",
@@ -354,7 +354,7 @@ def test_webhook_still_200_in_mail_off_mode(ledger, monkeypatch):
 # --------------------------------------------------------------------------- #
 @pytest.fixture
 def catalog_with_new_tier(monkeypatch):
-    """A catalog with 'starter' INSERTED between free and insider.
+    """A catalog with 'starter' INSERTED between free and essential.
 
     Nothing in app/billing_emails.py knows this tier exists, so if the comparison still
     ranks correctly the ordering is genuinely coming from the config.
@@ -370,26 +370,31 @@ def catalog_with_new_tier(monkeypatch):
                                                "unit_amount": 2900, "interval": "month"},
                                    "annual": {"lookup_key": "starter_annual",
                                               "unit_amount": 29000, "interval": "year"}}},
-            "insider": {"tier": "insider", "name": "Insider", "trial_days": 7,
-                        "features": ["site_full"],
-                        "prices": {"monthly": {"lookup_key": "insider_monthly",
-                                               "unit_amount": 6900, "interval": "month"}}},
+            "essential": {"tier": "essential", "name": "Essential", "trial_days": 7,
+                          "features": ["site_full"],
+                          "prices": {"monthly": {"lookup_key": "essential_monthly",
+                                                 "unit_amount": 6900, "interval": "month"}}},
             "pro": {"tier": "pro", "name": "Pro", "trial_days": 7,
                     "features": ["site_full", "chat_opus"],
                     "prices": {"monthly": {"lookup_key": "pro_monthly",
                                            "unit_amount": 9900, "interval": "month"}}},
         },
-        "tier_rank": ["free", "starter", "insider", "pro"],
+        "tier_rank": ["free", "starter", "essential", "pro"],
     }
     monkeypatch.setattr(billing, "_CATALOG", cat)
     return cat
 
 
 def test_upgrade_detection_uses_catalog_ordering(catalog_with_new_tier):
-    up = {"tier": "insider", "plan_interval": "monthly"}
+    up = {"tier": "essential", "plan_interval": "monthly"}
     assert be.is_upgrade({"tier": "starter", "interval": "monthly"}, up) is True
     assert be.is_upgrade({"tier": "pro", "interval": "monthly"}, up) is False
+    assert be.is_upgrade({"tier": "essential", "interval": "monthly"}, up) is False
+    # the retired spelling ranks with its canonical tier — a grandfathered row must not
+    # read as "not a paid plan" and silently suppress the upgrade mail
     assert be.is_upgrade({"tier": "insider", "interval": "monthly"}, up) is False
+    assert be.is_upgrade({"tier": "insider", "interval": "monthly"},
+                         {"tier": "pro", "plan_interval": "monthly"}) is True
     # the inserted tier is a real rung, not a synonym for free
     assert be.is_upgrade({"tier": "free", "interval": None},
                          {"tier": "starter", "plan_interval": "monthly"}) is False
@@ -716,7 +721,7 @@ class _EntStore:
         return list(self.rows)
 
 
-def _trial_row(user_id="user_1", cpe="2026-08-01T00:00:00+00:00", tier="insider",
+def _trial_row(user_id="user_1", cpe="2026-08-01T00:00:00+00:00", tier="essential",
                interval="monthly", cid="cus_1") -> dict:
     return {"user_id": user_id, "stripe_customer_id": cid, "tier": tier,
             "plan_interval": interval, "current_period_end": cpe}
@@ -845,12 +850,12 @@ def test_sweep_omits_the_amount_when_stripe_cannot_price_it(monkeypatch, ledger,
 
 
 def test_trial_ending_wording_tracks_the_real_gap():
-    spec = be.spec_trial_ending(tier="insider", interval="monthly",
+    spec = be.spec_trial_ending(tier="essential", interval="monthly",
                                 period_end=datetime(2026, 8, 1, tzinfo=timezone.utc),
                                 amount=6900, currency="usd",
                                 now=datetime(2026, 7, 30, 12, 0, tzinfo=timezone.utc))
     assert spec.subject_en == "Your trial ends in 2 days"
-    one_day = be.spec_trial_ending(tier="insider", interval="monthly",
+    one_day = be.spec_trial_ending(tier="essential", interval="monthly",
                                    period_end=datetime(2026, 8, 1, tzinfo=timezone.utc),
                                    amount=6900, currency="usd",
                                    now=datetime(2026, 7, 31, 12, 0, tzinfo=timezone.utc))
@@ -1158,7 +1163,7 @@ def test_unknown_feature_key_is_omitted_never_printed_as_a_slug(catalog_with_new
 
 
 def test_feature_with_no_zh_translation_uses_the_english_name_not_the_slug():
-    """A product NAME in a Chinese sentence is normal here ('你的 Insider 试用'); a slug is not."""
+    """A product NAME in a Chinese sentence is normal here ('你的 Essential 试用'); a slug is not."""
     en, zh = be._feature_label("site_full")
     assert zh == "整站访问权限"
     assert "site_full" not in zh

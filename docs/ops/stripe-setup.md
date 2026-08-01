@@ -23,12 +23,29 @@ mode** first; live-mode is gated by **W-LEGAL** (business entity, tax registrati
 
 | lookup_key | product | price |
 |---|---|---|
-| `insider_2026_v2_monthly` | Insider | $99 / month |
-| `insider_2026_v2_annual`  | Insider | $900 / year ($75/mo equivalent) |
+| `essential_2026_v2_monthly` | Essential | $99 / month |
+| `essential_2026_v2_annual`  | Essential | $900 / year ($75/mo equivalent) |
 | `pro_2026_v2_monthly`     | Pro     | $149 / month |
 | `pro_2026_v2_annual`      | Pro     | $1,308 / year ($109/mo equivalent) |
 
 Features `site_full`, `terminal_live_options`, `chat_opus` are created and attached to the products.
+
+**Renamed products are ADOPTED, never duplicated.** A Stripe Product is found by
+`metadata.mnz_product = <config/plans.yml products key>`. When that key is renamed, the catalog's
+`legacy_product_keys` records the old one and the bootstrap re-tags the EXISTING Product and updates
+its `name` in place — the same object keeps serving every live subscription, price, entitlement
+feature and portal entry, and the new display name reaches Checkout, invoices and the portal. The
+dry run names the path it will take, one line per product:
+
+```
+  product  essential                reuse   prod_XXXXXXXXXXXXXX
+  product  essential                reuse-legacy prod_XXXXXXXXXXXXXX (migrating metadata+name)  [dry-run]
+  product  essential                CREATE  (dry-run)
+```
+
+`reuse` (already tagged with the current key) always wins over `reuse-legacy`, so a second run is a
+no-op. Seeing `CREATE` for a product you know exists live means the legacy key is missing from the
+catalog — **stop and fix the catalog**; do not let it create a duplicate.
 The bootstrap also creates `Founding Pro`: a forever-duration, Pro-only coupon that makes annual Pro
 $900/year ($75/month equivalent), plus a `FOUNDINGPRO2026V2` PromotionCode capped at **2,000 real
 first-time redemptions**. The PromotionCode—not the Coupon—owns this cap. The uncapped Coupon is
@@ -99,7 +116,7 @@ Stripe Dashboard → **Developers → Webhooks → Add endpoint**:
 products and prices, so it is idempotent and reproduces identically against the live account.
 Re-running the bootstrap is all that is needed; there is no dashboard step.
 
-It sets: plan switching **with the Insider/Pro products and all four prices attached**, cancel
+It sets: plan switching **with the Essential/Pro products and all four prices attached**, cancel
 (`at_period_end`), payment-method update, invoice history, and customer update.
 
 > **Why it moved out of the dashboard (2026-07-25 go-live audit).** The hand-clicked config was
@@ -161,13 +178,13 @@ created by any code in this repo — `scripts/stripe_bootstrap.py` does products
 the portal config, but never `WebhookEndpoint`. Step 4's dashboard click is the primary path, and
 it must be repeated per mode.
 
-## 5c. Upgrade lane (Insider → Pro)
+## 5c. Upgrade lane (Essential → Pro)
 
 `POST /api/billing/upgrade` (bearer; body `{tier?, interval?, offer?}`) modifies the caller's
 existing live subscription **in place** — it never creates a second one. The upward-only
-tier/cadence matrix permits same-tier monthly→annual and Insider→Pro moves. It swaps the item to the
+tier/cadence matrix permits same-tier monthly→annual and Essential→Pro moves. It swaps the item to the
 target price (and applies Founding Pro when requested and available) using
-`proration_behavior="always_invoice"`, so Stripe credits the unused Insider time and charges the
+`proration_behavior="always_invoice"`, so Stripe credits the unused Essential time and charges the
 prorated difference **immediately**; `payment_behavior="error_if_incomplete"` turns a card decline
 into a `402` (Stripe's message) instead of a half-switched sub. **Trialing subs** keep their trial —
 Stripe swaps the price with no proration and an unchanged `trial_end`, so the user just starts Pro
@@ -222,7 +239,7 @@ first live transaction.
    `4242 4242 4242 4242`, any future expiry/CVC. Checkout returns to
    **`start.html?checkout=success`** (the desk, not the pricing page); `site/hub-welcome.js`
    confirms the tier it reads back from `/api/me`.
-2. Webhook fires → a row appears in `user_entitlements` (tier `insider`/`pro`, status `trialing`).
+2. Webhook fires → a row appears in `user_entitlements` (tier `essential`/`pro`, status `trialing`).
 3. `GET /api/me` (with the user's bearer token) reflects the new `tier` + `features`.
 4. Customer Portal → cancel → within seconds `/api/me` downgrades to `free` (cache-bust on the
    `subscription.deleted`/`updated` event).

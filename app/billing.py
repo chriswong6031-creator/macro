@@ -81,14 +81,14 @@ def _catalog() -> dict:
 
 
 def _tier_rank() -> list[str]:
-    return list(_catalog().get("tier_rank", ["free", "insider", "pro"]))
+    return list(_catalog().get("tier_rank", ["free", "essential", "pro"]))
 
 
 def _product_tiers() -> frozenset[str]:
     """Every entitlement tier the catalog actually SELLS — the enum for an inbound `tier`.
 
     Authored once because it was hardcoded once too often: /upgrade carried a literal
-    ``("insider", "pro")`` that a fourth product would have silently locked out of the
+    ``("essential", "pro")`` that a fourth product would have silently locked out of the
     upgrade path while checkout happily sold it.
     """
     return frozenset(str(p["tier"]) for p in _catalog()["products"].values())
@@ -152,14 +152,15 @@ def _upgrade_allowed(cur_tier: str, cur_interval: str, tgt_tier: str, tgt_interv
     is not a no-op — the target tier ranks at or above the current tier (via _tier_rank, so the
     ordering stays config-driven), the target interval ranks at or above the current interval
     (monthly < annual), AND the pair actually changes. This is exactly the five reachable moves:
-    insider·m -> {insider·a, pro·m, pro·a}, pro·m -> pro·a, insider·a -> pro·a. Everything else —
+    essential·m -> {essential·a, pro·m, pro·a}, pro·m -> pro·a, essential·a -> pro·a. Everything
     any tier downgrade, any annual->monthly, and pro·annual (already at the top) — is refused.
     Unknown tiers/intervals rank -1 and can only ever satisfy the >= against themselves, which the
     no-op clause then rejects, so a garbage pair fails closed.
 
     Both tiers are normalized first. That is not belt-and-braces: an ALIAS ranks -1 like any
-    unknown string, so an un-normalized `cur_tier` of 'essential' would out-rank nothing and
-    make a real DOWNGRADE look legal — the one direction this matrix exists to refuse.
+    unknown string, so an un-normalized `cur_tier` of 'insider' (what every pre-rename row and
+    every far-future-cached copy of onboard.js still says) would out-rank nothing and make a
+    real DOWNGRADE look legal — the one direction this matrix exists to refuse.
     """
     cur_tier, tgt_tier = normalize_tier(cur_tier), normalize_tier(tgt_tier)
     rank = _tier_rank()
@@ -866,7 +867,7 @@ def _first_item_id(sub: Any) -> str | None:
 def _sub_interval(sub: Any) -> str | None:
     """Derive the billing interval ('monthly'|'annual') from the first item's price.
 
-    Reads the price lookup_key suffix (pro_monthly -> 'monthly', insider_annual -> 'annual') so the
+    Reads the price lookup_key suffix (pro_monthly -> 'monthly', essential_annual -> 'annual') so the
     upgrade keeps the user on their current cadence unless the request overrides it. Falls back to the
     price's raw `interval` field ('month'->'monthly', 'year'->'annual') if the lookup_key is missing or
     unrecognized. Returns None only when neither signal is present (caller then defaults to 'monthly').
@@ -898,7 +899,7 @@ def _current_user(authorization: str | None = Header(default=None)) -> dict:
 # Routes
 # --------------------------------------------------------------------------- #
 class CheckoutRequest(BaseModel):
-    tier: str = Field(..., description="'insider' (alias: 'essential') | 'pro'")
+    tier: str = Field(..., description="'essential' (alias: 'insider') | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
     offer: str | None = Field(None, description="optional catalog offer key")
 
@@ -1032,7 +1033,7 @@ def billing_config() -> dict:
 
 
 class SubscribeInitRequest(BaseModel):
-    tier: str = Field(..., description="'insider' (alias: 'essential') | 'pro'")
+    tier: str = Field(..., description="'essential' (alias: 'insider') | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
     offer: str | None = Field(None, description="optional catalog offer key")
 
@@ -1111,7 +1112,7 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
 
 class SubscribeCompleteRequest(BaseModel):
     setup_intent_id: str = Field(..., description="the SetupIntent confirmed client-side by Elements")
-    tier: str = Field(..., description="'insider' (alias: 'essential') | 'pro'")
+    tier: str = Field(..., description="'essential' (alias: 'insider') | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
     offer: str | None = Field(None, description="optional catalog offer key")
 
@@ -1225,7 +1226,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
 class UpgradeRequest(BaseModel):
     tier: str | None = Field(
         None,
-        description="'insider' (alias: 'essential') | 'pro' — target tier; defaults to 'pro' "
+        description="'essential' (alias: 'insider') | 'pro' — target tier; defaults to 'pro' "
                     "(settings-dashboard back-compat)")
     interval: str | None = Field(
         None, description="'monthly' | 'annual' — defaults to the current subscription's cadence")
@@ -1240,11 +1241,11 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
 
     Matrix law (operator order — never a downgrade, never a no-op):
 
-        current \\ target   insider·m  insider·a  pro·m  pro·a
-        insider·monthly        —         yes      yes    yes
-        insider·annual         no        —        no     yes
-        pro·monthly            no        no       —      yes
-        pro·annual             no        no       no     —
+        current \\ target   essential·m  essential·a  pro·m  pro·a
+        essential·monthly        —           yes        yes    yes
+        essential·annual         no          —          no     yes
+        pro·monthly              no          no         —      yes
+        pro·annual               no          no         no     —
 
     i.e. the target tier may not rank below the current tier, the target interval may not step from
     annual back to monthly, and the pair must actually change. `tier` defaults to 'pro' (the

@@ -121,7 +121,7 @@ quotas:
       limit: 3
       period: trial
 
-  insider:
+  essential:
     fast:
       limit: 300
       period: month

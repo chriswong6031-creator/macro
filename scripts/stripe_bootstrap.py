@@ -4,7 +4,10 @@
 Reads the pricing catalog from ``config/plans.yml`` and creates — or reconciles, on
 re-run — the matching Stripe objects:
 
-  * 2 Products (Insider, Pro), tagged ``metadata.mnz_product`` so we can find them again.
+  * 2 Products (Essential, Pro), tagged ``metadata.mnz_product`` so we can find them again.
+    A product key that has been RENAMED carries its history in the catalog's
+    ``legacy_product_keys``; the live Product is then adopted (metadata re-tagged, display
+    name updated) rather than duplicated — see ``_ensure_product``.
   * 4 recurring Prices addressed by stable ``lookup_key`` (portable across test/live),
     so application code never hardcodes environment-specific price IDs.
   * Limited-offer Coupons + PromotionCodes whose real Stripe redemption count powers
@@ -72,11 +75,56 @@ def _ensure_feature(key: str, name: str, dry: bool) -> str | None:
 # --------------------------------------------------------------------------- #
 # Products (found by metadata tag) + feature attachment
 # --------------------------------------------------------------------------- #
-def _ensure_product(pkey: str, name: str, dry: bool) -> str | None:
+def _legacy_product_keys(cat: dict, pkey: str) -> list[str]:
+    """Former ``products`` keys for ``pkey``, from the catalog's ``legacy_product_keys``.
+
+    Read through one function so ``main`` and the tests resolve it identically — and so a
+    catalog that LOSES the entry degrades to "no history" in exactly one place.
+    """
+    entry = (cat.get("legacy_product_keys") or {}).get(pkey) or []
+    return [str(k).strip() for k in entry if str(k).strip()]
+
+
+def _ensure_product(pkey: str, prod_spec: dict, legacy_keys: list[str], dry: bool) -> str | None:
+    """Find-or-create the Stripe Product for catalog key ``pkey``.
+
+    Three outcomes, in strict precedence order:
+
+    ``reuse``
+        A Product already tagged ``metadata.mnz_product == pkey``. Nothing is written. A
+        direct tag WINS over a legacy one no matter which order Stripe lists them in, which
+        is what makes the migration below idempotent: the second run takes this path.
+    ``reuse-legacy``
+        No direct tag, but a Product tagged with one of ``legacy_keys`` — the same object
+        under its pre-rename key. It is ADOPTED: the metadata tag moves to ``pkey`` and the
+        display name is updated. This is deliberately a modify, not a create. Every live
+        subscription, price, entitlement feature and portal entry hangs off that Product id;
+        creating a second one would strand all of them, and Stripe shows ``name`` on
+        Checkout, invoices and the customer portal, so this modify is also the only way a
+        renamed product's new name ever reaches a paying customer.
+    ``CREATE``
+        Neither matched — a genuinely new product (or a fresh environment).
+    """
+    legacy = {k for k in legacy_keys if k and k != pkey}
+    legacy_hit = None
     for prod in stripe.Product.list(active=True, limit=100).auto_paging_iter():
-        if (prod.metadata or {}).get(PRODUCT_METADATA_KEY) == pkey:
+        tag = (prod.metadata or {}).get(PRODUCT_METADATA_KEY)
+        if tag == pkey:
             print(f"  product  {pkey:<24} reuse   {prod.id}")
             return prod.id
+        if legacy_hit is None and tag in legacy:
+            legacy_hit = prod
+    name = prod_spec["name"]
+    if legacy_hit is not None:
+        suffix = "  [dry-run]" if dry else ""
+        print(f"  product  {pkey:<24} reuse-legacy {legacy_hit.id} "
+              f"(migrating metadata+name){suffix}")
+        if not dry:
+            stripe.Product.modify(
+                legacy_hit.id, metadata={PRODUCT_METADATA_KEY: pkey}, name=name)
+        # The object EXISTS either way, so a dry run reports its real id — the price and
+        # portal lines below then reconcile against the product they will actually touch.
+        return legacy_hit.id
     if dry:
         print(f"  product  {pkey:<24} CREATE  (dry-run)")
         return None
@@ -359,7 +407,7 @@ def main() -> int:
     portal_products: dict[str, list[str]] = {}
     product_ids: dict[str, str | None] = {}
     for pkey, prod in cat["products"].items():
-        pid = _ensure_product(pkey, prod["name"], args.dry_run)
+        pid = _ensure_product(pkey, prod, _legacy_product_keys(cat, pkey), args.dry_run)
         product_ids[pkey] = pid
         _attach_features(pid, [feat_ids.get(f) for f in prod.get("features", [])], args.dry_run)
         for interval_name, pspec in prod["prices"].items():

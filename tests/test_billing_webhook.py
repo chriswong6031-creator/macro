@@ -94,7 +94,7 @@ def test_reducer_picks_highest_active_tier():
     r = billing._entitlement_from_state(
         [
             {"status": "active", "current_period_end": 1900000000, "tier": "pro"},
-            {"status": "active", "current_period_end": 1900000000, "tier": "insider"},
+            {"status": "active", "current_period_end": 1900000000, "tier": "essential"},
         ],
         [],
     )
@@ -105,10 +105,10 @@ def test_reducer_picks_highest_active_tier():
 
 def test_reducer_uses_entitlement_keys_when_present():
     r = billing._entitlement_from_state(
-        [{"status": "trialing", "current_period_end": 1, "tier": "insider"}],
+        [{"status": "trialing", "current_period_end": 1, "tier": "essential"}],
         ["site_full", "terminal_live_options"],
     )
-    assert r["tier"] == "insider" and r["status"] == "trialing"
+    assert r["tier"] == "essential" and r["status"] == "trialing"
     assert r["features"] == ["site_full", "terminal_live_options"]
 
 
@@ -129,7 +129,8 @@ def test_reducer_empty_is_free_none():
 # --------------------------------------------------------------------------- #
 def test_sub_tier_from_lookup_key():
     assert billing._sub_tier(_sub("active", "pro_annual", 1)) == "pro"
-    assert billing._sub_tier(_sub("active", "insider_monthly", 1)) == "insider"
+    # a retired lookup_key still resolves, via the catalog's legacy_lookup_keys
+    assert billing._sub_tier(_sub("active", "insider_monthly", 1)) == "essential"
 
 
 def test_sub_period_end_prefers_item_level():
@@ -256,7 +257,7 @@ def test_subscription_deleted_downgrades_and_busts_cache(monkeypatch):
 # 7. review remediation — chargeback, multi-item tier, out-of-order resolution
 # --------------------------------------------------------------------------- #
 def test_multi_item_sub_resolves_highest_tier():
-    # M2: a sub carrying both an insider and a pro price resolves to pro, not item order.
+    # M2: a sub carrying both an essential and a pro price resolves to pro, not item order.
     item = lambda lk: types.SimpleNamespace(price=types.SimpleNamespace(lookup_key=lk, metadata={}), current_period_end=1)
     sub = types.SimpleNamespace(status="active", current_period_end=None,
                                 items=types.SimpleNamespace(data=[item("insider_monthly"), item("pro_monthly")]))
@@ -338,7 +339,7 @@ def test_concurrent_events_for_one_user_do_not_interleave(monkeypatch):
         order.append(f"snap-{threading.current_thread().name}")
         barrier_hit.set()
         time.sleep(0.05)          # a window wide enough for the other thread to race in
-        return {"tier": "insider"}
+        return {"tier": "essential"}
 
     def _upsert(uid, cid, ent):
         order.append(f"write-{threading.current_thread().name}")

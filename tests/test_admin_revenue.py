@@ -148,12 +148,15 @@ def test_mrr_monthly_and_annual_normalization(wired, monkeypatch):
     # by-interval split: monthly leg $69, annual leg $69 (82800/12)
     assert out["mrr"]["by_interval_usd"]["monthly"] == pytest.approx(69.00)
     assert out["mrr"]["by_interval_usd"]["annual"] == pytest.approx(69.00)
-    # by-tier: insider $69 (monthly), pro $69 (annual/12)
-    assert out["mrr"]["by_tier_usd"]["insider"] == pytest.approx(69.00)
+    # by-tier: essential $69 (monthly), pro $69 (annual/12). The fixture prices carry
+    # PRE-RENAME lookup_keys on purpose — _sub_tier resolves them through the catalog's
+    # legacy_lookup_keys, so a grandfathered subscription lands in the current tier bucket
+    # instead of the "other" one.
+    assert out["mrr"]["by_tier_usd"]["essential"] == pytest.approx(69.00)
     assert out["mrr"]["by_tier_usd"]["pro"] == pytest.approx(69.00)
     # counts land in the right tier×interval buckets
     ai = out["now"]["active_by_tier_interval"]
-    assert ai["insider"]["monthly"] == 1 and ai["pro"]["annual"] == 1
+    assert ai["essential"]["monthly"] == 1 and ai["pro"]["annual"] == 1
     assert out["now"]["active_total"] == 2
 
 
