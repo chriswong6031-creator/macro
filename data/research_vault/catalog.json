@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T01:59:32.169315+00:00",
-  "count": 497,
+  "generated_at": "2026-08-01T02:29:33.279201+00:00",
+  "count": 498,
   "institutions": [
     "Amova",
     "Apollo",
@@ -447,6 +447,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-sulptsyczho-49a9d0",
+      "title": "Macro at a Glance Latest views and forecasts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:22Z",
+      "summary_points": [
+        "**Euro Area & Global Growth Divergence**: China’s 2026 GDP growth projected at 4.6% (vs.",
+        "US 2.2%), with GS forecasting global GDP at 2.4% (below consensus 2.5%), signaling structural policy-driven capital flow shifts toward high-growth emerging markets.",
+        "**Policy Rate Divergence**: US policy rates at 3.85% (GS) versus China’s 1.40% (GS), while ECB hikes to 2.5% peak (Fed holds at 3.5-3.75% for 2026), creating cross-currency volatility and yield-seeking flows.",
+        "**Geopolitical Inflation Risk**: Middle East conflict escalation threatens energy price spikes, driving CPI/PPI inflation to 1.0%/2.0% YoY via commodity pass-throughs, directly impacting global inflation trajectories and central bank policy timing."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
