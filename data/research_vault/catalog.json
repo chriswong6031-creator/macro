@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T02:29:33.279201+00:00",
-  "count": 498,
+  "generated_at": "2026-08-01T02:44:38.822037+00:00",
+  "count": 499,
   "institutions": [
     "Amova",
     "Apollo",
@@ -95,6 +95,27 @@
         "**Earthquake Risk**: Kumamoto earthquake drags July production outlook to -0.7% mom (vs June's +1.3% mom), risking sustained industrial output decline amid sector recovery; METI bias-adjusted forecast contradicts June momentum.",
         "**Retail Sales Collapse**: June retail sales fell -0.5% yoy (vs +2.0% forecast), with machinery/equipment (-10.3% mom) and textiles/apparel (-14.2% mom) collapsing due to typhoons and supply chain issues.",
         "**Naphtha Inventory Dip**: Sharp decline in naphtha inventory (2025–2026) signals manufacturing supply chain stress or reduced industrial demand, critical for Japanese manufacturing fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-c8ei4rifktd-45b1a7",
+      "title": "South Korea Stronger than expected Rebound in June IP",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:23:48Z",
+      "summary_points": [
+        "**IP Momentum Surge**: June IP +6.4% mom sa (vs.",
+        "+2.9% consensus), led by autos (+15.4%) and semiconductors (+4.5%), reversing contraction and hitting strongest momentum since June 2020.",
+        "**Inventory Correction Signal**: Manufacturing I-S ratio fell to 94.2 (from 102.4), signaling sector-wide inventory reduction and potential overstocking risks.",
+        "**Output Growth Acceleration**: Overall output +2.3% mom sa (strongest since June 2020), driven by services (+0.7% mom sa), investment rebound (equipment +5.8% mom sa), and resilient external demand.",
+        "**Tech Sector Weakness**: Tech contraction for 4th consecutive month, construction orders down 59%, and semi-durable goods consumption (-1.7%) offsetting durable goods growth (+12.6%)."
       ],
       "tags": [],
       "tickers": [],
