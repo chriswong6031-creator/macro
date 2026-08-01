@@ -197,7 +197,9 @@ _MACRO_THESES_TAIL = (
     "    conviction: \"low\"|\"medium\"|\"high\" — default low; reserve high for genuine agreement.\n"
     "    horizon_d: integer trading days, 5..60.\n"
     "    thesis: one sentence naming the divergence.\n"
-    "    falsifier_text: one concrete condition that would prove the lean wrong."
+    "    falsifier_text: one concrete condition that would prove the lean wrong, phrased "
+    "as the plain condition itself. This text is shown to users under a 'Changes this "
+    "read' label: never write the words 'falsified', 'falsify' or 'refuted' in it."
 )
 
 MASTER_SYSTEM_TMPL = (

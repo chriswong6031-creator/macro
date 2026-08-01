@@ -688,7 +688,7 @@
     {# ---- AI analyst + thesis monitor ---- #}
     {% if (analyst and analyst.regime_read) or (monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening)) %}
     <details>
-      <summary><span class="sh-ic">🧠</span>{{ t('Analyst read & thesis monitor', '分析师解读与论点监视') }}<span class="sh-hint">{{ t('what could break it', '何以证伪') }}</span><span class="sh-car">▶</span></summary>
+      <summary><span class="sh-ic">🧠</span>{{ t('Analyst read & thesis monitor', '分析师解读与论点监视') }}<span class="sh-hint">{{ t('what could break it', '何种情况会改变判断') }}</span><span class="sh-car">▶</span></summary>
       <div class="sh-body">
         {% if monitor and (monitor.n_open or monitor.n_broken or monitor.n_weakening) %}
         <div class="fx-mon {{ 'broken' if monitor.n_broken else 'weak' if monitor.n_weakening else '' }}">

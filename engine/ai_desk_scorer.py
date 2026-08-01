@@ -48,7 +48,7 @@ def _calibration_note(overall: dict, by_conv: dict) -> str:
     parts = [f"{overall['n']} scored, hit-rate {overall['hit_rate']} "
              f"(directional accuracy {overall['dir_accuracy']})."]
     if hi.get("n"):
-        parts.append(f"High-conviction calls: {hi['hits']}/{hi['n']} not falsified.")
+        parts.append(f"High-conviction calls: {hi['hits']}/{hi['n']} holding.")
     if overall["n"] < 10:
         parts.append("Sample is tiny — treat conviction as provisional and lean low.")
     return " ".join(parts)
@@ -62,7 +62,7 @@ def _calibration_note_zh(overall: dict, by_conv: dict) -> str:
     parts = [f"已评分 {overall['n']} 条，命中率 {overall['hit_rate']}"
              f"（方向准确率 {overall['dir_accuracy']}）。"]
     if hi.get("n"):
-        parts.append(f"高置信判断：{hi['hits']}/{hi['n']} 未被证伪。")
+        parts.append(f"高置信判断：{hi['hits']}/{hi['n']} 仍成立。")
     if overall["n"] < 10:
         parts.append("样本极小 —— 将置信视为暂定并保持偏低。")
     return "".join(parts)
@@ -135,7 +135,7 @@ def render_markdown(track: dict) -> str:
     for c in ("high", "medium", "low"):
         b = track.get("by_conviction", {}).get(c, {})
         if b.get("n"):
-            L.append(f"  · {c}: {b['hits']}/{b['n']} not falsified (dir {b['dir_accuracy']})")
+            L.append(f"  · {c}: {b['hits']}/{b['n']} holding (dir {b['dir_accuracy']})")
     L += ["", "_context only — never scored, sized, or fed into an allocation_"]
     return "\n".join(L)
 

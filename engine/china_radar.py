@@ -856,9 +856,9 @@ def scan(asof: date | str | None = None) -> dict | None:
             "divergences": active,
             "in_line": [r for r in rows if r["sign"] == "in_line"],
             "n_active": len(active), "n_pairs": len(rows),
-            "disclaimer_en": "Context only — a divergence is a falsifiable hypothesis, not a trade. "
+            "disclaimer_en": "Context only — a divergence is a checkable hypothesis, not a trade. "
                              "No validated edge; the ledger tracks whether these calls hold.",
-            "disclaimer_zh": "仅作背景——背离是可证伪的假设，而非交易。无已验证优势；台账追踪这些判断是否成立。",
+            "disclaimer_zh": "仅作背景——背离是可检验的假设，而非交易。无已验证优势；台账追踪这些判断是否成立。",
         }
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("china_radar.scan failed (%s)", e)

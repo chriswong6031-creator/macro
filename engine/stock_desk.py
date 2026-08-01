@@ -194,7 +194,9 @@ _SCHEMA_TAIL = (
     "control supports it.\n"
     "  evidence: array of short strings (cite the specific axis / verdict / risk leg).\n"
     "  dissent: string — the single strongest contrary case.\n"
-    "  falsifier_text: string — one concrete condition that would prove the lean wrong.")
+    "  falsifier_text: string — one concrete condition that would prove the lean wrong, "
+    "phrased as the plain condition itself. This text is shown to users under a 'Changes "
+    "this read' label: never write the words 'falsified', 'falsify' or 'refuted' in it.")
 
 _SYSTEM = (
     "You are the analyst writing accountable JUDGMENT notes on a solo trader's OWN "

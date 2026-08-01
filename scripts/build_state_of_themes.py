@@ -62,7 +62,7 @@ _LEG_LABELS = {
     "cyclical_dislocation": ("dis", "Cyclical dislocation", "周期错位"),
     "entry_cleanliness": ("cln", "Entry cleanliness", "入场质量"),
     "crowding_hazard": ("crw", "Crowding hazard", "拥挤风险"),
-    "falsifier_clarity": ("fal", "Falsifier clarity", "假证伪清晰度"),
+    "falsifier_clarity": ("fal", "Testability", "可检验性"),
     "orthogonality": ("ort", "Orthogonality vs market", "市场正交性"),
 }
 

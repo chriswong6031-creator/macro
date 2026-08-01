@@ -102,14 +102,14 @@ def _thesis_for(tkr: str, read: dict, asof: str, entry_lvl: float | None,
     lean = "outperform" if bullish else "underperform"
     vintage = f"{read['chain_key']}:{tkr}:{read['fy_latest']}:{div}"
     if bullish:
-        ft_en = (f"FALSE if {tkr} underperforms SPY by >5% over ~{horizon} trading days — i.e. "
+        ft_en = (f"Changes this read: {tkr} underperforms SPY by >5% over ~{horizon} trading days — i.e. "
                  f"hyperscaler capex running ahead of consensus did NOT translate into relative strength.")
-        ft_zh = (f"若 {tkr} 在约 {horizon} 个交易日内跑输 SPY 逾5%，则证伪——"
+        ft_zh = (f"改判条件：{tkr} 在约 {horizon} 个交易日内跑输 SPY 逾5%——"
                  "即领先于共识的云厂商资本开支并未转化为相对强势。")
     else:
-        ft_en = (f"FALSE if {tkr} outperforms SPY by >5% over ~{horizon} trading days — i.e. the "
+        ft_en = (f"Changes this read: {tkr} outperforms SPY by >5% over ~{horizon} trading days — i.e. the "
                  f"customer-capex-at-risk read was wrong and it rallied anyway.")
-        ft_zh = (f"若 {tkr} 在约 {horizon} 个交易日内跑赢 SPY 逾5%，则证伪——"
+        ft_zh = (f"改判条件：{tkr} 在约 {horizon} 个交易日内跑赢 SPY 逾5%——"
                  "即“客户资本开支承压”的判断有误，其反而上涨。")
     return {
         "id": f"{asof}-{read['chain_key']}-{tkr}",

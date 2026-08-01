@@ -1717,15 +1717,17 @@ def _translate_macro_detail(msg_en: str) -> str:
     if m:
         return f"净流动性 4 周 RoC 转为负值（收缩）并持续 {m.group(1)} 天：{m.group(2)}"
 
-    # Cycle falsifier FIRED
-    # EN: "Cycle falsifier FIRED — credit: <claim>. Direction: refutes. Coverage: ..."
-    m = _re.match(r"Cycle falsifier FIRED — ([^:]+): (.+)", msg_en)
+    # Cycle read-change condition HIT (pre-#3821 logs say "Cycle falsifier FIRED";
+    # both shapes translate to the sanctioned register)
+    # EN: "Cycle read-change condition HIT — credit: <claim>. Direction: ... Coverage: ..."
+    m = _re.match(r"Cycle (?:read-change condition HIT|falsifier FIRED) — ([^:]+): (.+)",
+                  msg_en)
     if m:
         cycle = m.group(1)
         rest = m.group(2)
         # strip trailing "Direction: X. Coverage: Y." suffix if present
         rest_clean = _re.sub(r"\.\s*Direction:.*$", "", rest, flags=_re.DOTALL).strip()
-        return f"周期证伪条件触发 — {cycle}：{rest_clean}。"
+        return f"周期改判条件触发 — {cycle}：{rest_clean}。"
 
     # HY OAS widening
     # EN: "HY OAS 1-day widening +0.12pp is 2.3 sigma (level 4.56%)"

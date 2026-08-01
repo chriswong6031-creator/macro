@@ -178,7 +178,7 @@
             ],
             "vetoes": [],
             "divergences": [],
-            "what_would_prove_wrong": "FALSE if LNG underperforms SPY by >=5% over 21 business days (engine-derived falsifier). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
+            "what_would_prove_wrong": "FALSE if LNG underperforms SPY by >=5% over 21 business days (engine-derived check). Also exits if extension veto fires (parabolic/≥30% above 200dma), Altman enters distress, or conviction band drops to 'avoid'.",
             "sizing_rationale": "Conviction sleeve: confluence-weighted sizing. LNG receives 6.4% (confluence +0.43 (5/7 lenses bullish = +0.43 net), capped at 8% per name). The weight is subtract-only from the theoretical maximum — no veto means full confluence allocation, reduced if another name dominates the confluence score. Falsification horizon: 21 business days. Position time-stop: 2026-10-21.",
             "confluence": 0.429,
             "prob_correct": 0.7

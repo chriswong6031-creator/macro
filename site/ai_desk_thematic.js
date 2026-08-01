@@ -58,8 +58,8 @@
         var tb = document.getElementById('td-track');
         if (tb) {
           tb.innerHTML = ov.n
-            ? L('track record: ' + Math.round((ov.hit_rate || 0) * 100) + '% not-falsified · n=' + ov.n,
-                '战绩：' + Math.round((ov.hit_rate || 0) * 100) + '% 未被证伪 · n=' + ov.n)
+            ? L('track record: ' + Math.round((ov.hit_rate || 0) * 100) + '% holding · n=' + ov.n,
+                '战绩：' + Math.round((ov.hit_rate || 0) * 100) + '% 仍成立 · n=' + ov.n)
             : L('track record: building (n=0)', '战绩：积累中（n=0）');
           tb.style.display = 'inline-block';
           tb.title = (track.calibration_note || '');
@@ -106,7 +106,7 @@
           (t.thesis ? '<div class="body">' + esc(t.thesis) + '</div>' : '') +
           ((t.evidence && t.evidence.length) ? '<div class="ev">' + t.evidence.map(esc).join(' · ') + '</div>' : '') +
           (t.dissent ? '<div class="dis">' + L('Dissent', '异议') + ': ' + esc(t.dissent) + '</div>' : '') +
-          (falsTxt ? '<div class="fals"><b>' + L('Falsified if', '证伪条件') + ':</b> ' + falsTxt + by + '</div>'
+          (falsTxt ? '<div class="fals"><b>' + L('Changes this read', '改判条件') + ':</b> ' + falsTxt + by + '</div>'
                    : (by ? '<div class="fals"><b>' + L('Check', '检验') + '</b>' + by + '</div>' : '')) +
           '</div>';
       }).join('');

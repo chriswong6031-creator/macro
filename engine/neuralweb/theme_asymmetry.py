@@ -901,7 +901,7 @@ def _leg_falsifier_clarity(
         return _null_leg(
             inputs, stale=True,
             note_en="thesis ledger pending W1 build",
-            note_zh="假证伪器清单等待 W1 构建",
+            note_zh="改判条件清单等待 W1 构建",
         )
 
     # Filter to this theme's rows
@@ -910,7 +910,7 @@ def _leg_falsifier_clarity(
         return _null_leg(
             inputs, stale=True,
             note_en=f"no thesis ledger entries for theme {theme_id}",
-            note_zh=f"主题 {theme_id} 无假证伪器条目",
+            note_zh=f"主题 {theme_id} 无改判条件条目",
         )
 
     # Collect all falsifiers across thesis rows
@@ -923,8 +923,8 @@ def _leg_falsifier_clarity(
     if not all_falsifiers:
         return _null_leg(
             inputs, stale=True,
-            note_en=f"no falsifier records in thesis entries for {theme_id}",
-            note_zh=f"主题 {theme_id} 假证伪器条目无内容",
+            note_en=f"no watch-condition records in thesis entries for {theme_id}",
+            note_zh=f"主题 {theme_id} 改判条件条目无内容",
         )
 
     n_total = len(all_falsifiers)
@@ -948,13 +948,13 @@ def _leg_falsifier_clarity(
     band = _band_from_value(value, _FALS_MED, _FALS_HIGH)
 
     note_en = (
-        f"n_falsifiers={n_total}, "
+        f"watch_conditions={n_total}, "
         f"machine_checkable={n_machine_checkable} ({share_checkable:.0%}), "
         f"armed={n_armed} ({share_armed:.0%}) "
         f"→ clarity={value:.2f}"
     )
     note_zh = (
-        f"假证伪器总数={n_total}，"
+        f"改判条件总数={n_total}，"
         f"机器可验证={n_machine_checkable}（{share_checkable:.0%}），"
         f"已激活={n_armed}（{share_armed:.0%}）"
         f"→ 清晰度={value:.2f}"

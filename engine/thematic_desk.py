@@ -253,7 +253,10 @@ _SCHEMA_TAIL = (
     "trend-gate/crowding/rotation).\n"
     "     evidence: array of strings citing the specific legs.\n"
     "     dissent: string — the single strongest contrary case.\n"
-    "     falsifier_text: string — one concrete condition that would prove this wrong.\n"
+    "     falsifier_text: string — one concrete condition that would prove this wrong, "
+    "phrased as the plain condition itself (e.g. 'XLK lags SPY by 5% before the check-by "
+    "date'). This text is shown to users under a 'Changes this read' label: never write "
+    "the words 'falsified', 'falsify' or 'refuted' in it.\n"
     "  emerging_watch: string|null — at most ONE early-hypothesis to watch (a theme whose "
     "leadership may be forming OR fading) WITH a kill-criterion; or null. This is a watch, "
     "not a call.\n"
@@ -306,7 +309,7 @@ def _build_user(state: dict) -> str:
 
 
 DISCLAIMER = (
-    "Context only — the desk's fallible, FALSIFIABLE hypotheses, graded against reality over "
+    "Context only — the desk's fallible, CHECKABLE hypotheses, graded against reality over "
     "time. NOT investment advice, NOT a buy list, NOT a size. The validated edge on this page "
     "is drawdown control; everything the AI says is display-only.")
 

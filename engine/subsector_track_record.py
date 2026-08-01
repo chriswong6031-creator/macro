@@ -336,13 +336,13 @@ def compute(today: date | str | None = None, root: Path | None = None,
             "note": note, "note_zh": note_zh,
             "recent_misses": misses,
             "head_to_head": _head_to_head(out_h),
-            "disclaimer": ("A falsifiable scorecard of the rotation read's own calls — "
+            "disclaimer": ("An accountable scorecard of the rotation read's own calls — "
                            "emerging_score rank and emerging/fading labels graded against "
                            "realized member-equal-weight SPY-relative forward returns. Until a "
                            "horizon matures and clears a Newey-West significance bar it is "
                            "'measuring', never trusted. Members are frozen point-in-time; only "
                            "priceable members are used. Nothing here sizes a position."),
-            "disclaimer_zh": ("对轮动研判自身研判的可证伪记分卡——升温评分排名与升温/退潮标签，"
+            "disclaimer_zh": ("对轮动研判自身研判的可问责记分卡——升温评分排名与升温/退潮标签，"
                               "以成分股等权、相对 SPY 的实际前瞻收益进行评分。在某周期到期并通过 "
                               "Newey-West 显著性检验之前，始终为「测量中」，不予采信。成分股按时间点冻结，"
                               "仅使用可定价成分股。此处任何内容都不用于确定仓位。"),

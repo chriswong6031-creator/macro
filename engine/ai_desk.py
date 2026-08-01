@@ -61,7 +61,7 @@ SCHEMA = "ai_desk.v1"
 DISCLAIMER = (
     "AI desk note — context only, never scored or sized. The detectors it reads are "
     "DISPLAY-ONLY (flow has no validated forward edge; the relief snap is coincident). "
-    "Each lean is a fallible, FALSIFIABLE judgement with a check-by date, not a trade "
+    "Each lean is a fallible, CHECKABLE judgement with a check-by date, not a trade "
     "recommendation or a position size.")
 
 # Conditional directional leans (a lean is NEVER a size). 'neutral' is not a thesis —
@@ -386,7 +386,9 @@ _SCHEMA_TAIL = (
     "     thesis: string — the reasoning, naming WHICH detector leg supports it.\n"
     "     evidence: array of strings (cite the specific leg / cluster / snap state).\n"
     "     dissent: string — the single strongest contrary case.\n"
-    "     falsifier_text: string — one concrete condition that would prove this wrong.\n"
+    "     falsifier_text: string — one concrete condition that would prove this wrong, "
+    "phrased as the plain condition itself. This text is shown to users under a 'Changes "
+    "this read' label: never write the words 'falsified', 'falsify' or 'refuted' in it.\n"
     "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 

@@ -132,7 +132,7 @@ def _reasoning_model(cfg: dict) -> str:
     return "claude-opus-4-8"
 
 DISCLAIMER = (
-    "An AI reading of the desk's own deterministic convergence — accountable and falsifiable, "
+    "An AI reading of the desk's own deterministic convergence — accountable and checkable, "
     "not a guarantee. Every call cites the channels/actors it is based on, is graded vs SPY "
     "over the horizon, and can be wrong or overconfident. The Mastermind sizes it through its "
     "own risk framework; treat as odds, not a forecast."
@@ -176,7 +176,9 @@ _SYSTEM = (
     "the primary name implies, each with a one-clause reason.\n"
     "     evidence: array of strings — the specific channels/actors cited.\n"
     "     dissent: string — the single strongest contrary case.\n"
-    "     falsifier_text: string — one concrete condition that would prove this wrong.\n"
+    "     falsifier_text: string — one concrete condition that would prove this wrong, "
+    "phrased as the plain condition itself. This text is shown to users under a 'Changes "
+    "this read' label: never write the words 'falsified', 'falsify' or 'refuted' in it.\n"
     "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 

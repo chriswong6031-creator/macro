@@ -711,7 +711,7 @@ def _ai_handoff(rot: dict) -> dict:
         "ai_directive": (
             "Permitted: name the prevailing narrative, judge its durability from breadth/"
             "cohesion/trend-health, flag crowding as a sizing caution, and describe the "
-            "one-narrative-vs-everything structure. Produce ONE falsifiable conditional lean "
+            "one-narrative-vs-everything structure. Produce ONE checkable conditional lean "
             "with a check-by horizon. FORBIDDEN: directional certainty, fade calls, next-theme "
             "prediction, or letting any of this feed a score."),
         "one_narrative_dominant": rot.get("one_narrative"),

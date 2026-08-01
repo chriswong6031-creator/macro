@@ -550,14 +550,18 @@ def cycle_falsifier_fired(hist: "pd.DataFrame", f: "pd.DataFrame",
     for r in newly_fired:
         # direction → severity mapping: refutes = warn, confirms = info
         severity = "warn" if r.direction == "refutes" else "info"
+        # Display register (operator 2026-07-27, #3821): the schema value stays
+        # "refutes"/"confirms", but user-shown text never says falsified/refuted/证伪.
+        dirn = "cuts against the read" if r.direction == "refutes" else "supports the read"
+        dirn_zh = "与原判断相反" if r.direction == "refutes" else "支持原判断"
         msg_en = (
-            f"Cycle falsifier FIRED — {r.cycle}: {r.claim}. "
-            f"Direction: {r.direction}. "
+            f"Cycle read-change condition HIT — {r.cycle}: {r.claim}. "
+            f"Direction: {dirn}. "
             f"Coverage: {r.coverage}."
         )
         msg_zh = (
-            f"周期证伪条件触发 — {r.cycle}：{r.claim}。"
-            f"方向：{r.direction}。"
+            f"周期改判条件触发 — {r.cycle}：{r.claim}。"
+            f"方向：{dirn_zh}。"
         )
         alerts.append(Alert(
             rule=f"cycle_falsifier_fired:{r.id}",
@@ -606,12 +610,14 @@ def dispatch_alerts(newly_fired: list[TripwireResult],
     alerts = []
     for r in newly_fired:
         severity = "warn" if r.direction == "refutes" else "info"
+        dirn = "cuts against the read" if r.direction == "refutes" else "supports the read"
+        dirn_zh = "与原判断相反" if r.direction == "refutes" else "支持原判断"
         msg_en = (
-            f"Cycle falsifier FIRED — {r.cycle}: "
-            f"'{r.claim}' (coverage: {r.coverage}, direction: {r.direction})."
+            f"Cycle read-change condition HIT — {r.cycle}: "
+            f"'{r.claim}' (coverage: {r.coverage}, direction: {dirn})."
         )
         msg_zh = (
-            f"周期证伪条件触发 — {r.cycle}：'{r.claim}'（{r.direction}）。"
+            f"周期改判条件触发 — {r.cycle}：'{r.claim}'（{dirn_zh}）。"
         )
         alerts.append(Alert(
             rule=f"cycle_falsifier_fired:{r.id}",
