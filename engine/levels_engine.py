@@ -135,36 +135,25 @@ def _node(role: str, strike: float, gamma_net: float, anchor_abs: float,
 # --------------------------------------------------------------------------- #
 
 def _flip_from_rows(rows: list[dict]) -> float | None:
-    """Interpolated price where cumulative dealer gamma (summed from the lowest strike
-    upward) crosses from negative to positive.
+    """RETIRED — always ``None``. A gamma flip cannot be reconstructed from ``by_strike``.
 
-    This mirrors engine/options_hub._find_gamma_flip / engine/gex_engine._gamma_flip so
-    the sign convention is identical; it is used ONLY as a fallback when the payload did
-    not carry ``gamma_flip`` (e.g. a thinned or partial board). When the payload has a
-    flip we reuse it verbatim and never recompute — one flip definition, one owner.
+    ⚠️ Do not reinstate the old body. Until 2026-08-01 this summed ``gamma_net`` along the
+    strike ladder and returned the cumulative zero-crossing (with ``min(crossings)``, the
+    worst of the tiebreaks), believing it mirrored ``options_hub._find_gamma_flip`` and
+    ``gex_engine._gamma_flip``. It mirrored the former, which was itself the wrong
+    estimator — the bug reached three call sites through one false docstring.
+
+    The real flip is the hypothetical SPOT at which the whole book, RE-PRICED there, has
+    zero net dealer gamma. That needs per-contract ``K``/``T``/``iv``/``oi``, which a
+    ``by_strike`` row list does not carry: its ``gamma_net`` is already collapsed to a
+    single number per strike, evaluated at one spot. No amount of arithmetic on those
+    rows recovers the profile. So this fallback cannot be fixed — only removed.
+
+    Consequence, and it is the right one: when the payload has no ``gamma_flip`` the
+    caller now renders its honest null node instead of a fabricated level. Analysis:
+    charting-app ``docs/audits/2026-08-01-market-structure-core/gamma-flip-defect-rca.md``.
     """
-    if len(rows) < 4:
-        return None
-    ks = [r["strike"] for r in rows]
-    cum = 0.0
-    prev_cum = 0.0
-    crossings: list[float] = []
-    for i, r in enumerate(rows):
-        cum += r["gamma_net"]
-        if i == 0:
-            prev_cum = cum
-            continue
-        # zero-touch or a sign change between consecutive cumulative sums
-        if prev_cum == 0.0 or (prev_cum < 0) != (cum < 0):
-            x0, x1, y0, y1 = ks[i - 1], ks[i], prev_cum, cum
-            crossings.append(x0 - y0 * (x1 - x0) / (y1 - y0) if y1 != y0 else x0)
-        prev_cum = cum
-    if not crossings:
-        return None
-    # nearest crossing to the middle of the ladder (mirrors the payload's nearest-to-spot
-    # tiebreak once spot is known; without spot here we take the lowest-strike crossing,
-    # which is the true negative->positive boundary the taxonomy cares about).
-    return min(crossings)
+    return None
 
 
 # --------------------------------------------------------------------------- #
@@ -222,26 +211,24 @@ def _build_walls(payload: dict, rows: list[dict], anchor_abs: float) -> list[dic
 
 
 def _build_flip(payload: dict, rows: list[dict], spot: float) -> dict:
-    """Flip ⚡ — reuse the payload's gamma_flip; recompute from by_strike only if absent."""
+    """Flip ⚡ — the payload's gamma_flip is the ONLY source. There is no fallback:
+    ``_flip_from_rows`` is retired (see its docstring — a flip is not reconstructable
+    from by_strike), so an absent flip renders an honest null node."""
     fp = _num(payload.get("gamma_flip"))
-    source = "payload"
-    if fp is None:
-        fp = _flip_from_rows(rows)
-        source = "recomputed"
     if fp is None:
         return _null_node(
             "flip",
-            "No gamma flip in the input and none reconstructable from by_strike "
-            "(cumulative dealer gamma does not cross zero across the reported strikes).",
+            "The exposure payload carried no gamma flip for this session. A flip is the "
+            "spot at which the re-priced book has zero net dealer gamma, so it cannot be "
+            "reconstructed from the by-strike ladder alone — shown as absent rather than "
+            "estimated.",
         )
     calm_side = "above" if spot is not None and spot >= fp else "below"
     note = (
-        f"Flip — the price where cumulative dealer gamma crosses negative->positive. "
+        f"Flip — the spot at which the re-priced book carries zero net dealer gamma. "
         f"Calmer/stickier above it, wilder/slipperier below. Spot is currently "
         f"{calm_side} the flip."
     )
-    if source == "recomputed":
-        note += " (Reconstructed from by_strike; the payload did not carry a flip.)"
     return {
         "role": "flip",
         "strike": _round(fp),
