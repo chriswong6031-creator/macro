@@ -274,5 +274,13 @@ def test_builder_and_template_wire_hk_radar_and_quality_without_ranking_it():
     assert '_st.get("risk_radar") or _radar_by_cc.get(_cc3)' in builder
     assert "recovery_assessment" in builder
     assert "recovery_assessment" in template
-    assert "vs ~{{ (_rd_b21*100)|round|int }}% base" in template
-    assert "never rank or exclude markets" in template
+    # The modelled pullback odds must still arrive WITH their base rate — the honesty
+    # invariant. Both moved off the tile face into the hover receipt (they printed on
+    # every tile at rest, and on most tiles the two figures are equal, i.e. "no lift"),
+    # so match the receipt form rather than the old always-visible line.
+    assert "'% base'" in template and "_rd_b21" in template
+    assert "≥5% dip in a month" in template
+    # ...and the provenance of those odds travels with them
+    assert "own history only — radar record still building" in template
+    # the radar is still declared non-ranking on the glance tier
+    assert "Risk tags are context, never a ranking" in template
