@@ -138,10 +138,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| chronicle-events | `data/chronicle/events.jsonl` | jsonl | daily-engine | display | 3 | 0 |
+| chronicle-events | `data/chronicle/events.jsonl` | jsonl | daily-engine | display | 4 | 0 |
+| chronicle-earnings-call-events | `data/chronicle/earnings_call_events.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | chronicle-manifest | `data/chronicle/manifest.json` | json | daily-engine | display | 3 | 0 |
 | chronicle-state-log | `data/chronicle/state_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
-| chronicle-earnings-call-events | `data/chronicle/earnings_call_events.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 
 ### biopharma-seasonality-intelligence
 
