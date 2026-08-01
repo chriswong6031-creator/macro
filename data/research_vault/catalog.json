@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T07:29:57.435036+00:00",
-  "count": 513,
+  "generated_at": "2026-08-01T08:00:32.808067+00:00",
+  "count": 514,
   "institutions": [
     "Amova",
     "Apollo",
@@ -642,6 +642,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wmargyvvyou-850b8a",
+      "title": "Euro Area Spanish Inflation Slightly Firmer",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:16:33Z",
+      "summary_points": [
+        "**Core Inflation Downgrade**: Euro Area core inflation forecast revised down 2bp to 2.44% yoy (July), driven by weaker German core goods data, while headline forecast unchanged at 2.88% yoy.",
+        "**Goldman vs Consensus Divergence**: Goldman Sachs forecasts Euro area HICP at 2.88% (vs BBG Consensus 2.9%), with energy/food components at 2.36% (vs Consensus 2.4%), signaling below-consensus inflation trajectory.",
+        "**Country-Level Inflation Mismatch**: Germany (2.9% vs 2.8% consensus) and France (2.1% vs 2.0%) forecasts exceed consensus, while Italy (2.8% vs 2.9%) lags, highlighting uneven regional inflation dynamics."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
       "language": "en",
       "needs_metadata": false
     },
