@@ -147,6 +147,60 @@ def test_build_fail_open_no_frame_no_seed(tmp_path: Path):
     contract = si.build(stage_frame=None, root=tmp_path, asof="2026-07-20")
     assert contract["n_industries"] == 0
     assert contract["regions"] == {}
+    assert contract["status"] == "warn"
+    assert contract["coverage"]["non_vacuous"] is False
+    assert {"no_input_rows", "no_eligible_rows", "no_output_rows"} <= set(
+        contract["coverage"]["issues"])
+
+
+def test_prepare_live_frame_joins_reference_taxonomy_and_asof(tmp_path: Path):
+    p = tmp_path / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        {"ticker": "AAA", "region": "N.Amer", "gics_industry": "Software",
+         "gics_sub_industry": "Systems Software"},
+        {"ticker": "BBB", "region": "N.Amer", "gics_industry": "Software",
+         "gics_sub_industry": "Application Software"},
+    ]).to_parquet(p)
+    live = pd.DataFrame([
+        {"ticker": "AAA", "stage": 2, "fresh": True, "weeks_in_stage": 1,
+         "mansfield_rs": 8.0, "mansfield_rs_change": 2.0, "sata_score": 8},
+        {"ticker": "BBB", "stage": 4, "fresh": False, "weeks_in_stage": 3,
+         "mansfield_rs": -4.0, "mansfield_rs_change": -1.0, "sata_score": 2},
+    ])
+    prepared = si.prepare_live_frame(
+        live, root=tmp_path, source_asof="2026-07-20",
+    )
+    assert prepared["region"].tolist() == ["USA", "USA"]
+    assert prepared["industry_id"].tolist() == ["Software", "Software"]
+    assert prepared["stage_flag"].tolist() == [2, 4]
+    assert prepared["is_stage2_start"].tolist() == [True, False]
+    assert set(prepared["stage_source_asof"]) == {"2026-07-20"}
+
+    contract = si.build(stage_frame=prepared, root=tmp_path, asof="2026-07-20")
+    assert contract["status"] == "ready"
+    assert contract["coverage"]["taxonomy_coverage_pct"] == 100.0
+    assert contract["coverage"]["freshness"]["status"] == "current"
+
+
+def test_prepare_live_frame_does_not_treat_fresh_window_as_stage_start(tmp_path: Path):
+    live = pd.DataFrame([
+        {"ticker": "AAA", "region": "USA", "industry_id": "Software",
+         "industry_name": "Software", "stage": 2, "fresh": True,
+         "weeks_in_stage": 6, "mansfield_rs": 8.0,
+         "mansfield_rs_change": 2.0},
+    ])
+    prepared = si.prepare_live_frame(live, root=tmp_path)
+    assert prepared["is_stage2_start"].tolist() == [False]
+
+
+def test_coverage_guard_marks_stale_source(tmp_path: Path):
+    stale = _frame().assign(stage_source_asof="2026-07-19")
+    contract = si.build(stage_frame=stale, root=tmp_path, asof="2026-07-20")
+    assert contract["coverage"]["non_vacuous"] is True
+    assert contract["status"] == "warn"
+    assert contract["coverage"]["freshness"]["status"] == "stale"
+    assert "source_asof_stale" in contract["coverage"]["issues"]
 
 
 # ---------------------------------------------------------------------------

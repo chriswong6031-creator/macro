@@ -64,6 +64,14 @@ W_MOM = 0.30
 
 BUCKET_LABELS = ("Leading", "Improving", "Weakening", "Lagging")
 
+# A live build must cover a meaningful share of the classified universe and
+# carry an actual RS-change observation.  These are observability guards, not
+# trading gates: degraded builds still publish fail-open artifacts, but their
+# contract status is ``warn`` instead of silently presenting an empty surface
+# as healthy.
+MIN_TAXONOMY_COVERAGE_PCT = 50.0
+MIN_RS_CHANGE_COVERAGE_PCT = 25.0
+
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -105,6 +113,222 @@ def _seed_stage_frame(dr: Path):
     return df
 
 
+def _normalise_region(value: Any) -> str | None:
+    """Map source-region aliases onto the three Stage surface regions."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text or text.lower() in {"nan", "none"}:
+        return None
+    key = text.lower().replace(".", "").replace("_", " ").strip()
+    if key in {"usa", "us", "north america", "n amer", "namer", "namerica"}:
+        return "USA"
+    if key in {"europe", "european", "eu"}:
+        return "EUROPE"
+    if key in {"asia", "asian", "apac"}:
+        return "ASIA"
+    return text.upper()
+
+
+def _load_gics_map(dr: Path):
+    """Reference-only ticker taxonomy from the committed overview yardstick.
+
+    Stage/RS values from the overview are deliberately ignored.  The live
+    classifier remains the sole source for stage, RS, SATA, and freshness.
+    """
+    import pandas as pd
+
+    p = dr / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    if not p.exists():
+        return None
+    try:
+        ov = pd.read_parquet(p)
+    except Exception as e:  # noqa: BLE001
+        log.warning("stage_industry: overview GICS map unreadable (%s)", e)
+        return None
+    if ov.empty or "ticker" not in ov.columns or "gics_industry" not in ov.columns:
+        return None
+    keep = [c for c in ("ticker", "region", "gics_industry", "gics_sub_industry")
+            if c in ov.columns]
+    ov = ov[keep].copy()
+    ov["ticker"] = ov["ticker"].astype(str).str.split().str[0].str.upper()
+    if "region" in ov.columns:
+        ov["region"] = ov["region"].map(_normalise_region)
+    return ov.drop_duplicates(subset=["ticker"], keep="last")
+
+
+def prepare_live_frame(stage_frame, root: Path | None = None,
+                       source_asof: str | None = None):
+    """Normalise one live classifier frame for ranks *and* flows.
+
+    The live Stage records carry current classifier values but intentionally do
+    not depend on the stale overview's stage fields.  This adapter joins only
+    reference GICS identity, maps ``stage`` to ``stage_flag``, derives the
+    fresh-Stage-2 marker, and stamps the classifier as-of supplied by the
+    orchestrator.  The returned richer frame is shared by both side engines so
+    ranks, per-name percentiles, flows, and the screener cannot drift onto
+    different snapshots.
+    """
+    import pandas as pd
+
+    if stage_frame is None:
+        return None
+    if isinstance(stage_frame, pd.DataFrame):
+        out = stage_frame.copy()
+    else:
+        try:
+            out = pd.DataFrame(stage_frame)
+        except Exception:  # noqa: BLE001
+            return None
+    if out.empty or "ticker" not in out.columns:
+        return out
+
+    out["ticker"] = out["ticker"].astype(str).str.split().str[0].str.upper()
+    if "stage_flag" not in out.columns and "stage" in out.columns:
+        out["stage_flag"] = pd.to_numeric(out["stage"], errors="coerce")
+    if "is_stage2_start" not in out.columns:
+        stage_values = pd.to_numeric(
+            out.get("stage_flag", out.get("stage")), errors="coerce",
+        )
+        weeks_values = pd.to_numeric(out.get("weeks_in_stage"), errors="coerce")
+        if stage_values is not None and weeks_values is not None:
+            out["is_stage2_start"] = (stage_values == 2) & (weeks_values == 1)
+        else:
+            out["is_stage2_start"] = False
+    if "mansfield_rs_change" not in out.columns:
+        out["mansfield_rs_change"] = float("nan")
+
+    # Seed the canonical columns before fill-map operations.
+    if "region" not in out.columns:
+        out["region"] = None
+    if "industry_id" not in out.columns:
+        out["industry_id"] = None
+    if "industry_name" not in out.columns:
+        out["industry_name"] = out.get("industry")
+    if "sub_industry_id" not in out.columns:
+        out["sub_industry_id"] = None
+    if "sub_industry_name" not in out.columns:
+        out["sub_industry_name"] = None
+
+    gics = _load_gics_map(_data_root(root))
+    if gics is not None:
+        gmap = gics.set_index("ticker")
+
+        def _fill(column: str, source: str) -> None:
+            if source not in gmap.columns:
+                return
+            mapped = out["ticker"].map(gmap[source])
+            cur = out[column]
+            missing = cur.isna() | cur.astype(str).str.strip().str.lower().isin(
+                {"", "nan", "none"})
+            out.loc[missing, column] = mapped.loc[missing]
+
+        _fill("region", "region")
+        _fill("industry_id", "gics_industry")
+        _fill("industry_name", "gics_industry")
+        _fill("sub_industry_id", "gics_sub_industry")
+        _fill("sub_industry_name", "gics_sub_industry")
+
+    out["region"] = out["region"].map(_normalise_region)
+    # If the yardstick lacks a sub-industry, preserve a usable parent fallback.
+    for sub_col, parent_col in (("sub_industry_id", "industry_id"),
+                                ("sub_industry_name", "industry_name")):
+        missing = out[sub_col].isna() | out[sub_col].astype(str).str.strip().str.lower().isin(
+            {"", "nan", "none"})
+        out.loc[missing, sub_col] = out.loc[missing, parent_col]
+    if source_asof is not None:
+        out["stage_source_asof"] = str(source_asof)
+    return out
+
+
+def coverage_snapshot(stage_frame, expected_asof: str | None,
+                      output_rows: int) -> dict:
+    """Return non-vacuous coverage/freshness diagnostics for an artifact."""
+    import pandas as pd
+
+    if stage_frame is None or not isinstance(stage_frame, pd.DataFrame):
+        df = pd.DataFrame()
+    else:
+        df = stage_frame
+    input_rows = int(len(df))
+
+    def _valid(col: str):
+        if col not in df.columns:
+            return pd.Series(False, index=df.index, dtype=bool)
+        raw = df[col]
+        text = raw.astype(str).str.strip().str.lower()
+        return raw.notna() & ~text.isin({"", "nan", "none"})
+
+    taxonomy = _valid("region") & _valid("industry_id")
+    rs = pd.to_numeric(df.get("mansfield_rs"), errors="coerce").notna() \
+        if "mansfield_rs" in df.columns else pd.Series(False, index=df.index)
+    rs_change = pd.to_numeric(df.get("mansfield_rs_change"), errors="coerce").notna() \
+        if "mansfield_rs_change" in df.columns else pd.Series(False, index=df.index)
+    eligible = taxonomy & rs
+    taxonomy_rows = int(taxonomy.sum())
+    eligible_rows = int(eligible.sum())
+    change_rows = int((eligible & rs_change).sum())
+    taxonomy_pct = round(100.0 * taxonomy_rows / input_rows, 1) if input_rows else 0.0
+    change_pct = round(100.0 * change_rows / eligible_rows, 1) if eligible_rows else 0.0
+
+    source_asof = None
+    for col in ("stage_source_asof", "data_as_of_date", "week_end", "date"):
+        if col not in df.columns:
+            continue
+        parsed = pd.to_datetime(df[col], errors="coerce", utc=True).dropna()
+        if not parsed.empty:
+            source_asof = parsed.max().date().isoformat()
+            break
+    if source_asof is None or expected_asof is None:
+        freshness = "unknown"
+    elif source_asof == str(expected_asof):
+        freshness = "current"
+    elif source_asof < str(expected_asof):
+        freshness = "stale"
+    else:
+        freshness = "future"
+
+    non_vacuous = eligible_rows > 0 and int(output_rows) > 0
+    issues: list[str] = []
+    if input_rows == 0:
+        issues.append("no_input_rows")
+    if eligible_rows == 0:
+        issues.append("no_eligible_rows")
+    if int(output_rows) == 0:
+        issues.append("no_output_rows")
+    if input_rows and taxonomy_pct < MIN_TAXONOMY_COVERAGE_PCT:
+        issues.append("taxonomy_coverage_below_floor")
+    if eligible_rows and change_pct < MIN_RS_CHANGE_COVERAGE_PCT:
+        issues.append("rs_change_coverage_below_floor")
+    if freshness != "current":
+        issues.append(f"source_asof_{freshness}")
+
+    regions = sorted(str(v) for v in df.loc[taxonomy, "region"].dropna().unique()) \
+        if "region" in df.columns else []
+    return {
+        "status": "ready" if non_vacuous and not issues else "warn",
+        "non_vacuous": non_vacuous,
+        "input_rows": input_rows,
+        "taxonomy_rows": taxonomy_rows,
+        "taxonomy_coverage_pct": taxonomy_pct,
+        "eligible_rows": eligible_rows,
+        "rs_change_rows": change_rows,
+        "rs_change_coverage_pct": change_pct,
+        "output_rows": int(output_rows),
+        "regions": regions,
+        "freshness": {
+            "expected_asof": expected_asof,
+            "source_asof": source_asof,
+            "status": freshness,
+        },
+        "floors": {
+            "taxonomy_coverage_pct": MIN_TAXONOMY_COVERAGE_PCT,
+            "rs_change_coverage_pct": MIN_RS_CHANGE_COVERAGE_PCT,
+        },
+        "issues": issues,
+    }
+
+
 def _coerce_frame(stage_frame, dr: Path):
     """Return a validated DataFrame or None (fail-open)."""
     import pandas as pd
@@ -121,11 +345,19 @@ def _coerce_frame(stage_frame, dr: Path):
             return None
     if df.empty:
         return None
+    if any(c not in df.columns for c in _REQUIRED_COLS):
+        df = prepare_live_frame(df, root=dr)
+        if df is None or df.empty:
+            return None
     missing = [c for c in _REQUIRED_COLS if c not in df.columns]
     if missing:
         log.warning("stage_industry: stage frame missing %s", missing)
         return None
-    out = df[list(_REQUIRED_COLS)].copy()
+    keep = list(_REQUIRED_COLS) + [
+        c for c in ("stage_source_asof", "data_as_of_date", "week_end", "date")
+        if c in df.columns
+    ]
+    out = df[keep].copy()
     # Drop rows with a null industry_id BEFORE the str-cast: astype(str) turns
     # NaN into the literal "nan", which would otherwise group into a spurious
     # 'nan' industry bucket (the seed carries ~31 such rows).
@@ -475,19 +707,37 @@ def build(stage_frame=None, root: Path | None = None,
         asof = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    # Preserve the full prepared input for coverage accounting; _coerce_frame
+    # drops unmatched taxonomy rows by design, which must not inflate reported
+    # coverage to a fictional 100%.
+    source_frame = stage_frame if stage_frame is not None else _seed_stage_frame(dr)
+    if source_frame is not None:
+        try:
+            import pandas as pd  # noqa: PLC0415
+            if not isinstance(source_frame, pd.DataFrame):
+                source_frame = pd.DataFrame(source_frame)
+            if any(c not in source_frame.columns for c in _REQUIRED_COLS):
+                source_frame = prepare_live_frame(source_frame, root=dr)
+        except Exception:  # noqa: BLE001
+            source_frame = None
+
     # Coerce once so both artifacts share the same source frame.
-    df = _coerce_frame(stage_frame, dr)
+    df = _coerce_frame(source_frame, dr)
     all_ranks = ranks(region=None, stage_frame=df, root=root) if df is not None else []
     name_pct = name_industry_percentiles(stage_frame=df, root=root) if df is not None else {}
 
     by_region: dict[str, list] = {}
     for r in all_ranks:
         by_region.setdefault(r["region"], []).append(r)
+    coverage = coverage_snapshot(source_frame, expected_asof=asof,
+                                 output_rows=len(all_ranks))
 
     contract = {
         "schema": "stage_industry_ranks.v1",
         "asof": asof,
         "built": built,
+        "status": coverage["status"],
+        "coverage": coverage,
         "is_context_only": True,
         "display_only": True,
         "disclaimer": ("Context only — industry momentum ranks for rotation "
@@ -533,7 +783,9 @@ def build(stage_frame=None, root: Path | None = None,
         _atomic_write_json(
             dr / "stage_analysis" / "industry_name_pctile.json",
             {"schema": "stage_industry_name_pctile.v1", "asof": asof,
-             "built": built, "is_context_only": True, "display_only": True,
+             "built": built, "status": coverage["status"],
+             "coverage": coverage,
+             "is_context_only": True, "display_only": True,
              "percentiles": name_pct},
         )
     except Exception as e:  # noqa: BLE001
@@ -545,5 +797,9 @@ def build(stage_frame=None, root: Path | None = None,
         build_industry_heatmap(root=root, asof=asof)
     except Exception as e:  # noqa: BLE001
         print(f"::warning:: stage_industry: failed to write heatmap ({e})", flush=True)
+
+    if coverage["status"] != "ready":
+        log.warning("stage_industry: degraded live coverage (%s)",
+                    ",".join(coverage["issues"]) or "unknown")
 
     return contract

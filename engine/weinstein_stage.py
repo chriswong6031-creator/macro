@@ -113,6 +113,7 @@ def _empty_result(too_young: bool = True, n_weeks: int = 0) -> dict:
         "ma30_slope_pct5w": None,
         "pct_vs_ma30": None,
         "mansfield_rs": None,
+        "mansfield_rs_change": None,
         "vol_ratio": None,
         "event": None,
         "arc_pos": 0.0,
@@ -502,6 +503,15 @@ def classify(close: pd.Series,
 
     slope = _last_val(wf["slope_5w"])
     mansfield = _last_val(wf["mansfield_rs"])
+    # Four-week change in the same Mansfield-RS level used by the industry
+    # rotation engines.  Keep this as an absolute level delta (not a percent
+    # change of a value that can cross zero).  A short/NaN tail degrades to
+    # null so downstream breadth remains honest rather than fabricating 0.
+    mansfield_change = None
+    if mansfield is not None and last >= 4:
+        prev_mansfield = wf["mansfield_rs"].iloc[last - 4]
+        if pd.notna(prev_mansfield):
+            mansfield_change = float(mansfield) - float(prev_mansfield)
     vol_ratio = _last_val(wf["vol_ratio"])
 
     # --- SGA-2 extension fields (atr_14w / atr_ext / atr_pct_price) ---
@@ -555,6 +565,9 @@ def classify(close: pd.Series,
         "ma30_slope_pct5w": round(slope, 4) if slope is not None else None,
         "pct_vs_ma30": pct_vs_ma30,
         "mansfield_rs": round(mansfield, 2) if mansfield is not None else None,
+        "mansfield_rs_change": (
+            round(mansfield_change, 2) if mansfield_change is not None else None
+        ),
         "vol_ratio": round(vol_ratio, 3) if vol_ratio is not None else None,
         "event": event,
         "arc_pos": _arc_pos(stage, wis),

@@ -32,7 +32,7 @@ def _write_scores_manifest(scores: Path) -> None:
 # ---------------------------------------------------------------------------
 def _fake_stage_map() -> dict[str, dict]:
     """A tidy universe covering every stage + a too-young + an unclassifiable."""
-    return {
+    stages = {
         # ticker: (stage, weeks, fresh, slope, pct_vs_ma30, mrs, vol_ratio, event, arc, n_weeks)
         "NVDA": dict(stage=2, weeks_in_stage=6, fresh=True, ma30_slope_pct5w=3.4,
                      pct_vs_ma30=8.9, mansfield_rs=12.0, vol_ratio=1.72,
@@ -75,6 +75,13 @@ def _fake_stage_map() -> dict[str, dict]:
                     pct_vs_ma30=3.0, mansfield_rs=0.0, vol_ratio=1.0,
                     event=None, arc_pos=0.45, n_weeks=300),
     }
+    # The live classifier now carries the four-week Mansfield-RS delta used by
+    # both industry-rank and breadth-flow surfaces.
+    for rec in stages.values():
+        mrs = rec.get("mansfield_rs")
+        rec["mansfield_rs_change"] = None if mrs is None else round(mrs * 0.1, 2)
+        rec["stage_source_asof"] = "2026-07-17"
+    return stages
 
 
 @pytest.fixture
@@ -139,6 +146,22 @@ def env(tmp_path, monkeypatch):
 # ---------------------------------------------------------------------------
 # 1. Schema completeness vs the fixture's key set.
 # ---------------------------------------------------------------------------
+def test_classify_one_stamps_actual_ohlcv_source_date(tmp_path, monkeypatch):
+    dr = tmp_path / "data"
+    p = dr / "baskets" / "ohlcv" / "AAA.parquet"
+    p.parent.mkdir(parents=True)
+    idx = pd.date_range("2026-07-01", periods=5, freq="D")
+    pd.DataFrame({"close": range(5), "volume": 100}, index=idx).to_parquet(p)
+    monkeypatch.setitem(sa._SHARED, "dr", dr)
+    monkeypatch.setitem(sa._SHARED, "bench", pd.Series(range(5), index=idx))
+    monkeypatch.setattr(sa, "_classify", lambda *args, **kwargs: {"stage": 2})
+
+    ticker, result = sa._classify_one("AAA")
+
+    assert ticker == "AAA"
+    assert result["stage_source_asof"] == "2026-07-05"
+
+
 def test_schema_completeness_vs_fixture(env):
     dr, _ = env
     fixture = json.loads(FIXTURE.read_text())
@@ -272,6 +295,65 @@ def test_region_toggle_seed_rows_appended(env):
     assert br["EUROPE"]["seed"] == 2 and br["EUROPE"]["live"] == 0
     assert br["ASIA"]["seed"] == 1
     assert br["USA"]["live"] > 0 and br["USA"]["seed"] == 0
+
+
+def test_live_frame_populates_industry_ranks_flows_and_screener(env):
+    """The classifier's same-day frame, not an optional stage seed, powers all
+    industry surfaces and immediately fills the screener's industry context."""
+    dr, _ = env
+    industry_by_ticker = {
+        "NVDA": "Semiconductors", "AVGO": "Semiconductors",
+        "INTC": "Semiconductors", "COST": "Consumer Staples Distribution",
+        "WMT": "Consumer Staples Distribution", "MMM": "Industrial Conglomerates",
+        "GE": "Industrial Conglomerates", "PFE": "Pharmaceuticals",
+        "KO": "Beverages", "SPY": "Broad Market ETF",
+    }
+    _write_overview_seed(dr, [
+        _ov_row(tk, "USA", 75, gics_industry=industry)
+        for tk, industry in industry_by_ticker.items()
+    ])
+
+    contract = sa.build_context_feed(root=dr, asof="2026-07-17")
+    ranks = json.loads((dr / "stage_analysis" / "industry_ranks.json").read_text())
+    flows = json.loads((dr / "stage_analysis" / "industry_flows.json").read_text())
+    pct = json.loads((dr / "stage_analysis" / "industry_name_pctile.json").read_text())
+    screener = json.loads((dr / "stage_analysis" / "screener.json").read_text())
+
+    assert ranks["n_industries"] >= 5
+    assert flows["n_industry"] == ranks["n_industries"]
+    assert ranks["status"] == flows["status"] == "ready"
+    assert ranks["coverage"]["non_vacuous"] is True
+    assert ranks["coverage"]["freshness"] == {
+        "expected_asof": "2026-07-17",
+        "source_asof": "2026-07-17",
+        "status": "current",
+    }
+    assert ranks["coverage"]["input_rows"] == contract["counts"]["total"]
+    assert set(industry_by_ticker) <= set(pct["percentiles"])
+
+    live = {r["ticker"]: r for r in screener["rows"] if r["source"] == "live"}
+    assert live["NVDA"]["industry"] == "Semiconductors"
+    assert live["NVDA"]["industry_percentile"] is not None
+    assert all(live[tk]["industry"] == industry
+               for tk, industry in industry_by_ticker.items())
+
+
+def test_live_industry_freshness_uses_ohlcv_source_not_requested_asof(env):
+    """A later build label cannot launder a stale classifier snapshot."""
+    dr, _ = env
+    _write_overview_seed(dr, [
+        _ov_row(tk, "USA", 75, gics_industry="Software")
+        for tk in ("NVDA", "AVGO", "INTC")
+    ])
+    sa.build_context_feed(root=dr, asof="2026-07-18")
+    ranks = json.loads((dr / "stage_analysis" / "industry_ranks.json").read_text())
+    assert ranks["status"] == "warn"
+    assert ranks["coverage"]["freshness"] == {
+        "expected_asof": "2026-07-18",
+        "source_asof": "2026-07-17",
+        "status": "stale",
+    }
+    assert "source_asof_stale" in ranks["coverage"]["issues"]
 
 
 def test_seed_region_cap_disclosed(env):

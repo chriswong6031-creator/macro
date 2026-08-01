@@ -53,31 +53,15 @@ def main(argv: list[str] | None = None) -> int:
 
     root = Path(args.root) if args.root else None
 
-    # --- SGA-2 side surfaces (industry ranks/flows + earnings) --------------
-    # These regenerate the artifacts the flagship page consumes from the
-    # committed parquet seeds: industry_name_pctile.json (the screener "Ind %ile"
-    # column), industry_ranks.json, industry_flows.json, and the four Earnings-
-    # Calls surfaces (ec_industry / earnings_{season,compare,table}.json).
-    # They must run BEFORE build_context_feed so the context feed can join the
-    # freshly-written industry_name_pctile.json. Each is fail-open (::warning::)
-    # so a broken side-surface never breaks the context feed or the build.
+    # --- SGA-2 independent side surfaces ------------------------------------
+    # Earnings/alt-data/research can build before the classifier. Industry
+    # ranks + flows cannot: build_context_feed now retains the live per-name
+    # frame, joins reference-only GICS taxonomy, and passes that same current
+    # frame to both engines before projecting the screener. This avoids the old
+    # cold-start path that silently emitted empty artifacts when the optional
+    # stage_daily.parquet seed was absent.
     # Skipped in --fixture mode (dry runs / tests load a pre-built contract).
     if not args.fixture:
-        try:
-            from engine import stage_industry  # noqa: PLC0415
-            stage_industry.build(root=root, asof=args.asof)
-            log.info("stage_industry: ranks + name-percentile artifacts built")
-        except Exception as e:  # noqa: BLE001 — never break the build
-            # Bare print, NOT a logger call: GitHub only parses a workflow command when
-            # "::" STARTS the line, and this module's logging format prefixes every
-            # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
-            print(f"::warning:: stage_industry.build failed ({e})", flush=True)
-        try:
-            from engine import stage_flows  # noqa: PLC0415
-            stage_flows.build(root=root, asof=args.asof)
-            log.info("stage_flows: industry/sub-industry flows artifact built")
-        except Exception as e:  # noqa: BLE001
-            print(f"::warning:: stage_flows.build failed ({e})", flush=True)
         try:
             from engine import earnings_qual  # noqa: PLC0415
             # build_all_earnings_surfaces takes the REPO root (data/ lives under it).

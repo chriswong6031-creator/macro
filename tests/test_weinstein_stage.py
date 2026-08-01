@@ -397,7 +397,7 @@ def test_v2_fields_present_on_classify():
     n = len(close)
     res = ws.classify(close, None, _flat_bench(n), high, low)
     for k in ("atr_14w", "atr_ext", "atr_pct_price", "sata_score",
-              "sata_change_1w", "stage_detailed"):
+              "sata_change_1w", "stage_detailed", "mansfield_rs_change"):
         assert k in res, f"missing SGA-2 field {k}"
     # ATR is positive; extension is a finite number; SATA is 0..10.
     assert res["atr_14w"] is not None and res["atr_14w"] > 0
@@ -410,8 +410,18 @@ def test_v2_fields_null_on_too_young():
     res = ws.classify(_series(np.linspace(100.0, 120.0, 30)), None,
                       _flat_bench(30))
     for k in ("atr_14w", "atr_ext", "atr_pct_price", "sata_score",
-              "sata_change_1w", "stage_detailed"):
+              "sata_change_1w", "stage_detailed", "mansfield_rs_change"):
         assert res[k] is None
+
+
+def test_mansfield_rs_change_is_four_week_level_delta():
+    close = _round_trip_close()
+    n = len(close)
+    bench = _flat_bench(n)
+    wf = ws.weekly_frame(close, None, bench)
+    res = ws.classify(close, None, bench)
+    expected = float(wf["mansfield_rs"].iloc[-1] - wf["mansfield_rs"].iloc[-5])
+    assert res["mansfield_rs_change"] == round(expected, 2)
 
 
 def test_atr_ext_matches_close_minus_ma_over_atr():
