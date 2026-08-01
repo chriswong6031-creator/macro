@@ -376,7 +376,7 @@ class TestSpendCapFromCommittedState:
             "requests": int(spent["requests"]), "tweets": int(spent["tweets"]),
             "usd": float(spent["usd"])}}}}
         items = press_providers.poll_all(
-            tmp_path, PW.actions_press_cfg(self._cfg()), session, offline=False)
+            tmp_path, PW.actions_press_cfg(self._cfg()), session, offline=False, now=NOW)
 
         assert items == []
         warnings = [ln for ln in capsys.readouterr().out.splitlines()
@@ -403,7 +403,7 @@ class TestSpendCapFromCommittedState:
             "requests": int(spent["requests"]), "tweets": int(spent["tweets"]),
             "usd": float(spent["usd"])}}}}
         press_providers.poll_all(
-            tmp_path, PW.actions_press_cfg(self._cfg()), session, offline=False)
+            tmp_path, PW.actions_press_cfg(self._cfg()), session, offline=False, now=NOW)
         assert calls == ["DeItaone"]
 
     def test_tick_appends_only_the_delta_it_spent(self, tmp_path, monkeypatch):
