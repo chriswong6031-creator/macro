@@ -13,6 +13,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | XSR | 1 |
 | active-build-map | 1 |
 | agentic_media | 3 |
+| biopharma-seasonality-intelligence | 1 |
 | btc-vector | 6 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
@@ -104,7 +105,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 348 |
+| display | 349 |
 | infrastructure | 101 |
 | scored | 4 |
 | shadow | 79 |
@@ -113,7 +114,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 505 |
+| git | 506 |
 | git+r2 | 1 |
 | gitignored-local | 15 |
 | r2 | 11 |
@@ -139,6 +140,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | chronicle-events | `data/chronicle/events.jsonl` | jsonl | daily-engine | display | 3 | 0 |
 | chronicle-manifest | `data/chronicle/manifest.json` | json | daily-engine | display | 3 | 0 |
 | chronicle-state-log | `data/chronicle/state_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
+
+### biopharma-seasonality-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-biopharma-seasonality-methodology | `site/seasonalitydata/methodology.json` | json | on-demand | display | 0 | 1 |
 
 ### btc-vector
 
