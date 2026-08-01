@@ -471,6 +471,21 @@ def _parse_earnings_parquet(p: Path) -> dict[str, dict]:
         return {}
     if df is None or df.empty or "ticker" not in df.columns:
         return {}
+    if p.parent.name == "earnings_calls":
+        try:
+            from engine.earnings_qual import _validate_transport_frame  # noqa: PLC0415
+            valid, reason = _validate_transport_frame(
+                df, p, "scores", root=p.parent.parent.parent,
+            )
+            if valid is not True:
+                log.warning(
+                    "stage_analysis: rejecting unmanifested/mixed earnings scores (%s)",
+                    reason,
+                )
+                return {}
+        except Exception as exc:  # noqa: BLE001
+            log.warning("stage_analysis: earnings manifest validation failed (%s)", exc)
+            return {}
 
     out: dict[str, dict] = {}
     # Latest by call_date if present, else last row wins.

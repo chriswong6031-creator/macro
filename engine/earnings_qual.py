@@ -635,6 +635,8 @@ _STORE_COLUMNS = [
     "sentiment", "performance", "confidence", "tone_word",
     "positive_highlights", "negative_highlights", "tags",
     "source_sha256", "scored_at",
+    "source_record_id", "source_updated_at", "prompt_version",
+    "analysis_schema_version",
     "summary",   # SGA W5: model call_summary (str, nullable); live scorer fills if present
 ]
 # JSON-encoded columns (stored as strings in parquet for portability).
@@ -662,7 +664,12 @@ def load_scores(root: Path | None = None):
     if not p.exists():
         return pd.DataFrame(columns=_STORE_COLUMNS)
     try:
-        return pd.read_parquet(p)
+        frame = pd.read_parquet(p)
+        valid, reason = _validate_transport_frame(frame, p, "scores", root=root)
+        if valid is False:
+            log.warning("earnings_qual: scores generation rejected (%s)", reason)
+            return pd.DataFrame(columns=_STORE_COLUMNS)
+        return frame
     except Exception as exc:  # noqa: BLE001
         log.warning("earnings_qual: scores parquet unreadable (%s) — empty", exc)
         return pd.DataFrame(columns=_STORE_COLUMNS)
@@ -1055,6 +1062,278 @@ def _backfill_earnings_path(root: Path | None = None) -> Path:
     return _sa_data_root(root) / "backfill" / "earnings_calls.parquet"
 
 
+def _backfill_earnings_candidates(root: Path | None = None) -> list[tuple[str, Path]]:
+    """Ordered historical-call stores, strongest first.
+
+    ``history.parquet`` is the canonical R2-transported migration of the full
+    EquityDesk numeric/tag/highlight archive.  The two committed stores are
+    deliberate cold-start fallbacks so a fresh checkout can never silently
+    render a zero-row Earnings Calls tab merely because the R2 producer missed
+    a run.  The overview fallback has one recent call per covered name; the
+    compact score seed is the last-resort context lane.
+    """
+    r = Path(root) if root is not None else _REPO_ROOT
+    return [
+        ("r2_history", r / "data" / "earnings_calls" / "history.parquet"),
+        ("legacy_full_history", _backfill_earnings_path(root)),
+        (
+            "committed_overview_fallback",
+            _sa_data_root(root) / "backfill" / "equitydesk_overview.parquet",
+        ),
+        (
+            "committed_score_seed_fallback",
+            _sa_data_root(root) / "backfill" / "earnings_seed.parquet",
+        ),
+    ]
+
+
+_STORE_HASH_CACHE: dict[tuple[str, int, int], str] = {}
+
+
+def _store_md5(path: Path) -> str:
+    """Content hash with a tiny stat-keyed cache (surfaces load the store often)."""
+    stat = path.stat()
+    key = (str(path), int(stat.st_mtime_ns), int(stat.st_size))
+    cached = _STORE_HASH_CACHE.get(key)
+    if cached:
+        return cached
+    digest = hashlib.md5()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    value = digest.hexdigest()
+    _STORE_HASH_CACHE.clear()
+    _STORE_HASH_CACHE[key] = value
+    return value
+
+
+def _transport_manifest(root: Path | None = None) -> dict | None:
+    r = Path(root) if root is not None else _REPO_ROOT
+    path = r / "data" / "earnings_calls" / "manifest.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _validate_transport_frame(
+    frame,
+    path: Path,
+    block_name: str,
+    root: Path | None = None,
+) -> tuple[bool | None, str | None]:
+    """Validate a fetched parquet against its generation manifest.
+
+    ``None`` means a legacy/local fixture has no manifest.  ``False`` is an
+    explicit contract failure and the caller must reject this R2 candidate.
+    """
+    # The commit marker lives beside the transported payload.  Prefer that
+    # sibling path so validation remains correct whether callers pass a repo
+    # root or a data-root fixture; fall back to the conventional repo layout.
+    manifest = None
+    sibling_manifest = path.parent / "manifest.json"
+    if sibling_manifest.exists():
+        try:
+            payload = json.loads(sibling_manifest.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                return False, "manifest_contract_invalid"
+            manifest = payload
+        except Exception as exc:  # noqa: BLE001
+            return False, f"manifest_unreadable:{exc}"
+    else:
+        manifest = _transport_manifest(root)
+    if manifest is None:
+        return None, "manifest_absent"
+    if manifest.get("schema") not in {
+        "earnings_intelligence_manifest.v2",
+        "earnings_intelligence_manifest.v3",
+    }:
+        return False, "manifest_schema_unsupported"
+    scores_block = manifest.get("scores")
+    history_block = manifest.get("history")
+    if manifest.get("generation_id"):
+        scores_md5 = (
+            scores_block.get("md5") if isinstance(scores_block, dict) else ""
+        )
+        history_md5 = (
+            history_block.get("md5") if isinstance(history_block, dict) else ""
+        )
+        material = f"{scores_md5 or ''}:{history_md5 or ''}"
+        expected_generation = hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]
+        if str(manifest.get("generation_id")) != expected_generation:
+            return False, "manifest_generation_id_mismatch"
+    if manifest.get("schema") == "earnings_intelligence_manifest.v3":
+        for name, filename in (("scores", "scores.parquet"), ("history", "history.parquet")):
+            candidate = manifest.get(name)
+            if candidate is None:
+                continue
+            if not isinstance(candidate, dict):
+                return False, f"manifest_{name}_block_invalid"
+            key = str(candidate.get("key") or "")
+            if (
+                not key.startswith("earnings_calls/generations/")
+                or not key.endswith(f"/{filename}")
+            ):
+                return False, f"manifest_{name}_immutable_key_invalid"
+    reconciliation = manifest.get("reconciliation")
+    if isinstance(reconciliation, dict):
+        try:
+            if int(reconciliation["input_rows"]) != (
+                int(reconciliation["output_rows"])
+                + int(reconciliation["rejected_rows"])
+            ):
+                return False, "manifest_reconciliation_arithmetic_mismatch"
+        except (KeyError, TypeError, ValueError):
+            return False, "manifest_reconciliation_counts_invalid"
+    block = manifest.get(block_name)
+    if not isinstance(block, dict):
+        return False, f"manifest_{block_name}_block_absent"
+    try:
+        expected_md5 = str(block.get("md5") or "")
+        if not expected_md5 or _store_md5(path) != expected_md5:
+            return False, f"{block_name}_md5_mismatch"
+        expected_bytes = block.get("bytes")
+        if expected_bytes is not None and int(expected_bytes) != int(path.stat().st_size):
+            return False, f"{block_name}_bytes_mismatch"
+        expected_rows = block.get("rows")
+        if expected_rows is not None and int(expected_rows) != int(len(frame)):
+            return False, f"{block_name}_rows_mismatch"
+        ticker_col = "ticker" if block_name == "scores" else "document_ticker"
+        expected_tickers = block.get("tickers")
+        if expected_tickers is not None and ticker_col in frame.columns:
+            actual = int(frame[ticker_col].dropna().astype(str).nunique())
+            if int(expected_tickers) != actual:
+                return False, f"{block_name}_tickers_mismatch"
+    except Exception as exc:  # noqa: BLE001
+        return False, f"{block_name}_validation_error:{exc}"
+    return True, None
+
+
+def _clean_identity(value: Any) -> str:
+    text = str(value or "").strip().upper()
+    if text in {"", "NAN", "NONE", "<NA>"}:
+        return ""
+    return re.sub(r"\s+", " ", text)
+
+
+def _display_ticker(value: Any) -> str:
+    """Preserve the source listing ticker, removing only a redundant US token."""
+    text = _clean_identity(value)
+    parts = text.split()
+    if len(parts) == 2 and parts[1] in {"US", "UN", "UW"}:
+        return parts[0]
+    return text
+
+
+def _issuer_region(document_ticker: Any, company_ticker: Any) -> str:
+    """Map an exchange-qualified listing to the page's five region buckets."""
+    listing = _display_ticker(document_ticker)
+    if re.search(r"\.(SS|SH|SZ|BJ)$", listing):
+        return "CHINA"
+    if listing.endswith(".HK"):
+        return "HK"
+    if re.search(r"\.(TO|V|CN|NE)$", listing):
+        return "CANADA"
+    if re.search(r"\.[A-Z]{1,4}$", listing):
+        return "OTHER"
+    company = _clean_identity(company_ticker)
+    market = company.split()[-1] if " " in company else ""
+    if market in {"US", "UN", "UW"}:
+        return "US"
+    if market == "CN":
+        return "CANADA"
+    if market == "HK":
+        return "HK"
+    return "OTHER" if market else "US"
+
+
+def _add_earnings_identity_and_period(df):
+    """Attach listing identity, issuer identity, region and validated fiscal period."""
+    import pandas as pd  # noqa: PLC0415
+
+    out = df.copy()
+    documents = out.get("document_ticker", pd.Series("", index=out.index))
+    companies = out.get("company_ticker", pd.Series("", index=out.index))
+    out["ticker"] = documents.map(_display_ticker)
+    company_keys = companies.map(_clean_identity)
+    fallback_keys = out["ticker"].map(lambda value: f"DOC:{value}" if value else "")
+    out["issuer_key"] = company_keys.where(company_keys.ne(""), fallback_keys)
+    out["region"] = [
+        _issuer_region(document, company)
+        for document, company in zip(documents, companies)
+    ]
+
+    raw_year = out.get("fiscal_year", pd.Series(None, index=out.index))
+    raw_quarter = out.get("fiscal_quarter", pd.Series(None, index=out.index))
+    fiscal_year = pd.to_numeric(raw_year, errors="coerce")
+    fiscal_quarter = pd.to_numeric(raw_quarter, errors="coerce")
+    # Producer rows conventionally use ``Q1``..``Q4`` (and some upstream
+    # feeds spell years as ``FY2026``), while the historical archive stores
+    # integers.  Normalize both representations before validating the period.
+    quarter_text = raw_quarter.astype("string").str.extract(
+        r"(?i)^\s*Q?([1-4])\s*$", expand=False,
+    )
+    year_text = raw_year.astype("string").str.extract(
+        r"(?i)^\s*(?:FY)?(\d{4})\s*$", expand=False,
+    )
+    fiscal_quarter = fiscal_quarter.fillna(pd.to_numeric(quarter_text, errors="coerce"))
+    fiscal_year = fiscal_year.fillna(pd.to_numeric(year_text, errors="coerce"))
+    call_year = out["call_dt"].dt.year
+    present = fiscal_year.notna() | fiscal_quarter.notna()
+    valid = (
+        fiscal_year.notna()
+        & fiscal_quarter.between(1, 4)
+        & call_year.notna()
+        # Earnings-call fiscal labels in the observed archive live in a clean
+        # call-year +/-1 band. Wider offsets are stale/copied source revisions
+        # (for example a 2026 call mislabeled 2023Q1) and can manufacture
+        # adjacent-but-temporally-impossible QoQ pairs.
+        & fiscal_year.between(call_year - 1, call_year + 1)
+    )
+    out["fiscal_period"] = None
+    out.loc[valid, "fiscal_period"] = (
+        fiscal_year[valid].astype("Int64").astype(str)
+        + "Q"
+        + fiscal_quarter[valid].astype("Int64").astype(str)
+    )
+    out["fiscal_period_order"] = None
+    out.loc[valid, "fiscal_period_order"] = (
+        fiscal_year[valid] * 4 + fiscal_quarter[valid]
+    ).astype("Int64")
+    out["invalid_fiscal_period"] = present & ~valid
+    out["missing_fiscal_period"] = ~present
+    return out
+
+
+def _quarterly_earnings_frame(df):
+    """One deterministic call per exact issuer and valid fiscal period."""
+    import pandas as pd  # noqa: PLC0415
+
+    if df.empty:
+        return df.copy()
+    d = df[
+        df["issuer_key"].astype(str).str.strip().ne("")
+        & df["fiscal_period"].notna()
+        & df["call_dt"].notna()
+    ].copy()
+    if d.empty:
+        return d
+    for col in ("updated_at", "created_at"):
+        raw = d[col] if col in d.columns else pd.Series(None, index=d.index)
+        d[f"_{col}_dt"] = pd.to_datetime(raw, utc=True, errors="coerce")
+    d["_row_id"] = d.get("id", pd.Series("", index=d.index)).fillna("").astype(str)
+    d = d.sort_values(
+        [
+            "issuer_key", "fiscal_period_order", "call_dt", "_updated_at_dt",
+            "_created_at_dt", "_row_id", "ticker",
+        ],
+        kind="mergesort",
+        na_position="first",
+    ).drop_duplicates(["issuer_key", "fiscal_period"], keep="last")
+    return d.drop(columns=["_updated_at_dt", "_created_at_dt", "_row_id"])
+
+
 def _atomic_write_json(path: Path, obj: Any) -> None:
     """Write JSON via tmp-then-rename (atomic on POSIX).  Never partial."""
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1145,6 +1424,230 @@ def _parse_tag_list(raw: Any) -> list[str]:
     return []
 
 
+def _normalise_earnings_source(df, source_tier: str, root: Path | None = None):
+    """Project any supported cold-start store into the full-history schema."""
+    import pandas as pd  # noqa: PLC0415
+
+    out = df.copy()
+
+    if source_tier == "committed_score_seed_fallback":
+        # Reverse the documented EquityDesk->our-score calibration used by
+        # scripts/import_equitydesk_backfill.py.  This keeps the legacy Stage
+        # Analysis display scale (sent 0..30, perf -12..12) consistent.
+        sent = pd.to_numeric(out.get("sentiment"), errors="coerce")
+        perf = pd.to_numeric(out.get("performance"), errors="coerce")
+        ticker = out.get("ticker", pd.Series("", index=out.index)).astype(str).str.upper()
+        projected = pd.DataFrame(index=out.index)
+        projected["document_ticker"] = ticker
+        projected["company_ticker"] = ticker
+        projected["company_name"] = ticker
+        projected["id"] = None
+        projected["created_at"] = out.get("scored_at")
+        projected["updated_at"] = out.get("scored_at")
+        projected["fiscal_quarter"] = out.get("quarter")
+        projected["fiscal_year"] = out.get("year")
+        projected["call_date"] = out.get("call_date")
+        projected["earnings_call_sent"] = (sent * 18.0 + 12.0).clip(0.0, 30.0)
+        projected["earnings_call_perf"] = (perf * 2.4 - 12.0).clip(-12.0, 12.0)
+        projected["earnings_call_combined"] = (
+            projected["earnings_call_sent"] + projected["earnings_call_perf"]
+        )
+        projected["level1_tags"] = out.get("tags")
+        projected["level2_tags"] = None
+        projected["key_quote"] = out.get("summary")
+        projected["positive_highlights"] = None
+        projected["negative_highlights"] = None
+        projected["file_path"] = None
+        out = projected
+
+        # Enrich the compact seed with the committed issuer/GICS dictionary.
+        ov = _sa_data_root(root) / "backfill" / "equitydesk_overview.parquet"
+        if ov.exists():
+            try:
+                meta = pd.read_parquet(
+                    ov,
+                    columns=[
+                        "ticker", "name_ui", "gics_sector", "gics_industry_group",
+                        "gics_industry", "gics_sub_industry",
+                    ],
+                ).drop_duplicates("ticker", keep="last")
+                meta["document_ticker"] = meta["ticker"].astype(str).str.upper()
+                meta = meta.drop(columns=["ticker"]).rename(
+                    columns={
+                        "name_ui": "_company_name",
+                        "gics_sub_industry": "gics_subindustry",
+                    }
+                )
+                out = out.merge(meta, on="document_ticker", how="left")
+                out["company_name"] = out["_company_name"].fillna(out["company_name"])
+                out = out.drop(columns=["_company_name"])
+            except Exception as exc:  # noqa: BLE001
+                log.warning("earnings_qual: score-seed metadata join failed (%s)", exc)
+
+    elif source_tier == "committed_overview_fallback":
+        ticker = out.get("ticker", pd.Series("", index=out.index)).astype(str).str.upper()
+        out["document_ticker"] = ticker
+        out["company_ticker"] = ticker
+        if "company_name" not in out.columns:
+            out["company_name"] = out.get("name_ui", ticker)
+        else:
+            out["company_name"] = out["company_name"].fillna(out.get("name_ui"))
+        if "gics_subindustry" not in out.columns:
+            out["gics_subindustry"] = out.get("gics_sub_industry")
+        out["fiscal_quarter"] = None
+        out["fiscal_year"] = None
+        out["key_quote"] = None
+        out["file_path"] = None
+
+    return out
+
+
+def _frame_metadata(df) -> dict:
+    """Small provenance/readiness block carried by every earnings artifact."""
+    import pandas as pd  # noqa: PLC0415
+
+    source_tier = str(df.attrs.get("source_tier") or "none")
+    latest = None
+    if not df.empty and "call_dt" in df.columns:
+        mx = df["call_dt"].max()
+        if pd.notna(mx):
+            latest = pd.Timestamp(mx).date().isoformat()
+    n_listings = (
+        int(df["ticker"].replace("", None).dropna().nunique())
+        if not df.empty and "ticker" in df.columns else 0
+    )
+    n_issuers = (
+        int(df["issuer_key"].replace("", None).dropna().nunique())
+        if not df.empty and "issuer_key" in df.columns else 0
+    )
+    invalid_fiscal = (
+        int(df["invalid_fiscal_period"].fillna(False).sum())
+        if not df.empty and "invalid_fiscal_period" in df.columns else 0
+    )
+    missing_fiscal = (
+        int(df["missing_fiscal_period"].fillna(False).sum())
+        if not df.empty and "missing_fiscal_period" in df.columns else 0
+    )
+    reconciliation = df.attrs.get("import_reconciliation")
+    if not isinstance(reconciliation, dict):
+        reconciliation = {}
+    if df.empty:
+        status = "empty"
+    elif source_tier in {
+        "r2_history",
+        "r2_history_plus_score_overlay",
+        "legacy_full_history",
+        "legacy_full_history_plus_score_overlay",
+    }:
+        status = "ready"
+    else:
+        status = "degraded"
+    if status == "ready" and latest:
+        try:
+            age_days = (
+                pd.Timestamp.now(tz="UTC").date() - pd.Timestamp(latest).date()
+            ).days
+            if age_days > 14:
+                status = "stale"
+        except Exception:  # noqa: BLE001
+            pass
+    return {
+        "data_status": status,
+        "data_source_tier": source_tier,
+        "source_rows": int(len(df)),
+        # Backward-compatible name: this is listing coverage (document_ticker),
+        # not canonical issuer coverage.  Both are exposed to prevent the old
+        # 3,529-vs-3,496 distinction from being mislabeled as data loss.
+        "source_tickers": n_listings,
+        "source_listings": n_listings,
+        "source_issuers": n_issuers,
+        "invalid_fiscal_period_rows": invalid_fiscal,
+        "missing_fiscal_period_rows": missing_fiscal,
+        "import_input_rows": reconciliation.get("input_rows"),
+        "import_output_rows": reconciliation.get("output_rows"),
+        "import_rejected_rows": reconciliation.get("rejected_rows"),
+        "import_duplicate_groups": reconciliation.get("duplicate_group_count"),
+        "transport_manifest_valid": df.attrs.get("transport_manifest_valid"),
+        "transport_generation_id": df.attrs.get("transport_generation_id"),
+        "latest_call_date": latest,
+    }
+
+
+def _overlay_forward_scores(df, source_tier: str, root: Path | None = None):
+    """Append post-migration score rows that are absent from call history.
+
+    The imported history is a calibration/backfill snapshot.  The existing
+    producer lane continues to advance ``scores.parquet`` from newly collected
+    transcripts or 8-K text.  Without this overlay, a healthy score producer
+    could publish a newer call while the Stage surfaces stayed frozen at the
+    migration cutoff forever.
+
+    History wins for matching ticker/date pairs; the score projection is used
+    only for genuinely new events and remains display/context-only.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    if source_tier not in {"r2_history", "legacy_full_history"}:
+        return df, source_tier
+    r = Path(root) if root is not None else _REPO_ROOT
+    scores_path = r / "data" / "earnings_calls" / "scores.parquet"
+    if not scores_path.exists():
+        return df, source_tier
+    try:
+        scores = pd.read_parquet(scores_path)
+        if scores.empty:
+            return df, source_tier
+        score_valid, score_reason = _validate_transport_frame(
+            scores, scores_path, "scores", root=root,
+        )
+        if score_valid is False:
+            log.warning(
+                "earnings_qual: rejecting score overlay (%s)", score_reason,
+            )
+            return df, source_tier
+        projected = _normalise_earnings_source(
+            scores,
+            "committed_score_seed_fallback",
+            root=root,
+        )
+        # Preserve the canonical issuer key for known listings.  The score
+        # contract carries a listing ticker, while history carries the exact
+        # Bloomberg-style company ticker (e.g. CLS CN vs CLS SJ).
+        issuer_map = (
+            df[["document_ticker", "company_ticker"]]
+            .dropna(subset=["document_ticker"])
+            .drop_duplicates("document_ticker", keep="last")
+            .set_index("document_ticker")["company_ticker"]
+        )
+        projected["company_ticker"] = (
+            projected["document_ticker"].map(issuer_map)
+            .fillna(projected["company_ticker"])
+        )
+        base_ticker = (
+            df.get("document_ticker", pd.Series("", index=df.index))
+            .map(_display_ticker)
+        )
+        score_ticker = (
+            projected.get("document_ticker", pd.Series("", index=projected.index))
+            .map(_display_ticker)
+        )
+        base_date = pd.to_datetime(df.get("call_date"), errors="coerce").dt.date.astype(str)
+        score_date = pd.to_datetime(
+            projected.get("call_date"), errors="coerce"
+        ).dt.date.astype(str)
+        base_keys = set((base_ticker + "|" + base_date).tolist())
+        keep = ~((score_ticker + "|" + score_date).isin(base_keys))
+        keep &= score_ticker.ne("") & score_date.ne("NaT")
+        additions = projected.loc[keep]
+        if additions.empty:
+            return df, source_tier
+        out = pd.concat([df, additions], ignore_index=True, sort=False)
+        return out, f"{source_tier}_plus_score_overlay"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("earnings_qual: forward score overlay failed (%s)", exc)
+        return df, source_tier
+
+
 def load_backfill_earnings(root: Path | None = None):
     """Load the committed EquityDesk earnings backfill as a normalized frame.
 
@@ -1155,25 +1658,68 @@ def load_backfill_earnings(root: Path | None = None):
     import pandas as pd  # noqa: PLC0415
 
     cols = [
-        "document_ticker", "company_ticker", "company_name", "fiscal_quarter",
+        "id", "created_at", "updated_at", "document_ticker", "company_ticker",
+        "company_name", "fiscal_quarter",
         "fiscal_year", "call_date", "gics_sector", "gics_industry_group",
         "gics_industry", "gics_subindustry", "earnings_call_sent",
         "earnings_call_perf", "earnings_call_combined", "earnings_call_pop",
         "positive_highlights", "negative_highlights", "key_quote",
         "level1_tags", "level2_tags", "file_path",
     ]
-    p = _backfill_earnings_path(root)
-    if not p.exists():
-        return pd.DataFrame(columns=cols + ["call_dt", "calendar_quarter", "ticker"])
-    try:
-        df = pd.read_parquet(p)
-    except Exception as exc:  # noqa: BLE001
-        log.warning("earnings_qual: backfill earnings unreadable (%s) — empty", exc)
-        return pd.DataFrame(columns=cols + ["call_dt", "calendar_quarter", "ticker"])
-    if df.empty:
-        return df
+    df = None
+    source_tier = "none"
+    source_path = None
+    for tier, p in _backfill_earnings_candidates(root):
+        if not p.exists():
+            continue
+        try:
+            candidate = pd.read_parquet(p)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("earnings_qual: %s unreadable (%s) — trying fallback", p, exc)
+            continue
+        if candidate.empty:
+            log.warning("earnings_qual: %s is empty — trying fallback", p)
+            continue
+        transport_valid = None
+        transport_reason = None
+        if tier == "r2_history":
+            transport_valid, transport_reason = _validate_transport_frame(
+                candidate, p, "history", root=root,
+            )
+            if transport_valid is not True:
+                log.warning(
+                    "earnings_qual: rejecting unmanifested/mixed R2 history (%s) — "
+                    "trying committed fallback",
+                    transport_reason,
+                )
+                continue
+        df = _normalise_earnings_source(candidate, tier, root=root)
+        source_tier = tier
+        source_path = p
+        manifest = _transport_manifest(root) if tier == "r2_history" else None
+        df.attrs.update(
+            transport_manifest_valid=transport_valid,
+            transport_manifest_reason=transport_reason,
+            transport_generation_id=(manifest or {}).get("generation_id"),
+            import_reconciliation=(manifest or {}).get("reconciliation"),
+        )
+        break
 
+    if df is None or df.empty:
+        empty = pd.DataFrame(columns=cols + [
+            "call_dt", "calendar_quarter", "ticker", "issuer_key", "region",
+            "fiscal_period", "fiscal_period_order", "invalid_fiscal_period",
+            "missing_fiscal_period",
+        ])
+        empty.attrs.update(source_tier="none", source_path=None)
+        return empty
+
+    transport_attrs = dict(df.attrs)
+    df, source_tier = _overlay_forward_scores(df, source_tier, root=root)
     df = df.copy()
+    for c in cols:
+        if c not in df.columns:
+            df[c] = None
     df["call_dt"] = pd.to_datetime(df.get("call_date"), errors="coerce")
     # Canonical, dirty-value-proof quarter key: the CALENDAR quarter of the call
     # (their fiscal_year has occasional dirty entries like 2925; call_date is the
@@ -1184,14 +1730,9 @@ def load_backfill_earnings(root: Path | None = None):
         y.astype("Int64").astype(str) + "Q" + q.astype("Int64").astype(str)
     )
     df.loc[df["call_dt"].isna(), "calendar_quarter"] = None
-    # A stable per-name key (bare symbol without the ' US' region suffix).
-    tk = df.get("company_ticker")
-    if tk is None:
-        tk = df.get("document_ticker")
-    df["ticker"] = (
-        tk.astype(str).str.split().str[0].str.upper()
-        if tk is not None else ""
-    )
+    df = _add_earnings_identity_and_period(df)
+    df.attrs.update(transport_attrs)
+    df.attrs.update(source_tier=source_tier, source_path=str(source_path))
     return df
 
 
@@ -1222,6 +1763,8 @@ def ec_industry_heatmap(
     *,
     weeks: int = 26,
     window_days: int = _EC_FRESH_WINDOW_DAYS,
+    region: str | None = None,
+    frame=None,
     write: bool = True,
 ) -> dict:
     """Weekly per-GICS-industry earnings-call heatmap.
@@ -1237,12 +1780,14 @@ def ec_industry_heatmap(
     """
     import pandas as pd  # noqa: PLC0415
 
-    df = load_backfill_earnings(root)
+    df = frame if frame is not None else load_backfill_earnings(root)
     weeks_out: list[dict] = []
     industries: set[str] = set()
 
     if not df.empty:
         d = df.dropna(subset=["call_dt", "gics_industry"]).copy()
+        if region is not None:
+            d = d[d["region"] == str(region).upper()]
         d = d[d["gics_industry"].astype(str).str.strip() != ""]
         if not d.empty:
             last = d["call_dt"].max()
@@ -1260,11 +1805,11 @@ def ec_industry_heatmap(
                 # Latest call per company inside the window.
                 latest = (
                     win.sort_values("call_dt")
-                    .groupby("ticker", as_index=False)
+                    .groupby("issuer_key", as_index=False)
                     .tail(1)
                 )
                 g = latest.groupby("gics_industry").agg(
-                    companies_with_fresh_ec=("ticker", "nunique"),
+                    companies_with_fresh_ec=("issuer_key", "nunique"),
                     avg_earnings_call_sent=("earnings_call_sent", "mean"),
                     avg_earnings_call_perf=("earnings_call_perf", "mean"),
                     avg_earnings_call_combined=("earnings_call_combined", "mean"),
@@ -1282,6 +1827,7 @@ def ec_industry_heatmap(
                     })
 
     out = _context_envelope("ec_industry_heatmap", {
+        **_frame_metadata(df),
         "window_days": int(window_days),
         "n_weeks": len({r["week"] for r in weeks_out}),
         "n_industries": len(industries),
@@ -1296,7 +1842,8 @@ def ec_industry_heatmap(
 # Surface #1b — EC industry heatmap GRID (per-region, matrix form)
 # --------------------------------------------------------------------------- #
 # The `ec_industry_heatmap` above emits a long-format list (one row per
-# week×industry cell) from earnings_calls.parquet, which has NO region split.
+# week×industry cell) from earnings_calls.parquet with an exchange-derived
+# five-bucket region split.
 # This grid form reads the EquityDesk seed ec_industry.parquet directly — it
 # carries their per-region GICS-industry weekly aggregates
 # (avg_earnings_call_combined + companies_with_fresh_ec) — and reshapes them
@@ -1333,6 +1880,8 @@ def ec_industry_heatmap_grid(
     import pandas as pd  # noqa: PLC0415
 
     regions_out: dict[str, dict] = {}
+    grid_source_tier = "none"
+    source_frame = None
     p = _ec_industry_seed_path(root)
     if p.exists():
         try:
@@ -1357,10 +1906,73 @@ def ec_industry_heatmap_grid(
                     grid = _ec_grid_region(sub, weeks=weeks, max_rows=max_rows)
                     if grid is not None:
                         regions_out[reg] = grid
+                if regions_out:
+                    grid_source_tier = "committed_ec_industry_seed"
             except Exception as exc:  # noqa: BLE001
                 print(f"::warning:: earnings_qual: ec grid build failed ({exc})", flush=True)
 
+    # When the old per-region seed is absent, derive exact five-bucket grids
+    # from the exchange-qualified historical archive.  This both prevents a
+    # permanent warm state and avoids the old error of labeling every foreign
+    # call as USA.
+    if not regions_out:
+        source_frame = load_backfill_earnings(root)
+        if not source_frame.empty:
+            for region_code, output_key in (
+                ("US", "USA"),
+                ("CHINA", "CHINA"),
+                ("HK", "HK"),
+                ("CANADA", "CANADA"),
+                ("OTHER", "OTHER"),
+            ):
+                long_view = ec_industry_heatmap(
+                    root=root,
+                    weeks=weeks,
+                    region=region_code,
+                    frame=source_frame,
+                    write=False,
+                )
+                rows = long_view.get("rows") or []
+                if not rows:
+                    continue
+                fallback = pd.DataFrame(rows).rename(
+                    columns={"gics_industry": "gics_industry_name"}
+                )
+                # The long view intentionally carries both aliases; select one
+                # rather than renaming ``week`` into a duplicate column.
+                fallback["as_of_date"] = fallback["week"]
+                fallback["dt_"] = pd.to_datetime(
+                    fallback["as_of_date"], errors="coerce"
+                )
+                grid = _ec_grid_region(fallback, weeks=weeks, max_rows=max_rows)
+                if grid is not None:
+                    regions_out[output_key] = grid
+            if regions_out:
+                grid_source_tier = str(
+                    source_frame.attrs.get("source_tier") or "history_fallback"
+                )
+
+    if source_frame is not None:
+        grid_meta = _frame_metadata(source_frame)
+    elif regions_out:
+        grid_meta = {
+            "data_status": "ready",
+            "data_source_tier": grid_source_tier,
+            "source_rows": None,
+            "source_tickers": None,
+            "latest_call_date": None,
+        }
+    else:
+        grid_meta = {
+            "data_status": "empty",
+            "data_source_tier": "none",
+            "source_rows": 0,
+            "source_tickers": 0,
+            "latest_call_date": None,
+        }
+
     out = _context_envelope("ec_industry_heatmap_grid", {
+        **grid_meta,
         "n_regions": len(regions_out),
         "regions": _json_safe(regions_out),
     })
@@ -1476,18 +2088,40 @@ def earnings_season(
     quarters_out: list[dict] = []
 
     if not df.empty:
-        d = df.dropna(subset=["call_dt", "calendar_quarter"]).copy()
+        d = _quarterly_earnings_frame(df)
+        d = d.dropna(subset=["call_dt", "calendar_quarter", "fiscal_period"]).copy()
         d = d[pd.to_numeric(d["earnings_call_combined"], errors="coerce").notna()]
         if not d.empty:
-            # Prior combined = the same ticker's immediately-prior call.
-            d = d.sort_values("call_dt")
-            d["prev_combined"] = (
-                d.groupby("ticker")["earnings_call_combined"].shift(1)
+            # Prior combined = the same exact issuer's prior VALID fiscal period.
+            # Multiple vendor rows/listings inside one fiscal period have already
+            # been deterministically reduced by _quarterly_earnings_frame.
+            d = d.sort_values(["issuer_key", "fiscal_period_order", "call_dt"])
+            grouped = d.groupby("issuer_key", sort=False)
+            d["prev_combined"] = grouped["earnings_call_combined"].shift(1)
+            d["prev_period_order"] = grouped["fiscal_period_order"].shift(1)
+            adjacent = (
+                pd.to_numeric(d["fiscal_period_order"], errors="coerce")
+                - pd.to_numeric(d["prev_period_order"], errors="coerce")
+            ).eq(1)
+            # QoQ is literal here: a 2026Q2 row may compare only with 2026Q1,
+            # never with the merely previous stored call (for example 2025Q4).
+            d.loc[~adjacent, "prev_combined"] = None
+            current_combined = pd.to_numeric(
+                d["earnings_call_combined"], errors="coerce",
             )
-            d["delta_combined"] = (
-                pd.to_numeric(d["earnings_call_combined"], errors="coerce")
-                - pd.to_numeric(d["prev_combined"], errors="coerce")
+            prior_combined = pd.to_numeric(d["prev_combined"], errors="coerce")
+            d["delta_combined"] = current_combined - prior_combined
+            # The imported archive uses exact combined==0 as an UNSCORED /
+            # missing-call placeholder, not a real tone reading. Apply the same
+            # both-quarters-scored gate as earnings_comparison so false 0-vs-35
+            # deltas never inflate Season counts or tag clouds.
+            both_scored = (
+                current_combined.notna()
+                & prior_combined.notna()
+                & current_combined.ne(0)
+                & prior_combined.ne(0)
             )
+            d.loc[~both_scored, "delta_combined"] = None
             want = [quarter] if quarter else _latest_quarters(d, n_quarters)
             for qk in want:
                 qd = d[d["calendar_quarter"] == qk]
@@ -1519,6 +2153,7 @@ def earnings_season(
                 })
 
     out = _context_envelope("earnings_season", {
+        **_frame_metadata(df),
         "n_quarters": len(quarters_out),
         "quarters": _json_safe(quarters_out),
     })
@@ -1553,13 +2188,21 @@ def earnings_comparison(
     n_scored = 0
 
     if not df.empty:
-        d = df.dropna(subset=["call_dt"]).copy()
-        d = d.sort_values("call_dt")
-        for tk, grp in d.groupby("ticker"):
+        d = _quarterly_earnings_frame(df)
+        d = d.sort_values(["issuer_key", "fiscal_period_order", "call_dt"])
+        for issuer_key, grp in d.groupby("issuer_key"):
             if len(grp) < 2:
                 continue
             cur = grp.iloc[-1]
             prev = grp.iloc[-2]
+            cur_order = pd.to_numeric(
+                pd.Series([cur.get("fiscal_period_order")]), errors="coerce",
+            ).iloc[0]
+            prev_order = pd.to_numeric(
+                pd.Series([prev.get("fiscal_period_order")]), errors="coerce",
+            ).iloc[0]
+            if pd.isna(cur_order) or pd.isna(prev_order) or int(cur_order - prev_order) != 1:
+                continue
             cur_comb = pd.to_numeric(pd.Series([cur.get("earnings_call_combined")]),
                                      errors="coerce").iloc[0]
             prev_comb = pd.to_numeric(pd.Series([prev.get("earnings_call_combined")]),
@@ -1586,19 +2229,22 @@ def earnings_comparison(
             new_tags = [t for t in cur_tags if t not in set(prev_tags)]
             dropped_tags = [t for t in prev_tags if t not in set(cur_tags)]
             rows_out.append({
-                "ticker": str(tk),
+                "ticker": str(cur.get("ticker") or ""),
+                "issuer_key": str(issuer_key),
+                "region": str(cur.get("region") or "US"),
                 "company_name": str(cur.get("company_name") or ""),
                 "gics_industry": str(cur.get("gics_industry") or ""),
-                "current_quarter": cur.get("calendar_quarter"),
+                "current_quarter": cur.get("fiscal_period"),
                 "current_date": cur["call_dt"].date().isoformat(),
                 "current_combined": round(float(cur_comb), 3),
                 "current_scored": cur_scored,
                 "current_tags": cur_tags,
-                "prior_quarter": prev.get("calendar_quarter"),
+                "prior_quarter": prev.get("fiscal_period"),
                 "prior_date": prev["call_dt"].date().isoformat(),
                 "prior_combined": round(float(prev_comb), 3),
                 "prior_scored": prev_scored,
                 "prior_tags": prev_tags,
+                "fiscal_period_gap": 1,
                 "delta_combined": round(float(cur_comb) - float(prev_comb), 3),
                 # True iff BOTH quarters are genuinely scored — the swing-ranking
                 # gate. A False here means the delta straddles an unscored quarter
@@ -1619,6 +2265,7 @@ def earnings_comparison(
         rows_out.sort(key=lambda r: (not r["both_scored"], -r["delta_combined"]))
 
     out = _context_envelope("earnings_comparison", {
+        **_frame_metadata(df),
         "n_rows": len(rows_out),
         "n_total": n_full,
         "n_scored": n_scored,       # both-quarters-scored pairs (rank-eligible)
@@ -1664,11 +2311,14 @@ def earnings_table(
             fp = None if (fp is None or (isinstance(fp, float) and fp != fp)) else str(fp)
             rows_out.append({
                 "ticker": str(r.get("ticker") or ""),
+                "issuer_key": str(r.get("issuer_key") or ""),
+                "region": str(r.get("region") or "US"),
                 "company_name": str(r.get("company_name") or ""),
                 "gics_industry": str(r.get("gics_industry") or ""),
                 "gics_sector": str(r.get("gics_sector") or ""),
                 "call_date": r["call_dt"].date().isoformat(),
-                "quarter": r.get("calendar_quarter"),
+                "quarter": r.get("fiscal_period") or r.get("calendar_quarter"),
+                "fiscal_period_valid": not bool(r.get("invalid_fiscal_period")),
                 "ec_sent": _json_safe(r.get("earnings_call_sent")),
                 "ec_perf": _json_safe(r.get("earnings_call_perf")),
                 "ec_combined": _json_safe(r.get("earnings_call_combined")),
@@ -1686,6 +2336,7 @@ def earnings_table(
             })
 
     out = _context_envelope("earnings_table", {
+        **_frame_metadata(df),
         "n_rows": len(rows_out),
         "cap": int(cap),
         "rows": _json_safe(rows_out),
@@ -1693,6 +2344,109 @@ def earnings_table(
     if write:
         _atomic_write_json(_sa_data_root(root) / "earnings_table.json", out)
     return out
+
+
+def earnings_intelligence_health(
+    root: Path | None = None,
+    *,
+    frame=None,
+    write: bool = True,
+) -> dict:
+    """Emit the operational heartbeat for the earnings data plane.
+
+    Unlike the legacy warm-up copy, this distinguishes a healthy full-history
+    lane from a committed cold-start fallback and from a genuinely empty store.
+    It is intentionally diagnostic: callers may alert on ``status=empty`` but
+    Stage Analysis remains display/context-only.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    df = frame if frame is not None else load_backfill_earnings(root)
+    meta = _frame_metadata(df)
+    qoq_tickers = 0
+    quarterly = _quarterly_earnings_frame(df)
+    valid_period_rows = 0
+    same_period_superseded_rows = 0
+    if not df.empty:
+        period_mask = (
+            df["issuer_key"].astype(str).str.strip().ne("")
+            & df["fiscal_period"].notna()
+            & df["call_dt"].notna()
+        )
+        valid_period_rows = int(period_mask.sum())
+        same_period_superseded_rows = max(0, valid_period_rows - int(len(quarterly)))
+    if not quarterly.empty and "issuer_key" in quarterly.columns:
+        ordered = quarterly.sort_values(
+            ["issuer_key", "fiscal_period_order", "call_dt"],
+        ).copy()
+        grouped = ordered.groupby("issuer_key", sort=False)
+        ordered["_prior_order"] = grouped["fiscal_period_order"].shift(1)
+        ordered["_prior_combined"] = grouped["earnings_call_combined"].shift(1)
+        latest = ordered.groupby("issuer_key", sort=False).tail(1)
+        gap = (
+            pd.to_numeric(latest["fiscal_period_order"], errors="coerce")
+            - pd.to_numeric(latest["_prior_order"], errors="coerce")
+        )
+        current_combined = pd.to_numeric(
+            latest["earnings_call_combined"], errors="coerce",
+        )
+        prior_combined = pd.to_numeric(latest["_prior_combined"], errors="coerce")
+        qoq_tickers = int(
+            (gap.eq(1) & current_combined.notna() & prior_combined.notna()).sum()
+        )
+    age_days = None
+    latest = meta.get("latest_call_date")
+    if latest:
+        try:
+            age_days = int((pd.Timestamp.now(tz="UTC").date() - pd.Timestamp(latest).date()).days)
+        except Exception:  # noqa: BLE001
+            age_days = None
+    status = meta["data_status"]
+    if status == "ready" and age_days is not None and age_days > 14:
+        status = "stale"
+    health = {
+        "schema": "earnings_intelligence_health.v1",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "status": status,
+        **meta,
+        "age_days": age_days,
+        "valid_fiscal_source_rows": valid_period_rows,
+        "canonical_issuer_period_rows": int(len(quarterly)),
+        "same_period_superseded_rows": same_period_superseded_rows,
+        "quarantined_fiscal_rows": int(meta.get("invalid_fiscal_period_rows") or 0),
+        "qoq_eligible_tickers": qoq_tickers,
+        "qoq_eligible_issuers": qoq_tickers,
+        "checks": {
+            "has_rows": bool(len(df)),
+            "has_full_history": meta["data_source_tier"] in {
+                "r2_history",
+                "r2_history_plus_score_overlay",
+                "legacy_full_history",
+                "legacy_full_history_plus_score_overlay",
+            },
+            "has_qoq_pairs": qoq_tickers > 0,
+            "latest_within_14d": age_days is not None and age_days <= 14,
+            "transport_manifest_valid": meta.get("transport_manifest_valid") is not False,
+            "fiscal_anomalies_quarantined": bool(
+                quarterly.empty
+                or not quarterly.get("invalid_fiscal_period", pd.Series(False)).fillna(False).any()
+            ),
+            "issuer_periods_reconciled": (
+                int(len(quarterly)) + same_period_superseded_rows
+                == valid_period_rows
+            ),
+        },
+        "operator_note": (
+            "ready = full history available; degraded = committed one-call fallback; "
+            "stale = full history older than 14 days; empty = ingestion contract failure"
+        ),
+        "is_context_only": True,
+        "display_only": True,
+    }
+    if write:
+        r = Path(root) if root is not None else _REPO_ROOT
+        _atomic_write_json(r / "data" / "quality" / "earnings_intelligence_health.json", health)
+    return health
 
 
 def build_all_earnings_surfaces(root: Path | None = None) -> dict:
@@ -1711,6 +2465,11 @@ def build_all_earnings_surfaces(root: Path | None = None) -> dict:
         except Exception as exc:  # noqa: BLE001
             print(f"::warning:: earnings_qual: surface {name} failed ({exc})", flush=True)
             results[name] = {"error": str(exc)}
+    try:
+        results["health"] = earnings_intelligence_health(root=root, write=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning:: earnings_qual: health build failed ({exc})", flush=True)
+        results["health"] = {"error": str(exc)}
     return results
 
 

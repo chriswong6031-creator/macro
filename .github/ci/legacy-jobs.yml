@@ -3963,7 +3963,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: china/HK collectors and the collect.py sweeps + store-freshness tripwires
-        run: python -m pytest tests/test_action_board_lane_split.py tests/test_china_alpha_w3c_infra.py tests/test_china_fundamentals_collector.py tests/test_content_stamp_freshness.py tests/test_data_quality_audit.py tests/test_earnings_qual.py tests/test_earnings_w5.py tests/test_hk_fundamentals_collector.py tests/test_hk_narrative.py tests/test_hk_track_record_vm.py tests/test_housing_hf.py -q
+        run: python -m pytest tests/test_action_board_lane_split.py tests/test_china_alpha_w3c_infra.py tests/test_china_fundamentals_collector.py tests/test_content_stamp_freshness.py tests/test_data_quality_audit.py tests/test_build_earnings_scores_from_history.py tests/test_earnings_qual.py tests/test_earnings_seasons.py tests/test_earnings_w5.py tests/test_hk_fundamentals_collector.py tests/test_hk_narrative.py tests/test_hk_track_record_vm.py tests/test_housing_hf.py -q
 
   unrun-russell-breadth:
     # the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks.

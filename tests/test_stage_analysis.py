@@ -14,8 +14,17 @@ import pandas as pd
 import pytest
 
 from engine import stage_analysis as sa
+from scripts.publish_earnings_r2 import _synth_manifest
 
 FIXTURE = Path(__file__).parent / "fixtures" / "stage_context_latest.json"
+
+
+def _write_scores_manifest(scores: Path) -> None:
+    """Commit a score-only transport generation for live-store fixtures."""
+    payload = _synth_manifest(scores, None)
+    (scores.parent / "manifest.json").write_text(
+        json.dumps(payload), encoding="utf-8",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -471,6 +480,7 @@ def test_earnings_join_present(env):
          "sentiment": -0.4, "performance": 3.0, "tags": json.dumps(["miss_and_cut"])},
     ])
     df.to_parquet(ec / "scores.parquet")
+    _write_scores_manifest(ec / "scores.parquet")
     contract = sa.build_context_feed(root=dr, asof="2026-07-17")
     by_tk = {r["ticker"]: r for r in contract["top_stage2"]}
     assert by_tk["NVDA"]["earnings"]["present"] is True
@@ -508,6 +518,7 @@ def test_earnings_seed_fallback_and_live_overlay(tmp_path):
         {"ticker": "CCC", "quarter": "Q2", "sentiment": 0.2, "performance": 6.0,
          "tone_word": "steady", "tags": json.dumps([]), "summary": "Fresh call CCC."},
     ]).to_parquet(ec / "scores.parquet")
+    _write_scores_manifest(ec / "scores.parquet")
     m2 = sa._load_earnings_scores(dr)
     assert m2["AAA"]["summary"] == "Fresh call AAA." and m2["AAA"]["quarter"] == "Q2"
     assert m2["BBB"]["summary"] == "Seed outlook BBB."  # seed retained where no live row

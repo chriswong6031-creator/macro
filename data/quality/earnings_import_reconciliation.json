@@ -1,0 +1,1085 @@
+{
+  "schema": "earnings_import_reconciliation.v1",
+  "status": "reconciled",
+  "selection_rule": "one row per (document_ticker,fiscal_quarter,fiscal_year,call_date); max(updated_at), then max(created_at), max(id), source position",
+  "input_rows": 51156,
+  "output_rows": 50982,
+  "accepted_rows": 50982,
+  "rejected_rows": 174,
+  "duplicate_group_count": 1,
+  "duplicate_groups": [
+    {
+      "natural_key": {
+        "document_ticker": "AKSO.OL",
+        "fiscal_quarter": 4,
+        "fiscal_year": 2925,
+        "call_date": "2026-02-12"
+      },
+      "input_rows": 175,
+      "rejected_rows": 174,
+      "selected": {
+        "id": "c38722d6-63c4-49d9-aa52-6eb56e663c08",
+        "created_at": "2026-04-30T21:59:20.861849+00:00",
+        "updated_at": "2026-04-30T21:59:20.861849+00:00",
+        "earnings_call_sent": 22,
+        "earnings_call_perf": -3,
+        "earnings_call_combined": 19
+      },
+      "rejected": [
+        {
+          "id": "c631c210-9cb0-488e-8f32-61742b67cf94",
+          "created_at": "2026-02-19T11:48:43.686514+00:00",
+          "updated_at": "2026-02-19T11:48:43.686514+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "561b7e9f-9f48-4419-b3d9-d027437a8edd",
+          "created_at": "2026-02-19T16:26:03.035695+00:00",
+          "updated_at": "2026-02-19T16:26:03.035695+00:00",
+          "earnings_call_combined": 25
+        },
+        {
+          "id": "5836a19a-27b6-41e6-9739-a292bdf954ba",
+          "created_at": "2026-02-20T00:44:22.057743+00:00",
+          "updated_at": "2026-02-20T00:44:22.057743+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "aa876ba6-2b46-40c9-ac78-3d9cbeb8b3de",
+          "created_at": "2026-02-20T16:57:05.456534+00:00",
+          "updated_at": "2026-02-20T16:57:05.456534+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "a4c9bd6c-2735-4edb-826f-8231d305b1c7",
+          "created_at": "2026-02-21T00:22:07.113275+00:00",
+          "updated_at": "2026-02-21T00:22:07.113275+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "bdc93f94-3ec6-41fe-ab9a-bf13407e82b7",
+          "created_at": "2026-02-21T08:16:42.173941+00:00",
+          "updated_at": "2026-02-21T08:16:42.173941+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "a2bcda62-9fe2-450e-81e3-2f58e397b466",
+          "created_at": "2026-02-21T16:38:42.577642+00:00",
+          "updated_at": "2026-02-21T16:38:42.577642+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "e4b28d0c-fed9-4265-ba77-3ef6288eef27",
+          "created_at": "2026-02-22T01:02:18.053147+00:00",
+          "updated_at": "2026-02-22T01:02:18.053147+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "3a0caf5d-0913-4739-a03d-ce09e517b138",
+          "created_at": "2026-02-22T08:18:05.722654+00:00",
+          "updated_at": "2026-02-22T08:18:05.722654+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "55e6ecf4-bd13-44ad-af27-0a7f7a2f8845",
+          "created_at": "2026-02-22T16:34:50.516209+00:00",
+          "updated_at": "2026-02-22T16:34:50.516209+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "9e05aafa-2241-4bb6-b381-e9e2a3de6e12",
+          "created_at": "2026-02-24T00:38:08.541061+00:00",
+          "updated_at": "2026-02-24T00:38:08.541061+00:00",
+          "earnings_call_combined": 24
+        },
+        {
+          "id": "dea72be0-e322-4897-91a0-5532121a9bfd",
+          "created_at": "2026-02-24T09:01:42.203705+00:00",
+          "updated_at": "2026-02-24T09:01:42.203705+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "79d123d1-6ae6-421c-ad6d-ee26c4f068ef",
+          "created_at": "2026-02-24T16:31:44.408977+00:00",
+          "updated_at": "2026-02-24T16:31:44.408977+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "29eeeba5-58a2-40a5-97d4-a382e02097de",
+          "created_at": "2026-02-25T00:52:07.25376+00:00",
+          "updated_at": "2026-02-25T00:52:07.25376+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "8527916a-0221-4121-a097-417d7f74d4f2",
+          "created_at": "2026-02-25T08:20:53.096834+00:00",
+          "updated_at": "2026-02-25T08:20:53.096834+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "94472298-48b1-43db-b101-a6855634f55a",
+          "created_at": "2026-02-25T17:17:12.30733+00:00",
+          "updated_at": "2026-02-25T17:17:12.30733+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "3485d44b-6dfd-4b6b-bd3e-67e63c2653bd",
+          "created_at": "2026-02-26T01:04:28.102335+00:00",
+          "updated_at": "2026-02-26T01:04:28.102335+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "4fec952f-e51f-43c1-926b-40f56c9fe848",
+          "created_at": "2026-02-26T08:13:50.202462+00:00",
+          "updated_at": "2026-02-26T08:13:50.202462+00:00",
+          "earnings_call_combined": 25
+        },
+        {
+          "id": "12b3fd84-5b8a-4a25-8128-908dfaee5a02",
+          "created_at": "2026-02-26T16:52:51.154299+00:00",
+          "updated_at": "2026-02-26T16:52:51.154299+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "fb060303-b91a-40ef-b239-db89a04f5bd6",
+          "created_at": "2026-02-27T00:53:02.814788+00:00",
+          "updated_at": "2026-02-27T00:53:02.814788+00:00",
+          "earnings_call_combined": 26
+        },
+        {
+          "id": "64e1d037-c0ad-400d-8fc9-e6f8af5e689f",
+          "created_at": "2026-02-27T08:26:23.262379+00:00",
+          "updated_at": "2026-02-27T08:26:23.262379+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "39f4b9e5-4446-4fb4-b44d-726d11e75970",
+          "created_at": "2026-02-27T17:07:28.55337+00:00",
+          "updated_at": "2026-02-27T17:07:28.55337+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "06a3e8e0-3aad-415e-b531-4d77751ce0cf",
+          "created_at": "2026-02-28T00:36:51.597068+00:00",
+          "updated_at": "2026-02-28T00:36:51.597068+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "5972c95e-8087-49a6-a7d9-3c05f951f4c3",
+          "created_at": "2026-02-28T08:34:37.131226+00:00",
+          "updated_at": "2026-02-28T08:34:37.131226+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "51b3a4f8-60c2-4965-9f4a-9023772d82a8",
+          "created_at": "2026-02-28T16:59:20.809592+00:00",
+          "updated_at": "2026-02-28T16:59:20.809592+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "38a2577a-3b0d-4f89-8390-8ba74555c518",
+          "created_at": "2026-03-01T00:21:24.738011+00:00",
+          "updated_at": "2026-03-01T00:21:24.738011+00:00",
+          "earnings_call_combined": 24
+        },
+        {
+          "id": "b432cfc9-6e84-4ae5-ad28-34927f18dbd0",
+          "created_at": "2026-03-01T08:38:16.81914+00:00",
+          "updated_at": "2026-03-01T08:38:16.81914+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "341d30fb-865e-4a64-9a46-599285525b8a",
+          "created_at": "2026-03-01T16:54:59.47347+00:00",
+          "updated_at": "2026-03-01T16:54:59.47347+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "c1588def-e9d5-4f73-b641-5f44139d580a",
+          "created_at": "2026-03-03T00:56:22.038567+00:00",
+          "updated_at": "2026-03-03T00:56:22.038567+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "fe03ffa8-a990-4081-a025-4137e116bb80",
+          "created_at": "2026-03-03T09:01:12.338481+00:00",
+          "updated_at": "2026-03-03T09:01:12.338481+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "0d088f6f-7c83-4e93-81c6-232718caa36b",
+          "created_at": "2026-03-03T16:38:18.590092+00:00",
+          "updated_at": "2026-03-03T16:38:18.590092+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "48e0afee-6cca-41c8-b5d0-b3df7428e359",
+          "created_at": "2026-03-04T00:23:52.7576+00:00",
+          "updated_at": "2026-03-04T00:23:52.7576+00:00",
+          "earnings_call_combined": 14
+        },
+        {
+          "id": "23eac4f0-690b-45d4-b874-41262fadabf6",
+          "created_at": "2026-03-04T08:34:22.366732+00:00",
+          "updated_at": "2026-03-04T08:34:22.366732+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "808f50d1-3c14-447c-9dea-2f3d8e9fede2",
+          "created_at": "2026-03-04T16:59:25.566045+00:00",
+          "updated_at": "2026-03-04T16:59:25.566045+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "28b8e931-6d9d-4a1e-9231-44b2b7d656f0",
+          "created_at": "2026-03-05T00:23:12.073678+00:00",
+          "updated_at": "2026-03-05T00:23:12.073678+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "32c687bd-5578-4f75-8f7e-3424ab502ed7",
+          "created_at": "2026-03-05T08:36:30.489549+00:00",
+          "updated_at": "2026-03-05T08:36:30.489549+00:00",
+          "earnings_call_combined": 26
+        },
+        {
+          "id": "fcd6ff36-5ccf-4944-9862-1520d48e11b4",
+          "created_at": "2026-03-05T17:11:42.52826+00:00",
+          "updated_at": "2026-03-05T17:11:42.52826+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "b3d18b56-8f70-407c-a557-6f1e9b38a89c",
+          "created_at": "2026-03-06T00:37:31.929534+00:00",
+          "updated_at": "2026-03-06T00:37:31.929534+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "fcba6560-10fd-4abe-9c62-10bcadbb6228",
+          "created_at": "2026-03-06T08:18:31.195388+00:00",
+          "updated_at": "2026-03-06T08:18:31.195388+00:00",
+          "earnings_call_combined": 12
+        },
+        {
+          "id": "641a5b3b-b2b4-4ade-86e1-52aae978a36c",
+          "created_at": "2026-03-06T17:01:22.96813+00:00",
+          "updated_at": "2026-03-06T17:01:22.96813+00:00",
+          "earnings_call_combined": 24
+        },
+        {
+          "id": "f6c34ab4-c6a0-4a02-a483-734e27bd3218",
+          "created_at": "2026-03-07T00:14:40.900598+00:00",
+          "updated_at": "2026-03-07T00:14:40.900598+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "6abfabbc-4d2c-439b-b533-fc0bb626010a",
+          "created_at": "2026-03-07T08:20:12.62205+00:00",
+          "updated_at": "2026-03-07T08:20:12.62205+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "9bab1433-d630-4aab-bce5-d9810ea4be79",
+          "created_at": "2026-03-07T16:49:58.848683+00:00",
+          "updated_at": "2026-03-07T16:49:58.848683+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "6ac39def-3f89-4f39-86b9-3b600665c2ce",
+          "created_at": "2026-03-08T00:08:26.350576+00:00",
+          "updated_at": "2026-03-08T00:08:26.350576+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "b136c4f5-4bd3-45a4-87e4-7eb3cc975b19",
+          "created_at": "2026-03-08T08:28:18.837396+00:00",
+          "updated_at": "2026-03-08T08:28:18.837396+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "e767f47f-939e-4763-9121-97f9f27e6e4e",
+          "created_at": "2026-03-08T16:47:55.356552+00:00",
+          "updated_at": "2026-03-08T16:47:55.356552+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "47c4160e-db65-4549-83be-79ed59cb7b1b",
+          "created_at": "2026-03-10T00:30:53.912216+00:00",
+          "updated_at": "2026-03-10T00:30:53.912216+00:00",
+          "earnings_call_combined": 27
+        },
+        {
+          "id": "07189320-6013-41bb-a69d-6cde56220cae",
+          "created_at": "2026-03-10T08:57:40.635251+00:00",
+          "updated_at": "2026-03-10T08:57:40.635251+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "2718856b-cd3c-4cd5-b39f-d9dde1b040e8",
+          "created_at": "2026-03-10T16:23:21.722763+00:00",
+          "updated_at": "2026-03-10T16:23:21.722763+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "65f9bb0b-b514-4314-ab76-2395e6ecdc5a",
+          "created_at": "2026-03-11T00:49:53.309907+00:00",
+          "updated_at": "2026-03-11T00:49:53.309907+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "4255d0b3-bdba-45f2-9e40-a588e2ecf9ac",
+          "created_at": "2026-03-11T08:11:53.411437+00:00",
+          "updated_at": "2026-03-11T08:11:53.411437+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "f968fad0-8df0-452a-bd96-a1dedfa4817c",
+          "created_at": "2026-03-11T16:35:32.004346+00:00",
+          "updated_at": "2026-03-11T16:35:32.004346+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "cc96bb4e-4e31-45b0-b476-58b955f251e8",
+          "created_at": "2026-03-12T00:10:32.588698+00:00",
+          "updated_at": "2026-03-12T00:10:32.588698+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "3701ac53-7fa5-4fdb-8d4b-709b8275814c",
+          "created_at": "2026-03-12T08:45:34.792526+00:00",
+          "updated_at": "2026-03-12T08:45:34.792526+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "61a26b0a-c4f6-4945-b554-03f9a9881e51",
+          "created_at": "2026-03-12T16:09:24.547714+00:00",
+          "updated_at": "2026-03-12T16:09:24.547714+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "0164ca70-780b-47f2-9e79-39e64c0e6bac",
+          "created_at": "2026-03-13T00:06:50.158894+00:00",
+          "updated_at": "2026-03-13T00:06:50.158894+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "f26be2ba-ec9c-41ee-b748-26f84b359c38",
+          "created_at": "2026-03-13T08:41:00.703776+00:00",
+          "updated_at": "2026-03-13T08:41:00.703776+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "f9b9713c-4eaa-47a8-90cf-d366dc2b18b5",
+          "created_at": "2026-03-13T16:51:47.81922+00:00",
+          "updated_at": "2026-03-13T16:51:47.81922+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "445e135c-d1d9-4644-b355-17d8abe8f306",
+          "created_at": "2026-03-14T00:14:23.496649+00:00",
+          "updated_at": "2026-03-14T00:14:23.496649+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "5709b25e-0788-4e21-9961-b7d2678caf70",
+          "created_at": "2026-03-14T08:36:17.561912+00:00",
+          "updated_at": "2026-03-14T08:36:17.561912+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "614489c6-0e00-469c-8b31-e2758a72c4c7",
+          "created_at": "2026-03-14T16:56:46.929543+00:00",
+          "updated_at": "2026-03-14T16:56:46.929543+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "a184ad5c-c2cf-47fb-8074-01b47aa41c30",
+          "created_at": "2026-03-15T00:18:52.470743+00:00",
+          "updated_at": "2026-03-15T00:18:52.470743+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "0df08c3b-52b6-49ea-805b-46f8d88461c8",
+          "created_at": "2026-03-15T08:39:09.760094+00:00",
+          "updated_at": "2026-03-15T08:39:09.760094+00:00",
+          "earnings_call_combined": 27
+        },
+        {
+          "id": "1bc38604-b2ef-4351-9153-5cef0dd48dd8",
+          "created_at": "2026-03-15T16:59:30.8151+00:00",
+          "updated_at": "2026-03-15T16:59:30.8151+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "7182008e-8266-4ecc-a7ee-816b52a22dbb",
+          "created_at": "2026-03-17T00:44:19.753835+00:00",
+          "updated_at": "2026-03-17T00:44:19.753835+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "5edd22a7-d89a-431c-bbfd-119d68ddc9f6",
+          "created_at": "2026-03-17T16:36:17.797823+00:00",
+          "updated_at": "2026-03-17T16:36:17.797823+00:00",
+          "earnings_call_combined": 24
+        },
+        {
+          "id": "d25ee0f9-8545-47f0-9395-41cb4e789b24",
+          "created_at": "2026-03-18T00:09:27.976262+00:00",
+          "updated_at": "2026-03-18T00:09:27.976262+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "797480ca-0057-4969-8cb2-5e3f9155575f",
+          "created_at": "2026-03-18T08:41:40.897924+00:00",
+          "updated_at": "2026-03-18T08:41:40.897924+00:00",
+          "earnings_call_combined": 26
+        },
+        {
+          "id": "35748f5b-2235-475e-ae94-94ebea731e8f",
+          "created_at": "2026-03-18T16:04:53.27726+00:00",
+          "updated_at": "2026-03-18T16:04:53.27726+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "f19dec02-dc46-4098-a8c7-c2a1c6b57d30",
+          "created_at": "2026-03-19T00:46:54.769605+00:00",
+          "updated_at": "2026-03-19T00:46:54.769605+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "7d46ff91-d818-47f6-a645-72f72f2fb287",
+          "created_at": "2026-03-19T08:06:48.256388+00:00",
+          "updated_at": "2026-03-19T08:06:48.256388+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "e6c573a3-7852-47d0-a80b-5cb4481c587f",
+          "created_at": "2026-03-19T16:30:19.82595+00:00",
+          "updated_at": "2026-03-19T16:30:19.82595+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "7973a909-6e33-4213-a265-74d172a3b713",
+          "created_at": "2026-03-20T00:09:01.065242+00:00",
+          "updated_at": "2026-03-20T00:09:01.065242+00:00",
+          "earnings_call_combined": 12
+        },
+        {
+          "id": "4d264a0f-7bca-4e29-b7bb-e30acc074a55",
+          "created_at": "2026-03-20T08:39:17.207044+00:00",
+          "updated_at": "2026-03-20T08:39:17.207044+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "0577b7d3-a501-43ea-b2dd-5694f9006024",
+          "created_at": "2026-03-21T00:09:29.745816+00:00",
+          "updated_at": "2026-03-21T00:09:29.745816+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "c15e78a1-6a31-4ee5-8409-8a251e63f3ac",
+          "created_at": "2026-03-21T08:32:05.573795+00:00",
+          "updated_at": "2026-03-21T08:32:05.573795+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "6d41b1b3-803d-4e77-82ef-457f8eaca6f6",
+          "created_at": "2026-03-21T16:54:36.123691+00:00",
+          "updated_at": "2026-03-21T16:54:36.123691+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "66a48bc8-19ec-485f-af68-091ab5e96c46",
+          "created_at": "2026-03-22T00:13:47.979793+00:00",
+          "updated_at": "2026-03-22T00:13:47.979793+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "7487fb21-6fa9-4c40-8161-b71b4e0a40bc",
+          "created_at": "2026-03-22T08:33:45.552449+00:00",
+          "updated_at": "2026-03-22T08:33:45.552449+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "615d0d7c-da68-431c-b682-1a8afbacf5bb",
+          "created_at": "2026-03-22T16:54:37.490334+00:00",
+          "updated_at": "2026-03-22T16:54:37.490334+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "5cf0c8dd-3607-4a2f-977e-e99b42230325",
+          "created_at": "2026-03-24T00:38:44.371986+00:00",
+          "updated_at": "2026-03-24T00:38:44.371986+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "f9b96fa3-1886-4b7e-af62-8c2fada1cca5",
+          "created_at": "2026-03-24T09:01:06.588764+00:00",
+          "updated_at": "2026-03-24T09:01:06.588764+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "bd9d7cdd-f2d9-405c-be2d-57b4f14fe0a3",
+          "created_at": "2026-03-25T00:51:00.257386+00:00",
+          "updated_at": "2026-03-25T00:51:00.257386+00:00",
+          "earnings_call_combined": 14
+        },
+        {
+          "id": "8f17c0af-71a1-4e54-b291-8e9ec3376fca",
+          "created_at": "2026-03-25T08:15:43.262662+00:00",
+          "updated_at": "2026-03-25T08:15:43.262662+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "4a6ac16d-c7dd-44b3-a055-2f8fbe63aac0",
+          "created_at": "2026-03-25T16:57:29.097385+00:00",
+          "updated_at": "2026-03-25T16:57:29.097385+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "d4456ccd-d023-4ddf-af75-f17e813b74f4",
+          "created_at": "2026-03-26T00:57:53.34007+00:00",
+          "updated_at": "2026-03-26T00:57:53.34007+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "888ba75f-8ff0-4b0d-8539-1c55cf5cfba5",
+          "created_at": "2026-03-26T08:44:20.413487+00:00",
+          "updated_at": "2026-03-26T08:44:20.413487+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "b4aa507b-646b-4f6d-8de3-936cdc13cf65",
+          "created_at": "2026-03-26T16:10:04.238347+00:00",
+          "updated_at": "2026-03-26T16:10:04.238347+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "a58a6558-5278-4bc7-9bf9-38d61c719b02",
+          "created_at": "2026-03-27T10:02:51.216528+00:00",
+          "updated_at": "2026-03-27T10:02:51.216528+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "678bf8a4-f2db-4ce9-9d51-3410c9ad64e5",
+          "created_at": "2026-03-27T18:02:36.587733+00:00",
+          "updated_at": "2026-03-27T18:02:36.587733+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "cc1862cf-4bc9-491c-a9a7-9fc632804f63",
+          "created_at": "2026-03-28T02:04:21.997069+00:00",
+          "updated_at": "2026-03-28T02:04:21.997069+00:00",
+          "earnings_call_combined": 13
+        },
+        {
+          "id": "8671453a-79f5-4991-8a1b-f7602ed2f5f0",
+          "created_at": "2026-03-28T10:02:55.753892+00:00",
+          "updated_at": "2026-03-28T10:02:55.753892+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "48e37d90-ad69-447d-aa3f-b4338916e436",
+          "created_at": "2026-03-28T18:03:06.062244+00:00",
+          "updated_at": "2026-03-28T18:03:06.062244+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "c2408745-4b16-4d1b-a397-d46acb7420f0",
+          "created_at": "2026-03-29T02:03:17.022197+00:00",
+          "updated_at": "2026-03-29T02:03:17.022197+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "808521fc-2929-4096-bfaa-429be4043f9b",
+          "created_at": "2026-03-29T10:02:37.459031+00:00",
+          "updated_at": "2026-03-29T10:02:37.459031+00:00",
+          "earnings_call_combined": 23
+        },
+        {
+          "id": "cd395d5a-e17c-4c92-9a5a-082147e70102",
+          "created_at": "2026-03-29T18:02:48.672989+00:00",
+          "updated_at": "2026-03-29T18:02:48.672989+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "ab952909-947b-4ca0-a639-9597f4cc1955",
+          "created_at": "2026-03-31T02:02:48.862316+00:00",
+          "updated_at": "2026-03-31T02:02:48.862316+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "0ed43946-d628-498f-a909-50a9bbe380c3",
+          "created_at": "2026-03-31T10:04:59.622061+00:00",
+          "updated_at": "2026-03-31T10:04:59.622061+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "c58c6610-d18b-4a59-a00d-1f01f7aefee6",
+          "created_at": "2026-03-31T18:12:31.022901+00:00",
+          "updated_at": "2026-03-31T18:12:31.022901+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "4ec8c675-664b-4680-bc9d-0b80cdc1aa31",
+          "created_at": "2026-04-01T02:03:03.959421+00:00",
+          "updated_at": "2026-04-01T02:03:03.959421+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "f562c3ac-c0da-473c-b46c-1dce003bfbe3",
+          "created_at": "2026-04-01T10:03:19.651328+00:00",
+          "updated_at": "2026-04-01T10:03:19.651328+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "eee09dae-c3b7-49e7-a416-8be4fc24db94",
+          "created_at": "2026-04-01T18:24:34.106422+00:00",
+          "updated_at": "2026-04-01T18:24:34.106422+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "87d62e51-fe92-4e4a-b22e-0d1b7c9b15ee",
+          "created_at": "2026-04-02T02:24:45.681249+00:00",
+          "updated_at": "2026-04-02T02:24:45.681249+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "6f484dd4-d863-4213-a837-63437ee951d2",
+          "created_at": "2026-04-02T10:03:44.851345+00:00",
+          "updated_at": "2026-04-02T10:03:44.851345+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "ca7f4325-277a-4472-afd5-90779f43f7ac",
+          "created_at": "2026-04-02T18:18:20.551433+00:00",
+          "updated_at": "2026-04-02T18:18:20.551433+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "2a7045a0-1ac0-47d5-b194-e9ef2b704258",
+          "created_at": "2026-04-03T02:02:35.980523+00:00",
+          "updated_at": "2026-04-03T02:02:35.980523+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "19737a3e-c51c-49b0-b7af-80edcdfc4a71",
+          "created_at": "2026-04-03T10:03:44.433543+00:00",
+          "updated_at": "2026-04-03T10:03:44.433543+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "10bf70b8-713b-43df-b8c2-851787907ac4",
+          "created_at": "2026-04-04T02:02:42.750816+00:00",
+          "updated_at": "2026-04-04T02:02:42.750816+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "08eec994-7ecf-4080-a117-0cd26274b61f",
+          "created_at": "2026-04-04T10:02:06.840596+00:00",
+          "updated_at": "2026-04-04T10:02:06.840596+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "1663c955-f5f9-4997-beb7-a812f757e96d",
+          "created_at": "2026-04-04T18:02:53.774792+00:00",
+          "updated_at": "2026-04-04T18:02:53.774792+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "700d5176-710d-4aad-9ae1-d3341964590f",
+          "created_at": "2026-04-05T02:03:03.409614+00:00",
+          "updated_at": "2026-04-05T02:03:03.409614+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "0f995c32-b92e-48bf-bf5a-16343ea986fc",
+          "created_at": "2026-04-05T10:03:03.928921+00:00",
+          "updated_at": "2026-04-05T10:03:03.928921+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "e409a341-03ec-4855-9fa5-1128c52e65bf",
+          "created_at": "2026-04-05T18:02:48.125684+00:00",
+          "updated_at": "2026-04-05T18:02:48.125684+00:00",
+          "earnings_call_combined": 27
+        },
+        {
+          "id": "2bf3b6ba-202e-48ff-be13-b66f2147715c",
+          "created_at": "2026-04-07T02:02:30.768277+00:00",
+          "updated_at": "2026-04-07T02:02:30.768277+00:00",
+          "earnings_call_combined": 23
+        },
+        {
+          "id": "6534ff91-005e-45b6-b9ec-56390da6f526",
+          "created_at": "2026-04-07T10:02:21.436897+00:00",
+          "updated_at": "2026-04-07T10:02:21.436897+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "8194bac8-311a-4101-8f90-0fbb5c4ecf09",
+          "created_at": "2026-04-07T18:07:10.643947+00:00",
+          "updated_at": "2026-04-07T18:07:10.643947+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "8a3ebfbf-b5c6-4268-9b68-b765635b2de9",
+          "created_at": "2026-04-08T02:03:12.654346+00:00",
+          "updated_at": "2026-04-08T02:03:12.654346+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "a6ce220f-8dda-4524-925e-60f0116c6033",
+          "created_at": "2026-04-08T10:02:26.422552+00:00",
+          "updated_at": "2026-04-08T10:02:26.422552+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "289e8303-9a1b-4738-869e-5921901807c7",
+          "created_at": "2026-04-08T18:18:57.438345+00:00",
+          "updated_at": "2026-04-08T18:18:57.438345+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "5133a23a-ba6b-4dbe-8971-5c9eb33db16c",
+          "created_at": "2026-04-09T02:04:42.16224+00:00",
+          "updated_at": "2026-04-09T02:04:42.16224+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "727b8bbe-cfa3-4839-860a-b1c26b214c1a",
+          "created_at": "2026-04-09T10:02:13.990521+00:00",
+          "updated_at": "2026-04-09T10:02:13.990521+00:00",
+          "earnings_call_combined": 26
+        },
+        {
+          "id": "2da9ebe2-140e-49a2-addf-c51c95dfb532",
+          "created_at": "2026-04-09T18:13:44.918628+00:00",
+          "updated_at": "2026-04-09T18:13:44.918628+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "314b3518-fa98-41ed-a4c5-d3701a3972ca",
+          "created_at": "2026-04-10T10:03:46.743553+00:00",
+          "updated_at": "2026-04-10T10:03:46.743553+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "36662488-dfcd-4fa3-89d5-70ed2661a5e1",
+          "created_at": "2026-04-10T18:06:36.887609+00:00",
+          "updated_at": "2026-04-10T18:06:36.887609+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "40c9dd30-2bbe-45c4-8299-cb46f18bfbb8",
+          "created_at": "2026-04-11T02:04:34.848082+00:00",
+          "updated_at": "2026-04-11T02:04:34.848082+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "99134eb7-aefd-4b71-bb26-2c88949cdf34",
+          "created_at": "2026-04-11T10:02:53.948003+00:00",
+          "updated_at": "2026-04-11T10:02:53.948003+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "2fc7092f-afe1-4238-bc27-63995b3cd994",
+          "created_at": "2026-04-11T18:02:34.580715+00:00",
+          "updated_at": "2026-04-11T18:02:34.580715+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "cdd5a4d8-3701-444c-aa6a-c79cc4af3c9b",
+          "created_at": "2026-04-12T02:03:27.646545+00:00",
+          "updated_at": "2026-04-12T02:03:27.646545+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "5987d737-cea7-4eed-a13d-5b180312a696",
+          "created_at": "2026-04-12T10:03:01.358237+00:00",
+          "updated_at": "2026-04-12T10:03:01.358237+00:00",
+          "earnings_call_combined": 13
+        },
+        {
+          "id": "0d9763d7-8786-4aa8-9f42-a3d882bf4e83",
+          "created_at": "2026-04-12T18:02:59.776311+00:00",
+          "updated_at": "2026-04-12T18:02:59.776311+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "77f1cfb8-8a80-4ab9-9965-52c41763d692",
+          "created_at": "2026-04-14T02:06:41.594391+00:00",
+          "updated_at": "2026-04-14T02:06:41.594391+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "217364f2-1063-4ce0-b51a-36498fab9a6f",
+          "created_at": "2026-04-14T10:03:15.100629+00:00",
+          "updated_at": "2026-04-14T10:03:15.100629+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "1d88b4c0-8442-4813-a7ad-e1d3b8fff940",
+          "created_at": "2026-04-14T18:09:53.086435+00:00",
+          "updated_at": "2026-04-14T18:09:53.086435+00:00",
+          "earnings_call_combined": 24
+        },
+        {
+          "id": "a33032e7-1b50-482b-8187-9c02d24705fc",
+          "created_at": "2026-04-15T02:10:24.005664+00:00",
+          "updated_at": "2026-04-15T02:10:24.005664+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "1e607ef6-36eb-4f7c-8125-d7081d2c6b40",
+          "created_at": "2026-04-15T10:03:27.864044+00:00",
+          "updated_at": "2026-04-15T10:03:27.864044+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "9442ffb0-fc18-418e-b6de-59f46cbb9285",
+          "created_at": "2026-04-15T18:16:41.575612+00:00",
+          "updated_at": "2026-04-15T18:16:41.575612+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "d29e7bca-cbfe-4ae4-94c2-4ffff19d831f",
+          "created_at": "2026-04-16T02:04:53.906836+00:00",
+          "updated_at": "2026-04-16T02:04:53.906836+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "f78f3b4b-fb9f-4d0c-9a6e-2f65674c0881",
+          "created_at": "2026-04-16T10:02:56.62612+00:00",
+          "updated_at": "2026-04-16T10:02:56.62612+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "ff506e02-7653-4034-b5fc-0266fa8e672c",
+          "created_at": "2026-04-16T18:28:22.371627+00:00",
+          "updated_at": "2026-04-16T18:28:22.371627+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "3e46ec5d-6c5e-419a-842e-46f809da693b",
+          "created_at": "2026-04-17T02:16:09.046173+00:00",
+          "updated_at": "2026-04-17T02:16:09.046173+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "36dd7d11-dd2d-48ef-bd28-d0ae7e684377",
+          "created_at": "2026-04-17T10:02:40.234618+00:00",
+          "updated_at": "2026-04-17T10:02:40.234618+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "11b7c9eb-5439-4344-830c-1985c1b0846f",
+          "created_at": "2026-04-17T18:40:34.417965+00:00",
+          "updated_at": "2026-04-17T18:40:34.417965+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "cfcc356c-f359-4cb3-84fa-701e65eb1411",
+          "created_at": "2026-04-18T02:02:42.718081+00:00",
+          "updated_at": "2026-04-18T02:02:42.718081+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "cf14da57-b165-4f9c-8656-f5acc0f3d15b",
+          "created_at": "2026-04-18T10:02:28.44585+00:00",
+          "updated_at": "2026-04-18T10:02:28.44585+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "4363def9-f803-41ef-9f56-106a532e2f0a",
+          "created_at": "2026-04-18T18:02:44.76707+00:00",
+          "updated_at": "2026-04-18T18:02:44.76707+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "d5bf1fa8-d0c2-45d2-955f-1b2a27be6f59",
+          "created_at": "2026-04-19T02:02:46.328959+00:00",
+          "updated_at": "2026-04-19T02:02:46.328959+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "982c5703-7245-4f5b-90e2-393a1db292a1",
+          "created_at": "2026-04-19T10:03:21.683991+00:00",
+          "updated_at": "2026-04-19T10:03:21.683991+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "71aef91b-023a-4f0b-bf01-cc24cfa5a2d6",
+          "created_at": "2026-04-19T18:02:33.673158+00:00",
+          "updated_at": "2026-04-19T18:02:33.673158+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "2e17c042-a866-48b0-b519-22233407e8c1",
+          "created_at": "2026-04-21T02:14:46.436435+00:00",
+          "updated_at": "2026-04-21T02:14:46.436435+00:00",
+          "earnings_call_combined": 14
+        },
+        {
+          "id": "5fa4ff86-f305-4270-ae2f-6a8f5d0c0615",
+          "created_at": "2026-04-21T10:03:28.491699+00:00",
+          "updated_at": "2026-04-21T10:03:28.491699+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "88807f3f-92bd-45a3-9248-02c61c9d8e32",
+          "created_at": "2026-04-21T18:46:46.810281+00:00",
+          "updated_at": "2026-04-21T18:46:46.810281+00:00",
+          "earnings_call_combined": 20
+        },
+        {
+          "id": "409a1210-b15f-4b33-be87-27ab51bf85d7",
+          "created_at": "2026-04-22T02:33:03.19153+00:00",
+          "updated_at": "2026-04-22T02:33:03.19153+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "1d9a440d-4b2d-4a8d-83c8-2db77eccf4bf",
+          "created_at": "2026-04-22T10:05:35.577481+00:00",
+          "updated_at": "2026-04-22T10:05:35.577481+00:00",
+          "earnings_call_combined": 19
+        },
+        {
+          "id": "4f09c164-5e72-4c55-bcb3-2f0c0630454a",
+          "created_at": "2026-04-22T18:42:43.472745+00:00",
+          "updated_at": "2026-04-22T18:42:43.472745+00:00",
+          "earnings_call_combined": 27
+        },
+        {
+          "id": "448b3158-6a4b-409c-8929-e79774b91b64",
+          "created_at": "2026-04-23T03:28:08.166743+00:00",
+          "updated_at": "2026-04-23T03:28:08.166743+00:00",
+          "earnings_call_combined": 26
+        },
+        {
+          "id": "6ce2166a-3cbc-4ca5-af7c-079d2e1ed6b0",
+          "created_at": "2026-04-23T10:07:22.579005+00:00",
+          "updated_at": "2026-04-23T10:07:22.579005+00:00",
+          "earnings_call_combined": 25
+        },
+        {
+          "id": "8c129353-b670-4478-8b02-8c0e5389d2d5",
+          "created_at": "2026-04-23T20:34:45.23505+00:00",
+          "updated_at": "2026-04-23T20:34:45.23505+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "f2534403-1724-47f3-9b3f-59c4a861513f",
+          "created_at": "2026-04-24T02:43:18.944478+00:00",
+          "updated_at": "2026-04-24T02:43:18.944478+00:00",
+          "earnings_call_combined": 27
+        },
+        {
+          "id": "f838a0a1-7031-4966-a1b0-fd14b38add76",
+          "created_at": "2026-04-24T10:30:38.547314+00:00",
+          "updated_at": "2026-04-24T10:30:38.547314+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "6cf080c0-4306-4eec-a538-4e1fd3c2835d",
+          "created_at": "2026-04-24T19:01:19.800716+00:00",
+          "updated_at": "2026-04-24T19:01:19.800716+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "bf235f0b-cf79-4355-b92d-7fb6d304cf1b",
+          "created_at": "2026-04-25T02:06:53.497281+00:00",
+          "updated_at": "2026-04-25T02:06:53.497281+00:00",
+          "earnings_call_combined": 18
+        },
+        {
+          "id": "3527f774-7c61-4724-b12c-d4b5675f9904",
+          "created_at": "2026-04-25T10:03:17.572995+00:00",
+          "updated_at": "2026-04-25T10:03:17.572995+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "122e8cff-e75d-4ff8-b365-2c925932e884",
+          "created_at": "2026-04-25T18:03:05.366845+00:00",
+          "updated_at": "2026-04-25T18:03:05.366845+00:00",
+          "earnings_call_combined": 14
+        },
+        {
+          "id": "a0bcd435-ff30-407c-961e-5bbce5989346",
+          "created_at": "2026-04-26T02:03:16.727443+00:00",
+          "updated_at": "2026-04-26T02:03:16.727443+00:00",
+          "earnings_call_combined": 17
+        },
+        {
+          "id": "d51dc70b-7a9e-4ec7-81d0-b168de31d851",
+          "created_at": "2026-04-26T10:02:56.409293+00:00",
+          "updated_at": "2026-04-26T10:02:56.409293+00:00",
+          "earnings_call_combined": 24
+        },
+        {
+          "id": "69f95280-db11-4438-9c03-3217976af237",
+          "created_at": "2026-04-26T18:03:03.224456+00:00",
+          "updated_at": "2026-04-26T18:03:03.224456+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "05e0edeb-44c7-492b-bac9-00820fc45a6e",
+          "created_at": "2026-04-28T02:34:27.997351+00:00",
+          "updated_at": "2026-04-28T02:34:27.997351+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "47dbd7d1-faa5-488d-a21c-ae29a3a4b554",
+          "created_at": "2026-04-28T10:12:49.530975+00:00",
+          "updated_at": "2026-04-28T10:12:49.530975+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "d89779fa-45c1-4d8b-a2d2-cbf1b50a72e4",
+          "created_at": "2026-04-28T19:34:50.08669+00:00",
+          "updated_at": "2026-04-28T19:34:50.08669+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "50cec10d-7320-41fb-9a21-106faf53c04f",
+          "created_at": "2026-04-29T02:24:38.897472+00:00",
+          "updated_at": "2026-04-29T02:24:38.897472+00:00",
+          "earnings_call_combined": 21
+        },
+        {
+          "id": "ec9a1261-a3d0-44a6-a79d-7896e933d80d",
+          "created_at": "2026-04-29T11:03:49.394954+00:00",
+          "updated_at": "2026-04-29T11:03:49.394954+00:00",
+          "earnings_call_combined": 16
+        },
+        {
+          "id": "39ab4434-ae9c-41f6-8147-c2b4f00cc23a",
+          "created_at": "2026-04-29T20:44:16.125453+00:00",
+          "updated_at": "2026-04-29T20:44:16.125453+00:00",
+          "earnings_call_combined": 15
+        },
+        {
+          "id": "07f18b19-8523-4390-a7a5-189aa9a30df2",
+          "created_at": "2026-04-30T03:07:58.328777+00:00",
+          "updated_at": "2026-04-30T03:07:58.328777+00:00",
+          "earnings_call_combined": 23
+        },
+        {
+          "id": "9d076201-eb6f-41c5-a3ae-996b201118b6",
+          "created_at": "2026-04-30T10:12:27.134758+00:00",
+          "updated_at": "2026-04-30T10:12:27.134758+00:00",
+          "earnings_call_combined": 19
+        }
+      ]
+    }
+  ],
+  "generated_at": "2026-08-01T09:58:23.279403+00:00",
+  "source_file": "earnings_call_data.json",
+  "source_path": "/Users/chriswong/Documents/Cluade/equitydesk_backfill/delta_2026-07-31/earnings_call_data.json",
+  "source_bytes": 637953791,
+  "source_sha256": "6c3bb9174e89937c1a0b3896c639e1a9d1ff4adc03f7a37c42ad64a9c509e7b7",
+  "source_updated_at_max": "2026-08-01 08:08:38.565289+00:00",
+  "invalid_fiscal_period_rows": 17,
+  "is_context_only": true,
+  "display_only": true
+}

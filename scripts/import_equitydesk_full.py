@@ -17,10 +17,12 @@ Design rules:
 from __future__ import annotations
 
 import json
+import hashlib
 import logging
 import os
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +41,9 @@ BACKFILL_SRC = Path(os.environ.get(
 ))
 SEED_DIR = _REPO_ROOT / "data" / "stage_analysis" / "backfill"
 MANIFEST_PATH = SEED_DIR / "_manifest.json"
+EARNINGS_RECONCILIATION_PATH = (
+    _REPO_ROOT / "data" / "quality" / "earnings_import_reconciliation.json"
+)
 
 # Size threshold (bytes) above which we split text cols into a separate file
 _TEXT_SPLIT_THRESHOLD_BYTES = 40 * 1024 * 1024  # 40 MB
@@ -47,6 +52,12 @@ _TEXT_SPLIT_THRESHOLD_BYTES = 40 * 1024 * 1024  # 40 MB
 # Earnings columns
 # ---------------------------------------------------------------------------
 _EC_NUMERIC_COLS = [
+    # Source-row provenance is deliberately retained.  It is required to make
+    # duplicate correction deterministic and auditable rather than depending on
+    # whatever order Supabase happened to return.
+    "id",
+    "created_at",
+    "updated_at",
     "document_ticker",
     "company_ticker",
     "company_name",
@@ -76,6 +87,9 @@ _EC_NUMERIC_COLS = [
     "level1_tags",
     "level2_tags",
     "file_path",
+]
+_EC_DERIVED_PROVENANCE_COLS = [
+    "analysis_model", "analysis_schema_version", "prompt_version",
 ]
 _EC_TEXT_COLS = [
     "summary",
@@ -153,6 +167,138 @@ def _atomic_write(df: pd.DataFrame, dest: Path) -> None:
     except Exception:
         tmp_path.unlink(missing_ok=True)
         raise
+
+
+def _atomic_json(payload: dict[str, Any], dest: Path) -> None:
+    """Write one JSON contract atomically."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        dir=dest.parent, suffix=".tmp.json", mode="w", delete=False,
+        encoding="utf-8",
+    ) as tmp:
+        json.dump(payload, tmp, indent=2, ensure_ascii=False)
+        tmp.write("\n")
+        tmp_path = Path(tmp.name)
+    try:
+        os.replace(tmp_path, dest)
+    except Exception:
+        tmp_path.unlink(missing_ok=True)
+        raise
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _json_scalar(value: Any) -> Any:
+    if value is None or value is pd.NA:
+        return None
+    try:
+        if pd.isna(value):
+            return None
+    except (TypeError, ValueError):
+        pass
+    if hasattr(value, "item"):
+        try:
+            value = value.item()
+        except Exception:
+            pass
+    return value if isinstance(value, (str, int, float, bool)) else str(value)
+
+
+def _dedupe_earnings_rows(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, Any]]:
+    """Choose one deterministic winner per vendor natural key.
+
+    ``updated_at`` is the correction clock.  ``created_at``, ``id`` and source
+    position are deterministic tie-breakers only.  The returned reconciliation
+    includes every rejected source id for the small number of conflicting
+    groups, so a 51,156 -> 50,982 reduction can never disappear behind a row
+    count with no receipt.
+    """
+    keys = ["document_ticker", "fiscal_quarter", "fiscal_year", "call_date"]
+    missing = [key for key in keys if key not in df.columns]
+    if missing:
+        return df.copy(), {
+            "schema": "earnings_import_reconciliation.v1",
+            "status": "invalid_contract",
+            "missing_natural_key_columns": missing,
+            "input_rows": int(len(df)),
+            "output_rows": int(len(df)),
+            "rejected_rows": 0,
+            "duplicate_group_count": 0,
+            "duplicate_groups": [],
+        }
+
+    work = df.copy()
+    work["_source_position"] = range(len(work))
+    for col in ("updated_at", "created_at"):
+        raw = work[col] if col in work.columns else pd.Series(None, index=work.index)
+        work[f"_{col}_dt"] = pd.to_datetime(raw, utc=True, errors="coerce")
+    if "id" not in work.columns:
+        work["id"] = None
+    work["_id_sort"] = work["id"].fillna("").astype(str)
+
+    order = keys + ["_updated_at_dt", "_created_at_dt", "_id_sort", "_source_position"]
+    ranked = work.sort_values(order, kind="mergesort", na_position="first")
+    winners = ranked.drop_duplicates(subset=keys, keep="last")
+    winner_positions = set(winners["_source_position"].astype(int).tolist())
+
+    duplicate_groups: list[dict[str, Any]] = []
+    for group_key, group in ranked.groupby(keys, dropna=False, sort=True):
+        if len(group) <= 1:
+            continue
+        winner = group.iloc[-1]
+        rejected = group.iloc[:-1]
+        duplicate_groups.append({
+            "natural_key": {
+                key: _json_scalar(value) for key, value in zip(keys, group_key)
+            },
+            "input_rows": int(len(group)),
+            "rejected_rows": int(len(rejected)),
+            "selected": {
+                "id": _json_scalar(winner.get("id")),
+                "created_at": _json_scalar(winner.get("created_at")),
+                "updated_at": _json_scalar(winner.get("updated_at")),
+                "earnings_call_sent": _json_scalar(winner.get("earnings_call_sent")),
+                "earnings_call_perf": _json_scalar(winner.get("earnings_call_perf")),
+                "earnings_call_combined": _json_scalar(
+                    winner.get("earnings_call_combined")
+                ),
+            },
+            "rejected": [{
+                "id": _json_scalar(row.get("id")),
+                "created_at": _json_scalar(row.get("created_at")),
+                "updated_at": _json_scalar(row.get("updated_at")),
+                "earnings_call_combined": _json_scalar(
+                    row.get("earnings_call_combined")
+                ),
+            } for _, row in rejected.iterrows()],
+        })
+
+    helpers = [
+        "_source_position", "_updated_at_dt", "_created_at_dt", "_id_sort",
+    ]
+    output = work[work["_source_position"].isin(winner_positions)].copy()
+    output = output.sort_values("_source_position", kind="mergesort").drop(columns=helpers)
+    reconciliation = {
+        "schema": "earnings_import_reconciliation.v1",
+        "status": "reconciled",
+        "selection_rule": (
+            "one row per (document_ticker,fiscal_quarter,fiscal_year,call_date); "
+            "max(updated_at), then max(created_at), max(id), source position"
+        ),
+        "input_rows": int(len(df)),
+        "output_rows": int(len(output)),
+        "accepted_rows": int(len(output)),
+        "rejected_rows": int(len(df) - len(output)),
+        "duplicate_group_count": int(len(duplicate_groups)),
+        "duplicate_groups": duplicate_groups,
+    }
+    return output, reconciliation
 
 
 def _record(manifest: dict, name: str, df: pd.DataFrame, source_file: str) -> None:
@@ -508,16 +654,53 @@ def write_earnings_calls(manifest: dict) -> None:
     num_want = [c for c in _EC_NUMERIC_COLS if c in available]
     txt_want = [c for c in _EC_TEXT_COLS if c in available]
 
-    # Dedupe on (document_ticker, fiscal_quarter, fiscal_year, call_date)
-    # keeping last (most recently updated)
-    df_num = pd.DataFrame(
-        [{k: row.get(k) for k in num_want} for row in data]
-    )
+    # Dedupe on the vendor natural key using the explicit correction clock.  Raw
+    # array order is not chronological (the AKSO.OL retry storm proves this), so
+    # ``drop_duplicates(..., keep='last')`` is not a valid recency rule.
+    numeric_rows: list[dict[str, Any]] = []
+    for row in data:
+        projected = {k: row.get(k) for k in num_want}
+        unified = row.get("unified_analysis")
+        if isinstance(unified, dict):
+            projected["analysis_model"] = unified.get("model_used")
+            projected["analysis_schema_version"] = (
+                unified.get("schema_version") or unified.get("schema_ver")
+            )
+            projected["prompt_version"] = unified.get("prompt_version")
+        else:
+            for col in _EC_DERIVED_PROVENANCE_COLS:
+                projected[col] = None
+        numeric_rows.append(projected)
+    df_num = pd.DataFrame(numeric_rows)
 
     dedup_keys = [c for c in ["document_ticker", "fiscal_quarter", "fiscal_year", "call_date"]
                   if c in df_num.columns]
-    if dedup_keys:
-        df_num = df_num.drop_duplicates(subset=dedup_keys, keep="last")
+    df_num, reconciliation = _dedupe_earnings_rows(df_num)
+    _call_dt = pd.to_datetime(df_num.get("call_date"), errors="coerce")
+    _fiscal_year = pd.to_numeric(df_num.get("fiscal_year"), errors="coerce")
+    _fiscal_quarter = pd.to_numeric(df_num.get("fiscal_quarter"), errors="coerce")
+    _fiscal_present = _fiscal_year.notna() | _fiscal_quarter.notna()
+    _fiscal_valid = (
+        _call_dt.notna()
+        & _fiscal_year.notna()
+        & _fiscal_quarter.between(1, 4)
+        & _fiscal_year.between(_call_dt.dt.year - 1, _call_dt.dt.year + 1)
+    )
+    reconciliation.update({
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "source_file": src.name,
+        "source_path": str(src),
+        "source_bytes": int(file_size),
+        "source_sha256": _sha256_file(src),
+        "source_updated_at_max": (
+            str(pd.to_datetime(df_num.get("updated_at"), utc=True, errors="coerce").max())
+            if "updated_at" in df_num.columns else None
+        ),
+        "invalid_fiscal_period_rows": int((_fiscal_present & ~_fiscal_valid).sum()),
+        "is_context_only": True,
+        "display_only": True,
+    })
+    _atomic_json(reconciliation, EARNINGS_RECONCILIATION_PATH)
 
     # Type coercions for numeric columns
     for col in ["fiscal_quarter", "fiscal_year", "analysts_count", "questions_count",
@@ -540,6 +723,15 @@ def write_earnings_calls(manifest: dict) -> None:
 
     _atomic_write(df_num, dest_num)
     _record(manifest, "earnings_calls", df_num, src.name)
+    manifest["earnings_calls"]["reconciliation"] = {
+        "schema": reconciliation["schema"],
+        "path": str(EARNINGS_RECONCILIATION_PATH.relative_to(_REPO_ROOT)),
+        "input_rows": reconciliation["input_rows"],
+        "output_rows": reconciliation["output_rows"],
+        "rejected_rows": reconciliation["rejected_rows"],
+        "duplicate_group_count": reconciliation["duplicate_group_count"],
+        "source_sha256": reconciliation["source_sha256"],
+    }
 
     # Check committed size
     committed_size = dest_num.stat().st_size
@@ -553,14 +745,15 @@ def write_earnings_calls(manifest: dict) -> None:
     # Write text parquet (gitignored)
     if txt_want:
         # Include the dedupe keys in text file too for joins
-        txt_with_keys = [c for c in dedup_keys if c not in txt_want] + txt_want
+        provenance = ["id", "created_at", "updated_at"]
+        txt_with_keys = [
+            c for c in dedup_keys + provenance if c not in txt_want
+        ] + txt_want
         txt_available = [c for c in txt_with_keys if c in available]
         df_txt_rows = [{k: row.get(k) for k in txt_available} for row in data]
         df_txt = pd.DataFrame(df_txt_rows)
         if dedup_keys:
-            df_txt = df_txt.drop_duplicates(
-                subset=[c for c in dedup_keys if c in df_txt.columns], keep="last"
-            )
+            df_txt, _ = _dedupe_earnings_rows(df_txt)
         # unified_analysis is a mixed-type column (some rows are dicts, some
         # are strings or None).  pyarrow cannot serialise mixed struct/non-struct
         # in a single array, so we coerce to a JSON string for storage.
