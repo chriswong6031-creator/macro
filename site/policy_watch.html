@@ -33,10 +33,213 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fed & Policy Watch — Macro Dashboard</title>
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=8d7800c8">
-<link rel="stylesheet" href="assets/css/8eef9326.css?v=8eef9326">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=8fccad75">
+<link rel="stylesheet" href="theme.css">
+<style>
+  /* ---------- shared Research-Reports chrome ---------- */
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font:14px/1.6 -apple-system,"Segoe UI",Roboto,Helvetica,sans-serif; margin:0; padding:18px 18px 60px; }
+  @media(min-width:1100px){ body{ padding-left:max(18px,calc((100vw - 1096px)/2)); padding-right:max(18px,calc((100vw - 1096px)/2)); } }
+  a { color:var(--link); text-decoration:none; }
+  .wrap { max-width:1060px; margin:0 auto; }
+  /* unambiguous move colours (NOT tied to the zh red=up swap) */
+  .r-neg { color:#d23f3f; font-weight:600; }
+  .r-pos { color:#1f9a55; font-weight:600; }
+  html[data-theme="dark"] .r-neg { color:#ef6a6a; }
+  html[data-theme="dark"] .r-pos { color:#3fc07e; }
+  .mut { color:var(--muted); }
+  /* tags / chips */
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:5px 10px; border-radius:999px;
+          background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .chip.tag-macro   { color:#5b8def; border-color:#5b8def55; }
+  .chip.tag-fed     { color:#c77dff; border-color:#c77dff55; }
+  .chip.tag-rates   { color:#3fb6c0; border-color:#3fb6c055; }
+  .chip.tag-equities{ color:#46b87a; border-color:#46b87a55; }
+  .chip.tag-crypto  { color:#e0973a; border-color:#e0973a55; }
+  .chip.tag-energy  { color:#cf7b3a; border-color:#cf7b3a55; }
+  .chip.tag-event   { color:#e0607a; border-color:#e0607a55; }
+  .chip.tag-ai      { color:#b48ead; border-color:#b48ead55; }
+  .chip.tag-china   { color:#d0554f; border-color:#d0554f55; }
+  .chip.tag-credit  { color:#d08770; border-color:#d0877055; }
+  footer.rfoot { color:var(--muted); font-size:11.5px; margin:46px auto 0; max-width:1060px; border-top:1px solid var(--line); padding-top:14px; }
+  /* XG-W7 follow line — its own row, never appended to the disclaimer sentence:
+     a legal notice and a marketing CTA must not read as one thought. */
+  footer.rfoot .rf-x { display:inline-flex; align-items:center; gap:6px; margin-top:11px; padding:4px 10px;
+    border-radius:100px; border:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600;
+    transition:color .16s, border-color .16s; }
+  footer.rfoot .rf-x:hover { color:var(--text); border-color:color-mix(in srgb,var(--text) 26%,transparent); }
+  
+  /* ── Policy Watch — situation-desk revamp ──────────────────────────────────
+     Type roles follow the macro.html Attio trial: Inter Display carries
+     headings, state words and overlines; body stays on the shared UI stack;
+     dates, counts and percentages get tabular figures. Fonts are the same
+     self-hosted files macro.html uses (China-safe, no third-party request). */
+  @font-face { font-family:"MX Inter Display"; src:url("fonts/InterDisplay-600.woff2") format("woff2");
+               font-style:normal; font-weight:600; font-display:swap; }
+  @font-face { font-family:"MX Inter Display"; src:url("fonts/InterDisplay-700.woff2") format("woff2");
+               font-style:normal; font-weight:700; font-display:swap; }
+  :root {
+    --pw-disp: "MX Inter Display", Inter, "PingFang SC", "Hiragino Sans GB",
+      "Microsoft YaHei", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    /* page accent set = the dossier's existing thread colors, promoted to tokens
+       (dark values are the base — theme.css is dark-default, light overrides) */
+    --pwa: #c77dff;   /* fed violet — the page identity */
+    --pwb: #5b8def;   /* policy blue */
+    --pwt: #3fb6c0;   /* treasury / dollar teal */
+    --pwg: #3fc07e;   /* working / hit green */
+    --pwam: #e0973a;  /* prior / caution amber */
+    --pwr: #ef6a6a;   /* miss / lagging red */
+  }
+  html[data-theme="light"] {
+    --pwa: #8b46e0; --pwb: #3b63d4; --pwt: #147f8a; --pwg: #1f9a55; --pwam: #a8701f; --pwr: #d23f3f;
+  }
+  html { scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } }
+
+  /* ── hero ── */
+  .pw-hero { max-width:1060px; margin:18px auto 0; position:relative; overflow:hidden;
+             background:radial-gradient(620px 240px at 88% -30%, color-mix(in srgb, var(--pwa) 10%, transparent), transparent 70%), var(--panel);
+             border:1px solid var(--line); border-radius:16px; padding:24px 28px 22px;
+             display:grid; grid-template-columns:1.35fr .85fr 1fr; gap:14px 30px; box-shadow:var(--card-shadow, none); }
+  .pw-hero::before { content:""; position:absolute; inset:0 0 auto 0; height:3px;
+             background:linear-gradient(90deg, var(--pwa), color-mix(in srgb, var(--pwa) 12%, transparent) 60%, transparent); }
+  @media (max-width: 960px) { .pw-hero { grid-template-columns:1fr; } }
+  .pw-hero .eyebrow { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.06em;
+             text-transform:uppercase; color:var(--pwa); margin:0 0 10px; }
+  .pw-hero h1 { font-family:var(--pw-disp); font-size:30px; font-weight:700; letter-spacing:-.02em; margin:0 0 8px; line-height:1.12; }
+  html[data-lang="zh"] .pw-hero h1, html[data-lang="zh"] .pw-hero .eyebrow, html[data-lang="zh"] .pw-ovl { letter-spacing:0; }
+  .pw-hero .lens { font-size:13px; color:var(--muted); margin:0 0 14px; line-height:1.55; max-width:46ch; }
+  .pw-chips { display:flex; flex-wrap:wrap; gap:7px; }
+  .pwc { display:inline-flex; align-items:center; gap:5px; font-size:11.5px; line-height:1; padding:6px 10px;
+         border-radius:999px; background:var(--panel2); border:1px solid var(--line); color:var(--muted); white-space:nowrap; }
+  .pwc b { color:var(--text); font-variant-numeric:tabular-nums; }
+  .pwc.age-ok    { color:var(--pwg); border-color:color-mix(in srgb, var(--pwg) 30%, transparent); }
+  .pwc.age-amber { color:var(--pwam); border-color:color-mix(in srgb, var(--pwam) 32%, transparent); }
+  .pwc.age-red   { color:var(--pwr); border-color:color-mix(in srgb, var(--pwr) 32%, transparent); }
+  /* stance cell */
+  .pw-ovl { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.06em;
+            text-transform:uppercase; color:var(--muted); margin:0 0 8px; display:flex; align-items:center; gap:7px; }
+  .pw-dot { width:7px; height:7px; border-radius:50%; background:var(--c, var(--muted)); flex:0 0 auto; }
+  .pw-state { font-family:var(--pw-disp); font-size:26px; font-weight:700; letter-spacing:-.02em; margin:0 0 6px; line-height:1.15; }
+  html[data-lang="zh"] .pw-state { letter-spacing:0; }
+  .pw-state.s-down { color:var(--pwr); }
+  .pw-state.s-up { color:var(--pwg); }
+  .pw-state.s-muted { color:var(--text); }
+  .pw-since { font-size:12px; color:var(--muted); margin:0 0 8px; font-variant-numeric:tabular-nums; }
+  .pw-drv { font-size:11.5px; color:var(--muted); margin:0; line-height:1.6; }
+  /* decision clock cell */
+  .pw-clock { border-left:1px solid var(--line); padding-left:26px; }
+  @media (max-width: 960px) { .pw-clock { border-left:none; padding-left:0; border-top:1px solid var(--line); padding-top:14px; } }
+  .pw-ck-row { display:flex; align-items:baseline; gap:9px; padding:6px 0; border-bottom:1px dashed color-mix(in srgb, var(--line) 72%, transparent); }
+  .pw-ck-row:last-of-type { border-bottom:none; }
+  .pw-ck-date { font-family:var(--pw-disp); font-weight:600; font-size:12px; font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--text); }
+  .pw-ck-ev { font-size:12px; line-height:1.4; color:var(--text); opacity:.9; flex:1; min-width:0; }
+  .pw-ck-ev .imp { margin-left:6px; }
+  .pw-ck-chip { font-size:10px; font-weight:700; letter-spacing:.03em; padding:2px 7px; border-radius:6px; white-space:nowrap; }
+  .pw-ck-chip.up { color:var(--pwa); background:color-mix(in srgb, var(--pwa) 14%, transparent); }
+  .pw-ck-chip.past { color:var(--muted); background:var(--panel2); }
+  .pw-ck-note { font-size:11px; color:var(--muted); margin:8px 0 0; }
+  /* impact dots: 3/2/1 filled for high/medium/low */
+  .imp { display:inline-flex; gap:3px; align-items:center; vertical-align:middle; }
+  .imp i { width:5px; height:5px; border-radius:50%; background:color-mix(in srgb, var(--muted) 32%, transparent); }
+  .imp i.on { background:var(--pwa); }
+
+  /* ── merged notice band (divergence + staleness live here, once) ── */
+  .pw-note { max-width:1060px; margin:14px auto 0; border:1px solid color-mix(in srgb, var(--pwam) 32%, transparent);
+             border-left:3px solid var(--pwam); background:color-mix(in srgb, var(--pwam) 7%, var(--panel));
+             border-radius:12px; padding:11px 16px; font-size:13px; line-height:1.6; }
+  .pw-note p { margin:2px 0; }
+
+  /* ── on-page jump chips ── */
+  .pw-toc { max-width:1060px; margin:16px auto 0; display:flex; flex-wrap:wrap; gap:7px; }
+  .pw-toc a { font-family:var(--pw-disp); font-size:11px; font-weight:600; letter-spacing:.04em; text-transform:uppercase;
+              color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:6px 12px;
+              transition:color .16s, border-color .16s; }
+  .pw-toc a:hover { color:var(--text); border-color:color-mix(in srgb, var(--text) 26%, transparent); }
+  html[data-lang="zh"] .pw-toc a { letter-spacing:0; }
+
+  .pw-wrap { max-width:1060px; margin:0 auto; }
+
+  /* ── thesis duo ── */
+  .pw-duo { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0 0; }
+  @media (max-width: 860px) { .pw-duo { grid-template-columns:1fr; } }
+  .pw-th { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 19px; box-shadow:var(--card-shadow, none); }
+  .pw-th.key { border-top:3px solid var(--pwg); }
+  .pw-th.warn { border-top:3px solid var(--pwam); }
+  .pw-th .pw-ovl { margin-bottom:9px; }
+  .pw-prose { font-size:13.5px; line-height:1.65; margin:0; display:-webkit-box; -webkit-line-clamp:8; -webkit-box-orient:vertical; overflow:hidden; }
+  .pw-prose.open { display:block; -webkit-line-clamp:unset; overflow:visible; }
+  .pw-more { appearance:none; background:none; border:none; padding:8px 0 0; cursor:pointer;
+             font:600 12px/1 var(--pw-disp); color:var(--pwa); letter-spacing:.02em; }
+  .pw-more:hover { text-decoration:underline; }
+  .pw-more .less, .pw-more.open .more { display:none; }
+  .pw-more.open .less { display:inline; }
+
+  /* ── section rhythm ── */
+  .pw-sec { border-top:1px solid var(--line); margin-top:40px; padding-top:26px; scroll-margin-top:84px; }
+  .pw-sec h2 { font-family:var(--pw-disp); font-size:20px; font-weight:600; letter-spacing:-.01em; margin:0 0 6px; }
+  html[data-lang="zh"] .pw-sec h2 { letter-spacing:0; }
+  h3.sub { font-family:var(--pw-disp); font-size:11.5px; margin:20px 0 8px; color:var(--muted);
+           text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+  html[data-lang="zh"] h3.sub { letter-spacing:0; }
+  .lede { font-size:13.5px; line-height:1.65; }
+  .pw-lede { font-size:13px; line-height:1.6; color:var(--muted); margin:4px 0 10px; max-width:88ch; }
+
+  /* ── badges (basis / status / confidence) ── */
+  .b { display:inline-block; font-size:10px; font-weight:700; letter-spacing:.03em; padding:2.5px 7px; border-radius:6px; white-space:nowrap; }
+  .b-fact { color:var(--pwg); background:color-mix(in srgb, var(--pwg) 13%, transparent); }
+  .b-inf  { color:var(--pwa); background:color-mix(in srgb, var(--pwa) 14%, transparent); }
+  .b-prior{ color:var(--pwam); background:color-mix(in srgb, var(--pwam) 14%, transparent); }
+  .b-open { color:var(--muted); background:var(--panel2); }
+  .b-hit  { color:var(--pwg); background:color-mix(in srgb, var(--pwg) 13%, transparent); }
+  .b-miss { color:var(--pwr); background:color-mix(in srgb, var(--pwr) 13%, transparent); }
+  .th-fed{color:var(--pwa)}.th-treasury{color:var(--pwt)}.th-policy{color:var(--pwb)}.th-rotation{color:var(--pwg)}.th-debasement{color:var(--pwam)}.th-dollar{color:var(--pwt)}
+  .conf { font-size:11px; color:var(--muted); }
+
+  /* ── panels + cards ── */
+  .pw-panel { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 18px; margin:12px 0; box-shadow:var(--card-shadow, none); }
+  .pw-panel .pw-ovl { margin-bottom:7px; }
+  .pw-panel.warn { border-left:3px solid var(--pwam); }
+  .pw-quote { border-left:3px solid var(--pwa); background:var(--panel2); border-radius:0 10px 10px 0;
+              padding:10px 14px; margin:12px 0; font-size:13px; line-height:1.6; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:12px; margin:12px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:15px 17px;
+          box-shadow:var(--card-shadow, none); transition:border-color .16s; }
+  .card:hover { border-color:color-mix(in srgb, var(--text) 18%, var(--line)); }
+  .card .cn { font-family:var(--pw-disp); font-weight:600; font-size:14.5px; letter-spacing:-.01em; margin:0 0 4px; line-height:1.35; }
+  .card .cmeta { font-size:11px; color:var(--muted); margin-bottom:8px; display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
+  .card .cch { font-size:12.5px; line-height:1.55; margin:6px 0; }
+  .pw-block { margin-top:9px; padding-left:10px; border-left:2px solid var(--line); font-size:12.5px; line-height:1.55; }
+  .pw-block.read { border-left-color:var(--pwa); }
+  .pw-block.cap { border-left-color:var(--pwt); }
+  .pw-block .pw-bl { display:block; font-family:var(--pw-disp); font-size:10px; font-weight:600;
+                     letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+  html[data-lang="zh"] .pw-block .pw-bl { letter-spacing:0; }
+  .pw-tkr { font-family:var(--pw-disp); font-weight:600; letter-spacing:0; }
+
+  /* ── tables ── */
+  table.data { border-collapse:collapse; width:100%; font-size:12.5px; margin:10px 0; }
+  table.data th { font-family:var(--pw-disp); text-align:left; padding:8px 10px; background:var(--panel2); color:var(--muted);
+                  font-weight:600; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; border-bottom:2px solid var(--line); }
+  html[data-lang="zh"] table.data th { letter-spacing:0; }
+  table.data td { padding:8px 10px; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.5; }
+  table.data tr:hover td { background:var(--panel2); }
+  table.data td .num, table.data td strong { font-variant-numeric:tabular-nums; }
+  tr.key-row td { background:color-mix(in srgb, var(--pwa) 6%, transparent); }
+  tr.key-row:hover td { background:color-mix(in srgb, var(--pwa) 10%, transparent); }
+  .k-star { color:var(--pwa); }
+  .prox { font-family:var(--pw-disp); font-weight:600; font-size:11px; letter-spacing:.01em; color:var(--text); opacity:.85; }
+  .led-stat { display:flex; gap:8px; flex-wrap:wrap; margin:8px 0 4px; }
+
+  /* ── monitor + sources ── */
+  .monitor { list-style:none; padding:0; margin:12px 0; display:grid; grid-template-columns:1fr 1fr; gap:2px 26px; }
+  @media (max-width: 760px) { .monitor { grid-template-columns:1fr; } }
+  .monitor li { margin:0; padding:8px 2px; font-size:13px; border-bottom:1px dashed color-mix(in srgb, var(--line) 72%, transparent); }
+  .monitor a { color:var(--link); }
+  .srcs { font-size:11.5px; color:var(--muted); word-break:break-word; line-height:2; }
+  .srcs a { color:var(--link); border:1px solid var(--line); border-radius:6px; padding:2px 6px; margin-right:2px; white-space:nowrap; }
+  .srcs a:hover { border-color:color-mix(in srgb, var(--link) 45%, transparent); }
+
+</style>
 
 
 
@@ -63,7 +266,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=8fccad75">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -279,10 +482,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -304,57 +507,120 @@
 </nav>
 
 
+
+
+
+
+
+
+
+
 <section class="pw-hero">
-  <p class="eyebrow">🏛️ <span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></p>
-  <h1><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></h1>
-  <p class="lens"><span class="l-en">Realpolitik / revealed-preference lens · non-partisan · as of</span><span class="l-zh">现实政治／显示性偏好视角 · 非党派 · 截至</span> 2026-07-13</p>
-  
-  
+  <div>
+    <p class="eyebrow"><span class="l-en">Policy intelligence</span><span class="l-zh">政策情报</span></p>
+    <h1><span class="l-en">Fed & Policy Watch</span><span class="l-zh">美联储与政策观察</span></h1>
+    <p class="lens"><span class="l-en">What policymakers do, not what they say — non-partisan · as of</span><span class="l-zh">看政策制定者做什么，而非说什么 — 非党派 · 截至</span> 2026-07-13</p>
+    <div class="pw-chips">
+      
+      <span class="pwc"><b>44</b> <span class="l-en">calls on record</span><span class="l-zh">在案判断</span></span>
+      <span class="pwc">1 <span class="l-en">graded</span><span class="l-zh">已核</span> · <b>100%</b> <span class="l-en">landed</span><span class="l-zh">命中</span> · <span class="r-neg">2 <span class="l-en">due</span><span class="l-zh">待结</span></span></span>
+      
+      <span class="pwc"><span class="l-en">rotation</span><span class="l-zh">轮动</span>: <span class="r-pos">2 <span class="l-en">working</span><span class="l-zh">达标</span></span> · <span class="r-neg">4 <span class="l-en">lagging</span><span class="l-zh">落后</span></span></span>
+      
+      
+      
+      
+      <span class="pwc age-red"><span class="l-en">intel 19d old</span><span class="l-zh">情报已19天未更新</span></span>
+      
+    </div>
+  </div>
   
   <div>
-    <span class="pw-age-chip age-red">
-      <span class="l-en">intel 19d old</span>
-      <span class="l-zh">情报已19天未更新</span>
-    </span>
+    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwa)"></i><span class="l-en">Fed stance — read from market prices</span><span class="l-zh">美联储姿态 — 由市场价格读出</span></p>
+    <p class="pw-state s-down"><span class="l-en">Hawkish</span><span class="l-zh">鹰派</span></p>
+    
+    <p class="pw-since"><span class="l-en">for</span><span class="l-zh">已持续</span> 19<span class="l-en">d</span><span class="l-zh">天</span> · <span class="l-en">since</span><span class="l-zh">自</span> 2026-07-13</p>
+    
+    
+    <p class="pw-drv"><span class="l-en">market prices ~2.0 hike(s) over 12m · statement guidance on-hold · market ≈ the Fed (+11bp)</span><span class="l-zh">市场计入未来12个月约2.0次加息 · 声明指引按兵不动 · 市场与美联储基本一致（+11bp）</span></p>
+    
+  </div>
+  
+  
+  <div class="pw-clock">
+    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwb)"></i><span class="l-en">Decision clock</span><span class="l-zh">决议时钟</span></p>
+    
+    <div class="pw-ck-row">
+      <span class="pw-ck-date">07-29</span>
+      <span class="pw-ck-ev"><span class="k-star">★</span> <span class="l-en">FOMC rate decision</span><span class="l-zh">FOMC 利率决议</span><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+      <span class="pw-ck-chip past"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
+    </div>
+    
+    <div class="pw-ck-row">
+      <span class="pw-ck-date">07-15</span>
+      <span class="pw-ck-ev"><span class="l-en">June PPI — completes the inflation read</span><span class="l-zh">6月 PPI — 补全通胀读数</span><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class=""></i></span></span>
+      <span class="pw-ck-chip past"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
+    </div>
+    
+    <div class="pw-ck-row">
+      <span class="pw-ck-date">07-14</span>
+      <span class="pw-ck-ev"><span class="k-star">★</span> <span class="l-en">June CPI — the tier-1 inflation print</span><span class="l-zh">6月 CPI — 一线通胀数据</span><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span></span>
+      <span class="pw-ck-chip past"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
+    </div>
+    
+    <p class="pw-ck-note"><span class="l-en">No dated catalysts ahead — calendar refreshes with the next intel update.</span><span class="l-zh">暂无未来催化剂 — 日历将随下次情报更新刷新。</span></p>
   </div>
   
 </section>
 
+
+
+
+<div class="pw-note">
+  
+  
+  <p>⚠ <b><span class="l-en">Sharpest divergence</span><span class="l-zh">最大背离</span>:</b> <span class="l-en">the map targets</span><span class="l-zh">地图看好</span> <b><span class="l-en">Critical minerals / rare earths</span><span class="l-zh">关键矿产/稀土</span></b> <span class="l-en">but it is lagging SPY by</span><span class="l-zh">但其跑输标普</span> -41.3% — <span class="l-en">evidence against that leg of the rotation thesis.</span><span class="l-zh">是对该轮动判断的反证。</span></p>
+  
+  
+  <p>⏳ <b><span class="l-en">Intel is</span><span class="l-zh">情报已</span> 19 <span class="l-en">days old</span><span class="l-zh">天未更新</span></b> — <span class="l-en">re-verify before acting; this layer is time-sensitive (truces, ceasefires and pending rulings move).</span><span class="l-zh">行动前请重新核实；该层具时效性（休战、停火与待决裁决随时变化）。</span></p>
+  
+</div>
+
+
+<nav class="pw-toc" aria-label="On this page">
+  <a href="#calendar"><span class="l-en">Calendar</span><span class="l-zh">日历</span></a>
+  <a href="#desk"><span class="l-en">Intent desk</span><span class="l-zh">意图台</span></a>
+  <a href="#fed"><span class="l-en">The Fed</span><span class="l-zh">美联储</span></a>
+  <a href="#admin"><span class="l-en">Administration</span><span class="l-zh">行政当局</span></a>
+  <a href="#rotation"><span class="l-en">Rotation map</span><span class="l-zh">轮动地图</span></a>
+  <a href="#ledger"><span class="l-en">Ledger</span><span class="l-zh">台账</span></a>
+  <a href="#monitor"><span class="l-en">Monitor</span><span class="l-zh">监测</span></a>
+  <a href="#sources"><span class="l-en">Sources</span><span class="l-zh">来源</span></a>
+</nav>
+
 <div class="pw-wrap">
 
-  
-  <div class="led-stat" style="margin-top:14px;font-size:13px">
-    <span><b>44</b> <span class="l-en">predictions</span><span class="l-zh">预测</span> (1 <span class="l-en">resolved</span><span class="l-zh">已结</span>, 100% <span class="l-en">hit</span><span class="l-zh">命中</span>, <span class="r-neg">2 <span class="l-en">due</span><span class="l-zh">待结</span></span>)</span>
-    <span><span class="l-en">rotation</span><span class="l-zh">轮动</span>: <span class="r-pos">2 <span class="l-en">working</span><span class="l-zh">达标</span></span> · <span class="r-neg">4 <span class="l-en">lagging</span><span class="l-zh">落后</span></span></span>
-    <span><span class="l-en">Fed</span><span class="l-zh">美联储</span>: <b><span class="l-en">hawkish</span><span class="l-zh">鹰派</span></b> 19<span class="l-en">d</span><span class="l-zh">天</span></span>
-    <span><span class="l-en">intel</span><span class="l-zh">情报</span>: <span class="r-neg">19<span class="l-en">d old</span><span class="l-zh">天</span></span></span>
-  </div>
-  
-  
-  
-  <div class="callout warn">⚠ <b><span class="l-en">Sharpest divergence</span><span class="l-zh">最大背离</span>:</b> <span class="l-en">the map targets</span><span class="l-zh">地图看好</span> <b><span class="l-en">Critical minerals / rare earths</span><span class="l-zh">关键矿产/稀土</span></b> <span class="l-en">but it is lagging SPY by</span><span class="l-zh">但其跑输标普</span> -41.3% — <span class="l-en">evidence against that leg of the rotation thesis.</span><span class="l-zh">是对该轮动判断的反证。</span></div>
-  
-  
-
-  
-  <div class="callout warn" style="margin-top:16px">⏳ <b><span class="l-en">Intel is</span><span class="l-zh">情报已</span> 19 <span class="l-en">days old</span><span class="l-zh">天未更新</span></b> — <span class="l-en">re-verify before acting; this layer is time-sensitive (truces, ceasefires and pending rulings move).</span><span class="l-zh">行动前请重新核实；该层具时效性（休战、停火与待决裁决随时变化）。</span> · 2 <span class="l-en">prediction(s) past check-by</span><span class="l-zh">条预测已过核查日</span></div>
-  
-
-  <div class="callout key" style="margin-top:16px">
-    <span class="co-h"><span class="l-en">The thesis</span><span class="l-zh">核心论点</span></span>
-    <span class="l-en">A coordinated regime of low-real-yield engineering + strategic re-industrialization. The Fed under Warsh institutionalizes a narrower, more discretionary, framework-resetting central bank (strict 2% target, less unconventional easing, no self-binding forward guidance), while Treasury under Bessent runs explicit yield suppression via bill-heavy issuance, buybacks, dealer-intermediation reform, and a de-facto funding alignment with the Fed. Industrial policy (advanced-chip tariffs, nuclear-for-AI) steers capital toward strategic domestic capacity. UPDATE (6/24): read this as a SEQUENCED, optionality-based campaign — not a static state — and downgrade &#39;coordinated&#39; to aligned-incentives / revealed-preference, mostly common-cause. The hawkish tape (as of 6/16: Sept hike a minority ~1-in-3, Dec-hike ~77–88%, DXY 13-mo high, real 10y 2.29%, gold&lt;$4,000) was the credibility-banking STAGING phase. UPDATE (7/13): ceasefire declared over 7/8 (Trump), US strikes on Iran 7/8–11, Brent spiked ~$80 intraday; CME FedWatch moved to &gt;70% probability of a Sept hike (50.6% 25bp + 19.6% 50bp); gold trading $4,044–4,200 range; DXY ~100.9 well off its 13-mo high. The stagflationary split has sharpened: the Iran re-escalation is an upside oil shock hitting simultaneously with a hike-majority market. The frame Warsh&#39;s guidance/dot deletion + the inflation-frameworks and AI-productivity task forces are optionality infrastructure that pre-loads doctrinal cover for a post-midterm pivot, and Bessent&#39;s 6/24 &#39;strong dollar while cutting&#39; is the FX bridge (manufactured demand + Iran haven bid) that lets the front end ease without breaking the ~$9.7T FY2026 refi math. Net: the administration wants the OUTCOME of lower real yields without the inflation-validating OPTICS of near-term cuts — so it suppresses yields structurally now and holds easing as inflation-gated optionality post-midterm. UPDATE (7/6): the first genuine two-sided test of the frame arrived as a STAGFLATIONARY SPLIT — May PCE (6/25) ran hot (core +0.3% m/m, 3.4% y/y, highest since Oct-2023; headline +0.4% m/m, 4.1% y/y) while June payrolls (7/2) cracked to +57k (vs ~115k expected, with -74k of Apr/May downward revisions and participation at a 4-yr-low 61.5%). Warsh&#39;s Sintra response (7/1) held the hawkish line (&#39;prices are too high&#39;; declined to signal July; buried forward guidance alongside Lagarde/Bailey/Macklem). Revealed preference so far = inflation-mandate first, labor-crack second: the &#39;setup&#39; posture is intact, but the weak-jobs leg is exactly the data the catalyst spine flagged as the one thing that can reopen an easing path. The live question is whether a July 28–29 hold morphs toward a DATA-driven (not calendar-driven) September pivot if the labor crack widens.</span><span class="l-zh">一个协调一致的“压低实际收益率 + 战略再工业化”政策体制。沃什治下的美联储将其制度化为一个更收窄、更具相机抉择、重置框架的央行（严格2%目标、减少非常规宽松、不再自缚式前瞻指引）；贝森特治下的财政部则通过偏短端发债、回购、做市商中介改革，以及与美联储事实上的融资协同，明确压低收益率。产业政策（先进芯片关税、为AI供电的核能）将资本引向战略性国内产能。更新（6/24）：应将其理解为一场分阶段、以“灵活性”为核心的运动——而非静态状态——并把“协调一致”下调为“利益一致／显示性偏好、且大多为共同成因”。鹰派的盘面（截至6/16：9月加息仍属少数派约三分之一，12月加息约77–88%、DXY十三个月新高、10年期实际收益率2.29%、黄金跌破4000美元）是“储蓄信誉”的铺垫阶段。更新（7/13）：停火于7/8被宣告终结（特朗普），美军7/8–7/11对伊朗发动打击，布伦特盘中飙至约80美元；CME FedWatch显示9月前至少加息一次的概率超过70%（25bp概率50.6%、50bp概率19.6%）；黄金交投于4,044–4,200美元区间；DXY约100.9，远低于其十三个月高点。类滞胀撞裂加剧：伊朗再升级是一次上行油价冲击，与加息概率多数化同时到来。该框架沃什取消指引／点位，加上通胀框架与AI生产率工作组，构成为中期选举后转向预置教义掩护的“灵活性基础设施”；而贝森特6/24“降息中维持强美元”则是那座汇率之桥（人为需求＋伊朗避险买盘），让短端得以宽松而不击穿约9.7万亿美元的2026财年再融资数学。归结：政府想要“更低实际收益率”的结果，却不要“近期降息”那种坐实通胀的观感——于是当下以结构性手段压低收益率，并把宽松作为中期选举后、取决于通胀的“期权”持有。更新（7/6）：该框架迎来首次真正的双向检验——一场“类滞胀”的撕裂。5月PCE（6/25）偏热（核心环比+0.3%、同比3.4%，为2023年10月以来最高；整体环比+0.4%、同比4.1%），而6月非农（7/2）骤降至+5.7万（远低于约11.5万预期，4/5月合计下修7.4万，劳动参与率降至61.5%的四年低位）。沃什在辛特拉（7/1）维持鹰派表态（“物价过高”、拒绝暗示7月、与拉加德／贝利／麦克勒姆一道埋葬前瞻指引）。目前的显示性偏好＝先通胀使命、后就业裂缝：“铺垫”姿态未变，但疲弱就业正是本情报“催化剂主线”所标注的、唯一可能重启宽松路径的数据。核心问题在于：若就业裂缝扩大，7月28–29日的按兵是否会转向由数据（而非日历）驱动的9月转向。</span>
-  </div>
-  <div class="callout warn">
-    <span class="co-h"><span class="l-en">Narrative vs revealed interest</span><span class="l-zh">叙事 vs 真实利益</span></span>
-    <span class="l-en">The market-relevant divergence: the consensus narrative casts Warsh as a dovish Trump instrument (Warren&#39;s &#39;sock puppet&#39;), yet his revealed debut was a hawkish hold with a possible-hike dot. The low-yield outcome the administration wants is being pursued STRUCTURALLY — framework reset, balance-sheet posture, and Treasury issuance — not via near-term cuts. Trade the structure, not the rhetoric. SECOND TELL (6/24): the entire hawkish surface is the SETUP, not the destination — strong-dollar/strict-2% credibility is being BANKED now to spend on a post-midterm &#39;earned-disinflation&#39; cut, with the dot/guidance deletion ensuring that cut violates no prior and the AI-productivity/look-through doctrine furnishing the technocratic alibi. Bessent&#39;s &#39;you can have a strong dollar when rates are being cut&#39; (volunteered on a day the market had priced cuts out through Sept) is the giveaway. Trade-relevant line: do NOT pay up for terminal-rate-stays-high duration shorts on the hawkish tape alone, and do NOT trust &#39;debasement is dead&#39; at peak-hawk — own optionality on a dovish/debasement surprise that bases when DXY+2Y+real-yields+hike-odds peak TOGETHER. Gate it on P5; the debasement washout is a positioning flush, not a fundamental refutation (deficits/issuance are unchanged by gold&#39;s price).</span><span class="l-zh">对市场最关键的背离：主流叙事把沃什描绘成特朗普的鸽派工具（沃伦称其“提线木偶”），但他实际的首秀却是鹰派按兵不动、并暗示年内可能加息。政府想要的低收益率结果，是通过“结构性”手段实现的——框架重置、资产负债表姿态、财政部发债结构——而非近期降息。交易结构，而非言辞。第二个破绽（6/24）：整个鹰派表象是铺垫、而非终点——强美元／严格2%的信誉正被“储蓄”起来，以便在中期选举后、以“应得的反通胀”之名启动降息；取消点位／指引确保该次降息不违背任何先前承诺，而AI生产率／“透视性看待”教义则提供技术官僚式的挡箭牌。贝森特那句“降息时也能维持强美元”（在市场已把9月前降息定价剔除的当天主动抛出）正是泄露。可操作的要点：不要仅凭鹰派盘面就为“终端利率维持高位”的久期空头付高价，也不要在鹰派高峰相信“去货币化已死”——应持有对“鸽派／去货币化意外”的期权，其筑底发生在美元+2年期+实际收益率+加息概率同时见顶之时。以P5为闸门；去货币化的洗盘是仓位踩踏，而非基本面证伪（赤字与发债规模并不因金价而改变）。</span>
+  <div class="pw-duo">
+    <div class="pw-th key">
+      <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwg)"></i><span class="l-en">The thesis</span><span class="l-zh">核心论点</span></p>
+      <p class="pw-prose" id="pw-thesis"><span class="l-en">A coordinated regime of low-real-yield engineering + strategic re-industrialization. The Fed under Warsh institutionalizes a narrower, more discretionary, framework-resetting central bank (strict 2% target, less unconventional easing, no self-binding forward guidance), while Treasury under Bessent runs explicit yield suppression via bill-heavy issuance, buybacks, dealer-intermediation reform, and a de-facto funding alignment with the Fed. Industrial policy (advanced-chip tariffs, nuclear-for-AI) steers capital toward strategic domestic capacity. UPDATE (6/24): read this as a SEQUENCED, optionality-based campaign — not a static state — and downgrade &#39;coordinated&#39; to aligned-incentives / revealed-preference, mostly common-cause. The hawkish tape (as of 6/16: Sept hike a minority ~1-in-3, Dec-hike ~77–88%, DXY 13-mo high, real 10y 2.29%, gold&lt;$4,000) was the credibility-banking STAGING phase. UPDATE (7/13): ceasefire declared over 7/8 (Trump), US strikes on Iran 7/8–11, Brent spiked ~$80 intraday; CME FedWatch moved to &gt;70% probability of a Sept hike (50.6% 25bp + 19.6% 50bp); gold trading $4,044–4,200 range; DXY ~100.9 well off its 13-mo high. The stagflationary split has sharpened: the Iran re-escalation is an upside oil shock hitting simultaneously with a hike-majority market. The frame Warsh&#39;s guidance/dot deletion + the inflation-frameworks and AI-productivity task forces are optionality infrastructure that pre-loads doctrinal cover for a post-midterm pivot, and Bessent&#39;s 6/24 &#39;strong dollar while cutting&#39; is the FX bridge (manufactured demand + Iran haven bid) that lets the front end ease without breaking the ~$9.7T FY2026 refi math. Net: the administration wants the OUTCOME of lower real yields without the inflation-validating OPTICS of near-term cuts — so it suppresses yields structurally now and holds easing as inflation-gated optionality post-midterm. UPDATE (7/6): the first genuine two-sided test of the frame arrived as a STAGFLATIONARY SPLIT — May PCE (6/25) ran hot (core +0.3% m/m, 3.4% y/y, highest since Oct-2023; headline +0.4% m/m, 4.1% y/y) while June payrolls (7/2) cracked to +57k (vs ~115k expected, with -74k of Apr/May downward revisions and participation at a 4-yr-low 61.5%). Warsh&#39;s Sintra response (7/1) held the hawkish line (&#39;prices are too high&#39;; declined to signal July; buried forward guidance alongside Lagarde/Bailey/Macklem). Revealed preference so far = inflation-mandate first, labor-crack second: the &#39;setup&#39; posture is intact, but the weak-jobs leg is exactly the data the catalyst spine flagged as the one thing that can reopen an easing path. The live question is whether a July 28–29 hold morphs toward a DATA-driven (not calendar-driven) September pivot if the labor crack widens.</span><span class="l-zh">一个协调一致的“压低实际收益率 + 战略再工业化”政策体制。沃什治下的美联储将其制度化为一个更收窄、更具相机抉择、重置框架的央行（严格2%目标、减少非常规宽松、不再自缚式前瞻指引）；贝森特治下的财政部则通过偏短端发债、回购、做市商中介改革，以及与美联储事实上的融资协同，明确压低收益率。产业政策（先进芯片关税、为AI供电的核能）将资本引向战略性国内产能。更新（6/24）：应将其理解为一场分阶段、以“灵活性”为核心的运动——而非静态状态——并把“协调一致”下调为“利益一致／显示性偏好、且大多为共同成因”。鹰派的盘面（截至6/16：9月加息仍属少数派约三分之一，12月加息约77–88%、DXY十三个月新高、10年期实际收益率2.29%、黄金跌破4000美元）是“储蓄信誉”的铺垫阶段。更新（7/13）：停火于7/8被宣告终结（特朗普），美军7/8–7/11对伊朗发动打击，布伦特盘中飙至约80美元；CME FedWatch显示9月前至少加息一次的概率超过70%（25bp概率50.6%、50bp概率19.6%）；黄金交投于4,044–4,200美元区间；DXY约100.9，远低于其十三个月高点。类滞胀撞裂加剧：伊朗再升级是一次上行油价冲击，与加息概率多数化同时到来。该框架沃什取消指引／点位，加上通胀框架与AI生产率工作组，构成为中期选举后转向预置教义掩护的“灵活性基础设施”；而贝森特6/24“降息中维持强美元”则是那座汇率之桥（人为需求＋伊朗避险买盘），让短端得以宽松而不击穿约9.7万亿美元的2026财年再融资数学。归结：政府想要“更低实际收益率”的结果，却不要“近期降息”那种坐实通胀的观感——于是当下以结构性手段压低收益率，并把宽松作为中期选举后、取决于通胀的“期权”持有。更新（7/6）：该框架迎来首次真正的双向检验——一场“类滞胀”的撕裂。5月PCE（6/25）偏热（核心环比+0.3%、同比3.4%，为2023年10月以来最高；整体环比+0.4%、同比4.1%），而6月非农（7/2）骤降至+5.7万（远低于约11.5万预期，4/5月合计下修7.4万，劳动参与率降至61.5%的四年低位）。沃什在辛特拉（7/1）维持鹰派表态（“物价过高”、拒绝暗示7月、与拉加德／贝利／麦克勒姆一道埋葬前瞻指引）。目前的显示性偏好＝先通胀使命、后就业裂缝：“铺垫”姿态未变，但疲弱就业正是本情报“催化剂主线”所标注的、唯一可能重启宽松路径的数据。核心问题在于：若就业裂缝扩大，7月28–29日的按兵是否会转向由数据（而非日历）驱动的9月转向。</span></p>
+      <button class="pw-more" aria-expanded="false" aria-controls="pw-thesis" type="button"><span class="more"><span class="l-en">Read the full thesis ▾</span><span class="l-zh">展开全文 ▾</span></span><span class="less"><span class="l-en">Show less ▴</span><span class="l-zh">收起 ▴</span></span></button>
+    </div>
+    <div class="pw-th warn">
+      <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwam)"></i><span class="l-en">Narrative vs revealed interest</span><span class="l-zh">叙事 vs 真实利益</span></p>
+      <p class="pw-prose" id="pw-regime"><span class="l-en">The market-relevant divergence: the consensus narrative casts Warsh as a dovish Trump instrument (Warren&#39;s &#39;sock puppet&#39;), yet his revealed debut was a hawkish hold with a possible-hike dot. The low-yield outcome the administration wants is being pursued STRUCTURALLY — framework reset, balance-sheet posture, and Treasury issuance — not via near-term cuts. Trade the structure, not the rhetoric. SECOND TELL (6/24): the entire hawkish surface is the SETUP, not the destination — strong-dollar/strict-2% credibility is being BANKED now to spend on a post-midterm &#39;earned-disinflation&#39; cut, with the dot/guidance deletion ensuring that cut violates no prior and the AI-productivity/look-through doctrine furnishing the technocratic alibi. Bessent&#39;s &#39;you can have a strong dollar when rates are being cut&#39; (volunteered on a day the market had priced cuts out through Sept) is the giveaway. Trade-relevant line: do NOT pay up for terminal-rate-stays-high duration shorts on the hawkish tape alone, and do NOT trust &#39;debasement is dead&#39; at peak-hawk — own optionality on a dovish/debasement surprise that bases when DXY+2Y+real-yields+hike-odds peak TOGETHER. Gate it on P5; the debasement washout is a positioning flush, not a fundamental refutation (deficits/issuance are unchanged by gold&#39;s price).</span><span class="l-zh">对市场最关键的背离：主流叙事把沃什描绘成特朗普的鸽派工具（沃伦称其“提线木偶”），但他实际的首秀却是鹰派按兵不动、并暗示年内可能加息。政府想要的低收益率结果，是通过“结构性”手段实现的——框架重置、资产负债表姿态、财政部发债结构——而非近期降息。交易结构，而非言辞。第二个破绽（6/24）：整个鹰派表象是铺垫、而非终点——强美元／严格2%的信誉正被“储蓄”起来，以便在中期选举后、以“应得的反通胀”之名启动降息；取消点位／指引确保该次降息不违背任何先前承诺，而AI生产率／“透视性看待”教义则提供技术官僚式的挡箭牌。贝森特那句“降息时也能维持强美元”（在市场已把9月前降息定价剔除的当天主动抛出）正是泄露。可操作的要点：不要仅凭鹰派盘面就为“终端利率维持高位”的久期空头付高价，也不要在鹰派高峰相信“去货币化已死”——应持有对“鸽派／去货币化意外”的期权，其筑底发生在美元+2年期+实际收益率+加息概率同时见顶之时。以P5为闸门；去货币化的洗盘是仓位踩踏，而非基本面证伪（赤字与发债规模并不因金价而改变）。</span></p>
+      <button class="pw-more" aria-expanded="false" aria-controls="pw-regime" type="button"><span class="more"><span class="l-en">Read the full read ▾</span><span class="l-zh">展开全文 ▾</span></span><span class="less"><span class="l-en">Show less ▴</span><span class="l-zh">收起 ▴</span></span></button>
+    </div>
   </div>
 
   <!-- ================= CATALYST SPINE ================= -->
   
   
-  
-  <h2 class="sec">🗓️ <span class="l-en">Catalyst spine — inflation to decision</span><span class="l-zh">催化剂主线 — 从通胀到决议</span></h2>
-  <p class="lede" style="color:var(--muted)"><span class="l-en">The inflation-to-decision spine into the July 28–29 FOMC. UPDATE (7/6): the two prints since 6/24 split — May PCE (6/25) ran HOT (core 3.4% y/y) but June payrolls (7/2) came in WEAK (+57k, big miss). The high-information June CPI (7/14) now arbitrates a genuinely two-sided debate; the FOMC pulls the trigger 7/29. Each hot inflation read still ratchets hike odds, but a widening labor crack is the one thing that reopens an easing path. The crowded, leveraged semis/memory complex can flush on any of these (or on its own earnings) regardless. Display / context only.</span><span class="l-zh">通往 7月 28–29 日 FOMC 的“通胀至决议”主线。更新（7/6）：6/24以来的两项数据出现撕裂——5月PCE（6/25）偏热（核心同比3.4%），但6月非农（7/2）疲弱（+5.7万，大幅不及预期）。高信息量的6月CPI（7/14）如今仲裁一场真正双向的争论；FOMC于7/29扣动扳机。每一次偏热的通胀读数仍会上调加息概率，但扩大的就业裂缝是唯一能重启宽松路径者。拥挤、加杠杆的半导体／记忆体板块，无论如何都可能因其中任一事件（或自身财报）而抛售。仅供展示／参考。</span></p>
+  <div class="pw-sec" id="calendar">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwb)"></i><span class="l-en">Calendar</span><span class="l-zh">日历</span></p>
+  <h2><span class="l-en">Catalyst spine — inflation to decision</span><span class="l-zh">催化剂主线 — 从通胀到决议</span></h2>
+</div>
+  <p class="pw-lede"><span class="l-en">The inflation-to-decision spine into the July 28–29 FOMC. UPDATE (7/6): the two prints since 6/24 split — May PCE (6/25) ran HOT (core 3.4% y/y) but June payrolls (7/2) came in WEAK (+57k, big miss). The high-information June CPI (7/14) now arbitrates a genuinely two-sided debate; the FOMC pulls the trigger 7/29. Each hot inflation read still ratchets hike odds, but a widening labor crack is the one thing that reopens an easing path. The crowded, leveraged semis/memory complex can flush on any of these (or on its own earnings) regardless. Display / context only.</span><span class="l-zh">通往 7月 28–29 日 FOMC 的“通胀至决议”主线。更新（7/6）：6/24以来的两项数据出现撕裂——5月PCE（6/25）偏热（核心同比3.4%），但6月非农（7/2）疲弱（+5.7万，大幅不及预期）。高信息量的6月CPI（7/14）如今仲裁一场真正双向的争论；FOMC于7/29扣动扳机。每一次偏热的通胀读数仍会上调加息概率，但扩大的就业裂缝是唯一能重启宽松路径者。拥挤、加杠杆的半导体／记忆体板块，无论如何都可能因其中任一事件（或自身财报）而抛售。仅供展示／参考。</span></p>
   <table class="data">
     <tr><th><span class="l-en">Date</span><span class="l-zh">日期</span></th><th><span class="l-en">Event</span><span class="l-zh">事件</span></th><th><span class="l-en">Impact</span><span class="l-zh">影响</span></th><th><span class="l-en">Read</span><span class="l-zh">解读</span></th></tr>
     
@@ -365,7 +631,7 @@
         <br><span class="b b-open"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
       </td>
       <td><strong><span class="l-en">Micron (MU) fiscal-Q3 earnings</span><span class="l-zh">美光（MU）财季 Q3 财报</span></strong></td>
-      <td><span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
+      <td><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span> <span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="l-en">Memory-specific. HBM is sold out through 2026, but the stock is priced for perfection (island-top near record highs) — it gaps memory (MU / SK Hynix / Samsung) before PCE even prints.</span><span class="l-zh">记忆体专属。HBM 在 2026 年前已售罄，但股价已计入完美预期（高位岛形反转）——在 PCE 公布前就会令记忆体板块（美光／SK 海力士／三星）跳空。</span></td>
     </tr>
     
@@ -376,29 +642,29 @@
         <br><span class="b b-open"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
       </td>
       <td><strong><span class="l-en">May PCE — core PCE price index (Fed’s preferred gauge)</span><span class="l-zh">5月 PCE — 核心 PCE 物价指数（美联储首选指标）</span></strong></td>
-      <td><span class="b b-prior"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
+      <td><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class=""></i></span> <span class="b b-prior"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="l-en">RELEASED (6/25): core PCE +0.3% m/m / 3.4% y/y (highest since Oct-2023); headline +0.4% m/m / 4.1% y/y (highest since Apr-2023). Consensus qualifier: headline was ~0.1pp below the LSEG m/m forecast (0.4% vs 0.5%) but in line on the y/y print (4.1% = 4.1% consensus); core was in line vs the LSEG 3.4% forecast but 0.1pp above the Dow Jones 3.3% forecast -- verdict flips by survey and horizon. The 3.4% y/y hardens the no-cut/hawkish case.</span><span class="l-zh">已公布（6/25）：核心PCE环比+0.3%／同比3.4%（2023年10月以来最高）；整体环比+0.4%／同比4.1%（2023年4月以来最高）。共识修正：整体较LSEG环比预测低约0.1个百分点（0.4%对0.5%），但同比与共识持平（4.1%对4.1%）；核心与LSEG 3.4%预测持平，但高于Dow Jones 3.3%预测0.1个百分点——结论因调查来源与期限而异。 3.4%同比强化了不降息／鹰派立场。</span></td>
     </tr>
     
-    <tr style="background:color-mix(in srgb,var(--link) 7%,transparent)">
+    <tr class="key-row">
       <td style="white-space:nowrap">
         <strong>2026-07-02</strong><br>
         <span class="conf"><span class="l-en">8:30am ET</span><span class="l-zh">美东 08:30</span></span>
         <br><span class="b b-open"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
       </td>
-      <td>★ <strong><span class="l-en">June jobs report (nonfarm payrolls)</span><span class="l-zh">6月就业报告（非农就业）</span></strong></td>
-      <td><span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
+      <td><span class="k-star">★</span> <strong><span class="l-en">June jobs report (nonfarm payrolls)</span><span class="l-zh">6月就业报告（非农就业）</span></strong></td>
+      <td><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span> <span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="l-en">RELEASED (7/2): +57k payrolls, a sharp MISS (vs ~115k expected); unemployment 4.2% but on a falling participation rate (61.5%, lowest since Mar-2021); Apr/May revised down a combined -74k; leisure/hospitality -61k. This is the &#39;sharp miss&#39; this note flagged as the one thing that reopens an easing path — now realized. Sets up a genuine stagflationary hike-vs-hold-vs-cut debate into July CPI.</span><span class="l-zh">已公布（7/2）：非农+5.7万，大幅不及预期（约11.5万）；失业率4.2%，但因劳动参与率下滑（61.5%，2021年3月以来最低）；4/5月合计下修7.4万；休闲住宿-6.1万。这正是本条所标注的、唯一能重启宽松路径的“大幅低于预期”——如今兑现。为通往7月CPI的真正“类滞胀”加息／按兵／降息之争埋下伏笔。</span></td>
     </tr>
     
-    <tr style="background:color-mix(in srgb,var(--link) 7%,transparent)">
+    <tr class="key-row">
       <td style="white-space:nowrap">
         <strong>2026-07-14</strong><br>
         <span class="conf"><span class="l-en">8:30am ET</span><span class="l-zh">美东 08:30</span></span>
         <br><span class="b b-open"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
       </td>
-      <td>★ <strong><span class="l-en">June CPI — the tier-1 inflation print</span><span class="l-zh">6月 CPI — 一线通胀数据</span></strong></td>
-      <td><span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
+      <td><span class="k-star">★</span> <strong><span class="l-en">June CPI — the tier-1 inflation print</span><span class="l-zh">6月 CPI — 一线通胀数据</span></strong></td>
+      <td><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span> <span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="l-en">The highest-information inflation event before the decision: CPI leads, and PCE is nowcast off it. This is the print the Fed weighs most going into July 28–29 — the macro catalyst worth circling, more than tomorrow’s PCE.</span><span class="l-zh">决议前信息量最高的通胀事件：CPI 领先，PCE 据其即时推算。这是美联储在 7 月 28–29 日会议前最看重的数据——比明日 PCE 更值得圈出的宏观催化剂。</span></td>
     </tr>
     
@@ -409,36 +675,39 @@
         <br><span class="b b-open"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
       </td>
       <td><strong><span class="l-en">June PPI — completes the inflation read</span><span class="l-zh">6月 PPI — 补全通胀读数</span></strong></td>
-      <td><span class="b b-prior"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
+      <td><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class=""></i></span> <span class="b b-prior"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="l-en">Day-after CPI; feeds the PCE components (airfares, portfolio management, healthcare) the CPI doesn’t cleanly capture. Confirms or complicates the CPI signal into the FOMC.</span><span class="l-zh">CPI 次日公布；为 CPI 未能净准捕捉的 PCE 分项（机票、资产管理、医疗）提供输入。在 FOMC 前对 CPI 信号或确认或扰动。</span></td>
     </tr>
     
-    <tr style="background:color-mix(in srgb,var(--link) 7%,transparent)">
+    <tr class="key-row">
       <td style="white-space:nowrap">
         <strong>2026-07-29</strong><br>
         <span class="conf"><span class="l-en">2:00pm ET (meeting 7/28–29)</span><span class="l-zh">美东 14:00（会议 7/28–29）</span></span>
         <br><span class="b b-open"><span class="l-en">passed</span><span class="l-zh">已过</span></span>
       </td>
-      <td>★ <strong><span class="l-en">FOMC rate decision</span><span class="l-zh">FOMC 利率决议</span></strong></td>
-      <td><span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
+      <td><span class="k-star">★</span> <strong><span class="l-en">FOMC rate decision</span><span class="l-zh">FOMC 利率决议</span></strong></td>
+      <td><span class="imp" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i></span> <span class="b b-inf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="l-en">The policy event -- and the biggest gap risk of the cluster. June FOMC minutes (released 7/8) confirmed a 9-to-8 split on a 2026 hike, with inflation forecasts revised sharply higher (core PCE 3.3% for 2026). By 7/10-11 CME FedWatch moved to &gt;70% probability of at least one hike by September (50.6% 25bp + 19.6% 50bp). The June jobs miss (7/2) put a data-driven cut path back on the table, so the debate remains three-sided into the June CPI (7/14). Warsh&#39;s Sintra hold (7/1) still tilts the base case toward no-cut, but hike odds are now a MAJORITY, not the minority ~1-in-3 priced at the June 16 FOMC.</span><span class="l-zh">政策事件——也是本轮事件群中跳空风险最大者。6月FOMC纪要（7/8公布）确认9比8的分裂投票（赞成2026年加息），通胀预测大幅上调（2026年核心PCE 3.3%）。7/10-11，CME FedWatch显示9月前至少加息一次的概率超过70%（25bp概率50.6%、50bp概率19.6%）。6月非农失手（7/2）使由数据驱动的降息路径重回台面，因此通往6月CPI（7/14）的争论仍呼三向。沃什辛特拉按兵（7/1）仍使基准情形偏向不降息，但加息概率现已为多数派，而非6月16日FOMC时约三分之一的少数派。</span></td>
     </tr>
     
   </table>
-  <p class="conf"><span class="l-en">★ = the catalysts that actually move the decision (June CPI → the July 28–29 FOMC). Each hot print ratchets hike odds; PCE is largely pre-figured. Display / context only.</span><span class="l-zh">★ = 真正影响决议的催化剂（6月CPI → 7月28–29日FOMC）。每次偏热读数都上调加息概率；PCE 大体已被预定。仅供展示／参考。</span></p>
+  <p class="conf"><span class="l-en">★ = the catalysts that actually move the decision (June CPI → the July 28–29 FOMC). Each hot print ratchets hike odds; PCE is largely pre-figured. Context, not a signal.</span><span class="l-zh">★ = 真正影响决议的催化剂（6月CPI → 7月28–29日FOMC）。每次偏热读数都上调加息概率；PCE 大体已被预定。仅供参考、并非信号。</span></p>
   
 
   <!-- ================= INTENT DESK (LLM, accountable) ================= -->
   
-  <h2 class="sec">🤖 <span class="l-en">Intent Desk — accountable realpolitik leans</span><span class="l-zh">意图台 — 可问责的现实政治判断</span></h2>
-  <p class="lede" style="color:var(--muted)"><span class="l-en">An LLM reads the sourced intel + live market state and emits dated, FALSIFIABLE leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.</span><span class="l-zh">由LLM读取来源情报+实时市场状态，给出有日期、可证伪的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。</span></p>
-  <div class="callout"><span class="l-en">The administration and Fed are executing a sequenced campaign to suppress real yields and redirect capital into strategic industries (nuclear, chips, defense) while maintaining hawkish optics to avoid validating inflation. However, the Iran conflict spike is delivering an oil shock that collides with a Fed still tilted toward hiking, creating a stagflationary split. The consensus narrative that the Fed is merely stubborn misses the revealed interest: the administration wants lower real rates but cannot afford a near-term cut, so it suppresses yields structurally via Treasury bill issuance and holds easing as post-midterm optionality, while allowing a stronger dollar to manage funding costs.</span><span class="l-zh">政府与美联储正在执行一项有序安排，以压低实际收益率并将资本引导至战略产业（核能、芯片、国防），同时维持鹰派姿态以避免坐实通胀。然而，伊朗冲突升级带来的石油冲击与仍偏紧缩的美联储相撞，形成滞胀分裂。市场普遍认为美联储只是固执己见，但这忽略了其显性利益：政府希望降低实际利率，但眼下承担不起降息的政治代价，因此通过国库券发行结构性压低收益率，并将降息作为中期选举后的、以通胀为约束的备选项，同时允许美元走强来管理融资成本。</span></div>
+  <div class="pw-sec" id="desk">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwa)"></i><span class="l-en">Intent desk</span><span class="l-zh">意图台</span></p>
+  <h2><span class="l-en">Intent Desk — accountable realpolitik leans</span><span class="l-zh">意图台 — 可问责的现实政治判断</span></h2>
+</div>
+  <p class="pw-lede"><span class="l-en">An LLM reads the sourced intel + live market state and emits dated, checkable leans (a proxy ticker vs SPY) that are scored over time. Context only — never a size or a trade; intent is a tracked hypothesis, not an oracle.</span><span class="l-zh">由LLM读取来源情报+实时市场状态，给出有日期、可核查的判断（某代理标的 vs SPY），并随时间评分。仅供参考——绝非仓位或交易；意图是被追踪的假设，而非神谕。</span></p>
+  <div class="pw-quote"><span class="l-en">The administration and Fed are executing a sequenced campaign to suppress real yields and redirect capital into strategic industries (nuclear, chips, defense) while maintaining hawkish optics to avoid validating inflation. However, the Iran conflict spike is delivering an oil shock that collides with a Fed still tilted toward hiking, creating a stagflationary split. The consensus narrative that the Fed is merely stubborn misses the revealed interest: the administration wants lower real rates but cannot afford a near-term cut, so it suppresses yields structurally via Treasury bill issuance and holds easing as post-midterm optionality, while allowing a stronger dollar to manage funding costs.</span><span class="l-zh">政府与美联储正在执行一项有序安排，以压低实际收益率并将资本引导至战略产业（核能、芯片、国防），同时维持鹰派姿态以避免坐实通胀。然而，伊朗冲突升级带来的石油冲击与仍偏紧缩的美联储相撞，形成滞胀分裂。市场普遍认为美联储只是固执己见，但这忽略了其显性利益：政府希望降低实际利率，但眼下承担不起降息的政治代价，因此通过国库券发行结构性压低收益率，并将降息作为中期选举后的、以通胀为约束的备选项，同时允许美元走强来管理融资成本。</span></div>
   
   
   <div class="cards">
     
     <div class="card">
-      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · SMR — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
+      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · <span class="pw-tkr">SMR</span> — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
       <div class="cmeta">
         <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-10-21</span>
@@ -446,11 +715,11 @@
       </div>
       <div class="cch"><span class="l-en">The administration&#39;s nuclear-for-AI push, backed by HALEU fuel releases and datacenter demand, is channeling capital towards small modular reactor companies, providing a policy-driven tailwind vs SPY.</span><span class="l-zh">政府推动‘核能供应AI’的政策，辅以HALEU燃料投放和数据中心需求，将资本引向小型模块化反应堆公司，形成较SPY的政策顺风。</span></div>
       <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">SMR technology remains commercially unproven and project costs may escalate, undercutting the investment thesis.</span><span class="l-zh">SMR技术商业化尚未验证，项目成本可能超支，削弱投资逻辑。</span></div>
-      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">DOE fails to announce HALEU release or a major SMR project is canceled in Q3 2026.</span><span class="l-zh">能源部未能宣布HALEU投放，或2026年第三季度有重大SMR项目被取消。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">What changes this read</span><span class="l-zh">改判条件</span></span><span class="l-en">DOE fails to announce HALEU release or a major SMR project is canceled in Q3 2026.</span><span class="l-zh">能源部未能宣布HALEU投放，或2026年第三季度有重大SMR项目被取消。</span></div>
     </div>
     
     <div class="card">
-      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · ITA — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
+      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · <span class="pw-tkr">ITA</span> — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
       <div class="cmeta">
         <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-10-21</span>
@@ -458,11 +727,11 @@
       </div>
       <div class="cch"><span class="l-en">The structural NATO spending super-cycle, Iran re-escalation, and missile-defense priorities under the Golden Dome architecture create sustained demand for defense primes, outperforming SPY as long as conflict risk persists.</span><span class="l-zh">北约结构性支出超级周期、伊朗局势再升级以及‘金穹’导弹防御架构，为主承包商带来持续需求，只要冲突风险持续，就跑赢SPY。</span></div>
       <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A sudden ceasefire or budget reallocation to domestic programs could halt defense outperformance.</span><span class="l-zh">突然的停火或预算转向国内项目可能终止国防股的超额收益。</span></div>
-      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">Iran ceasefire holds for 30+ days and Congressional defense budget top-line is cut.</span><span class="l-zh">伊朗停火持续超过30天，且国会削减国防预算上限。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">What changes this read</span><span class="l-zh">改判条件</span></span><span class="l-en">Iran ceasefire holds for 30+ days and Congressional defense budget top-line is cut.</span><span class="l-zh">伊朗停火持续超过30天，且国会削减国防预算上限。</span></div>
     </div>
     
     <div class="card">
-      <div class="cn"><span class="th-fed"><span class="l-en">FED</span><span class="l-zh">美联储</span></span> · XLF — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
+      <div class="cn"><span class="th-fed"><span class="l-en">FED</span><span class="l-zh">美联储</span></span> · <span class="pw-tkr">XLF</span> — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
       <div class="cmeta">
         <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-09-22</span>
@@ -470,11 +739,11 @@
       </div>
       <div class="cch"><span class="l-en">Treasury’s push for dealer-intermediation reform and the Fed’s bill-reinvestment stance are creating a structurally supportive environment for primary dealer banks, while a hawkish Fed curve temporarily aids net interest margins, leading XLF to outperform SPY near-term.</span><span class="l-zh">财政部推动的交易商中介改革以及美联储转而投资国库券的立场，为一级交易商银行创造了结构性利好环境，而美联储鹰派利差暂时有助于净息差，令XLF短期内跑赢SPY。</span></div>
       <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A rapid labor-market crack and recession fears could invert the curve and spike credit losses, negating any structural benefits.</span><span class="l-zh">劳动力市场快速恶化与衰退担忧可能导致曲线倒挂并引发信用损失，抵消结构性利好。</span></div>
-      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">July payrolls show another sub-100k print and credit spreads widen &gt;50bp, or eSLR reform is explicitly shelved.</span><span class="l-zh">7月非农就业再度低于10万且信用利差扩大超过50个基点，或eSLR改革被明确搁置。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">What changes this read</span><span class="l-zh">改判条件</span></span><span class="l-en">July payrolls show another sub-100k print and credit spreads widen &gt;50bp, or eSLR reform is explicitly shelved.</span><span class="l-zh">7月非农就业再度低于10万且信用利差扩大超过50个基点，或eSLR改革被明确搁置。</span></div>
     </div>
     
     <div class="card">
-      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · XLE — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
+      <div class="cn"><span class="th-policy"><span class="l-en">ADMIN</span><span class="l-zh">行政当局</span></span> · <span class="pw-tkr">XLE</span> — <span class="b b-fact"><span class="l-en">overweight</span><span class="l-zh">超配</span></span></div>
       <div class="cmeta">
         <span class="conf"><span class="l-en">low</span><span class="l-zh">低</span> <span class="l-en">conviction</span><span class="l-zh">置信</span></span>
         <span class="b b-open"><span class="l-en">check by</span><span class="l-zh">核查于</span> 2026-08-24</span>
@@ -482,7 +751,7 @@
       </div>
       <div class="cch"><span class="l-en">The Iran re-escalation has triggered an oil supply disruption premium, driving capital into energy equities which were already the top ETF inflow sector in Q1. Despite headline fragility, XLE can outperform SPY as long as Brent remains above $75.</span><span class="l-zh">伊朗局势再升级触发了石油供应中断溢价，推动资金流入一季度已是ETF资金流入最多的能源板块。尽管新闻面脆弱，只要布伦特原油保持在75美元以上，XLE能跑赢SPY。</span></div>
       <div class="cch" style="color:var(--muted)"><b><span class="l-en">Dissent</span><span class="l-zh">反方</span>:</b> <span class="l-en">A rapid ceasefire or demand-destruction from global slowdown could sink oil, erasing energy outperformance quickly.</span><span class="l-zh">快速停火或全球经济放缓导致需求破坏可能使油价暴跌，迅速抹去能源的超额收益。</span></div>
-      <div class="crp"><b><span class="l-en">Falsifier</span><span class="l-zh">证伪条件</span>:</b> <span class="l-en">Brent crude drops below $70 and JMIC threat level is downgraded.</span><span class="l-zh">布伦特原油跌破70美元，且联合海上情报中心威胁级别下调。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">What changes this read</span><span class="l-zh">改判条件</span></span><span class="l-en">Brent crude drops below $70 and JMIC threat level is downgraded.</span><span class="l-zh">布伦特原油跌破70美元，且联合海上情报中心威胁级别下调。</span></div>
     </div>
     
   </div>
@@ -491,28 +760,31 @@
   
 
   <!-- ================= THE FED ================= -->
-  <h2 class="sec">🏦 <span class="l-en">The Fed under Warsh</span><span class="l-zh">沃什治下的美联储</span></h2>
+  <div class="pw-sec" id="fed">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwa)"></i><span class="l-en">The Fed</span><span class="l-zh">美联储</span></p>
+  <h2><span class="l-en">The Fed under Warsh</span><span class="l-zh">沃什治下的美联储</span></h2>
+</div>
   <p class="lede"><span class="l-en">Warsh&#39;s revealed agenda (CFR confirmation-hearing analysis + his June 17 debut): narrow the Fed&#39;s mandate, revert to a strict 2% target (abandoning 2020 flexible-average-inflation-targeting), cut reliance on unconventional tools (QE/balance sheet), and abandon forward guidance — potentially making the dot plot obsolete. He withheld his own dot, dropped guidance, issued a ~114-word statement, and chartered five reform task forces. Revealed interest: a personal institutional legacy / structural Fed redesign that outlasts any one president. UPDATE (7/1): at his global debut (ECB Sintra forum) Warsh held the hawkish line — &#39;prices are too high&#39;, declined to signal the July decision, and jointly buried forward guidance alongside Lagarde/Bailey/Macklem, pledging to &#39;deliver price stability&#39; and pointedly disappointing anyone expecting tolerance of &gt;2% inflation — a posture that, held through a weak June jobs print, likely forecloses the near-term cuts the President has sought.</span><span class="l-zh">沃什的实际议程（CFR对其确认听证会的分析 + 6月17日首秀）：收窄美联储职责、回归严格2%目标（放弃2020年的灵活平均通胀目标制）、减少对非常规工具（QE/资产负债表）的依赖、并放弃前瞻指引——点阵图或将作废。他未提交自己的点位、取消指引、发布约114词的声明、并设立五个改革工作组。其真实利益：打造个人的制度遗产 / 一个能超越任一总统任期的结构性美联储重设。更新（7/1）：在其全球首秀（欧洲央行辛特拉论坛）上，沃什维持鹰派表态——“物价过高”、拒绝暗示7月决议，并与拉加德／贝利／麦克勒姆一道埋葬前瞻指引，承诺“交付价格稳定”，并明确让任何期待其容忍2%以上通胀者失望——这一姿态在疲弱6月就业数据下仍得以维持，很可能封堵了总统所寻求的近期降息。</span></p>
 
   
   
-  <div class="callout">
-    <span class="co-h"><span class="l-en">Reaction function (explicit, display-only)</span><span class="l-zh">反应函数（显式，仅展示）</span>
-      <span class="b b-miss"><span class="l-en">Hawkish</span><span class="l-zh">鹰派</span></span> <span class="conf"><span class="l-en">for</span><span class="l-zh">已持续</span> 19<span class="l-en">d</span><span class="l-zh">天</span> (<span class="l-en">since</span><span class="l-zh">自</span> 2026-07-13)</span></span>
+  <div class="pw-panel">
+    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwa)"></i><span class="l-en">Reaction function — read from market prices, not a forecast</span><span class="l-zh">反应函数 — 由市场价格读出、并非预测</span>
+      <span class="b b-miss"><span class="l-en">Hawkish</span><span class="l-zh">鹰派</span></span> <span class="conf"><span class="l-en">for</span><span class="l-zh">已持续</span> 19<span class="l-en">d</span><span class="l-zh">天</span> (<span class="l-en">since</span><span class="l-zh">自</span> 2026-07-13)</span></p>
     <span class="l-en">market prices ~2.0 hike(s) over 12m · statement guidance on-hold · market ≈ the Fed (+11bp)</span><span class="l-zh">市场计入未来12个月约2.0次加息 · 声明指引按兵不动 · 市场与美联储基本一致（+11bp）</span>. 
     <span class="conf"><span class="l-en">Explicit reaction-function read off fed_path + the FOMC-statement guidance. A market price is reactive, not a forecast; display only.</span><span class="l-zh">基于 fed_path 与 FOMC 声明指引的显式“反应函数”读数。市场价格是被动反应而非预测；仅供展示。</span></span>
   </div>
   
 
   
-  <div class="callout warn">
-    <span class="co-h"><span class="l-en">Pivot infrastructure — the 6/24 read</span><span class="l-zh">转向基础设施 —— 6/24 解读</span>
-      <span class="b b-inf"><span class="l-en">INFERENCE / PRIOR · adversary-tested</span><span class="l-zh">推断 / 先验 · adversary-tested</span></span> <span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></span>
+  <div class="pw-panel warn">
+    <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwam)"></i><span class="l-en">Pivot infrastructure — the 6/24 read</span><span class="l-zh">转向基础设施 —— 6/24 解读</span>
+      <span class="b b-inf"><span class="l-en">INFERENCE / PRIOR · adversary-tested</span><span class="l-zh">推断 / 先验 · adversary-tested</span></span> <span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></p>
     <span class="l-en">Decode the Warsh redesign as PIVOT INFRASTRUCTURE, not just hawkishness. (1) Deleting the dot plot / forward guidance removes the time-stamped record against which a future political-looking cut could be judged — a sudden post-midterm cut violates no prior, it is just &#39;the new data&#39; (accountability-deletion as optionality). (2) The inflation-frameworks task force is the machinery to re-specify what &#39;2%&#39; operationally means (index, horizon, tariff look-through) — watch for language splitting &#39;tariff level-shifts&#39; from &#39;underlying inflation&#39;, the cut permission slip that prices first in breakevens and the belly. (3) The productivity/AI task force furnishes a higher-trend-growth / lower-required-real-rate alibi so ~3.3% core PCE becomes compatible with easing without formally moving the target. One week on, the design has already done the Fed&#39;s tightening FOR it: dollar 13-mo high, real 10y +57bp, the AI froth and the debasement trade both flushed — with the policy rate UNCHANGED. ADVERSARY CAVEATS: Warsh&#39;s anti-guidance ideology predates any 2026-27 cut calculus and cuts both ways; tariff look-through is orthodox decades-old doctrine; any chair would study AI — only TIMING relative to the pivot window discriminates intent from coincidence.</span><span class="l-zh">把沃什的重设解读为“转向基础设施”，而非单纯的鹰派。（1）废除点阵图／前瞻指引，等于删除了未来一次“看似政治化”的降息可被对照评判的时间戳记录——中期选举后的一次突然降息不违背任何先前承诺，它只是“新数据”（以删除问责换取灵活性）。（2）通胀框架工作组是重新界定“2%”操作含义（指数、视野、关税透视）的机器——留意把“关税带来的价位跳升”与“潜在通胀”区分开的措辞，那就是降息“许可证”，会率先在盈亏平衡通胀与曲线中段定价。（3）生产率／AI工作组提供“趋势增长更高／所需实际利率更低”的挡箭牌，使约3.3%的核心PCE在不正式移动目标的前提下与宽松“相容”。一周之后，该设计已替美联储完成了紧缩：美元十三个月新高、10年期实际收益率+57bp、AI泡沫与去货币化交易双双被冲洗——而政策利率纹丝未动。对抗性告诫：沃什反指引的理念早于任何2026-27降息盘算、且利弊双向；关税透视本属数十年的正统教义；任何主席都会研究AI——唯有相对转向窗口的“时点”才能把意图与巧合区分开。</span>
   </div>
   
 
-  <h3 class="sub"><span class="l-en">Reform task forces — dated, falsifiable</span><span class="l-zh">改革工作组 — 有日期、可证伪</span></h3>
+  <h3 class="sub"><span class="l-en">Reform task forces — dated, checkable</span><span class="l-zh">改革工作组 — 有日期、可核查</span></h3>
   <div class="cards">
     
     <div class="card">
@@ -525,7 +797,7 @@
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
       <div class="cch"><span class="l-en">Review Fed communications, the SEP/dot-plot, transcript release practice, and the press conference; recommendations due ~end-2026; the vote on changes is deferred until it reports.</span><span class="l-zh">审查美联储沟通方式、SEP/点阵图、纪要发布做法及新闻发布会；建议约于2026年底出炉；相关变更的表决推迟至其汇报后。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Institutionalizes killing forward guidance and the dot plot — more chair discretion, less market self-binding.</span><span class="l-zh">将“废除前瞻指引与点阵图”制度化——主席相机抉择空间更大，对市场的自我约束更少。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span></span><span class="l-en">Institutionalizes killing forward guidance and the dot plot — more chair discretion, less market self-binding.</span><span class="l-zh">将“废除前瞻指引与点阵图”制度化——主席相机抉择空间更大，对市场的自我约束更少。</span></div>
     </div>
     
     <div class="card">
@@ -538,7 +810,7 @@
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
       <div class="cch"><span class="l-en">Reconsider the Fed&#39;s balance-sheet framework and tools.</span><span class="l-zh">重新审视美联储的资产负债表框架与工具。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Codifies a smaller, less-interventionist balance sheet and the &#39;bills-from-MBS&#39; reinvestment that conveniently aids Treasury&#39;s bill-heavy funding (the Fed/Treasury nexus).</span><span class="l-zh">将“更小、更少干预的资产负债表”及“以MBS回流资金购买短期国库券”的再投资姿态制度化——恰好配合财政部偏短端的融资需求（美联储/财政部联结点）。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span></span><span class="l-en">Codifies a smaller, less-interventionist balance sheet and the &#39;bills-from-MBS&#39; reinvestment that conveniently aids Treasury&#39;s bill-heavy funding (the Fed/Treasury nexus).</span><span class="l-zh">将“更小、更少干预的资产负债表”及“以MBS回流资金购买短期国库券”的再投资姿态制度化——恰好配合财政部偏短端的融资需求（美联储/财政部联结点）。</span></div>
     </div>
     
     <div class="card">
@@ -551,7 +823,7 @@
         <span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span>
       </div>
       <div class="cch"><span class="l-en">Review the Fed&#39;s use of and reliance on existing data sources.</span><span class="l-zh">审查美联储对现有数据来源的使用与依赖。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Revisits which data the Fed trusts (deemphasizing soft/lagging series), widening interpretive latitude for policy.</span><span class="l-zh">重新界定美联储信任哪些数据（弱化软性/滞后序列），为政策解读拓宽空间。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span></span><span class="l-en">Revisits which data the Fed trusts (deemphasizing soft/lagging series), widening interpretive latitude for policy.</span><span class="l-zh">重新界定美联储信任哪些数据（弱化软性/滞后序列），为政策解读拓宽空间。</span></div>
     </div>
     
     <div class="card">
@@ -564,7 +836,7 @@
         <span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span>
       </div>
       <div class="cch"><span class="l-en">Study productivity and jobs in an era of transformation (AI).</span><span class="l-zh">研究AI变革时代下的生产率与就业。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">Builds the intellectual case that AI lifts productivity/potential growth — justification to tolerate stronger demand without hiking. A supply-side narrative aligned with the administration&#39;s AI-dominance agenda.</span><span class="l-zh">构建“AI提升生产率/潜在增长”的理论依据——为“容忍更强需求而不加息”背书。这一供给侧叙事与政府的AI主导议程一致。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span></span><span class="l-en">Builds the intellectual case that AI lifts productivity/potential growth — justification to tolerate stronger demand without hiking. A supply-side narrative aligned with the administration&#39;s AI-dominance agenda.</span><span class="l-zh">构建“AI提升生产率/潜在增长”的理论依据——为“容忍更强需求而不加息”背书。这一供给侧叙事与政府的AI主导议程一致。</span></div>
     </div>
     
     <div class="card">
@@ -577,14 +849,17 @@
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
       <div class="cch"><span class="l-en">Re-examine the Fed&#39;s inflation frameworks.</span><span class="l-zh">重新检视美联储的通胀框架。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span>:</b> <span class="l-en">The vehicle to formally bury 2020 FAIT and lock in a strict 2% target — the doctrinal core of the reset.</span><span class="l-zh">正式埋葬2020年FAIT、锁定严格2%目标的载体——本次重置的教义核心。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik read</span><span class="l-zh">现实政治解读</span></span><span class="l-en">The vehicle to formally bury 2020 FAIT and lock in a strict 2% target — the doctrinal core of the reset.</span><span class="l-zh">正式埋葬2020年FAIT、锁定严格2%目标的载体——本次重置的教义核心。</span></div>
     </div>
     
   </div>
-  <p class="lede" style="color:var(--muted)">⏳ <span class="l-en">Each task force pairs internal Fed staff with external experts Warsh is &#39;still recruiting&#39; — NO external members named as of the June 17 debut. First named member is itself a tracked signal.</span><span class="l-zh">每个工作组由美联储内部人员搭配外部专家组成，沃什表示仍在“招募中”——截至6月17日首秀尚无外部成员公布。首位公布的成员本身即是一个被追踪的信号。</span></p>
+  <p class="pw-lede">⏳ <span class="l-en">Each task force pairs internal Fed staff with external experts Warsh is &#39;still recruiting&#39; — NO external members named as of the June 17 debut. First named member is itself a tracked signal.</span><span class="l-zh">每个工作组由美联储内部人员搭配外部专家组成，沃什表示仍在“招募中”——截至6月17日首秀尚无外部成员公布。首位公布的成员本身即是一个被追踪的信号。</span></p>
 
   <!-- ================= THE ADMINISTRATION ================= -->
-  <h2 class="sec">🇺🇸 <span class="l-en">The Administration</span><span class="l-zh">行政当局</span></h2>
+  <div class="pw-sec" id="admin">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwb)"></i><span class="l-en">Administration</span><span class="l-zh">行政当局</span></p>
+  <h2><span class="l-en">The Administration</span><span class="l-zh">行政当局</span></h2>
+</div>
   <p class="lede"><span class="l-en">Treasury&#39;s revealed strategy under Bessent is yield suppression — &#39;Making America Affordable Again&#39; — via short-end/bill-heavy funding rather than long-end coupons or deficit elimination, plus market-structure reform to expand dealer capacity to absorb Treasuries (eSLR reform, SEC central-clearing, buyback expansion). The objective Bessent states plainly: keep the risk-free rate low to lower mortgage and car payments. Pair this with concrete industrial policy (chip tariffs, nuclear-for-AI) and the picture is reflation-with-repression: hold real yields down while steering capital into strategic domestic capacity.</span><span class="l-zh">贝森特治下财政部的实际策略是压低收益率——“让美国重新负担得起”——通过偏短端/票据为主的发债（而非增加长端票息或消除赤字），并辅以扩大做市商承接国债能力的市场结构改革（eSLR改革、SEC中央清算、扩大回购）。贝森特直言其目标：压低无风险利率以降低房贷与车贷。再叠加具体的产业政策（芯片关税、为AI供电的核能），整体图景即“带金融抑制的再通胀”：压住实际收益率，同时把资本引向战略性国内产能。</span></p>
   <p class="conf"><span class="l-en">Decision-makers tracked</span><span class="l-zh">追踪的决策者</span>: <span class="l-en">Donald Trump (President) · Scott Bessent (Treasury Secretary) · DOE Sec. Chris Wright (energy/nuclear)</span><span class="l-zh">特朗普（总统） · 贝森特（财政部长） · 能源部长赖特（能源/核能）</span></p>
 
@@ -656,8 +931,8 @@
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
       <div class="cch"><span class="l-en">Nov 10 2025 US-China deal: fentanyl tariff cut 10pp; rare-earth/gallium/germanium/antimony/graphite general licenses; both sides suspend post-Mar-2025 retaliation. SCOTUS ruling (Feb 20 2026, Learning Resources v. Trump): IEEPA does NOT authorize tariffs. IEEPA tariffs terminated Feb 24 2026; replaced by a 10% global surcharge under Section 122 of the Trade Act of 1974 (effective Feb 24). CRITICAL TIME LIMITS: Section 122 is STATUTORILY CAPPED at 150 days -- it expires July 24 2026. The US Court of International Trade STRUCK DOWN Section 122 tariffs on May 7 2026 (2-1 panel); currently surviving only on a Federal Circuit administrative stay (May 12) pending appeal. USTR Section 301 replacement (12.5% on ~46 countries incl. China) has a July 20 completion deadline, targeting effect ~July 24. SEPARATELY STRUCTURAL: USTR Section 301 semiconductor determination (Dec 29 2025; initial 0%, step-up ~Jun 23 2027) + Jan 14 2026 25% Section 232 advanced-chip tariff (NVIDIA H200, AMD MI325X). Note: China&#39;s current 10% is the Section 122 global surcharge, NOT the defunct IEEPA reciprocal truce; Section 232/301 remain fully in force.</span><span class="l-zh">2025年11月10日美中协议：芬太尼关税下调10个百分点；稀土/镓/锗/锑/石墨一般许可；双方暂停2025年3月以来的反制。最高法院裁决（2026年2月20日，Learning Resources诉特朗普）：IEEPA不授权征收关税。IEEPA关税于2026年2月24日终止，由《1974年贸易法》第122条的10%全球附加税取代（2月24日生效）。重要时限：第122条在法规上最多持续150天——将于2026年7月24日到期。美国国际贸易法院于2026年5月7日（2比1合议庭）裁定第122条关税违宪；目前仅凭联邦巡回法院的行政中止令（5月12日）维系，上诉审理中。USTR第301条取代方案（对约46个国家包括中国征12.5%）的完成期限为7月20日，目标于7月24日前后生效。另有结构性动作：USTR 301半导体认定（2025年12月29日，初始0%，约2027年6月23日上调）+2026年1月14日的25%的232条款先进芯片关税（英伟达H200、AMD MI325X）。注：中国当前10%为第122条全球附加税，而非已废止的IEEPA对等关税休战；232/301条款关税仍完全生效。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span>:</b> <span class="l-en">Revealed posture is managed DE-RISKING, not decoupling: a tariff truce buys rare-earth supply and calm while structural chip/AI controls (Section 301, export rules) keep tightening. The headline &#39;trade war&#39; is paused; the tech war is not. CRITICAL (7/13): the tariff-wall architecture is mid-transition -- Section 122 (the operative 10% levy) was already struck by the CIT (May 7) and expires July 24 by statute; the Section 301 replacement (~12.5%, ~46 countries) is proposed but not final. The &#39;wall preserved via re-papering&#39; thesis (P42) is contingent on the Section 301 replacement landing cleanly. Legal risk is NOT merely prospective: a court already invalidated Section 122; it survives only on appeal. The US-EU deal (took effect July 1: 15% ceiling, autos 27.5%-&gt;15%) shows Section 122 replacement is bilateral and fast-moving.</span><span class="l-zh">真实姿态是“管理式去风险”而非脱钩：关税休战换取稀土供应与平静，同时结构性芯片/AI管制（301条款、出口规则）持续收紧。头条“贸易战”已暂停，科技战未停。重要（7/13）：关税墙架构正处过渡中——第122条（现行10%税率）已于5月7日被国际贸易法院推翻，且依法规将于7月24日到期；第301条取代方案（约12.5%，约46国）仍为拟议而非最终。“通过重新包装保留关税墙”的论点（P42）取决于第301条取代方案能否顺利落地。法律风险并非单纯前瞻性：法院已推翻第122条，其存续仅凭上诉中的中止令。美欧贸易协议（7月1日生效：15%上限，汽车27.5%降至15%）显示第122条替代工作正在双边、快速推进。</span></div>
-      <div class="cch" style="margin-top:6px"><b>💰 <span class="l-en">Capital</span><span class="l-zh">资本</span>:</b> <span class="l-en">Two-sided: truce relieves rare-earth/critical-minerals supply (caps a squeeze) yet the de-risking mandate still funds domestic minerals &amp; chip onshoring. The SCOTUS strike-down did NOT unwind the tariff-protection premium -- but Section 122 is expiring July 24 and the Section 301 replacement (~12.5%) is pending. Net: onshoring bid persists contingent on the Section 301 handoff completing cleanly. Re-verify China effective tariff rate after July 24.</span><span class="l-zh">两面性：休战缓解稀土/关键矿产供应（抑制逼空），但去风险使命仍为国内矿产与芯片回流提供资金。最高法院推翻并未瓦解关税保护溢价——但第122条将于7月24日到期，第301条取代方案（约12.5%）悬而未决。归结：回流买盘延续，取决于第301条交接能否顺利完成。请7月24日后重新核实对华有效关税税率。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span></span><span class="l-en">Revealed posture is managed DE-RISKING, not decoupling: a tariff truce buys rare-earth supply and calm while structural chip/AI controls (Section 301, export rules) keep tightening. The headline &#39;trade war&#39; is paused; the tech war is not. CRITICAL (7/13): the tariff-wall architecture is mid-transition -- Section 122 (the operative 10% levy) was already struck by the CIT (May 7) and expires July 24 by statute; the Section 301 replacement (~12.5%, ~46 countries) is proposed but not final. The &#39;wall preserved via re-papering&#39; thesis (P42) is contingent on the Section 301 replacement landing cleanly. Legal risk is NOT merely prospective: a court already invalidated Section 122; it survives only on appeal. The US-EU deal (took effect July 1: 15% ceiling, autos 27.5%-&gt;15%) shows Section 122 replacement is bilateral and fast-moving.</span><span class="l-zh">真实姿态是“管理式去风险”而非脱钩：关税休战换取稀土供应与平静，同时结构性芯片/AI管制（301条款、出口规则）持续收紧。头条“贸易战”已暂停，科技战未停。重要（7/13）：关税墙架构正处过渡中——第122条（现行10%税率）已于5月7日被国际贸易法院推翻，且依法规将于7月24日到期；第301条取代方案（约12.5%，约46国）仍为拟议而非最终。“通过重新包装保留关税墙”的论点（P42）取决于第301条取代方案能否顺利落地。法律风险并非单纯前瞻性：法院已推翻第122条，其存续仅凭上诉中的中止令。美欧贸易协议（7月1日生效：15%上限，汽车27.5%降至15%）显示第122条替代工作正在双边、快速推进。</span></div>
+      <div class="pw-block cap"><span class="pw-bl"><span class="l-en">Capital</span><span class="l-zh">资本</span></span><span class="l-en">Two-sided: truce relieves rare-earth/critical-minerals supply (caps a squeeze) yet the de-risking mandate still funds domestic minerals &amp; chip onshoring. The SCOTUS strike-down did NOT unwind the tariff-protection premium -- but Section 122 is expiring July 24 and the Section 301 replacement (~12.5%) is pending. Net: onshoring bid persists contingent on the Section 301 handoff completing cleanly. Re-verify China effective tariff rate after July 24.</span><span class="l-zh">两面性：休战缓解稀土/关键矿产供应（抑制逼空），但去风险使命仍为国内矿产与芯片回流提供资金。最高法院推翻并未瓦解关税保护溢价——但第122条将于7月24日到期，第301条取代方案（约12.5%）悬而未决。归结：回流买盘延续，取决于第301条交接能否顺利完成。请7月24日后重新核实对华有效关税税率。</span></div>
     </div>
     
     <div class="card">
@@ -667,8 +942,8 @@
         <span class="conf"><span class="l-en">medium (re-escalation base case; further developments pending)</span><span class="l-zh">中 (re-escalation base case; further developments pending)</span></span>
       </div>
       <div class="cch"><span class="l-en">A ~6-week 2026 Iran war pushed oil above $120/bbl (Brent peak at Hormuz closure) as shipping lanes went offline; Apr 8 2026 a Pakistan-mediated conditional ceasefire. Jun 17 2026: US-Iran signed 14-point MOU opening ~60-day talks window on Hormuz navigation, nuclear/missile limits, and sanctions. Jun 20: Iran briefly re-declared Strait closed. Jun 27: JMIC widened transit route near Oman -- coinciding with the tanker Kiku struck by Iranian projectile and CENTCOM retaliatory airstrikes. Jul 6-7: additional tanker attacks (Al Rekayyat, Wedyan). OVERTAKEN (7/8): Trump declared the ceasefire &#39;OVER&#39; at the NATO Ankara summit; CENTCOM launched sustained strikes on Iranian sites 7/8-7/11; Brent spiked ~$80 intraday (+8.7%), JMIC raised Hormuz threat to &#39;severe&#39;; Hormuz tanker traffic near-standstill by 7/9. Doha talks (7/1) said &#39;going well&#39; (Vance); no comprehensive deal. NUCLEAR GAP: as of Jun 14 the US had shifted to accepting a 15-20 year enrichment SUSPENSION (not permanent zero-enrichment); live gap = suspension duration + HEU down-blended material location; US messaging inconsistent (Vance 6/18: &#39;Ours will not [allow enrichment]&#39;).</span><span class="l-zh">约6周的2026年伊朗战争在霍尔木兹封锁高峰期将布伦特推升至120美元以上，航道一度中断；2026年4月8日达成巴基斯坦斡旋的有条件停火。2026年6月17日：美伊签署14点谅解备忘录，开启约60天谈判窗口，议题涵盖霍尔木兹通航、核/导弹限制、制裁。6月20日：伊朗短暂宣布海峡再次关闭。6月27日：JMIC在阿曼附近拓宽通行航路——同日油轮Kiku遇伊朗投射物打击，CENTCOM展开报复性空袭。7月6-7日：更多油轮遇袭（Al Rekayyat、Wedyan）。已被推翻（7/8）：特朗普在北约安卡拉峰会宣告停火“已终结”；CENTCOM于7/8-7/11对伊朗境内目标发动持续打击；布伦特盘中飙至约80美元（+8.7%），JMIC将霍尔木兹威胁评级升至“严峻”；7/9起霍尔木兹油轮交通濒临停滞。多哈谈判（7/1）万斯称“进展顺利”；无全面协议。核谈分歧：截至6月14日，美方已转为接受15-20年的浓缩暂停（而非永久零浓缩）；现实分歧在于暂停期限及高浓铀下混后材料的存放地点，且美方表态不一致（万斯6/18：“我们不允许浓缩”）。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span>:</b> <span class="l-en">As of 7/13 the administration&#39;s Iran calculus has inverted: the ceasefire is no longer the base case -- active re-escalation is. The &#39;functioning Hormuz = deliberate disinflation lever&#39; thesis is under active falsification pressure. Oil is now a geopolitical UPSIDE risk, not a managed-down lever. The &#39;oil-down trade is policy-contingent&#39; caveat has materialized: Hormuz near-standstill is Brent near $80 territory and a supply shock on top of a hike-majority market. The JMIC &#39;severe&#39; threat rating and tanker-traffic data are the leading indicators; ceasefire resumption is the tail, not the base. Defense bid and energy-sector rotation remain durable regardless of ceasefire status.</span><span class="l-zh">截至7/13，政府的伊朗盘算已发生逆转：停火不再是基准情形——主动的再升级才是。“可通行的霍尔木兹＝有意的反通胀杠杆”论点正承受主动证伪压力。油价现为地缘政治上行风险，而非可管理的下行杠杆。“油价下行交易取决于政策”的告诫已然兼现：霍尔木兹濒临停滞意味着布伦特接运80美元领域，且是在加息概率多数化的市场上叠加供给冲击。JMIC“严峻”威胁评级及油轮流量数据是领先指标；停火恢复是尾部情形，而非基准。无论停火状态如何，国防买盘与能源板块轮动仍具持续性。</span></div>
-      <div class="cch" style="margin-top:6px"><b>💰 <span class="l-en">Capital</span><span class="l-zh">资本</span>:</b> <span class="l-en">Oil two-sided but upside-skewed on headlines -- re-escalation spike now realized (~$80 Brent intraday 7/8). Energy was the TOP ETF-inflow sector Q1 2026 (first in years) on the conflict; the rotation is real and now re-primed by the ceasefire collapse. Defense bid persists regardless. Watch: Hormuz transit data (Lloyd&#39;s List, Rystad), JMIC threat level, CENTCOM strike cadence.</span><span class="l-zh">油价双向但随头条上行偏斜——再升级飙升已成现实（布伦特盘中约80美元，7/8）。2026年4一季度能源是流入ETF量最多的板块（多年来首次），该轮动真实存在，且因停火崩溃而再度激活。无论如何国防仍获买盘。关注：霍尔木兹通行数据（Lloyd&#39;s List、Rystad）、JMIC威胁等级、CENTCOM打击节奏。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span></span><span class="l-en">As of 7/13 the administration&#39;s Iran calculus has inverted: the ceasefire is no longer the base case -- active re-escalation is. The &#39;functioning Hormuz = deliberate disinflation lever&#39; thesis is under active falsification pressure. Oil is now a geopolitical UPSIDE risk, not a managed-down lever. The &#39;oil-down trade is policy-contingent&#39; caveat has materialized: Hormuz near-standstill is Brent near $80 territory and a supply shock on top of a hike-majority market. The JMIC &#39;severe&#39; threat rating and tanker-traffic data are the leading indicators; ceasefire resumption is the tail, not the base. Defense bid and energy-sector rotation remain durable regardless of ceasefire status.</span><span class="l-zh">截至7/13，政府的伊朗盘算已发生逆转：停火不再是基准情形——主动的再升级才是。“可通行的霍尔木兹＝有意的反通胀杠杆”论点正承受主动证伪压力。油价现为地缘政治上行风险，而非可管理的下行杠杆。“油价下行交易取决于政策”的告诫已然兼现：霍尔木兹濒临停滞意味着布伦特接运80美元领域，且是在加息概率多数化的市场上叠加供给冲击。JMIC“严峻”威胁评级及油轮流量数据是领先指标；停火恢复是尾部情形，而非基准。无论停火状态如何，国防买盘与能源板块轮动仍具持续性。</span></div>
+      <div class="pw-block cap"><span class="pw-bl"><span class="l-en">Capital</span><span class="l-zh">资本</span></span><span class="l-en">Oil two-sided but upside-skewed on headlines -- re-escalation spike now realized (~$80 Brent intraday 7/8). Energy was the TOP ETF-inflow sector Q1 2026 (first in years) on the conflict; the rotation is real and now re-primed by the ceasefire collapse. Defense bid persists regardless. Watch: Hormuz transit data (Lloyd&#39;s List, Rystad), JMIC threat level, CENTCOM strike cadence.</span><span class="l-zh">油价双向但随头条上行偏斜——再升级飙升已成现实（布伦特盘中约80美元，7/8）。2026年4一季度能源是流入ETF量最多的板块（多年来首次），该轮动真实存在，且因停火崩溃而再度激活。无论如何国防仍获买盘。关注：霍尔木兹通行数据（Lloyd&#39;s List、Rystad）、JMIC威胁等级、CENTCOM打击节奏。</span></div>
     </div>
     
     <div class="card">
@@ -678,8 +953,8 @@
         <span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span>
       </div>
       <div class="cch"><span class="l-en">NATO Hague Summit (Jun 2025): allies committed to 5% of GDP by 2035 (3.5% core + 1.5% related). US FY2027 defense request = $1.5T ($1.15T discretionary + $350B reconciliation) = +24% real vs FY2026 discretionary, +38% incl. reconciliation. FY2026 DoD appropriation $839.2B (signed Feb 3 2026). FY2025 reconciliation added $153.3B DoD (5-yr availability through FY2029; DoD planned to allocate $151.5B in FY2026). Priorities: shipbuilding, Golden Dome / missile defense, munitions, drones.</span><span class="l-zh">北约海牙峰会（2025年6月）：盟国承诺2035年前国防开支达GDP的5%（3.5%核心+1.5%相关）。美国FY2027国防申请=1.5万亿美元（1.15万亿可自由支配+0.35万亿对账拨款）=较FY2026实际增长24%，含对账增长38%。FY2026国防部拨款8392亿（2026年2月3日签署）。FY2025对账法新增国防部1533亿（5年可用，至FY2029；国防部计划在FY2026拨1515亿）。优先：造船、金穹/导弹防御、弹药、无人机。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span>:</b> <span class="l-en">This is the most durable, least-headline-fragile rotation in the whole map — multi-year, bipartisan, treaty-locked (2035), and funded through both appropriations AND reconciliation. Revealed intent: re-industrialize the defense base + force allied procurement of US primes.</span><span class="l-zh">这是整张地图中最持久、最不受头条左右的轮动——多年、两党、条约锁定（2035）、且通过常规拨款与对账双渠道融资。真实意图：重建国防工业基础+迫使盟国采购美国军工巨头。</span></div>
-      <div class="cch" style="margin-top:6px"><b>💰 <span class="l-en">Capital</span><span class="l-zh">资本</span>:</b> <span class="l-en">Targeted/high-confidence: defense primes + shipbuilding + missile-defense/Golden Dome + munitions + drones. Proxies ITA, XAR, PPA, SHLD.</span><span class="l-zh">受益/高置信：军工巨头+造船+导弹防御/金穹+弹药+无人机。代理 ITA、XAR、PPA、SHLD。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span></span><span class="l-en">This is the most durable, least-headline-fragile rotation in the whole map — multi-year, bipartisan, treaty-locked (2035), and funded through both appropriations AND reconciliation. Revealed intent: re-industrialize the defense base + force allied procurement of US primes.</span><span class="l-zh">这是整张地图中最持久、最不受头条左右的轮动——多年、两党、条约锁定（2035）、且通过常规拨款与对账双渠道融资。真实意图：重建国防工业基础+迫使盟国采购美国军工巨头。</span></div>
+      <div class="pw-block cap"><span class="pw-bl"><span class="l-en">Capital</span><span class="l-zh">资本</span></span><span class="l-en">Targeted/high-confidence: defense primes + shipbuilding + missile-defense/Golden Dome + munitions + drones. Proxies ITA, XAR, PPA, SHLD.</span><span class="l-zh">受益/高置信：军工巨头+造船+导弹防御/金穹+弹药+无人机。代理 ITA、XAR、PPA、SHLD。</span></div>
     </div>
     
     <div class="card">
@@ -689,15 +964,18 @@
         <span class="conf"><span class="l-en">high (GENIUS) / low (accord)</span><span class="l-zh">高 (GENIUS) / 低 (accord)</span></span>
       </div>
       <div class="cch"><span class="l-en">REAL, enacted: the GENIUS Act — Treasury (Bessent) explicitly frames stablecoins as driving &#39;a surge in demand for US Treasuries&#39; and &#39;dollar supremacy&#39; (a funding channel for the debt). THEORY, not policy: the &#39;Mar-a-Lago Accord&#39; (a &#39;dominant-but-weaker&#39; dollar via coordinated CB intervention — foreign CBs swap into 50-100yr low-coupon bonds; IEEPA &#39;user fee&#39; on foreign Treasury holdings; gold revaluation). CORRECTIONS: Stephen Miran authored the Mar-a-Lago framework (Hudson Bay paper, November 2024) BEFORE any official government role; he later served as CEA chair (Jan 2025-Jan 2026) and as a Fed governor (Sept 2025-~May 2026). As of the as_of date he holds NEITHER post. Do not describe him as &#39;current CEA chair&#39; or &#39;on the Fed Board&#39; -- both claims are false.</span><span class="l-zh">真实、已立法：GENIUS法案——财政部（贝森特）明确将稳定币定位为推动“美债需求激增”与“美元至上”（一条债务融资渠道）。理论、非政策：“海湖庄园协议”（通过协同央行干预实现“强势但偏弱”的美元——外国央行换入50-100年低息债券；依IEEPA对外国持有美债征“使用费”；黄金重估）。更正：斯蒂芬·米兰在出任任何官职之前撰写了海湖庄园框架文件（Hudson Bay，2024年11月）；此后担任CEA主席（2025年1月-2026年1月）及美联储理事（2025年9月至约2026年5月）。截至as_of日期两职均不在任。不要将其描述为“现任CEA主席”或“美联储理事会成员”——两种说法均为假。</span></div>
-      <div class="crp"><b><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span>:</b> <span class="l-en">The enacted lever is the GENIUS/stablecoin → T-bill demand channel (reinforces the Bessent bill-heavy, low-yield agenda). The Mar-a-Lago dollar-devaluation is a SCENARIO to monitor, not a base case — don&#39;t trade it as policy. The honest read: financial repression is happening via issuance + stablecoin demand, not (yet) via overt currency realignment.</span><span class="l-zh">已落地的杠杆是GENIUS/稳定币→短债需求渠道（强化贝森特偏短端、低收益率议程）。海湖庄园式美元贬值是需监测的“情景”，而非基准——不要把它当政策来交易。诚实解读：金融抑制正通过发债结构+稳定币需求发生，而非（目前）通过公开的货币重整。</span></div>
-      <div class="cch" style="margin-top:6px"><b>💰 <span class="l-en">Capital</span><span class="l-zh">资本</span>:</b> <span class="l-en">Reinforces front-end Treasuries + the low-real-yield regime; stablecoin issuers/rails a structural T-bill bid. A genuine Mar-a-Lago turn (low odds) would be dollar-bearish / gold-bullish — a tail to watch, not own.</span><span class="l-zh">强化短端美债+低实际收益率体制；稳定币发行方/通道形成结构性短债买盘。真正的海湖庄园转向（概率低）将利空美元/利多黄金——属待观察尾部，而非持仓。</span></div>
+      <div class="pw-block read"><span class="pw-bl"><span class="l-en">Realpolitik</span><span class="l-zh">现实政治</span></span><span class="l-en">The enacted lever is the GENIUS/stablecoin → T-bill demand channel (reinforces the Bessent bill-heavy, low-yield agenda). The Mar-a-Lago dollar-devaluation is a SCENARIO to monitor, not a base case — don&#39;t trade it as policy. The honest read: financial repression is happening via issuance + stablecoin demand, not (yet) via overt currency realignment.</span><span class="l-zh">已落地的杠杆是GENIUS/稳定币→短债需求渠道（强化贝森特偏短端、低收益率议程）。海湖庄园式美元贬值是需监测的“情景”，而非基准——不要把它当政策来交易。诚实解读：金融抑制正通过发债结构+稳定币需求发生，而非（目前）通过公开的货币重整。</span></div>
+      <div class="pw-block cap"><span class="pw-bl"><span class="l-en">Capital</span><span class="l-zh">资本</span></span><span class="l-en">Reinforces front-end Treasuries + the low-real-yield regime; stablecoin issuers/rails a structural T-bill bid. A genuine Mar-a-Lago turn (low odds) would be dollar-bearish / gold-bullish — a tail to watch, not own.</span><span class="l-zh">强化短端美债+低实际收益率体制；稳定币发行方/通道形成结构性短债买盘。真正的海湖庄园转向（概率低）将利空美元/利多黄金——属待观察尾部，而非持仓。</span></div>
     </div>
     
   </div>
 
   <!-- ================= CAPITAL ROTATION ================= -->
-  <h2 class="sec">🧭 <span class="l-en">Capital-rotation map</span><span class="l-zh">资本轮动地图</span></h2>
-  <h3 class="sub">🎯 <span class="l-en">Targeted / protected / subsidized</span><span class="l-zh">受益 / 受保护 / 受补贴</span></h3>
+  <div class="pw-sec" id="rotation">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwg)"></i><span class="l-en">Rotation</span><span class="l-zh">资本轮动</span></p>
+  <h2><span class="l-en">Capital-rotation map</span><span class="l-zh">资本轮动地图</span></h2>
+</div>
+  <h3 class="sub"><span class="l-en">Targeted / protected / subsidized</span><span class="l-zh">受益 / 受保护 / 受补贴</span></h3>
   <table class="data">
     <tr><th><span class="l-en">Theme</span><span class="l-zh">主题</span></th><th><span class="l-en">Mechanism</span><span class="l-zh">机制</span></th><th><span class="l-en">Proxies</span><span class="l-zh">代理标的</span></th><th><span class="l-en">Realized 63d vs SPY</span><span class="l-zh">近63日 vs 标普</span></th><th><span class="l-en">Basis</span><span class="l-zh">依据</span></th></tr>
     
@@ -729,7 +1007,7 @@
       <td><strong><span class="l-en">Financials / dealer banks</span><span class="l-zh">金融/做市商银行</span></strong></td>
       <td><span class="l-en">eSLR reform + central-clearing + buyback expansion ease bank Treasury intermediation</span><span class="l-zh">eSLR改革+中央清算+扩大回购，缓解银行承接国债的约束</span></td>
       <td class="prox">XLF KBE</td>
-      <td class="num"><span class="b b-fact"><span class="l-en">working</span><span class="l-zh">达标</span></span> +4.9%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 12/20</span></td>
+      <td class="num"><span class="b b-fact"><span class="l-en">working</span><span class="l-zh">达标</span></span> +4.9%<br><span class="conf"><span class="l-en">working</span><span class="l-zh">达标</span> 13/20</span></td>
       <td><span class="b b-fact"><span class="l-en">FACT mechanism · INFERENCE proxies</span><span class="l-zh">事实 机制 · 推断 代理</span></span><br><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
     </tr>
     
@@ -766,8 +1044,8 @@
     </tr>
     
   </table>
-  <p class="conf"><span class="l-en">Realized = mean trailing-63d return of the theme&#39;s proxies minus SPY (coincident, display-only — a persistently lagging TARGETED theme is evidence against the rotation call).</span><span class="l-zh">“近63日”= 该主题代理标的过去63个交易日相对标普的平均超额收益（同步、仅展示——长期跑输的受益主题即是对该轮动判断的反证）。</span></p>
-  <h3 class="sub">🥶 <span class="l-en">Starved / pressured</span><span class="l-zh">受冷落 / 承压</span></h3>
+  <p class="conf"><span class="l-en">Realized = mean trailing-63d return of the theme&#39;s proxies minus SPY (coincident, context-only — a persistently lagging TARGETED theme is evidence against the rotation call).</span><span class="l-zh">“近63日”= 该主题代理标的过去63个交易日相对标普的平均超额收益（同步、仅供参考——长期跑输的受益主题即是对该轮动判断的反证）。</span></p>
+  <h3 class="sub"><span class="l-en">Starved / pressured</span><span class="l-zh">受冷落 / 承压</span></h3>
   <table class="data">
     <tr><th><span class="l-en">Theme</span><span class="l-zh">主题</span></th><th><span class="l-en">Mechanism</span><span class="l-zh">机制</span></th><th><span class="l-en">Proxies</span><span class="l-zh">代理标的</span></th><th><span class="l-en">Basis</span><span class="l-zh">依据</span></th></tr>
     
@@ -802,15 +1080,18 @@
   </table>
 
   <!-- ================= PREDICTION LEDGER ================= -->
-  <h2 class="sec">🎯 <span class="l-en">Falsifiable prediction ledger</span><span class="l-zh">可证伪预测台账</span></h2>
-  <p class="lede" style="color:var(--muted)"><span class="l-en">The accountability spine: each call has a measurable outcome and a check-by date. Outcomes get scored over time so this layer earns a track record instead of being vibes. Policy-action calls (high-confidence, track explicit directives) are scored separately from market-outcome calls (lower-confidence inference).</span><span class="l-zh">问责脊柱：每条判断都有可衡量的结果与核查日期。结果将随时间被评分，使该层积累真实战绩而非凭感觉。政策行动类判断（高置信、追踪明确指令）与市场结果类判断（低置信、属推断）分开评分。</span></p>
+  <div class="pw-sec" id="ledger">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwam)"></i><span class="l-en">Ledger</span><span class="l-zh">台账</span></p>
+  <h2><span class="l-en">Prediction ledger — dated calls, checked on schedule</span><span class="l-zh">预测台账 — 有日期的判断，按期核查</span></h2>
+</div>
+  <p class="pw-lede"><span class="l-en">The accountability spine: each call has a measurable outcome and a check-by date. Outcomes get scored over time so this layer earns a track record instead of being vibes. Policy-action calls (high-confidence, track explicit directives) are scored separately from market-outcome calls (lower-confidence inference).</span><span class="l-zh">问责脊柱：每条判断都有可衡量的结果与核查日期。结果将随时间被评分，使该层积累真实战绩而非凭感觉。政策行动类判断（高置信、追踪明确指令）与市场结果类判断（低置信、属推断）分开评分。</span></p>
   <div class="led-stat">
-    <span><b>44</b> <span class="l-en">total</span><span class="l-zh">总计</span></span>
-    <span><b>43</b> <span class="l-en">open</span><span class="l-zh">未结</span></span>
-    <span><b>1</b> <span class="l-en">hit</span><span class="l-zh">命中</span></span>
-    <span><b>0</b> <span class="l-en">miss</span><span class="l-zh">落空</span></span>
-    <span><b>2</b> <span class="l-en">past check-by</span><span class="l-zh">已过核查</span></span>
-    <span>30 <span class="l-en">policy-action</span><span class="l-zh">政策行动</span> · 14 <span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span>
+    <span class="pwc"><b>44</b> <span class="l-en">total</span><span class="l-zh">总计</span></span>
+    <span class="pwc"><b>43</b> <span class="l-en">open</span><span class="l-zh">未结</span></span>
+    <span class="pwc"><b class="r-pos">1</b> <span class="l-en">hit</span><span class="l-zh">命中</span></span>
+    <span class="pwc"><b>0</b> <span class="l-en">miss</span><span class="l-zh">落空</span></span>
+    <span class="pwc"><b>2</b> <span class="l-en">past check-by</span><span class="l-zh">已过核查</span></span>
+    <span class="pwc">30 <span class="l-en">policy-action</span><span class="l-zh">政策行动</span> · 14 <span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span>
   </div>
   <table class="data">
     <tr><th>#</th><th><span class="l-en">Thread</span><span class="l-zh">线索</span></th><th><span class="l-en">Prediction</span><span class="l-zh">预测</span></th><th><span class="l-en">Check by</span><span class="l-zh">核查于</span></th><th><span class="l-en">Tier</span><span class="l-zh">层级</span></th><th><span class="l-en">Conf</span><span class="l-zh">置信</span></th><th><span class="l-en">Status</span><span class="l-zh">状态</span></th></tr>
@@ -819,7 +1100,7 @@
       <td><strong>P1</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">Fed releases a revised SEP/communications framework (new dot-plot format, or formal discontinuation, or transcript/presser changes).</span><span class="l-zh">美联储发布修订后的SEP/沟通框架（点阵图改版、正式停用、或纪要/发布会变更）。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -829,7 +1110,7 @@
       <td><strong>P2</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">Inflation-frameworks task force formally recommends abandoning 2020 FAIT for a strict 2% target.</span><span class="l-zh">通胀框架工作组正式建议放弃2020年FAIT、回归严格2%目标。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -839,7 +1120,7 @@
       <td><strong>P3</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">Warsh keeps withholding his own dot OR the dot plot is suspended over the next 2–3 meetings.</span><span class="l-zh">未来2–3次会议中，沃什继续不提交自己的点位，或点阵图被暂停。</span></td>
-      <td>2026-09-30</td>
+      <td style="white-space:nowrap"><span class="num">2026-09-30</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -849,7 +1130,7 @@
       <td><strong>P4</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">At least one named external task-force expert is announced.</span><span class="l-zh">至少公布一位具名的外部工作组专家。</span></td>
-      <td>2026-09-30</td>
+      <td style="white-space:nowrap"><span class="num">2026-09-30</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -859,7 +1140,7 @@
       <td><strong>P5</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">The Fed does NOT cut at the July and September 2026 meetings (hold or hike). Falsified by any 2026 cut ahead of the median path.</span><span class="l-zh">美联储在2026年7月与9月会议上不降息（按兵或加息）。若年内先于中值路径降息则证伪。</span></td>
-      <td>2026-09-30</td>
+      <td style="white-space:nowrap"><span class="num">2026-09-30</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -869,7 +1150,7 @@
       <td><strong>P6</strong></td>
       <td><span class="th-treasury"><span class="l-en">treasury</span><span class="l-zh">财政部</span></span></td>
       <td><span class="l-en">No coupon auction-size INCREASE at the Aug 2026 refunding (bills stay the shock absorber). Falsified by any coupon-size hike.</span><span class="l-zh">2026年8月再融资不上调票息拍卖规模（短债仍为减震器）。若上调票息规模则证伪。</span></td>
-      <td>2026-08-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-08-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -879,7 +1160,7 @@
       <td><strong>P7</strong></td>
       <td><span class="th-treasury"><span class="l-en">treasury</span><span class="l-zh">财政部</span></span></td>
       <td><span class="l-en">Treasury keeps publicly framing policy as keeping the risk-free rate low / affordability.</span><span class="l-zh">财政部继续公开将政策表述为压低无风险利率/可负担性。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -889,7 +1170,7 @@
       <td><strong>P8</strong></td>
       <td><span class="th-treasury"><span class="l-en">treasury</span><span class="l-zh">财政部</span></span></td>
       <td><span class="l-en">Concrete eSLR-reform progress (a proposed or final rule from a banking regulator).</span><span class="l-zh">eSLR改革取得具体进展（银行监管机构出台拟议或最终规则）。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -899,7 +1180,7 @@
       <td><strong>P9</strong></td>
       <td><span class="th-treasury"><span class="l-en">treasury</span><span class="l-zh">财政部</span></span></td>
       <td><span class="l-en">SEC advances Treasury central-clearing expansion (a rule or compliance milestone).</span><span class="l-zh">SEC推进国债中央清算扩容（规则或合规里程碑）。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -909,7 +1190,7 @@
       <td><strong>P10</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">The Fed keeps reinvesting MBS runoff into T-bills through 2026.</span><span class="l-zh">美联储在2026年内持续将MBS回流资金再投资于短期国库券。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -919,7 +1200,7 @@
       <td><strong>P11</strong></td>
       <td><span class="th-policy"><span class="l-en">policy</span><span class="l-zh">政策</span></span></td>
       <td><span class="l-en">The 25% advanced-chip tariff stays in force (not rescinded) and/or the covered list expands.</span><span class="l-zh">25%先进芯片关税继续生效（未被撤销）且/或覆盖清单扩大。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -929,7 +1210,7 @@
       <td><strong>P12</strong></td>
       <td><span class="th-policy"><span class="l-en">policy</span><span class="l-zh">政策</span></span></td>
       <td><span class="l-en">At least one of the three pilot reactors reaches criticality. RESOLVED HIT (7/2): ALL THREE reached criticality before the Jul-4 deadline — Antares Mark-0 (early June), Valar Atomics Ward-250 (6/18), Deployable Energy Unity (6/30).</span><span class="l-zh">三座试点反应堆中至少一座达临界。已结·命中（7/2）：三座均在7月4日截止前达临界——Antares Mark-0（6月初）、Valar Atomics Ward-250（6/18）、Deployable Energy Unity（6/30）。</span></td>
-      <td>2026-07-04</td>
+      <td style="white-space:nowrap"><span class="num">2026-07-04</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-hit"><span class="l-en">hit</span><span class="l-zh">命中</span></span></td>
@@ -939,7 +1220,7 @@
       <td><strong>P13</strong></td>
       <td><span class="th-policy"><span class="l-en">policy</span><span class="l-zh">政策</span></span></td>
       <td><span class="l-en">DOE releases ≥20 MT HALEU into the fuel bank for private/AI projects.</span><span class="l-zh">美国能源部向燃料库释放≥20公吨HALEU用于私营/AI项目。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -949,7 +1230,7 @@
       <td><strong>P14</strong></td>
       <td><span class="th-policy"><span class="l-en">policy</span><span class="l-zh">政策</span></span></td>
       <td><span class="l-en">The AI/critical-infrastructure reactor program shows a contracted/sited project.</span><span class="l-zh">AI/关键基础设施反应堆计划出现已签约/选址的项目。</span></td>
-      <td>2027-10-31</td>
+      <td style="white-space:nowrap"><span class="num">2027-10-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -959,7 +1240,7 @@
       <td><strong>P15</strong></td>
       <td><span class="th-rotation"><span class="l-en">rotation</span><span class="l-zh">轮动</span></span></td>
       <td><span class="l-en">Nuclear/uranium proxies (URA/URNM/SMR/OKLO/CCJ) outperform the S&amp;P 500 over the next 2 quarters. Falsified by sustained underperformance.</span><span class="l-zh">核能/铀代理（URA/URNM/SMR/OKLO/CCJ）未来两个季度跑赢标普500。若持续跑输则证伪。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -969,7 +1250,7 @@
       <td><strong>P16</strong></td>
       <td><span class="th-rotation"><span class="l-en">rotation</span><span class="l-zh">轮动</span></span></td>
       <td><span class="l-en">Front-end Treasury demand stays robust (bill auctions well-covered, no forced coupon shift).</span><span class="l-zh">短端美债需求保持强劲（票据拍卖认购充分，未被迫调整票息）。</span></td>
-      <td>2026-08-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-08-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -979,7 +1260,7 @@
       <td><strong>P17</strong></td>
       <td><span class="th-rotation"><span class="l-en">rotation</span><span class="l-zh">轮动</span></span></td>
       <td><span class="l-en">Financials/dealer-bank proxies (XLF) benefit on eSLR-reform headlines.</span><span class="l-zh">金融/做市商银行代理（XLF）受益于eSLR改革相关消息。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -989,7 +1270,7 @@
       <td><strong>P18</strong></td>
       <td><span class="th-rotation"><span class="l-en">rotation</span><span class="l-zh">轮动</span></span></td>
       <td><span class="l-en">Long-duration Treasuries (TLT) do NOT sustain a term-premium blowout that overrides the suppression campaign in H2 2026. Falsified by a disorderly long-end selloff.</span><span class="l-zh">长久期美债（TLT）在2026下半年不出现压过压制行动的期限溢价飙升。若长端无序抛售则证伪。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -999,7 +1280,7 @@
       <td><strong>P19</strong></td>
       <td><span class="th-china"><span class="l-en">china</span><span class="l-zh">中国</span></span></td>
       <td><span class="l-en">The effective US tariff rate on China stays at/near 10% through the Section 122 expiry (July 24 2026) and the Section 301 replacement (~12.5%) takes effect without a material gap -- no return to the tariff-free baseline from before the IEEPA era. NOTE: the IEEPA reciprocal truce was terminated Feb 24 2026; China&#39;s current 10% is the Section 122 global surcharge (July 24 expiry), with Section 301 as the intended successor. Re-verify after July 24.</span><span class="l-zh">美国对华有效关税税率在第122条到期（2026年7月24日）前后维持约10%，第301条取代方案（约12.5%）无实质性空档地生效——不回归至IEEPA时代之前的无关税基准。注：IEEPA对等关税休战已于2026年2月24日终止；中国当前10%为第122条全球附加税（7月24日到期），第301条为预定的接任方案。请7月24日后重新核实。</span></td>
-      <td>2026-09-30</td>
+      <td style="white-space:nowrap"><span class="num">2026-09-30</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1009,7 +1290,7 @@
       <td><strong>P20</strong></td>
       <td><span class="th-china"><span class="l-en">china</span><span class="l-zh">中国</span></span></td>
       <td><span class="l-en">If SCOTUS strikes the IEEPA tariff authority, the administration re-imposes equivalent protection via Section 232/301 (the tariff wall is not dismantled).</span><span class="l-zh">若最高法院推翻IEEPA关税权限，政府将通过232/301条款重新施加等效保护（关税墙不被拆除）。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1019,7 +1300,7 @@
       <td><strong>P21</strong></td>
       <td><span class="th-china"><span class="l-en">china</span><span class="l-zh">中国</span></span></td>
       <td><span class="l-en">The Section 301 semiconductor tariff steps up above 0% on/around its scheduled ~Jun 23 2027 date.</span><span class="l-zh">301条款半导体关税在约2027年6月23日的预定日期前后上调至0%以上。</span></td>
-      <td>2027-06-30</td>
+      <td style="white-space:nowrap"><span class="num">2027-06-30</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1029,7 +1310,7 @@
       <td><strong>P22</strong></td>
       <td><span class="th-iran"><span class="l-en">iran</span><span class="l-zh">伊朗</span></span></td>
       <td><span class="l-en">ACTIVE-FALSIFICATION (7/8): Trump declared the US-Iran ceasefire &#39;over&#39; at the NATO Ankara summit; CENTCOM struck Iranian sites 7/8-7/11; Hormuz near-standstill by 7/9; JMIC threat at &#39;severe&#39;. P22 (no full re-closure through Q3) is under immediate pressure -- the operational question is whether the current near-standstill becomes a formal full re-closure or traffic resumes. Re-verify before any use.</span><span class="l-zh">主动证伪中（7/8）：特朗普在北约安卡拉峰会宣告美伊停火“已终结”；CENTCOM于7/8-7/11对伊朗目标发动打击；7/9起霍尔木兹濒临停滞；JMIC威胁评级升至“严峻”。P22（三季度前不全面关闭）面临即时压力——核心问题是当前近停滞状态是否演变为正式的完全关闭，或交通是否恢复。使用前请重新核实。</span></td>
-      <td>2026-09-30</td>
+      <td style="white-space:nowrap"><span class="num">2026-09-30</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1039,7 +1320,7 @@
       <td><strong>P23</strong></td>
       <td><span class="th-iran"><span class="l-en">iran</span><span class="l-zh">伊朗</span></span></td>
       <td><span class="l-en">No signed comprehensive US-Iran nuclear deal by Q3 2026 (the suspension-duration gap persists). NOTE (7/6): as of Jun 14 the US had already shifted from &#39;zero enrichment&#39; to accepting a 15-20 year suspension; the live gap is suspension DURATION + location of down-blended HEU, with inconsistent US messaging. P23 still holds -- no deal signed -- but the &#39;enrichment gap&#39; framing requires updating to reflect the US position shift.</span><span class="l-zh">2026年三季度前未签署全面的美伊核协议（暂停期限分歧仍在）。注（7/6）：截至6月14日，美方已从要求“零浓缩”转为接受15-20年暂停；现实分歧在于暂停期限及高浓铀下混后材料的存放地点，且美方表态不一致。P23仍成立——未签协议——但“浓缩分歧”的表述需更新以反映美方立场转变。</span></td>
-      <td>2026-09-30</td>
+      <td style="white-space:nowrap"><span class="num">2026-09-30</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1049,7 +1330,7 @@
       <td><strong>P24</strong></td>
       <td><span class="th-nato"><span class="l-en">nato</span><span class="l-zh">北约</span></span></td>
       <td><span class="l-en">Enacted US FY2027 defense topline lands as a real increase over FY2026 (toward the $1.5T request).</span><span class="l-zh">已通过的美国FY2027国防总额较FY2026实际增长（趋向1.5万亿申请）。</span></td>
-      <td>2027-03-31</td>
+      <td style="white-space:nowrap"><span class="num">2027-03-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1059,7 +1340,7 @@
       <td><strong>P25</strong></td>
       <td><span class="th-nato"><span class="l-en">nato</span><span class="l-zh">北约</span></span></td>
       <td><span class="l-en">No rollback of the NATO Hague 5%-by-2035 pledge; aggregate allied defense spending keeps rising.</span><span class="l-zh">北约海牙“2035年5%”承诺未被推翻；盟国国防开支总额持续上升。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1069,7 +1350,7 @@
       <td><strong>P26</strong></td>
       <td><span class="th-rotation"><span class="l-en">rotation</span><span class="l-zh">轮动</span></span></td>
       <td><span class="l-en">Defense proxies (ITA/XAR/PPA/SHLD) outperform the S&amp;P 500 over the next 2 quarters.</span><span class="l-zh">国防代理（ITA/XAR/PPA/SHLD）未来两个季度跑赢标普500。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1079,7 +1360,7 @@
       <td><strong>P27</strong></td>
       <td><span class="th-dollar"><span class="l-en">dollar</span><span class="l-zh">美元</span></span></td>
       <td><span class="l-en">Stablecoin reserves&#39; Treasury holdings rise materially in 2026 (the GENIUS-Act funding channel operates as Treasury frames it).</span><span class="l-zh">2026年稳定币储备所持美债显著上升（GENIUS法案融资渠道如财政部所述运作）。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1089,7 +1370,7 @@
       <td><strong>P28</strong></td>
       <td><span class="th-dollar"><span class="l-en">dollar</span><span class="l-zh">美元</span></span></td>
       <td><span class="l-en">NO enacted &#39;Mar-a-Lago Accord&#39; action (IEEPA user-fee on foreign Treasuries or coordinated dollar devaluation) by year-end — it stays theory.</span><span class="l-zh">年底前未出台任何“海湖庄园协议”行动（对外国持有美债征IEEPA使用费或协同美元贬值）——仍停留于理论。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1099,7 +1380,7 @@
       <td><strong>P29</strong></td>
       <td><span class="th-iran"><span class="l-en">iran</span><span class="l-zh">伊朗</span></span></td>
       <td><span class="l-en">ACTIVE-FALSIFICATION (7/8): Ceasefire declared &#39;over&#39;; Hormuz near-standstill; Brent spiked ~$80 intraday 7/8. P29 (oil not &gt;$100 absent Hormuz re-closure) now requires tracking whether the near-standstill constitutes a functional re-closure -- if Brent sustains above $80-85 the prediction faces active pressure. The &#39;ceasefire holds as disinflation lever&#39; precondition has broken.</span><span class="l-zh">主动证伪中（7/8）：停火被宣告“已终结”；霍尔木兹濒临停滞；布伦特盘中飙至约80美元（7/8）。P29（在霍尔木兹未再关闭的情况下油价不持续高于100美元）现需跟踪近停滞是否构成功能性再关闭——若布伦特持续高于80-85美元则预测面临主动压力。“停火作为反通胀杠杆维持”的前提已破裂。</span></td>
-      <td>2026-09-30</td>
+      <td style="white-space:nowrap"><span class="num">2026-09-30</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1109,7 +1390,7 @@
       <td><strong>P30</strong></td>
       <td><span class="th-dollar"><span class="l-en">dollar</span><span class="l-zh">美元</span></span></td>
       <td><span class="l-en">Bessent keeps publicly asserting &#39;strong dollar&#39; compatibility WITH lower rates (the strong-dollar-while-cutting frame) through year-end 2026, while NO overt FX intervention or dollar-realignment action is taken. Falsified by Treasury explicitly seeking/accepting a weaker dollar OR by FX intervention.</span><span class="l-zh">贝森特在2026年底前持续公开主张“强美元”与更低利率相容（降息中强美元框架），且未采取任何公开的汇率干预或美元重整行动。若财政部明确寻求／接受弱美元、或进行汇率干预则证伪。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">high</span><span class="l-zh">高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1119,7 +1400,7 @@
       <td><strong>P31</strong></td>
       <td><span class="th-dollar"><span class="l-en">dollar</span><span class="l-zh">美元</span></span></td>
       <td><span class="l-en">DXY does NOT fall ~1:1 with 2Y US-vs-G10 rate-differential compression as the easing path gets priced in H2 2026 — the dollar holds on non-rate legs (growth/haven/rails) as hike-odds roll over. Falsified if DXY declines roughly in lockstep with the 2Y differential.</span><span class="l-zh">随2026下半年降息路径被price-in，DXY不与2年期美-G10利差压缩约1:1同步下行——美元靠非利率支柱（增长／避险／通道）在加息概率回落时站稳。若DXY与2年期利差大致同步下跌则证伪。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1129,7 +1410,7 @@
       <td><strong>P32</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">At least one of the inflation-frameworks or productivity/AI task forces publishes language operationally distinguishing &#39;tariff/supply-driven level shifts&#39; from &#39;underlying inflation&#39;, OR an upward r-star/trend-productivity re-estimate, BEFORE the first 2026-27 rate cut. Falsified if the first cut precedes any such doctrinal output.</span><span class="l-zh">通胀框架或生产率／AI工作组中，至少一个在首次2026-27降息之前，发布把“关税／供给驱动的价位跳升”与“潜在通胀”区分开的操作性措辞，或上调r-star／趋势生产率的重估。若首次降息先于任何此类教义产出则证伪。</span></td>
-      <td>2027-03-31</td>
+      <td style="white-space:nowrap"><span class="num">2027-03-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1139,7 +1420,7 @@
       <td><strong>P33</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">If the Fed cuts within ~6 months after the Nov 2026 midterms WITH core PCE still &gt;=3%, it draws materially LESS &#39;broke its own guidance/political&#39; criticism than the 2019/2024 episodes (the accountability-deletion thesis). Falsified by a comparable or louder backlash, or by re-imposing a binding quantitative path.</span><span class="l-zh">若美联储在2026年中期选举后约6个月内、在核心PCE仍≥3%的情况下降息，其招致的“自食其言／政治化”批评显著少于2019/2024（删除问责论）。若引发同等或更强烈的反弹、或重新施加具约束力的量化路径则证伪。</span></td>
-      <td>2027-06-30</td>
+      <td style="white-space:nowrap"><span class="num">2027-06-30</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1149,7 +1430,7 @@
       <td><strong>P34</strong></td>
       <td><span class="th-debasement"><span class="l-en">debasement</span><span class="l-zh">去货币化</span></span></td>
       <td><span class="l-en">Debasement assets (gold first) put in a durable bottom that COINCIDES with the simultaneous peak of DXY + 2Y + real yields (DFII10) + hike-odds, while core inflation is still elevated — the trough precedes the first actual cut by a multi-month margin. Falsified if gold/silver/BTC make new lows AFTER all four have clearly peaked.</span><span class="l-zh">去货币化资产（黄金最先）筑出持久底部，且与美元+2年期+实际收益率（DFII10）+加息概率的同时见顶相吻合，而核心通胀仍偏高——底部早于首次实际降息数月。若黄金／白银／比特币在上述四者均明显见顶之后再创新低则证伪。</span></td>
-      <td>2027-03-31</td>
+      <td style="white-space:nowrap"><span class="num">2027-03-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1159,7 +1440,7 @@
       <td><strong>P35</strong></td>
       <td><span class="th-debasement"><span class="l-en">debasement</span><span class="l-zh">去货币化</span></span></td>
       <td><span class="l-en">KILL-SWITCH: Gold does NOT break to new all-time highs (above the ~Jan 2026 $5,589 peak) WHILE the Fed is actively easing the front end in the H2 2026-H1 2027 pivot window. A new-high gold breakout concurrent with easing falsifies the &#39;strong dollar while cutting&#39; bridge.</span><span class="l-zh">终止开关：在2026下半年-2027上半年的转向窗口、美联储正积极宽松短端期间，黄金不创历史新高（不突破约2026年1月的5,589美元峰值）。若黄金在宽松期间创历史新高，则证伪“降息中强美元”之桥。</span></td>
-      <td>2027-06-30</td>
+      <td style="white-space:nowrap"><span class="num">2027-06-30</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1169,7 +1450,7 @@
       <td><strong>P36</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">Real 10y yields (DFII10) PEAK in 2026 at/near the hawkish-tape high (~2.2-2.5% area) and do not sustain materially new highs once hike-odds roll over — i.e. ~2.2-2.5% marks the real-yield ceiling for this regime. Falsified by DFII10 sustaining materially above its 2026 peak into 2027.</span><span class="l-zh">10年期实际收益率（DFII10）于2026年在鹰派盘面高位附近（约2.2-2.5%区间）见顶，并在加息概率回落后不持续创显著新高——即约2.2-2.5%为本轮体制的实际收益率上限。若DFII10在2027年持续显著高于其2026年峰值则证伪。</span></td>
-      <td>2027-06-30</td>
+      <td style="white-space:nowrap"><span class="num">2027-06-30</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1179,7 +1460,7 @@
       <td><strong>P37</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">There is NO immediate large Fed cut within ~2 months of the Nov 3 2026 midterms; any easing is delayed and/or delivered curve/balance-sheet-first from a higher base (inflation-gated, not calendar-driven). Falsified by a clean &gt;=25bp funds-rate cut at the first post-midterm FOMC.</span><span class="l-zh">2026年11月3日中期选举后约2个月内，美联储不立即大幅降息；任何宽松都被延迟、且／或先经曲线／资产负债表、从更高基点启动（取决于通胀，而非日历）。若中期选举后首次FOMC出现干净的≥25bp降息则证伪。</span></td>
-      <td>2027-01-31</td>
+      <td style="white-space:nowrap"><span class="num">2027-01-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1189,7 +1470,7 @@
       <td><strong>P38</strong></td>
       <td><span class="th-dollar"><span class="l-en">dollar</span><span class="l-zh">美元</span></span></td>
       <td><span class="l-en">Stablecoin reserve T-bill holdings scale materially (toward/above ~$300B) in 2026 even as foreign official reserve demand stagnates (the GENIUS captive-bid operates) — BUT front-end yields stay dominated by Fed-path expectations rather than stablecoin-adjusted net supply. Falsified if holdings stall/shrink, or if they demonstrably set the marginal bill yield.</span><span class="l-zh">2026年稳定币储备所持短债显著扩大（趋向／超过约3000亿美元），即便外国官方储备需求停滞（GENIUS被动买盘运作）——但短端收益率仍由美联储路径预期主导，而非由经稳定币调整的净供给决定。若持有量停滞／收缩、或其可证明地决定边际短债收益率则证伪。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1199,7 +1480,7 @@
       <td><strong>P39</strong></td>
       <td><span class="th-debasement"><span class="l-en">debasement</span><span class="l-zh">去货币化</span></span></td>
       <td><span class="l-en">On the RECOVERY leg of the debasement trade, the beta-magnitude ordering holds (silver and BTC outperform gold in percentage terms) even if the strict gold-&gt;silver-&gt;BTC lead-lag SEQUENCE is noisy. Falsified if gold outperforms both silver and BTC on the re-rate.</span><span class="l-zh">在去货币化交易的反弹腿上，按涨幅的贝塔排序成立（白银与比特币以百分比计跑赢黄金），即便严格的黄金→白银→比特币领先-滞后次序较为嘈杂。若黄金在重估中同时跑赢白银与比特币则证伪。</span></td>
-      <td>2027-06-30</td>
+      <td style="white-space:nowrap"><span class="num">2027-06-30</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">low</span><span class="l-zh">低</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1209,7 +1490,7 @@
       <td><strong>P40</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">The Fed HOLDS (no cut) at the July 28–29 2026 FOMC despite the +57k June jobs miss — Warsh privileges the hot 3.4% core PCE and his &#39;price stability&#39; mandate over the labor crack. Falsified by a July rate cut.</span><span class="l-zh">尽管6月非农仅+5.7万不及预期，美联储在2026年7月28–29日FOMC按兵不动（不降息）——沃什将偏热的3.4%核心PCE与其“价格稳定”使命置于就业裂缝之上。若7月降息则证伪。</span></td>
-      <td>2026-07-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-07-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium-high</span><span class="l-zh">中高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span> <span class="b b-miss"><span class="l-en">due</span><span class="l-zh">待结</span></span></td>
@@ -1219,7 +1500,7 @@
       <td><strong>P41</strong></td>
       <td><span class="th-fed"><span class="l-en">fed</span><span class="l-zh">美联储</span></span></td>
       <td><span class="l-en">The labor crack persists — the 3-month average nonfarm payroll gain stays below ~100k through the July report (released ~Aug 1), keeping a data-driven September easing case alive. Falsified by a re-acceleration to a 3-mo average above ~100k.</span><span class="l-zh">就业裂缝延续——至7月就业报告（约8月1日公布）为止，非农三个月均值维持在约10万以下，使由数据驱动的9月宽松理由存续。若三个月均值回升至约10万以上则证伪。</span></td>
-      <td>2026-08-07</td>
+      <td style="white-space:nowrap"><span class="num">2026-08-07</span></td>
       <td><span class="conf"><span class="l-en">market-outcome</span><span class="l-zh">市场结果</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1229,7 +1510,7 @@
       <td><strong>P42</strong></td>
       <td><span class="th-china"><span class="l-en">china</span><span class="l-zh">中国</span></span></td>
       <td><span class="l-en">Following the Feb-2026 SCOTUS strike of IEEPA tariffs, the effective US tariff wall on China is NOT dismantled -- the Section 232/301 stack keeps the effective average China rate at or above the pre-ruling level through year-end. CRITICAL CAVEAT: the Section 122 10% pillar was already STRUCK by the CIT (May 7 2026) and expires July 24 by statute; it survives only on a Federal Circuit stay. The &#39;wall preserved&#39; conclusion for H2 2026 depends on the Section 301 replacement (~12.5%) landing cleanly -- re-verify after July 24. Falsified by a material net reduction in the effective China tariff rate.</span><span class="l-zh">在2026年2月最高法院推翻IEEPA关税后，美国对华的有效关税墙未被拆除——232/301条款体系使对华有效平均税率在年底前维持在裁决前水平或更高。重要告诫：第122条10%关税支柱已于2026年5月7日被国际贸易法院推翻，且依法规将于7月24日到期；其存续仅凭联邦巡回法院中止令。2026年下半年“关税墙保留”的结论取决于第301条取代方案（约12.5%）能否顺利落地——请7月24日后重新核实。若对华有效关税率出现实质性净下降则证伪。</span></td>
-      <td>2026-12-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-12-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium-high</span><span class="l-zh">中高</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1239,7 +1520,7 @@
       <td><strong>P43</strong></td>
       <td><span class="th-treasury"><span class="l-en">treasury</span><span class="l-zh">财政部</span></span></td>
       <td><span class="l-en">The federal banking regulators (Fed/OCC/FDIC) advance concrete eSLR reform by the ~Jul-18 2026 deadline — a proposed or final rule that eases Treasury-intermediation capital treatment. Falsified by the deadline passing with no rule text. (Sharper-dated version of P8.)</span><span class="l-zh">联邦银行监管机构（美联储/OCC/FDIC）在约2026年7月18日截止前推进具体的eSLR改革——出台放松国债中介资本处理的拟议或最终规则。若截止日过去仍无规则文本则证伪。（P8的更近日期版本。）</span></td>
-      <td>2026-07-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-07-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span> <span class="b b-miss"><span class="l-en">due</span><span class="l-zh">待结</span></span></td>
@@ -1249,7 +1530,7 @@
       <td><strong>P44</strong></td>
       <td><span class="th-iran"><span class="l-en">iran</span><span class="l-zh">伊朗</span></span></td>
       <td><span class="l-en">ACTIVE-FALSIFICATION (7/8): The 60-day MOU window is still open (from Jun 17, ~expires mid-Aug), but the ceasefire precondition has BROKEN -- Trump declared it &#39;over&#39; 7/8; CENTCOM struck 7/8-7/11; Hormuz near-standstill. The prediction&#39;s falsification condition (full strait re-closure) is approaching but not yet formally met. The enrichment gap has also evolved: the US shifted from zero-enrichment demand to accepting a 15-20 year suspension (Jun 14), so the stated gap in P44 (&#39;zero enrichment vs right to enrich&#39;) is now stale. Monitor: whether Hormuz traffic resumes or escalates further, and whether US-Iran back-channel talks survive the ceasefire collapse.</span><span class="l-zh">主动证伪中（7/8）：60天谅解备忘录窗口仍未关闭（自6月17日起，约8月中到期），但停火前提已破裂——特朗普于7/8宣告其“已终结”；CENTCOM于7/8-7/11发动打击；霍尔木兹濒临停滞。预测的证伪条件（海峡全面再关闭）已临近但尚未正式触发。浓缩分歧也已演变：美方已从要求零浓缩转为接受15-20年暂停（6月14日），因此P44所述分歧（“零浓缩”对“浓缩权”）表述已过时。关注：霍尔木兹通行是否恢复或进一步升级，以及美伊秘轨谈判是否在停火崩溃后存续。</span></td>
-      <td>2026-08-31</td>
+      <td style="white-space:nowrap"><span class="num">2026-08-31</span></td>
       <td><span class="conf"><span class="l-en">policy-action</span><span class="l-zh">政策行动</span></span></td>
       <td><span class="conf"><span class="l-en">medium</span><span class="l-zh">中</span></span></td>
       <td><span class="b b-open"><span class="l-en">open</span><span class="l-zh">未结</span></span></td>
@@ -1258,7 +1539,10 @@
   </table>
 
   <!-- ================= MONITOR ================= -->
-  <h2 class="sec">📡 <span class="l-en">Monitor — highest-signal sources</span><span class="l-zh">监测 — 最高信号来源</span></h2>
+  <div class="pw-sec" id="monitor">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwt)"></i><span class="l-en">Monitor</span><span class="l-zh">监测</span></p>
+  <h2><span class="l-en">Monitor — highest-signal sources</span><span class="l-zh">监测 — 最高信号来源</span></h2>
+</div>
   <ul class="monitor">
     
     <li><a href="https://fred.stlouisfed.org/series/DFII10" target="_blank" rel="noopener"><span class="l-en">Four-variable bottom-confirmation: DFII10 + DXY + 2Y-vs-G10 differential + CME hike-odds</span><span class="l-zh">四变量筑底确认：DFII10 + DXY + 2年期对G10利差 + CME加息概率</span></a> — <span class="conf"><span class="l-en">FRED / CME FedWatch / market</span><span class="l-zh">FRED / CME FedWatch / 市场</span> · <span class="l-en">daily — the debasement-trade trough signal (peak TOGETHER)</span><span class="l-zh">每日 —— 去货币化交易的底部信号（同时见顶）</span></span></li>
@@ -1282,14 +1566,17 @@
   </ul>
 
   <!-- ================= SOURCES + CAVEATS ================= -->
-  <h2 class="sec">📚 <span class="l-en">Sources & caveats</span><span class="l-zh">来源与说明</span></h2>
-  <div class="callout">
+  <div class="pw-sec" id="sources">
+  <p class="pw-ovl"><i class="pw-dot" style="--c:var(--pwt)"></i><span class="l-en">Sources</span><span class="l-zh">来源</span></p>
+  <h2><span class="l-en">Sources & caveats</span><span class="l-zh">来源与说明</span></h2>
+</div>
+  <div class="pw-panel">
     <span class="l-en">China / Iran / NATO threads are PRIMARY-SOURCED. KEY CORRECTIONS AS OF 7/13: (1) IRAN CEASEFIRE COLLAPSED: Trump declared ceasefire &#39;over&#39; 7/8; CENTCOM struck Iranian sites 7/8-7/11; Hormuz near-standstill by 7/9; Brent spiked ~$80 intraday. The &#39;fragile ceasefire = disinflation lever&#39; thesis is under active falsification. P22/P29/P44 flagged active-falsification. (2) SECTION 122 EXPIRY + CIT STRIKE-DOWN: Section 122 tariffs (China&#39;s current 10%) expire July 24 2026 by statute (150-day cap) AND were already struck by the CIT May 7 2026 (surviving on Federal Circuit stay). The wall&#39;s H2 durability depends on Section 301 replacement (~12.5%, ~46 countries, USTR July 20 deadline). Re-verify after July 24. Prediction P42 (&#39;wall through year-end&#39;) is conditional on 301 landing. (3) IEEPA MECHANISM: China&#39;s 10% is now Section 122 (not IEEPA reciprocal truce, which was terminated Feb 24). P19 re-grounded accordingly. (4) RATE-HIKE ODDS SHIFT: June FOMC minutes (7/8) confirmed 9-to-8 split; CME FedWatch by 7/11 shows &gt;70% probability of at least one hike by September (50.6% 25bp + 19.6% 50bp) -- the &#39;minority ~1-in-3&#39; framing from June 16 is stale. (5) GOLD ABOVE $4,000: gold trading $4,044-4,200 range (7/4-7/10), inverting the &#39;gold&lt;$4,000&#39; hawkish-credibility data point. The debasement-trade bottoming signal the monitor section watches for may be approaching. (6) NUCLEAR: Valar Ward-250 criticality date corrected to 6/18 (DOE announcement; 6/22 was the ANS article publication date). (7) MIRAN PROVENANCE: authored the Mar-a-Lago framework (Hudson Bay, Nov 2024) before any official role; was CEA chair Jan 2025-Jan 2026 and Fed governor Sept 2025-~May 2026; holds neither post as of as_of date. (8) NATO RECONCILIATION FIGURE: $153.3B (not $152.3B) per CRS R48891; $151.5B was FY2026-planned allocation. (9) NUCLEAR GAP REFRAME: US position had shifted to accepting 15-20 year enrichment suspension (not permanent zero-enrichment) by Jun 14; live gap = suspension duration + HEU location. (10) OIL PEAK: 2026 war peak was above $120/bbl (Brent at Hormuz closure), not ~$100. PCE CONSENSUS: headline 0.1pp below LSEG m/m forecast but in line y/y; core in line vs LSEG but 0.1pp above Dow Jones 3.3% forecast -- result is survey/horizon-dependent. STANDING CAVEATS: &#39;Mar-a-Lago Accord&#39; is a THEORY, not enacted policy; realpolitik reads, ticker proxies, and market-outcome predictions (P15-P18, P26, P29) are INFERENCE. Nuclear targets aspirational; chip-tariff reshoring-exemption REFUTED. CALIBRATION (6/24 adversary pass, still applies): ~60-70% common-cause, ~22-30% Bessent talking his book, ~10-15% genuinely coordinated. P5 (no July+Sept cut) is the master gate; trade the dated tells (P40-P44), not the frame. Context only -- not investment advice. Re-verify before any trading use.</span><span class="l-zh">中国/伊朗/北约线索已有一手来源。截至7/13的关键更正：（1）伊朗停火崩溃：特朗普于7/8宣告停火“已终结”；CENTCOM于7/8-7/11对伊朗境内目标发动打击；7/9起霍尔木兹濒临停滞；布伦特盘中飙至约80美元。“脆弱停火＝反通胀杠杆”论点正承受主动证伪压力。P22/P29/P44已标注主动证伪中。（2）第122条到期+国际贸易法院推翻：第122条关税（中国当前10%）依法规于2026年7月24日到期（150天上限），且已于2026年5月7日被国际贸易法院推翻（凭联邦巡回法院中止令存续）。关税墙下半年的持续性取决于第301条取代方案（约12.5%，约46个国家，USTR 7月20日期限）。请7月24日后重新核实。P42（“年底前维持关税墙”）以第301条顺利落地为前提。（3）IEEPA机制：中国10%现为第122条（而非已于2026年2月24日终止的IEEPA对等关税休战）。P19已相应重新表述。（4）加息概率转变：6月FOMC纪要（7/8公布）确认9比8分裂投票；CME FedWatch截至7/11显示9月前至少加息一次的概率超过70%（25bp概率50.6%、50bp概率19.6%）——来自6月16日的“少数派约三分之一”表述已过时。（5）黄金突破4000美元：黄金交投于4,044-4,200美元区间（7/4-7/10），颠倒了“金价低于4,000美元”的鹰派信誉数据点。监测部分所关注的去货币化交易底部信号或已临近。（6）核能：Valar Ward-250临界日期更正为6/18（DOE公告；6/22为ANS文章发表日）。（7）米兰资历：他在出任任何官职之前撰写了海湖庄园框架文件（Hudson Bay，2024年11月）；曾任CEA主席（2025年1月-2026年1月）及美联储理事（2025年9月至约2026年5月）；截至as_of日期两职均不在任。（8）北约对账数字：依 CRS R48891为1533亿美元（非1523亿）；1515亿为FY2026计划拨付额。（9）核谈分歧重构：截至6月14日，美方立场已转为接受15-20年浓缩暂停（而非永久零浓缩）；现实分歧在于暂停期限及高浓铀存放地点。（10）油价高峰：2026年战争期间的峰值超过120美元/桶（霍尔木兹封锁时的布伦特），而非约100美元。PCE共识：整体较LSEG环比预测低0.1个百分点，但同比与共识持平；核心与LSEG持平，但高于Dow Jones 3.3%预测0.1个百分点——结论因调查来源与期限而异。常设告诫：“海湖庄园协议”为理论而非已落地政策；realpolitik解读、代理标的及市场结果类预测（P15-P18、P26、P29）均为推断。核能目标偏理想；芯片关税建厂豁免已被证伪。校准（6/24对抗审查，仍适用）：约60-70%为共同成因、约22-30%是贝森特托词、约10-15%为真正协同。P5（7月与9月不降息）是总闸门；应交易有日期的破绽（P40-P44），而非框架。仅供参考，不构成投资建议。交易前请重新核实。</span>
   </div>
   <p class="srcs"><strong><span class="l-en">Primary sources</span><span class="l-zh">一手来源</span>:</strong>
     <a href="https://www.federalreserve.gov/mediacenter/files/FOMCpresconf20260617.pdf" target="_blank" rel="noopener">[1]</a> <a href="https://www.federalreserve.gov/monetarypolicy/files/fomcprojtabl20260617.pdf" target="_blank" rel="noopener">[2]</a> <a href="https://www.cfr.org/articles/what-kevin-warshs-confirmation-hearing-revealed-about-the-future-of-the-fed" target="_blank" rel="noopener">[3]</a> <a href="https://home.treasury.gov/news/press-releases/sb0314" target="_blank" rel="noopener">[4]</a> <a href="https://www.whitehouse.gov/fact-sheets/2026/01/fact-sheet-president-donald-j-trump-takes-action-on-certain-advanced-computing-chips-to-protect-americas-economic-and-national-security/" target="_blank" rel="noopener">[5]</a> <a href="https://www.energy.gov/ne/articles/9-key-takeaways-president-trumps-executive-orders-nuclear-energy" target="_blank" rel="noopener">[6]</a> <a href="https://www.cnbc.com/2026/06/17/kevin-warsh-fed-interest-rates-risk-analysis.html" target="_blank" rel="noopener">[7]</a> <a href="https://www.npr.org/2026/06/17/nx-s1-5860084/fed-chief-warsh-first-fomc-meeting" target="_blank" rel="noopener">[8]</a> <a href="https://www.whitehouse.gov/fact-sheets/2025/11/fact-sheet-president-donald-j-trump-strikes-deal-on-economic-and-trade-relations-with-china/" target="_blank" rel="noopener">[9]</a> <a href="https://www.congress.gov/crs-product/R48549" target="_blank" rel="noopener">[10]</a> <a href="https://commonslibrary.parliament.uk/research-briefings/cbp-10637/" target="_blank" rel="noopener">[11]</a> <a href="https://www.aljazeera.com/news/2026/6/14/us-iran-ceasefire-deal-announced-trump-says-strait-of-hormuz-reopening" target="_blank" rel="noopener">[12]</a> <a href="https://www.csis.org/analysis/unpacking-15-trillion-fy-2027-defense-budget-topline" target="_blank" rel="noopener">[13]</a> <a href="https://www.nato.int/en/about-us/official-texts-and-resources/official-texts/2025/06/25/the-hague-summit-declaration" target="_blank" rel="noopener">[14]</a> <a href="https://www.congress.gov/crs-product/R48891" target="_blank" rel="noopener">[15]</a> <a href="https://home.treasury.gov/news/press-releases/sb0197" target="_blank" rel="noopener">[16]</a> <a href="https://www.cfr.org/articles/mar-lago-accord-not-recipe-success" target="_blank" rel="noopener">[17]</a> <a href="https://www.ishares.com/us/insights/inside-the-market/2026-etf-market-trends-and-flows" target="_blank" rel="noopener">[18]</a> <a href="https://www.cnbc.com/2026/06/24/cnbc-transcript-us-treasury-secretary-scott-bessent-speaks-with-cnbcs-joe-kernen-on-squawk-box-today.html" target="_blank" rel="noopener">[19]</a> <a href="https://home.treasury.gov/news/press-releases/sb0539" target="_blank" rel="noopener">[20]</a> <a href="https://www.coindesk.com/markets/2026/06/24/gold-silver-and-bitcoin-tumble-as-debasement-trade-unwinds" target="_blank" rel="noopener">[21]</a> <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" rel="noopener">[22]</a> <a href="https://www.bea.gov/data/personal-consumption-expenditures-price-index-excluding-food-and-energy" target="_blank" rel="noopener">[23]</a> <a href="https://www.bls.gov/news.release/archives/empsit_07022026.htm" target="_blank" rel="noopener">[24]</a> <a href="https://www.cnbc.com/2026/07/01/kevin-warsh-ecb-forum-live-updates.html" target="_blank" rel="noopener">[25]</a> <a href="https://www.energy.gov/articles/us-department-energy-meets-president-trumps-goal-delivers-third-advanced-reactor" target="_blank" rel="noopener">[26]</a> <a href="https://www.congress.gov/crs-product/LSB11398" target="_blank" rel="noopener">[27]</a> <a href="https://www.supremecourt.gov/opinions/25pdf/24-1287_4gcj.pdf" target="_blank" rel="noopener">[28]</a> <a href="https://www.axios.com/2026/06/14/us-iran-ceasefire-extended-hormuz-reopen-trump" target="_blank" rel="noopener">[29]</a> <a href="https://www.cnn.com/2026/07/08/politics/trump-iran-ceasefire-over-nato-summit" target="_blank" rel="noopener">[30]</a> <a href="https://www.spglobal.com/commodity-insights/en/news-research/latest-news/oil/070826-trump-declares-iran-ceasefire-over-oil-prices-spike" target="_blank" rel="noopener">[31]</a> <a href="https://www.federalreserve.gov/monetarypolicy/files/fomcminutes20260617.pdf" target="_blank" rel="noopener">[32]</a> <a href="https://www.perkinscole.com/en/news-and-insights/section-122-tariff-150-day-expiry-july-2026" target="_blank" rel="noopener">[33]</a> <a href="https://www.jdsupra.com/legalnews/cit-strikes-section-122-tariffs-may-7-2026/" target="_blank" rel="noopener">[34]</a> <a href="https://www.ustr.gov/about-us/policy-offices/press-office/press-releases/2026/july/ustr-section-301-replacement-tariff-proposal" target="_blank" rel="noopener">[35]</a> 
   </p>
-  <p class="conf"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-01 20:24 UTC · <span class="l-en">display / context only — not investment advice</span><span class="l-zh">仅供展示／参考——不构成投资建议</span></p>
+  <p class="conf"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-01 22:16 UTC · <span class="l-en">context only — not investment advice</span><span class="l-zh">仅供参考——不构成投资建议</span></p>
 
 </div>
 
@@ -1306,7 +1593,23 @@
   
 </footer>
 
-<script src="theme.js?v=ba799a17" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
+<script>
+(function () {
+  // thesis read-more: clamp is CSS; the button just toggles + hides itself when
+  // the paragraph already fits (short intel updates shouldn't show a dead toggle)
+  document.querySelectorAll('.pw-more').forEach(function (b) {
+    var p = document.getElementById(b.getAttribute('aria-controls'));
+    if (!p) { b.hidden = true; return; }
+    if (p.scrollHeight <= p.clientHeight + 6) { b.hidden = true; return; }
+    b.addEventListener('click', function () {
+      var open = p.classList.toggle('open');
+      b.classList.toggle('open', open);
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+  });
+})();
+</script>
+
+<script src="theme.js"></script>
 </body>
 </html>
