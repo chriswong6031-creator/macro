@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T00:14:16.133266+00:00",
-  "count": 492,
+  "generated_at": "2026-08-01T00:44:18.326412+00:00",
+  "count": 493,
   "institutions": [
     "Amova",
     "Apollo",
@@ -426,6 +426,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-scxcoqf6rke-850197",
+      "title": "Japan July Consumer Sentiment Improves Beyond Market Forecasts; Expected Inflation Gradually Decelerates",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:32Z",
+      "summary_points": [
+        "**Confidence-Inflation Divergence**: Sharp consumer confidence decline (blue) post-2014 tax hike/COVID-19 coincided with rising 1Y inflation expectations (green), signaling heightened inflation fears and reduced spending capacity—key for assessing Japan’s economic resilience and policy response risks.",
+        "**Policy Shock Sensitivity**: Historical volatility (GFC, earthquake, tax hikes) confirms Japan’s acute vulnerability to domestic policy shifts; consumption tax hikes directly triggered immediate confidence drops, heightening risk of future tax actions amplifying inflation expectations.",
+        "**Future Tax Hike Risk**: Current inflation dynamics increase likelihood of policy-driven tax hikes, which could exacerbate inflation expectations and further erode consumer spending—critical for anticipating central bank policy missteps.",
+        "**Resilience Assessment**: The confidence-inflation disconnect reveals structural fragility in Japan’s consumption-driven economy, demanding portfolio adjustments to mitigate policy shock exposure and inflation volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
