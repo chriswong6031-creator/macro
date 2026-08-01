@@ -86,6 +86,13 @@ DEFAULT_ANCHORS = [
     # PER_ANCHOR_MAX_AGE_H (their cadences are nothing like the daily lanes').
     "options_hub",    # nightly hub payloads (M1 launchd 16:45 PT weekdays);
                       # anchor = oi_movers.json, put on every successful run.
+    "options_hub_oi", # R3 OI suite (oi_time / max_pain / oi_change), same 16:45
+                      # lane; anchor = oi_change.json (cross-root, written by the
+                      # same aggregates step as oi_movers). A SEPARATE anchor —
+                      # not a second oi_movers candidate — because _candidates is
+                      # freshest-of: folding it in would WEAKEN the existing
+                      # dead-man, and the failure it exists to catch is "lane
+                      # runs, OI-suite step silently dead".
     "live_flow",      # RTH poller cycles (M1 launchd, 09:25–16:05 ET weekdays);
                       # anchor = meta.json, put every cycle.
     "levels_ledger",  # pre-open sealed levels boards (M1 launchd 04:30/06:00 PT);
@@ -116,6 +123,7 @@ DEFAULT_MAX_AGE_H = 26.0
 #                     seal) — ~2-3×/yr, dismiss on sight.
 PER_ANCHOR_MAX_AGE_H: dict[str, float] = {
     "options_hub": 68.0,
+    "options_hub_oi": 68.0,   # same 16:45 lane as options_hub → same envelope
     "live_flow": 22.0,
     "levels_ledger": 30.0,
 }
@@ -187,9 +195,10 @@ def _try(fetch, url: str, retries: int, method: str = "HEAD"):
 # Options-plane lanes publish per-cycle/per-run artifacts directly (no publish_r2
 # manifest), so each anchors on its always-rewritten beacon object instead.
 _DIR_CANDIDATES = {
-    "options_hub":   ["options_hub/oi_movers.json"],
-    "live_flow":     ["live_flow/meta.json"],
-    "levels_ledger": ["levels_ledger/index.json"],
+    "options_hub":    ["options_hub/oi_movers.json"],
+    "options_hub_oi": ["options_hub/oi_change.json"],
+    "live_flow":      ["live_flow/meta.json"],
+    "levels_ledger":  ["levels_ledger/index.json"],
 }
 
 

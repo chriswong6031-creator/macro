@@ -3353,7 +3353,7 @@ healthcheck:
 
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-  anchors: [stockdata, chinastockdata, feeds, thetadata_eod, options_hub, live_flow, levels_ledger]
+  anchors: [stockdata, chinastockdata, feeds, thetadata_eod, options_hub, options_hub_oi, live_flow, levels_ledger]
                       # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
                       # thetadata_eod (2026-07-30): the ~60 GB ThetaData EOD store's SOLE offsite backup —
                       # per ops/THETADATA_R2_SYNC_RUNBOOK.md the store "exists only on the ops Mac". It had NO
@@ -3373,6 +3373,11 @@ r2_data_plane:
   anchor_max_age_hours:   # per-lane budgets (hours) merged over audit_r2.PER_ANCHOR_MAX_AGE_H —
     options_hub: 68       # nightly 23:45 UTC weekdays: Monday legitimately reads Friday at 62.75h;
                           # one missed weekday nightly reads 86.75h → trips
+    options_hub_oi: 68    # R3 OI suite (oi_time/max_pain/oi_change), same 16:45 lane —
+                          # beacon = options_hub/oi_change.json; separate anchor because
+                          # audit_r2._candidates is freshest-of (folding it into options_hub
+                          # would weaken the existing beacon, and its failure mode is
+                          # "lane runs, OI-suite step silently dead")
     live_flow: 22         # RTH-cycle lane: healthy heartbeat age ≈ minutes; clears the quiet
                           # 18.4h overnight / 21.5h post-half-day reads; dead poller trips next day
     levels_ledger: 30     # pre-open seal: a missed seal reads ~27h next heartbeat → trips; clears the

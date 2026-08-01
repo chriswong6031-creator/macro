@@ -760,6 +760,387 @@ def compute_oi_movers(
 
 
 # --------------------------------------------------------------------------- #
+# R3 OI suite — oi_time / max_pain / oi_change (Options Superintelligence R3)
+# --------------------------------------------------------------------------- #
+# Pure, hermetic, mirror the compute_vol/compute_gex conventions. All three read
+# the OI tier only (plus EOD mids for oi_change); the OI TIMING LAW applies
+# verbatim: the OI parquet for date d carries the OPRA report representing
+# end-of-(d-1) positions, so every payload discloses oi_date: "t-1".
+
+_OI_TIME_MONTHS_DEFAULT = 18   # QuantData OI/Time depth (~18 months)
+_MAX_PAIN_CURVE_EXPS = 8       # expiries that carry a full intrinsic-value curve
+_MAX_PAIN_MAX_EXPS = 60        # cap on the expiries list (SPXW dailies are many)
+_MAX_PAIN_CURVE_CAP = 120      # curve strikes cap (nearest window center)
+_OI_BY_STRIKE_CAP = 160        # by_strike rows cap (mirrors the gex ±20%/160 law)
+_OI_WINDOW_FRAC = 0.20         # ±20% window around center (mirrors gex law)
+
+
+def _norm_oi_frame(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalise an OI frame: expiration → 'YYYY-MM-DD', strike float, right 'C'/'P',
+    open_interest numeric (non-positive rows dropped)."""
+    sub = df[["expiration", "strike", "right", "open_interest"]].copy()
+    sub["expiration"] = pd.to_datetime(sub["expiration"]).dt.date.astype(str)
+    sub["strike"] = pd.to_numeric(sub["strike"], errors="coerce")
+    sub["right"] = sub["right"].astype(str).str.upper().str[:1]
+    sub["open_interest"] = pd.to_numeric(sub["open_interest"], errors="coerce")
+    sub = sub[np.isfinite(sub["strike"]) & (sub["open_interest"] > 0)]
+    return sub
+
+
+def compute_oi_time(
+    oi_all: pd.DataFrame,
+    asof: str,
+    root: str,
+    months: int = _OI_TIME_MONTHS_DEFAULT,
+) -> dict:
+    """Build options_hub/oi_time/{ROOT}.json — call/put total OI per session.
+
+    Args:
+        oi_all: multi-year OI frame for this root (columns: date, expiration,
+                strike, right, open_interest). Dates 'YYYY-MM-DD' or parseable.
+        asof:   'YYYY-MM-DD' reference date (rows after asof are excluded).
+        root:   option root symbol.
+        months: history depth (calendar months back from asof).
+
+    Each history row keys by the OI parquet's own session date; per the OI
+    timing law that report represents end-of-(date-1) positions — disclosed
+    via oi_date: "t-1", never re-shifted here.
+    """
+    empty = {
+        "schema": "options_hub.oi_time/v1",
+        "asof": asof,
+        "root": root,
+        "oi_date": "t-1",
+        "window_months": months,
+        "history": [],
+        "coverage": {"n_days": 0, "since": None},
+    }
+    if oi_all is None or oi_all.empty or "date" not in oi_all.columns:
+        return empty
+
+    df = oi_all.copy()
+    df["date"] = pd.to_datetime(df["date"]).dt.date.astype(str)
+    cutoff = str((pd.Timestamp(asof) - pd.DateOffset(months=months)).date())
+    df = df[(df["date"] >= cutoff) & (df["date"] <= asof)]
+    if df.empty:
+        return empty
+
+    df["right"] = df["right"].astype(str).str.upper().str[:1]
+    df["open_interest"] = pd.to_numeric(df["open_interest"], errors="coerce").fillna(0.0)
+
+    piv = (df.pivot_table(index="date", columns="right",
+                          values="open_interest", aggfunc="sum")
+             .fillna(0.0).sort_index())
+    call_s = piv["C"] if "C" in piv.columns else pd.Series(0.0, index=piv.index)
+    put_s = piv["P"] if "P" in piv.columns else pd.Series(0.0, index=piv.index)
+
+    history = [
+        {
+            "date": d,
+            "call_oi": int(call_s.get(d, 0.0)),
+            "put_oi": int(put_s.get(d, 0.0)),
+            "total_oi": int(call_s.get(d, 0.0) + put_s.get(d, 0.0)),
+        }
+        for d in piv.index
+    ]
+    return {
+        "schema": "options_hub.oi_time/v1",
+        "asof": asof,
+        "root": root,
+        "oi_date": "t-1",
+        "window_months": months,
+        "history": history,
+        "coverage": {"n_days": len(history), "since": history[0]["date"] if history else None},
+    }
+
+
+def _window_center(spot_ref, fallback) -> float | None:
+    """Window center for by_strike/curve trims: spot_ref when finite, else fallback."""
+    try:
+        v = float(spot_ref)
+        if np.isfinite(v) and v > 0:
+            return v
+    except (TypeError, ValueError):
+        pass
+    try:
+        v = float(fallback)
+        return v if np.isfinite(v) else None
+    except (TypeError, ValueError):
+        return None
+
+
+def compute_max_pain(
+    oi_t1: pd.DataFrame,
+    asof: str,
+    root: str,
+    spot_ref: float | None,
+    curve_exps: int = _MAX_PAIN_CURVE_EXPS,
+    max_exps: int = _MAX_PAIN_MAX_EXPS,
+) -> dict:
+    """Build options_hub/max_pain/{ROOT}.json — per-expiration max pain from OI[t-1].
+
+    Max pain per expiration = the candidate settle strike minimizing total
+    intrinsic value paid out by option writers:
+        value(Ks) = Σ_calls OI·max(0, Ks−K) + Σ_puts OI·max(0, K−Ks), × MULT.
+    The argmin runs over the expiration's FULL strike set; curves are windowed
+    for payload size only (±20% of center, cap, max-pain strike always kept).
+
+    Also carries the OI ladder the Structure tab renders: by_strike call/put OI
+    aggregated across upcoming expiries (±20%/160 window per the gex law, uncut
+    count disclosed) — expiries[] rows double as OI-by-expiration.
+
+    Args:
+        oi_t1:    OI frame for asof (per the OI timing law these are t-1
+                  positions). Columns: expiration, strike, right, open_interest.
+        asof:     'YYYY-MM-DD' reference date; only expirations > asof are kept.
+        spot_ref: reference spot (from the gex payload) — window center and the
+                  UI's "max pain vs spot" comparison; None degrades gracefully.
+        curve_exps: nearest expiries that carry the intrinsic-value curve.
+        max_exps:   cap on the expiries list (nearest first, uncut count disclosed).
+    """
+    base = {
+        "schema": "options_hub.max_pain/v1",
+        "asof": asof,
+        "root": root,
+        "spot_ref": _f(spot_ref),
+        "oi_date": "t-1",
+        "expiries": [],
+        "expiries_full_n": 0,
+        "by_strike": [],
+        "by_strike_full_n": 0,
+        "coverage": {"n_contracts": 0, "asof": asof, "oi_date": "t-1"},
+    }
+    if oi_t1 is None or oi_t1.empty:
+        return base
+
+    sub = _norm_oi_frame(oi_t1)
+    sub = sub[sub["expiration"] > asof]
+    if sub.empty:
+        return base
+
+    today = pd.Timestamp(asof).date()
+    exps = sorted(sub["expiration"].unique())
+    base["expiries_full_n"] = len(exps)
+    exps = exps[:max_exps]
+
+    exp_rows: list[dict] = []
+    for i, exp in enumerate(exps):
+        grp = sub[sub["expiration"] == exp]
+        piv = (grp.pivot_table(index="strike", columns="right",
+                               values="open_interest", aggfunc="sum")
+                  .fillna(0.0).sort_index())
+        ks = piv.index.to_numpy(float)
+        if ks.size == 0:
+            continue
+        c_oi = (piv["C"] if "C" in piv.columns else pd.Series(0.0, index=piv.index)).to_numpy(float)
+        p_oi = (piv["P"] if "P" in piv.columns else pd.Series(0.0, index=piv.index)).to_numpy(float)
+
+        # Intrinsic payout at each candidate settle (vectorized outer diff), $.
+        call_val = (c_oi[:, None] * np.maximum(0.0, ks[None, :] - ks[:, None])).sum(axis=0) * MULT
+        put_val = (p_oi[:, None] * np.maximum(0.0, ks[:, None] - ks[None, :])).sum(axis=0) * MULT
+        total = call_val + put_val
+
+        min_v = float(total.min())
+        min_idx = np.flatnonzero(total == min_v)
+        if len(min_idx) > 1 and spot_ref is not None and np.isfinite(float(spot_ref)):
+            pick = min(min_idx, key=lambda j: abs(ks[j] - float(spot_ref)))
+        else:
+            pick = int(min_idx[0])
+        max_pain = float(ks[pick])
+
+        dte = (pd.Timestamp(exp).date() - today).days
+        row: dict = {
+            "exp": exp,
+            "dte": int(dte),
+            "max_pain": _f(max_pain),
+            "call_oi": int(c_oi.sum()),
+            "put_oi": int(p_oi.sum()),
+        }
+
+        if i < curve_exps:
+            center = _window_center(spot_ref, max_pain)
+            keep = np.ones(ks.size, dtype=bool)
+            if center is not None and center > 0:
+                keep = np.abs(ks / center - 1.0) <= _OI_WINDOW_FRAC
+            idxs = np.flatnonzero(keep)
+            if idxs.size > _MAX_PAIN_CURVE_CAP and center is not None:
+                order = np.argsort(np.abs(ks[idxs] - center))
+                idxs = idxs[order[:_MAX_PAIN_CURVE_CAP]]
+            keep_set = set(int(j) for j in idxs)
+            keep_set.add(int(pick))  # the argmin must always be drawable
+            curve = [
+                {
+                    "strike": _f(ks[j]),
+                    "call_value_mn": _f(call_val[j] / 1e6, 2),
+                    "put_value_mn": _f(put_val[j] / 1e6, 2),
+                    "value_mn": _f(total[j] / 1e6, 2),
+                }
+                for j in sorted(keep_set)
+            ]
+            row["curve"] = curve
+            row["curve_full_n"] = int(ks.size)
+
+        exp_rows.append(row)
+
+    # ── by_strike OI ladder across ALL upcoming expiries (not just max_exps) ──
+    by_k = (sub.pivot_table(index="strike", columns="right",
+                            values="open_interest", aggfunc="sum")
+               .fillna(0.0).sort_index())
+    ks_all = by_k.index.to_numpy(float)
+    c_all = (by_k["C"] if "C" in by_k.columns else pd.Series(0.0, index=by_k.index)).to_numpy(float)
+    p_all = (by_k["P"] if "P" in by_k.columns else pd.Series(0.0, index=by_k.index)).to_numpy(float)
+    by_strike_full_n = int(ks_all.size)
+
+    front_mp = exp_rows[0]["max_pain"] if exp_rows else None
+    center = _window_center(spot_ref, front_mp)
+    keep = np.ones(ks_all.size, dtype=bool)
+    if center is not None and center > 0:
+        keep = np.abs(ks_all / center - 1.0) <= _OI_WINDOW_FRAC
+    idxs = np.flatnonzero(keep)
+    if idxs.size > _OI_BY_STRIKE_CAP and center is not None:
+        order = np.argsort(np.abs(ks_all[idxs] - center))
+        idxs = np.sort(idxs[order[:_OI_BY_STRIKE_CAP]])
+    by_strike = [
+        {
+            "strike": _f(ks_all[j]),
+            "call_oi": int(c_all[j]),
+            "put_oi": int(p_all[j]),
+        }
+        for j in idxs
+    ]
+
+    out = dict(base)
+    out["expiries"] = exp_rows
+    out["by_strike"] = by_strike
+    out["by_strike_full_n"] = by_strike_full_n
+    out["coverage"] = {"n_contracts": int(len(sub)), "asof": asof, "oi_date": "t-1"}
+    return out
+
+
+def compute_oi_change(
+    oi_t: pd.DataFrame,
+    oi_prev: pd.DataFrame,
+    eod_t: pd.DataFrame,
+    asof: str,
+    prev_date: str | None,
+    root: str,
+    top_n: int = 50,
+) -> dict:
+    """Build options_hub/oi_change/{ROOT}.json — top contract-level OI shifts.
+
+    OI TIMING LAW: oi_t (the report for asof) carries end-of-(asof-1) positions;
+    oi_prev (the report for prev_date) carries end-of-(prev_date-1) positions.
+    The delta is fully known at market open on asof — never same-day OI.
+
+    Rows are |ΔOI|-ranked (magnitude, so large reductions are kept), carry the
+    percent change (null when the contract is new — no prev base), the EOD mid,
+    and DTE. Expired contracts (exp <= asof) are excluded: their OI going to
+    zero is expiry mechanics, not positioning.
+    """
+    base = {
+        "schema": "options_hub.oi_change/v1",
+        "asof": asof,
+        "root": root,
+        "scope": "root",
+        "prev_session": prev_date,
+        "oi_date": "t-1",
+        "rows": [],
+        "coverage": {"n_contracts_changed": 0},
+    }
+    if (oi_t is None or oi_t.empty or oi_prev is None or oi_prev.empty
+            or not prev_date):
+        return base
+
+    keys = ["expiration", "strike", "right"]
+    t = _norm_oi_frame(oi_t)
+    t1 = _norm_oi_frame(oi_prev)
+
+    merged = t.merge(
+        t1.rename(columns={"open_interest": "oi_prev"}),
+        on=keys, how="outer",
+    ).fillna(0.0)
+    merged["oi"] = merged["open_interest"].astype(float)
+    merged["oi_prev"] = merged["oi_prev"].astype(float)
+    merged["d_oi"] = merged["oi"] - merged["oi_prev"]
+    merged = merged[(merged["d_oi"].abs() > 0) & (merged["expiration"] > asof)]
+    n_changed = int(len(merged))
+    if merged.empty:
+        # Legitimately possible: OPRA occasionally republishes an unchanged
+        # vintage (see engine/positioning_persistence same_vintage) — an honest
+        # empty beats stale last-good rows wearing today's date.
+        out = dict(base)
+        out["note"] = "no contract-level OI change vs prev session"
+        return out
+
+    # EOD mid (close bid/ask) for context
+    if eod_t is not None and not eod_t.empty and "bid_eod" in eod_t.columns:
+        ep = eod_t[keys + ["bid_eod", "ask_eod"]].copy()
+        ep["expiration"] = pd.to_datetime(ep["expiration"]).dt.date.astype(str)
+        ep["strike"] = pd.to_numeric(ep["strike"], errors="coerce")
+        ep["right"] = ep["right"].astype(str).str.upper().str[:1]
+        ep["mid"] = (pd.to_numeric(ep["bid_eod"], errors="coerce") +
+                     pd.to_numeric(ep["ask_eod"], errors="coerce")) / 2.0
+        merged = merged.merge(ep[keys + ["mid"]], on=keys, how="left")
+    else:
+        merged["mid"] = np.nan
+
+    merged = merged.reindex(
+        merged["d_oi"].abs().sort_values(ascending=False).index
+    ).head(top_n)
+
+    today = pd.Timestamp(asof).date()
+    rows: list[dict] = []
+    for r in merged.itertuples():
+        oi_prev_v = float(r.oi_prev)
+        d_oi_v = float(r.d_oi)
+        pct = _f(d_oi_v / oi_prev_v * 100.0, 1) if oi_prev_v > 0 else None
+        mid_v = getattr(r, "mid", np.nan)
+        rows.append({
+            "root": root,
+            "right": str(r.right),
+            "exp": str(r.expiration),
+            "dte": int((pd.Timestamp(r.expiration).date() - today).days),
+            "strike": _f(r.strike),
+            "oi": int(r.oi),
+            "oi_prev": int(oi_prev_v),
+            "d_oi": int(d_oi_v),
+            "d_oi_pct": pct,
+            "mid": _f(mid_v) if np.isfinite(mid_v) else None,
+        })
+
+    out = dict(base)
+    out["rows"] = rows
+    out["coverage"] = {"n_contracts_changed": n_changed}
+    return out
+
+
+def compute_oi_change_cross(
+    rows: list[dict],
+    asof: str,
+    roots_n: int,
+    top_n: int = 100,
+) -> dict:
+    """Cross-root options_hub/oi_change.json: |ΔOI|-top rows merged across roots.
+
+    `rows` are per-root compute_oi_change rows (each already carries its root).
+    Same magnitude ranking as oi_movers so large reductions survive the cut.
+    """
+    ranked = sorted(
+        (r for r in (rows or []) if isinstance(r, dict)),
+        key=lambda r: abs(r.get("d_oi", 0) or 0),
+        reverse=True,
+    )
+    return {
+        "schema": "options_hub.oi_change/v1",
+        "asof": asof,
+        "scope": "cross_root",
+        "oi_date": "t-1",
+        "roots_n": int(roots_n),
+        "rows": ranked[:top_n],
+    }
+
+
+# --------------------------------------------------------------------------- #
 # Hot contracts
 # --------------------------------------------------------------------------- #
 

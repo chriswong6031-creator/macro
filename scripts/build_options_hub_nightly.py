@@ -45,6 +45,10 @@ from engine.options_hub import (
     compute_gex,
     compute_oi_movers,
     compute_hot_contracts,
+    compute_oi_time,
+    compute_max_pain,
+    compute_oi_change,
+    compute_oi_change_cross,
     load_gex_history_v2,
     build_context_payload,
     build_tickers_ctx,
@@ -74,6 +78,17 @@ ROOT_WALL_BUDGET_S: float = float(os.environ.get("HUB_ROOT_BUDGET_S", "420"))
 # Publish cross-root aggregates (oi_movers / hot_contracts / context) after every
 # N roots so a mid-run OOM leaves the feeds only N roots stale, not entirely frozen.
 INCREMENTAL_N: int = int(os.environ.get("HUB_INCREMENTAL_N", "50"))
+
+# ── R3 OI suite (oi_time / max_pain / oi_change) ──────────────────────────────
+# Per-root cost guards for the new step: a kill-switch (HUB_OI_SUITE=0 skips the
+# whole suite without touching the rest of the lane), a tunable history depth,
+# and a per-root warn threshold so a pathological chain shows up in the log
+# before it eats the wall budget (the ROOT_WALL_BUDGET_S check already envelopes
+# this compute — it runs before that check reads the clock).
+OI_SUITE_ENABLED: bool = os.environ.get("HUB_OI_SUITE", "1") != "0"
+OI_TIME_MONTHS: int = int(os.environ.get("HUB_OI_TIME_MONTHS", "18"))
+OI_CHANGE_TOP_N: int = int(os.environ.get("HUB_OI_CHANGE_TOP_N", "50"))
+OI_SUITE_WARN_S: float = float(os.environ.get("HUB_OI_SUITE_WARN_S", "60"))
 
 # ── standard data paths (relative to data_root) ───────────────────────────────
 _POLYGON_GEX_SUBDIR = "polygon_gex"
@@ -159,6 +174,7 @@ def _publish_aggregates(
     gex_latest_path: Path,
     live_flow_out_dir: Path,
     label: str = "incremental",
+    oi_change_rows: list[dict] | None = None,
 ) -> dict | None:
     """Compute and publish cross-root aggregate artifacts from roots processed so far.
 
@@ -185,6 +201,24 @@ def _publish_aggregates(
         log.info("options_hub_builder: [%s] oi_movers + hot_contracts done", label)
     except Exception as e:  # noqa: BLE001
         log.warning("options_hub_builder: [%s] cross-root build FAILED — %s", label, e)
+
+    # ── R3 OI suite: cross-root oi_change.json (also the options_hub_oi
+    # dead-man beacon — audit_r2 anchors on this key's Last-Modified) ─────────
+    try:
+        if oi_change_rows is not None:
+            cross = compute_oi_change_cross(
+                oi_change_rows, asof, roots_n=len(roots_ok))
+            oc_path = out_dir / "oi_change.json"
+            _write_json(oc_path, cross)
+            if s3 and bucket:
+                _upload_r2(s3, bucket, oc_path, f"{R2_PREFIX}oi_change.json")
+            log.info("options_hub_builder: [%s] oi_change.json done (%d rows)",
+                     label, len(cross.get("rows") or []))
+    except Exception as e:  # noqa: BLE001
+        log.warning(
+            "options_hub_builder: [%s] cross-root oi_change build FAILED — %s",
+            label, e,
+        )
 
     try:
         ctx_payload = build_context_payload(
@@ -393,6 +427,57 @@ def build_root(
         vex_payload = {}
 
     return vol_payload, gex_payload, vex_payload
+
+
+# --------------------------------------------------------------------------- #
+# R3 OI suite — per-root oi_time / max_pain / oi_change payloads
+# --------------------------------------------------------------------------- #
+
+def build_oi_suite(
+    root: str,
+    asof: str,
+    theta_store: str | Path | None,
+    spot_ref: float | None,
+) -> tuple[dict, dict, dict, dict]:
+    """Build the three OI-suite payloads for one root from ONE multi-year OI read.
+
+    The OI read rides the per-root parquet cache (cleared after each root), so
+    the asof slice build_root already loaded costs nothing extra; the only new
+    I/O per root is the prior OI year(s) needed for the 18-month oi_time window
+    and the EOD file for oi_change mids.
+
+    OI TIMING LAW: the OI parquet for date d = OPRA report of end-of-(d-1)
+    positions. compute_max_pain gets the asof slice (t-1 positions); the
+    oi_change delta compares it against the previous session's report.
+    """
+    y_hi = pd.Timestamp(asof).year
+    y_lo = (pd.Timestamp(asof) - pd.DateOffset(months=OI_TIME_MONTHS)).year
+    oi_all = _load_parquets("oi", root, list(range(y_lo, y_hi + 1)), theta_store)
+    if not oi_all.empty:
+        oi_all = _normalise_date(oi_all)
+
+    oi_time_payload = compute_oi_time(oi_all, asof, root, months=OI_TIME_MONTHS)
+
+    oi_t = (oi_all[oi_all["date"] == asof].copy()
+            if not oi_all.empty else pd.DataFrame())
+    max_pain_payload = compute_max_pain(oi_t, asof, root, spot_ref)
+
+    prev_date = _prev_oi_date(oi_all, asof) if not oi_all.empty else None
+    oi_prev = (oi_all[oi_all["date"] == prev_date].copy()
+               if prev_date else pd.DataFrame())
+    eod_t = _load_eod_for_date(root, asof, theta_store)
+    oi_change_payload = compute_oi_change(
+        oi_t, oi_prev, eod_t, asof, prev_date, root, top_n=OI_CHANGE_TOP_N)
+
+    meta = {"oi_all_n": int(len(oi_all)), "oi_t_n": int(len(oi_t))}
+    return oi_time_payload, max_pain_payload, oi_change_payload, meta
+
+
+def _oi_suite_upload_ok(payload_rows, source_had_rows: bool) -> bool:
+    """Completeness guard twin of _gex_publish_decision for the OI suite:
+    an empty compute over a store that HAS rows suppresses the upload
+    (preserve last-good); a genuinely empty store publishes its honest empty."""
+    return bool(payload_rows) or not source_had_rows
 
 
 # --------------------------------------------------------------------------- #
@@ -920,6 +1005,7 @@ def main() -> None:
     roots_timeout: list[str] = []      # roots skipped due to wall-clock budget
 
     _last_incremental: int = 0         # index of last incremental aggregate publish
+    _oi_change_rows: list[dict] = []   # R3: per-root oi_change rows → cross-root top
     # WP-GEX-DATES: global self-heal budget for missed dated snapshots this run.
     # Roots are processed anchors-first, so the budget naturally goes to the
     # index ETFs before the long tail; a long outage closes over a few nights.
@@ -930,6 +1016,32 @@ def main() -> None:
         _root_start = time.monotonic()
         try:
             vol_payload, gex_payload, vex_payload = build_root(root, asof, theta_store, polygon_gex_dir)
+
+            # ── R3 OI suite (oi_time / max_pain / oi_change) — computed HERE so
+            # the wall-budget check below envelopes its cost (a slow chain skips
+            # the whole root's uploads, new payloads included). INERT per root;
+            # HUB_OI_SUITE=0 is the kill-switch.
+            oi_time_payload: dict | None = None
+            max_pain_payload: dict | None = None
+            oi_change_payload: dict | None = None
+            oi_suite_meta: dict = {}
+            if OI_SUITE_ENABLED:
+                _oi_start = time.monotonic()
+                try:
+                    (oi_time_payload, max_pain_payload,
+                     oi_change_payload, oi_suite_meta) = build_oi_suite(
+                        root, asof, theta_store, gex_payload.get("spot_ref"))
+                    _oi_elapsed = time.monotonic() - _oi_start
+                    if _oi_elapsed > OI_SUITE_WARN_S:
+                        log.warning(
+                            "options_hub_builder: OI suite slow for %s (%.1fs > %.0fs)",
+                            root, _oi_elapsed, OI_SUITE_WARN_S,
+                        )
+                except Exception as _oi_err:  # noqa: BLE001
+                    log.warning(
+                        "options_hub_builder: OI suite compute failed for %s — %s",
+                        root, _oi_err,
+                    )
 
             _elapsed = time.monotonic() - _root_start
             if _elapsed > ROOT_WALL_BUDGET_S:
@@ -1084,6 +1196,44 @@ def main() -> None:
                     root, _mv_err,
                 )
 
+            # ── R3 OI suite publish (oi_time / max_pain / oi_change per root) ──
+            # Written locally always; uploaded under the same completeness-guard
+            # philosophy as gex (_oi_suite_upload_ok): an empty compute over a
+            # store that HAS rows preserves last-good, a genuinely empty store
+            # publishes its honest empty. oi_change rows may be honestly empty
+            # ONLY on the disclosed unchanged-vintage path (note set); a
+            # missing-input empty stays unpublished. INERT per root.
+            try:
+                if oi_time_payload is not None:
+                    _ot_path = out_dir / "oi_time" / f"{root}.json"
+                    _write_json(_ot_path, oi_time_payload)
+                    if s3 and bucket and _oi_suite_upload_ok(
+                            oi_time_payload.get("history"),
+                            oi_suite_meta.get("oi_all_n", 0) > 0):
+                        _upload_r2(s3, bucket, _ot_path,
+                                   f"{R2_PREFIX}oi_time/{root}.json")
+                if max_pain_payload is not None:
+                    _mp_path = out_dir / "max_pain" / f"{root}.json"
+                    _write_json(_mp_path, max_pain_payload)
+                    if s3 and bucket and _oi_suite_upload_ok(
+                            max_pain_payload.get("expiries"),
+                            oi_suite_meta.get("oi_t_n", 0) > 0):
+                        _upload_r2(s3, bucket, _mp_path,
+                                   f"{R2_PREFIX}max_pain/{root}.json")
+                if oi_change_payload is not None:
+                    _oc_path = out_dir / "oi_change" / f"{root}.json"
+                    _write_json(_oc_path, oi_change_payload)
+                    if s3 and bucket and (oi_change_payload.get("rows")
+                                          or oi_change_payload.get("note")):
+                        _upload_r2(s3, bucket, _oc_path,
+                                   f"{R2_PREFIX}oi_change/{root}.json")
+                    _oi_change_rows.extend(oi_change_payload.get("rows") or [])
+            except Exception as _oi_pub_err:  # noqa: BLE001
+                log.warning(
+                    "options_hub_builder: OI suite publish failed for %s — %s",
+                    root, _oi_pub_err,
+                )
+
             roots_ok.append(root)
             log.info(
                 "options_hub_builder: %s done (%.1fs)", root,
@@ -1116,6 +1266,7 @@ def main() -> None:
                 gex_latest_path=gex_latest_path,
                 live_flow_out_dir=live_flow_out_dir,
                 label=f"incremental@{len(roots_ok)}",
+                oi_change_rows=list(_oi_change_rows),
             )
             _last_incremental = len(roots_ok)
 
@@ -1132,6 +1283,7 @@ def main() -> None:
         gex_latest_path=gex_latest_path,
         live_flow_out_dir=live_flow_out_dir,
         label="final",
+        oi_change_rows=list(_oi_change_rows),
     )
 
     # ── summary / completion sentinel ────────────────────────────────────────
