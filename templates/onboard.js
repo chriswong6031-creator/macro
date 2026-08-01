@@ -2359,12 +2359,15 @@
   // the cheap cookie sniff gates the /api/me fetch entirely.
   var UPCHROME = {
     upgrade: ["Upgrade", "升级"],
+    upgradeAnnual: ["Upgrade to Annual", "升级为年付"],
     openDash: ["Open the dashboard", "打开仪表盘"],
     included: ["Included", "已包含"],
-    current: ["Current plan", "当前方案"]
+    current: ["Current plan", "当前方案"],
+    yourPlan: ["Your plan", "当前方案"]
   };
   function _byId(id) { return document.getElementById(id); }
   var _navSnap = null;   // signed-out nav-cta snapshot, so a dead session can be reverted exactly
+  var _planSnap = null;  // signed-out pricing-CTA snapshots (label/href/period), same purpose
 
   // Wire the gear ACCOUNT buttons — independent of auth state, so signed-out
   // visitors can sign in / create an account straight from the gear.
@@ -2402,6 +2405,7 @@
   // Apply the signed-in header chrome from an /api/me payload.
   function applyAuthChrome(me) {
     if (!me) return;
+    snapshotPlanCtas();                        // idempotent; MMOnboard.applyChrome may arrive first
     var tier = me.tier || "free";
     var interval = me.interval || null;
     var best = (tier === "unlimited") || (tier === "pro" && interval === "annual");
@@ -2426,17 +2430,33 @@
       b.classList.remove("js-startfree"); b.classList.add("js-startfree-done");
     }
 
-    // 4) pricing-card CTAs
+    // 4) pricing-card CTAs — ENTITLEMENT-AWARE. A paying member must never be sold a
+    //    trial of something they already hold ("Start 7-day trial" to a Pro Lifetime
+    //    member was the bug). Every actionable CTA reuses the upgrade sheet, whose lane
+    //    matrix (upgradeLanes) already tailors the panel to tier×interval.
+    //    Lifetime = comp / uncapped grant with no period end (mirrors theme.js _sdPlanChip).
+    var lifetime = (tier === "unlimited" || me.source === "comp") &&
+                   !me.current_period_end && me.status !== "canceled";
+    // Nothing left to sell on the Pro card: unlimited, Pro Lifetime, or Pro Annual.
+    // interval is null for comp/lifetime grants, so only an EXPLICIT "monthly" is upsellable.
+    var proTop = (tier === "unlimited") || lifetime || (tier === "pro" && interval !== "monthly");
     document.querySelectorAll(".js-plan-cta").forEach(function (pc) {
       var plan = pc.getAttribute("data-plan");
       if (plan === "free") {
         // Free card: inert "Current plan" when free, else "Included" (paid tiers include Free)
         makeInert(pc, tier === "free" ? "current" : "included");
+      } else if (tier === "free") {
+        // signed-in free tier → unchanged: keep the card's own trial copy, open the sheet
+        makePlanLive(pc, null, start, { plan: plan, period: pc.getAttribute("data-period") || "annual" });
+      } else if (plan === "insider") {
+        // held by an Insider, bundled into Pro/unlimited — either way, not a purchase
+        makeInert(pc, tier === "insider" ? "yourPlan" : "included");
+      } else if (plan === "pro") {
+        if (proTop) makeInert(pc, "yourPlan");
+        else if (tier === "pro") makePlanLive(pc, "upgradeAnnual", start, { plan: "pro", period: "annual" });
+        else makePlanLive(pc, "upgrade", start, { plan: "pro", period: "annual" });
       } else {
-        // paid card → open upgrade preselecting that plan (or best-plan panel)
-        pc.setAttribute("href", start);
-        pc.__upgradePlan = { plan: plan, period: pc.getAttribute("data-period") || "annual" };
-        bindPlanCta(pc);
+        makePlanLive(pc, null, start, { plan: plan, period: pc.getAttribute("data-period") || "annual" });
       }
     });
 
@@ -2460,13 +2480,75 @@
   }
   function bindPlanCta(pc) {
     if (pc.__bound) return; pc.__bound = true;
-    pc.addEventListener("click", function (e) { e.preventDefault(); openSheet("upgrade", pc.__upgradePlan || {}); });
+    pc.addEventListener("click", function (e) {
+      // A revertAuthChrome() (hard 401) clears __upgradePlan: the card is a guest signup
+      // link again, so this listener must stand down rather than force the upgrade sheet.
+      if (!pc.__upgradePlan) return;
+      e.preventDefault(); openSheet("upgrade", pc.__upgradePlan);
+    });
   }
   function makeInert(pc, key) {
     paintBilingual(pc, UPCHROME[key][0], UPCHROME[key][1]);
     pc.setAttribute("aria-disabled", "true");
     pc.removeAttribute("href");
+    // Drop data-period too: the landing's applyPricing() re-writes `.js-plan-cta[data-period]`
+    // hrefs on every billing/language toggle, and `new URL("", location.href)` does NOT throw —
+    // so a toggle would silently hand the href back to a card we just made inert. An inert card
+    // has no billing period to carry. __periodAttr lets makePlanLive/restore put it back.
+    var per = pc.getAttribute("data-period");
+    if (per != null) { pc.__periodAttr = per; pc.removeAttribute("data-period"); }
     pc.style.pointerEvents = "none"; pc.style.opacity = ".65";
+  }
+  // The inverse of makeInert + the actionable wiring. applyAuthChrome runs TWICE per load
+  // (optimistic hint, then confirmed /api/me), so a card the first paint made inert must be
+  // fully revivable when the confirmed tier turns out to be upsellable after all.
+  // key === null restores the card's own signed-out copy (the trial labels) from the snapshot.
+  function makePlanLive(pc, key, href, target) {
+    if (key) setChromeLabel(pc, key); else restorePlanLabel(pc);
+    pc.removeAttribute("aria-disabled");
+    pc.style.pointerEvents = ""; pc.style.opacity = "";
+    if (pc.__periodAttr != null && !pc.hasAttribute("data-period")) pc.setAttribute("data-period", pc.__periodAttr);
+    pc.setAttribute("href", href);
+    pc.__upgradePlan = target;
+    bindPlanCta(pc);
+  }
+  // Snapshot the signed-out pricing CTAs once, before any repaint, so both a downgrade
+  // repaint and a hard-401 revert can restore the exact original copy. LANG may already
+  // have swapped the page to zh by the time this runs — __en holds the English original.
+  function snapshotPlanCtas() {
+    if (_planSnap) return;
+    _planSnap = [];
+    document.querySelectorAll(".js-plan-cta").forEach(function (pc) {
+      _planSnap.push({
+        el: pc,
+        en: (pc.__en != null) ? pc.__en : pc.innerHTML,
+        zh: pc.getAttribute("data-zh"),
+        href: pc.getAttribute("href"),
+        period: pc.getAttribute("data-period")
+      });
+    });
+  }
+  function _planSnapFor(pc) {
+    if (!_planSnap) return null;
+    for (var i = 0; i < _planSnap.length; i++) if (_planSnap[i].el === pc) return _planSnap[i];
+    return null;
+  }
+  function restorePlanLabel(pc) {
+    var s = _planSnapFor(pc);
+    if (!s) return;
+    if (s.zh != null) paintBilingual(pc, s.en, s.zh);
+    else { pc.__en = s.en; pc.innerHTML = s.en; }
+  }
+  // Full signed-out restore of one pricing CTA (label + href + billing period + inert styling).
+  function restorePlanCta(pc) {
+    var s = _planSnapFor(pc);
+    if (!s) return;
+    restorePlanLabel(pc);
+    pc.removeAttribute("aria-disabled");
+    pc.style.pointerEvents = ""; pc.style.opacity = "";
+    if (s.href != null) pc.setAttribute("href", s.href); else pc.removeAttribute("href");
+    if (s.period != null) pc.setAttribute("data-period", s.period); else pc.removeAttribute("data-period");
+    pc.__upgradePlan = null;
   }
   function renderGearAccount(me) {
     var out = _byId("gp-acct-out"), inn = _byId("gp-acct-in");
@@ -2495,6 +2577,8 @@
       if (_navSnap.ctaHref) cta.setAttribute("href", _navSnap.ctaHref);
       cta.__upgrade = false;
     }
+    // pricing cards → back to the signed-out trial copy (label, href, billing period, no inert)
+    document.querySelectorAll(".js-plan-cta").forEach(restorePlanCta);
     var out = _byId("gp-acct-out"), inn = _byId("gp-acct-in");
     if (out) { out.hidden = false; out.style.display = ""; }
     if (inn) { inn.hidden = true; inn.style.display = "none"; }
@@ -2509,6 +2593,7 @@
     if (!_byId("nav-cta") && !_byId("gp-acct-out")) return;
     wireGearAccount();                         // always (signed-out gear needs its buttons)
     if (!_navSnap) { var c0 = _byId("nav-cta"); _navSnap = c0 ? { ctaHtml: c0.innerHTML, ctaHref: c0.getAttribute("href") } : {}; }
+    snapshotPlanCtas();                        // pricing CTAs too — a 401 must restore the trial copy
     if (!hasSessionCookie()) { clearMeHint(); return; }   // guest → signed-out markup, zero network
     // OPTIMISTIC PAINT: a session cookie means the user IS signed in. Reflect it NOW from
     // the fresh SS cache or the durable hint (or a free-tier default) so the "Log in" chrome
