@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T05:16:10.047913+00:00",
-  "count": 504,
+  "generated_at": "2026-08-01T07:00:18.053669+00:00",
+  "count": 511,
   "institutions": [
     "Amova",
     "Apollo",
@@ -265,6 +265,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-xueqe66yoxy-865d9b",
+      "title": "Veolia Environnement (VIE.PA) Update numbers post H1 results",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:57Z",
+      "summary_points": [
+        "**H1 2026 Results & Guidance Upgrade**: H1 2026 revenue +1.5% (€22.19bn), EBITDA +5.0% (€3.552bn) at constant scope; guidance upgraded to include Clean Earth, with organic EBITDA growth 5-6% and net income growth 8% (vs 8% without Clean Earth), driven by cost-cutting (56% of 2026 efficiency gains achieved).",
+        "**Disposal Plan & EPS Impact**: €2bn+ asset disposal target by 2028 (€0.1bn closed in H1 2026); post-results EPS forecasts increased by 1.6% average for 2026-28 due to H1 performance and Clean Earth acquisition.",
+        "**Revised Growth Trajectory**: Net income growth revised to 2.3% (from 1.5%) and EPS to 2.4% (from 1.1%) through 2028E, supported by €1.4tn fragmented market expansion (40% Water, 35% Waste, 25% Energy) and cost-cutting, forecasting 8% net income CAGR for FY2025-29.",
+        "**Valuation Disconnect**: Buy rating with €41 price target (14.5% upside) but Goldman Sachs’ target fell from €41.00 (May 2026) to €34.60 (Aug 2023), with current price (€35.82) below target, signaling weakening bullish sentiment and undervaluation risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zppp80od49b-6fbbcb",
+      "title": "UK Weekly Kickstart Data only update",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:55Z",
+      "summary_points": [
+        "**UK International Rotation Signal**: FTSE 100’s resilience (9.7% YTD) despite 1-week underperformance (2.4%) and 4.1% vs 3.1% international vs domestic outperformance signal potential portfolio rotation toward global exposure.",
+        "**FTSE 350 Overvaluation**: Current metrics (EV/Sales 86%, Price/Book 81%, cyclically adjusted P/E 81%) indicate significant overvaluation vs historical norms, with Tech (17.8) and Industrials (22.0) at extreme valuations.",
+        "**FTSE 250 Relative Strength**: FTSE 250 offers lower P/B (1.3 vs FTSE 100’s 2.3), higher dividend yield (3.9% vs 3.4%), and stronger EPS growth (14.4% 2026E-2027E vs FTSE 100’s 6.5%), suggesting sustainable valuation opportunity despite leverage risks.",
+        "**Sector Revisions & Risks**: Basic Resources (21.3% 26E rev) and Banks (5.7% 27E rev) show significant downward revisions despite strong EPS growth (36.0% CAGR), signaling sector-specific geopolitical/economic headwinds.",
+        "**FTSE 100 Leverage Risk**: Elevated leverage (67% Net Debt/Equity) with negative sales growth (2026E-2027E: -0.3%) and declining earnings estimates (-10% by Jul-26) heighten earnings volatility risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-m8pd7djihdu-c9c210",
       "title": "Maxell Ltd. (6810.T) Large 1Q beat vs",
       "institution": "Goldman Sachs",
@@ -307,6 +348,25 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-goe0qwwrbji-c4558a",
+      "title": "India Robust corporate tax collection in June",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:40Z",
+      "summary_points": [
+        "**Fiscal Deficit Beat**: Deficit at 3.4% of GDP (vs 4.3% BE), driven by 17.5% YoY corporate tax growth and 450% YoY disinvestment (30% of BE), offsetting low excise duties (11% of BE, lowest in 20 years).",
+        "**Revenue Divergence**: Strong corporate tax (+17.5% YoY) contrasts sharply with weak excise duties (11% of BE), indicating uneven fiscal performance across tax streams.",
+        "**Expenditure Discipline**: Total expenditure flat YoY as higher defense/transfer capex offset increased farmer welfare spending (INR 190bn), reflecting policy prioritization without fiscal expansion."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-pbbbcafx6ef-4e8ea7",
       "title": "Dominion Energy Inc. (D) First Take 2Q EPS Beat vs. GSe Street but CVOW timing pushed and budget raised",
       "institution": "Goldman Sachs",
@@ -323,6 +383,83 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-dgjqvputfok-68f16d",
+      "title": "GS Vol Views July 31",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:35Z",
+      "summary_points": [
+        "**Earnings/NFP Catalyst**: 14% S&P 500 market cap earnings + July NFP implied move 1.53% (next week) driving near-term volatility - **Macro Flows & Sentiment**: NDX 6th consecutive down session (longest since Nov '16) + GS call buying (21,275 QQQ 7Aug 690 calls) signals client capitulation and structural volatility dynamics - **SMH Technical Setup**: Vol compress + 100dma support (50.79) enables ratio call spreads/knock-out calls (SMH 3m 25d call IV 46.83) for upside capture"
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ugfnakhh5fv-17761b",
+      "title": "Japan Economic Flash Likelihood of Accelerated Rate Hikes Not High",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:33Z",
+      "summary_points": [
+        "**BOJ Policy Stance**: Maintained 1% policy rate; Governor Ueda targets 2% inflation as prerequisite for hikes, with next move expected January 2024, barring accelerated hikes due to underlying inflation <2%.",
+        "**Hike Timeline vs Market**: BOJ unlikely to revise outlook upward despite 70% market pricing for Sept/Oct 2023 hike; gradual 6-month intervals expected, constrained by subdued inflation forecasts.",
+        "**Inflation Constraint**: Key risk factor is lack of labor-intensive service price acceleration, preventing inflation from exceeding 2% and delaying hikes despite Yen depreciation or oil volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ss2r2ocwrsk-69f416",
+      "title": "Kenya Headline Inflation Edged Up by 0.1pp in July, In Line With Consensus",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:28Z",
+      "summary_points": [
+        "**Inflation Drivers**: Headline inflation rose to 6.5% yoy (food: +9.3% yoy, transport: -15.4% yoy), with core inflation at 3.2% yoy; persistent food inflation offsets transport deflation.",
+        "**Policy Duration**: CBK holds benchmark rate at 8.75% until end-2026 due to high oil prices (2026H1) and current account pressures, delaying cuts until Q1 2027.",
+        "**Policy Contingency**: Monetary policy hinges on Middle East conflict de-escalation and oil price stability, with inflation forecast averaging 6.1% yoy.",
+        "**Short-Term Momentum**: Headline CPI (SA) rose 0.6% mom, signaling near-term inflation persistence despite headline volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xl0hln4awvh-99158b",
+      "title": "Japan Focus of the Week June Wage",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:20:26Z",
+      "summary_points": [
+        "**BOJ Policy & Inflation Risks**: Underlying inflation nears 2% with BOJ emphasizing upside risks (Middle East, AI demand, FX); Governor Ueda signals gradual hikes if inflation approaches target, maintaining 1% rate despite new core CPI at +2.0% yoy.",
+        "**Key Data Mismatches**: Tokyo new core CPI beat forecast (+2.0% yoy), industrial production rose +1.3% mom (beat), but retail sales missed (+0.5% yoy vs +3.1% forecast), signaling weak demand despite production strength.",
+        "**Wage Growth Deceleration**: June nominal cash wages +3.2% yoy (May: +3.3%) with special wages slowing to +3.5% yoy (from +4.4% in 2025), indicating labor market tightness easing as bonus growth decelerates.",
+        "**US Labor Momentum**: Civilian unemployment at 4.2% (consensus), nonfarm payrolls at 88k, and hourly wage growth at +3.5% yoy—critical for US economic trajectory ahead of Jackson Hole.",
+        "**Geopolitical & Data Revisions**: Middle East disruption and Kumamoto earthquake caused production suspensions (electronic parts -6.3%), while August 7 base-year CPI revision risks data revisions impacting inflation forecasts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
