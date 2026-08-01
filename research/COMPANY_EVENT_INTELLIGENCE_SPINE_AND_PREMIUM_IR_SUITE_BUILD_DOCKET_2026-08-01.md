@@ -8,7 +8,7 @@
 
 **Decision:** build one Mastermind-native Company Event Intelligence Spine and expose it through the existing Stage Analysis, Terminal, Neural Web/Brain, Research, SEO, and X Growth products. Do not create separate Jodie, Struct, Quartr, EarningsCall.ai, or EquityDesk clones.
 
-**Delivery status at this memo cut:** the Stage recovery and Terminal transcript-discovery lanes are **merged, deployed, and live**. Stage shipped through Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181), with its mobile containment follow-up in [#4187](https://github.com/chriswong6031-creator/macro/pull/4187). Terminal transcript intelligence shipped through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound role repair in [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299). The automatic Terminal-to-earnings forward adapter is implemented and under review in Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303) and Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); it remains **not live** until both merge/deploy chains and an operating proof complete.
+**Delivery status at this memo refresh:** the Stage recovery and Terminal transcript-discovery lanes are **merged, deployed, and live**. Stage shipped through Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181), with its mobile containment follow-up in [#4187](https://github.com/chriswong6031-creator/macro/pull/4187). Terminal transcript intelligence shipped through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound role repair in [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299). The continuous forward adapter is now merged through Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303) and Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); the live Terminal index generated at `2026-08-01T14:41:55Z` carries 25,438 bodies, 25,438 revision hashes, 25,438 dates, and 3,288 symbols. Runtime-telemetry isolation for the installed Mac appliance merged through Macro [#4201](https://github.com/chriswong6031-creator/macro/pull/4201) as `fdd75709f79dbd19a6456ff1b954e3e9dec89d1a`. The first-batch checkpoint was 63 of 64 attempted eligible records healthy, with future-dated `HCM/2026Q2` quarantined and 29 pending plus 1 retry before drain. Commissioning then completed at **2026-08-01 09:07 America/Vancouver**: generation `90595cb8924f2ef3992f4e16` was atomically promoted; the final run attempted 29, succeeded on 28, and left only the intentionally pending future `HCM/2026Q2` record (`call_date=2026-08-06`, `source_future_call_date`). All currently causal real calls are drained. Chronicle, Brain, Press, and X consumer projections are implemented and validated; shipment and final deployment evidence are tracked in Macro [#4202](https://github.com/chriswong6031-creator/macro/pull/4202). No X scheduler is armed by that change.
 
 **Evidence appendices:**
 
@@ -297,9 +297,11 @@ The shipped implementation makes every output carry source tier, source rows, so
 
 ### 2.2 Terminal transcript archive recovery
 
-**Status at memo cut:** shipped and live through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound speaker-role inference and corpus repair shipped through [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299).
+**Status at memo refresh:** shipped and live through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound speaker-role inference and corpus repair shipped through [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299), and revision/date publication shipped through [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303).
 
 The repaired Terminal archive now exposes **25,438 transcript bodies across 3,288 symbols**. The original defect was a missing browser-facing index plus a Macro-root mismatch, which made existing bodies undiscoverable and allowed later generation to erase valid transcript links. The shipped recovery fixes discovery rather than pretending the corpus must be recollected.
+
+The live `mastermind.tx-index/v1` generation stamped `2026-08-01T14:41:55Z` now reports the same 25,438 records for bodies, revision hashes, and dates, across the same 3,288 symbols. That one-to-one coverage is the correction-safe forward-ingestion proof: Macro can distinguish a new or corrected body without inferring change from ticker/quarter identity alone.
 
 Implemented files in `charting-app`:
 
@@ -1574,6 +1576,8 @@ Suggested cadence for the controlled U.S./Canada universe:
 | Full coverage audit | Nightly | Missing expected sources, lag, collapse, duplicates |
 | Historical reconciliation | Weekly/monthly | Late additions and source drift |
 
+The commissioned Mac fallback currently runs through launchd at **17:45, 20:45, and 23:45 America/Vancouver**. At the completed commissioning checkpoint, launchd's last exit was 0, `bootstrap_earnings_worker.sh --check` passed, the ops clone was clean, and both external runtime telemetry ledgers contained 92 rows.
+
 ### 11.2 R2 artifact layout
 
 Illustrative private/public split:
@@ -1898,9 +1902,28 @@ Exit gate recorded complete: production shows the per-ticker Transcripts tab, an
 
 **Repositories:** Terminal producer plus Macro consumer
 
-**State:** implementation verified and under review in Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303) and Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); not yet merged, deployed, scheduled, or proven on a newly arriving production call
+**State:** producer and consumer merged; Terminal revision/date publication is live through [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303), Macro intake merged/deployed through [#4192](https://github.com/chriswong6031-creator/macro/pull/4192), and the installed Mac appliance's out-of-worktree telemetry hardening merged through [#4201](https://github.com/chriswong6031-creator/macro/pull/4201). The current causal backlog is drained and the recurring launchd schedule is loaded.
 
-This lane adds stable transcript revision hashes/dates at the producer, a durable consumer cursor and retry queue, direct transcript-to-scorer mapping, local-Qwen-first routing, inexpensive provider fallbacks, and automatic publication into the existing Stage/Company Event artifacts. It closes the future-backfill gap without creating a second transcript archive. Do not mark it shipped until both producer and consumer changes are live and an observed new or corrected call completes the full path.
+This lane adds stable transcript revision hashes/dates at the producer, a durable consumer cursor and retry queue, direct transcript-to-scorer mapping, local-Qwen-first routing, inexpensive provider fallbacks, and automatic publication into the existing Stage/Company Event artifacts. It closes the future-backfill gap without creating a second transcript archive. PR #4201 moves AI-cost and key-metabolism telemetry outside the self-updating ops clone so normal scoring cannot dirty and strand the appliance checkout.
+
+The first bounded checkpoint was 63 of 64 attempted eligible records healthy; future-dated `HCM/2026Q2` was quarantined before provider/model use; and durable state showed 29 pending plus 1 retry. The completed 09:07 America/Vancouver run then attempted those 29, succeeded on 28, and atomically promoted generation `90595cb8924f2ef3992f4e16`. The sole pending/retry is the same causally impossible future record (`call_date=2026-08-06`, reason `source_future_call_date`), so all currently causal real calls are drained without pretending the future call has occurred.
+
+The promoted manifest records 3,620 score rows across 3,558 tickers and 50,982 history rows across 3,529 tickers, with latest call date 2026-07-31. An R2 dry-run reports the generation current. Operational checks also pass: both external runtime telemetry ledgers have 92 rows, the ops clone is clean, launchd last exit is 0, the 17:45/20:45/23:45 schedule is loaded, and bootstrap `--check` passes.
+
+#### CEI-C — Chronicle, Brain, Press, and X consumer bridge
+
+**Repository:** Macro Dashboard
+
+**State:** implemented and validated on branch `codex/earnings-consumers-integrated-20260801`; shipment and final deployment evidence are tracked in Macro [#4202](https://github.com/chriswong6031-creator/macro/pull/4202). No X scheduler is armed.
+
+The integrated consumer stack:
+
+- projects only healthy score rows into committed `earnings.call_event.v1` Chronicle records with stable source identity, transcript URL/hash, causal `call_date <= source_updated_at <= scored_at` lineage, model/prompt/schema provenance, fixed context salience, and no signal/rank/size authority;
+- gives Brain the newest cited call packet per ticker while replacing the stale one-time EquityDesk call-quality snapshot;
+- gives Press revision-specific staging receipts, supersedes pending stale drafts, and creates an explicit non-emittable `correction_required` record when a published source revision changes;
+- gives X a deterministic, bounded derivative lane that admits only structured quarter/year numerics, dedupes an identical revision, and returns `correction_required` rather than queuing an unlabeled second revision; no X scheduler is armed by this implementation.
+
+Post-rebase validation is green: 477 focused Chronicle/Brain/Press/X/Signal-Bus tests and 1,794 broad Brain/Press/Chronicle/marketing/outbox/claim/registry tests passed. Python compile and `git diff --check` also passed.
 
 ### 14.1 Wave 0 — rights, benchmark, and design truth
 
@@ -2463,6 +2486,8 @@ The practical default is a cascade, not a single expensive model:
 
 A deliberately generous representative operating allowance is **$15–$40/month of paid API inference plus C$5–$15/month of local electricity**. Actual scheduled text generation can be lower: the annual all-API table above shows that even 8,000 calls are inexpensive before local routing. Interactive Brain demand should still be metered separately with compact retrieval, quotas, caching, and per-query cost logs.
 
+The first two live runs provide a much stronger empirical anchor than the planning table: the external runtime AI ledger records **92 DeepSeek V4 Flash calls**, **447,818 input tokens**, **31,905 output tokens**, and **$0.0721838** total estimated cost. Those invocations produced 91 scored real calls; the extra invocation was a retry. That is about **$0.00079 per recorded model call**, confirming that source quality, causality, correction handling, and product usefulness—not text inference cost—are the binding constraints.
+
 ### 15.5 Existing infrastructure advantage
 
 The old greenfield infrastructure estimate does not apply to Mastermind:
@@ -2528,21 +2553,17 @@ Use dependency-complete build waves, not institutional calendar estimates. Agent
 
 ### Wave B — continuous forward intake
 
-- merge and deploy the Macro consumer after its review gates clear; the Terminal
-  producer is merged and fully green, while its live revision-aware index is
-  waiting on the already-running append-only fund publication lane;
-- detect new and corrected transcript revisions by stable content hash;
-- retain a durable retry queue and last-good artifacts;
-- run local Qwen first with DeepSeek/Kimi fallbacks;
-- install the reviewed Mac fallback appliance only after the consumer is on
-  `origin/main`; switch its provider order to the Windows Qwen endpoint when
-  that endpoint is continuously reachable;
-- prove that a newly available call reaches Stage and its ticker context without manual backfill.
+- Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303), Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192), and telemetry hardening [#4201](https://github.com/chriswong6031-creator/macro/pull/4201) are merged; the revision-aware producer, durable consumer, and clean self-updating appliance are operational;
+- the live index has complete one-to-one body/revision/date coverage for 25,438 records, and the commissioned worker detects new/corrected revisions by stable content hash while retaining durable retry and last-good state;
+- generation `90595cb8924f2ef3992f4e16` is promoted with 3,620 score rows/3,558 tickers and 50,982 history rows/3,529 tickers; all currently causal real calls are drained;
+- `HCM/2026Q2` remains correctly pending because its 2026-08-06 call date is still in the future, proving the causality gate instead of manufacturing a completed event;
+- the launchd fallback schedule is loaded at 17:45/20:45/23:45 America/Vancouver, the ops clone is clean, and bootstrap `--check` passes;
+- switch provider priority to the Windows Qwen endpoint only when that endpoint is continuously reachable; continue watching the next scheduled new/corrected call as recurring-service evidence, not as a prerequisite for calling the current causal drain complete.
 
 ### Wave C — evidence and digest plane
 
 - merge core identity/event/source/span schemas;
-- project each healthy R2 earnings score into a byte-stable, committed
+- ship the validated projection in Macro [#4202](https://github.com/chriswong6031-creator/macro/pull/4202) of each healthy R2 earnings score into a byte-stable, committed
   `earnings.call_event.v1` Chronicle source carrying stable record identity,
   transcript URL, source hash, model/prompt lineage, summary, highlights, and
   context-only status; never make Chronicle read the mutable R2 parquet directly;
@@ -2551,7 +2572,7 @@ Use dependency-complete build waves, not institutional calendar estimates. Agent
 
 ### Wave D — premium product and distribution
 
-- ship Terminal Brief/Sources/search/cross-quarter UX, source-grounded Brain tools, and Neural Web context keys;
+- ship Terminal Brief/Sources/search/cross-quarter UX and Neural Web context keys; the source-grounded Brain call packet, correction-safe Press bridge, and deterministic X derivative are implemented and validated in Macro [#4202](https://github.com/chriswong6031-creator/macro/pull/4202);
 - fan one approved canonical story into Event Briefs, SEO, X, alerts, and short form;
 - measure retrieval, digest, latency, conversion, and UX quality before expanding publication volume.
 
@@ -2653,14 +2674,15 @@ The thin clone is easy. The durable system is hard. The hard part—identity, ri
 The immediate order is binding:
 
 1. preserve the shipped Stage and Terminal repair contracts;
-2. finish, test, merge, deploy, and production-prove the in-progress continuous forward adapter so manual backfill ends;
-3. freeze the golden corpus and complete experience architecture;
-4. build identity → event → document → span contracts;
-5. produce deterministic facts, one structured extraction, and one cited digest;
-6. put the premium Mastermind-native experience in the Terminal and compact context in Brain/Neural Web;
-7. add narrative, relationships, and residual-theme joins;
-8. fan approved canonical stories into public SEO and X;
-9. add slides and any Prophet authority only after their separate gates pass.
+2. preserve and monitor the now-commissioned continuous forward adapter so manual backfill stays ended;
+3. review, merge, deploy, and production-prove the locally validated Chronicle/Brain/Press/X consumer bridge;
+4. freeze the golden corpus and complete experience architecture;
+5. build identity → event → document → span contracts;
+6. produce deterministic facts, one structured extraction, and one cited digest;
+7. put the premium Mastermind-native experience in the Terminal and compact context in Brain/Neural Web;
+8. add narrative, relationships, and residual-theme joins;
+9. fan approved canonical stories into public SEO and X;
+10. add slides and any Prophet authority only after their separate gates pass.
 
 If scope must be cut, cut global coverage, live audio, consensus, slides, and article volume. Do not cut identity, point-in-time timestamps, source receipts, corrections, health, rights, evaluation, or experience quality. Those are the product.
 
@@ -2670,15 +2692,16 @@ If scope must be cut, cut global coverage, live audio, consensus, slides, and ar
 
 Update this table with PR and live evidence as lanes actually complete. “Implemented locally” is not “shipped.”
 
-| Lane | State at 2026-08-01 memo cut | PR / merge / live evidence |
+| Lane | State at 2026-08-01 memo refresh | PR / merge / live evidence |
 |---|---|---|
 | REPAIR-S Stage recovery | **Shipped/live:** corrected v3 generation `ready`/manifest-valid; 50,982 accepted history rows; 3,529 listing views; latest call date 2026-07-31; 17 fiscal anomalies quarantined; zero invalid QoQ joins | Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181); responsive follow-up [#4187](https://github.com/chriswong6031-creator/macro/pull/4187); [live Stage](https://www.mastermind-x.com/stage_analysis.html) |
-| REPAIR-T Terminal transcript discovery | **Shipped/live:** 25,438 transcript bodies across 3,288 symbols; per-ticker Transcripts UI and evidence-bound speaker roles live | Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295); role repair [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299); [live Terminal](https://app.mastermind-x.com/terminal) |
-| FORWARD-E Terminal-to-earnings adapter | **Producer merged/green; consumer reviewing:** Terminal revision metadata and change probe are merged with all CI green. Macro adds durable retry, direct score mapping, transcript URL/hash provenance, local-first/provider-fallback routing, and a reviewed but not-yet-installed Mac fallback appliance. Live revision/dates publication, Macro merge/deploy, scheduler installation, and a production-new-call proof remain open. | Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303); Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192) |
+| REPAIR-T Terminal transcript discovery | **Shipped/live:** 25,438 transcript bodies, 25,438 revision hashes, and 25,438 dates across 3,288 symbols in the live index generated `2026-08-01T14:41:55Z`; per-ticker Transcripts UI and evidence-bound speaker roles live | Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295); role repair [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299); revision/date producer [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303); [live Terminal](https://app.mastermind-x.com/terminal) |
+| FORWARD-E Terminal-to-earnings adapter | **Merged, deployed, and commissioned for the current causal backlog:** generation `90595cb8924f2ef3992f4e16` atomically promoted at 09:07 America/Vancouver with 3,620 score rows/3,558 tickers and 50,982 history rows/3,529 tickers; latest causal call date 2026-07-31. The completed drain attempted 29, succeeded on 28, and leaves only future `HCM/2026Q2` pending by `source_future_call_date`. R2 reports current; ops clone clean; launchd last exit 0; 17:45/20:45/23:45 schedule loaded; bootstrap `--check` passes. | Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303); Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192), merge `903cca72892ba4d1c0e27856ad1d7d270cb5b3ed`; telemetry/appliance hardening [#4201](https://github.com/chriswong6031-creator/macro/pull/4201), merge `fdd75709f79dbd19a6456ff1b954e3e9dec89d1a` |
+| CEI-C Chronicle/Brain/Press/X bridge | **Implemented and post-rebase validated:** committed causal/revision-aware Chronicle projection, latest cited Brain packet, correction-safe Press staging/emission, and deterministic correction-safe X derivative. No X scheduler is armed. | Macro [#4202](https://github.com/chriswong6031-creator/macro/pull/4202); branch `codex/earnings-consumers-integrated-20260801`; 477 focused and 1,794 broad tests passed; compile and diff checks clean |
 | CEI-00A rights/source decision | Current corpus and intended redistribution posture resolved; retain the gate for any newly added source | User-authorized program constraint; per-source evidence remains required for expansion |
 | CEI-00B golden corpus | Not started | — |
 | CEI-00C experience architecture | Not started | — |
-| CEI-01 through CEI-18 | Roadmap | — |
+| Remaining CEI-01 through CEI-18 work | Roadmap, excluding the partial CEI-C implementation recorded above | — |
 
 ### Evidence links
 

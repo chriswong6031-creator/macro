@@ -994,10 +994,12 @@ lanes:
         note: >
           Chronicle W0 market-context timeline spine (agentic_media program). Deterministic
           event compile from research-vault catalog, Prophet ledger, macro-release forward
-          ledger, earnings parquet, risk_radar forward log, and world_state.json regime
-          labels (via the state_log.jsonl forward-capture ledger). Writes:
-          data/chronicle/events.jsonl, data/chronicle/state_log.jsonl (append-only, one
-          row/night), data/chronicle/rollups/{daily,weekly}/*.json,
+          ledger, earnings parquet, the committed healthy earnings-call projection,
+          risk_radar forward log, and world_state.json regime labels (via the
+          state_log.jsonl forward-capture ledger). Writes:
+          data/chronicle/events.jsonl, data/chronicle/earnings_call_events.jsonl
+          (nightly-only last-good projection), data/chronicle/state_log.jsonl
+          (append-only, one row/night), data/chronicle/rollups/{daily,weekly}/*.json,
           data/chronicle/manifest.json. Never-raise; display-only; no LLM calls; originates
           no market signal. M10: runs HERE (engine job), ahead of build_nw_mastermind_context
           below, so the mastermind lobe reads a same-night store instead of the previous

@@ -1381,10 +1381,27 @@ charters:
     owner_program: agentic_media
     notes: >-
       Chronicle W0 event spine (agentic_media/Chronicle program). Deterministic derived-event
-      ledger compiled nightly from 6 sources; public-safe by construction (chronicle.event.v1
+      ledger compiled nightly from 7 sources; public-safe by construction (chronicle.event.v1
       is the field allowlist). tier mirrored from synapse.yml (display); string-form
       fitness_sensors = no metabolism roster slot consumed. authority.may_rank/gate/size/
       escalate=false — weight_hint is deterministic salience only, never LLM-set.
+
+  chronicle-earnings-call-events:
+    lobe_id: chronicle-earnings-call-events
+    tier: display
+    lifecycle_state: active
+    information_domain: context
+    fitness_sensors:
+    - liveness
+    - freshness_sla
+    owner_program: agentic_media
+    notes: >-
+      Chronicle's committed earnings.call_event.v1 last-good projection. Nightly alone may
+      advance healthy evidence-addressed rows; degraded/outage/rebuild/off-lane paths preserve
+      prior bytes. Public-safe transcript URL/hash and model/prompt/schema lineage travel with
+      context-only summary/highlights. tier mirrored from synapse.yml (display); string-form
+      fitness_sensors = no metabolism roster slot consumed. authority.may_rank/gate/size/
+      escalate=false.
 
   chronicle-state-log:
     lobe_id: chronicle-state-log
@@ -1417,4 +1434,3 @@ charters:
       counts/gap notes + per-ledger row counts/sha256 + compile elapsed_s). tier mirrored from
       synapse.yml (display); string-form fitness_sensors = no metabolism roster slot consumed.
       authority.may_rank/gate/size/escalate=false.
-

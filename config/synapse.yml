@@ -15703,6 +15703,36 @@ artifacts:
       Coverage/exclusion disclosure, compile failures, authority zeros, form-policy
       version, and temporary-adapter migration receipt. It explicitly states that W1
       covers registration/issuance forms rather than claiming all-SEC completeness.
+  chronicle-earnings-call-events:
+    path: data/chronicle/earnings_call_events.jsonl
+    format: jsonl
+    producer: scripts/build_chronicle.py
+    known_extra_writers: []
+    owner_program: agentic_media
+    cadence: daily-engine
+    storage: git
+    asof_field: call_date
+    freshness_sla_hours: 30
+    schema: earnings.call_event.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/chronicle/earnings_calls.py
+      - engine/chronicle/spine.py
+      - engine/marketing/earnings_call_lane.py
+      - engine/neuralweb/brain_gateway.py
+    external_consumers: []
+    notes: >
+      Public-safe, committed last-good projection of healthy evidence-addressed rows from
+      the mutable R2/local earnings score generation. Normal nightly is the sole writer;
+      --rebuild and off-nightly lanes never rewrite it. Stable source_record_id-derived ids
+      let a corrected transcript replace the prior row without forking identity. Rows carry
+      transcript URL/hash, source/scoring timestamps, model/prompt/schema lineage, summary,
+      highlights, tags, and is_context_only=true. Degraded, missing, rejected, or collapsed
+      score inputs retain prior rows and can never erase last-good context. This artifact
+      originates no rank, gate, size, signal, or escalation authority.
 
   chronicle-events:
     path: data/chronicle/events.jsonl
@@ -15719,13 +15749,14 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/context_pack.py]
+    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/context_pack.py, engine/press/desk_planner.py]
     external_consumers: []
     notes: >
       Chronicle W0 event spine (agentic_media/Chronicle program, CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md).
       Deterministic, append-only derived-event ledger (B1: source-row-leaves-snapshot is a
-      union-merge retain, never a delete) compiled nightly from 6 sources: research-vault catalog
-      items, Prophet ledger closes, macro-release reactions, earnings surprises, risk-band flips
+      union-merge retain, never a delete) compiled nightly from 7 sources: research-vault catalog
+      items, Prophet ledger closes, macro-release reactions, earnings surprises, committed
+      healthy earnings-call reads (chronicle-earnings-call-events), risk-band flips
       (data/risk_radar/forward_log.jsonl — real committed dated history, B6 correction) and regime
       flips derived from chronicle-state-log (world_state.json has no committed dated history of
       its own, hence the forward-capture ledger). Display-only; originates no market signal/
@@ -15734,7 +15765,7 @@ artifacts:
       fails any event carrying a field outside it or a fact string over the 200-char cap). Rebuildable
       byte-stable via `python -m scripts.build_chronicle --rebuild` (modulo generated_at); regime
       flip events accrue forward-only from the W0 run date — historical flips are W4 git-archaeology.
-      m13: 2 of 6 sources (data/research_vault/catalog.json, data/earnings/earnings.parquet) have no
+      m13: 2 of 7 sources (data/research_vault/catalog.json, data/earnings/earnings.parquet) have no
       independent synapse artifact entry of their own (owned by other programs) — the cross-artifact
       read-gate does not cover those two specifically; deliberate, tracked omission, not an oversight.
   chronicle-state-log:
@@ -15785,5 +15816,6 @@ artifacts:
     notes: >
       Chronicle W0 sidecar envelope (dict payload — engine.neuralweb.envelope.stamp cannot stamp a
       JSONL stream directly). Carries the 5 envelope keys + per-adapter event counts/gap notes +
-      per-ledger row counts and sha256 hashes for chronicle-events and chronicle-state-log + compile
-      elapsed_s (binding budget: printed every run; target well under the 200-minute nightly cap).
+      per-ledger row counts and sha256 hashes for chronicle-events,
+      chronicle-earnings-call-events, and chronicle-state-log + compile elapsed_s (binding
+      budget: printed every run; target well under the 200-minute nightly cap).

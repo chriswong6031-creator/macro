@@ -94,6 +94,7 @@ def build_manifest(
     adapter_report: dict,
     events_path: Path,
     state_log_path: Path,
+    earnings_call_path: Path,
     elapsed_s: float,
 ) -> dict:
     gap_notes = [
@@ -115,6 +116,7 @@ def build_manifest(
         },
         "ledgers": {
             "events": _ledger_stats(events_path, repo),
+            "earnings_calls": _ledger_stats(earnings_call_path, repo),
             "state_log": _ledger_stats(state_log_path, repo),
         },
         "source_fingerprints": _source_fingerprints(repo),
