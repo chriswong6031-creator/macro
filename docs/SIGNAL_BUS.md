@@ -33,6 +33,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 1 |
+| government-revenue-foresight | 8 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -103,8 +104,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 346 |
-| infrastructure | 95 |
+| display | 348 |
+| infrastructure | 101 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -112,7 +113,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 497 |
+| git | 505 |
 | git+r2 | 1 |
 | gitignored-local | 15 |
 | r2 | 11 |
@@ -355,6 +356,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | fundamental-forensics-private-state | `fundamental_forensics/state.json.gz` | json | daily-engine | display | 3 | 1 |
+
+### government-revenue-foresight
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| government-revenue-latest | `data/government_revenue/latest.json` | json | daily-engine | display | 3 | 1 |
+| government-revenue-entities | `data/government_revenue/entities.json` | json | on-demand | infrastructure | 2 | 0 |
+| government-revenue-ingest-status | `data/government_revenue/ingest_status.json` | json | collect | infrastructure | 2 | 0 |
+| site-government-revenue-latest | `site/government-revenue-data/latest.json` | json | daily-engine | display | 2 | 0 |
+| government-revenue-award-actions | `data/government_revenue/award_actions.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| government-revenue-award-snapshots | `data/government_revenue/award_snapshots.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| government-revenue-awards | `data/government_revenue/awards.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| government-revenue-collector-heartbeat | `data/government_revenue/collector_heartbeat.parquet` | parquet | collect | infrastructure | 1 | 0 |
 
 ### hk-canada
 
@@ -1452,6 +1466,20 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
   - engine/market_state_tune.py — a6_auto_apply lane-i events on every tune() call
   - engine/risk_radar_intl_tune.py — a6_auto_apply lane-i events on every tune() call
 
+### government-revenue-collector-heartbeat
+
+- **path:** `data/government_revenue/collector_heartbeat.parquet`
+- **declared producer:** `collectors/usaspending_awards.py`
+- **extra writers:**
+  - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
+
+### government-revenue-latest
+
+- **path:** `data/government_revenue/latest.json`
+- **declared producer:** `scripts/build_government_revenue.py`
+- **extra writers:**
+  - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
+
 ### great-company-trap
 
 - **path:** `embedded: great_company_trap fields inside site/stockdata/<TICKER>.json`
@@ -1756,6 +1784,13 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/theme_adoption.py`
 - **extra writers:**
   - scripts/build_discovery_confluence.py
+
+### site-government-revenue-latest
+
+- **path:** `site/government-revenue-data/latest.json`
+- **declared producer:** `scripts/build_government_revenue.py`
+- **extra writers:**
+  - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
 
 ### site-neuralweb-market-plane
 

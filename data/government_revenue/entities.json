@@ -1,0 +1,177 @@
+{
+  "schema_version": "government_revenue_entities.v1",
+  "as_of": "2026-08-01",
+  "updated_at": "2026-08-01",
+  "description": "Curated public-company to USAspending recipient queries. These mappings are entity-resolution inputs, not evidence that every fuzzy-name result belongs to the issuer.",
+  "source": "data/usaspending/recipient_aliases.json",
+  "entities": {
+    "LMT": {
+      "name": "Lockheed Martin",
+      "recipient_search_text": "LOCKHEED MARTIN",
+      "recipient_aliases": ["LOCKHEED MARTIN"],
+      "tags": ["defense", "aerospace", "missiles", "space"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "RTX": {
+      "name": "RTX (Raytheon)",
+      "recipient_search_text": "RAYTHEON",
+      "recipient_aliases": ["RAYTHEON"],
+      "tags": ["defense", "aerospace", "missiles", "sensors"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "NOC": {
+      "name": "Northrop Grumman",
+      "recipient_search_text": "NORTHROP GRUMMAN",
+      "recipient_aliases": ["NORTHROP GRUMMAN"],
+      "tags": ["defense", "aerospace", "space", "nuclear"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "GD": {
+      "name": "General Dynamics",
+      "recipient_search_text": "GENERAL DYNAMICS",
+      "recipient_aliases": ["GENERAL DYNAMICS"],
+      "tags": ["defense", "shipbuilding", "ground-systems", "government-it"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "LHX": {
+      "name": "L3Harris Technologies",
+      "recipient_search_text": "L3HARRIS",
+      "recipient_aliases": ["L3HARRIS"],
+      "tags": ["defense", "communications", "space", "sensors"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "HII": {
+      "name": "Huntington Ingalls",
+      "recipient_search_text": "HUNTINGTON INGALLS",
+      "recipient_aliases": ["HUNTINGTON INGALLS"],
+      "tags": ["defense", "shipbuilding", "nuclear"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "BA": {
+      "name": "Boeing",
+      "recipient_search_text": "BOEING COMPANY",
+      "recipient_aliases": ["BOEING COMPANY"],
+      "tags": ["defense", "aerospace", "space"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "TDG": {
+      "name": "TransDigm",
+      "recipient_search_text": "TRANSDIGM",
+      "recipient_aliases": ["TRANSDIGM"],
+      "tags": ["aerospace", "defense-components"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "HWM": {
+      "name": "Howmet Aerospace",
+      "recipient_search_text": "HOWMET",
+      "recipient_aliases": ["HOWMET"],
+      "tags": ["aerospace", "defense-components"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "AVAV": {
+      "name": "AeroVironment",
+      "recipient_search_text": "AEROVIRONMENT",
+      "recipient_aliases": ["AEROVIRONMENT"],
+      "tags": ["defense", "drones", "autonomy"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "KTOS": {
+      "name": "Kratos Defense",
+      "recipient_search_text": "KRATOS",
+      "recipient_aliases": ["KRATOS"],
+      "tags": ["defense", "drones", "hypersonics", "space"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "GE": {
+      "name": "GE Aerospace",
+      "recipient_search_text": "GE AEROSPACE",
+      "recipient_aliases": ["GE AEROSPACE"],
+      "tags": ["aerospace", "defense-propulsion"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "LDOS": {
+      "name": "Leidos",
+      "recipient_search_text": "LEIDOS",
+      "recipient_aliases": ["LEIDOS"],
+      "tags": ["defense", "government-it", "cyber"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "TXT": {
+      "name": "Textron",
+      "recipient_search_text": "TEXTRON",
+      "recipient_aliases": ["TEXTRON"],
+      "tags": ["defense", "aerospace", "rotorcraft"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "CW": {
+      "name": "Curtiss-Wright",
+      "recipient_search_text": "CURTISS-WRIGHT",
+      "recipient_aliases": ["CURTISS-WRIGHT"],
+      "tags": ["defense-components", "nuclear", "aerospace"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "TDY": {
+      "name": "Teledyne",
+      "recipient_search_text": "TELEDYNE",
+      "recipient_aliases": ["TELEDYNE"],
+      "tags": ["defense-components", "sensors", "space"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "HEI": {
+      "name": "HEICO",
+      "recipient_search_text": "HEICO",
+      "recipient_aliases": ["HEICO"],
+      "tags": ["aerospace", "defense-components"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "BWXT": {
+      "name": "BWX Technologies",
+      "recipient_search_text": "BWX TECHNOLOGIES",
+      "recipient_aliases": ["BWX TECHNOLOGIES"],
+      "tags": ["defense", "nuclear", "shipbuilding"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "IRDM": {
+      "name": "Iridium Communications",
+      "recipient_search_text": "IRIDIUM",
+      "recipient_aliases": ["IRIDIUM"],
+      "tags": ["defense", "space", "communications"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "medium"
+    },
+    "VSAT": {
+      "name": "Viasat",
+      "recipient_search_text": "VIASAT",
+      "recipient_aliases": ["VIASAT"],
+      "tags": ["defense", "space", "communications"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    },
+    "PLTR": {
+      "name": "Palantir Technologies",
+      "recipient_search_text": "PALANTIR",
+      "recipient_aliases": ["PALANTIR"],
+      "tags": ["defense", "government-it", "ai", "data-platforms"],
+      "match_method": "curated_fuzzy_name",
+      "match_confidence": "high"
+    }
+  }
+}

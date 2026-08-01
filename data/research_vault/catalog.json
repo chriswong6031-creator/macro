@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T10:30:23.995823+00:00",
-  "count": 517,
+  "generated_at": "2026-08-01T11:00:14.007453+00:00",
+  "count": 523,
   "institutions": [
     "Amova",
     "Apollo",
@@ -850,6 +850,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-9x9xq7g6tri-0881db",
+      "title": "LATAM Today July 30, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:20Z",
+      "summary_points": [
+        "**Brazil Labor Market Resilience**: Unemployment near record lows (5.4%) with real income deceleration (2.8% yoy) and labor force participation decline (62.1%), signaling persistent cost-push inflation pressures despite softening job creation.",
+        "**Household Debt Service Risk**: Household debt service at record high (28.5% of disposable income), up 12bp, with lending rates rising 120bp to 64.0%, indicating heightened credit stress and consumption vulnerability.",
+        "**Mexico Q2 GDP Beat**: Real GDP growth accelerated to 1.5% qoq sa (vs.",
+        "3% consensus), driven by broad-based expansion across services, secondary sectors, and primary sectors, prompting 2026 GDP forecast upgrade to 1.3%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-cmfp1h4mrao-a0f1cf",
       "title": "Global Markets Daily What Could Spark a Reset Higher in FX Vol",
       "institution": "Goldman Sachs",
@@ -890,6 +910,46 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-bhi3qbb0qv5-1bebdf",
+      "title": "China July Politburo meeting strengthens easing rhetoric and emphasizes faster implementation of planned measures",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:13Z",
+      "summary_points": [
+        "**Fiscal Acceleration**: Central/local governments to issue RMB800bn policy-based financial instrument (up from RMB500bn) and RMB100bn special funding, prioritizing fiscal-financial coordination for domestic demand despite declining capital returns.",
+        "**Monetary Policy Shift**: Move from \"keep interbank liquidity ample\" to \"comprehensively utilizing and timely adjusting instruments,\" signaling potential rate flexibility, with baseline no rate cuts through 2026.",
+        "**Consumption Weakness**: Policy measures (trade-in programs, subsidies) unlikely to significantly boost consumption due to weak labor market, subdued income expectations, and property-related wealth effects."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mjsg7xfvt3x-84e415",
+      "title": "G10 Consumer Dashboard July 2026 Spending Growth Edges Higher",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:11Z",
+      "summary_points": [
+        "**G10 Energy Price Impact Divergence**: Japan (P95) and Australia (P75) shielded from energy price pressures via price controls, while US (P10), UK (P25), Canada (P40), and Euro area (P40) saw real income growth subdued, creating asymmetric consumer health dynamics.",
+        "**Debt Service Ratio Vulnerabilities**: Canada (P20) and Australia (P35) face elevated debt service ratios (interest payments >8% of disposable income), contrasting with US/Euro area (P75/P65), signaling heightened household debt risk in these markets.",
+        "**Consumer Health Indicator (CHI) Regional Shifts**: US/Canada at P40 (below Euro area P50 but above UK P35), with Japan at P70 (strong sentiment) vs Australia at P50 (weaker), highlighting divergent Asia-Pacific consumer resilience.",
+        "**UK/Germany Consumption Weakness**: Real household consumption (goods/services) significantly below 2015-19 trend, driving cyclical sector underperformance, while Western Europe (Germany, France, Spain) retail sales exceed historical averages.",
+        "**US/Euro Area Spending Momentum**: Real spending growth improved (US P35, Euro area P55), contrasting with UK decline; Western Europe retail sales growth outpacing historical norms."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 20,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-ljqhd8pcxnw-851d3c",
       "title": "Euro Area German Headline At Consensus; Lowering Our Area Wide Tracking Estimates",
       "institution": "Goldman Sachs",
@@ -901,6 +961,67 @@
         "**Core-Headline Divergence**: Core HICP (2.42-2.46%) persistently below headline (2.87-2.89%), signaling structural inflation divergence despite headline cooling.",
         "**GS Tracker Revision**: Goldman Sachs' July-26 Euro area HICP tracker at 2.87% (vs BBG Consensus 2.9%), reflecting modest downward inflation expectations.",
         "**Energy Inflation Risk**: Energy component growth at 10.0% (up from 8.5%), highlighting elevated energy-driven inflation risk for Eurozone."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ket4krxgupf-32a2e9",
+      "title": "Brazil Resilient but Gradually Less Tight Labor Market; Stable Participation Rate; Soft Employment and Real Wage Growth (Ramos)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:57Z",
+      "summary_points": [
+        "**Brazil Labor Market: Resilient but Softening**: Unemployment at 5.4% (below NAIRU) signals tight conditions, but real wage growth (3.6% yoy) and employment growth (0.7% yoy) moderating indicate cooling wage pressures amid persistent labor scarcity.",
+        "**Critical Risks: Fiscal & Monetary Policy**: Generous fiscal transfers reducing labor force participation (especially informal sector) and restrictive monetary policy fueling services-sector inflation, creating cost-push pressure.",
+        "**Demographic Labor Supply Risk**: Working-age population growth (5.1%) outpaces active labor force growth (3.7%), driving a 4.6mn (7.4%) surge in non-labor force individuals, posing long-term structural supply constraints."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-uxk7oftahxs-347229",
+      "title": "Euro Area Belgian Inflation Below Expectations; Additional German Regional Data Stronger; Nudging Up Our Euro Area Tracking ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:54Z",
+      "summary_points": [
+        "**Euro Area Inflation Update**: Belgian flash HICP at 3.5% yoy (July, below 3.7% forecast) and German core HICP revised down to 2.7% yoy, downgrading core HICP estimate to 3.1% yoy.",
+        "**Euro Area Headline Inflation**: Upgraded to 2.89% yoy (after German regional data), exceeding Goldman Sachs tracker (2.89%) vs BBG consensus (2.9%).",
+        "**Component Driver**: \"Energy, food, alc.",
+        "& tobac.\" component (weight 720) at 2.45% in GS tracker, indicating higher inflation expectations in critical category.",
+        "**Regional Divergence**: France HICP forecast at 2.1% (Jul-26 GS Tracker) vs BBG consensus 2.0%, signaling potential ECB policy divergence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-tsi1f8cboll-374b28",
+      "title": "Euro Area Spanish Inflation Slightly Firmer; German Regional Data Broadly in Line; Nudging Down Our Euro Area Core Tracking ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:48Z",
+      "summary_points": [
+        "**Core Inflation Revision**: Goldman Sachs lowers Euro area core inflation forecast to 2.44% yoy (from 2.46% yoy) driven by weaker German core HICP (2.6% yoy vs prior 2.7% yoy), offset by firmer Spanish inflation (3.8% yoy flash HICP).",
+        "**Headline vs Core Divergence**: Euro area headline inflation forecast unchanged at 2.88% yoy for July, while core inflation revised down, signaling potential ECB policy impact amid German regional data weakness.",
+        "**HICP Tracker vs Consensus**: Goldman Sachs' July HICP tracker (2.88%) is 0.02 below BBG Consensus (2.90%), indicating marginal deceleration in inflation expectations affecting ECB rate timing.",
+        "**Critical Basket Inflation**: Energy, food, alc.",
+        "& tobac."
       ],
       "tags": [],
       "tickers": [],

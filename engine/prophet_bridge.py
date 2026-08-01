@@ -292,7 +292,173 @@ def _sanitize_thesis_text_zh(text: str) -> str:
     return text
 
 
-def _build_thesis(ticker: str, b: dict, opt_ctx: dict | None = None) -> str:
+_GOVERNMENT_REVENUE_METRICS = (
+    "ttm_obligations",
+    "prior_ttm_obligations",
+    "award_velocity_yoy_pct",
+    "velocity_basis",
+    "latest_complete_month",
+    "funded_capacity_observed",
+    "potential_capacity_observed",
+    "funded_backlog",
+    "total_backlog",
+    "backlog_sample_coverage_pct",
+    "awards_visible",
+    "awards_with_current_value",
+    "backlog_scope",
+    "funding_pct",
+    "modification_impulse_90d",
+    "deobligations_90d",
+    "agency_concentration",
+    "program_concentration",
+)
+
+
+def _load_government_revenue_context(
+    standouts_path: Path,
+    asof: str | None = None,
+) -> dict[str, dict]:
+    """Load sparse official-procurement context after candidate selection.
+
+    The workbench is deliberately an annotation source, not an originating
+    engine.  This function is called only *after* ``select_candidates`` and its
+    output may reach prose/provenance fields only.  Missing, malformed, or
+    mismatched artifacts degrade to ``{}`` so the prior plan output remains
+    byte-identical when no procurement evidence exists.
+    """
+    candidates: list[Path] = []
+    # Normal layout: <repo>/site/factordata/us_standouts.json.
+    try:
+        candidates.append(standouts_path.resolve().parents[2])
+    except (IndexError, OSError):
+        pass
+    candidates.append(Path(__file__).resolve().parent.parent)
+
+    payload: dict | None = None
+    seen: set[Path] = set()
+    for repo in candidates:
+        if repo in seen:
+            continue
+        seen.add(repo)
+        path = repo / "data" / "government_revenue" / "latest.json"
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            continue
+        if isinstance(loaded, dict):
+            payload = loaded
+            break
+
+    if not payload or payload.get("schema_version") != "company_government_revenue.v1":
+        return {}
+
+    # Prophet's ``asof`` is the sole knowledge clock. A current workbench must
+    # never annotate a historical/backfill plan. Date-only anchors mean evidence
+    # known through the end of that UTC day; malformed/missing knowledge stamps
+    # fail closed whenever a cutoff is supplied.
+    if asof is not None:
+        try:
+            cutoff = pd.Timestamp(asof)
+            if cutoff.tzinfo is None:
+                cutoff = cutoff.tz_localize("UTC")
+            else:
+                cutoff = cutoff.tz_convert("UTC")
+            if len(str(asof).strip()) <= 10:
+                cutoff = cutoff.normalize() + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+            payload_known = pd.Timestamp(payload.get("known_at"))
+            payload_day = pd.Timestamp(payload.get("as_of"))
+            if pd.isna(payload_known) or pd.isna(payload_day):
+                return {}
+            payload_known = (
+                payload_known.tz_localize("UTC")
+                if payload_known.tzinfo is None
+                else payload_known.tz_convert("UTC")
+            )
+            payload_day = (
+                payload_day.tz_localize("UTC")
+                if payload_day.tzinfo is None
+                else payload_day.tz_convert("UTC")
+            )
+        except (TypeError, ValueError, OverflowError):
+            return {}
+        if payload_known > cutoff or payload_day > cutoff:
+            return {}
+
+    out: dict[str, dict] = {}
+    for company in payload.get("companies") or []:
+        if not isinstance(company, dict):
+            continue
+        ticker = str(company.get("ticker") or "").strip().upper()
+        if not ticker:
+            continue
+        raw_metrics = company.get("metrics") or {}
+        metrics = {
+            key: raw_metrics.get(key)
+            for key in _GOVERNMENT_REVENUE_METRICS
+            if raw_metrics.get(key) is not None
+        }
+        context = {
+            "as_of": payload.get("as_of"),
+            "known_at": payload.get("known_at"),
+            "metrics": metrics,
+            "recompete_candidates": (company.get("recompete_candidates") or [])[:3],
+            "catalyst_facts": (company.get("catalyst_facts") or [])[:3],
+            "confidence": company.get("confidence"),
+            "provenance": (company.get("provenance") or [])[:3],
+            "allowed_behavior": "annotate_only",
+            "authority": {
+                "can_add_candidates": False,
+                "can_rank": False,
+                "can_size": False,
+                "can_gate": False,
+                "can_escalate": False,
+            },
+            "honesty_note": (
+                "official procurement context; obligations are not recognized revenue "
+                "and award ceilings are not GAAP backlog"
+            ),
+        }
+        out[ticker] = context
+    return out
+
+
+def _government_revenue_sentence(context: dict | None) -> tuple[str, str] | None:
+    """Return deterministic EN/ZH plan annotation from procurement facts."""
+    if not context:
+        return None
+    metrics = context.get("metrics") or {}
+    velocity = metrics.get("award_velocity_yoy_pct")
+    latest_month = metrics.get("latest_complete_month")
+    funded_backlog = metrics.get("funded_capacity_observed")
+    if funded_backlog is None:
+        funded_backlog = metrics.get("funded_backlog")
+
+    parts_en: list[str] = []
+    parts_zh: list[str] = []
+    if isinstance(velocity, (int, float)) and math.isfinite(float(velocity)):
+        stamp_en = f" through {latest_month}" if latest_month else ""
+        stamp_zh = f"（截至 {latest_month}）" if latest_month else ""
+        parts_en.append(f"official award-obligation velocity was {float(velocity):+.1f}% YoY{stamp_en}")
+        parts_zh.append(f"官方合同义务金额同比增速为 {float(velocity):+.1f}%{stamp_zh}")
+    if isinstance(funded_backlog, (int, float)) and math.isfinite(float(funded_backlog)):
+        parts_en.append(f"observed funded contract capacity was ${float(funded_backlog) / 1_000_000_000:.2f}B")
+        parts_zh.append(f"观察到的已拨款合同余量为 ${float(funded_backlog) / 1_000_000_000:.2f}B")
+    if not parts_en:
+        return None
+    return (
+        "Government-revenue context: " + "; ".join(parts_en)
+        + ". Context only—obligations are not recognized revenue and contract capacity is not GAAP backlog.",
+        "政府收入背景：" + "；".join(parts_zh)
+        + "。仅作背景注释；合同义务金额不等同于确认收入，合同余量不等同于 GAAP 在手订单。",
+    )
+
+
+def _build_thesis(
+    ticker: str,
+    b: dict,
+    opt_ctx: dict | None = None,
+    government_revenue_ctx: dict | None = None,
+) -> str:
     """
     OURS: Build a 2-3 sentence deterministic thesis woven from the candidate's
     actual drivers, cautions, and technical flags (above200, weekly_bull, coiled,
@@ -365,6 +531,9 @@ def _build_thesis(ticker: str, b: dict, opt_ctx: dict | None = None) -> str:
     _dealer = _dealer_sentence(opt_ctx, b)
     if _dealer:
         parts.append(_dealer[0])
+    _government_revenue = _government_revenue_sentence(government_revenue_ctx)
+    if _government_revenue:
+        parts.append(_government_revenue[0])
     parts.append(
         "DISPLAY-ONLY: machine-generated from factor scores; no forward return"
         " guarantee; display-tier artifact."
@@ -393,7 +562,12 @@ def _dealer_sentence(opt_ctx: dict | None, b: dict) -> tuple[str, str] | None:
         return None
 
 
-def _build_thesis_zh(ticker: str, b: dict, opt_ctx: dict | None = None) -> str:
+def _build_thesis_zh(
+    ticker: str,
+    b: dict,
+    opt_ctx: dict | None = None,
+    government_revenue_ctx: dict | None = None,
+) -> str:
     """ZH counterpart of _build_thesis — same deterministic template, translated strings.
     Data interpolation (ticker, score, prices) is unchanged; no LLM at runtime.
     ``opt_ctx`` carries the same M-PRO dealer-positioning context; the ZH sentence is
@@ -459,6 +633,9 @@ def _build_thesis_zh(ticker: str, b: dict, opt_ctx: dict | None = None) -> str:
     _dealer = _dealer_sentence(opt_ctx, b)
     if _dealer:
         parts.append(_dealer[1])
+    _government_revenue = _government_revenue_sentence(government_revenue_ctx)
+    if _government_revenue:
+        parts.append(_government_revenue[1])
     parts.append("仅供展示：由因子分数机器生成；无前瞻收益保证；展示层级输出。")
     return " ".join(parts)
 
@@ -1284,10 +1461,21 @@ def originate_plans(
                  "theses render without it", e)
         _wall_map = {}
 
+    # Government Revenue Foresight context is loaded once and strictly after
+    # ``select_candidates``.  It can annotate an already-selected plan, but it
+    # cannot alter selection, order, confidence, geometry, horizon, or options.
+    try:
+        _government_revenue_map = _load_government_revenue_context(standouts_path, asof)
+    except Exception as e:  # noqa: BLE001
+        log.info("prophet_bridge: government-revenue context unavailable (%s); "
+                 "plans render without it", e)
+        _government_revenue_map = {}
+
     plans: list[dict] = []
     for b in candidates:
         ticker: str = b["ticker"]
         direction = "BULL"  # all dir="up" entries
+        government_revenue_ctx = _government_revenue_map.get(ticker.upper())
 
         # Signal date: use hold.anchor if present, else standouts as_of
         hold = b.get("hold") or {}
@@ -1412,8 +1600,12 @@ def originate_plans(
             "asof": asof,
             "asset": ticker,
             "direction": direction,
-            "thesis": _build_thesis(ticker, b, _wall_map.get(ticker)),
-            "thesis_zh": _build_thesis_zh(ticker, b, _wall_map.get(ticker)),
+            "thesis": _build_thesis(
+                ticker, b, _wall_map.get(ticker), government_revenue_ctx
+            ),
+            "thesis_zh": _build_thesis_zh(
+                ticker, b, _wall_map.get(ticker), government_revenue_ctx
+            ),
             "source_engines": ["us_standouts_buy_lane", "neural_web"],
             "trigger": round(trigger, 4),
             "entry": round(entry, 4),
@@ -1457,6 +1649,10 @@ def originate_plans(
             "_r_unit": geo["r_unit"],
             "_gate_go": standouts.get("gate_go"),
         }
+
+        if government_revenue_ctx:
+            plan["government_revenue_context"] = government_revenue_ctx
+            plan["context_engines"] = ["government_revenue_foresight"]
 
         # Validate
         from engine.options_structure import validate_trade_plan as _vtp  # noqa: PLC0415

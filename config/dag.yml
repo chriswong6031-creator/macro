@@ -2808,21 +2808,52 @@ modules:
       wall, validation gate (criteria a-d). Display-tier, authority all-false. Runs
       in collect_tail after corp_bond_holdings. Non-fatal (CCW-R16).
 
+  - module: collectors.usaspending_awards
+    reads:
+      - data/government_revenue/entities.json
+    writes:
+      - data/government_revenue/awards.parquet
+      - data/government_revenue/award_actions.parquet
+      - data/government_revenue/award_snapshots.parquet
+      - data/government_revenue/ingest_status.json
+      - data/government_revenue/collector_heartbeat.parquet
+    impure: true
+    needs_secrets: false
+    event_driven: false
+    note: >
+      Keyless official USAspending award-search/detail/transaction collector.
+      Granular composite-key ledgers persist atomically inside the collector;
+      both direct CLI and standard Adapter runs emit the dated heartbeat frame.
+
   - module: scripts.build_baskets
     reads:
       - data/baskets/membership.json
       - data/breadth/_closes_cache.parquet
       - data/stocks/*.parquet
       - data/radar/theses.jsonl
+      - data/usaspending/obligations.parquet
+      - data/government_revenue/entities.json
+      - data/government_revenue/awards.parquet
+      - data/government_revenue/award_actions.parquet
+      - data/government_revenue/award_snapshots.parquet
+      - data/government_revenue/ingest_status.json
     writes:
       - site/basketdata/baskets.json
       - site/basketdata/radar.json
       - site/basketdata/flow.json
       - site/basketdata/sector_pulse.json
       - data/baskets/latest.json
+      - data/government_revenue/latest.json
+      - site/government-revenue-data/latest.json
+      - site/government_revenue.html
     impure: false
     needs_secrets: false
     event_driven: false
+    note: >
+      The Government Revenue Foresight vertical workbench rides this existing
+      render lane through scripts.build_government_revenue. It is a pure,
+      fail-soft projection of committed official-data stores and emits only
+      display/context artifacts with no rank, size, or gate authority.
 
   - module: scripts.build_baskets_canada
     reads:
