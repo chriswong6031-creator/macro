@@ -39,6 +39,7 @@ SCHEMA = "ai_costs.usage.v1"
 _LEDGER_REL = "data/ai_costs/usage.jsonl"
 _SHARD_REL = "data/ai_costs/usage.d"          # per-writer shard dir (merge-on-read)
 _PRICING_REL = "config/ai_pricing.yml"
+_STATE_ROOT_ENV = "AI_COSTS_STATE_ROOT"
 
 
 # ── Lobe taxonomy ─────────────────────────────────────────────────────────────
@@ -107,13 +108,25 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def _state_root() -> Path:
+    """Resolve the mutable-ledger root without moving repository config.
+
+    Long-lived appliances can set ``AI_COSTS_STATE_ROOT`` to keep append-only
+    usage telemetry outside their immutable Git checkout. Pricing continues to
+    come from the repository unless a caller supplies the existing explicit
+    ``root=`` test/diagnostic override.
+    """
+    override = os.environ.get(_STATE_ROOT_ENV, "").strip()
+    return Path(override).expanduser() if override else _repo_root()
+
+
 def _ledger_path(root: Path | None = None) -> Path:
-    base = root if root is not None else _repo_root()
+    base = root if root is not None else _state_root()
     return base / _LEDGER_REL
 
 
 def _shard_dir(root: Path | None = None) -> Path:
-    base = root if root is not None else _repo_root()
+    base = root if root is not None else _state_root()
     return base / _SHARD_REL
 
 

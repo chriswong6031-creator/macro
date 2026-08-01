@@ -12,6 +12,7 @@ OPS_ROOT="${EARNINGS_OPS_ROOT:-/Users/chriswong/earnings-ops-wt}"
 PYTHON="${EARNINGS_PYTHON:-/Users/chriswong/earnings-venv/bin/python}"
 REMOTE_URL="${EARNINGS_REMOTE_URL:-https://github.com/chriswong6031-creator/macro.git}"
 PROVIDER_ORDER="${EARNINGS_PROVIDER_ORDER:-deepseek}"
+RUNTIME_ROOT="${EARNINGS_RUNTIME_ROOT:-/Users/chriswong/earnings-runtime}"
 STATE_PATH="$OPS_ROOT/data/earnings_calls/terminal_intake_state.json"
 LOCK_DIR="${EARNINGS_LOCK_DIR:-/tmp/mm_earnings_worker.lock}"
 RUNNER="$OPS_ROOT/ops/launchd/run_earnings_worker.sh"
@@ -93,12 +94,43 @@ fi
 verify_env_names
 
 # launchd cannot safely read/exec under ~/Documents because of macOS TCC.
-case "$OPS_ROOT" in
-  "$HOME/Documents"|"$HOME/Documents"/*)
-    echo "ERROR: EARNINGS_OPS_ROOT must live outside ~/Documents: $OPS_ROOT" >&2
+for path_name in OPS_ROOT RUNTIME_ROOT; do
+  path_value="${!path_name}"
+  case "$path_value" in
+    /*) ;;
+    *) echo "ERROR: $path_name must be an absolute path: $path_value" >&2; exit 1 ;;
+  esac
+  case "$path_value" in
+    "$HOME/Documents"|"$HOME/Documents"/*)
+      echo "ERROR: $path_name must live outside ~/Documents: $path_value" >&2
+      exit 1
+      ;;
+  esac
+done
+case "$RUNTIME_ROOT" in
+  "$OPS_ROOT"|"$OPS_ROOT"/*)
+    echo "ERROR: EARNINGS_RUNTIME_ROOT must live outside the immutable code clone: $RUNTIME_ROOT" >&2
     exit 1
     ;;
 esac
+
+# AI authentication records cost and quota telemetry as a side effect. Keep
+# those append-only ledgers outside the fast-forward-only code appliance so a
+# successful model call can never dirty the clone and block its next run.
+export AI_COSTS_STATE_ROOT="${AI_COSTS_STATE_ROOT:-$RUNTIME_ROOT}"
+export METABOLISM_STATE_ROOT="${METABOLISM_STATE_ROOT:-$RUNTIME_ROOT}"
+for telemetry_root in "$AI_COSTS_STATE_ROOT" "$METABOLISM_STATE_ROOT"; do
+  case "$telemetry_root" in
+    /*) ;;
+    *) echo "ERROR: telemetry state roots must be absolute: $telemetry_root" >&2; exit 1 ;;
+  esac
+  case "$telemetry_root" in
+    "$OPS_ROOT"|"$OPS_ROOT"/*)
+      echo "ERROR: telemetry state roots must live outside the immutable code clone: $telemetry_root" >&2
+      exit 1
+      ;;
+  esac
+done
 
 if [ ! -d "$OPS_ROOT/.git" ]; then
   echo "ERROR: missing standalone earnings ops clone at $OPS_ROOT" >&2
