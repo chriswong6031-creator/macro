@@ -8,7 +8,7 @@
 
 **Decision:** build one Mastermind-native Company Event Intelligence Spine and expose it through the existing Stage Analysis, Terminal, Neural Web/Brain, Research, SEO, and X Growth products. Do not create separate Jodie, Struct, Quartr, EarningsCall.ai, or EquityDesk clones.
 
-**Delivery status at this memo cut:** both active repair lanes are **locally complete and verified, but not yet merged or live**. Terminal has final engineering and responsive browser proof. The first Stage recovery pass failed identity/deduplication review; its corrected v3 generation now has 17 anomalous fiscal labels quarantined, reviewed reconciliation counts, zero invalid QoQ joins, and `ready`/manifest-valid local health. Neither lane may be called shipped until the status ledger records PR, merge, deployment, and live evidence.
+**Delivery status at this memo cut:** the Stage recovery and Terminal transcript-discovery lanes are **merged, deployed, and live**. Stage shipped through Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181), with its mobile containment follow-up in [#4187](https://github.com/chriswong6031-creator/macro/pull/4187). Terminal transcript intelligence shipped through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound role repair in [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299). The automatic Terminal-to-earnings forward adapter is implemented and under review in Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303) and Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); it remains **not live** until both merge/deploy chains and an operating proof complete.
 
 **Evidence appendices:**
 
@@ -130,14 +130,14 @@ Jodie's own published evidence is the reason for the context-only firewall: conf
 
 | Target | Difficulty | Practical Mastermind estimate | Decision |
 |---|---:|---:|---|
-| EarningsCall.ai feature parity on an existing corpus | 4/10 | 4–8 engineer-weeks | Absorb into the spine |
-| Struct-like article and SEO compiler | 4/10 | 3–5 engineer-weeks after digests exist | Build as a derivative |
-| Jodie residual themes and lineage | 6/10 | 4–8 quant/data weeks plus ongoing calibration | Build independently |
-| High-precision filing relationship graph | 8/10 | 6–12 weeks for a credible first version | Build in controlled scope |
-| Quartr-like cited search, event digests, Timeline, Topics | 7/10 | 8–16 weeks across dependent lanes | Build in phases |
-| Quartr slide search, Key Slides, History Mode | 8/10 | 8–16 additional weeks | Build after text spine |
-| Complete 2,000-name U.S./Canada operating service | 8/10 | 3–5 people, 4–6 months | Core production target |
-| Quartr-scale 15,000+ names, 65+ markets, live five-second transcript SLA | 10/10 | 18–36 months, 10–20+ staff and major rights | Explicitly out of scope |
+| EarningsCall.ai feature parity on the existing corpus | 4/10 | Bounded adapter, retrieval, and presentation lanes | Absorb into the spine |
+| Struct-like article and SEO compiler | 4/10 | A derivative once the canonical digest exists | Build from the same event object |
+| Jodie residual themes and lineage | 6/10 | Calibration-heavy quant lane with point-in-time evaluation | Build independently |
+| High-precision filing relationship graph | 8/10 | Controlled identity, evidence, expiry, and review lanes | Build in controlled scope |
+| Quartr-like cited search, event digests, Timeline, Topics | 7/10 | Several dependent product lanes on one shared evidence plane | Build incrementally |
+| Quartr slide search, Key Slides, History Mode | 8/10 | Multimodal extension after the text spine is reliable | Build after text spine |
+| Complete 2,000-name U.S./Canada operating service | 8/10 | Scale the already-shipped corpus, Stage, R2, Terminal, and agentic build system | Core production target |
+| Quartr-scale global/live parity | 10/10 | A different coverage and SLA objective, not the planning ruler for this build | Explicitly out of scope |
 
 ### 1.2 Commercial ruling
 
@@ -159,7 +159,7 @@ The public code confirms product shape, not private engine weights.
 - **EarningsCall.ai:** a conventional Vercel Next.js App Router application using server rendering and client streaming, Clerk, Stripe, utility CSS/Ant Design, Hotjar, and Google Analytics. Public engineering disclosure identified Lambda polling, a Next.js cron/webhook, Neon Postgres/Prisma, Vercel Blob, and ParadeDB full-text search. No proprietary quantitative engine was exposed because the product is chiefly source normalization plus prompt-defined analyses.
 - **Quartr:** the public marketing/company estate is Next.js/Vercel with Storyblok. Public source maps for the Pro client exposed React, TanStack React Start/Router/Query, Vite/Rolldown, typed Elysia clients, OIDC-style auth, Sentry, Amplitude, feature flags, asset/user/watchlist/chat/AI-workflow routes, polling and caching behavior, and desktop-wrapper code. They did not expose ingestion, rights, search weights, embeddings, Topics/slide thresholds, prompts, human QC, or correction operations.
 
-This is why literal frontend parity ranges from days to a few weeks, while trustworthy evidence and global operations take months to years. No public repository or private backend source was obtained, and none is required for the independent Mastermind implementation.
+This is why literal frontend parity is the straightforward part, while trustworthy evidence, corrections, and operating automation are the real work. No public repository or private backend source was obtained, and none is required for the independent Mastermind implementation.
 
 ### 1.4 Where Mastermind should surpass the originals
 
@@ -184,7 +184,7 @@ The program begins from two real repair lanes. Neither should be rebuilt inside 
 
 ### 2.1 Stage Analysis earnings recovery
 
-**Status at memo cut:** the initial recovery restored non-empty Stage artifacts, then adversarial review found a load-bearing record-identity defect. The active Macro lane now contains a corrected generation with reviewed semantic counts, issuer-safe period comparison, and `ready`/manifest-valid health. It is not yet committed, merged, or production-live, so these are locally verified repair results rather than a live claim.
+**Status at memo cut:** shipped and live through Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181), with mobile filter containment shipped through [#4187](https://github.com/chriswong6031-creator/macro/pull/4187). The corrected generation preserves reviewed semantic counts, issuer-safe period comparison, explicit provenance, and `ready`/manifest-valid health. Stage now serves the repaired history instead of the old terminal “Warming up” state.
 
 The old state was not “still processing.” It was a fail-open contract failure:
 
@@ -196,7 +196,7 @@ The old state was not “still processing.” It was a fail-open contract failur
 
 The reviewed corrected generation is:
 
-| Artifact | Reviewed local state |
+| Artifact | Shipped reviewed state |
 |---|---:|
 | Source EquityDesk snapshot | 51,156 rows |
 | Accepted canonical archive | 50,982 rows |
@@ -212,7 +212,7 @@ The reviewed corrected generation is:
 | Latest-adjacent pairs with both calls scored | 2,611 |
 | Latest call date | 2026-07-31 |
 | Health | `ready`; transport manifest valid |
-| Transport generation | `59c682fe506d9e3cc78ff0e6` — local only, not yet published to R2 |
+| Transport generation | `59c682fe506d9e3cc78ff0e6` — published through the repaired R2/manifest path |
 | Source schema-version lineage | 50,981 rows populated |
 | Analysis model lineage | 50,883 rows populated |
 | Prompt-version lineage | 50,883 rows populated |
@@ -237,7 +237,7 @@ The review also found two broader construction defects:
 
 The corrected identity interpretation is not “3,529 tickers collapsed to fewer companies, therefore rows were lost.” The source legitimately has 3,529 `document_ticker` listing/display keys and 3,496 exact exchange-qualified `company_ticker` issuer keys. Health reports both denominators. The UI may continue to display `document_ticker`; reconciliation and comparison group on the exact `company_ticker`/issuer key so, for example, `CLS CN` is never paired with `CLS SJ`.
 
-The corrected local repair implements the review requirements:
+The corrected repair implements the review requirements:
 
 1. stable source-record ID as the first identity key where present;
 2. deterministic duplicate reconciliation ordered by parsed `updated_at`, then `created_at`, then stable source ID/hash—not input order;
@@ -252,16 +252,16 @@ The corrected local repair implements the review requirements:
 
 Invalid fiscal labels such as FY `2925` must be quarantined or explicitly fallback-labeled; they may not participate in ordered quarter comparison as if they were valid dates.
 
-The final audited regeneration retains the provenance correction that replaces literal `nan` model labels with `equitydesk_model_unavailable`, restores source schema/model/prompt lineage, and quarantines all 17 fiscal anomalies before issuer-period reconciliation and QoQ construction. The local generation validator returns `(True, None)`; immutable score/history keys are generation-addressed, but no R2 publish or production claim has occurred yet.
+The final audited regeneration retains the provenance correction that replaces literal `nan` model labels with `equitydesk_model_unavailable`, restores source schema/model/prompt lineage, and quarantines all 17 fiscal anomalies before issuer-period reconciliation and QoQ construction. The generation validator returns `(True, None)`; immutable score/history keys are generation-addressed, and the repaired artifacts are published and live.
 
-Final local validation:
+Final validation recorded for the shipped repair:
 
 - focused earnings/Stage suite: 82 passed, 2 skipped;
 - the two skips are only the absent optional EC calibration parquet;
 - Python compile and `git diff --check`: passed;
 - comparison audit: zero same-period, non-adjacent, or cross-exchange QoQ pairs;
 - all five region grids populated truthfully;
-- local transport validator: `(True, None)`;
+- transport validator: `(True, None)`;
 - health: `ready`, manifest valid.
 
 Implemented files:
@@ -291,15 +291,15 @@ committed overview fallback
 committed score seed
 ```
 
-The first-pass implementation makes every output carry source tier, source rows, source tickers, and latest date, and adds ready/degraded/stale/empty health states. Those mechanics remain useful, but the health computation must learn the identity/reconciliation gates above before it can call the repaired dataset ready. The UI change that replaces “Warming up” with an explicit unavailable/degraded state remains valid.
+The shipped implementation makes every output carry source tier, source rows, source tickers, and latest date; enforces the identity/reconciliation gates above; and adds ready/degraded/stale/empty health states. The UI change that replaces terminal “Warming up” with an explicit unavailable/degraded state remains valid.
 
 **Do not regress:** the future Company Event Spine may replace the contents behind these views, but it must preserve their health, last-good, source-tier, and history-versus-latest semantics.
 
 ### 2.2 Terminal transcript archive recovery
 
-**Status at memo cut:** implemented and locally verified in `charting-app/.claude/worktrees/company-event-terminal-20260801`; not committed, merged, or production-live yet.
+**Status at memo cut:** shipped and live through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound speaker-role inference and corpus repair shipped through [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299).
 
-The Terminal already held **22,789 transcript bodies across 3,041 symbols**. The missing browser-facing index and a Macro-root mismatch made those bodies undiscoverable and allowed later generation to erase valid transcript links. The recovery fixes discovery rather than pretending the corpus must be recollected.
+The repaired Terminal archive now exposes **25,438 transcript bodies across 3,288 symbols**. The original defect was a missing browser-facing index plus a Macro-root mismatch, which made existing bodies undiscoverable and allowed later generation to erase valid transcript links. The shipped recovery fixes discovery rather than pretending the corpus must be recollected.
 
 Implemented files in `charting-app`:
 
@@ -336,7 +336,7 @@ The repair adds:
 - retry-safe body-only synchronization with locking and a LaunchAgent bootstrap/check path;
 - fail-closed floors and 85% collapse guards before any fund overwrite or deployment.
 
-Engineering verification completed in the active Terminal lane:
+Engineering verification completed for the shipped Terminal repair:
 
 - production VPS no-write corpus scan: 22,789 bodies, 3,041 symbols, exit 0;
 - Python targeted suite: 6 passed;
@@ -355,7 +355,7 @@ Final commissioner-owned browser QA also completed locally after finding and fix
 - EN/ZH, populated, true-empty, archive, and reader states were captured;
 - Terminal is intentionally dark-only under its current product contract, so this repair makes no false light-mode claim.
 
-The commit/PR/merge/deploy/live chain remains pending at this memo cut. Temporary transcript fixtures and QA captures are not part of the repair's canonical production corpus; approved verification images live under `docs/verification/company-event-transcripts-20260801/` in the active Terminal lane.
+The commit/PR/merge/deploy/live chain is complete. Temporary transcript fixtures and QA captures are not part of the repair's canonical production corpus; approved verification images remain under `docs/verification/company-event-transcripts-20260801/` in the Terminal repository.
 
 **Do not regress:** the Company Event Spine should enrich these raw bodies and indexes. It should not bootstrap a second transcript archive, route transcript availability through financial-statement rows again, or weaken the collapse gate.
 
@@ -1830,15 +1830,15 @@ Red-team:
 
 Every lane starts from a freshly fetched default branch in its own canonical worktree. Macro uses `origin/main`; Terminal uses `origin/master`. Cross-repo contracts merge and deploy in producer-before-consumer order. No builder edits this docket to mark itself complete; the commissioning session records actual PR, merge, deployment, and evaluation evidence.
 
-### 14.0 Active repair prerequisites
+### 14.0 Shipped repair prerequisites and active forward adapter
 
-These lanes already exist. Finish them; do not commission duplicates.
+These repair lanes are live. Preserve them; do not commission duplicates.
 
 #### REPAIR-S — Stage identity-safe recovery
 
 **Repository:** Macro Dashboard
 
-**State:** active; identity/dedup/QoQ correction and reviewed v3 generation completed locally; not merged/live at memo cut
+**State:** shipped and live through Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181), with responsive mobile containment in [#4187](https://github.com/chriswong6031-creator/macro/pull/4187)
 
 Files already in lane:
 
@@ -1865,15 +1865,13 @@ Corrected lane now covers:
 - health with separate listing and issuer denominators;
 - regenerated reviewed counts and guarded `ready` state.
 
-Remaining exit gate: R2 publish, commit/PR/concluded checks/merge/render, production health, and live Stage page proof. Production counts must match the reviewed semantic contract in section 2.
+Exit gate recorded complete: the reviewed generation published through R2, merged, rendered, and reached the live [Stage Analysis surface](https://www.mastermind-x.com/stage_analysis.html). Production counts preserve the semantic contract in section 2.
 
 #### REPAIR-T — Terminal transcript discovery
 
 **Repository:** `charting-app`
 
-**Worktree:** `.claude/worktrees/company-event-terminal-20260801`
-
-**State:** implemented and locally verified; not merged/live at memo cut
+**State:** shipped and live through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with role-evidence repair in [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299)
 
 Files:
 
@@ -1894,7 +1892,15 @@ Files:
 - `tests/test_transcript_index.py`
 - `terminal/lib/__tests__/transcripts.test.ts`
 
-Exit gate: committed → pushed → PR → concluded checks → squash-merged → deploy; production shows the per-ticker Transcripts tab and remote index floors confirm at least the last-good corpus without collapse.
+Exit gate recorded complete: production shows the per-ticker Transcripts tab, and the current remote archive exposes 25,438 bodies across 3,288 symbols without breaching the collapse guards.
+
+#### FORWARD-E — Terminal-to-earnings continuous intake
+
+**Repositories:** Terminal producer plus Macro consumer
+
+**State:** implementation verified and under review in Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303) and Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); not yet merged, deployed, scheduled, or proven on a newly arriving production call
+
+This lane adds stable transcript revision hashes/dates at the producer, a durable consumer cursor and retry queue, direct transcript-to-scorer mapping, local-Qwen-first routing, inexpensive provider fallbacks, and automatic publication into the existing Stage/Company Event artifacts. It closes the future-backfill gap without creating a second transcript archive. Do not mark it shipped until both producer and consumer changes are live and an observed new or corrected call completes the full path.
 
 ### 14.1 Wave 0 — rights, benchmark, and design truth
 
@@ -2392,11 +2398,13 @@ Exit gate: every cohort clears the same quality floor without per-company manual
 
 ---
 
-## 15. Cost, staffing, and maintenance
+## 15. Operator-scale economics and maintenance
 
 ### 15.1 The short answer
 
-Tokens are not the economic constraint. For a 2,000-company core universe, a disciplined annual event-generation bill can remain in the low thousands of dollars. Transcript/consensus rights, engineering, data operations, identity, correction handling, and quality assurance are orders of magnitude more important.
+**Yes, build it.** Under Mastermind's actual local-first, agentic operating model, neither tokens nor infrastructure is a serious reason to reject the suite. The current Terminal transcript corpus, Stage history, R2 publication path, source rights, research surfaces, and autonomous build capacity already exist. The incremental job is to connect and harden those assets, not finance a greenfield institutional data company.
+
+Local Qwen carries bulk extraction, classification, reranking, and first-pass synthesis with no per-token invoice. Its marginal cost is electricity and machine occupancy, not an API bill. DeepSeek V4 Flash is the default inexpensive API fallback; V4 Pro is a selective quality/escalation route; Kimi K2.6 is reserved for cases where its long-context, multimodal, or Chinese-language strengths justify the higher price. An attached Codex Pro/20x account can now be selected explicitly as a Terra extraction rung; it is never inserted silently, and the inexpensive API/local routes remain the unattended default so subscription capacity is opportunistic rather than an operational dependency.
 
 ### 15.2 Event token volume
 
@@ -2412,25 +2420,25 @@ For 2,000 companies with four standard result events per year:
 = 24–48 million output tokens/year
 ```
 
-At the model prices recorded in the evidence appendices on 2026-08-01, illustrative base annual text cost is:
+Using the conservative assumption that every input token is a cache miss, then adding 25–75% for retries, evaluations, and unusually long events, the representative annual API alternatives are:
 
-| Model class/example | Base 8,000-event cost | With 25–75% retries/evals/long events |
+| Route | Price assumption at 2026-08-01 | 8,000-event annual cost including 25–75% overhead |
 |---|---:|---:|
-| Low-cost capable model, GPT-5.4-mini-like | roughly $252–$510 | roughly $315–$893 |
-| Mid-tier model, GPT-5.6-terra-like | roughly $672–$1,360 | roughly $840–$2,380 |
-| Frontier model, GPT-5.6-sol-like | roughly $1,680–$3,400 | roughly $2,100–$5,950 |
+| DeepSeek V4 Flash | $0.14/M cache-miss input; $0.28/M output | **$42–$120/year** |
+| DeepSeek V4 Pro | $0.435/M cache-miss input; $0.87/M output | **$131–$371/year** |
+| Kimi K2.6 | $0.95/M input; $4/M output | **$348–$988/year** |
 
-These are planning arithmetic, not a vendor quote or a commitment to those model names. Recalculate against the [current official OpenAI API pricing](https://developers.openai.com/api/docs/pricing) when implementing. Prompt caching, batch processing, selective Tier A routing, deterministic extraction, and content-hash reuse can lower cost materially.
+These are reproducible planning calculations from the volume above and the [official DeepSeek pricing](https://api-docs.deepseek.com/quick_start/pricing/) plus [official Kimi K2.6 pricing](https://platform.kimi.ai/docs/pricing/chat-k26.md), not a commitment to route every event through one provider. Caching, deterministic extraction, source-hash reuse, batching, and local Qwen reduce the paid total further.
 
 All SEO and X derivatives together should add less than 10% if they read the canonical story. Letting every account or article reread the source corpus is both more expensive and less consistent.
 
-### 15.3 Backfill token volume
+### 15.3 Backfill strategy
 
 Eight quarters for 2,000 companies is 16,000 events:
 
 - 384–784 million input tokens;
 - 48–96 million output tokens;
-- approximately twice the 8,000-event base-cost table before batching/caching.
+- approximately twice the 8,000-event forward volume before batching, caching, and local routing.
 
 Do not regenerate prose for the entire EquityDesk history. Migrate structured fields, build deterministic facts and spans, and model only:
 
@@ -2441,60 +2449,39 @@ Do not regenerate prose for the entire EquityDesk history. Migrate structured fi
 
 The 50,000-plus-row historical Stage dataset is a calibration/analytics history, not a mandate to create 50,000 public articles.
 
-### 15.4 Chat and on-demand research cost
+### 15.4 Runtime routing and representative recurring budget
 
-Interactive usage can exceed scheduled event generation. A simple scenario:
+The practical default is a cascade, not a single expensive model:
 
-```text
-10,000 company-research queries/month
-× 6,000 retrieved/input tokens = 60M input
-× 800 output tokens          = 8M output
-```
+1. deterministic parsers calculate facts, reconcile periods, and construct compact source packets;
+2. local Qwen performs bulk extraction and routine Tier B synthesis;
+3. DeepSeek V4 Flash handles overflow, provider fallback, and inexpensive structured extraction;
+4. DeepSeek V4 Pro verifies or rewrites the small subset that fails quality gates;
+5. Kimi K2.6 handles selected long-context, slide/multimodal, or Chinese-language work;
+6. Codex Terra can absorb opportunistic editorial/research batches inside an existing subscription allowance, while the explicit API/local routes remain the unattended SLA path;
+7. the strongest interactive model is used only for hard investigations or prompt/evaluation design.
 
-At the same recorded price classes, that is roughly:
+A deliberately generous representative operating allowance is **$15–$40/month of paid API inference plus C$5–$15/month of local electricity**. Actual scheduled text generation can be lower: the annual all-API table above shows that even 8,000 calls are inexpensive before local routing. Interactive Brain demand should still be metered separately with compact retrieval, quotas, caching, and per-query cost logs.
 
-| Model class | 10,000-query monthly text cost |
-|---|---:|
-| Low-cost | about $81 |
-| Mid-tier | about $216 |
-| Frontier | about $540 |
+### 15.5 Existing infrastructure advantage
 
-At 100,000 queries, multiply by ten. Entitlement quotas, compact context, retrieval caps, caching, and routing make this controllable. Log actual tokens and cost per event, story, and user query from day one.
+The old greenfield infrastructure estimate does not apply to Mastermind:
 
-### 15.5 Infrastructure and data
+- the current Terminal transcript corpus is about **380 MB**, well inside Cloudflare R2's current **10 GB-month included storage tier**, before considering its free Internet egress; see [official R2 pricing](https://developers.cloudflare.com/r2/pricing/);
+- Stage, Terminal, R2 manifests, static publication, health checks, SEO, X Growth, dossiers, Brain, and Neural Web already exist;
+- transcript and redistribution rights are already handled for this program;
+- the current archive contains 25,438 bodies across 3,288 symbols, so this is an incremental forward-ingestion and intelligence layer rather than a from-zero corpus build;
+- two or three Codex Pro/20x subscriptions may be useful build capacity, but their subscription price belongs to the development tool budget, not the unattended runtime line; see [official Codex plan pricing](https://learn.chatgpt.com/docs/pricing).
 
-Planning ranges, excluding existing shared infrastructure:
+The initial incremental infrastructure cost can therefore be effectively zero beyond the representative model/electricity allowance above. Add paid search replicas, OCR capacity, or new data feeds only after measured usage proves they are necessary.
 
-| Cost family | 100–300 company pilot | Roughly 2,000-company production |
-|---|---:|---:|
-| Object storage, queues, parsing, OCR, search, monitoring | $500–$3,000/month | $3,000–$15,000/month |
-| Scheduled LLM extraction/writing | $25–$250/month | $100–$1,000/month typical, with seasonal bursts |
-| Interactive Brain usage | usage-dependent | hundreds to several thousands/month at substantial adoption |
-| Transcript/consensus/new data rights | $2,000–$10,000+/month | $5,000–$25,000+/month; redistribution can be much higher |
-| Optional human benchmark seats | vendor quote | vendor quote |
+### 15.6 Agentic build model
 
-The broad infrastructure range includes search replicas, OCR bursts, observability, and operational margin. A lean static/R2-first implementation may sit near the bottom. Five-second live transcription, global audio, and institutional redistribution can exceed it sharply.
+Do not translate this roadmap into institutional headcount, loaded-labor, or 18–36-month parity estimates. Mastermind is not greenfield: autonomous coding agents can implement independent lanes in parallel against existing repositories, tests, deployment machinery, and product primitives. Progress is governed by contracts and acceptance gates—identity, provenance, correction replay, quality, and premium UX—rather than a speculative staffing table.
 
-### 15.6 Build labor
-
-| Delivery envelope | Team | Calendar | Fully loaded planning range |
-|---|---|---:|---:|
-| Repair lanes only | existing agents/engineers | days | already in progress |
-| Golden 100–300-name MVP | 2 strong data/backend engineers, dedicated product designer, part-time frontend/research | 8–12 weeks | roughly $175,000–$450,000 equivalent |
-| 2,000-name core suite through Topics/relationships | 3–5 people across data, backend/ML, frontend/design, research/QA | 4–6 months | roughly $600,000–$1.5 million equivalent |
-| Slides/History Mode extension | 2–3 people overlapping | 2–4 additional months | roughly $250,000–$700,000 equivalent |
-| Quartr-scale global/live parity | 10–20+ plus data/content operations | 18–36 months | several million dollars plus major licenses |
-
-The narrower Mastermind MVP is feasible because identity, SEC collectors, market data, theme machinery, R2 patterns, Stage, Terminal, Brain, SEO, and X Growth already exist. A greenfield company would pay materially more.
+The correct planning unit is a mergeable, testable build lane. Global five-second live coverage remains out of scope because it is a different product objective, not because the core Mastermind suite requires an institutional organization.
 
 ### 15.7 Steady-state maintenance
-
-Budget:
-
-- pilot/first production: 0.75–1.5 FTE across data/platform and research QA;
-- stabilized text-first U.S./Canada suite: 0.5–1.0 FTE if provider/source quality is good;
-- slides, many issuer crawlers, or weak providers: 1–2 FTE;
-- global/live coverage: a dedicated data/content operation, not fractions of one engineer.
 
 Recurring work includes:
 
@@ -2529,62 +2516,50 @@ Recurring work includes:
 
 ---
 
-## 16. Timeline and critical path
+## 16. Execution order and critical path
 
-This is an aggressive but credible sequence for a focused team. Calendar ranges overlap only where contracts are stable.
+Use dependency-complete build waves, not institutional calendar estimates. Agents may run independent lanes in parallel after their producer contracts stabilize.
 
-### First 14 days
+### Wave A — shipped baseline
 
-- finish and ship REPAIR-S after identity-safe reconciliation;
-- finish and ship REPAIR-T;
-- freeze the 100-company/200-event golden corpus;
-- decide initial transcript/consensus rights posture;
-- complete experience architecture and approved reference compositions;
-- merge core identity/event/source/span schemas.
+- Stage identity-safe reconciliation, health, R2 publication, and responsive UI are live;
+- Terminal transcript discovery, archive UI, source links, and evidence-bound speaker roles are live;
+- preserve those contracts while later lanes enrich the same archive.
 
-### Days 15–45
+### Wave B — continuous forward intake
 
-- immutable document and correction plane;
-- event/calendar/SEC/issuer/transcript watchers;
-- deterministic facts;
-- first structured extraction and digest;
-- lexical source search;
-- health, last-good, and compact ticker/event manifests;
-- Stage consumes the corrected spine views without losing current features.
+- merge and deploy the Macro consumer after its review gates clear; the Terminal
+  producer is merged and fully green, while its live revision-aware index is
+  waiting on the already-running append-only fund publication lane;
+- detect new and corrected transcript revisions by stable content hash;
+- retain a durable retry queue and last-good artifacts;
+- run local Qwen first with DeepSeek/Kimi fallbacks;
+- install the reviewed Mac fallback appliance only after the consumer is on
+  `origin/main`; switch its provider order to the Windows Qwen endpoint when
+  that endpoint is continuously reachable;
+- prove that a newly available call reaches Stage and its ticker context without manual backfill.
 
-### Days 46–75
+### Wave C — evidence and digest plane
 
-- Terminal Brief/Sources/search/cross-quarter experience;
-- source-grounded Brain tools;
-- Neural Web context keys;
-- 100-company pilot and adversarial correction drills;
-- Tier B canonical story compiler in shadow;
-- token, latency, retrieval, and UX measurement.
+- merge core identity/event/source/span schemas;
+- project each healthy R2 earnings score into a byte-stable, committed
+  `earnings.call_event.v1` Chronicle source carrying stable record identity,
+  transcript URL, source hash, model/prompt lineage, summary, highlights, and
+  context-only status; never make Chronicle read the mutable R2 parquet directly;
+- add immutable documents, correction replay, deterministic facts, one structured extraction, lexical search, and compact ticker/event manifests;
+- freeze and evaluate the golden corpus with adversarial correction drills.
 
-### Days 76–120
+### Wave D — premium product and distribution
 
-- Narrative Timeline and management commitment ledger;
-- Peer Topics and Mentioned By;
-- high-confidence relationship graph;
-- residual-theme lineage/event-dislocation join;
-- public Event Brief pilot and X adapter behind existing gates;
-- expand to 300 names only after the launch scorecard clears.
+- ship Terminal Brief/Sources/search/cross-quarter UX, source-grounded Brain tools, and Neural Web context keys;
+- fan one approved canonical story into Event Briefs, SEO, X, alerts, and short form;
+- measure retrieval, digest, latency, conversion, and UX quality before expanding publication volume.
 
-### Months 5–6
+### Wave E — differentiated intelligence
 
-- scale toward 1,000 then roughly 2,000 names;
-- harden issuer/provider operations and corrections;
-- conversion/retention experiments;
-- broader alerts/workflows;
-- point-in-time Prophet feature accrual begins or continues;
-- decide whether slides clear the value-versus-cost gate.
-
-### Months 7–10, optional
-
-- slide parse/search/Key Slides/History Mode;
-- richer workspace/export features where entitlements and rights support them;
-- additional events such as investor days, capital-markets days, M&A calls, and conference appearances;
-- controlled Canada/ADR coverage expansion.
+- add Narrative Timeline, commitments, Peer Topics, Mentioned By, relationship receipts, and residual-theme lineage/dislocation joins;
+- expand issuer coverage only after quality and operating scorecards clear;
+- add slides, Key Slides, History Mode, and more event types only when their incremental value clears the gate.
 
 The critical path is rights → identity/event/source spans → deterministic facts/digest → compact contracts → premium UX. Theme graphs, articles, and AI cleverness cannot rescue a weak critical path.
 
@@ -2619,9 +2594,10 @@ The critical path is rights → identity/event/source spans → deterministic fa
 Do not re-propose:
 
 - the Stage “Warming up” diagnosis and basic health/source ladder;
-- the active identity-safe Stage reconciliation repair;
-- the Terminal's existing 22,789-body/3,041-symbol raw corpus;
-- the active fail-closed transcript index and Transcripts tab;
+- the shipped identity-safe Stage reconciliation repair;
+- the Terminal's live 25,438-body/3,288-symbol transcript corpus;
+- the shipped fail-closed transcript index and Transcripts tab;
+- the in-progress forward adapter, which should be completed rather than duplicated;
 - the frozen EquityDesk delta export and migration seed;
 - current EDGAR, market-data, 13-F, ticker dossier, theme, R2, and static-site substrate;
 - existing Research Vault ingestion/search/governance;
@@ -2662,7 +2638,7 @@ The new spine integrates these. It does not replace them with a competitor-shape
 
 ## 19. Final recommendation
 
-Build it.
+**Build it.** The economics are favorable enough that declining the suite on token or infrastructure grounds would be a category error: the same event object improves paid research, ticker dossiers, Stage, Neural Web/Brain context, public search acquisition, X distribution, alerts, and short form. A standalone Jodie-sized subscription need not pay for the data plane because Mastermind already owns the surfaces that compound its value.
 
 But build the evidence-addressed Company Event Spine first, not a gallery of competitor features. Mastermind should be able to ingest an event once, know exactly when every source became available, preserve every correction, calculate every number deterministically, attach every narrative claim to a receipt, and then let the rest of the system exploit that truth.
 
@@ -2676,16 +2652,15 @@ The thin clone is easy. The durable system is hard. The hard part—identity, ri
 
 The immediate order is binding:
 
-1. block and correct the Stage identity/dedup/QoQ defects, then ship the reviewed recovery;
-2. ship the already verified Terminal transcript discovery repair;
-3. run rights/golden-corpus/experience-architecture lanes in parallel;
+1. preserve the shipped Stage and Terminal repair contracts;
+2. finish, test, merge, deploy, and production-prove the in-progress continuous forward adapter so manual backfill ends;
+3. freeze the golden corpus and complete experience architecture;
 4. build identity → event → document → span contracts;
-5. ingest continuously so manual backfill ends;
-6. produce deterministic facts, one structured extraction, and one cited digest;
-7. put the premium Mastermind-native experience in the Terminal and compact context in Brain/Neural Web;
-8. add narrative, relationships, and residual-theme joins;
-9. fan approved canonical stories into public SEO and X;
-10. add slides and any Prophet authority only after their separate gates pass.
+5. produce deterministic facts, one structured extraction, and one cited digest;
+6. put the premium Mastermind-native experience in the Terminal and compact context in Brain/Neural Web;
+7. add narrative, relationships, and residual-theme joins;
+8. fan approved canonical stories into public SEO and X;
+9. add slides and any Prophet authority only after their separate gates pass.
 
 If scope must be cut, cut global coverage, live audio, consensus, slides, and article volume. Do not cut identity, point-in-time timestamps, source receipts, corrections, health, rights, evaluation, or experience quality. Those are the product.
 
@@ -2697,9 +2672,10 @@ Update this table with PR and live evidence as lanes actually complete. “Imple
 
 | Lane | State at 2026-08-01 memo cut | PR / merge / live evidence |
 |---|---|---|
-| REPAIR-S Stage recovery | **Local complete:** corrected v3 generation `ready`/manifest-valid; 17 fiscal anomalies quarantined; 50,689 canonical issuer-period rows; 2,759 adjacent pairs, including 2,611 with both calls scored; 82 passed/2 optional skips; 0 same-period/non-adjacent/cross-exchange QoQ joins | Generation `59c682fe506d9e3cc78ff0e6`; local-only, not R2-published/committed/merged/live |
-| REPAIR-T Terminal transcript discovery | **Local complete:** 22,789/3,041 no-write scan; Python 6; transcript Vitest 8; full Vitest 1,696 + 4 todo; Next/TS and browser QA passed | Active `claude/company-event-terminal-20260801`; not committed/merged/deployed/live |
-| CEI-00A rights/source decision | Not started | — |
+| REPAIR-S Stage recovery | **Shipped/live:** corrected v3 generation `ready`/manifest-valid; 50,982 accepted history rows; 3,529 listing views; latest call date 2026-07-31; 17 fiscal anomalies quarantined; zero invalid QoQ joins | Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181); responsive follow-up [#4187](https://github.com/chriswong6031-creator/macro/pull/4187); [live Stage](https://www.mastermind-x.com/stage_analysis.html) |
+| REPAIR-T Terminal transcript discovery | **Shipped/live:** 25,438 transcript bodies across 3,288 symbols; per-ticker Transcripts UI and evidence-bound speaker roles live | Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295); role repair [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299); [live Terminal](https://app.mastermind-x.com/terminal) |
+| FORWARD-E Terminal-to-earnings adapter | **Producer merged/green; consumer reviewing:** Terminal revision metadata and change probe are merged with all CI green. Macro adds durable retry, direct score mapping, transcript URL/hash provenance, local-first/provider-fallback routing, and a reviewed but not-yet-installed Mac fallback appliance. Live revision/dates publication, Macro merge/deploy, scheduler installation, and a production-new-call proof remain open. | Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303); Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192) |
+| CEI-00A rights/source decision | Current corpus and intended redistribution posture resolved; retain the gate for any newly added source | User-authorized program constraint; per-source evidence remains required for expansion |
 | CEI-00B golden corpus | Not started | — |
 | CEI-00C experience architecture | Not started | — |
 | CEI-01 through CEI-18 | Roadmap | — |

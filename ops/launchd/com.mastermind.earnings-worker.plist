@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Earnings qualitative producer. Install only after the Terminal producer and
+  Macro consumer PRs have merged:
+
+    /bin/bash /Users/chriswong/earnings-ops-wt/ops/bootstrap_earnings_worker.sh
+
+  Terminal starts at 16:30 America/Vancouver. This producer gets a primary
+  17:45 window plus two idempotent retry/drain windows at 20:45 and 23:45.
+  All paths are outside ~/Documents for launchd/TCC safety.
+
+  Secrets are NOT stored here. run_with_env.sh sources the already-existing
+  /Users/chriswong/flow-ops-wt/.env before launching the runner.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mastermind.earnings-worker</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/chriswong/earnings-ops-wt/ops/launchd/run_with_env.sh</string>
+    <string>/Users/chriswong/flow-ops-wt/.env</string>
+    <string>/Users/chriswong/earnings-ops-wt/ops/launchd/run_earnings_worker.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/earnings-ops-wt</string>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Hour</key><integer>17</integer>
+      <key>Minute</key><integer>45</integer>
+    </dict>
+    <dict>
+      <key>Hour</key><integer>20</integer>
+      <key>Minute</key><integer>45</integer>
+    </dict>
+    <dict>
+      <key>Hour</key><integer>23</integer>
+      <key>Minute</key><integer>45</integer>
+    </dict>
+  </array>
+
+  <key>RunAtLoad</key>
+  <false/>
+  <key>KeepAlive</key>
+  <false/>
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+
+  <key>StandardOutPath</key>
+  <string>/tmp/mm_earnings_worker.log</string>
+  <key>StandardErrorPath</key>
+  <string>/tmp/mm_earnings_worker.log</string>
+</dict>
+</plist>
