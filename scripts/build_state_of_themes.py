@@ -389,7 +389,7 @@ _LANE_META: dict[str, dict[str, str]] = {
         "stance_en": "A break-rule tripped — stand aside",
         "stance_zh": "触发否定条件——暂避观望",
         "guide_en": "A rule that would break the story has tripped. Stand aside until it clears.",
-        "guide_zh": "一条会证伪论点的规则已触发。在其解除前暂避。",
+        "guide_zh": "一条会改变论点的规则已触发。在其解除前暂避。",
     },
     "quiet": {
         "key": "quiet",

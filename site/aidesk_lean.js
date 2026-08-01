@@ -1,6 +1,6 @@
 /* Accountable AI-JUDGMENT panel — fetches site/stockdata/ai_desk_notes.json (the top-pick
    leans written by engine/stock_desk.py) + ai_desk_track.json (the graded track record).
-   Shows the FALSIFIABLE lean for a name ONLY if it's a covered top pick (panel stays hidden
+   Shows the CHECKABLE lean for a name ONLY if it's a covered top pick (panel stays hidden
    otherwise). HONEST: the cross-sectional rank has no validated forward edge — the lean is a
    fallible, scored conditional, never a size, never alpha. All model output is escaped before
    insertion. Bilingual chrome (model prose stays English); re-renders on 'langchange'.

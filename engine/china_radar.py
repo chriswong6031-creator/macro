@@ -660,7 +660,7 @@ def _candidates(etf, sign, conv_map, n=3):
 def _build_row(cv, key, sen, szh, etf, sec_en, sec_zh, sig, thesis,
                by_pair, by_signal, conv_map) -> dict:
     """One radar row: signal-A direction vs the sector ETF's price RS → divergence verdict,
-    conviction-scored (strength × ledger reliability) with falsifiable hypothesis + candidates.
+    conviction-scored (strength × ledger reliability) with checkable hypothesis + candidates.
     Shared by the macro/policy/flow pairs AND the per-sector sector-flow pairs. PURE-ish (reads
     price + ledger + convergence)."""
     rs_pct, rs_z = _price_rs(etf)

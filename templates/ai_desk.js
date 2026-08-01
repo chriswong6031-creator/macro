@@ -1,5 +1,5 @@
 /* AI Desk renderer — fetches ai_desk.json (written by engine/ai_desk.py) and builds
-   the desk note client-side: track-record badge, falsifiable theses, the analyst
+   the desk note client-side: track-record badge, checkable theses, the analyst
    panel, and recent graded outcomes. Labels are bilingual (l-en/l-zh; theme.js
    toggles); the AI-authored content is shown as-is. Resilient: any missing field
    degrades to a muted note, never throws. */

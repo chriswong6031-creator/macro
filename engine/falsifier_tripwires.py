@@ -551,7 +551,7 @@ def cycle_falsifier_fired(hist: "pd.DataFrame", f: "pd.DataFrame",
         # direction → severity mapping: refutes = warn, confirms = info
         severity = "warn" if r.direction == "refutes" else "info"
         # Display register (operator 2026-07-27, #3821): the schema value stays
-        # "refutes"/"confirms", but user-shown text never says falsified/refuted/证伪.
+        # "refutes"/"confirms", but user-shown text never uses those words.
         dirn = "cuts against the read" if r.direction == "refutes" else "supports the read"
         dirn_zh = "与原判断相反" if r.direction == "refutes" else "支持原判断"
         msg_en = (

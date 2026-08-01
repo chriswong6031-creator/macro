@@ -1,4 +1,4 @@
-/* AI Desk for Thematic Investing — render the live, falsifiable per-theme leans on
+/* AI Desk for Thematic Investing — render the live, checkable per-theme leans on
    allocation*.html from site/allocationdata/ai_desk_<region>.json (+ ai_desk_track.json).
    Display-only: these are the desk's graded hypotheses, never a buy list or a size. Degrades
    silently to the static handoff contract above when the brief is absent (LLM off / pre-build). */
