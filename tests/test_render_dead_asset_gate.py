@@ -101,3 +101,19 @@ def test_render_metadata_replay_is_code_data_only() -> None:
 
     assert gate != -1
     assert replay - gate < 240
+
+
+def test_engine_render_owns_the_crypto_emitter_in_every_hub_scope() -> None:
+    workflow = _text(ROOT / ".github" / "workflows" / "engine-render.yml")
+    assert "crypto() {" in workflow
+    assert "scripts.build_crypto" in workflow
+
+    case_body = workflow.split('case "$SCOPE" in', 1)[1].split("esac", 1)[0]
+    assert len(re.findall(r"\bhub\s*;\s*crypto\b", case_body)) == 8
+    assert not re.search(r"\bhub\s*;(?!\s*crypto\b)", case_body)
+
+    dag = _text(ROOT / "config" / "dag.yml")
+    engine_lane = dag.split(
+        "- workflow: .github/workflows/engine-render.yml", 1
+    )[1].split("- workflow:", 1)[0]
+    assert "module: scripts.build_crypto" in engine_lane
