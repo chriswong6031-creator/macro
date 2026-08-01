@@ -2,7 +2,8 @@
 
 Covers the SSR shell that scripts/build_research_vault.py renders:
   - the page builds from an EMPTY catalog (honest empty state, no fake cards) and
-    from a seeded catalog (SSR cards baked for SEO/instant paint);
+    from a seeded catalog (SSR cards baked for SEO/no-JS fallback, but withheld from
+    the interactive first paint until the live catalog resolves);
   - the flagship structure is present: hero + This-Week figs, the three lane tabs
     (Latest/Top Picks/Saved), the browse rail + facet filter, the PDF viewer modal
     (auth-overlay clone) with its quota/download states, and the app + catalog island;
@@ -190,7 +191,11 @@ def test_public_ssr_preview_stops_at_three_and_shows_pro_gate(monkeypatch):
     assert "Report 1" not in html and "Report 3" not in html
     island = re.search(r'<script id="rv-catalog" type="application/json">(.*?)</script>',
                        html, re.S)
-    assert island and len(json.loads(island.group(1))["items"]) == 3
+    assert island
+    payload = json.loads(island.group(1))
+    assert len(payload["items"]) == 3
+    assert payload["preview"] is True
+    assert payload["summary"]["total"] == 5
     assert "2 more institutional reports" in html
     assert "Upgrade to Pro" in html
 
@@ -202,7 +207,8 @@ def test_client_preview_is_fixed_to_three_and_fails_closed():
     assert "function teaseCount() { return 3; }" in js
     assert "previewItems().filter(matchItem)" in js
     assert "x.slug && feedUnlocked()" in js
-    assert "fetch(API + '/api/research/catalog', { headers: h" in js
+    assert "fetch(API + '/api/research/catalog', opts)" in js
+    assert "var opts = { headers: h, credentials: 'include', cache: 'no-store' };" in js
 
 
 # --- Pro unlock path (the MDXAuth boot race) --------------------------------
@@ -242,6 +248,8 @@ def test_auth_listener_registration_has_a_load_fallback():
     # the callback is a named function so both registration paths share it
     assert "function onAuthResolved()" in js
     assert "window.MDXAuth.onChange(onAuthResolved)" in js
+    on_auth = re.search(r"function onAuthResolved\(\) \{(.*?)\n    \}", js, re.S)
+    assert on_auth and "refreshFromApi();" in on_auth.group(1)
     # ...and the fallback: register on 'load' when theme.js has not run yet
     # (same shape as site/mm_brain.js boot()), then redo the reads that went out
     # unauthenticated at boot.
@@ -254,6 +262,70 @@ def test_auth_listener_registration_has_a_load_fallback():
     assert "window.MDXAuth.onChange(onAuthResolved)" in body
     assert "resolveTier();" in body
     assert "refreshFromApi();" in body
+
+
+def test_interactive_first_paint_masks_the_baked_snapshot(page_seeded):
+    """The hourly data snapshot can be newer than the last page render.
+
+    Apply the loading class in <head> (before a browser can paint), keep the baked
+    cards available to crawlers/no-JS, and reveal interactive data only after the
+    app settles a catalog source.
+    """
+    marker = "document.documentElement.classList.add('rv-awaiting-live')"
+    assert marker in page_seeded
+    assert page_seeded.index(marker) < page_seeded.index('id="rv-catalog"')
+    assert "html.rv-awaiting-live .rv-feed{ display:none; }" in page_seeded
+    assert "html.rv-awaiting-live .rv-feed-loading{ display:block; }" in page_seeded
+    assert 'id="feed-shell" aria-busy="false"' in page_seeded
+    assert 'class="rv-status-loading">Refreshing live research' in page_seeded
+    assert 'class="rv-status-loading">正在刷新实时研报' in page_seeded
+
+
+def test_no_js_default_is_an_honest_saved_snapshot(page_seeded):
+    """With scripts disabled the SSR cards stay usable and never claim to be live."""
+    assert 'class="rv-status-snapshot">Saved research snapshot' in page_seeded
+    assert 'class="rv-status-snapshot">已保存研报快照' in page_seeded
+    assert 'class="rv-lead-snapshot">Showing the latest saved institutional reports.' in page_seeded
+    assert 'class="rv-lead-snapshot">正在显示最近保存的机构研报。' in page_seeded
+    assert 'id="feed-shell" aria-busy="false"' in page_seeded
+
+
+def test_boot_waits_for_authoritative_catalog_before_ingesting_bake():
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    boot = re.search(r"function boot\(\) \{(.*?)\n  \}", js, re.S)
+    assert boot, "missing Research Vault boot function"
+    body = boot.group(1)
+    assert "refreshFromApi();" in body
+    assert "hydrateFromBake();" not in body, (
+        "the render-time catalog must not be painted as current before the live API"
+    )
+    assert "CATALOG_SOURCE === 'loading') hydrateFromBake();" in js
+    assert "ingest(j, j.stale ? 'snapshot' : 'live');" in js
+    assert "Saved snapshot · live update unavailable" in js
+    assert "shell.setAttribute('aria-busy', 'true')" in body
+
+
+def test_catalog_refresh_is_no_store_and_newest_request_wins():
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "var CATALOG_REQ = 0" in js
+    assert "var req = ++CATALOG_REQ;" in js
+    assert "if (CATALOG_ABORT)" in js and "CATALOG_ABORT.abort()" in js
+    assert "if (req !== CATALOG_REQ) return null;" in js
+    assert "if (!j || !Array.isArray(j.items)) throw new Error('invalid catalog payload');" in js
+    assert "cache: 'no-store'" in js
+    assert "Promise.race([request, deadline])" in js
+    assert "reject(new Error('catalog timeout'))" in js
+
+
+def test_preview_hero_and_constellation_use_whole_vault_aggregates():
+    js = (bld.ROOT / "site" / "research_vault_app.js").read_text(encoding="utf-8")
+    assert "var CATALOG_SUMMARY = null" in js
+    assert "var aggregateNewN = summaryNumber('new_this_week');" in js
+    assert "var aggregateDeskN = summaryNumber('desks_this_week');" in js
+    assert "var aggregatePicks = summaryNumber('highlighted');" in js
+    assert "Array.isArray(CATALOG_SUMMARY.institutions)" in js
+    assert "CATALOG_PREVIEW = !!(catalog && catalog.preview) || TOTAL_COUNT > ITEMS.length;" in js
+    assert "Latest preview loaded. Whole-vault weekly totals are temporarily unavailable." in js
 
 
 def test_empty_state_has_no_fake_cards(page_empty):

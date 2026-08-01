@@ -494,6 +494,8 @@ def _catalog_preview(catalog: dict, limit: int = _PUBLIC_PREVIEW_COUNT) -> dict:
     public = dict(catalog)
     public["items"] = preview[:limit]
     public["count"] = len(items)
+    public["preview"] = True
+    public["summary"] = catalog.get("summary") or catalog_mod.public_summary(catalog)
     public["institutions"] = sorted({
         str((item or {}).get("institution") or "").strip()
         for item in public["items"]
@@ -512,7 +514,9 @@ def research_catalog(
     server creds, 60s TTL cache. ``{stale:true}`` merged when a refresh fails but a
     prior copy exists; 503 only if never fetched. No PDF bytes are returned.
     """
-    catalog = _load_catalog()
+    catalog = dict(_load_catalog())
+    catalog["preview"] = False
+    catalog["summary"] = catalog_mod.public_summary(catalog)
     return catalog if _can_view(_optional_tier(authorization)) else _catalog_preview(catalog)
 
 

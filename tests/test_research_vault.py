@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import shutil
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -394,6 +394,38 @@ def test_catalog_institutions_rollup_sorted_unique():
     catalog_mod.upsert_item(cat, _item("b", "Bernstein", "2026-07-02"))
     catalog_mod.upsert_item(cat, _item("c", "Bernstein", "2026-07-03"))
     assert cat["institutions"] == ["Bernstein", "Goldman Sachs"]
+
+
+def test_public_summary_describes_the_full_catalog_not_a_preview_slice():
+    cat = {
+        "items": [
+            {"id": "a1", "institution": "Desk A", "published_at": "2026-07-31T10:00:00Z",
+             "tags": ["AI"], "top_pick": True},
+            {"id": "a2", "institution": "Desk A", "published_at": "2026-07-25T10:00:00Z",
+             "tags": ["Macro", "AI"], "top_pick": False},
+            {"id": "b", "institution": "Desk B", "published_at": "2026-07-24T10:00:00Z",
+             "tags": ["AI"], "top_pick": False},
+            {"id": "c", "institution": "Desk C", "published_at": "2026-07-23T10:00:00Z",
+             "tags": ["Old theme"], "top_pick": False},
+        ]
+    }
+
+    summary = catalog_mod.public_summary(
+        cat, now=datetime(2026, 7, 31, 12, tzinfo=timezone.utc)
+    )
+
+    assert summary == {
+        "total": 4,
+        "new_this_week": 3,
+        "desks_this_week": 2,
+        "highlighted": 1,
+        "most_covered_theme": "AI",
+        "institutions": [
+            {"name": "Desk A", "count": 2},
+            {"name": "Desk B", "count": 1},
+            {"name": "Desk C", "count": 1},
+        ],
+    }
 
 
 def test_catalog_upsert_is_idempotent_by_id():
