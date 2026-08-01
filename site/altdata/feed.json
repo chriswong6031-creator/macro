@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-01T03:34:47.737644+00:00",
+  "generated_utc": "2026-08-01T05:10:32.465418+00:00",
   "as_of": "2026-08-01",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -26810,14 +26810,14 @@
         "sentiment": 0.107
       },
       {
-        "ticker": "QQQ",
-        "mentions": 25,
-        "sentiment": 0.074
-      },
-      {
         "ticker": "MSFT",
         "mentions": 25,
         "sentiment": 0.015
+      },
+      {
+        "ticker": "QQQ",
+        "mentions": 25,
+        "sentiment": 0.074
       },
       {
         "ticker": "OKLO",
@@ -29413,6 +29413,18 @@
         "why": "congress_cluster: 4 members net +7 \u00b7 github_momentum: +0.27% stars \u00b7 retail_buzz: 51 WSB mentions \u00b7 stocktwits_bull: 86% bull \u00b7 561,391 watching"
       },
       {
+        "ticker": "AMZN",
+        "score": 4,
+        "weighted_score": 1.4,
+        "channel_list": [
+          "darkpool_accum",
+          "hf_model_momentum",
+          "lobbying",
+          "special_situation"
+        ],
+        "why": "darkpool_accum: DPI 0.386 \u00b7 hf_model_momentum: +26.5% model downloads \u00b7 lobbying: $5,010,000 lobbied \u00b7 special_situation: Acquisitions"
+      },
+      {
         "ticker": "BA",
         "score": 4,
         "weighted_score": 1.35,
@@ -29479,17 +29491,6 @@
           "special_situation"
         ],
         "why": "clinical_phase3_start: 8 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA \u00b7 special_situation: Tender Offers"
-      },
-      {
-        "ticker": "AMZN",
-        "score": 3,
-        "weighted_score": 1.2,
-        "channel_list": [
-          "darkpool_accum",
-          "hf_model_momentum",
-          "lobbying"
-        ],
-        "why": "darkpool_accum: DPI 0.386 \u00b7 hf_model_momentum: +26.5% model downloads \u00b7 lobbying: $5,010,000 lobbied"
       },
       {
         "ticker": "CNTM",
