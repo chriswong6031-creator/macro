@@ -86,7 +86,8 @@ _ENGINE_ARTIFACTS: tuple[tuple[str, str], ...] = (
 # Chronicle sources whose events are OUR OWN measurement rather than a
 # third-party publication.  A story built on one of these is first-party.
 _FIRST_PARTY_CHRONICLE_SOURCES = frozenset({
-    "prophet_ledger", "risk_band", "regime_flip", "earnings", "macro_release",
+    "prophet_ledger", "risk_band", "regime_flip", "earnings", "earnings_call",
+    "macro_release",
 })
 
 _SITE_BASE = "https://www.mastermind-x.com"
@@ -703,22 +704,33 @@ def _event_fact(ev: dict) -> dict:
     text = f"[{ev.get('date')}] {ev.get('title')}"
     if facts_txt:
         text += f" — {facts_txt}"
-    site = (ev.get("links") or {}).get("site")
-    return _fact(
+    links = ev.get("links") or {}
+    site = links.get("site")
+    # Earnings-call rows carry a public-safe source URL/hash even when the URL
+    # is not on Press's logged-out article-link allowlist.  Preserve that
+    # provenance in the staged slot for audit/correction handling; the writer
+    # still receives only ``allowed_links`` and therefore cannot emit it unless
+    # the publication policy explicitly opens that path later.
+    source_url = links.get("source") if src == "earnings_call" else None
+    fact = _fact(
         f"chronicle_{ev.get('id')}",
         text,
         ref=f"chronicle:{ev.get('source_ref') or ev.get('id')}",
         tier=tier,
         values=[],
         dated=ev.get("date"),
-        url=site,
+        url=site or source_url,
         source_name=_source_label(src),
     )
+    if src == "earnings_call" and links.get("receipt"):
+        fact["receipt"] = str(links["receipt"])
+    return fact
 
 
 def _source_label(src: str) -> str:
     return {
         "earnings": "Mastermind earnings store",
+        "earnings_call": "Mastermind earnings-call analysis",
         "prophet_ledger": "Mastermind Prophet ledger",
         "risk_band": "Mastermind risk radar",
         "regime_flip": "Mastermind regime engine",
@@ -800,16 +812,18 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
         # SOURCE LAW (amended at W1 review — masterplan §0 W1 gate 2).
         # A Brief slot is FULLY FIRST-PARTY: the story is our own chronicle
         # event and our own engine measurements. It carries its receipts inline
-        # (dated, fact-anchored numbers) and links nothing.
+        # (dated, fact-anchored numbers). Only the separately computed
+        # ``allowed_links`` list may reach the article body.
         #
         # W1 originally pointed these slots at /us_track_record.html,
         # /radar.html and /macro.html as their "primary source" — all three
         # answer 302 to /?signin=1, so the validator was forcing every public
-        # article to cite a login wall. `url: None` is the honest state: a
-        # first-party desk with no public page to show. The link allowlist in
-        # config/press.yml (validators.check_link_allowlist) is what keeps a
-        # gated URL from creeping back in through the draft body.
-        primary_url = lead.get("url")     # vault-sourced events carry /research/
+        # article to cite a login wall. `url: None` is the honest state when a
+        # first-party desk has no source page to show. An earnings-call event
+        # retains its public-safe evidence URL/hash in the staged audit record,
+        # but the link allowlist below keeps that URL out of prose unless its
+        # logged-out path is separately approved.
+        primary_url = lead.get("url")
         slots.append({
             "id": f"press-{name}-{as_of.isoformat()}-{story_key(name, ref)}",
             "desk": name,
@@ -821,9 +835,9 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
             "min_words": int(desk_cfg.get("min_words") or 300),
             "max_words": int(desk_cfg.get("max_words") or 600),
             "min_anchored_receipts": int(desk_cfg.get("min_anchored_receipts") or 0),
-            # What the writer may link. Empty for a Brief: the pages that carry
-            # these numbers (/radar.html, /macro.html, /us_track_record.html)
-            # are all regwall 302s, so the piece carries dated receipts instead.
+            # What the writer may link. Usually empty for a Brief: the pages
+            # that carry these numbers are gated, so the piece carries dated
+            # receipts instead. Vault coverage is the existing public exception.
             "allowed_links": _allowed_links(cfg, [primary_url]),
             "story": {
                 "kind": ev.get("kind"),
@@ -837,6 +851,7 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
                 "name": lead.get("source_name") or "Mastermind",
                 "url": _absolute(primary_url) if primary_url else None,
                 "ref": ref,
+                "receipt": lead.get("receipt"),
             },
             "sources": [ref],
             "seed_refs": sorted({f["ref"] for f in facts}),

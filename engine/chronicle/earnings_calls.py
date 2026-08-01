@@ -413,6 +413,48 @@ def load_call_events(repo: Path) -> tuple[list[dict], str | None]:
     return rows, gap
 
 
+def latest_for_ticker(repo: Path, ticker: str) -> dict | None:
+    """Return the newest valid committed call row for ``ticker``.
+
+    This is the small read contract for ticker-scoped consumers.  It reads only
+    the committed ``earnings.call_event.v1`` ledger — never the mutable score
+    parquet and never a transcript body — and fails closed when any committed
+    row is invalid.  Returning a copy prevents a caller from mutating the
+    in-memory row it was handed.
+
+    ``call_date`` is the primary clock.  The remaining lineage fields form a
+    deterministic tie-breaker for multiple calls recorded on the same date;
+    they do not turn model scores into ranking authority.
+    """
+
+    wanted = _text(ticker, max_len=32).upper()
+    if not wanted:
+        return None
+    rows, gap, safe_to_read = _read_ledger(Path(repo))
+    if not safe_to_read:
+        log.warning(
+            "chronicle.earnings_calls: latest_for_ticker refused invalid ledger (%s)",
+            gap or "unknown validation failure",
+        )
+        return None
+    candidates = [row for row in rows if row.get("ticker") == wanted]
+    if not candidates:
+        return None
+    winner = max(
+        candidates,
+        key=lambda row: (
+            row.get("call_date") or "",
+            int(row.get("year") or 0),
+            int(str(row.get("quarter") or "Q0")[1:] or 0),
+            row.get("source_updated_at") or "",
+            row.get("scored_at") or "",
+            row.get("source_sha256") or "",
+            row.get("id") or "",
+        ),
+    )
+    return dict(winner)
+
+
 def _canonical_bytes(rows: list[dict]) -> bytes:
     chunks = [
         json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":"))

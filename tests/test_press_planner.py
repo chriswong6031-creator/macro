@@ -22,6 +22,31 @@ def _cfg(root):
     return P.load_config(root)
 
 
+def _earnings_call_event() -> dict:
+    return {
+        "id": "cev-earnings_call-demo",
+        "ts": "2026-07-26T00:00:00Z",
+        "date": "2026-07-26",
+        "source": "earnings_call",
+        "source_ref": "defeatbeta:AAPL:2026Q3",
+        "kind": "earnings",
+        "title": "Earnings call: AAPL Q3 FY2026 — constructive",
+        "facts": [
+            "Tone constructive · sentiment +0.72 · performance 8.4/10 · confidence 0.91",
+            "Services demand accelerated after guidance.",
+        ],
+        "tickers": ["AAPL"],
+        "themes": ["earnings", "earnings_call", "services"],
+        "horizon_hint": "short",
+        "weight_hint": 2,
+        "links": {
+            "site": None,
+            "source": "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz",
+            "receipt": "sha256:" + "b" * 64,
+        },
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # determinism + desk separation
 # ─────────────────────────────────────────────────────────────────────────────
@@ -79,6 +104,30 @@ def test_brief_slots_are_first_party_and_link_nothing_gated(tmp_path):
         for url in slot["allowed_links"]:
             path = "/" + url.split("//", 1)[1].split("/", 1)[1]
             assert any(path.startswith(pre) for pre in prefixes), url
+
+
+def test_earnings_call_is_first_party_source_labeled_and_provenance_preserved(tmp_path):
+    root = F.fixture_root(tmp_path)
+    event = _earnings_call_event()
+    events_path = root / "data" / "chronicle" / "events.jsonl"
+    events_path.write_text(json.dumps(event) + "\n", encoding="utf-8")
+
+    fact = P._event_fact(event)
+    assert fact["tier"] == "first_party"
+    assert fact["source_name"] == "Mastermind earnings-call analysis"
+    assert fact["url"] == event["links"]["source"]
+    assert fact["receipt"] == event["links"]["receipt"]
+
+    slots = P.plan(["brief"], as_of="2026-07-26", root=root)
+    assert len(slots) == 1
+    slot = slots[0]
+    assert slot["sources"] == ["chronicle:defeatbeta:AAPL:2026Q3"]
+    assert slot["primary_source"]["name"] == "Mastermind earnings-call analysis"
+    assert slot["primary_source"]["url"] == event["links"]["source"]
+    assert slot["primary_source"]["receipt"] == event["links"]["receipt"]
+    # Audit provenance is retained, but the writer cannot emit the transcript
+    # URL unless it is separately admitted to the logged-out link allowlist.
+    assert slot["allowed_links"] == []
 
 
 def test_no_gated_url_survives_anywhere_in_the_press_config():
@@ -157,6 +206,30 @@ def test_planner_dedupes_against_staged_but_unemitted_drafts(tmp_path):
     }})
     refs = {r for s in P.plan(as_of="2026-07-26", root=root) for r in s["sources"]}
     assert "chronicle:UBER-BULL-20260623" not in refs
+
+
+def test_earnings_call_dedupes_across_chronicle_and_source_namespaces(tmp_path):
+    event = _earnings_call_event()
+    for blocked_ref in (
+        "chronicle:defeatbeta:AAPL:2026Q3",
+        "earnings_call:defeatbeta:AAPL:2026Q3",
+    ):
+        root = F.fixture_root(tmp_path / P.story_key(blocked_ref), ledger_rows=[{
+            "id": "already-covered",
+            "ts": "2026-07-26T12:00:00Z",
+            "desk": "brief",
+            "publication": "mastermind_news",
+            "slug": "already-covered-aapl-call",
+            "sources": [blocked_ref],
+            "seed_refs": [],
+            "validator_report": {},
+            "urls": [],
+        }])
+        (root / "data" / "chronicle" / "events.jsonl").write_text(
+            json.dumps(event) + "\n",
+            encoding="utf-8",
+        )
+        assert P.plan(["brief"], as_of="2026-07-26", root=root) == []
 
 
 def test_run_summary_file_is_not_mistaken_for_a_staged_slot(tmp_path):

@@ -88,6 +88,43 @@ def _make_temp_root() -> pathlib.Path:
     return d
 
 
+def _write_cited_call(root: pathlib.Path, *, summary: str = "Demand accelerated.") -> dict:
+    """Write one valid public-safe Chronicle call row for Brain read tests."""
+
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, project_score_row
+
+    row = project_score_row({
+        "ticker": "AAPL",
+        "quarter": "Q3",
+        "year": 2026,
+        "call_date": "2026-07-30",
+        "source": "terminal_transcript",
+        "source_url": "/data/tx/AAPL/2026Q3.json.gz",
+        "source_sha256": "a" * 64,
+        "source_revision_sha256": "b" * 64,
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "source_updated_at": "2026-07-30T21:00:00Z",
+        "scored_at": "2026-07-30T21:05:00Z",
+        "model": "qwen3-14b",
+        "prompt_version": "equal-v2",
+        "analysis_schema_version": "earnings-qual/v2",
+        "sentiment": 0.72,
+        "performance": 8.4,
+        "confidence": 0.91,
+        "tone_word": "constructive",
+        "summary": summary,
+        "positive_highlights": ["Services demand accelerated."],
+        "negative_highlights": ["Component costs remain elevated."],
+        "tags": ["services", "cost_pressure"],
+        "is_context_only": True,
+        "degraded_reason": None,
+    })
+    path = root / CALL_EVENTS_REL
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(row, sort_keys=True) + "\n", encoding="utf-8")
+    return row
+
+
 class _MockBlock:
     def __init__(self, type_: str, text: str = "", name: str = "", input_: dict | None = None, id_: str = "tid1"):
         self.type = type_
@@ -801,6 +838,77 @@ def test_symbol_context_combines_fresh_technicals_act_now_and_dated_stage(tmp_pa
     digest = gw._symbol_grounding_digest("600036.SS", tmp_path)
     assert "WHAT TO ACT ON NOW=BUY" in digest
     assert "older than the current price/theme evidence" in digest
+
+
+def test_symbol_and_earnings_context_use_latest_cited_call_not_stale_snapshot(
+    tmp_path, monkeypatch,
+):
+    import pandas as pd
+
+    call = _write_cited_call(tmp_path, summary="Services demand accelerated after guidance.")
+    monkeypatch.setattr(gw, "_technical_snapshot", lambda symbol, root: {})
+    monkeypatch.setattr(gw, "_symbol_theme_context", lambda symbol, root: (None, []))
+    monkeypatch.setattr(gw, "_compact_stage_context", lambda symbol, root: {})
+
+    packet = gw._tool_get_symbol_context({"symbol": "aapl"}, tmp_path)
+    cited = packet["latest_earnings_call"]
+    assert packet["available"] is True, "the cited call alone is valid ticker context"
+    assert cited["event_id"] == call["id"]
+    assert cited["fiscal_period"] == "Q3 FY2026"
+    assert cited["summary"].startswith("Services demand")
+    assert cited["analysis"] == {
+        "tone": "constructive",
+        "sentiment": 0.72,
+        "performance": 8.4,
+        "confidence": 0.91,
+    }
+    assert cited["citation"] == {
+        "url": "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz",
+        "receipt": "sha256:" + "b" * 64,
+        "source_updated_at": "2026-07-30T21:00:00.000000Z",
+    }
+    assert cited["authority"] == "context_only"
+    assert cited["is_context_only"] is True
+
+    digest = gw._symbol_grounding_digest("AAPL", tmp_path)
+    assert "Services demand accelerated after guidance" in digest
+    assert cited["citation"]["url"] in digest
+    assert cited["citation"]["receipt"] in digest
+    assert "cannot create signal authority" in digest
+
+    # The call remains available when the independent earnings-calendar store
+    # is absent; this read path does not depend on that snapshot.
+    call_only = gw._tool_get_earnings({"symbol": "AAPL"}, tmp_path)
+    assert call_only["available"] is True
+    assert call_only["latest_earnings_call"]["event_id"] == call["id"]
+
+    # Prove the frozen EquityDesk quality row no longer wins.  It can remain as
+    # a Stage calibration artifact without leaking into current Brain context.
+    stale_dir = tmp_path / "data" / "stage_analysis" / "backfill"
+    stale_dir.mkdir(parents=True)
+    pd.DataFrame([{
+        "ticker": "AAPL",
+        "earnings_call_sent": 1,
+        "earnings_call_perf": -12,
+        "earnings_call_combined": -11,
+        "call_date": "2025-01-01",
+    }]).to_parquet(stale_dir / "equitydesk_overview.parquet", index=False)
+    earnings_dir = tmp_path / "data" / "earnings"
+    earnings_dir.mkdir(parents=True)
+    pd.DataFrame([{
+        "next_date": "2026-10-29",
+        "next_time": "AMC",
+        "eps_forecast": 1.55,
+        "surprises_json": "[]",
+        "as_of": "2026-08-01",
+    }], index=pd.Index(["AAPL"], name="ticker")).to_parquet(
+        earnings_dir / "earnings.parquet",
+    )
+    enriched = gw._tool_get_earnings({"symbol": "AAPL"}, tmp_path)
+    assert enriched["available"] is True
+    assert enriched["latest_earnings_call"]["event_id"] == call["id"]
+    assert "call_quality" not in enriched
+    assert enriched["latest_earnings_call"]["analysis"]["sentiment"] == 0.72
 
 
 # ---------------------------------------------------------------------------

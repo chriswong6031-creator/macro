@@ -822,8 +822,9 @@ def _brain_tool_schemas() -> list[dict]:
                 "Read one current, cross-region ticker packet covering US, China A-shares, "
                 "Hong Kong, Canada, and international symbols. It includes current price "
                 "technicals (returns, moving averages, RSI, MACD), regional basket/sector "
-                "leadership, the What To Act On Now action and score, and any older dated "
-                "Weinstein-stage evidence. Call this first for ticker analysis, especially "
+                "leadership, the What To Act On Now action and score, any older dated "
+                "Weinstein-stage evidence, and the latest source-cited earnings-call context. "
+                "Call this first for ticker analysis, especially "
                 "for exchange-qualified symbols such as 600036.SH/.SS, 0700.HK, SHOP.TO, "
                 "or 7203.T."
             ),
@@ -938,7 +939,7 @@ def _brain_tool_schemas() -> list[dict]:
             "name": "get_earnings",
             "description": (
                 "With a symbol: that ticker's next earnings date/time, EPS forecast, recent "
-                "surprise history, and (when available) the earnings-call quality snapshot. "
+                "surprise history, and (when available) the latest cited earnings-call analysis. "
                 "Without a symbol: a 10-day forward earnings CALENDAR across all tickers. "
                 "Call when the user asks when a company reports, its earnings surprises, or "
                 "what's on the earnings calendar this/next week."
@@ -1436,8 +1437,76 @@ def _compact_stage_context(symbol: str, root: Path) -> dict:
         return {}
 
 
+def _compact_call_text(value: Any, limit: int) -> str:
+    """Whitespace-normalized, word-boundary-safe text for the prompt digest."""
+
+    text = re.sub(r"\s+", " ", str(value or "")).strip()
+    if len(text) <= limit:
+        return text
+    clipped = text[: max(0, limit - 1)].rsplit(" ", 1)[0].rstrip(" ,;:.-")
+    return (clipped + "…") if clipped else ""
+
+
+def _compact_earnings_call_context(symbol: str, root: Path) -> dict:
+    """Latest cited call analysis from Chronicle's committed public-safe ledger.
+
+    The mutable score store and transcript corpus are deliberately outside this
+    read path.  Brain receives the same last-good, revision-aware object as
+    Chronicle, including a resolvable source URL and content-hash receipt, and
+    it remains context-only.
+    """
+
+    try:
+        from engine.chronicle.earnings_calls import latest_for_ticker  # noqa: PLC0415
+
+        row = latest_for_ticker(root, symbol)
+    except Exception as exc:  # noqa: BLE001 — optional context must fail soft
+        log.warning("brain_gateway: earnings-call context failed for %s (%s)", symbol, exc)
+        return {}
+    if not row:
+        return {}
+    return {
+        "schema": row.get("schema"),
+        "event_id": row.get("id"),
+        "source_record_id": row.get("source_record_id"),
+        "ticker": row.get("ticker"),
+        "fiscal_period": f"{row.get('quarter')} FY{row.get('year')}",
+        "quarter": row.get("quarter"),
+        "year": row.get("year"),
+        "call_date": row.get("call_date"),
+        "source_type": row.get("source_type"),
+        "summary": row.get("summary"),
+        "positive_highlights": list(row.get("positive_highlights") or []),
+        "negative_highlights": list(row.get("negative_highlights") or []),
+        "tags": list(row.get("tags") or []),
+        "analysis": {
+            "tone": row.get("tone_word"),
+            "sentiment": row.get("sentiment"),
+            "performance": row.get("performance"),
+            "confidence": row.get("confidence"),
+        },
+        "citation": {
+            "url": row.get("source_url"),
+            "receipt": f"sha256:{row.get('source_sha256')}",
+            "source_updated_at": row.get("source_updated_at"),
+        },
+        "analysis_lineage": {
+            "model": row.get("model"),
+            "prompt_version": row.get("prompt_version"),
+            "schema_version": row.get("analysis_schema_version"),
+            "scored_at": row.get("scored_at"),
+        },
+        "authority": "context_only",
+        "is_context_only": True,
+        "note": (
+            "AI-assisted qualitative call context with source receipt; it cannot "
+            "originate a signal, rank, size, gate, or escalation."
+        ),
+    }
+
+
 def _tool_get_symbol_context(params: dict, root: Path) -> dict:
-    """Current cross-region ticker, technical, theme, and dated-stage context."""
+    """Current ticker, theme, dated-stage, and cited earnings-call context."""
     symbol = _safe_symbol(params.get("symbol") or "")
     if not symbol:
         return {"error": "symbol required"}
@@ -1448,17 +1517,27 @@ def _tool_get_symbol_context(params: dict, root: Path) -> dict:
         log.warning("brain_gateway: regional symbol context failed for %s (%s)", symbol, exc)
         theme_as_of, themes = None, []
     stage = _compact_stage_context(symbol, root)
-    as_of = price.get("as_of") or theme_as_of or stage.get("as_of")
+    latest_call = _compact_earnings_call_context(symbol, root)
+    dated = [
+        str(value)[:10]
+        for value in (
+            price.get("as_of"), theme_as_of, stage.get("as_of"),
+            latest_call.get("call_date"),
+        )
+        if value and re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(value)[:10])
+    ]
+    as_of = max(dated) if dated else None
     return {
         "symbol": symbol,
-        "available": bool(price or themes or stage),
+        "available": bool(price or themes or stage or latest_call),
         "as_of": as_of,
         "price": price,
         "themes": themes,
         "stage_snapshot": stage,
+        "latest_earnings_call": latest_call,
         "freshness_note": (
-            "Near-term conclusions must prefer the newest price/theme date and reconcile "
-            "older stage evidence explicitly instead of presenting it as current."
+            "Near-term conclusions must prefer the newest dated evidence and reconcile "
+            "older stage/call context explicitly instead of presenting it as current."
         ),
     }
 
@@ -1510,6 +1589,43 @@ def _symbol_grounding_digest(symbol: str, root: Path) -> str:
                 "Freshness rule: the stage snapshot is older than the current price/theme "
                 "evidence. Reconcile the conflict; do not let the older stage label erase "
                 "the newer technical turn or sector leadership."
+            )
+    latest_call = snapshot.get("latest_earnings_call") or {}
+    if latest_call:
+        analysis = latest_call.get("analysis") or {}
+        lines.append(
+            f"Latest cited earnings call {latest_call.get('fiscal_period')} on "
+            f"{latest_call.get('call_date')}: tone {analysis.get('tone')}; "
+            f"sentiment {analysis.get('sentiment')}; performance "
+            f"{analysis.get('performance')}/10; confidence {analysis.get('confidence')}."
+        )
+        summary = _compact_call_text(latest_call.get("summary"), 500)
+        if summary:
+            lines.append(f"Call summary: {summary}")
+        positive = [
+            _compact_call_text(item, 240)
+            for item in (latest_call.get("positive_highlights") or [])[:2]
+        ]
+        negative = [
+            _compact_call_text(item, 240)
+            for item in (latest_call.get("negative_highlights") or [])[:2]
+        ]
+        if any(positive):
+            lines.append("Call positives: " + "; ".join(item for item in positive if item))
+        if any(negative):
+            lines.append("Call risks: " + "; ".join(item for item in negative if item))
+        citation = latest_call.get("citation") or {}
+        lines.append(
+            f"Call evidence: {citation.get('url')} ({citation.get('receipt')}). "
+            "This qualitative read is context-only and cannot create signal authority."
+        )
+        if (
+            snapshot.get("as_of") and latest_call.get("call_date")
+            and snapshot["as_of"] > latest_call["call_date"]
+        ):
+            lines.append(
+                "Freshness rule: the earnings-call read predates the newest ticker evidence. "
+                "Use it as dated company context, not as a claim about today's tape."
             )
     return (
         "[CURRENT TICKER STATE — current local market data for BOTH dashboard and Terminal. "
@@ -1820,21 +1936,44 @@ def _tool_get_fundamentals(
 
 def _tool_get_earnings(params: dict, root: Path) -> dict:
     """Read data/earnings/earnings.parquet (index=ticker). With symbol → next date +
-    surprise history; without → a 10-day forward calendar (cap 20).  Also joins the
-    one-time equitydesk earnings-call quality snapshot when a symbol is given."""
+    surprise history plus the latest cited Chronicle call; without → a 10-day
+    forward calendar (cap 20).  The call read never opens a transcript or the
+    mutable score store."""
     symbol = _safe_symbol(params.get("symbol") or "")
+    latest_call = _compact_earnings_call_context(symbol, root) if symbol else {}
     try:
         import pandas as pd  # noqa: PLC0415
     except Exception:  # noqa: BLE001
+        if latest_call:
+            return {
+                "symbol": symbol,
+                "available": True,
+                "latest_earnings_call": latest_call,
+                "note": "earnings calendar unavailable; cited call context is available",
+            }
         return {"available": False, "note": "pandas unavailable"}
 
     path = root / "data" / "earnings" / "earnings.parquet"
     src = "data/earnings/earnings.parquet"
     if not path.exists():
+        if latest_call:
+            return {
+                "symbol": symbol,
+                "available": True,
+                "latest_earnings_call": latest_call,
+                "note": f"{src} not found; cited call context is available",
+            }
         return {"available": False, "note": f"{src} not found"}
     try:
         df = pd.read_parquet(path)
     except Exception as exc:  # noqa: BLE001
+        if latest_call:
+            return {
+                "symbol": symbol,
+                "available": True,
+                "latest_earnings_call": latest_call,
+                "note": f"earnings calendar read error; cited call context is available ({exc})",
+            }
         return {"available": False, "note": f"read error: {exc}"}
 
     if symbol:
@@ -1863,23 +2002,12 @@ def _tool_get_earnings(params: dict, root: Path) -> dict:
                 "as_of": row.get("as_of"),
                 "source": src,
             }
-        # Earnings-call quality snapshot (one-time backfill; as_of 2026-07-17)
-        cq_path = root / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
-        if symbol and cq_path.exists():
-            try:
-                edf = pd.read_parquet(cq_path)
-                sub = edf[edf["ticker"] == symbol] if "ticker" in edf.columns else edf.iloc[0:0]
-                if len(sub):
-                    r = sub.iloc[0]
-                    out["call_quality"] = {
-                        "earnings_call_sent": r.get("earnings_call_sent"),
-                        "earnings_call_perf": r.get("earnings_call_perf"),
-                        "earnings_call_combined": r.get("earnings_call_combined"),
-                        "call_date": r.get("call_date"),
-                        "note": "one-time backfill snapshot as of 2026-07-17 — not a live feed",
-                    }
-            except Exception:  # noqa: BLE001
-                pass
+        if latest_call:
+            out["latest_earnings_call"] = latest_call
+            # A current, cited call is useful even when the calendar row is
+            # absent.  ``available`` describes the whole tool response, not
+            # only the calendar parquet.
+            out["available"] = True
         return out
 
     # Calendar mode: rows with next_date in [today, today+10d]

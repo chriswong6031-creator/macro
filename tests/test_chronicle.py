@@ -875,6 +875,91 @@ def test_stale_healthy_snapshot_cannot_unwind_newer_call_correction(tmp_path, mo
     assert rows[0]["summary"].startswith("The corrected")
 
 
+def test_latest_call_for_ticker_selects_newest_correction_with_provenance(
+    tmp_path, monkeypatch,
+):
+    from engine.chronicle.earnings_calls import latest_for_ticker, sync_from_scores
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    prior = _healthy_call_score(
+        source_record_id="defeatbeta:TST:2026Q1",
+        quarter="Q1",
+        call_date="2026-04-20",
+        source_url="/data/tx/TST/2026Q1.json.gz",
+        source_sha256="c" * 64,
+        source_updated_at="2026-04-20T21:00:00+00:00",
+        scored_at="2026-04-20T21:05:00+00:00",
+        summary="The earlier call.",
+    )
+    newest = _healthy_call_score(
+        source_record_id="defeatbeta:TST:2026Q2",
+        quarter="Q2",
+        call_date="2026-07-20",
+        source_url="/data/tx/TST/2026Q2.json.gz",
+        source_sha256="a" * 64,
+        summary="The current call before correction.",
+    )
+    _write_call_score_store(root, [newest, prior])
+    assert sync_from_scores(root)["updated"] is True
+
+    first = latest_for_ticker(root, "tst")
+    assert first is not None
+    stable_id = first["id"]
+    assert first["quarter"] == "Q2"
+    assert first["source_url"] == (
+        "https://app.mastermind-x.com/data/tx/TST/2026Q2.json.gz"
+    )
+    assert first["source_sha256"] == "a" * 64
+    assert first["model"] == "qwen3-14b"
+    assert first["prompt_version"] == "equal-v2"
+    assert first["analysis_schema_version"] == "earnings-qual/v2"
+
+    corrected = _healthy_call_score(
+        source_record_id="defeatbeta:TST:2026Q2",
+        quarter="Q2",
+        call_date="2026-07-20",
+        source_url="/data/tx/TST/2026Q2.json.gz",
+        source_sha256="b" * 64,
+        source_updated_at="2026-07-21T21:00:00+00:00",
+        scored_at="2026-07-21T21:05:00+00:00",
+        summary="The corrected latest call.",
+    )
+    _write_call_score_store(root, [prior, corrected])
+    result = sync_from_scores(root)
+    assert result["corrected"] == 1
+
+    latest = latest_for_ticker(root, "TST")
+    assert latest is not None
+    assert latest["id"] == stable_id
+    assert latest["source_sha256"] == "b" * 64
+    assert latest["summary"] == "The corrected latest call."
+    # The helper returns a copy; one consumer cannot corrupt another read.
+    latest["summary"] = "consumer mutation"
+    assert latest_for_ticker(root, "TST")["summary"] == "The corrected latest call."
+
+
+def test_latest_call_for_ticker_fails_closed_on_invalid_committed_ledger(
+    tmp_path, monkeypatch, caplog,
+):
+    from engine.chronicle.earnings_calls import (
+        CALL_EVENTS_REL,
+        latest_for_ticker,
+        sync_from_scores,
+    )
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _write_call_score_store(root, [_healthy_call_score()])
+    assert sync_from_scores(root)["updated"] is True
+    path = root / CALL_EVENTS_REL
+    path.write_text(path.read_text(encoding="utf-8") + "{}\n", encoding="utf-8")
+
+    with caplog.at_level("WARNING"):
+        assert latest_for_ticker(root, "TST") is None
+    assert any("refused invalid ledger" in row.getMessage() for row in caplog.records)
+
+
 def test_score_store_outage_preserves_last_good_call_ledger(tmp_path, monkeypatch):
     from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
 

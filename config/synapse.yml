@@ -15718,7 +15718,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [engine/chronicle/earnings_calls.py, engine/chronicle/spine.py]
+    consumers: [engine/chronicle/earnings_calls.py, engine/chronicle/spine.py, engine/neuralweb/brain_gateway.py]
     external_consumers: []
     notes: >
       Public-safe, committed last-good projection of healthy evidence-addressed rows from
@@ -15745,7 +15745,7 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/context_pack.py]
+    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/context_pack.py, engine/press/desk_planner.py]
     external_consumers: []
     notes: >
       Chronicle W0 event spine (agentic_media/Chronicle program, CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md).
