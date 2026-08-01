@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T16:47:15.968702+00:00",
-  "count": 540,
+  "generated_at": "2026-08-01T17:15:54.926402+00:00",
+  "count": 541,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1877,6 +1877,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-0zdi2g2hoi0-eaaec0",
+      "title": "WBC MorningReport30Jul2026 1",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T23:46:19Z",
+      "summary_points": [
+        "**US Fed Policy Ambiguity**: Fed's 9-3 rate hold amid Chair Warsh's press conference fuels market anxiety over inflation and future hike timing, triggering yield curve steepening, weak dollar, and stock sell-off.",
+        "**Geopolitical Oil Shock**: Trump's threat of Iranian strike drives Brent oil surge (+7.7%) and WTI +6.6%, amplifying energy cost risks despite delayed pass-through in domestic inflation.",
+        "**Australia CPI Miss & RBA Shift**: Q2 CPI below expectations (0.6%qtr/3.9%yr) prompts RBA to hold rates this year, conflicting with hawkish market pricing despite Middle East tensions elevating energy costs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
