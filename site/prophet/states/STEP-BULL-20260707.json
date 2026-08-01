@@ -1,26 +1,26 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "STEP-BULL-20260707",
-  "asof": "2026-07-31",
+  "asof": "2026-08-01",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 44.5,
-  "raw_confidence": 44.6,
-  "delta_vs_base": -15.5,
+  "management_confidence": 44.6,
+  "raw_confidence": 44.8,
+  "delta_vs_base": -15.4,
   "recommended_action": "hold",
   "human_state": "Stalling",
   "components": {
     "validity": 100.0,
     "progress": 8.0,
-    "pace": 13.4,
+    "pace": 12.4,
     "retention": 50.0,
-    "overlay": 59.0
+    "overlay": 67.0
   },
   "geometry": {
     "dist_to_stop_r": 1.087,
     "dist_to_t1_r": 1.413,
     "dist_to_t2_r": 2.913,
-    "horizon_pct_used": 53.3,
+    "horizon_pct_used": 55.6,
     "p1": 0.0579,
     "p2": 0.0289,
     "p3": null,
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-15",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 24,
-  "tau": 0.5333
+  "days_elapsed": 25,
+  "tau": 0.5556
 }

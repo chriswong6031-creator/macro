@@ -1,0 +1,199 @@
+schema: sector_intelligence_ownership.v1
+effective_at: "2026-08-01T00:00:00Z"
+status: partial_freeze
+
+policy:
+  one_writer_required: true
+  cross_domain_access: versioned_read_adapter_only
+  unresolved_owner_behavior: block_or_degrade
+  duplicate_writer_behavior: hard_fail
+  user_state_owner: terminal_supabase
+  authority_owner: neural_web_a5_governor
+
+# B0a freezes the source-fact lanes needed by the NCT Trial Capsule. It does not
+# pretend the broader B0 program is closed: company identity, a complete security
+# master, Corporate documents, and Capital Structure remain explicit dependencies.
+registrations:
+  clinicaltrials_source_record:
+    canonical_owner: biocatalyst
+    implementation_state: frozen_for_b0a
+    writer:
+      service: macro_biocatalyst_worker
+      module: collectors.biocatalyst.clinicaltrials_v2
+      storage_class: private_immutable_object
+      artifact: "biocatalyst/raw/clinicaltrials/v2/{nct_id}/{content_sha256}.json"
+      schema: source_record.v1
+    cadence: hourly_canary
+    retry_replay_policy: receipt_backed_idempotent_replay
+    consumers:
+      - biocatalyst_trial_projection
+      - biocatalyst_exact_diff
+    operational_owner: mastermindx_platform_ops
+
+  trial_snapshot_and_exact_diff:
+    canonical_owner: biocatalyst
+    implementation_state: frozen_for_b0a
+    writer:
+      service: macro_biocatalyst_worker
+      module: engine.biocatalyst.trials
+      storage_class: private_append_only_ledger
+      artifact: "/var/lib/macro-biocatalyst/state/"
+      schemas:
+        - trial_snapshot.v1
+        - trial_version_diff.v1
+    cadence: after_complete_source_run
+    retry_replay_policy: content_addressed_idempotent_replay
+    consumers:
+      - biocatalyst_read_projection
+    operational_owner: mastermindx_platform_ops
+
+  biocatalyst_read_projection:
+    canonical_owner: biocatalyst
+    implementation_state: frozen_for_b0a
+    writer:
+      service: macro_biocatalyst_worker
+      module: services.biocatalyst.storage
+      storage_class: vps_atomic_public_projection
+      artifact: "/var/lib/macro-biocatalyst/public/"
+      schemas:
+        - trial_snapshot.v1
+        - trial_version_diff.v1
+    cadence: after_complete_source_run
+    retry_replay_policy: temp_write_fsync_rename
+    consumers:
+      - macro_biocatalyst_api
+    operational_owner: mastermindx_platform_ops
+
+  generic_company_identity:
+    canonical_owner: corporate_intelligence
+    implementation_state: blocked_pending_executable_contract
+    writer: null
+    bootstrap_read_only_sources:
+      - module: collectors.symbol_directory
+        artifact: "data/symbol_directory/cik_map/YYYY-MM-DD.parquet"
+        scope: source_native_us_listed_ticker_cik_title_only
+    prohibited_uses:
+      - private_company_identity
+      - temporal_company_alias_history
+      - asset_ownership_inference
+    required_before:
+      - biocatalyst_b2_company_bridge
+      - issuer_document_extraction
+    operational_owner: corporate_intelligence
+
+  security_identity_and_corporate_actions:
+    canonical_owner: market_data_security_master
+    implementation_state: bootstrap_only_not_registered_as_complete_master
+    writer:
+      service: macro_collect
+      module: collectors.symbol_directory
+      storage_class: private_point_in_time_snapshots
+      artifact: "data/symbol_directory/snapshots/YYYY-MM-DD.parquet"
+      schema: symbol_directory_snapshot.v1
+    limitations:
+      - us_exchange_roster_only
+      - incomplete_corporate_action_history
+      - no_private_companies
+      - no_global_security_master
+    required_before:
+      - biocatalyst_b2_security_bridge
+    operational_owner: market_data_ops
+
+  corporate_documents_and_spans:
+    canonical_owner: corporate_intelligence
+    implementation_state: blocked_pending_executable_contract
+    writer: null
+    prohibited_biocatalyst_fallbacks:
+      - duplicate_sec_collector
+      - duplicate_transcript_store
+      - duplicate_document_index
+    required_before:
+      - issuer_disclosed_pdufa_claims
+      - issuer_hold_or_crl_claims
+      - partnership_economics_extraction
+    operational_owner: corporate_intelligence
+
+  capital_structure_projection:
+    canonical_owner: capital_structure
+    implementation_state: planning_only
+    writer: null
+    prohibited_biocatalyst_fallbacks:
+      - duplicate_cash_calculation
+      - duplicate_burn_calculation
+      - duplicate_dilution_engine
+    required_before:
+      - cash_through_catalyst
+      - financing_survival
+      - dilution_distribution
+    operational_owner: capital_structure
+
+  saved_queries_watchlists_and_assignments:
+    canonical_owner: terminal_supabase
+    implementation_state: active_external_plane
+    writer:
+      service: mastermind_terminal
+      module: terminal_supabase_product_plane
+      storage_class: tenant_scoped_database
+      artifact: null
+      schema: product_user_state_existing
+    prohibited_biocatalyst_fallbacks:
+      - local_user_database
+      - browser_owned_canonical_state
+    operational_owner: terminal_platform_ops
+
+  cross_sector_read_federation:
+    canonical_owner: neural_web
+    implementation_state: interface_only
+    writer:
+      service: neural_web
+      module: engine.neuralweb
+      storage_class: governed_read_projection
+      artifact: null
+      schema: sector_intelligence_packet.v1
+    prohibited_uses:
+      - domain_truth_writes
+      - source_record_mutation
+      - prediction_origination
+    operational_owner: neural_web
+
+  authority_and_promotion:
+    canonical_owner: neural_web_a5_governor
+    implementation_state: active_governance
+    writer:
+      service: neural_web
+      module: engine.neuralweb.constitution
+      storage_class: authority_ledger
+      artifact: null
+      schema: authority_manifest.v1
+    operational_owner: neural_web
+
+  final_technical_selection:
+    canonical_owner: prophet
+    implementation_state: active_external_plane
+    writer:
+      service: prophet
+      module: engine.prophet
+      storage_class: governed_signal_artifact
+      artifact: null
+      schema: existing_prophet_contracts
+    prohibited_biocatalyst_fallbacks:
+      - candidate_origination
+      - candidate_reordering
+      - gating
+      - sizing
+    operational_owner: prophet
+
+b0_closure:
+  state: open
+  b0a_may_ship: true
+  blockers:
+    - generic_company_identity_executable_contract
+    - complete_market_data_security_master_registration
+    - corporate_documents_and_spans_executable_contract
+    - capital_structure_projection_executable_contract
+  unblocked_scope:
+    - source_canonical_nct_identity
+    - clinicaltrials_raw_receipts
+    - prospective_trial_observations
+    - exact_registry_record_diffs
+    - bounded_trial_read_api

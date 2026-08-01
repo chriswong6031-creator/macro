@@ -37,9 +37,10 @@ caller emits a freeze no-op and computes earliest_reset.
 
 STATELESS-CATTLE
 ----------------
-All state is in data/metabolism/key_ledger.jsonl (append-only, git-tracked).
-The pool reads the ledger on every call; it holds no in-process mutable state
-between calls.  A fresh process on a fresh key resumes from the ledger.
+State defaults to data/metabolism/key_ledger.jsonl. Long-lived appliances may
+set METABOLISM_STATE_ROOT so their append-only key/session telemetry lives
+outside an immutable Git checkout. The pool reads the ledger on every call; it
+holds no in-process mutable state between calls.
 
 NEVER-RAISE CONTRACT
 --------------------
@@ -133,18 +134,40 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent.parent
 
 
+def _state_root() -> Path:
+    """Resolve mutable key-ledger storage independently of repo config."""
+    # Literal allowlisted name: this module must never dynamically dereference
+    # an environment key because capability ref names can point at secrets.
+    override = os.environ.get("METABOLISM_STATE_ROOT", "").strip()
+    if not override:
+        return _repo_root()
+
+    candidate = Path(override).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError("METABOLISM_STATE_ROOT must be an absolute path")
+    resolved = candidate.resolve(strict=False)
+    repo = _repo_root().resolve(strict=False)
+    home = Path.home().resolve(strict=False)
+    filesystem_root = Path(resolved.anchor)
+    if resolved in {filesystem_root, home}:
+        raise ValueError("METABOLISM_STATE_ROOT is too broad for mutable telemetry")
+    if resolved == repo or repo in resolved.parents:
+        raise ValueError("METABOLISM_STATE_ROOT must live outside the repository")
+    return resolved
+
+
 def _manifest_path(root: Path | None = None) -> Path:
     base = root if root is not None else _repo_root()
     return base / _MANIFEST_REL
 
 
 def _ledger_path(root: Path | None = None) -> Path:
-    base = root if root is not None else _repo_root()
+    base = root if root is not None else _state_root()
     return base / _LEDGER_REL
 
 
 def _usage_ledger_path(root: Path | None = None) -> Path:
-    base = root if root is not None else _repo_root()
+    base = root if root is not None else _state_root()
     return base / _USAGE_LEDGER_REL
 
 

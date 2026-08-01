@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_asymmetry.v1",
   "as_of": "2026-08-01",
-  "generated_at": "2026-08-01T03:34:31Z",
+  "generated_at": "2026-08-01T21:35:15Z",
   "hard_caveat": "not a buy score; no behavior-changing consumer",
   "authority": {
     "is_context_only": true,
@@ -248,8 +248,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.854); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.854）；差距收窄。no_dispersion_data"
+          "note_en": "activity accelerating (ACCELERATING) and revisions following (level=POSITIVE, breadth=0.877); gap narrowing. no_dispersion_data",
+          "note_zh": "活动加速（ACCELERATING）且修正跟进（水平=POSITIVE，广度=0.877）；差距收窄。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.517,
@@ -296,8 +296,8 @@
             "theme_thesis_ledger:falsifiers.status"
           ],
           "stale": false,
-          "note_en": "n_falsifiers=18, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
-          "note_zh": "假证伪器总数=18，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
+          "note_en": "n_falsifiers=21, machine_checkable=0 (0%), armed=0 (0%) → clarity=0.00",
+          "note_zh": "假证伪器总数=21，机器可验证=0（0%），已激活=0（0%）→ 清晰度=0.00"
         },
         "orthogonality": {
           "value": 0.451,
@@ -708,7 +708,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.126,
+          "value": 0.127,
           "band": "low",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -716,8 +716,8 @@
             "radar:flags.observable.accel"
           ],
           "stale": false,
-          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.66 → tightness=0.13",
-          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.66，综合紧张度=0.13"
+          "note_en": "bottleneck_band=band=NEUTRAL, accel=0.67 → tightness=0.13",
+          "note_zh": "瓶颈波段=band=NEUTRAL，活动加速=accel=0.67，综合紧张度=0.13"
         },
         "stale_consensus_gap": {
           "value": 0.2,
@@ -912,8 +912,8 @@
           "note_zh": "瓶颈波段=band=TIGHTENING (fingerprint)，活动加速=accel=0.22，综合紧张度=0.22"
         },
         "stale_consensus_gap": {
-          "value": 0.35,
-          "band": "med",
+          "value": 0.15,
+          "band": "low",
           "inputs": [
             "foresight_cascade:demand_band",
             "foresight_cascade:broadening_state",
@@ -922,8 +922,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity accelerating (RISING) and revisions following (level=POSITIVE, breadth=0.202); gap narrowing. no_dispersion_data",
-          "note_zh": "活动加速（RISING）且修正跟进（水平=POSITIVE，广度=0.202）；差距收窄。no_dispersion_data"
+          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY), revisions positive (level=POSITIVE, breadth=0.202); no gap. no_dispersion_data",
+          "note_zh": "活动未加速（INSUFFICIENT_HISTORY），修正正面（水平=POSITIVE，广度=0.202）；无差距。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.26,
@@ -934,8 +934,8 @@
             "baskets:theme_intel.rs_pctile"
           ],
           "stale": false,
-          "note_en": "max_drawdown_from_peak=6.0%, avg_rs_pctile=0.75, avg_accel_z=-2.98 → dislocation=0.26",
-          "note_zh": "最大回撤=6.0%，平均RS百分位=0.75，平均加速z值=-2.98 → 错位=0.26"
+          "note_en": "max_drawdown_from_peak=6.0%, avg_rs_pctile=0.75, avg_accel_z=-2.97 → dislocation=0.26",
+          "note_zh": "最大回撤=6.0%，平均RS百分位=0.75，平均加速z值=-2.97 → 错位=0.26"
         },
         "entry_cleanliness": {
           "value": 0.166,
@@ -1092,7 +1092,7 @@
       ],
       "legs": {
         "bottleneck_tightness": {
-          "value": 0.619,
+          "value": 0.621,
           "band": "med",
           "inputs": [
             "foresight_cascade:bottleneck_band",
@@ -1210,8 +1210,8 @@
             "finnhub_recs:revision_direction"
           ],
           "stale": false,
-          "note_en": "activity not accelerating (MIXED) and revisions lagging — aligned weakness. no_dispersion_data",
-          "note_zh": "活动未加速（MIXED）且修正滞后——一致疲软。no_dispersion_data"
+          "note_en": "activity not accelerating (INSUFFICIENT_HISTORY) and revisions lagging — aligned weakness. no_dispersion_data",
+          "note_zh": "活动未加速（INSUFFICIENT_HISTORY）且修正滞后——一致疲软。no_dispersion_data"
         },
         "cyclical_dislocation": {
           "value": 0.29,
@@ -1759,7 +1759,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-01T03:34:31Z",
-  "inputs_hash": "sha256:e6dca9886a66bf2fc44f220e38127e1d189f8250ececc848ac85f45c457120aa",
+  "produced_at": "2026-08-01T21:35:15Z",
+  "inputs_hash": "sha256:04e07b813f28bec18c00383571fe07b0d7f21b39912d725d1f68040ee60272fd",
   "tier": "display"
 }

@@ -10,8 +10,12 @@ separately makes that divergence visible.
 Outputs
 -------
 data/options_flow/cohorts_<key>.parquet — append/idempotent accrual (one row per cohort per
-                                     day; COLLECT_LANE=nightly-gated, HOUSE-U5)
+                                     day; COLLECT_LANE=nightly-gated, HOUSE-U5) plus a
+                                     bounded backfill of sessions the single-asof upsert
+                                     stranded (same gate; see _heal_sessions)
 site/flowdata/cohorts.json         — latest-day snapshot + 10-session sparkline arrays
+                                     (10 sessions that carry a READING — a null row never
+                                     eats a slot)
 
 Design principles (carry-through from flow_desk)
 -------------------------------------------------
@@ -61,9 +65,21 @@ MIN_PCT_HISTORY = 20
 # Number of sessions for sparkline arrays
 SPARKLINE_SESSIONS = 10
 
+# How far back the backfill pass re-checks for sessions that have per-ticker
+# summary coverage but no usable ledger row.  ~20 trading sessions — enough to
+# reach MIN_PCT_HISTORY and twice the sparkline window, short enough that the
+# pass can never walk deep history.
+BACKFILL_LOOKBACK_DAYS = 30
+
 # Parquet store location
 COHORTS_STORE_GROUP = "options_flow"
 COHORTS_STORE_NAME = "cohorts"
+
+# Ledger row shape — the columns accrued to cohorts_<key>.parquet, in order.
+LEDGER_COLUMNS = [
+    "gross_premium_mn", "net_premium_mn", "pc_ratio",
+    "zerodte_share", "net_doi", "n_members", "n_members_covered",
+]
 
 
 # ── Membership loading ─────────────────────────────────────────────────────────
@@ -88,18 +104,34 @@ def _load_cohort_members(data_dir: Path) -> dict[str, list[str]]:
 
 # ── Per-ticker summary loading ──────────────────────────────────────────────────
 
-def _load_ticker_summary(data_dir: Path, ticker: str) -> pd.DataFrame | None:
-    """Load data/options_flow/summary_<TICKER>.parquet (1 row/day history)."""
+def _load_ticker_summary(
+    data_dir: Path,
+    ticker: str,
+    cache: dict[str, pd.DataFrame | None] | None = None,
+) -> pd.DataFrame | None:
+    """Load data/options_flow/summary_<TICKER>.parquet (1 row/day history).
+
+    ``cache`` memoises the frame (including the absent/unreadable → None case)
+    for the life of one build_cohorts() call.  Without it the backfill pass
+    below re-reads all 40 member parquets once per candidate date: measured on
+    this checkout, a 30-day pass costs 2.84 s uncached vs 0.20 s cached, and
+    render budget is law.
+    """
+    if cache is not None and ticker in cache:
+        return cache[ticker]
     p = data_dir / "options_flow" / f"summary_{ticker}.parquet"
-    if not p.exists():
-        return None
-    try:
-        df = pd.read_parquet(p)
-        df.index = pd.to_datetime(df.index)
-        return df.sort_index()
-    except Exception as e:  # noqa: BLE001
-        log.debug("flow_cohorts: summary %s read error: %s", ticker, e)
-        return None
+    df: pd.DataFrame | None = None
+    if p.exists():
+        try:
+            df = pd.read_parquet(p)
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+        except Exception as e:  # noqa: BLE001
+            log.debug("flow_cohorts: summary %s read error: %s", ticker, e)
+            df = None
+    if cache is not None:
+        cache[ticker] = df
+    return df
 
 
 # ── Aggregation ────────────────────────────────────────────────────────────────
@@ -130,6 +162,7 @@ def _aggregate_day(
     cohort_key: str,
     members: list[str],
     asof: date,
+    cache: dict[str, pd.DataFrame | None] | None = None,
 ) -> dict[str, Any]:
     """Aggregate options-flow metrics for one cohort on one date.
 
@@ -147,7 +180,7 @@ def _aggregate_day(
     ts = pd.Timestamp(asof)
 
     for ticker in members:
-        df = _load_ticker_summary(data_dir, ticker)
+        df = _load_ticker_summary(data_dir, ticker, cache)
         if df is None or ts not in df.index:
             continue
         row = df.loc[ts]
@@ -214,6 +247,88 @@ def _aggregate_day(
     }
 
 
+# ── Bounded backfill ───────────────────────────────────────────────────────────
+
+def _heal_sessions(
+    data_dir: Path,
+    cohort_key: str,
+    members: list[str],
+    asof: date,
+    cache: dict[str, pd.DataFrame | None],
+) -> tuple[list[str], int]:
+    """Re-aggregate in-window sessions that have per-ticker summary coverage but
+    no usable ledger row.  Returns (healed ISO dates, in-window dates skipped
+    for zero coverage).
+
+    Two row shapes are healed, and they are one defect seen from two sides:
+
+    - an ALL-NULL row, written by an off-nightly run whose requested asof had no
+      per-ticker coverage *at the time*.  #4007 gated new ones; the rows already
+      written stayed, and nothing revisited them — because a later nightly only
+      ever upserts its own asof.  Five of the nine such rows in the committed
+      store (07-13/14/16/17/20) sit at dates the summary store covers in FULL
+      today: the reading was recoverable all along, so purging those rows would
+      have thrown away five real sessions.
+    - NO row at all, for the same reason from the other direction: a session the
+      nightly never ran at (07-01/02/06/09/10 pre-FL-B) never got a row, and the
+      single-asof upsert has no path back to it.
+
+    Deliberately consistent with the main path on coverage: any date with
+    n_members_covered > 0 is written, exactly as the nightly would have written
+    it at the time.  A date with ZERO coverage carries no information and is
+    never written — that is the row shape this whole repair exists to stop.
+
+    Caller must already be in the nightly lane; this UPSERTS a forward ledger.
+    Values come from the summary store as it stands TODAY, so a healed row
+    carries the current vintage of the per-ticker summaries rather than the
+    vintage of the original session — acceptable at display tier (this artifact
+    feeds no scored or arithmetic path), and stated in the JSON's own
+    magnitude/direction notes.
+    """
+    if not members:
+        return [], 0
+
+    lo = pd.Timestamp(asof) - pd.Timedelta(days=BACKFILL_LOOKBACK_DAYS)
+    hi = pd.Timestamp(asof)  # exclusive — asof itself is owned by the main path
+
+    hist = store.read(COHORTS_STORE_GROUP, f"{COHORTS_STORE_NAME}_{cohort_key}")
+    usable: set[pd.Timestamp] = set()
+    if hist is not None and not hist.empty and "gross_premium_mn" in hist.columns:
+        usable = set(pd.to_datetime(hist.index[hist["gross_premium_mn"].notna()]).normalize())
+
+    # Candidate sessions = every date the members' summary store covers in-window.
+    covered: set[pd.Timestamp] = set()
+    for ticker in members:
+        df = _load_ticker_summary(data_dir, ticker, cache)
+        if df is None or df.empty:
+            continue
+        idx = pd.to_datetime(df.index).normalize()
+        covered |= set(idx[(idx >= lo) & (idx < hi)])
+
+    todo = sorted(covered - usable)
+    if not todo:
+        return [], 0
+
+    rows: list[dict[str, Any]] = []
+    stamps: list[pd.Timestamp] = []
+    skipped = 0
+    for ts in todo:
+        row = _aggregate_day(data_dir, cohort_key, members, ts.date(), cache)
+        if row.get("n_members_covered", 0) < 1 or row.get("gross_premium_mn") is None:
+            skipped += 1
+            continue
+        rows.append(row)
+        stamps.append(ts)
+
+    if not rows:
+        return [], skipped
+
+    # One upsert per cohort, not one per date — the store rewrites the whole file.
+    sdf = pd.DataFrame({k: [r.get(k) for r in rows] for k in LEDGER_COLUMNS}, index=stamps)
+    store.upsert(COHORTS_STORE_GROUP, f"{COHORTS_STORE_NAME}_{cohort_key}", sdf, outlier_col=None)
+    return [str(ts.date()) for ts in stamps], skipped
+
+
 # ── Percentile context ─────────────────────────────────────────────────────────
 
 def _percentile_vs_history(
@@ -270,6 +385,9 @@ def build_cohorts(
     tone chips, sparkline arrays, and honesty counts.  Also:
     - appends one row per cohort to data/options_flow/cohorts_<key>.parquet
       (idempotent; COLLECT_LANE=nightly-gated, HOUSE-U5)
+    - re-aggregates in-window sessions that have per-ticker summary coverage but
+      no usable ledger row (same gate; bounded to BACKFILL_LOOKBACK_DAYS — see
+      _heal_sessions for why a single-asof upsert alone strands sessions)
     - writes site/flowdata/cohorts.json if site_flowdata_dir is given
 
     The returned rows and the JSON are produced in EVERY lane — only the parquet
@@ -282,6 +400,9 @@ def build_cohorts(
 
     members_map = _load_cohort_members(data_dir)
     cohort_rows: list[dict[str, Any]] = []
+    # Per-call summary-frame cache — shared by the asof aggregation and the
+    # backfill pass so the whole build reads each member parquet at most once.
+    summary_cache: dict[str, pd.DataFrame | None] = {}
 
     # HOUSE-U5: the accrual UPSERTS committed data/options_flow/ parquets, so only
     # the nightly collector may advance them — express/intraday lanes bake site/
@@ -306,22 +427,40 @@ def build_cohorts(
     for cohort in COHORTS:
         ckey = cohort["key"]
         members = members_map.get(ckey, [])
-        row = _aggregate_day(data_dir, ckey, members, asof)
+        row = _aggregate_day(data_dir, ckey, members, asof, summary_cache)
         cohort_rows.append(row)
 
         # Accrue to parquet store (idempotent via upsert) — nightly lane only.
         if persist:
             try:
                 sdf = pd.DataFrame(
-                    {k: [row.get(k)] for k in [
-                        "gross_premium_mn", "net_premium_mn", "pc_ratio",
-                        "zerodte_share", "net_doi", "n_members", "n_members_covered",
-                    ]},
+                    {k: [row.get(k)] for k in LEDGER_COLUMNS},
                     index=[pd.Timestamp(asof)],
                 )
                 store.upsert(COHORTS_STORE_GROUP, f"{COHORTS_STORE_NAME}_{ckey}", sdf, outlier_col=None)
             except Exception as e:  # noqa: BLE001
                 log.warning("flow_cohorts: accrual %s failed: %s", ckey, e)
+
+    # Bounded backfill — nightly lane only, and only AFTER the asof row is in
+    # place so the pass never competes with the main upsert for the same date.
+    # Without this there is no path back to a session the nightly never ran at,
+    # nor to a null row an off-nightly run left behind (see _heal_sessions).
+    if persist:
+        for cohort in COHORTS:
+            ckey = cohort["key"]
+            try:
+                healed, skipped = _heal_sessions(
+                    data_dir, ckey, members_map.get(ckey, []), asof, summary_cache
+                )
+            except Exception as e:  # noqa: BLE001 — a repair must never kill the build
+                log.warning("flow_cohorts: backfill %s failed: %s", ckey, e)
+                continue
+            if healed or skipped:
+                log.info(
+                    "flow_cohorts: backfill %s — healed %d session(s) %s; "
+                    "%d in-window date(s) skipped (zero member coverage — no row written)",
+                    ckey, len(healed), healed, skipped,
+                )
 
     # Enrich with percentile context + sparklines
     enriched: list[dict[str, Any]] = []
@@ -347,8 +486,23 @@ def build_cohorts(
             if not raw_fallback and row.get("gross_premium_mn") is not None:
                 gross_pct = _percentile_vs_history(hist_gross, row["gross_premium_mn"])
 
-            # Sparkline: last SPARKLINE_SESSIONS sessions
-            recent = hist_df.tail(SPARKLINE_SESSIONS)
+            # Sparkline: the last SPARKLINE_SESSIONS sessions that carry a READING,
+            # not the last SPARKLINE_SESSIONS rows.  A null row consumes a slot
+            # under a plain .tail(): measured on the committed 2026-07-28 vintage,
+            # mag7 spark_gross came back
+            #   [5777.8, null, null, null, null, null, null, 4877.0, 4893.9, 4012.3]
+            # — 4 real points in 10 slots, because nine all-null rows an off-nightly
+            # run had left in the ledger (#4007 gated new ones, nothing cleaned the
+            # old) sat inside the window.  The percentile path was already immune via
+            # its own .dropna(); this makes the sparkline immune the same way, so any
+            # future null row costs the strip nothing whatever the store holds.
+            #
+            # Selection is on gross_premium_mn (the sparkline's own series) and BOTH
+            # arrays are then read off the same frame — spark_gross and spark_net must
+            # stay positionally aligned to one set of sessions, so a session whose
+            # net signing failed keeps its null in spark_net rather than shifting the
+            # series by one slot.
+            recent = hist_df[hist_df["gross_premium_mn"].notna()].tail(SPARKLINE_SESSIONS)
             spark_gross = [
                 (float(v) if not pd.isna(v) else None)
                 for v in recent.get("gross_premium_mn", pd.Series(dtype=float))

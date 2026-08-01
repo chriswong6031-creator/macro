@@ -1,0 +1,24 @@
+{
+  "contract_id": "feature_snapshot.v1",
+  "schema_version": "1.0.0",
+  "snapshot_id": "feature-snapshot:trial:NCT00000001:20260801T080500Z",
+  "sector": "biopharma",
+  "entity_ref": "trial:NCT00000001",
+  "feature_set_id": "trial_registry_context",
+  "feature_set_version": "1.0.0",
+  "as_of": "2026-08-01T08:05:00Z",
+  "knowledge_cutoff": "2026-08-01T08:00:00Z",
+  "computed_at": "2026-08-01T08:05:00Z",
+  "point_in_time_safe": true,
+  "values": [
+    {"name": "registry.enrollment_count", "definition_version": "1.0.0", "value": 120, "unit": "participants", "missingness": "observed", "observed_at": "2026-08-01T08:00:00Z", "stale": false, "source_claim_refs": ["claim:trial:NCT00000001:enrollment:20260801"]},
+    {"name": "registry.enrollment_type", "definition_version": "1.0.0", "value": "ESTIMATED", "unit": null, "missingness": "observed", "observed_at": "2026-08-01T08:00:00Z", "stale": false, "source_claim_refs": ["claim:trial:NCT00000001:enrollment-type:20260801"]}
+  ],
+  "input_record_refs": ["src:ctgov:NCT00000001:sha256:287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e"],
+  "input_claim_refs": ["claim:trial:NCT00000001:enrollment:20260801", "claim:trial:NCT00000001:enrollment-type:20260801"],
+  "input_hashes": ["287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e"],
+  "missingness_summary": {"present": 2, "missing": 0, "stale": 0},
+  "staleness": {"state": "fresh", "oldest_input_at": "2026-08-01T08:00:00Z", "max_age_seconds": 86400, "evaluated_at": "2026-08-01T08:05:00Z"},
+  "producer": {"service": "biocatalyst-feature-worker", "code_version": "fixture", "run_id": "run:biocatalyst:20260801T080000Z"},
+  "authority_manifest_ref": "authority:biocatalyst-features:v1"
+}

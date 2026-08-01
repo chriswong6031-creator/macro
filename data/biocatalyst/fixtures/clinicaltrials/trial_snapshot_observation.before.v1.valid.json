@@ -1,0 +1,25 @@
+{
+  "contract_id": "trial_snapshot_observation.v1",
+  "schema_version": "1.0.0",
+  "observation_id": "ctgov_observation_NCT00000001_before",
+  "nct_id": "NCT00000001",
+  "run_ref": "ctgov_run_fixture_20260731T150000Z",
+  "page_receipt_ref": "ctgov_receipt_fixture_20260731T150000Z_0",
+  "source_snapshot_ref": "ctgov_snapshot_NCT00000001_before",
+  "canonical_content_sha256": "76af58021df5ef9a8e1b2d0fd5db692d5614cebe2ded221bc5fb0ae41d18668e",
+  "prior_source_snapshot_ref": null,
+  "prior_canonical_content_sha256": null,
+  "source_state_changed": false,
+  "same_content_as_prior": false,
+  "observed_interval": {
+    "after": null,
+    "at_or_before": "2026-07-31T15:00:04Z"
+  },
+  "source_last_update_posted_at": "2026-07-31",
+  "source_dataset_timestamp_raw": "2026-07-31T09:00:00",
+  "retrieved_at": "2026-07-31T15:00:04Z",
+  "first_seen_at": "2026-07-31T15:00:04Z",
+  "coverage_class": "current_only",
+  "transaction_from": "2026-07-31T15:00:05Z",
+  "transaction_to": null
+}

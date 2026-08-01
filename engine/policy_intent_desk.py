@@ -43,7 +43,7 @@ log = logging.getLogger(__name__)
 SCHEMA = "policy_intent_desk.v1"
 DISCLAIMER = (
     "Policy intent desk — realpolitik, context only, never scored or sized. Each lean is "
-    "a fallible, CHECKABLE judgement (proxy vs SPY, with a check-by date), not a trade "
+    "a fallible, checkable judgement (proxy vs SPY, with a check-by date), not a trade "
     "or a position size. Intent is inferred from interests; treat it as a hypothesis with "
     "a track record, not an oracle.")
 DISCLAIMER_ZH = (

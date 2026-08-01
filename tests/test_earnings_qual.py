@@ -78,6 +78,32 @@ def test_score_text_schema(monkeypatch):
     assert len(row["source_sha256"]) == 64   # sha256 hex
 
 
+def test_score_text_persists_source_and_prompt_lineage(monkeypatch):
+    obj = dict(_GOOD_JSON)
+    obj["summary"] = "Revenue grew while management maintained guidance."
+    _mock_reply(monkeypatch, obj)
+    row = eq.score_text(
+        "Some earnings call text.",
+        "AAPL",
+        "Q3",
+        2026,
+        call_date="2026-07-30",
+        source_record_id="defeatbeta:AAPL:2026Q3",
+        source_updated_at="2026-08-01T00:00:00Z",
+        source_url="https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz",
+        source_revision_sha256="revision-123",
+    )
+    assert row["source_record_id"] == "defeatbeta:AAPL:2026Q3"
+    assert row["source_updated_at"] == "2026-08-01T00:00:00Z"
+    assert row["source_url"] == (
+        "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz"
+    )
+    assert row["source_revision_sha256"] == "revision-123"
+    assert row["prompt_version"]
+    assert row["analysis_schema_version"]
+    assert row["summary"].startswith("Revenue grew")
+
+
 def test_score_text_clips_out_of_range(monkeypatch):
     _mock_reply(monkeypatch, {
         "sentiment": 5.0,        # out of [-1,1]
@@ -168,7 +194,13 @@ def test_invalid_json_degrades(monkeypatch):
         return "I cannot produce JSON, sorry.", None, "openai_compat"
 
     monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
-    row = eq.score_text("txt", "X", "Q1", 2026)
+    row = eq.score_text(
+        "txt",
+        "X",
+        "Q1",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat"]},
+    )
     assert row["degraded_reason"] == "invalid_json"
     assert row["sentiment"] is None
     assert calls["n"] == 2                    # first + one retry
@@ -183,6 +215,68 @@ def test_no_provider_degrades(monkeypatch):
     row = eq.score_text("txt", "X", "Q1", 2026)
     assert row["degraded_reason"] == "no_provider"
     assert row["model"] is None
+
+
+def test_incomplete_local_reply_falls_through_to_deepseek(monkeypatch):
+    calls: list[str] = []
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        calls.append(provider)
+        if provider == "openai_compat":
+            return "{}", None, provider
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "NVDA",
+        "Q1",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+    assert calls == ["openai_compat", "openai_compat", "deepseek"]
+    assert row["model"] == "deepseek"
+    assert row["degraded_reason"] is None
+    assert row["performance"] == pytest.approx(8.5)
+
+
+def test_llm_auth_rung_disables_implicit_codex(monkeypatch):
+    from engine import llm_auth
+
+    captured: dict = {}
+
+    def fake_build(cfg, **_kwargs):
+        captured.update(cfg)
+        return []
+
+    monkeypatch.setattr(llm_auth, "build_providers", fake_build)
+    text, reason = eq._call_llm_auth(
+        "system", "user", {}, "deepseek", max_tokens=100
+    )
+    assert text is None and reason == "no_provider"
+    assert captured["provider_order"] == ["deepseek"]
+    assert captured["codex_provider"] is False
+
+
+def test_codex_subscription_is_available_only_as_explicit_rung(monkeypatch):
+    calls: list[str] = []
+
+    def fake_llm(system, user, cfg, provider_name, *, max_tokens):
+        calls.append(provider_name)
+        return json.dumps(_GOOD_JSON), None
+
+    monkeypatch.setattr(eq, "_call_llm_auth", fake_llm)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["codex"]},
+    )
+    assert calls == ["codex"]
+    assert row["model"] == "codex"
+    assert row["degraded_reason"] is None
 
 
 def test_empty_text_degrades():
@@ -245,6 +339,157 @@ def test_upsert_replaces_same_key(tmp_path):
     # same (ticker,quarter,year,source) → one row, the newer sentiment kept
     assert len(df) == 1
     assert float(df.iloc[0]["sentiment"]) == pytest.approx(0.9)
+
+
+def test_upsert_uses_source_record_id_before_legacy_quarter_key(tmp_path):
+    base = {
+        "ticker": "CLS", "quarter": "Q2", "year": 2026,
+        "call_date": "2026-07-01", "source": "transcript", "model": "qwen",
+        "sentiment": 0.1, "performance": 5.0, "confidence": 0.5,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "scored_at": "2026-07-01T00:00:00Z",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    first = dict(base, source_record_id="source:CLS:first", source_sha256="sha-first")
+    second = dict(base, source_record_id="source:CLS:second", source_sha256="sha-second")
+    assert eq.upsert_scores([first, second], root=tmp_path) == 2
+    df = eq.load_scores(tmp_path)
+    assert len(df) == 2
+    assert set(df["source_record_id"]) == {"source:CLS:first", "source:CLS:second"}
+
+
+def test_completion_ledger_is_record_scoped_not_global_text_scoped(tmp_path):
+    base = {
+        "quarter": "Q2", "year": 2026, "call_date": "2026-07-01",
+        "source": "transcript", "model": "qwen", "sentiment": 0.1,
+        "performance": 5.0, "confidence": 0.5, "tone_word": "steady",
+        "positive_highlights": [], "negative_highlights": [], "tags": [],
+        "source_sha256": "identical-rendered-text",
+        "scored_at": "2026-07-01T00:00:00Z", "is_context_only": True,
+        "degraded_reason": None,
+    }
+    eq.upsert_scores([
+        dict(base, ticker="AAA", source_record_id="source:AAA:2026Q2"),
+        dict(base, ticker="BBB", source_record_id="source:BBB:2026Q2"),
+    ], root=tmp_path)
+    assert eq._completed_record_shas(tmp_path) == {
+        "source:AAA:2026Q2": "identical-rendered-text",
+        "source:BBB:2026Q2": "identical-rendered-text",
+    }
+
+
+def test_completion_ledger_prefers_upstream_revision_hash(tmp_path):
+    row = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [],
+        "source_sha256": "same-rendered-text",
+        "source_revision_sha256": "metadata-aware-revision",
+        "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    eq.upsert_scores([row], root=tmp_path)
+    assert eq._completed_record_shas(tmp_path) == {
+        "defeatbeta:AAPL:2026Q3": "metadata-aware-revision"
+    }
+
+
+def test_degraded_sha_is_not_marked_seen(tmp_path):
+    row = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": None,
+        "sentiment": None, "performance": None, "confidence": None,
+        "tone_word": None, "positive_highlights": [], "negative_highlights": [],
+        "tags": [], "source_sha256": "retry-me", "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3", "is_context_only": True,
+        "degraded_reason": "openai_compat_error",
+    }
+    eq.upsert_scores([row], root=tmp_path)
+    assert "retry-me" not in eq._seen_shas(tmp_path)
+
+
+def test_degraded_revision_cannot_replace_healthy_source_record(tmp_path):
+    healthy = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "source_sha256": "old-good",
+        "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    failed_revision = dict(
+        healthy,
+        source_sha256="new-failed",
+        sentiment=None,
+        performance=None,
+        confidence=None,
+        tone_word=None,
+        degraded_reason="openai_compat_error",
+    )
+    eq.upsert_scores([healthy], root=tmp_path)
+    eq.upsert_scores([failed_revision], root=tmp_path)
+    stored = eq.load_scores(tmp_path)
+    assert len(stored) == 1
+    assert stored.iloc[0]["source_sha256"] == "old-good"
+    assert float(stored.iloc[0]["performance"]) == pytest.approx(7.0)
+
+
+def test_multiple_producer_upserts_survive_stale_transport_manifest(tmp_path):
+    from scripts.publish_earnings_r2 import _synth_manifest
+
+    first = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [], "source_sha256": "first",
+        "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    second = dict(
+        first,
+        ticker="MSFT",
+        source_sha256="second",
+        source_record_id="defeatbeta:MSFT:2026Q3",
+        scored_at="2026-08-01T00:01:00Z",
+    )
+    eq.upsert_scores([first], root=tmp_path)
+    scores_path = eq.store_path(tmp_path)
+    manifest_path = scores_path.parent / "manifest.json"
+    manifest_path.write_text(json.dumps(_synth_manifest(scores_path)), encoding="utf-8")
+
+    # The next producer write reads the mutable parquet directly, then removes
+    # the now-stale commit marker until the publisher regenerates it.
+    eq.upsert_scores([second], root=tmp_path)
+    assert not manifest_path.exists()
+    stored = eq.load_scores(tmp_path)
+    assert set(stored["ticker"]) == {"AAPL", "MSFT"}
+
+
+def test_parseable_but_incomplete_json_is_retryable(monkeypatch):
+    monkeypatch.setattr(
+        eq,
+        "_dispatch",
+        lambda *a, **k: ('{"sentiment": 0.2}', None, "test-model"),
+    )
+    row = eq.score_text("Revenue rose.", "AAPL", "Q3", 2026)
+    assert row["degraded_reason"] == "incomplete_schema"
+    assert row["source_sha256"]
+
+
+def test_bounded_transcript_keeps_head_and_qa_tail():
+    text = "HEAD-FACT\n" + ("middle " * 100) + "\nQ&A-TAIL-FACT"
+    bounded = eq._bounded_transcript_text(text, max_chars=120, tail_chars=30)
+    assert bounded.startswith("HEAD-FACT")
+    assert bounded.endswith("Q&A-TAIL-FACT")
+    assert "middle of transcript omitted" in bounded
+    assert len(bounded) <= 120
 
 
 # --------------------------------------------------------------------------- #

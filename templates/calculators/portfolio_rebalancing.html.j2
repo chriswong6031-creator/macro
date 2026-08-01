@@ -156,7 +156,8 @@
    '再平衡卖出涨多的、买入落后的——这是一种纪律，而非预测。交易本身很简单；难的是判断何时值得为之付出成本。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Size each new buy with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t(', or read the lesson on <a href="', '为每笔新买入定仓，或阅读关于 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t('.', ' 的课程。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Size each new buy with the <a href="' ~ rel ~ 'tools/calculators/position-size.html">position size calculator</a>, or read the lesson on <a href="' ~ rel ~ 'learn/risk/position-sizing.html">position sizing</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/position-size.html">仓位计算器</a>为每笔新买入定仓，或阅读关于 <a href="' ~ rel ~ 'learn/risk/position-sizing.html">仓位管理</a> 的课程。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

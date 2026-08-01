@@ -454,6 +454,15 @@ class TestCheckB:
         viols = _check_b(REPO_ROOT, extra_files=synthetic)
         assert not any(v.check == "b" for v in viols)
 
+    def test_sector_contract_validator_allowlisted_for_enforcement(self) -> None:
+        synthetic = {
+            "engine/sector_intelligence/contracts.py": (
+                "actions = document.get('allowed_actions')\n"
+            ),
+        }
+        viols = _check_b(REPO_ROOT, extra_files=synthetic)
+        assert not any(v.check == "b" for v in viols)
+
     def test_no_token_no_violation(self) -> None:
         synthetic = {
             "engine/alert_triage.py": "# nothing here\nprint('hi')\n",

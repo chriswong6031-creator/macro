@@ -624,6 +624,12 @@ jobs:
           tests/test_fundamental_forensics_page.py
           tests/test_fundamental_forensics_private_state.py
           tests/test_fundamental_forensics_ui.py
+          tests/test_fundamental_forensics_acquisition.py
+          tests/test_fundamental_forensics_disclosure_diff.py
+          tests/test_fundamental_forensics_disclosure_projection.py
+          tests/test_fundamental_forensics_source_sync.py
+          tests/test_fundamental_forensics_wave2_operator.py
+          tests/test_sec_document_spine.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_context_api.py
@@ -712,6 +718,34 @@ jobs:
       - name: adapter registry must stay populated
         run: |
           python -c "from scripts.collect import all_adapters; n = len(all_adapters()); assert n > 100, f'adapter registry gutted: only {n} adapters registered'; print(f'{n} adapters registered')"
+
+  capital-structure-intelligence:
+    if: ${{ false }}
+    # W0-W1 is an evidence and event-spine contract, not merely a collector. This
+    # dedicated offline job keeps its schemas, PIT/correction behavior, R2 wrapper,
+    # graph linkage, legacy shadow boundary, and SEC fixtures in one hard gate.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install capital-structure test deps
+        run: pip install pytest pandas numpy pyarrow jsonschema requests pyyaml
+      - name: capital-structure contracts, compiler, graph, source store, and legacy boundary
+        run: >
+          python -m pytest
+          tests/test_capital_structure_compiler.py
+          tests/test_capital_structure_contracts.py
+          tests/test_capital_structure_event_spine.py
+          tests/test_capital_structure_graph.py
+          tests/test_capital_structure_legacy_compat.py
+          tests/test_capital_structure_pit.py
+          tests/test_capital_structure_source_identity.py
+          tests/test_capital_structure_source_manifest.py
+          tests/test_sec_capital_structure.py
+          tests/test_nwqs_c_dilution.py -q
 
   china-native-collectors:
     if: ${{ false }}
@@ -979,6 +1013,8 @@ jobs:
       # out of the scarce self-hosted render queue.
       - name: "render workflow size ceiling and builder ownership"
         run: python -m pytest tests/test_render_run_size_cap.py tests/test_render_builder_ownership.py -q
+      - name: render publication dead-asset fences
+        run: python -m pytest tests/test_render_dead_asset_gate.py -q
       # Same class, second instance (2026-07-27). build_canada was invoked by NO
       # workflow at all: site/canada.html existed only as a side effect of a
       # swallowed try/except inside build_vector, so a canada-only fix could ride a
@@ -2147,6 +2183,12 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow
       - name: live flow ops test suite
         run: python -m pytest tests/test_live_flow_tiering.py -v
+      # The two surfaces that CONSUME live_flow's payloads, executed under node against
+      # payloads from the real builders. Both suites turn a schema move (or a re-pointed
+      # field) into a red instead of a quietly wrong figure. node comes from the pack-level
+      # setup-node; the suites skip loudly if it is ever absent.
+      - name: live_flow payload consumers — intraday_flow tracker + stock panel (node)
+        run: python -m pytest tests/test_intraday_flow_ncp_js.py tests/test_stock_iflow_panel_js.py -q
 
   ird-substrate-engines:
     if: ${{ false }}
@@ -3525,6 +3567,16 @@ jobs:
         run: python -m pytest tests/test_free_content.py -q
       - name: committed estate must match a fresh render (template↔site drift law)
         run: python -m scripts.build_free_content --check
+      # i18n split-tag law (2026-07-30). `--check` above pins the committed bytes
+      # to a fresh render — it does NOT judge whether those bytes are valid, so it
+      # froze 48 t() calls that passed an OPENING `<a href="` through the
+      # bilingual macro and shipped `href="</span>` on all 26 calculator pages.
+      # check_inline_js only parses <script>/on*=, and check_site_asset_refs
+      # deliberately skips refs containing `<`. Scans site/ AND templates/, so it
+      # is not scoped to this estate; it lives here because this job already owns
+      # the render contract and already installs the deps.
+      - name: no split tags across the bilingual t() macro (rendered + source)
+        run: python -m pytest tests/test_i18n_split_tag_guard.py -q
       # SECOND home for this suite, and the only one where all of it RUNS.
       # tests/test_externalize_css.py also runs in template-site-sync, whose
       # `pip install pyyaml pytest` deliberately has no jinja2 — so its

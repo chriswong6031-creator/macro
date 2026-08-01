@@ -2802,3 +2802,13 @@
 {"date": "2026-07-31", "ticker": "GEF", "score": 3.0, "percentile": 3.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-31", "ticker": "PLNT", "score": 46.0, "percentile": 46.0, "regime": "mixed", "horizons": [21, 63, 126]}
 {"date": "2026-07-31", "ticker": "OTIS", "score": 26.0, "percentile": 26.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "RCL", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "DBX", "score": 47.0, "percentile": 47.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "VRSK", "score": 32.0, "percentile": 32.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "HR", "score": 27.0, "percentile": 27.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "MSM", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "CART", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "PJT", "score": 4.0, "percentile": 4.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "PMT", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "FMC", "score": 0.0, "percentile": 0.0, "regime": "mixed", "horizons": [21, 63, 126]}
+{"date": "2026-07-31", "ticker": "AVAV", "score": 9.0, "percentile": 9.0, "regime": "mixed", "horizons": [21, 63, 126]}

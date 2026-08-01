@@ -1,22 +1,22 @@
 {
   "as_of": "2026-07-31",
-  "built_at": "2026-08-01T02:55:13Z",
+  "built_at": "2026-08-01T20:54:25Z",
   "latest_pulse": {
     "date": "2026-07-31",
     "class": "quiet",
-    "market_vol_ratio": 1.003,
-    "up_share": 0.534,
+    "market_vol_ratio": 1.123,
+    "up_share": 0.528,
     "basis": "updown",
-    "n_megacap_rvol2": 2,
+    "n_megacap_rvol2": 3,
     "megacap_rvol": {
-      "AMZN": 3.22,
-      "AAPL": 2.61,
-      "MSFT": 1.89,
-      "GOOGL": 1.7,
-      "GOOG": 1.61,
+      "AMZN": 3.3,
+      "AAPL": 2.71,
+      "MSFT": 2.04,
+      "GOOGL": 1.71,
+      "GOOG": 1.62,
       "MA": 1.56,
       "TMUS": 1.48,
-      "META": 1.4
+      "META": 1.41
     },
     "calendar": {
       "is_quarter_end": false,

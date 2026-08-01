@@ -1,6 +1,6 @@
 {
   "schema": "prophet.index/v1",
-  "asof": "2026-07-31",
+  "asof": "2026-08-01",
   "cadence": "nightly-EOD",
   "authority_tier": "display",
   "gate_go": false,
@@ -23,8 +23,34 @@
       "_conviction_score": 100,
       "_signal_date": "2026-06-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 76.3,
+      "management_confidence": 78.6,
       "recommended_action": "hold",
+      "last_price": 19.5,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 78.6,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 67.5,
+          "pace": 89.4,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 2.486,
+          "dist_to_t1_r": 0.014,
+          "dist_to_t2_r": 1.514,
+          "horizon_pct_used": 84.4,
+          "p1": 0.9906,
+          "p2": 0.4953,
+          "p3": null,
+          "move_r": 1.486,
+          "mfe_r": 1.486,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($19.54).",
         "Add to the position on short-term pullbacks as long as price remains above $12.44 (invalidation level).",
@@ -65,8 +91,34 @@
       "_conviction_score": 90,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 33.1,
+      "management_confidence": 33.0,
       "recommended_action": "hold",
+      "last_price": 123.06,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 33.0,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 65.7,
+          "progress": 0.0,
+          "pace": 3.1,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.733,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 68.9,
+          "p1": -0.1783,
+          "p2": -0.0891,
+          "p3": null,
+          "move_r": -0.267,
+          "mfe_r": 0.187,
+          "mae_r": -0.298
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($168.93).",
         "Add to the position on short-term pullbacks as long as price remains above $104.05 (invalidation level).",
@@ -107,8 +159,34 @@
       "_conviction_score": 89,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 64.6,
+      "management_confidence": 63.5,
       "recommended_action": "hold",
+      "last_price": 34.3,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 63.5,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 36.1,
+          "pace": 43.1,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.646,
+          "dist_to_t1_r": 0.854,
+          "dist_to_t2_r": 2.354,
+          "horizon_pct_used": 64.4,
+          "p1": 0.4304,
+          "p2": 0.2152,
+          "p3": null,
+          "move_r": 0.646,
+          "mfe_r": 1.111,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($38.62).",
         "Add to the position on short-term pullbacks as long as price remains above $25.99 (invalidation level).",
@@ -149,8 +227,34 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 63.1,
+      "management_confidence": 64.0,
       "recommended_action": "hold",
+      "last_price": 184.02,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 64.0,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 42.3,
+          "pace": 54.2,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.796,
+          "dist_to_t1_r": 0.704,
+          "dist_to_t2_r": 2.204,
+          "horizon_pct_used": 57.8,
+          "p1": 0.5307,
+          "p2": 0.2654,
+          "p3": null,
+          "move_r": 0.796,
+          "mfe_r": 1.0,
+          "mae_r": -0.424
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($199.07).",
         "Add to the position on short-term pullbacks as long as price remains above $145.62 (invalidation level).",
@@ -191,8 +295,34 @@
       "_conviction_score": 87,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.5,
+      "management_confidence": 60.7,
       "recommended_action": "hold",
+      "last_price": 36.33,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 60.7,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 34.7,
+          "pace": 39.7,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.611,
+          "dist_to_t1_r": 0.889,
+          "dist_to_t2_r": 2.389,
+          "horizon_pct_used": 68.9,
+          "p1": 0.4073,
+          "p2": 0.2037,
+          "p3": null,
+          "move_r": 0.611,
+          "mfe_r": 0.725,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($41.17).",
         "Add to the position on short-term pullbacks as long as price remains above $27.55 (invalidation level).",
@@ -233,8 +363,34 @@
       "_conviction_score": 86,
       "_signal_date": "2026-06-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 59.9,
+      "management_confidence": 60.1,
       "recommended_action": "hold",
+      "last_price": 36.33,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 60.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 34.2,
+          "pace": 38.0,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.599,
+          "dist_to_t1_r": 0.901,
+          "dist_to_t2_r": 2.401,
+          "horizon_pct_used": 73.3,
+          "p1": 0.3995,
+          "p2": 0.1998,
+          "p3": null,
+          "move_r": 0.599,
+          "mfe_r": 0.712,
+          "mae_r": -0.007
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($41.27).",
         "Add to the position on short-term pullbacks as long as price remains above $27.55 (invalidation level).",
@@ -275,8 +431,34 @@
       "_conviction_score": 84,
       "_signal_date": "2026-07-07",
       "phase": "triggered_pre_t1",
-      "management_confidence": 44.5,
+      "management_confidence": 44.6,
       "recommended_action": "hold",
+      "last_price": 43.86,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 44.6,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 8.0,
+          "pace": 12.4,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.087,
+          "dist_to_t1_r": 1.413,
+          "dist_to_t2_r": 2.913,
+          "horizon_pct_used": 55.6,
+          "p1": 0.0579,
+          "p2": 0.0289,
+          "p3": null,
+          "move_r": 0.087,
+          "mfe_r": 0.268,
+          "mae_r": -0.231
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($51.02).",
         "Add to the position on short-term pullbacks as long as price remains above $38.35 (invalidation level).",
@@ -319,6 +501,32 @@
       "phase": "overtime",
       "management_confidence": 40.0,
       "recommended_action": "trim",
+      "last_price": 18.0,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 40.0,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 99.1,
+          "progress": 0.0,
+          "pace": 0.7,
+          "retention": 0.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.993,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 148.9,
+          "p1": -0.0045,
+          "p2": -0.0022,
+          "p3": null,
+          "move_r": -0.007,
+          "mfe_r": 0.359,
+          "mae_r": -0.07
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($22.49). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $15.04 (invalidation) is a full exit signal.",
@@ -359,8 +567,34 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 57.2,
+      "management_confidence": 57.5,
       "recommended_action": "hold",
+      "last_price": 250.41,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 57.5,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 28.1,
+          "pace": 34.1,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.461,
+          "dist_to_t1_r": 1.039,
+          "dist_to_t2_r": 2.539,
+          "horizon_pct_used": 57.8,
+          "p1": 0.3072,
+          "p2": 0.1536,
+          "p3": null,
+          "move_r": 0.461,
+          "mfe_r": 0.764,
+          "mae_r": -0.14
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($295.08).",
         "Add to the position on short-term pullbacks as long as price remains above $187.61 (invalidation level).",
@@ -401,8 +635,34 @@
       "_conviction_score": 81,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 61.3,
+      "management_confidence": 61.2,
       "recommended_action": "hold",
+      "last_price": 316.07,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 61.2,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 34.4,
+          "pace": 42.7,
+          "retention": 50.0,
+          "overlay": 64.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.604,
+          "dist_to_t1_r": 0.896,
+          "dist_to_t2_r": 2.396,
+          "horizon_pct_used": 57.8,
+          "p1": 0.4029,
+          "p2": 0.2014,
+          "p3": null,
+          "move_r": 0.604,
+          "mfe_r": 0.997,
+          "mae_r": -0.232
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($355.00).",
         "Add to the position on short-term pullbacks as long as price remains above $246.33 (invalidation level).",
@@ -443,8 +703,34 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 63.2,
+      "management_confidence": 63.1,
       "recommended_action": "hold",
+      "last_price": 29.15,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 63.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 37.6,
+          "pace": 45.1,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.68,
+          "dist_to_t1_r": 0.82,
+          "dist_to_t2_r": 2.32,
+          "horizon_pct_used": 64.4,
+          "p1": 0.4533,
+          "p2": 0.2266,
+          "p3": null,
+          "move_r": 0.68,
+          "mfe_r": 0.872,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($33.89).",
         "Add to the position on short-term pullbacks as long as price remains above $19.44 (invalidation level).",
@@ -485,8 +771,34 @@
       "_conviction_score": 80,
       "_signal_date": "2026-07-09",
       "phase": "triggered_pre_t1",
-      "management_confidence": 46.2,
+      "management_confidence": 43.6,
       "recommended_action": "hold",
+      "last_price": 22.12,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 43.6,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 91.8,
+          "progress": 0.0,
+          "pace": 10.1,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.938,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 51.1,
+          "p1": -0.0411,
+          "p2": -0.0206,
+          "p3": null,
+          "move_r": -0.062,
+          "mfe_r": 0.25,
+          "mae_r": -0.11
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($26.93).",
         "Add to the position on short-term pullbacks as long as price remains above $19.23 (invalidation level).",
@@ -527,8 +839,34 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-09",
       "phase": "triggered_pre_t1",
-      "management_confidence": 57.9,
+      "management_confidence": 60.4,
       "recommended_action": "hold",
+      "last_price": 128.09,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 60.4,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 49.3,
+          "pace": 68.7,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.976,
+          "dist_to_t1_r": 0.524,
+          "dist_to_t2_r": 2.024,
+          "horizon_pct_used": 51.1,
+          "p1": 0.6506,
+          "p2": 0.3253,
+          "p3": null,
+          "move_r": 0.976,
+          "mfe_r": 0.976,
+          "mae_r": -2.153
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($131.52).",
         "Add to the position on short-term pullbacks as long as price remains above $115.15 (invalidation level).",
@@ -569,8 +907,34 @@
       "_conviction_score": 79,
       "_signal_date": "2026-07-03",
       "phase": "triggered_pre_t1",
-      "management_confidence": 44.6,
+      "management_confidence": 45.2,
       "recommended_action": "hold",
+      "last_price": 151.36,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 45.2,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 10.5,
+          "pace": 11.8,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.125,
+          "dist_to_t1_r": 1.375,
+          "dist_to_t2_r": 2.875,
+          "horizon_pct_used": 64.4,
+          "p1": 0.0832,
+          "p2": 0.0416,
+          "p3": null,
+          "move_r": 0.125,
+          "mfe_r": 0.125,
+          "mae_r": -0.302
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($228.10).",
         "Add to the position on short-term pullbacks as long as price remains above $88.60 (invalidation level).",
@@ -613,6 +977,32 @@
       "phase": "overtime",
       "management_confidence": 32.7,
       "recommended_action": "trim",
+      "last_price": 101.43,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 32.7,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 100.0,
+          "progress": 19.7,
+          "pace": 0.0,
+          "retention": 78.6,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.288,
+          "dist_to_t1_r": 1.212,
+          "dist_to_t2_r": 2.712,
+          "horizon_pct_used": 302.2,
+          "p1": 0.1918,
+          "p2": 0.0959,
+          "p3": null,
+          "move_r": 0.288,
+          "mfe_r": 0.366,
+          "mae_r": -0.507
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($120.47). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $81.20 (invalidation) is a full exit signal.",
@@ -655,6 +1045,32 @@
       "phase": "triggered_pre_t1",
       "management_confidence": 64.8,
       "recommended_action": "hold",
+      "last_price": 151.36,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 64.8,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 6.9,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.071,
+          "dist_to_t1_r": 1.429,
+          "dist_to_t2_r": 2.929,
+          "horizon_pct_used": 6.7,
+          "p1": 0.0474,
+          "p2": 0.0237,
+          "p3": null,
+          "move_r": 0.071,
+          "mfe_r": 0.071,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($228.97).",
         "Add to the position on short-term pullbacks as long as price remains above $93.19 (invalidation level).",
@@ -705,8 +1121,34 @@
       "_conviction_score": 77,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.8,
+      "management_confidence": 67.9,
       "recommended_action": "wait",
+      "last_price": 151.36,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.9,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 99.9,
+          "progress": 0.0,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.999,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 4.4,
+          "p1": -0.0005,
+          "p2": -0.0002,
+          "p3": null,
+          "move_r": -0.001,
+          "mfe_r": 0.0,
+          "mae_r": -0.001
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($153.60) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $238.72 (T1). There is no need to rush.",
@@ -757,8 +1199,34 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-06",
       "phase": "triggered_pre_t1",
-      "management_confidence": 60.3,
+      "management_confidence": 60.1,
       "recommended_action": "hold",
+      "last_price": 29.15,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 60.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 31.6,
+          "pace": 38.8,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.539,
+          "dist_to_t1_r": 0.961,
+          "dist_to_t2_r": 2.461,
+          "horizon_pct_used": 57.8,
+          "p1": 0.3592,
+          "p2": 0.1796,
+          "p3": null,
+          "move_r": 0.539,
+          "mfe_r": 0.715,
+          "mae_r": -0.025
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($35.22).",
         "Add to the position on short-term pullbacks as long as price remains above $19.44 (invalidation level).",
@@ -799,8 +1267,34 @@
       "_conviction_score": 75,
       "_signal_date": "2026-07-15",
       "phase": "triggered_pre_t1",
-      "management_confidence": 42.8,
+      "management_confidence": 35.5,
       "recommended_action": "hold",
+      "last_price": 286.77,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 35.5,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 10.7,
+          "progress": 0.0,
+          "pace": 35.3,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.212,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 37.8,
+          "p1": -0.5254,
+          "p2": -0.2627,
+          "p3": null,
+          "move_r": -0.788,
+          "mfe_r": 0.932,
+          "mae_r": -0.788
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($381.50).",
         "Add to the position on short-term pullbacks as long as price remains above $278.00 (invalidation level).",
@@ -843,6 +1337,32 @@
       "phase": "invalidated",
       "management_confidence": 13.5,
       "recommended_action": "invalidated",
+      "last_price": 147.61,
+      "state": {
+        "phase": "invalidated",
+        "management_confidence": 13.5,
+        "recommended_action": "invalidated",
+        "components": {
+          "validity": 0.0,
+          "progress": 0.0,
+          "pace": 0.0,
+          "retention": 8.4,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": -2.435,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 48.9,
+          "p1": -2.2898,
+          "p2": -1.1449,
+          "p3": null,
+          "move_r": -3.435,
+          "mfe_r": 0.0,
+          "mae_r": -3.435
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Invalidation level ($177.09) has been breached. Exit the full position.",
         "This plan is no longer active. Do not hold through invalidation."
@@ -884,6 +1404,32 @@
       "phase": "overtime",
       "management_confidence": 41.5,
       "recommended_action": "trim",
+      "last_price": 17.18,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 41.5,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 100.0,
+          "progress": 8.7,
+          "pace": 0.0,
+          "retention": 13.5,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.097,
+          "dist_to_t1_r": 1.403,
+          "dist_to_t2_r": 2.903,
+          "horizon_pct_used": 240.0,
+          "p1": 0.0645,
+          "p2": 0.0323,
+          "p3": null,
+          "move_r": 0.097,
+          "mfe_r": 0.716,
+          "mae_r": -0.019
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($19.36). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $15.48 (invalidation) is a full exit signal.",
@@ -924,8 +1470,34 @@
       "_conviction_score": 73,
       "_signal_date": "2026-07-01",
       "phase": "triggered_pre_t1",
-      "management_confidence": 44.7,
+      "management_confidence": 42.1,
       "recommended_action": "hold",
+      "last_price": 172.62,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 42.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.2,
+          "pace": 3.1,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.001,
+          "dist_to_t1_r": 1.499,
+          "dist_to_t2_r": 2.999,
+          "horizon_pct_used": 68.9,
+          "p1": 0.0005,
+          "p2": 0.0003,
+          "p3": null,
+          "move_r": 0.001,
+          "mfe_r": 0.573,
+          "mae_r": -0.556
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($210.44).",
         "Add to the position on short-term pullbacks as long as price remains above $147.37 (invalidation level).",
@@ -966,8 +1538,34 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-25",
       "phase": "triggered_pre_t1",
-      "management_confidence": 35.5,
+      "management_confidence": 34.3,
       "recommended_action": "hold",
+      "last_price": 3016.25,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 34.3,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 67.8,
+          "progress": 0.0,
+          "pace": 0.5,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.75,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 82.2,
+          "p1": -0.1666,
+          "p2": -0.0833,
+          "p3": null,
+          "move_r": -0.25,
+          "mfe_r": 0.359,
+          "mae_r": -0.511
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($3410.80).",
         "Add to the position on short-term pullbacks as long as price remains above $2847.13 (invalidation level).",
@@ -1008,8 +1606,34 @@
       "_conviction_score": 72,
       "_signal_date": "2026-06-26",
       "phase": "triggered_pre_t1",
-      "management_confidence": 72.8,
+      "management_confidence": 74.0,
       "recommended_action": "hold",
+      "last_price": 582.74,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 74.0,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 60.6,
+          "pace": 77.9,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 2.286,
+          "dist_to_t1_r": 0.214,
+          "dist_to_t2_r": 1.714,
+          "horizon_pct_used": 80.0,
+          "p1": 0.8571,
+          "p2": 0.4286,
+          "p3": null,
+          "move_r": 1.286,
+          "mfe_r": 1.286,
+          "mae_r": -0.456
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($592.66).",
         "Add to the position on short-term pullbacks as long as price remains above $476.89 (invalidation level).",
@@ -1050,8 +1674,34 @@
       "_conviction_score": 71,
       "_signal_date": "2026-07-08",
       "phase": "triggered_pre_t1",
-      "management_confidence": 54.7,
+      "management_confidence": 53.6,
       "recommended_action": "hold",
+      "last_price": 263.2,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 53.6,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 18.7,
+          "pace": 24.3,
+          "retention": 50.0,
+          "overlay": 64.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.269,
+          "dist_to_t1_r": 1.231,
+          "dist_to_t2_r": 2.731,
+          "horizon_pct_used": 53.3,
+          "p1": 0.179,
+          "p2": 0.0895,
+          "p3": null,
+          "move_r": 0.269,
+          "mfe_r": 0.613,
+          "mae_r": -0.225
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($337.02).",
         "Add to the position on short-term pullbacks as long as price remains above $187.15 (invalidation level).",
@@ -1092,8 +1742,34 @@
       "_conviction_score": 70,
       "_signal_date": "2026-07-29",
       "phase": "triggered_pre_t1",
-      "management_confidence": 70.1,
+      "management_confidence": 70.5,
       "recommended_action": "hold",
+      "last_price": 124.05,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 70.5,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 22.2,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.338,
+          "dist_to_t1_r": 1.162,
+          "dist_to_t2_r": 2.662,
+          "horizon_pct_used": 6.7,
+          "p1": 0.2252,
+          "p2": 0.1126,
+          "p3": null,
+          "move_r": 0.338,
+          "mfe_r": 0.338,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($147.96).",
         "Add to the position on short-term pullbacks as long as price remains above $96.53 (invalidation level).",
@@ -1144,8 +1820,34 @@
       "_conviction_score": 70,
       "_signal_date": "2026-06-23",
       "phase": "pre_trigger",
-      "management_confidence": 38.0,
+      "management_confidence": 38.3,
       "recommended_action": "wait",
+      "last_price": 70.36,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 38.3,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 37.5,
+          "progress": 0.0,
+          "pace": 0.1,
+          "retention": 50.0,
+          "overlay": 58.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.484,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 86.7,
+          "p1": -0.3443,
+          "p2": -0.1722,
+          "p3": null,
+          "move_r": -0.516,
+          "mfe_r": 0.136,
+          "mae_r": -1.077
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($75.59) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $86.25 (T1). There is no need to rush.",
@@ -1188,6 +1890,32 @@
       "phase": "pre_trigger",
       "management_confidence": 52.0,
       "recommended_action": "wait",
+      "last_price": 12.76,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 52.0,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 0.8,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 80.0,
+          "p1": 0.0,
+          "p2": 0.0,
+          "p3": null,
+          "move_r": 0.0,
+          "mfe_r": 0.0,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($13.01) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $18.25 (T1). There is no need to rush.",
@@ -1238,8 +1966,34 @@
       "_conviction_score": 68,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 49.6,
+      "management_confidence": 49.2,
       "recommended_action": "wait",
+      "last_price": 10.11,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 49.2,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 72.8,
+          "progress": 0.0,
+          "pace": 3.7,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.791,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 66.7,
+          "p1": -0.1395,
+          "p2": -0.0698,
+          "p3": null,
+          "move_r": -0.209,
+          "mfe_r": 0.0,
+          "mae_r": -0.221
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($10.65) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $13.05 (T1). There is no need to rush.",
@@ -1282,6 +2036,32 @@
       "phase": "pre_trigger",
       "management_confidence": 52.0,
       "recommended_action": "wait",
+      "last_price": 26.43,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 52.0,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 2.5,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 71.1,
+          "p1": 0.0,
+          "p2": 0.0,
+          "p3": null,
+          "move_r": 0.0,
+          "mfe_r": 0.0,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($26.90) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $37.29 (T1). There is no need to rush.",
@@ -1334,6 +2114,32 @@
       "phase": "invalidated",
       "management_confidence": 12.0,
       "recommended_action": "invalidated",
+      "last_price": 146.26,
+      "state": {
+        "phase": "invalidated",
+        "management_confidence": 12.0,
+        "recommended_action": "invalidated",
+        "components": {
+          "validity": 0.0,
+          "progress": 0.0,
+          "pace": 0.0,
+          "retention": 0.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": -0.685,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 66.7,
+          "p1": -1.1232,
+          "p2": -0.5616,
+          "p3": null,
+          "move_r": -1.685,
+          "mfe_r": 0.906,
+          "mae_r": -1.685
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Invalidation level ($154.08) has been breached. Exit the full position.",
         "This plan is no longer active. Do not hold through invalidation."
@@ -1375,6 +2181,32 @@
       "phase": "invalidated",
       "management_confidence": 13.2,
       "recommended_action": "invalidated",
+      "last_price": 147.61,
+      "state": {
+        "phase": "invalidated",
+        "management_confidence": 13.2,
+        "recommended_action": "invalidated",
+        "components": {
+          "validity": 0.0,
+          "progress": 0.0,
+          "pace": 0.0,
+          "retention": 0.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": -2.196,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 51.1,
+          "p1": -2.1309,
+          "p2": -1.0654,
+          "p3": null,
+          "move_r": -3.196,
+          "mfe_r": 0.001,
+          "mae_r": -3.196
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Invalidation level ($177.49) has been breached. Exit the full position.",
         "This plan is no longer active. Do not hold through invalidation."
@@ -1414,8 +2246,34 @@
       "_conviction_score": 64,
       "_signal_date": "2026-07-13",
       "phase": "pre_trigger",
-      "management_confidence": 32.5,
+      "management_confidence": 31.8,
       "recommended_action": "wait",
+      "last_price": 7.59,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 31.8,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 0.0,
+          "progress": 0.0,
+          "pace": 24.9,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.017,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 42.2,
+          "p1": -0.6552,
+          "p2": -0.3276,
+          "p3": null,
+          "move_r": -0.983,
+          "mfe_r": 0.0,
+          "mae_r": -1.086
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($8.22) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $9.03 (T1). There is no need to rush.",
@@ -1456,8 +2314,34 @@
       "_conviction_score": 63,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.7,
+      "management_confidence": 67.8,
       "recommended_action": "wait",
+      "last_price": 124.05,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.8,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 99.8,
+          "progress": 0.0,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.998,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 4.4,
+          "p1": -0.0012,
+          "p2": -0.0006,
+          "p3": null,
+          "move_r": -0.002,
+          "mfe_r": 0.0,
+          "mae_r": -0.002
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($126.40) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $165.46 (T1). There is no need to rush.",
@@ -1508,8 +2392,34 @@
       "_conviction_score": 63,
       "_signal_date": "2026-07-21",
       "phase": "triggered_pre_t1",
-      "management_confidence": 54.4,
+      "management_confidence": 53.5,
       "recommended_action": "hold",
+      "last_price": 33.97,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 53.5,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 84.6,
+          "progress": 0.0,
+          "pace": 70.5,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.883,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 24.4,
+          "p1": -0.0778,
+          "p2": -0.0389,
+          "p3": null,
+          "move_r": -0.117,
+          "mfe_r": 0.339,
+          "mae_r": -0.297
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($39.79).",
         "Add to the position on short-term pullbacks as long as price remains above $30.79 (invalidation level).",
@@ -1552,6 +2462,32 @@
       "phase": "triggered_pre_t1",
       "management_confidence": 59.2,
       "recommended_action": "hold",
+      "last_price": 128.09,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 59.2,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 5.0,
+          "pace": 78.7,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.047,
+          "dist_to_t1_r": 1.453,
+          "dist_to_t2_r": 2.953,
+          "horizon_pct_used": 22.2,
+          "p1": 0.031,
+          "p2": 0.0155,
+          "p3": null,
+          "move_r": 0.047,
+          "mfe_r": 0.047,
+          "mae_r": -0.07
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($177.72).",
         "Add to the position on short-term pullbacks as long as price remains above $92.35 (invalidation level).",
@@ -1602,8 +2538,34 @@
       "_conviction_score": 62,
       "_signal_date": "2026-07-24",
       "phase": "pre_trigger",
-      "management_confidence": 64.1,
+      "management_confidence": 62.5,
       "recommended_action": "wait",
+      "last_price": 13.42,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 62.5,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 79.7,
+          "progress": 0.0,
+          "pace": 85.8,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.845,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 17.8,
+          "p1": -0.103,
+          "p2": -0.0515,
+          "p3": null,
+          "move_r": -0.155,
+          "mfe_r": 0.0,
+          "mae_r": -0.155
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($14.01) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $17.27 (T1). There is no need to rush.",
@@ -1654,8 +2616,34 @@
       "_conviction_score": 62,
       "_signal_date": "2026-06-05",
       "phase": "overtime",
-      "management_confidence": 35.6,
+      "management_confidence": 34.1,
       "recommended_action": "trim",
+      "last_price": 80.29,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 34.1,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 38.9,
+          "progress": 0.0,
+          "pace": 14.0,
+          "retention": 0.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.497,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 126.7,
+          "p1": -0.3353,
+          "p2": -0.1677,
+          "p3": null,
+          "move_r": -0.503,
+          "mfe_r": 0.36,
+          "mae_r": -0.503
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($120.71). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $70.26 (invalidation) is a full exit signal.",
@@ -1696,8 +2684,34 @@
       "_conviction_score": 61,
       "_signal_date": "2026-07-22",
       "phase": "triggered_pre_t1",
-      "management_confidence": 69.3,
+      "management_confidence": 70.6,
       "recommended_action": "hold",
+      "last_price": 310.23,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 70.6,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 25.9,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.415,
+          "dist_to_t1_r": 1.085,
+          "dist_to_t2_r": 2.585,
+          "horizon_pct_used": 22.2,
+          "p1": 0.2767,
+          "p2": 0.1384,
+          "p3": null,
+          "move_r": 0.415,
+          "mfe_r": 0.415,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($375.91).",
         "Add to the position on short-term pullbacks as long as price remains above $224.56 (invalidation level).",
@@ -1748,8 +2762,34 @@
       "_conviction_score": 61,
       "_signal_date": "2026-07-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 64.9,
+      "management_confidence": 64.8,
       "recommended_action": "hold",
+      "last_price": 101.015,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 64.8,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 10.7,
+          "pace": 93.4,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.127,
+          "dist_to_t1_r": 1.373,
+          "dist_to_t2_r": 2.873,
+          "horizon_pct_used": 17.8,
+          "p1": 0.0848,
+          "p2": 0.0424,
+          "p3": null,
+          "move_r": 0.127,
+          "mfe_r": 0.208,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($156.51).",
         "Add to the position on short-term pullbacks as long as price remains above $55.44 (invalidation level).",
@@ -1802,6 +2842,32 @@
       "phase": "overtime",
       "management_confidence": 40.0,
       "recommended_action": "trim",
+      "last_price": 19.94,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 40.0,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 92.6,
+          "progress": 0.0,
+          "pace": 12.7,
+          "retention": 0.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.945,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 128.9,
+          "p1": -0.0369,
+          "p2": -0.0185,
+          "p3": null,
+          "move_r": -0.055,
+          "mfe_r": 0.113,
+          "mae_r": -0.055
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($25.84). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $16.36 (invalidation) is a full exit signal.",
@@ -1854,6 +2920,32 @@
       "phase": "pre_trigger",
       "management_confidence": 64.1,
       "recommended_action": "wait",
+      "last_price": 35.74,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 64.1,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 80.6,
+          "progress": 0.0,
+          "pace": 85.8,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.852,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 17.8,
+          "p1": -0.0987,
+          "p2": -0.0493,
+          "p3": null,
+          "move_r": -0.148,
+          "mfe_r": 0.0,
+          "mae_r": -0.148
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($36.78) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $43.09 (T1). There is no need to rush.",
@@ -1904,8 +2996,34 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-20",
       "phase": "triggered_pre_t1",
-      "management_confidence": 75.0,
+      "management_confidence": 76.4,
       "recommended_action": "hold",
+      "last_price": 464.72,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 76.4,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 51.6,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 2.039,
+          "dist_to_t1_r": 0.461,
+          "dist_to_t2_r": 1.961,
+          "horizon_pct_used": 26.7,
+          "p1": 0.693,
+          "p2": 0.3465,
+          "p3": null,
+          "move_r": 1.039,
+          "mfe_r": 1.039,
+          "mae_r": -0.343
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($492.38).",
         "Add to the position on short-term pullbacks as long as price remains above $342.25 (invalidation level).",
@@ -1948,6 +3066,32 @@
       "phase": "pre_trigger",
       "management_confidence": 62.6,
       "recommended_action": "wait",
+      "last_price": 37.08,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 62.6,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 93.5,
+          "progress": 0.0,
+          "pace": 85.8,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.951,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 17.8,
+          "p1": -0.0326,
+          "p2": -0.0163,
+          "p3": null,
+          "move_r": -0.049,
+          "mfe_r": 0.0,
+          "mae_r": -0.253
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($37.56) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $42.47 (T1). There is no need to rush.",
@@ -1998,8 +3142,34 @@
       "_conviction_score": 60,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 52.9,
+      "management_confidence": 49.1,
       "recommended_action": "hold",
+      "last_price": 14.66,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 49.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 78.9,
+          "progress": 0.0,
+          "pace": 41.0,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.839,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 35.6,
+          "p1": -0.1075,
+          "p2": -0.0538,
+          "p3": null,
+          "move_r": -0.161,
+          "mfe_r": 0.864,
+          "mae_r": -0.244
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($19.30).",
         "Add to the position on short-term pullbacks as long as price remains above $12.32 (invalidation level).",
@@ -2040,8 +3210,34 @@
       "_conviction_score": 58,
       "_signal_date": "2026-07-29",
       "phase": "pre_trigger",
-      "management_confidence": 59.5,
+      "management_confidence": 56.6,
       "recommended_action": "wait",
+      "last_price": 54.84,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 56.6,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 46.2,
+          "progress": 0.0,
+          "pace": 99.7,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.564,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 6.7,
+          "p1": -0.2903,
+          "p2": -0.1452,
+          "p3": null,
+          "move_r": -0.436,
+          "mfe_r": 0.0,
+          "mae_r": -0.436
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($56.88) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $62.80 (T1). There is no need to rush.",
@@ -2092,8 +3288,34 @@
       "_conviction_score": 57,
       "_signal_date": "2026-07-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 66.4,
+      "management_confidence": 67.1,
       "recommended_action": "hold",
+      "last_price": 14.72,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 67.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 15.8,
+          "pace": 98.5,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.215,
+          "dist_to_t1_r": 1.285,
+          "dist_to_t2_r": 2.785,
+          "horizon_pct_used": 17.8,
+          "p1": 0.1433,
+          "p2": 0.0716,
+          "p3": null,
+          "move_r": 0.215,
+          "mfe_r": 0.215,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($17.65).",
         "Add to the position on short-term pullbacks as long as price remains above $11.95 (invalidation level).",
@@ -2144,8 +3366,34 @@
       "_conviction_score": 56,
       "_signal_date": "2026-07-17",
       "phase": "triggered_pre_t1",
-      "management_confidence": 50.5,
+      "management_confidence": 48.1,
       "recommended_action": "hold",
+      "last_price": 205.69,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 48.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 78.1,
+          "progress": 0.0,
+          "pace": 46.9,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.833,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 33.3,
+          "p1": -0.1116,
+          "p2": -0.0558,
+          "p3": null,
+          "move_r": -0.167,
+          "mfe_r": 0.268,
+          "mae_r": -0.307
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($238.66).",
         "Add to the position on short-term pullbacks as long as price remains above $189.23 (invalidation level).",
@@ -2186,8 +3434,34 @@
       "_conviction_score": 55,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.4,
+      "management_confidence": 67.6,
       "recommended_action": "wait",
+      "last_price": 6.03,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.6,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 4.4,
+          "p1": 0.0,
+          "p2": 0.0,
+          "p3": null,
+          "move_r": 0.0,
+          "mfe_r": 0.0,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($6.17) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $9.21 (T1). There is no need to rush.",
@@ -2238,8 +3512,34 @@
       "_conviction_score": 55,
       "_signal_date": "2026-07-21",
       "phase": "triggered_pre_t1",
-      "management_confidence": 71.2,
+      "management_confidence": 71.1,
       "recommended_action": "hold",
+      "last_price": 251.07,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 71.1,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 26.3,
+          "pace": 95.7,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.423,
+          "dist_to_t1_r": 1.077,
+          "dist_to_t2_r": 2.577,
+          "horizon_pct_used": 24.4,
+          "p1": 0.282,
+          "p2": 0.141,
+          "p3": null,
+          "move_r": 0.423,
+          "mfe_r": 0.465,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($289.95).",
         "Add to the position on short-term pullbacks as long as price remains above $199.70 (invalidation level).",
@@ -2280,8 +3580,34 @@
       "_conviction_score": 54,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.5,
+      "management_confidence": 67.7,
       "recommended_action": "wait",
+      "last_price": 46.08,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.7,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 4.4,
+          "p1": 0.0,
+          "p2": 0.0,
+          "p3": null,
+          "move_r": 0.0,
+          "mfe_r": 0.0,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($46.65) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $69.11 (T1). There is no need to rush.",
@@ -2332,8 +3658,34 @@
       "_conviction_score": 53,
       "_signal_date": "2026-07-20",
       "phase": "triggered_pre_t1",
-      "management_confidence": 64.1,
+      "management_confidence": 64.7,
       "recommended_action": "hold",
+      "last_price": 53.29,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 64.7,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 19.3,
+          "pace": 81.5,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.279,
+          "dist_to_t1_r": 1.221,
+          "dist_to_t2_r": 2.721,
+          "horizon_pct_used": 26.7,
+          "p1": 0.1861,
+          "p2": 0.0931,
+          "p3": null,
+          "move_r": 0.279,
+          "mfe_r": 0.279,
+          "mae_r": -0.074
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($58.93).",
         "Add to the position on short-term pullbacks as long as price remains above $47.38 (invalidation level).",
@@ -2384,8 +3736,34 @@
       "_conviction_score": 53,
       "_signal_date": "2026-07-23",
       "phase": "triggered_pre_t1",
-      "management_confidence": 66.7,
+      "management_confidence": 67.0,
       "recommended_action": "hold",
+      "last_price": 47.42,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 67.0,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 15.8,
+          "pace": 94.0,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.215,
+          "dist_to_t1_r": 1.285,
+          "dist_to_t2_r": 2.785,
+          "horizon_pct_used": 20.0,
+          "p1": 0.1433,
+          "p2": 0.0716,
+          "p3": null,
+          "move_r": 0.215,
+          "mfe_r": 0.215,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($68.41).",
         "Add to the position on short-term pullbacks as long as price remains above $27.58 (invalidation level).",
@@ -2436,8 +3814,34 @@
       "_conviction_score": 53,
       "_signal_date": "2026-03-27",
       "phase": "overtime",
-      "management_confidence": 36.7,
+      "management_confidence": 36.9,
       "recommended_action": "trim",
+      "last_price": 28.31,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 36.9,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 68.8,
+          "progress": 0.0,
+          "pace": 0.0,
+          "retention": 46.3,
+          "overlay": 58.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.758,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 282.2,
+          "p1": -0.1613,
+          "p2": -0.0806,
+          "p3": null,
+          "move_r": -0.242,
+          "mfe_r": 0.0,
+          "mae_r": -0.242
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($55.17). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $16.62 (invalidation) is a full exit signal.",
@@ -2488,8 +3892,34 @@
       "_conviction_score": 52,
       "_signal_date": "2026-07-23",
       "phase": "pre_trigger",
-      "management_confidence": 56.4,
+      "management_confidence": 53.6,
       "recommended_action": "wait",
+      "last_price": 175.05,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 53.6,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 43.8,
+          "progress": 0.0,
+          "pace": 81.1,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.542,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 20.0,
+          "p1": -0.3052,
+          "p2": -0.1526,
+          "p3": null,
+          "move_r": -0.458,
+          "mfe_r": 0.028,
+          "mae_r": -0.458
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($184.90) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $210.76 (T1). There is no need to rush.",
@@ -2542,6 +3972,32 @@
       "phase": "invalidated",
       "management_confidence": 11.8,
       "recommended_action": "invalidated",
+      "last_price": 210.42,
+      "state": {
+        "phase": "invalidated",
+        "management_confidence": 11.8,
+        "recommended_action": "invalidated",
+        "components": {
+          "validity": 0.0,
+          "progress": 0.0,
+          "pace": 0.0,
+          "retention": 38.3,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": -0.707,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 51.1,
+          "p1": -1.1383,
+          "p2": -0.5691,
+          "p3": null,
+          "move_r": -1.707,
+          "mfe_r": 0.0,
+          "mae_r": -2.773
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Invalidation level ($215.26) has been breached. Exit the full position.",
         "This plan is no longer active. Do not hold through invalidation."
@@ -2583,6 +4039,32 @@
       "phase": "overtime",
       "management_confidence": 39.9,
       "recommended_action": "trim",
+      "last_price": 45.82,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 39.9,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 64.4,
+          "progress": 0.0,
+          "pace": 19.3,
+          "retention": 48.3,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.722,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 117.8,
+          "p1": -0.1854,
+          "p2": -0.0927,
+          "p3": null,
+          "move_r": -0.278,
+          "mfe_r": 0.0,
+          "mae_r": -0.317
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($56.76). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $41.38 (invalidation) is a full exit signal.",
@@ -2635,6 +4117,32 @@
       "phase": "overtime",
       "management_confidence": 40.0,
       "recommended_action": "trim",
+      "last_price": 19.14,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 40.0,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 100.0,
+          "progress": 1.6,
+          "pace": 0.0,
+          "retention": 18.2,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.01,
+          "dist_to_t1_r": 1.49,
+          "dist_to_t2_r": 2.99,
+          "horizon_pct_used": 157.8,
+          "p1": 0.0069,
+          "p2": 0.0034,
+          "p3": null,
+          "move_r": 0.01,
+          "mfe_r": 0.057,
+          "mae_r": -0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($30.73). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $11.28 (invalidation) is a full exit signal.",
@@ -2685,8 +4193,34 @@
       "_conviction_score": 51,
       "_signal_date": "2026-07-24",
       "phase": "triggered_pre_t1",
-      "management_confidence": 66.4,
+      "management_confidence": 67.0,
       "recommended_action": "hold",
+      "last_price": 47.42,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 67.0,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 14.8,
+          "pace": 97.4,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.196,
+          "dist_to_t1_r": 1.304,
+          "dist_to_t2_r": 2.804,
+          "horizon_pct_used": 17.8,
+          "p1": 0.1305,
+          "p2": 0.0653,
+          "p3": null,
+          "move_r": 0.196,
+          "mfe_r": 0.196,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($67.08).",
         "Add to the position on short-term pullbacks as long as price remains above $29.40 (invalidation level).",
@@ -2737,8 +4271,34 @@
       "_conviction_score": 50,
       "_signal_date": "2026-07-27",
       "phase": "pre_trigger",
-      "management_confidence": 67.6,
+      "management_confidence": 67.7,
       "recommended_action": "wait",
+      "last_price": 871.0,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.7,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.0,
+          "pace": 96.4,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 11.1,
+          "p1": 0.0,
+          "p2": 0.0,
+          "p3": null,
+          "move_r": 0.0,
+          "mfe_r": 0.0,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($878.80) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $1218.40 (T1). There is no need to rush.",
@@ -2791,6 +4351,32 @@
       "phase": "overtime",
       "management_confidence": 40.0,
       "recommended_action": "trim",
+      "last_price": 67.16,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 40.0,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 78.2,
+          "progress": 0.0,
+          "pace": 8.7,
+          "retention": 45.9,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.834,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 135.6,
+          "p1": -0.1109,
+          "p2": -0.0555,
+          "p3": null,
+          "move_r": -0.166,
+          "mfe_r": 0.0,
+          "mae_r": -0.166
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($108.12). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $46.67 (invalidation) is a full exit signal.",
@@ -2841,8 +4427,34 @@
       "_conviction_score": 50,
       "_signal_date": "2026-07-27",
       "phase": "pre_trigger",
-      "management_confidence": 67.2,
+      "management_confidence": 67.5,
       "recommended_action": "wait",
+      "last_price": 147.81,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.5,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 99.8,
+          "progress": 0.0,
+          "pace": 96.4,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.998,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 11.1,
+          "p1": -0.0012,
+          "p2": -0.0006,
+          "p3": null,
+          "move_r": -0.002,
+          "mfe_r": 0.0,
+          "mae_r": -0.045
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($150.00) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $226.12 (T1). There is no need to rush.",
@@ -2895,6 +4507,32 @@
       "phase": "overtime",
       "management_confidence": 40.0,
       "recommended_action": "trim",
+      "last_price": 325.7,
+      "state": {
+        "phase": "overtime",
+        "management_confidence": 40.0,
+        "recommended_action": "trim",
+        "components": {
+          "validity": 89.3,
+          "progress": 0.0,
+          "pace": 0.0,
+          "retention": 0.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.92,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 166.7,
+          "p1": -0.0535,
+          "p2": -0.0267,
+          "p3": null,
+          "move_r": -0.08,
+          "mfe_r": 0.393,
+          "mae_r": -0.08
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trade has exceeded its intended horizon without reaching T1 ($414.35). Reassess thesis strength.",
         "Trim position to reduce time-decay risk. A close below $274.10 (invalidation) is a full exit signal.",
@@ -2947,6 +4585,32 @@
       "phase": "pre_trigger",
       "management_confidence": 62.9,
       "recommended_action": "wait",
+      "last_price": 36.32,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 62.9,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 82.5,
+          "progress": 0.0,
+          "pace": 85.8,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.868,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 17.8,
+          "p1": -0.0883,
+          "p2": -0.0442,
+          "p3": null,
+          "move_r": -0.132,
+          "mfe_r": 0.0,
+          "mae_r": -0.197
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($37.57) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $46.42 (T1). There is no need to rush.",
@@ -2997,8 +4661,34 @@
       "_conviction_score": 49,
       "_signal_date": "2026-07-30",
       "phase": "pre_trigger",
-      "management_confidence": 67.8,
+      "management_confidence": 67.9,
       "recommended_action": "wait",
+      "last_price": 160.52,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 67.9,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 0.1,
+          "pace": 100.0,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.0,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 4.4,
+          "p1": 0.0003,
+          "p2": 0.0001,
+          "p3": null,
+          "move_r": 0.0,
+          "mfe_r": 0.0,
+          "mae_r": 0.0
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($162.50) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $234.96 (T1). There is no need to rush.",
@@ -3049,8 +4739,34 @@
       "_conviction_score": 48,
       "_signal_date": "2026-07-13",
       "phase": "triggered_pre_t1",
-      "management_confidence": 53.4,
+      "management_confidence": 50.6,
       "recommended_action": "hold",
+      "last_price": 35.62,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 50.6,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 4.9,
+          "pace": 27.5,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.045,
+          "dist_to_t1_r": 1.455,
+          "dist_to_t2_r": 2.955,
+          "horizon_pct_used": 42.2,
+          "p1": 0.0299,
+          "p2": 0.0149,
+          "p3": null,
+          "move_r": 0.045,
+          "mfe_r": 0.27,
+          "mae_r": -0.154
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($51.52).",
         "Add to the position on short-term pullbacks as long as price remains above $24.20 (invalidation level).",
@@ -3099,8 +4815,34 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-02",
       "phase": "pre_trigger",
-      "management_confidence": 48.4,
+      "management_confidence": 48.1,
       "recommended_action": "wait",
+      "last_price": 216.14,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 48.1,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 68.9,
+          "progress": 0.0,
+          "pace": 3.7,
+          "retention": 50.0,
+          "overlay": 55.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.759,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 66.7,
+          "p1": -0.1607,
+          "p2": -0.0804,
+          "p3": null,
+          "move_r": -0.241,
+          "mfe_r": 0.0,
+          "mae_r": -0.505
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($228.50) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $290.95 (T1). There is no need to rush.",
@@ -3141,8 +4883,34 @@
       "_conviction_score": 46,
       "_signal_date": "2026-07-22",
       "phase": "pre_trigger",
-      "management_confidence": 66.5,
+      "management_confidence": 66.4,
       "recommended_action": "wait",
+      "last_price": 152.37,
+      "state": {
+        "phase": "pre_trigger",
+        "management_confidence": 66.4,
+        "recommended_action": "wait",
+        "components": {
+          "validity": 100.0,
+          "progress": 5.8,
+          "pace": 79.3,
+          "retention": 50.0,
+          "overlay": 58.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.057,
+          "dist_to_t1_r": 1.443,
+          "dist_to_t2_r": 2.943,
+          "horizon_pct_used": 22.2,
+          "p1": 0.038,
+          "p2": 0.019,
+          "p3": null,
+          "move_r": 0.057,
+          "mfe_r": 0.065,
+          "mae_r": -0.031
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Watch for price to reach the trigger level ($152.60) before entering. No position until trigger is confirmed.",
         "Keep size small on initial entry; the buy zone extends from trigger up to $189.63 (T1). There is no need to rush.",
@@ -3193,8 +4961,34 @@
       "_conviction_score": 43,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 52.3,
+      "management_confidence": 50.9,
       "recommended_action": "hold",
+      "last_price": 62.65,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 50.9,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 99.6,
+          "progress": 0.0,
+          "pace": 41.0,
+          "retention": 50.0,
+          "overlay": 64.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 0.997,
+          "dist_to_t1_r": 1.5,
+          "dist_to_t2_r": 3.0,
+          "horizon_pct_used": 35.6,
+          "p1": -0.002,
+          "p2": -0.001,
+          "p3": null,
+          "move_r": -0.003,
+          "mfe_r": 0.105,
+          "mae_r": -0.161
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($77.32).",
         "Add to the position on short-term pullbacks as long as price remains above $52.92 (invalidation level).",
@@ -3235,8 +5029,34 @@
       "_conviction_score": 42,
       "_signal_date": "2026-07-02",
       "phase": "triggered_pre_t1",
-      "management_confidence": 42.5,
+      "management_confidence": 42.7,
       "recommended_action": "hold",
+      "last_price": 105.25,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 42.7,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 5.0,
+          "pace": 6.5,
+          "retention": 50.0,
+          "overlay": 61.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.046,
+          "dist_to_t1_r": 1.454,
+          "dist_to_t2_r": 2.954,
+          "horizon_pct_used": 66.7,
+          "p1": 0.0306,
+          "p2": 0.0153,
+          "p3": null,
+          "move_r": 0.046,
+          "mfe_r": 0.147,
+          "mae_r": -0.058
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($135.31).",
         "Add to the position on short-term pullbacks as long as price remains above $83.63 (invalidation level).",
@@ -3277,8 +5097,34 @@
       "_conviction_score": 39,
       "_signal_date": "2026-07-16",
       "phase": "triggered_pre_t1",
-      "management_confidence": 52.7,
+      "management_confidence": 51.7,
       "recommended_action": "hold",
+      "last_price": 78.68,
+      "state": {
+        "phase": "triggered_pre_t1",
+        "management_confidence": 51.7,
+        "recommended_action": "hold",
+        "components": {
+          "validity": 100.0,
+          "progress": 3.0,
+          "pace": 42.4,
+          "retention": 50.0,
+          "overlay": 67.0
+        },
+        "geometry": {
+          "dist_to_stop_r": 1.024,
+          "dist_to_t1_r": 1.476,
+          "dist_to_t2_r": 2.976,
+          "horizon_pct_used": 35.6,
+          "p1": 0.0159,
+          "p2": 0.0079,
+          "p3": null,
+          "move_r": 0.024,
+          "mfe_r": 0.082,
+          "mae_r": -0.115
+        },
+        "change_reason": ""
+      },
       "what_to_do_now": [
         "Trigger is confirmed. Hold the current position and let the trade advance toward T1 ($101.61).",
         "Add to the position on short-term pullbacks as long as price remains above $62.78 (invalidation level).",

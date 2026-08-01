@@ -102,7 +102,8 @@
    '每点价值与仓位规模一一对应地缩放，且它先落在报价货币上，再落到你的账户货币上。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a pip value into a risk-based share of your account with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t(', or read the lesson on <a href="', '把每点价值换算成占账户的风险比例，或阅读 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t('.', ' 这节课。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a pip value into a risk-based share of your account with the <a href="' ~ rel ~ 'tools/calculators/position-size.html">position size calculator</a>, or read the lesson on <a href="' ~ rel ~ 'learn/risk/position-sizing.html">position sizing</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/position-size.html">仓位计算器</a>把每点价值换算成占账户的风险比例，或阅读 <a href="' ~ rel ~ 'learn/risk/position-sizing.html">仓位管理</a> 这节课。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

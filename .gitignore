@@ -189,11 +189,20 @@ data/_dev_china_vm.pkl
 research/signal_engine/_track_record_audit.md
 data/edgar/company_tickers.json
 data/fundamental_forensics/raw/
+data/fundamental_forensics/archive/
 data/fundamental_forensics/private/
 
 # Special Situations: fetched filing-text cache + LLM summary cache (regenerable)
 data/special_situations/doc_cache/
 data/special_situations/digest_cache/
+# Capital Structure Intelligence: original SEC bytes live in R2 or an explicit
+# local evidence store. Compact manifests/derived ledgers remain tracked.
+data/capital_structure/source_objects/
+# Interrupted collector/compiler staging is never an artifact. The compiler
+# stages outside data and promotes telemetry last; the collector uses these
+# same-directory parquet temps for one-file atomic replacement.
+data/capital_structure/*.tmp.parquet
+.capital-structure-compile-*/
 # raw digest capture / reverse-engineering evidence (private; digest_db.parquet is the committed artifact)
 research/_recon_raw/
 

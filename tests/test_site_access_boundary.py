@@ -373,6 +373,7 @@ def test_generated_data_is_not_accidentally_public():
         # Official agency publication lifecycle and verified factual outcomes.
         "/live/release_publications.json",
         "/prophet/showcase.json",
+        "/seasonalitydata/methodology.json",
         "/factordata/tech_lab.json",
         # Static Natural Earth geometry required by the public start-page globe.
         "/world-110m.json",

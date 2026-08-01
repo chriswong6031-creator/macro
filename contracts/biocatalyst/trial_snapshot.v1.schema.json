@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_snapshot.v1.schema.json",
+  "title": "BioCatalyst Trial Read Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "snapshot_id", "source_version_ordinal", "nct_id",
+    "source_snapshot_ref", "source_record_ref", "canonical_content_sha256", "coverage_class",
+    "source_attribution", "source_published_at", "source_effective_at", "retrieved_at",
+    "first_seen_at", "knowledge_cutoff", "valid_from", "valid_to", "parser_version",
+    "source_schema_version", "license_class", "confidence", "contradiction_state",
+    "analyst_review_state", "facts", "evidence_claim_refs", "authority", "transaction_from",
+    "transaction_to", "projection_sha256", "hash_scope"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_snapshot.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "snapshot_id": {"type": "string", "pattern": "^trial_snapshot_[a-zA-Z0-9_-]+$"},
+    "source_version_ordinal": {"type": "integer", "minimum": 1},
+    "nct_id": {"$ref": "#/$defs/nctId"},
+    "source_snapshot_ref": {"type": "string", "pattern": "^ctgov_snapshot_[a-zA-Z0-9_-]+$"},
+    "source_record_ref": {"type": "string", "pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"},
+    "canonical_content_sha256": {"$ref": "#/$defs/sha256"},
+    "coverage_class": {"const": "current_only"},
+    "source_attribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_name", "source_uri", "source_processed_at_raw", "source_processed_timestamp_timezone", "source_last_update_posted_at", "submitter_responsibility_note", "modification_note"],
+      "properties": {
+        "source_name": {"const": "ClinicalTrials.gov"},
+        "source_uri": {"type": "string", "format": "uri", "pattern": "^https://clinicaltrials\\.gov/study/NCT[0-9]{8}$"},
+        "source_processed_at_raw": {"$ref": "#/$defs/sourceDataTimestamp"},
+        "source_processed_timestamp_timezone": {"const": "not_declared_by_source_value"},
+        "source_last_update_posted_at": {"$ref": "#/$defs/nullableTemporal"},
+        "submitter_responsibility_note": {"const": "Study sponsors or investigators supply the registry information; a listing is not government validation of the study's science or safety."},
+        "modification_note": {"const": "BioCatalyst parsed and normalized selected source fields without changing the archived source record."}
+      }
+    },
+    "source_published_at": {"$ref": "#/$defs/nullableTemporal"},
+    "source_effective_at": {"$ref": "#/$defs/nullableTemporal"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "first_seen_at": {"type": "string", "format": "date-time"},
+    "knowledge_cutoff": {"type": "string", "format": "date-time"},
+    "valid_from": {"$ref": "#/$defs/nullableTemporal"},
+    "valid_to": {"$ref": "#/$defs/nullableTemporal"},
+    "parser_version": {"const": "clinicaltrials_v2_parser.v1"},
+    "source_schema_version": {"const": "ctgov_api_v2"},
+    "license_class": {"const": "us_government_source_facts"},
+    "confidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["value", "method", "meaning", "calibrated"],
+      "properties": {
+        "value": {"const": 1.0},
+        "method": {"const": "deterministic_source_parse"},
+        "meaning": {"const": "parser_fidelity_not_real_world_truth"},
+        "calibrated": {"const": false}
+      }
+    },
+    "contradiction_state": {"type": "string", "enum": ["none_known", "open", "resolved", "superseded"]},
+    "analyst_review_state": {"type": "string", "enum": ["unreviewed", "machine_checked", "analyst_reviewed", "rejected"]},
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["brief_title", "official_title", "overall_status", "study_type", "phases", "sponsor", "enrollment", "start_date", "primary_completion_date", "completion_date", "conditions", "interventions", "primary_outcomes", "secondary_outcomes", "locations"],
+      "properties": {
+        "brief_title": {"allOf": [{"$ref": "#/$defs/stringFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/identificationModule/briefTitle"}}}]},
+        "official_title": {"allOf": [{"$ref": "#/$defs/stringFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/identificationModule/officialTitle"}}}]},
+        "overall_status": {"allOf": [{"$ref": "#/$defs/stringFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/overallStatus"}}}]},
+        "study_type": {"allOf": [{"$ref": "#/$defs/stringFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/designModule/studyType"}}}]},
+        "phases": {"allOf": [{"$ref": "#/$defs/stringArrayFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/designModule/phases"}}}]},
+        "sponsor": {"$ref": "#/$defs/sponsorFact"},
+        "enrollment": {"$ref": "#/$defs/enrollmentFact"},
+        "start_date": {"allOf": [{"$ref": "#/$defs/dateFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/startDateStruct"}}}]},
+        "primary_completion_date": {"allOf": [{"$ref": "#/$defs/dateFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/primaryCompletionDateStruct"}}}]},
+        "completion_date": {"allOf": [{"$ref": "#/$defs/dateFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/statusModule/completionDateStruct"}}}]},
+        "conditions": {"allOf": [{"$ref": "#/$defs/stringArrayFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/conditionsModule/conditions"}}}]},
+        "interventions": {"allOf": [{"$ref": "#/$defs/interventionArrayFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/armsInterventionsModule/interventions"}}}]},
+        "primary_outcomes": {"allOf": [{"$ref": "#/$defs/outcomeArrayFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/outcomesModule/primaryOutcomes"}}}]},
+        "secondary_outcomes": {"allOf": [{"$ref": "#/$defs/outcomeArrayFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/outcomesModule/secondaryOutcomes"}}}]},
+        "locations": {"allOf": [{"$ref": "#/$defs/locationArrayFact"}, {"properties": {"source_json_path": {"const": "/protocolSection/contactsLocationsModule/locations"}}}]}
+      }
+    },
+    "evidence_claim_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["classification", "decision_authority", "allowed_uses", "forbidden_uses"],
+      "properties": {
+        "classification": {"const": "source_fact"},
+        "decision_authority": {"const": false},
+        "allowed_uses": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "enum": ["display", "context", "explain"]}},
+        "forbidden_uses": {"type": "array", "minItems": 7, "uniqueItems": true, "items": {"type": "string", "enum": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]}}
+      }
+    },
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "projection_sha256": {"$ref": "#/$defs/sha256"},
+    "hash_scope": {"const": "canonical_payload_excluding_projection_sha256"}
+  },
+  "$defs": {
+    "nctId": {"type": "string", "pattern": "^NCT[0-9]{8}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceDataTimestamp": {"type": "string", "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"},
+    "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]},
+    "missingness": {"type": "string", "enum": ["observed", "source_null", "source_missing", "not_applicable", "parser_degraded", "license_restricted"]},
+    "stringFact": {
+      "type": "object", "additionalProperties": false, "required": ["state", "value", "source_json_path"],
+      "properties": {"state": {"$ref": "#/$defs/missingness"}, "value": {"type": ["string", "null"]}, "source_json_path": {"type": "string", "pattern": "^/"}},
+      "allOf": [{"if": {"properties": {"state": {"const": "observed"}}}, "then": {"properties": {"value": {"type": "string"}}}, "else": {"properties": {"value": {"type": "null"}}}}]
+    },
+    "stringArrayFact": {
+      "type": "object", "additionalProperties": false, "required": ["state", "value", "source_json_path"],
+      "properties": {"state": {"$ref": "#/$defs/missingness"}, "value": {"oneOf": [{"type": "null"}, {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}]}, "source_json_path": {"type": "string", "pattern": "^/"}},
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "observed"}}},
+          "then": {"properties": {"value": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}}},
+          "else": {"properties": {"value": {"type": "null"}}}
+        }
+      ]
+    },
+    "sponsorFact": {
+      "type": "object", "additionalProperties": false, "required": ["state", "value", "source_json_path"],
+      "properties": {"state": {"$ref": "#/$defs/missingness"}, "value": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sponsorValue"}]}, "source_json_path": {"const": "/protocolSection/sponsorCollaboratorsModule/leadSponsor"}},
+      "allOf": [{"if": {"properties": {"state": {"const": "observed"}}}, "then": {"properties": {"value": {"$ref": "#/$defs/sponsorValue"}}}, "else": {"properties": {"value": {"type": "null"}}}}]
+    },
+    "sponsorValue": {"type": "object", "additionalProperties": false, "required": ["name", "class"], "properties": {"name": {"type": "string", "minLength": 1}, "class": {"type": ["string", "null"]}}},
+    "enrollmentFact": {
+      "type": "object", "additionalProperties": false, "required": ["state", "value", "source_json_path"],
+      "properties": {"state": {"$ref": "#/$defs/missingness"}, "value": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/enrollmentValue"}]}, "source_json_path": {"const": "/protocolSection/designModule/enrollmentInfo"}},
+      "allOf": [{"if": {"properties": {"state": {"const": "observed"}}}, "then": {"properties": {"value": {"$ref": "#/$defs/enrollmentValue"}}}, "else": {"properties": {"value": {"type": "null"}}}}]
+    },
+    "enrollmentValue": {"type": "object", "additionalProperties": false, "required": ["count", "type"], "properties": {"count": {"type": "integer", "minimum": 0}, "type": {"type": ["string", "null"], "enum": ["ACTUAL", "ESTIMATED", "UNKNOWN", null]}}},
+    "dateFact": {
+      "type": "object", "additionalProperties": false, "required": ["state", "value", "source_json_path"],
+      "properties": {"state": {"$ref": "#/$defs/missingness"}, "value": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/dateValue"}]}, "source_json_path": {"type": "string", "pattern": "^/protocolSection/statusModule/"}},
+      "allOf": [{"if": {"properties": {"state": {"const": "observed"}}}, "then": {"properties": {"value": {"$ref": "#/$defs/dateValue"}}}, "else": {"properties": {"value": {"type": "null"}}}}]
+    },
+    "dateValue": {"type": "object", "additionalProperties": false, "required": ["date", "type"], "properties": {"date": {"type": "string", "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"}, "type": {"type": ["string", "null"], "enum": ["ACTUAL", "ESTIMATED", "UNKNOWN", null]}}},
+    "interventionArrayFact": {"$ref": "#/$defs/jsonArrayFact"},
+    "outcomeArrayFact": {"$ref": "#/$defs/jsonArrayFact"},
+    "locationArrayFact": {"$ref": "#/$defs/jsonArrayFact"},
+    "jsonArrayFact": {
+      "type": "object", "additionalProperties": false, "required": ["state", "value", "source_json_path"],
+      "properties": {"state": {"$ref": "#/$defs/missingness"}, "value": {"oneOf": [{"type": "null"}, {"type": "array", "items": {"$ref": "#/$defs/jsonObject"}}]}, "source_json_path": {"type": "string", "pattern": "^/"}},
+      "allOf": [
+        {
+          "if": {"properties": {"state": {"const": "observed"}}},
+          "then": {"properties": {"value": {"type": "array", "items": {"$ref": "#/$defs/jsonObject"}}}},
+          "else": {"properties": {"value": {"type": "null"}}}
+        }
+      ]
+    },
+    "jsonValue": {"oneOf": [{"type": "null"}, {"type": "boolean"}, {"type": "number"}, {"type": "string"}, {"type": "array", "items": {"$ref": "#/$defs/jsonValue"}}, {"$ref": "#/$defs/jsonObject"}]},
+    "jsonObject": {"type": "object", "additionalProperties": {"$ref": "#/$defs/jsonValue"}}
+  }
+}

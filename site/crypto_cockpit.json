@@ -3,16 +3,16 @@
   "contract_phase": "w0",
   "display_only": true,
   "as_of": "2026-08-01",
-  "generated_at": "2026-08-01T12:16:16+00:00",
+  "generated_at": "2026-08-01T21:03:28+00:00",
   "hero": {
     "asset": "BTC-USD",
-    "price": 62900.68,
-    "change_24h_pct": 0.12,
+    "price": 63014.31,
+    "change_24h_pct": 0.3,
     "stance_en": "RISK-OFF",
     "stance_zh": "偏空",
-    "summary_en": "The big picture reads risk-off. Support comes from behaviour versus stocks and miners; the drag comes from momentum and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
-    "summary_zh": "大方向偏空。支撑来自与美股的联动与矿工；拖累来自动量与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
-    "master_score": -27,
+    "summary_en": "The big picture reads risk-off. Support comes from ETF flows and behaviour versus stocks; the drag comes from momentum and futures positioning. Day-to-day direction is a coin flip — watch the dip-risk read below.",
+    "summary_zh": "大方向偏空。支撑来自ETF 资金流与与美股的联动；拖累来自动量与期货持仓。未来几天的涨跌仍近乎抛硬币——先看下方的回撤风险读数。",
+    "master_score": -17,
     "exposure_pct": 0,
     "gate_active": true
   },
@@ -109,13 +109,13 @@
       "label_zh": "流动性与资金流",
       "primary": {
         "key": "etf",
-        "label_en": "Etf",
-        "label_zh": "etf",
+        "label_en": "ETF flows",
+        "label_zh": "ETF 资金流",
         "source": "master.board.etf",
-        "state_en": "Unavailable",
-        "state_zh": "暂无",
-        "tone": "neutral",
-        "grade": null
+        "state_en": "Accumulation",
+        "state_zh": "吸筹",
+        "tone": "bull",
+        "grade": "DIRECTIONAL"
       },
       "spark_source": "signals.etf_flow_z",
       "receipt_members": [

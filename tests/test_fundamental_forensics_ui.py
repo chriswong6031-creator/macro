@@ -26,9 +26,9 @@ def _render() -> str:
     )
 
 
-def test_workbench_renders_four_functional_views_and_external_assets():
+def test_workbench_renders_seven_functional_views_and_external_assets():
     html = _render()
-    for tab in ("radar", "statements", "compare", "trace"):
+    for tab in ("radar", "statements", "disclosures", "redlines", "timeline", "compare", "trace"):
         assert f'id="ff-tab-{tab}"' in html
         assert f'id="ff-panel-{tab}"' in html
     assert 'id="ff-company-search"' in html
@@ -41,6 +41,19 @@ def test_workbench_renders_four_functional_views_and_external_assets():
     # allowed and is not application logic.
     executable_inline = re.findall(r"<script(?![^>]*\bsrc=)(?![^>]*application/ld\+json)[^>]*>(.*?)</script>", html, re.S)
     assert executable_inline == []
+
+
+def test_disclosure_surfaces_make_the_text_comparison_boundary_and_source_path_plain():
+    html = _render()
+    assert 'id="ff-disclosure-feed"' in html
+    assert 'id="ff-redline-list"' in html
+    assert 'id="ff-timeline"' in html
+    assert 'id="ff-disclosure-section"' in html
+    assert 'class="ff-lexical-glyph"' in html
+    assert "This is a text comparison, not an explanation of motive, materiality, or financial impact." in html
+    assert "Every row links back to the matched SEC filing excerpts." in html
+    assert "The filing record behind this review" in html
+    assert "Confirm the reporting form, filing date, accession, and original SEC document" in html
 
 
 def test_workbench_dom_ids_are_unique_and_bilingual():
@@ -65,6 +78,24 @@ def test_runtime_contract_accessibility_and_security_guards():
         "renderStatements",
         "renderCompare",
         "renderTrace",
+        "renderDisclosureFeed",
+        "renderRedlines",
+        "renderTimeline",
+        "renderDisclosureEvidence",
+        "renderTabEvidenceEmpty",
+        "disclosure_bundle",
+        "disclosures",
+        "disclosureTracks",
+        "readyDisclosureTracks",
+        "selectedDisclosureTrack",
+        "current_filing",
+        "prior_filing",
+        "accepted_at",
+        "redlines",
+        "redline_ops",
+        "source_excerpt",
+        "prior_receipt",
+        "current_receipt",
         "renderEvidence",
         "setInert",
         "focusableInEvidence",
@@ -79,6 +110,13 @@ def test_runtime_contract_accessibility_and_security_guards():
     assert "actionKey === 'limited' ? '?'" in js
     assert "Coverage incomplete" in js
     assert "missing checks remain unknown" in js
+    assert "Observed language is not a motive claim" in js
+    assert "across ' + pairCount + ' filing pair" in js
+    assert "_track_form" in js
+    assert "_filing_role" in js
+    assert "No comparable filing pair yet" in js
+    assert "suppressed_boilerplate" in js
+    assert "Array.isArray(bundle.redlines) ? bundle.redlines : []" in js
 
 
 def test_runtime_is_valid_javascript():
@@ -98,9 +136,15 @@ def test_responsive_evidence_lens_has_desktop_drawer_and_mobile_sheet():
     css = (TEMPLATES / "fundamental_forensics.css").read_text(encoding="utf-8")
     assert "@media (min-width: 1100px)" in css
     assert "@media (max-width: 1099px)" in css
+    assert "@media (min-width: 701px) and (max-width: 1300px)" in css
     assert "@media (max-width: 700px)" in css
     assert ".ff-evidence.is-open" in css
     assert ".ff-scrim" in css
+    assert ".ff-disclosure-card" in css
+    assert ".ff-redline-card" in css
+    assert ".ff-source-excerpt" in css
+    assert ".ff-lexical-glyph" in css
+    assert ".ff-timeline-card" in css
     assert ":focus-visible" in css
     assert "prefers-reduced-motion" in css
 

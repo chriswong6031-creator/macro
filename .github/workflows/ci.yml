@@ -216,6 +216,13 @@ on:
       # selection, 404-empty, rail-sentence condition). Same ci-test-whitelist-rot guard.
       - "tests/test_watchlist_chains_js.py"
       - "tests/fixtures/transmission/transmission_chains.json"
+      # live_flow payload consumers: the node-shelled suites that execute the intraday_flow
+      # tracker's and the stock panel's flow loaders against payloads from the real builders.
+      # templates/** and site/** already cover the pages and engine/** the builders; list the
+      # test files so a test-only edit still triggers CI (ci-test-whitelist-rot guard).
+      # Run in the live-flow-ops job.
+      - "tests/test_intraday_flow_ncp_js.py"
+      - "tests/test_stock_iflow_panel_js.py"
       # WRI W6.1: the factor-exposure engine bakes factor_betas.json that risk_core.js
       # consumes; list its emit + tests so an engine/test-only edit triggers CI
       # (ci-test-whitelist-rot guard). Run in the wri-risk-core job below.
@@ -389,6 +396,18 @@ on:
       - "collectors/**"
       - "lib/**"
       - "tests/test_china_news.py"
+      # Capital Structure Intelligence W0-W1: evidence contracts, offline compiler,
+      # PIT graph, and source-store/SEC fixtures must never exist as an unrun suite.
+      # collectors/** and scripts/collect.py cover collector edits; these explicit
+      # paths cover contract-, compiler-, fixture-, and test-only changes too.
+      - "engine/capital_structure/**"
+      - "scripts/compile_capital_structure_events.py"
+      - "contracts/capital_structure_*.schema.json"
+      - "docs/CAPITAL_STRUCTURE_INTELLIGENCE_CONTRACT.md"
+      - "tests/test_capital_structure_*.py"
+      - "tests/test_sec_capital_structure.py"
+      - "tests/test_nwqs_c_dilution.py"
+      - "tests/fixtures/capital_structure/**"
       # LHB-W2b 8-K item expansion: test-only edits must still trigger the job
       - "tests/test_edgar_8k_items.py"
       # LHB-W3 A1 falsifier packet: engine + builder + admin block + test re-run together.
@@ -496,14 +515,20 @@ on:
       - "app/forensics.py"
       - "app/main.py"
       - "collectors/edgar_forensics.py"
+      - "collectors/fundamental_forensics_acquisition.py"
+      - "collectors/sec_document_spine.py"
       - "scripts/build_fundamental_forensics.py"
+      - "scripts/build_fundamental_forensics_disclosures.py"
+      - "scripts/run_fundamental_forensics_wave2.py"
       - "config/fundamental_forensics.yml"
+      - "config/fundamental_forensics_disclosure_diff.v1.json"
       - "contracts/fundamental_forensics_run.schema.json"
       - "templates/fundamental_forensics.html.j2"
       - "templates/fundamental_forensics.css"
       - "templates/fundamental_forensics.js"
       - "tests/fixtures/fundamental_forensics/**"
       - "tests/test_fundamental_forensics_*.py"
+      - "tests/test_sec_document_spine.py"
       - "tests/test_forensics_api.py"
       - "tests/test_edgar_forensics_collector.py"
       - "tests/test_context_api.py"
@@ -579,6 +604,7 @@ on:
       - "tests/test_render_intl_scope.py"
       - "tests/test_render_run_size_cap.py"
       - "tests/test_render_builder_ownership.py"
+      - "tests/test_render_dead_asset_gate.py"
       - "tests/test_render_canada_scope.py"
       # OIP E8 options integrity suites (job: workflow-yaml). engine/**, scripts/** and
       # .github/workflows/** already reach their subjects; these entries are so a
@@ -1559,6 +1585,10 @@ on:
       # (the #3592 Legal footer column never reached them) with main staying green.
       - "scripts/build_free_content.py"
       - "tests/test_free_content.py"
+      # i18n split-tag guard (2026-07-30). Its SUBJECTS — site/** and templates/**
+      # — already trigger above, so the guarded change always reaches it; this
+      # line only covers a PR that edits the guard itself.
+      - "tests/test_i18n_split_tag_guard.py"
       - "content/seo/**"
       - "templates/seo_base.html.j2"
       - "templates/seo_article.html.j2"

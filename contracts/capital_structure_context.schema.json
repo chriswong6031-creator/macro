@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_context.schema.json",
+  "title": "Capital Structure issuer context",
+  "description": "Rebuildable issuer context. Observations are separated from non-authoritative risk claims.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "issuer_id", "as_of", "calculation_version", "observations", "lineage",
+    "coverage", "risk_claims", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.context.v1"},
+    "issuer_id": {"type": "string", "minLength": 1},
+    "as_of": {"type": "string", "format": "date-time"},
+    "calculation_version": {"type": "string", "minLength": 1},
+    "observations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reported_shares", "estimated_float", "authorized_headroom", "registered_resale_supply",
+        "incentive_equity_supply", "active_primary_financing_capacity", "active_instrument_overhang",
+        "near_price_overhang", "cash_resources", "normalized_cash_use", "runway",
+        "debt_and_convertible_maturities", "shelf_state", "pending_and_live_offerings",
+        "historical_offering_behavior", "counterparty_history", "corporate_action_state"
+      ],
+      "properties": {
+        "reported_shares": {"$ref": "#/$defs/metric"},
+        "estimated_float": {"$ref": "#/$defs/metric"},
+        "authorized_headroom": {"$ref": "#/$defs/metric"},
+        "registered_resale_supply": {"$ref": "#/$defs/metric"},
+        "incentive_equity_supply": {"$ref": "#/$defs/metric"},
+        "active_primary_financing_capacity": {"$ref": "#/$defs/metric"},
+        "active_instrument_overhang": {"$ref": "#/$defs/metric"},
+        "near_price_overhang": {"$ref": "#/$defs/metric"},
+        "cash_resources": {"$ref": "#/$defs/metric"},
+        "normalized_cash_use": {"$ref": "#/$defs/metric"},
+        "runway": {"$ref": "#/$defs/metric"},
+        "debt_and_convertible_maturities": {"$ref": "#/$defs/record_list"},
+        "shelf_state": {"$ref": "#/$defs/record_list"},
+        "pending_and_live_offerings": {"$ref": "#/$defs/record_list"},
+        "historical_offering_behavior": {"$ref": "#/$defs/record_list"},
+        "counterparty_history": {"$ref": "#/$defs/record_list"},
+        "corporate_action_state": {"$ref": "#/$defs/record_list"}
+      }
+    },
+    "lineage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_ids", "term_observation_ids", "calculation_receipt_ids"],
+      "properties": {
+        "event_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "term_observation_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "calculation_receipt_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "freshness", "contradiction_ids"],
+      "properties": {
+        "state": {"type": "string", "enum": ["complete", "partial", "unavailable", "contradicted"]},
+        "freshness": {"type": "string", "enum": ["fresh", "stale", "unknown"]},
+        "contradiction_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "risk_claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authority", "claims"],
+      "properties": {
+        "authority": {"const": "context_only"},
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim_id", "statement", "status", "evidence_ids"],
+            "properties": {
+              "claim_id": {"type": "string", "minLength": 1},
+              "statement": {"type": "string", "minLength": 1},
+              "status": {"type": "string", "enum": ["descriptive", "unvalidated", "contradicted"]},
+              "evidence_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+            }
+          }
+        }
+      }
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true},
+        "rank_authority": {"const": false},
+        "sizing_authority": {"const": false},
+        "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit", "state", "evidence_ids"],
+      "properties": {
+        "value": {"type": ["number", "string", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "state": {"type": "string", "enum": ["observed", "derived", "unknown", "contradicted", "not_applicable"]},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "record_list": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "records", "evidence_ids"],
+      "properties": {
+        "state": {"type": "string", "enum": ["observed", "derived", "unknown", "contradicted", "not_applicable"]},
+        "records": {"type": "array", "items": {"$ref": "#/$defs/context_record"}},
+        "evidence_ids": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "context_record": {
+      "type": "object",
+      "description": "A bounded evidence-backed fact. Nested authority, ranking, sizing, entry, Prophet, score, and model-output objects are deliberately impossible.",
+      "additionalProperties": false,
+      "required": ["record_id", "record_type", "label", "state", "value", "unit", "effective_at", "evidence_ids"],
+      "properties": {
+        "record_id": {"type": "string", "minLength": 1},
+        "record_type": {
+          "type": "string",
+          "enum": ["instrument", "registration", "offering", "financing_history", "counterparty", "corporate_action", "other"]
+        },
+        "label": {"type": "string", "minLength": 1, "maxLength": 160},
+        "state": {"type": "string", "enum": ["observed", "derived", "unknown", "contradicted", "not_applicable"]},
+        "value": {"type": ["number", "string", "boolean", "null"]},
+        "unit": {"type": ["string", "null"]},
+        "effective_at": {"type": ["string", "null"], "format": "date-time"},
+        "evidence_ids": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true}
+      }
+    }
+  }
+}

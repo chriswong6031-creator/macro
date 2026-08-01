@@ -1,0 +1,21 @@
+{
+  "contract_id": "sector_event.v1",
+  "schema_version": "1.0.0",
+  "event_id": "event:trial:NCT00000001:registry-change:20260801",
+  "sector": "biopharma",
+  "event_type": "trial.registry_record_changed",
+  "entity_refs": ["trial:NCT00000001"],
+  "state": "observed_registry_change",
+  "interpretation_status": "registry_change_only",
+  "timing": {"kind": "interval", "exact_at": null, "earliest_at": "2026-07-31", "latest_at": "2026-08-01T08:00:00Z", "distribution_ref": null, "source_date_precision": "day", "first_observed_at": "2026-08-01T08:00:00Z"},
+  "evidence_claim_refs": ["claim:trial:NCT00000001:overall_status:20260801"],
+  "source_record_refs": ["src:ctgov:NCT00000001:sha256:287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e"],
+  "materiality": {"status": "not_assessed", "score": null, "method": null, "model_version": null},
+  "confidence": null,
+  "valid_from": null,
+  "valid_to": null,
+  "transaction_from": "2026-08-01T08:00:01Z",
+  "transaction_to": null,
+  "authority_manifest_ref": "authority:biocatalyst-facts:v1",
+  "supersedes_event_id": null
+}

@@ -1,6 +1,6 @@
 {
   "schema": "calibration_hub.v1",
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "desks": [
     {
       "name": "AI Desk",
@@ -79,7 +79,7 @@
       "name": "Alt-Data Brain",
       "slug": "altdata",
       "scored": 0,
-      "open": 415,
+      "open": 419,
       "hit_rate": null,
       "dir_accuracy": null,
       "null_hit_rate": null,
@@ -138,10 +138,10 @@
     {
       "name": "Stock Desk",
       "slug": "stock_desk",
-      "scored": 71,
-      "open": 82,
-      "hit_rate": 0.746,
-      "dir_accuracy": 0.423,
+      "scored": 72,
+      "open": 87,
+      "hit_rate": 0.736,
+      "dir_accuracy": 0.417,
       "null_hit_rate": 0.8236,
       "null_dir_rate": 0.531,
       "p_hit": null,
@@ -149,9 +149,9 @@
       "p_dir": null,
       "p_dir_holm": null,
       "independent_blocks": 2,
-      "placebo_coverage": 0.338,
+      "placebo_coverage": 0.3333,
       "placebo_available": false,
-      "placebo_note": "reconstructed 24 graded predicates but the track record has 71 \u2014 cannot pair observed outcomes to their nulls",
+      "placebo_note": "reconstructed 24 graded predicates but the track record has 72 \u2014 cannot pair observed outcomes to their nulls",
       "placebo_mix_source": "scored",
       "placebo_by_kind": {
         "rel_return": {
@@ -161,15 +161,15 @@
         }
       },
       "conviction_monotone": true,
-      "conviction_note": "conviction ordering holds (medium 100% \u2265 low 71%; medium n=8, low n=63)",
+      "conviction_note": "conviction ordering holds (medium 100% \u2265 low 70%; medium n=8, low n=64)",
       "conviction_tiers": {
         "high": 0,
         "medium": 8,
-        "low": 63
+        "low": 64
       },
       "regimes": [],
       "health": "inverted",
-      "health_note": "not-falsified 75% vs 82% of these same falsifiers go untriggered by chance (the 24 of 71 graded we could price, 2 independent windows); direction called right 42% vs 53% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering holds (medium 100% \u2265 low 71%; medium n=8, low n=63)."
+      "health_note": "not-falsified 74% vs 82% of these same falsifiers go untriggered by chance (the 24 of 72 graded we could price, 2 independent windows); direction called right 42% vs 53% by chance \u2014 the leans point the WRONG WAY; a lenient not-falsified rate cannot rescue that. conviction ordering holds (medium 100% \u2265 low 70%; medium n=8, low n=64)."
     },
     {
       "name": "Demand Chain",
@@ -205,7 +205,7 @@
       "name": "Thematic Desk",
       "slug": "thematic_desk",
       "scored": 50,
-      "open": 110,
+      "open": 112,
       "hit_rate": 0.58,
       "dir_accuracy": 0.4,
       "null_hit_rate": 0.856,

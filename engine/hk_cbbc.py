@@ -28,6 +28,16 @@ W2 ADDITIONS — magnet cluster fields (per-underlying):
   call_level_coverage     — fraction of outstanding CBBCs with a known call price
                             (honest: partial coverage is labelled, not hidden)
 
+W2 ADDITIONS — call-levels store staleness (snapshot level):
+  sld_max_issue_date        — newest issue_date in the call-levels store (ISO) or None
+  sld_freshness             — missing | unknown | fresh | slow | stale
+  sld_pdftotext_available   — collector-side extractor health (True/False/None), read
+                              fail-open: absent in the pre-#4177 coverage JSON shape
+  sld_banner                — {en, zh} plain-word banner when the store is stale
+  Rationale: the verdict keys to max(issue_date) in the DATA, never to the coverage
+  file's fetched_at — during the 2026-07 store freeze fetched_at kept advancing
+  nightly, so a fetch-stamp gate is blind to exactly the failure it exists to catch.
+
 Sign-correctness invariant (critical):
   Bull-CBBC call price < spot at issuance (magnet BELOW spot).
   Bear-CBBC call price > spot at issuance (magnet ABOVE spot).
@@ -65,7 +75,7 @@ import math
 import os
 import re
 import tempfile
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import NamedTuple
 
@@ -599,6 +609,66 @@ def _w1_banner(freshness: str, store_empty: bool) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# SLD call-levels store staleness — keyed to the DATA, not the fetch stamp
+# ---------------------------------------------------------------------------
+# During the 2026-07-10..07-31 no-poppler M1 incident the call_levels store
+# froze at issue_date 2026-07-28 while sld_coverage.json's fetched_at kept
+# advancing nightly — a fetched_at-keyed gate stays green through exactly the
+# failure it exists to catch, so the verdict keys to max(issue_date) in the
+# parquet itself. HKEX files SLDs every weekday (~21/day): a max issue_date
+# _SLD_STALE_BUSDAYS+ business days old means extraction is dead, not quiet.
+# (A multi-day HK holiday run can produce one false-stale night — the banner
+# states the last-update date, which is true either way, and the store heals
+# on the next filing day.)
+_SLD_STALE_BUSDAYS = 3   # busday lag >= 3 → stale
+
+
+def _sld_data_freshness(call_levels_df: pd.DataFrame | None,
+                        today: date | None = None) -> tuple[str | None, str]:
+    """(max_issue_date_iso, verdict) for the SLD call-levels store.
+
+    Verdict keys to max(issue_date) in the data — never to the coverage
+    file's fetched_at (see incident note above). Values:
+      'missing'  — store absent or empty (launch state; fail-open, no banner)
+      'unknown'  — rows exist but no parseable YYYYMMDD issue_date
+      'fresh'    — newest filing <= 1 business day old
+      'slow'     — 2 business days
+      'stale'    — >= _SLD_STALE_BUSDAYS business days: extraction is dead
+    Never raises.
+    """
+    try:
+        if call_levels_df is None or call_levels_df.empty:
+            return None, "missing"
+        dates = []
+        for s in call_levels_df.get("issue_date", pd.Series(dtype=str)).astype(str):
+            if re.match(r"^\d{8}$", s):
+                try:
+                    dates.append(datetime.strptime(s, "%Y%m%d").date())
+                except ValueError:
+                    continue
+        if not dates:
+            return None, "unknown"
+        max_d = max(dates)
+        if today is None:
+            today = date.today()
+        lag = 0
+        d = max_d
+        while d < today:
+            d += timedelta(days=1)
+            if d.weekday() < 5:
+                lag += 1
+        if lag <= 1:
+            verdict = "fresh"
+        elif lag < _SLD_STALE_BUSDAYS:
+            verdict = "slow"
+        else:
+            verdict = "stale"
+        return max_d.isoformat(), verdict
+    except Exception:  # noqa: BLE001 — freshness must never break the render
+        return None, "unknown"
+
+
+# ---------------------------------------------------------------------------
 # Ledger
 # ---------------------------------------------------------------------------
 
@@ -725,6 +795,21 @@ def run(data_root: Path | None = None) -> dict:
         except Exception as e:  # noqa: BLE001
             log.warning("hk_cbbc: SLD call-levels unavailable (%s) — W1 mode", e)
 
+        # SLD store staleness — keyed to max(issue_date) in the data, NOT to
+        # sld_coverage.json's fetched_at (which kept advancing through the
+        # 2026-07 store freeze). pdftotext_available is read fail-open: absent
+        # (pre-#4177 coverage shape) → None, never a crash.
+        sld_max_issue_date, sld_freshness = _sld_data_freshness(call_levels_df)
+        sld_pdftotext = sld_coverage.get("pdftotext_available")
+        sld_banner = None
+        if sld_freshness == "stale":
+            log.warning("hk_cbbc: SLD call-levels store stale — newest issue_date %s",
+                        sld_max_issue_date)
+            sld_banner = {
+                "en": f"Price-level data last updated {sld_max_issue_date} — newer leveraged bets may be missing",
+                "zh": f"价位数据更新至 {sld_max_issue_date}，较新的杠杆仓位可能缺失",
+            }
+
         # W2: load spot prices from price store (fail-open)
         spot_prices = _load_spot_prices(data_root)
 
@@ -747,6 +832,10 @@ def run(data_root: Path | None = None) -> dict:
             "cbbc_total_contracts": status.get("cbbc_rows", 0),
             "dw_total_contracts": status.get("dw_rows", 0),
             "sld_call_levels_in_store": sld_coverage.get("call_levels_in_store", 0),
+            "sld_max_issue_date": sld_max_issue_date,
+            "sld_freshness": sld_freshness,
+            "sld_pdftotext_available": sld_pdftotext,
+            "sld_banner": sld_banner,
             "display_only": True,
         }
 
@@ -767,5 +856,11 @@ def run(data_root: Path | None = None) -> dict:
             },
             "cbbc_total_contracts": 0,
             "dw_total_contracts": 0,
+            # Schema symmetry with the healthy path (site/factordata/hk_cbbc.json
+            # consumers read these keys unconditionally).
+            "sld_max_issue_date": None,
+            "sld_freshness": "missing",
+            "sld_pdftotext_available": None,
+            "sld_banner": None,
             "display_only": True,
         }

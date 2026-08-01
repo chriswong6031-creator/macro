@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_event_edge.schema.json",
+  "title": "Capital Structure immutable event edge",
+  "description": "An append-only observation linking two immutable capital-structure event versions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "edge_id", "from_event_id", "to_event_id", "relationship",
+    "link_method", "observed_at", "immutable_record"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.event_edge.v1"},
+    "edge_id": {"type": "string", "pattern": "^edge:cs:[A-Fa-f0-9]{24}$"},
+    "from_event_id": {"type": "string", "minLength": 1},
+    "to_event_id": {"type": "string", "minLength": 1},
+    "relationship": {"type": "string", "enum": ["amendment_of", "effectuates", "withdraws", "supersedes"]},
+    "link_method": {
+      "type": "string",
+      "enum": ["explicit_event_id", "explicit_accession", "exact_cik_file_number_family_chronology"]
+    },
+    "observed_at": {"type": "string", "format": "date-time"},
+    "immutable_record": {"const": true}
+  }
+}

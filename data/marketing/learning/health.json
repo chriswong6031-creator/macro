@@ -76,7 +76,6 @@
           "metric": "last_nine",
           "n": 9,
           "problems": [
-            "7/9 posts have no measurement yet (ceiling 6)",
             "5 near-repeat(s) in the visible grid"
           ],
           "repeats": 5,
@@ -84,7 +83,7 @@
             "receipt_floor": 3,
             "unmeasured_ceiling": 6
           },
-          "unmeasured": 7,
+          "unmeasured": 1,
           "value": 9,
           "verdict": "warn",
           "with_receipt": 7
@@ -313,7 +312,7 @@
     }
   ],
   "apply_halts": true,
-  "as_of": "2026-08-01T03:51:41Z",
+  "as_of": "2026-08-01T21:49:41Z",
   "halted": [],
   "metrics": [
     "approval_rate",

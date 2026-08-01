@@ -186,12 +186,249 @@ def _unique_slug(base: str, slot: dict, taken: set[str]) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _source_revisions(obj: dict) -> dict[str, str]:
+    """Revision receipts recorded on a slot, staged item, or ledger row."""
+
+    raw = obj.get("source_revisions") if isinstance(obj, dict) else None
+    if not isinstance(raw, dict):
+        slot = obj.get("slot") if isinstance(obj, dict) else None
+        raw = slot.get("source_revisions") if isinstance(slot, dict) else None
+    out = {
+        str(ref): str(receipt).lower()
+        for ref, receipt in (raw or {}).items()
+        if ref and receipt
+    }
+    if out:
+        return out
+    # Compatibility with the first revision-aware staged shape, which carried
+    # the receipt only under primary_source before the top-level map existed.
+    slot = obj.get("slot") if isinstance(obj, dict) else None
+    slot = slot if isinstance(slot, dict) else obj
+    primary = slot.get("primary_source") if isinstance(slot, dict) else None
+    if isinstance(primary, dict) and primary.get("ref") and primary.get("receipt"):
+        return {str(primary["ref"]): str(primary["receipt"]).lower()}
+    return {}
+
+
+def _read_ledger_rows(path: Path) -> list[dict]:
+    rows: list[dict] = []
+    if not path.exists():
+        return rows
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        log.warning("press revision reconciliation: cannot read %s: %s", path, exc)
+        return rows
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("press revision reconciliation: invalid ledger row: %s", exc)
+            continue
+        if isinstance(row, dict):
+            rows.append(row)
+    return rows
+
+
+def _mark_revision_state(path: Path, obj: dict, *, status: str, reason: str,
+                         details: dict) -> bool:
+    """Persist one terminal/non-emittable revision state exactly once."""
+
+    if obj.get("status") == status and obj.get("revision_state") == details:
+        return False
+    obj["status"] = status
+    obj["revision_state"] = details
+    obj["quarantine_reason"] = reason
+    obj[f"{status}_at"] = _now()
+    path.write_text(
+        json.dumps(obj, ensure_ascii=False, indent=2, default=str) + "\n",
+        encoding="utf-8",
+    )
+    return True
+
+
+def reconcile_earnings_call_revisions(root: Path, cfg: dict) -> dict:
+    """Reconcile mutable transcript revisions with immutable Press state.
+
+    Pending stale drafts are retained but made non-emittable.  Once a prior
+    revision has been published, a changed (or unverifiable legacy) revision is
+    represented by an explicit ``correction_required`` staging record; it is
+    never converted into a normal passing draft automatically.
+    """
+
+    paths = _paths(cfg, root)
+    paths["staging"].mkdir(parents=True, exist_ok=True)
+    current = desk_planner.earnings_call_revisions(root)
+
+    published: dict[str, dict] = {}
+    for row in _read_ledger_rows(paths["ledger"]):
+        revisions = _source_revisions(row)
+        for ref in row.get("sources") or []:
+            ref = str(ref)
+            if ref in current:
+                # Append-only ledger order: the last row is the latest explicit
+                # publication state for this stable story ref.
+                published[ref] = {
+                    "row": row,
+                    "receipt": revisions.get(ref, ""),
+                }
+
+    mismatches: dict[str, dict] = {}
+    for ref, state in current.items():
+        prior = published.get(ref)
+        if prior is None:
+            continue
+        current_receipt = str(state.get("receipt") or "")
+        published_receipt = str(prior.get("receipt") or "")
+        if not state.get("valid") or current_receipt != published_receipt:
+            mismatches[ref] = {
+                "current": state,
+                "published": prior,
+            }
+
+    stage_rows: list[tuple[Path, dict]] = []
+    for path in sorted(paths["staging"].glob("*.json")):
+        if path.name.startswith("_"):
+            continue
+        try:
+            obj = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("press revision reconciliation: unreadable %s: %s", path, exc)
+            continue
+        if isinstance(obj, dict):
+            stage_rows.append((path, obj))
+
+    superseded = 0
+    resolved = 0
+    for path, obj in stage_rows:
+        revisions = _source_revisions(obj)
+        tracked_refs = [ref for ref in revisions if ref in current]
+        missing_refs = [ref for ref in revisions if ref not in current]
+
+        if obj.get("status") == "correction_required":
+            active = [
+                ref for ref in tracked_refs
+                if ref in mismatches
+                and revisions.get(ref) == str(current[ref].get("receipt") or "")
+            ]
+            if active:
+                continue
+            details = {
+                "state": "published_revision_now_current"
+                if tracked_refs and not any(ref in mismatches for ref in tracked_refs)
+                else "correction_record_superseded",
+                "recorded": revisions,
+                "current": {
+                    ref: str(current[ref].get("receipt") or "") for ref in tracked_refs
+                },
+            }
+            if _mark_revision_state(
+                path, obj, status="resolved", reason=details["state"], details=details,
+            ):
+                resolved += 1
+            continue
+
+        stale_refs = [
+            ref for ref in tracked_refs
+            if not current[ref].get("valid")
+            or revisions.get(ref) != str(current[ref].get("receipt") or "")
+        ]
+        published_changed = [ref for ref in tracked_refs if ref in mismatches]
+        if missing_refs or stale_refs or published_changed:
+            reason = (
+                "published_revision_changed_requires_correction"
+                if published_changed else "source_revision_changed"
+            )
+            details = {
+                "state": reason,
+                "recorded": revisions,
+                "current": {
+                    ref: str(current[ref].get("receipt") or "") for ref in tracked_refs
+                },
+                "missing_current_refs": missing_refs,
+            }
+            if _mark_revision_state(
+                path, obj, status="superseded", reason=reason, details=details,
+            ):
+                superseded += 1
+
+    correction_required = 0
+    # Re-read the small staging set conceptually through stage_rows plus any
+    # state changes above.  A matching correction record is idempotent and
+    # prevents one file per run.
+    existing_corrections: set[tuple[str, str]] = set()
+    for _path, obj in stage_rows:
+        if obj.get("status") != "correction_required":
+            continue
+        for ref, receipt in _source_revisions(obj).items():
+            existing_corrections.add((ref, receipt))
+
+    for ref, mismatch in sorted(mismatches.items()):
+        state = mismatch["current"]
+        receipt = str(state.get("receipt") or "")
+        if (ref, receipt) in existing_corrections:
+            continue
+        prior = mismatch["published"]
+        row = prior["row"]
+        correction_id = (
+            "press-correction-"
+            + desk_planner.story_key(ref, receipt or "unverifiable")
+        )
+        correction = {
+            "id": correction_id,
+            "desk": row.get("desk") or "brief",
+            "publication": row.get("publication") or "mastermind_news",
+            "as_of": state.get("date") or date.today().isoformat(),
+            "staged_at": _now(),
+            "status": "correction_required",
+            "correction_reason": (
+                "published_source_revision_changed"
+                if receipt else "current_source_revision_unverifiable"
+            ),
+            "sources": [ref],
+            "source_revisions": {ref: receipt},
+            "seed_refs": [],
+            "slug": "",
+            "draft": None,
+            "validator_report": None,
+            "attempts": [],
+            "correction": {
+                "state": "requires_editorial_correction",
+                "auto_emit_allowed": False,
+                "source_ref": ref,
+                "published": {
+                    "id": row.get("id"),
+                    "receipt": prior.get("receipt") or None,
+                    "url": row.get("url"),
+                    "ts": row.get("ts"),
+                },
+                "current": state,
+            },
+        }
+        (paths["staging"] / f"{correction_id}.json").write_text(
+            json.dumps(correction, ensure_ascii=False, indent=2, default=str) + "\n",
+            encoding="utf-8",
+        )
+        correction_required += 1
+
+    return {
+        "current_sources": len(current),
+        "superseded": superseded,
+        "resolved": resolved,
+        "correction_required": correction_required,
+        "published_mismatches": len(mismatches),
+    }
+
+
 def run_staging(root: Path, cfg: dict, *, desks=None, as_of=None,
                 max_slots: int | None = None) -> dict:
     paths = _paths(cfg, root)
     paths["staging"].mkdir(parents=True, exist_ok=True)
 
     run_date = as_of or date.today().isoformat()
+    revision_reconciliation = reconcile_earnings_call_revisions(root, cfg)
     slots = desk_planner.plan(desks, as_of=run_date, root=root, cfg=cfg)
     if max_slots is not None:
         slots = slots[:max_slots]
@@ -210,7 +447,8 @@ def run_staging(root: Path, cfg: dict, *, desks=None, as_of=None,
     taken = desk_planner.taken_slugs(root) | pub_slugs | stg_slugs
 
     summary = {"run_at": _now(), "as_of": run_date, "planned": len(slots),
-               "passed": 0, "quarantined": 0, "items": []}
+               "passed": 0, "quarantined": 0, "items": [],
+               "revision_reconciliation": revision_reconciliation}
 
     for slot in slots:
         attempts: list[dict] = []
@@ -284,6 +522,7 @@ def _stage_item(slot: dict, passed_payload, attempts: list[dict], run_date: str)
         "as_of": slot.get("as_of") or run_date,
         "staged_at": _now(),
         "sources": list(slot.get("sources") or []),
+        "source_revisions": dict(slot.get("source_revisions") or {}),
         "seed_refs": list(slot.get("seed_refs") or []),
         "slot": slot,
         "attempts": attempts,
@@ -461,6 +700,11 @@ def run_emit(root: Path, cfg: dict) -> dict:
         _annotate("notice", "press_emit", "press emit: no staging directory — nothing to do")
         return {"emitted": 0, "items": []}
 
+    # Re-check the exact Chronicle receipt at the last safe boundary.  A call
+    # can be corrected after staging; no previously-passing draft is allowed to
+    # cross that race as stale copy.
+    revision_reconciliation = reconcile_earnings_call_revisions(root, cfg)
+
     sitemap = root / "site" / "sitemap.xml"
     sitemap_before = sitemap.read_bytes() if sitemap.exists() else None
 
@@ -479,7 +723,8 @@ def run_emit(root: Path, cfg: dict) -> dict:
     if not items:
         _annotate("notice", "press_emit",
                   "press emit: no passing staged drafts — nothing published")
-        return {"emitted": 0, "items": []}
+        return {"emitted": 0, "items": [],
+                "revision_reconciliation": revision_reconciliation}
 
     paths["content"].mkdir(parents=True, exist_ok=True)
     written: list[dict] = []
@@ -527,6 +772,7 @@ def run_emit(root: Path, cfg: dict) -> dict:
             "title": str(draft.get("title") or ""),
             "url": route["url"],
             "sources": list(obj.get("sources") or []),
+            "source_revisions": dict(_source_revisions(obj)),
             "seed_refs": list(obj.get("seed_refs") or []),
             "validator_report": obj.get("validator_report"),
             "urls": [route["url"]],
@@ -606,7 +852,8 @@ def run_emit(root: Path, cfg: dict) -> dict:
               f"press emit: {len(ledger_rows)} article(s) published; "
               f"{len(copied)} file(s) written under site/blog/{routed_note}")
     return {"emitted": len(ledger_rows), "items": ledger_rows, "site_files": copied,
-            "properties": routed_pubs}
+            "properties": routed_pubs,
+            "revision_reconciliation": revision_reconciliation}
 
 
 def _restore_tree(base: Path, snapshot: dict) -> None:

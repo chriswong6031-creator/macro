@@ -1,7 +1,7 @@
 {
   "schema": "stage_context.v1",
   "asof": "2026-08-01",
-  "built": "2026-08-01T02:18:36Z",
+  "built": "2026-08-01T20:22:54Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
@@ -99,9 +99,9 @@
         "上升初期 — 已上行 7 周",
         "位于 30 周均线之上 — 趋势向好"
       ],
-      "atr_14w": 8.8359,
+      "atr_14w": 8.838,
       "atr_ext": 0.22,
-      "atr_pct_price": 0.37282,
+      "atr_pct_price": 0.37291,
       "sata_score": 5,
       "sata_change_1w": 0,
       "stage_detailed": "2X_catch_price_above_ma",
@@ -169,9 +169,23 @@
         "sentiment": 0.5555555555555556,
         "performance": 5.0,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "m&a",
+          "food_distribution",
+          "restaurant_depot",
+          "local_volume",
+          "cost_synergies",
+          "sales_productivity",
+          "restaurant_supply",
+          "wholesale",
+          "foodservice",
+          "cash_and_carry",
+          "private_label",
+          "ma_integration",
+          "supply_chain_logistics"
+        ],
         "quarter": "Q3",
-        "summary": "Company reiterated FY26 adjusted EPS guidance, expecting to be at the high end of the $4.50-$4.60 range. For Q4, management expects at least 2.5% local case growth, which is an acceleration on a two-year stacked basis."
+        "summary": "Most notably, we delivered 3.3% local volume growth in our U.S. business, a 210 basis point improvement versus the prior quarter."
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
@@ -189,7 +203,7 @@
       "sata_score": 7,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 50.0
     },
     {
       "ticker": "IMMR",
@@ -202,7 +216,7 @@
       "ma30_slope_pct5w": 0.919,
       "pct_vs_ma30": 20.27,
       "mansfield_rs": 8.32,
-      "vol_ratio": 1.37,
+      "vol_ratio": 1.38,
       "event": "pullback_resume",
       "gate_tier": "T1",
       "blackout": false,
@@ -232,7 +246,7 @@
       "sata_score": 8,
       "sata_change_1w": 4,
       "stage_detailed": "2D_extended_run",
-      "industry_percentile": null
+      "industry_percentile": 53.3
     },
     {
       "ticker": "AMZN",
@@ -245,7 +259,7 @@
       "ma30_slope_pct5w": 1.378,
       "pct_vs_ma30": 14.35,
       "mansfield_rs": 7.26,
-      "vol_ratio": 0.94,
+      "vol_ratio": 0.95,
       "event": "trendline_recapture",
       "gate_tier": "T2",
       "blackout": false,
@@ -255,9 +269,21 @@
         "sentiment": 0.8333333333333334,
         "performance": 7.5,
         "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Company guided Q2 revenues to be between $194B and $199B, and operating income between $20B and $24B. The guidance sees continued strong sales trends, but also incorporates a ~$1B cost increase for the Amazon Leo satellite project and higher fuel-related transportation costs."
+        "tags": [
+          "ai_demand",
+          "aws_acceleration",
+          "cloud_capex",
+          "custom_silicon",
+          "ad_revenue_growth",
+          "grocery_&_perishables",
+          "logistics_efficiency",
+          "aws_growth",
+          "ecommerce",
+          "advertising",
+          "grocery_delivery"
+        ],
+        "quarter": "Q2",
+        "summary": "Our AI revenue run rate... is now also over $25 billion, growing triple-digit percentages year-over-year."
       },
       "why": [
         "Early in its climb — 1 weeks up so far",
@@ -275,7 +301,7 @@
       "sata_score": 8,
       "sata_change_1w": 4,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 85.7
     },
     {
       "ticker": "SILA",
@@ -298,9 +324,23 @@
         "sentiment": 0.6111111111111112,
         "performance": 6.25,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "reit",
+          "healthcare",
+          "acquisitions",
+          "portfolio_optimization",
+          "capital_allocation",
+          "leverage",
+          "tenant_quality",
+          "healthcare_reit",
+          "medical_office_buildings",
+          "inpatient_rehabilitation",
+          "post_acute_care",
+          "surgical_hospitals",
+          "net_lease"
+        ],
         "quarter": "Q4",
-        "summary": "Company sees itself in a prime position to execute strategy using its balance sheet strength. Outlook is for continued careful capital allocation, with expected 2026 acquisition volume similar to 2025 (~$150M). The company is also focused on higher-yielding internal redevelopm…"
+        "summary": "We foresee additional expansion opportunities... yielding 150 to 200 basis points higher than going in capitalization rates."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -339,9 +379,24 @@
         "sentiment": 0.7777777777777778,
         "performance": 7.5,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "ai",
+          "athena",
+          "beat_and_raise",
+          "market_share_gains",
+          "vendor_consolidation",
+          "marigold_integration",
+          "guidance_raise",
+          "marketing_automation",
+          "ad_tech",
+          "generative_ai",
+          "customer_data_platform",
+          "saas",
+          "data_analytics",
+          "digital_advertising"
+        ],
         "quarter": "Q1",
-        "summary": "For the full year 2026, we're increasing the midpoint of our revenue guidance by $30 million to $1.785 billion... and adjusted EBITDA to $397 million."
+        "summary": "Athena was a driver in one of the largest deals we have ever closed, as the customer consolidated down from 4 vendors to 1, Zeta."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -359,7 +414,7 @@
       "sata_score": 6,
       "sata_change_1w": 2,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 77.7
     },
     {
       "ticker": "CRSR",
@@ -383,10 +438,23 @@
         "performance": 6.25,
         "tone_word": "confident",
         "tags": [
-          "margin_expansion"
+          "margin_expansion",
+          "guidance",
+          "dtc",
+          "ai",
+          "semiconductor_shortage",
+          "elgato_ecosystem",
+          "consumer_electronics",
+          "pc_hardware",
+          "gaming_peripherals",
+          "streaming_hardware",
+          "esports",
+          "direct_to_consumer",
+          "sim_racing",
+          "semiconductors"
         ],
         "quarter": "Q1",
-        "summary": "For Q2 2026, expects revenue $295M-$320M, adjusted EBITDA $12.5M-$15.5M, and non-GAAP EPS $0.05-$0.07. Revenue outlook is cautious on components due to semiconductor shortages."
+        "summary": "In gaming components and systems, revenue declined 10%... Despite the revenue decline, we grew gross profit 18% year-over-year and expanded gross margin 670 basis points."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -404,7 +472,7 @@
       "sata_score": 8,
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
+      "industry_percentile": 66.7
     },
     {
       "ticker": "RCL",
@@ -427,9 +495,26 @@
         "sentiment": 0.3333333333333333,
         "performance": 5.0,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "geopolitics",
+          "demand",
+          "net_yield",
+          "fuel_costs",
+          "caribbean",
+          "europe_itineraries",
+          "cost_control",
+          "loyalty_program",
+          "cruise_lines",
+          "travel_leisure",
+          "consumer_discretionary",
+          "destinations",
+          "onboard_revenue",
+          "booking_curve",
+          "capacity_growth",
+          "net_yields"
+        ],
         "quarter": "Q1",
-        "summary": "Company projects full-year adjusted EPS of $17.10-$17.50, absorbing $0.86 in headwinds from fuel and JVs. Net yield guidance for the year was lowered to 1.5%-2.5% due to geopolitical impacts moderating demand for Mediterranean and Mexico itineraries."
+        "summary": "Due to the geopolitical events affecting itineraries in the Mediterranean and the West Coast of Mexico, we've adjusted our full year net yield expectations."
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
@@ -447,7 +532,7 @@
       "sata_score": 6,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 57.6
     },
     {
       "ticker": "AMC",
@@ -555,10 +640,22 @@
         "performance": 7.5,
         "tone_word": "confident",
         "tags": [
-          "margin_expansion"
+          "record_quarter",
+          "volume_growth",
+          "margin_expansion",
+          "kefir",
+          "health_trends",
+          "new_products",
+          "costco_expansion",
+          "packaged_foods",
+          "dairy_products",
+          "consumer_staples",
+          "probiotics",
+          "health_and_wellness_food",
+          "food_and_beverage"
         ],
         "quarter": "Q1",
-        "summary": "The company did not provide specific quantitative guidance, but noted that strategic investments in marketing, innovation, and manufacturing capacity are expected to enhance growth, market share capture, and capitalize on category tailwinds."
+        "summary": "This record breaking achievement...represents entirely volume led expansion, fueled by our flagship Lifeway Kefir and high protein LifeWay farmer cheese."
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
@@ -574,7 +671,7 @@
       "sata_score": 8,
       "sata_change_1w": 0,
       "stage_detailed": "2D_extended_run",
-      "industry_percentile": null
+      "industry_percentile": 82.6
     },
     {
       "ticker": "BH",
@@ -638,9 +735,22 @@
         "sentiment": 0.6111111111111112,
         "performance": 10.0,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "ai",
+          "ccaas",
+          "subscription_growth",
+          "cloud_migration",
+          "share_repurchase",
+          "guidance_raise",
+          "consumption_model",
+          "cloud_software",
+          "ai_software",
+          "customer_experience",
+          "saas",
+          "enterprise_software"
+        ],
         "quarter": "Q1",
-        "summary": "Raised full-year 2026 guidance for revenue to a midpoint of $1.26B and non-GAAP EPS to a midpoint of $3.26. Expects H2 revenue growth to accelerate to double digits."
+        "summary": "AI revenue growth accelerated to 68%, primarily driven by our backlog ramping earlier than anticipated."
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
@@ -658,7 +768,7 @@
       "sata_score": 8,
       "sata_change_1w": 2,
       "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
+      "industry_percentile": 88.3
     },
     {
       "ticker": "PGEN",
@@ -762,12 +872,29 @@
       "arc_pos": 0.3625,
       "earnings": {
         "present": true,
-        "sentiment": 0.4444444444444444,
-        "performance": 3.75,
+        "sentiment": 0.6111111111111112,
+        "performance": 7.916666666666667,
         "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Despite a strong start to the year ahead of expectations, the company reaffirmed its full-year guidance. This decision was driven by the need to absorb new cost headwinds from the Middle East conflict and a plan to reinvest any potential EPS upside back into the business to ma…"
+        "tags": [
+          "emerging_markets",
+          "north_america_recovery",
+          "innovation",
+          "biscoff_partnership",
+          "cocoa_costs",
+          "guidance_raise",
+          "reinvestment",
+          "distribution_gains",
+          "consumer_staples",
+          "packaged_foods",
+          "snacks",
+          "chocolate",
+          "biscuits",
+          "brand_strength",
+          "emerging_markets_exposure",
+          "global_distribution"
+        ],
+        "quarter": "Q2",
+        "summary": "The expansion of our distribution We added another 100 thousand stores in India. Brazil is now at 1 million stores."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -785,7 +912,7 @@
       "sata_score": 6,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 65.2
     },
     {
       "ticker": "NET",
@@ -808,9 +935,28 @@
         "sentiment": 0.5555555555555556,
         "performance": 5.0,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "ai",
+          "restructuring",
+          "layoffs",
+          "cloud_security",
+          "developer_platform",
+          "large_customers",
+          "gross_margin_pressure",
+          "guidance",
+          "sase",
+          "zero_trust",
+          "cloud_infrastructure",
+          "cybersecurity",
+          "content_delivery_network",
+          "edge_computing",
+          "developer_platforms",
+          "saas",
+          "zero_trust_security",
+          "ai_infrastructure"
+        ],
         "quarter": "Q1",
-        "summary": "Provided strong Q2 and FY2026 guidance, projecting 30% YoY revenue growth for the full year, driven by strength in AI workloads and large customers, despite a significant restructuring."
+        "summary": "AI is driving a fundamental replatforming of the Internet... the biggest tailwind for our network and Workers developer platform we have ever seen."
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
@@ -828,7 +974,7 @@
       "sata_score": 8,
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
+      "industry_percentile": 77.3
     },
     {
       "ticker": "EML",
@@ -882,19 +1028,33 @@
       "ma30_slope_pct5w": 7.446,
       "pct_vs_ma30": 26.03,
       "mansfield_rs": 19.8,
-      "vol_ratio": 1.9,
+      "vol_ratio": 1.95,
       "event": null,
       "gate_tier": null,
       "blackout": false,
       "arc_pos": 0.3375,
       "earnings": {
         "present": true,
-        "sentiment": 0.3888888888888889,
-        "performance": 6.25,
+        "sentiment": 0.5555555555555556,
+        "performance": 7.5,
         "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Q1 is viewed as the cycle low point, with sequential improvement expected. Q2 guidance is for revenue of $380M-$400M and adjusted EPS of -$0.60 to -$0.40."
+        "tags": [
+          "market_recovery",
+          "pricing_power",
+          "margin_pressure",
+          "backlog_growth",
+          "liquidity_enhancement",
+          "trailers",
+          "commercial_vehicles",
+          "transportation_equipment",
+          "industrial_machinery",
+          "logistics",
+          "trucking",
+          "vehicle_parts",
+          "freight"
+        ],
+        "quarter": "Q2",
+        "summary": "We expect Q4 material margin to improve 200-300 basis points, backed by orders already in our backlog."
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
@@ -910,7 +1070,7 @@
       "sata_score": 8,
       "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 100.0
     },
     {
       "ticker": "HPK",
@@ -933,9 +1093,23 @@
         "sentiment": 0.6111111111111112,
         "performance": 7.5,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "capital_discipline",
+          "cost_control",
+          "free_cash_flow",
+          "production_beat",
+          "workovers",
+          "hedging",
+          "oil_production",
+          "lease_operating_expense",
+          "capital_efficiency",
+          "drilling_and_completion",
+          "hedging_strategy",
+          "permian_basin",
+          "free_cash_flow_generation"
+        ],
         "quarter": "Q1",
-        "summary": "The company reaffirmed its annual capital plan, noting approximately 60% will be spent in the first half of the year. Management expects a relatively flat production profile for the remainder of 2026, though likely in the upper end of the previously guided range."
+        "summary": "Lease operating expense per BOE came in more than 17% below our guided range and roughly 22% below the fourth quarter levels."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -951,7 +1125,7 @@
       "sata_score": 6,
       "sata_change_1w": -1,
       "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
+      "industry_percentile": 41.8
     },
     {
       "ticker": "LPRO",
@@ -974,9 +1148,22 @@
         "sentiment": 0.5,
         "performance": 8.75,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "auto_lending",
+          "fintech",
+          "credit_risk",
+          "underwriting",
+          "credit_unions",
+          "product_launch",
+          "financial_technology",
+          "consumer_finance",
+          "data_analytics",
+          "risk_management",
+          "automotive_services",
+          "insurance_technology"
+        ],
         "quarter": "Q4",
-        "summary": "Company introduced full-year 2026 guidance for CERTs (100k-110k) and Adj. EBITDA ($25M-$29M), and Q1 CERTs (21k-22k), reflecting increased confidence. Growth is expected to be back-half loaded."
+        "summary": "Our certified loan shortfall compared to guidance was driven by a temporary headwind in conversion rates as we actively managed risk."
       },
       "why": [
         "Early in its climb — 8 weeks up so far",
@@ -992,7 +1179,7 @@
       "sata_score": 9,
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
+      "industry_percentile": 100.0
     },
     {
       "ticker": "TRNS",
@@ -1097,9 +1284,23 @@
         "sentiment": 0.7222222222222222,
         "performance": 6.25,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "product_launch",
+          "rare_disease",
+          "pipeline",
+          "acromegaly",
+          "cah",
+          "payer_coverage",
+          "clinical_trials",
+          "biotechnology",
+          "rare_disease_therapeutics",
+          "endocrine_disorders",
+          "drug_commercialization",
+          "clinical_stage_assets",
+          "us_drug_launch"
+        ],
         "quarter": "Q1",
-        "summary": "Maintaining opex guidance for 2026, the company reported a strong launch for Palsonify and is confident in its trajectory. The cash runway extends into 2030."
+        "summary": "From the fourth quarter in 2025 to the first quarter in 2026, treatment-naive patients increased from 5% to 15% of total enrollments."
       },
       "why": [
         "Early in its climb — 3 weeks up so far",
@@ -1115,7 +1316,7 @@
       "sata_score": 10,
       "sata_change_1w": 0,
       "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": null
+      "industry_percentile": 96.3
     },
     {
       "ticker": "FRD",
@@ -1191,9 +1392,9 @@
         "上升初期 — 已上行 8 周",
         "已明显高于 30 周均线 — 可能需要回踩"
       ],
-      "atr_14w": 2.043,
-      "atr_ext": 1.732,
-      "atr_pct_price": 0.0778,
+      "atr_14w": 2.0476,
+      "atr_ext": 1.728,
+      "atr_pct_price": 0.07798,
       "sata_score": 7,
       "sata_change_1w": -1,
       "stage_detailed": "2X_fallback_bullish",
@@ -1217,12 +1418,25 @@
       "arc_pos": 0.3625,
       "earnings": {
         "present": true,
-        "sentiment": 0.5,
-        "performance": 7.5,
-        "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "Company reaffirmed full year 2026 guidance for premium revenue of approximately $42 billion and adjusted EPS of at least $5.00, citing a prudent approach early in the year despite a strong Q1."
+        "sentiment": 0.16666666666666666,
+        "performance": 5.833333333333334,
+        "tone_word": "steady",
+        "tags": [
+          "medicaid",
+          "medicare_advantage",
+          "marketplace_/_aca",
+          "medical_cost_ratio_(mcr)",
+          "acuity_mix",
+          "guidance_revision",
+          "government_contracts",
+          "managed_care",
+          "health_insurance_exchange",
+          "medical_cost_trend",
+          "risk_adjustment",
+          "healthcare_policy"
+        ],
+        "quarter": "Q2",
+        "summary": "We're seeing high-cost drug utilization without corresponding HCC to drive risk adjustment, which is creating an imbalance."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -1238,7 +1452,7 @@
       "sata_score": 6,
       "sata_change_1w": 0,
       "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
+      "industry_percentile": 44.7
     },
     {
       "ticker": "NGNE",
@@ -1279,7 +1493,7 @@
       "sata_score": 7,
       "sata_change_1w": -1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 78.5
     },
     {
       "ticker": "TMHC",
@@ -1302,9 +1516,18 @@
         "sentiment": 0.2777777777777778,
         "performance": 2.5,
         "tone_word": "steady",
-        "tags": [],
+        "tags": [
+          "homebuilding",
+          "residential_construction",
+          "single_family_homes",
+          "build_to_rent",
+          "land_development",
+          "mortgage_financing",
+          "consumer_discretionary",
+          "active_adult_communities"
+        ],
         "quarter": "Q1",
-        "summary": "Company reaffirmed its full-year 2026 guidance, expecting gradual gross margin improvement in the second half of the year, driven by a better mix towards to-be-built homes."
+        "summary": "We achieved our first quarter sales with a significant increase in the share of to-be-built orders to 38% from 28% in the fourth quarter."
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
@@ -1320,7 +1543,7 @@
       "sata_score": 8,
       "sata_change_1w": 0,
       "stage_detailed": "2D_extended_run",
-      "industry_percentile": null
+      "industry_percentile": 83.3
     },
     {
       "ticker": "ADV",
@@ -1538,7 +1761,7 @@
       "ma30_slope_pct5w": 1.296,
       "pct_vs_ma30": 5.94,
       "mansfield_rs": -2.93,
-      "vol_ratio": 1.01,
+      "vol_ratio": 1.02,
       "event": "pullback_resume",
       "gate_tier": "T2",
       "blackout": false,
@@ -1568,7 +1791,7 @@
       "sata_score": 6,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 7.3
     },
     {
       "ticker": "PSNL",
@@ -1591,9 +1814,24 @@
         "sentiment": 0.5555555555555556,
         "performance": 5.0,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "mrd",
+          "clinical_volume_growth",
+          "gross_margin_pressure",
+          "reimbursement_strategy",
+          "biopharma_services",
+          "tempus_partnership",
+          "ultrasensitivity",
+          "cancer_diagnostics",
+          "mrd_testing",
+          "liquid_biopsy",
+          "genomic_sequencing",
+          "clinical_lab_services",
+          "oncology",
+          "tumor_informed"
+        ],
         "quarter": "Q1",
-        "summary": "Company reaffirmed full-year 2026 guidance, including revenue of $78M-$80M and clinical test volumes of 43k-45k. The outlook only includes currently reimbursed tests."
+        "summary": "This margin compression is intentional, driven by strong growth in NeXT Personal test volume ahead of reimbursed revenue and our goal of gaining market share."
       },
       "why": [
         "Early in its climb — 8 weeks up so far",
@@ -1609,7 +1847,7 @@
       "sata_score": 8,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 95.5
     },
     {
       "ticker": "BHVN",
@@ -1715,10 +1953,22 @@
         "performance": 7.5,
         "tone_word": "confident",
         "tags": [
-          "margin_expansion"
+          "organic_growth",
+          "margin_expansion",
+          "powering_honest_growth",
+          "wipes_growth",
+          "personal_care",
+          "diaper_decline",
+          "share_buyback",
+          "household_penetration",
+          "household_products",
+          "baby_products",
+          "consumer_staples",
+          "e_commerce",
+          "brand_management"
         ],
         "quarter": "Q1",
-        "summary": "Reaffirmed full-year 2026 guidance, including organic revenue growth of 4-6% and adjusted EBITDA of $20M to $23M, while noting a cautious outlook for the competitive diaper category."
+        "summary": "Strong momentum behind our higher growth, higher-margin wipes and personal care platforms was partially offset by moderating diaper sales declines."
       },
       "why": [
         "Early in its climb — 8 weeks up so far",
@@ -1734,7 +1984,7 @@
       "sata_score": 7,
       "sata_change_1w": -1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 83.3
     },
     {
       "ticker": "HNVR",
@@ -1857,7 +2107,7 @@
       "sata_score": 7,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 71.1
     },
     {
       "ticker": "TBRG",
@@ -1921,9 +2171,24 @@
         "sentiment": 0.7777777777777778,
         "performance": 10.0,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "healthcare_reit",
+          "senior_housing",
+          "skilled_nursing",
+          "noi_growth",
+          "acquisitions",
+          "development",
+          "raised_guidance",
+          "reit_healthcare",
+          "senior_living",
+          "skilled_nursing_facilities",
+          "medical_office_buildings",
+          "post_acute_care",
+          "real_estate_acquisitions",
+          "real_estate_development"
+        ],
         "quarter": "Q1",
-        "summary": "Company raised full-year NFFO and same-store NOI growth guidance, citing a very strong Q1, robust demographic-driven demand, historically low new supply, and an active acquisition pipeline of over $650M."
+        "summary": "...surging demand meeting constrained supply—is a compelling operating environment our operators are experiencing right now."
       },
       "why": [
         "Early in its climb — 1 weeks up so far",
@@ -1939,7 +2204,7 @@
       "sata_score": 7,
       "sata_change_1w": 3,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 44.4
     },
     {
       "ticker": "AIRJ",
@@ -1974,9 +2239,9 @@
         "上升初期 — 已上行 6 周",
         "位于 30 周均线之上 — 趋势向好"
       ],
-      "atr_14w": 0.9192,
+      "atr_14w": 0.9193,
       "atr_ext": 0.564,
-      "atr_pct_price": 0.2173,
+      "atr_pct_price": 0.21733,
       "sata_score": 5,
       "sata_change_1w": 0,
       "stage_detailed": "2X_catch_price_above_ma",
@@ -2034,7 +2299,7 @@
       "ma30_slope_pct5w": 5.104,
       "pct_vs_ma30": 13.3,
       "mansfield_rs": 7.42,
-      "vol_ratio": 0.87,
+      "vol_ratio": 0.88,
       "event": "pullback_resume",
       "gate_tier": null,
       "blackout": false,
@@ -2044,9 +2309,25 @@
         "sentiment": 0.6666666666666666,
         "performance": 5.0,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "member_growth",
+          "pricing_strategy",
+          "renewal_rates",
+          "real_estate_channel",
+          "hvac_program",
+          "2-10_integration",
+          "attach_rate_improvement",
+          "share_buybacks",
+          "home_services",
+          "home_warranty",
+          "real_estate_services",
+          "subscription_model",
+          "direct_to_consumer",
+          "hvac_services",
+          "consumer_discretionary"
+        ],
         "quarter": "Q1",
-        "summary": "Company reaffirmed its full-year 2026 outlook and provided Q2 guidance for revenue of $635M-$650M and adjusted EBITDA of $198M-$208M. It raised its total member count growth forecast to approx. 1% for 2026."
+        "summary": "Ending member count for first-year real estate grew 3%, the first time we have organically grown this channel in years. This is a very big deal."
       },
       "why": [
         "Early in its climb — 8 weeks up so far",
@@ -2062,7 +2343,7 @@
       "sata_score": 7,
       "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 75.0
     },
     {
       "ticker": "MASS",
@@ -2085,9 +2366,23 @@
         "sentiment": 0.7777777777777778,
         "performance": 9.166666666666668,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "m&a",
+          "guidance_raise",
+          "new_product_launch",
+          "recurring_revenue",
+          "government_spending",
+          "analytical_instruments",
+          "security_equipment",
+          "aerospace_defense",
+          "public_safety_tech",
+          "law_enforcement_tech",
+          "scientific_devices",
+          "software_as_a_service",
+          "hardware_as_a_service"
+        ],
         "quarter": "Q1",
-        "summary": "Raised full-year revenue guidance to $67-70M (19-25% growth) driven by the acquisition of NIRLAB, which is expected to contribute ~$2.5M in revenue for the remainder of 2026."
+        "summary": "Sales to U.S. state and local customers remained a key driver, representing approximately 50% of our first quarter revenues."
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
@@ -2103,7 +2398,7 @@
       "sata_score": 6,
       "sata_change_1w": 2,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 52.2
     },
     {
       "ticker": "MHK",
@@ -2116,19 +2411,26 @@
       "ma30_slope_pct5w": 0.795,
       "pct_vs_ma30": 10.36,
       "mansfield_rs": -2.0,
-      "vol_ratio": 0.97,
+      "vol_ratio": 0.98,
       "event": null,
       "gate_tier": "T1",
       "blackout": false,
       "arc_pos": 0.2625,
       "earnings": {
         "present": true,
-        "sentiment": -0.2222222222222222,
-        "performance": 2.5,
-        "tone_word": "steady",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "For Q2, company expects adjusted EPS between $2.50 and $2.60. Outlook is cautious due to the Middle East conflict increasing inflation and potentially lowering consumer confidence, impacting residential demand. Commercial channels remain solid. The full impact of recent price …"
+        "sentiment": 0.6,
+        "performance": 8.0,
+        "tone_word": "confident",
+        "tags": [
+          "beat_and_raise",
+          "margin_expansion",
+          "demand_acceleration",
+          "new_product",
+          "buyback_or_dividend",
+          "macro_sensitivity"
+        ],
+        "quarter": "Q2",
+        "summary": "Mohawk Industries reported Q2 FY2026 net sales of $3 billion, up 6.8% as reported or 5% on a constant basis, with adjusted EPS of $3.67, including $0.63 from tariff refunds. All three segments grew, with Global Ceramic up 4.6% constant, Flooring North America up 4.7%, and Floo…"
       },
       "why": [
         "Early in its climb — 1 weeks up so far",
@@ -2140,13 +2442,13 @@
         "位于 30 周均线之上 — 趋势向好",
         "其他多项验证同样给出强确认"
       ],
-      "atr_14w": 9.9453,
+      "atr_14w": 9.945,
       "atr_ext": 1.162,
       "atr_pct_price": 0.08079,
       "sata_score": 6,
       "sata_change_1w": 2,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 66.7
     },
     {
       "ticker": "AGEN",
@@ -2249,11 +2551,28 @@
       "earnings": {
         "present": true,
         "sentiment": 0.7777777777777778,
-        "performance": 10.0,
+        "performance": 8.333333333333334,
         "tone_word": "confident",
-        "tags": [],
-        "quarter": "Q1",
-        "summary": "The strength delivered in the first quarter gives us confidence to raise our expected growth and profitability for the full year."
+        "tags": [
+          "guidance_raise",
+          "m&a",
+          "margin_expansion",
+          "strong_bookings",
+          "counter-uas",
+          "naval/shipbuilding",
+          "space",
+          "ai_/_software",
+          "aerospace_and_defense",
+          "defense_electronics",
+          "naval_systems",
+          "unmanned_systems",
+          "space_systems",
+          "c4isr",
+          "ai_in_defense",
+          "missile_defense"
+        ],
+        "quarter": "Q2",
+        "summary": "Execution, favorable program mix, and the retirement of program risk, were the linchpins of our success."
       },
       "why": [
         "Early in its climb — 10 weeks up so far",
@@ -2269,7 +2588,7 @@
       "sata_score": 5,
       "sata_change_1w": -2,
       "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": null
+      "industry_percentile": 65.5
     },
     {
       "ticker": "IART",
@@ -2289,14 +2608,28 @@
       "arc_pos": 0.3625,
       "earnings": {
         "present": true,
-        "sentiment": 0.5555555555555556,
-        "performance": 8.333333333333334,
+        "sentiment": 0.3333333333333333,
+        "performance": 5.833333333333334,
         "tone_word": "confident",
         "tags": [
-          "margin_expansion"
+          "surgimend",
+          "supply_chain",
+          "guidance",
+          "primatrix",
+          "cost_control",
+          "durasorb",
+          "ent",
+          "medical_devices",
+          "neurosurgery",
+          "wound_care",
+          "tissue_reconstruction",
+          "surgical_instruments",
+          "product_relaunch",
+          "supply_chain_recovery",
+          "deleveraging"
         ],
-        "quarter": "Q1",
-        "summary": "We are maintaining our 2026 revenue guidance of $1.66 billion to $1.7 billion and updating our adjusted earnings per share guidance to a range of $2.40 to $2.50."
+        "quarter": "Q2",
+        "summary": "We benefited from $0.05 per share of tariff favorability versus our May guidance, which contributed to our adjusted EPS performance above the high end."
       },
       "why": [
         "Early in its climb — 9 weeks up so far",
@@ -2312,7 +2645,7 @@
       "sata_score": 7,
       "sata_change_1w": -2,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 76.5
     },
     {
       "ticker": "MRDN",
@@ -2407,7 +2740,7 @@
       "ma30_slope_pct5w": 4.404,
       "pct_vs_ma30": 12.51,
       "mansfield_rs": 2.54,
-      "vol_ratio": 0.7,
+      "vol_ratio": 0.71,
       "event": null,
       "gate_tier": null,
       "blackout": false,
@@ -2417,9 +2750,23 @@
         "sentiment": 0.16666666666666666,
         "performance": 2.5,
         "tone_word": "steady",
-        "tags": [],
+        "tags": [
+          "cost_savings",
+          "inflation_impact",
+          "roofing",
+          "insulation",
+          "doors",
+          "demand_headwinds",
+          "guidance_maintained",
+          "portfolio_reshaping",
+          "building_materials",
+          "residential_construction",
+          "remodeling",
+          "distributor_channel",
+          "specialty_materials"
+        ],
         "quarter": "Q1",
-        "summary": "For Q2, the company anticipates revenue of approximately $2.6-$2.7 billion and an adjusted EBITDA margin of approximately 20% to 22%, reflecting continued market pressure but resilient operational performance."
+        "summary": "Roofing activity... remained impacted by low carryover demand from the uniquely quiet storm season in the second half of last year."
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
@@ -2435,7 +2782,7 @@
       "sata_score": 7,
       "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 90.9
     },
     {
       "ticker": "OSUR",
@@ -2458,9 +2805,25 @@
         "sentiment": 0.4444444444444444,
         "performance": 7.5,
         "tone_word": "confident",
-        "tags": [],
+        "tags": [
+          "product_launch",
+          "gross_margin_expansion",
+          "near-shoring",
+          "guidance",
+          "fda_clearance",
+          "operating_loss",
+          "share_buyback",
+          "medical_diagnostics",
+          "life_science_tools",
+          "point_of_care_testing",
+          "infectious_disease_testing",
+          "genomic_sample_collection",
+          "sti_testing",
+          "molecular_diagnostics",
+          "fda_approval"
+        ],
         "quarter": "Q1",
-        "summary": "Q2 revenue guided to $27M - $30M. Q2 gross margin is expected to be similar to Q1. Q2 operating expenses are guided to the high $20M range, declining in Q3."
+        "summary": "Gross margin expansion was driven by operating efficiencies, largely related to in-sourcing production from third-party contract manufacturers."
       },
       "why": [
         "Early in its climb — 10 weeks up so far",
@@ -2470,13 +2833,13 @@
         "上升初期 — 已上行 10 周",
         "已明显高于 30 周均线 — 可能需要回踩"
       ],
-      "atr_14w": 0.4032,
-      "atr_ext": 1.708,
-      "atr_pct_price": 0.09956,
+      "atr_14w": 0.4029,
+      "atr_ext": 1.71,
+      "atr_pct_price": 0.09947,
       "sata_score": 8,
       "sata_change_1w": 1,
       "stage_detailed": "2X_fallback_bullish",
-      "industry_percentile": null
+      "industry_percentile": 83.8
     },
     {
       "ticker": "PLX",
@@ -11645,7 +12008,7 @@
     ],
     "SKYT": [
       2,
-      47
+      48
     ],
     "SKYW": [
       1,
@@ -12837,7 +13200,7 @@
     ],
     "URI": [
       2,
-      8
+      9
     ],
     "UROY": [
       4,
@@ -27940,7 +28303,7 @@
     "AES": {
       "stage": 2,
       "fresh": true,
-      "event": null
+      "event": "pullback_resume"
     },
     "AESI": {
       "stage": 2,
@@ -31650,7 +32013,7 @@
     "EFC": {
       "stage": 2,
       "fresh": false,
-      "event": null
+      "event": "pullback_resume"
     },
     "EFOR": {
       "stage": 4,
@@ -36920,7 +37283,7 @@
     "PAA": {
       "stage": 2,
       "fresh": false,
-      "event": null
+      "event": "pullback_resume"
     },
     "PACB": {
       "stage": 4,
@@ -38730,7 +39093,7 @@
     "SKYT": {
       "stage": 2,
       "fresh": false,
-      "event": null
+      "event": "trendline_recapture"
     },
     "SKYW": {
       "stage": 1,
@@ -40220,7 +40583,7 @@
     "URI": {
       "stage": 2,
       "fresh": true,
-      "event": "pullback_resume"
+      "event": null
     },
     "UROY": {
       "stage": 4,

@@ -2,7 +2,7 @@
   "schema": "marketing.cashtag_tiers/v1",
   "schema_version": 1,
   "produced_by": "engine/marketing/radar_internal.py",
-  "produced_at": "2026-08-01T03:51:33Z",
+  "produced_at": "2026-08-01T21:49:32Z",
   "tier": "display",
   "as_of": "2026-07-31",
   "universe_n": 520,
@@ -76,6 +76,7 @@
       "AWK",
       "AXON",
       "BA",
+      "BAC",
       "BALL",
       "BAX",
       "BDX",
@@ -235,7 +236,6 @@
       "LIN",
       "LITE",
       "LMT",
-      "LNT",
       "LRCX",
       "LVS",
       "LYV",
@@ -258,6 +258,7 @@
       "MRVL",
       "MTD",
       "NCLH",
+      "NEE",
       "NI",
       "NOC",
       "NOW",
@@ -329,6 +330,7 @@
       "TER",
       "TGT",
       "TKO",
+      "TMO",
       "TMUS",
       "TPL",
       "TPR",
@@ -344,6 +346,7 @@
       "UHS",
       "ULTA",
       "UNH",
+      "UNP",
       "UPS",
       "URI",
       "VEEV",
@@ -363,6 +366,7 @@
       "WDC",
       "WEC",
       "WELL",
+      "WFC",
       "WM",
       "WMB",
       "WMT",
@@ -390,7 +394,6 @@
       "ASML",
       "AXP",
       "AZO",
-      "BAC",
       "BBY",
       "BEN",
       "BLK",
@@ -458,6 +461,7 @@
       "KVUE",
       "LEN",
       "LH",
+      "LNT",
       "LOW",
       "LULU",
       "LUV",
@@ -476,7 +480,6 @@
       "NBIS",
       "NDAQ",
       "NDSN",
-      "NEE",
       "NEM",
       "NKE",
       "NTRS",
@@ -513,7 +516,6 @@
       "TEL",
       "TFC",
       "TJX",
-      "TMO",
       "TRGP",
       "TRI",
       "TRV",
@@ -521,12 +523,10 @@
       "TTD",
       "TTWO",
       "UAL",
-      "UNP",
       "USB",
       "VRSN",
       "VTRS",
       "WAB",
-      "WFC",
       "WRB",
       "WSM",
       "WST",
@@ -556,7 +556,7 @@
         "pct_1d": -7.35,
         "pct_1w": -7.24,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 39354.523133655486
+        "dollar_vol_musd": 40861.16340740662
       }
     },
     "ABBV": {
@@ -569,7 +569,7 @@
         "pct_1d": -2.51,
         "pct_1w": -3.25,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 1223.4843306033324
+        "dollar_vol_musd": 1819.791803704834
       }
     },
     "ABNB": {
@@ -583,7 +583,7 @@
         "pct_1d": -0.37,
         "pct_1w": 7.38,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 350.4942556430054
+        "dollar_vol_musd": 372.84527451324465
       }
     },
     "ABT": {
@@ -596,7 +596,7 @@
         "pct_1d": 0.09,
         "pct_1w": 2.56,
         "earnings_in_days": 15,
-        "dollar_vol_musd": 1011.7304576894379
+        "dollar_vol_musd": 1015.4493006820678
       }
     },
     "ACGL": {
@@ -662,7 +662,7 @@
         "pct_1d": -1.66,
         "pct_1w": -7.74,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 276.18039399428557
+        "dollar_vol_musd": 601.4690265289306
       }
     },
     "ADP": {
@@ -676,7 +676,7 @@
         "pct_1d": 0.98,
         "pct_1w": 6.55,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 656.1670550578308
+        "dollar_vol_musd": 664.5245726898194
       }
     },
     "ADSK": {
@@ -702,7 +702,7 @@
         "pct_1d": 0.79,
         "pct_1w": -3.66,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 301.91548540118407
+        "dollar_vol_musd": 302.3701476837158
       }
     },
     "AEP": {
@@ -716,7 +716,7 @@
         "pct_1d": 0.05,
         "pct_1w": -5.67,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 731.4517036201859
+        "dollar_vol_musd": 731.4937662696839
       }
     },
     "AES": {
@@ -727,7 +727,7 @@
       "proxies": {
         "mcap_weight": 0.02206,
         "pct_1d": 0.04,
-        "pct_1w": -1.08,
+        "pct_1w": 0.11,
         "earnings_in_days": 1,
         "dollar_vol_musd": null
       }
@@ -878,7 +878,7 @@
         "pct_1d": 1.18,
         "pct_1w": -5.33,
         "earnings_in_days": null,
-        "dollar_vol_musd": 3582.916148997162
+        "dollar_vol_musd": 3758.8903134216307
       }
     },
     "AMC": {
@@ -902,7 +902,7 @@
         "pct_1d": -0.6,
         "pct_1w": 0.76,
         "earnings_in_days": null,
-        "dollar_vol_musd": 387.8697543510513
+        "dollar_vol_musd": 387.88438523139956
       }
     },
     "AMD": {
@@ -915,7 +915,7 @@
         "pct_1d": -1.9,
         "pct_1w": -8.77,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 12054.493697829803
+        "dollar_vol_musd": 12625.355163162232
       }
     },
     "AME": {
@@ -941,7 +941,7 @@
         "pct_1d": -0.64,
         "pct_1w": 2.43,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 742.4598436193237
+        "dollar_vol_musd": 752.4485831542969
       }
     },
     "AMP": {
@@ -965,7 +965,7 @@
         "pct_1d": -0.63,
         "pct_1w": 4.01,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 745.6759710253143
+        "dollar_vol_musd": 745.7080426254272
       }
     },
     "AMZN": {
@@ -978,7 +978,7 @@
         "pct_1d": 15.32,
         "pct_1w": 17.0,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 34197.644672405215
+        "dollar_vol_musd": 35001.58172341614
       }
     },
     "ANET": {
@@ -1013,7 +1013,7 @@
       "proxies": {
         "mcap_weight": 0.061606,
         "pct_1d": 1.14,
-        "pct_1w": -1.07,
+        "pct_1w": -0.47,
         "earnings_in_days": 8,
         "dollar_vol_musd": null
       }
@@ -1041,7 +1041,7 @@
         "pct_1d": -1.77,
         "pct_1w": -1.0,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 291.8558912877197
+        "dollar_vol_musd": 431.68949244384766
       }
     },
     "APH": {
@@ -1055,7 +1055,7 @@
         "pct_1d": 0.55,
         "pct_1w": 5.26,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 1222.7238519799805
+        "dollar_vol_musd": 1490.8299416885377
       }
     },
     "APO": {
@@ -1156,7 +1156,7 @@
         "pct_1d": -0.85,
         "pct_1w": -3.59,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 87.3776098626709
+        "dollar_vol_musd": 180.62421072387696
       }
     },
     "AVB": {
@@ -1169,7 +1169,7 @@
         "pct_1d": -1.16,
         "pct_1w": -2.11,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 83.18037933352662
+        "dollar_vol_musd": 135.4767394454956
       }
     },
     "AVGO": {
@@ -1182,7 +1182,7 @@
         "pct_1d": 0.37,
         "pct_1w": 1.93,
         "earnings_in_days": null,
-        "dollar_vol_musd": 7196.774660152374
+        "dollar_vol_musd": 7926.791831143189
       }
     },
     "AVY": {
@@ -1234,7 +1234,7 @@
         "pct_1d": -0.38,
         "pct_1w": 3.09,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 782.53276875
+        "dollar_vol_musd": 790.12025
       }
     },
     "AZO": {
@@ -1245,7 +1245,7 @@
         "pct_1d": 0.32,
         "pct_1w": 1.99,
         "earnings_in_days": null,
-        "dollar_vol_musd": 283.96485625
+        "dollar_vol_musd": 365.5695
       }
     },
     "BA": {
@@ -1259,18 +1259,20 @@
         "pct_1d": -2.15,
         "pct_1w": 3.16,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 1557.798569860977
+        "dollar_vol_musd": 1581.6044455337524
       }
     },
     "BAC": {
-      "tier": "T3",
-      "reasons": [],
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
       "proxies": {
         "mcap_weight": 0.711648,
         "pct_1d": 0.36,
         "pct_1w": -0.16,
         "earnings_in_days": 17,
-        "dollar_vol_musd": 986.5766217000923
+        "dollar_vol_musd": 1690.157090814972
       }
     },
     "BALL": {
@@ -1386,7 +1388,7 @@
         "pct_1d": -0.18,
         "pct_1w": 8.7,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 855.8461544203186
+        "dollar_vol_musd": 887.0313319335937
       }
     },
     "BKR": {
@@ -1400,7 +1402,7 @@
         "pct_1d": 0.98,
         "pct_1w": 5.66,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 328.1070845642624
+        "dollar_vol_musd": 348.30747866477964
       }
     },
     "BLDR": {
@@ -1425,7 +1427,7 @@
         "pct_1d": -0.73,
         "pct_1w": 3.29,
         "earnings_in_days": 10,
-        "dollar_vol_musd": 408.79266844177243
+        "dollar_vol_musd": 412.38550354003905
       }
     },
     "BMY": {
@@ -1439,7 +1441,7 @@
         "pct_1d": 0.69,
         "pct_1w": 5.19,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 665.0152621605224
+        "dollar_vol_musd": 951.8344354187012
       }
     },
     "BNY": {
@@ -1450,7 +1452,7 @@
         "pct_1d": 0.16,
         "pct_1w": -1.23,
         "earnings_in_days": 10,
-        "dollar_vol_musd": 237.77793278503418
+        "dollar_vol_musd": 365.1868842773437
       }
     },
     "BR": {
@@ -1476,7 +1478,7 @@
         "pct_1d": 0.36,
         "pct_1w": 3.36,
         "earnings_in_days": null,
-        "dollar_vol_musd": 1289.6573271228333
+        "dollar_vol_musd": 2012.6030096191407
       }
     },
     "BRO": {
@@ -1539,7 +1541,7 @@
         "pct_1d": 0.1,
         "pct_1w": 0.2,
         "earnings_in_days": 17,
-        "dollar_vol_musd": 1270.0477889870454
+        "dollar_vol_musd": 1272.049770690918
       }
     },
     "CAH": {
@@ -1573,9 +1575,9 @@
       "proxies": {
         "mcap_weight": 0.192627,
         "pct_1d": 0.4,
-        "pct_1w": 1.09,
+        "pct_1w": 1.16,
         "earnings_in_days": null,
-        "dollar_vol_musd": 190.579155
+        "dollar_vol_musd": 190.5748
       }
     },
     "CAT": {
@@ -1590,7 +1592,7 @@
         "pct_1d": 0.7,
         "pct_1w": -8.32,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 1947.6924850041503
+        "dollar_vol_musd": 1952.121792150879
       }
     },
     "CB": {
@@ -1603,7 +1605,7 @@
         "pct_1d": 0.15,
         "pct_1w": -2.52,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 296.87796683947755
+        "dollar_vol_musd": 477.5910820251465
       }
     },
     "CBOE": {
@@ -1631,7 +1633,7 @@
         "pct_1d": -1.77,
         "pct_1w": 5.27,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 268.5447007241821
+        "dollar_vol_musd": 268.77974353027344
       }
     },
     "CCEP": {
@@ -1653,7 +1655,7 @@
         "pct_1d": -0.27,
         "pct_1w": 1.87,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 381.8879244743042
+        "dollar_vol_musd": 381.88914527435304
       }
     },
     "CCL": {
@@ -1704,7 +1706,7 @@
         "pct_1d": -0.31,
         "pct_1w": -4.23,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 486.00368275
+        "dollar_vol_musd": 486.166325
       }
     },
     "CF": {
@@ -1717,7 +1719,7 @@
         "pct_1d": -0.46,
         "pct_1w": 0.1,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 207.03334210748292
+        "dollar_vol_musd": 294.73482274780275
       }
     },
     "CFG": {
@@ -1766,7 +1768,7 @@
         "pct_1d": 2.1,
         "pct_1w": 17.57,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 409.76377598454286
+        "dollar_vol_musd": 409.8439499221802
       }
     },
     "CI": {
@@ -1779,7 +1781,7 @@
         "pct_1d": -2.99,
         "pct_1w": -3.63,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 483.12426676574705
+        "dollar_vol_musd": 610.505563293457
       }
     },
     "CIEN": {
@@ -1814,7 +1816,7 @@
         "pct_1d": -0.33,
         "pct_1w": 0.61,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 395.0458006046448
+        "dollar_vol_musd": 608.0762803253174
       }
     },
     "CLX": {
@@ -1840,7 +1842,7 @@
         "pct_1d": 1.23,
         "pct_1w": 7.44,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 628.7627764945603
+        "dollar_vol_musd": 675.5497781867981
       }
     },
     "CME": {
@@ -1851,7 +1853,7 @@
         "pct_1d": 0.21,
         "pct_1w": 4.89,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 875.0544652321472
+        "dollar_vol_musd": 875.3519799316406
       }
     },
     "CMG": {
@@ -1931,7 +1933,7 @@
         "pct_1d": -0.54,
         "pct_1w": 3.04,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 840.0412653621826
+        "dollar_vol_musd": 840.052969921875
       }
     },
     "COHR": {
@@ -1980,7 +1982,7 @@
         "pct_1d": 1.22,
         "pct_1w": 0.18,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 696.9315189385986
+        "dollar_vol_musd": 698.5189634628296
       }
     },
     "COR": {
@@ -2006,7 +2008,7 @@
         "pct_1d": -0.24,
         "pct_1w": 1.8,
         "earnings_in_days": null,
-        "dollar_vol_musd": 1603.5310733164063
+        "dollar_vol_musd": 1674.184157763672
       }
     },
     "CPAY": {
@@ -2056,7 +2058,7 @@
         "pct_1d": -1.03,
         "pct_1w": -4.87,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 712.1259037416305
+        "dollar_vol_musd": 712.1284690116883
       }
     },
     "CRL": {
@@ -2096,7 +2098,7 @@
         "pct_1d": 3.05,
         "pct_1w": 4.14,
         "earnings_in_days": null,
-        "dollar_vol_musd": 1402.1564299639588
+        "dollar_vol_musd": 1503.78594480896
       }
     },
     "CRWV": {
@@ -2120,7 +2122,7 @@
         "pct_1d": 2.14,
         "pct_1w": 1.59,
         "earnings_in_days": 12,
-        "dollar_vol_musd": 2180.4210403023835
+        "dollar_vol_musd": 2180.7743458358764
       }
     },
     "CSGP": {
@@ -2146,7 +2148,7 @@
         "pct_1d": 0.42,
         "pct_1w": -5.32,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 793.2529824160309
+        "dollar_vol_musd": 868.901066306305
       }
     },
     "CTAS": {
@@ -2186,7 +2188,7 @@
         "pct_1d": -11.9,
         "pct_1w": -11.81,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 843.0661847237473
+        "dollar_vol_musd": 907.4869344444274
       }
     },
     "CVNA": {
@@ -2212,7 +2214,7 @@
         "pct_1d": -0.75,
         "pct_1w": -3.07,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 739.2769942503891
+        "dollar_vol_musd": 739.2913011604309
       }
     },
     "CVX": {
@@ -2225,7 +2227,7 @@
         "pct_1d": 2.35,
         "pct_1w": 1.05,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 1948.5284446266173
+        "dollar_vol_musd": 1954.2660391799927
       }
     },
     "D": {
@@ -2236,7 +2238,7 @@
         "pct_1d": -0.8,
         "pct_1w": -2.71,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 243.74428302764892
+        "dollar_vol_musd": 247.69776344299316
       }
     },
     "DAL": {
@@ -2261,7 +2263,7 @@
         "pct_1d": -0.69,
         "pct_1w": 13.45,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 608.4149675184937
+        "dollar_vol_musd": 608.4294833587646
       }
     },
     "DD": {
@@ -2300,7 +2302,7 @@
         "pct_1d": -1.13,
         "pct_1w": -5.65,
         "earnings_in_days": null,
-        "dollar_vol_musd": 666.053194854126
+        "dollar_vol_musd": 666.1017937927246
       }
     },
     "DECK": {
@@ -2337,7 +2339,7 @@
         "pct_1d": -0.35,
         "pct_1w": 8.38,
         "earnings_in_days": null,
-        "dollar_vol_musd": 176.90658409931945
+        "dollar_vol_musd": 176.90442424926758
       }
     },
     "DGX": {
@@ -2372,20 +2374,21 @@
         "pct_1d": -0.61,
         "pct_1w": 1.82,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 623.7335970925598
+        "dollar_vol_musd": 855.2992492584228
       }
     },
     "DIS": {
       "tier": "T2",
       "reasons": [
-        "earnings_window"
+        "earnings_window",
+        "dollar_volume"
       ],
       "proxies": {
         "mcap_weight": 0.426839,
         "pct_1d": 0.03,
         "pct_1w": 1.41,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 793.5040347399903
+        "dollar_vol_musd": 1075.548512298584
       }
     },
     "DLR": {
@@ -2398,7 +2401,7 @@
         "pct_1d": -2.42,
         "pct_1w": -5.3,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 261.0545840763245
+        "dollar_vol_musd": 408.7113692626953
       }
     },
     "DLTR": {
@@ -2446,7 +2449,7 @@
         "pct_1d": 0.66,
         "pct_1w": 1.51,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 192.8566175691681
+        "dollar_vol_musd": 275.705646333313
       }
     },
     "DPZ": {
@@ -2482,7 +2485,7 @@
         "pct_1d": 0.12,
         "pct_1w": -5.08,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 103.76229572875977
+        "dollar_vol_musd": 226.5238212036133
       }
     },
     "DUK": {
@@ -2495,7 +2498,7 @@
         "pct_1d": -0.67,
         "pct_1w": -3.9,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 380.93153807682035
+        "dollar_vol_musd": 540.8416183158874
       }
     },
     "DVA": {
@@ -2521,7 +2524,7 @@
         "pct_1d": 2.17,
         "pct_1w": 0.2,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 290.76339036164853
+        "dollar_vol_musd": 356.3148974330902
       }
     },
     "DXCM": {
@@ -2550,7 +2553,7 @@
         "pct_1d": 0.13,
         "pct_1w": 0.38,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 1017.9511161605835
+        "dollar_vol_musd": 1018.0098769607544
       }
     },
     "EBAY": {
@@ -2563,7 +2566,7 @@
         "pct_1d": 0.43,
         "pct_1w": 4.22,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 328.75422571994017
+        "dollar_vol_musd": 419.0323618515015
       }
     },
     "ECHO": {
@@ -2574,7 +2577,7 @@
         "pct_1d": -2.37,
         "pct_1w": -4.31,
         "earnings_in_days": null,
-        "dollar_vol_musd": 346.966340679657
+        "dollar_vol_musd": 346.9805518890381
       }
     },
     "ECL": {
@@ -2587,7 +2590,7 @@
         "pct_1d": -0.61,
         "pct_1w": 3.3,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 290.20109150390624
+        "dollar_vol_musd": 459.7552880859375
       }
     },
     "ED": {
@@ -2598,7 +2601,7 @@
         "pct_1d": -0.74,
         "pct_1w": -3.68,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 156.29738625899506
+        "dollar_vol_musd": 303.32140574798586
       }
     },
     "EFX": {
@@ -2639,7 +2642,7 @@
         "pct_1d": -6.81,
         "pct_1w": -8.0,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 439.49497411235046
+        "dollar_vol_musd": 453.9108589920044
       }
     },
     "EL": {
@@ -2661,7 +2664,7 @@
         "pct_1d": -0.15,
         "pct_1w": -0.49,
         "earnings_in_days": 15,
-        "dollar_vol_musd": 260.4477214622498
+        "dollar_vol_musd": 367.15809242248537
       }
     },
     "EME": {
@@ -2699,7 +2702,7 @@
         "pct_1d": 2.19,
         "pct_1w": 1.57,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 405.5087128682251
+        "dollar_vol_musd": 433.32727411499025
       }
     },
     "EQIX": {
@@ -2713,7 +2716,7 @@
         "pct_1d": -2.7,
         "pct_1w": -5.99,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 670.3927066289062
+        "dollar_vol_musd": 742.035861328125
       }
     },
     "EQR": {
@@ -2726,7 +2729,7 @@
         "pct_1d": -1.0,
         "pct_1w": -2.08,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 116.2093494630127
+        "dollar_vol_musd": 259.4540130844116
       }
     },
     "EQT": {
@@ -2739,7 +2742,7 @@
         "pct_1d": 1.1,
         "pct_1w": 0.49,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 284.41576916629026
+        "dollar_vol_musd": 284.4353798866272
       }
     },
     "ERIE": {
@@ -2780,7 +2783,7 @@
         "pct_1d": 0.81,
         "pct_1w": -3.18,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 117.17536408081055
+        "dollar_vol_musd": 232.79591400146484
       }
     },
     "ETN": {
@@ -2795,7 +2798,7 @@
         "pct_1d": 7.32,
         "pct_1w": 2.75,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 1839.505455682129
+        "dollar_vol_musd": 1888.5372555236816
       }
     },
     "ETR": {
@@ -2809,7 +2812,7 @@
         "pct_1d": -0.38,
         "pct_1w": -7.18,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 280.1145269688339
+        "dollar_vol_musd": 280.1133431488037
       }
     },
     "EVRG": {
@@ -2844,7 +2847,7 @@
         "pct_1d": 0.53,
         "pct_1w": -3.6,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 432.6741333182526
+        "dollar_vol_musd": 460.31688093414306
       }
     },
     "EXE": {
@@ -2857,7 +2860,7 @@
         "pct_1d": 1.74,
         "pct_1w": 2.74,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 285.74155731048586
+        "dollar_vol_musd": 288.85075325012207
       }
     },
     "EXPD": {
@@ -2896,7 +2899,7 @@
         "pct_1d": -0.11,
         "pct_1w": 0.22,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 143.86556155545043
+        "dollar_vol_musd": 233.23700942230224
       }
     },
     "F": {
@@ -2909,7 +2912,7 @@
         "pct_1d": -1.21,
         "pct_1w": 2.16,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 677.8443458513947
+        "dollar_vol_musd": 821.890645085907
       }
     },
     "FANG": {
@@ -2922,7 +2925,7 @@
         "pct_1d": 1.59,
         "pct_1w": -0.85,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 331.38913496690367
+        "dollar_vol_musd": 334.9486749633789
       }
     },
     "FAST": {
@@ -2944,7 +2947,7 @@
         "pct_1d": -1.28,
         "pct_1w": 0.05,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 675.3111180170059
+        "dollar_vol_musd": 675.5146655204773
       }
     },
     "FDS": {
@@ -3117,7 +3120,7 @@
         "pct_1d": -1.0,
         "pct_1w": 5.28,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 218.16108071496964
+        "dollar_vol_musd": 223.46926924324035
       }
     },
     "FRT": {
@@ -3182,7 +3185,7 @@
         "pct_1d": 0.32,
         "pct_1w": -0.86,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 584.2412299206848
+        "dollar_vol_musd": 584.2937584625245
       }
     },
     "GDDY": {
@@ -3209,7 +3212,7 @@
         "pct_1d": 1.42,
         "pct_1w": 1.79,
         "earnings_in_days": 15,
-        "dollar_vol_musd": 1097.718066008789
+        "dollar_vol_musd": 1133.6084040588378
       }
     },
     "GEHC": {
@@ -3249,7 +3252,7 @@
         "pct_1d": 0.85,
         "pct_1w": -2.41,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 2005.4699043624269
+        "dollar_vol_musd": 2332.5290142456056
       }
     },
     "GILD": {
@@ -3260,7 +3263,7 @@
         "pct_1d": -0.82,
         "pct_1w": 0.7,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 795.442774634491
+        "dollar_vol_musd": 850.2192598388672
       }
     },
     "GIS": {
@@ -3311,7 +3314,7 @@
         "pct_1d": 0.52,
         "pct_1w": 7.53,
         "earnings_in_days": 10,
-        "dollar_vol_musd": 319.97117775778196
+        "dollar_vol_musd": 593.1493900741577
       }
     },
     "GME": {
@@ -3350,7 +3353,7 @@
         "pct_1d": 6.88,
         "pct_1w": 11.77,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 10824.71713320163
+        "dollar_vol_musd": 10860.491624139404
       }
     },
     "GOOGL": {
@@ -3363,7 +3366,7 @@
         "pct_1d": 6.73,
         "pct_1w": 11.38,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 16505.775643996705
+        "dollar_vol_musd": 16533.58476768799
       }
     },
     "GPC": {
@@ -3417,7 +3420,7 @@
         "pct_1d": -0.63,
         "pct_1w": -4.04,
         "earnings_in_days": 17,
-        "dollar_vol_musd": 1213.8285137999267
+        "dollar_vol_musd": 1581.1367955810547
       }
     },
     "GWW": {
@@ -3441,7 +3444,7 @@
         "pct_1d": 1.93,
         "pct_1w": -3.33,
         "earnings_in_days": 10,
-        "dollar_vol_musd": 235.44741375
+        "dollar_vol_musd": 299.37675
       }
     },
     "HAS": {
@@ -3491,7 +3494,7 @@
         "pct_1d": -0.42,
         "pct_1w": -0.31,
         "earnings_in_days": null,
-        "dollar_vol_musd": 1093.0084802250672
+        "dollar_vol_musd": 1646.156401626587
       }
     },
     "HIG": {
@@ -3529,7 +3532,7 @@
         "pct_1d": -0.48,
         "pct_1w": -1.38,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 551.6055778720703
+        "dollar_vol_musd": 732.479872680664
       }
     },
     "HON": {
@@ -3638,7 +3641,7 @@
         "pct_1d": -1.23,
         "pct_1w": 0.43,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 380.5303485340271
+        "dollar_vol_musd": 380.5412016342163
       }
     },
     "HUBB": {
@@ -3678,7 +3681,7 @@
         "pct_1d": 1.8,
         "pct_1w": -2.42,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 614.4255650778808
+        "dollar_vol_musd": 643.750404272461
       }
     },
     "IBKR": {
@@ -3702,7 +3705,7 @@
         "pct_1d": 0.86,
         "pct_1w": 4.42,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 2027.192619176941
+        "dollar_vol_musd": 2031.8825595489502
       }
     },
     "ICE": {
@@ -3754,7 +3757,7 @@
         "pct_1d": -0.33,
         "pct_1w": 4.32,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 79.17746008004761
+        "dollar_vol_musd": 130.1663840057373
       }
     },
     "INCY": {
@@ -3780,7 +3783,7 @@
         "pct_1d": -1.02,
         "pct_1w": -2.3,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 9430.48003693634
+        "dollar_vol_musd": 9801.510508383179
       }
     },
     "INTU": {
@@ -3820,7 +3823,7 @@
         "pct_1d": -5.38,
         "pct_1w": -3.15,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 301.8377892061615
+        "dollar_vol_musd": 301.843954536438
       }
     },
     "IQV": {
@@ -3860,7 +3863,7 @@
         "pct_1d": -1.86,
         "pct_1w": -4.67,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 156.07921873059846
+        "dollar_vol_musd": 359.4862471031189
       }
     },
     "ISRG": {
@@ -3873,7 +3876,7 @@
         "pct_1d": 0.1,
         "pct_1w": 4.69,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 852.5615844897766
+        "dollar_vol_musd": 869.4037649597168
       }
     },
     "IT": {
@@ -3963,7 +3966,7 @@
         "pct_1d": 1.93,
         "pct_1w": 2.29,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 385.3220275215149
+        "dollar_vol_musd": 516.0232228851319
       }
     },
     "JKHY": {
@@ -3987,7 +3990,7 @@
         "pct_1d": 0.21,
         "pct_1w": -2.68,
         "earnings_in_days": 16,
-        "dollar_vol_musd": 1166.9257357836914
+        "dollar_vol_musd": 1736.9251013549804
       }
     },
     "JPM": {
@@ -4000,7 +4003,7 @@
         "pct_1d": 0.27,
         "pct_1w": -0.4,
         "earnings_in_days": 17,
-        "dollar_vol_musd": 2316.025703595886
+        "dollar_vol_musd": 2319.738495346069
       }
     },
     "KDP": {
@@ -4011,7 +4014,7 @@
         "pct_1d": -1.43,
         "pct_1w": 4.85,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 338.1704371996632
+        "dollar_vol_musd": 356.4858336135864
       }
     },
     "KEY": {
@@ -4059,7 +4062,7 @@
         "pct_1d": -0.12,
         "pct_1w": -2.38,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 61.86656000852966
+        "dollar_vol_musd": 215.19643213386536
       }
     },
     "KKR": {
@@ -4087,7 +4090,7 @@
         "pct_1d": 1.38,
         "pct_1w": -13.16,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 2366.5547193099974
+        "dollar_vol_musd": 2468.746532904053
       }
     },
     "KMB": {
@@ -4098,7 +4101,7 @@
         "pct_1d": -0.8,
         "pct_1w": -0.36,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 455.81678707946776
+        "dollar_vol_musd": 494.1030509643555
       }
     },
     "KMI": {
@@ -4109,21 +4112,22 @@
         "pct_1d": 1.64,
         "pct_1w": -2.07,
         "earnings_in_days": 16,
-        "dollar_vol_musd": 196.9014090472946
+        "dollar_vol_musd": 316.43881500091555
       }
     },
     "KO": {
       "tier": "T2",
       "reasons": [
         "move_1w",
-        "earnings_window"
+        "earnings_window",
+        "dollar_volume"
       ],
       "proxies": {
         "mcap_weight": 0.428123,
         "pct_1d": -1.02,
         "pct_1w": 6.49,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 952.9512189474182
+        "dollar_vol_musd": 1288.413810131836
       }
     },
     "KR": {
@@ -4134,7 +4138,7 @@
         "pct_1d": -0.21,
         "pct_1w": 1.53,
         "earnings_in_days": null,
-        "dollar_vol_musd": 248.02321652988434
+        "dollar_vol_musd": 341.5956239299774
       }
     },
     "KVUE": {
@@ -4145,7 +4149,7 @@
         "pct_1d": -0.36,
         "pct_1w": -0.21,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 294.6158250152073
+        "dollar_vol_musd": 437.5406827949524
       }
     },
     "L": {
@@ -4234,7 +4238,7 @@
         "pct_1d": -5.95,
         "pct_1w": -6.62,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 2494.254210258789
+        "dollar_vol_musd": 2495.899837475586
       }
     },
     "LITE": {
@@ -4260,7 +4264,7 @@
         "pct_1d": -0.53,
         "pct_1w": -3.95,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 3308.3581054914553
+        "dollar_vol_musd": 3310.0377095214844
       }
     },
     "LMT": {
@@ -4273,18 +4277,16 @@
         "pct_1d": 1.5,
         "pct_1w": 0.02,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 826.3748390515136
+        "dollar_vol_musd": 829.1807321044922
       }
     },
     "LNT": {
-      "tier": "T2",
-      "reasons": [
-        "move_1w"
-      ],
+      "tier": "T3",
+      "reasons": [],
       "proxies": {
         "mcap_weight": 0.02206,
         "pct_1d": -0.16,
-        "pct_1w": -5.55,
+        "pct_1w": -4.83,
         "earnings_in_days": 6,
         "dollar_vol_musd": null
       }
@@ -4297,7 +4299,7 @@
         "pct_1d": -1.08,
         "pct_1w": 0.08,
         "earnings_in_days": null,
-        "dollar_vol_musd": 531.9248086408081
+        "dollar_vol_musd": 826.1902072937012
       }
     },
     "LRCX": {
@@ -4311,7 +4313,7 @@
         "pct_1d": -1.58,
         "pct_1w": -3.99,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 3675.7669826628417
+        "dollar_vol_musd": 3677.928298101807
       }
     },
     "LULU": {
@@ -4370,7 +4372,7 @@
         "pct_1d": -5.14,
         "pct_1w": -1.75,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 747.3623242269288
+        "dollar_vol_musd": 875.7694465576172
       }
     },
     "MA": {
@@ -4383,7 +4385,7 @@
         "pct_1d": -0.74,
         "pct_1w": 6.2,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 2622.8212663677978
+        "dollar_vol_musd": 2623.193208251953
       }
     },
     "MAA": {
@@ -4409,7 +4411,7 @@
         "pct_1d": -0.71,
         "pct_1w": -0.43,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 578.5206629941712
+        "dollar_vol_musd": 582.9196840057373
       }
     },
     "MAS": {
@@ -4437,7 +4439,7 @@
         "pct_1d": 0.82,
         "pct_1w": 2.22,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 1193.9633371834716
+        "dollar_vol_musd": 1343.1593286987304
       }
     },
     "MCHP": {
@@ -4463,7 +4465,7 @@
         "pct_1d": -1.08,
         "pct_1w": 1.82,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 528.0697392357788
+        "dollar_vol_musd": 662.0917288879394
       }
     },
     "MCO": {
@@ -4487,7 +4489,7 @@
         "pct_1d": -1.22,
         "pct_1w": 2.96,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 506.391698790699
+        "dollar_vol_musd": 506.4369981616974
       }
     },
     "MDT": {
@@ -4498,7 +4500,7 @@
         "pct_1d": -0.37,
         "pct_1w": 2.62,
         "earnings_in_days": null,
-        "dollar_vol_musd": 819.9654104090423
+        "dollar_vol_musd": 820.0087031387329
       }
     },
     "MELI": {
@@ -4535,7 +4537,7 @@
         "pct_1d": 3.28,
         "pct_1w": -6.47,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 13447.68520503351
+        "dollar_vol_musd": 13473.774306793213
       }
     },
     "MGM": {
@@ -4572,7 +4574,7 @@
         "pct_1d": -2.75,
         "pct_1w": -6.16,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 538.464917380127
+        "dollar_vol_musd": 538.4785710205078
       }
     },
     "MMC": {
@@ -4594,7 +4596,7 @@
         "pct_1d": 0.12,
         "pct_1w": 2.12,
         "earnings_in_days": 14,
-        "dollar_vol_musd": 329.4593851185608
+        "dollar_vol_musd": 471.6900207336426
       }
     },
     "MNST": {
@@ -4605,7 +4607,7 @@
         "pct_1d": -1.3,
         "pct_1w": 3.09,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 374.0160725415039
+        "dollar_vol_musd": 374.07968333969114
       }
     },
     "MO": {
@@ -4619,7 +4621,7 @@
         "pct_1d": 0.57,
         "pct_1w": -6.38,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 758.4136860633851
+        "dollar_vol_musd": 762.1050094223023
       }
     },
     "MOS": {
@@ -4645,7 +4647,7 @@
         "pct_1d": 0.76,
         "pct_1w": 2.34,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 533.5323444779663
+        "dollar_vol_musd": 533.9798330596924
       }
     },
     "MPWR": {
@@ -4666,14 +4668,15 @@
     "MRK": {
       "tier": "T2",
       "reasons": [
-        "earnings_window"
+        "earnings_window",
+        "dollar_volume"
       ],
       "proxies": {
         "mcap_weight": 0.541786,
         "pct_1d": 0.32,
         "pct_1w": -0.66,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 605.3135870120544
+        "dollar_vol_musd": 1006.6933564041137
       }
     },
     "MRNA": {
@@ -4708,9 +4711,9 @@
       "proxies": {
         "mcap_weight": 0.441761,
         "pct_1d": 0.72,
-        "pct_1w": -1.89,
+        "pct_1w": -1.35,
         "earnings_in_days": 16,
-        "dollar_vol_musd": 992.9829131991577
+        "dollar_vol_musd": 993.1403073577881
       }
     },
     "MSCI": {
@@ -4734,7 +4737,7 @@
         "pct_1d": 3.02,
         "pct_1w": 21.75,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 26242.15013341156
+        "dollar_vol_musd": 28230.810634155274
       }
     },
     "MSI": {
@@ -4796,7 +4799,7 @@
         "pct_1d": -5.9,
         "pct_1w": -10.63,
         "earnings_in_days": 37,
-        "dollar_vol_musd": 43497.300831315675
+        "dollar_vol_musd": 44655.88102658691
       }
     },
     "NBIS": {
@@ -4846,14 +4849,16 @@
       }
     },
     "NEE": {
-      "tier": "T3",
-      "reasons": [],
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
       "proxies": {
         "mcap_weight": 0.358204,
         "pct_1d": -1.15,
         "pct_1w": -3.19,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 953.5010803135681
+        "dollar_vol_musd": 1145.622959866333
       }
     },
     "NEM": {
@@ -4864,7 +4869,7 @@
         "pct_1d": -2.14,
         "pct_1w": 0.56,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 549.4030763424454
+        "dollar_vol_musd": 549.4966926315308
       }
     },
     "NFLX": {
@@ -4877,7 +4882,7 @@
         "pct_1d": -2.0,
         "pct_1w": 2.31,
         "earnings_in_days": 15,
-        "dollar_vol_musd": 2380.7219877351304
+        "dollar_vol_musd": 2568.5087472076416
       }
     },
     "NI": {
@@ -4888,7 +4893,7 @@
       "proxies": {
         "mcap_weight": 0.02206,
         "pct_1d": -0.76,
-        "pct_1w": -4.82,
+        "pct_1w": -4.18,
         "earnings_in_days": 5,
         "dollar_vol_musd": null
       }
@@ -4901,7 +4906,7 @@
         "pct_1d": -1.37,
         "pct_1w": 0.02,
         "earnings_in_days": 31,
-        "dollar_vol_musd": 942.0082334230805
+        "dollar_vol_musd": 942.5792433105469
       }
     },
     "NOC": {
@@ -4940,7 +4945,7 @@
         "pct_1d": 0.24,
         "pct_1w": -4.78,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 184.9580106229706
+        "dollar_vol_musd": 361.8981029067993
       }
     },
     "NSC": {
@@ -4990,7 +4995,7 @@
         "pct_1d": 0.1,
         "pct_1w": 3.93,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 209.31416981158446
+        "dollar_vol_musd": 402.53021836853026
       }
     },
     "NVDA": {
@@ -5003,7 +5008,7 @@
         "pct_1d": 2.93,
         "pct_1w": -2.94,
         "earnings_in_days": 26,
-        "dollar_vol_musd": 27956.6790745
+        "dollar_vol_musd": 28036.684775
       }
     },
     "NVR": {
@@ -5040,7 +5045,7 @@
         "pct_1d": -1.89,
         "pct_1w": 2.99,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 105.22019200104332
+        "dollar_vol_musd": 112.54401381912231
       }
     },
     "NXPI": {
@@ -5066,9 +5071,9 @@
       "proxies": {
         "mcap_weight": 0.107887,
         "pct_1d": -0.45,
-        "pct_1w": -2.64,
+        "pct_1w": -2.23,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 365.50462746756745
+        "dollar_vol_musd": 366.02618987884523
       }
     },
     "ODFL": {
@@ -5095,7 +5100,7 @@
         "pct_1d": 1.95,
         "pct_1w": -2.52,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 466.80543248004153
+        "dollar_vol_musd": 466.8269544494629
       }
     },
     "OMC": {
@@ -5106,7 +5111,7 @@
         "pct_1d": -1.14,
         "pct_1w": -1.21,
         "earnings_in_days": 10,
-        "dollar_vol_musd": 185.0119665257721
+        "dollar_vol_musd": 333.5384570663452
       }
     },
     "ON": {
@@ -5134,7 +5139,7 @@
         "pct_1d": 1.81,
         "pct_1w": 12.94,
         "earnings_in_days": null,
-        "dollar_vol_musd": 3761.9873952679445
+        "dollar_vol_musd": 4464.073290161133
       }
     },
     "ORLY": {
@@ -5145,7 +5150,7 @@
         "pct_1d": 2.28,
         "pct_1w": 2.23,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 508.19080402134705
+        "dollar_vol_musd": 524.5381010421753
       }
     },
     "OTIS": {
@@ -5169,7 +5174,7 @@
         "pct_1d": 2.0,
         "pct_1w": -0.4,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 381.82460722823333
+        "dollar_vol_musd": 388.6524049217224
       }
     },
     "PANW": {
@@ -5182,7 +5187,7 @@
         "pct_1d": 1.89,
         "pct_1w": 2.48,
         "earnings_in_days": null,
-        "dollar_vol_musd": 1666.9880889741517
+        "dollar_vol_musd": 1667.3461335296631
       }
     },
     "PAYX": {
@@ -5219,7 +5224,7 @@
         "pct_1d": -2.25,
         "pct_1w": -2.63,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 417.6180558743477
+        "dollar_vol_musd": 495.8843980550766
       }
     },
     "PDD": {
@@ -5243,7 +5248,7 @@
         "pct_1d": -1.12,
         "pct_1w": -3.92,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 281.1631705589905
+        "dollar_vol_musd": 281.17022511901854
       }
     },
     "PEP": {
@@ -5256,20 +5261,21 @@
         "pct_1d": -0.46,
         "pct_1w": 2.14,
         "earnings_in_days": 22,
-        "dollar_vol_musd": 1352.5489262190551
+        "dollar_vol_musd": 1353.2993403259277
       }
     },
     "PFE": {
       "tier": "T2",
       "reasons": [
-        "earnings_window"
+        "earnings_window",
+        "dollar_volume"
       ],
       "proxies": {
         "mcap_weight": 0.240461,
         "pct_1d": 0.4,
         "pct_1w": 1.92,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 847.9987466305561
+        "dollar_vol_musd": 1126.785544311905
       }
     },
     "PFG": {
@@ -5288,14 +5294,15 @@
     "PG": {
       "tier": "T2",
       "reasons": [
-        "earnings_window"
+        "earnings_window",
+        "dollar_volume"
       ],
       "proxies": {
         "mcap_weight": 0.418701,
         "pct_1d": 0.37,
         "pct_1w": -1.98,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 979.8329640509033
+        "dollar_vol_musd": 1321.4188962371827
       }
     },
     "PGR": {
@@ -5306,7 +5313,7 @@
         "pct_1d": -0.87,
         "pct_1w": -1.13,
         "earnings_in_days": 16,
-        "dollar_vol_musd": 357.3173447653656
+        "dollar_vol_musd": 498.57063968200686
       }
     },
     "PH": {
@@ -5317,7 +5324,7 @@
         "pct_1d": 1.43,
         "pct_1w": -1.11,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 335.5171639958496
+        "dollar_vol_musd": 465.80482397460935
       }
     },
     "PHM": {
@@ -5339,7 +5346,7 @@
         "pct_1d": -1.12,
         "pct_1w": -3.36,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 67.39383907608033
+        "dollar_vol_musd": 116.13481427001953
       }
     },
     "PLD": {
@@ -5350,7 +5357,7 @@
         "pct_1d": -1.08,
         "pct_1w": -2.05,
         "earnings_in_days": 15,
-        "dollar_vol_musd": 299.81774511543273
+        "dollar_vol_musd": 467.74104697418215
       }
     },
     "PLTR": {
@@ -5363,7 +5370,7 @@
         "pct_1d": 0.65,
         "pct_1w": 0.11,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 3439.465401763916
+        "dollar_vol_musd": 3569.342923187256
       }
     },
     "PM": {
@@ -5377,7 +5384,7 @@
         "pct_1d": -0.61,
         "pct_1w": -1.13,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 1038.472820239563
+        "dollar_vol_musd": 1038.5760538635254
       }
     },
     "PNC": {
@@ -5388,7 +5395,7 @@
         "pct_1d": 0.47,
         "pct_1w": -0.45,
         "earnings_in_days": 16,
-        "dollar_vol_musd": 359.9099923968506
+        "dollar_vol_musd": 360.01268896484373
       }
     },
     "PNR": {
@@ -5438,7 +5445,7 @@
         "pct_1d": -1.35,
         "pct_1w": -4.72,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 172.7594432726059
+        "dollar_vol_musd": 286.2025833068848
       }
     },
     "PPL": {
@@ -5477,7 +5484,7 @@
         "pct_1d": 2.12,
         "pct_1w": 0.52,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 255.29263816470336
+        "dollar_vol_musd": 447.22495052490234
       }
     },
     "PSKY": {
@@ -5501,7 +5508,7 @@
         "pct_1d": 0.51,
         "pct_1w": 2.37,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 616.2408895578003
+        "dollar_vol_musd": 616.5391466674805
       }
     },
     "PTC": {
@@ -5530,7 +5537,7 @@
         "pct_1d": 1.43,
         "pct_1w": 6.63,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 1307.0258660310058
+        "dollar_vol_musd": 1307.1580033081054
       }
     },
     "PYPL": {
@@ -5583,7 +5590,7 @@
         "pct_1d": -1.13,
         "pct_1w": 8.43,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 619.9821698232422
+        "dollar_vol_musd": 620.143866217041
       }
     },
     "REG": {
@@ -5718,7 +5725,7 @@
         "pct_1d": -0.59,
         "pct_1w": 5.1,
         "earnings_in_days": null,
-        "dollar_vol_musd": 403.6060838540039
+        "dollar_vol_musd": 404.29803279418945
       }
     },
     "RSG": {
@@ -5744,7 +5751,7 @@
         "pct_1d": 0.39,
         "pct_1w": 1.14,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 734.6276477667236
+        "dollar_vol_musd": 735.1484801696778
       }
     },
     "RVTY": {
@@ -5770,7 +5777,7 @@
         "pct_1d": -0.51,
         "pct_1w": 4.27,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 382.1852298976135
+        "dollar_vol_musd": 390.46434078216555
       }
     },
     "SBUX": {
@@ -5784,7 +5791,7 @@
         "pct_1d": -0.57,
         "pct_1w": 1.94,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 1303.91225375
+        "dollar_vol_musd": 1304.142225
       }
     },
     "SCHW": {
@@ -5795,7 +5802,7 @@
         "pct_1d": 0.87,
         "pct_1w": 3.21,
         "earnings_in_days": 14,
-        "dollar_vol_musd": 570.6141098973008
+        "dollar_vol_musd": 899.1915897476197
       }
     },
     "SHOP": {
@@ -5820,7 +5827,7 @@
         "pct_1d": -1.16,
         "pct_1w": 7.35,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 570.8269588216552
+        "dollar_vol_musd": 570.8215052215576
       }
     },
     "SJM": {
@@ -5844,7 +5851,7 @@
         "pct_1d": 1.39,
         "pct_1w": -5.4,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 506.90065043972777
+        "dollar_vol_musd": 610.5768768787384
       }
     },
     "SMCI": {
@@ -5883,7 +5890,7 @@
         "pct_1d": -5.09,
         "pct_1w": -15.43,
         "earnings_in_days": null,
-        "dollar_vol_musd": 25126.587954689698
+        "dollar_vol_musd": 25620.642290197753
       }
     },
     "SNPS": {
@@ -5909,7 +5916,7 @@
         "pct_1d": 0.21,
         "pct_1w": -2.79,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 527.62897412957
+        "dollar_vol_musd": 527.6371991096497
       }
     },
     "SOLV": {
@@ -5946,7 +5953,7 @@
         "pct_1d": -0.46,
         "pct_1w": -0.18,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 171.04395779882813
+        "dollar_vol_musd": 317.17282924804687
       }
     },
     "SPGI": {
@@ -5959,7 +5966,7 @@
         "pct_1d": -0.74,
         "pct_1w": -3.39,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 680.5330636999512
+        "dollar_vol_musd": 894.7531370910644
       }
     },
     "SRE": {
@@ -5970,7 +5977,7 @@
         "pct_1d": -1.15,
         "pct_1w": -4.76,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 244.53331282751464
+        "dollar_vol_musd": 245.04442344512938
       }
     },
     "STE": {
@@ -5995,7 +6002,7 @@
         "pct_1d": -0.49,
         "pct_1w": 1.68,
         "earnings_in_days": 11,
-        "dollar_vol_musd": 222.35152709884645
+        "dollar_vol_musd": 226.73701904296874
       }
     },
     "STT": {
@@ -6020,7 +6027,7 @@
         "pct_1d": 0.52,
         "pct_1w": 0.52,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 5152.254579135132
+        "dollar_vol_musd": 5239.9436948852535
       }
     },
     "STZ": {
@@ -6046,7 +6053,7 @@
         "pct_1d": -3.26,
         "pct_1w": -5.33,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 224.20751024368286
+        "dollar_vol_musd": 319.0915694732666
       }
     },
     "SWK": {
@@ -6100,7 +6107,7 @@
         "pct_1d": -6.42,
         "pct_1w": -1.38,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 1291.4956528044434
+        "dollar_vol_musd": 1477.3426853698732
       }
     },
     "SYY": {
@@ -6113,7 +6120,7 @@
         "pct_1d": 0.63,
         "pct_1w": 2.56,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 278.85617477148435
+        "dollar_vol_musd": 283.6616648910522
       }
     },
     "T": {
@@ -6126,7 +6133,7 @@
         "pct_1d": 0.17,
         "pct_1w": -3.65,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 1351.49043825
+        "dollar_vol_musd": 1351.589925
       }
     },
     "TAP": {
@@ -6225,7 +6232,7 @@
         "pct_1d": -0.01,
         "pct_1w": 5.64,
         "earnings_in_days": null,
-        "dollar_vol_musd": 320.78240568537905
+        "dollar_vol_musd": 478.4064081878662
       }
     },
     "TJX": {
@@ -6236,7 +6243,7 @@
         "pct_1d": -1.21,
         "pct_1w": 2.02,
         "earnings_in_days": null,
-        "dollar_vol_musd": 592.3023253740845
+        "dollar_vol_musd": 592.322150213623
       }
     },
     "TKO": {
@@ -6249,18 +6256,20 @@
         "pct_1d": -1.09,
         "pct_1w": 0.66,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 130.5175792373657
+        "dollar_vol_musd": 162.42905181884765
       }
     },
     "TMO": {
-      "tier": "T3",
-      "reasons": [],
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
       "proxies": {
         "mcap_weight": 0.362189,
         "pct_1d": -0.43,
         "pct_1w": 1.06,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 925.1771798348999
+        "dollar_vol_musd": 1213.093864215088
       }
     },
     "TMUS": {
@@ -6273,7 +6282,7 @@
         "pct_1d": -0.36,
         "pct_1w": -4.1,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 1164.727442707199
+        "dollar_vol_musd": 1164.8253692810058
       }
     },
     "TPL": {
@@ -6286,7 +6295,7 @@
         "pct_1d": 2.11,
         "pct_1w": -4.02,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 157.5126403862915
+        "dollar_vol_musd": 157.65032274169923
       }
     },
     "TPR": {
@@ -6308,9 +6317,9 @@
       "proxies": {
         "mcap_weight": 0.115725,
         "pct_1d": 1.23,
-        "pct_1w": -3.9,
+        "pct_1w": -3.45,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 166.9302201652832
+        "dollar_vol_musd": 301.4895815551758
       }
     },
     "TRI": {
@@ -6383,7 +6392,7 @@
         "pct_1d": 0.76,
         "pct_1w": -0.58,
         "earnings_in_days": 9,
-        "dollar_vol_musd": 11084.239603188995
+        "dollar_vol_musd": 11367.816325872802
       }
     },
     "TSN": {
@@ -6413,7 +6422,7 @@
         "pct_1d": 3.33,
         "pct_1w": -5.41,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 1002.4932706984863
+        "dollar_vol_musd": 1002.527846899414
       }
     },
     "TTD": {
@@ -6424,7 +6433,7 @@
         "pct_1d": -1.31,
         "pct_1w": 4.34,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 254.22468998186494
+        "dollar_vol_musd": 296.3791750411987
       }
     },
     "TTWO": {
@@ -6435,7 +6444,7 @@
         "pct_1d": -1.82,
         "pct_1w": 4.87,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 468.60555122779846
+        "dollar_vol_musd": 468.78701246643067
       }
     },
     "TXN": {
@@ -6447,9 +6456,9 @@
       "proxies": {
         "mcap_weight": 0.472888,
         "pct_1d": -1.08,
-        "pct_1w": -1.37,
+        "pct_1w": -0.87,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 2425.837729786377
+        "dollar_vol_musd": 2435.473463745117
       }
     },
     "TXT": {
@@ -6501,7 +6510,7 @@
         "pct_1d": -0.01,
         "pct_1w": 6.7,
         "earnings_in_days": 5,
-        "dollar_vol_musd": 834.396573558136
+        "dollar_vol_musd": 842.9972393127441
       }
     },
     "UDR": {
@@ -6555,18 +6564,20 @@
         "pct_1d": -1.68,
         "pct_1w": -1.51,
         "earnings_in_days": 15,
-        "dollar_vol_musd": 1141.7805559832154
+        "dollar_vol_musd": 1622.7074960998534
       }
     },
     "UNP": {
-      "tier": "T3",
-      "reasons": [],
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
       "proxies": {
         "mcap_weight": 0.302184,
         "pct_1d": 0.92,
         "pct_1w": -4.94,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 715.7783986138916
+        "dollar_vol_musd": 1102.5278514282227
       }
     },
     "UPS": {
@@ -6604,7 +6615,7 @@
         "pct_1d": 0.17,
         "pct_1w": -1.5,
         "earnings_in_days": 15,
-        "dollar_vol_musd": 278.62611692792893
+        "dollar_vol_musd": 572.357620753479
       }
     },
     "V": {
@@ -6617,7 +6628,7 @@
         "pct_1d": -0.04,
         "pct_1w": 2.92,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 1782.987586508423
+        "dollar_vol_musd": 2864.601158203125
       }
     },
     "VEEV": {
@@ -6643,7 +6654,7 @@
         "pct_1d": 0.15,
         "pct_1w": -1.42,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 257.1877294733143
+        "dollar_vol_musd": 257.2234337238312
       }
     },
     "VLO": {
@@ -6654,9 +6665,9 @@
       "proxies": {
         "mcap_weight": 0.153015,
         "pct_1d": 0.77,
-        "pct_1w": 3.44,
+        "pct_1w": 3.84,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 746.4974056386109
+        "dollar_vol_musd": 760.7850451599121
       }
     },
     "VLTO": {
@@ -6682,7 +6693,7 @@
         "pct_1d": -0.98,
         "pct_1w": -3.98,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 532.5318904627685
+        "dollar_vol_musd": 532.5474675231934
       }
     },
     "VRSK": {
@@ -6722,7 +6733,7 @@
         "pct_1d": 6.18,
         "pct_1w": -16.8,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 2603.585736268738
+        "dollar_vol_musd": 2618.0391113769533
       }
     },
     "VRTX": {
@@ -6735,7 +6746,7 @@
         "pct_1d": -0.95,
         "pct_1w": -0.05,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 453.1018757965088
+        "dollar_vol_musd": 456.6801258422852
       }
     },
     "VST": {
@@ -6748,7 +6759,7 @@
         "pct_1d": -0.29,
         "pct_1w": -9.3,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 560.7551185583496
+        "dollar_vol_musd": 650.0354457092285
       }
     },
     "VTR": {
@@ -6762,7 +6773,7 @@
         "pct_1d": 1.73,
         "pct_1w": -6.98,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 251.216584449028
+        "dollar_vol_musd": 402.0556051849365
       }
     },
     "VTRS": {
@@ -6786,7 +6797,7 @@
         "pct_1d": 1.52,
         "pct_1w": 0.93,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 1323.611675811531
+        "dollar_vol_musd": 1323.674494833374
       }
     },
     "WAB": {
@@ -6823,7 +6834,7 @@
         "pct_1d": 3.26,
         "pct_1w": 2.06,
         "earnings_in_days": 6,
-        "dollar_vol_musd": 974.7229973241577
+        "dollar_vol_musd": 974.7568717231751
       }
     },
     "WDAY": {
@@ -6864,7 +6875,7 @@
         "pct_1d": -0.57,
         "pct_1w": -5.49,
         "earnings_in_days": 2,
-        "dollar_vol_musd": 141.05321021958923
+        "dollar_vol_musd": 217.98652035217285
       }
     },
     "WELL": {
@@ -6878,18 +6889,20 @@
         "pct_1d": -0.51,
         "pct_1w": -6.99,
         "earnings_in_days": 4,
-        "dollar_vol_musd": 865.0594616885376
+        "dollar_vol_musd": 933.3994257202148
       }
     },
     "WFC": {
-      "tier": "T3",
-      "reasons": [],
+      "tier": "T2",
+      "reasons": [
+        "dollar_volume"
+      ],
       "proxies": {
         "mcap_weight": 0.461648,
         "pct_1d": 1.19,
         "pct_1w": 0.16,
         "earnings_in_days": 17,
-        "dollar_vol_musd": 978.202290568634
+        "dollar_vol_musd": 1276.7886499282838
       }
     },
     "WM": {
@@ -6916,7 +6929,7 @@
         "pct_1d": 0.89,
         "pct_1w": -3.32,
         "earnings_in_days": 3,
-        "dollar_vol_musd": 518.4257053345108
+        "dollar_vol_musd": 518.4646946350098
       }
     },
     "WMT": {
@@ -6929,7 +6942,7 @@
         "pct_1d": 0.09,
         "pct_1w": 1.58,
         "earnings_in_days": null,
-        "dollar_vol_musd": 2531.5047377257233
+        "dollar_vol_musd": 2533.147050480652
       }
     },
     "WRB": {
@@ -6989,7 +7002,7 @@
         "pct_1d": 6.51,
         "pct_1w": 4.55,
         "earnings_in_days": 8,
-        "dollar_vol_musd": 231.53629188171195
+        "dollar_vol_musd": 273.87326151313783
       }
     },
     "WYNN": {
@@ -7013,7 +7026,7 @@
         "pct_1d": -0.05,
         "pct_1w": -4.25,
         "earnings_in_days": 1,
-        "dollar_vol_musd": 547.6556926277161
+        "dollar_vol_musd": 547.6658586273194
       }
     },
     "XOM": {
@@ -7026,7 +7039,7 @@
         "pct_1d": -0.97,
         "pct_1w": -0.96,
         "earnings_in_days": 7,
-        "dollar_vol_musd": 1828.1542727937622
+        "dollar_vol_musd": 2435.620486254883
       }
     },
     "XYL": {

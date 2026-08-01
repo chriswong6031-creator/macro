@@ -1,5 +1,5 @@
 {
-  "date": "2026-07-31",
+  "date": "2026-08-01",
   "regime": "mixed / no clear trend",
   "breadth": 0.31,
   "favored": [
@@ -10,7 +10,7 @@
     "equity_intl"
   ],
   "correlation": "concentrated",
-  "asof": "2026-07-31",
+  "asof": "2026-08-01",
   "flows": {
     "schema": "crossasset_flows.v2",
     "display_only": true,
@@ -19,8 +19,8 @@
       "verdict": "concentrated",
       "absorption_pctile": 0.84,
       "n_markets": 6,
-      "absorption_ratio": 0.407,
-      "mean_abs_corr": 0.269,
+      "absorption_ratio": 0.406,
+      "mean_abs_corr": 0.268,
       "dominant_cluster": [
         "US",
         "Commodities",
@@ -130,7 +130,7 @@
         0.445,
         0.422,
         0.412,
-        0.407
+        0.406
       ],
       "spark_asof": "2026-07-31"
     },
@@ -181,21 +181,21 @@
       },
       {
         "pair": "gold_silver",
-        "ratio": 70.941,
+        "ratio": 70.308,
         "trend": "mid",
-        "pctile": 33.0
+        "pctile": 32.0
       },
       {
         "pair": "oil_gold",
         "ratio": 0.021,
         "trend": "mid",
-        "pctile": 61.0
+        "pctile": 59.0
       },
       {
         "pair": "stocks_gold",
-        "ratio": 0.182,
+        "ratio": 0.184,
         "trend": "mid",
-        "pctile": 55.0
+        "pctile": 59.0
       }
     ],
     "carry": {
@@ -258,7 +258,7 @@
           "leader": "Crypto",
           "follower": "HK",
           "lag": 1,
-          "r": 0.283,
+          "r": 0.282,
           "t": 4.185,
           "q": 0.0
         },
@@ -302,8 +302,8 @@
     },
     "confirm": {
       "verdict": "diverge",
-      "agree_pct": 0,
-      "n_blind_flags": 2,
+      "agree_pct": 50,
+      "n_blind_flags": 1,
       "flags_top": [
         {
           "key": "credit",
@@ -313,18 +313,9 @@
           "owner": "bonds",
           "lead": "leading",
           "equity_blind": true
-        },
-        {
-          "key": "usd_triple_red",
-          "en": "Triple-red \u2014 USD, equities & Treasuries falling together: the dollar is NOT acting as a safe haven (a US-idiosyncratic 'sell-America' configuration).",
-          "zh": "\u4e09\u7ea2 \u2014 \u7f8e\u5143\u3001\u80a1\u7968\u4e0e\u56fd\u503a\u540c\u6b65\u4e0b\u8dcc\uff1a\u7f8e\u5143\u672a\u53d1\u6325\u907f\u9669\u4f5c\u7528\uff08\u7f8e\u56fd\u7279\u6709\u7684\u2018\u629b\u552e\u7f8e\u56fd\u2019\u914d\u7f6e\uff09\u3002",
-          "severity": "high",
-          "owner": "fx",
-          "lead": "coincident",
-          "equity_blind": true
         }
       ],
-      "asof": "2026-07-30"
+      "asof": "2026-07-31"
     },
     "dollar": {
       "usd_dir": "strengthening",
@@ -348,7 +339,7 @@
       "fx_stress": {
         "dominant": null,
         "top_key": "carry_unwind",
-        "top_val": 24.1
+        "top_val": 24.2
       }
     },
     "shadow": {

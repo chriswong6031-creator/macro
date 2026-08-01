@@ -1,23 +1,22 @@
 {
   "schema_version": 1,
   "produced_by": "sentinel",
-  "produced_at": "2026-08-01T03:51:22Z",
+  "produced_at": "2026-08-01T21:49:25Z",
   "as_of": "2026-08-01",
   "plan_status": "pass",
   "publish_enabled": false,
   "auditor_strict": true,
   "counts": {
-    "items": 156,
-    "passed": 137,
-    "quarantined": 19,
-    "quarantined_policy": 19,
+    "items": 153,
+    "passed": 135,
+    "quarantined": 18,
+    "quarantined_policy": 18,
     "quarantined_overflow": 0,
     "warnings": 0,
     "exceptions_applied": 0
   },
   "reasons_histogram": {
-    "near_dup": 18,
-    "ramp_theme_list": 1
+    "near_dup": 18
   },
   "quarantined": [
     {
@@ -25,7 +24,7 @@
       "account": "kelly",
       "slot": "D2-S9",
       "type": "watchlist",
-      "cashtag": "$CDW",
+      "cashtag": "$ARES",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -37,7 +36,7 @@
       "account": "kelly",
       "slot": "D3-S9",
       "type": "watchlist",
-      "cashtag": "$TEL",
+      "cashtag": "$BDC",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -49,7 +48,7 @@
       "account": "kelly",
       "slot": "D3-S10",
       "type": "watchlist",
-      "cashtag": "$SHOO",
+      "cashtag": "$ARES",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -61,7 +60,7 @@
       "account": "kelly",
       "slot": "D3-S12",
       "type": "watchlist",
-      "cashtag": "$CDW",
+      "cashtag": "$NSSC",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -73,7 +72,7 @@
       "account": "kelly",
       "slot": "D3-S17",
       "type": "watchlist",
-      "cashtag": "$TEAM",
+      "cashtag": "$TPR",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -85,7 +84,7 @@
       "account": "kelly",
       "slot": "D4-S2",
       "type": "watchlist",
-      "cashtag": "$JBLU",
+      "cashtag": "$CBOE",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -97,7 +96,7 @@
       "account": "kelly",
       "slot": "D4-S7",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$CDW",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -109,7 +108,7 @@
       "account": "kelly",
       "slot": "D4-S17",
       "type": "watchlist",
-      "cashtag": "$CUBI",
+      "cashtag": "$AVNT",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -121,7 +120,7 @@
       "account": "kelly",
       "slot": "D4-S24",
       "type": "watchlist",
-      "cashtag": "$LPG",
+      "cashtag": "$ROST",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -133,7 +132,7 @@
       "account": "kelly",
       "slot": "D4-S25",
       "type": "watchlist",
-      "cashtag": "$CASY",
+      "cashtag": "$LPG",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -145,7 +144,7 @@
       "account": "kelly",
       "slot": "D5-S2",
       "type": "watchlist",
-      "cashtag": "$CBOE",
+      "cashtag": "$KMT",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -157,7 +156,7 @@
       "account": "kelly",
       "slot": "D5-S8",
       "type": "watchlist",
-      "cashtag": "$AVNT",
+      "cashtag": "$CDW",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -169,7 +168,7 @@
       "account": "kelly",
       "slot": "D5-S16",
       "type": "watchlist",
-      "cashtag": "$SHOO",
+      "cashtag": "$EQT",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -181,7 +180,7 @@
       "account": "kelly",
       "slot": "D6-S4",
       "type": "watchlist",
-      "cashtag": "$KMT",
+      "cashtag": "$CBOE",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -193,7 +192,7 @@
       "account": "kelly",
       "slot": "D6-S9",
       "type": "watchlist",
-      "cashtag": "$EQT",
+      "cashtag": "$CDW",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -205,7 +204,7 @@
       "account": "kelly",
       "slot": "D6-S25",
       "type": "watchlist",
-      "cashtag": "$ARES",
+      "cashtag": "$CSR",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -217,7 +216,7 @@
       "account": "kelly",
       "slot": "D7-S3",
       "type": "watchlist",
-      "cashtag": "$CASY",
+      "cashtag": "$PI",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
@@ -229,23 +228,11 @@
       "account": "kelly",
       "slot": "D7-S14",
       "type": "watchlist",
-      "cashtag": "$AVNT",
+      "cashtag": "$ARES",
       "headline": "Call result",
       "class": "policy",
       "reasons": [
         "near_dup:post-founder-051"
-      ]
-    },
-    {
-      "id": "post-theme-005",
-      "account": "kelly",
-      "slot": "D1-S1",
-      "type": "theme_list",
-      "cashtag": "$ETN",
-      "headline": "Industrial Automation ripping, +1.9% avg today",
-      "class": "policy",
-      "reasons": [
-        "ramp_theme_list"
       ]
     }
   ],
@@ -263,7 +250,7 @@
       "account": "flagship",
       "slot": "D2-S5",
       "type": "watchlist",
-      "cashtag": "$TEL",
+      "cashtag": "$PI",
       "headline": "How that call played out"
     },
     {
@@ -271,7 +258,7 @@
       "account": "flagship",
       "slot": "D2-S20",
       "type": "watchlist",
-      "cashtag": "$CSR",
+      "cashtag": "$BDC",
       "headline": "How that call played out"
     },
     {
@@ -279,7 +266,7 @@
       "account": "flagship",
       "slot": "D2-S21",
       "type": "watchlist",
-      "cashtag": "$ROST",
+      "cashtag": "$CWK",
       "headline": "How that call played out"
     },
     {
@@ -303,7 +290,7 @@
       "account": "flagship",
       "slot": "D2-S26",
       "type": "watchlist",
-      "cashtag": "$CWK",
+      "cashtag": "$TPR",
       "headline": "How that call played out"
     },
     {
@@ -327,7 +314,7 @@
       "account": "flagship",
       "slot": "D4-S12",
       "type": "watchlist",
-      "cashtag": "$EQT",
+      "cashtag": "$LPG",
       "headline": "How that call played out"
     },
     {
@@ -335,7 +322,7 @@
       "account": "flagship",
       "slot": "D4-S17",
       "type": "watchlist",
-      "cashtag": "$TEAM",
+      "cashtag": "$NSSC",
       "headline": "How that call played out"
     },
     {
@@ -343,7 +330,7 @@
       "account": "flagship",
       "slot": "D4-S26",
       "type": "watchlist",
-      "cashtag": "$CSR",
+      "cashtag": "$LPG",
       "headline": "How that call played out"
     },
     {
@@ -383,7 +370,7 @@
       "account": "flagship",
       "slot": "D6-S2",
       "type": "watchlist",
-      "cashtag": "$ROST",
+      "cashtag": "$PI",
       "headline": "How that call played out"
     },
     {
@@ -391,7 +378,7 @@
       "account": "flagship",
       "slot": "D6-S12",
       "type": "watchlist",
-      "cashtag": "$KWR",
+      "cashtag": "$CSR",
       "headline": "How that call played out"
     },
     {
@@ -407,7 +394,7 @@
       "account": "flagship",
       "slot": "D6-S22",
       "type": "watchlist",
-      "cashtag": "$KMT",
+      "cashtag": "$AVNT",
       "headline": "How that call played out"
     },
     {
@@ -415,7 +402,7 @@
       "account": "flagship",
       "slot": "D6-S27",
       "type": "watchlist",
-      "cashtag": "$CDW",
+      "cashtag": "$JBLU",
       "headline": "How that call played out"
     },
     {
@@ -423,7 +410,7 @@
       "account": "flagship",
       "slot": "D7-S2",
       "type": "watchlist",
-      "cashtag": "$ARES",
+      "cashtag": "$TPR",
       "headline": "How that call played out"
     },
     {
@@ -431,7 +418,7 @@
       "account": "flagship",
       "slot": "D7-S6",
       "type": "watchlist",
-      "cashtag": "$HSY",
+      "cashtag": "$ARLO",
       "headline": "How that call played out"
     },
     {
@@ -447,16 +434,8 @@
       "account": "flagship",
       "slot": "D7-S19",
       "type": "watchlist",
-      "cashtag": "$NSSC",
+      "cashtag": "$CBOE",
       "headline": "How that call played out"
-    },
-    {
-      "id": "post-theme-003",
-      "account": "flagship",
-      "slot": "D1-S3",
-      "type": "theme_list",
-      "cashtag": "$AMBA",
-      "headline": "Autonomous Systems ripping, +1.9% avg today"
     },
     {
       "id": "post-founder-010",
@@ -471,7 +450,7 @@
       "account": "founder",
       "slot": "D2-S23",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$KWR",
       "headline": "Called it, here's the result"
     },
     {
@@ -487,7 +466,7 @@
       "account": "founder",
       "slot": "D3-S17",
       "type": "watchlist",
-      "cashtag": "$SHOO",
+      "cashtag": "$LPG",
       "headline": "Called it, here's the result"
     },
     {
@@ -495,7 +474,7 @@
       "account": "founder",
       "slot": "D4-S4",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$CWK",
       "headline": "Called it, here's the result"
     },
     {
@@ -503,7 +482,7 @@
       "account": "founder",
       "slot": "D4-S6",
       "type": "watchlist",
-      "cashtag": "$MSFT",
+      "cashtag": "$SHOO",
       "headline": "Called it, here's the result"
     },
     {
@@ -511,7 +490,7 @@
       "account": "founder",
       "slot": "D4-S16",
       "type": "watchlist",
-      "cashtag": "$LKFN",
+      "cashtag": "$TEAM",
       "headline": "Called it, here's the result"
     },
     {
@@ -535,7 +514,7 @@
       "account": "founder",
       "slot": "D4-S28",
       "type": "watchlist",
-      "cashtag": "$CVI",
+      "cashtag": "$MSFT",
       "headline": "Called it, here's the result"
     },
     {
@@ -543,7 +522,7 @@
       "account": "founder",
       "slot": "D5-S4",
       "type": "watchlist",
-      "cashtag": "$JBLU",
+      "cashtag": "$PI",
       "headline": "Called it, here's the result"
     },
     {
@@ -591,7 +570,7 @@
       "account": "founder",
       "slot": "D6-S12",
       "type": "watchlist",
-      "cashtag": "$MSFT",
+      "cashtag": "$CBOE",
       "headline": "Called it, here's the result"
     },
     {
@@ -599,7 +578,7 @@
       "account": "founder",
       "slot": "D6-S24",
       "type": "watchlist",
-      "cashtag": "$TEAM",
+      "cashtag": "$EPAC",
       "headline": "Called it, here's the result"
     },
     {
@@ -607,7 +586,7 @@
       "account": "founder",
       "slot": "D7-S6",
       "type": "watchlist",
-      "cashtag": "$CVI",
+      "cashtag": "$PI",
       "headline": "Called it, here's the result"
     },
     {
@@ -647,7 +626,7 @@
       "account": "meagan",
       "slot": "D2-S21",
       "type": "watchlist",
-      "cashtag": "$LPG",
+      "cashtag": "$LKFN",
       "headline": "One result, posted flat"
     },
     {
@@ -655,7 +634,7 @@
       "account": "meagan",
       "slot": "D2-S23",
       "type": "watchlist",
-      "cashtag": "$TPR",
+      "cashtag": "$KMT",
       "headline": "One result, posted flat"
     },
     {
@@ -663,7 +642,7 @@
       "account": "meagan",
       "slot": "D3-S2",
       "type": "watchlist",
-      "cashtag": "$SHOO",
+      "cashtag": "$CVI",
       "headline": "One result, posted flat"
     },
     {
@@ -687,7 +666,7 @@
       "account": "meagan",
       "slot": "D3-S10",
       "type": "watchlist",
-      "cashtag": "$NSSC",
+      "cashtag": "$LPG",
       "headline": "One result, posted flat"
     },
     {
@@ -727,7 +706,7 @@
       "account": "meagan",
       "slot": "D4-S20",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$LPG",
       "headline": "One result, posted flat"
     },
     {
@@ -735,7 +714,7 @@
       "account": "meagan",
       "slot": "D4-S23",
       "type": "watchlist",
-      "cashtag": "$MSFT",
+      "cashtag": "$LKFN",
       "headline": "One result, posted flat"
     },
     {
@@ -767,7 +746,7 @@
       "account": "meagan",
       "slot": "D5-S18",
       "type": "watchlist",
-      "cashtag": "$ROST",
+      "cashtag": "$EPAC",
       "headline": "One result, posted flat"
     },
     {
@@ -783,7 +762,7 @@
       "account": "meagan",
       "slot": "D6-S13",
       "type": "watchlist",
-      "cashtag": "$CDW",
+      "cashtag": "$LPG",
       "headline": "One result, posted flat"
     },
     {
@@ -807,7 +786,7 @@
       "account": "meagan",
       "slot": "D7-S2",
       "type": "watchlist",
-      "cashtag": "$CSR",
+      "cashtag": "$ARLO",
       "headline": "One result, posted flat"
     },
     {
@@ -815,7 +794,7 @@
       "account": "meagan",
       "slot": "D7-S3",
       "type": "watchlist",
-      "cashtag": "$JBLU",
+      "cashtag": "$SHOO",
       "headline": "One result, posted flat"
     },
     {
@@ -823,7 +802,7 @@
       "account": "meagan",
       "slot": "D7-S7",
       "type": "watchlist",
-      "cashtag": "$TPR",
+      "cashtag": "$CUBI",
       "headline": "One result, posted flat"
     },
     {
@@ -831,7 +810,7 @@
       "account": "meagan",
       "slot": "D7-S8",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$BDC",
       "headline": "One result, posted flat"
     },
     {
@@ -839,7 +818,7 @@
       "account": "meagan",
       "slot": "D7-S12",
       "type": "watchlist",
-      "cashtag": "$SONO",
+      "cashtag": "$JBLU",
       "headline": "One result, posted flat"
     },
     {
@@ -851,19 +830,11 @@
       "headline": "What earns a spot on a watch list"
     },
     {
-      "id": "post-housepick-001",
-      "account": "meagan",
-      "slot": "D1-S19",
-      "type": "watchlist",
-      "cashtag": "$AMCR",
-      "headline": ""
-    },
-    {
-      "id": "post-sophia-024",
+      "id": "post-sophia-006",
       "account": "sophia",
-      "slot": "D1-S24",
-      "type": "chart",
-      "cashtag": "$ARLO",
+      "slot": "D1-S6",
+      "type": "macro",
+      "cashtag": "",
       "headline": ""
     },
     {
@@ -871,7 +842,7 @@
       "account": "sophia",
       "slot": "D2-S2",
       "type": "watchlist",
-      "cashtag": "$CBOE",
+      "cashtag": "$LPG",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -879,7 +850,7 @@
       "account": "sophia",
       "slot": "D2-S8",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$ROST",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -895,7 +866,7 @@
       "account": "sophia",
       "slot": "D2-S27",
       "type": "watchlist",
-      "cashtag": "$ARLO",
+      "cashtag": "$KMT",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -903,7 +874,7 @@
       "account": "sophia",
       "slot": "D3-S1",
       "type": "watchlist",
-      "cashtag": "$LPG",
+      "cashtag": "$CSR",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -999,7 +970,7 @@
       "account": "sophia",
       "slot": "D5-S17",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$MSFT",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -1007,7 +978,7 @@
       "account": "sophia",
       "slot": "D5-S20",
       "type": "watchlist",
-      "cashtag": "$SONO",
+      "cashtag": "$CDW",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -1023,7 +994,7 @@
       "account": "sophia",
       "slot": "D6-S3",
       "type": "watchlist",
-      "cashtag": "$AVNT",
+      "cashtag": "$TEAM",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -1031,7 +1002,7 @@
       "account": "sophia",
       "slot": "D6-S8",
       "type": "watchlist",
-      "cashtag": "$ARLO",
+      "cashtag": "$CUBI",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -1047,7 +1018,7 @@
       "account": "sophia",
       "slot": "D6-S19",
       "type": "watchlist",
-      "cashtag": "$CVI",
+      "cashtag": "$JBLU",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -1055,7 +1026,7 @@
       "account": "sophia",
       "slot": "D6-S26",
       "type": "watchlist",
-      "cashtag": "$CDW",
+      "cashtag": "$ARLO",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -1071,7 +1042,7 @@
       "account": "sophia",
       "slot": "D7-S19",
       "type": "watchlist",
-      "cashtag": "$TEL",
+      "cashtag": "$MSFT",
       "headline": "Did the rhyme hold?"
     },
     {
@@ -1079,16 +1050,16 @@
       "account": "sophia",
       "slot": "D7-S21",
       "type": "watchlist",
-      "cashtag": "$CASY",
+      "cashtag": "$LPG",
       "headline": "Did the rhyme hold?"
     },
     {
-      "id": "post-kelly-005",
-      "account": "kelly",
-      "slot": "D1-S5",
-      "type": "macro",
-      "cashtag": "",
-      "headline": ""
+      "id": "post-mover-002",
+      "account": "sophia",
+      "slot": "D1-S15",
+      "type": "mover",
+      "cashtag": "$AMZN",
+      "headline": "$AMZN +15.3% today"
     },
     {
       "id": "post-kelly-031",
@@ -1191,7 +1162,7 @@
       "account": "cici",
       "slot": "D2-S17",
       "type": "watchlist",
-      "cashtag": "$BDC",
+      "cashtag": "$ARES",
       "headline": "How the group read played out"
     },
     {
@@ -1199,7 +1170,7 @@
       "account": "cici",
       "slot": "D2-S20",
       "type": "watchlist",
-      "cashtag": "$TEAM",
+      "cashtag": "$NSSC",
       "headline": "How the group read played out"
     },
     {
@@ -1223,7 +1194,7 @@
       "account": "cici",
       "slot": "D3-S24",
       "type": "watchlist",
-      "cashtag": "$MSFT",
+      "cashtag": "$EQT",
       "headline": "How the group read played out"
     },
     {
@@ -1239,7 +1210,7 @@
       "account": "cici",
       "slot": "D4-S14",
       "type": "watchlist",
-      "cashtag": "$TEL",
+      "cashtag": "$KWR",
       "headline": "How the group read played out"
     },
     {
@@ -1255,7 +1226,7 @@
       "account": "cici",
       "slot": "D5-S10",
       "type": "watchlist",
-      "cashtag": "$PI",
+      "cashtag": "$JBLU",
       "headline": "How the group read played out"
     },
     {
@@ -1263,7 +1234,7 @@
       "account": "cici",
       "slot": "D5-S17",
       "type": "watchlist",
-      "cashtag": "$TEL",
+      "cashtag": "$CUBI",
       "headline": "How the group read played out"
     },
     {
@@ -1271,7 +1242,7 @@
       "account": "cici",
       "slot": "D5-S22",
       "type": "watchlist",
-      "cashtag": "$AVNT",
+      "cashtag": "$EPAC",
       "headline": "How the group read played out"
     },
     {
@@ -1311,7 +1282,7 @@
       "account": "cici",
       "slot": "D6-S20",
       "type": "watchlist",
-      "cashtag": "$TEL",
+      "cashtag": "$BDC",
       "headline": "How the group read played out"
     },
     {
@@ -1349,7 +1320,7 @@
   ],
   "checks": {
     "near_dup": {
-      "pairs_checked": 8225,
+      "pairs_checked": 7972,
       "hits": 18,
       "shared_media_hits": 0
     },
@@ -1661,7 +1632,7 @@
         }
       },
       "missing_created": [],
-      "theme_list_hits": 1
+      "theme_list_hits": 0
     }
   },
   "notes": []

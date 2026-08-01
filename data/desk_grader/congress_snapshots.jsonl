@@ -3558,3 +3558,6 @@
 {"date":"2026-08-01","ticker":"V","departed":true,"left_desk":"2026-08-01","last_rank":98,"last_score":28.0}
 {"date":"2026-08-01","ticker":"WAT","departed":true,"left_desk":"2026-08-01","last_rank":145,"last_score":52.6}
 {"date":"2026-08-01","ticker":"WFC","departed":true,"left_desk":"2026-08-01","last_rank":144,"last_score":52.7}
+{"date":"2026-08-01","ticker":"ADP","rank":144,"score":56.1,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-08-01","ticker":"MA","rank":145,"score":55.2,"lean":1,"covered":true,"unconfirmed":false}
+{"date":"2026-08-01","ticker":"PAYX","rank":146,"score":53.1,"lean":1,"covered":true,"unconfirmed":false}

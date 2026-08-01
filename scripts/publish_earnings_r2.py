@@ -9,9 +9,10 @@ store is gitignored (data/earnings_calls/) and MUST be published to R2 so the CI
 nightly runner can download it (scripts/fetch_earnings_scores.py) before
 engine/stage_analysis.py joins scores into the Stage Analysis context.
 
-SGA-R6 (single-writer / transport): the Windows worker is producer-only — it
-writes R2 via this script and NEVER touches git.  Nightly is the sole ledger
-advancer via the fetch shim.
+SGA-R6 (producer / transport): workers write immutable R2 generations via this
+script and never advance score data through git. Manifest compare-and-swap plus
+worker-side rebase makes concurrent PC/Mac producers lossless. Nightly consumes
+the committed generation through the fetch shim.
 
 Key layout: payloads are immutable generation objects under
              earnings_calls/generations/<generation_id>/
@@ -59,6 +60,10 @@ _EARNINGS_FILES = [
 
 # R2 key prefix for earnings-call scores
 _R2_PREFIX = "earnings_calls"
+
+# Distinct retryable outcome used by the worker when another producer wins the
+# manifest compare-and-swap.  Generic upload/validation failures remain 1.
+PUBLISH_CONFLICT = 2
 
 _CT = {
     ".parquet": "application/octet-stream",
@@ -240,15 +245,37 @@ def _read_manifest(path: Path) -> dict | None:
 
 def _remote_manifest(s3, bucket: str) -> dict | None:
     """Read the prior R2 manifest so an edge producer can preserve history metadata."""
+    payload, _etag = _remote_manifest_snapshot(s3, bucket)
+    return payload
+
+
+def _remote_manifest_snapshot(s3, bucket: str) -> tuple[dict | None, str | None]:
+    """Return the current manifest and its opaque ETag for conditional commit."""
     try:
-        body = s3.get_object(
+        response = s3.get_object(
             Bucket=bucket,
             Key=f"{_R2_PREFIX}/manifest.json",
-        )["Body"].read()
-        payload = json.loads(body)
-        return payload if isinstance(payload, dict) else None
+        )
+        etag = str(response.get("ETag") or "").strip() or None
+        payload = json.loads(response["Body"].read())
+        return (payload if isinstance(payload, dict) else None), etag
     except Exception:  # noqa: BLE001
-        return None
+        return None, None
+
+
+def _is_precondition_failed(exc: Exception) -> bool:
+    response = getattr(exc, "response", None)
+    if not isinstance(response, dict):
+        return False
+    error = response.get("Error") if isinstance(response.get("Error"), dict) else {}
+    metadata = (
+        response.get("ResponseMetadata")
+        if isinstance(response.get("ResponseMetadata"), dict) else {}
+    )
+    return (
+        str(error.get("Code") or "") in {"PreconditionFailed", "412"}
+        or int(metadata.get("HTTPStatusCode") or 0) == 412
+    )
 
 
 def _refresh_manifest(
@@ -362,8 +389,19 @@ def _validate_local_generation(
     return True, None
 
 
-def publish(data_dir: Path | None = None, dry_run: bool = False) -> int:
-    """Upload earnings scores to R2.  Returns 0 on success, 1 on error."""
+def publish(
+    data_dir: Path | None = None,
+    dry_run: bool = False,
+    *,
+    expected_manifest_etag: str | None = None,
+) -> int:
+    """Upload earnings scores to R2.
+
+    ``expected_manifest_etag`` is the commit marker observed during the
+    caller's pre-write hydration. When supplied, promotion is conditional on
+    that exact parent still being current; a newer producer therefore forces a
+    rebase instead of allowing a stale read to overwrite its rows.
+    """
     s3 = _client()
     if s3 is None:
         log.info("no R2 creds (R2_ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY) — skip")
@@ -392,7 +430,7 @@ def publish(data_dir: Path | None = None, dry_run: bool = False) -> int:
     # absent-only behavior let a healthy producer publish new parquet bytes
     # beside a permanently stale generation record.
     manifest_path = earnings_dir / "manifest.json"
-    remote_manifest = _remote_manifest(s3, bucket)
+    remote_manifest, remote_manifest_etag = _remote_manifest_snapshot(s3, bucket)
     try:
         prior = _read_manifest(manifest_path) or remote_manifest
         if _refresh_manifest(
@@ -488,19 +526,35 @@ def publish(data_dir: Path | None = None, dry_run: bool = False) -> int:
         up += 1
     else:
         try:
-            s3.upload_file(
-                str(manifest_path), bucket, manifest_key,
-                ExtraArgs={
-                    "ContentType": "application/json",
-                    "Metadata": {
-                        "content-md5": manifest_md5,
-                        "generation-id": str(manifest.get("generation_id") or ""),
-                    },
+            put_args = {
+                "Bucket": bucket,
+                "Key": manifest_key,
+                "Body": manifest_path.read_bytes(),
+                "ContentType": "application/json",
+                "Metadata": {
+                    "content-md5": manifest_md5,
+                    "generation-id": str(manifest.get("generation_id") or ""),
                 },
+            }
+            conditional_etag = (
+                str(expected_manifest_etag).strip()
+                if expected_manifest_etag is not None
+                else remote_manifest_etag
             )
+            if conditional_etag:
+                put_args["IfMatch"] = conditional_etag
+            else:
+                put_args["IfNoneMatch"] = "*"
+            s3.put_object(**put_args)
             log.info("promoted generation: %s", manifest.get("generation_id"))
             up += 1
         except Exception as exc:  # noqa: BLE001
+            if _is_precondition_failed(exc):
+                log.warning(
+                    "manifest promotion lost compare-and-swap for generation %s",
+                    manifest.get("generation_id"),
+                )
+                return PUBLISH_CONFLICT
             log.error("manifest promotion failed: %s", exc)
             errors += 1
 

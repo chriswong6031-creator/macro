@@ -27,7 +27,7 @@ LINK_FIELDS: tuple[str, ...] = ("site", "source", "receipt")
 
 SOURCES: tuple[str, ...] = (
     "research_vault", "prophet_ledger", "macro_release",
-    "earnings", "regime_flip", "risk_band",
+    "earnings", "earnings_call", "regime_flip", "risk_band",
 )
 KINDS: tuple[str, ...] = ("report", "signal_close", "print", "earnings", "state_flip")
 HORIZONS: tuple[str, ...] = ("short", "medium", "long")

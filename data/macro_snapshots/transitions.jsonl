@@ -100,11 +100,12 @@
 {"asof": "2026-07-31", "domain": "fx", "field": "fx_liquidity_dir", "from_value": "soft", "to_value": "supportive", "macro_context_id": "72189d007b106157"}
 {"asof": "2026-07-31", "domain": "fx", "field": "fx_usdchf_action", "from_value": "LONG", "to_value": "FLAT", "macro_context_id": "72189d007b106157"}
 {"asof": "2026-07-31", "domain": "canada", "field": "canada_overlay_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "72189d007b106157"}
-{"asof": "2026-08-01", "domain": "us", "field": "us_risk_radar", "from_value": "caution", "to_value": "watch", "macro_context_id": "8787efdcaf0e031b"}
-{"asof": "2026-08-01", "domain": "us", "field": "us_gamma_regime", "from_value": null, "to_value": "short", "macro_context_id": "8787efdcaf0e031b"}
-{"asof": "2026-08-01", "domain": "us", "field": "us_vrp_state", "from_value": "normal", "to_value": "collapsing (de-risk)", "macro_context_id": "8787efdcaf0e031b"}
-{"asof": "2026-08-01", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_ON", "macro_context_id": "8787efdcaf0e031b"}
-{"asof": "2026-08-01", "domain": "fx", "field": "fx_risk", "from_value": "risk-off", "to_value": "risk-on", "macro_context_id": "8787efdcaf0e031b"}
-{"asof": "2026-08-01", "domain": "commodity", "field": "silver_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "8787efdcaf0e031b"}
-{"asof": "2026-08-01", "domain": "hk", "field": "hk_risk_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "8787efdcaf0e031b"}
-{"asof": "2026-08-01", "domain": "canada", "field": "canada_cycle_tag", "from_value": "mid", "to_value": "late", "macro_context_id": "8787efdcaf0e031b"}
+{"asof": "2026-08-01", "domain": "us", "field": "us_fused_risk", "from_value": "elevated", "to_value": "caution", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "us", "field": "us_risk_radar", "from_value": "caution", "to_value": "watch", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "us", "field": "us_gamma_regime", "from_value": null, "to_value": "short", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "market", "field": "market_state_verdict", "from_value": "MIXED", "to_value": "RISK_ON", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "fx", "field": "fx_risk", "from_value": "risk-off", "to_value": "risk-on", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "commodity", "field": "silver_action", "from_value": "HOLD", "to_value": "SELL", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "china", "field": "china_fe_band", "from_value": "Neutral", "to_value": "Greed", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "hk", "field": "hk_risk_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "d46987a2d5195cc4"}
+{"asof": "2026-08-01", "domain": "canada", "field": "canada_cycle_tag", "from_value": "mid", "to_value": "late", "macro_context_id": "d46987a2d5195cc4"}

@@ -1,6 +1,6 @@
 {
 "filter":"idx_ndx",
-"as_of":"2026-08-01 00:28 UTC",
+"as_of":"2026-08-01 15:59 UTC",
 "n":103,
 "total_reported":103,
 "unmapped_industries":[],
@@ -27,7 +27,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4361.69
+"market_cap_b":4358.34
 },
 {
 "ticker":"GOOGL",
@@ -35,7 +35,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":4355.59
+"market_cap_b":4358.34
 },
 {
 "ticker":"MSFT",
@@ -75,7 +75,7 @@
 "industry":"Internet Content & Information",
 "sector":"Communication Services",
 "country":"USA",
-"market_cap_b":1412.96
+"market_cap_b":1418.01
 },
 {
 "ticker":"TSLA",
@@ -355,7 +355,7 @@
 "industry":"Restaurants",
 "sector":"Consumer Cyclical",
 "country":"USA",
-"market_cap_b":119.99
+"market_cap_b":119.98
 },
 {
 "ticker":"FTNT",
@@ -363,7 +363,7 @@
 "industry":"Software - Infrastructure",
 "sector":"Technology",
 "country":"USA",
-"market_cap_b":118.65
+"market_cap_b":118.82
 },
 {
 "ticker":"ADP",
@@ -547,7 +547,7 @@
 "industry":"Utilities - Regulated Electric",
 "sector":"Utilities",
 "country":"USA",
-"market_cap_b":69.56
+"market_cap_b":69.6
 },
 {
 "ticker":"WBD",
@@ -651,7 +651,7 @@
 "industry":"Utilities - Regulated Electric",
 "sector":"Utilities",
 "country":"USA",
-"market_cap_b":48.82
+"market_cap_b":48.85
 },
 {
 "ticker":"CCEP",
@@ -670,20 +670,20 @@
 "market_cap_b":47.92
 },
 {
+"ticker":"EXC",
+"company":"Exelon Corp",
+"industry":"Utilities - Regulated Electric",
+"sector":"Utilities",
+"country":"USA",
+"market_cap_b":47.3
+},
+{
 "ticker":"FER",
 "company":"Ferrovial N. V",
 "industry":"Engineering & Construction",
 "sector":"Industrials",
 "country":"Netherlands",
 "market_cap_b":47.22
-},
-{
-"ticker":"EXC",
-"company":"Exelon Corp",
-"industry":"Utilities - Regulated Electric",
-"sector":"Utilities",
-"country":"USA",
-"market_cap_b":46.88
 },
 {
 "ticker":"TTWO",
@@ -795,7 +795,7 @@
 "industry":"Medical Devices",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":32.2
+"market_cap_b":31.49
 },
 {
 "ticker":"GEHC",
@@ -819,7 +819,7 @@
 "industry":"Biotechnology",
 "sector":"Healthcare",
 "country":"USA",
-"market_cap_b":27.44
+"market_cap_b":27.5
 },
 {
 "ticker":"CPRT",

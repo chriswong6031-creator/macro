@@ -106,7 +106,8 @@
    '当下的收入是算术；十年后的收入是假设。把年度数字当作事实，把测算当作情景。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how reinvestment stacks up over time with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or measure a holding’s growth rate with the <a href="', '看再投资如何随时间累积，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', 'CAGR 计算器') }}</a>{{ t('.', '衡量一项持仓的增长率。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how reinvestment stacks up over time with the <a href="' ~ rel ~ 'tools/calculators/compounding.html">compounding calculator</a>, or measure a holding’s growth rate with the <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/compounding.html">复利计算器</a>看再投资如何随时间累积，或用 <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR 计算器</a>衡量一项持仓的增长率。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

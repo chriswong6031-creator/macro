@@ -95,6 +95,20 @@ def test_render_publish_commits_from_index_to_avoid_promisor_blob_materializatio
     assert "git commit " not in script
 
 
+def test_render_publish_budget_covers_cold_hydration_and_fails_closed():
+    """A validated render must survive one cold fallback and never report false green."""
+    publish = next(
+        step for step in _steps() if step.get("name", "").startswith("commit rendered site")
+    )
+    script = publish["run"]
+
+    assert "PUSH_BUDGET_SECS=2400" in script
+    assert "PUSH_MAX_ATTEMPTS=20" in script
+    give_up = script[script.index("push_lost") :].rstrip()
+    assert "rendered site NOT pushed" in give_up
+    assert give_up.endswith("exit 1"), "an unlanded render must fail the workflow"
+
+
 def test_cancelled_or_guard_failed_render_never_normalizes_or_publishes():
     steps = _steps()
     render = next(step for step in steps if step.get("id") == "render_pages")

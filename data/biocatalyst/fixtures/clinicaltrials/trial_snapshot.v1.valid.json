@@ -1,0 +1,126 @@
+{
+  "contract_id": "trial_snapshot.v1",
+  "schema_version": "1.0.0",
+  "snapshot_id": "trial_snapshot_NCT00000001_after",
+  "source_version_ordinal": 2,
+  "nct_id": "NCT00000001",
+  "source_snapshot_ref": "ctgov_snapshot_NCT00000001_after",
+  "source_record_ref": "src:ctgov:NCT00000001:sha256:287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e",
+  "canonical_content_sha256": "287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e",
+  "coverage_class": "current_only",
+  "source_attribution": {
+    "source_name": "ClinicalTrials.gov",
+    "source_uri": "https://clinicaltrials.gov/study/NCT00000001",
+    "source_processed_at_raw": "2026-08-01T09:00:00",
+    "source_processed_timestamp_timezone": "not_declared_by_source_value",
+    "source_last_update_posted_at": "2026-08-01",
+    "submitter_responsibility_note": "Study sponsors or investigators supply the registry information; a listing is not government validation of the study's science or safety.",
+    "modification_note": "BioCatalyst parsed and normalized selected source fields without changing the archived source record."
+  },
+  "source_published_at": "2026-08-01",
+  "source_effective_at": null,
+  "retrieved_at": "2026-08-01T15:00:04Z",
+  "first_seen_at": "2026-08-01T15:00:04Z",
+  "knowledge_cutoff": "2026-08-01T15:00:04Z",
+  "valid_from": null,
+  "valid_to": null,
+  "parser_version": "clinicaltrials_v2_parser.v1",
+  "source_schema_version": "ctgov_api_v2",
+  "license_class": "us_government_source_facts",
+  "confidence": {
+    "value": 1.0,
+    "method": "deterministic_source_parse",
+    "meaning": "parser_fidelity_not_real_world_truth",
+    "calibrated": false
+  },
+  "contradiction_state": "none_known",
+  "analyst_review_state": "machine_checked",
+  "facts": {
+    "brief_title": {
+      "state": "observed",
+      "value": "Synthetic Phase 2 Study",
+      "source_json_path": "/protocolSection/identificationModule/briefTitle"
+    },
+    "official_title": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/identificationModule/officialTitle"
+    },
+    "overall_status": {
+      "state": "observed",
+      "value": "RECRUITING",
+      "source_json_path": "/protocolSection/statusModule/overallStatus"
+    },
+    "study_type": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/designModule/studyType"
+    },
+    "phases": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/designModule/phases"
+    },
+    "sponsor": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/sponsorCollaboratorsModule/leadSponsor"
+    },
+    "enrollment": {
+      "state": "observed",
+      "value": {"count": 160, "type": "ESTIMATED"},
+      "source_json_path": "/protocolSection/designModule/enrollmentInfo"
+    },
+    "start_date": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/statusModule/startDateStruct"
+    },
+    "primary_completion_date": {
+      "state": "observed",
+      "value": {"date": "2026-12", "type": "ESTIMATED"},
+      "source_json_path": "/protocolSection/statusModule/primaryCompletionDateStruct"
+    },
+    "completion_date": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/statusModule/completionDateStruct"
+    },
+    "conditions": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/conditionsModule/conditions"
+    },
+    "interventions": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/armsInterventionsModule/interventions"
+    },
+    "primary_outcomes": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/outcomesModule/primaryOutcomes"
+    },
+    "secondary_outcomes": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/outcomesModule/secondaryOutcomes"
+    },
+    "locations": {
+      "state": "source_missing",
+      "value": null,
+      "source_json_path": "/protocolSection/contactsLocationsModule/locations"
+    }
+  },
+  "evidence_claim_refs": ["claim:trial:NCT00000001:overall_status:20260801"],
+  "authority": {
+    "classification": "source_fact",
+    "decision_authority": false,
+    "allowed_uses": ["display", "context", "explain"],
+    "forbidden_uses": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]
+  },
+  "transaction_from": "2026-08-01T15:00:05Z",
+  "transaction_to": null,
+  "projection_sha256": "089251299071200347c43a4a9968841990aded41afadda6bf2fc33c15169af3a",
+  "hash_scope": "canonical_payload_excluding_projection_sha256"
+}

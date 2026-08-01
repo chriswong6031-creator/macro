@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-01T03:16:54.910061+00:00",
+  "generated_utc": "2026-08-01T21:17:40.751510+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -1003,11 +1003,10 @@
       ],
       "n_actors": 2,
       "alt_corroborated": true,
-      "alt_score": 7,
-      "alt_weighted": 2.9,
+      "alt_score": 6,
+      "alt_weighted": 2.5,
       "alt_channels": [
         "affiliation",
-        "app_demand",
         "github_momentum",
         "hf_model_momentum",
         "lobbying",
@@ -1208,11 +1207,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.9,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
-        "patent_cluster"
+        "patent_cluster",
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1295,6 +1295,31 @@
       }
     },
     {
+      "ticker": "AXP",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "app_demand"
+      ],
+      "top_holder": {
+        "owner": "BERKSHIRE HATHAWAY INC",
+        "title": "Institution",
+        "shares": 151610700
+      }
+    },
+    {
       "ticker": "KO",
       "actors": [
         {
@@ -1316,6 +1341,31 @@
       "top_holder": null
     },
     {
+      "ticker": "BAC",
+      "actors": [
+        {
+          "actor": "Warren Buffett",
+          "kind": "fund",
+          "rel": "AFFILIATES_WITH",
+          "provenance": "DISCLOSED",
+          "qualitative": true
+        }
+      ],
+      "n_actors": 1,
+      "alt_corroborated": true,
+      "alt_score": 2,
+      "alt_weighted": 0.9,
+      "alt_channels": [
+        "affiliation",
+        "app_demand"
+      ],
+      "top_holder": {
+        "owner": "VANGUARD GROUP INC",
+        "title": "Institution",
+        "shares": 651076825
+      }
+    },
+    {
       "ticker": "UBER",
       "actors": [
         {
@@ -1328,11 +1378,10 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 3,
-      "alt_weighted": 1.1,
+      "alt_score": 2,
+      "alt_weighted": 0.7,
       "alt_channels": [
         "affiliation",
-        "app_demand",
         "special_situation"
       ],
       "top_holder": {
@@ -1542,54 +1591,6 @@
         "affiliation"
       ],
       "top_holder": null
-    },
-    {
-      "ticker": "AXP",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "BERKSHIRE HATHAWAY INC",
-        "title": "Institution",
-        "shares": 151610700
-      }
-    },
-    {
-      "ticker": "BAC",
-      "actors": [
-        {
-          "actor": "Warren Buffett",
-          "kind": "fund",
-          "rel": "AFFILIATES_WITH",
-          "provenance": "DISCLOSED",
-          "qualitative": true
-        }
-      ],
-      "n_actors": 1,
-      "alt_corroborated": false,
-      "alt_score": 1,
-      "alt_weighted": 0.5,
-      "alt_channels": [
-        "affiliation"
-      ],
-      "top_holder": {
-        "owner": "VANGUARD GROUP INC",
-        "title": "Institution",
-        "shares": 651076825
-      }
     },
     {
       "ticker": "CVI",

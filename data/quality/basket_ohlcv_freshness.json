@@ -1,11 +1,11 @@
 {
   "status": "stale",
-  "checked_at": "2026-08-01T00:39:04.140677+00:00",
+  "checked_at": "2026-08-01T16:08:13.332688+00:00",
   "threshold_sessions": 3,
   "store_max": "2026-07-31",
   "n_members": 694,
   "n_stale": 1,
-  "n_behind_within_threshold": 1,
+  "n_behind_within_threshold": 0,
   "stale": {
     "BLD": {
       "last": "2026-07-02",

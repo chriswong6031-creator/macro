@@ -96,7 +96,8 @@
    'ROI 告诉你一笔交易赚了多少；年化回报告诉你赚得多快。只有后者能让你比较耗时不同的交易。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a percentage into money-per-year with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', 'CAGR 计算器') }}</a>{{ t(', or see how repeated gains stack up in the <a href="', ' 把百分比折算成年增长率，或在 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t('.', ' 中查看反复收益如何累积。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn a percentage into money-per-year with the <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR calculator</a>, or see how repeated gains stack up in the <a href="' ~ rel ~ 'tools/calculators/compounding.html">compounding calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR 计算器</a> 把百分比折算成年增长率，或在 <a href="' ~ rel ~ 'tools/calculators/compounding.html">复利计算器</a> 中查看反复收益如何累积。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

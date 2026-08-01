@@ -4,20 +4,19 @@
     {
       "as_of": "2026-08-01",
       "tickers": [
-        "AMCR",
+        "AMZN",
         "ARES",
         "ARLO",
         "AVNT",
         "BDC",
-        "CASY",
         "CBOE",
         "CDW",
         "CSR",
         "CUBI",
         "CVI",
         "CWK",
+        "EPAC",
         "EQT",
-        "HSY",
         "JBLU",
         "KMT",
         "KWR",
@@ -28,9 +27,7 @@
         "PI",
         "ROST",
         "SHOO",
-        "SONO",
         "TEAM",
-        "TEL",
         "TPR"
       ]
     },

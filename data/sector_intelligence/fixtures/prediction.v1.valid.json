@@ -1,0 +1,29 @@
+{
+  "contract_id": "prediction.v1",
+  "schema_version": "1.0.0",
+  "prediction_id": "prediction:trial:NCT00000001:completion-window:v1",
+  "sector": "biopharma",
+  "target": {"entity_ref": "trial:NCT00000001", "outcome_type": "study_conduct.registry_primary_completion_by_horizon", "outcome_definition_version": "1.0.0"},
+  "issued_at": "2026-08-01T08:10:00Z",
+  "knowledge_cutoff": "2026-08-01T08:00:00Z",
+  "horizon": {"starts_at": "2026-08-01T08:10:00Z", "ends_at": "2027-08-01T08:10:00Z"},
+  "scenarios": [
+    {"scenario_id": "by_horizon", "label": "Registry reports primary completion by horizon", "probability": 0.55, "lower_bound": 0.35, "upper_bound": 0.72},
+    {"scenario_id": "not_by_horizon", "label": "Registry does not report primary completion by horizon", "probability": 0.45, "lower_bound": 0.28, "upper_bound": 0.65}
+  ],
+  "uncertainty": {"method": "fixture_interval_only", "confidence_level": 0.9, "limitations": ["Synthetic fixture; not a clinical-success forecast.", "Registry timing is not proof of protocol execution or efficacy."]},
+  "model": {"model_id": "synthetic-baseline", "model_version": "0.0.1", "baseline_id": "historical-frequency-placeholder", "training_cutoff": "2026-07-31T23:59:59Z"},
+  "calibration": {"status": "shadow", "calibration_version": null, "evaluated_at": null},
+  "feature_snapshot_ref": "feature-snapshot:trial:NCT00000001:20260801T080500Z",
+  "evidence_claim_refs": ["claim:trial:NCT00000001:overall_status:20260801"],
+  "originator_type": "deterministic_model",
+  "llm_role": "none",
+  "publication_tier": "SHADOW",
+  "decision_authority": false,
+  "permitted_decision_uses": ["research"],
+  "promotion_evidence_refs": [],
+  "governance_decision_refs": [],
+  "authority_manifest_ref": "authority:biocatalyst-prediction-shadow:v1",
+  "status": "shadow",
+  "supersedes_prediction_id": null
+}

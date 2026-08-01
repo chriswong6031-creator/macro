@@ -1,7 +1,7 @@
 {
   "schema": "subsector_rotation.track_record.v1",
   "as_of": "2026-08-01",
-  "generated_at": "2026-08-01T01:43:13.516996+00:00",
+  "generated_at": "2026-08-01T19:48:17.167587+00:00",
   "is_context_only": true,
   "n_snapshots": 6984,
   "n_days": 26,
@@ -12,11 +12,11 @@
       "score_ic_t_hac": 1.392,
       "score_ic_detail": {
         "mean_ic": 0.1044,
-        "ic_vol": 0.3863,
+        "ic_vol": 0.3862,
         "ic_ir": 0.27,
-        "ic_ir_ann": 0.855,
+        "ic_ir_ann": 0.854,
         "t_hac": 1.392,
-        "p_hac": 0.164,
+        "p_hac": 0.1641,
         "hit": 0.6,
         "n": 20,
         "hac_lags": 5
@@ -48,13 +48,13 @@
     "10": {
       "n_matured": 4106,
       "score_ic": 0.253,
-      "score_ic_t_hac": 4.639,
+      "score_ic_t_hac": 4.638,
       "score_ic_detail": {
         "mean_ic": 0.253,
         "ic_vol": 0.2898,
         "ic_ir": 0.873,
         "ic_ir_ann": 3.905,
-        "t_hac": 4.639,
+        "t_hac": 4.638,
         "p_hac": 0.0,
         "hit": 0.824,
         "n": 17,
@@ -92,7 +92,7 @@
         "mean_ic": 0.3341,
         "ic_vol": 0.3324,
         "ic_ir": 1.005,
-        "ic_ir_ann": 6.515,
+        "ic_ir_ann": 6.514,
         "t_hac": 4.85,
         "p_hac": 0.0,
         "hit": 0.7,
@@ -242,7 +242,7 @@
         "ic": 0.253,
         "ic_v2": null,
         "gap": null,
-        "t_hac": 4.639,
+        "t_hac": 4.638,
         "t_hac_v2": null
       },
       "21": {

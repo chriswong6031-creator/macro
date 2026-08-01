@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/source_page_receipt.v1.schema.json",
+  "title": "BioCatalyst Sanitized Source Page Receipt v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "receipt_id", "run_id", "source_id", "page_ordinal",
+    "receipt_object_key", "request", "response", "source_dataset_timestamp_raw", "source_api_version", "sanitization",
+    "transaction_from", "transaction_to"
+  ],
+  "properties": {
+    "contract_id": {"const": "source_page_receipt.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "receipt_id": {"type": "string", "pattern": "^ctgov_receipt_[a-zA-Z0-9_-]+$"},
+    "run_id": {"type": "string", "pattern": "^ctgov_run_[a-zA-Z0-9_-]+$"},
+    "source_id": {"const": "clinicaltrials_gov_v2"},
+    "page_ordinal": {"type": "integer", "minimum": 0},
+    "receipt_object_key": {"type": "string", "pattern": "^biocatalyst/receipts/clinicaltrials/[0-9]{4}/[0-9]{2}/[A-Za-z0-9_-]+/[0-9]+\\.json$"},
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "path", "query_sha256", "page_token_sha256", "headers"],
+      "properties": {
+        "method": {"const": "GET"},
+        "path": {"const": "/studies"},
+        "query_sha256": {"$ref": "#/$defs/sha256"},
+        "page_token_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+        "headers": {
+          "type": "object",
+          "propertyNames": {"enum": ["accept", "user-agent"]},
+          "additionalProperties": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status_code", "headers", "exact_response_sha256", "raw_response_object_key", "byte_count", "study_count", "next_page_token_sha256", "received_at"],
+      "properties": {
+        "status_code": {"type": "integer", "minimum": 100, "maximum": 599},
+        "headers": {
+          "type": "object",
+          "propertyNames": {"enum": ["content-type", "content-length", "date", "etag", "last-modified"]},
+          "additionalProperties": {"type": "string"}
+        },
+        "exact_response_sha256": {"$ref": "#/$defs/sha256"},
+        "raw_response_object_key": {"type": "string", "pattern": "^biocatalyst/raw/clinicaltrials/v2/pages/[0-9]{4}/[0-9]{2}/[A-Za-z0-9_-]+/[0-9]+/[a-f0-9]{64}\\.json$"},
+        "byte_count": {"type": "integer", "minimum": 0},
+        "study_count": {"type": "integer", "minimum": 0},
+        "next_page_token_sha256": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]},
+        "received_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "source_dataset_timestamp_raw": {"$ref": "#/$defs/sourceDataTimestamp"},
+    "source_api_version": {"type": "string", "minLength": 1},
+    "sanitization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw_pagination_tokens_stored_in_receipt", "credentials_stored_in_receipt", "rejected_header_names"],
+      "properties": {
+        "raw_pagination_tokens_stored_in_receipt": {"const": false},
+        "credentials_stored_in_receipt": {"const": false},
+        "rejected_header_names": {"type": "array", "uniqueItems": true, "items": {"type": "string", "enum": ["authorization", "cookie", "proxy-authorization", "set-cookie", "x-api-key"]}}
+      }
+    },
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceDataTimestamp": {"type": "string", "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"}
+  }
+}

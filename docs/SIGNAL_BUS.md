@@ -12,8 +12,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|
 | XSR | 1 |
 | active-build-map | 1 |
-| agentic_media | 3 |
+| agentic_media | 4 |
+| biopharma-seasonality-intelligence | 1 |
 | btc-vector | 6 |
+| capital-structure-intelligence | 8 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
@@ -32,7 +34,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | fast-turn | 4 |
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
-| fundamental-forensics | 1 |
+| fundamental-forensics | 2 |
 | government-revenue-foresight | 8 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
@@ -104,8 +106,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 348 |
-| infrastructure | 101 |
+| display | 350 |
+| infrastructure | 110 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -113,10 +115,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 505 |
+| git | 516 |
 | git+r2 | 1 |
-| gitignored-local | 15 |
-| r2 | 11 |
+| gitignored-local | 14 |
+| r2 | 12 |
 
 ## Artifacts by owner_program
 
@@ -136,9 +138,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| chronicle-events | `data/chronicle/events.jsonl` | jsonl | daily-engine | display | 3 | 0 |
+| chronicle-earnings-call-events | `data/chronicle/earnings_call_events.jsonl` | jsonl | daily-engine | display | 4 | 0 |
+| chronicle-events | `data/chronicle/events.jsonl` | jsonl | daily-engine | display | 4 | 0 |
 | chronicle-manifest | `data/chronicle/manifest.json` | json | daily-engine | display | 3 | 0 |
 | chronicle-state-log | `data/chronicle/state_log.jsonl` | jsonl | daily-engine | display | 3 | 0 |
+
+### biopharma-seasonality-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| site-biopharma-seasonality-methodology | `site/seasonalitydata/methodology.json` | json | on-demand | display | 0 | 1 |
 
 ### btc-vector
 
@@ -150,6 +159,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-regime-ledger | `data/vector/regime_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | btc-impulse-ledger | `data/vector/impulse_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | crypto-cockpit | `site/crypto_cockpit.json` | json | daily-engine | display | 0 | 0 |
+
+### capital-structure-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-index-coverage | `data/capital_structure/index_coverage.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-retrieval-attempts | `data/capital_structure/retrieval_attempts.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 0 | 0 |
+| capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 0 | 0 |
+| capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 0 | 0 |
+| capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 0 | 0 |
 
 ### causal-hypothesis-factory
 
@@ -356,6 +378,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | fundamental-forensics-private-state | `fundamental_forensics/state.json.gz` | json | daily-engine | display | 3 | 1 |
+| fundamental-forensics-sec-source-snapshot | `fundamental_forensics/sec-source/v1/latest.json` | json | daily-engine | infrastructure | 2 | 0 |
 
 ### government-revenue-foresight
 

@@ -1,0 +1,143 @@
+schema: biocatalyst_outcome_policy.v1
+effective_at: "2026-08-01T00:00:00Z"
+owner: biocatalyst
+
+policy:
+  flatten_to_binary_success_failure: false
+  preserve_source_native_status: true
+  unresolved_is_not_failure: true
+  missing_is_not_negative: true
+  revision_is_append_only: true
+  prediction_is_not_outcome: true
+  source_record_change_is_not_protocol_change: true
+
+layers:
+  study_conduct:
+    description: Operational disposition of a registered study.
+    values:
+      - not_yet_recruiting
+      - recruiting
+      - active_not_recruiting
+      - enrolling_by_invitation
+      - completed
+      - suspended
+      - terminated
+      - withdrawn
+      - unknown
+    evidence_floor: registry_or_primary_document
+    forbidden_inference:
+      - terminated_means_endpoint_failure
+      - suspended_means_regulatory_hold
+      - last_update_date_is_event_date
+
+  endpoint_result:
+    description: Result status for a named endpoint, population, and time frame.
+    values:
+      - met
+      - missed
+      - mixed
+      - non_inferior
+      - not_non_inferior
+      - descriptive_only
+      - not_evaluable
+      - not_reported
+      - disputed
+      - unknown
+    evidence_floor: results_record_regulator_publication_or_primary_document
+    required_dimensions:
+      - endpoint_identity
+      - endpoint_role
+      - analysis_population
+      - time_frame
+      - result_source
+    forbidden_inference:
+      - top_line_positive_means_every_endpoint_met
+      - p_value_without_estimand_is_complete_result
+
+  regulatory_disposition:
+    description: Jurisdiction-specific disposition of a named application or product.
+    values:
+      - not_submitted
+      - submitted
+      - accepted_for_review
+      - under_review
+      - advisory_committee_scheduled
+      - approved
+      - complete_response
+      - refused_to_file
+      - withdrawn
+      - cancelled
+      - postmarketing_commitment
+      - unknown
+    evidence_floor: regulator_published_or_registered_corporate_source
+    required_dimensions:
+      - agency
+      - jurisdiction
+      - application_or_product_identity
+    forbidden_inference:
+      - foreign_approval_implies_fda_approval
+      - pdufa_guidance_is_regulator_confirmed_without_evidence
+
+  asset_program_state:
+    description: Commercial and development state of an asset-indication program.
+    values:
+      - discovery
+      - preclinical
+      - active_clinical
+      - paused
+      - discontinued
+      - returned
+      - partnered
+      - optioned
+      - approved_marketed
+      - divested
+      - unknown
+    evidence_floor: adjudicated_multi_source_claim
+    required_dimensions:
+      - asset_identity
+      - indication_identity
+      - owner_interval
+    forbidden_inference:
+      - trial_termination_means_asset_discontinuation
+      - one_jurisdiction_state_applies_globally
+
+resolution:
+  allowed_resolver_types:
+    - deterministic_policy
+    - analyst
+    - adjudication_panel
+  model_may_resolve: false
+  executable_contract:
+    contract_id: outcome_label.v1
+    layer_encoding: outcome_type_prefix_before_first_dot
+    field_mapping:
+      outcome_id: label_id
+      layer: outcome_type
+      subject_id: target_ref
+      value: outcome
+      evidence_ids: evidence_claim_refs
+      policy_version: resolution_policy.policy_version
+      revision_of: prior_label_ref
+  required_contract_fields:
+    - label_id
+    - outcome_type
+    - target_ref
+    - outcome
+    - resolved_at
+    - knowledge_cutoff
+    - evidence_claim_refs
+    - resolution_policy
+    - prior_label_ref
+  correction_behavior: append_revision_and_close_prior_transaction_interval
+
+b0a_scope:
+  may_emit:
+    - registry_record_changed
+  may_not_emit:
+    - protocol_changed
+    - endpoint_met
+    - endpoint_missed
+    - trial_halted_on_date
+    - site_activated
+    - enrollment_velocity
+    - approval_probability

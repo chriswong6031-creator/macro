@@ -114,7 +114,7 @@
     "label": "deteriorating",
     "name": "Data-Center Power & Cooling",
     "name_zh": "\u6570\u636e\u4e2d\u5fc3\u7535\u529b\u4e0e\u6563\u70ed",
-    "rank": 32,
+    "rank": 33,
     "reco": "avoid",
     "score": 41
   },
@@ -250,9 +250,9 @@
     "label": "deteriorating",
     "name": "Quantum Computing",
     "name_zh": "\u91cf\u5b50\u8ba1\u7b97",
-    "rank": 33,
+    "rank": 32,
     "reco": "avoid",
-    "score": 41
+    "score": 42
   },
   "regional_banks": {
     "label": "fading",

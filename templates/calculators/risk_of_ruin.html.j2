@@ -102,7 +102,8 @@
    '你的优势决定长期能否盈利；你的下注大小决定你是否还活着看到那一天。降低每笔风险，削减爆仓概率的速度，远快于它对收益的损耗。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Ground the bet-size half in the lesson on <a href="', '在这节课中夯实下注大小这一半 <a href="') }}{{ rel }}learn/risk/position-sizing.html">{{ t('position sizing', '仓位管理') }}</a>{{ t(', or turn your win rate and payoff into an edge with the <a href="', '，或用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t('.', '将你的胜率与盈亏比换算成优势。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Ground the bet-size half in the lesson on <a href="' ~ rel ~ 'learn/risk/position-sizing.html">position sizing</a>, or turn your win rate and payoff into an edge with the <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">risk-to-reward calculator</a>.',
+   '在这节课中夯实下注大小这一半 <a href="' ~ rel ~ 'learn/risk/position-sizing.html">仓位管理</a>，或用 <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">盈亏比计算器</a>将你的胜率与盈亏比换算成优势。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

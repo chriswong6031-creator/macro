@@ -19,7 +19,8 @@ Writes (additions for RLT-R3):
                                              P1.7's missing writer call site
   data/options_flow/cohorts_<key>.parquet  — cohort accrual via engine.flow_cohorts.
                                              build_cohorts (COLLECT_LANE=nightly-gated,
-                                             HOUSE-U5)
+                                             HOUSE-U5), plus that call's bounded backfill
+                                             of sessions the single-asof upsert stranded
 
 Writes:
   site/flow_desk.json      — data payload (Market Tide + cohorts + sector heatmap + top movers + ETF)

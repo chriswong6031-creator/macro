@@ -509,6 +509,79 @@ class TestShards:
         assert "/" not in files[0].name and ".." not in files[0].stem
 
 
+class TestExternalStateRoot:
+    def test_env_redirects_mutable_ledgers_but_not_pricing(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from lib import ai_costs
+
+        repo = tmp_path / "repo"
+        runtime = tmp_path / "runtime"
+        _write_pricing(repo)
+        monkeypatch.setattr(ai_costs, "_repo_root", lambda: repo)
+        monkeypatch.setenv("AI_COSTS_STATE_ROOT", str(runtime))
+        monkeypatch.delenv("AI_COSTS_SHARD", raising=False)
+
+        assert ai_costs.record_usage(
+            lane="earnings_qual",
+            provider="deepseek",
+            model="claude-haiku-4-5",
+            input_tokens=1_000,
+            output_tokens=100,
+        ) is True
+
+        ledger = runtime / "data" / "ai_costs" / "usage.jsonl"
+        assert ledger.exists()
+        assert not (repo / "data" / "ai_costs" / "usage.jsonl").exists()
+        rows = ai_costs.read_usage()
+        assert len(rows) == 1
+        assert rows[0]["lane"] == "earnings_qual"
+        assert rows[0]["est_cost_usd"] is not None
+
+    def test_explicit_root_still_wins(self, tmp_path: Path, monkeypatch) -> None:
+        from lib.ai_costs import record_usage
+
+        runtime = tmp_path / "runtime"
+        explicit = tmp_path / "explicit"
+        monkeypatch.setenv("AI_COSTS_STATE_ROOT", str(runtime))
+        assert record_usage(lane="x", provider="p", root=explicit) is True
+        assert (explicit / "data" / "ai_costs" / "usage.jsonl").exists()
+        assert not runtime.exists()
+
+    def test_relative_or_repo_alias_state_root_fails_closed(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from lib import ai_costs
+
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        monkeypatch.setattr(ai_costs, "_repo_root", lambda: repo)
+
+        monkeypatch.setenv("AI_COSTS_STATE_ROOT", ".")
+        assert ai_costs.record_usage(lane="x", provider="p") is False
+
+        monkeypatch.setenv(
+            "AI_COSTS_STATE_ROOT", str(repo / "child" / "..")
+        )
+        assert ai_costs.record_usage(lane="x", provider="p") is False
+        assert not (repo / "data" / "ai_costs" / "usage.jsonl").exists()
+
+    def test_symlink_back_into_repo_fails_closed(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        from lib import ai_costs
+
+        repo = tmp_path / "repo"
+        repo.mkdir()
+        alias = tmp_path / "runtime-link"
+        alias.symlink_to(repo, target_is_directory=True)
+        monkeypatch.setattr(ai_costs, "_repo_root", lambda: repo)
+        monkeypatch.setenv("AI_COSTS_STATE_ROOT", str(alias))
+
+        assert ai_costs.record_usage(lane="x", provider="p") is False
+        assert not (repo / "data" / "ai_costs" / "usage.jsonl").exists()
+
+
 # ── direct-SDK capture helpers ─────────────────────────────────────────────────
 
 class TestCaptureHelpers:

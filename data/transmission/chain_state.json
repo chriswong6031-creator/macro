@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
   "asof": "2026-07-31",
-  "built": "2026-08-01 02:19 UTC",
+  "built": "2026-08-01 20:23 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -93,12 +93,12 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "propagating",
+      "state": "expressed",
       "state_label": {
-        "en": "Propagating",
-        "zh": "传导中"
+        "en": "Expressed",
+        "zh": "已兑现"
       },
-      "hop": 1,
+      "hop": 2,
       "n_hops": 2,
       "armable": true,
       "episode_id": "dollar_spike_em_multinational@r3:2026-07-30",
@@ -145,8 +145,8 @@
             0,
             90
           ],
-          "confirmed": false,
-          "asof": null,
+          "confirmed": true,
+          "asof": "2026-07-31",
           "value_receipt": [
             {
               "series": "FXI",
@@ -237,9 +237,9 @@
             "en": "EM revenue exposure",
             "zh": "新兴市场营收敞口"
           },
-          "n": 37,
+          "n": 46,
           "cuts": {},
-          "unevaluable": 2831,
+          "unevaluable": 2816,
           "names": [
             "A",
             "AAPL",
@@ -248,10 +248,12 @@
             "AGCO",
             "ALV",
             "AMAT",
+            "AOS",
             "APD",
             "APH",
             "BCO",
             "BWA",
+            "CBT",
             "CCK",
             "CE",
             "CNH",
@@ -261,21 +263,28 @@
             "DD",
             "EEFT",
             "EL",
+            "FCFS",
             "FCX",
             "INGR",
+            "ITT",
             "JBL",
             "LEA",
             "LIN",
             "LULU",
             "MGM",
+            "MKSI",
             "MRVL",
             "MU",
             "NEM",
             "NVDA",
             "NXPI",
+            "PLXS",
             "PSN",
+            "QRVO",
             "SNPS",
+            "ST",
             "TEL",
+            "VC",
             "WAB",
             "WHR"
           ],
@@ -290,9 +299,9 @@
             "en": "Multinational FX translation",
             "zh": "跨国汇率折算"
           },
-          "n": 155,
+          "n": 171,
           "cuts": {},
-          "unevaluable": 2621,
+          "unevaluable": 2587,
           "names": [
             "A",
             "AA",
@@ -306,6 +315,7 @@
             "AES",
             "AGCO",
             "AIG",
+            "ALGN",
             "ALV",
             "AMAT",
             "AME",
@@ -316,12 +326,14 @@
             "APTV",
             "ARW",
             "ATI",
+            "ATR",
             "AVGO",
             "AVY",
             "BA",
             "BAX",
             "BCO",
             "BDX",
+            "BF-B",
             "BG",
             "BKNG",
             "BKR",
@@ -330,16 +342,21 @@
             "CARR",
             "CAT",
             "CBRE",
+            "CBT",
             "CCK",
             "CCL",
             "CDNS",
             "CE",
             "CMI",
             "CNH",
+            "COO",
             "CPAY",
+            "CRL",
+            "CROX",
             "CSCO",
             "CTVA",
             "DAN",
+            "DBD",
             "DCH",
             "DD",
             "DE",
@@ -373,8 +390,10 @@
             "INGR",
             "INTC",
             "IR",
+            "ITT",
             "ITW",
             "JBL",
+            "JBTM",
             "JCI",
             "JNJ",
             "KBR",
@@ -382,6 +401,7 @@
             "KO",
             "KVUE",
             "LEA",
+            "LEG",
             "LIN",
             "LKQ",
             "LULU",
@@ -392,6 +412,7 @@
             "MDT",
             "META",
             "MHK",
+            "MKSI",
             "MMM",
             "MRK",
             "MRVL",
@@ -413,6 +434,7 @@
             "PCAR",
             "PEP",
             "PFE",
+            "PLXS",
             "PPC",
             "PRGO",
             "PVH",
@@ -427,6 +449,7 @@
             "SNPS",
             "SOLV",
             "SON",
+            "ST",
             "STT",
             "SW",
             "TDY",
@@ -436,6 +459,7 @@
             "TTWO",
             "UBER",
             "V",
+            "VC",
             "VFC",
             "VRT",
             "VTRS",
@@ -444,6 +468,7 @@
             "WMG",
             "WTW",
             "XPO",
+            "XRAY",
             "XYL",
             "YUM",
             "ZBH",
@@ -461,11 +486,11 @@
             "en": "Dollar-debt burden",
             "zh": "美元债务负担"
           },
-          "n": 17,
+          "n": 19,
           "cuts": {
             "financials.debt_to_assets": 31.9
           },
-          "unevaluable": 2737,
+          "unevaluable": 2715,
           "names": [
             "APTV",
             "AVGO",
@@ -481,9 +506,11 @@
             "OI",
             "OTIS",
             "SON",
+            "ST",
             "VFC",
             "VTRS",
-            "WMG"
+            "WMG",
+            "XRAY"
           ],
           "resolved": true,
           "note": {
@@ -830,7 +857,7 @@
               "series": "CL=F",
               "metric": "ret_pct",
               "window": 60,
-              "value": -14.076,
+              "value": -16.185,
               "op": "gt",
               "threshold": 25,
               "passed": false
@@ -838,7 +865,7 @@
             {
               "series": "CL=F",
               "metric": "ma50_slope5",
-              "value": -0.954,
+              "value": -0.9966,
               "op": "gt",
               "threshold": 0,
               "passed": false
@@ -938,7 +965,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.7,
+              "value": 0.75,
               "passed": true
             }
           ]
@@ -987,7 +1014,7 @@
               "path": "vol_regime.vix",
               "op": "gte",
               "threshold": 25,
-              "value": 17.09,
+              "value": 15.99,
               "passed": false
             }
           ]
@@ -1001,7 +1028,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.7,
+              "value": 0.75,
               "passed": true
             }
           ]
@@ -1049,7 +1076,7 @@
     "universe": 2937,
     "substrate_asof": {
       "min": "2026-05-07",
-      "max": "2026-07-31"
+      "max": "2026-08-01"
     }
   }
 }

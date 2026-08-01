@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/ctgov_watermark.v1.schema.json",
+  "title": "BioCatalyst ClinicalTrials.gov Successful Watermark v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "watermark_id", "source_id", "scope_id",
+    "query_sha256", "successful_run_ref", "successful_source_dataset_timestamp_raw",
+    "successful_retrieved_at", "overlap_seconds", "candidate_run_ref", "candidate_run_state",
+    "advance_state", "advance_reason", "transaction_from", "transaction_to"
+  ],
+  "properties": {
+    "contract_id": {"const": "ctgov_watermark.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "watermark_id": {"type": "string", "pattern": "^ctgov_watermark_[a-zA-Z0-9_-]+$"},
+    "source_id": {"const": "clinicaltrials_gov_v2"},
+    "scope_id": {"type": "string", "minLength": 1},
+    "query_sha256": {"$ref": "#/$defs/sha256"},
+    "successful_run_ref": {"type": ["string", "null"]},
+    "successful_source_dataset_timestamp_raw": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/sourceDataTimestamp"}]},
+    "successful_retrieved_at": {"type": ["string", "null"], "format": "date-time"},
+    "overlap_seconds": {"type": "integer", "minimum": 0},
+    "candidate_run_ref": {"type": "string", "minLength": 1},
+    "candidate_run_state": {"type": "string", "enum": ["complete", "partial", "quarantined", "failed"]},
+    "advance_state": {"type": "string", "enum": ["advanced", "held"]},
+    "advance_reason": {"type": "string", "enum": ["complete_run_reconciled", "run_not_complete", "source_changed_mid_run", "count_mismatch", "durability_failure", "projection_publish_failure"]},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "sourceDataTimestamp": {"type": "string", "format": "ctgov-data-timestamp", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(Z|[+-][0-9]{2}:[0-9]{2})?$"}
+  }
+}

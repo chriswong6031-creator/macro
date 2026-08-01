@@ -365,6 +365,7 @@ jobs:
           }
 
           hub() { run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
+          crypto() { run_py "crypto intelligence cockpit (build_crypto)" scripts.build_crypto; }
 
           # US Sector Central hub — reads baskets.json (cl_baskets) + sector_cycles_data.js
           # (sector_cycles/country_cycles, both present in render/daily cl_misc but intentionally
@@ -571,13 +572,13 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; us_pages; libs ;;
+              spine; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; crypto; us_pages; libs ;;
             macro)
-              spine; hub; us_pages ;;
+              spine; hub; crypto; us_pages ;;
             china)
-              run_py "build china a-share dashboard (build_china)" scripts.build_china; hub ;;
+              run_py "build china a-share dashboard (build_china)" scripts.build_china; hub; crypto ;;
             hk)
-              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
+              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub; crypto ;;
             markets)
               run_py "build commodity vector (build_commodities)"         scripts.build_commodities
               run_py "build strategic reserves (build_spr)"               scripts.build_spr
@@ -586,7 +587,7 @@ jobs:
               run_py "cross-asset vector (build_crossasset)"              scripts.build_crossasset
               run_py "rate & inflation transmission (build_transmission)" scripts.build_transmission
               run_py "discovery leaderboard (build_discovery)"            scripts.build_discovery
-              hub ;;
+              hub; crypto ;;
             gex)
               run_py "GEX magnets board (build_gex_board)"      scripts.build_gex_board
               run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
@@ -597,7 +598,7 @@ jobs:
               run_py "US options screener page (build_options_screener)" scripts.build_options_screener
               # flowleaders BEFORE optionscmd (M10) — see the OIP E8 note above the step.
               flowleaders; optionscmd
-              hub ;;
+              hub; crypto ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
               run_py "news suite (build_news)"              scripts.build_news
@@ -605,7 +606,7 @@ jobs:
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
-              hub ;;
+              hub; crypto ;;
             fast)
               # Early-close provisional render (FTR W6, PR-7).
               # Runs the macro+baskets clusters only — the smallest set that gives a
@@ -622,15 +623,15 @@ jobs:
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
-              hub ;;
+              hub; crypto ;;
             *)
               echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
           esac
           exit 0
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
-        # WITHOUT node, so this guard failed on every render there 07-18 — and because the
-        # commit step is if: always(), unverified JS shipped to main (the VPS serves main).
+        # WITHOUT node, so this guard failed on every render there 07-18; the historical
+        # always-publish path still shipped that unverified JS. Publication is now gated.
         # setup-node installs into the runner tool cache: works on Linux AND a Mac fallback.
         uses: actions/setup-node@v4
         with:
@@ -643,12 +644,11 @@ jobs:
       - name: guard — market-state board coherence (ui.ms_board_coherence)
         # A freshly rendered board whose verdict/score/thesis/notes disagree means the
         # render itself is broken (engine or template regression) — restore last-good
-        # boards from checkout HEAD so the commit step (if: always()) can't ship them,
-        # then fail RED for visibility. The rebase-race hybrid variant (2026-07-07,
+        # boards from checkout HEAD, then fail RED for visibility. The rebase-race
+        # hybrid variant (2026-07-07,
         # commit 5bf116a3b3) is healed separately inside the push loop below.
-        # !cancelled(): the commit below ships even when the JS guard fails, so this heal
-        # must not be skippable by an earlier step failure (07-18: a failing JS guard
-        # silently skipped both this guard and the shim inject).
+        # !cancelled() keeps the heal visible even when an earlier guard failed; the
+        # success-gated finalization/commit steps still refuse to publish that tree.
         if: ${{ !cancelled() }}
         run: |
           python3 scripts/check_ms_board_coherence.py && exit 0
@@ -694,12 +694,10 @@ jobs:
           echo "::error title=engine-render stockdata publish failed::R2 sync failed after 3 attempts"
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
-        # always(), NOT !cancelled() — same reasoning as render.yml: the commit below is
-        # if: always(), so a CANCELLED engine-render still pushes site/ to main, and
-        # !cancelled() skipped this normalization first → raw un-externalized pages live
-        # on a 60s-TTL document. Idempotent normalizers, ~5s over 237 pages, so they are
-        # safe to run inside the cancellation window. Guards above stay !cancelled().
-        if: always()
+        # A cancelled, timed-out, or guard-failed engine render must keep the last-good
+        # committed site live. Normalize only a tree whose builders and first-pass guards
+        # succeeded, then re-run the dead-reference guard on the finalized bytes below.
+        if: ${{ success() }}
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
@@ -708,8 +706,14 @@ jobs:
           # swallowed into a green run pins returning browsers to the old bytes for a year
           # (#3617/#3624). See render.yml for the full rationale.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
+      - name: guard — finalized site has no dead references
+        # externalize_css can create and prune content-addressed stylesheets. Validate the
+        # exact post-normalization tree that would be committed, not only the pre-pass.
+        if: ${{ success() }}
+        run: python3 scripts/check_site_asset_refs.py site
       - name: commit rendered site (site/ ONLY — never data/, so every ledger stays pristine)
-        if: always()
+        # Fail closed: no cancelled run or failed guard is allowed to mutate main.
+        if: ${{ success() }}
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
@@ -755,6 +759,9 @@ jobs:
           # commit staged `Updated upstream / Stashed changes` blocks or unmerged
           # index entries — a conflicted autostash apply is the known source.
           push_staged_heal site/ templates/ || exit 1
+          # The sync/runtime/marker heals above can replace pages after the standalone
+          # finalized-tree step. Validate the exact healed tree represented by the index.
+          python3 scripts/check_site_asset_refs.py site
           git commit -m "engine-render: regime recompute + re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
           # --autostash: we commit site/ ONLY, leaving the render's throwaway data/ writes
           # unstaged; a plain `pull --rebase` refuses on a dirty tree and silently failed
@@ -783,6 +790,9 @@ jobs:
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
             if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
+              # Prove the rebased render commit itself before any optional heal. If a
+              # later follow-up commit is skipped, this is the exact HEAD we still push.
+              python3 scripts/check_site_asset_refs.py site
               # post-rebase template↔site re-sync (ui.template_site_sync). -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # MID-RENDER: 2026-07-07 incident — run 28835838497 (110 min, checkout
@@ -811,6 +821,10 @@ jobs:
               bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               python3 scripts/check_conflict_markers.py --file site/start.html
               python3 scripts/check_start_runtime.py --heal-from origin/main
+              # A rebase can combine this run's stale page with main's newer deletion of
+              # its content-addressed asset (2026-08-01 crypto.html -> 94a4f2e3.css).
+              # Recheck the actual post-rebase tree before creating a heal commit or push.
+              python3 scripts/check_site_asset_refs.py site
               if ! git diff --quiet -- site/ templates/; then
                 # push_staged_clean: never bake conflict markers into the follow-up
                 # commit (P0 d29e4dd44d/#4167). On a dirty scan: unstage and push the

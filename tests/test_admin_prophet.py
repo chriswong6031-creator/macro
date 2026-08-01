@@ -451,6 +451,28 @@ def test_deliberation_model_enabled_within_budget():
     )
 
 
+def test_deliberation_model_caps_external_ai_cost_state(tmp_path, monkeypatch):
+    """Appliance telemetry must count toward the premium-model daily cap."""
+    from engine.llm_auth import deliberation_model as dm
+    from lib.ai_costs import record_usage
+
+    runtime = tmp_path / "runtime"
+    monkeypatch.setenv("AI_COSTS_STATE_ROOT", str(runtime))
+    assert record_usage(
+        lane="earnings_qual",
+        provider="deepseek",
+        model="claude-fable-5",
+        input_tokens=100,
+        output_tokens=30,
+        est_cost_usd=0.01,
+    ) is True
+
+    with patch("lib.config.load", return_value=_make_config(cap=100)):
+        result = dm(default="claude-opus-4-8")
+
+    assert result == "claude-opus-4-8"
+
+
 # ---------------------------------------------------------------------------
 # Deliverable 2 (model-not-found retry): injected fake call_fn
 # ---------------------------------------------------------------------------

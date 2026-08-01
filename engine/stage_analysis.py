@@ -28,6 +28,7 @@ classify() contract (pinned — engine/weinstein_stage.py, sibling lane):
         ma30_slope_pct5w float (30w SMA slope per 5 weeks, %)
         pct_vs_ma30      float (close/ma30 - 1, %)
         mansfield_rs     float (Mansfield RS vs bench, %)
+        mansfield_rs_change float (four-week absolute change in Mansfield RS)
         vol_ratio        float (recent vol / baseline vol)
         event            str|None  breakout|trendline_recapture|pullback_resume
         arc_pos          float in [0,1)  position along the idealized cycle arc
@@ -303,6 +304,24 @@ def _classify_one(ticker: str) -> tuple[str, dict | None]:
     if close is None:
         return ticker, None
     res = _classify(close, vol, bench, high, low)
+    if res is not None:
+        # Freshness must come from the classified OHLCV, never from the date a
+        # caller asked the builder to label. Numeric/RangeIndex inputs (common
+        # in small unit fixtures) have no trustworthy calendar date and remain
+        # explicitly unknown.
+        source_asof = None
+        try:
+            import pandas as pd  # noqa: PLC0415
+            idx = close.index
+            if not isinstance(idx, pd.RangeIndex) and not pd.api.types.is_numeric_dtype(idx.dtype):
+                parsed = pd.to_datetime(idx, errors="coerce", utc=True)
+                parsed = parsed[~pd.isna(parsed)]
+                if len(parsed):
+                    source_asof = parsed.max().date().isoformat()
+        except Exception:  # noqa: BLE001 — freshness degrades to unknown
+            source_asof = None
+        res = dict(res)
+        res["stage_source_asof"] = source_asof
     return ticker, res
 
 
@@ -420,6 +439,84 @@ def _load_industry_pctile(dr: Path) -> dict[str, float]:
     return out
 
 
+def _build_live_industry_surfaces(recs: list[dict], root: Path | None,
+                                  asof: str) -> tuple[dict[str, float], dict[str, dict]]:
+    """Build ranks + flows from the exact live classifier records in this run.
+
+    Returns ``(per_name_percentiles, taxonomy_by_ticker)`` for immediate use by
+    the screener.  Both side engines receive the same prepared DataFrame and
+    therefore the same Stage, RS, taxonomy, and source-as-of snapshot.  Every
+    failure is fail-open and leaves the main Stage contract buildable.
+    """
+    try:
+        import pandas as pd  # noqa: PLC0415
+        from engine import stage_flows, stage_industry  # noqa: PLC0415
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning:: stage_analysis: industry engines unavailable ({e})",
+              flush=True)
+        return {}, {}
+
+    try:
+        live_frame = stage_industry.prepare_live_frame(
+            pd.DataFrame(recs), root=root,
+        )
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning:: stage_analysis: live industry frame failed ({e})",
+              flush=True)
+        return {}, {}
+
+    taxonomy: dict[str, dict] = {}
+    if live_frame is not None and not live_frame.empty:
+        for row in live_frame.to_dict(orient="records"):
+            tk = str(row.get("ticker") or "").strip().upper()
+            if not tk:
+                continue
+
+            def _clean(value):
+                if value is None:
+                    return None
+                text = str(value).strip()
+                return None if text.lower() in {"", "nan", "none"} else text
+
+            taxonomy[tk] = {
+                "region": _clean(row.get("region")),
+                "industry_id": _clean(row.get("industry_id")),
+                "industry": _clean(row.get("industry_name")),
+                "sub_industry_id": _clean(row.get("sub_industry_id")),
+                "sub_industry": _clean(row.get("sub_industry_name")),
+            }
+
+    name_pct: dict[str, float] = {}
+    try:
+        industry_contract = stage_industry.build(
+            stage_frame=live_frame, root=root, asof=asof,
+        )
+        name_pct = stage_industry.name_industry_percentiles(
+            stage_frame=live_frame, root=root,
+        )
+        if (industry_contract.get("coverage") or {}).get("non_vacuous") is not True:
+            issues = (industry_contract.get("coverage") or {}).get("issues") or []
+            print("::warning:: stage_analysis: industry ranks degraded "
+                  f"({','.join(issues) or 'empty output'})", flush=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning:: stage_analysis: live industry ranks failed ({e})",
+              flush=True)
+
+    try:
+        flows_contract = stage_flows.build(
+            stage_frame=live_frame, root=root, asof=asof,
+        )
+        if (flows_contract.get("coverage") or {}).get("non_vacuous") is not True:
+            issues = (flows_contract.get("coverage") or {}).get("issues") or []
+            print("::warning:: stage_analysis: industry flows degraded "
+                  f"({','.join(issues) or 'empty output'})", flush=True)
+    except Exception as e:  # noqa: BLE001
+        print(f"::warning:: stage_analysis: live industry flows failed ({e})",
+              flush=True)
+
+    return name_pct, taxonomy
+
+
 # ---------------------------------------------------------------------------
 # Earnings-call scores join (SGA-R5 — context-only, fail-open)
 # ---------------------------------------------------------------------------
@@ -471,7 +568,8 @@ def _parse_earnings_parquet(p: Path) -> dict[str, dict]:
         return {}
     if df is None or df.empty or "ticker" not in df.columns:
         return {}
-    if p.parent.name == "earnings_calls":
+    is_live = p.parent.name == "earnings_calls"
+    if is_live:
         try:
             from engine.earnings_qual import _validate_transport_frame  # noqa: PLC0415
             valid, reason = _validate_transport_frame(
@@ -498,10 +596,39 @@ def _parse_earnings_parquet(p: Path) -> dict[str, dict]:
         tk = str(r.get("ticker") or "").strip().upper()
         if not tk:
             continue
+        if is_live:
+            # A live row only earns the right to override the committed seed
+            # when it is a healthy, context-only model result.  Provider outage
+            # receipts, partial JSON, and upstream future-date errors must
+            # remain invisible to the product.
+            call_dt = pd.to_datetime(
+                r.get("call_date"), errors="coerce", utc=True,
+            )
+            if (
+                not pd.isna(call_dt)
+                and call_dt.date() > datetime.now(timezone.utc).date()
+            ):
+                continue
+            degraded = r.get("degraded_reason")
+            if degraded is not None and not pd.isna(degraded) and str(degraded).strip():
+                continue
+            if "is_context_only" in df.columns:
+                context_only = r.get("is_context_only")
+                if context_only is not None and not pd.isna(context_only):
+                    if isinstance(context_only, str):
+                        context_ok = context_only.strip().lower() in {
+                            "1", "true", "yes", "y",
+                        }
+                    else:
+                        context_ok = bool(context_only)
+                    if not context_ok:
+                        continue
         sent = r.get("sentiment")
         perf = r.get("performance")
         sent = None if (sent is None or pd.isna(sent)) else float(sent)
         perf = None if (perf is None or pd.isna(perf)) else float(perf)
+        if is_live and (sent is None or perf is None):
+            continue
         tags = r.get("tags")
         tags = _coerce_tags(tags)
         qv = r.get("quarter")
@@ -1357,7 +1484,6 @@ def build_context_feed(root: Path | None = None,
     # --- side inputs (all fail-open) ---
     gate_tiers = _load_gate_tiers(rr)
     earnings_map = _load_earnings_scores(dr)
-    industry_pctile = _load_industry_pctile(dr)
 
     # earnings-blackout assess needs a date object.
     try:
@@ -1441,12 +1567,27 @@ def build_context_feed(root: Path | None = None,
             "ticker": tk,
             "company": company,
             "sector": sector,
+            # Live rows are the US classifier universe. Reference-only GICS
+            # identity is joined after the fan-out from the overview taxonomy.
+            "region": "USA",
+            "industry_id": None,
+            "industry": None,
+            "sub_industry_id": None,
+            "sub_industry": None,
+            "stage_source_asof": res.get("stage_source_asof"),
             "stage": stage,
             "weeks_in_stage": weeks,
             "fresh": fresh,
+            # A flow start is the actual first completed week in Stage 2. The
+            # broader UI `fresh` label intentionally remains <=10 weeks.
+            "is_stage2_start": bool(stage == 2 and weeks == 1),
             "ma30_slope_pct5w": None if slope is None else round(float(slope), 3),
             "pct_vs_ma30": None if res.get("pct_vs_ma30") is None else round(float(res["pct_vs_ma30"]), 2),
             "mansfield_rs": None if res.get("mansfield_rs") is None else round(float(res["mansfield_rs"]), 2),
+            "mansfield_rs_change": (
+                None if res.get("mansfield_rs_change") is None
+                else round(float(res["mansfield_rs_change"]), 2)
+            ),
             "vol_ratio": None if res.get("vol_ratio") is None else round(float(res["vol_ratio"]), 2),
             "event": res.get("event"),
             "gate_tier": gate_tier,
@@ -1458,8 +1599,9 @@ def build_context_feed(root: Path | None = None,
             "sata_score": res.get("sata_score"),
             "sata_change_1w": res.get("sata_change_1w"),
             "stage_detailed": res.get("stage_detailed"),
-            # Ind %ile joined from the industry-ranks lane (null if absent).
-            "industry_percentile": industry_pctile.get(tk),
+            # Filled from this run's live industry frame below (null if the
+            # reference taxonomy cannot match the ticker).
+            "industry_percentile": None,
         }
         rec["sga_score"] = _compute_sga_score(rec, slope_pctile, gate_tier)
 
@@ -1482,6 +1624,20 @@ def build_context_feed(root: Path | None = None,
         rec["why_zh"] = zh
 
         recs.append(rec)
+
+    # Build the side surfaces only after the live fan-out exists. Previously
+    # the CLI ran these first against a missing stage_daily.parquet seed, which
+    # silently emitted zero-industry artifacts. The returned taxonomy and
+    # percentiles are applied to the same records before any UI projection.
+    industry_pctile, taxonomy = _build_live_industry_surfaces(recs, root, asof)
+    for rec in recs:
+        tk = rec["ticker"]
+        ref = taxonomy.get(tk) or {}
+        for key in ("region", "industry_id", "industry",
+                    "sub_industry_id", "sub_industry"):
+            if ref.get(key) is not None:
+                rec[key] = ref[key]
+        rec["industry_percentile"] = industry_pctile.get(tk)
 
     total = len(recs)
     counts_full = {

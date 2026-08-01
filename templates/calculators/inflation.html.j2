@@ -105,7 +105,8 @@
    '通胀不会缩小账单上的数字——它缩小的是这个数字能买到什么。衡量现金要看它的购买力，而非它的面值。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how a return can outrun inflation with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or turn two values into a growth rate with the <a href="', '看看回报如何跑赢通胀，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', '年化增长率计算器') }}</a>{{ t('.', '把两个数值换算成增长率。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how a return can outrun inflation with the <a href="' ~ rel ~ 'tools/calculators/compounding.html">compounding calculator</a>, or turn two values into a growth rate with the <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/compounding.html">复利计算器</a>看看回报如何跑赢通胀，或用 <a href="' ~ rel ~ 'tools/calculators/cagr.html">年化增长率计算器</a>把两个数值换算成增长率。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

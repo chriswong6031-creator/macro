@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_graph.v1",
   "artifact_id": "confluence-graph",
-  "asof": "2026-07-31",
+  "asof": "2026-08-01",
   "is_context_only": true,
   "display_only": true,
   "hard_law": "HARD LAW: confluence never gates, never ranks, never raises a priority.  All edges are display_only=True.  Cross-engine hard gates require their own pre-registered gauntlet (China falsification precedent).  Edge promotion beyond display requires a registered gauntlet result in config/qual_ladder.yml.",
@@ -19,7 +19,7 @@
       "type": "engine",
       "label": "altdata_conv",
       "meta": {
-        "n_spine_rows": 39
+        "n_spine_rows": 43
       }
     },
     {
@@ -27,7 +27,7 @@
       "type": "engine",
       "label": "ca_board",
       "meta": {
-        "n_spine_rows": 1156
+        "n_spine_rows": 1160
       }
     },
     {
@@ -43,7 +43,7 @@
       "type": "engine",
       "label": "china_special_sits",
       "meta": {
-        "n_spine_rows": 59
+        "n_spine_rows": 62
       }
     },
     {
@@ -75,7 +75,7 @@
       "type": "engine",
       "label": "desk:ai_desk",
       "meta": {
-        "n_spine_rows": 26
+        "n_spine_rows": 27
       }
     },
     {
@@ -83,7 +83,7 @@
       "type": "engine",
       "label": "desk:stock_desk",
       "meta": {
-        "n_spine_rows": 71
+        "n_spine_rows": 72
       }
     },
     {
@@ -91,7 +91,7 @@
       "type": "engine",
       "label": "desk:thematic_desk",
       "meta": {
-        "n_spine_rows": 46
+        "n_spine_rows": 50
       }
     },
     {
@@ -99,7 +99,7 @@
       "type": "engine",
       "label": "hk_board",
       "meta": {
-        "n_spine_rows": 1380
+        "n_spine_rows": 1388
       }
     },
     {
@@ -107,7 +107,7 @@
       "type": "engine",
       "label": "intel_hub",
       "meta": {
-        "n_spine_rows": 1604
+        "n_spine_rows": 1668
       }
     },
     {
@@ -171,7 +171,7 @@
       "type": "engine",
       "label": "reflex.options_flow_attention",
       "meta": {
-        "n_spine_rows": 149
+        "n_spine_rows": 158
       }
     },
     {
@@ -203,7 +203,7 @@
       "type": "engine",
       "label": "track_record",
       "meta": {
-        "n_spine_rows": 290645
+        "n_spine_rows": 290700
       }
     },
     {
@@ -211,7 +211,7 @@
       "type": "engine",
       "label": "us_board",
       "meta": {
-        "n_spine_rows": 2212
+        "n_spine_rows": 2282
       }
     },
     {
@@ -1651,17 +1651,17 @@
       "meta": {
         "subtype": "fx_dollar",
         "regime": "US growth premium",
-        "risk": "risk-off",
+        "risk": "risk-on",
         "usd_trend": "up",
-        "asof": "2026-07-31",
+        "asof": "2026-08-01",
         "display_only": true,
         "source_lobe": "fx_dollar",
         "smile_regime": "mixed",
         "dollar_day_flag": false,
         "regime_radar_dominant": null,
-        "stance_word": "Get ready",
+        "stance_word": "Watch — don't chase",
         "dominant_scenario": null,
-        "days_in_regime": 103
+        "days_in_regime": 104
       }
     },
     {
@@ -1674,11 +1674,11 @@
           "rates": {
             "real_10y": 2.41,
             "real_10y_pctile": 0.99,
-            "real_10y_chg_63d_bp": 46.0,
-            "nominal_10y": 4.67,
-            "curve_2s10s": 0.45,
-            "curve_tp_adj": 1.29,
-            "policy_gap": 0.59,
+            "real_10y_chg_63d_bp": 45.0,
+            "nominal_10y": 4.68,
+            "curve_2s10s": 0.47,
+            "curve_tp_adj": 1.31,
+            "policy_gap": 0.6,
             "regime": "restrictive",
             "direction": "rising",
             "label": {
@@ -1692,7 +1692,7 @@
             "headline_cpi_yoy": 3.73,
             "core_pce_3m_ann": 2.89,
             "ppi_core_yoy": 4.68,
-            "eci_comp_yoy": 3.43,
+            "eci_comp_yoy": 3.38,
             "vs_target_pp": 1.29,
             "regime": "above target",
             "direction": "cooling",
@@ -1702,10 +1702,10 @@
             }
           },
           "expectations": {
-            "breakeven_10y": 2.27,
+            "breakeven_10y": 2.28,
             "breakeven_5y5y": 2.3,
             "model_5y": 2.42,
-            "survey_1y": 4.8,
+            "survey_1y": 4.6,
             "market_minus_model_bp": -12.0,
             "anchoring": "anchored",
             "label": {
@@ -1719,7 +1719,7 @@
           "zh": "仅供展示。可计分腿检验：没有任何利率/通胀腿通过前瞻回撤门槛并满足清洗交叉验证稳健性（详见校准报告）。"
         },
         "yield_curve_regime": "bear_steepener",
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "rates_transmission"
       }
@@ -1732,8 +1732,8 @@
         "subtype": "rates_credit",
         "health_label": "healthy",
         "cycle_phase": "late",
-        "recession_risk": 4.650923127945125,
-        "asof": "2026-07-30",
+        "recession_risk": 4.653342794998939,
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "rates_credit"
       }
@@ -1749,7 +1749,7 @@
           "Gold",
           "Copper"
         ],
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "commodity_context"
       }
@@ -1764,7 +1764,7 @@
         "regime": "mixed / no clear trend",
         "correlation_verdict": "concentrated",
         "state_text": "mixed / no clear trend",
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "cross_asset_flows"
       }
@@ -1779,7 +1779,7 @@
         "quad_name": "Reflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1794,7 +1794,7 @@
         "quad_name": "Stagflation",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1809,7 +1809,7 @@
         "quad_name": "Goldilocks",
         "cycle_tag": "mid",
         "stale": false,
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1822,9 +1822,9 @@
         "subtype": "global_regime:canada",
         "quad": "Q2",
         "quad_name": "Reflation",
-        "cycle_tag": "mid",
+        "cycle_tag": "late",
         "stale": false,
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "global_regimes"
       }
@@ -1846,16 +1846,56 @@
       "label": "Market Structure",
       "meta": {
         "subtype": "market_structure",
-        "regime": "short",
+        "regime": "long",
         "agreement": "split",
         "cor1m_regime": "dispersion",
-        "asof": "2026-07-30",
+        "asof": "2026-07-31",
         "display_only": true,
         "source_lobe": "world_state.market_structure"
       }
     }
   ],
   "edges": [
+    {
+      "src": "module:scripts/build_fundamental_forensics.py",
+      "dst": "artifact:fundamental-forensics-private-state",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_fundamental_forensics.py writes fundamental_forensics/state.json.gz"
+    },
+    {
+      "src": "artifact:fundamental-forensics-private-state",
+      "dst": "module:app/forensics.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: fundamental_forensics/state.json.gz consumed by app/forensics.py"
+    },
+    {
+      "src": "artifact:fundamental-forensics-private-state",
+      "dst": "module:engine/neuralweb/context_api.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: fundamental_forensics/state.json.gz consumed by engine/neuralweb/context_api.py"
+    },
+    {
+      "src": "artifact:fundamental-forensics-private-state",
+      "dst": "module:engine/neuralweb/brain_gateway.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: fundamental_forensics/state.json.gz consumed by engine/neuralweb/brain_gateway.py"
+    },
     {
       "src": "module:scripts/build_crypto.py",
       "dst": "artifact:btc-options",
@@ -11457,6 +11497,16 @@
       "note": "structural: site/factordata/factor_seasonality.json consumed by scripts/build_baskets.py"
     },
     {
+      "src": "module:scripts/build_biopharma_seasonality.py",
+      "dst": "artifact:site-biopharma-seasonality-methodology",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_biopharma_seasonality.py writes site/seasonalitydata/methodology.json"
+    },
+    {
       "src": "module:scripts/build_site.py",
       "dst": "artifact:site-momentum-display",
       "edge_type": "feeds",
@@ -16567,6 +16617,386 @@
       "note": "structural: site/neuralwebdata/marketing_lobe.json consumed by site/committee.html"
     },
     {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-entities",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/entities.json"
+    },
+    {
+      "src": "artifact:government-revenue-entities",
+      "dst": "module:collectors/usaspending_awards.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/entities.json consumed by collectors/usaspending_awards.py"
+    },
+    {
+      "src": "artifact:government-revenue-entities",
+      "dst": "module:engine/government_revenue/__init__.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/entities.json consumed by engine/government_revenue/__init__.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-awards",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/awards.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-awards",
+      "dst": "module:engine/government_revenue/__init__.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/awards.parquet consumed by engine/government_revenue/__init__.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-award-actions",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/award_actions.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-award-actions",
+      "dst": "module:engine/government_revenue/__init__.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_actions.parquet consumed by engine/government_revenue/__init__.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-award-snapshots",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/award_snapshots.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-award-snapshots",
+      "dst": "module:engine/government_revenue/__init__.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/award_snapshots.parquet consumed by engine/government_revenue/__init__.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-ingest-status",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/ingest_status.json"
+    },
+    {
+      "src": "artifact:government-revenue-ingest-status",
+      "dst": "module:engine/government_revenue/__init__.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/ingest_status.json consumed by engine/government_revenue/__init__.py"
+    },
+    {
+      "src": "artifact:government-revenue-ingest-status",
+      "dst": "module:scripts/build_government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/ingest_status.json consumed by scripts/build_government_revenue.py"
+    },
+    {
+      "src": "module:collectors/usaspending_awards.py",
+      "dst": "artifact:government-revenue-collector-heartbeat",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/usaspending_awards.py writes data/government_revenue/collector_heartbeat.parquet"
+    },
+    {
+      "src": "artifact:government-revenue-collector-heartbeat",
+      "dst": "module:scripts/collect.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/collector_heartbeat.parquet consumed by scripts/collect.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue.py",
+      "dst": "artifact:government-revenue-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue.py writes data/government_revenue/latest.json"
+    },
+    {
+      "src": "artifact:government-revenue-latest",
+      "dst": "module:engine/neuralweb/mastermind_context.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/latest.json consumed by engine/neuralweb/mastermind_context.py"
+    },
+    {
+      "src": "artifact:government-revenue-latest",
+      "dst": "module:engine/prophet_bridge.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/latest.json consumed by engine/prophet_bridge.py"
+    },
+    {
+      "src": "artifact:government-revenue-latest",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/government_revenue/latest.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "module:scripts/build_government_revenue.py",
+      "dst": "artifact:site-government-revenue-latest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_government_revenue.py writes site/government-revenue-data/latest.json"
+    },
+    {
+      "src": "artifact:site-government-revenue-latest",
+      "dst": "module:site/government_revenue.html",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/government-revenue-data/latest.json consumed by site/government_revenue.html"
+    },
+    {
+      "src": "artifact:site-government-revenue-latest",
+      "dst": "module:app/government_revenue.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: site/government-revenue-data/latest.json consumed by app/government_revenue.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure.py",
+      "dst": "artifact:capital-structure-discovery",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure.py writes data/capital_structure/discovery.parquet"
+    },
+    {
+      "src": "artifact:capital-structure-discovery",
+      "dst": "module:collectors/sec_capital_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/discovery.parquet consumed by collectors/sec_capital_structure.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure.py",
+      "dst": "artifact:capital-structure-index-coverage",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure.py writes data/capital_structure/index_coverage.parquet"
+    },
+    {
+      "src": "artifact:capital-structure-index-coverage",
+      "dst": "module:collectors/sec_capital_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/index_coverage.parquet consumed by collectors/sec_capital_structure.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure.py",
+      "dst": "artifact:capital-structure-retrieval-attempts",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure.py writes data/capital_structure/retrieval_attempts.parquet"
+    },
+    {
+      "src": "artifact:capital-structure-retrieval-attempts",
+      "dst": "module:collectors/sec_capital_structure.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/retrieval_attempts.parquet consumed by collectors/sec_capital_structure.py"
+    },
+    {
+      "src": "module:collectors/sec_capital_structure.py",
+      "dst": "artifact:capital-structure-source-manifest",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: collectors/sec_capital_structure.py writes data/capital_structure/source_manifest.parquet"
+    },
+    {
+      "src": "artifact:capital-structure-source-manifest",
+      "dst": "module:scripts/compile_capital_structure_events.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/capital_structure/source_manifest.parquet consumed by scripts/compile_capital_structure_events.py"
+    },
+    {
+      "src": "module:scripts/compile_capital_structure_events.py",
+      "dst": "artifact:capital-structure-event-versions",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/event_versions.parquet"
+    },
+    {
+      "src": "module:scripts/compile_capital_structure_events.py",
+      "dst": "artifact:capital-structure-event-edges",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/event_edges.parquet"
+    },
+    {
+      "src": "module:scripts/compile_capital_structure_events.py",
+      "dst": "artifact:capital-structure-review-queue",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/review_queue.parquet"
+    },
+    {
+      "src": "module:scripts/compile_capital_structure_events.py",
+      "dst": "artifact:capital-structure-telemetry",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/compile_capital_structure_events.py writes data/capital_structure/telemetry.json"
+    },
+    {
+      "src": "module:scripts/build_chronicle.py",
+      "dst": "artifact:chronicle-earnings-call-events",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: scripts/build_chronicle.py writes data/chronicle/earnings_call_events.jsonl"
+    },
+    {
+      "src": "artifact:chronicle-earnings-call-events",
+      "dst": "module:engine/chronicle/earnings_calls.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/chronicle/earnings_call_events.jsonl consumed by engine/chronicle/earnings_calls.py"
+    },
+    {
+      "src": "artifact:chronicle-earnings-call-events",
+      "dst": "module:engine/chronicle/spine.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/chronicle/earnings_call_events.jsonl consumed by engine/chronicle/spine.py"
+    },
+    {
+      "src": "artifact:chronicle-earnings-call-events",
+      "dst": "module:engine/marketing/earnings_call_lane.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/chronicle/earnings_call_events.jsonl consumed by engine/marketing/earnings_call_lane.py"
+    },
+    {
+      "src": "artifact:chronicle-earnings-call-events",
+      "dst": "module:engine/neuralweb/brain_gateway.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/chronicle/earnings_call_events.jsonl consumed by engine/neuralweb/brain_gateway.py"
+    },
+    {
       "src": "module:scripts/build_chronicle.py",
       "dst": "artifact:chronicle-events",
       "edge_type": "feeds",
@@ -16605,6 +17035,16 @@
       "display_only": true,
       "regime": null,
       "note": "structural: data/chronicle/events.jsonl consumed by engine/chronicle/context_pack.py"
+    },
+    {
+      "src": "artifact:chronicle-events",
+      "dst": "module:engine/press/desk_planner.py",
+      "edge_type": "feeds",
+      "n": null,
+      "stable": null,
+      "display_only": true,
+      "regime": null,
+      "note": "structural: data/chronicle/events.jsonl consumed by engine/press/desk_planner.py"
     },
     {
       "src": "module:scripts/build_chronicle.py",
@@ -16687,16 +17127,6 @@
       "note": "structural: data/chronicle/manifest.json consumed by engine/chronicle/manifest.py"
     },
     {
-      "src": "data/regime/latest.json:regime_vector",
-      "dst": "data/regime/latest.json:risk_radar",
-      "edge_type": "contradicts",
-      "n": null,
-      "stable": null,
-      "display_only": true,
-      "regime": null,
-      "note": "pair_id=regime_vector-vs-risk_radar kind=directional-opposition severity=tension a=quad=Q2 growth_score=0.133 (rising growth) b=state=caution dominant_scare=growth top_score=70.9"
-    },
-    {
       "src": "site/intelligence/by_ticker.json (demand/tape)",
       "dst": "site/intelligence/briefing.json",
       "edge_type": "contradicts",
@@ -16704,7 +17134,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=35 ticker-level demand-vs-supply divergences b=n_divergences=35, top tickers=['BEN', 'C', 'TENB', 'PSKY', '"
+      "note": "pair_id=briefing-divergences kind=directional-opposition severity=tension a=32 ticker-level demand-vs-supply divergences b=n_divergences=32, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO',"
     },
     {
       "src": "data/regime/latest.json:cross_asset_confirm (bonds/FX)",
@@ -16714,7 +17144,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=0"
+      "note": "pair_id=cross_asset_confirm-diverge kind=directional-opposition severity=tension a=bonds+FX cross-asset leg readings b=cross_asset_confirm verdict=diverge, agree_pct=50"
     },
     {
       "src": "engine:altdata",
@@ -16830,19 +17260,19 @@
       "src": "engine:radar",
       "dst": "engine:us_board",
       "edge_type": "confirms",
-      "n": 45,
-      "lift": 0.0109,
+      "n": 49,
+      "lift": 0.01144,
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "co-firing lift=0.0109 n=45 (pre-gauntlet estimate; display-only)"
+      "note": "co-firing lift=0.0114 n=49 (pre-gauntlet estimate; display-only)"
     },
     {
       "src": "engine:track_record",
       "dst": "engine:us_board",
       "edge_type": "confirms",
       "n": 15,
-      "lift": -0.04308,
+      "lift": -0.04313,
       "stable": null,
       "display_only": true,
       "regime": null,
@@ -16896,7 +17326,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLB net=-0.386 verdict=headwind source_lobe=rates_transmission asof=2026-07-30"
+      "note": "rates headwind: asset=XLB net=-0.39 verdict=headwind source_lobe=rates_transmission asof=2026-07-31"
     },
     {
       "src": "macro:rates_transmission",
@@ -16906,7 +17336,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLK net=-0.323 verdict=headwind source_lobe=rates_transmission asof=2026-07-30"
+      "note": "rates headwind: asset=XLK net=-0.324 verdict=headwind source_lobe=rates_transmission asof=2026-07-31"
     },
     {
       "src": "macro:rates_transmission",
@@ -16916,7 +17346,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "rates headwind: asset=XLF net=-0.317 verdict=headwind source_lobe=rates_transmission asof=2026-07-30"
+      "note": "rates headwind: asset=XLF net=-0.319 verdict=headwind source_lobe=rates_transmission asof=2026-07-31"
     },
     {
       "src": "macro:fx_dollar",
@@ -16926,7 +17356,7 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-07-30 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: fx_dollar contradicts regime:Q2 asof=2026-07-31 source_lobe=contradictions/cross_asset_confirm"
     },
     {
       "src": "macro:rates_credit",
@@ -16936,51 +17366,34 @@
       "stable": null,
       "display_only": true,
       "regime": null,
-      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-07-30 source_lobe=contradictions/cross_asset_confirm"
+      "note": "cross_asset diverge: rates_credit contradicts regime:Q2 asof=2026-07-31 source_lobe=contradictions/cross_asset_confirm"
     }
   ],
   "contradiction_summary": {
-    "n": 3,
+    "n": 2,
     "by_severity": {
-      "tension": 3
+      "tension": 2
     },
     "top_pair_ids": [
-      "regime_vector-vs-risk_radar",
       "briefing-divergences",
       "cross_asset_confirm-diverge"
     ]
   },
   "contradiction_records": [
     {
-      "pair_id": "regime_vector-vs-risk_radar",
-      "a": {
-        "artifact": "data/regime/latest.json:regime_vector",
-        "reading": "quad=Q2 growth_score=0.133 (rising growth)"
-      },
-      "b": {
-        "artifact": "data/regime/latest.json:risk_radar",
-        "reading": "state=caution dominant_scare=growth top_score=70.9"
-      },
-      "kind": "directional-opposition",
-      "severity": "tension",
-      "as_of": "2026-07-30",
-      "note": "Regime vector places growth in positive territory while the risk radar flags an elevated growth scare (caution).  This is typical of early growth-scare onset before the regime flips.  Display-only; neither cancels the other.",
-      "display_only": true
-    },
-    {
       "pair_id": "briefing-divergences",
       "a": {
         "artifact": "site/intelligence/by_ticker.json (demand/tape)",
-        "reading": "35 ticker-level demand-vs-supply divergences"
+        "reading": "32 ticker-level demand-vs-supply divergences"
       },
       "b": {
         "artifact": "site/intelligence/briefing.json",
-        "reading": "n_divergences=35, top tickers=['BEN', 'C', 'TENB', 'PSKY', 'ECHO']"
+        "reading": "n_divergences=32, top tickers=['AMZN', 'PSKY', 'NVDA', 'MO', 'C']"
       },
       "kind": "directional-opposition",
       "severity": "tension",
-      "as_of": "2026-07-31",
-      "note": "35 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: BEN, C, TENB, PSKY, ECHO.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
+      "as_of": "2026-08-02",
+      "note": "32 ticker-level demand (news_dir) vs supply (alt+radar) direction disagreements detected by engine/briefing.py.  Top 5: AMZN, PSKY, NVDA, MO, C.  These are pre-computed; no recomputation here.  Display-only context (news_dir×supply_dir sign-product < 0 or early_edge/crowded_top labels).",
       "display_only": true
     },
     {
@@ -16991,12 +17404,12 @@
       },
       "b": {
         "artifact": "data/regime/latest.json:regime (equity)",
-        "reading": "cross_asset_confirm verdict=diverge, agree_pct=0"
+        "reading": "cross_asset_confirm verdict=diverge, agree_pct=50"
       },
       "kind": "directional-opposition",
       "severity": "tension",
       "as_of": "2026-07-31",
-      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit, usd_triple_red).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
+      "note": "cross_asset_confirm signals 'diverge': bonds/FX and equity readings disagree.  Bonds/FX diverge from the equity read — fast-family caution the equity gauges don't yet show (credit).  Note: MOVE-vs-VIX, dollar/EM-FX, FX carry are COINCIDENT not leading (engine/cross_asset_confirm.py:15-20).  Display-only macro context.",
       "display_only": true
     }
   ],
@@ -17017,7 +17430,7 @@
   ],
   "schema_version": 1,
   "produced_by": "engine/neuralweb/confluence.py",
-  "produced_at": "2026-08-01T03:15:22Z",
-  "inputs_hash": "sha256:50d1b19587dac3b30ecb79e46b98091ca97320c2c89392f91c980158f2f972da",
+  "produced_at": "2026-08-01T21:16:09Z",
+  "inputs_hash": "sha256:182ed2bbad77674b1203503df4d401403c4d53cfe08d52f10496b2e4f7f7e244",
   "tier": "display"
 }

@@ -1,6 +1,6 @@
 {
-  "built": "2026-08-01T03:03:25.211165+00:00",
-  "timing_sec": 1.74,
+  "built": "2026-08-01T21:03:38.240625+00:00",
+  "timing_sec": 1.76,
   "em_stress": {
     "state": "strained",
     "thermometer": 45.2,
@@ -36,13 +36,13 @@
         "note": "2011+ history; EVZ ended 2025-03 and is not used"
       },
       "em_fx_basket": {
-        "value": -0.73,
-        "rvol_20d": 3.67,
-        "dd_pctile": 21.1,
-        "rvol_pctile": 4.5,
-        "pctile": 12.8,
+        "value": -0.68,
+        "rvol_20d": 3.83,
+        "dd_pctile": 20.4,
+        "rvol_pctile": 5.7,
+        "pctile": 13.0,
         "vel_5d_z": null,
-        "vel_20d_z": 0.551,
+        "vel_20d_z": 0.589,
         "z": null,
         "asof": "2026-08-01",
         "stale": false,
@@ -108,7 +108,7 @@
     },
     "gaps": [],
     "as_of": "2026-08-01",
-    "built": "2026-08-01T03:03:23.548018+00:00",
+    "built": "2026-08-01T21:03:36.560597+00:00",
     "k_of_n_params": {
       "stressed_threshold": 3,
       "strained_threshold": 2,
@@ -725,24 +725,24 @@
     },
     "berg_pattillo_receipt": "Historical early-warning-system caveat (Berg-Pattillo): best-in-class EWS models missed approximately 68% of currency/debt crises out-of-sample; approximately 60% of their 'danger' signals proved false alarms. This table is a fragility MAP — it identifies who is vulnerable, not when a crisis will occur.",
     "note": "BIS credit-to-GDP gap: only US and CN currently in store; other countries accrue as the BIS adapter extends.",
-    "built": "2026-08-01T03:03:23.642468+00:00"
+    "built": "2026-08-01T21:03:36.651521+00:00"
   },
   "spillover": {
     "total_connectedness": 82.7,
     "to_others": {
-      "EWJ": 102.9,
-      "EWG": 128.6,
-      "EWU": 96.8,
-      "EWC": 114.1,
-      "EWA": 132.0,
+      "EWJ": 103.1,
+      "EWG": 128.7,
+      "EWU": 96.9,
+      "EWC": 114.2,
+      "EWA": 132.1,
       "EWL": 121.4,
-      "EWZ": 60.4,
-      "EWW": 30.0,
-      "INDA": 28.6,
+      "EWZ": 60.5,
+      "EWW": 30.1,
+      "INDA": 28.7,
       "EIDO": 68.6,
-      "EZA": 113.5,
-      "EWY": 96.1,
-      "EEM": 45.8,
+      "EZA": 113.0,
+      "EWY": 96.0,
+      "EEM": 45.7,
       "SPY": 18.5
     },
     "from_others": {
@@ -751,31 +751,31 @@
       "EWU": 88.0,
       "EWC": 89.0,
       "EWA": 86.8,
-      "EWL": 85.1,
+      "EWL": 85.0,
       "EWZ": 85.5,
-      "EWW": 76.0,
-      "INDA": 93.7,
+      "EWW": 75.9,
+      "INDA": 93.6,
       "EIDO": 78.2,
       "EZA": 88.2,
       "EWY": 75.4,
-      "EEM": 61.9,
-      "SPY": 75.5
+      "EEM": 62.0,
+      "SPY": 75.7
     },
     "top_transmitters": [
       {
         "ticker": "EWA",
-        "to_others_pct": 132.0
+        "to_others_pct": 132.1
       },
       {
         "ticker": "EWG",
-        "to_others_pct": 128.6
+        "to_others_pct": 128.7
       },
       {
         "ticker": "EWL",
         "to_others_pct": 121.4
       }
     ],
-    "us_from_others": 75.5,
+    "us_from_others": 75.7,
     "history_weekly": [
       {
         "date": "2025-07-25",
@@ -1008,7 +1008,7 @@
       "SPY: OHLC absent — using close-return vol proxy"
     ],
     "as_of": "2026-07-31",
-    "built": "2026-08-01T03:03:23.769653+00:00",
+    "built": "2026-08-01T21:03:36.779537+00:00",
     "timing_sec": 0.12,
     "params": {
       "window": 150,
@@ -1034,13 +1034,13 @@
     }
   },
   "corr_tightening": {
-    "eem_emfx_corr_60d": -0.035,
+    "eem_emfx_corr_60d": -0.032,
     "pairwise_avg_corr": 0.55,
     "pairwise_vel_20d_z": -0.696,
     "tightening": false,
     "gaps": [],
     "as_of": "2026-07-31",
-    "built": "2026-08-01T03:03:24.686816+00:00"
+    "built": "2026-08-01T21:03:37.717785+00:00"
   },
   "two_tier": {
     "state": "contained",
@@ -1097,7 +1097,7 @@
           "caveat": "Quarter-end spikes (late Dec/Mar/Jun/Sep) are technical — not structural funding stress; verify calendar proximity."
         },
         "safety_bid_flag": {
-          "dxy_5d_chg": -1.511,
+          "dxy_5d_chg": -1.514,
           "dgs2_5d_chg": -14.0,
           "safety_bid": false,
           "hot": false,
@@ -1108,7 +1108,7 @@
     "safety_bid": false,
     "gaps": [],
     "state_logic": "quiet: tier1 calm | contained: tier1>=strained, 0 tier2 hot | watching: 1 tier2 hot | transmitting: >=2 tier2 hot with tier1>=strained",
-    "built": "2026-08-01T03:03:24.721508+00:00"
+    "built": "2026-08-01T21:03:37.751538+00:00"
   },
   "cb_desk": {
     "cbs": [
@@ -1341,15 +1341,15 @@
       "RBA: balance-sheet series not available (honest null)"
     ],
     "as_of": "2026-07-31",
-    "built": "2026-08-01T03:03:25.163389+00:00",
+    "built": "2026-08-01T21:03:38.193416+00:00",
     "bs_note": "Balance-sheet impulse available for: FED (WALCL), ECB (ECBASSETSW), BoJ (JPNASSETS). BoE: FRED provides annual-only balance-sheet data — honest null. PBoC: no clean keyless balance-sheet series available — honest null. SNB/BoC/RBA: no balance-sheet series configured — honest null.",
     "irdr7_note": "IRD-R7: This desk is DESCRIPTIVE. It reports realized policy rates, observed changes, and published meeting dates. No policy-intent projection, no forward guidance scoring, no consensus-surprise computation (no free consensus source)."
   },
   "smile": {
     "beta": 0.0183,
     "r2": 0.064,
-    "residual_20d": -0.01728,
-    "residual_20d_z": -1.35,
+    "residual_20d": -0.01731,
+    "residual_20d_z": -1.352,
     "regime": "mixed",
     "regime_60d": "mixed",
     "safety_bid_today": false,
@@ -1368,7 +1368,7 @@
     "weights_note": "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% (ICE benchmark). Re-weighted to available 2y series: EUR 69.3%, JPY 16.4%, GBP 14.3%. CAD/SEK/CHF excluded (no 2y in store). Actual weights after re-norm: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}.",
     "gaps": [],
     "display_only": true,
-    "built": "2026-08-01T02:18:57.524733+00:00"
+    "built": "2026-08-01T20:23:01.313936+00:00"
   },
   "inversion_board": {
     "n_inverted": 0,
@@ -1412,20 +1412,20 @@
       }
     ],
     "synchronized": false,
-    "built": "2026-08-01T03:03:25.203607+00:00"
+    "built": "2026-08-01T21:03:38.232491+00:00"
   },
   "swap_lines_bn": 0.1,
   "top_transmitters_display": [
     {
       "ticker": "EWA",
-      "to_others_pct": 132.0,
+      "to_others_pct": 132.1,
       "name_en": "Australia",
       "name_zh": "澳大利亚",
       "flag": "🇦🇺"
     },
     {
       "ticker": "EWG",
-      "to_others_pct": 128.6,
+      "to_others_pct": 128.7,
       "name_en": "Germany",
       "name_zh": "德国",
       "flag": "🇩🇪"
@@ -1444,53 +1444,53 @@
     "as_of": "2026-08-01",
     "pressure": {
       "us": {
-        "pct": 0.8333,
+        "pct": 0.7778,
         "level": "moderate"
       },
       "cn": {
-        "pct": 0.75,
-        "level": "moderate"
+        "pct": 0.6647,
+        "level": "low"
       },
       "hk": {
-        "pct": 0.8452,
+        "pct": 0.7996,
         "level": "moderate"
       },
       "ca": {
-        "pct": 0.7996,
+        "pct": 0.75,
         "level": "moderate"
       },
       "kr": {
-        "pct": 0.8988,
+        "pct": 0.8274,
         "level": "moderate"
       },
       "jp": {
-        "pct": 0.8591,
+        "pct": 0.8155,
         "level": "moderate"
       },
       "tw": {
-        "pct": 0.8889,
+        "pct": 0.8492,
         "level": "moderate"
       },
       "in": {
-        "pct": 0.7996,
-        "level": "moderate"
+        "pct": 0.748,
+        "level": "low"
       },
       "au": {
-        "pct": 0.879,
+        "pct": 0.8234,
         "level": "moderate"
       },
       "gb": {
-        "pct": 0.8452,
+        "pct": 0.7877,
         "level": "moderate"
       },
       "ez": {
-        "pct": 0.8294,
+        "pct": 0.7679,
         "level": "moderate"
       }
     },
     "top_stressed": [
-      "kr",
       "tw",
+      "kr",
       "au"
     ]
   }

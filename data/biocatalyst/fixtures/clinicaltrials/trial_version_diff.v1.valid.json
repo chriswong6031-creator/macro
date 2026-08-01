@@ -1,0 +1,82 @@
+{
+  "contract_id": "trial_version_diff.v1",
+  "schema_version": "1.0.0",
+  "diff_id": "trial_diff_NCT00000001_fixture",
+  "nct_id": "NCT00000001",
+  "before_source_snapshot_ref": "ctgov_snapshot_NCT00000001_before",
+  "after_source_snapshot_ref": "ctgov_snapshot_NCT00000001_after",
+  "before_observation_ref": "ctgov_observation_NCT00000001_before",
+  "after_observation_ref": "ctgov_observation_NCT00000001_after",
+  "before_content_sha256": "76af58021df5ef9a8e1b2d0fd5db692d5614cebe2ded221bc5fb0ae41d18668e",
+  "after_content_sha256": "287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e",
+  "source_record_refs": [
+    "src:ctgov:NCT00000001:sha256:76af58021df5ef9a8e1b2d0fd5db692d5614cebe2ded221bc5fb0ae41d18668e",
+    "src:ctgov:NCT00000001:sha256:287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e"
+  ],
+  "evidence_claim_refs": [],
+  "operations": [
+    {
+      "op": "replace",
+      "json_path": "/protocolSection/designModule/enrollmentInfo/count",
+      "change_family": "enrollment_target",
+      "before_state": "present",
+      "before_value": 120,
+      "after_state": "present",
+      "after_value": 160
+    },
+    {
+      "op": "replace",
+      "json_path": "/protocolSection/statusModule/lastUpdatePostDateStruct/date",
+      "change_family": "other",
+      "before_state": "present",
+      "before_value": "2026-07-31",
+      "after_state": "present",
+      "after_value": "2026-08-01"
+    },
+    {
+      "op": "replace",
+      "json_path": "/protocolSection/statusModule/primaryCompletionDateStruct/date",
+      "change_family": "primary_completion_date",
+      "before_state": "present",
+      "before_value": "2026-09",
+      "after_state": "present",
+      "after_value": "2026-12"
+    }
+  ],
+  "observed_interval": {
+    "after": "2026-07-31T15:00:04Z",
+    "at_or_before": "2026-08-01T15:00:04Z"
+  },
+  "source_last_update_posted_at": "2026-08-01",
+  "source_published_at": "2026-08-01",
+  "source_effective_at": null,
+  "valid_from": null,
+  "valid_to": null,
+  "coverage_class": "current_only",
+  "parser_version": "clinicaltrials_v2_parser.v1",
+  "semantic_alignment": {
+    "status": "exact_source_json_path_only",
+    "endpoint_semantics_assessed": false,
+    "protocol_semantics_assessed": false
+  },
+  "confidence": {
+    "value": 1.0,
+    "method": "deterministic_json_diff",
+    "meaning": "diff_fidelity_not_real_world_materiality",
+    "calibrated": false
+  },
+  "contradiction_state": "none_known",
+  "interpretation": "registry_record_changed",
+  "allowed_product_language": "ClinicalTrials.gov's registry record changed; first observed within this interval.",
+  "protocol_change_asserted": false,
+  "materiality_assessed": false,
+  "authority": {
+    "decision_authority": false,
+    "allowed_uses": ["display", "context", "explain"],
+    "forbidden_uses": ["originate_signal", "rank_security", "select_security", "size_position", "gate_decision", "execute_trade", "raise_authority"]
+  },
+  "transaction_from": "2026-08-01T15:00:05Z",
+  "transaction_to": null,
+  "diff_payload_sha256": "09dcb0bb928c9b1cbdef6392a3cf9b8a4620e13139797796f7b91b9b491bf822",
+  "hash_scope": "canonical_payload_excluding_diff_payload_sha256"
+}

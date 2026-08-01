@@ -2,34 +2,36 @@
   "schema": "master_brief.v2",
   "lens": "china",
   "is_context_only": true,
-  "generated_at": "2026-08-01T03:09:05.324764+00:00",
+  "generated_at": "2026-08-01T21:09:37.390756+00:00",
   "model": "deepseek-v4-pro",
   "state_asof": "2026-07-31",
   "tldr": [
-    "Mainland: Stagflation stuck \u2014 growth cooling, liquidity draining.",
-    "Hong Kong: Goldilocks for now, but weak peg and dollar headwinds.",
-    "Banks: Top performer losing flow \u2014 mean-reversion risk rising.",
+    "China: Growth cooling, prices creeping \u2014 in Stagflation despite rate cuts.",
+    "Banks & defensives: Surged in 3 weeks \u2014 look stretched, not safe to chase.",
+    "HK: Global risk-on cheers, but mainland money sells \u2014 peg under pressure.",
+    "PBoC easing: Delivered but not yet in the pipes \u2014 liquidity still contracting.",
     "What to do: Watch \u2014 don't chase."
   ],
-  "summary": "Mainland stuck in stagflation with draining liquidity; Hong Kong buoyed by global risk-on but facing dollar headwinds.",
-  "regime_read": "China sits in Stagflation on the map, but the drift is grim: growth has cooled over the past three weeks and inflation is warming, pushing deeper into that corner. Bank liquidity is contracting even as the central bank has delivered cumulative rate and reserve-requirement cuts \u2014 the easing is in the pipes but not reaching the system yet.\n\nHong Kong, by contrast, reads Goldilocks \u2014 global risk appetite is on and that props up the index. But the Hong Kong dollar is pinned to the weak side of its band, signalling outflows, and the mainland's own risk-off mood is selling Hong Kong shares via the southbound link. A strengthening US dollar makes that split worse.",
+  "summary": "China equities are in a stagflation funk with easing stuck in the pipes, while Hong Kong rides global risk-on but leaks outflows.",
+  "regime_read": "China sits in Stagflation: growth has cooled over the last 20 days while inflation has crept up. The central bank has cut rates and reserve requirements, but the liquidity read is still contracting \u2014 the easing has not yet reached the system. Defensive and inflation-friendly groups like banks, coal, and liquor have shot up in the past three weeks, while tech and chips have been hammered, exactly the split you would expect in a slowdown with rising prices.\nHong Kong is mapped as Goldilocks, benefiting from a global risk-on mood. Yet the currency peg is near the weak side, signalling outflows, and mainland investors are selling Hong Kong shares. That puts HK at odds with the mainland: global money is staying, local money is leaving.",
   "conflicts": [
-    "Easing vs liquidity: The central bank has cut rates and freed bank reserves, but system liquidity is still contracting \u2014 the medicine isn't working yet.",
-    "HK growth: The growth score says Goldilocks, but manufacturing PMI and tech stocks paint a weaker picture \u2014 the label overstates the glow."
+    "PBoC easing: Rate cuts delivered, but the liquidity overlay still says contracting \u2014 the medicine isn't flowing yet.",
+    "Banks strength: Top sector by price, but flow radar and credit-impulse data show smart money fading \u2014 the run may be past its best.",
+    "HK split: Global risk-on vs mainland risk-off \u2014 the peg is straining under opposing forces."
   ],
-  "rotation_check": "This month's leader, Banks, is seeing smart-money outflows \u2014 the mean-reversion snap from stretched leaders may be brewing.",
+  "rotation_check": "Defensive surge and tech collapse both look extreme \u2014 the mean-reversion set-up is loud, especially in banks and liquor.",
   "transmission": [
-    "If the US dollar keeps strengthening \u2192 Hong Kong's peg pressure deepens, dragging H-shares lower.",
-    "If mainland liquidity stays tight \u2192 the stagflation bite spreads, hitting cyclicals and small caps hardest."
+    "If PBoC easing keeps building \u2192 system liquidity should flip from contracting to neutral within weeks.",
+    "If the US dollar keeps strengthening \u2192 HK's peg pressure intensifies and EM stocks face stronger headwinds."
   ],
   "watch_items": [
-    "NBS PMI release: weak print deepens stagflation worry.",
-    "USDCNY above 6.80: signals capital-outflow pressure.",
-    "Southbound flow turns positive: would hint at a tech bounce."
+    "Aug 7 trade data: Weak exports would deepen the stagflation picture.",
+    "USD/CNY near 7.0: A breakout above could accelerate mainland outflows.",
+    "Banks 20-day return: Already up 17% in three weeks \u2014 another 3-4% would mark a multi-year extreme."
   ],
   "confidence": "low",
   "theses": [],
-  "raw_text": "{\n  \"tldr\": [\n    \"Mainland: Stagflation stuck \u2014 growth cooling, liquidity draining.\",\n    \"Hong Kong: Goldilocks for now, but weak peg and dollar headwinds.\",\n    \"Banks: Top performer losing flow \u2014 mean-reversion risk rising.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"Mainland stuck in stagflation with draining liquidity; Hong Kong buoyed by global risk-on but facing dollar headwinds.\",\n  \"regime_read\": \"China sits in Stagflation on the map, but the drift is grim: growth has cooled over the past three weeks and inflation is warming, pushing deeper into that corner. Bank liquidity is contracting even as the central bank has delivered cumulative rate and reserve-requirement cuts \u2014 the easing is in the pipes but not reaching the system yet.\\n\\nHong Kong, by contrast, reads Goldilocks \u2014 global risk appetite is on and that props up the index. But the Hong Kong dollar is pinned to the weak side of its band, signalling outflows, and the mainland's own risk-off mood is selling Hong Kong shares via the southbound link. A strengthening US dollar makes that split worse.\",\n  \"conflicts\": [\n    \"Easing vs liquidity: The central bank has cut rates and freed bank reserves, but system liquidity is still contracting \u2014 the medicine isn't working yet.\",\n    \"HK growth: The growth score says Goldilocks, but manufacturing PMI and tech stocks paint a weaker picture \u2014 the label overstates the glow.\"\n  ],\n  \"transmission\": [\n    \"If the US dollar keeps strengthening \u2192 Hong Kong's peg pressure deepens, dragging H-shares lower.\",\n    \"If mainland liquidity stays tight \u2192 the stagflation bite spreads, hitting cyclicals and small caps hardest.\"\n  ],\n  \"rotation_check\": \"This month's leader, Banks, is seeing smart-money outflows \u2014 the mean-reversion snap from stretched leaders may be brewing.\",\n  \"watch_items\": [\n    \"NBS PMI release: weak print deepens stagflation worry.\",\n    \"USDCNY above 6.80: signals capital-outflow pressure.\",\n    \"Southbound flow turns positive: would hint at a tech bounce.\"\n  ],\n  \"confidence\": \"low\"\n}",
+  "raw_text": "{\n  \"tldr\": [\n    \"China: Growth cooling, prices creeping \u2014 in Stagflation despite rate cuts.\",\n    \"Banks & defensives: Surged in 3 weeks \u2014 look stretched, not safe to chase.\",\n    \"HK: Global risk-on cheers, but mainland money sells \u2014 peg under pressure.\",\n    \"PBoC easing: Delivered but not yet in the pipes \u2014 liquidity still contracting.\",\n    \"What to do: Watch \u2014 don't chase.\"\n  ],\n  \"summary\": \"China equities are in a stagflation funk with easing stuck in the pipes, while Hong Kong rides global risk-on but leaks outflows.\",\n  \"regime_read\": \"China sits in Stagflation: growth has cooled over the last 20 days while inflation has crept up. The central bank has cut rates and reserve requirements, but the liquidity read is still contracting \u2014 the easing has not yet reached the system. Defensive and inflation-friendly groups like banks, coal, and liquor have shot up in the past three weeks, while tech and chips have been hammered, exactly the split you would expect in a slowdown with rising prices.\\nHong Kong is mapped as Goldilocks, benefiting from a global risk-on mood. Yet the currency peg is near the weak side, signalling outflows, and mainland investors are selling Hong Kong shares. That puts HK at odds with the mainland: global money is staying, local money is leaving.\",\n  \"conflicts\": [\n    \"PBoC easing: Rate cuts delivered, but the liquidity overlay still says contracting \u2014 the medicine isn't flowing yet.\",\n    \"Banks strength: Top sector by price, but flow radar and credit-impulse data show smart money fading \u2014 the run may be past its best.\",\n    \"HK split: Global risk-on vs mainland risk-off \u2014 the peg is straining under opposing forces.\"\n  ],\n  \"transmission\": [\n    \"If PBoC easing keeps building \u2192 system liquidity should flip from contracting to neutral within weeks.\",\n    \"If the US dollar keeps strengthening \u2192 HK's peg pressure intensifies and EM stocks face stronger headwinds.\"\n  ],\n  \"rotation_check\": \"Defensive surge and tech collapse both look extreme \u2014 the mean-reversion set-up is loud, especially in banks and liquor.\",\n  \"watch_items\": [\n    \"Aug 7 trade data: Weak exports would deepen the stagflation picture.\",\n    \"USD/CNY near 7.0: A breakout above could accelerate mainland outflows.\",\n    \"Banks 20-day return: Already up 17% in three weeks \u2014 another 3-4% would mark a multi-year extreme.\"\n  ],\n  \"confidence\": \"low\"\n}",
   "degraded_reason": null,
   "disclaimer": "Context only \u2014 not a signal. This is an AI-generated SYNTHESIS of the dashboards' own deterministic outputs. It does not feed any score, signal or allocation, and it can be wrong or overconfident. Use it as a research read; verify every claim against the underlying dashboard it cites. Effective sample sizes on macro regimes are small \u2014 treat cross-asset 'reads' as odds, not forecasts.",
   "style_flags": [],
@@ -87,27 +89,29 @@
     }
   ],
   "zh": {
-    "summary": "\u4e2d\u56fd\u5927\u9646\u9677\u5165\u6ede\u80c0\u3001\u6d41\u52a8\u6027\u6d41\u5931\uff1b\u9999\u6e2f\u53d7\u5168\u7403\u98ce\u9669\u504f\u597d\u63d0\u632f\uff0c\u4f46\u9762\u4e34\u7f8e\u5143\u9006\u98ce\u3002",
-    "regime_read": "\u4e2d\u56fd\u5728\u5730\u56fe\u4e0a\u5904\u4e8e\u6ede\u80c0\u533a\u95f4\uff0c\u4f46\u8d8b\u52bf\u582a\u5fe7\uff1a\u8fc7\u53bb\u4e09\u5468\u589e\u957f\u964d\u6e29\u3001\u901a\u80c0\u5347\u6e29\uff0c\u8fdb\u4e00\u6b65\u6ed1\u5411\u6ede\u80c0\u89d2\u843d\u3002\u5c3d\u7ba1\u592e\u884c\u7d2f\u8ba1\u964d\u606f\u5e76\u4e0b\u8c03\u5b58\u6b3e\u51c6\u5907\u91d1\u7387\uff0c\u94f6\u884c\u6d41\u52a8\u6027\u4ecd\u5728\u6536\u7f29\u2014\u2014\u5bbd\u677e\u653f\u7b56\u5df2\u5728\u7ba1\u9053\u4e2d\uff0c\u5374\u5c1a\u672a\u5230\u8fbe\u7cfb\u7edf\u3002\n\n\u76f8\u6bd4\u4e4b\u4e0b\uff0c\u9999\u6e2f\u7684\u8bfb\u6570\u663e\u73b0\u2018\u7406\u60f3\u589e\u957f\u2019\u72b6\u6001\u2014\u2014\u5168\u7403\u98ce\u9669\u504f\u597d\u5347\u6e29\u652f\u6491\u6307\u6570\u3002\u4f46\u6e2f\u5143\u88ab\u538b\u5728\u5151\u6362\u533a\u95f4\u5f31\u65b9\uff0c\u8868\u660e\u8d44\u91d1\u5916\u6d41\uff0c\u800c\u5185\u5730\u81ea\u8eab\u7684\u907f\u9669\u60c5\u7eea\u6b63\u901a\u8fc7\u5357\u5411\u901a\u9053\u629b\u552e\u6e2f\u80a1\u3002\u7f8e\u5143\u8d70\u5f3a\u52a0\u5267\u4e86\u8fd9\u4e00\u5206\u5316\u3002",
-    "rotation_check": "\u672c\u6708\u9886\u6da8\u7684\u94f6\u884c\u677f\u5757\u6b63\u51fa\u73b0\u806a\u660e\u94b1\u6d41\u51fa\u2014\u2014\u8d85\u4e70\u9886\u6da8\u80a1\u7684\u5747\u503c\u56de\u5f52\u56de\u64a4\u53ef\u80fd\u6b63\u5728\u915d\u917f\u3002",
+    "summary": "\u4e2d\u56fd\u80a1\u5e02\u9677\u5165\u6ede\u80c0\u4f4e\u8ff7\uff0c\u5bbd\u677e\u63aa\u65bd\u5361\u5728\u4f20\u5bfc\u7ba1\u9053\u4e2d\uff1b\u9999\u6e2f\u5219\u642d\u4e58\u5168\u7403\u98ce\u9669\u504f\u597d\u4e0a\u5347\u7684\u987a\u98ce\uff0c\u5374\u51fa\u73b0\u8d44\u91d1\u5916\u6d41\u3002",
+    "regime_read": "\u4e2d\u56fd\u5904\u4e8e\u6ede\u80c0\u72b6\u6001\uff1a\u8fc7\u53bb20\u5929\u7ecf\u6d4e\u589e\u957f\u964d\u6e29\uff0c\u800c\u901a\u80c0\u6084\u7136\u62ac\u5934\u3002\u592e\u884c\u5df2\u964d\u606f\u5e76\u4e0b\u8c03\u5b58\u6b3e\u51c6\u5907\u91d1\u7387\uff0c\u4f46\u6d41\u52a8\u6027\u6307\u6807\u4ecd\u5728\u6536\u7f29\u2014\u2014\u5bbd\u677e\u5c1a\u672a\u4f20\u5bfc\u81f3\u4f53\u7cfb\u3002\u8fc7\u53bb\u4e09\u5468\uff0c\u94f6\u884c\u3001\u7164\u70ad\u3001\u767d\u9152\u7b49\u9632\u5fa1\u6027\u53ca\u53d7\u76ca\u901a\u80c0\u7684\u677f\u5757\u5927\u5e45\u4e0a\u6da8\uff0c\u800c\u79d1\u6280\u548c\u82af\u7247\u677f\u5757\u5219\u906d\u5230\u91cd\u632b\uff0c\u6b63\u662f\u7ecf\u6d4e\u653e\u7f13\u4f34\u968f\u7269\u4ef7\u4e0a\u6da8\u65f6\u5e94\u6709\u8868\u73b0\u7684\u5206\u5316\u3002\u9999\u6e2f\u88ab\u5b9a\u4f4d\u4e3a\u201c\u91d1\u53d1\u5973\u5b69\u201d\uff08Goldilocks\uff09\u72b6\u6001\uff0c\u53d7\u76ca\u4e8e\u5168\u7403\u98ce\u9669\u504f\u597d\u60c5\u7eea\u3002\u7136\u800c\uff0c\u8054\u7cfb\u6c47\u7387\u63a5\u8fd1\u5f31\u65b9\u5151\u6362\u6c34\u5e73\uff0c\u663e\u793a\u8d44\u91d1\u5916\u6d41\uff0c\u5185\u5730\u6295\u8d44\u8005\u4e5f\u5728\u5356\u51fa\u9999\u6e2f\u80a1\u7968\u3002\u8fd9\u4f7f\u5f97\u9999\u6e2f\u4e0e\u5185\u5730\u80cc\u79bb\uff1a\u5168\u7403\u8d44\u91d1\u5728\u6d41\u5165\uff0c\u672c\u5730\u8d44\u91d1\u5728\u6d41\u51fa\u3002",
+    "rotation_check": "\u9632\u5fa1\u677f\u5757\u5927\u6da8\u4e0e\u79d1\u6280\u677f\u5757\u5d29\u584c\u770b\u8d77\u6765\u90fd\u5df2\u6781\u7aef\u2014\u2014\u5747\u503c\u56de\u5f52\u7684\u4fe1\u53f7\u975e\u5e38\u5f3a\u70c8\uff0c\u5c24\u5176\u5728\u94f6\u884c\u548c\u767d\u9152\u677f\u5757\u3002",
     "tldr": [
-      "\u5185\u5730\uff1a\u6ede\u80c0\u6301\u7eed\u2014\u2014\u589e\u957f\u964d\u6e29\uff0c\u6d41\u52a8\u6027\u6536\u7d27\u3002",
-      "\u9999\u6e2f\uff1a\u76ee\u524d\u5904\u4e8e\u91d1\u53d1\u5973\u5b69\u72b6\u6001\uff0c\u4f46\u8054\u7cfb\u6c47\u7387\u75b2\u8f6f\u548c\u7f8e\u5143\u9006\u98ce\u3002",
-      "\u94f6\u884c\u80a1\uff1a\u9886\u6da8\u677f\u5757\u8d44\u91d1\u6d41\u51fa\u2014\u2014\u5747\u503c\u56de\u5f52\u98ce\u9669\u4e0a\u5347\u3002",
-      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\u2014\u2014\u4e0d\u5b9c\u8ffd\u9ad8\u3002"
+      "\u4e2d\u56fd\uff1a\u589e\u957f\u964d\u6e29\u3001\u7269\u4ef7\u6500\u5347\u2014\u2014\u5c3d\u7ba1\u964d\u606f\uff0c\u4ecd\u5904\u4e8e\u6ede\u80c0\u3002",
+      "\u94f6\u884c\u4e0e\u9632\u5fa1\u677f\u5757\uff1a\u4e09\u5468\u6025\u6da8\u2014\u2014\u770b\u4f3c\u8d85\u4e70\uff0c\u4e0d\u5b9c\u8ffd\u9ad8\u3002",
+      "\u9999\u6e2f\uff1a\u5168\u7403\u98ce\u9669\u504f\u597d\u5347\u6e29\u63d0\u632f\uff0c\u4f46\u5185\u5730\u8d44\u91d1\u629b\u552e\u2014\u2014\u8054\u7cfb\u6c47\u7387\u627f\u538b\u3002",
+      "\u4e2d\u56fd\u592e\u884c\u5bbd\u677e\uff1a\u5df2\u843d\u5730\u4f46\u5c1a\u672a\u4f20\u5bfc\u2014\u2014\u6d41\u52a8\u6027\u4ecd\u5728\u6536\u7f29\u3002",
+      "\u64cd\u4f5c\u5efa\u8bae\uff1a\u89c2\u671b\u2014\u2014\u5207\u52ff\u8ffd\u9ad8\u3002"
     ],
     "conflicts": [
-      "\u5bbd\u677e\u4e0e\u6d41\u52a8\u6027\uff1a\u592e\u884c\u5df2\u964d\u606f\u5e76\u91ca\u653e\u94f6\u884c\u51c6\u5907\u91d1\uff0c\u4f46\u4f53\u7cfb\u6d41\u52a8\u6027\u4ecd\u5728\u6536\u7f29\u2014\u2014\u836f\u6548\u5c1a\u672a\u663e\u73b0\u3002",
-      "\u9999\u6e2f\u589e\u957f\uff1a\u589e\u957f\u8bc4\u5206\u663e\u793a\u2018\u7406\u60f3\u589e\u957f\u2019\uff0c\u4f46\u5236\u9020\u4e1aPMI\u548c\u79d1\u6280\u80a1\u753b\u51fa\u66f4\u5f31\u56fe\u666f\u2014\u2014\u6807\u7b7e\u9ad8\u4f30\u4e86\u5149\u9c9c\u7a0b\u5ea6\u3002"
+      "\u4e2d\u56fd\u592e\u884c\u5bbd\u677e\uff1a\u964d\u606f\u5df2\u7ecf\u843d\u5730\uff0c\u4f46\u6d41\u52a8\u6027\u6307\u6807\u4ecd\u663e\u793a\u6536\u7f29\u2014\u2014\u836f\u529b\u5c1a\u672a\u4f20\u5bfc\u5230\u4f4d\u3002",
+      "\u94f6\u884c\u8d70\u5f3a\uff1a\u4ef7\u683c\u8868\u73b0\u9886\u8dd1\u5404\u677f\u5757\uff0c\u4f46\u8d44\u91d1\u6d41\u5411\u96f7\u8fbe\u548c\u4fe1\u7528\u8109\u51b2\u6570\u636e\u663e\u793a\u806a\u660e\u94b1\u6b63\u5728\u9000\u6f6e\u2014\u2014\u8fd9\u6ce2\u884c\u60c5\u53ef\u80fd\u5df2\u8fc7\u9ad8\u5cf0\u671f\u3002",
+      "\u9999\u6e2f\u80cc\u79bb\uff1a\u5168\u7403\u98ce\u9669\u504f\u597d\u56de\u5347 vs \u5185\u5730\u907f\u9669\u60c5\u7eea\u2014\u2014\u8054\u7cfb\u6c47\u7387\u5728\u76f8\u53cd\u529b\u91cf\u62c9\u626f\u4e0b\u627f\u538b\u3002"
     ],
     "transmission": [
-      "\u82e5\u7f8e\u5143\u6301\u7eed\u8d70\u5f3a \u2192 \u9999\u6e2f\u8054\u7cfb\u6c47\u7387\u538b\u529b\u52a0\u6df1\uff0c\u62d6\u7d2fH\u80a1\u8d70\u4f4e\u3002",
-      "\u5982\u679c\u5185\u5730\u6d41\u52a8\u6027\u6301\u7eed\u7d27\u5f20 \u2192 \u6ede\u80c0\u51b2\u51fb\u8513\u5ef6\uff0c\u5468\u671f\u80a1\u548c\u5c0f\u76d8\u80a1\u53d7\u521b\u6700\u91cd\u3002"
+      "\u5982\u679c\u4e2d\u56fd\u592e\u884c\u5bbd\u677e\u653f\u7b56\u6301\u7eed\u52a0\u7801\uff0c\u7cfb\u7edf\u6d41\u52a8\u6027\u5e94\u5728\u6570\u5468\u5185\u7531\u6536\u7f29\u8f6c\u4e3a\u4e2d\u6027\u3002",
+      "\u5982\u679c\u7f8e\u5143\u6301\u7eed\u8d70\u5f3a\uff0c\u9999\u6e2f\u8054\u7cfb\u6c47\u7387\u538b\u529b\u52a0\u5927\uff0c\u65b0\u5174\u5e02\u573a\u80a1\u5e02\u9762\u4e34\u66f4\u5f3a\u9006\u98ce\u3002"
     ],
     "watch_items": [
-      "\u56fd\u5bb6\u7edf\u8ba1\u5c40PMI\u53d1\u5e03\uff1a\u6570\u636e\u75b2\u8f6f\u52a0\u6df1\u6ede\u80c0\u62c5\u5fe7\u3002",
-      "\u7f8e\u5143\u5151\u4eba\u6c11\u5e01\u6c47\u7387\u9ad8\u4e8e6.80\uff1a\u9884\u793a\u8d44\u672c\u5916\u6d41\u538b\u529b\u3002",
-      "\u5357\u5411\u8d44\u91d1\u8f6c\u6b63\uff1a\u53ef\u80fd\u6697\u793a\u79d1\u6280\u80a1\u53cd\u5f39\u3002"
+      "8\u67087\u65e5\u8d38\u6613\u6570\u636e\uff1a\u51fa\u53e3\u75b2\u8f6f\u5c06\u52a0\u6df1\u6ede\u80c0\u5c40\u9762\u3002",
+      "\u7f8e\u5143/\u4eba\u6c11\u5e01\u903c\u8fd17.0\uff1a\u7a81\u7834\u8be5\u70b9\u4f4d\u53ef\u80fd\u52a0\u901f\u5185\u5730\u8d44\u91d1\u5916\u6d41\u3002",
+      "\u94f6\u884c\u80a120\u65e5\u56de\u62a5\uff1a\u4e09\u5468\u5185\u5df2\u4e0a\u6da817%\u2014\u2014\u518d\u6da83-4%\u5c06\u89e6\u53ca\u591a\u5e74\u6781\u7aef\u6c34\u5e73\u3002"
     ]
   }
 }

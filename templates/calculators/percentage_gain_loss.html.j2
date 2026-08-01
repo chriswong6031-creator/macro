@@ -93,7 +93,8 @@
    '一段涨幅与它所弥补的跌幅，从来不是同一个大小——基数越小，爬回原点就越吃力。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how deep drawdowns compound in the <a href="', '在 <a href="') }}{{ rel }}tools/calculators/drawdown-recovery.html">{{ t('drawdown-recovery calculator', '回撤修复计算器') }}</a>{{ t(', or study how gains and losses combine in the lesson on <a href="', '中看看深度回撤如何累积，或在 <a href="') }}{{ rel }}learn/risk/risk-reward-expectancy.html">{{ t('risk, reward and expectancy', '风险、回报与期望值') }}</a>{{ t('.', ' 这节课中学习涨跌如何叠加。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how deep drawdowns compound in the <a href="' ~ rel ~ 'tools/calculators/drawdown-recovery.html">drawdown-recovery calculator</a>, or study how gains and losses combine in the lesson on <a href="' ~ rel ~ 'learn/risk/risk-reward-expectancy.html">risk, reward and expectancy</a>.',
+   '在 <a href="' ~ rel ~ 'tools/calculators/drawdown-recovery.html">回撤修复计算器</a>中看看深度回撤如何累积，或在 <a href="' ~ rel ~ 'learn/risk/risk-reward-expectancy.html">风险、回报与期望值</a> 这节课中学习涨跌如何叠加。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

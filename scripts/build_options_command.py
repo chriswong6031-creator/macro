@@ -94,10 +94,27 @@ _TONE_ZH = {"pos~": "偏看涨", "neg~": "偏看跌", "neutral": "双向"}
 # sector bar fill class + tone chip
 _TONE_CLS = {"pos~": "buy", "neg~": "sell", "neutral": "mix"}
 
-# Same-day (0DTE) explanation — reused verbatim from templates/flow_leaders.html.j2:361.
-_ZERODTE_TIP_EN = ("Mostly same-day (0DTE) options — usually day-trading, "
+# Same-day-expiry explanation.  Plain words only: the acronym this line used to
+# carry ("0DTE") is banned vocabulary on BOTH the glance tier and the hover tier
+# of this workspace (tests/test_build_options_command.py's two sweeps), because
+# it was never a definition here — just the plain phrase with the jargon riding
+# along beside it, which discloses nothing to the reader who needed it.  The
+# term's sanctioned home is Tier 3, where a page actually explains it:
+# content/seo/learn/options/zero-dte-regime.md.
+#
+# Standalone-safe in all three call sites (the pips-cell tip with and without a
+# share prefix, and the top-movers caution chip), so the subject stays explicit
+# rather than leaning on a "these contracts" antecedent a fourth caller might
+# not supply.  templates/options.html.j2's `ZDTE` JS constant is the client-side
+# twin of these two strings and carries the same wording verbatim.
+#
+# This line USED to be copied verbatim from templates/flow_leaders.html.j2:361,
+# which still ships the acronym form (in a visible chip label, "0DTE-heavy", not
+# only in its tip).  That is a real gap on a surface with its own lane and its
+# own guard — do NOT resync these two by copying that version back here.
+_ZERODTE_TIP_EN = ("Same-day contracts are usually day-trading, "
                    "not positioning for a move.")
-_ZERODTE_TIP_ZH = "以当日到期（0DTE）期权为主 — 通常是日内交易，而非布局趋势。"
+_ZERODTE_TIP_ZH = "当日到期合约通常用于日内交易，而非布局趋势。"
 
 # The nearflip rail group reuses the screener's own shipped preset value.
 _NEAR_FLIP_PCT = 1.0

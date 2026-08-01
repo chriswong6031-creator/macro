@@ -140,7 +140,8 @@ def pack(
     the other parameters, which match the masterplan signature exactly.
     ``window_forward`` is a B3 addition (opt-in only, see module docstring).
 
-    Returns {"lines": [{"text","source_ref","site_url"}], "narratives": [],
+    Returns {"lines": [{"text","source_ref","site_url","source_url",
+             "receipt"}], "narratives": [],
              "coverage": {"start","end","note"}, "budget_used": int}.
 
     Never raises: a malformed as_of degrades to the empty-with-reason contract
@@ -225,6 +226,8 @@ def pack(
                 "text": text,
                 "source_ref": e.get("source_ref"),
                 "site_url": (e.get("links") or {}).get("site"),
+                "source_url": (e.get("links") or {}).get("source"),
+                "receipt": (e.get("links") or {}).get("receipt"),
             })
             used_h += cost
             emitted_h += 1

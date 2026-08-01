@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/sector_event.v1.schema.json",
+  "title": "Sector Intelligence Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "event_id", "sector", "event_type", "entity_refs", "state", "interpretation_status", "timing", "evidence_claim_refs", "source_record_refs", "materiality", "confidence", "valid_from", "valid_to", "transaction_from", "transaction_to", "authority_manifest_ref", "supersedes_event_id"],
+  "properties": {
+    "contract_id": {"const": "sector_event.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "event_id": {"type": "string", "minLength": 1},
+    "sector": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "event_type": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]*$"},
+    "entity_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "state": {"type": "string", "enum": ["source_asserted", "scheduled", "observed_registry_change", "estimated", "resolved", "cancelled"]},
+    "interpretation_status": {"type": "string", "enum": ["source_reported", "registry_change_only", "analyst_confirmed", "model_inferred"]},
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "exact_at", "earliest_at", "latest_at", "distribution_ref", "source_date_precision", "first_observed_at"],
+      "properties": {
+        "kind": {"type": "string", "enum": ["exact", "interval", "distribution", "unknown"]},
+        "exact_at": {"$ref": "#/$defs/nullableTemporal"},
+        "earliest_at": {"$ref": "#/$defs/nullableTemporal"},
+        "latest_at": {"$ref": "#/$defs/nullableTemporal"},
+        "distribution_ref": {"type": ["string", "null"]},
+        "source_date_precision": {"type": ["string", "null"], "enum": ["instant", "day", "month", "quarter", "year", "unknown", null]},
+        "first_observed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "evidence_claim_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_record_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "materiality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "score", "method", "model_version"],
+      "properties": {
+        "status": {"type": "string", "enum": ["not_assessed", "assessed"]},
+        "score": {"type": ["number", "null"]},
+        "method": {"type": ["string", "null"]},
+        "model_version": {"type": ["string", "null"]}
+      }
+    },
+    "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "valid_from": {"$ref": "#/$defs/nullableTemporal"},
+    "valid_to": {"$ref": "#/$defs/nullableTemporal"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "authority_manifest_ref": {"type": ["string", "null"]},
+    "supersedes_event_id": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]}
+  }
+}

@@ -40,6 +40,34 @@ meta:
 # ============================================================
 artifacts:
 
+  fundamental-forensics-sec-source-snapshot:
+    path: fundamental_forensics/sec-source/v1/latest.json
+    format: json
+    producer: scripts/run_fundamental_forensics_wave2.py
+    known_extra_writers: []
+    owner_program: fundamental-forensics
+    cadence: daily-engine
+    storage: r2
+    asof_field: snapshot_at
+    freshness_sla_hours: 30
+    schema: fundamental_forensics.sec_source_latest/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/run_fundamental_forensics_wave2.py
+      - scripts/build_fundamental_forensics_disclosures.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      Private Research R2 pointer to a content-addressed raw SEC Submissions and
+      primary-filing archive snapshot. The operator restores and hash-verifies it
+      before bounded acquisition, then commits its next pointer last after projection
+      and object read-back. It is never copied to git, the public site, or a public
+      bucket; it is an evidence/provenance rail with no score, rank, gate, or trade
+      authority.
+
   fundamental-forensics-private-state:
     path: fundamental_forensics/state.json.gz
     format: json
@@ -63,10 +91,12 @@ artifacts:
       - mastermind-x:filing-forensics-workbench
     qual_ladder_ref: null
     notes: >
-      Private Research Vault R2 object assembled from the normalized SEC panels.
-      The public repo carries only the shell and detector code; entitled browsers
-      receive this gzip through /api/forensics/state. Display/context only, not a
-      point-in-time accession store, company score, rank, gate, or trading authority.
+      Private Research Vault R2 object assembled from normalized SEC panels plus
+      optional bounded accession-aware disclosure projections whose underlying raw
+      archive remains in the separate private source snapshot. The public repo carries
+      only the shell and detector code; entitled browsers receive this gzip through
+      /api/forensics/state. Display/context only, not a company score, rank, gate, or
+      trading authority.
 
   btc-options:
     path: site/btc_options.json
@@ -5716,7 +5746,12 @@ artifacts:
       - "scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts() which writes via store.upsert"
     owner_program: flow-continuity
     cadence: collect
-    storage: gitignored-local
+    # git, NOT gitignored-local (corrected 2026-07-30): all four cohorts_<key>.parquet
+    # are git-tracked, and options_flow is absent from publish_r2's DEFAULT_DIRS and
+    # _DATA_DIRS — so git is the store of record here and R2 holds no copy that could
+    # heal a repaired row back.  The mislabel matters: it invites a "just delete it,
+    # R2 will restore" reading of a store that has no R2 backing at all.
+    storage: git
     asof_field: null
     freshness_sla_hours: 30
     schema: implicit
@@ -5732,8 +5767,13 @@ artifacts:
       (cohorts_mag7, cohorts_memory_storage, cohorts_ai_semiconductors, cohorts_ai_software).
       Aggregates gross_premium_mn, net_premium_mn (SOFT direction), volume-weighted pc_ratio,
       zerodte_share, net_doi, n_members, n_members_covered per trading day.
-      Written via store.upsert (idempotent append). Used to compute percentile context
-      in build_cohorts() when >= 20 obs present (raw-fallback flag otherwise).
+      Written via store.upsert (idempotent append) for the requested asof, plus a bounded
+      nightly backfill (BACKFILL_LOOKBACK_DAYS) that re-aggregates in-window sessions with
+      per-ticker summary coverage but no usable row — the single-asof upsert alone strands
+      any session the nightly did not run at, and stranded the all-null rows an off-nightly
+      run wrote before #4007 gated them. A date with ZERO member coverage is never written.
+      Used to compute percentile context in build_cohorts() when >= 20 obs present
+      (raw-fallback flag otherwise).
       Display-only: no arithmetic path; direction is SOFT. FL-B deliverable (06-26 lesson:
       Mag7 call-bid and memory put-hedge invisible inside a single GICS bucket).
 
@@ -8850,6 +8890,34 @@ artifacts:
       display_only=true. Consumed as context chip on us_stocks + baskets pages (B4).
       Consumed by engine/neuralweb/world_state._compose_factor_weather as seasonal_climate
       sub-key (independent seasonality_as_of stamp; no coupling to factor_state_as_of).
+
+  # --- Biopharma seasonality intelligence: claim-bounded foundation contract ---
+  site-biopharma-seasonality-methodology:
+    path: site/seasonalitydata/methodology.json
+    format: json
+    producer: scripts/build_biopharma_seasonality.py
+    known_extra_writers: []
+    owner_program: biopharma-seasonality-intelligence
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 9999
+    schema: biopharma_seasonality.methodology.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers:
+      - public-methodology-endpoint
+    notes: >
+      Claim-bounded public foundation manifest for the clean-room biopharma
+      seasonality program. Written only by scripts/build_biopharma_seasonality.py.
+      It advertises contracts, planned clocks, validation methods, and the birth
+      authority ceiling; it explicitly says live forecasts, the screener, and the
+      event graph are not yet commissioned. Static methodology, not perishable
+      market data, so the parked 9999h SLA is intentional. No scores, weights,
+      rankings, gates, trade origination, or Prophet geometry write path.
 
   site-momentum-display:
     path: site/factordata/momentum_display.json
@@ -15495,6 +15563,217 @@ artifacts:
       read-only API fallback. Byte-identical to the canonical payload at build time;
       display/context only with the same all-false authority contract.
 
+  # --- Capital Structure Intelligence W0-W1: immutable SEC evidence/event spine ---
+  capital-structure-discovery:
+    path: data/capital_structure/discovery.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: _first_seen
+    freshness_sla_hours: 30
+    schema: capital_structure.discovery/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure.py]
+    external_consumers: []
+    notes: >
+      Operational point-in-time discovery ledger for in-policy SEC form-index rows.
+      It records what entered the retrieval backlog and when; it is not evidence that
+      the filing bytes were fetched, parsed, or classified.
+
+  capital-structure-index-coverage:
+    path: data/capital_structure/index_coverage.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: last_attempt_at
+    freshness_sla_hours: 30
+    schema: capital_structure.index_coverage/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure.py]
+    external_consumers: []
+    notes: >
+      Operational disclosure of each SEC daily-index date attempted, its state,
+      target count, and last error. Failed index days remain retryable and visible
+      rather than being mistaken for zero relevant filings. Deterministic observed
+      federal holidays close as not_published; repeated HTTP 404 does so only after
+      the seven-day grace gate. Generic HTTP 403 always remains retryable.
+
+  capital-structure-retrieval-attempts:
+    path: data/capital_structure/retrieval_attempts.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: attempted_at
+    freshness_sla_hours: 30
+    schema: capital_structure.retrieval_attempt/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/sec_capital_structure.py]
+    external_consumers: []
+    notes: >
+      Append-only operational ledger of SEC fetch and source-store attempts. Success
+      here is still not canonical evidence: only a verified source-manifest row proves
+      content-addressed storage and readback.
+
+  capital-structure-source-manifest:
+    path: data/capital_structure/source_manifest.parquet
+    format: parquet
+    producer: collectors/sec_capital_structure.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: retrieval.first_seen_at
+    freshness_sla_hours: 30
+    schema: capital_structure.source_manifest/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/compile_capital_structure_events.py]
+    external_consumers: []
+    notes: >
+      Strict manifest for SEC documents whose raw bytes passed content-addressed
+      object-store write plus hash readback. Failed fetch/storage attempts never enter
+      this artifact. Public SEC source bytes live under the unlinked object-store prefix
+      capital_structure/sec/sha256; storage.store_id preserves the non-secret physical
+      namespace, while the compact provenance ledger is git-retained.
+
+  capital-structure-event-versions:
+    path: data/capital_structure/event_versions.parquet
+    format: parquet
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: available_at
+    freshness_sla_hours: 30
+    schema: capital_structure.event.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Immutable event-version adapter compiled offline from verified manifests.
+      Canonical PIT availability is system first-seen, not SEC filing date. This is a
+      temporary adapter until company_event.v1 lands with an explicit owned migration;
+      no normalized terms, score, rank, entry, sizing, or Prophet authority.
+
+  capital-structure-event-edges:
+    path: data/capital_structure/event_edges.parquet
+    format: parquet
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 30
+    schema: capital_structure.event_edge.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Immutable amendment/effect/withdrawal/supersession edges. Reverse links are
+      derived from this table; older event rows are never rewritten. Linkage requires
+      explicit accession or a unique CIK + file number + registration family path.
+
+  capital-structure-review-queue:
+    path: data/capital_structure/review_queue.parquet
+    format: parquet
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: first_queued_at
+    freshness_sla_hours: 30
+    schema: capital_structure.review_item.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Rebuildable queue for ambiguous content, missing documents, conflicts, and
+      non-unique graph linkage. A defer is never converted to a negative fact.
+
+  capital-structure-telemetry:
+    path: data/capital_structure/telemetry.json
+    format: json
+    producer: scripts/compile_capital_structure_events.py
+    known_extra_writers: []
+    owner_program: capital-structure-intelligence
+    cadence: collect
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 30
+    schema: capital_structure.telemetry.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    notes: >
+      Coverage/exclusion disclosure, compile failures, authority zeros, form-policy
+      version, and temporary-adapter migration receipt. It explicitly states that W1
+      covers registration/issuance forms rather than claiming all-SEC completeness.
+  chronicle-earnings-call-events:
+    path: data/chronicle/earnings_call_events.jsonl
+    format: jsonl
+    producer: scripts/build_chronicle.py
+    known_extra_writers: []
+    owner_program: agentic_media
+    cadence: daily-engine
+    storage: git
+    asof_field: call_date
+    freshness_sla_hours: 30
+    schema: earnings.call_event.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - engine/chronicle/earnings_calls.py
+      - engine/chronicle/spine.py
+      - engine/marketing/earnings_call_lane.py
+      - engine/neuralweb/brain_gateway.py
+    external_consumers: []
+    notes: >
+      Public-safe, committed last-good projection of healthy evidence-addressed rows from
+      the mutable R2/local earnings score generation. Normal nightly is the sole writer;
+      --rebuild and off-nightly lanes never rewrite it. Stable source_record_id-derived ids
+      let a corrected transcript replace the prior row without forking identity. Rows carry
+      transcript URL/hash, source/scoring timestamps, model/prompt/schema lineage, summary,
+      highlights, tags, and is_context_only=true. Degraded, missing, rejected, or collapsed
+      score inputs retain prior rows and can never erase last-good context. This artifact
+      originates no rank, gate, size, signal, or escalation authority.
+
   chronicle-events:
     path: data/chronicle/events.jsonl
     format: jsonl
@@ -15510,13 +15789,14 @@ artifacts:
     horizon_role: context
     weights: none
     scored_path_surfaces: []
-    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/context_pack.py]
+    consumers: [engine/neuralweb/mastermind_context.py, admin/chronicle.py, engine/chronicle/context_pack.py, engine/press/desk_planner.py]
     external_consumers: []
     notes: >
       Chronicle W0 event spine (agentic_media/Chronicle program, CHRONICLE_CONTEXT_TIMELINE_MASTERPLAN_BY_FABLE.md).
       Deterministic, append-only derived-event ledger (B1: source-row-leaves-snapshot is a
-      union-merge retain, never a delete) compiled nightly from 6 sources: research-vault catalog
-      items, Prophet ledger closes, macro-release reactions, earnings surprises, risk-band flips
+      union-merge retain, never a delete) compiled nightly from 7 sources: research-vault catalog
+      items, Prophet ledger closes, macro-release reactions, earnings surprises, committed
+      healthy earnings-call reads (chronicle-earnings-call-events), risk-band flips
       (data/risk_radar/forward_log.jsonl — real committed dated history, B6 correction) and regime
       flips derived from chronicle-state-log (world_state.json has no committed dated history of
       its own, hence the forward-capture ledger). Display-only; originates no market signal/
@@ -15525,7 +15805,7 @@ artifacts:
       fails any event carrying a field outside it or a fact string over the 200-char cap). Rebuildable
       byte-stable via `python -m scripts.build_chronicle --rebuild` (modulo generated_at); regime
       flip events accrue forward-only from the W0 run date — historical flips are W4 git-archaeology.
-      m13: 2 of 6 sources (data/research_vault/catalog.json, data/earnings/earnings.parquet) have no
+      m13: 2 of 7 sources (data/research_vault/catalog.json, data/earnings/earnings.parquet) have no
       independent synapse artifact entry of their own (owned by other programs) — the cross-artifact
       read-gate does not cover those two specifically; deliberate, tracked omission, not an oversight.
   chronicle-state-log:
@@ -15576,5 +15856,6 @@ artifacts:
     notes: >
       Chronicle W0 sidecar envelope (dict payload — engine.neuralweb.envelope.stamp cannot stamp a
       JSONL stream directly). Carries the 5 envelope keys + per-adapter event counts/gap notes +
-      per-ledger row counts and sha256 hashes for chronicle-events and chronicle-state-log + compile
-      elapsed_s (binding budget: printed every run; target well under the 200-minute nightly cap).
+      per-ledger row counts and sha256 hashes for chronicle-events,
+      chronicle-earnings-call-events, and chronicle-state-log + compile elapsed_s (binding
+      budget: printed every run; target well under the 200-minute nightly cap).

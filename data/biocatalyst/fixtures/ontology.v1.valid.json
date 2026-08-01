@@ -1,0 +1,39 @@
+{
+  "contract_id": "biocatalyst_ontology.v1",
+  "schema_version": "1.0.0",
+  "ontology_id": "biocatalyst",
+  "ontology_version": "1.0.0",
+  "sector": "biopharma",
+  "canonical_unit": "asset_indication_temporal_owner",
+  "released_at": "2026-08-01T08:00:00Z",
+  "effective_from": "2026-08-01T08:00:00Z",
+  "effective_to": null,
+  "entity_types": [
+    {"type_id": "organization", "label": "Organization", "canonical_id_namespace": "organization", "temporally_versioned": true, "source_owned_by": "corporate_identity"},
+    {"type_id": "asset", "label": "Therapeutic asset", "canonical_id_namespace": "biocatalyst_asset", "temporally_versioned": true, "source_owned_by": "biocatalyst"},
+    {"type_id": "indication", "label": "Indication", "canonical_id_namespace": "biocatalyst_indication", "temporally_versioned": true, "source_owned_by": "biocatalyst"},
+    {"type_id": "trial", "label": "Clinical trial", "canonical_id_namespace": "clinicaltrials_gov", "temporally_versioned": true, "source_owned_by": "biocatalyst"},
+    {"type_id": "endpoint", "label": "Registry endpoint", "canonical_id_namespace": "biocatalyst_endpoint", "temporally_versioned": true, "source_owned_by": "biocatalyst"},
+    {"type_id": "regulatory_application", "label": "Regulatory application", "canonical_id_namespace": "regulatory_application", "temporally_versioned": true, "source_owned_by": "biocatalyst"}
+  ],
+  "relationship_types": [
+    {"type_id": "asset_has_indication", "from_types": ["asset"], "to_types": ["indication"], "cardinality": "many_to_many", "temporally_versioned": true, "evidence_required": true},
+    {"type_id": "organization_owns_asset_indication", "from_types": ["organization"], "to_types": ["asset", "indication"], "cardinality": "many_to_many", "temporally_versioned": true, "evidence_required": true},
+    {"type_id": "trial_studies_asset_indication", "from_types": ["trial"], "to_types": ["asset", "indication"], "cardinality": "many_to_many", "temporally_versioned": true, "evidence_required": true},
+    {"type_id": "trial_has_endpoint", "from_types": ["trial"], "to_types": ["endpoint"], "cardinality": "one_to_many", "temporally_versioned": true, "evidence_required": true}
+  ],
+  "vocabulary_registry": [
+    {"family": "drug", "vocabulary": "UNII", "release_version": "fixture-2026", "mapping_method": "exact_identifier", "confidence": 1.0, "effective_from": "2026-08-01T08:00:00Z", "effective_to": null, "license_class": "public_domain", "redistribution_allowed": true},
+    {"family": "disease", "vocabulary": "NCI_Thesaurus", "release_version": "fixture-2026", "mapping_method": "curated_mapping", "confidence": 0.95, "effective_from": "2026-08-01T08:00:00Z", "effective_to": null, "license_class": "public_access_restricted_redistribution", "redistribution_allowed": false},
+    {"family": "trial", "vocabulary": "ClinicalTrials.gov_native", "release_version": "api-v2", "mapping_method": "source_native", "confidence": 1.0, "effective_from": "2026-08-01T08:00:00Z", "effective_to": null, "license_class": "us_government_source_facts", "redistribution_allowed": false}
+  ],
+  "authority_boundaries": {
+    "registry_change_label": "registry_record_changed",
+    "protocol_change_requires": ["protocol_document", "statistical_analysis_plan", "regulatory_filing", "issuer_confirmation"],
+    "adverse_event_inference": "reporting_not_causality_or_incidence",
+    "patent_expiry_inference": "calculated_estimate_not_legal_truth",
+    "llm_role": "explanation_only",
+    "prediction_default_tier": "SHADOW"
+  },
+  "content_sha256": "bc7d7892c5b39e41ae0a530171f6ff2c2f689a7bff90dc403f53c5f7688f9f78"
+}

@@ -195,6 +195,15 @@ def test_crypto_is_first_class_in_navigation_workflows_and_products():
     assert "scripts.build_crypto" in render
     assert "hub; crypto" in render
 
+    engine_render = (
+        ROOT / ".github" / "workflows" / "engine-render.yml"
+    ).read_text(encoding="utf-8")
+    assert "crypto() {" in engine_render
+    assert "scripts.build_crypto" in engine_render
+    case_body = engine_render.split('case "$SCOPE" in', 1)[1].split("esac", 1)[0]
+    assert len(re.findall(r"\bhub\s*;\s*crypto\b", case_body)) == 8
+    assert not re.search(r"\bhub\s*;(?!\s*crypto\b)", case_body)
+
     product = ROOT / "content" / "seo" / "products" / "crypto-intelligence.md"
     assert product.exists()
     assert "/crypto.html" in product.read_text(encoding="utf-8")

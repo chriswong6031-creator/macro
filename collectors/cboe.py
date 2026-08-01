@@ -5,7 +5,11 @@ GEX methodology (standard open-source convention, e.g. gex-tracker):
     call GEX(strike) = +gamma * OI * 100 * spot^2 * 0.01
     put  GEX(strike) = -gamma * OI * 100 * spot^2 * 0.01
   net GEX = sum over strikes (expressed in $bn per 1% move);
-  gamma flip = strike where the cumulative-by-strike profile crosses zero.
+  gamma flip = the zero-gamma spot from a ±25% grid reevaluation of net dealer gamma
+    (engine/gex_engine._gamma_flip, same convention as collectors/deribit).
+The earlier cumulative-by-strike zero-crossing is undefined whenever net GEX ends
+negative (the cumsum never re-crosses zero), which blanked the dashboard banner for
+every short-gamma session 2026-06-24 -> 07-28.
 This is an assumption, not ground truth — see LIMITATIONS.md. Delayed chain,
 EOD cadence: a regime/vol-context input, not a day-trading tool.
 """
@@ -145,9 +149,20 @@ class GexAdapter(Adapter):
         o["gamma"] = pd.to_numeric(o.get("gamma"), errors="coerce")
         return o.dropna(subset=["K", "T", "is_call", "oi"]), spot
 
-    def _legacy_spx(self, o: pd.DataFrame, spot: float, gcfg: dict) -> pd.DataFrame:
-        """Original SPX frame (net_gex_bn, flip_strike, spot, spot_vs_flip_pct) —
-        UNCHANGED math, so build_site + gex_flip_cross are unaffected."""
+    def _legacy_spx(self, o: pd.DataFrame, spot: float, gcfg: dict,
+                    engine_flip: "float | None" = None) -> pd.DataFrame:
+        """Original SPX frame (net_gex_bn, flip_strike, spot, spot_vs_flip_pct) for
+        build_site + gex_flip_cross + latest['market_gamma']. net_gex_bn/spot math is
+        unchanged. flip_strike/spot_vs_flip_pct now carry the ENGINE's grid-reevaluated
+        zero-gamma level (engine.gex_engine._gamma_flip, passed in from fetch()): the
+        old cumulative-by-strike zero crossing is UNDEFINED whenever net GEX ends
+        negative (the cumsum never re-crosses zero) — exactly the short-gamma regime
+        the dealer-gamma banner exists to flag. It blanked the banner every short
+        session 2026-06-24→07-28 (flip present on 22/22 net-positive days, 2/17
+        net-negative), and where it did resolve it sat 5-13% above spot (the put-wall
+        offset point), contradicting the board's engine flip ~1% from spot. One
+        definition now serves both surfaces; the sign convention of
+        spot_vs_flip_pct (spot below flip -> negative -> dealers short) is unchanged."""
         c = o.dropna(subset=["gamma"]).copy()
         horizon = pd.Timestamp(date.today()) + pd.Timedelta(days=gcfg["max_expiry_days"])
         win = gcfg["strike_window_pct"]
@@ -156,12 +171,16 @@ class GexAdapter(Adapter):
         sign = np.where(c["is_call"], 1.0, -1.0)
         c = c.assign(gex=sign * c["gamma"] * c["oi"] * mult)
         by_strike = c.groupby("K")["gex"].sum().sort_index()
-        cum = by_strike.cumsum()
-        flip = np.nan
-        crossings = cum[np.sign(cum).diff().abs() > 0]
-        near = crossings[np.abs(crossings.index / spot - 1) <= 0.15]
-        if not near.empty:
-            flip = float(near.index[np.argmin(np.abs(near.index - spot))])
+        flip = (float(engine_flip)
+                if engine_flip is not None and np.isfinite(engine_flip) else np.nan)
+        if np.isnan(flip):
+            # A NaN flip blanks the dashboard banner and nulls latest['market_gamma']
+            # downstream — make it loud in the Actions summary. Bare line-start print:
+            # a logger prefix would make GitHub silently drop the annotation.
+            print("::warning title=gex flip NaN::SPX gamma-flip unresolved (engine "
+                  f"grid found no zero crossing; net_gex_bn={by_strike.sum() / 1e9:.1f})"
+                  " — flip_strike/spot_vs_flip_pct NaN, dealer-gamma banner will be "
+                  "blank", flush=True)
         svf = (spot / flip - 1) * 100 if not np.isnan(flip) else np.nan
         return pd.DataFrame({"net_gex_bn": [by_strike.sum() / 1e9], "flip_strike": [flip],
                              "spot": [spot], "spot_vs_flip_pct": [svf]},
@@ -185,7 +204,8 @@ class GexAdapter(Adapter):
                                              "q": GEX_Q.get(sym, 0.0)})
         out[f"gex_{sym.lstrip('_')}"] = self._row(summ)
         if sym == "_SPX":
-            out["gex"] = self._legacy_spx(chain, spot, gcfg)
+            out["gex"] = self._legacy_spx(chain, spot, gcfg,
+                                          engine_flip=summ.get("gamma_flip"))
 
     def fetch(self, full_history: bool = False) -> dict[str, pd.DataFrame]:
         gcfg = self.cfg["gex"]

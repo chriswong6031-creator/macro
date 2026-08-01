@@ -1064,6 +1064,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "NI",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-30",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "PEP",
       "direction": 1,
       "horizon": "5.0",
@@ -1097,9 +1108,42 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "RL",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-30",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "ROST",
+      "direction": 1,
+      "horizon": "21.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-30",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "XEL",
       "direction": 1,
       "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-06-30",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
+      "subject": "XEL",
+      "direction": 1,
+      "horizon": "21.0",
       "persistence_streak": 0,
       "strength_slope": null,
       "state": "gone",
@@ -2376,8 +2420,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-31",
-      "n_sessions_in_tape": 17
+      "last_as_of": "2026-08-02",
+      "n_sessions_in_tape": 18
     },
     {
       "pair_id": "regime_vector-vs-risk_radar",
@@ -2404,9 +2448,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 415,
+  "n_tape_rows": 420,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-08-01T03:16:24Z",
+  "produced_at": "2026-08-01T21:17:11Z",
   "authority_check": []
 }

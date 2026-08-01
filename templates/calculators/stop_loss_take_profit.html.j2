@@ -110,7 +110,8 @@
    '百分比决定盈亏比的结构；价格与股数只放大金额。两者都无法告诉你目标被触及的频率。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn this ratio into a break-even win rate with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/risk-reward.html">{{ t('risk-to-reward calculator', '盈亏比计算器') }}</a>{{ t(', or turn a stop into a share count with the <a href="', '把这个比率换算成保本胜率，或用 <a href="') }}{{ rel }}tools/calculators/position-size.html">{{ t('position size calculator', '仓位计算器') }}</a>{{ t('.', '把止损换算成股数。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('Turn this ratio into a break-even win rate with the <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">risk-to-reward calculator</a>, or turn a stop into a share count with the <a href="' ~ rel ~ 'tools/calculators/position-size.html">position size calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/risk-reward.html">盈亏比计算器</a>把这个比率换算成保本胜率，或用 <a href="' ~ rel ~ 'tools/calculators/position-size.html">仓位计算器</a>把止损换算成股数。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

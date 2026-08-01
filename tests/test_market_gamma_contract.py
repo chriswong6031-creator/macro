@@ -43,6 +43,20 @@ def test_snapshot_degrades_to_none_when_store_absent(monkeypatch):
     assert market_gamma.snapshot() is None
 
 
+def test_nan_flip_returns_none_and_annotates(monkeypatch, capsys):
+    """A PRESENT row with a NaN flip (the 2026-06-24 -> 07-28 short-gamma incident:
+    net GEX computed, flip unresolved) still degrades to None — but no longer SILENTLY.
+    The blank banner + null contract field must announce themselves in the Actions
+    summary, and the annotation must START its line or GitHub drops it."""
+    monkeypatch.setattr(market_gamma.store, "read",
+                        lambda group, name: _gex(-37.7, float("nan"), 7408.30,
+                                                 float("nan"), asof="2026-07-23"))
+    assert market_gamma.snapshot() is None
+    out = capsys.readouterr().out
+    assert any(line.startswith("::warning ") for line in out.splitlines()), \
+        f"NaN flip must emit a line-start ::warning, got: {out!r}"
+
+
 def test_fe_banner_and_contract_share_one_deriver():
     """The build_site banner var and the engine contract must be the SAME function
     object — the structural guarantee that they can never drift."""

@@ -117,7 +117,8 @@
    '复利会覆盖任何长期目标的一部分——期限越长、回报越高，需要你亲自存入的那一份就越小。') }}</p>
 </div>
 
-<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how a balance grows deposit by deposit with the <a href="', '用 <a href="') }}{{ rel }}tools/calculators/compounding.html">{{ t('compounding calculator', '复利计算器') }}</a>{{ t(', or turn a start and end value into a rate with the <a href="', '看余额如何随每笔存款增长，或用 <a href="') }}{{ rel }}tools/calculators/cagr.html">{{ t('CAGR calculator', '复合年增长率计算器') }}</a>{{ t('.', '把起止金额换算成回报率。') }}</p>
+<p class="mut" style="font-family:var(--font-ui); font-size:13.5px;">{{ t('See how a balance grows deposit by deposit with the <a href="' ~ rel ~ 'tools/calculators/compounding.html">compounding calculator</a>, or turn a start and end value into a rate with the <a href="' ~ rel ~ 'tools/calculators/cagr.html">CAGR calculator</a>.',
+   '用 <a href="' ~ rel ~ 'tools/calculators/compounding.html">复利计算器</a>看余额如何随每笔存款增长，或用 <a href="' ~ rel ~ 'tools/calculators/cagr.html">复合年增长率计算器</a>把起止金额换算成回报率。') }}</p>
 {% endblock %}
 
 {% block calc_script %}

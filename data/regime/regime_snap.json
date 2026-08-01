@@ -1,10 +1,10 @@
 {
   "snap": false,
   "relief_magnitude": null,
-  "roro": 1.074,
+  "roro": 1.041,
   "cap_recent": true,
   "fear_built": 0.368,
-  "roro_velocity": 0.579,
+  "roro_velocity": 0.546,
   "vel_pctile": 0.982,
   "legs_up": 3,
   "legs_total": 7,
@@ -45,17 +45,17 @@
   "veto": {
     "schema": "regime_snap_veto.v1",
     "is_context_only": true,
-    "lean": "durable",
+    "lean": "fragile",
     "confidence": "medium",
     "checks": {
-      "catalyst": "Structural \u2014 actual FOMC decision to hold rates steady, a scheduled policy event, triggering USD repricing.",
-      "premium": "Fear built over 35 days to 0.368; high velocity (0.982) and building snap suggest partial, rapid unwinding \u2014 some premium likely still left.",
-      "washout": "Real washout \u2014 cap_recent=true indicates recent capitulation, and fear was not rebuilding.",
-      "follow_through": "Mixed \u2014 only 3 of 7 legs flipped, China A-shares down, and driver 'mixed' with low confidence; cross-asset confirmation may wobble."
+      "catalyst": "Headlines show no structural catalyst (no signed deal, actual policy shift, or hard data surprise). The dovish repricing is likely verbal/speculative, driven by a mixed liquidity impulse with low confidence. No legible structural driver, making this likely easily reversed.",
+      "premium": "Fear built at 0.368 and only 3 of 7 legs flipped up amid extreme velocity, suggesting partial but incomplete unwinding. VIX/term have flipped, but residual fear premium likely remains. Not all premium is exhausted.",
+      "washout": "cap_recent true and 35 days since last snap indicate a real washout with capitulation present. This gives some ballast, but alone cannot offset a weak catalyst.",
+      "follow_through": "Confidence in today's driver is low; without a clear catalyst, cross-asset confirmation (VIX, VIX term, copper/gold) is vulnerable to fizzling. The snap's legs may not hold the next session if no structural follow-up emerges."
     },
-    "read": "A structural Fed event triggered a fast relief rally out of a genuine capitulation, supporting durability. However, the limited leg confirmations and mixed cross-asset moves suggest follow-through may be tentative, tempering conviction.",
+    "read": "Relief is built on a speculative dovish repricing with no legible structural catalyst. Despite a genuine washout, the absence of a signed deal or hard data surprise makes this move prone to reversal, leaning fragile.",
     "model": "deepseek-v4-pro",
-    "generated_at": "2026-08-01T01:34:04.865391+00:00",
+    "generated_at": "2026-08-01T19:39:39.885500+00:00",
     "degraded_reason": null,
     "disclaimer": "AI durability read \u2014 context only, never scored or sized. The snap detector is coincident; this is a fallible judgement on whether the relief is structural or a dead-cat, not a trade recommendation."
   }

@@ -86,10 +86,12 @@ _ENGINE_ARTIFACTS: tuple[tuple[str, str], ...] = (
 # Chronicle sources whose events are OUR OWN measurement rather than a
 # third-party publication.  A story built on one of these is first-party.
 _FIRST_PARTY_CHRONICLE_SOURCES = frozenset({
-    "prophet_ledger", "risk_band", "regime_flip", "earnings", "macro_release",
+    "prophet_ledger", "risk_band", "regime_flip", "earnings", "earnings_call",
+    "macro_release",
 })
 
 _SITE_BASE = "https://www.mastermind-x.com"
+_SHA256_RECEIPT_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -351,6 +353,11 @@ def staged_refs(root=None, cfg: dict | None = None) -> tuple[set[str], set[str]]
         obj = _read_json(path)
         if not isinstance(obj, dict):
             continue
+        # A superseded record is retained as an audit trail, not as a live
+        # draft.  Keeping its source ref or slug in the blocking sets would
+        # prevent the corrected revision from ever being staged.
+        if obj.get("status") in {"superseded", "resolved"}:
+            continue
         for s in obj.get("sources") or []:
             refs.add(str(s))
         for s in obj.get("seed_refs") or []:
@@ -358,6 +365,54 @@ def staged_refs(root=None, cfg: dict | None = None) -> tuple[set[str], set[str]]
         if obj.get("slug"):
             slugs.add(str(obj["slug"]))
     return refs, slugs
+
+
+def earnings_call_revisions(root=None) -> dict[str, dict]:
+    """Current canonical call-ledger revision by stable Press source ref.
+
+    The stable ref identifies the company-period story; ``receipt`` identifies
+    the exact transcript revision used to build it.  Invalid/missing receipts
+    remain present with ``valid=False`` so emit-time reconciliation fails
+    closed instead of treating an unverifiable event as unrelated.
+    """
+
+    from engine.chronicle.earnings_calls import load_call_events  # noqa: PLC0415
+
+    out: dict[str, dict] = {}
+    rows, gap = load_call_events(repo_root(root))
+    if gap:
+        log.warning("press.desk_planner: canonical earnings-call ledger gap: %s", gap)
+        return out
+    for event in rows:
+        source_ref = str(event.get("source_record_id") or "").strip()
+        if not source_ref:
+            continue
+        ref = f"chronicle:{source_ref}"
+        source_hash = str(event.get("source_sha256") or "").lower()
+        receipt = f"sha256:{source_hash}" if re.fullmatch(r"[0-9a-f]{64}", source_hash) else ""
+        candidate = {
+            "ref": ref,
+            "receipt": receipt,
+            "valid": bool(receipt),
+            "event_id": str(event.get("id") or ""),
+            "source_ref": source_ref,
+            "date": str(event.get("call_date") or ""),
+            "title": (
+                f"Earnings call: {event.get('ticker')} {event.get('quarter')} "
+                f"FY{event.get('year')}"
+            ),
+        }
+        # Chronicle is append-only in normal operation.  If a malformed fixture
+        # or hand edit leaves two rows for one source ref, deterministic event
+        # time/id ordering chooses one rather than filesystem order.
+        prior = out.get(ref)
+        key = (candidate["date"], candidate["event_id"], candidate["receipt"])
+        prior_key = (
+            prior.get("date", ""), prior.get("event_id", ""), prior.get("receipt", "")
+        ) if prior else None
+        if prior_key is None or key >= prior_key:
+            out[ref] = candidate
+    return out
 
 
 def taken_slugs(root=None) -> set[str]:
@@ -699,26 +754,45 @@ def _neg_ordinal(d) -> int:
 def _event_fact(ev: dict) -> dict:
     src = str(ev.get("source") or "")
     tier = "first_party" if src in _FIRST_PARTY_CHRONICLE_SOURCES else "third_party"
-    facts_txt = "; ".join(str(f) for f in (ev.get("facts") or []))
-    text = f"[{ev.get('date')}] {ev.get('title')}"
+    title = str(ev.get("title") or "")
+    facts = [str(f) for f in (ev.get("facts") or [])]
+    if src == "earnings_call":
+        from engine.chronicle.earnings_calls import sanitize_untrusted_prose  # noqa: PLC0415
+
+        title = sanitize_untrusted_prose(title, max_len=300)
+        facts = [sanitize_untrusted_prose(fact, max_len=1600) for fact in facts]
+        facts = [fact for fact in facts if fact]
+    facts_txt = "; ".join(facts)
+    text = f"[{ev.get('date')}] {title}"
     if facts_txt:
         text += f" — {facts_txt}"
-    site = (ev.get("links") or {}).get("site")
-    return _fact(
+    links = ev.get("links") or {}
+    site = links.get("site")
+    # Earnings-call rows carry a public-safe source URL/hash even when the URL
+    # is not on Press's logged-out article-link allowlist.  Preserve that
+    # provenance in the staged slot for audit/correction handling; the writer
+    # still receives only ``allowed_links`` and therefore cannot emit it unless
+    # the publication policy explicitly opens that path later.
+    source_url = links.get("source") if src == "earnings_call" else None
+    fact = _fact(
         f"chronicle_{ev.get('id')}",
         text,
         ref=f"chronicle:{ev.get('source_ref') or ev.get('id')}",
         tier=tier,
         values=[],
         dated=ev.get("date"),
-        url=site,
+        url=site or source_url,
         source_name=_source_label(src),
     )
+    if src == "earnings_call" and links.get("receipt"):
+        fact["receipt"] = str(links["receipt"])
+    return fact
 
 
 def _source_label(src: str) -> str:
     return {
         "earnings": "Mastermind earnings store",
+        "earnings_call": "Mastermind earnings-call analysis",
         "prophet_ledger": "Mastermind Prophet ledger",
         "risk_band": "Mastermind risk radar",
         "regime_flip": "Mastermind regime engine",
@@ -784,6 +858,16 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
             continue
 
         lead = _event_fact(ev)
+        revision_receipt = str(lead.get("receipt") or "").lower()
+        if ev.get("source") == "earnings_call" and not _SHA256_RECEIPT_RE.fullmatch(
+            revision_receipt
+        ):
+            log.warning(
+                "press.desk_planner: earnings-call candidate %s has no valid "
+                "revision receipt — skipped fail-closed",
+                ref,
+            )
+            continue
         if not _press_safe(lead["text"]):
             # The story cannot be told without a banned word. Skip it rather
             # than plan a piece that is guaranteed to be quarantined.
@@ -800,18 +884,40 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
         # SOURCE LAW (amended at W1 review — masterplan §0 W1 gate 2).
         # A Brief slot is FULLY FIRST-PARTY: the story is our own chronicle
         # event and our own engine measurements. It carries its receipts inline
-        # (dated, fact-anchored numbers) and links nothing.
+        # (dated, fact-anchored numbers). Only the separately computed
+        # ``allowed_links`` list may reach the article body.
         #
         # W1 originally pointed these slots at /us_track_record.html,
         # /radar.html and /macro.html as their "primary source" — all three
         # answer 302 to /?signin=1, so the validator was forcing every public
-        # article to cite a login wall. `url: None` is the honest state: a
-        # first-party desk with no public page to show. The link allowlist in
-        # config/press.yml (validators.check_link_allowlist) is what keeps a
-        # gated URL from creeping back in through the draft body.
-        primary_url = lead.get("url")     # vault-sourced events carry /research/
+        # article to cite a login wall. `url: None` is the honest state when a
+        # first-party desk has no source page to show. An earnings-call event
+        # retains its public-safe evidence URL/hash in the staged audit record,
+        # but the link allowlist below keeps that URL out of prose unless its
+        # logged-out path is separately approved.
+        primary_url = lead.get("url")
+        source_revisions = (
+            {ref: revision_receipt} if ev.get("source") == "earnings_call" else {}
+        )
+        event_title = str(ev.get("title") or "")
+        if ev.get("source") == "earnings_call":
+            from engine.chronicle.earnings_calls import sanitize_untrusted_prose  # noqa: PLC0415
+
+            event_title = sanitize_untrusted_prose(event_title, max_len=300)
+            if not event_title:
+                ticker_label = tickers[0] if tickers else "company"
+                event_title = f"Earnings call update: {ticker_label}"
+        identity_parts = [name, ref]
+        if revision_receipt:
+            # Stable story ref, revision-specific staging identity.  The former
+            # powers dedupe; the latter preserves both audit records when a
+            # pending draft is superseded by a corrected transcript.
+            identity_parts.append(revision_receipt)
         slots.append({
-            "id": f"press-{name}-{as_of.isoformat()}-{story_key(name, ref)}",
+            "id": (
+                f"press-{name}-{as_of.isoformat()}-"
+                f"{story_key(*identity_parts)}"
+            ),
             "desk": name,
             "publication": publication,
             "byline": str(desk_cfg.get("byline") or "The Brief"),
@@ -821,13 +927,13 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
             "min_words": int(desk_cfg.get("min_words") or 300),
             "max_words": int(desk_cfg.get("max_words") or 600),
             "min_anchored_receipts": int(desk_cfg.get("min_anchored_receipts") or 0),
-            # What the writer may link. Empty for a Brief: the pages that carry
-            # these numbers (/radar.html, /macro.html, /us_track_record.html)
-            # are all regwall 302s, so the piece carries dated receipts instead.
+            # What the writer may link. Usually empty for a Brief: the pages
+            # that carry these numbers are gated, so the piece carries dated
+            # receipts instead. Vault coverage is the existing public exception.
             "allowed_links": _allowed_links(cfg, [primary_url]),
             "story": {
                 "kind": ev.get("kind"),
-                "title_hint": ev.get("title"),
+                "title_hint": event_title,
                 "tickers": tickers,
                 "themes": [str(t) for t in (ev.get("themes") or [])],
                 "event_date": ev.get("date"),
@@ -837,13 +943,15 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
                 "name": lead.get("source_name") or "Mastermind",
                 "url": _absolute(primary_url) if primary_url else None,
                 "ref": ref,
+                "receipt": lead.get("receipt"),
             },
             "sources": [ref],
+            "source_revisions": source_revisions,
             "seed_refs": sorted({f["ref"] for f in facts}),
             "facts": facts,
             "raw_documents": _raw_documents_for_event(ev),
             "chronicle_context": ctx,
-            "slug_hint": slugify(str(ev.get("title") or "market brief")),
+            "slug_hint": slugify(event_title or "market brief"),
         })
         blocked_refs.add(ref)
     return slots

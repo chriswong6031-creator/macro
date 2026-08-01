@@ -518,6 +518,23 @@ and the seen-ledger. Production desk/rail snapshots live under
 - **Code pickup**: `macro-update` already restarts the daemon when
   `engine/marketing/*` or the daemon script changes on main — no manual
   `systemctl restart` is needed after a merge.
+- **`wire_rank.json` sidecar (Mastermind brain)**: the served rail
+  (`live/wires.json`) deliberately carries no ranking number, so the brain's
+  ranked view of the SAME window ships as a separate non-public file the daemon
+  rewrites on every real tick, immediately after the wires sink. It lands at
+  `$MACRO_LIVE_STATE_DIR/wire_rank.json` when that override is set, otherwise
+  `/var/lib/macro-live/state/wire_rank.json` on the VPS and the gitignored
+  `data/marketing/press/wire_rank.json` on a dev box — never the public live
+  dir. It contains exactly `{schema, updated_at, ids}` and **no numbers at all**:
+  element order is the entire ranking, so there is nothing leakable in it even
+  at a non-public path. The reader ignores the file when `updated_at` is older
+  than 45 minutes and falls back to recency, which is also what happens to any
+  id the file does not list — so a stale or missing sidecar degrades quietly
+  rather than blanking the brain's wire. Kill switch:
+  `wire.rank_sidecar_enabled` in `config/press_sources.yml` (ships `true`;
+  setting it false or deleting the key stops the write, the rail is unaffected).
+  The ordering numbers themselves live only in the daemon's gitignored
+  `data/marketing/press/state.json` under `wire_rank_order`.
 
 The live-plane venv includes `datasketch`; without it the daemon still runs but
 the scoring brain reports `story-spine-no-datasketch` and falls back to exact
