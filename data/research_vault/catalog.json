@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T21:43:15.685892+00:00",
-  "count": 544,
+  "generated_at": "2026-08-01T22:16:05.099256+00:00",
+  "count": 554,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,168 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-myfjhnohu9e-b22974",
+      "title": "Credit Analysis Summer bummer for bonds",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:08:20Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2izpqouqinc-ae5416",
+      "title": "US weighed on equities despite broad earnings support",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:08:17Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 75,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xljn1o7xykc-149bd1",
+      "title": "Record single stock inflows driven by institutional clients",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:48Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-7rkuwevyoe0-d36d7b",
+      "title": "July jobs a litmus test for Fed credibility",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:37Z",
+      "summary_points": [],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-po29qktu47q-dbeafa",
+      "title": "Hedge now, rally later Industry Overview",
+      "institution": "Bank of America",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:07:22Z",
+      "summary_points": [
+        "**Muni Credit Stress Signals**: Chapter 12 filings (674 vs OH’s 14,500) indicate severe rural muni credit risk; state dispersion highlights systemic stress (critical risk factor).",
+        "**10s30s Treasury Slope Threshold**: 10s30s slope at 54bp must stay below 60bp to sustain muni yield peak; Fed’s less hawkish stance increases steepening risk.",
+        "**2026 Supply-Demand Dynamics**: Net supply $138bn in 2026 (Jun-Jul-Aug-Dec favorable periods); issuance revised down to $500bn vs redemptions $462bn.",
+        "**Sector Differentiation**: Tobacco (+0.56% MTD) strongest; Local GOs (-1.67% MTD) weakest; GOs outperform Revenue at single-A but underperform at BBB.",
+        "**HY Muni Tightness**: HY spreads hit 52-wk tight at 149bp (tightened 2bp w/w), signaling heightened demand for riskier segments and rotation opportunity."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-fp0z3pev1rk-5251f7",
+      "title": "GS Equity Index Vol Update 31Jul26",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:02:09Z",
+      "summary_points": [
+        "**Market Rally & Volatility**: SPX/NDX rose (+0.70%/+0.60%) amid strong earnings, VIX fell (-1.10pts) as negative spot-vol dynamics crushed NDX/RUT volatility and term structure steepened.",
+        "**Critical Data & Positioning**: Upcoming ISM (Wed), Jobless Claims (Thu), NFP (Fri) with straddle levels at $46.5 (Mon) and $98.5 (Fri) for key event positioning.",
+        "**Volatility Flows**: Flows tilted toward volatility buyers (downside) early, skew sellers active ahead of data releases."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wz2vdbmhxbj-cbaaec",
+      "title": "[GSX] Global Reflections Aug 1",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:02:08Z",
+      "summary_points": [
+        "**Momo Capitulation**: High-beta momentum factors (GSPRHIMO, GSPEMOMO) erased YTD gains post-record rallies; factor volatility at post-Covid highs, with largest 3-day de-gross since Nov 2022 and net exposure reduction in momentum/mega-cap tech.",
+        "**AI Hardware Rebound**: Hyperscalers’ 2Q results confirm AI demand fundamentals; focus on US Datacentres (GSTMTDAT), EU Semis (GSSSEMI), Asia AI Bottlenecks (GSXABOTL) as rebound areas; SPXXAI hedges AI meltdown while broadening beneficiaries.",
+        "**Policy Catalysts & Volatility Spread**: US midterms (electricity pricing, RES capacity) and EU French election drive political risk; US High Beta Momo vs SPX realized vol spread at decade-high, signaling heightened volatility.",
+        "**Factor Drawdown Severity**: Largest monthly drawdown since GFC period; -31.19% 1-day change (02/29/24) indicates extreme volatility and reversal risk.",
+        "**Data Center L/S Reversal**: Prime Book Long/Short Ratio for Data Centers halved post-peak, signaling aggressive unwinding of long positions and near-term downside risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-9cicnwmmvc5-48e420",
+      "title": "GS Mark Wilson July 31",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:02:04Z",
+      "summary_points": [
+        "**Fed Guidance & Capital Competition**: US 30yr yields broke pre-GFC levels amid contained G10 ex-US inflation, signaling enduring capital competition beyond historical norms and amplifying uncertainty.",
+        "**AI-Driven Capital Shifts**: AI’s capital-intensive buildout collides with re-industrialization, defense re-investment, and de-globalization, creating a structural \"capital-hungry\" cycle.",
+        "**GT30 Govt Trendline Resistance**: GT30 Govt (US Treasuries) approaching key resistance at 5.266 with uptrend; \"!!!\" marker signals breakout/reversal risk for bond portfolio allocation.",
+        "**G10 Inflation Acceleration**: G10 ex-US core inflation rising (Exhibit 5), diverging from US PCE/CPI, signaling rising global inflation pressures driving higher rates and critical June forecasts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hcmegffbll7-e06f3c",
+      "title": "GS Tony Pasquariello Markets and Macro Aug 1",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:02:00Z",
+      "summary_points": [
+        "**De-grossing Activity**: Second-largest weekly de-grossing in decade (July 24–30), Prime Book Gross Trading Flow at ~-3% vs.",
+        "historical averages, signaling major market flow shift.",
+        "**Hyperscaler Debt Volatility**: Credit spreads on hyperscalers (GSUCHS30) widened 18bps last week, tied to AI capex narrative, indicating persistent risk factor.",
+        "**Energy Sector Momentum**: Energy stocks led market with 33% YTD return, confirmed by seven straight weeks of net buying (GS PB), showing show-don’t-tell dynamic.",
+        "**S&P Forward EPS Acceleration**: Structural earnings growth trend with acceleration in S&P forward EPS expectations post-crisis events (e.g., LEH, COVID), not confined to US market."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-jsrqdxq1kq9-365520",
       "title": "Asset Allocation July 31",
@@ -10846,6 +11008,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": null,
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xynjuyjmmnl-a733fd",
+      "title": "Michael Wilson Weekly Warm up Broadening Continues as Index Struggles",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-20T20:50:56Z",
+      "summary_points": [
+        "**Broadening Thesis Accelerates**: Equal Weight S&P 500 outperforms Cap Weighted by 12% over 2 months; Consumer Discretionary/Transports lead driven by AI adoption, lower oil prices, Fed hold.",
+        "**Semis Correction & Sector Rotation**: Semis face ~15% downside (Silver analog), broadening to Consumer Discretionary/Transports; Hyperscalers favored via AI ecosystem and undervaluation (21x multiple).",
+        "**Policy Fragmentation Threatens AI Capex**: $286B data center projects delayed/canceled (15 states), risking $877B 2026 AI capex; local opposition (water, electricity, zoning) dominates sentiment.",
+        "**Mag 7 Dominance in Earnings**: Mag 7 contributes 71% to S&P 500 earnings growth (2027), with 38% earnings growth vs.",
+        "16% for S&P 493, driving market momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": true,
+      "pages": 35,
+      "language": "en",
       "needs_metadata": false
     }
   ]
