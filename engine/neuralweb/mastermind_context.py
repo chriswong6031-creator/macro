@@ -65,6 +65,10 @@ from typing import Any
 
 import pandas as pd
 
+from engine.neuralweb.options_plane import (
+    options_structure_block as _options_structure_block,
+)
+
 log = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -2917,6 +2921,14 @@ def build_market_plane(
     # ── liquidity plumbing ───────────────────────────────────────────────────
     liquidity_plumbing = _plane_liquidity_block(repo, gaps)
 
+    # ── options structure (Market Structure Core §6) ──────────────────────────
+    # The dealer gamma regime is a CONDITIONING variable for every other read on this
+    # plane, not another signal beside them: "risk-on with dealers long gamma" and
+    # "risk-on with dealers short gamma below the flip" have different realized-vol
+    # distributions, and nothing else here can tell them apart. Context only, per the
+    # plane's is_context_only contract — the Terminal must not rank or filter on it.
+    options_structure = _options_structure_block(repo, gaps, _read_json)
+
     # ── contradiction count (confluence_graph contradiction_summary) ─────────
     contradiction_count: int | None = None
     cg = _read_json(repo / "data" / "neuralweb" / "confluence_graph.json")
@@ -2959,6 +2971,7 @@ def build_market_plane(
         "vol": vol,
         "breadth": breadth,
         "liquidity_plumbing": liquidity_plumbing,
+        "options_structure": options_structure,
         "contradiction_count": contradiction_count,
         "cortex": cortex,
         "stale": stale,
