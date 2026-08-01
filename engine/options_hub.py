@@ -598,6 +598,15 @@ def compute_gex(
         for row in by_k_win.itertuples()
     ]
 
+    # ── by call-delta bucket (Volland parity W3: "Floating Strike") ───────────
+    # The SAME book, indexed by moneyness-in-delta-space instead of by strike. A
+    # strike ladder answers "where is the exposure"; a delta ladder answers "how far
+    # out of the money is it", which is the question that stays comparable as spot
+    # moves and as time passes. Volland ships this as C-95-100 … C-5-0, so puts are
+    # mapped to their call-equivalent delta (a -0.30 put lives in the 0.70 bucket)
+    # and everything reads on one axis.
+    by_delta_rows = _by_call_delta(g)
+
     # ── by expiry ─────────────────────────────────────────────────────────────
     by_exp = g.groupby("expiration").agg(
         gamma_net=("_net_gex", "sum"),
@@ -636,12 +645,94 @@ def compute_gex(
         "put_wall": _f(put_wall),
         "by_strike": by_strike_rows,
         "by_strike_full_n": by_strike_full_n,
+        "by_delta": by_delta_rows,
         "by_expiry": by_expiry_rows,
         "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
         "coverage": coverage,
         # NOTE: history field is injected by build_options_hub_nightly.py
         # via _attach_gex_history() — it is absent when polygon_gex parquet is missing.
     }
+
+
+#: Call-delta bucket width. 0.05 gives the 20 buckets Volland labels C-95-100 … C-5-0 —
+#: fine enough to separate the at-the-money wall from the 25-delta wings, coarse enough
+#: that a single strike's delta estimate cannot move a bucket on its own.
+_DELTA_BUCKET = 0.05
+
+
+def _by_call_delta(g: pd.DataFrame) -> list[dict]:
+    """Dealer exposure bucketed by CALL-EQUIVALENT delta rather than by strike.
+
+    Why this is not just the strike ladder relabelled
+    --------------------------------------------------
+    A strike is a fixed price; a delta is a position relative to where the market
+    actually is. As spot travels and time passes, "the 0.25-delta call wing" stays the
+    same object while "the 750 strike" becomes something else entirely. Reading exposure
+    in delta space is the sticky-delta view, and it is what makes today's picture
+    comparable to last week's without re-basing anything by hand.
+
+    Put mapping
+    -----------
+    Puts are folded onto the call axis by ``1 - |delta_put|``: a -0.30 put and a +0.70
+    call describe the same region of the distribution, so they belong in the same bucket.
+    This is a presentational fold only — the dealer SIGN is already baked into the
+    exposure columns, so a put still contributes its own signed dollars.
+
+    Returns
+    -------
+    list[dict]
+        One row per occupied bucket, low-delta first, each carrying the band edges, the
+        four exposures in $mn, and the contract count. Empty when no usable delta column
+        is present — the consumer then hides the view rather than inventing buckets.
+    """
+    if "delta" not in g.columns:
+        return []
+    d = pd.to_numeric(g["delta"], errors="coerce").to_numpy(float)
+    is_call = g["is_call"].to_numpy(bool)
+    # Fold puts onto the call axis. |delta| is used rather than the raw value so a feed
+    # that reports puts as positive cannot silently land them in the wrong half.
+    cd = np.where(is_call, np.abs(d), 1.0 - np.abs(d))
+    ok = np.isfinite(cd) & (cd >= 0.0) & (cd <= 1.0)
+    if not ok.any():
+        return []
+
+    work = g.loc[ok].copy()
+    cd_ok = cd[ok]
+    # Floor to the bucket, clamped so delta exactly 1.0 joins the 0.95-1.00 band rather
+    # than opening a 21st bucket of its own.
+    #
+    # The epsilon is load-bearing, not defensive noise. Bucket edges are exactly the
+    # values that land on binary-fraction boundaries: a -0.30 put folds to 1.0 - 0.3,
+    # which divided by 0.05 is 13.999999999999998, and floor() files it in 0.65-0.70
+    # instead of 0.70-0.75. Every round-numbered delta -- precisely the ones a chain is
+    # full of -- would sit one bucket too low, and the picture would look entirely
+    # reasonable while being systematically shifted.
+    idx = np.minimum(np.floor(cd_ok / _DELTA_BUCKET + 1e-9).astype(int),
+                     int(round(1.0 / _DELTA_BUCKET)) - 1)
+    # `itertuples()` mangles leading-underscore names positionally, so this column
+    # cannot be called `_bucket` — the rows would come back as `_1`.
+    work["dbucket"] = idx
+
+    agg = work.groupby("dbucket").agg(
+        gamma_net=("_net_gex", "sum"),
+        delta_net=("_net_delta", "sum"),
+        vanna_net=("_net_vanna", "sum"),
+        charm_net=("_net_charm", "sum"),
+        n=("_net_gex", "size"),
+    ).reset_index()
+
+    return [
+        {
+            "lo": _f(row.dbucket * _DELTA_BUCKET, 2),
+            "hi": _f((row.dbucket + 1) * _DELTA_BUCKET, 2),
+            "gamma_net": _f(row.gamma_net / 1e6, 4),
+            "delta_net": _f(row.delta_net / 1e6, 4),
+            "vanna_net": _f(row.vanna_net / 1e6, 4),
+            "charm_net": _f(row.charm_net / 1e6, 4),
+            "n": int(row.n),
+        }
+        for row in agg.sort_values("dbucket").itertuples()
+    ]
 
 
 def _empty_gex(root: str, asof: str) -> dict:
@@ -656,6 +747,7 @@ def _empty_gex(root: str, asof: str) -> dict:
         "put_wall": None,
         "by_strike": [],
         "by_strike_full_n": 0,
+        "by_delta": [],
         "by_expiry": [],
         "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
         "coverage": {"n_contracts": 0, "asof": asof, "oi_date": "t-1", "n_days": 0, "since": asof},
