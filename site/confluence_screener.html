@@ -35,7 +35,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Signals Lining Up — 2026-07-30 | MastermindX</title>
+<title>Signals Lining Up — 2026-08-01 | MastermindX</title>
 
 
 
@@ -57,9 +57,9 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
+<link rel="stylesheet" href="assets/css/7d5af2ad.css?v=7d5af2ad">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=3ee9d113">
-<link rel="stylesheet" href="assets/css/7d5af2ad.css?v=7d5af2ad">
 </head>
 <body>
 <nav class="site-nav" style="max-width:1080px;margin:18px auto 14px;padding:0 20px">
@@ -187,6 +187,17 @@
       <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
         <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
         <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
       </div>
@@ -194,14 +205,6 @@
     <div class="nav-dd">
       <a class="nav-link" href="javascript:void(0)"><span class="menu-icon menu-icon-assets" aria-hidden="true"></span><span class="l-en">Other Assets</span><span class="l-zh">其他资产</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
-        <div class="nav-dd nav-sub">
-          <a class="nav-sub-trig" href="vector.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">Market state · risk · cycle</span><span class="l-zh">市场状态 · 风险 · 周期</span></span></span><span class="caret-r">▸</span></a>
-          <div class="nav-dd-menu" role="menu">
-            <a href="vector.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Overview</span><span class="l-zh">总览</span><span class="d"><span class="l-en">Market state · risk · momentum</span><span class="l-zh">市场状态 · 风险 · 动量</span></span></a>
-            <a href="vector_allocation.html"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation Strategy</span><span class="l-zh">仓位策略</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-            <a href="btc_strategy.html"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">BTC Strategy</span><span class="l-zh">BTC策略</span><span class="d"><span class="l-en">Cycle vs risk-allocation · backtested</span><span class="l-zh">周期 vs 风险配置 · 已回测</span></span></a>
-          </div>
-        </div>
         <div class="nav-dd nav-sub">
           <a class="nav-sub-trig" href="commodities.html"><span class="nav-sub-text"><span class="submenu-icon submenu-icon-commodities" aria-hidden="true"></span><span class="l-en">Commodities</span><span class="l-zh">大宗商品</span><span class="d"><span class="l-en">Gold · oil · silver · copper</span><span class="l-zh">黄金 · 原油 · 白银 · 铜</span></span></span><span class="caret-r">▸</span></a>
           <div class="nav-dd-menu" role="menu">
@@ -217,46 +220,44 @@
     
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-main">
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
-              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
-              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
-              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
-              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
-              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
-              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
-              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
-              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
-              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
             </div>
           </section>
         </div>
-        <aside class="nav-mega-rail">
-          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
-            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
-              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
             </button>
             <div class="nav-drill-panel" data-nav-drill-panel inert>
               <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
@@ -269,7 +270,11 @@
               <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+          <a class="rail-link nav-rail-item" href="intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
         </aside>
       </div>
     </div>
@@ -303,7 +308,7 @@
   <div class="hero">
     <div class="hero-inner">
       <div>
-        <div class="hero-eyebrow"><span class="l-en">SETUP TAPE · 2026-07-30</span><span class="l-zh">布局磁带 · 2026-07-30</span></div>
+        <div class="hero-eyebrow"><span class="l-en">SETUP TAPE · 2026-08-01</span><span class="l-zh">布局磁带 · 2026-08-01</span></div>
         <h1 class="hero-state">
           <span class="l-en"><span class="n">3</span> setups lining up today</span>
           <span class="l-zh"><span class="n">3</span> 组信号今日共振</span>
@@ -349,14 +354,14 @@
         <div class="lc-title-wrap">
           <div class="lc-title"><span class="l-en">Weekly 50/200 golden cross + weekly reclaims 35-day line + weekly Stochastic-RSI bullish cross</span><span class="l-zh">周线50/200金叉 + 周线站上35日线 + 周线随机 RSI 金叉</span></div>
           <div class="lc-since">
-            <span class="l-en">Seen 94 times since 1975 · about 1.9 a year · last 2026-07-24</span>
-            <span class="l-zh">自 1975 年出现 94 次 · 约每年 1.9 次 · 最近 2026-07-24</span>
+            <span class="l-en">Seen 96 times since 1975 · about 1.9 a year · last 2026-07-24</span>
+            <span class="l-zh">自 1975 年出现 96 次 · 约每年 1.9 次 · 最近 2026-07-24</span>
           </div>
         </div>
         <div class="lc-wr">
           <div class="lc-wr-big mono">8.7<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
           <div class="lc-wr-unit"><span class="l-en">wins recently (2018+)</span><span class="l-zh">近年胜率 (2018起)</span></div>
-          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>5.0/10</b></div>
+          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>4.8/10</b></div>
         </div>
       </div>
 
@@ -421,94 +426,16 @@
       <div class="lc-top">
         <div class="lc-rank">02</div>
         <div class="lc-title-wrap">
-          <div class="lc-title"><span class="l-en">Weekly 50/200 golden cross + double bottom (fast) + band breakout up + POC retest holds</span><span class="l-zh">周线50/200金叉 + 短线双底 + 布林带向上突破 + POC 回踩守稳</span></div>
+          <div class="lc-title"><span class="l-en">Weekly 50/200 golden cross + weekly reclaims 7-day line + weekly ribbon flips up + weekly RSI crosses above 50</span><span class="l-zh">周线50/200金叉 + 周线站上7日线 + 周线均线带翻多 + 周线RSI 上穿 50</span></div>
           <div class="lc-since">
-            <span class="l-en">Seen 94 times since 1971 · about 1.7 a year · last 2026-07-27</span>
-            <span class="l-zh">自 1971 年出现 94 次 · 约每年 1.7 次 · 最近 2026-07-27</span>
+            <span class="l-en">Seen 67 times since 1972 · about 1.2 a year · last 2026-07-24</span>
+            <span class="l-zh">自 1972 年出现 67 次 · 约每年 1.2 次 · 最近 2026-07-24</span>
           </div>
         </div>
         <div class="lc-wr">
-          <div class="lc-wr-big mono">8.4<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
+          <div class="lc-wr-big mono">8.6<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
           <div class="lc-wr-unit"><span class="l-en">wins recently (2018+)</span><span class="l-zh">近年胜率 (2018起)</span></div>
-          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>5.6/10</b></div>
-        </div>
-      </div>
-
-      
-      <div class="legs">
-        
-        <div class="leg">
-          <span class="leg-tf w">W</span>
-          <span class="leg-txt"><span class="l-en">Golden Cross (50/200)</span><span class="l-zh">黄金交叉 (50/200)</span></span>
-        </div>
-        
-        <div class="leg">
-          <span class="leg-tf d">D</span>
-          <span class="leg-txt"><span class="l-en">Double Bottom (Short-term)</span><span class="l-zh">双底形态（短期）</span></span>
-        </div>
-        
-        <div class="leg">
-          <span class="leg-tf d">D</span>
-          <span class="leg-txt"><span class="l-en">Bollinger Breakout Up</span><span class="l-zh">布林带向上突破</span></span>
-        </div>
-        
-        <div class="leg">
-          <span class="leg-tf d">D</span>
-          <span class="leg-txt"><span class="l-en">POC retest holds (price defends the point of control)</span><span class="l-zh">POC 回踩守稳（价格守住成交量控制点）</span></span>
-        </div>
-        
-      </div>
-
-      <div class="lc-foot">
-        <span class="chip ok">
-<span class="w10 tone-gated" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span>
-          <span class="l-en">8.4 in 10 recently</span>
-          <span class="l-zh">近年 8.4/10</span></span>
-        
-        <span class="chip">
-          <span class="l-en">+27 points better than a coin-flip entry</span>
-          <span class="l-zh">较随机入场高 27 个百分点</span>
-        </span>
-        
-        <span class="chip ok">✓ <span class="l-en">held up in both eras</span><span class="l-zh">两期均稳</span></span>
-        
-      </div>
-
-      
-      
-        <div class="locked" data-confluence-combo="L0029">
-          <span class="ic" aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-          </span>
-          <span class="lk-tx">
-            <b>
-              <span class="l-en">1 stock lining up now</span>
-              <span class="l-zh">1 只股票当前共振</span>
-            </b>
-            <span class="sub">
-              <span class="l-en">Unlock this line-up's matching tickers with the free trial.</span>
-              <span class="l-zh">开启免费试用即可查看此组合匹配的股票。</span>
-            </span>
-          </span>
-          <a class="btn" href="https://app.mastermind-x.com/?utm_source=site&amp;utm_medium=free_tools&amp;utm_campaign=confluence_screener&amp;utm_content=cta"><span class="l-en">Start free trial</span><span class="l-zh">开始免费试用</span></a>
-        </div>
-      
-    </div>
-    
-    <div class="lc gated">
-      <div class="lc-top">
-        <div class="lc-rank">03</div>
-        <div class="lc-title-wrap">
-          <div class="lc-title"><span class="l-en">Weekly 50/200 golden cross + weekly reclaims 21-day line + weekly reclaims 35-day line + RSI crosses above 50</span><span class="l-zh">周线50/200金叉 + 周线站上21日线 + 周线站上35日线 + RSI 上穿 50</span></div>
-          <div class="lc-since">
-            <span class="l-en">Seen 72 times since 1975 · about 1.4 a year · last 2026-07-24</span>
-            <span class="l-zh">自 1975 年出现 72 次 · 约每年 1.4 次 · 最近 2026-07-24</span>
-          </div>
-        </div>
-        <div class="lc-wr">
-          <div class="lc-wr-big mono">8.8<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
-          <div class="lc-wr-unit"><span class="l-en">wins recently (2018+)</span><span class="l-zh">近年胜率 (2018起)</span></div>
-          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>5.9/10</b></div>
+          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>6.8/10</b></div>
         </div>
       </div>
 
@@ -522,16 +449,16 @@
         
         <div class="leg">
           <span class="leg-tf w">W</span>
-          <span class="leg-txt"><span class="l-en">MA Buy (21)</span><span class="l-zh">均线买入 (21)</span></span>
+          <span class="leg-txt"><span class="l-en">MA Buy (7)</span><span class="l-zh">均线买入 (7)</span></span>
         </div>
         
         <div class="leg">
           <span class="leg-tf w">W</span>
-          <span class="leg-txt"><span class="l-en">MA Buy (35)</span><span class="l-zh">均线买入 (35)</span></span>
+          <span class="leg-txt"><span class="l-en">Trend Ribbon — Flip to Uptrend</span><span class="l-zh">趋势带 — 翻转为上升趋势</span></span>
         </div>
         
         <div class="leg">
-          <span class="leg-tf d">D</span>
+          <span class="leg-tf w">W</span>
           <span class="leg-txt"><span class="l-en">RSI crosses above 50</span><span class="l-zh">RSI 上穿 50</span></span>
         </div>
         
@@ -540,12 +467,12 @@
       <div class="lc-foot">
         <span class="chip ok">
 <span class="w10 tone-gated" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i></span>
-          <span class="l-en">8.8 in 10 recently</span>
-          <span class="l-zh">近年 8.8/10</span></span>
+          <span class="l-en">8.6 in 10 recently</span>
+          <span class="l-zh">近年 8.6/10</span></span>
         
         <span class="chip">
-          <span class="l-en">+31 points better than a coin-flip entry</span>
-          <span class="l-zh">较随机入场高 31 个百分点</span>
+          <span class="l-en">+29 points better than a coin-flip entry</span>
+          <span class="l-zh">较随机入场高 29 个百分点</span>
         </span>
         
         <span class="chip ok">✓ <span class="l-en">held up in both eras</span><span class="l-zh">两期均稳</span></span>
@@ -573,6 +500,87 @@
       
     </div>
     
+    <div class="lc gated">
+      <div class="lc-top">
+        <div class="lc-rank">03</div>
+        <div class="lc-title-wrap">
+          <div class="lc-title"><span class="l-en">Weekly reclaims 35-day line + reclaims 35-day line + momentum burst + Ichimoku bull cross</span><span class="l-zh">周线站上35日线 + 站上35日线 + 动量爆发 + 一目均衡表金叉</span></div>
+          <div class="lc-since">
+            <span class="l-en">Seen 91 times since 1966 · about 1.5 a year · last 2026-07-31</span>
+            <span class="l-zh">自 1966 年出现 91 次 · 约每年 1.5 次 · 最近 2026-07-31</span>
+          </div>
+        </div>
+        <div class="lc-wr">
+          <div class="lc-wr-big mono">8.0<span style="font-size:15px;color:var(--muted);font-weight:600">/10</span></div>
+          <div class="lc-wr-unit"><span class="l-en">wins recently (2018+)</span><span class="l-zh">近年胜率 (2018起)</span></div>
+          <div class="lc-wr-old"><span class="l-en">older years:</span><span class="l-zh">更早年份:</span> <b>5.4/10</b></div>
+        </div>
+      </div>
+
+      
+      <div class="legs">
+        
+        <div class="leg">
+          <span class="leg-tf d">D</span>
+          <span class="leg-txt"><span class="l-en">MA Buy (35)</span><span class="l-zh">均线买入 (35)</span></span>
+        </div>
+        
+        <div class="leg">
+          <span class="leg-tf w">W</span>
+          <span class="leg-txt"><span class="l-en">MA Buy (35)</span><span class="l-zh">均线买入 (35)</span></span>
+        </div>
+        
+        <div class="leg">
+          <span class="leg-tf d">D</span>
+          <span class="leg-txt"><span class="l-en">Possible Runner (Momentum Breakout)</span><span class="l-zh">潜在突破股（动量突破）</span></span>
+        </div>
+        
+        <div class="leg">
+          <span class="leg-tf d">D</span>
+          <span class="leg-txt"><span class="l-en">Ichimoku — Bullish TK Cross (Tenkan crosses above Kijun)</span><span class="l-zh">一目均衡 — 看涨TK交叉（转换线上穿基准线）</span></span>
+        </div>
+        
+      </div>
+
+      <div class="lc-foot">
+        <span class="chip ok">
+<span class="w10 tone-gated" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class=""></i><i class=""></i></span>
+          <span class="l-en">8.0 in 10 recently</span>
+          <span class="l-zh">近年 8.0/10</span></span>
+        
+        <span class="chip">
+          <span class="l-en">+23 points better than a coin-flip entry</span>
+          <span class="l-zh">较随机入场高 23 个百分点</span>
+        </span>
+        
+        <span class="chip">
+          <span class="l-en">recent read only — thinner older record</span>
+          <span class="l-zh">仅近年数据 — 更早记录较薄</span>
+        </span>
+        
+      </div>
+
+      
+      
+        <div class="locked" data-confluence-combo="L0079">
+          <span class="ic" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+          </span>
+          <span class="lk-tx">
+            <b>
+              <span class="l-en">1 stock lining up now</span>
+              <span class="l-zh">1 只股票当前共振</span>
+            </b>
+            <span class="sub">
+              <span class="l-en">Unlock this line-up's matching tickers with the free trial.</span>
+              <span class="l-zh">开启免费试用即可查看此组合匹配的股票。</span>
+            </span>
+          </span>
+          <a class="btn" href="https://app.mastermind-x.com/?utm_source=site&amp;utm_medium=free_tools&amp;utm_campaign=confluence_screener&amp;utm_content=cta"><span class="l-en">Start free trial</span><span class="l-zh">开始免费试用</span></a>
+        </div>
+      
+    </div>
+    
   </div>
 
   
@@ -581,8 +589,8 @@
     <ul>
       <li><span class="l-en"><b>Leads, not proof.</b> These combos were found by searching a large pool of signal recipes. Treat them as things to watch and research, not a guarantee.</span>
         <span class="l-zh"><b>线索，非定论。</b>这些组合由自动搜索大量信号配方得出。请将其视为值得观察与研究的线索，而非保证。</span></li>
-      <li><span class="l-en"><b>The stocks are survivors.</b> The list covers 232 large, established US companies — names that made it. That flatters the win rates. Small and failed companies aren't here.</span>
-        <span class="l-zh"><b>标的是幸存者。</b>名单覆盖 232 家大型成熟美国公司——都是活下来的赢家。这会美化胜率。小盘股与失败公司不在其中。</span></li>
+      <li><span class="l-en"><b>The stocks are survivors.</b> The list covers 234 large, established US companies — names that made it. That flatters the win rates. Small and failed companies aren't here.</span>
+        <span class="l-zh"><b>标的是幸存者。</b>名单覆盖 234 家大型成熟美国公司——都是活下来的赢家。这会美化胜率。小盘股与失败公司不在其中。</span></li>
       <li><span class="l-en"><b>Small recent samples.</b> A recent-era rate can rest on only a couple dozen monthly readings — samples that thin will wobble. The exact counts sit next to every rate.</span>
         <span class="l-zh"><b>近期样本偏小。</b>近期胜率可能只基于二十来个月度读数——样本这么小，数字会有波动。具体次数就标在每个胜率旁边。</span></li>
       <li><span class="l-en"><b>Win rates are historical, month-by-month reads.</b> Each calendar month counts once, so clusters don't inflate them. We show the recent years and the older years so you can see if a pattern is cherry-picked.</span>
@@ -595,7 +603,7 @@
   <div class="cta-band" id="confluence-paid-cta">
     <div>
       <div class="cb-tx"><span class="l-en">See every line-up's matching stocks</span><span class="l-zh">查看每组共振匹配的股票</span></div>
-      <div class="cb-sub"><span class="l-en">The full screener updates daily. Build your own combos and screen all 232 names.</span><span class="l-zh">完整筛选器每日更新。自建组合并筛选全部 232 只标的。</span></div>
+      <div class="cb-sub"><span class="l-en">The full screener updates daily. Build your own combos and screen all 234 names.</span><span class="l-zh">完整筛选器每日更新。自建组合并筛选全部 234 只标的。</span></div>
     </div>
     <a class="btn" href="https://app.mastermind-x.com/?utm_source=site&amp;utm_medium=free_tools&amp;utm_campaign=confluence_screener&amp;utm_content=cta"><span class="l-en">Start free trial →</span><span class="l-zh">开始免费试用 →</span></a>
   </div>
@@ -603,7 +611,7 @@
   
 
   <div class="site-foot">
-    <span><span class="l-en">Data as of 2026-07-30 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-07-30 · 美国大盘股 · 每日更新。</span></span>
+    <span><span class="l-en">Data as of 2026-08-01 · large-cap US universe · updated daily.</span><span class="l-zh">数据截至 2026-08-01 · 美国大盘股 · 每日更新。</span></span>
     <span><span class="l-en">Context, not investment advice.</span><span class="l-zh">仅供参考，非投资建议。</span></span>
   </div>
 </div>
@@ -773,6 +781,5 @@
   window.addEventListener('mdx-auth', attemptHydrate);
 })();
 </script>
-<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

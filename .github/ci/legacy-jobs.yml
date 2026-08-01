@@ -196,15 +196,17 @@ jobs:
     # ('<<<<<<< ours' / '=======' / '>>>>>>> theirs') inside templates/dashboard.html.j2
     # and merged GREEN — Jinja parses marker lines as plain text, pytest never rendered
     # that block, and no other guard greps for them. This fails RED on any conflict-marker
-    # line in templates/**, engine/**, scripts/**, or shipped site/** files. The self-test
-    # proves the guard itself still catches known-bad fixtures before trusting its OK.
+    # line in templates/**, engine/**, scripts/**, or shipped site/** files. PRs use a
+    # changed-file ratchet because the 2026-08-01 render incident left legacy generated
+    # pages damaged on main; the full-tree pages/deploy gate remains unchanged. The
+    # self-test proves both full scanning and the ratchet before trusting their OK.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: guard self-test (known-bad flagged, known-good clean)
         run: python3 scripts/check_conflict_markers.py --self-test
-      - name: no git conflict markers in committed content
-        run: python3 scripts/check_conflict_markers.py
+      - name: no new git conflict markers in PR content
+        run: python3 scripts/check_conflict_markers.py --changed-from "origin/${CI_BASE_REF:-main}"
 
   title-i18n:
     if: ${{ false }}
