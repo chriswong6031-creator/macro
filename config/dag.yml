@@ -41,6 +41,14 @@ lanes:
           graders (grade_breadth_divergence / grade_policy_calendar /
           grade_qledger) STAY inside this step (COLLECT_LANE=nightly) — the
           nightly sole-advancer law is untouched by the split.
+      - id: compile_capital_structure_events
+        module: scripts.compile_capital_structure_events
+        note: >
+          Capital Structure Intelligence W0-W1 offline compiler. Runs after the
+          SEC collector closes verified source bundles and before the data
+          checkpoint, so an integrity failure blocks publication of a partial
+          event generation. Context-only; it has no rank, size, gate, trade, or
+          Prophet authority.
       - id: publish_r2_attention
         module: scripts.publish_r2
         args: [--dirs, attention]
