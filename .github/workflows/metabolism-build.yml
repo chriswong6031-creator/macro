@@ -117,6 +117,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
         run: |
           set -euo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
 
           # Double-gate: runner-side AUTONOMY_PAUSED re-check (defends against race).
           AP="$(printf '%s' "${AUTONOMY_PAUSED:-}" | tr '[:upper:]' '[:lower:]')"
@@ -209,7 +210,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only "origin/$BRANCH" 2>/dev/null | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            git pull --rebase --autostash origin "$BRANCH" 2>/dev/null || true
+            { git pull --rebase --autostash origin "$BRANCH" 2>/dev/null && push_autostash_ok; } || true
             git push origin HEAD:"$BRANCH"
           else
             echo "no claim changes staged — no commit needed."
@@ -233,6 +234,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot" || true
           git config user.email "actions@users.noreply.github.com" || true
           # (a) Save journals BEFORE any branch switch.
@@ -261,7 +263,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+            if git pull --rebase --autostash origin main && push_autostash_ok && git push origin HEAD:main; then
               echo "journal pushed to main on attempt $_i"
               exit 0
             fi

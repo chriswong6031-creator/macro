@@ -61,6 +61,7 @@ jobs:
 
       - name: commit intl-etf data
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/intl_etf/ data/run_status.json 2>/dev/null || true
@@ -72,7 +73,7 @@ jobs:
           # Rebase-retry loop: a concurrent push (e.g. daily closing up at the same
           # time) must not permanently fail this job.
           for i in 1 2 3 4 5; do
-            if git pull --rebase -X theirs origin main && git push; then
+            if git pull --rebase -X theirs origin main && push_autostash_ok && git push; then
               echo "pushed intl_etf data on attempt $i"
               exit 0
             fi

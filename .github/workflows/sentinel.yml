@@ -43,6 +43,7 @@ jobs:
           # compose()+latest.json still run so vector.html has fresh cross-refs.
           CBF_INTRADAY: "1"
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           python -m scripts.build_vector
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -60,5 +61,5 @@ jobs:
           comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                    <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
             | while IFS= read -r f; do rm -f -- "$f" || true; done
-          git pull --rebase --autostash -X theirs origin main
+          git pull --rebase --autostash -X theirs origin main && push_autostash_ok
           git push

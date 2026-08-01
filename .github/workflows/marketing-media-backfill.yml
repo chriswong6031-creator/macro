@@ -124,6 +124,7 @@ jobs:
         if: always() && inputs.dry_run != true
         run: |
           set -uo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/marketing/outbox/media_urls.jsonl 2>/dev/null || true
@@ -138,7 +139,7 @@ jobs:
             # advances mid-run. The sidecar carries merge=union, so a concurrent
             # append resolves instead of conflicting.
             git fetch --depth 20 origin main || true
-            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+            if git pull --rebase --autostash origin main && push_autostash_ok && git push origin HEAD:main; then
               echo "marketing-media-backfill: pushed on attempt $i"
               exit 0
             fi

@@ -97,6 +97,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -uo pipefail
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           git add data/metabolism/key_budget_status.json 2>/dev/null || true
@@ -110,7 +111,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            if git pull --rebase --autostash origin main && git push origin HEAD:main; then
+            if git pull --rebase --autostash origin main && push_autostash_ok && git push origin HEAD:main; then
               echo "pushed key_budget_status.json on attempt $i"
               exit 0
             fi

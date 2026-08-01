@@ -114,6 +114,7 @@ jobs:
 
       - name: commit + push heartbeat row (only on change)
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
           # Guard: only add the file when it actually exists (paused no-op never writes it;
@@ -147,7 +148,7 @@ jobs:
                    <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
             | while IFS= read -r f; do rm -f -- "$f" || true; done
           for _i in 1 2 3; do
-            if git pull --rebase --autostash origin main && git push; then
+            if git pull --rebase --autostash origin main && push_autostash_ok && git push; then
               echo "heartbeat pushed on attempt $_i"; exit 0
             fi
             git rebase --abort 2>/dev/null || true

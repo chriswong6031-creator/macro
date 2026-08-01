@@ -42,6 +42,7 @@ jobs:
       - name: rebuild commodities + commit (only on shock-state change)
         if: steps.sentinel.outputs.rc == '10'
         run: |
+          . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           python -m scripts.build_commodities
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
@@ -64,7 +65,7 @@ jobs:
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
-            git pull --rebase --autostash -X theirs origin main && git push && exit 0
+            git pull --rebase --autostash -X theirs origin main && push_autostash_ok && git push && exit 0
             echo "push attempt $i failed; retrying"; sleep $((i*3))
           done
           exit 1

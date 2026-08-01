@@ -22,6 +22,13 @@ What must stay true:
   * a bare `=======` line alone never trips it (setext underlines and similar)
   * every render-family lane is actually WIRED to both guards (a guard the
     trigger never reaches is no guard)
+  * every OTHER lane that pulls with --autostash (the narrow single-path
+    lanes: sentinels, marketing, metabolism, research, seo, probes) carries
+    push_autostash_ok in the pull condition itself and sources the library —
+    they commit before pulling and add only their own paths, so they cannot
+    ship markers to main, but an unguarded conflicted apply leaves
+    marker-polluted persisted trees and stale autostash entries on the
+    shared runner checkouts
 """
 
 from __future__ import annotations
@@ -409,6 +416,71 @@ def test_daily_engine_commit_heals_then_hard_fails():
     assert "exit 1" in heal_call.split("git commit", 1)[0], (
         "a failed heal must hard-fail BEFORE the engine commit"
     )
+
+
+# ---------------------------------------------------------------------------
+# 4. Narrow single-path lanes — EVERY autostash pull repo-wide is guarded
+# ---------------------------------------------------------------------------
+
+
+def _autostash_pull_steps() -> list[tuple[str, str]]:
+    """(label, code) for every workflow step whose non-comment code pulls with
+    --autostash — the render family AND the narrow single-path lanes. Located
+    structurally over the whole workflows dir so a new lane is swept the
+    moment it is born, not when someone remembers to list it."""
+    out = []
+    for wf_path in sorted(list(WF.glob("*.yml")) + list(WF.glob("*.yaml"))):
+        doc = yaml.safe_load(wf_path.read_text(encoding="utf-8"))
+        for job_name, job in (doc.get("jobs") or {}).items():
+            for step in job.get("steps", []):
+                code = _code(step.get("run") or "")
+                if "pull --rebase --autostash" in code:
+                    out.append((f"{wf_path.name}:{job_name}:{step.get('name')}", code))
+    return out
+
+
+def test_every_autostash_pull_repo_wide_carries_the_guard_on_its_own_line():
+    steps = _autostash_pull_steps()
+    # 51 steps at the 2026-08-01 sweep (render family + 30 narrow-lane sites).
+    # A census far below that has lost its discriminator, not its lanes.
+    assert len(steps) >= 45, [s[0] for s in steps]
+    for label, code in steps:
+        for line in code.splitlines():
+            if "pull --rebase --autostash" in line:
+                assert "push_autostash_ok" in line, (
+                    f"{label}: autostash pull without push_autostash_ok in the "
+                    f"same condition (conflicted-apply containment, d29e4dd44d):\n{line}"
+                )
+
+
+def test_every_autostash_pulling_step_sources_the_library():
+    """push_autostash_ok is defined in scripts/ci/push_retry.sh; a step that
+    calls it without sourcing dies with `command not found` — under the retry
+    loops' `if` that reads as an eternal lost race, never as a wiring bug."""
+    steps = _autostash_pull_steps()
+    for label, code in steps:
+        assert "push_retry.sh" in code, (
+            f"{label}: pulls with --autostash but never sources "
+            "scripts/ci/push_retry.sh in the same step"
+        )
+
+
+def test_intl_etf_pull_is_guarded_even_without_autostash():
+    """intl_etf pulls WITHOUT --autostash (so the census above cannot see it)
+    but is wired anyway: the guard also sweeps autostash entries leaked into
+    the shared runner checkout by other lanes' earlier unguarded runs."""
+    doc = yaml.safe_load((WF / "intl_etf.yml").read_text(encoding="utf-8"))
+    hits = []
+    for job in doc["jobs"].values():
+        for step in job.get("steps", []):
+            code = _code(step.get("run") or "")
+            for line in code.splitlines():
+                if "git pull --rebase" in line:
+                    hits.append((step.get("name"), line, code))
+    assert hits, "intl_etf.yml lost its pull — check the census"
+    for name, line, code in hits:
+        assert "push_autostash_ok" in line, f"{name}: {line}"
+        assert "push_retry.sh" in code, f"{name}: library not sourced"
 
 
 def test_guard_functions_exist_in_the_library():
