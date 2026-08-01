@@ -340,3 +340,47 @@ with pre-registered engagement measurement.
   decoration (standing law: the loop is closed or it is theater).
 - Kill-switches stay: MARKETING_PUBLISH_ENABLED is the master arm; per-account pause
   via account_overrides.
+
+## §7 Field-study findings (2026-07-31 twitterapi.io study; full doc:
+`research/agentic_media/X_VOICE_FIELD_STUDY_2026_07_BY_FABLE.md`)
+
+1,219 posts harvested across five archetype lanes (wire, technical, macro,
+female-finance persona, reply mechanics); all lift claims are WITHIN-ACCOUNT paired
+deltas (cross-account raw gaps are account-mix artifacts and were discarded).
+Measured laws to encode as generation-time gates (W1c follow-up work):
+
+- **M1 length plateau**: 120–300 chars wins (Δ+0.28, 14/20 handles); <100 chars is
+  the worst bucket on the board. Gate: reject <110 or >320, target 140–260.
+- **M2 structure**: 2–3 line posts beat one-liners AND walls (Δ+0.20, 7/8).
+- **M3 body links are the largest measured penalty** (Δ−0.41, positive on only 2/7
+  handles). Ruling: CTA-with-URL becomes KIND-SCOPED — conversion kinds
+  (watchlist/theme_list/receipt/education) keep the link, presence kinds
+  (signal/chart/macro/mover/event/breaking) never carry one; the profile carries
+  the funnel. (Exposure lives in the CTA/ramp machinery — tag_text only rewrites,
+  never inserts.)
+- **M4 cashtags**: exactly 1–2 for single-name kinds (Δ+0.18, 5/5); 3+ only lawful
+  on theme_list (buys raw reach, loses rate — a list-post shape, not a signal).
+- **M5 number density**: 3–5 numbers per post is the optimum (Δ+0.14, 8/11);
+  6–10 underperforms. Coheres with the per-shape budgets: the salad defect was
+  numbers WITHOUT narrative logic, not the count alone.
+- **Honest nulls**: hook-carries-the-number is register-conditional (9/18 — enable
+  for flagship/kelly/wire, don't enforce globally); reply timing windows are
+  UNMEASURED (the harvest captured the late tail, not winners — do not encode);
+  day/hour schedules unmeasurable from a 3-day snapshot.
+
+Charter-conflict adjudications (Fable, 2026-07-31):
+- **F6 — ALL-CAPS wire headlines** (measured top form, banned by
+  mastermind_news charter): CHARTER WINS. The siren-caps costume is the commodity
+  wire aesthetic; we take the substance (front-loaded label compression) in
+  sentence case. Ban stands.
+- **F7 — lifestyle garnish on employee personas**: CHARTER WINS and the data
+  agrees. All four lifestyle canons stay DARK pending each employee's own
+  confirmation (AM-R1: no unverified personal texture on real names; "fabricated
+  personal experience" is banned per spec). The shippable form of personality is
+  the REACTION WORD + UNHEDGED VERDICT on a real number — the lane's single best
+  post (×25.2 account median) was exactly that shape with zero biography. §3.4's
+  lifestyle-fusion lane and W2d are re-scoped accordingly: reaction-forward voice
+  NOW; lifestyle texture only after employee sign-off, and then only their own.
+- The 56 distilled per-persona example lines are CANDIDATES for the spec YMLs'
+  example corpora — the language layer is provenance-frozen, so wiring them in
+  needs an operator blessing (W2c ships the delivery mechanism regardless).
