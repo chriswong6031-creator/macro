@@ -228,8 +228,12 @@ jobs:
     # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED
     # at exactly 75.5m, 2026-07-11 23:57 → 01:12 — all its work wasted, site stayed
     # stale). Same silent-timeout budget-rot class as daily.yml collect (100→150,
-    # #2271) and asia-close (#2193). 115m ≈ 1.6× the worst quiet-box run.
-    timeout-minutes: 115
+    # #2271) and asia-close (#2193). Run 30699186793 completed a 100m builder pass,
+    # every guard, R2 publish, and asset shim, then lost the render at 115m while the
+    # guarded push hydrated a 47k-object partial-clone pack after main advanced.
+    # 180m covers the measured build plus the push loop's explicit 10m contention
+    # budget without weakening any guard or publishing a partial tree.
+    timeout-minutes: 180
     steps:
       - name: bound persisted render checkout
         id: bound
