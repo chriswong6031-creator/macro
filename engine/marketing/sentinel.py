@@ -10,7 +10,7 @@ Public API:
     run_gate(root, *, plan, cfg, ...) -> report        # loads, gates, writes
     resolve_ramp(cfg, as_of, *, root, announce) -> ramp report (tiers + caps)
     resolve_ramp_tier(created, as_of, *, graduate_after_days) -> tier name
-    receipts_context(root) -> (age_days, graded_window)
+    receipts_context(root, cfg=None) -> (age_days, graded_window)
     load_exceptions(root) -> {item_id: row}
     publish_enabled() -> bool                          # global kill-switch
     is_reply_item(item) -> bool                        # kind OR type (XG-W4)
@@ -1109,7 +1109,8 @@ def _has_disclosure(text: str) -> bool:
     return any(p.search(lower) for p in _DISCLOSURE_PATTERNS_SINGLE)
 
 
-def receipts_context(root: Path | str | None = None) -> tuple[int | None, list[dict] | None]:
+def receipts_context(root: Path | str | None = None,
+                     cfg: dict | None = None) -> tuple[int | None, list[dict] | None]:
     """Derive (receipts_age_days, graded_window) from the Prophet index.
 
     Single read of site/prophet/index.json.
@@ -1121,8 +1122,28 @@ def receipts_context(root: Path | str | None = None) -> tuple[int | None, list[d
     graded_window = the full graded outcome set for the same window via
     receipt_source.graded_receipts, as [{"ticker", "outcome"}] (None when
     uncomputable — the gate skips cherry-pick, printed honestly).
+
+    `cfg` IS THE WINDOW THE WORD "WINDOW" REFERS TO (2026-07-31 adversarial
+    review). The cherry-pick arm asks "did the desk publish the wins and bury
+    the losses INSIDE this window", so the window has to be the same one the
+    Content Studio drew its receipts from — otherwise a config change to
+    ``copywriter.receipt_max_age_days`` moves the supply and leaves the audit
+    grading a different book, and the gate quietly stops being able to see a
+    cherry-pick at all. Pass the marketing config the caller already loaded;
+    ``None`` reads ``config/marketing.yml`` off *root* rather than falling
+    through to the in-code default, because a silent fall-through is the defect.
     """
     r = _repo_root(root)
+
+    if cfg is None:
+        try:
+            import yaml  # noqa: PLC0415
+            with open(r / _CONFIG_REL, encoding="utf-8") as f:
+                cfg = yaml.safe_load(f) or {}
+        except Exception as exc:  # noqa: BLE001
+            log.warning("sentinel.receipts_context: could not load cfg (%s) — "
+                        "receipts window falls back to the in-code default", exc)
+            cfg = {}
     try:
         idx = json.loads((r / _PROPHET_INDEX_REL).read_text(encoding="utf-8"))
         plans = idx.get("plans") or []
@@ -1149,11 +1170,14 @@ def receipts_context(root: Path | str | None = None) -> tuple[int | None, list[d
     graded_window: list[dict] | None = None
     try:
         from engine.marketing.chart_render import load_closes  # noqa: PLC0415
-        from engine.marketing.receipt_source import graded_receipts  # noqa: PLC0415
+        from engine.marketing.receipt_source import (  # noqa: PLC0415
+            graded_receipts, receipt_max_age_days,
+        )
         graded = graded_receipts(
             plans,
             closes_loader=lambda t: load_closes(t, r, n=90),
             today=today.isoformat(),
+            max_age_days=receipt_max_age_days(cfg),
         )
         graded_window = [{"ticker": g["ticker"], "outcome": g["kind"]} for g in graded]
     except Exception as exc:  # noqa: BLE001

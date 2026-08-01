@@ -649,6 +649,108 @@ class TestFlagshipBudget:
         assert fired[1]["sector"] == "Semiconductors"
 
 
+class TestFlagshipBudgetIsChargedOnTheRoutingDecision:
+    """The mirror valve must be charged by the DECISION, not by the rescue.
+
+    THE DEFECT (adversarial review, 2026-07-31). `emit` reassigned `account` in
+    place — routing, then the dark-desk rescue — and then decremented
+    `flagship_budget` by reading the POST-rescue value, under a comment
+    promising the exact opposite ("NOT charged to flagship_budget below … a
+    fallback is a rescue, not a mirror"). Two ways to break one valve:
+
+      * flagship DARK: every intended mirror was rescued off the flagship desk,
+        so the decrement never fired and "only the biggest events get a second
+        desk" became "every event does", for the whole pass;
+      * wire DARK (the SHIPPED default, `mastermind_news`): budget exhaustion
+        routed to the wire desk, live_account rescued it back to flagship (it is
+        first in `fallbacks`), and the decrement then charged a mirror the budget
+        had already refused — driving the counter negative.
+
+    Both tests watch the CANDIDATE handed to `live_account`, which is the
+    routing decision itself. The desks the items finally land on are unchanged
+    by this fix (the rescue still runs, and it must) — what changes is which
+    events get to ask for a mirror.
+    """
+
+    @staticmethod
+    def _desks(*, flagship_on: bool, news_on: bool) -> dict:
+        return {"desk_network": {"accounts": [
+                    {"id": "flagship", "enabled": flagship_on},
+                    {"id": "mastermind_news", "enabled": news_on}]},
+                "wire_routing": {"default": "flagship"}}
+
+    @staticmethod
+    def _packet(label: str, severity: float) -> FactPacket:
+        return _sector_packet(label, -6.5, severity,
+                              [["AAA", -9.1], ["BBB", -8.4], ["CCC", -7.2]],
+                              members=9, down=8)
+
+    def _run(self, tmp_path, monkeypatch, packets, marketing_cfg):
+        """emit() with the booking stubbed, recording live_account candidates.
+
+        `book_packet` is stubbed because a real booking is a Chrome raster, an
+        R2 upload and an LLM call — none of which is the thing under test. The
+        `would_book` verdict takes the same budget branch a real `queued` does.
+        """
+        HT.reset_dark_account_warnings()
+        root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
+                           hot_tape_cfg=_ROUTING_CFG)
+        seen_accounts: list[str] = []
+        candidates: list[str] = []
+        real_live = HT.live_account
+
+        def _spy_live(candidate, **kw):
+            candidates.append(candidate)
+            return real_live(candidate, **kw)
+
+        def _fake_book(packet, *, account, **kw):
+            seen_accounts.append(account)
+            return {"status": "would_book", "item_id": None, "text": "x"}
+
+        monkeypatch.setattr(HT, "live_account", _spy_live)
+        monkeypatch.setattr(RADAR, "book_packet", _fake_book)
+        RADAR.emit(packets, root=root, cfg=HT.load_config(root),
+                   marketing_cfg=marketing_cfg, fired_today=[], now=NOW,
+                   as_of=DAY, demo=False, dry_run=True, fetcher=_no_fetch)
+        HT.reset_dark_account_warnings()
+        return candidates, seen_accounts
+
+    def test_a_dark_flagship_desk_does_not_make_the_mirror_budget_infinite(
+            self, tmp_path, monkeypatch):
+        """flagship_max_per_run is 1, so exactly ONE event may ask to mirror."""
+        packets = [self._packet(f"Group {i}", 90.0) for i in range(3)]
+        candidates, accounts = self._run(
+            tmp_path, monkeypatch, packets,
+            self._desks(flagship_on=False, news_on=True))
+        # PRE-FIX: ["flagship", "flagship", "flagship"] — the rescue moved the
+        # item off the flagship desk, the decrement read the rescued account,
+        # and the budget was never spent.
+        assert candidates == ["flagship", "mastermind_news", "mastermind_news"], candidates
+        # The rescue itself is untouched: nothing is enqueued to a dark desk.
+        assert accounts == ["mastermind_news"] * 3, accounts
+
+    def test_a_rescue_off_the_dark_wire_desk_does_not_eat_the_mirror_budget(
+            self, tmp_path, monkeypatch):
+        """The shipped posture: `mastermind_news` is the dark one.
+
+        A sub-85 event is routed to the wire desk and rescued to flagship for
+        LIVENESS — it never asked for a mirror. Charging it spent the pass's one
+        mirror slot before the 90-severity event that the valve exists for even
+        arrived, which is how a rescue silently reordered the desk's editorial
+        priority.
+        """
+        packets = [self._packet("Small Group", 80.0),
+                   self._packet("Big Group", 90.0)]
+        candidates, accounts = self._run(
+            tmp_path, monkeypatch, packets,
+            self._desks(flagship_on=True, news_on=False))
+        # PRE-FIX: ["mastermind_news", "mastermind_news"] — the sub-85 rescue
+        # burned the budget, so the big event found it empty and was routed to
+        # the wire desk (from which the same rescue then bounced it back).
+        assert candidates == ["mastermind_news", "flagship"], candidates
+        assert accounts == ["flagship", "flagship"], accounts
+
+
 class TestDemoBlastRadius:
     """M5 — demo relaxes EVERY threshold at once, and with the publisher armed
     those are real posts. One item, wire desk, never the flagship."""

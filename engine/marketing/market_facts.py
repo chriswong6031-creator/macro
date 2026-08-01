@@ -207,17 +207,25 @@ def _fmt_pct(v: float, decimals: int = 1) -> str:
     return f"{sign}{v:.{decimals}f}%"
 
 
-#: Ratio band outside which a count says nothing. Mirrors
-#: ``content_studio._DEFAULT_DEGENERATE_BAND`` deliberately BY VALUE, not by
-#: import: content_studio imports this module, so reading the constant back out
-#: of it would be a cycle. The consumer-side gate stays the second net; this is
-#: the first, and the two must agree or a count the studio would drop still gets
-#: to be the digit a post is built around before the studio ever sees it.
-_VACUOUS_COUNT_BAND: tuple[float, float] = (0.05, 0.95)
+#: Saturation ceiling above which a count says nothing. ONE-SIDED on purpose —
+#: see `_is_vacuous_count` for why the matching low arm was deleted.
+#:
+#: The high arm still mirrors ``content_studio._DEFAULT_DEGENERATE_BAND``'s upper
+#: value BY VALUE, not by import: content_studio imports this module, so reading
+#: the constant back out of it would be a cycle. The consumer-side gate stays the
+#: second net; this is the first, and their SATURATION halves must agree or a
+#: count the studio would drop still gets to be the digit a post is built around
+#: before the studio ever sees it.
+_VACUOUS_COUNT_MAX_RATIO: float = 0.95
+
+#: Retained as a two-tuple for readers/tests that describe the gate's shape.
+#: The low element is 0.0 because "no names qualified" is now the KNIFE-EDGE
+#: case only (den==0 / num==0 are handled explicitly below), not a band.
+_VACUOUS_COUNT_BAND: tuple[float, float] = (0.0, _VACUOUS_COUNT_MAX_RATIO)
 
 
 def _is_vacuous_count(numerator: object, denominator: object) -> bool:
-    """True when a count saturates (or empties) its universe, or has no universe.
+    """True when a count SATURATES its universe, or has no universe at all.
 
     A DENOMINATOR THE NUMERATOR CANNOT MOVE AGAINST IS NOT A DENOMINATOR
     (2026-07-28: four posts opened "231 of 231 names ... showing bullish
@@ -232,10 +240,28 @@ def _is_vacuous_count(numerator: object, denominator: object) -> bool:
     saturated and there is no denominator repair available; the only honest
     handling is to drop it.
 
-    THE GATE IS A BAND, NOT A STRICT INEQUALITY. ``0 < n < universe`` is a
+    THE SATURATION GATE IS A BAND, NOT A STRICT INEQUALITY. ``n < universe`` is a
     knife-edge: 231 of 232 clears it and is exactly as vacuous as 232 of 232,
     and one name dropping off the screen was all it took to re-arm the sentence
-    this rule exists to kill.
+    this rule exists to kill. So the high arm stays a ratio band.
+
+    THE LOW ARM IS GONE, AND ITS DELETION IS THE POINT (2026-07-31). The gate was
+    symmetric — ``ratio <= 0.05`` dropped anything under 5% of the universe — but
+    the diagnosed defect was SATURATION ONLY. Symmetry was assumed, not measured,
+    and it deleted the most newsworthy prints this lane can produce: "11 of 232
+    names" is a washout, and a washout is INFORMATION. 231-of-232 says nothing
+    because it cannot be otherwise; 11-of-232 says the screen almost emptied,
+    which is rare, checkable, and exactly the kind of concrete fact the voice law
+    asks for. A count near zero has a denominator it can move against in both
+    directions — it is the opposite of degenerate.
+
+    Two edges survive from the old low arm, and only these two:
+
+      * ``den <= 0`` — no universe. There is nothing to be a fraction OF.
+      * ``num <= 0`` — "0 of 232". This is the ONE genuinely empty print: it
+        names no members, it reads identically on a day the screen ran and a day
+        it silently returned nothing, and it is indistinguishable from the
+        lane being broken. A washout has survivors; this has none.
     """
     try:
         num, den = float(numerator), float(denominator)  # type: ignore[arg-type]
@@ -243,9 +269,9 @@ def _is_vacuous_count(numerator: object, denominator: object) -> bool:
         return True
     if den <= 0:
         return True  # no universe at all — the denominator law drops it anyway
-    lo, hi = _VACUOUS_COUNT_BAND
-    ratio = num / den
-    return ratio >= hi or ratio <= lo
+    if num <= 0:
+        return True  # "0 of N" — see the knife-edge note above
+    return (num / den) >= _VACUOUS_COUNT_MAX_RATIO
 
 
 def _count_block(n_moving: object, n_tracked: object, noun: str) -> dict:

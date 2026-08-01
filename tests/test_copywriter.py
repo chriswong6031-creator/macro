@@ -667,6 +667,128 @@ def test_graded_receipts_freshness_gate():
     assert graded_receipts([fresh]), "a within-window resolution must produce a receipt"
 
 
+# ── the window BOUNDARY, and the lanes that were not reading it ─────────────
+#
+# 2026-07-31 adversarial review, finding 6. `receipt_max_age_days`' docstring
+# claimed to be "THE single reader" of `copywriter.receipt_max_age_days`. Three
+# lanes call `graded_receipts` and only content_studio threaded a window
+# through, so an operator who tightened the knob would have moved the Studio's
+# receipt supply while `allies.track_record_stats` (the win rate a kit prints)
+# and `sentinel.receipts_context` (the cherry-pick audit window) silently kept
+# grading a 30-day book. Two numbers off two windows, both called "the track
+# record".
+
+def test_graded_receipts_window_boundary_is_inclusive_at_exactly_max_age():
+    """`age > max_age_days` is the gate, so age == max is IN.
+
+    An off-by-one here is invisible in production and expensive: it is one
+    day of resolved supply on a desk whose whole supply is six plans.
+    """
+    from engine.marketing.receipt_source import graded_receipts, receipt_max_age_days
+    window = receipt_max_age_days()
+    assert window == 30, "boundary fixtures below are written against 30"
+    plan = _make_signal_plan(
+        "EDGE", entry=100.0, inv=90.0, signal_date=_old_date(window),
+        phase="invalidated",
+    )
+    receipts = graded_receipts([plan])
+    assert len(receipts) == 1, f"age == {window} must be inside the window"
+    assert receipts[0]["ticker"] == "EDGE"
+
+
+def test_graded_receipts_window_boundary_excludes_one_day_past_it():
+    from engine.marketing.receipt_source import graded_receipts, receipt_max_age_days
+    window = receipt_max_age_days()
+    plan = _make_signal_plan(
+        "EDGE", entry=100.0, inv=90.0, signal_date=_old_date(window + 1),
+        phase="invalidated",
+    )
+    assert graded_receipts([plan]) == [], f"age == {window + 1} must be outside"
+
+
+def _write_prophet_index(root, plans: list[dict]) -> None:
+    """A real site/prophet/index.json under *root*, the way both lanes read it."""
+    import json as _json
+
+    d = root / "site" / "prophet"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "index.json").write_text(_json.dumps({"plans": plans}), encoding="utf-8")
+
+
+def test_allies_track_record_reads_the_config_window(tmp_path):
+    """MUTATION CHECK for the allies half, driven through the real function.
+
+    A plan 20 days old is inside the default 30-day window and outside a
+    config-tightened 14-day one. Pre-fix this call site passed no window at all,
+    so BOTH configs reported the same single win and the kit's printed win rate
+    could not be moved from config.
+    """
+    from engine.marketing import allies
+
+    _write_prophet_index(tmp_path, [_make_signal_plan(
+        "WIN", entry=100.0, inv=90.0, signal_date=_old_date(20),
+        phase="triggered_pre_t1",
+        profit_plan=[{"level": 120.0, "label": "T1", "status": "DONE", "action": ""}],
+    )])
+
+    wide = allies.track_record_stats(tmp_path, cfg={})
+    tight = allies.track_record_stats(
+        tmp_path, cfg={"copywriter": {"receipt_max_age_days": 14}})
+
+    assert wide["wins"] == 1, wide
+    assert wide["graded_n"] == 1, wide
+    assert tight["wins"] == 0, tight
+    assert tight["graded_n"] == 0, tight
+
+
+def test_sentinel_receipts_context_reads_the_config_window(tmp_path):
+    """MUTATION CHECK for the sentinel half, driven through the real function
+    with a real prophet index on disk."""
+    from engine.marketing import sentinel
+
+    _write_prophet_index(tmp_path, [_make_signal_plan(
+        "WIN", entry=100.0, inv=90.0, signal_date=_old_date(20),
+        phase="triggered_pre_t1",
+        profit_plan=[{"level": 120.0, "label": "T1", "status": "DONE", "action": ""}],
+    )])
+
+    _age, wide = sentinel.receipts_context(tmp_path, cfg={})
+    assert wide == [{"ticker": "WIN", "outcome": "win"}], wide
+
+    _age, tight = sentinel.receipts_context(
+        tmp_path, cfg={"copywriter": {"receipt_max_age_days": 14}})
+    assert tight == [], tight
+
+
+def test_every_graded_receipts_call_site_threads_a_window():
+    """SOURCE-LEVEL PIN, because the defect was a MISSING argument and a missing
+    argument is exactly what a runtime test does not see: the call worked, it
+    just quietly used a different window.
+
+    The docstring's "THE single reader" claim was the whole reason nobody
+    looked, so this asserts the property instead of the prose.
+    """
+    import inspect
+
+    from engine.marketing import allies, content_studio, sentinel
+    from engine.marketing.receipt_source import receipt_max_age_days
+
+    for mod, fn_name in ((allies, "track_record_stats"),
+                         (sentinel, "receipts_context")):
+        src = inspect.getsource(getattr(mod, fn_name))
+        assert "graded_receipts(" in src, (mod.__name__, fn_name)
+        assert "max_age_days=" in src, (
+            f"{mod.__name__}.{fn_name} calls graded_receipts with no window")
+        assert "receipt_max_age_days(" in src, (
+            f"{mod.__name__}.{fn_name} does not resolve the config knob")
+        assert "cfg" in inspect.signature(getattr(mod, fn_name)).parameters, (
+            f"{mod.__name__}.{fn_name} has no cfg to thread")
+
+    # The lane that already did it, kept honest the same way.
+    assert "receipt_max_age_days(cfg)" in inspect.getsource(content_studio)
+    assert "single reader" not in (receipt_max_age_days.__doc__ or "").split("\n")[0]
+
+
 def test_graded_receipts_deduplicate_richest():
     """Mixed beats win beats loss when same ticker appears multiple times."""
     from engine.marketing.receipt_source import graded_receipts
@@ -1408,12 +1530,21 @@ def _movers_desk_items(monkeypatch, tmp_path, tiles, themes) -> list[dict]:
 
     md = tmp_path / "site" / "marketdata"
     md.mkdir(parents=True, exist_ok=True)
-    # asof must be TODAY: the mover lane's session-staleness law (2026-07-31)
-    # refuses to build "today" claims from a non-today session, so a pinned
-    # historical date here would silently shrink the item count and starve the
-    # clarity-gate sample this test exists to exercise.
+    # asof is a PINNED LITERAL. It used to read date.today() with a comment
+    # claiming "the mover lane's session-staleness law refuses to build 'today'
+    # claims from a non-today session". THAT LAW IS NOT ON THIS PATH — it is the
+    # publish-time lane's (publish_time_content._tape_stale / _cand_session,
+    # which this fixture never enters). The nightly content_studio movers block
+    # reads the heatmap and builds; nothing in it compares `asof` to a clock.
+    # Mutation-checked: pinning the date leaves every assertion below green, so
+    # the comment was describing a gate that does not exist and the wall-clock
+    # read was a nondeterminism the fixture did not need.
+    #
+    # The real load-bearing facts about this fixture are stated at the cfg below
+    # (two desks, so the reach items find free D1 rungs) and at the closes_loader
+    # (a mover cannot be seated without a card).
     (md / "sp500_heatmap.json").write_text(json.dumps({
-        "asof": date.today().isoformat(),
+        "asof": "2026-07-31",
         "tiles": [{"t": t, "name": t, "sector": "Information Technology",
                    "perf": {"1D": pct}} for t, pct in tiles],
     }), encoding="utf-8")
@@ -1436,7 +1567,18 @@ def _movers_desk_items(monkeypatch, tmp_path, tiles, themes) -> list[dict]:
         {"id": "founder", "kind": "personal", "beat": "Conviction and cost",
          "voice": "dry, receipts-forward"},
     ]}}
-    plan = content_plan(cfg, [], closes_loader=None, root=tmp_path)
+    # A MOVER WITHOUT A CARD IS NOT A POST. `mover` is a bare-cashtag kind, so a
+    # chartless one is terminally quarantined at dispatch — content_studio's
+    # card-less unseat pass (2026-07-31) therefore drops it from the queue before
+    # the plan is returned. `closes_loader=None` means no mover card can render,
+    # which means ZERO mover items come back and the `len(movers) >= 4` assertion
+    # below would be testing the absence of the lane. Synthetic bars are the
+    # cheapest way to let the card path complete.
+    def _closes(_ticker: str):
+        return ([f"2026-06-{d:02d}" for d in range(1, 31)],
+                [100.0 + i * 0.5 for i in range(30)])
+
+    plan = content_plan(cfg, [], closes_loader=_closes, root=tmp_path)
     return [it for row in plan["accounts"] for it in row["queue"]
             if isinstance(it, dict) and it.get("provenance") == "movers_desk"]
 

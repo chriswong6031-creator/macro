@@ -187,11 +187,46 @@ _PRICE_SLOT_RE = re.compile(
 #: duration or a tally, not a level ("held above 20 sessions", "over 10 names").
 #: The gate stays narrow on purpose: a gate that cries wolf stops meaning
 #: anything (the copy_review doctrine).
+#:
+#: THE MOTION-PREPOSITION OVER-FIRE (2026-07-31 adversarial review). Wave 1 gave
+#: `_TARGET_SLOT_RE` the motion prepositions `toward|towards|up to|looking for|
+#: aiming for|en route to`. Those words are NOT price vocabulary the way
+#: `entry|target|t1|stop` are — English uses them for magnitudes of every kind —
+#: so three ordinary sentences started rejecting as `invented_level`:
+#:
+#:     "Volume ran up to 3 million shares"   -> invented_level '3'
+#:     "Grinding toward 5 straight weeks"    -> invented_level '5'
+#:     "toward 2 handles"                    -> invented_level '2'
+#:
+#: The unit / multiplier / tally nouns below are the minimal rule that closes
+#: all three. It is deliberately the SAME noun test the slot rule already ran
+#: rather than a second mechanism, because the discriminator is identical: a
+#: price is written BARE ("toward 190"), and a count is written with the thing
+#: it counts ("toward 5 straight weeks"). The two other discriminators the
+#: review floated — "require a decimal point or a $ prefix for the new
+#: prepositions" — were measured and rejected: they would unpin
+#: `toward 228` / `toward 44` / `looking for 228 next`, which ARE the defect-5
+#: regression pins (a fabricated target is nearly always a bare integer), and a
+#: `$` override would newly false-fire on "up to $3 million in volume".
+#:
+#: `handles` is PLURAL ONLY, on purpose. "toward 2 handles" is a move of two
+#: points; "toward the 190 handle" names a price zone and must stay catchable.
 _SLOT_NON_LEVEL_NOUNS: frozenset[str] = frozenset({
     "session", "sessions", "day", "days", "week", "weeks", "month", "months",
     "year", "years", "time", "times", "name", "names", "stock", "stocks",
     "sector", "sectors", "group", "groups", "ticker", "tickers", "point",
     "points", "bps", "minute", "minutes", "hour", "hours", "of",
+    # Magnitude multipliers: "up to 3 million shares", "toward 2 billion".
+    "million", "millions", "billion", "billions", "trillion", "trillions",
+    "thousand", "thousands",
+    # What gets counted: share/contract/lot tallies, not prices.
+    "share", "shares", "contract", "contracts", "lot", "lots", "trade",
+    "trades", "setup", "setups", "candle", "candles", "bar", "bars",
+    # Move units. Plural only — see the note above.
+    "handles", "percent", "pct",
+    # Streak adjectives that sit BETWEEN the count and its noun:
+    # "5 straight weeks", "3 consecutive closes", "4 more names".
+    "straight", "consecutive", "more", "other", "closes",
 })
 
 
@@ -832,6 +867,27 @@ def build_context(
         "loss_pct_str": loss_pct_str or "",
         "target_label": target_label,
         "stop_str": stop_str or "",
+        # THE RECEIPT'S OWN TARGET (2026-07-31 adversarial review). `target_str`
+        # was computed above, folded into `numbers_whitelist` and into the
+        # levels-first ordering, and then NEVER RETURNED — the receipt block
+        # emitted only `stop_str`. `_LEVEL_CTX_KEYS` names "target_str", so
+        # `allowed_level_tokens` was asking for a key build_context did not
+        # publish, and the failure was silent and asymmetric:
+        #
+        #   a receipt whose ticker is still on the Prophet board picks up
+        #   entry_str/t1_str from `_plan` and reads fine;
+        #   a receipt whose plan has ROLLED OFF the board (which is most of
+        #   them — the window is 30 days and the board turns over faster) has
+        #   no `_plan`, so levels = {stop_str} ALONE. The set is non-empty, so
+        #   invented_level takes the STRICT branch, and the receipt's own
+        #   target — the number the post exists to report, present in
+        #   `numbers_whitelist` and in `_receipt["target"]` — is called
+        #   invented. "I said 172 on QCOM three weeks ago and it hit 190" was
+        #   rejected for writing 190.
+        #
+        # Exact-value provenance stays out of the whitelist (contract
+        # §Rounding); this is the DISPLAY form, same as every other *_str.
+        "target_str": target_str or "",
         # Confluence
         "win_rate": win_rate,
         "win_rate_str": win_rate_str or "",
@@ -1920,8 +1976,23 @@ _MACHINE_RISK_PATTERNS: tuple[tuple[str, str], ...] = (
 # — "37.1 is my trigger, 30.9 proves me wrong". The operator: "so cringe and
 # disgusting, like you're writing a poem". Requires BOTH halves under ~34 chars
 # so ordinary compound sentences do not trip it.
+# A DECIMAL POINT IS NOT A SENTENCE END (2026-07-31 adversarial review). The
+# clause classes were a bare ``[^.!?,\n]``, so the '.' inside a PRICE ended the
+# clause and the whole rule went blind on the exact post its own docstring
+# quotes as the fixture: "37.1 is my trigger, 30.9 proves me wrong." matched
+# nothing, while the digit-only rewrite "371 is my trigger, 309 proves me wrong"
+# matched fine. Motto cadence is a thing writers do WITH LEVELS, so "blind to
+# any clause containing a price" is blind to most of the class. Found by the
+# per-rule sample bank in tests/test_marketing_copy_v2.py, which is what a
+# silenced rule looks like when the counter stops being a total.
+#
+# The exemption is deliberately `\d.\d` ONLY — a period between two digits.
+# Sentence-ending periods, ellipses and abbreviations still close a clause, so
+# the rule stays a two-clause rule and does not start spanning sentences.
+_MOTTO_CLAUSE = r"(?:[^.!?,\n]|(?<=\d)\.(?=\d))"
 _MOTTO_RE = re.compile(
-    r"(?:^|(?<=[.!?]\s))([^.!?,\n]{6,34}),\s([^.!?,\n]{6,34})[.!?](?:\s|$)"
+    r"(?:^|(?<=[.!?]\s))(" + _MOTTO_CLAUSE + r"{6,34}),\s("
+    + _MOTTO_CLAUSE + r"{6,34})[.!?](?:\s|$)"
 )
 _MOTTO_HINGE = (
     "is my", "proves", "kills", "matters more", "beats", "means", "wins",
@@ -2295,7 +2366,8 @@ def trim_cost_monoculture(
     return cut
 
 
-def queued_voice_violations(text: str, kind: str = "") -> list[str]:
+def queued_voice_violations(text: str, kind: str = "",
+                            shape: str | None = None) -> list[str]:
     """The voice laws, runnable against copy that is ALREADY in the queue.
 
     The queue is a bypass around every generation-time law: 187 posts were
@@ -2311,12 +2383,26 @@ def queued_voice_violations(text: str, kind: str = "") -> list[str]:
     the numbers whitelist and the sibling-overlap checks need a packet the
     queue no longer has, and a check that cannot be evaluated must not
     quarantine.
+
+    ``shape`` CLOSES A HALF-APPLIED FIX (2026-07-31 adversarial review). The
+    per-shape number budget landed in ``validate_copy_v2`` and stopped there, so
+    the writer and this post-time screen disagreed about the same post: a
+    ``stack`` carrying the three numbers its own SHAPE_CONTRACT orders passed
+    generation and was then quarantined by the queue screen under the flat
+    default of two. A gate that rejects obedience is worse than no gate — it
+    teaches the desk to stop obeying. The two screens now compute the budget the
+    same way, from the same ``number_budget_for``.
+
+    The default is ``None``, not ``""``: an outbox row that carries no recorded
+    shape gets exactly the pre-fix budget, which is what keeps every older
+    caller (tests/test_confluence_source.py, the reply lanes) unmoved. Only a
+    caller that KNOWS the shape widens the budget.
     """
     out: list[str] = []
     out += machine_risk_violations(text)
     out += motto_violations(text)
     out += process_list_violations(text)
-    out += number_soup_violations(text, kind=kind)
+    out += number_soup_violations(text, kind=kind, shape=str(shape or ""))
     out += no_reaction_violations(text)
     out += lecture_violations(text)
     # batch_texts is empty on purpose: at publish time there is no batch, so
@@ -5715,13 +5801,46 @@ def store_exemplar_block(cfg: dict | None, *, root: Any = None,
 # Adding a head here is the way to make that test go quiet, which is the point:
 # it costs an explicit, reviewable claim that the new paragraph quotes rather
 # than prescribes.
+#
+# EVERY HEAD HERE IS LOAD-BEARING, AND THAT IS ENFORCED (2026-07-31 adversarial
+# review). A mutation sweep — drop one head, re-run the scan — found four
+# entries that suppressed nothing. Two of them were dead by CONSTRUCTION and are
+# now gone:
+#
+#   "EXEMPLARS (real posts"        the corpus block is subtracted from the
+#   "THESE SHIPPED FROM THIS DESK" prompt BY VALUE before the paragraph split
+#                                  (see prescriptive_prompt_paragraphs), so all
+#                                  that survived the subtraction was the bare
+#                                  header line — house text, which has to pass
+#                                  the scan like any other order. Exempting it
+#                                  only hid a future typo.
+#
+# The other two the sweep named are kept, because the sweep ran against
+# ``_v2_system_prompt({})`` and neither paragraph EXISTS in that prompt:
+#
+#   "OTHER LAWS"        emitted only when cfg carries copy_laws. Against the
+#                       SHIPPED config/marketing.yml (36 laws, most of them ban
+#                       lists) dropping this head produces a hit. Measured, not
+#                       assumed; pinned by a test.
+#   "RATIFIED EXEMPLARS" emitted only when the exemplar store has an active
+#                       version pin. This deployment ships that store dark, so
+#                       the sweep saw nothing. The block is OTHER PEOPLE'S posts
+#                       and is NOT value-subtracted, so arming the pin would put
+#                       third-party copy under the scan and turn an operator
+#                       ratification into a red test about data rather than
+#                       about our own orders.
+#
+# BLAST RADIUS, so a future edit knows what it is holding: "VOICE." suppresses
+# exactly ONE bullet — "Never a regime label or an internal score" — worth one
+# hit ("banned vocab: 'regime'"). "THE COLD-READ LAW" holds two ('vwap', 'point
+# of control'), "NEVER NARRATE THE MACHINERY" four, and "HARD BANS" is the ban
+# list itself (~48). Deleting a head is a claim that its paragraph ORDERS
+# nothing it quotes; make that claim explicitly or leave the head alone.
 _PROMPT_BAN_QUOTING_HEADS: tuple[str, ...] = (
     "THE COLD-READ LAW",          # "not 'the anchored VWAP', not 'the point of control'"
     "NEVER NARRATE THE MACHINERY",
-    "VOICE.",                     # "Never a regime label or an internal score"
+    "VOICE.",                     # one bullet: "Never a regime label or an internal score"
     "HARD BANS",
-    "EXEMPLARS (real posts",
-    "THESE SHIPPED FROM THIS DESK",
     "RATIFIED EXEMPLARS",         # other accounts' posts, quoted for register
     "OTHER LAWS",                 # config-supplied copy_laws, often ban lists
 )

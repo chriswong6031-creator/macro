@@ -1408,6 +1408,60 @@ def test_emit_stamps_tape_claim_source(tmp_path):
     assert mover_item["source"]["baseline_pct"] == -14.2
 
 
+def test_emit_stamps_the_plans_targets_not_just_entry_and_invalidation(tmp_path):
+    """THE DEFECT (approval-desk concern #1, 11 of 185 items on the 2026-07-31
+    corpus): the plan-block loop copied direction/entry/invalidation and stopped.
+
+    The copywriter whitelists `plan["targets"][0]` and `[1]` as t1/t2 and the
+    signal templates literally print "T1 {target1}", so a post that obeyed its
+    own plan reached approval_desk with a level the item's source could not
+    account for and was read as `invented_level`. The desk has read
+    `source.t1`/`.t2`/`.target` defensively since it was built (its
+    `_LEVEL_SOURCE_KEYS` comment says so outright) waiting for an emitter to
+    stamp them.
+
+    `targets` is a LIST in the plan's own shape, so positional derivation is the
+    part that has to work; the flat `t1`/`t2`/`target` keys are for lanes that
+    build a plan block by hand.
+    """
+    from engine.marketing.outbox import emit_from_content_plan, read_items
+
+    plan = _make_plan_fixture()
+    sig = plan["accounts"][0]["queue"][0]
+    assert sig["type"] == "signal"
+    sig["_plan"] = {"id": "prophet-NVDA-1", "direction": "BULL",
+                    "entry": 950.0, "invalidation": 899.0,
+                    "targets": [1010.0, 1080.0], "target": 1010.0}
+
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+    src = next(i["source"] for i in read_items(tmp_path)
+               if (i.get("source") or {}).get("plan_item_id") == sig["id"])
+
+    assert src["t1"] == 1010.0, src
+    assert src["t2"] == 1080.0, src
+    assert src["target"] == 1010.0, src
+    # Unchanged neighbours — the new stamps must not have displaced the old ones.
+    assert src["entry"] == 950.0 and src["invalidation"] == 899.0, src
+
+
+def test_emit_omits_absent_targets_rather_than_stubbing_them(tmp_path):
+    """A plan with no targets must produce NO t1/t2/target keys. A stubbed None
+    would read to the approval desk as "the plan asserted a level and it is
+    empty", which is a different and worse claim than "there is no target" —
+    the same omit-never-stub rule the W1 telemetry block above follows."""
+    from engine.marketing.outbox import emit_from_content_plan, read_items
+
+    plan = _make_plan_fixture()
+    sig = plan["accounts"][0]["queue"][0]
+    sig["_plan"] = {"id": "prophet-NVDA-1", "direction": "BULL", "entry": 950.0}
+
+    emit_from_content_plan(plan, root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+    src = next(i["source"] for i in read_items(tmp_path)
+               if (i.get("source") or {}).get("plan_item_id") == sig["id"])
+
+    assert "t1" not in src and "t2" not in src and "target" not in src, src
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # F6: slot_datetime — real per-day advisory times (D2..D7 no longer read day-1)
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1543,10 +1597,18 @@ class TestSkippedSlotMismatch:
         assert result["skipped_slot_mismatch"] == 2, result
 
     def test_family_breakdown_separates_ladder_from_unemittable(self, tmp_path):
-        """D2..D7 and MOVER-/THEME-/CONF- are both skipped and are NOT the same
-        event: the forward ladder is regenerated nightly by design, a non-day
-        label is a lane that can never publish. The breakdown is what lets an
-        operator tell them apart in the activity row."""
+        """THREE kinds of skip, one counter, and the breakdown is what tells
+        them apart in the activity row:
+
+          * `D2`..`D7` — the forward ladder, regenerated nightly by design;
+          * `CONF` — confluence, deliberately and permanently unemittable (see
+            `test_confluence_is_counted_but_never_alarms`);
+          * `MOVER`/`THEME`/a bare label — a lane that can never publish and did
+            not mean to be in that state.
+
+        All three are COUNTED here. Only the third is an alarm — that split is
+        pinned by the two annotation tests below, not by this one.
+        """
         from engine.marketing.outbox import emit_from_content_plan
 
         plan = _slot_plan(_AS_OF, ["D2-AM", "D7-PM", "MOVER-01", "CONF-01",
@@ -1605,6 +1667,54 @@ class TestSkippedSlotMismatch:
 
         assert result["skipped_slot_mismatch"] == 2
         assert "marketing_unemittable_slots" not in capsys.readouterr().out
+
+    def test_confluence_is_counted_but_never_alarms(self, tmp_path, capsys):
+        """CONF- IS ALARM FATIGUE, AND IT WAS INTENTIONAL-AND-WRONG
+        (adversarial review, 2026-07-31).
+
+        The warning was built to catch a lane that went dark by ACCIDENT — the
+        movers desk shipped MOVER-NN for two weeks and published nothing.
+        Confluence is the opposite case: content_studio slots it CONF-NN knowing
+        emit takes D1- only, and its census note refuses to "fix" that by
+        relabelling the slot, because publication has to be earned on evidence
+        rather than on a prefix change. So this annotation fired EVERY nightly
+        on a state nobody intends to change, which is precisely how an operator
+        learns to scroll past the annotation on the night a real lane dies.
+
+        Counted, never alarmed — and the MOVER half of the second case is the
+        anti-vacuity control: a version of this that simply stopped warning
+        would pass the first assertion and fail the second.
+        """
+        from engine.marketing.outbox import emit_from_content_plan
+
+        result = emit_from_content_plan(
+            _slot_plan(_AS_OF, ["CONF-01", "CONF-02", "D1-AM"]),
+            root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+
+        assert result["skipped_slot_by_family"] == {"CONF": 2}, result
+        assert "marketing_unemittable_slots" not in capsys.readouterr().out
+
+    def test_a_real_dark_lane_still_warns_alongside_confluence(self, tmp_path,
+                                                              capsys):
+        """The exclusion is per FAMILY, not "any unemittable label present". A
+        MOVER item in the same emit must still raise the alarm, and the
+        annotation must not name CONF — a breakdown listing a family nobody can
+        act on is the fatigue coming back through the message body."""
+        from engine.marketing.outbox import emit_from_content_plan
+
+        emit_from_content_plan(
+            _slot_plan(_AS_OF, ["CONF-01", "MOVER-02", "D1-AM"]),
+            root=tmp_path, cfg=_EMIT_CFG, day_prefix="D1")
+
+        hits = [ln for ln in capsys.readouterr().out.splitlines()
+                if ln.startswith("::warning title=marketing_unemittable_slots::")]
+        assert hits, "a genuinely dark lane stopped warning"
+        assert "MOVER=1" in hits[0], hits
+        assert "CONF" not in hits[0], hits
+        # The count in the headline is the unemittable-and-actionable count, not
+        # the raw skip total (which is 2 here).
+        assert hits[0].startswith(
+            "::warning title=marketing_unemittable_slots::1 plan item(s)"), hits
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1756,3 +1866,43 @@ class TestScheduleFloorAtEnqueue:
         item = self._backdated()
         assert enqueue(item, root=tmp_path) == "queued"
         assert item["scheduled_at"] == "2026-07-19T12:00:00Z", item["scheduled_at"]
+
+    def test_a_rejected_duplicate_comes_back_untouched(self, tmp_path):
+        """THE MUTATION ORDER (adversarial review, 2026-07-31).
+
+        The clamp used to run at the TOP of enqueue, ahead of
+        `_rejection_reason`. Since it deliberately rewrites the caller's own
+        dict, a duplicate or over-cap item was handed back rewritten: a
+        scheduled_at it never got, a `source.scheduled_at_original` breadcrumb
+        pointing at a row that does not exist, and a WARNING in the log about a
+        post nobody queued. Nothing is written for a rejected item, so nothing
+        should be rewritten for one either.
+
+        Asserted on a SECOND dict with identical content — the id hashes
+        (account, kind, text, as_of) and excludes scheduled_at, so this is a
+        real duplicate of the first, which is exactly the shape the mutation
+        leaked through.
+        """
+        from engine.marketing.outbox import enqueue
+
+        assert enqueue(self._backdated(), root=tmp_path) == "queued"
+
+        dupe = self._backdated()
+        assert enqueue(dupe, root=tmp_path) == "duplicate"
+        assert dupe["scheduled_at"] == "2026-07-19T09:00:00Z", dupe["scheduled_at"]
+        assert "scheduled_at_original" not in (dupe.get("source") or {}), dupe
+
+    def test_a_capped_out_item_comes_back_untouched(self, tmp_path):
+        """The other rejection path, because `_rejection_reason` returns several
+        verdicts and a fix that only moved the clamp past the dedupe check would
+        pass the test above and still rewrite an over-cap item."""
+        from engine.marketing.outbox import enqueue
+
+        assert enqueue(self._backdated(text="First post about $PLTR levels."),
+                       root=tmp_path, max_per_account_day=1) == "queued"
+
+        over = self._backdated(
+            text="A completely separate note on $MU memory pricing today.")
+        assert enqueue(over, root=tmp_path, max_per_account_day=1) == "cap_exceeded"
+        assert over["scheduled_at"] == "2026-07-19T09:00:00Z", over["scheduled_at"]
+        assert "scheduled_at_original" not in (over.get("source") or {}), over

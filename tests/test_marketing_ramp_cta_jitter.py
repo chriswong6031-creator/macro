@@ -637,11 +637,20 @@ class TestPublishTimeLaneRamp:
         run under tmp_path with no renderer and no R2, so the card is stubbed to
         its happy path and the tier assertions keep measuring the tier."""
         from engine.marketing import publish_time_content as _ptc
-        monkeypatch.setattr(_ptc, "_resolve_card", lambda cand, **kw: {
-            "media": {"kind": "chart_svg", "chart_id": "stub",
-                      "path": "data/marketing/outbox/media/stub.svg",
-                      "media_url": "https://cards.example/stub.png"},
-            "published": {"chart_id": "stub"}, "reason": "ok"})
+
+        # Keyword-pinned, mirroring the autouse stub in
+        # test_marketing_publish_time_content.py: a `lambda cand, **kw` absorbs
+        # any signature, so a change to _resolve_card's call contract would be
+        # caught in one file and silently swallowed here, leaving the ramp-tier
+        # assertions passing against a lane that can no longer resolve a card.
+        def _stub_card(cand, *, root, cfg, as_of, now, slot):
+            return {
+                "media": {"kind": "chart_svg", "chart_id": "stub",
+                          "path": "data/marketing/outbox/media/stub.svg",
+                          "media_url": "https://cards.example/stub.png"},
+                "published": {"chart_id": "stub"}, "reason": "ok"}
+
+        monkeypatch.setattr(_ptc, "_resolve_card", _stub_card)
 
 
     @classmethod
@@ -1195,11 +1204,20 @@ class TestPublishTimeLaneRevival:
         run under tmp_path with no renderer and no R2, so the card is stubbed to
         its happy path and the tier assertions keep measuring the tier."""
         from engine.marketing import publish_time_content as _ptc
-        monkeypatch.setattr(_ptc, "_resolve_card", lambda cand, **kw: {
-            "media": {"kind": "chart_svg", "chart_id": "stub",
-                      "path": "data/marketing/outbox/media/stub.svg",
-                      "media_url": "https://cards.example/stub.png"},
-            "published": {"chart_id": "stub"}, "reason": "ok"})
+
+        # Keyword-pinned, mirroring the autouse stub in
+        # test_marketing_publish_time_content.py: a `lambda cand, **kw` absorbs
+        # any signature, so a change to _resolve_card's call contract would be
+        # caught in one file and silently swallowed here, leaving the ramp-tier
+        # assertions passing against a lane that can no longer resolve a card.
+        def _stub_card(cand, *, root, cfg, as_of, now, slot):
+            return {
+                "media": {"kind": "chart_svg", "chart_id": "stub",
+                          "path": "data/marketing/outbox/media/stub.svg",
+                          "media_url": "https://cards.example/stub.png"},
+                "published": {"chart_id": "stub"}, "reason": "ok"}
+
+        monkeypatch.setattr(_ptc, "_resolve_card", _stub_card)
 
     def test_unlimited_cap_does_not_block_every_account(self, tmp_path):
         """THE REGRESSION: at cap=-1 the lane must still generate."""

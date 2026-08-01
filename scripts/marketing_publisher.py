@@ -1333,10 +1333,21 @@ def main(argv: list[str] | None = None) -> int:
     # below so the run's own candidate set never sees an item this pass retired.
     # DRY-RUN NEVER MUTATES: quarantine is terminal and a projection must not
     # destroy the queue it is projecting.
+    #
+    # POST-NOW IS EXEMPT (#3960 minor). This pass runs here, ahead of the fold,
+    # for the reason above — and post-now id resolution does not happen until
+    # ~250 lines below it. Without the exemption the operator's own
+    # `--post-now <id>` on a breaking item that took a while to get a human
+    # decision is self-defeating: the run summoned to send it quarantines it
+    # (TERMINALLY) on the way in, and the dispatch it was called for finds
+    # nothing. The pass is NOT reordered — the fold below must still never see
+    # an item this sweep retired — the named ids are simply spared, which is the
+    # narrowest possible fix and cannot widen the reaper's blast radius.
     expired_wire = 0
     if live:
         try:
-            _wire_expiry = _outbox.expire_stale_wire(root, now=now)
+            _wire_expiry = _outbox.expire_stale_wire(root, now=now,
+                                                     exempt_ids=post_now)
             expired_wire = int(_wire_expiry.get("expired") or 0)
             if expired_wire:
                 # Bare line-start print (house law): a logger prefix makes GitHub
@@ -1398,10 +1409,14 @@ def main(argv: list[str] | None = None) -> int:
         pt_dropped = len(_pt_report.get("dropped") or [])
         log.info(
             "publish-time generation | enabled=%s slot=%s quotes=%s "
-            "generated=%d would_generate=%d dropped=%d",
+            "generated=%d would_generate=%d dropped=%d cards_deferred_dry_run=%d",
             _pt_report.get("enabled"), _pt_report.get("slot") or "-",
             _pt_report.get("quote_source"), pt_generated,
             len(_pt_report.get("would_generate") or []), pt_dropped,
+            # A dry sweep resolves no cards (contract: live=False writes
+            # NOTHING); without this count an operator reading the dry log
+            # cannot tell deferred-by-design from a dead card lane.
+            int(_pt_report.get("cards_deferred_dry_run") or 0),
         )
         for _d in (_pt_report.get("dropped") or []):
             log.info("  pt drop: %s — %s", _d.get("reason"), _d.get("detail"))
@@ -2103,7 +2118,23 @@ def main(argv: list[str] | None = None) -> int:
         # graded a batch F, but retiring a rule does not rewrite copy already
         # enqueued — without this screen the graded-F batch posts tomorrow no
         # matter what the writer does tonight.
-        _voice = _queued_voice_violations(text, str(it.get("kind") or ""))
+        #
+        # THE SHAPE TRAVELS WITH THE ITEM (adversarial review, 2026-07-31). The
+        # number budget inside this screen is per SHAPE as well as per kind:
+        # SHAPE_CONTRACT ORDERS three numbers for a `stack`, up to six rows for a
+        # list. Calling with no shape made this gate re-judge every queued post
+        # at the shapeless default of two — so an obedient 3-number stack was
+        # written by the LLM, paid for, queued, and then TERMINALLY quarantined
+        # here for doing exactly what the prompt demanded. The shape has been
+        # persisted at `source.shape` since W1 telemetry
+        # (outbox.emit_from_content_plan), so the fix is to hand it over, not to
+        # loosen the budget. A pre-W1 item carries no shape and gets the
+        # unchanged shapeless behaviour.
+        _voice_src = it.get("source") if isinstance(it.get("source"), dict) else {}
+        _voice = _queued_voice_violations(
+            text, str(it.get("kind") or ""),
+            shape=str(_voice_src.get("shape") or ""),
+        )
         if _voice:
             reason = "voice laws (queue vintage): " + "; ".join(_voice[:2])
             print(f"::warning title=marketing-voice-gate::item {iid} "

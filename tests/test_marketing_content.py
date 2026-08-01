@@ -1123,10 +1123,10 @@ def test_content_plan_all_enabled_by_default():
 
 
 def test_slot_labels_are_the_45min_pacific_ladder():
-    """The plan schedules onto the 19-slot 45-min Pacific ladder (S1..S19),
-    replacing the old AM/PM/EOD triple; day N labels prefix D<N>-, and no legacy
-    suffix survives (outbox.slot_datetime resolves S1..S19 to real Pacific-clock
-    times)."""
+    """The plan schedules onto the 28-rung 30-min Pacific ladder (S1..S28,
+    operator re-spec 2026-07-27), replacing the old AM/PM/EOD triple; day N
+    labels prefix D<N>-, and no legacy suffix survives (outbox.slot_datetime
+    resolves S1..S28 to real Pacific-clock times)."""
     from engine.marketing.content_studio import _slot_labels
     assert _slot_labels(1, 19) == [f"D1-S{i}" for i in range(1, 20)]
     two_days = _slot_labels(2, 19)

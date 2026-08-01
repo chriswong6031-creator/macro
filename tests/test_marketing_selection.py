@@ -383,7 +383,12 @@ def test_degenerate_gate_reads_structured_fields_too():
     assert dropped == 1
 
     assert is_degenerate_count(231, 231) is True
-    assert is_degenerate_count(1, 231) is True        # <= 5% is degenerate too
+    # Saturation-only (fix-wave ruling, mirroring market_facts): the default
+    # band's low arm is gone because a washout ("1 of 231") is the rarest and
+    # most newsworthy breadth print, not noise. A positive lo remains a config
+    # opt-in — pinned in test_degenerate_band_is_configurable.
+    assert is_degenerate_count(1, 231) is False
+    assert is_degenerate_count(0, 231) is False       # "no triggers" is information
     assert is_degenerate_count(18, 30) is False
     assert is_degenerate_count(5, 0) is False         # unknown denominator != degenerate
 

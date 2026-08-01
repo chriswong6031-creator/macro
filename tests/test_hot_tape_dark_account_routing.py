@@ -150,7 +150,21 @@ class TestTheBookingPathActuallyCallsIt:
         # inherits its alert's account and falls back to the same hardcoded
         # `emit.account` in pending_briefs, so covering only the first would
         # leave the second half of every two-step publish going to a grave.
-        assert src.count("HT.live_account(") == 2, src.count("HT.live_account(")
+        # AST, not src.count(): a string count is satisfied by a comment and
+        # broken by a legitimate refactor — same reasoning as the
+        # phrase_or_fallback scan in test_marketing_hot_tape_radar.py.
+        import ast
+        import textwrap
+        tree = ast.parse(textwrap.dedent(src))
+        calls = [
+            node for node in ast.walk(tree)
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "live_account"
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "HT"
+        ]
+        assert len(calls) == 2, f"expected 2 HT.live_account call sites, found {len(calls)}"
 
     def test_a_sub_85_event_books_on_an_ENABLED_desk(self, tmp_path, capsys,
                                                      monkeypatch):

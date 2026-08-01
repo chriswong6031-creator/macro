@@ -81,19 +81,37 @@ _EMPTY_FACTS: dict = {"facts": [], "numbers_whitelist": []}
 #   4. Direction-keyed, and the key is the SIGN OF THE AGGREGATE (see
 #      _direction_of) — never a `direction` string a caller may have set
 #      independently of the number it labels.
+#   5. **48 CHARACTERS MAX, EACH.** This is a supply constraint, not a style
+#      preference, and it is the defect the 2026-07-31 rewrite introduced. The
+#      bank it replaced was four ~32-char reply-bait questions; the stance tails
+#      came back at up to 80 chars — 2.5× longer — and the tail is appended to a
+#      theme body that already carries a member list ("$AAPL +2.1% $MSFT +1.4%
+#      …"). copywriter.validate_copy caps headline+body at 275 chars, so the
+#      longest banks pushed the 'dry, receipts-forward' theme render to 282 and
+#      the candidate was DROPPED as a copy violation. A tail that costs the
+#      author nothing to write but costs the desk the whole post is not a voice
+#      improvement. The study's reaction-word form is a SHORT verdict — one
+#      breath — not a paragraph, so the budget and the voice law agree here.
+#      (publish_time_content._render_copy_unbaited now also re-rolls onto other
+#      variants on a too-long violation, which is the second net; this is the
+#      first, and a bank that fits should never need the net.)
 # ─────────────────────────────────────────────────────────────────────────────
 _TAIL_DOWN = [
-    "I want one quiet close before I touch this group. Am I too slow here?",
-    "I'm not calling a low on the first green candle. Do I regret that by Friday?",
-    "Passing on the whole group here. Does that cost me the snapback?",
-    "I'd rather be late here than early. Am I paying for patience again?",
+    "Am I too slow waiting for one quiet close?",
+    "Do I regret passing on the first bounce?",
+    "Does patience cost me the snapback here?",
+    "I'd rather be late. Am I paying for that?",
 ]
 _TAIL_UP = [
-    "I'm not paying up after a move like this. Do I miss it if I wait?",
-    "I'd rather have the first pullback than this print. Am I going to miss the move?",
-    "Not chasing a group that already went. Does that keep costing me?",
-    "I want to see it hold before I believe it. Am I too slow on this one?",
+    "Do I miss it if I refuse to pay up here?",
+    "Am I too slow waiting for the pullback?",
+    "Does not chasing keep costing me money?",
+    "I want it to hold first. Too careful of me?",
 ]
+
+#: Hard ceiling every tail must satisfy — pinned in tests so a future "better"
+#: line cannot quietly reintroduce the 282-char drop. See constraint 5 above.
+_TAIL_MAX_CHARS = 48
 
 
 # ─────────────────────────────────────────────────────────────────────────────

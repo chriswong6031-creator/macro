@@ -1188,3 +1188,134 @@ class TestPressCardMedia:
         assert item["media"] == []
         out = capsys.readouterr().out
         assert "::warning title=press-lane-card-publish-failed::" in out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 13. A TRANSIENT REFUSAL IS NOT A PERMANENT KILL
+#
+# THE DEFECT (adversarial review, 2026-07-31). run_press_tick added EVERY
+# outbox refusal to the permanent `seen` ledger under a comment asserting that
+# "every refusal reason is a stable property of the copy, so a retry cannot
+# change the answer". `media_unhosted` is not: it fires when the Chrome raster
+# loses a race, when the R2 upload blips, when boto3/R2_* are missing on the
+# host. One flaky raster therefore suppressed a breaking cashtag story for the
+# entire life of the ledger, and the LLM spend that produced its copy bought
+# nothing.
+#
+# Both halves are pinned here: the retry (an unhosted item comes back next
+# tick) and the alarm (a host that is genuinely down still surfaces, rather
+# than re-rendering and re-paying in silence forever).
+# ─────────────────────────────────────────────────────────────────────────────
+
+_TICK_NOW = datetime(2026, 7, 27, 14, 0, tzinfo=timezone.utc)
+
+
+def _refusing_tick(monkeypatch, reason, *, state, seen, calls=None):
+    """One press tick whose outbox emission always refuses with `reason`.
+
+    `_emit_outbox_item` is the seam because the refusal it returns is precisely
+    what the caller under test branches on; driving the real card host from here
+    would test media_publish, not the seen-ledger law.
+    """
+    from engine.marketing import press_lane
+
+    def _refuse(root, item_id, account, headline, body, svg, provenance, now,
+                **kw):
+        if calls is not None:
+            calls.append(item_id)
+        _refusal = kw.get("refusal")
+        if _refusal is not None:
+            _refusal["reason"] = reason
+        return None
+
+    monkeypatch.setattr(press_lane, "_emit_outbox_item", _refuse)
+    press_cfg = yaml.safe_load((ROOT / "config" / "press_sources.yml").read_text())
+    marketing_cfg = yaml.safe_load((ROOT / "config" / "marketing.yml").read_text())
+    return run_press_tick(_emitting_items(), root=str(ROOT), now=_TICK_NOW,
+                          cfg=marketing_cfg, press_cfg=press_cfg, state=state,
+                          seen_ids=seen, dry_run=True)
+
+
+class TestTransientRefusalsRetry:
+    def test_an_unhosted_item_is_not_burned_into_the_seen_ledger(self, monkeypatch):
+        state: dict = {}
+        calls: list[str] = []
+        result = _refusing_tick(monkeypatch, "media_unhosted",
+                                state=state, seen=set(), calls=calls)
+        assert "trumpstruth:strong" in calls, calls
+        assert result["emitted"] == []
+        reasons = [r["reason"] for r in result["skipped"]]
+        assert "media_unhosted" in reasons, result["skipped"]
+        # THE PIN. Pre-fix the emission key was in `_seen`, so every later tick
+        # deduped the story away and it could never be retried.
+        assert "truth:strong" not in set(result["_seen"]), result["_seen"]
+
+    def test_the_next_tick_actually_re_attempts_it(self, monkeypatch):
+        state: dict = {}
+        calls: list[str] = []
+        seen: set = set()
+        for _ in range(2):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen, calls=calls)
+            seen = set(result["_seen"])
+        # Two ticks, two genuine attempts — not one attempt and one dedupe skip.
+        assert calls.count("trumpstruth:strong") == 2, calls
+
+    def test_a_copy_property_refusal_still_never_comes_back(self, monkeypatch):
+        """The invariant the old blanket comment was RIGHT about, kept intact:
+        banned language is decided by the text and gives the same answer
+        forever, so re-generating it burns billed spend on a known outcome."""
+        state: dict = {}
+        calls: list[str] = []
+        seen: set = set()
+        for _ in range(2):
+            result = _refusing_tick(monkeypatch, "banned_language",
+                                    state=state, seen=seen, calls=calls)
+            seen = set(result["_seen"])
+        assert "truth:strong" in seen, seen
+        assert calls.count("trumpstruth:strong") == 1, calls
+
+    def test_a_genuinely_dead_host_still_alarms(self, monkeypatch, capsys):
+        """The retry must not be silent — a host that is down re-renders and
+        re-pays every tick, and that has to reach the Actions summary."""
+        state: dict = {}
+        seen: set = set()
+        for _ in range(_TRANSIENT_ALARM_AT := 3):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen)
+            seen = set(result["_seen"])
+        assert state["transient_refusals"]["truth:strong"] == _TRANSIENT_ALARM_AT
+        lines = [ln for ln in capsys.readouterr().out.splitlines()
+                 if "press-lane-transient-refusal-stuck" in ln]
+        assert lines, "three consecutive environment refusals must alarm"
+        # House law: the annotation STARTS the line or GitHub drops it silently.
+        assert lines[0].startswith(
+            "::warning title=press-lane-transient-refusal-stuck::"), lines[0]
+
+    def test_the_alarm_holds_its_fire_through_a_blip(self, monkeypatch, capsys):
+        """One or two failed ticks is a raster race, not an outage."""
+        from engine.marketing import press_lane
+
+        state: dict = {}
+        seen: set = set()
+        for _ in range(press_lane._TRANSIENT_RETRY_ALARM_AT - 1):
+            result = _refusing_tick(monkeypatch, "media_unhosted",
+                                    state=state, seen=seen)
+            seen = set(result["_seen"])
+        assert "press-lane-transient-refusal-stuck" not in capsys.readouterr().out
+
+    def test_a_settled_refusal_clears_the_streak(self, monkeypatch):
+        """The tally counts CONSECUTIVE environment refusals. A story that then
+        refuses on its copy is settled, and its counter must not linger to
+        alarm on some unrelated later story."""
+        from engine.marketing import press_lane
+
+        state: dict = {}
+        seen: set = set()
+        result = _refusing_tick(monkeypatch, "media_unhosted",
+                                state=state, seen=seen)
+        assert state["transient_refusals"]["truth:strong"] == 1
+        result = _refusing_tick(monkeypatch, "banned_language",
+                                state=state, seen=set(result["_seen"]))
+        assert "truth:strong" not in state["transient_refusals"]
+        assert press_lane._TRANSIENT_RETRY_ALARM_AT >= 2

@@ -325,7 +325,7 @@ _STATIC_CLAUSE_FRAGMENTS: tuple[str, ...] = (
     "in market value", "the level our engine flagged in last night's plan",
     "the level our engine flagged in our", "plan", "Watching how it holds.",
     "Still green:", "are green", "Green across", "Median", "median", "Last",
-    "crossed", "just traded through", "through", "again", "is up", "is down",
+    "crossed", "traded through", "through", "again", "is up", "is down",
     # T4 earnings reaction
     "EPS came in at", "consensus", "surprise",
     # Two-step context brief (codex): mechanism, affected names, what to watch
@@ -778,10 +778,25 @@ _STREAK_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
      ("streak_clause", "live_marker")),
 )
 
+#: "JUST" IS A CLAIM ABOUT TIME AND THIS FAMILY HAS NO RECEIPT FOR IT
+#: (2026-07-31, adversarial review). The signal_fired detector in
+#: engine/marketing/hot_tape.py tests ``prev_close < entry <= price`` against the
+#: LIVE quote, which stays true for the rest of the session once the level goes
+#: — and the packet is re-detected on every five-minute pass and may be booked
+#: hours later. So "just traded through" shipped the exact class of unlicensed
+#: freshness claim :func:`_milestone_clause` was rewritten to kill, on the one
+#: family that never grew the ``crossed_in_window`` leaf which licenses it there.
+#:
+#: The immediacy the copy needs is carried LAWFULLY by ``{live_marker}`` ("so far
+#: today", "right now", "in premarket trading"): a statement about WHEN we are
+#: looking, not about when the crossing happened. Should the signal_fired packet
+#: ever grow a fresh-cross receipt (the prior tick did not have this crossing, as
+#: threshold_cross gets from the ring), the event wording may come back — but
+#: behind that bool and a VERB PAIR, never as a bare template like this one was.
 _SIGNAL_VARIANTS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("{cashtag} crossed {level} {live_marker}, {flagged_clause}. Watching how it holds.",
      ("flagged_clause", "live_marker")),
-    ("{cashtag} just traded through {level} {live_marker}. {flagged_clause_cap}.",
+    ("{cashtag} traded through {level} {live_marker}. {flagged_clause_cap}.",
      ("flagged_clause", "live_marker")),
     ("{cashtag} {live_marker} at {price}, through {level}. {flagged_clause_cap}.",
      ("flagged_clause", "live_marker")),

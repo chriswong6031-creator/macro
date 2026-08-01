@@ -1632,6 +1632,26 @@ def emit(
         if account == flagship_account and flagship_budget <= 0:
             # Budget spent this pass: the event still ships, on the wire desk.
             account = wire_account
+        # THE ROUTING DECISION, FROZEN BEFORE THE RESCUE (review, 2026-07-31).
+        # `flagship_budget` is charged against THIS value, never against the
+        # post-rescue `account`, because the two answer different questions:
+        # this one is "did the desk INTEND a flagship mirror", the other is
+        # "which desk was armed to take it". Reading the post-rescue account
+        # broke the valve in both directions:
+        #
+        #   * an intended mirror whose flagship desk was dark got rescued to the
+        #     wire, so `account == flagship_account` was False and the budget was
+        #     never charged — every big event in the pass mirrored, unbounded;
+        #   * budget exhaustion routed to the wire desk, which on the shipped
+        #     config is the DARK one, so live_account rescued it straight back to
+        #     flagship (it is first in `fallbacks`) — a mirror the budget had
+        #     already refused, and the decrement then ran a second time and drove
+        #     the budget negative.
+        #
+        # Charging the pre-rescue decision makes the code match the comment
+        # below: a dark-account rescue is FREE, and "only the biggest events get
+        # a second desk" survives however the desk_network switches are set.
+        routed_account = account
         # LIVENESS, AFTER ROUTING AND AFTER THE MIRROR BUDGET. `emit.account`
         # defaults to mastermind_news, a desk that is DARK in desk_network, so
         # every sub-85 event was rendered, phrased, uploaded and enqueued only
@@ -1656,7 +1676,7 @@ def emit(
         if status == "would_book":
             booked.append(packet.key)
             day_used += 1
-            if account == flagship_account:
+            if routed_account == flagship_account:
                 flagship_budget -= 1
             continue
         if status == "queued":
@@ -1664,7 +1684,7 @@ def emit(
                                                  account=account))
             booked.append(result["item_id"])
             day_used += 1
-            if account == flagship_account:
+            if routed_account == flagship_account:
                 flagship_budget -= 1
             continue
         if status in _TERMINAL_ENQUEUE_CODES:

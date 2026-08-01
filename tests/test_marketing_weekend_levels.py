@@ -260,6 +260,9 @@ def test_render_chart_v2_draws_the_cited_level():
 #     09:52 batch) and wrote EIGHT items each time: a second, contradictory post
 #     for every slot, deleted by the operator by hand. A re-run must add zero
 #     new slots — and must not spend eight Chrome rasters discovering that.
+#     The guard is STATUS-BLIND (2026-07-31): the first fix read live items only,
+#     which went blind the moment the 03:13 batch POSTED — i.e. exactly when the
+#     09:52 rerun happened. See TestWeekendLaneIsIdempotent.
 #
 # (b) NO SILENT TEMPLATE FALLBACK. write_copy called `copywriter.write_posts_llm`,
 #     the retired v1 BATCH path whose documented failure mode is a silent 100%
@@ -312,15 +315,60 @@ class TestWeekendLaneIsIdempotent:
         assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26",
                               account="cici")
 
-    def test_a_quarantined_batch_re_arms_the_lane(self, tmp_path):
-        """The honest recovery from a bad slate is to quarantine it; dead items
-        must not keep the lane locked out of the day."""
+    def test_a_POSTED_batch_still_blocks_the_rerun(self, tmp_path):
+        """THE 2026-07-26 INCIDENT, exactly. Fails pre-fix.
+
+        `already_built` used to read `rewrite.live_items_for`, which filters out
+        every TERMINAL status — and `posted` is terminal. So the guard could only
+        see a batch that had NOT shipped yet: the 03:13 slate queued, posted
+        through the morning, and by 09:52 every one of its rows was invisible.
+        The lane read "nothing built for 2026-07-26" and rebuilt the whole day.
+
+        An idempotence guard that goes blind the moment its work SUCCEEDS is the
+        inverse of the guarantee it advertises.
+        """
+        from engine.marketing.outbox import transition
+        _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
+        item = _queue_a_weekend_item(tmp_path)
+        # Walk the row all the way to the terminal `posted` status the morning
+        # batch reaches — queued → approved → posting → posted.
+        for to in ("approved", "posting", "posted"):
+            transition(item["id"], to, actor="publisher", root=tmp_path)
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26") == [], (
+            "a POSTED 03:13 batch let the 09:52 rerun rebuild the whole day"
+        )
+
+    def test_a_quarantined_batch_also_blocks_the_rerun(self, tmp_path):
+        """The trade this fix makes, pinned so it cannot be reverted by accident.
+
+        Quarantining a bad slate used to re-arm the lane for the same day. It no
+        longer does: "built" is now ANY row for (account, as_of, provenance) in
+        items.jsonl, whatever the ledger later did to it, because status-aware
+        was exactly what let a POSTED batch look like an empty day. A duplicate
+        slate on a live timeline is a public contradiction; a day with a
+        quarantined batch and no replacement is a quiet day. Deliberate
+        regeneration goes through the rewrite path (next test).
+        """
         from engine.marketing.outbox import transition
         _seed_parquet(tmp_path, "NVDA", [float(x) for x in range(1, 121)])
         item = _queue_a_weekend_item(tmp_path)
         assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26") == []
         transition(item["id"], "quarantined", actor="operator", root=tmp_path)
-        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26")
+        assert wl.build_items(tmp_path, tickers=["NVDA"], as_of="2026-07-26") == []
+
+    def test_already_built_counts_every_status(self, tmp_path):
+        """Directly on the predicate, so the pin survives a build_items refactor."""
+        from engine.marketing.outbox import transition
+        item = _queue_a_weekend_item(tmp_path)
+        assert wl.already_built(tmp_path, as_of="2026-07-26") == 1
+        for to in ("approved", "posting", "posted"):
+            transition(item["id"], to, actor="publisher", root=tmp_path)
+        assert wl.already_built(tmp_path, as_of="2026-07-26") == 1, (
+            "the row vanished from the idempotence read once it posted"
+        )
+        # Still scoped: another day / another desk is not this day's work.
+        assert wl.already_built(tmp_path, as_of="2026-07-27") == 0
+        assert wl.already_built(tmp_path, as_of="2026-07-26", account="cici") == 0
 
     def test_the_rewrite_path_can_still_regenerate_a_queued_day(self, tmp_path):
         """skip_if_queued=False is what the supersede lane passes; without it a

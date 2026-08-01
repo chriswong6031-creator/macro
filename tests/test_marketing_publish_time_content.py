@@ -1283,3 +1283,266 @@ def test_marketing_publish_workflow_can_render_and_host_a_card():
                 "R2_BUCKET"):
         assert key in publisher["env"], sorted(publisher["env"])
         assert "secrets." + key in publisher["env"][key]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 17. DRY-RUN WRITES NOTHING — including no card
+#
+# The module contract has always said live=False "writes NOTHING". _resolve_card
+# ran unguarded anyway, and it is not a read: it rasterises through Chrome and
+# hands the SVG to media_publish.publish_card, which writes an SVG and a PNG
+# under data/ and PUTs the PNG to R2. Every scheduled dry sweep therefore paid a
+# raster + an upload per candidate and left data/ dirty — against the house law
+# that intraday lanes discard data/ writes.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _tree(root: Path) -> set[str]:
+    """Every file under *root*, as posix-relative strings."""
+    return {str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()}
+
+
+def test_dry_run_never_resolves_a_card(tmp_path, monkeypatch):
+    """PINS the fix. The spy FAILS the test if the resolver is entered at all —
+    a call count assertion, not a side-effect assertion, so it cannot be
+    satisfied by a resolver that happens to no-op under tmp_path."""
+    calls: list[str] = []
+
+    def _spy(cand, **kw):
+        calls.append(str(cand.get("type")))
+        return _fake_card(cand, **kw)
+
+    monkeypatch.setattr(pt, "_resolve_card", _spy)
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg(), live=False)
+    assert rep["would_generate"], rep["dropped"]
+    assert calls == [], f"_resolve_card ran {len(calls)} time(s) in a DRY run"
+    assert rep["cards_deferred_dry_run"] == len(rep["would_generate"])
+
+
+def test_dry_run_leaves_the_root_byte_identical(tmp_path, monkeypatch):
+    """The whole-tree assertion — a card SVG, a card PNG, an outbox row, a ledger
+    line all show up here as a new path.
+
+    The stub WRITES, on purpose. media_publish.publish_card writes the SVG and
+    the PNG under data/marketing/outbox/media/<as_of>/ before it uploads, so a
+    resolver that is merely *entered* dirties the tree. Under tmp_path the real
+    resolver bails on "no-bars" and writes nothing, which would make a
+    tree-equality assertion pass on the broken code — the exact vacuous-green
+    shape this repo keeps finding. Standing in for the write is what makes the
+    assertion below able to SEE the failure.
+    """
+    def _writing_card(cand, *, root, cfg, as_of, now, slot):
+        d = Path(root) / "data" / "marketing" / "outbox" / "media" / as_of
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "dry-leak.svg").write_text("<svg/>", encoding="utf-8")
+        (d / "dry-leak.png").write_bytes(b"\x89PNG")
+        return _fake_card(cand, root=root, cfg=cfg, as_of=as_of, now=now, slot=slot)
+
+    monkeypatch.setattr(pt, "_resolve_card", _writing_card)
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+    before = _tree(tmp_path)
+
+    rep = _gen(tmp_path, _cfg(), live=False)
+    assert rep["would_generate"], rep["dropped"]
+    assert _tree(tmp_path) == before, sorted(_tree(tmp_path) - before)
+    assert outbox.read_items(tmp_path) == []
+
+
+def test_the_dry_run_preview_says_the_card_is_pending(tmp_path, monkeypatch):
+    """A preview that showed no card and said nothing about it would read as
+    'this lane ships bare rollup posts'. It does not — it defers."""
+    monkeypatch.setattr(pt, "_resolve_card", _fake_card)
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg(), live=False)
+    assert rep["would_generate"], rep["dropped"]
+    assert all(w["card"] == "deferred_dry_run" for w in rep["would_generate"]), \
+        rep["would_generate"]
+
+
+def test_a_live_run_still_resolves_every_card(tmp_path, monkeypatch):
+    """The mutation check on the guard above: skip the card in LIVE mode and
+    this fails. Without it, `if not live` could be inverted and nothing would
+    notice until a bare rollup post was quarantined in production."""
+    calls: list[str] = []
+
+    def _spy(cand, **kw):
+        calls.append(str(cand.get("type")))
+        return _fake_card(cand, **kw)
+
+    monkeypatch.setattr(pt, "_resolve_card", _spy)
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg(), live=True)
+    assert rep["generated"], rep["dropped"]
+    assert calls, "the live run skipped card resolution"
+    assert rep["cards_deferred_dry_run"] == 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 18. A TOO-LONG RENDER IS A VARIANT PROBLEM, SO IT IS RE-ROLLED
+#
+# validate_copy caps headline+body at 275 chars and the variant banks are not
+# all the same length. On the same candidate the 'dry, receipts-forward' theme
+# template rendered 282 chars and _render_copy_unbaited short-circuited on it at
+# attempt 0 — spending a real post to punish a template, which is the exact
+# failure the re-roll was written to stop for bait.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_too_long_render_is_re_rolled_onto_a_shorter_variant(tmp_path, monkeypatch):
+    """282 chars on roll 0, a compliant render on roll 1. Fails pre-fix: the old
+    loop returned the violation from attempt 0 and the candidate was dropped."""
+    from engine.marketing import copywriter
+
+    long_body = ("ISRG fell today. " + "The tape kept selling into the close. " * 6
+                 + "I'm not touching it. Am I too slow?")
+    assert len(long_body) > 275, len(long_body)
+
+    def _rolled(contexts):
+        out = []
+        for ctx in contexts:
+            first = "-r" not in str(ctx.get("slot") or "")
+            body = long_body if first else "ISRG fell today. I'm out. Am I too slow?"
+            out.append({
+                "headline": "$ISRG -14.0%", "body": body, "mode": "deterministic",
+                "violations": ([f"too long: {len(body) + 13} chars (max 275)"]
+                               if first else []),
+            })
+        return out
+
+    monkeypatch.setattr(copywriter, "write_posts_deterministic", _rolled)
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    mv = next(i for i in outbox.read_items(tmp_path) if i["kind"] == "mover")
+    assert mv["text"].rstrip().endswith("I'm out. Am I too slow?"), mv["text"]
+
+
+def test_a_non_length_violation_is_still_terminal_on_the_first_attempt(tmp_path,
+                                                                       monkeypatch):
+    """The other half of the rule. A banned phrase is a property of the
+    candidate's facts, not of the variant — grinding the bank would only burn
+    renders and hide the real reason from `copy_violation`."""
+    from engine.marketing import copywriter
+    seen: list[str] = []
+
+    def _always_banned(contexts):
+        for ctx in contexts:
+            seen.append(str(ctx.get("slot")))
+        return [{"headline": "$ISRG -14.0%", "body": "ISRG fell. I'm out.",
+                 "violations": ["banned vocab: 'validated'"],
+                 "mode": "deterministic"} for _ in contexts]
+
+    monkeypatch.setattr(copywriter, "write_posts_deterministic", _always_banned)
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"] == []
+    assert any(d["reason"] == "copy_violation" for d in rep["dropped"]), rep["dropped"]
+    assert len(seen) == 1, f"a non-length violation was re-rolled {len(seen)}x"
+
+
+def test_too_long_in_every_variant_reports_copy_violation_not_bait(tmp_path,
+                                                                   monkeypatch):
+    """Exhausting the rolls on LENGTH must not be reported as reader-bait — the
+    two have different fixes (shorten the bank vs rewrite the tails), and a
+    mislabelled counter sends the next reader to the wrong file."""
+    from engine.marketing import copywriter
+    long_body = ("ISRG fell today. " + "The tape kept selling into the close. " * 6
+                 + "I'm not touching it. Am I too slow?")
+    monkeypatch.setattr(copywriter, "write_posts_deterministic", lambda ctxs: [
+        {"headline": "$ISRG -14.0%", "body": long_body, "mode": "deterministic",
+         "violations": [f"too long: {len(long_body) + 13} chars (max 275)"]}
+        for _ in ctxs])
+    _write_sp500(tmp_path, [_tile("ISRG", 0.1, sector="Health Care")])
+    _write_snapshot(tmp_path, {"ISRG": (300.0, 349.0, -14.0)})
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"] == []
+    reasons = {d["reason"] for d in rep["dropped"]}
+    assert "copy_violation" in reasons, rep["dropped"]
+    assert "bait_tail" not in reasons, rep["dropped"]
+
+
+def test_only_length_violations_predicate():
+    """Directly on the gate, so the pin survives a loop refactor."""
+    assert pt._only_length_violations(["too long: 282 chars (max 275)"])
+    assert pt._only_length_violations(["shape list: 300 chars (max 275)",
+                                       "shape two_part: body 290 chars (max 275)"])
+    assert not pt._only_length_violations([])
+    assert not pt._only_length_violations(["banned vocab: 'validated'"])
+    # MIXED is not length-only: the banned phrase survives every re-roll.
+    assert not pt._only_length_violations(["too long: 282 chars (max 275)",
+                                           "banned vocab: 'validated'"])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 19. A SENTENCE-INITIAL PRONOUN IS STILL FIRST PERSON
+#
+# _FIRST_PERSON_RE was one case-sensitive alternation, so its lower-case arm
+# only ever matched lower-case pronouns — and a pronoun is capitalised exactly
+# when it opens the sentence, which is the commonest place for it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_a_capitalised_pronoun_opening_the_tail_is_not_bait():
+    """The two repro strings from the review, plus the bare-I control."""
+    for ok in ("My read is nothing here?",
+               "ISRG fell today. Our patience is the cost?",
+               "Mine to miss if it runs?",
+               "Am I too slow here?"):
+        assert not pt._tail_is_bait(ok), ok
+
+
+def test_lower_case_i_is_still_not_a_pronoun():
+    """The bare-I arm stays case-sensitive on purpose: `\\bi\\b` under IGNORECASE
+    matches the stray single letter in any enumeration, which would silently
+    disarm the bait gate."""
+    assert pt._tail_is_bait("Option i or option ii?")
+    assert not pt._has_first_person("Option i or option ii")
+    assert pt._has_first_person("Option I take")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 20. THE WORKFLOW COMMENT MUST DESCRIBE A WIRE THAT EXISTS
+#
+# marketing-publish.yml justified `pip install pillow` with "media_publish.
+# publish_card falls back to the legacy PIL raster when no Chrome is available".
+# This lane never passes `legacy_png`, so that fallback is unreachable from here
+# and a Chrome-less runner drops every candidate for `no-media-url` whatever PIL
+# is installed. Pinning the FACT, not the prose: a comment cannot be tested, but
+# the call shape it describes can.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_resolve_card_never_arms_the_legacy_png_fallback(tmp_path, monkeypatch):
+    """If this ever starts passing `legacy_png`, the workflow comment about why
+    pillow is installed has to be rewritten again — so fail here first."""
+    from engine.marketing import media_publish
+    seen: dict = {}
+
+    def _spy_publish_card(svg, *, chart_id, as_of, root=None, legacy_png=None):
+        seen["legacy_png"] = legacy_png
+        return {"media_url": f"https://cards.example/{chart_id}.png",
+                "media_png_path": f"data/x/{chart_id}.png"}
+
+    monkeypatch.setattr(media_publish, "publish_card", _spy_publish_card)
+    monkeypatch.setattr(pt, "_resolve_card", _REAL_RESOLVE_CARD)
+    from engine.marketing import chart_render
+    monkeypatch.setattr(chart_render, "resolve_color_logo", lambda t, r: None)
+    _theme_fixture(tmp_path)
+
+    rep = _gen(tmp_path, _cfg())
+    assert rep["generated"], rep["dropped"]
+    assert "legacy_png" in seen, "publish_card was never reached — fixture is wrong"
+    assert seen["legacy_png"] is None, (
+        "the publish-time lane now arms the legacy PIL raster; the pillow "
+        "justification comment in .github/workflows/marketing-publish.yml is "
+        "stale again"
+    )

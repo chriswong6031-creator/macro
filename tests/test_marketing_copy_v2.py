@@ -1362,50 +1362,85 @@ def test_format_display_pct_is_the_single_definition_of_the_legal_form():
 _DASHES = ("—", "–", "―")
 
 
+def _rule_message_samples() -> dict[str, list[str]]:
+    """One live violation message per rule family, KEYED BY THE RULE'S NAME.
+
+    A DICT, NOT A FLAT LIST, AND THAT IS THE FIX (2026-07-31 adversarial
+    review). The caller used to concatenate everything and assert
+    ``len(samples) >= 21``. A total is blind to WHICH rule went quiet: a
+    mutation sweep raised ``_REPEAT_CLOSER_MIN_WORDS`` back to 5, which silences
+    ``repeated_closer_violations`` entirely (its fixture closer, "Watching, no
+    position.", is three words), and the count stayed at 21 because two other
+    fixtures happen to emit two messages each. The rule was dead, the dash scan
+    covered it no longer, and the test was green.
+
+    Keyed by name, a silenced rule fails with its own name in the message, and
+    the sample bank doubles as the enumeration of what this file screens.
+    """
+    return {
+        "fake_precision": cw.fake_precision_violations("entry 285.10, target 375.91"),
+        "orphan_hedge": cw.orphan_hedge_violations(
+            "Below 30 it's over. Historical, not a promise."),
+        "count_without_denominator": cw.count_without_denominator_violations(
+            "18 groups on the move today."),
+        "jargon": cw.jargon_violations("Quietly the best chart on my screen."),
+        "sibling_overlap": cw.sibling_overlap_violations(
+            "ARES dipped back to 122, the most-traded price of the past four months",
+            ["ARES dipped back to 122, the most-traded price of the past four months"]),
+        "batch_stem": cw.batch_stem_violations(
+            "Watching $GPI, not buying yet.", ["Watching $CUBI, not buying yet."]),
+        "batch_body_duplicate": cw.batch_body_duplicate_violations(
+            "$A held 45 today", ["$A held 45 today"]),
+        "shape_one_liner": cw.shape_violations("x" * 300, "one_liner"),
+        "shape_two_part": cw.shape_violations("no blank line here", "two_part"),
+        "validate_copy_v2_clarity": cw.validate_copy_v2(
+            "Four up, near highs.", _ctx(type="macro")),
+        "validate_copy_v2_headline": cw.validate_copy_v2(
+            "$X held 122.", _ctx(shape="one_liner"), headline="A headline"),
+        # The 2026-07-30 voice laws. This bank enumerates rules BY HAND, so a
+        # new guard is invisible to it until someone adds a line: all seven
+        # below were unchecked when they landed, and
+        # repeated_sentence_violations really did ship an em dash.
+        "machine_risk": cw.machine_risk_violations(
+            "I'm wrong below 33.8. Historical, not a guarantee."),
+        "motto": cw.motto_violations("37.1 is my trigger, 30.9 proves me wrong."),
+        "process_list": cw.process_list_violations(
+            "1. I write it down. 2. I note the fact."),
+        "number_soup": cw.number_soup_violations("held 1 then 2 then 3 then 4 then 5"),
+        "no_reaction": cw.no_reaction_violations("That's the whole observation."),
+        "repeated_sentence": cw.repeated_sentence_violations(
+            "I am not fighting this one here.", ["I am not fighting this one here."]),
+        "stock_closer": cw.stock_closer_violations(
+            "$X ripped. Strength worth respecting, not chasing.", []),
+        "queued_voice": cw.queued_voice_violations("I'm wrong below 33.8.", "signal"),
+        # The 2026-07-31 prompt-autopsy guards, added the same way.
+        "invented_level": cw.invented_level_violations(
+            "I want 151 before leaning toward 190, then 228.",
+            _ctx(entry_str="151", t1_str="190")),
+        "repeated_closer": cw.repeated_closer_violations(
+            "$Y gave it back. Watching, no position.",
+            [{"text": "$X held. Watching, no position.", "date": "2026-07-28"}]),
+    }
+
+
+def test_every_rule_family_still_emits_a_message():
+    """A SILENCED RULE MUST BE VISIBLE BY NAME, not hidden in a total.
+
+    This is the arm the flat ``len(samples) >= 21`` could not have: it names the
+    rule that stopped firing instead of reporting a count that other rules can
+    make up for.
+    """
+    silent = [name for name, msgs in _rule_message_samples().items() if not msgs]
+    assert silent == [], f"these rule families emitted nothing: {silent}"
+
+
 def test_no_rule_message_carries_a_dash_tell():
     """A violation string is echoed VERBATIM into the repair turn, so a dash in
     a rule message costs the post its one repair round on the dash ban."""
-    samples: list[str] = []
-    samples += cw.fake_precision_violations("entry 285.10, target 375.91")
-    samples += cw.orphan_hedge_violations("Below 30 it's over. Historical, not a promise.")
-    samples += cw.count_without_denominator_violations("18 groups on the move today.")
-    samples += cw.jargon_violations("Quietly the best chart on my screen.")
-    samples += cw.sibling_overlap_violations(
-        "ARES dipped back to 122, the most-traded price of the past four months",
-        ["ARES dipped back to 122, the most-traded price of the past four months"])
-    samples += cw.batch_stem_violations(
-        "Watching $GPI, not buying yet.", ["Watching $CUBI, not buying yet."])
-    samples += cw.batch_body_duplicate_violations("$A held 45 today", ["$A held 45 today"])
-    samples += cw.shape_violations("x" * 300, "one_liner")
-    samples += cw.shape_violations("no blank line here", "two_part")
-    samples += cw.validate_copy_v2("Four up, near highs.", _ctx(type="macro"))
-    samples += cw.validate_copy_v2(
-        "$X held 122.", _ctx(shape="one_liner"), headline="A headline")
-    # The 2026-07-30 voice laws. This test enumerates rules BY HAND, so a new
-    # guard is invisible to it until someone adds a line: all seven below were
-    # unchecked when they landed, and repeated_sentence_violations really did
-    # ship an em dash.
-    samples += cw.machine_risk_violations("I'm wrong below 33.8. Historical, not a guarantee.")
-    samples += cw.motto_violations("37.1 is my trigger, 30.9 proves me wrong.")
-    samples += cw.process_list_violations("1. I write it down. 2. I note the fact.")
-    samples += cw.number_soup_violations("held 1 then 2 then 3 then 4 then 5")
-    samples += cw.no_reaction_violations("That's the whole observation.")
-    samples += cw.repeated_sentence_violations(
-        "I am not fighting this one here.", ["I am not fighting this one here."])
-    samples += cw.stock_closer_violations(
-        "$X ripped. Strength worth respecting, not chasing.", [])
-    samples += cw.queued_voice_violations("I'm wrong below 33.8.", "signal")
-    # The 2026-07-31 prompt-autopsy guards, added the same way.
-    samples += cw.invented_level_violations(
-        "I want 151 before leaning toward 190, then 228.",
-        _ctx(entry_str="151", t1_str="190"))
-    samples += cw.repeated_closer_violations(
-        "$Y gave it back. Watching, no position.",
-        [{"text": "$X held. Watching, no position.", "date": "2026-07-28"}])
-    assert len(samples) >= 21, "every rule must have contributed a message"
-    for msg in samples:
-        for ch in _DASHES:
-            assert ch not in msg, f"dash tell in a rule message: {msg!r}"
+    for name, msgs in _rule_message_samples().items():
+        for msg in msgs:
+            for ch in _DASHES:
+                assert ch not in msg, f"dash tell in {name}: {msg!r}"
 
 
 def test_the_repair_turn_strips_a_dash_that_came_from_elsewhere():
@@ -2487,6 +2522,170 @@ class TestPromptDoesNotFightItself:
         assert "size appropriately" in prompt  # as a ban, in HARD BANS
         assert cw.machine_risk_violations("size appropriately") != []
 
+    # ── the scan has to run over the prompt the WRITER SENDS ─────────────────
+    #
+    # 2026-07-31 adversarial review, finding 4. Autopsy defect 4 moved the
+    # persona card INTO the system turn, where `persona_prompt_section` renders
+    # `voice_notes` VERBATIM as a paragraph headed "THIS ACCOUNT'S CARD" — a
+    # head that is not in `_PROMPT_BAN_QUOTING_HEADS`, so the card is
+    # PRESCRIPTIVE by construction and every word in it is an order. But the
+    # scan above only ever read `_v2_system_prompt({})`: no config laws, no
+    # card. The two paragraphs most likely to contradict the house bans — the
+    # 36 config copy_laws and the eleven shipped persona cards — were the two
+    # the guard could not see.
+    #
+    # A card is allowed to DESCRIBE ("she rarely uses exclamation marks"); it is
+    # not allowed to ORDER something a validator kills. That is exactly the
+    # prescriptive/quoting split `prescriptive_prompt_paragraphs` already
+    # implements, so this runs the SAME machinery over the real per-account
+    # prompts rather than inventing a second rule.
+
+    @staticmethod
+    def _shipped_copywriter_cfg() -> dict:
+        import yaml
+
+        with open(ROOT / "config" / "marketing.yml", encoding="utf-8") as f:
+            return (yaml.safe_load(f) or {}).get("copywriter") or {}
+
+    @classmethod
+    def _shipped_cards(cls) -> list[tuple[str, dict]]:
+        """The card dict EXACTLY as `_v2_write_batch` builds it per account.
+
+        Rebuilt here rather than imported, because the shape is the defect
+        surface: config calls the field `voice_notes` and
+        `persona_prompt_section` reads `voice`, and a test that fed the raw
+        config row would silently scan an empty register and pass.
+        """
+        personas = cls._shipped_copywriter_cfg().get("personas") or {}
+        out: list[tuple[str, dict]] = []
+        for pid, raw in sorted(personas.items()):
+            out.append((pid, {
+                "name": raw.get("name") or pid,
+                "voice": str(raw.get("voice_notes") or "").strip(),
+                "example_lines": list(raw.get("example_lines") or []),
+            }))
+        return out
+
+    def test_the_shipped_config_really_has_cards_to_scan(self):
+        """A scan over an empty iterable is a green light. Pin the supply."""
+        cards = self._shipped_cards()
+        assert len(cards) >= 5, cards
+        for pid, card in cards:
+            assert card["voice"], f"{pid} has no register to scan"
+            assert cw.persona_prompt_section(card), pid
+
+    def test_no_shipped_persona_card_orders_what_the_validators_kill(self):
+        """THE PER-ACCOUNT PROMPT, one per shipped desk, config laws included."""
+        cfg = self._shipped_copywriter_cfg()
+        failures: list[tuple[str, list]] = []
+        for pid, card in self._shipped_cards():
+            prompt = cw._v2_system_prompt(cfg, persona_card=card)
+            assert "THIS ACCOUNT'S CARD" in prompt, pid
+            hits = _prompt_self_contradictions(prompt)
+            if hits:
+                failures.append((pid, hits))
+        assert failures == [], failures
+
+    def test_the_card_paragraph_is_scanned_not_exempted(self):
+        """MUTATION CHECK. The card head must NOT be a quoting head: feed a card
+        whose register orders a banned phrase and the scan has to see it."""
+        bad = {"name": "Test", "voice": "Always close with 'size appropriately'.",
+               "example_lines": []}
+        heads = [h for h, _ in
+                 _prompt_self_contradictions(cw._v2_system_prompt({}, persona_card=bad))]
+        assert any(h.startswith("THIS ACCOUNT'S CARD") for h in heads), heads
+
+    def test_the_config_copy_laws_paragraph_is_scanned_too(self):
+        """The OTHER LAWS head exempts the paragraph BODY, not the account of
+        it: a law that is a ban list is lawful, and this pins that the shipped
+        set is what the scan sees when the head is lifted."""
+        cfg = self._shipped_copywriter_cfg()
+        assert len(cfg.get("copy_laws") or []) >= 10, "config laws went missing"
+        assert "OTHER LAWS" in cw._v2_system_prompt(cfg)
+
+
+class TestPromptBanQuotingHeads:
+    """2026-07-31 adversarial review, finding 5: an exemption is a liability.
+
+    Every head in `_PROMPT_BAN_QUOTING_HEADS` turns a whole paragraph invisible
+    to the self-contradiction scan. A head that suppresses nothing is dead
+    weight that will one day hide a real order; a head that suppresses
+    something is a reviewable claim. This class is the sweep the review ran,
+    made permanent.
+    """
+
+    @staticmethod
+    def _scan_without(head: str, prompt: str) -> list:
+        orig = cw._PROMPT_BAN_QUOTING_HEADS
+        cw._PROMPT_BAN_QUOTING_HEADS = tuple(h for h in orig if h != head)
+        try:
+            return _prompt_self_contradictions(prompt)
+        finally:
+            cw._PROMPT_BAN_QUOTING_HEADS = orig
+
+    def test_the_two_dead_exemptions_are_gone(self):
+        """Both corpus blocks are subtracted from the prompt BY VALUE before the
+        paragraph split, so all that ever reached the scan was the bare header
+        line, which is house text and has to pass like any other order."""
+        for dead in ("EXEMPLARS (real posts", "THESE SHIPPED FROM THIS DESK"):
+            assert dead not in cw._PROMPT_BAN_QUOTING_HEADS, dead
+
+    def test_the_headers_those_exemptions_hid_are_clean_on_their_own(self):
+        """...and now they are actually screened, which is the point of the
+        deletion rather than a side effect of it."""
+        prompt = cw._v2_system_prompt({})
+        for header in ("EXEMPLARS (real posts", "THESE SHIPPED FROM THIS DESK"):
+            assert header in prompt, header
+        assert _prompt_self_contradictions(prompt) == []
+
+    @pytest.mark.parametrize("head,expected_hit", [
+        ("THE COLD-READ LAW", "vwap"),
+        ("NEVER NARRATE THE MACHINERY", "on my screen"),
+        ("VOICE.", "regime"),
+        ("HARD BANS", "rsi"),
+    ])
+    def test_every_surviving_head_on_the_base_prompt_is_load_bearing(
+            self, head, expected_hit):
+        """Drop the head, the scan must go red. An exemption that suppresses
+        nothing is a hole waiting for a real order to fall into it."""
+        hits = [h for _head, msgs in self._scan_without(head, cw._v2_system_prompt({}))
+                for h in msgs]
+        assert any(expected_hit in h for h in hits), (head, hits)
+
+    def test_the_VOICE_exemption_covers_exactly_one_bullet(self):
+        """BLAST RADIUS, measured, so a future edit knows what it is holding.
+        VOICE. is a long paragraph of house defaults and the exemption buys
+        exactly one line of it: "Never a regime label or an internal score"."""
+        hits = [h for _head, msgs in self._scan_without("VOICE.", cw._v2_system_prompt({}))
+                for h in msgs]
+        assert hits == ["banned vocab: 'regime'"], hits
+
+    def test_OTHER_LAWS_is_load_bearing_against_the_SHIPPED_config(self):
+        """The review's sweep called this head a no-op. It ran against
+        `_v2_system_prompt({})`, which emits no OTHER LAWS paragraph AT ALL —
+        the head is unreachable there, not dead. Against the real config it
+        suppresses a hit, so it stays."""
+        cfg = TestPromptDoesNotFightItself._shipped_copywriter_cfg()
+        prompt = cw._v2_system_prompt(cfg)
+        assert _prompt_self_contradictions(prompt) == []
+        heads = [h for h, _ in self._scan_without("OTHER LAWS", prompt)]
+        assert any(h.startswith("OTHER LAWS") for h in heads), heads
+
+    def test_RATIFIED_EXEMPLARS_is_load_bearing_when_the_store_pin_is_armed(self):
+        """Same reasoning, different dark switch: this deployment ships the
+        exemplar store with no active version, so `store_exemplar_block`
+        returns "" and the sweep saw nothing. The block is OTHER PEOPLE'S posts
+        and, unlike the corpus blocks, is NOT value-subtracted, so arming the
+        pin would put third-party copy under a scan whose subject is OUR OWN
+        orders. Simulated here rather than left to a future operator."""
+        armed = (cw._v2_system_prompt({})
+                 + "\n\nRATIFIED EXEMPLARS (exemplar store version 3). Real posts "
+                   "from OTHER accounts, ratified for their REGISTER.\n"
+                   '- [terse] "RSI is stretched and I am wrong below 33.8."')
+        assert _prompt_self_contradictions(armed) == []
+        heads = [h for h, _ in self._scan_without("RATIFIED EXEMPLARS", armed)]
+        assert any(h.startswith("RATIFIED EXEMPLARS") for h in heads), heads
+
 
 class TestPerShapeNumberBudget:
     """Autopsy defect 2: the contracts ordered more numbers than the budget allowed."""
@@ -2544,6 +2743,56 @@ class TestPerShapeNumberBudget:
             body = cw.SHAPE_CONTRACT[shape].lower()
             assert "measured against" in body or "read against each other" in body, shape
         assert "data dump" in cw.SHAPE_CONTRACT["stack"].lower()
+
+    # ── the post-time screen must enforce the SAME budget (2026-07-31 review) ──
+    #
+    # The fix above landed in `validate_copy_v2` only. `queued_voice_violations`
+    # is the publisher's screen over copy ALREADY IN THE QUEUE, and it called
+    # `number_soup_violations` with no shape, so the two halves of the pipeline
+    # disagreed about the same post: generation passed the obedient stack and
+    # the queue quarantined it. A gate that rejects obedience teaches the desk
+    # to stop obeying.
+
+    STACK = ("Copper closed at 4.87.\n"
+             "The five year average sits at 3.90.\n"
+             "That gap is 24% and it is why the miners stopped caring "
+             "about the dollar.")
+
+    def test_the_queue_screen_passes_the_stack_the_writer_passed(self):
+        assert cw.validate_copy_v2(
+            self.STACK, _ctx(type="macro", shape="stack",
+                             numbers_whitelist=["4.87", "3.90", "24%"])) == []
+        assert cw.queued_voice_violations(self.STACK, "macro", "stack") == []
+
+    def test_without_the_shape_that_same_stack_is_quarantined(self):
+        """MUTATION CHECK: the pre-fix call, which is what production ran."""
+        v = cw.queued_voice_violations(self.STACK, "macro")
+        assert any("number soup" in x for x in v), v
+
+    def test_the_default_is_byte_for_byte_the_pre_fix_screen(self):
+        """The publisher call site is another lane's edit and the reply lanes
+        never pass a shape at all, so `shape=None` has to mean exactly what it
+        meant before this parameter existed."""
+        for text in (self.STACK, "held 1 then 2 then 3 then 4 then 5",
+                     "$X held 122. Ugly."):
+            assert (cw.queued_voice_violations(text, "macro")
+                    == cw.queued_voice_violations(text, "macro", None))
+            assert (cw.queued_voice_violations(text, "macro")
+                    == cw.queued_voice_violations(text, "macro", ""))
+
+    def test_an_unknown_shape_gets_the_default_budget_not_a_crash(self):
+        assert cw.queued_voice_violations(
+            "held 1 then 2 then 3", "macro", "not_a_shape") != []
+
+    def test_both_screens_read_the_same_budget_function(self):
+        """Two screens that compute a budget two ways drift on the first edit.
+        Source-level pin: neither may inline a number."""
+        import inspect
+
+        for fn in (cw.queued_voice_violations, cw.validate_copy_v2):
+            src = inspect.getsource(fn)
+            assert "number_soup_violations(" in src, fn.__name__
+            assert "shape=" in src, fn.__name__
 
 
 class TestPayloadContract:
@@ -2781,6 +3030,77 @@ class TestInventedLevels:
         from a budget failure. This is a third thing from either."""
         v = cw.invented_level_violations("toward 228", self._signal_ctx())
         assert v and "whitelist" not in v[0].lower(), v
+
+    # ── the 2026-07-31 adversarial review's over-fire repros ─────────────────
+    #
+    # Wave 1 widened `_TARGET_SLOT_RE` with the MOTION prepositions
+    # (toward / towards / up to / looking for / aiming for / en route to). Those
+    # are not price vocabulary the way `entry|target|t1|stop` are, and three
+    # ordinary sentences started quarantining as invented_level.
+
+    @pytest.mark.parametrize("text", [
+        "Volume ran up to 3 million shares",
+        "Grinding toward 5 straight weeks",
+        "toward 2 handles",
+    ])
+    def test_a_motion_preposition_over_a_COUNT_is_not_a_target(self, text):
+        """EXECUTED REPRO, all three from the review. A price is written bare;
+        a count is written with the thing it counts."""
+        assert cw.invented_level_violations(text, self._signal_ctx()) == [], text
+
+    @pytest.mark.parametrize("text", [
+        "toward 228",
+        "looking for 228 next",
+        "up to 228",
+        "aiming for 228 from here",
+        "en route to 228",
+    ])
+    def test_the_same_prepositions_over_a_BARE_LEVEL_still_reject(self, text):
+        """THE OTHER HALF, and the half that makes the fix load-bearing rather
+        than a relaxation. A fabricated target is a bare number; if the fix had
+        required a decimal point or a $ prefix (the two rules the review
+        floated) every one of these would have gone quiet."""
+        v = cw.invented_level_violations(text, self._signal_ctx())
+        assert v and "228" in v[0], (text, v)
+
+    def test_the_singular_handle_is_price_language_and_the_plural_is_a_move(self):
+        """"toward 2 handles" is a two-point move. "the 190 handle" is a price
+        zone. Only the plural is exempted, so the distinction survives."""
+        assert "handles" in cw._SLOT_NON_LEVEL_NOUNS
+        assert "handle" not in cw._SLOT_NON_LEVEL_NOUNS
+
+    def test_the_receipt_target_it_used_to_call_invented(self):
+        """THE QCOM REPRO. A receipt whose plan has ROLLED OFF the Prophet board
+        carries no `_plan`, so build_context had exactly one forward level to
+        offer — `stop_str`. A non-empty level set takes the STRICT branch, and
+        the receipt's own target, present in `numbers_whitelist` AND in
+        `_receipt["target"]`, was rejected as a fabrication.
+
+        `_LEVEL_CTX_KEYS` has named "target_str" since the gate landed; nothing
+        ever emitted it.
+        """
+        ctx = cw.build_context(
+            {"ticker": "QCOM", "type": "receipt", "account": "receipts",
+             "_receipt": {"kind": "win", "entry": 172.0, "target": 190.0,
+                          "stop": 165.0, "gain_pct_str": "+10.5%",
+                          "target_label": "T1"}},
+            persona=None, facts=None)
+        assert ctx["target_str"] == "190", ctx["target_str"]
+        assert "190" in ctx["numbers_whitelist"]
+        assert "190" in cw.allowed_level_tokens(ctx), cw.allowed_level_tokens(ctx)
+        assert cw.invented_level_violations(
+            "I said 172 on QCOM three weeks ago. It ran up to 190.", ctx) == []
+
+    def test_that_receipt_still_rejects_a_level_it_was_never_given(self):
+        """The fix widens the licence to the receipt's OWN target, not to any
+        number the post feels like aiming at."""
+        ctx = cw.build_context(
+            {"ticker": "QCOM", "type": "receipt", "account": "receipts",
+             "_receipt": {"kind": "win", "entry": 172.0, "target": 190.0,
+                          "stop": 165.0, "gain_pct_str": "+10.5%"}},
+            persona=None, facts=None)
+        v = cw.invented_level_violations("Now looking for 240.", ctx)
+        assert v and "240" in v[0], v
 
 
 class TestRepeatedClosers:

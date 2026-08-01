@@ -37,10 +37,13 @@ Polarity contract (M2 facts only):
 Basis contract (extreme/level facts):
   Every fact whose detection compares a price to a level carries a "basis" key
   ∈ {"close", "intraday"} naming the series it was measured on, and its wording
-  may only claim what that series supports — "closed at a new 52-week low" for
-  close basis, "traded down to X intraday" for intraday basis. A fact detected
-  on one basis and phrased on the other is the 2026-07-28 $TSLA defect (an
-  intraday low, close-phrased, contradicted by the record's own last_close).
+  may only claim what that series supports — "closed at a new 52-week CLOSING
+  low" for close basis, "traded down to X intraday" for intraday basis. A fact
+  detected on one basis and phrased on the other is the 2026-07-28 $TSLA defect
+  (an intraday low, close-phrased, contradicted by the record's own last_close).
+  The word "closing" is load-bearing in the close-basis wording: an unqualified
+  "new 52-week high" names the intraday extreme a quote page prints, which a
+  close-basis record has not measured and may be several percent away from.
 
 PLAIN-LANGUAGE CONTRACT (2026-07-26 $AAPL incident).
 A fact is not raw material for the writer, it is the SENTENCE the reader ends up
@@ -301,11 +304,31 @@ def _fact_52w_high_low(
                 "basis": basis, "numbers": numbers}
 
     # New 52-week high — CLOSE basis first (the stronger claim), then intraday.
+    #
+    # "CLOSING high", not "high". The close-basis branch compares last_close to
+    # `w52_high_close` — the highest CLOSE of the look-back — and says nothing
+    # whatever about `w52_high`, the intraday extreme every quote page prints as
+    # "52-week high". Those two routinely differ by several percent: a name whose
+    # true 52w high is 320 (an intraday spike) can set a new closing high at 305,
+    # and "closed at a new 52-week high (305)" then reads as a claim the reader
+    # can falsify in one glance at any quote page. Naming the basis IN THE
+    # SENTENCE is the same rule the intraday branch already follows ("traded up
+    # to X intraday"); the `basis` key was correct all along, it just never
+    # reached the words. This is the $TSLA basis-mix defect wearing the other
+    # sign — that one phrased an intraday record as a close, this one phrased a
+    # close record as the intraday level.
+    #
+    # THE LADDER IS if/elif ALL THE WAY DOWN, and on an OUTSIDE-REVERSAL DAY that
+    # is a real (unfixed) asymmetry: a bar that both closes above the prior
+    # closing high AND trades below the 52-week low emits ONLY the bullish fact,
+    # because the first arm matches and the low arms are never evaluated. Noted,
+    # not restructured — splitting the ladder changes how many facts a post can
+    # carry and which one leads, which is a copy-side decision, not a wording fix.
     if last_close > w52_high_close:
         close_str = _fmt_price(last_close)
         facts.append(_record_fact(
             "new_52w_high",
-            f"{ticker} closed at a new 52-week high ({close_str})",
+            f"{ticker} closed at a new 52-week closing high ({close_str})",
             close_str, "close", _since_label(lookback_c, w52_high_close)))
     elif last_high > w52_high:
         high_str = _fmt_price(last_high)
@@ -318,7 +341,7 @@ def _fact_52w_high_low(
         close_str = _fmt_price(last_close)
         facts.append(_record_fact(
             "new_52w_low",
-            f"{ticker} closed at a new 52-week low ({close_str})",
+            f"{ticker} closed at a new 52-week closing low ({close_str})",
             close_str, "close", _since_label(lookback_c, w52_low_close)))
     elif last_low < w52_low:
         low_str = _fmt_price(last_low)

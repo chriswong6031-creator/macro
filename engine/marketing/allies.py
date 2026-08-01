@@ -8,7 +8,7 @@ Public API
 seed_targets(root=None)    -> list[dict]
 score_target(t)            -> float
 draft_referral(target_id, tier, billing) -> dict   (PAPER ONLY — persists nothing)
-track_record_stats(root=None) -> dict
+track_record_stats(root=None, cfg=None) -> dict
 render_kit(target, stats)  -> str (markdown)
 build_allies(root=None)    -> dict
 """
@@ -434,17 +434,48 @@ def draft_referral(target_id: str, tier: str, billing: str) -> dict:
 # track_record_stats
 # ---------------------------------------------------------------------------
 
-def track_record_stats(root: Path | str | None = None) -> dict:
+def _load_marketing_cfg(root: Path) -> dict:
+    """config/marketing.yml — fail-soft to {}.
+
+    NOT :func:`_load_config`, which reads the repo-root ``config.yml``. The
+    marketing knobs (``copywriter.receipt_max_age_days`` among them) live in
+    ``config/marketing.yml``, and reading the wrong file here would look exactly
+    like an absent key: a silent fall-through to the in-code default, which is
+    the failure this loader exists to stop.
+    """
+    try:
+        import yaml  # type: ignore[import]
+        with (root / "config" / "marketing.yml").open(encoding="utf-8") as f:
+            return yaml.safe_load(f) or {}
+    except Exception as exc:  # noqa: BLE001
+        log.warning("allies: failed to load config/marketing.yml: %s", exc)
+        return {}
+
+
+def track_record_stats(root: Path | str | None = None,
+                       cfg: dict | None = None) -> dict:
     """Honest track-record stats from graded Prophet receipts.
 
     Loads site/prophet/index.json "plans", runs receipt_source.graded_receipts(),
     counts wins/losses/mixed.  Returns zeros/None on any missing data.
     Kits must print the null honestly — never hide it.
+
+    `cfg` IS THE RECEIPTS WINDOW (2026-07-31 adversarial review). This call site
+    used to take ``graded_receipts``' in-code default, so the win-rate a kit
+    prints was computed over a window nobody could change from config while the
+    Content Studio's receipt supply moved with ``copywriter.receipt_max_age_days``
+    the moment the operator touched it. Two "track records" off two windows.
+    Pass the already-loaded marketing config when you have one; ``None`` reads
+    ``config/marketing.yml`` off *root* rather than falling through to the
+    default, because a silent fall-through is the defect.
     """
     try:
         r = _repo_root(root)
         from engine.marketing import receipt_source
         from engine.marketing.chart_render import load_closes
+
+        if cfg is None:
+            cfg = _load_marketing_cfg(r)
 
         plans: list[dict] = []
         prophet_path = r / "site" / "prophet" / "index.json"
@@ -458,7 +489,9 @@ def track_record_stats(root: Path | str | None = None) -> dict:
         def closes_loader(ticker: str):  # type: ignore[return]
             return load_closes(ticker, r, n=90)
 
-        receipts = receipt_source.graded_receipts(plans, closes_loader=closes_loader)
+        receipts = receipt_source.graded_receipts(
+            plans, closes_loader=closes_loader,
+            max_age_days=receipt_source.receipt_max_age_days(cfg))
 
         wins = sum(1 for rx in receipts if rx.get("kind") == "win")
         losses = sum(1 for rx in receipts if rx.get("kind") == "loss")

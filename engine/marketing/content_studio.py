@@ -535,7 +535,15 @@ _DEFAULT_TICKER_COOLDOWN_DAYS = 3      # watchlist / chart / caption exposure
 _DEFAULT_SIGNAL_COOLDOWN_DAYS = 5      # a directional call with entry/stop
 _DEFAULT_MAX_ACCOUNTS_PER_TICKER_DAY = 2
 _DEFAULT_MAX_SIGNAL_ACCOUNTS_PER_DAY = 1
-_DEFAULT_DEGENERATE_BAND: tuple[float, float] = (0.05, 0.95)
+# Low arm 0.0 = saturation-only (fix-wave ruling, mirrors market_facts): the
+# diagnosed defect was "231 of 231" — a denominator the numerator cannot move
+# against. The symmetric 5% floor this shipped with was NEW suppression that
+# deleted washouts ("11 of 232 showing momentum"), the rarest and most
+# newsworthy breadth print. A washout is information; only saturation is
+# vacuous. ratio<=0.0 is unreachable for a positive count, and a 0-of-N read
+# ("no triggers") is likewise information, not noise. Config can still narrow
+# via selection.degenerate_stat_band.
+_DEFAULT_DEGENERATE_BAND: tuple[float, float] = (0.0, 0.95)
 
 #: Folded outbox statuses that count as EXPOSURE — the name reached, or is about
 #: to reach, a timeline. `quarantined`/`failed`/`recalled` deliberately do NOT:
@@ -817,7 +825,11 @@ def is_degenerate_count(
         return False
     ratio = num / den
     lo, hi = band
-    return ratio >= hi or ratio <= lo
+    # lo<=0 disables the low arm entirely: with an inclusive <=, a lo of 0.0
+    # would still swallow the "0 of N" washout the saturation-only ruling
+    # explicitly protects ("no triggers is information too"). A positive lo
+    # remains a config opt-in with its original inclusive semantics.
+    return ratio >= hi or (lo > 0 and ratio <= lo)
 
 
 def _fact_is_degenerate(fact: dict, *, band: tuple[float, float]) -> bool:
@@ -3416,6 +3428,18 @@ def content_plan(
     _seated_movers: list[dict] = []
     _seated_themes: list[dict] = []
     _reach_unseated = 0
+    #: Why each reach item lost its rung, split by cause. "the ladder was full"
+    #: (a distribution problem, fixed by rungs or desks) and "the card never
+    #: rendered" (a render problem, fixed by budget or bars) cost the desk the
+    #: identical slot and were reported as one number, so neither was ever
+    #: actionable from the census alone.
+    _reach_unseated_reasons: dict[str, int] = {}
+    #: Per-desk pool of D1 rungs nothing has booked yet — built at distribution
+    #: and MUTATED by the card-less unseat pass after the try block. Declared out
+    #: here because that pass must run even when the movers block raised on its
+    #: way to (or inside) the card renderers, which is exactly the case that
+    #: leaves an item seated with chart_id still None.
+    _reach_free: dict[str, list[str]] = {}
 
     try:
         from engine.marketing.movers_source import (
@@ -3604,7 +3628,7 @@ def content_plan(
 
                 # Per-desk pool of D1 rungs nothing has booked yet — same
                 # computation the filing lane runs a few hundred lines below.
-                _reach_free: dict[str, list[str]] = {}
+                # (Declared above the try; filled here.)
                 for _row in enabled_rows:
                     _used = {
                         str(_it.get("slot") or "").split("-", 1)[1]
@@ -3614,19 +3638,40 @@ def content_plan(
                     _reach_free[str(_row.get("id") or "")] = [
                         _s for _s in _LADDER_SLOTS if _s not in _used]
 
+                # THE ROUND-ROBIN INDEX IS A STARTING POINT, NOT AN ASSIGNMENT
+                # (defect closed 2026-07-31). `enabled_rows[_idx % _n_acct]` used
+                # to be final: the desk was chosen before anyone asked whether it
+                # had a rung, so a single full desk dropped its whole share of the
+                # reach batch while its neighbours sat on twenty-odd empty rungs.
+                # The drop then reported "no free D1 rung", which was true of that
+                # ONE desk and false of the network — the census read like a
+                # capacity problem when it was an allocation problem.
+                #
+                # Now the item is OFFERED to each desk in turn starting at the
+                # round-robin position and the first one with a free rung takes
+                # it. Fairness is untouched (the walk still starts one desk
+                # further along per item, so the lead desk still rotates), and
+                # "unseated" now means what it says: every enabled desk is full.
                 for _idx, _item in enumerate(_reach_items):
-                    _acct = enabled_rows[_idx % _n_acct]
-                    _pool = _reach_free.get(str(_acct.get("id") or "")) or []
-                    if not _pool:
+                    _seated_ok = False
+                    for _off in range(_n_acct):
+                        _acct = enabled_rows[(_idx + _off) % _n_acct]
+                        _pool = _reach_free.get(str(_acct.get("id") or "")) or []
+                        if not _pool:
+                            continue
+                        _item["account"] = _acct.get("id", "flagship")
+                        _item["slot"] = f"D1-{_pool.pop(0)}"
+                        _acct["queue"].append(_item)
+                        if _item.get("type") == "mover":
+                            _seated_movers.append(_item)
+                        else:
+                            _seated_themes.append(_item)
+                        _seated_ok = True
+                        break
+                    if not _seated_ok:
                         _reach_unseated += 1
-                        continue
-                    _item["account"] = _acct.get("id", "flagship")
-                    _item["slot"] = f"D1-{_pool.pop(0)}"
-                    _acct["queue"].append(_item)
-                    if _item.get("type") == "mover":
-                        _seated_movers.append(_item)
-                    else:
-                        _seated_themes.append(_item)
+                        _reach_unseated_reasons["no_free_rung"] = (
+                            _reach_unseated_reasons.get("no_free_rung", 0) + 1)
 
             # ── Watchlist card rendering for theme_list items ─────────────────
             # Each theme_list item gets an SVG watchlist card: rows from theme members
@@ -3688,38 +3733,8 @@ def content_plan(
                 except Exception:  # noqa: BLE001
                     pass  # fail-soft: watchlist card unavailable; theme posts unchanged
 
-            # THE CENSUS IS WHAT WAS SEATED, not what was minted. A minted item
-            # the ladder could not take is not a post; reporting it as one is the
-            # same false-supply reading the MOVER-NN slot bug produced for two
-            # weeks (queues full of items, outbox empty, census saying "2 mover
-            # posts, 4 theme_list posts generated" every night).
-            _movers_summary = {
-                "movers": [
-                    {
-                        "ticker": it["ticker"],
-                        "pct": it["_mover_data"]["pct"],
-                        "sector": it["_mover_data"].get("sector", ""),
-                    }
-                    for it in _seated_movers
-                ],
-                "theme_lists": [
-                    {
-                        "theme": it["_theme_data"]["theme"],
-                        "direction": it["_theme_data"]["direction"],
-                        "agg_pct": it["_theme_data"]["agg_pct"],
-                        "n_members": len(it["_theme_data"]["members"]),
-                    }
-                    for it in _seated_themes
-                ],
-                "unseated": _reach_unseated,
-                "note": (
-                    f"{len(_seated_movers)} mover posts, "
-                    f"{len(_seated_themes)} theme_list posts queued on the D1 "
-                    f"ladder from heatmap data"
-                    + (f"; {_reach_unseated} dropped (no free D1 rung)."
-                       if _reach_unseated else ".")
-                ),
-            }
+            # (The census used to be built HERE, between the two card renderers.
+            # It now runs after the unseat pass below the try — see there.)
 
             # mover items: attempt v2 chart (same as Prophet signal flow).
             # SEATED movers only — see the distribution block above.
@@ -3793,6 +3808,156 @@ def content_plan(
 
     except Exception:  # noqa: BLE001
         pass  # fail-soft — movers unavailable; Prophet posts unchanged
+
+    # ── UNSEAT every card-less reach item ────────────────────────────────────
+    # THE DEFECT (reproduced end-to-end 2026-07-31). Seating runs BEFORE the two
+    # card renderers — deliberately, so the ladder rung is settled before a card
+    # is paid for — and both renderers are fail-soft: the theme loop is wrapped in
+    # `except Exception: pass`, the mover loop `continue`s on absent bars and
+    # `break`s when the reach budget runs out, and neither runs at all when
+    # `closes_loader` is None or the block above raised on its way here. Any of
+    # those leaves the item sitting on a real D1 rung with `chart_id` still None.
+    #
+    # `mover` and `theme_list` are bare-cashtag kinds — they are in the
+    # publisher's `_TICKER_ROLLUP_KINDS`, and `_bare_cashtag_post` refuses to ship
+    # a cashtag-bearing post with no picture ("YOU WILL NOT SHIP THESE TEXT ONLY"
+    # — operator, 2026-07-30). So a chartless mover is not a plainer post, it is a
+    # post that is TERMINALLY QUARANTINED at dispatch. It still consumed its
+    # desk's rung and its share of the day cap on the way there, and the census
+    # still counted it as queued supply — a plan that reports six reach posts and
+    # delivers four, with no line anywhere saying which two died or why.
+    #
+    # SAME LAW AS THE PUBLISH-TIME LANE, which already refuses to build an item
+    # whose card would not host ("better no post than a naked ticker post" —
+    # publish_time_content's module header). The plan must never EMIT a chartless
+    # mover/theme either. Unseating is the plan-time form of that law: the item
+    # leaves the queue, its rung goes back to the pool for a producer that can
+    # actually fill it, and the drop is counted with its reason.
+    #
+    # RUNS OUTSIDE THE TRY on purpose. The case that most reliably produces a
+    # card-less seated item is the renderer raising, which jumps straight to the
+    # `except: pass` above — a pass placed inside the block would be skipped by
+    # exactly the failure it exists to clean up.
+
+    # "Carded" is CHART PRESENT IN `featured_charts`, not merely `chart_id` set.
+    # The mover loop stamps `_mv_item["chart_id"]` a few statements before it
+    # appends the chart dict, and `_attach_chart_media` sits between the two — so
+    # a raise there leaves an id pointing at a card that was never rendered, and
+    # a `chart_id is not None` test would call that item carded and ship it bare.
+    _chart_ids_rendered = {str(_fc.get("id") or "") for _fc in featured_charts}
+
+    def _reach_is_carded(_it: dict) -> bool:
+        _cid = str(_it.get("chart_id") or "")
+        return bool(_cid) and _cid in _chart_ids_rendered
+
+    _reach_cardless: list[dict] = []
+    for _seated_list in (_seated_movers, _seated_themes):
+        _kept = [_it for _it in _seated_list if _reach_is_carded(_it)]
+        _reach_cardless.extend(_it for _it in _seated_list if not _reach_is_carded(_it))
+        _seated_list[:] = _kept
+
+    if _reach_cardless:
+        _rows_by_id = {str(_r.get("id") or ""): _r for _r in enabled_rows}
+        for _it in _reach_cardless:
+            _acct_id = str(_it.get("account") or "")
+            _row = _rows_by_id.get(_acct_id)
+            if _row is not None:
+                # Identity comparison, not id-field equality: the queue holds the
+                # very dict object seated above, and two producers could in
+                # principle mint the same id string.
+                _row["queue"] = [_q for _q in (_row.get("queue") or []) if _q is not _it]
+            # Return the rung to the pool, earliest-first order preserved. The
+            # filing lane below recomputes its own pool from the queues, so it
+            # sees the freed rung either way; this keeps `_reach_free` honest for
+            # anything that reads it after this point and makes the "returned"
+            # half of the fix inspectable rather than incidental.
+            _slot_str = str(_it.get("slot") or "")
+            if _slot_str.startswith("D1-"):
+                _rung = _slot_str.split("-", 1)[1]
+                _pool_back = _reach_free.get(_acct_id)
+                if _pool_back is not None and _rung not in _pool_back:
+                    _pool_back.append(_rung)
+                    _pool_back.sort(
+                        key=lambda _s: _LADDER_SLOTS.index(_s)
+                        if _s in _LADDER_SLOTS else len(_LADDER_SLOTS))
+            _it["slot"] = ""
+            _it["status"] = "unseated_no_card"
+            _reach_unseated += 1
+            _reach_unseated_reasons["no_card"] = (
+                _reach_unseated_reasons.get("no_card", 0) + 1)
+
+        # Bare line-start print, NEVER through a logger — every builder here logs
+        # with a prefixing format, so `log.warning("::warning …")` emits
+        # "WARNING ::warning …" and GitHub silently drops it. flush because
+        # stdout is block-buffered when piped in Actions.
+        print(f"::warning title=reach-cardless-unseated::"
+              f"{len(_reach_cardless)} mover/theme_list reach item(s) ended "
+              f"card-less and were unseated (D1 rungs returned to the pool). A "
+              f"bare-cashtag post with no picture is terminally quarantined at "
+              f"dispatch, so emitting it would spend a day-cap slot on nothing.",
+              flush=True)
+
+    # ── The movers census — SEATED AND CARDED, at plan time ──────────────────
+    # THE CENSUS IS WHAT WAS SEATED, not what was minted. A minted item the
+    # ladder could not take is not a post; reporting it as one is the same
+    # false-supply reading the MOVER-NN slot bug produced for two weeks (queues
+    # full of items, outbox empty, census saying "2 mover posts, 4 theme_list
+    # posts generated" every night).
+    #
+    # MOVED OUT OF THE TRY BLOCK (2026-07-31). It used to be built between the
+    # two card renderers, which meant it was a snapshot of a moment that had not
+    # finished happening: the mover chart loop ran after it, and the card-less
+    # unseat pass above runs after that. Building it here is the first point at
+    # which `_seated_movers` / `_seated_themes` are final.
+    #
+    # "AT PLAN TIME" IS THE HONEST QUALIFIER, and the note says so. `apply_reuse_
+    # budget` runs several hundred lines below and can still DELETE a seated
+    # mover from its desk's queue (the ×5-ARES fix), and the v2 writer can drop
+    # one more. Those cuts have their own counters in the plan summary and this
+    # block cannot see them — it is upstream of both. Naming the boundary is the
+    # fix; pretending the number is final is what made it wrong.
+    if _movers_data is not None:
+        _movers_summary = {
+            "movers": [
+                {
+                    "ticker": it["ticker"],
+                    "pct": it["_mover_data"]["pct"],
+                    "sector": it["_mover_data"].get("sector", ""),
+                }
+                for it in _seated_movers
+            ],
+            "theme_lists": [
+                {
+                    "theme": it["_theme_data"]["theme"],
+                    "direction": it["_theme_data"]["direction"],
+                    "agg_pct": it["_theme_data"]["agg_pct"],
+                    "n_members": len(it["_theme_data"]["members"]),
+                }
+                for it in _seated_themes
+            ],
+            "unseated": _reach_unseated,
+            "unseated_reasons": dict(_reach_unseated_reasons),
+            # Rungs still unbooked when distribution finished, per desk. THE
+            # AUDIT FOR `no_free_rung`: that reason is only honest when the whole
+            # network is out of rungs, and this is the number that says whether
+            # it was. Pre-2026-07-31 the round-robin index was final, so a single
+            # full desk dropped its share of the batch while this map still
+            # showed twenty-odd free rungs on its neighbours — the census read
+            # like a capacity problem when it was an allocation problem. (Cards
+            # returned by the unseat pass are added back here, so a desk can show
+            # headroom that only opened up after the renderers ran.)
+            "free_rungs": {_k: len(_v) for _k, _v in _reach_free.items()},
+            "note": (
+                f"{len(_seated_movers)} mover posts, "
+                f"{len(_seated_themes)} theme_list posts seated on the D1 "
+                f"ladder with a card, at plan time; reuse-budget cuts are "
+                f"reported separately"
+                + (f". {_reach_unseated} unseated ("
+                   + ", ".join(f"{_k}={_v}" for _k, _v
+                               in sorted(_reach_unseated_reasons.items()))
+                   + ")." if _reach_unseated else ".")
+            ),
+        }
 
     # ── Movers/theme items join `all_items` (the plan's own census) ───────────
     # THE BLIND SPOT THIS CLOSES. `all_items` is what feeds `distinctness()`,

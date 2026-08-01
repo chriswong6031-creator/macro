@@ -316,10 +316,10 @@ def check_payload(text: str) -> Check:
 #:   congress   (no rows in the corpus)
 #:   receipt    (no rows in the corpus)
 #:
-#: `t1` and `t2` are NOT stamped by any emitter today — `emit_from_content_plan`
-#: copies only direction/entry/invalidation off the plan block. They are read
-#: here anyway, defensively, so the day an emitter starts stamping them the
-#: desk widens by itself instead of quarantining the new levels as invented.
+#: `t1`/`t2`/`target` ARE stamped by `emit_from_content_plan` as of the same-day
+#: fix-wave (the desk's own frozen replay measured 11/185 items whose printed
+#: target was the plan's own T1 reading as invented) — the defensive reads below
+#: predate that stamp and are what let the desk widen automatically when it landed.
 _LEVEL_SOURCE_KEYS: tuple[tuple[str, str], ...] = (
     ("entry", "entry_str"),
     ("t1", "t1_str"),

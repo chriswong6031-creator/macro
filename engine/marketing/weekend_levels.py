@@ -787,15 +787,45 @@ def already_built(
     account: str = "flagship",
     provenance: str = "weekend_levels",
 ) -> int:
-    """How many still-live items this lane already has for (account, as_of).
+    """How many items this lane has EVER built for (account, as_of) — any status.
 
     The idempotence read. Fail-soft: an unreadable queue answers 0, because a
     lane that cannot see the outbox must still be able to fill an empty day.
+
+    STATUS-BLIND ON PURPOSE (defect closed 2026-07-31; the incident it replays is
+    2026-07-26). This used to call `rewrite.live_items_for`, which filters out
+    every TERMINAL status — and `posted` is terminal. So the guard could only see
+    a batch that had not shipped yet: the 03:13 batch of eight queued, POSTED
+    through the morning, and by the 09:52 rerun every one of its rows was
+    invisible to this check. The lane read "nothing built for 2026-07-26",
+    rebuilt the whole day, and produced a second contradictory post per slot —
+    eight more Chrome rasters and eight more R2 uploads against a render budget
+    that is law. An idempotence guard that goes blind the moment its work
+    SUCCEEDS is the exact inverse of the guarantee it advertises: the better the
+    lane performs, the sooner it duplicates itself.
+
+    "Built" therefore means ANY row for this (account, as_of, provenance) triple
+    in items.jsonl, whatever the ledger later did to it — posted, quarantined,
+    failed, recalled, superseded. The row is the receipt that the work was done.
+
+    WHAT THIS COSTS, stated plainly: quarantining a bad batch no longer re-arms
+    the lane for the same day (the old docstring named that as the recovery path
+    and it is now gone). That is the correct trade — a duplicate slate on a live
+    timeline is a public contradiction, while a day with a quarantined batch and
+    no replacement is merely a quiet day. Re-running a day on purpose is an
+    operator action: supersede the rows through `engine.marketing.rewrite`
+    (which passes `skip_if_queued=False` precisely because it OWNS regeneration),
+    or build under a different `as_of`.
     """
     try:
-        from engine.marketing.rewrite import live_items_for  # noqa: PLC0415
-        return len(live_items_for(root=root, account=account, as_of=as_of,
-                                  provenance=provenance))
+        from engine.marketing.outbox import fold_state  # noqa: PLC0415
+        state = fold_state(root)
+        return sum(
+            1 for it in (state.get("items") or {}).values()
+            if str(it.get("account") or "") == account
+            and str(it.get("as_of") or "") == as_of
+            and str(it.get("provenance") or "") == provenance
+        )
     except Exception as exc:  # noqa: BLE001
         log.warning("weekend_levels: queue unreadable for idempotence check: %s", exc)
         return 0
@@ -840,10 +870,14 @@ def build_items(
     rasters and eight R2 uploads against a render budget that is law. Detecting
     the day up front is cheaper and is what "never duplicate" actually means.
     A PARTIAL first run is deliberately treated as built: this returns [] when
-    ANY live item exists for the day. Refilling the rest of a ladder needs slot
+    ANY item exists for the day. Refilling the rest of a ladder needs slot
     occupancy this function does not have, and the day-cap is the real limiter
-    anyway — the honest recovery for a bad batch is to quarantine it, which
-    makes those items dead and re-arms this lane on the next run.
+    anyway.
+
+    "ANY item" is STATUS-BLIND — including a batch that already posted. See
+    `already_built` for why the old live-items-only read let a shipped 03:13
+    batch look like an empty day at 09:52, and for the recovery path that
+    replaces "quarantine it to re-arm the lane".
     """
     from engine.marketing.outbox import make_item  # noqa: PLC0415
 
@@ -851,8 +885,9 @@ def build_items(
         _existing = already_built(root, as_of=as_of, account=account,
                                   provenance=provenance)
         if _existing:
-            log.info("weekend_levels: %s already has %d live item(s) for %s — "
-                     "skipping (idempotent re-run)", account, _existing, as_of)
+            log.info("weekend_levels: %s already built %d item(s) for %s "
+                     "(any status) — skipping (idempotent re-run)",
+                     account, _existing, as_of)
             return []
 
     ts_now = now if now is not None else datetime.now(timezone.utc)

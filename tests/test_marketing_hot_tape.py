@@ -854,12 +854,24 @@ class TestSectorDetector:
         assert rout.facts["dollar_moved_usd"] is None
         assert rout.facts["dollar_missing_caps"] == 5
 
-    def test_two_passes_over_one_group_cannot_grow_the_median_and_shrink_the_dollars(self):
+    def _rip(self, tiles, recs):
+        events = HT.detect_events({}, pack=_pack(recs, FRESH_TRADE_DATE),
+                                  heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        return [e for e in events if e.trigger == "sector_rip"][0]
+
+    def test_a_second_pass_that_loses_caps_withholds_the_dollar_total(self):
         """The shipped contradiction, reproduced: same group, same names, same
         session — 15:27 "median +11.8% ... roughly $148 billion in fresh market
         value", 19:03 "median +13.4% ... roughly $135 billion". With a pinned
         cap base a bigger move CANNOT be a smaller dollar figure; the only way
         to print that pair is to sum over a silently smaller membership.
+
+        REGIME ONE of the invariant: incomplete coverage prints NOTHING. This
+        used to be the whole test, with a `if second is not None:` comparison
+        stapled on after `assert second is None` — a branch nothing could ever
+        reach, so the monotone rule itself was pinned by a dead line. The live
+        comparison is the test below.
         """
         tiles_a = [_tile(f"S{i}", "Technology", 3.0, industry="Sub") for i in range(10)]
         tiles_b = [_tile(f"S{i}", "Technology", 4.0, industry="Sub") for i in range(10)]
@@ -868,22 +880,33 @@ class TestSectorDetector:
         # the old gate admitted.
         thinned = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(7)}
 
-        def _rip(tiles, recs):
-            events = HT.detect_events({}, pack=_pack(recs, FRESH_TRADE_DATE),
-                                      heatmap=self._heatmap(tiles), now=NOW,
-                                      cfg=HT.DEFAULTS)
-            return [e for e in events if e.trigger == "sector_rip"][0]
-
-        first, second = _rip(tiles_a, full), _rip(tiles_b, thinned)
+        first, second = self._rip(tiles_a, full), self._rip(tiles_b, thinned)
         assert second.facts["median_pct"] > first.facts["median_pct"]
         # PRE-FIX: 7 * 100e9 * 0.04 = $280B against the first pass's $300B — a
         # bigger median with a smaller total, on the same ten names.
         assert first.facts["dollar_moved_usd"] == round(10 * 100_000_000_000 * 0.03)
         assert second.facts["dollar_moved_usd"] is None
-        # The invariant itself, stated: two comparable claims can never invert.
-        if second.facts["dollar_moved_usd"] is not None:
-            assert (second.facts["dollar_moved_usd"]
-                    >= first.facts["dollar_moved_usd"])
+        assert second.facts["dollar_missing_caps"] == 3
+
+    def test_with_full_coverage_a_bigger_median_is_never_a_smaller_total(self):
+        """REGIME TWO: both passes PRINT a number, and the invariant is checked
+        for real rather than guarded behind an unreachable `is not None`.
+
+        Two comparable claims about the same ten names cannot invert: the same
+        cap base times a larger move is a larger dollar figure, always.
+        """
+        tiles_a = [_tile(f"S{i}", "Technology", 3.0, industry="Sub") for i in range(10)]
+        tiles_b = [_tile(f"S{i}", "Technology", 4.0, industry="Sub") for i in range(10)]
+        full = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(10)}
+
+        first, second = self._rip(tiles_a, full), self._rip(tiles_b, full)
+        assert second.facts["median_pct"] > first.facts["median_pct"]
+        # Both numbers are REAL — the arm the old test could never enter.
+        assert first.facts["dollar_moved_usd"] is not None
+        assert second.facts["dollar_moved_usd"] is not None
+        assert (second.facts["dollar_moved_usd"]
+                > first.facts["dollar_moved_usd"]), (
+            first.facts["dollar_moved_usd"], second.facts["dollar_moved_usd"])
 
     def test_a_dollar_total_whose_sign_fights_the_direction_is_withheld(self):
         """M8 — the trigger is a MEDIAN, the total is CAP-WEIGHTED.
@@ -1375,6 +1398,69 @@ class TestThresholdFreshness:
             clause = W._milestone_clause(packet, packet.facts)
             assert clause and not clause.startswith("just"), (kind, clause)
             assert "enters correction" not in clause, (kind, clause)
+
+
+class TestSignalFiredClaimsNoFreshness:
+    """The SAME law on the family the freshness fix skipped (review, 2026-07-31).
+
+    `_detect_signal` (engine/marketing/hot_tape.py) tests
+    ``prev_close < entry <= price`` against the live quote, so the crossing is
+    true for the REST OF THE SESSION once the level goes — and the packet is
+    re-detected on every five-minute pass and can be booked hours later. There
+    is no `crossed_in_window` leaf on a signal_fired packet, so nothing in the
+    module could ever have licensed the deterministic bank's "just traded
+    through": it was the exact construction TestThresholdFreshness above exists
+    to kill, shipping unguarded one family over.
+
+    Pinned on a STALE-BOOKED packet — plan level crossed at yesterday's plan,
+    quote taken hours into the session — across EVERY variant in the bank, so a
+    future variant cannot smuggle the word back in through the rotation.
+    """
+
+    @staticmethod
+    def _stale_booked() -> FactPacket:
+        """A signal_fired packet whose crossing is hours old by construction.
+
+        `prev_close` is yesterday's close, `price` is the live quote well
+        through the level, and `fired_at` is late in the RTH session: the
+        detector cannot tell this apart from a crossing that happened one tick
+        ago, which is the whole point.
+        """
+        return _packet(
+            "signal_fired", "signal:stale123", "up", ticker="MSFT",
+            facts={"ticker": "MSFT", "level": 310.5, "price": 338.9,
+                   "prev_close": 308.4, "pct": 9.89, "direction": "up",
+                   "plan_as_of": _prev_weekday(NOW.date()).isoformat(),
+                   "signal_id": "stale123"})
+
+    def test_no_variant_in_the_bank_claims_the_crossing_just_happened(self):
+        packet = self._stale_booked()
+        rendered: list[str] = []
+        for entry in W._SIGNAL_VARIANTS:
+            with forced_variant("signal_fired", entry):
+                out = W.compose_wire(packet)
+            assert out is not None, entry[0]
+            rendered.append(out["text"])
+            assert " just " not in f" {out['text']} ", out["text"]
+            assert not out["text"].lower().startswith("just"), out["text"]
+        # Every variant actually rendered — an empty loop would pass vacuously.
+        assert len(rendered) == len(W._SIGNAL_VARIANTS) >= 3
+
+    def test_the_live_marker_still_carries_the_immediacy(self):
+        """The fix removes an unlicensed claim, it does not mute the family:
+        every variant still says WHEN WE ARE LOOKING, which is lawful."""
+        markers = {m for pair in W._LIVE_MARKERS.values() for m in pair}
+        packet = self._stale_booked()
+        for entry in W._SIGNAL_VARIANTS:
+            with forced_variant("signal_fired", entry):
+                out = W.compose_wire(packet)
+            assert out is not None and any(m in out["text"] for m in markers), out
+
+    def test_the_detector_still_ships_no_freshness_receipt(self):
+        """The premise, asserted rather than assumed. If signal_fired ever GROWS
+        a `crossed_in_window` leaf this flips, and the event wording may come
+        back — behind that bool and a verb pair, never as a bare template."""
+        assert "crossed_in_window" not in self._stale_booked().facts
 
 
 class TestStreakDetector:

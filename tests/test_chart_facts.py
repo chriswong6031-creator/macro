@@ -109,10 +109,45 @@ def test_new_52w_high_detected():
     fact_ids = [f["id"] for f in result["facts"]]
     assert "new_52w_high" in fact_ids, f"Expected new_52w_high in {fact_ids}"
 
-    # The fact text should mention "52-week high"
+    # The fact text must name the BASIS it was measured on. This bar closes
+    # above the highest prior CLOSE, so the close-basis arm fires and the words
+    # have to say "closing high" — an unqualified "52-week high" names the
+    # intraday extreme a quote page prints, which this branch never measured.
     high_fact = next(f for f in result["facts"] if f["id"] == "new_52w_high")
-    assert "52-week high" in high_fact["text"]
+    assert high_fact["basis"] == "close"
+    assert "52-week closing high" in high_fact["text"], high_fact["text"]
     assert high_fact["salience"] == 10
+
+
+def test_close_basis_record_never_claims_the_intraday_52w_high():
+    """The basis-mix repro: a NEW CLOSING high while the true 52w high is far above.
+
+    Adversarial-review finding (2026-07-31). One prior bar spiked to 320 intraday
+    but closed at 250; today closes at 305 — a genuine new closing high, and a
+    full 15 below the 52-week high any quote page prints. The old wording shipped
+    "closed at a new 52-week high (305.00)", which a reader falsifies in one
+    glance. Fails pre-fix on the substring assertion below.
+    """
+    from engine.marketing.chart_facts import compute_facts
+    n = 260
+    dates = _make_dates(n)
+    c = [200.0] * (n - 1) + [305.0]
+    c[50] = 250.0                       # prior best CLOSE, well under today's
+    o = [199.0] * n
+    h = c[:]
+    h[50] = 320.0                       # the real 52-week high — an intraday spike
+    h[-1] = 305.0                       # today never traded above its close
+    l = [198.0] * n
+    v = [1_000_000.0] * n
+
+    result = compute_facts("MSFT", dates, o, h, l, c, v)
+    high_fact = next((f for f in result["facts"] if f["id"] == "new_52w_high"), None)
+    assert high_fact is not None, [f["id"] for f in result["facts"]]
+    assert high_fact["basis"] == "close"
+    text = high_fact["text"]
+    assert "52-week closing high" in text, text
+    # The load-bearing half: the sentence must not contain the unqualified claim.
+    assert "a new 52-week high" not in text, text
 
 
 def test_new_52w_high_numbers_in_whitelist():

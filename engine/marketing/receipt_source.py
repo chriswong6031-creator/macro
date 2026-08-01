@@ -58,10 +58,20 @@ _KIND_PRIORITY = {"mixed": 3, "win": 2, "loss": 1}
 
 
 def receipt_max_age_days(cfg: dict | None = None) -> int:
-    """THE single reader of `copywriter.receipt_max_age_days`.
+    """The reader of `copywriter.receipt_max_age_days`. Call it from EVERY lane.
 
     A config key nothing reads is a lie in a config file; this function exists so
     the knob is real. Falls back to the measured default above.
+
+    THE DOCSTRING USED TO SAY "THE SINGLE READER" AND THAT WAS FALSE (2026-07-31
+    adversarial review). Three lanes call :func:`graded_receipts`, and only
+    content_studio threaded a window through it; ``allies.track_record_stats``
+    and ``sentinel.receipts_context`` took the bare in-code default, so an
+    operator who tightened the config to 14 would have seen the studio's receipt
+    supply move while the ally kits' win-rate denominator and the sentinel's
+    cherry-pick window silently kept grading a 30-day book. Two numbers computed
+    off two different windows, both printed as "the track record". Both call
+    sites now resolve the same knob; see the ``cfg`` parameter each grew.
     """
     raw = ((cfg or {}).get("copywriter") or {}).get("receipt_max_age_days")
     try:

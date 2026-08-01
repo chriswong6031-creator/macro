@@ -31,9 +31,10 @@ Public API:
 
 State (daemon-local, gitignored — data/marketing/press/):
     state["flagship_counter"] = {"day": "YYYY-MM-DD", "count": N}
+    state["transient_refusals"] = {emission_key: consecutive_env_refusals}
     (the seen-ledger + provider cursors live in the same state file, owned by the
-     daemon; this module only reads/advances the flagship counter and the
-     corroboration window.)
+     daemon; this module only reads/advances the flagship counter, the
+     corroboration window and the transient-refusal retry tally.)
 """
 from __future__ import annotations
 
@@ -99,6 +100,33 @@ def reset_media_host_stats() -> None:
     """Zero the card-hosting census (tests + the dry-run report)."""
     for k in _MEDIA_HOST_TALLY:
         _MEDIA_HOST_TALLY[k] = 0
+
+
+#: Refusal reasons that are a property of the ENVIRONMENT, not of the copy.
+#:
+#: A TRANSIENT REFUSAL MUST NOT ENTER A PERMANENT LEDGER (adversarial review,
+#: 2026-07-31). Everything else `_emit_outbox_item` can refuse — invalid item,
+#: banned language, a duplicate, a near-dup, a cap — is decided by the generated
+#: TEXT and gives the same answer on every retry, which is why the caller marks
+#: those seen. ``media_unhosted`` is not in that class: it fires when the Chrome
+#: raster loses a race, when the R2 upload blips, when boto3 or the R2_* creds
+#: are missing on the host. One flaky raster on a breaking cashtag story used to
+#: bury that story for the whole life of the seen ledger, and the LLM spend that
+#: produced its copy bought nothing.
+_TRANSIENT_REFUSALS: frozenset[str] = frozenset({"media_unhosted"})
+
+#: Consecutive transient refusals of the SAME story before the lane alarms. A
+#: retry loop that never surfaces is the other half of the same fault: a host
+#: that is genuinely down (no creds, no boto3) would otherwise re-render, re-pay
+#: and re-refuse the same item every tick in silence. Three ticks is the press
+#: daemon's ~15 minutes — long enough to ride out a raster blip, short enough
+#: that a real outage lands in the Actions summary the same hour.
+_TRANSIENT_RETRY_ALARM_AT = 3
+
+#: Cap on the per-story retry tally carried in daemon state. Bounded like every
+#: other ledger here: the counter exists to spot a stuck story, not to be a
+#: history. Oldest entries (insertion order) are dropped first.
+_TRANSIENT_TALLY_CAP = 500
 
 
 _DEFAULT_FLAGSHIP_TOP_K = 3
@@ -1210,7 +1238,8 @@ def run_press_tick(
         now:        current UTC datetime (injectable for tests).
         cfg:        full marketing.yml dict (for breaking.llm gating + relevance cfg).
         press_cfg:  parsed press_sources.yml dict (satire list, wire caps).
-        state:      daemon-local mutable state (flagship counter, corroboration seen).
+        state:      daemon-local mutable state (flagship counter, corroboration
+                    seen, transient-refusal retry tally).
         seen_ids:   ids already emitted (dedupe). When None, no cross-tick dedupe
                     (the daemon passes its persisted seen-set).
         dry_run:    compute everything, write nothing.
@@ -1283,6 +1312,13 @@ def run_press_tick(
     if counter.get("day") != _day_key(now):
         counter["day"] = _day_key(now)
         counter["count"] = 0
+
+    # Transient-refusal retry tally: emission_key -> CONSECUTIVE refusals whose
+    # reason is environmental (see _TRANSIENT_REFUSALS). Lives in daemon state
+    # rather than in `seen` on purpose — `seen` is the "never again" ledger and
+    # these items are explicitly coming back next tick. Cleared the moment the
+    # story emits or is settled by a copy-property refusal.
+    transient_tries: dict = state.setdefault("transient_refusals", {})
 
     # Corroboration window ledger: claim_key -> {sources:list, first_ts:iso}.
     # Prune entries older than the window so the state file cannot grow unbounded
@@ -1757,25 +1793,58 @@ def run_press_tick(
             text_override=_clamp["text"],
         )
         if out_item is None:
-            # RECORDED AS SEEN, deliberately. The canonical path refused it
-            # (invalid, duplicate, cross-account near-dup, or over cap), and the
-            # LLM summarize-with-citation call above has ALREADY been paid for.
-            # The refusal cannot be evaluated any earlier — every guard that
-            # produced it keys on the generated TEXT — so leaving the item
-            # unseen means re-generating and re-refusing the same story on every
-            # tick, forever, burning billed spend on an outcome we already know.
-            # Every refusal reason is a stable property of the copy, so a retry
-            # cannot change the answer. The seen ledger is size-capped and rolls
-            # (daemon _PRESS_SEEN_CAP), so this is a suppression with a horizon,
-            # not a permanent kill.
-            seen.add(_emission_key(s))
-            _skip_row = {"id": iid,
-                         "reason": str(_refusal.get("reason") or "outbox_refused"),
-                         "account": account}
+            _reason = str(_refusal.get("reason") or "outbox_refused")
+            _ekey = _emission_key(s)
+            if _reason in _TRANSIENT_REFUSALS:
+                # NOT RECORDED AS SEEN. The invariant below holds only for
+                # refusals decided by the COPY; this one is decided by the
+                # environment (a lost Chrome raster, an R2 blip, absent creds),
+                # and marking it seen turned a five-second outage into a
+                # permanent kill of a breaking story. It comes back next tick.
+                #
+                # The retry is COUNTED so it cannot be silent: a host that is
+                # genuinely down would otherwise re-render, re-pay and re-refuse
+                # the same item every tick with nothing in the summary.
+                _tries = int(transient_tries.get(_ekey, 0) or 0) + 1
+                transient_tries[_ekey] = _tries
+                if _tries >= _TRANSIENT_RETRY_ALARM_AT and \
+                        _tries % _TRANSIENT_RETRY_ALARM_AT == 0:
+                    # BARE print, line-start, flushed — never through the logger
+                    # (this module's format prefixes the line and GitHub then
+                    # drops the annotation silently).
+                    print(f"::warning title=press-lane-transient-refusal-stuck::"
+                          f"{iid}: refused {_tries} ticks in a row with "
+                          f"{_reason!r} — this is an ENVIRONMENT fault, not the "
+                          f"copy, and every attempt paid for a raster and an LLM "
+                          f"call. Check the card host (boto3 installed, R2_* set) "
+                          f"rather than the story.", flush=True)
+                # Bound the tally: it is a stuck-story detector, not a history.
+                if len(transient_tries) > _TRANSIENT_TALLY_CAP:
+                    for _stale in list(transient_tries)[:-_TRANSIENT_TALLY_CAP]:
+                        transient_tries.pop(_stale, None)
+            else:
+                # RECORDED AS SEEN, deliberately. The canonical path refused it
+                # (invalid, banned language, duplicate, cross-account near-dup,
+                # or over cap), and the LLM summarize-with-citation call above
+                # has ALREADY been paid for. The refusal cannot be evaluated any
+                # earlier — every guard that produced it keys on the generated
+                # TEXT — so leaving the item unseen means re-generating and
+                # re-refusing the same story on every tick, forever, burning
+                # billed spend on an outcome we already know. EVERY REASON THAT
+                # REACHES THIS BRANCH IS A STABLE PROPERTY OF THE COPY, so a
+                # retry cannot change the answer; the transient class above is
+                # the exception the old blanket comment wrongly claimed did not
+                # exist. The seen ledger is size-capped and rolls (daemon
+                # _PRESS_SEEN_CAP), so this is a suppression with a horizon, not
+                # a permanent kill.
+                seen.add(_ekey)
+                transient_tries.pop(_ekey, None)   # settled: the streak is over
+            _skip_row = {"id": iid, "reason": _reason, "account": account}
             if _refusal.get("violations"):
                 _skip_row["violations"] = list(_refusal["violations"])[:4]
             skipped.append(_skip_row)
             continue
+        transient_tries.pop(_emission_key(s), None)   # it shipped; streak over
         counter["count"] = int(counter["count"]) + 1
         # Record the MIRROR-COLLAPSED key so a later tick from EITHER mirror is a
         # dedupe skip. (There is no per-item outbox FILENAME any more — XG-W2

@@ -2123,3 +2123,81 @@ class TestSilentNightAlarm:
         assert _run_publisher(monkeypatch, tmp_path, [], kill_switch=False) == 0
         out = capsys.readouterr().out
         assert "marketing-zero-posted" not in out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The post-time voice screen judges a post by ITS OWN SHAPE
+# (adversarial review, 2026-07-31)
+#
+# THE DEFECT, end to end: the LLM prompt ORDERS a `stack` to carry three numbers
+# (copywriter.SHAPE_CONTRACT), validate_copy_v2 admits it under the per-shape
+# budget, outbox.emit_from_content_plan persists the shape at `source.shape` —
+# and then the publisher's post-time screen called queued_voice_violations with
+# no shape at all, re-judging the post at the shapeless default of two and
+# TERMINALLY quarantining it at dispatch. A post written to spec, paid for,
+# queued, and killed for obedience. Two halves, one in each file; this is the
+# call-site half.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: 3 distinct numbers, no cashtag (a cashtag on a price kind pulls in the live
+#: tape gate, which is a different test's subject). Over the shapeless budget of
+#: 2, inside the `stack` budget of 3.
+_THREE_NUMBER_STACK = (
+    "Three numbers off this morning's claims print, and then I will shut up "
+    "about it.\n\n"
+    "Initial claims 218.0 thousand, the four-week average 223.5 thousand, "
+    "continuing claims 1.94 million. I had been braced for a worse number "
+    "and I hedged into it, which cost me a decent week."
+)
+
+
+def _voice_quarantine_notes(tmp_path: Path, iid: str) -> list[str]:
+    """The voice screen's quarantine notes for one item, and only those.
+
+    Asserting on the NOTE rather than on the final status is deliberate: a
+    dispatch can end `posted` or `failed` for reasons that have nothing to do
+    with this gate, and either a bare "not quarantined" or a bare "posted"
+    assertion would go green the day an unrelated gate changed.
+    """
+    from engine.marketing.ledgers import read_jsonl
+    rows = read_jsonl(tmp_path / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+    return [str(r.get("note") or "") for r in rows
+            if r.get("id") == iid
+            and str(r.get("note") or "").startswith("voice laws (queue vintage):")]
+
+
+def test_a_three_number_stack_survives_the_dispatch_voice_screen(monkeypatch, tmp_path):
+    """The item's recorded shape reaches the gate, so the gate uses the stack
+    budget the writer was held to."""
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    iid = _seed_queued_kind(tmp_path, kind="macro", provenance="content_studio",
+                            text=_THREE_NUMBER_STACK,
+                            source={"shape": "stack", "angle": "data"})
+
+    fake = _FakePublisher(ok=True)
+    _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                   fake_publisher=fake, kill_switch=True)
+
+    assert _voice_quarantine_notes(tmp_path, iid) == [], (
+        "a post written to its own shape contract was killed at dispatch")
+
+
+def test_a_shapeless_item_still_gets_the_narrow_budget(monkeypatch, tmp_path):
+    """THE ANTI-VACUITY CONTROL, and the compatibility pin in one.
+
+    Identical copy, no recorded shape — a pre-W1 outbox row. It must still trip
+    the gate at the shapeless budget of two, which proves (a) the gate is armed
+    at all, so the test above is not passing on a disabled screen, and (b)
+    threading the shape did not quietly widen the budget for every queued item.
+    """
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    iid = _seed_queued_kind(tmp_path, kind="macro", provenance="content_studio",
+                            text=_THREE_NUMBER_STACK, source={"angle": "data"})
+
+    fake = _FakePublisher(ok=True)
+    _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                   fake_publisher=fake, kill_switch=True)
+
+    notes = _voice_quarantine_notes(tmp_path, iid)
+    assert len(notes) == 1, notes
+    assert "number soup (3 numbers" in notes[0], notes

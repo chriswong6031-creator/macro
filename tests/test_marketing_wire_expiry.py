@@ -60,6 +60,66 @@ def _seed(tmp_path: Path, *, key: str, kind: str, provenance: str,
     return item["id"]
 
 
+def _touch_ledger(tmp_path: Path, iid: str, *, to: str, actor: str,
+                  hours_ago: float) -> None:
+    """Move an item through a real status transition at a CONTROLLED time.
+
+    `actuator` + "operator approval applied" is verbatim what
+    :func:`outbox.apply_decisions` writes when the operator's approve is applied,
+    so this is the real shape of a human touch as the ledger records it — not a
+    hand-built row. `now=` is passed on purpose: a fixture that let the wall
+    clock stamp the row would be a dated time bomb the day the suite runs on a
+    different date than _NOW (memory: fixture-date-plus-wall-clock-gate-bomb).
+    """
+    from engine.marketing.outbox import transition
+
+    assert transition(iid, to, actor=actor, root=tmp_path,
+                      note="operator approval applied",
+                      now=_NOW - timedelta(hours=hours_ago))
+
+
+def _touch_decision(tmp_path: Path, iid: str, *, decision: str, actor: str,
+                    hours_ago: float) -> None:
+    """Append an operator decision row at a CONTROLLED time.
+
+    `outbox.record_decision` stamps `at` from the wall clock with no override, so
+    calling it here would make the fixture's age depend on the day the suite
+    runs. The row shape is copied from it exactly, which is what matters: this is
+    the log an operator's approve/hold lands in IMMEDIATELY, before
+    apply_decisions has written any ledger row at all — the window the live
+    defect fired in.
+    """
+    from engine.marketing.ledgers import append_jsonl
+
+    append_jsonl(
+        tmp_path / "data" / "marketing" / "outbox" / "decisions.jsonl",
+        {
+            "id": iid,
+            "decision": decision,
+            "at": (_NOW - timedelta(hours=hours_ago)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "actor": actor,
+            "note": None,
+        },
+    )
+
+
+def _expiry_notes(tmp_path: Path, iid: str) -> list[str]:
+    """Every `expired_stale_wire:` note the ledger carries for one item.
+
+    The precise question a post-now exemption test has to ask. "Is it still
+    queued?" is too weak (a later gate could have quarantined it for an unrelated
+    and correct reason) and "is it not quarantined?" is too strong (a post-now
+    dispatch legitimately ends `posted`).
+    """
+    from engine.marketing.ledgers import read_jsonl
+
+    rows = read_jsonl(
+        tmp_path / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+    return [str(r.get("note") or "") for r in rows
+            if r.get("id") == iid and str(r.get("note") or "").startswith(
+                "expired_stale_wire:")]
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. The reaper itself
 # ─────────────────────────────────────────────────────────────────────────────
@@ -163,6 +223,82 @@ class TestTheWireReaper:
         assert expire_stale_wire(tmp_path, now=_NOW)["expired"] == 1
         assert fold_state(tmp_path)["status"][iid] == "quarantined"
 
+    def test_an_operator_approval_a_minute_ago_saves_an_eight_hour_old_item(
+            self, tmp_path):
+        """THE REPRODUCED KILL (adversarial review, 2026-07-31).
+
+        Item created 8h before the sweep, operator approved it ONE MINUTE before
+        the sweep, sweep quarantines it — terminally. The mitigation was
+        documented (`_wire_item_born_at`: "an item an operator touched five
+        minutes ago is treated as five minutes old") and unreachable, because
+        created_at was read first and make_item always stamps it.
+
+        The item is realistic in every respect the defect needed: a real
+        `make_item` row with a created_at, and a real `actuator` transition on
+        top of it.
+        """
+        from engine.marketing.outbox import expire_stale_wire, fold_state
+
+        iid = _seed(tmp_path, key="amzn", kind="mover",
+                    provenance="publisher_live_movers", hours_old=8.0)
+        _touch_ledger(tmp_path, iid, to="approved", actor="actuator",
+                      hours_ago=1.0 / 60.0)
+
+        assert expire_stale_wire(tmp_path, now=_NOW)["expired"] == 0
+        assert fold_state(tmp_path)["status"][iid] == "approved"
+
+    def test_a_pending_operator_decision_saves_it_too(self, tmp_path):
+        """Same kill, one step earlier in the pipeline: the operator has clicked
+        approve (decisions.jsonl) but apply_decisions has not run yet, so there
+        is NO ledger row. A clock that read only the ledger would still destroy
+        the post the operator just cleared."""
+        from engine.marketing.outbox import expire_stale_wire, fold_state
+
+        iid = _seed(tmp_path, key="coin", kind="mover",
+                    provenance="publisher_live_movers", hours_old=8.0)
+        _touch_decision(tmp_path, iid, decision="approve", actor="admin",
+                        hours_ago=1.0 / 60.0)
+
+        assert expire_stale_wire(tmp_path, now=_NOW)["expired"] == 0
+        assert fold_state(tmp_path)["status"][iid] == "queued"
+
+    def test_an_old_touch_does_not_grant_immortality(self, tmp_path):
+        """The counterweight, and the reason the clock is IDLE time rather than
+        "has anyone ever touched this". An item somebody approved FIVE HOURS ago
+        and then forgot is exactly as stale as one nobody touched at all — its
+        "right now" is just as dead — and it must still reap."""
+        from engine.marketing.outbox import expire_stale_wire, fold_state
+
+        iid = _seed(tmp_path, key="sector", kind="theme_list",
+                    provenance="publisher_live_movers", hours_old=8.0)
+        _touch_ledger(tmp_path, iid, to="approved", actor="actuator",
+                      hours_ago=5.0)
+
+        out = expire_stale_wire(tmp_path, now=_NOW)
+        assert out["expired"] == 1 and out["ids"] == [iid]
+        assert "5.0h" in fold_state(tmp_path)["last"][iid]["note"]
+        assert fold_state(tmp_path)["status"][iid] == "quarantined"
+
+    def test_a_post_now_id_is_spared_by_the_same_sweep_that_reaps_its_sibling(
+            self, tmp_path):
+        """The reaper runs ~250 lines BEFORE post-now id resolution, so without
+        an exemption the run summoned to dispatch a breaking item is the run that
+        kills it. Pinned against a SIBLING that is reaped in the same call: an
+        exemption test that spared everything would pass on a disabled reaper."""
+        from engine.marketing.outbox import expire_stale_wire, fold_state
+
+        spared = _seed(tmp_path, key="press", kind="breaking",
+                       provenance="press_lane", hours_old=8.0)
+        doomed = _seed(tmp_path, key="amzn", kind="mover",
+                       provenance="publisher_live_movers", hours_old=8.0)
+
+        out = expire_stale_wire(tmp_path, now=_NOW, exempt_ids={spared})
+
+        assert out["ids"] == [doomed], out
+        status = fold_state(tmp_path)["status"]
+        assert status[spared] == "queued"
+        assert status[doomed] == "quarantined"
+
     def test_a_posted_item_is_never_touched(self, tmp_path):
         """`posted` is terminal-except-recall and the reaper must never reach a
         post that already went out — that would be a false quarantine on the
@@ -233,14 +369,44 @@ class TestTheSweepRunsTheReaperAndReportsIt:
             encoding="utf-8",
         )
 
-    def _run(self, monkeypatch, tmp_path: Path, *, live: bool):
+    def _run(self, monkeypatch, tmp_path: Path, *, live: bool,
+             extra_argv: list[str] | None = None):
         import scripts.marketing_publisher as pub
 
         monkeypatch.setenv("MARKETING_PUBLISH_ENABLED", "1" if live else "0")
         monkeypatch.setenv("BUFFER_TOKEN", "test-token")
-        argv = (["--live"] if live else []) + [
+        argv = (["--live"] if live else []) + (extra_argv or []) + [
             "--root", str(tmp_path), "--now", _NOW.strftime("%Y-%m-%dT%H:%M:%SZ")]
         return pub.main(argv)
+
+    def test_a_post_now_dispatch_does_not_kill_the_item_it_was_called_for(
+            self, monkeypatch, tmp_path):
+        """END TO END, through main(): the operator runs `--post-now <id>` on a
+        breaking item that has been waiting 8h for a human, and the run's own
+        reaper — which fires ~250 lines before post-now ids are resolved —
+        must not be what quarantines it.
+
+        Asserted on the LEDGER NOTE, not on the final status: a post-now
+        dispatch legitimately ends `posted` or `failed` depending on the
+        backend, and a bare "not quarantined" assertion would go green the day
+        an unrelated gate started quarantining it for a good reason. The SIBLING
+        is the anti-vacuity control — it proves the reaper ran at all in this
+        same process.
+        """
+        self._publish_cfg(tmp_path)
+        target = _seed(tmp_path, key="press", kind="breaking",
+                       provenance="press_lane", hours_old=8.0)
+        sibling = _seed(tmp_path, key="amzn", kind="mover",
+                        provenance="publisher_live_movers", hours_old=8.0)
+
+        self._run(monkeypatch, tmp_path, live=True,
+                  extra_argv=["--post-now", target])
+
+        assert _expiry_notes(tmp_path, target) == [], (
+            "the run summoned to dispatch this id reaped it instead")
+        assert len(_expiry_notes(tmp_path, sibling)) == 1, (
+            "control failed: the reaper did not run, so the exemption above "
+            "proves nothing")
 
     def test_a_live_sweep_retires_the_stalled_mover(self, monkeypatch, tmp_path):
         from engine.marketing.outbox import fold_state
@@ -307,23 +473,78 @@ class TestTheSweepRunsTheReaperAndReportsIt:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TestBirthTimeLadder:
-    def test_an_operator_touch_resets_the_clock(self, tmp_path):
-        """Age comes from the LAST ledger row when created_at is missing, so an
-        item somebody re-armed five minutes ago is treated as five minutes old —
-        not as eight hours old and instantly re-killed."""
-        from engine.marketing.outbox import _wire_item_born_at
+    """The clock is IDLE time, not age since creation.
 
-        it = {"as_of": "2026-07-31"}
-        last = {"at": "2026-07-31T23:25:00Z"}
-        assert _wire_item_born_at(it, last) == datetime(
-            2026, 7, 31, 23, 25, tzinfo=timezone.utc)
+    THE PRECEDENCE DEFECT (adversarial review, 2026-07-31). The two tests this
+    class replaces pinned the bug from both sides and neither could see it:
 
-    def test_created_at_outranks_the_ledger(self, tmp_path):
+      * `test_an_operator_touch_resets_the_clock` asserted the ledger rung on
+        the fixture ``{"as_of": ...}`` — an item dict with NO created_at, which
+        `make_item` cannot produce, so the rung it "proved" was unreachable for
+        every real item;
+      * `test_created_at_outranks_the_ledger` asserted the OPPOSITE contract on
+        a realistic item, and it was the one production actually took.
+
+    Together they froze a reaper that kills operator-approved items and
+    advertised, in its own docstring, a mitigation that could never fire. Every
+    test below therefore uses a REALISTIC item — created_at present, touches
+    layered on top — because that is the only shape the defect lives in.
+    """
+
+    def test_a_later_ledger_touch_outranks_created_at(self, tmp_path):
+        """The precedence, inverted. This is the assertion whose opposite was
+        pinned before, on the same fixture shape."""
         from engine.marketing.outbox import _wire_item_born_at
 
         it = {"created_at": "2026-07-31T15:32:53Z", "as_of": "2026-07-31"}
         got = _wire_item_born_at(it, {"at": "2026-07-31T23:25:00Z"})
-        assert got == datetime(2026, 7, 31, 15, 32, 53, tzinfo=timezone.utc)
+        assert got == datetime(2026, 7, 31, 23, 25, tzinfo=timezone.utc)
+
+    def test_a_decision_row_counts_before_the_actuator_has_run(self, tmp_path):
+        """An operator's approve lands in decisions.jsonl the instant they click;
+        the matching ledger row waits for apply_decisions. Reading only the
+        ledger would leave that whole window unprotected — and it is exactly the
+        window the live kill happened in."""
+        from engine.marketing.outbox import _wire_item_born_at
+
+        it = {"created_at": "2026-07-31T14:00:00Z", "as_of": "2026-07-31"}
+        got = _wire_item_born_at(it, None, {"at": "2026-07-31T17:59:00Z",
+                                            "actor": "admin",
+                                            "decision": "approve"})
+        assert got == datetime(2026, 7, 31, 17, 59, tzinfo=timezone.utc)
+
+    def test_the_newest_of_the_two_logs_wins(self, tmp_path):
+        """Neither log subsumes the other, so the rule is max(), not
+        "ledger else decision" — pinned in BOTH directions so a reordering of
+        the two reads cannot pass."""
+        from engine.marketing.outbox import _wire_item_born_at
+
+        it = {"created_at": "2026-07-31T14:00:00Z"}
+        ledger_newer = _wire_item_born_at(
+            it, {"at": "2026-07-31T20:00:00Z"}, {"at": "2026-07-31T17:59:00Z"})
+        assert ledger_newer == datetime(2026, 7, 31, 20, 0, tzinfo=timezone.utc)
+        decision_newer = _wire_item_born_at(
+            it, {"at": "2026-07-31T17:59:00Z"}, {"at": "2026-07-31T20:00:00Z"})
+        assert decision_newer == datetime(2026, 7, 31, 20, 0, tzinfo=timezone.utc)
+
+    def test_created_at_is_the_untouched_fallback(self, tmp_path):
+        """The AMZN/COIN shape: nobody ever touched it, so creation IS the start
+        of the idle stretch. This rung is what keeps the reaper a reaper."""
+        from engine.marketing.outbox import _wire_item_born_at
+
+        it = {"created_at": "2026-07-31T15:32:53Z", "as_of": "2026-07-31"}
+        assert _wire_item_born_at(it, None, None) == datetime(
+            2026, 7, 31, 15, 32, 53, tzinfo=timezone.utc)
+
+    def test_an_unparseable_touch_falls_through_to_created_at(self, tmp_path):
+        """A junk `at` must not read as "no information available, never expire"
+        — the item still has an honest creation stamp and the fail-open rule is
+        for items with NOTHING parseable, not for items with one bad field."""
+        from engine.marketing.outbox import _wire_item_born_at
+
+        it = {"created_at": "2026-07-31T15:32:53Z"}
+        assert _wire_item_born_at(it, {"at": "not-a-timestamp"}, None) == datetime(
+            2026, 7, 31, 15, 32, 53, tzinfo=timezone.utc)
 
     def test_a_date_only_as_of_floors_to_midnight_utc(self, tmp_path):
         from engine.marketing.outbox import _wire_item_born_at

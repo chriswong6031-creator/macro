@@ -38,7 +38,10 @@ Public API (a single orchestrator the publisher calls):
 Fail-soft law: the whole body is wrapped in try/except → a broken generation
 NEVER raises into the legacy publisher flow; it logs a warning and returns a
 report with the error noted. In dry-run (live=False) it writes NOTHING and
-collects candidates into "would_generate".
+collects candidates into "would_generate" — and "writes NOTHING" now includes
+the CARD: a dry run skips card resolution entirely (no Chrome raster, no data/
+SVG+PNG, no R2 PUT) and reports the count as `cards_deferred_dry_run`. Those
+candidates are previewed as card-pending; they are never enqueued as if carded.
 
 Display-tier ops (no signal authority, no forward-ledger writes): this only
 describes what already moved on the tape.
@@ -118,14 +121,32 @@ _PT_INFLIGHT_STATUSES: frozenset[str] = frozenset({"posting"})
 #: copywriter defect to report, not a loop to grind.
 _MAX_TAIL_ROLLS = 4
 
-#: First-person markers. A trailing question that carries one is the AUTHOR
-#: asking about their own position ("Am I too slow here?"); one that carries none
-#: is the post asking the timeline to do its thinking ("What's your read?",
-#: "Which one breaks out first?", "Dead-cat bounce or the real dip?"). Case
-#: matters for the bare "I" — \bI\b under IGNORECASE would match the "i" in any
-#: single-letter context — so this pattern is deliberately case-sensitive and
-#: lists the lower-case pronouns explicitly.
-_FIRST_PERSON_RE = re.compile(r"\bI\b|\b(?:me|my|mine|myself|we|us|our|ours)\b")
+#: First-person markers, in TWO patterns because the two halves need opposite
+#: case rules. A trailing question that carries one is the AUTHOR asking about
+#: their own position ("Am I too slow here?"); one that carries none is the post
+#: asking the timeline to do its thinking ("What's your read?", "Which one breaks
+#: out first?", "Dead-cat bounce or the real dip?").
+#:
+#: WHY NOT ONE CASE-SENSITIVE ALTERNATION (the defect this splits). It used to be
+#: `\bI\b|\b(?:me|my|…)\b` compiled with no flags, so the lower-case arm only ever
+#: matched lower-case pronouns — and a first-person pronoun is upper-case exactly
+#: when it opens the sentence, which is the commonest place for it. "My read is
+#: nothing here?" and "Our patience is the cost?" both carry a first-person
+#: stance and both were classified as reader-bait, dropping compliant copy and
+#: burning a re-roll (or the whole candidate) for nothing.
+#:
+#: The bare "I" arm stays CASE-SENSITIVE deliberately: `\bi\b` under IGNORECASE
+#: matches the stray single letter "i" in any enumeration or transliteration, and
+#: lower-case "i" is not the English pronoun.
+_FIRST_PERSON_I_RE = re.compile(r"\bI\b")
+_FIRST_PERSON_OTHER_RE = re.compile(
+    r"\b(?:me|my|mine|myself|we|us|our|ours)\b", re.IGNORECASE)
+
+
+def _has_first_person(text: str) -> bool:
+    """True when *text* carries a first-person marker (see the two patterns)."""
+    s = str(text or "")
+    return bool(_FIRST_PERSON_I_RE.search(s) or _FIRST_PERSON_OTHER_RE.search(s))
 
 #: Rows a theme card shows. The watchlist card supports 3-10 and the copy names
 #: at most 8 cashtags, so 8 keeps the picture and the text describing the SAME
@@ -672,7 +693,28 @@ def _tail_is_bait(text: str) -> bool:
     # complaint.
     parts = re.split(r"(?<=[.!?])\s+", body)
     last = parts[-1] if parts else body
-    return _FIRST_PERSON_RE.search(last) is None
+    return not _has_first_person(last)
+
+
+#: Every LENGTH violation copywriter can raise ends in "N chars (max M)":
+#: validate_copy's "too long: 282 chars (max 275)" and shape_violations'
+#: "shape list: 300 chars (max 275)" / "shape two_part: body 290 chars (max 275)".
+#: Matched by that trailing shape rather than by a list of prefixes so a new
+#: length rule is covered the day it is written — the failure mode this guards
+#: against is a length rule the re-roll does NOT recognise, which silently
+#: restores the old terminal-on-first-attempt behaviour.
+_LENGTH_VIOLATION_RE = re.compile(r"chars\s*\(max\b", re.IGNORECASE)
+
+
+def _only_length_violations(violations: list[str] | None) -> bool:
+    """True when *violations* is non-empty and every entry is a length cap.
+
+    The re-roll gate. A mixed list (too long AND a banned phrase) is NOT
+    length-only: the banned phrase is a property of the candidate's facts and no
+    variant escapes it, so the caller must see it on attempt 0.
+    """
+    items = [str(v) for v in (violations or [])]
+    return bool(items) and all(_LENGTH_VIOLATION_RE.search(v) for v in items)
 
 
 def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
@@ -689,8 +731,26 @@ def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
     signal; the caller drops and tallies it, which is what surfaces a bank that
     has gone bait all the way down.
 
+    LENGTH IS RE-ROLLED TOO, for exactly the same reason bait is (defect closed
+    2026-07-31). copywriter.validate_copy caps headline+body at 275 characters,
+    and the variant banks are not all the same size: on the same candidate the
+    'dry, receipts-forward' theme template rendered 282 chars and short-circuited
+    the whole loop on attempt 0, while the shorter variants one roll away would
+    have shipped. A too-long render is a property of the VARIANT, not of the
+    candidate — precisely the condition `roll` exists to escape — so treating it
+    as terminal spent a real post to punish a template, which is the failure this
+    function was written to stop in the first place.
+
+    Every OTHER violation stays terminal on the first attempt. A number that is
+    not in the facts whitelist, a banned phrase, a dangling level reference — all
+    of those are properties of the candidate's facts and re-rolling the variant
+    hash cannot fix them; grinding the bank would only burn renders and hide the
+    real reason from the caller's `copy_violation` report.
+
     The last attempt's text/violations are returned on failure so the caller's
-    existing empty-copy and violation branches still see a real render.
+    existing empty-copy and violation branches still see a real render — a
+    candidate that is too long in every variant reports `copy_violation` with the
+    real "too long: N chars" string, not a silent drop.
     """
     text = headline = ""
     violations: list[str] = ["empty render"]
@@ -698,13 +758,21 @@ def _render_copy_unbaited(candidate: dict, *, account: str, voice: str,
         text, headline, violations = _render_copy(
             candidate, account=account, voice=voice, persona=persona,
             slot=slot, has_chart=has_chart, roll=attempt)
-        if not text or violations:
-            # Not a bait decision: hand these straight back so the caller reports
-            # the real reason (empty_copy / copy_violation) rather than "bait".
+        if not text:
+            # Not a bait decision: hand this straight back so the caller reports
+            # the real reason (empty_copy) rather than "bait".
+            return text, headline, violations, False
+        if violations:
+            if _only_length_violations(violations):
+                continue   # a shorter variant may exist — see the docstring
             return text, headline, violations, False
         if not _tail_is_bait(text):
             return text, headline, violations, False
-    return text, headline, violations, True
+    # Fell out of the loop: either every variant was bait, or every variant was
+    # too long. `bait` is the give-up flag for the FORMER only — a length-only
+    # exhaustion must surface as copy_violation so the caller's report names the
+    # real cause (and so a bank that has grown past the cap is visible as such).
+    return text, headline, violations, (not violations)
 
 
 def _cand_session(cand: dict) -> str | None:
@@ -976,10 +1044,14 @@ def generate_slot_items(
     """Generate publish-time mover/theme items for the current slot run.
 
     Returns a report dict {enabled, generated:[ids], would_generate:[...],
-    dropped:[{reason, detail}], quote_source, slot}. NEVER raises — the whole
-    body is fail-soft; on error it logs a warning and returns a report with the
-    error noted. In dry-run (live=False) it writes NOTHING and fills
-    would_generate; enqueues only when live is True.
+    dropped:[{reason, detail}], quote_source, slot, cards_unhosted,
+    cards_deferred_dry_run}. NEVER raises — the whole body is fail-soft; on error
+    it logs a warning and returns a report with the error noted.
+
+    In dry-run (live=False) it writes NOTHING and fills would_generate; enqueues
+    only when live is True. NOTHING is literal: card resolution is skipped too,
+    so a dry sweep costs no Chrome raster, no data/ write and no R2 upload
+    (`cards_deferred_dry_run` counts the candidates whose card was deferred).
 
     `posted_counts` is accepted for API completeness (the publisher passes its
     as_of-based tally) but the cap decision uses the LEDGER-based posts-today this
@@ -1141,6 +1213,10 @@ def generate_slot_items(
         generated: list[str] = []
         would_generate: list[dict] = []
         cards_unhosted = 0          # tallied, then annotated once at the end
+        #: Candidates whose card was NOT drawn because this is a dry run. They
+        #: are previewed, never enqueued — the number belongs in the report so a
+        #: reader of a dry-run summary knows the cards are pending, not hosted.
+        cards_deferred_dry_run = 0
         accepted_texts: list[frozenset[str]] = []
         assigned_accounts: set[str] = set()
         acct_cursor = 0
@@ -1251,27 +1327,54 @@ def generate_slot_items(
             # so paying for the render before the copy costs nothing on the drop
             # path; and the copy's has_chart flag — which template variants may
             # say "levels are on the chart" — can only be answered honestly once
-            # the card actually exists. Rendered in dry-run too: a dry run that
-            # skipped the card would report items that could never ship.
+            # the card actually exists.
+            #
+            # DRY-RUN SKIPS THE CARD ENTIRELY (defect closed 2026-07-31). This
+            # function's contract — stated in its own docstring and the module
+            # header — is that live=False "writes NOTHING". `_resolve_card` is not
+            # a read: it rasterises the SVG through Chrome and hands it to
+            # media_publish.publish_card, which writes the SVG and PNG under
+            # data/ and PUTs the PNG to R2. So every scheduled dry sweep was
+            # paying a Chrome raster plus an R2 upload per candidate and leaving
+            # data/ dirty, against the house law that intraday lanes discard
+            # data/ writes. The comment that used to sit here ("Rendered in
+            # dry-run too: a dry run that skipped the card would report items
+            # that could never ship") argued for the side effect — but a dry run
+            # is a plan preview, and the honest preview of an unrendered card is
+            # "card pending", not a hosted URL nobody will ever post.
+            #
+            # `has_chart` is still True for the copy render below: in LIVE mode
+            # `require_card` guarantees an accepted item carries a card (the
+            # branch under it drops everything else), so previewing the copy with
+            # has_chart=False would show the dry run a DIFFERENT variant family
+            # than the one that ships. The card is deferred, not denied.
             card: dict[str, Any] = {"media": None, "published": {},
                                     "reason": "require_card disabled"}
+            card_deferred = False
             if pt["require_card"]:
-                card = _resolve_card(cand, root=r, cfg=cfg or {}, as_of=today,
-                                     now=now, slot=slot)
-                if not card.get("media"):
-                    cards_unhosted += 1
-                    dropped.append({
-                        "reason": "no_card",
-                        "detail": f"{lead_cashtag or cand['type']}: "
-                                  f"{card.get('reason')}",
-                    })
-                    continue
+                if not live:
+                    card_deferred = True
+                    cards_deferred_dry_run += 1
+                    card = {"media": None, "published": {},
+                            "reason": "card-deferred-dry-run"}
+                else:
+                    card = _resolve_card(cand, root=r, cfg=cfg or {}, as_of=today,
+                                         now=now, slot=slot)
+                    if not card.get("media"):
+                        cards_unhosted += 1
+                        dropped.append({
+                            "reason": "no_card",
+                            "detail": f"{lead_cashtag or cand['type']}: "
+                                      f"{card.get('reason')}",
+                        })
+                        continue
 
             # ── Copy (reuse-only) ───────────────────────────────────────────
             try:
                 text, headline, violations, bait = _render_copy_unbaited(
                     cand, account=chosen, voice=voice, persona=persona,
-                    slot=slot, has_chart=bool(card.get("media")))
+                    slot=slot,
+                    has_chart=bool(card.get("media")) or card_deferred)
             except Exception as exc:  # noqa: BLE001
                 dropped.append({"reason": "copy_error", "detail": f"{lead_cashtag}: {exc}"})
                 continue
@@ -1350,6 +1453,12 @@ def generate_slot_items(
                     "id": item["id"], "account": chosen, "kind": cand["type"],
                     "ticker": lead_ticker, "slot": f"LIVE-{slot}",
                     "text": text.replace("\n", " ")[:200],
+                    # Per-row honesty: this preview carries NO media, because no
+                    # card was drawn (see the dry-run branch above). A reader who
+                    # sees `media: []` on a rollup kind must not conclude the
+                    # live run would ship it bare — it would render the card
+                    # first, and drop the candidate if that failed.
+                    "card": "deferred_dry_run" if card_deferred else "n/a",
                 })
                 # Charge the account so the next candidate rotates onward in dry-run too.
                 posted_today[chosen] = posted_today.get(chosen, 0) + 1
@@ -1407,6 +1516,9 @@ def generate_slot_items(
             "quote_source": quote_source,
             "slot": slot,
             "cards_unhosted": cards_unhosted,
+            # Always present (0 on a live run) so a report consumer can read it
+            # unconditionally rather than .get()-ing around its absence.
+            "cards_deferred_dry_run": cards_deferred_dry_run,
         }
 
     except Exception as exc:  # noqa: BLE001
