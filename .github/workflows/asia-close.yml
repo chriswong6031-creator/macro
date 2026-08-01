@@ -190,6 +190,21 @@ jobs:
           path: data/hk_stocks
           key: hk-stocks-ohlc-${{ github.run_id }}
           restore-keys: hk-stocks-ohlc-
+      - name: preflight — pdftotext present (SLD extraction dies silently without it)
+        # collectors/hk_cbbc_sld.py returns None per PDF when poppler is missing, so
+        # a no-poppler host is visible only as failed_pdfs=200 in
+        # data/hk_cbbc/sld_coverage.json — every 07-10..07-31 night that landed on
+        # the M1 froze the call_levels store this way (last healthy extract 07-28 on
+        # mac-builder-5; poppler reached the M1 2026-08-01 in the vault bodyless
+        # incident). WARNING, not failure — unlike research-ingest's fail-closed
+        # preflight: vault receipts freeze maimed rows permanently, while this store
+        # self-heals on the next poppler run, and a red job here would cost every
+        # CN/HK dashboard for one adapter's input. This tripwire exists for the next
+        # host regression (new runner, brew migration, relabel).
+        run: |
+          if ! command -v pdftotext >/dev/null 2>&1; then
+            echo "::warning title=asia-close pdftotext missing::pdftotext (poppler) missing on ${RUNNER_NAME:-unknown} — hk_cbbc_sld will fail all SLD extractions this run (call_levels store freezes, HK magnet analysis goes stale). Fix: brew install poppler on this Mac."
+          fi
       - name: collect China/HK data (graceful degradation — never fails on one source)
         env:
           TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}  # unfreezes the gated tushare plane (dead since 2026-06-21: collectors silently no-op without it — see CHINA_ENGINE_REASSESSMENT)

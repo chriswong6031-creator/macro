@@ -98,6 +98,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -542,6 +543,29 @@ def fetch_sld_call_levels(data_root: Path | None = None,
         log.info("hk_cbbc_sld: no SLD rows returned for %s..%s", from_d, to_d)
         return _write_empty_results(data_root)
 
+    pdftotext_ok = _pdftotext_available()
+    if not pdftotext_ok:
+        # One annotation per run, not per PDF. A missing binary is a HOST fault
+        # that this collector otherwise renders invisible: every extract returns
+        # None, failed_pdfs pins at the row cap, and the run stays green while
+        # the call_levels store freezes (every macstudio night 07-10..07-31 that
+        # landed on the no-poppler M1 did exactly this). Fail-open on purpose,
+        # unlike research-ingest's fail-closed preflight: vault receipts freeze
+        # maimed rows permanently, while this store self-heals on the next run
+        # with the binary present — and a raise here would cost the whole asia
+        # collect group, not just this adapter.
+        print(
+            "::warning title=hk_cbbc_sld pdftotext missing::pdftotext (poppler) is not "
+            f"on PATH on runner {os.environ.get('RUNNER_NAME', 'unknown')} — all "
+            f"{len(rows)} SLD PDFs this run will fail extraction and the call_levels "
+            "store will freeze (HK magnet analysis goes stale). Fix: brew install "
+            "poppler on this Mac; the store self-heals on the next run with the "
+            "binary present.",
+            flush=True,
+        )
+        log.error("hk_cbbc_sld: pdftotext missing — %d SLD rows will not extract this run",
+                  len(rows))
+
     all_records: list[dict] = []
     new_pdfs = 0
     failed_codes = 0
@@ -625,6 +649,7 @@ def fetch_sld_call_levels(data_root: Path | None = None,
         n_new_pdfs=new_pdfs,
         n_failed=failed_codes,
         data_root=data_root,
+        pdftotext_available=pdftotext_ok,
     )
 
     return {
@@ -636,13 +661,15 @@ def fetch_sld_call_levels(data_root: Path | None = None,
 
 
 def _write_empty_results(data_root: Path | None) -> dict:
-    _write_sld_coverage(0, 0, 0, data_root)
+    _write_sld_coverage(0, 0, 0, data_root,
+                        pdftotext_available=_pdftotext_available())
     return {"new_pdfs": 0, "parsed_records": 0,
             "stock_codes_parsed": 0, "stock_codes_failed": 0}
 
 
 def _write_sld_coverage(n_records: int, n_new_pdfs: int, n_failed: int,
-                        data_root: Path | None = None) -> None:
+                        data_root: Path | None = None,
+                        pdftotext_available: bool = True) -> None:
     p = _sld_coverage_path(data_root)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps({
@@ -650,6 +677,11 @@ def _write_sld_coverage(n_records: int, n_new_pdfs: int, n_failed: int,
         "call_levels_in_store": n_records,
         "new_pdfs_this_run": n_new_pdfs,
         "failed_pdfs": n_failed,
+        # False = the run could not extract at all (host missing poppler) —
+        # distinguishes a frozen-store night from a genuinely quiet one in
+        # the git history of this file, which is the audit trail that dated
+        # the 07-10..07-31 M1 gap.
+        "pdftotext_available": pdftotext_available,
     }, indent=2))
 
 
