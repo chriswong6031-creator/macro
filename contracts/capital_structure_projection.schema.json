@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_projection.schema.json",
+  "title": "Capital Structure event-state projection bundle",
+  "description": "A deterministic, point-in-time projection of immutable Capital Structure event, edge, review, and telemetry records. It deliberately exposes no raw documents, private storage locations, financial estimates, scores, or trading decisions.",
+  "type": "object",
+  "additionalProperties": false,
+  "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+  "required": [
+    "schema", "projection_version", "generation_id", "generated_at", "as_of",
+    "source_receipt", "coverage", "records", "unavailable", "authority"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.projection_bundle.v1"},
+    "projection_version": {"type": "string", "minLength": 1},
+    "generation_id": {"type": "string", "pattern": "^projection:cs:[A-Fa-f0-9]{24}$"},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "as_of": {"type": "string", "format": "date-time"},
+    "source_receipt": {"$ref": "#/$defs/source_receipt"},
+    "coverage": {"$ref": "#/$defs/bundle_coverage"},
+    "records": {"type": "array", "items": {"$ref": "#/$defs/projection"}, "uniqueItems": true},
+    "unavailable": {"$ref": "#/$defs/unavailable"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "safe_property_name": {
+      "not": {"pattern": "^(?:object_?keys?|raw_?(?:docs?|documents?)|scores?|probabilit(?:y|ies)|capacities|capacity|runway|overhang)$"}
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["is_context_only", "rank_authority", "sizing_authority", "entry_authority", "prophet_authority"],
+      "properties": {
+        "is_context_only": {"const": true}, "rank_authority": {"const": false},
+        "sizing_authority": {"const": false}, "entry_authority": {"const": false},
+        "prophet_authority": {"const": false}
+      }
+    },
+    "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+    "string_id_array": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "unavailable": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "source_receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["generation_id", "as_of", "artifact_hashes", "source_ledger_receipt"],
+      "properties": {
+        "generation_id": {"type": ["string", "null"], "pattern": "^generation:cs:[A-Fa-f0-9]{24,64}$"},
+        "as_of": {"type": ["string", "null"], "format": "date-time"},
+        "artifact_hashes": {
+          "type": "object", "additionalProperties": false,
+          "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+          "required": ["event_versions", "event_edges", "review_queue"],
+          "properties": {
+            "event_versions": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+            "event_edges": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"},
+            "review_queue": {"type": ["string", "null"], "pattern": "^[A-Fa-f0-9]{64}$"}
+          }
+        },
+        "source_ledger_receipt": {
+          "type": ["object", "null"], "additionalProperties": false,
+          "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+          "required": ["schema", "record_count", "prefix_sha256", "form_policy_version", "immutable_prefix"],
+          "properties": {
+            "schema": {"const": "capital_structure.source_ledger_receipt.v1"},
+            "record_count": {"type": "integer", "minimum": 0},
+            "prefix_sha256": {"$ref": "#/$defs/sha256"},
+            "form_policy_version": {"type": "string", "minLength": 1},
+            "immutable_prefix": {"const": true}
+          }
+        }
+      }
+    },
+    "bundle_coverage": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "state", "freshness", "age_hours", "freshness_sla_hours", "source_status",
+        "coverage_claim", "known_exclusions", "reason", "issuer_count", "event_count",
+        "classified_event_count", "deferred_event_count", "edge_count", "review_count"
+      ],
+      "properties": {
+        "state": {"type": "string", "enum": ["complete", "partial", "unavailable", "contradicted"]},
+        "freshness": {"type": "string", "enum": ["fresh", "stale", "unknown"]},
+        "age_hours": {"type": ["number", "null"]},
+        "freshness_sla_hours": {"type": "number", "minimum": 0},
+        "source_status": {"type": "string", "enum": ["ok", "degraded", "no_source_manifest", "missing"]},
+        "coverage_claim": {"type": ["string", "null"]},
+        "known_exclusions": {"$ref": "#/$defs/string_id_array"},
+        "reason": {"type": "string", "minLength": 1},
+        "issuer_count": {"type": "integer", "minimum": 0},
+        "event_count": {"type": "integer", "minimum": 0},
+        "classified_event_count": {"type": "integer", "minimum": 0},
+        "deferred_event_count": {"type": "integer", "minimum": 0},
+        "edge_count": {"type": "integer", "minimum": 0},
+        "review_count": {"type": "integer", "minimum": 0}
+      }
+    },
+    "projection": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "schema", "issuer_id", "identity", "as_of", "generated_at", "latest_observed_event",
+        "timeline", "what_changed", "coverage", "unavailable", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "capital_structure.projection.v1"},
+        "issuer_id": {"type": "string", "minLength": 1},
+        "identity": {"$ref": "#/$defs/identity"},
+        "as_of": {"type": "string", "format": "date-time"},
+        "generated_at": {"type": "string", "format": "date-time"},
+        "latest_observed_event": {"$ref": "#/$defs/projected_event"},
+        "timeline": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/projected_event"}, "uniqueItems": true},
+        "what_changed": {"type": "array", "items": {"$ref": "#/$defs/change"}, "uniqueItems": true},
+        "coverage": {"$ref": "#/$defs/record_coverage"},
+        "unavailable": {"$ref": "#/$defs/unavailable"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["cik", "ticker", "observed_tickers", "aliases"],
+      "properties": {
+        "cik": {"type": ["string", "null"], "pattern": "^[0-9]{1,10}$"},
+        "ticker": {"type": ["string", "null"], "pattern": "^[A-Z0-9.\\-]+$"},
+        "observed_tickers": {"$ref": "#/$defs/string_id_array"},
+        "aliases": {"$ref": "#/$defs/string_id_array"}
+      }
+    },
+    "projected_event": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": [
+        "event_id", "accession", "form", "filing_date", "family", "subtype", "lifecycle_state",
+        "classification_state", "defer_reason", "correction_version", "correction_of", "relationships",
+        "review", "clocks", "source"
+      ],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "accession": {"type": ["string", "null"]}, "form": {"type": ["string", "null"]},
+        "filing_date": {"type": ["string", "null"], "format": "date"},
+        "family": {"type": "string", "enum": ["shelf", "atm", "follow_on", "rdo", "pipe", "eloc", "sepa", "warrant", "convertible", "resale_registration", "rights_offering", "reg_a", "corporate_action", "other"]},
+        "subtype": {"type": ["string", "null"]},
+        "lifecycle_state": {"type": "string", "enum": ["filed", "amended", "effective", "withdrawn", "priced", "closed", "expired", "unknown"]},
+        "classification_state": {"type": "string", "enum": ["classified", "deferred_missing_document", "deferred_unsupported_media", "deferred_ambiguous_content", "deferred_conflict", "deferred_linkage", "not_applicable"]},
+        "defer_reason": {"type": ["string", "null"]},
+        "correction_version": {"type": "integer", "minimum": 1}, "correction_of": {"type": ["string", "null"]},
+        "relationships": {"type": "array", "items": {"$ref": "#/$defs/relationship"}, "uniqueItems": true},
+        "review": {"$ref": "#/$defs/review"}, "clocks": {"$ref": "#/$defs/clocks"}, "source": {"$ref": "#/$defs/source"}
+      }
+    },
+    "relationship": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["edge_id", "relationship", "to_event_id", "observed_at"],
+      "properties": {
+        "edge_id": {"type": "string", "minLength": 1},
+        "relationship": {"type": "string", "enum": ["amendment_of", "effectuates", "withdraws", "supersedes"]},
+        "to_event_id": {"type": "string", "minLength": 1}, "observed_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "review": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["state", "queue_ids", "items"],
+      "properties": {
+        "state": {"type": "string", "enum": ["pending", "none"]},
+        "queue_ids": {"$ref": "#/$defs/string_id_array"},
+        "items": {"type": "array", "items": {"$ref": "#/$defs/review_item"}, "uniqueItems": true}
+      }
+    },
+    "review_item": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["queue_id", "classification_state", "defer_reason", "candidate_event_ids", "first_queued_at"],
+      "properties": {
+        "queue_id": {"type": "string", "minLength": 1},
+        "classification_state": {"type": "string", "enum": ["deferred_missing_document", "deferred_unsupported_media", "deferred_ambiguous_content", "deferred_conflict", "deferred_linkage"]},
+        "defer_reason": {"type": "string", "minLength": 1},
+        "candidate_event_ids": {"$ref": "#/$defs/string_id_array"},
+        "first_queued_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "clocks": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "description": "SEC acceptance, Mastermind observation, and projection generation clocks remain distinct.",
+      "required": ["sec_accepted_at", "mastermind_observed_at", "projection_generated_at"],
+      "properties": {
+        "sec_accepted_at": {"type": ["string", "null"], "format": "date-time"},
+        "mastermind_observed_at": {"type": "string", "format": "date-time"},
+        "projection_generated_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["source_system", "source_id", "filing_url", "manifest_ids", "evidence"],
+      "properties": {
+        "source_system": {"type": "string", "minLength": 1}, "source_id": {"type": "string", "minLength": 1},
+        "filing_url": {"type": ["string", "null"], "format": "uri", "pattern": "^https://(?:www\\.)?sec\\.gov/"},
+        "manifest_ids": {"$ref": "#/$defs/string_id_array"},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence_ref"}, "uniqueItems": true}
+      }
+    },
+    "evidence_ref": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["manifest_id", "span_id", "text_sha256"],
+      "properties": {"manifest_id": {"type": "string", "minLength": 1}, "span_id": {"type": "string", "minLength": 1}, "text_sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "change": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["change_id", "event_id", "change_type", "label", "observed_at", "edge_id"],
+      "properties": {
+        "change_id": {"type": "string", "minLength": 1}, "event_id": {"type": "string", "minLength": 1},
+        "change_type": {"type": "string", "minLength": 1}, "label": {"type": "string", "minLength": 1},
+        "observed_at": {"type": "string", "format": "date-time"}, "edge_id": {"type": ["string", "null"]}
+      }
+    },
+    "record_coverage": {
+      "type": "object", "additionalProperties": false,
+      "propertyNames": {"$ref": "#/$defs/safe_property_name"},
+      "required": ["state", "event_count", "classified_event_count", "deferred_event_count", "review_count", "review_queue_semantics", "contradiction_ids"],
+      "properties": {
+        "state": {"type": "string", "enum": ["partial", "contradicted"]},
+        "event_count": {"type": "integer", "minimum": 0}, "classified_event_count": {"type": "integer", "minimum": 0},
+        "deferred_event_count": {"type": "integer", "minimum": 0}, "review_count": {"type": "integer", "minimum": 0},
+        "review_queue_semantics": {"const": "current_rebuild_not_historical_ledger"}, "contradiction_ids": {"$ref": "#/$defs/string_id_array"}
+      }
+    }
+  }
+}
