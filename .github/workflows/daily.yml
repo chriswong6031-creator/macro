@@ -240,22 +240,6 @@ jobs:
         # Any source-bundle, ledger, or generation-receipt integrity failure blocks
         # the checkpoint; a partial capital-structure generation is never committed.
         run: python -m scripts.compile_capital_structure_events
-      - name: audit massive_stock_day store (content tripwire — loud, never blocks the night)
-        # This lane runs --exclude-group asia, and scripts/collect.py skips the WHOLE
-        # run_quality_audits gate on any partial run (--only/--group/--exclude-group) —
-        # so the store's content audit has never executed nightly. The 2026-07 freeze
-        # ran 18 sessions with zero audit coverage behind that hole. Hence its own step.
-        # The module bare-prints ::error/::warning annotations and exits 1 on a content
-        # fail; continue-on-error keeps the night's commit safe while the annotations
-        # plus the engine job's strict audit_r2 anchor carry the alarm. Writes
-        # data/quality/massive_store_audit.json, picked up by "commit data" below.
-        continue-on-error: true
-        env:
-          COLLECT_LANE: nightly   # load-bearing: the skip path only annotates on this lane
-                                  # (elsewhere an absent store is normal). Without it the
-                                  # "restore failed -> store did not advance" warning — the
-                                  # single loudest signal here — would never be emitted.
-        run: python -m scripts.audit_massive_store
       - name: refresh Finviz themes snapshot (subsector-rotation feed; non-fatal)
         # The only network leg for the themes map + Subsector Rotation. Refreshes
         # data/themes_heatmap/perf_snapshot.json (stamped with asof) so the rotation
@@ -273,6 +257,22 @@ jobs:
         run: |
           python scripts/collect_zori.py \
             || echo "::warning::ZORI collection failed (non-fatal) — shelter leg will use cached parquet"
+      - name: audit massive_stock_day store (content tripwire — loud, never blocks the night)
+        # This lane runs --exclude-group asia, and scripts/collect.py skips the WHOLE
+        # run_quality_audits gate on any partial run (--only/--group/--exclude-group) —
+        # so the store's content audit has never executed nightly. The 2026-07 freeze
+        # ran 18 sessions with zero audit coverage behind that hole. Hence its own step.
+        # The module bare-prints ::error/::warning annotations and exits 1 on a content
+        # fail; continue-on-error keeps the night's commit safe while the annotations
+        # plus the engine job's strict audit_r2 anchor carry the alarm. Writes
+        # data/quality/massive_store_audit.json, picked up by "commit data" below.
+        continue-on-error: true
+        env:
+          COLLECT_LANE: nightly   # load-bearing: the skip path only annotates on this lane
+                                  # (elsewhere an absent store is normal). Without it the
+                                  # "restore failed -> store did not advance" warning — the
+                                  # single loudest signal here — would never be emitted.
+        run: python -m scripts.audit_massive_store
       - name: commit data (local checkpoint — no network ops in this step)
         id: commitdata
         run: |
