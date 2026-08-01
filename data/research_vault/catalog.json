@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T11:30:18.354005+00:00",
-  "count": 525,
+  "generated_at": "2026-08-01T11:54:20.026791+00:00",
+  "count": 526,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1089,6 +1089,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ny760i7kalj-e1ef1c",
+      "title": "Lottomatica Group (LTMC)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:25Z",
+      "summary_points": [
+        "**EBITDA Beat & Margin Strength**: Online NGR growth outpaced GGR, driving 58.3% Online EBITDA margin; FY26 EBITDA forecast at €961mn exceeds expectations.",
+        "**Undervaluation Signal**: EV/EBITDA declines to 5.8x (from 8.6x), with revenue growth moderating to 5.9% but robust EBIT growth at 9.3% and rising 3.3% dividend yield.",
+        "**Financial Health & Cash Flow**: Net debt/EBITDA (excl.",
+        "leases) falls to 5.48x; operating cash flow consistently matches net income (€502.8m), confirming liquidity strength.",
+        "**Target Price Gap**: €31.00 price target consistently exceeds closing price (e.g., €27.67 on 06-May-26), indicating persistent undervaluation despite improving fundamentals."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
