@@ -378,7 +378,7 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
      content-free skeleton the hydration step replaces. #}
   {% if top_setups or gate %}
   <div class="setups-strip-label">{{ t('Top setups', '精选设置') }}
-    {% if gate %}<span class="gate-pill">{{ t('Insider', 'Insider') }}</span>{% endif %}
+    {% if gate %}<span class="gate-pill">{{ t('Essential', 'Essential') }}</span>{% endif %}
   </div>
   <div class="setups-strip" id="ss-setups">
     {% if gate %}
@@ -404,9 +404,9 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
     </svg>
-    <span class="l-en">Search, filters and sorting run across all {{ total }} situations on Insider. This preview
+    <span class="l-en">Search, filters and sorting run across all {{ total }} situations on Essential. This preview
       is the {{ gate.preview }} most recent filings.</span>
-    <span class="l-zh">搜索、筛选与排序在 Insider 下覆盖全部 {{ total }} 起事件。此预览为最新 {{ gate.preview }} 份申报。</span>
+    <span class="l-zh">搜索、筛选与排序在 Essential 下覆盖全部 {{ total }} 起事件。此预览为最新 {{ gate.preview }} 份申报。</span>
   </div>
   {% endif %}
   <div class="filter-bar{% if gate %} gated{% endif %}" id="ss-filter-bar">
@@ -556,10 +556,10 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
         <span class="l-zh">另有 {{ gate.locked }} 起事件向会员开放</span>
       </div>
       <div class="tw-p">
-        <span class="l-en">You’re reading the {{ gate.preview }} most recent filings. Insider and Pro open the
+        <span class="l-en">You’re reading the {{ gate.preview }} most recent filings. Essential and Pro open the
           whole board — all {{ total }} situations across {{ n_cats }} categories, the top-setup strip,
           and search, filters and sorting over every name.</span>
-        <span class="l-zh">你正在阅读最新 {{ gate.preview }} 份申报。Insider 与 Pro 可查看完整看板 ——
+        <span class="l-zh">你正在阅读最新 {{ gate.preview }} 份申报。Essential 与 Pro 可查看完整看板 ——
           {{ n_cats }} 个类别共 {{ total }} 起事件、精选设置条，以及对全部标的的搜索、筛选与排序。</span>
       </div>
       <div class="tw-acts">
@@ -802,7 +802,7 @@ html[data-lang="zh"] .live-mark{color:var(--red);border-color:var(--red)}
   /* ══════════ tier gate — attempt-hydrate ══════════
      On the gated build this document holds only the preview slice; the rest of
      the board lives in GATE.payload, which config/site_access.yml enforces as
-     Insider+ (premium.enforced_early) whatever PAYWALL_ENABLED says. So the
+     Essential+ (premium.enforced_early) whatever PAYWALL_ENABLED says. So the
      SERVER decides who sees the desk — nothing here is load-bearing. We simply
      ask, and keep the wall when the answer is 403.
      See docs/TIER_PREVIEW_PATTERN.md. */

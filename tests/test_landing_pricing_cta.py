@@ -19,11 +19,14 @@ branch matrix fails the test on behaviour rather than on wording.
   pro + annual          -> Insider inert "Included";   Pro inert "Your plan"
   pro lifetime (comp)   -> Insider inert "Included";   Pro inert "Your plan"
   unlimited             -> Insider inert "Included";   Pro inert "Your plan"
+  essential (any interval) -> identical to its insider twin (the rename migration's
+                           alias; the card KEYS stay `data-plan="insider"`)
 """
 
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 import textwrap
@@ -91,8 +94,26 @@ def _extract_fn(src: str, name: str) -> str:
     raise AssertionError("unbalanced braces slicing %s" % name)
 
 
+def _extract_var(src: str, name: str) -> str:
+    """Slice a one-line ``var <name> = …;`` declaration out of the shipping file."""
+    m = re.search(r"^\s*var " + re.escape(name) + r"\s*=.*?;\s*$", src, re.M)
+    assert m, f"var {name} not found — the slice below would silently lose it"
+    return m.group(0).strip()
+
+
 def _apply_auth_chrome(rel: str) -> str:
-    return _extract_fn((ROOT / rel).read_text(encoding="utf-8"), "applyAuthChrome")
+    """``applyAuthChrome`` plus the real tier-alias helper it calls.
+
+    ``normTier`` is SLICED, never stubbed. It is the alias hop the entitlement matrix
+    now depends on, so a stub would let the 'essential' personas below pass against a
+    fake and prove nothing about the shipping file.
+    """
+    src = (ROOT / rel).read_text(encoding="utf-8")
+    return "\n".join((
+        _extract_var(src, "TIER_ALIAS"),
+        _extract_fn(src, "normTier"),
+        _extract_fn(src, "applyAuthChrome"),
+    ))
 
 
 # The three landing pricing cards, in DOM order.
@@ -178,6 +199,14 @@ PERSONAS: dict[str, dict] = {
     # …while a CANCELED comp is not lifetime, so the ordinary monthly upsell returns.
     "pro-comp-canceled": {"tier": "pro", "status": "canceled", "source": "comp",
                           "interval": "monthly", "current_period_end": None},
+    # ── the rename migration's alias of the 'insider' wire value (lib/tiers.py). This
+    # file ships `immutable` with a far-future max-age, so a warm cache can still be
+    # running THIS copy after Phase 2 flips the stored value — an unrecognised tier here
+    # does not error, it paints a PAYING member the signed-out "start your trial" card.
+    "essential-monthly": {"tier": "essential", "status": "active", "source": "stripe",
+                          "interval": "monthly", "current_period_end": "2026-08-30T00:00:00Z"},
+    "essential-annual": {"tier": "essential", "status": "active", "source": "stripe",
+                         "interval": "annual", "current_period_end": "2027-07-31T00:00:00Z"},
 }
 
 # name -> {plan: (kind, label-key)}. `None` as the key on a live CTA means "leave
@@ -228,6 +257,17 @@ EXPECTED: dict[str, dict[str, tuple[str, str | None]]] = {
         "insider": ("inert", "included"),
         "pro": ("live", "upgradeAnnual"),
     },
+    # identical to their insider twins above, by construction — see the parity test
+    "essential-monthly": {
+        "free": ("inert", "included"),
+        "insider": ("inert", "yourPlan"),
+        "pro": ("live", "upgrade"),
+    },
+    "essential-annual": {
+        "free": ("inert", "included"),
+        "insider": ("inert", "yourPlan"),
+        "pro": ("live", "upgrade"),
+    },
 }
 
 
@@ -247,11 +287,23 @@ def test_entitlement_cta_matrix(rel: str) -> None:
 
 @needs_node
 @pytest.mark.parametrize("rel", REL_ONBOARD)
+def test_an_essential_payload_paints_exactly_like_its_insider_twin(rel: str) -> None:
+    """Stated as parity against the canonical persona rather than as a second expected
+    table, so it cannot drift from whatever the insider legs are supposed to do."""
+    got = _run_matrix(rel, PERSONAS)
+    for alias, wire in (("essential-monthly", "insider-monthly"),
+                        ("essential-annual", "insider-annual")):
+        assert got[alias] == got[wire], f"{alias} diverged from {wire}"
+
+
+@needs_node
+@pytest.mark.parametrize("rel", REL_ONBOARD)
 def test_every_actionable_paid_cta_targets_pro_annual(rel: str) -> None:
     """Insider and Pro-Monthly are both sold UP to Pro Annual — the sheet's own
     lane matrix (upgradeLanes) then tailors the panel; no new upgrade UI here."""
     got = _run_matrix(rel, PERSONAS)
-    for name in ("insider-monthly", "insider-annual", "pro-monthly"):
+    for name in ("insider-monthly", "insider-annual", "pro-monthly",
+                 "essential-monthly", "essential-annual"):
         pro = [c for c in got[name] if c["plan"] == "pro"][0]
         assert pro["kind"] == "live", f"{name}: Pro card must stay actionable"
         assert pro["target"] == {"plan": "pro", "period": "annual"}, (

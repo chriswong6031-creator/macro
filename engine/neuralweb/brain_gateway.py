@@ -41,6 +41,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Generator
 
+from lib.tiers import normalize_tier
+
 log = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
@@ -3295,19 +3297,22 @@ def _dispatch_brain_tool(
             )
         if tool_name == "search_research":
             # Analyst OS P0 — vault summaries mirror the vault product's tiers
-            # (Insider/Pro). Execution-time gate, portfolio-brief idiom: the model
+            # (Essential/Pro). Execution-time gate, portfolio-brief idiom: the model
             # gets the gate explained instead of fabricating research.
             if not user_id:
                 return {"error": "insider_required", "note": (
-                    "Institutional research search needs a signed-in Insider or Pro "
+                    "Institutional research search needs a signed-in Essential or Pro "
                     "account — explain the gate and answer from the desk's own signals.")}
             _ent = _resolve_tier(user_id, root=root)
             _tier = _ent.get("tier") or "free"
             _status = _ent.get("status") or "active"
-            if not (_tier in ("insider", "pro", "unlimited")
+            # 'essential' is the rename migration's alias of 'insider' (lib/tiers.py).
+            # _resolve_tier already normalizes; naming it here too means the gate stays
+            # correct if this ever reads a tier from somewhere that does not.
+            if not (_tier in ("insider", "essential", "pro", "unlimited")
                     and _status in ("active", "trialing")):
                 return {"error": "insider_required", "tier": _tier, "note": (
-                    "The research vault is an Insider/Pro capability. This user is on "
+                    "The research vault is an Essential/Pro capability. This user is on "
                     f"the '{_tier}' tier — explain the gate; do not fabricate research.")}
             _mode = str(tool_params.get("mode") or "search").strip().lower()
             if _mode == "report":
@@ -3317,7 +3322,7 @@ def _dispatch_brain_tool(
                 if not (_tier in ("pro", "unlimited")
                         and _status in ("active", "trialing")):
                     return {"error": "pro_required", "tier": _tier, "note": (
-                        "Full report content is a Pro capability — Insider gets the "
+                        "Full report content is a Pro capability — Essential gets the "
                         "summaries. Explain the upgrade; keep answering from the "
                         "summary you already have.")}
             from engine.neuralweb import brain_market_intel as _bmi  # noqa: PLC0415
@@ -3331,19 +3336,20 @@ def _dispatch_brain_tool(
             )
         if tool_name == "get_historical_analogues":
             # Analyst OS W2 — dated episodes whose measured state rhymed with today
-            # (display-tier, China-analog idiom). Depth capability → Insider/Pro,
+            # (display-tier, China-analog idiom). Depth capability → Essential/Pro,
             # same execution-time gate shape as search_research.
             if not user_id:
                 return {"error": "insider_required", "note": (
-                    "Historical analogues need a signed-in Insider or Pro account — "
+                    "Historical analogues need a signed-in Essential or Pro account — "
                     "explain the gate and answer from the current desk reads.")}
             _ent = _resolve_tier(user_id, root=root)
             _tier = _ent.get("tier") or "free"
             _status = _ent.get("status") or "active"
-            if not (_tier in ("insider", "pro", "unlimited")
+            # 'essential' alias — see the search_research gate above.
+            if not (_tier in ("insider", "essential", "pro", "unlimited")
                     and _status in ("active", "trialing")):
                 return {"error": "insider_required", "tier": _tier, "note": (
-                    "Historical analogues are an Insider/Pro capability. This user is "
+                    "Historical analogues are an Essential/Pro capability. This user is "
                     f"on the '{_tier}' tier — explain the gate; never invent episodes.")}
             from engine.neuralweb import brain_analogues as _ban  # noqa: PLC0415
             return _ban.get_historical_analogues(
@@ -3435,7 +3441,7 @@ def _all_brain_tool_schemas(root: Path, page: str = "", internals_allowed: bool 
         schemas = schemas + [_bmi.EVENTS_TOOL_SCHEMA, _bmi.RESEARCH_TOOL_SCHEMA]
     except Exception:  # noqa: BLE001
         pass
-    # Analyst OS W2: depth retrieval — historical analogues (Insider/Pro at execution)
+    # Analyst OS W2: depth retrieval — historical analogues (Essential/Pro at execution)
     # and the on-demand curve read. Separate try-blocks: one missing module never
     # drops the other's schema.
     try:
@@ -3764,6 +3770,10 @@ def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
     Returns {tier, status, current_period_end}.
     Fail-safe: table missing / key absent / error → {tier: 'free', status: 'active'}.
     Cache TTL: 60s (from config/brain.yml tier_cache_ttl_seconds).
+
+    The stored tier is normalized BEFORE it is cached, so every consumer of this resolver —
+    _get_allowance's quota bucket, the research/analogue gates, get_user_quotas — sees the
+    canonical wire value and none of them has to know the alias exists.
     """
     cfg = _load_brain_config(root)
     ttl = float(cfg.get("tier_cache_ttl_seconds") or 60)
@@ -3798,7 +3808,7 @@ def _resolve_tier(user_id: str, root: Path | None = None) -> dict:
             rows = json.loads(resp.read())
         if isinstance(rows, list) and rows:
             r = rows[0]
-            tier = r.get("tier") or "free"
+            tier = normalize_tier(r.get("tier")) or "free"
             status = r.get("status") or "active"
             cpe = r.get("current_period_end")
             result: dict = {"tier": tier, "status": status, "current_period_end": cpe}
@@ -3848,6 +3858,11 @@ def _get_allowance(tier: str, status: str, lane: str, root: Path | None = None) 
     """
     cfg = _load_brain_config(root)
     quotas = cfg.get("quotas") or {}
+    # Normalize before the `tier in quotas` test below. That test is the silent one: an
+    # unrecognised tier does not raise, it falls through to the FREE bucket — 5 questions a
+    # week for someone who is paying. _resolve_tier already normalizes, so this is the
+    # backstop for the callers that pass a tier in by hand (app/research.py, tests).
+    tier = normalize_tier(tier)
 
     if status == "trialing":
         bucket_name = "trial"

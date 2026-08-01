@@ -42,12 +42,20 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timedelta, timezone
 
+from lib.tiers import normalize_tier
+
 from . import users
 
 log = logging.getLogger("macro.admin.entitlements")
 
 # Tiers an operator may grant. 'free' is a valid target for downgrade/remove-comp but is
 # never a *pass/tier-grant* target (a pass to free is meaningless) — enforced per-action.
+#
+# These stay CANONICAL on purpose. Every inbound `tier` param below goes through
+# ``normalize_tier`` first, so the rename migration's 'essential' alias is ACCEPTED without
+# widening what gets WRITTEN: _write_comp puts this exact string into
+# user_entitlements.tier, and a widened tuple would have let an operator action store
+# 'essential' — the one value Phase 1 must never emit.
 _GRANT_TIERS = ("insider", "pro")
 _ALL_TIERS = ("free", "insider", "pro")
 _TRIALING_ACTIVE = ("active", "trialing")
@@ -90,7 +98,8 @@ def list_users(*, tier: str | None = None, status: str | None = None,
     Base table is auth.users (the lockdown makes registration the floor, so every
     account IS a free-tier member) LEFT JOINed to user_entitlements — users who never
     touched billing surface as implicit free (tier 'free', status 'none'). Filters:
-      tier    — 'free'|'insider'|'pro' (exact)
+      tier    — 'free'|'insider'|'pro' (exact; 'essential' is accepted as an alias of
+                'insider' and filters on the canonical stored value)
       status  — 'active'|'trialing'|'past_due'|'canceled'|'none' (exact)
       search  — case-insensitive substring over email OR display name
     Pagination is server-side (LIMIT/OFFSET); a total count accompanies the page.
@@ -106,6 +115,7 @@ def list_users(*, tier: str | None = None, status: str | None = None,
     offset = (page - 1) * page_size
 
     where = ["true"]
+    tier = normalize_tier(tier)
     if tier in _ALL_TIERS:
         where.append(f"coalesce(e.tier,'free') = '{tier}'")
     if status:
@@ -383,7 +393,7 @@ def act(body: dict, *, operator: str = "admin") -> tuple[dict, int]:
 
         # ---- change_tier → comp upgrade/downgrade -------------------------------------
         if action == "change_tier":
-            tier = (params.get("tier") or "").strip().lower()
+            tier = normalize_tier(params.get("tier"))
             if tier not in _ALL_TIERS:
                 return {"ok": False, "error": f"tier must be one of {list(_ALL_TIERS)}"}, 400
             err, _row = _guard_stripe(user_id, force=force, cancel_stripe=cancel_stripe,
@@ -401,7 +411,7 @@ def act(body: dict, *, operator: str = "admin") -> tuple[dict, int]:
             kind = (params.get("kind") or "").strip().lower()
             if kind not in _PASS_DAYS:
                 return {"ok": False, "error": f"kind must be one of {list(_PASS_DAYS)}"}, 400
-            tier = (params.get("tier") or "").strip().lower()
+            tier = normalize_tier(params.get("tier"))
             if tier not in _GRANT_TIERS:
                 return {"ok": False, "error": f"tier must be one of {list(_GRANT_TIERS)}"}, 400
             err, _row = _guard_stripe(user_id, force=force, cancel_stripe=cancel_stripe,

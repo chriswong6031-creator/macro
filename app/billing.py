@@ -51,6 +51,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
+from lib.tiers import normalize_tier
+
 log = logging.getLogger("macro.billing")
 router = APIRouter()
 
@@ -80,6 +82,16 @@ def _catalog() -> dict:
 
 def _tier_rank() -> list[str]:
     return list(_catalog().get("tier_rank", ["free", "insider", "pro"]))
+
+
+def _product_tiers() -> frozenset[str]:
+    """Every entitlement tier the catalog actually SELLS — the enum for an inbound `tier`.
+
+    Authored once because it was hardcoded once too often: /upgrade carried a literal
+    ``("insider", "pro")`` that a fourth product would have silently locked out of the
+    upgrade path while checkout happily sold it.
+    """
+    return frozenset(str(p["tier"]) for p in _catalog()["products"].values())
 
 
 def _lookup_key_to_tier() -> dict[str, str]:
@@ -144,7 +156,12 @@ def _upgrade_allowed(cur_tier: str, cur_interval: str, tgt_tier: str, tgt_interv
     any tier downgrade, any annual->monthly, and pro·annual (already at the top) — is refused.
     Unknown tiers/intervals rank -1 and can only ever satisfy the >= against themselves, which the
     no-op clause then rejects, so a garbage pair fails closed.
+
+    Both tiers are normalized first. That is not belt-and-braces: an ALIAS ranks -1 like any
+    unknown string, so an un-normalized `cur_tier` of 'essential' would out-rank nothing and
+    make a real DOWNGRADE look legal — the one direction this matrix exists to refuse.
     """
+    cur_tier, tgt_tier = normalize_tier(cur_tier), normalize_tier(tgt_tier)
     rank = _tier_rank()
 
     def tr(t: str) -> int:
@@ -881,7 +898,7 @@ def _current_user(authorization: str | None = Header(default=None)) -> dict:
 # Routes
 # --------------------------------------------------------------------------- #
 class CheckoutRequest(BaseModel):
-    tier: str = Field(..., description="'insider' | 'pro'")
+    tier: str = Field(..., description="'insider' (alias: 'essential') | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
     offer: str | None = Field(None, description="optional catalog offer key")
 
@@ -889,8 +906,8 @@ class CheckoutRequest(BaseModel):
 @router.post("/api/billing/checkout")
 def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict:
     """Create a Stripe Checkout Session and return its hosted URL."""
-    tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
-    if tier not in {p["tier"] for p in _catalog()["products"].values()}:
+    tier, interval = normalize_tier(body.tier), body.interval.strip().lower()
+    if tier not in _product_tiers():
         raise HTTPException(400, f"unknown tier '{tier}'")
     if interval not in ("monthly", "annual"):
         raise HTTPException(400, f"unknown interval '{interval}'")
@@ -983,8 +1000,14 @@ def portal(user: dict = Depends(_current_user)) -> dict:
 # Stripe.js without shipping the key in a build.
 # --------------------------------------------------------------------------- #
 def _resolve_lookup_key(tier: str, interval: str) -> str:
-    """Validate (tier, interval) exactly like checkout() and return the price lookup_key (or 400)."""
-    if tier not in {p["tier"] for p in _catalog()["products"].values()}:
+    """Validate (tier, interval) exactly like checkout() and return the price lookup_key (or 400).
+
+    ``tier`` is expected already normalized by the caller (every route does it on the way in,
+    because the canonical value is what goes into Stripe metadata); the extra hop here costs
+    nothing and keeps this helper correct if it is ever called with a raw value.
+    """
+    tier = normalize_tier(tier)
+    if tier not in _product_tiers():
         raise HTTPException(400, f"unknown tier '{tier}'")
     if interval not in ("monthly", "annual"):
         raise HTTPException(400, f"unknown interval '{interval}'")
@@ -1009,7 +1032,7 @@ def billing_config() -> dict:
 
 
 class SubscribeInitRequest(BaseModel):
-    tier: str = Field(..., description="'insider' | 'pro'")
+    tier: str = Field(..., description="'insider' (alias: 'essential') | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
     offer: str | None = Field(None, description="optional catalog offer key")
 
@@ -1022,7 +1045,10 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
     (card-up-front trial law). Returns the SetupIntent client_secret for Stripe.js Elements + the
     customer id (opaque to the browser; /complete re-derives it server-side, never trusting it back).
     """
-    tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
+    # Normalize BEFORE anything downstream: the SetupIntent below stamps `mm_tier` into
+    # Stripe metadata, and /complete + the webhook read it back — an alias stored there
+    # would leak a non-canonical tier into the entitlement row.
+    tier, interval = normalize_tier(body.tier), body.interval.strip().lower()
     _resolve_lookup_key(tier, interval)  # validate before touching Stripe
     _offer_key(body.offer, tier, interval)  # validate before touching Stripe
 
@@ -1085,7 +1111,7 @@ def subscribe_init(body: SubscribeInitRequest, user: dict = Depends(_current_use
 
 class SubscribeCompleteRequest(BaseModel):
     setup_intent_id: str = Field(..., description="the SetupIntent confirmed client-side by Elements")
-    tier: str = Field(..., description="'insider' | 'pro'")
+    tier: str = Field(..., description="'insider' (alias: 'essential') | 'pro'")
     interval: str = Field("annual", description="'monthly' | 'annual'")
     offer: str | None = Field(None, description="optional catalog offer key")
 
@@ -1098,7 +1124,7 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
     is retrieved fresh, must be 'succeeded', must belong to THIS user's customer, and must carry a
     payment method. Only then is the subscription created with the 7-day trial and the captured PM.
     """
-    tier, interval = body.tier.strip().lower(), body.interval.strip().lower()
+    tier, interval = normalize_tier(body.tier), body.interval.strip().lower()
     _resolve_lookup_key(tier, interval)
 
     user_id = user.get("id")
@@ -1198,7 +1224,9 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
 
 class UpgradeRequest(BaseModel):
     tier: str | None = Field(
-        None, description="'insider' | 'pro' — target tier; defaults to 'pro' (settings-dashboard back-compat)")
+        None,
+        description="'insider' (alias: 'essential') | 'pro' — target tier; defaults to 'pro' "
+                    "(settings-dashboard back-compat)")
     interval: str | None = Field(
         None, description="'monthly' | 'annual' — defaults to the current subscription's cadence")
     offer: str | None = Field(None, description="optional catalog offer key")
@@ -1238,8 +1266,11 @@ def upgrade(body: UpgradeRequest, user: dict = Depends(_current_user)) -> dict:
     → invalidate so /api/me reflects the new plan immediately; the webhook remains the convergent
     source of truth. The response carries the TARGET tier + interval.
     """
-    target_tier = (body.tier or "pro").strip().lower()
-    if target_tier not in ("insider", "pro"):
+    # Catalog-driven, alias-aware. This was a literal ("insider", "pro"): checkout sold from
+    # the catalog while THIS gate did not, so a fourth product — or the display rename's
+    # 'essential' alias — would 400 here after selling fine everywhere else.
+    target_tier = normalize_tier(body.tier or "pro")
+    if target_tier not in _product_tiers():
         raise HTTPException(400, f"unknown tier '{target_tier}'")
     interval_override = (body.interval or "").strip().lower() or None
     if interval_override and interval_override not in ("monthly", "annual"):

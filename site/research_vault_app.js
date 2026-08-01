@@ -105,7 +105,7 @@
   // Teaser gate: reading full PDFs is Pro-only. Every non-Pro visitor sees the
   // same fixed latest-three preview, and the app starts locked while auth resolves
   // so there is never a flash of the full catalog.
-  var USER_TIER = 'anon';    // 'anon' | 'free' | 'insider' | 'pro'
+  var USER_TIER = 'anon';    // 'anon' | 'free' | 'insider' (display: Essential) | 'pro'
   function feedUnlocked() { return USER_TIER === 'pro'; }
   function teaseCount() { return 3; }
   function previewItems() {
@@ -803,7 +803,7 @@
       cta = '<button class="btn primary" data-gate="signin">' + T('Sign in', '登录') + '</button>';
     } else if (kind === 'paid_required') {
       icon = STAR_SVG; h = T('Read the full report with Pro', '升级 Pro 阅读全文');
-      p = T('Opening the full PDF is a Pro feature — Insider and free plans read the latest summaries.', '阅读 PDF 全文为 Pro 专享 —— Insider 与免费用户可阅读最新摘要。');
+      p = T('Opening the full PDF is a Pro feature — Essential and free plans read the latest summaries.', '阅读 PDF 全文为 Pro 专享 —— Essential 与免费用户可阅读最新摘要。');
       cta = '<a class="btn upgrade" href="plans.html">' + T('Upgrade to Pro', '升级 Pro') + '</a>';
     } else if (kind === 'quota') {
       icon = LOCK_SVG; h = T('Daily limit reached', '今日已达上限');

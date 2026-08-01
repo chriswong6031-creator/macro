@@ -14,9 +14,15 @@ Run:
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
+import yaml
 
 from app import billing
+from lib import tiers
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 # --------------------------------------------------------------------------- #
@@ -138,3 +144,119 @@ def test_reducer_tolerates_sub_without_interval_key():
         [{"status": "active", "current_period_end": 1, "tier": "insider"}], []
     )
     assert r["tier"] == "insider" and r["plan_interval"] is None
+
+
+# --------------------------------------------------------------------------- #
+# The 'essential' alias (rename migration, Phase 1) — an aliased row must behave
+# EXACTLY like the canonical one it stands for, on both axes of the matrix.
+# --------------------------------------------------------------------------- #
+def test_normalize_tier_is_identity_on_canonical_values():
+    """The whole safety argument for arming this: nothing that exists today moves."""
+    for t in ("free", "insider", "pro", "unlimited"):
+        assert tiers.normalize_tier(t) == t
+
+
+def test_normalize_tier_maps_essential_to_the_wire_value():
+    assert tiers.normalize_tier("essential") == "insider"
+    assert tiers.normalize_tier("  ESSENTIAL  ") == "insider"
+
+
+def test_normalize_tier_leaves_an_unknown_string_for_the_callers_enum():
+    """It widens what is ACCEPTED; it never decides what is VALID."""
+    assert tiers.normalize_tier("bogus") == "bogus"
+    assert tiers.normalize_tier(None) == ""
+
+
+def test_the_live_catalog_still_declares_the_display_rename():
+    """The premise the alias rests on: plans.yml renamed the NAME, not the wire value."""
+    catalog = yaml.safe_load((ROOT / "config" / "plans.yml").read_text())
+    insider = catalog["products"]["insider"]
+    assert insider["tier"] == "insider", "Phase 1 must not flip the stored value"
+    assert insider["name"] == "Essential"
+    assert tiers.normalize_tier(insider["name"]) == insider["tier"]
+
+
+def test_the_alias_is_DERIVED_from_the_catalog_not_a_hand_kept_list(tmp_path, monkeypatch):
+    """Rename the product in a throwaway catalog and the alias must follow it.
+
+    Asserting `normalize_tier('essential') == 'insider'` against the real catalog proves
+    nothing about derivation — the static floor alone would satisfy it. This drives the
+    catalog path with a name the floor has never heard of.
+    """
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "plans.yml").write_text(yaml.safe_dump({
+        "products": {"insider": {"tier": "insider", "name": "Desk Pass"},
+                     "pro": {"tier": "pro", "name": "Pro"}},
+        "tier_rank": ["free", "insider", "pro"],
+    }))
+    monkeypatch.setattr(tiers, "ROOT", tmp_path)
+    tiers.reset_cache()
+    try:
+        assert tiers.normalize_tier("desk pass") == "insider"
+        assert tiers.normalize_tier("Desk Pass") == "insider"
+        # the static floor survives alongside whatever the catalog adds
+        assert tiers.normalize_tier("essential") == "insider"
+    finally:
+        monkeypatch.undo()
+        tiers.reset_cache()
+    assert tiers.normalize_tier("desk pass") == "desk pass", "the real catalog is back"
+
+
+def test_a_display_name_can_never_shadow_another_products_wire_value(tmp_path, monkeypatch):
+    """A catalog naming one product after another product's TIER must not reroute it —
+    the one way a display rename could become a real entitlement bug."""
+    (tmp_path / "config").mkdir()
+    (tmp_path / "config" / "plans.yml").write_text(yaml.safe_dump({
+        "products": {"insider": {"tier": "insider", "name": "Pro"},
+                     "pro": {"tier": "pro", "name": "Pro Plus"}},
+        "tier_rank": ["free", "insider", "pro"],
+    }))
+    monkeypatch.setattr(tiers, "ROOT", tmp_path)
+    tiers.reset_cache()
+    try:
+        assert tiers.normalize_tier("pro") == "pro", "'pro' must never resolve to 'insider'"
+        assert tiers.normalize_tier("free") == "free"
+    finally:
+        tiers.reset_cache()
+
+
+def test_an_unreadable_catalog_degrades_to_the_static_floor(tmp_path, monkeypatch):
+    """normalize_tier runs inside request paths; it may never raise on a bad catalog."""
+    monkeypatch.setattr(tiers, "ROOT", tmp_path)   # no config/plans.yml at all
+    tiers.reset_cache()
+    try:
+        assert tiers.normalize_tier("essential") == "insider"
+        assert tiers.normalize_tier("pro") == "pro"
+    finally:
+        tiers.reset_cache()
+
+
+@pytest.mark.parametrize("cur_t,cur_i,tgt_t,tgt_i", _ALLOWED + _DENIED)
+def test_essential_rows_walk_the_matrix_exactly_like_insider(cur_t, cur_i, tgt_t, tgt_i):
+    """Substituting the alias on EITHER axis changes no verdict, anywhere on the grid."""
+    canonical = billing._upgrade_allowed(cur_t, cur_i, tgt_t, tgt_i)
+    alias = {"insider": "essential"}
+    assert billing._upgrade_allowed(alias.get(cur_t, cur_t), cur_i, tgt_t, tgt_i) is canonical
+    assert billing._upgrade_allowed(cur_t, cur_i, alias.get(tgt_t, tgt_t), tgt_i) is canonical
+    assert billing._upgrade_allowed(
+        alias.get(cur_t, cur_t), cur_i, alias.get(tgt_t, tgt_t), tgt_i) is canonical
+
+
+def test_an_unnormalized_alias_would_make_a_downgrade_look_legal():
+    """The specific bug the normalize-inside-_upgrade_allowed hop prevents.
+
+    An alias ranks -1 like any unknown string, so an un-normalized current tier of
+    'essential' out-ranks nothing: pro -> essential would read as an UPGRADE. This asserts
+    the ranking that produces that, so the test fails if someone drops the hop.
+    """
+    rank = billing._tier_rank()
+    assert "essential" not in rank, "Phase 2 changes this test, not this behaviour"
+    assert billing._upgrade_allowed("essential", "annual", "insider", "annual") is False
+    assert billing._upgrade_allowed("pro", "annual", "essential", "annual") is False
+
+
+def test_upgrade_target_enum_is_catalog_driven_not_a_literal():
+    """/upgrade used to hardcode ('insider','pro') while checkout sold from the catalog."""
+    assert billing._product_tiers() == {
+        str(p["tier"]) for p in billing._catalog()["products"].values()}
+    assert "free" not in billing._product_tiers()

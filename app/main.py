@@ -789,7 +789,13 @@ def me(user: dict = Depends(require_user)) -> dict:
     return out
 
 
-_PLAN_LABELS = {"free": "Free", "insider": "Insider", "pro": "Pro", "unlimited": "Unlimited"}
+# Wire tier -> DISPLAY name (rendered by account.js as the plan pill). Two keys, one label:
+# 'insider' is the wire value config/plans.yml still stores, 'essential' is what the rename
+# migration will store, and BOTH are the product the catalog names "Essential"
+# (config/plans.yml products.insider.name — app/billing_emails.plan_name() already reads it,
+# so a receipt said "Essential" while this pill said "Insider").
+_PLAN_LABELS = {"free": "Free", "insider": "Essential", "essential": "Essential",
+                "pro": "Pro", "unlimited": "Unlimited"}
 
 
 @app.get("/api/account")

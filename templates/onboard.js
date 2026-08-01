@@ -37,13 +37,33 @@
   var TERMINAL_URL = "https://app.mastermind-x.com/terminal";
   var PLANS_HTML = "https://www.mastermind-x.com/plans.html";
   var TRIAL_DAYS = 7;
+  // ── tier alias (rename migration, Phase 1) ────────────────────────────────
+  // `insider` is the WIRE value; `essential` is the display rename's alias of it
+  // (lib/tiers.py is the server's copy of this exact table). This file is served
+  // `immutable` with a far-future max-age, so a browser can still be running THIS
+  // copy long after the stored value flips — every tier that arrives from outside
+  // (?plan=, /api/me, a stash, an opener's opts) hops through normTier() before
+  // anything keys on it, and every internal comparison can then stay canonical.
+  var TIER_ALIAS = { essential: "insider" };
+  function normTier(v) {
+    var t = String(v == null ? "" : v).trim().toLowerCase();
+    return TIER_ALIAS[t] || t;
+  }
+  // An /api/me payload with its tier made canonical (null stays null).
+  function normMe(me) {
+    if (!me || !me.tier) return me;
+    if (!TIER_ALIAS[String(me.tier).trim().toLowerCase()]) return me;
+    var out = {}; for (var k in me) if (me.hasOwnProperty(k)) out[k] = me[k];
+    out.tier = normTier(me.tier);
+    return out;
+  }
   // Mirrors config/plans.yml products[].trial_days. Essential (internal key
   // "insider") has NO trial as of 2026-07-31: the funnel puts everyone who wants to
   // try the desk into Pro's seven days, and Essential is bought outright. Every
   // trial promise in this sheet is keyed off this map — nothing may offer a trial
   // the billing spine will not actually create.
   var TRIAL_BY_PLAN = { insider: 0, pro: TRIAL_DAYS };
-  function trialDaysFor(plan) { return TRIAL_BY_PLAN[plan] || 0; }
+  function trialDaysFor(plan) { return TRIAL_BY_PLAN[normTier(plan)] || 0; }
   function planHasTrial(plan) { return trialDaysFor(plan) > 0; }
   // Browser `type=email` accepts local-network shapes such as `name@domain`.
   // Account creation requires a routable domain with a real suffix instead.
@@ -57,13 +77,16 @@
     pro:     { monthly: 14900, annual: 130800 }
   };
   var FOUNDING_PRO = { key: "founding_pro", active: true, annual: 90000, cap: 2000, claimed: null };
-  function offerFor(key, period) { return key === "pro" && period === "annual" && FOUNDING_PRO.active ? FOUNDING_PRO.key : null; }
-  function annualCents(key) { return offerFor(key, "annual") ? FOUNDING_PRO.annual : CENTS[key].annual; }
-  function perMonth(key, period) { var c = CENTS[key]; return Math.round(period === "annual" ? annualCents(key) / 12 / 100 : c.monthly / 100); }
-  function monthlyPrice(key) { return Math.round(CENTS[key].monthly / 100); }
+  // CENTS is keyed by the WIRE tier, so every lookup takes the alias hop — a lane or a
+  // ?plan= that says 'essential' must price as Essential, never throw on an absent key.
+  function cents(key) { return CENTS[normTier(key)]; }
+  function offerFor(key, period) { return normTier(key) === "pro" && period === "annual" && FOUNDING_PRO.active ? FOUNDING_PRO.key : null; }
+  function annualCents(key) { return offerFor(key, "annual") ? FOUNDING_PRO.annual : cents(key).annual; }
+  function perMonth(key, period) { var c = cents(key); return Math.round(period === "annual" ? annualCents(key) / 12 / 100 : c.monthly / 100); }
+  function monthlyPrice(key) { return Math.round(cents(key).monthly / 100); }
   function annualBilled(key) { return Math.round(annualCents(key) / 100); }
-  function annualWas(key) { return key === "pro" && FOUNDING_PRO.active ? Math.round(CENTS.pro.annual / 12 / 100) : monthlyPrice(key); }
-  function savePct(key) { var c = CENTS[key]; return Math.round(((c.monthly - annualCents(key) / 12) / c.monthly) * 100); }
+  function annualWas(key) { return normTier(key) === "pro" && FOUNDING_PRO.active ? Math.round(CENTS.pro.annual / 12 / 100) : monthlyPrice(key); }
+  function savePct(key) { var c = cents(key); return Math.round(((c.monthly - annualCents(key) / 12) / c.monthly) * 100); }
   function bestSavePct() { return Math.max(savePct("insider"), savePct("pro")); }
   function firstInvoiceTotal(key, period) { return period === "annual" ? annualBilled(key) : monthlyPrice(key); }
   function proWedge() { return perMonth("pro", "annual") - perMonth("insider", "annual"); }
@@ -756,7 +779,7 @@
     ca:     { t: "SHOP.TO", c: ["SHOP", "RY", "ENB", "CNQ", "BN"] },
     global: { t: "SPY",     c: ["SPY", "ASML", "0700", "NVDA", "TSM"] }
   };
-  var RANK = { free: 0, insider: 1, pro: 2, unlimited: 2 };
+  var RANK = { free: 0, insider: 1, essential: 1, pro: 2, unlimited: 2 };
 
   function stageStep() {
     // upgrade mode plays the same stage on its OWN two-step lane
@@ -827,7 +850,7 @@
     var tier = null;
     // upgrade: paid lanes show what you HAVE (the locks are what an upgrade
     // would light); the free lane is an active pick, so it shows the pick.
-    if (S.mode === "upgrade") tier = (S.upPre && S.planTouched) ? S.plan : ((S.me && S.me.tier) || "free");
+    if (S.mode === "upgrade") tier = (S.upPre && S.planTouched) ? S.plan : ((S.me && normTier(S.me.tier)) || "free");
     else if (S.planTouched) tier = S.plan;
     var stBox = q('[data-stage="state"]'), stTxt = q('[data-stage="statetxt"]');
     var st = "setup", stKey = "plateSetup";
@@ -859,7 +882,7 @@
     el.desk.classList.toggle("obm-armed", step >= 3);
 
     // ── the lattice: light every row up to the chosen tier ──
-    var have = tier == null ? null : (RANK[tier] != null ? RANK[tier] : 0);
+    var have = tier == null ? null : (RANK[normTier(tier)] != null ? RANK[normTier(tier)] : 0);
     var pins = pinnedTiles();
     var rows = el.desk.querySelectorAll(".obm-row");
     for (var r = 0; r < rows.length; r++) {
@@ -1575,7 +1598,7 @@
     try {
       var raw = sessionStorage.getItem(SS_ME); if (!raw) return null;
       var o = JSON.parse(raw);
-      if (o && o.t && (Date.now() - o.t) < ME_TTL && o.me) return o.me;
+      if (o && o.t && (Date.now() - o.t) < ME_TTL && o.me) return normMe(o.me);
     } catch (e) {}
     return null;
   }
@@ -1585,7 +1608,7 @@
   // Lets the landing paint the CORRECT signed-in chrome INSTANTLY on the next visit: the
   // CTA lands on the right label for the known tier before /api/me round-trips to confirm.
   var LS_ME_HINT = "mm.me.hint";
-  function readMeHint() { try { var o = JSON.parse(localStorage.getItem(LS_ME_HINT) || "null"); return (o && o.tier) ? o : null; } catch (e) { return null; } }
+  function readMeHint() { try { var o = JSON.parse(localStorage.getItem(LS_ME_HINT) || "null"); return (o && o.tier) ? normMe(o) : null; } catch (e) { return null; } }
   function writeMeHint(me) { try { localStorage.setItem(LS_ME_HINT, JSON.stringify({ tier: me.tier || "free", interval: me.interval || null, email: me.email || "" })); } catch (e) {} }
   function clearMeHint() { try { localStorage.removeItem(LS_ME_HINT); } catch (e) {} }
   function fetchMe(force) {
@@ -1595,7 +1618,7 @@
       if (!token) return null;
       return fetch(apiBase() + "/api/me", { headers: { Authorization: "Bearer " + token }, cache: "no-store" })
         .then(function (r) { if (!r || !r.ok) return null; return r.json().catch(function () { return null; }); })
-        .then(function (me) { if (me) writeMeCache(me); return me; });
+        .then(function (me) { me = normMe(me); if (me) writeMeCache(me); return me; });
     }).catch(function () { return null; });
   }
 
@@ -1663,7 +1686,7 @@
       return root;
     }
 
-    var tier = (S.me.tier || "free");
+    var tier = normTier(S.me.tier) || "free";
     var interval = S.me.interval || null;
 
     // free (or no active status) → the upgrade lane's OWN plan → billing steps.
@@ -1674,7 +1697,8 @@
     if (tier === "free") {
       if (!S.upPre) {
         var o = S.upgradeOpts || {};
-        S.plan = (o.plan === "insider" || o.plan === "pro") ? o.plan : "pro";
+        var oPlan = normTier(o.plan);
+        S.plan = (oPlan === "insider" || oPlan === "pro") ? oPlan : "pro";
         S.period = (o.period === "monthly" || o.period === "annual") ? o.period : "annual";
         S.planTouched = true; S.confirmPending = false;   // signed-in: no email-confirm gate
         S.upPre = true;
@@ -1759,6 +1783,7 @@
 
   // The lane matrix (upward-only, tier and interval may each rise, never fall).
   function upgradeLanes(tier, interval) {
+    tier = normTier(tier);
     var monthly = (interval === "monthly" || !interval);
     if (tier === "insider" && monthly) {
       // Lead with Pro Annual — the recommended, largest-step upgrade (tier + annual),
@@ -2240,7 +2265,8 @@
     sbClient().catch(function () {});
     build();
     S.mode = mode || "signup";
-    if (opts && opts.plan && (opts.plan === "free" || opts.plan === "insider" || opts.plan === "pro")) S.plan = opts.plan;
+    var optPlan = opts ? normTier(opts.plan) : "";
+    if (optPlan === "free" || optPlan === "insider" || optPlan === "pro") S.plan = optPlan;
     if (opts && opts.period && (opts.period === "monthly" || opts.period === "annual")) S.period = opts.period;
     if (opts && opts.resume) S.step = STEP_PREFS;
     if (S.mode === "signin") S.step = STEP_ACCOUNT;
@@ -2365,7 +2391,7 @@
     var wantSignup = sp.has("signup") || sp.has("onboard") || sp.has("plan");
     var wantSignin = sp.has("signin");
     if (!wantSignup && !wantSignin) return null;
-    var plan = sp.get("plan"), period = sp.get("period");
+    var plan = normTier(sp.get("plan")), period = sp.get("period");
     return {
       mode: (wantSignin && !wantSignup) ? "signin" : "signup",
       plan: (plan === "insider" || plan === "pro" || plan === "free") ? plan : null,
@@ -2446,7 +2472,7 @@
   function applyAuthChrome(me) {
     if (!me) return;
     snapshotPlanCtas();                        // idempotent; MMOnboard.applyChrome may arrive first
-    var tier = me.tier || "free";
+    var tier = normTier(me.tier) || "free";
     var interval = me.interval || null;
     // Lifetime/comp grants carry interval null — they hold the top plan and must never
     // be nav-upsold (mirrors the proTop predicate on the pricing cards below).
@@ -2677,7 +2703,7 @@
       if (resumeStash) {
         S.firstName = resumeStash.firstName || S.firstName;
         S.lastName = resumeStash.lastName || S.lastName;
-        if (resumeStash.plan) S.plan = resumeStash.plan;
+        if (resumeStash.plan) S.plan = normTier(resumeStash.plan);
         if (resumeStash.period) S.period = resumeStash.period;
         if (resumeStash.prefs) S.prefs = resumeStash.prefs;
       }
@@ -2703,7 +2729,7 @@
     if (st && st.open) {
       S.mode = st.mode || "signup"; S.step = st.step || STEP_ACCOUNT;
       S.firstName = st.firstName || ""; S.lastName = st.lastName || ""; S.email = st.email || "";
-      S.prefs = st.prefs || S.prefs; S.plan = st.plan || S.plan; S.period = st.period || S.period;
+      S.prefs = st.prefs || S.prefs; S.plan = normTier(st.plan) || S.plan; S.period = st.period || S.period;
       S.confirmPending = !!st.confirmPending; S.trialActive = !!st.trialActive; S.trialEnd = (typeof st.trialEnd === "number") ? st.trialEnd : null;
       S.subLive = !!st.subLive;
       S.planTouched = !!st.planTouched || (st.step || 1) >= 3;  // stale stashes: reached-plan implies touched

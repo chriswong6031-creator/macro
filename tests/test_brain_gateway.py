@@ -5594,3 +5594,91 @@ def test_brain_stream_route_threads_stored_prefs():
         assert captured["account_prefs"] == {"lang": "zh", "brain_depth": "deep"}
     finally:
         main.app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------------------
+# The 'essential' alias (rename migration, Phase 1)
+#
+# This is the gateway's highest-stakes tolerance gap because it is SILENT.
+# _get_allowance picks `quotas[tier] if tier in quotas else quotas['free']`, so an
+# unrecognised tier does not raise — it hands a paying customer the free bucket
+# (5 fast questions a WEEK instead of 300 a month).
+# ---------------------------------------------------------------------------
+
+def test_essential_allowance_is_identical_to_insider_on_both_lanes():
+    root = _make_temp_root()
+    for lane in ("fast", "pro"):
+        assert (gw._get_allowance("essential", "active", lane, root)
+                == gw._get_allowance("insider", "active", lane, root))
+
+
+def test_essential_is_not_silently_demoted_to_the_free_bucket():
+    """The failure this prevents, asserted as itself rather than as an equality."""
+    root = _make_temp_root()
+    got = gw._get_allowance("essential", "active", "fast", root)
+    assert got == {"limit": 300, "period": "month"}
+    assert got != gw._get_allowance("free", "active", "fast", root)
+
+
+def test_essential_trialing_still_takes_the_trial_bucket():
+    """Status outranks tier — the alias must not change which axis wins."""
+    root = _make_temp_root()
+    assert (gw._get_allowance("essential", "trialing", "fast", root)
+            == gw._get_allowance("insider", "trialing", "fast", root))
+
+
+def test_an_unknown_tier_still_falls_back_to_free():
+    """normalize_tier widens what is ACCEPTED, never what is VALID: junk still degrades."""
+    root = _make_temp_root()
+    assert (gw._get_allowance("klingon", "active", "fast", root)
+            == gw._get_allowance("free", "active", "fast", root))
+
+
+def test_resolve_tier_normalizes_the_stored_row_before_caching():
+    """Every consumer downstream of the resolver — quota bucket, research gate, /api/me's
+    chat_budget — reads this cached dict, so the alias hop belongs here and nowhere else."""
+    class _Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self):
+            return json.dumps([{"tier": "essential", "status": "active",
+                                "current_period_end": None}]).encode()
+
+    with patch.dict("os.environ", {
+        "SUPABASE_SERVICE_ROLE_KEY": "fake_key",
+        "SUPABASE_URL": "https://example.supabase.co",
+    }):
+        with gw._TIER_CACHE_LOCK:
+            gw._TIER_CACHE.clear()
+        with patch("urllib.request.urlopen", return_value=_Resp()):
+            result = gw._resolve_tier("aliased_user")
+        with gw._TIER_CACHE_LOCK:
+            cached = gw._TIER_CACHE["aliased_user"][0]
+            gw._TIER_CACHE.clear()
+
+    assert result["tier"] == "insider", "the alias must not escape the resolver"
+    assert cached["tier"] == "insider", "and it must not be what gets cached either"
+    assert result["status"] == "active"
+
+
+def test_resolve_tier_leaves_a_canonical_row_untouched():
+    """No behaviour change for the rows that exist today."""
+    class _Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self):
+            return json.dumps([{"tier": "insider", "status": "active",
+                                "current_period_end": None}]).encode()
+
+    with patch.dict("os.environ", {
+        "SUPABASE_SERVICE_ROLE_KEY": "fake_key",
+        "SUPABASE_URL": "https://example.supabase.co",
+    }):
+        with gw._TIER_CACHE_LOCK:
+            gw._TIER_CACHE.clear()
+        with patch("urllib.request.urlopen", return_value=_Resp()):
+            result = gw._resolve_tier("canonical_user")
+        with gw._TIER_CACHE_LOCK:
+            gw._TIER_CACHE.clear()
+
+    assert result["tier"] == "insider"

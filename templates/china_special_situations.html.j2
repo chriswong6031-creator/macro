@@ -433,9 +433,9 @@
     </svg>
     <span class="l-en">Every plane above is live and complete — this is the whole overhang read. The
       <b>names</b> behind it are the members' half: you get the {{ gate.n_preview }} closest in time,
-      Insider gets all {{ gate.locked + gate.n_preview }}.</span>
+      Essential gets all {{ gate.locked + gate.n_preview }}.</span>
     <span class="l-zh">上方各条线均为完整实时读数——这就是全部压力概览。其背后的<b>个股名单</b>面向会员：
-      你可以看到时间上最近的 {{ gate.n_preview }} 条，Insider 可查看全部 {{ gate.locked + gate.n_preview }} 条。</span>
+      你可以看到时间上最近的 {{ gate.n_preview }} 条，Essential 可查看全部 {{ gate.locked + gate.n_preview }} 条。</span>
   </div>
   {%- endif %}
 
@@ -499,11 +499,11 @@
     </div>
     <div class="wl-p">
       <span class="l-en">You keep the whole overhang read — every plane's state, every count, and the
-        nearest unlocks and newest letters. Insider and Pro open the names behind it: the rest of the
+        nearest unlocks and newest letters. Essential and Pro open the names behind it: the rest of the
         unlock and letter queues, the buyback and pledge boards, the earnings-preview movers, the
         risk-warning board and the block-trade tape.</span>
       <span class="l-zh">压力概览完整保留——各条线状态、全部计数，以及最近的解禁与最新的问询函。
-        Insider 与 Pro 可查看其背后的个股名单：解禁与问询函的其余部分、回购与质押看板、
+        Essential 与 Pro 可查看其背后的个股名单：解禁与问询函的其余部分、回购与质押看板、
         业绩预告变动榜、风险警示板与大宗交易。</span>
     </div>
     <div class="wl-acts">
@@ -650,7 +650,7 @@
    On the gated build this document holds ONLY the free half: every plane's
    state and counts, plus a small preview slice of the two newest-first queues.
    The named rows live in GATE.payload, which config/site_access.yml enforces as
-   Insider+ (premium.enforced_early) whatever PAYWALL_ENABLED says. So the SERVER
+   Essential+ (premium.enforced_early) whatever PAYWALL_ENABLED says. So the SERVER
    decides who reads the desk — nothing below is load-bearing. We simply ask, and
    keep the wall when the answer is 403. See docs/TIER_PREVIEW_PATTERN.md. */
 (function(){
@@ -737,7 +737,7 @@
 <div class="ssx-sec">
   <span class="sh-ic">{{ icon }}</span>
   <h2>{{ label }}</h2>
-  {%- if locked %}<span class="ssx-gpill" data-gate-pill>Insider</span>{%- endif %}
+  {%- if locked %}<span class="ssx-gpill" data-gate-pill>Essential</span>{%- endif %}
   {%- if g %}<span class="sh-stance lv-{{ g.level }}"><span class="lv">{{ tw(g) }}</span></span>{%- endif %}
   {%- if blk %}
     <span class="ssx-chip {{ blk.status if blk.status in ['ok','stale','missing'] else 'missing' }}">{{ blk.status or '—' }}</span>

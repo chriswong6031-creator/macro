@@ -212,17 +212,26 @@ SEGMENTS: tuple[Segment, ...] = (
         lambda r: r["status"] == "trialing",
         "In a trial right now.", "正在试用期内。",
     ),
+    # ---- the paid tiers ---------------------------------------------------- #
+    # 'essential' is the rename migration's alias of the 'insider' wire value (lib/tiers.py).
+    # Phase 1 emits only 'insider', so today these two clauses are the same population; the
+    # alias is named here so a stored row that flips during Phase 2 does not silently drop
+    # a paying customer OUT of the paid segment (and into no tier segment at all).
+    #
+    # The segment KEY stays `insider`: a saved campaign's targeting is stored BY key, and
+    # renaming it would orphan every campaign already aimed at this audience. Only the
+    # DISPLAY name moves.
     Segment(
         "paid", "Paying", "付费",
-        f"{TIER_SQL} in ('insider','pro')",
-        lambda r: r["tier"] in ("insider", "pro"),
-        "Insider and Pro together.", "Insider 与 Pro 合计。",
+        f"{TIER_SQL} in ('insider','essential','pro')",
+        lambda r: r["tier"] in ("insider", "essential", "pro"),
+        "Essential and Pro together.", "Essential 与 Pro 合计。",
     ),
     Segment(
-        "insider", "Insider", "Insider",
-        f"{TIER_SQL} = 'insider'",
-        lambda r: r["tier"] == "insider",
-        "On the Insider plan.", "使用 Insider 方案。",
+        "insider", "Essential", "Essential",
+        f"{TIER_SQL} in ('insider','essential')",
+        lambda r: r["tier"] in ("insider", "essential"),
+        "On the Essential plan.", "使用 Essential 方案。",
     ),
     Segment(
         "pro", "Pro", "Pro",
