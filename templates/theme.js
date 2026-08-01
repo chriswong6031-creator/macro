@@ -2515,8 +2515,8 @@
   // Per-month display price by tier+interval, mirroring config/plans.yml (and onboard.js
   // CENTS). Billing-hero decoration only — never a gate; the upgrade sheet owns real pricing.
   var SD_PRICE = {
-    insider: { monthly: 69, annual: 49, annualYr: 588 },
-    pro:     { monthly: 99, annual: 69, annualYr: 828 }
+    insider: { monthly: 99, annual: 75, annualYr: 900 },
+    pro:     { monthly: 149, annual: 109, annualYr: 1308 }
   };
   // Plain-word plan highlights for the Billing "what's included" summary. Kept in step
   // with plans.html.j2 / config/plans.yml; decorative only (never a gate).
