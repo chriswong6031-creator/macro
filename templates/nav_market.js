@@ -725,6 +725,197 @@
     });
   }
 
+  /* ---- Panel choreography -------------------------------------------------
+     Every wide panel lands on the SAME rect and differs only in height (780px
+     for the United States and China maps, 690-694px for the rest), so a switch
+     between two triggers needs no shared wrapper element: pinning the outgoing
+     AND the incoming panel to one animated height makes their chromes
+     pixel-identical for the crossing, and the pair reads as a single plate
+     that morphs while the contents cross-fade. Before this, a switch removed
+     the outgoing panel in the same frame the incoming one started at opacity
+     zero — one blank frame, then a slow re-entrance. That was the flicker.
+
+     Timings live in navigation-refresh.css and are read back from there, so
+     the stylesheet stays the single source of truth for the motion. */
+  var SWAP_DEFAULTS = { '--nav-close': 110, '--nav-morph': 170 };
+
+  function navRootOf(el) {
+    return (el && el.closest) ? el.closest('.site-nav, .topbar') : null;
+  }
+
+  function motionMs(root, name) {
+    var raw = root ? getComputedStyle(root).getPropertyValue(name).trim() : '';
+    var n = parseFloat(raw);
+    if (!isFinite(n) || n <= 0) return SWAP_DEFAULTS[name] || 0;
+    return /ms$/.test(raw) ? n : n * 1000;
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  // Natural height of a panel that is currently display:none. Measured once per
+  // (viewport width, language) pair — both change the panel's content box — and
+  // cached on the node, so a traverse costs no repeated reflow.
+  function naturalHeight(menu) {
+    var key = window.innerWidth + '|' + (document.documentElement.getAttribute('data-lang') || 'en');
+    if (menu._navHKey === key && menu._navH) return menu._navH;
+    var prev = menu.getAttribute('style');
+    menu.style.display = 'grid';
+    menu.style.visibility = 'hidden';
+    menu.style.height = 'auto';
+    menu.style.animation = 'none';
+    menu.style.transition = 'none';
+    var h = menu.offsetHeight;
+    if (prev === null) menu.removeAttribute('style'); else menu.setAttribute('style', prev);
+    // Commit the restored hidden state before the caller applies the swap
+    // classes. Without this flush the last style the engine saw for this panel
+    // is the measurement's display:grid, so the cross-fade's opacity:0 start
+    // reads as a transition TARGET rather than a start value and the incoming
+    // contents never fade in — they sit at 1 for the whole crossing.
+    void menu.offsetHeight;
+    menu._navHKey = key;
+    menu._navH = h;
+    return h;
+  }
+
+  // One rail owns one open panel at a time. Shared across every .nav-dd so a
+  // switch can see both sides of the crossing.
+  function choreographer(links) {
+    var root = navRootOf(links) || links;
+    var activeDd = null;
+    var swapTimer = 0;
+
+    function menuOf(dd) { return dd.querySelector(':scope > .nav-dd-menu'); }
+
+    function order(dd) {
+      var sibs = links.querySelectorAll(':scope > .nav-dd');
+      for (var i = 0; i < sibs.length; i++) if (sibs[i] === dd) return i;
+      return -1;
+    }
+
+    // Drop every transient class and let the surviving panel own its own chrome
+    // again. Runs at the end of a swap, and defensively before a new one.
+    function settle() {
+      window.clearTimeout(swapTimer);
+      swapTimer = 0;
+      root.style.removeProperty('--nav-plate-h');
+      links.querySelectorAll('.nav-panel-in, .nav-panel-out').forEach(function (m) {
+        var leaving = m.classList.contains('nav-panel-out');
+        m.classList.remove('nav-panel-in', 'nav-panel-out', 'nav-panel-live');
+        var owner = m.parentElement;
+        if (leaving && owner && owner !== activeDd) {
+          owner.classList.remove('nav-hover-open');
+          m.classList.remove('nav-panel-swapped');
+        }
+      });
+    }
+
+    // Cancel an exit that is mid-fade (the pointer came back). The timer is
+    // held ON THE PANEL, not in one shared slot: with a single slot, closing a
+    // second menu would clear the first one's pending cleanup and strand it at
+    // display:grid — an invisible panel that still contributes its scroll
+    // width, exactly the failure the closed-state rules above guard against.
+    function cancelClose(menu) {
+      if (!menu) return;
+      if (menu._navCloseTimer) {
+        window.clearTimeout(menu._navCloseTimer);
+        menu._navCloseTimer = 0;
+      }
+      menu.classList.remove('nav-panel-closing', 'nav-panel-live');
+    }
+
+    function hardOpen(dd) {
+      links.querySelectorAll(':scope > .nav-dd.nav-hover-open').forEach(function (other) {
+        if (other !== dd) other.classList.remove('nav-hover-open');
+      });
+      var menu = menuOf(dd);
+      if (menu) menu.classList.remove('nav-panel-swapped');
+      dd.classList.add('nav-hover-open');
+    }
+
+    // The Attio-style crossing: lock both panels to one height, walk that height
+    // to the incoming panel's natural size, and cross-fade the contents with a
+    // drift that follows the pointer's travel direction.
+    function crossFade(fromDd, toDd) {
+      var out = menuOf(fromDd);
+      var incoming = menuOf(toDd);
+      if (!out || !incoming) return false;
+
+      var from = Math.round(out.getBoundingClientRect().height);
+      var to = naturalHeight(incoming);
+      if (!from || !to) return false;
+
+      settle();
+      // +1 travelling right along the rail. Both panels then drift LEFT: the
+      // incoming enters from the right, the outgoing leaves to the left.
+      var dir = order(toDd) > order(fromDd) ? 1 : -1;
+      root.style.setProperty('--nav-plate-h', from + 'px');
+      root.style.setProperty('--nav-drift', (dir * 10) + 'px');
+      out.classList.add('nav-panel-out', 'nav-panel-swapped');
+      incoming.classList.add('nav-panel-in', 'nav-panel-swapped');
+      toDd.classList.add('nav-hover-open');
+
+      // Flush the start state before flipping to the target, or the browser
+      // coalesces both into one frame and nothing animates.
+      void incoming.offsetWidth;
+      root.style.setProperty('--nav-plate-h', to + 'px');
+      out.classList.add('nav-panel-live');
+      incoming.classList.add('nav-panel-live');
+      swapTimer = window.setTimeout(settle, motionMs(root, '--nav-morph'));
+      return true;
+    }
+
+    return {
+      open: function (dd) {
+        var menu = menuOf(dd);
+        cancelClose(menu);
+        var previous = activeDd;
+        activeDd = dd;
+        if (previous === dd) { dd.classList.add('nav-hover-open'); return; }
+        var wide = menu && menu.classList.contains('mega-menu');
+        var previousWide = previous && previous.isConnected &&
+          previous.parentElement === links &&
+          previous.classList.contains('nav-hover-open') &&
+          menuOf(previous) && menuOf(previous).classList.contains('mega-menu');
+        if (wide && previousWide && !prefersReducedMotion() && crossFade(previous, dd)) return;
+        settle();
+        hardOpen(dd);
+      },
+
+      close: function (dd) {
+        if (activeDd === dd) activeDd = null;
+        var menu = menuOf(dd);
+        if (!menu || !dd.classList.contains('nav-hover-open') ||
+            !menu.classList.contains('mega-menu') || prefersReducedMotion()) {
+          dd.classList.remove('nav-hover-open');
+          if (menu) menu.classList.remove('nav-panel-swapped');
+          return;
+        }
+        // display:none cannot transition, so hold the panel rendered for the
+        // length of the exit and let CSS fade it.
+        cancelClose(menu);
+        menu.classList.add('nav-panel-closing');
+        dd.classList.remove('nav-hover-open');
+        void menu.offsetWidth;
+        menu.classList.add('nav-panel-live');
+        menu._navCloseTimer = window.setTimeout(function () {
+          menu.classList.remove('nav-panel-closing', 'nav-panel-live', 'nav-panel-swapped');
+          menu._navCloseTimer = 0;
+        }, motionMs(root, '--nav-close'));
+      },
+
+      abort: function (dd) {
+        if (activeDd === dd) activeDd = null;
+        var menu = menuOf(dd);
+        cancelClose(menu);
+        settle();
+        dd.classList.remove('nav-hover-open');
+        if (menu) menu.classList.remove('nav-panel-swapped');
+      }
+    };
+  }
+
   // Wide desktop menus are anchored to the full navigation rail so they can
   // stay viewport-safe. That leaves the intentional visual air gap below the
   // trigger outside the CSS :hover tree. Keep the current menu alive briefly
@@ -733,6 +924,7 @@
   // existing click accordion and never enters this path.
   function bindHoverSafeDropdowns(links) {
     var fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+    var stage = choreographer(links);
     links.querySelectorAll(':scope > .nav-dd').forEach(function (dd) {
       if (dd.getAttribute('data-nav-hover-safe')) return;
       dd.setAttribute('data-nav-hover-safe', '1');
@@ -757,16 +949,28 @@
           return;
         }
         window.clearTimeout(closeTimer);
-        dd.parentElement.querySelectorAll(':scope > .nav-dd.nav-hover-open').forEach(function (other) {
-          if (other !== dd) other.classList.remove('nav-hover-open');
-        });
-        dd.classList.add('nav-hover-open');
+        stage.open(dd);
+        // Publish AFTER opening: a display:none panel reports a zero rect, so
+        // the gap can only be measured once the panel is actually rendered.
+        measureGap();
+      }
+
+      // The air gap between the trigger row and the panel. Doubles as the
+      // invisible bridge's vertical reach, published to CSS so the hover-safe
+      // zone is the real gap and can never overhang a control in a layout
+      // whose geometry differs. Clamped so a bad measurement stays harmless.
+      function measureGap() {
+        var triggerRect = trigger.getBoundingClientRect();
+        var menuRect = menu.getBoundingClientRect();
+        if (!menuRect.height) return 0;
+        var gap = Math.round(Math.max(0, menuRect.top - triggerRect.bottom));
+        var root = navRootOf(links);
+        if (root) root.style.setProperty('--nav-bridge', Math.min(24, gap) + 'px');
+        return gap;
       }
 
       function hoverGraceMs() {
-        var triggerRect = trigger.getBoundingClientRect();
-        var menuRect = menu.getBoundingClientRect();
-        var gap = Math.max(0, menuRect.top - triggerRect.bottom);
+        var gap = measureGap();
         return Math.min(1000, Math.max(420, 360 + Math.round(gap * 8)));
       }
 
@@ -774,7 +978,7 @@
         window.clearTimeout(closeTimer);
         closeTimer = window.setTimeout(function () {
           if (!dd.matches(':hover') && !dd.contains(document.activeElement)) {
-            dd.classList.remove('nav-hover-open');
+            stage.close(dd);
           }
         }, hoverGraceMs());
       }
@@ -788,7 +992,7 @@
       dd.addEventListener('keydown', function (e) {
         if (e.key !== 'Escape') return;
         window.clearTimeout(closeTimer);
-        dd.classList.remove('nav-hover-open');
+        stage.abort(dd);
       });
     });
   }

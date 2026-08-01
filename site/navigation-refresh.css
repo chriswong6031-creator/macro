@@ -1886,7 +1886,7 @@ html:not([data-theme="light"]) .ticker-search {
      though nav-hover-open correctly kept the menu alive. */
   .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,
   .topbar .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu {
-    animation: mockupMenuSwap .34s cubic-bezier(.2, .76, .2, 1) both;
+    animation: mockupMenuSwap var(--nav-open, 150ms) var(--nav-ease, cubic-bezier(.22, .78, .2, 1)) both;
   }
 }
 
@@ -2444,8 +2444,11 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
   }
 }
 
+/* The entrance. A panel anchored under the bar should arrive OUT of the bar,
+   so it starts 4px high and settles down — the old 8px rise read as a lurch
+   because the panel appeared to come from below the content it covers. */
 @keyframes mockupMenuSwap {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(-4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -2520,6 +2523,203 @@ html:not([data-theme="light"]) .result-row { background: var(--mock-surface-soft
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;
+  }
+}
+
+/* =========================================================================
+   PANEL CHOREOGRAPHY — hover bridge · quick open/close · morphing cross-fade
+   -------------------------------------------------------------------------
+   THE DEFECT. Traversing the trigger row (United States → China → Hong Kong)
+   removed the outgoing panel in the SAME frame the incoming one started at
+   opacity 0, then played a 340ms fade-up. Frame log of the shipped build at
+   1440px, pointer leaving United States at t=600ms:
+
+       600ms  United States[op 1.00 h780]
+       625ms  China[op 0.00 h780]        <- United States already display:none
+       ...    China ramps 0.00 -> 1.00 over the next 340ms
+
+   One fully blank frame, then a slow re-entrance. That is the flicker.
+
+   THE FIX. Measured on the shipped rail: every wide panel lands on the SAME
+   rect — x 148, y 101, width 1276 at 1440px — and differs only in HEIGHT
+   (780px United States/China · 690px Hong Kong/Canada/International ·
+   693-694px Research/Other Assets). Width is invariant at every breakpoint,
+   so a switch needs no shared wrapper element: pinning the outgoing AND the
+   incoming panel to one animated height makes their chromes pixel-identical
+   for the crossing. The pair then reads as a SINGLE PLATE that morphs, while
+   only the contents cross-fade — the surface never blinks. The incoming panel
+   suppresses its own chrome for the crossing and rides on top of the
+   outgoing plate, so the two opaque backgrounds never composite.
+
+   Everything here is desktop-only and JS-cooperative: nav_market.js owns the
+   classes and the measured custom properties. With scripting off, the CSS
+   `:hover` path below still opens every menu — it just swaps hard, exactly as
+   it did before.
+   ========================================================================= */
+.site-nav,
+.topbar {
+  --nav-open: 150ms;    /* entrance */
+  --nav-close: 110ms;   /* exit — deliberately quicker than the entrance */
+  --nav-swap: 100ms;    /* contents cross-fade on a trigger-to-trigger switch */
+  --nav-morph: 170ms;   /* plate height; outlasts the swap so the chrome is
+                           still settling as the new contents land, which is
+                           what reads as a morph rather than a resize */
+  --nav-ease: cubic-bezier(.22, .78, .2, 1);
+  --nav-drift: 10px;    /* content travel; nav_market.js signs it by direction */
+  --nav-bridge: 0px;    /* trigger-to-panel air gap, measured by nav_market.js */
+}
+
+@media (min-width: 901px) {
+  /* ---- (a) the invisible hover bridge ---------------------------------
+     Two dead bands sat between a trigger and everything it should reach: the
+     2px flex gutter between adjacent triggers, and the 16px of air below the
+     row. Crossing either fired pointerleave on the .nav-dd. The wide menus
+     cannot use theme.css's `.nav-dd::after` bridge because .nav-market-dd and
+     .nav-mega-dd are position:static (their panels anchor to the whole rail),
+     so the zone moves to the trigger link, which is positioned here for it.
+     Horizontal reach is unconditional; vertical depth comes from the real
+     measured gap so it can never overhang a control in a stacked layout. */
+  .site-nav .nav-links > .nav-dd > a.nav-link,
+  .topbar .nav-links > .nav-dd > a.nav-link { position: relative; }
+
+  .site-nav .nav-links > .nav-dd > a.nav-link::after,
+  .topbar .nav-links > .nav-dd > a.nav-link::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -3px;
+    right: -3px;
+    bottom: calc(0px - var(--nav-bridge, 0px));
+  }
+
+  /* ---- (b) the exit ---------------------------------------------------
+     display:none cannot transition, so nav_market.js holds the panel rendered
+     for exactly --nav-close while this class runs the fade. */
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-closing,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-closing {
+    display: grid;
+    opacity: 1;
+    /* nav-hover-open is already off by the time this runs, so the base
+       .nav-dd-menu visibility:hidden would otherwise erase the panel before it
+       could fade. */
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: none;
+    animation: none;
+    transition: opacity var(--nav-close) ease-out, transform var(--nav-close) ease-out;
+  }
+
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-closing.nav-panel-live,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-closing.nav-panel-live {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  /* ---- (c) the switch: one plate, morphing --------------------------- */
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-out,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-out,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in {
+    display: grid;
+    height: var(--nav-plate-h, auto);
+    min-height: 0;
+    opacity: 1;
+    transform: none;
+    transition: height var(--nav-morph) var(--nav-ease);
+  }
+
+  /* A panel that arrived through a swap must never replay the cold entrance —
+     re-enabling the keyframe when the swap classes come off would restart the
+     fade from zero and reintroduce the very flash this section removes.
+     The selector deliberately carries the full open-state shape plus the swap
+     class: a running animation outranks every normal declaration in the
+     cascade, so this has to out-specify the entrance rule (0,5,0) rather than
+     merely follow it. Measured before this was tightened: both panels rode the
+     entrance curve together, 0.32 -> 0.68 -> 0.86 opacity. */
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu.nav-panel-swapped,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu.nav-panel-swapped {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  /* The incoming panel rides on top of the outgoing plate with its own chrome
+     suppressed, so the crossing shows one border, one shadow, one background.
+     Doubled class matches the house `.nav-mega.nav-mega` idiom for winning
+     against the themed .mega-menu surface rules without !important. */
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-in {
+    z-index: 91;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+  }
+
+  /* Contents cross-fade with a drift that follows the pointer: travelling
+     right along the row sends both the outgoing and the incoming contents
+     leftward, so the swap has a direction instead of a blink. */
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in > *,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-out > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-out > * {
+    transition: opacity var(--nav-swap) ease, transform var(--nav-swap) ease;
+  }
+
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in > * {
+    opacity: 0;
+    transform: translateX(var(--nav-drift));
+  }
+
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-live > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in.nav-panel-live > * {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-out.nav-panel-live > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-out.nav-panel-live > * {
+    opacity: 0;
+    transform: translateX(calc(var(--nav-drift) * -1));
+  }
+}
+
+/* Reduced motion: every animation and transition this section introduces is
+   killed BY NAME, pseudo-elements included, and the swap becomes an instant
+   cut (nav_market.js also skips the choreography outright, so this is the
+   belt to that braces). The generic block above only reaches descendants and
+   only softens to .01ms; these rules zero the panel element itself. */
+@media (prefers-reduced-motion: reduce) {
+  .site-nav .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,
+  .topbar .nav-dd.nav-hover-open > .nav-dd-menu.mega-menu,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-out,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-closing,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-out,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-closing,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in > *,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-out > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-out > *,
+  .site-nav .nav-dd-menu.mega-menu::before,
+  .site-nav .nav-dd-menu.mega-menu::after,
+  .topbar .nav-dd-menu.mega-menu::before,
+  .topbar .nav-dd-menu.mega-menu::after,
+  .site-nav .nav-links > .nav-dd > a.nav-link::after,
+  .topbar .nav-links > .nav-dd > a.nav-link::after {
+    animation: none !important;
+    transition: none !important;
+    transition-duration: 0s !important;
+    animation-duration: 0s !important;
+  }
+
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-in > *,
+  .site-nav .nav-dd-menu.mega-menu.nav-panel-out > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-in > *,
+  .topbar .nav-dd-menu.mega-menu.nav-panel-out > * {
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 
