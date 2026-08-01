@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 from datetime import date
+from pathlib import Path
 
 import pytest
+import yaml
 
 from engine.seasonality.contracts import (
     BIOTEMPORAL_EVENT_SCHEMA,
@@ -198,3 +200,11 @@ def test_build_writes_public_methodology_manifest(tmp_path):
     assert output == tmp_path / "site" / "seasonalitydata" / "methodology.json"
     assert payload["schema"] == "biopharma_seasonality.methodology.v1"
     assert payload["as_of"] == "2026-08-01"
+
+
+def test_methodology_manifest_is_in_reviewed_public_boundary():
+    root = Path(__file__).resolve().parents[1]
+    policy = yaml.safe_load((root / "config" / "site_access.yml").read_text(encoding="utf-8"))
+    path = "/seasonalitydata/methodology.json"
+    assert path in policy["public"]["exact"]
+    assert path in (root / "app" / "deploy" / "Caddyfile").read_text(encoding="utf-8")
