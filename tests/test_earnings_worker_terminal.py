@@ -17,20 +17,25 @@ worker = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(worker)
 
 
-def _write_terminal_archive(root: Path, *, text: str = "Revenue increased 12%") -> None:
+def _write_terminal_archive(
+    root: Path,
+    *,
+    text: str = "Revenue increased 12%",
+    call_date: str = "2026-07-30",
+) -> None:
     body = {
         "schema": "mastermind.tx/v1",
         "ticker": "AAPL",
         "id": "2026Q3",
         "period": "Q3 FY2026",
-        "date": "2026-07-30",
+        "date": call_date,
         "title": "AAPL Earnings Call Q3 FY2026",
         "segments": [
             {"speaker": "Tim Cook", "role": "CEO", "text": text},
         ],
     }
     symbol_dir = root / "AAPL"
-    symbol_dir.mkdir(parents=True)
+    symbol_dir.mkdir(parents=True, exist_ok=True)
     with gzip.open(symbol_dir / "2026Q3.json.gz", "wt", encoding="utf-8") as handle:
         json.dump(body, handle)
     pair = "AAPL/2026Q3"
@@ -43,7 +48,7 @@ def _write_terminal_archive(root: Path, *, text: str = "Revenue increased 12%") 
                 "symbol_count": 1,
                 "symbols": {"AAPL": ["2026Q3"]},
                 "revisions": {pair: eti.canonical_body_sha256(body)},
-                "dates": {pair: "2026-07-30"},
+                "dates": {pair: call_date},
             }
         ),
         encoding="utf-8",
@@ -101,6 +106,7 @@ def test_terminal_bootstrap_scores_and_acks_success(monkeypatch, tmp_path: Path)
             "source_record_id": kwargs.get("source_record_id"),
             "source_updated_at": kwargs.get("source_updated_at"),
             "source_url": kwargs.get("source_url"),
+            "source_revision_sha256": kwargs.get("source_revision_sha256"),
             "prompt_version": "test-v1",
             "analysis_schema_version": "test/v1",
             "summary": "Revenue increased.",
@@ -126,7 +132,10 @@ def test_terminal_bootstrap_scores_and_acks_success(monkeypatch, tmp_path: Path)
     scores = eq.load_scores(repo_root)
     assert len(scores) == 1
     assert scores.iloc[0]["source_record_id"] == "defeatbeta:AAPL:2026Q3"
-    assert scores.iloc[0]["source_url"] == "/data/tx/AAPL/2026Q3.json.gz"
+    assert scores.iloc[0]["source_url"] == (
+        "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz"
+    )
+    assert scores.iloc[0]["source_revision_sha256"]
     assert scores.iloc[0]["degraded_reason"] is None
 
 
@@ -162,7 +171,81 @@ def test_degraded_model_row_remains_retryable(monkeypatch, tmp_path: Path):
     assert [eti.ref_from_pending(item).pair for item in state["pending"]] == [
         "AAPL/2026Q3"
     ]
+    revision = eti.ref_from_pending(state["pending"][0]).revision_key
+    assert state["retry"][revision]["attempts"] == 1
+    assert state["retry"][revision]["last_error"] == "model:openai_compat_error"
     assert eq._seen_shas(repo_root) == set()
+
+
+def test_hydration_failure_cannot_initialize_forward_only_cursor(
+    monkeypatch, tmp_path: Path,
+):
+    tx_root = tmp_path / "tx"
+    _write_terminal_archive(tx_root)
+    repo_root = tmp_path / "repo"
+    state_path = repo_root / "data" / "earnings_calls" / "terminal_intake_state.json"
+    monkeypatch.setattr(worker, "_fetch_remote_first", lambda _root: False)
+
+    assert worker.run_terminal(
+        repo_root=repo_root, provider_cfg={}, limit=64, do_publish=False,
+        base_url="unused", tx_root=tx_root, state_path=state_path,
+        bootstrap_since="2026-07-24", seed_existing=False,
+    ) == -1
+    assert not state_path.exists()
+
+    monkeypatch.setattr(worker, "run_terminal", lambda **_kwargs: -1)
+    assert worker.main([
+        "--terminal-auto",
+        "--terminal-tx-root", str(tx_root),
+        "--repo-root", str(repo_root),
+        "--terminal-state", str(state_path),
+        "--bootstrap-since", "2026-07-24",
+        "--no-publish",
+    ]) == 1
+
+
+def test_metadata_only_correction_replaces_same_record(monkeypatch, tmp_path: Path):
+    tx_root = tmp_path / "tx"
+    _write_terminal_archive(tx_root, call_date="2026-07-30")
+    repo_root = tmp_path / "repo"
+    state_path = repo_root / "data" / "earnings_calls" / "terminal_intake_state.json"
+
+    from engine import earnings_qual as eq
+
+    calls: list[str] = []
+
+    def fake_score(text, ticker, quarter, year, **kwargs):
+        calls.append(str(kwargs.get("call_date")))
+        return {
+            "ticker": ticker, "quarter": quarter, "year": year,
+            "call_date": kwargs.get("call_date"), "source": "transcript",
+            "model": "test", "sentiment": 0.2, "performance": 6.0,
+            "confidence": 0.8, "tone_word": "steady",
+            "positive_highlights": [], "negative_highlights": [], "tags": [],
+            "source_sha256": eq.source_sha256(text),
+            "source_revision_sha256": kwargs.get("source_revision_sha256"),
+            "source_record_id": kwargs.get("source_record_id"),
+            "source_updated_at": kwargs.get("source_updated_at"),
+            "source_url": kwargs.get("source_url"),
+            "scored_at": f"2026-08-01T00:0{len(calls)}:00Z",
+            "is_context_only": True, "degraded_reason": None,
+        }
+
+    monkeypatch.setattr(eq, "score_text", fake_score)
+    kwargs = dict(
+        repo_root=repo_root, provider_cfg={}, limit=64, do_publish=False,
+        base_url="unused", tx_root=tx_root, state_path=state_path,
+        seed_existing=False,
+    )
+    assert worker.run_terminal(bootstrap_since="2026-07-24", **kwargs) == 1
+
+    # The rendered transcript text is identical; only upstream metadata changes.
+    _write_terminal_archive(tx_root, call_date="2026-07-31")
+    assert worker.run_terminal(bootstrap_since=None, **kwargs) == 1
+    assert calls == ["2026-07-30", "2026-07-31"]
+    stored = eq.load_scores(repo_root)
+    assert len(stored) == 1
+    assert stored.iloc[0]["call_date"] == "2026-07-31"
 
 
 def test_remote_generation_is_hydrated_before_first_upsert(monkeypatch, tmp_path: Path):
@@ -194,6 +277,7 @@ def test_remote_generation_is_hydrated_before_first_upsert(monkeypatch, tmp_path
             "source_sha256": eq.source_sha256(text),
             "source_record_id": kwargs.get("source_record_id"),
             "source_updated_at": kwargs.get("source_updated_at"),
+            "source_revision_sha256": kwargs.get("source_revision_sha256"),
             "scored_at": "2026-08-01T00:00:00Z", "is_context_only": True,
             "degraded_reason": None,
         },
@@ -223,21 +307,28 @@ def test_idle_run_retries_publish(monkeypatch, tmp_path: Path):
         "scored_at": "2026-08-01T00:00:00Z", "is_context_only": True,
         "degraded_reason": None,
     }], root=repo_root)
-    monkeypatch.setattr(worker, "_fetch_remote_first", lambda root: True)
-    published: list[Path] = []
-    monkeypatch.setattr(worker, "_publish", lambda root: published.append(root) or True)
+    monkeypatch.setattr(worker, "_fetch_remote_first", lambda root: '"base-etag"')
+    published: list[tuple[Path, str | None]] = []
+    monkeypatch.setattr(
+        worker,
+        "_publish",
+        lambda root, expected_manifest_etag=None: (
+            published.append((root, expected_manifest_etag)) or True
+        ),
+    )
 
     assert worker.run_terminal(
         repo_root=repo_root, provider_cfg={}, limit=64, do_publish=True,
         base_url="unused", tx_root=tx_root, state_path=state_path,
         bootstrap_since=None, seed_existing=False,
     ) == 0
-    assert published == [repo_root]
+    assert published == [(repo_root, '"base-etag"')]
 
 
 def test_r2_hydration_merges_unpublished_local_rows(monkeypatch, tmp_path: Path):
     from engine import earnings_qual as eq
     from scripts import fetch_earnings_scores as fetcher
+    from scripts import publish_earnings_r2 as publisher
 
     repo_root = tmp_path / "repo"
     base = {
@@ -263,7 +354,11 @@ def test_r2_hydration_merges_unpublished_local_rows(monkeypatch, tmp_path: Path)
     fetched = {"done": False}
     manifest = {"schema": "test", "generation_id": "remote-generation"}
     monkeypatch.setattr(fetcher, "_client", lambda: object())
-    monkeypatch.setattr(fetcher, "_remote_manifest", lambda client, bucket: manifest)
+    monkeypatch.setattr(
+        publisher,
+        "_remote_manifest_snapshot",
+        lambda client, bucket: (manifest, '"remote-etag"'),
+    )
     monkeypatch.setattr(fetcher, "_manifest_contract", lambda value: (True, None))
     monkeypatch.setattr(
         fetcher,
@@ -282,7 +377,35 @@ def test_r2_hydration_merges_unpublished_local_rows(monkeypatch, tmp_path: Path)
         return 0
 
     monkeypatch.setattr(fetcher, "fetch", fake_fetch)
-    assert worker._fetch_remote_first(repo_root) is True
+    assert worker._fetch_remote_first(repo_root) == '"remote-etag"'
     stored = eq._load_scores_unvalidated(repo_root)
     assert set(stored["ticker"]) == {"AAPL", "MSFT"}
     assert not (eq.store_path(repo_root).parent / "manifest.json").exists()
+
+
+def test_publish_rebases_and_retries_manifest_conflict(monkeypatch, tmp_path: Path):
+    from scripts import publish_earnings_r2 as publisher
+
+    outcomes = iter([publisher.PUBLISH_CONFLICT, 0])
+    publishes: list[tuple[Path, str | None]] = []
+    rebases: list[Path] = []
+
+    def fake_publish(*, data_dir, expected_manifest_etag=None):
+        publishes.append((data_dir, expected_manifest_etag))
+        return next(outcomes)
+
+    monkeypatch.setattr(publisher, "publish", fake_publish)
+    monkeypatch.setattr(
+        worker,
+        "_fetch_remote_first",
+        lambda root: rebases.append(root) or '"second-etag"',
+    )
+    assert worker._publish(
+        tmp_path,
+        expected_manifest_etag='"first-etag"',
+    ) is True
+    assert publishes == [
+        (tmp_path / "data", '"first-etag"'),
+        (tmp_path / "data", '"second-etag"'),
+    ]
+    assert rebases == [tmp_path]

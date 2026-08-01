@@ -153,6 +153,7 @@ def new_state(source: str) -> dict[str, Any]:
         "initialized": False,
         "known": {},
         "pending": [],
+        "retry": {},
         "last_index_generated_at": "",
         "updated_at": "",
     }
@@ -176,7 +177,12 @@ def load_state(path: Path, *, source: str) -> dict[str, Any]:
         )
     known = raw.get("known")
     pending = raw.get("pending")
-    if not isinstance(known, dict) or not isinstance(pending, list):
+    retry = raw.get("retry") or {}
+    if (
+        not isinstance(known, dict)
+        or not isinstance(pending, list)
+        or not isinstance(retry, dict)
+    ):
         raise ValueError("transcript intake state known/pending shape is invalid")
     # Validate pending rows by round-tripping the dataclass constructor.
     clean_pending: list[dict[str, str]] = []
@@ -194,6 +200,20 @@ def load_state(path: Path, *, source: str) -> dict[str, Any]:
         clean_pending.append(asdict(ref))
     raw["known"] = {str(k): _clean_sha(v) for k, v in known.items()}
     raw["pending"] = clean_pending
+    clean_retry: dict[str, dict[str, Any]] = {}
+    for key, value in retry.items():
+        if not isinstance(key, str) or not isinstance(value, dict):
+            continue
+        try:
+            attempts = max(0, int(value.get("attempts") or 0))
+        except (TypeError, ValueError):
+            attempts = 0
+        clean_retry[key] = {
+            "attempts": attempts,
+            "last_error": str(value.get("last_error") or "")[:240],
+            "last_attempt_at": str(value.get("last_attempt_at") or ""),
+        }
+    raw["retry"] = clean_retry
     raw["source"] = source
     return raw
 
@@ -245,7 +265,9 @@ def plan_index(
     metadata = metadata or {}
     out = dict(state)
     known = dict(out.get("known") or {})
+    prior_pending = [TranscriptRef(**item) for item in out.get("pending") or []]
     pending = _pending_by_pair(out)
+    new_pairs: set[str] = set()
     initialized = bool(out.get("initialized"))
 
     cutoff = _clean_date(bootstrap_since) if bootstrap_since else ""
@@ -268,23 +290,53 @@ def plan_index(
             # Brand-new body pair.
             known[ref.pair] = ref.body_sha256
             pending[ref.pair] = ref
+            new_pairs.add(ref.pair)
         elif previous and ref.body_sha256 and previous != ref.body_sha256:
             # Same stable pair, corrected content. Replace any stale queued
             # revision with the latest advertised body revision.
             known[ref.pair] = ref.body_sha256
             pending[ref.pair] = ref
+            new_pairs.add(ref.pair)
         elif not previous and ref.body_sha256:
             # Hash extension rollout for an already-known legacy pair is not a
             # correction. Upgrade the cursor silently to avoid a 25k-item replay.
             known[ref.pair] = ref.body_sha256
 
-    ordered = sorted(
-        pending.values(),
-        key=lambda ref: (ref.call_date, ref.transcript_id, ref.ticker),
-        reverse=True,
-    )
+    if not initialized:
+        ordered = sorted(
+            pending.values(),
+            key=lambda ref: (ref.call_date, ref.transcript_id, ref.ticker),
+            reverse=True,
+        )
+    else:
+        # Newly discovered/corrected bodies lead, while the existing queue
+        # keeps its persisted order. mark_failed rotates a poison item to the
+        # tail, and this preservation prevents plan_index from undoing it.
+        priority = sorted(
+            (pending[pair] for pair in new_pairs),
+            key=lambda ref: (ref.call_date, ref.transcript_id, ref.ticker),
+            reverse=True,
+        )
+        seen = {ref.pair for ref in priority}
+        remainder: list[TranscriptRef] = []
+        for prior in prior_pending:
+            current = pending.get(prior.pair)
+            if current is not None and current.pair not in seen:
+                remainder.append(current)
+                seen.add(current.pair)
+        for pair, current in pending.items():
+            if pair not in seen:
+                remainder.append(current)
+                seen.add(pair)
+        ordered = priority + remainder
     out["known"] = known
     out["pending"] = [asdict(ref) for ref in ordered]
+    active_revisions = {ref.revision_key for ref in ordered}
+    out["retry"] = {
+        str(key): value
+        for key, value in (out.get("retry") or {}).items()
+        if str(key) in active_revisions
+    }
     out["initialized"] = True
     out["last_index_generated_at"] = str(metadata.get("generated_at") or "")
     out["last_index_body_count"] = int(metadata.get("body_count") or len(refs))
@@ -303,6 +355,40 @@ def mark_completed(state: dict[str, Any], ref: TranscriptRef) -> dict[str, Any]:
             continue
         kept.append(asdict(candidate))
     out["pending"] = kept
+    retry = dict(out.get("retry") or {})
+    retry.pop(ref.revision_key, None)
+    out["retry"] = retry
+    return out
+
+
+def mark_failed(
+    state: dict[str, Any],
+    ref: TranscriptRef,
+    *,
+    error: str,
+) -> dict[str, Any]:
+    """Rotate an exact failed revision to the tail and retain retry evidence."""
+
+    out = dict(state)
+    kept: list[dict[str, str]] = []
+    found = False
+    for item in out.get("pending") or []:
+        candidate = TranscriptRef(**item)
+        if candidate.pair == ref.pair and candidate.revision_key == ref.revision_key:
+            found = True
+            continue
+        kept.append(asdict(candidate))
+    if found:
+        kept.append(asdict(ref))
+    out["pending"] = kept
+    retry = dict(out.get("retry") or {})
+    prior = retry.get(ref.revision_key) if isinstance(retry.get(ref.revision_key), dict) else {}
+    retry[ref.revision_key] = {
+        "attempts": int(prior.get("attempts") or 0) + 1,
+        "last_error": str(error or "unknown")[:240],
+        "last_attempt_at": datetime.now(timezone.utc).isoformat(),
+    }
+    out["retry"] = retry
     return out
 
 
@@ -383,6 +469,7 @@ def body_to_score_input(
     payload: dict[str, Any],
     *,
     index_generated_at: str = "",
+    source_base_url: str = "https://app.mastermind-x.com/data/tx",
 ) -> tuple[dict[str, Any], str]:
     """Map ``mastermind.tx/v1`` directly into the earnings scorer contract."""
 
@@ -415,7 +502,10 @@ def body_to_score_input(
         "source": "transcript",
         "source_record_id": f"defeatbeta:{ticker}:{tx_id}",
         "source_updated_at": index_generated_at,
-        "terminal_url": f"/data/tx/{ticker}/{tx_id}.json.gz",
+        "source_revision_sha256": canonical_body_sha256(payload),
+        "terminal_url": (
+            f"{str(source_base_url).rstrip('/')}/{ticker}/{tx_id}.json.gz"
+        ),
     }
     return score_input, body
 

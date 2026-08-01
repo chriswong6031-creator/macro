@@ -165,7 +165,10 @@ def test_local_body_validation_and_score_mapping(tmp_path: Path):
     assert payload["quarter"] == "Q3"
     assert payload["year"] == 2026
     assert payload["source_record_id"] == "defeatbeta:AAPL:2026Q3"
-    assert payload["terminal_url"] == "/data/tx/AAPL/2026Q3.json.gz"
+    assert payload["terminal_url"] == (
+        "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz"
+    )
+    assert payload["source_revision_sha256"] == ref.body_sha256
     assert "Tim Cook [CEO]: Revenue rose 10%" in text
     assert "Analyst: What changed?" in text
 
@@ -198,3 +201,28 @@ def test_state_write_is_atomic_and_round_trips(tmp_path: Path):
     loaded = eti.load_state(path, source="source")
     assert loaded["pending"][0]["transcript_id"] == "2026Q3"
     assert not list(tmp_path.glob("*.tmp.*"))
+
+
+def test_failed_revision_rotates_to_tail_and_survives_replan():
+    first = _body("AAPL", "2026Q3")
+    second = _body("MSFT", "2026Q3")
+    refs, meta = eti.parse_global_index(_index(first, second))
+    state, pending = eti.plan_index(
+        refs,
+        eti.new_state("source"),
+        metadata=meta,
+        bootstrap_since="2026-07-24",
+    )
+    failed = pending[0]
+    state = eti.mark_failed(state, failed, error="model:invalid_json")
+    rotated = [eti.ref_from_pending(item) for item in state["pending"]]
+    assert rotated[-1].revision_key == failed.revision_key
+    assert state["retry"][failed.revision_key]["attempts"] == 1
+    assert state["retry"][failed.revision_key]["last_error"] == "model:invalid_json"
+
+    state, replanned = eti.plan_index(refs, state, metadata=meta)
+    assert [ref.revision_key for ref in replanned] == [
+        ref.revision_key for ref in rotated
+    ]
+    state = eti.mark_completed(state, failed)
+    assert failed.revision_key not in state["retry"]

@@ -12,8 +12,9 @@
 # SGA-R6: the Windows worker is producer-only — it writes R2, NEVER git.
 
 # Provider waterfall.  'openai_compat' is the local Qwen path (base_url below).
-# 'anthropic'/'deepseek' route through engine/llm_auth; Kimi uses its
-# OpenAI-compatible endpoint.  The local worker may override this order.
+# 'anthropic'/'deepseek'/'codex' route through engine/llm_auth; Kimi uses its
+# OpenAI-compatible endpoint. Codex is never inserted implicitly here; an
+# attached subscription is used only when the worker explicitly names it.
 # The harness tries providers in this order and stops at the first that answers.
 provider_order:
   - openai_compat        # local Qwen on the PC (primary — free, private)
@@ -35,6 +36,8 @@ openai_compat:
 # Cheapest lane only — earnings scoring is off the render-critical path.
 opus_model: "claude-haiku-4-5"            # 'anthropic' provider (cheap Haiku)
 deepseek_model: "deepseek-v4-flash"        # routine extraction; Pro reserved for publishable prose
+codex_source_model: "gpt-5.6-terra"        # optional explicit subscription rung
+codex_reasoning_effort: "low"              # extraction does not need deep search
 # llm_auth env-var names (waterfall credential lookups):
 oauth_token_env: "CLAUDE_CODE_OAUTH_TOKEN"
 api_key_env: "ANTHROPIC_API_KEY"

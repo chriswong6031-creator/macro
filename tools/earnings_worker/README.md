@@ -1,28 +1,29 @@
-# Earnings-call qualitative worker (Windows PC)
+# Earnings-call qualitative worker (local PC + Mac fallback)
 
 Standalone worker that polls Mastermind Terminal's committed transcript archive,
 scores new or corrected calls, and publishes the qualitative overlay to
 Cloudflare R2. The normal route is **local Qwen first**, with optional low-cost
-DeepSeek/Kimi/Anthropic fallbacks. Part of the Stage Analysis program (SGA W4,
+DeepSeek/Kimi/Codex/Anthropic fallbacks. Part of the Stage Analysis program (SGA W4,
 rulings **SGA-R5** and **SGA-R6**).
 
-It runs **outside** the nightly render pipeline. The Mac Studio's nightly job
-never calls the model — it only *fetches* the scores this worker publishes
-(`scripts/fetch_earnings_scores.py`).
+It runs **outside** the nightly render pipeline. The render job only fetches
+committed scores (`scripts/fetch_earnings_scores.py`); the standalone Mac
+appliance can provide a low-cost DeepSeek fallback when the local PC is offline.
 
 ---
 
-## The one law you must not break — SGA-R6 (single-writer / transport)
+## The one law you must not break — SGA-R6 (producer / transport)
 
 > **This worker is producer-only. It writes `data/earnings_calls/scores.parquet`
 > locally and publishes it to R2. It NEVER touches git — no `add`, `commit`,
 > `push`, or `pull`.** The nightly pipeline is the sole ledger advancer and pulls
 > scores from R2.
 
-The runner enforces this by construction: it has no git code path. Do not add
-one. If you clone the repo on the PC just to import the harness, that's fine —
-just never commit the gitignored `data/earnings_calls/` store, and never let a
-scheduled task run `git`.
+The score store is gitignored and transported only through immutable R2
+generations. Multiple producer hosts are safe: every host hydrates the current
+generation, conditionally promotes the manifest against the exact ETag it read,
+and rebases/retries when another host wins. The runner has no data-git path; do
+not add one.
 
 Also standing (SGA-R5): every score is **context-only** — never a trading signal,
 gate, or sizing input. The scorer strips trading verbs (`buy`/`sell`/`short`/
@@ -44,7 +45,8 @@ You cannot bypass that filter from the worker.
 5. Upsert by stable upstream record id. Provider failures stay pending and can
    never overwrite a healthy score or the committed Stage seed.
 6. Attempt R2 publication on every invocation, including an idle run after an
-   earlier failed publish.
+   earlier failed publish. Manifest promotion is compare-and-swap; a concurrent
+   writer forces hydration, deterministic merge, and retry.
 
 A 2,000–3,500-name universe implies roughly 22–38 calls/day on average at four
 calls per company per year, but earnings-season spikes can be hundreds per day.
@@ -120,7 +122,7 @@ Optional endpoint overrides (avoid editing the repo config on the PC):
 | `EARNINGS_LLM_BASE_URL` | local endpoint, e.g. `http://localhost:1234/v1` |
 | `EARNINGS_LLM_MODEL` | local model id, e.g. `qwen3-14b` |
 | `LOCAL_LLM_API_KEY` | only if your server requires a bearer token |
-| `EARNINGS_PROVIDER_ORDER` | optional waterfall, e.g. `openai_compat,deepseek,kimi,anthropic` |
+| `EARNINGS_PROVIDER_ORDER` | optional waterfall, e.g. `openai_compat,deepseek,kimi,codex,anthropic`; `codex` explicitly uses the attached Terra subscription rung |
 | `DEEPSEEK_API_KEY` | enables the low-cost DeepSeek fallback |
 | `MOONSHOT_API_KEY` | enables the optional Kimi fallback |
 | `ANTHROPIC_API_KEY` | enables the last-resort Anthropic fallback |
@@ -142,7 +144,7 @@ python run_worker.py --terminal-auto ^
 
 # Zero-touch fallback when the local endpoint is asleep or the queue spikes.
 python run_worker.py --terminal-auto ^
-  --provider-order openai_compat,deepseek,kimi,anthropic
+  --provider-order openai_compat,deepseek,kimi,codex,anthropic
 
 # Test against a local Terminal archive and keep all writes off R2.
 python run_worker.py --terminal-auto --terminal-tx-root D:\terminal\public\data\tx ^

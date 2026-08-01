@@ -90,11 +90,15 @@ def test_score_text_persists_source_and_prompt_lineage(monkeypatch):
         call_date="2026-07-30",
         source_record_id="defeatbeta:AAPL:2026Q3",
         source_updated_at="2026-08-01T00:00:00Z",
-        source_url="/data/tx/AAPL/2026Q3.json.gz",
+        source_url="https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz",
+        source_revision_sha256="revision-123",
     )
     assert row["source_record_id"] == "defeatbeta:AAPL:2026Q3"
     assert row["source_updated_at"] == "2026-08-01T00:00:00Z"
-    assert row["source_url"] == "/data/tx/AAPL/2026Q3.json.gz"
+    assert row["source_url"] == (
+        "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz"
+    )
+    assert row["source_revision_sha256"] == "revision-123"
     assert row["prompt_version"]
     assert row["analysis_schema_version"]
     assert row["summary"].startswith("Revenue grew")
@@ -190,7 +194,13 @@ def test_invalid_json_degrades(monkeypatch):
         return "I cannot produce JSON, sorry.", None, "openai_compat"
 
     monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
-    row = eq.score_text("txt", "X", "Q1", 2026)
+    row = eq.score_text(
+        "txt",
+        "X",
+        "Q1",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat"]},
+    )
     assert row["degraded_reason"] == "invalid_json"
     assert row["sentiment"] is None
     assert calls["n"] == 2                    # first + one retry
@@ -205,6 +215,68 @@ def test_no_provider_degrades(monkeypatch):
     row = eq.score_text("txt", "X", "Q1", 2026)
     assert row["degraded_reason"] == "no_provider"
     assert row["model"] is None
+
+
+def test_incomplete_local_reply_falls_through_to_deepseek(monkeypatch):
+    calls: list[str] = []
+
+    def fake_dispatch(system, user, cfg, provider_cfg, *, max_tokens):
+        provider = provider_cfg["provider_order"][0]
+        calls.append(provider)
+        if provider == "openai_compat":
+            return "{}", None, provider
+        return json.dumps(_GOOD_JSON), None, provider
+
+    monkeypatch.setattr(eq, "_dispatch", fake_dispatch)
+    row = eq.score_text(
+        "txt",
+        "NVDA",
+        "Q1",
+        2026,
+        provider_cfg={"provider_order": ["openai_compat", "deepseek"]},
+    )
+    assert calls == ["openai_compat", "openai_compat", "deepseek"]
+    assert row["model"] == "deepseek"
+    assert row["degraded_reason"] is None
+    assert row["performance"] == pytest.approx(8.5)
+
+
+def test_llm_auth_rung_disables_implicit_codex(monkeypatch):
+    from engine import llm_auth
+
+    captured: dict = {}
+
+    def fake_build(cfg, **_kwargs):
+        captured.update(cfg)
+        return []
+
+    monkeypatch.setattr(llm_auth, "build_providers", fake_build)
+    text, reason = eq._call_llm_auth(
+        "system", "user", {}, "deepseek", max_tokens=100
+    )
+    assert text is None and reason == "no_provider"
+    assert captured["provider_order"] == ["deepseek"]
+    assert captured["codex_provider"] is False
+
+
+def test_codex_subscription_is_available_only_as_explicit_rung(monkeypatch):
+    calls: list[str] = []
+
+    def fake_llm(system, user, cfg, provider_name, *, max_tokens):
+        calls.append(provider_name)
+        return json.dumps(_GOOD_JSON), None
+
+    monkeypatch.setattr(eq, "_call_llm_auth", fake_llm)
+    row = eq.score_text(
+        "txt",
+        "AAPL",
+        "Q3",
+        2026,
+        provider_cfg={"provider_order": ["codex"]},
+    )
+    assert calls == ["codex"]
+    assert row["model"] == "codex"
+    assert row["degraded_reason"] is None
 
 
 def test_empty_text_degrades():
@@ -303,6 +375,25 @@ def test_completion_ledger_is_record_scoped_not_global_text_scoped(tmp_path):
     assert eq._completed_record_shas(tmp_path) == {
         "source:AAA:2026Q2": "identical-rendered-text",
         "source:BBB:2026Q2": "identical-rendered-text",
+    }
+
+
+def test_completion_ledger_prefers_upstream_revision_hash(tmp_path):
+    row = {
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-30", "source": "transcript", "model": "qwen",
+        "sentiment": 0.4, "performance": 7.0, "confidence": 0.8,
+        "tone_word": "steady", "positive_highlights": [],
+        "negative_highlights": [], "tags": [],
+        "source_sha256": "same-rendered-text",
+        "source_revision_sha256": "metadata-aware-revision",
+        "scored_at": "2026-08-01T00:00:00Z",
+        "source_record_id": "defeatbeta:AAPL:2026Q3",
+        "is_context_only": True, "degraded_reason": None,
+    }
+    eq.upsert_scores([row], root=tmp_path)
+    assert eq._completed_record_shas(tmp_path) == {
+        "defeatbeta:AAPL:2026Q3": "metadata-aware-revision"
     }
 
 

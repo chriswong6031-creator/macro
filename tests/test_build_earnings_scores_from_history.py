@@ -265,6 +265,7 @@ def test_publish_never_promotes_manifest_after_payload_failure(monkeypatch, tmp_
     class S3:
         def __init__(self):
             self.uploaded: list[str] = []
+            self.put_args: dict | None = None
 
         @staticmethod
         def get_object(**_kwargs):
@@ -304,6 +305,7 @@ def test_publish_promotes_manifest_last_after_immutable_payloads(monkeypatch, tm
     class S3:
         def __init__(self):
             self.uploaded: list[str] = []
+            self.put_args: dict | None = None
 
         @staticmethod
         def get_object(**_kwargs):
@@ -316,6 +318,10 @@ def test_publish_promotes_manifest_last_after_immutable_payloads(monkeypatch, tm
         def upload_file(self, _path, _bucket, key, ExtraArgs=None):  # noqa: N803
             self.uploaded.append(key)
 
+        def put_object(self, **kwargs):
+            self.put_args = kwargs
+            self.uploaded.append(kwargs["Key"])
+
     s3 = S3()
     monkeypatch.setattr(publish_mod, "_client", lambda: s3)
     monkeypatch.setenv("R2_BUCKET", "bucket")
@@ -326,6 +332,100 @@ def test_publish_promotes_manifest_last_after_immutable_payloads(monkeypatch, tm
     assert [key.rsplit("/", 1)[-1] for key in s3.uploaded[:-1]] == [
         "scores.parquet", "history.parquet",
     ]
+    assert s3.put_args is not None
+    assert s3.put_args["IfNoneMatch"] == "*"
+    assert "IfMatch" not in s3.put_args
+
+
+def test_publish_manifest_cas_conflict_is_retryable(monkeypatch, tmp_path):
+    earnings = tmp_path / "data" / "earnings_calls"
+    earnings.mkdir(parents=True)
+    pd.DataFrame([{
+        "ticker": "AAA", "call_date": "2026-07-31",
+    }]).to_parquet(earnings / "scores.parquet", index=False)
+
+    class PreconditionFailed(RuntimeError):
+        response = {
+            "Error": {"Code": "PreconditionFailed"},
+            "ResponseMetadata": {"HTTPStatusCode": 412},
+        }
+
+    class S3:
+        def __init__(self):
+            self.put_args: dict | None = None
+
+        @staticmethod
+        def get_object(**_kwargs):
+            raise KeyError("no prior manifest")
+
+        @staticmethod
+        def head_object(**_kwargs):
+            raise KeyError("object absent")
+
+        @staticmethod
+        def upload_file(*_args, **_kwargs):
+            return None
+
+        def put_object(self, **kwargs):
+            self.put_args = kwargs
+            raise PreconditionFailed("another producer promoted first")
+
+    s3 = S3()
+    monkeypatch.setattr(publish_mod, "_client", lambda: s3)
+    monkeypatch.setenv("R2_BUCKET", "bucket")
+
+    assert publish_mod.publish(data_dir=tmp_path / "data") == (
+        publish_mod.PUBLISH_CONFLICT
+    )
+    assert s3.put_args is not None
+    assert s3.put_args["IfNoneMatch"] == "*"
+
+
+def test_publish_manifest_uses_hydrated_parent_etag_for_cas(monkeypatch, tmp_path):
+    earnings = tmp_path / "data" / "earnings_calls"
+    earnings.mkdir(parents=True)
+    pd.DataFrame([{
+        "ticker": "AAA", "call_date": "2026-07-31",
+    }]).to_parquet(earnings / "scores.parquet", index=False)
+
+    class S3:
+        def __init__(self):
+            self.put_args: dict | None = None
+
+        @staticmethod
+        def get_object(**_kwargs):
+            return {
+                "Body": _Body(json.dumps({
+                    "schema": "earnings_intelligence_manifest.v3",
+                    "generation_id": "prior",
+                    "scores": {"md5": "prior"},
+                    "history": None,
+                }).encode()),
+                "ETag": '"opaque-etag"',
+            }
+
+        @staticmethod
+        def head_object(**_kwargs):
+            raise KeyError("object absent")
+
+        @staticmethod
+        def upload_file(*_args, **_kwargs):
+            return None
+
+        def put_object(self, **kwargs):
+            self.put_args = kwargs
+
+    s3 = S3()
+    monkeypatch.setattr(publish_mod, "_client", lambda: s3)
+    monkeypatch.setenv("R2_BUCKET", "bucket")
+
+    assert publish_mod.publish(
+        data_dir=tmp_path / "data",
+        expected_manifest_etag='"hydrated-parent-etag"',
+    ) == 0
+    assert s3.put_args is not None
+    assert s3.put_args["IfMatch"] == '"hydrated-parent-etag"'
+    assert "IfNoneMatch" not in s3.put_args
 
 
 class _Body:

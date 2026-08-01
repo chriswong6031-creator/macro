@@ -300,7 +300,7 @@ def _call_llm_auth(
 ) -> tuple[str | None, str | None]:
     """Cloud fallback via engine.llm_auth for a single named provider.
 
-    provider_name ∈ {"anthropic", "deepseek"}.  Builds a one-provider waterfall
+    provider_name ∈ {"anthropic", "deepseek", "codex"}. Builds a one-provider waterfall
     so the harness controls ordering (config's provider_order), not llm_auth's
     default oauth-first ladder.  Never raises.
     """
@@ -312,6 +312,12 @@ def _call_llm_auth(
 
     sub_cfg = dict(cfg)
     sub_cfg["provider_order"] = [provider_name]
+    # The earnings worker owns its explicit provider order and cost ledger.
+    # llm_auth normally appends the attached Codex subscription as a fallback
+    # to non-OAuth lanes; disable that implicit rung here so a failed DeepSeek
+    # request cannot silently execute Terra while the score says "deepseek".
+    # Codex remains available to callers that choose it explicitly elsewhere.
+    sub_cfg["codex_provider"] = False
     try:
         providers = llm_auth.build_providers(
             sub_cfg,
@@ -372,7 +378,7 @@ def _dispatch(
             text, reason = _call_kimi(
                 system, user, cfg.get("kimi") or {}, max_tokens=max_tokens
             )
-        elif name in ("anthropic", "deepseek"):
+        elif name in ("anthropic", "deepseek", "codex"):
             text, reason = _call_llm_auth(system, user, cfg, name, max_tokens=max_tokens)
         else:
             log.warning("earnings_qual: unknown provider '%s' — skipping", name)
@@ -499,6 +505,18 @@ def _clean_tone(raw: Any) -> str | None:
     return w if w in _TONE_WORDS else None
 
 
+def _analysis_obj_complete(obj: dict | None) -> bool:
+    """Whether a parsed provider reply satisfies the required score fields."""
+
+    if not isinstance(obj, dict):
+        return False
+    return all((
+        _clip(obj.get("sentiment"), -1.0, 1.0, None) is not None,
+        _clip(obj.get("performance"), 0.0, 10.0, None) is not None,
+        _clip(obj.get("confidence"), 0.0, 1.0, None) is not None,
+    ))
+
+
 # --------------------------------------------------------------------------- #
 # source_sha256
 # --------------------------------------------------------------------------- #
@@ -523,6 +541,7 @@ def score_text(
     source_record_id: str | None = None,
     source_updated_at: str | None = None,
     source_url: str | None = None,
+    source_revision_sha256: str | None = None,
 ) -> dict:
     """Score one earnings-call text.  Provider-agnostic; never raises.
 
@@ -540,12 +559,14 @@ def score_text(
     source_record_id: stable upstream identity (preferred upsert key).
     source_updated_at: upstream commit-marker/index generation timestamp.
     source_url: public-safe citation back to the scored source body.
+    source_revision_sha256: canonical upstream body hash, including metadata.
 
     Returns a dict conforming to the §2 scores contract:
       { ticker, quarter, year, call_date, source, model, sentiment,
         performance, confidence, tone_word, positive_highlights,
         negative_highlights, tags, summary, source_sha256, scored_at,
-        source_record_id, source_updated_at, source_url, prompt_version,
+        source_record_id, source_updated_at, source_url,
+        source_revision_sha256, prompt_version,
         analysis_schema_version, is_context_only, degraded_reason }
     """
     cfg = cfg if cfg is not None else load_config()
@@ -573,6 +594,7 @@ def score_text(
         "source_record_id": source_record_id or None,
         "source_updated_at": source_updated_at or None,
         "source_url": source_url or None,
+        "source_revision_sha256": source_revision_sha256 or None,
         "prompt_version": str(cfg.get("prompt_version") or ""),
         "analysis_schema_version": str(cfg.get("analysis_schema_version") or ""),
         "summary": None,           # SGA W5: call_summary from the model (optional)
@@ -595,31 +617,65 @@ def score_text(
 
     user = _build_user_prompt(base_row["ticker"], q_norm, y_norm, source, body)
 
-    # First attempt.
-    reply, reason, provider_used = _dispatch(
-        _SYSTEM_PROMPT, user, cfg, provider_cfg, max_tokens=max_tokens
-    )
-    obj = _extract_json(reply) if reply else None
-
-    # One retry on invalid JSON (SGA harness contract).
+    # Validate and retry one provider rung at a time. A local endpoint that
+    # answers with malformed or incomplete JSON must not pin the durable queue;
+    # after its bounded retry the next configured provider gets a chance.
     retries = int(cfg.get("retry_on_bad_json", 1))
-    if obj is None and reply is not None and retries > 0:
-        reply2, reason2, provider_used2 = _dispatch(
-            _SYSTEM_PROMPT, user + _RETRY_SUFFIX, cfg, provider_cfg,
-            max_tokens=max_tokens,
+    order = (
+        provider_cfg.get("provider_order")
+        or cfg.get("provider_order")
+        or ["openai_compat", "deepseek", "anthropic"]
+    )
+    obj: dict | None = None
+    provider_used: str | None = None
+    last_reason: str | None = None
+    last_shape_reason: str | None = None
+    for provider_name in [str(name) for name in order if str(name).strip()]:
+        rung_cfg = dict(provider_cfg)
+        rung_cfg["provider_order"] = [provider_name]
+        reply, reason, used = _dispatch(
+            _SYSTEM_PROMPT, user, cfg, rung_cfg, max_tokens=max_tokens
         )
-        obj2 = _extract_json(reply2) if reply2 else None
-        if obj2 is not None:
-            obj, provider_used = obj2, provider_used2
-        else:
-            reason = reason2 or reason
+        last_reason = reason or last_reason
+        if reply is None:
+            continue
+        provider_used = used or provider_name
+        candidate = _extract_json(reply)
+        shape_reason = (
+            None
+            if _analysis_obj_complete(candidate)
+            else ("incomplete_schema" if candidate is not None else "invalid_json")
+        )
+        if shape_reason is not None and retries > 0:
+            reply2, reason2, used2 = _dispatch(
+                _SYSTEM_PROMPT,
+                user + _RETRY_SUFFIX,
+                cfg,
+                rung_cfg,
+                max_tokens=max_tokens,
+            )
+            last_reason = reason2 or last_reason
+            if reply2 is not None:
+                provider_used = used2 or provider_name
+                candidate = _extract_json(reply2)
+                shape_reason = (
+                    None
+                    if _analysis_obj_complete(candidate)
+                    else (
+                        "incomplete_schema"
+                        if candidate is not None
+                        else "invalid_json"
+                    )
+                )
+        if shape_reason is None:
+            obj = candidate
+            break
+        last_shape_reason = shape_reason
 
     if obj is None:
-        # Degraded — no usable JSON.  Distinguish no-provider from bad-json.
-        if reply is None:
-            base_row["degraded_reason"] = reason or "no_provider"
-        else:
-            base_row["degraded_reason"] = "invalid_json"
+        base_row["degraded_reason"] = (
+            last_shape_reason or last_reason or "no_provider"
+        )
         base_row["model"] = provider_used
         return base_row
 
@@ -639,7 +695,7 @@ def score_text(
     # partial schema as retryable degradation so it never becomes the live
     # overlay merely because the provider happened to return ``{}``.
     if any(base_row.get(key) is None for key in (
-        "sentiment", "performance", "confidence", "tone_word",
+        "sentiment", "performance", "confidence",
     )):
         base_row["degraded_reason"] = "incomplete_schema"
     return base_row
@@ -713,7 +769,8 @@ _STORE_COLUMNS = [
     "sentiment", "performance", "confidence", "tone_word",
     "positive_highlights", "negative_highlights", "tags",
     "source_sha256", "scored_at",
-    "source_record_id", "source_updated_at", "source_url", "prompt_version",
+    "source_record_id", "source_updated_at", "source_url",
+    "source_revision_sha256", "prompt_version",
     "analysis_schema_version",
     "summary",   # SGA W5: model call_summary (str, nullable); live scorer fills if present
     "is_context_only", "degraded_reason",
@@ -908,7 +965,11 @@ def _completed_record_shas(root: Path | None = None) -> dict[str, str]:
     out: dict[str, str] = {}
     for _, row in healthy.iterrows():
         record_id = str(row.get("source_record_id") or "").strip()
-        sha = str(row.get("source_sha256") or "").strip()
+        sha = str(
+            row.get("source_revision_sha256")
+            or row.get("source_sha256")
+            or ""
+        ).strip()
         if record_id and record_id != "nan" and sha and sha != "nan":
             out[record_id] = sha
     return out
@@ -1797,6 +1858,28 @@ def _overlay_forward_scores(df, source_tier: str, root: Path | None = None):
             log.warning(
                 "earnings_qual: rejecting score overlay (%s)", score_reason,
             )
+            return df, source_tier
+        # Provider failures and partial JSON are retry receipts, not calls that
+        # earned a product surface. Apply the same health/context/completeness
+        # gate as stage_analysis before normalization or the latest-500 cap.
+        if "degraded_reason" in scores.columns:
+            degraded = scores["degraded_reason"].fillna("").astype(str).str.strip()
+            scores = scores[degraded.eq("")]
+        if "is_context_only" in scores.columns:
+            context = scores["is_context_only"]
+            context_ok = context.map(
+                lambda value: (
+                    str(value).strip().lower() in {"1", "true", "yes", "y"}
+                    if isinstance(value, str)
+                    else bool(value) if value is not None and not pd.isna(value) else False
+                )
+            )
+            scores = scores[context_ok]
+        for required in ("sentiment", "performance"):
+            if required not in scores.columns:
+                return df, source_tier
+            scores = scores[pd.to_numeric(scores[required], errors="coerce").notna()]
+        if scores.empty:
             return df, source_tier
         projected = _normalise_earnings_source(
             scores,

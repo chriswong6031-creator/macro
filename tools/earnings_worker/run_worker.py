@@ -15,10 +15,11 @@ operator's Windows PC OUTSIDE the nightly render pipeline.  Its job:
   4. Upsert the rows into data/earnings_calls/scores.parquet (atomic, dedup).
   5. Publish scores.parquet + manifest.json to R2 (scripts.publish_earnings_r2).
 
-SGA-R6 — SINGLE-WRITER LAW:
-  This worker is PRODUCER-ONLY. It writes the local parquet and publishes to R2.
-  It NEVER runs git (no add / commit / push / pull). The nightly pipeline is the
-  sole ledger advancer and pulls scores from R2 via scripts/fetch_earnings_scores.py.
+SGA-R6 — PRODUCER / TRANSPORT LAW:
+  This worker writes the local parquet and publishes immutable generations to
+  R2. It never advances score data through git. Multiple producer hosts hydrate
+  first and compare-and-swap the R2 manifest; a lost race rebases and retries.
+  The nightly render pipeline is a consumer, not a model-serving path.
 
 SGA-R5:
   Every score is context-only (is_context_only=True, enforced by score_text). The
@@ -243,9 +244,13 @@ def run_terminal(
     # This producer is a read-modify-publish writer.  Always hydrate the latest
     # committed generation before the first local upsert so a fresh PC clone
     # cannot publish a one-row store over the accumulated R2 score history.
-    if not _fetch_remote_first(repo_root):
+    hydration_base = _fetch_remote_first(repo_root)
+    if not hydration_base:
         log.warning("refusing Terminal score writes until R2 hydration succeeds")
-        return 0
+        return -1
+    expected_manifest_etag = (
+        hydration_base if isinstance(hydration_base, str) else None
+    )
 
     source_key = f"local:{tx_root.resolve()}" if tx_root is not None else base_url.rstrip("/")
     state = intake.load_state(state_path, source=source_key)
@@ -281,7 +286,7 @@ def run_terminal(
     if not pending:
         log.info("Terminal transcript queue is current; nothing new to score")
         if do_publish and earnings_qual.store_path(repo_root).exists():
-            _publish(repo_root)
+            _publish(repo_root, expected_manifest_etag=expected_manifest_etag)
         return 0
 
     cfg = earnings_qual.load_config(repo_root)
@@ -302,12 +307,28 @@ def run_terminal(
             payload, text = intake.body_to_score_input(
                 body,
                 index_generated_at=str(metadata.get("generated_at") or ""),
+                source_base_url=(
+                    base_url
+                    if tx_root is None
+                    else os.environ.get(
+                        "TERMINAL_TX_PUBLIC_BASE_URL",
+                        "https://app.mastermind-x.com/data/tx",
+                    )
+                ),
             )
         except Exception as exc:  # noqa: BLE001
             log.warning("Terminal transcript %s unavailable/invalid (%s) — retry", ref.pair, exc)
+            state = intake.mark_failed(
+                state,
+                ref,
+                error=f"source_unavailable:{type(exc).__name__}",
+            )
+            intake.save_state(state_path, state)
             continue
 
-        sha = earnings_qual.source_sha256(text)
+        sha = str(payload.get("source_revision_sha256") or ref.body_sha256 or "")
+        if not sha:
+            sha = earnings_qual.source_sha256(text)
         record_id = str(payload.get("source_record_id") or "")
         if record_id and completed_records.get(record_id) == sha:
             log.info("Terminal transcript already scored: %s", ref.pair)
@@ -327,6 +348,7 @@ def run_terminal(
             source_record_id=payload.get("source_record_id"),
             source_updated_at=payload.get("source_updated_at"),
             source_url=payload.get("terminal_url"),
+            source_revision_sha256=payload.get("source_revision_sha256"),
         )
         if row.get("degraded_reason"):
             # Keep the cursor pending.  upsert_scores may retain a degraded
@@ -337,6 +359,12 @@ def run_terminal(
                 ref.pair,
                 row.get("degraded_reason"),
             )
+            state = intake.mark_failed(
+                state,
+                ref,
+                error=f"model:{row.get('degraded_reason') or 'unknown'}",
+            )
+            intake.save_state(state_path, state)
             continue
 
         earnings_qual.upsert_scores([row], root=repo_root)
@@ -354,7 +382,7 @@ def run_terminal(
         )
 
     if do_publish and earnings_qual.store_path(repo_root).exists():
-        _publish(repo_root)
+        _publish(repo_root, expected_manifest_etag=expected_manifest_etag)
     log.info(
         "Terminal intake attempted=%d succeeded=%d pending=%d",
         attempted,
@@ -364,7 +392,7 @@ def run_terminal(
     return succeeded
 
 
-def _fetch_remote_first(repo_root: Path) -> bool:
+def _fetch_remote_first(repo_root: Path) -> bool | str:
     """Hydrate and merge the current committed R2 generation before writing.
 
     With no R2 writer credentials this remains a harmless local-only no-op.
@@ -378,6 +406,7 @@ def _fetch_remote_first(repo_root: Path) -> bool:
             sys.path.insert(0, str(repo_root))
         from engine import earnings_qual  # noqa: PLC0415
         from scripts import fetch_earnings_scores  # noqa: PLC0415
+        from scripts import publish_earnings_r2  # noqa: PLC0415
 
         configured = all(
             os.environ.get(name)
@@ -391,15 +420,19 @@ def _fetch_remote_first(repo_root: Path) -> bool:
 
         client = fetch_earnings_scores._client()
         bucket = os.environ.get("R2_BUCKET", "")
-        manifest = fetch_earnings_scores._remote_manifest(client, bucket) if client else None
+        manifest, manifest_etag = (
+            publish_earnings_r2._remote_manifest_snapshot(client, bucket)
+            if client
+            else (None, None)
+        )
         valid, reason = fetch_earnings_scores._manifest_contract(manifest)
-        if not valid or manifest is None:
+        if not valid or manifest is None or not manifest_etag:
             log.warning("remote earnings commit marker unavailable/invalid (%s)", reason)
             return False
 
         earnings_dir = repo_root / "data" / "earnings_calls"
         if fetch_earnings_scores._local_generation_current(earnings_dir, manifest):
-            return True
+            return manifest_etag
 
         # Preserve unpublished local rows before the manifest-last fetch replaces
         # the base generation.  They are merged back only after remote validation.
@@ -410,26 +443,61 @@ def _fetch_remote_first(repo_root: Path) -> bool:
             return False
         if not local_pending.empty:
             earnings_qual.merge_score_store_frame(local_pending, root=repo_root)
-        return True
+        return manifest_etag
     except Exception as exc:  # noqa: BLE001
         log.warning("pre-write R2 hydration failed (%s) — retaining local store", exc)
         return False
 
 
-def _publish(repo_root: Path) -> bool:
-    """Publish scores.parquet + manifest.json to R2.  Fail-open."""
+def _publish(
+    repo_root: Path,
+    *,
+    expected_manifest_etag: str | None = None,
+) -> bool:
+    """Publish scores with optimistic R2 conflict rebase.  Fail-open.
+
+    Immutable generation payloads may be uploaded concurrently, but the
+    manifest commit marker is compare-and-swapped.  On a lost race, hydrate the
+    winner, merge our still-local rows by stable source identity, and retry.
+    """
     try:
         if str(repo_root) not in sys.path:
             sys.path.insert(0, str(repo_root))
         from scripts import publish_earnings_r2  # noqa: PLC0415
-        rc = publish_earnings_r2.publish(data_dir=repo_root / "data")
-        if rc == 0:
-            log.info("publish_earnings_r2 completed")
-            return True
-        log.warning(
-            "publish_earnings_r2 returned %d — scores stay local; next run retries",
-            rc,
-        )
+        conflict_rc = int(getattr(publish_earnings_r2, "PUBLISH_CONFLICT", 2))
+        if expected_manifest_etag is None:
+            hydration_base = _fetch_remote_first(repo_root)
+            if not hydration_base:
+                log.warning("earnings pre-publish hydration failed")
+                return False
+            if isinstance(hydration_base, str):
+                expected_manifest_etag = hydration_base
+        for attempt in range(3):
+            rc = publish_earnings_r2.publish(
+                data_dir=repo_root / "data",
+                expected_manifest_etag=expected_manifest_etag,
+            )
+            if rc == 0:
+                log.info("publish_earnings_r2 completed")
+                return True
+            if rc != conflict_rc:
+                log.warning(
+                    "publish_earnings_r2 returned %d — scores stay local; next run retries",
+                    rc,
+                )
+                return False
+            log.warning(
+                "earnings manifest changed during publish (attempt %d/3) — rebasing",
+                attempt + 1,
+            )
+            hydration_base = _fetch_remote_first(repo_root)
+            if not hydration_base:
+                log.warning("earnings publish rebase failed — local rows retained")
+                return False
+            expected_manifest_etag = (
+                hydration_base if isinstance(hydration_base, str) else None
+            )
+        log.warning("earnings publish lost three manifest races — local rows retained")
         return False
     except Exception as exc:  # noqa: BLE001
         log.warning("publish step failed (%s) — scores stay local; next run retries", exc)
@@ -496,7 +564,7 @@ def main(argv: list[str] | None = None) -> int:
         default=os.environ.get("EARNINGS_PROVIDER_ORDER", "openai_compat"),
         help=(
             "Comma-separated provider order. Default local-only; for zero-touch fallback use "
-            "openai_compat,deepseek,kimi,anthropic."
+            "openai_compat,deepseek,kimi,codex,anthropic."
         ),
     )
     ap.add_argument("--no-publish", action="store_true",
@@ -566,6 +634,12 @@ def main(argv: list[str] | None = None) -> int:
             bootstrap_since=args.bootstrap_since,
             seed_existing=args.seed_existing,
         )
+        if n < 0:
+            print(
+                "earnings_worker: Terminal intake blocked before cursor initialization",
+                file=sys.stderr,
+            )
+            return 1
         print(f"earnings_worker: scored {n} Terminal transcript row(s)")
         return 0
 

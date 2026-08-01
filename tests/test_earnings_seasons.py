@@ -452,6 +452,8 @@ def test_new_score_event_advances_full_history_snapshot(tmp_path):
         "confidence": 0.9,
         "tags": json.dumps(["demand_acceleration"]),
         "summary": "Demand accelerated.",
+        "is_context_only": True,
+        "degraded_reason": None,
     }]).to_parquet(live.parent / "scores.parquet", index=False)
     _write_transport_manifest(tmp_path)
 
@@ -464,6 +466,44 @@ def test_new_score_event_advances_full_history_snapshot(tmp_path):
     assert health["status"] == "ready"
     assert health["checks"]["has_full_history"] is True
     assert health["qoq_eligible_tickers"] == 1
+
+
+def test_degraded_or_incomplete_scores_never_reach_stage_overlay(tmp_path):
+    live = tmp_path / "data" / "earnings_calls" / "history.parquet"
+    live.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        _call("BASE", "Baseline", "Software", "2026-04-30", 20, 2, 22),
+    ]).to_parquet(live, index=False)
+    pd.DataFrame([
+        {
+            "ticker": "GOOD", "quarter": "Q3", "year": 2026,
+            "call_date": "2026-07-30", "sentiment": 0.5,
+            "performance": 7.0, "confidence": 0.8, "tone_word": "steady",
+            "tags": "[]", "summary": "Healthy context.",
+            "is_context_only": True, "degraded_reason": None,
+        },
+        {
+            "ticker": "FAILED", "quarter": "Q3", "year": 2026,
+            "call_date": "2026-07-31", "sentiment": None,
+            "performance": None, "confidence": None, "tone_word": None,
+            "tags": "[]", "summary": None,
+            "is_context_only": True, "degraded_reason": "invalid_json",
+        },
+        {
+            "ticker": "UNSCOPED", "quarter": "Q3", "year": 2026,
+            "call_date": "2026-07-31", "sentiment": 0.9,
+            "performance": 9.0, "confidence": 0.9, "tone_word": "confident",
+            "tags": "[]", "summary": "Not context-only.",
+            "is_context_only": False, "degraded_reason": None,
+        },
+    ]).to_parquet(live.parent / "scores.parquet", index=False)
+    _write_transport_manifest(tmp_path)
+
+    frame = eq.load_backfill_earnings(root=tmp_path)
+    tickers = set(frame["document_ticker"].astype(str).str.split().str[0])
+    assert "GOOD" in tickers
+    assert "FAILED" not in tickers
+    assert "UNSCOPED" not in tickers
 
 
 # ── 7. display-tier envelope on every artifact ──────────────────────────────

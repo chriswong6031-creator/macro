@@ -12,6 +12,7 @@ DEST_DIR="${EARNINGS_LAUNCHAGENT_DIR:-$HOME/Library/LaunchAgents}"
 LABEL="com.mastermind.earnings-worker"
 DEST_PLIST="$DEST_DIR/$LABEL.plist"
 DOMAIN="gui/$(/usr/bin/id -u)"
+LAUNCHCTL="${EARNINGS_LAUNCHCTL:-/bin/launchctl}"
 CHECK_ONLY=0
 RUN_NOW=0
 BOOTSTRAP_SINCE=""
@@ -139,7 +140,19 @@ EARNINGS_PYTHON="$VENV_ROOT/bin/python" \
   "$ENV_WRAPPER" "$ENV_FILE" "$RUNNER" --check-env
 
 if [ "$CHECK_ONLY" -eq 1 ]; then
-  echo "OK: earnings appliance clone, venv, plist, and environment names validated"
+  [ -f "$DEST_PLIST" ] || {
+    echo "ERROR: installed LaunchAgent plist is missing: $DEST_PLIST" >&2
+    exit 1
+  }
+  /usr/bin/cmp -s "$PLIST" "$DEST_PLIST" || {
+    echo "ERROR: installed LaunchAgent plist differs from origin/main: $DEST_PLIST" >&2
+    exit 1
+  }
+  "$LAUNCHCTL" print "$DOMAIN/$LABEL" >/dev/null 2>&1 || {
+    echo "ERROR: LaunchAgent is not loaded: $DOMAIN/$LABEL" >&2
+    exit 1
+  }
+  echo "OK: earnings appliance clone, venv, installed plist, loaded service, and environment names validated"
   exit 0
 fi
 
@@ -151,6 +164,19 @@ if [ -n "$BOOTSTRAP_SINCE" ]; then
   fi
   EARNINGS_PYTHON="$VENV_ROOT/bin/python" \
     "$ENV_WRAPPER" "$ENV_FILE" "$RUNNER" --bootstrap-since "$BOOTSTRAP_SINCE"
+  "$VENV_ROOT/bin/python" - "$STATE" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+try:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+except Exception as exc:
+    raise SystemExit(f"ERROR: catch-up did not create a readable intake cursor: {exc}")
+if payload.get("initialized") is not True:
+    raise SystemExit("ERROR: catch-up did not initialize the intake cursor")
+PY
 fi
 
 /bin/mkdir -p "$DEST_DIR"
@@ -159,11 +185,11 @@ trap '/bin/rm -f "$TMP_PLIST"' EXIT
 /usr/bin/install -m 0644 "$PLIST" "$TMP_PLIST"
 /bin/mv "$TMP_PLIST" "$DEST_PLIST"
 
-/bin/launchctl bootout "$DOMAIN/$LABEL" >/dev/null 2>&1 || true
-/bin/launchctl bootstrap "$DOMAIN" "$DEST_PLIST"
-/bin/launchctl enable "$DOMAIN/$LABEL"
+"$LAUNCHCTL" bootout "$DOMAIN/$LABEL" >/dev/null 2>&1 || true
+"$LAUNCHCTL" bootstrap "$DOMAIN" "$DEST_PLIST"
+"$LAUNCHCTL" enable "$DOMAIN/$LABEL"
 if [ "$RUN_NOW" -eq 1 ]; then
-  /bin/launchctl kickstart -k "$DOMAIN/$LABEL"
+  "$LAUNCHCTL" kickstart -k "$DOMAIN/$LABEL"
 fi
 
 echo "Installed $LABEL from $PLIST"

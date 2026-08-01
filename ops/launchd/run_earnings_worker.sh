@@ -65,6 +65,7 @@ verify_env_names() {
       deepseek) names+=(DEEPSEEK_API_KEY) ;;
       kimi) names+=(MOONSHOT_API_KEY) ;;
       anthropic) names+=(ANTHROPIC_API_KEY) ;;
+      codex) ;; # attached Codex login; availability is resolved at call time
       openai_compat|"") ;;
       *) echo "ERROR: unsupported provider name: $provider" >&2; return 1 ;;
     esac

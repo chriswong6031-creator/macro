@@ -59,6 +59,14 @@ def test_control_scripts_parse_and_requirements_are_pinned():
     }
 
 
+def test_bootstrap_check_verifies_installed_and_loaded_agent():
+    source = BOOTSTRAP.read_text(encoding="utf-8")
+    assert '/usr/bin/cmp -s "$PLIST" "$DEST_PLIST"' in source
+    assert '"$LAUNCHCTL" print "$DOMAIN/$LABEL"' in source
+    assert "EARNINGS_LAUNCHCTL" in source
+    assert 'payload.get("initialized") is not True' in source
+
+
 def test_plist_is_tcc_safe_secretless_and_has_two_retry_windows():
     with PLIST.open("rb") as handle:
         payload = plistlib.load(handle)
@@ -95,6 +103,11 @@ def test_env_check_reports_names_only_and_respects_local_qwen_override():
     assert "DEEPSEEK_API_KEY" in result.stderr
 
     env["EARNINGS_PROVIDER_ORDER"] = "openai_compat"
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode == 0, result.stderr
+    assert "DEEPSEEK_API_KEY" not in result.stdout
+
+    env["EARNINGS_PROVIDER_ORDER"] = "codex"
     result = _run(RUNNER, "--check-env", env=env)
     assert result.returncode == 0, result.stderr
     assert "DEEPSEEK_API_KEY" not in result.stdout
