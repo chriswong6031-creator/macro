@@ -1,4 +1,4 @@
-"""Publish earnings-call qualitative scores (scores.parquet + manifest.json) to R2.
+"""Publish earnings-call intelligence stores to R2.
 
 SGA W4 (rulings SGA-R5/R6).  Cloned from scripts/publish_oracle_panels.py.
 
@@ -13,9 +13,10 @@ SGA-R6 (single-writer / transport): the Windows worker is producer-only — it
 writes R2 via this script and NEVER touches git.  Nightly is the sole ledger
 advancer via the fetch shim.
 
-Key layout:  data/earnings_calls/scores.parquet   →  R2 key  earnings_calls/scores.parquet
-             data/earnings_calls/manifest.json     →  R2 key  earnings_calls/manifest.json
-             (manifest optional — synthesized from the parquet when absent)
+Key layout: payloads are immutable generation objects under
+             earnings_calls/generations/<generation_id>/
+            while earnings_calls/manifest.json is the sole mutable commit marker.
+            The manifest is synthesized or refreshed from the local stores.
 
 Design mirrors scripts/publish_r2.py exactly:
   - No-op (exit 0) when R2_* creds are absent — safe to call from any lane.
@@ -48,7 +49,12 @@ log = logging.getLogger("publish_earnings_r2")
 # Files to publish, relative to data/earnings_calls/
 _EARNINGS_FILES = [
     "scores.parquet",
-    "manifest.json",  # synthesized from the parquet if absent
+    # Full numeric/tag/highlight call history.  This is an optional bootstrap
+    # object: the producer may publish scores before the historical migration is
+    # available.  It stays out of git and gives fresh CI checkouts the same
+    # history used by the Stage Analysis season/comparison surfaces.
+    "history.parquet",
+    "manifest.json",  # synthesized/refreshed from the local stores
 ]
 
 # R2 key prefix for earnings-call scores
@@ -94,44 +100,266 @@ def _md5(p: Path) -> str:
     return h.hexdigest()
 
 
-def _remote_etag(s3, bucket: str, key: str) -> str | None:
-    """Return the ETag (MD5) of an existing R2 object, or None if absent."""
+def _remote_md5(
+    s3,
+    bucket: str,
+    key: str,
+    *,
+    filename: str,
+    manifest: dict | None = None,
+) -> str | None:
+    """Return an object's content MD5, including multipart R2 objects.
+
+    A multipart S3/R2 ETag is not a content MD5 (it ends in ``-N``).  New
+    uploads carry an explicit metadata hash; the remote manifest is the bridge
+    for older large objects uploaded before that metadata existed.
+    """
     try:
         r = s3.head_object(Bucket=bucket, Key=key)
-        return r.get("ETag", "").strip('"')
+        etag = r.get("ETag", "").strip('"')
+        if etag and "-" not in etag:
+            return etag
+        metadata = r.get("Metadata") or {}
+        explicit = metadata.get("content-md5")
+        if explicit:
+            return explicit
+        if isinstance(manifest, dict):
+            block_name = {
+                "scores.parquet": "scores",
+                "history.parquet": "history",
+            }.get(filename)
+            block = manifest.get(block_name) if block_name else None
+            if isinstance(block, dict) and block.get("md5"):
+                return str(block["md5"])
+        return None
     except Exception:  # noqa: BLE001 — NoSuchKey, auth errors, etc.
         return None
 
 
-def _synth_manifest(scores_path: Path) -> dict:
-    """Build a small manifest describing the scores parquet.
+def _parquet_stats(path: Path) -> dict:
+    """Return compact, fail-open metadata for one parquet object."""
+    out: dict[str, object] = {
+        "rows": 0,
+        "tickers": 0,
+        "md5": None,
+        "bytes": int(path.stat().st_size) if path.exists() else 0,
+    }
+    if not path.exists():
+        return out
+    try:
+        out["md5"] = _md5(path)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        import pandas as pd  # noqa: PLC0415
+        df = pd.read_parquet(path)
+        out["rows"] = int(len(df))
+        ticker_col = "ticker" if "ticker" in df.columns else (
+            "document_ticker" if "document_ticker" in df.columns else None
+        )
+        if ticker_col:
+            out["tickers"] = int(df[ticker_col].nunique())
+        for date_col in ("scored_at", "call_date"):
+            if date_col in df.columns and len(df):
+                out[f"latest_{date_col}"] = str(df[date_col].max())
+    except Exception as exc:  # noqa: BLE001
+        log.debug("publish_earnings_r2: parquet stats partial for %s (%s)", path.name, exc)
+    return out
+
+
+def _load_reconciliation(scores_path: Path) -> dict | None:
+    path = scores_path.parent.parent / "quality" / "earnings_import_reconciliation.json"
+    payload = _read_manifest(path)
+    if not isinstance(payload, dict):
+        return None
+    return {
+        "schema": payload.get("schema"),
+        "status": payload.get("status"),
+        "input_rows": payload.get("input_rows"),
+        "output_rows": payload.get("output_rows"),
+        "rejected_rows": payload.get("rejected_rows"),
+        "duplicate_group_count": payload.get("duplicate_group_count"),
+        "source_sha256": payload.get("source_sha256"),
+        "source_updated_at_max": payload.get("source_updated_at_max"),
+        "invalid_fiscal_period_rows": payload.get("invalid_fiscal_period_rows"),
+    }
+
+
+def _generation_id(scores: dict, history: dict | None) -> str:
+    material = ":".join([
+        str(scores.get("md5") or ""),
+        str((history or {}).get("md5") or ""),
+    ])
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()[:24]
+
+
+def _generation_key(generation_id: str, filename: str) -> str:
+    return f"{_R2_PREFIX}/generations/{generation_id}/{filename}"
+
+
+def _synth_manifest(scores_path: Path, history_path: Path | None = None) -> dict:
+    """Build a small manifest describing the earnings intelligence stores.
 
     Recorded so a consumer can tell scores generations apart at promotion time
     without reading the whole parquet.  NEVER raises — degrades to a minimal
     manifest on any parquet-read error.
     """
+    score_stats = _parquet_stats(scores_path)
+    history_stats = (
+        _parquet_stats(history_path)
+        if history_path is not None and history_path.exists()
+        else None
+    )
+    generation_id = _generation_id(score_stats, history_stats)
+    score_stats["key"] = _generation_key(generation_id, "scores.parquet")
+    if history_stats is not None:
+        history_stats["key"] = _generation_key(generation_id, "history.parquet")
     manifest: dict = {
-        "schema": "earnings_scores_manifest.v1",
+        "schema": "earnings_intelligence_manifest.v3",
         "built": datetime.now(timezone.utc).isoformat(),
-        "rows": 0,
-        "tickers": 0,
-        "md5": None,
+        "generation_id": generation_id,
+        "scores": score_stats,
+        "history": history_stats,
+        "reconciliation": _load_reconciliation(scores_path),
     }
-    try:
-        manifest["md5"] = _md5(scores_path)
-    except Exception:  # noqa: BLE001
-        pass
-    try:
-        import pandas as pd  # noqa: PLC0415
-        df = pd.read_parquet(scores_path)
-        manifest["rows"] = int(len(df))
-        if "ticker" in df.columns:
-            manifest["tickers"] = int(df["ticker"].nunique())
-        if "scored_at" in df.columns and len(df):
-            manifest["latest_scored_at"] = str(df["scored_at"].max())
-    except Exception as exc:  # noqa: BLE001
-        log.debug("publish_earnings_r2: manifest synth partial (%s)", exc)
+    # Keep the v1 top-level fields for older health consumers.
+    scores = manifest["scores"] or {}
+    manifest["rows"] = scores.get("rows", 0)
+    manifest["tickers"] = scores.get("tickers", 0)
+    manifest["md5"] = scores.get("md5")
     return manifest
+
+
+def _read_manifest(path: Path) -> dict | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload if isinstance(payload, dict) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _remote_manifest(s3, bucket: str) -> dict | None:
+    """Read the prior R2 manifest so an edge producer can preserve history metadata."""
+    try:
+        body = s3.get_object(
+            Bucket=bucket,
+            Key=f"{_R2_PREFIX}/manifest.json",
+        )["Body"].read()
+        payload = json.loads(body)
+        return payload if isinstance(payload, dict) else None
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _refresh_manifest(
+    manifest_path: Path,
+    scores_path: Path,
+    history_path: Path,
+    *,
+    prior: dict | None = None,
+) -> bool:
+    """Atomically align manifest stats with local objects; return True if changed.
+
+    A score-only producer may not carry the historical migration locally.  In
+    that case the last published history block is retained rather than falsely
+    declaring the still-present R2 history object absent.
+    """
+    local_current = _read_manifest(manifest_path) or {}
+    preservation_source = prior or local_current
+    desired = _synth_manifest(
+        scores_path,
+        history_path if history_path.exists() else None,
+    )
+    if not history_path.exists() and isinstance(preservation_source.get("history"), dict):
+        desired["history"] = preservation_source["history"]
+        desired["generation_id"] = _generation_id(
+            desired.get("scores") or {}, desired.get("history"),
+        )
+        desired["scores"]["key"] = _generation_key(
+            desired["generation_id"], "scores.parquet",
+        )
+    if desired.get("reconciliation") is None and isinstance(
+        preservation_source.get("reconciliation"), dict
+    ):
+        desired["reconciliation"] = preservation_source["reconciliation"]
+    current_scores = (
+        local_current.get("scores")
+        if isinstance(local_current.get("scores"), dict) else {}
+    )
+    desired_scores = desired.get("scores") or {}
+    current_history = (
+        local_current.get("history")
+        if isinstance(local_current.get("history"), dict) else None
+    )
+    desired_history = desired.get("history") if isinstance(desired.get("history"), dict) else None
+    same = (
+        local_current.get("schema") == desired.get("schema")
+        and local_current.get("generation_id") == desired.get("generation_id")
+        and current_scores.get("md5") == desired_scores.get("md5")
+        and (current_history or {}).get("md5") == (desired_history or {}).get("md5")
+    )
+    if same and manifest_path.exists():
+        return False
+    tmp = manifest_path.with_name(manifest_path.name + ".tmp")
+    tmp.write_text(json.dumps(desired, indent=2) + "\n", encoding="utf-8")
+    os.replace(tmp, manifest_path)
+    return True
+
+
+def _validate_local_generation(
+    manifest: dict | None,
+    scores_path: Path,
+    history_path: Path,
+) -> tuple[bool, str | None]:
+    if not isinstance(manifest, dict):
+        return False, "manifest_unreadable"
+    if manifest.get("schema") != "earnings_intelligence_manifest.v3":
+        return False, "manifest_schema_not_v3"
+    for name, path, required in (
+        ("scores", scores_path, True),
+        ("history", history_path, False),
+    ):
+        block = manifest.get(name)
+        if not path.exists():
+            if required:
+                return False, f"{name}_absent"
+            continue
+        if not isinstance(block, dict):
+            return False, f"{name}_manifest_block_absent"
+        stats = _parquet_stats(path)
+        for field in ("md5", "bytes", "rows", "tickers"):
+            if str(block.get(field)) != str(stats.get(field)):
+                return False, f"{name}_{field}_mismatch"
+        if int(stats.get("rows") or 0) <= 0:
+            return False, f"{name}_empty"
+    expected_generation = _generation_id(
+        manifest.get("scores") or {}, manifest.get("history"),
+    )
+    if manifest.get("generation_id") != expected_generation:
+        return False, "generation_id_mismatch"
+    generation_prefix = f"{_R2_PREFIX}/generations/"
+    for name, path in (("scores", scores_path), ("history", history_path)):
+        block = manifest.get(name)
+        if not isinstance(block, dict):
+            continue
+        key = str(block.get("key") or "")
+        if not key.startswith(generation_prefix) or not key.endswith(f"/{path.name}"):
+            return False, f"{name}_immutable_key_invalid"
+        # A locally-present payload will be uploaded for this exact generation.
+        # A score-only producer may retain an older immutable history key.
+        if path.exists() and key != _generation_key(expected_generation, path.name):
+            return False, f"{name}_generation_key_mismatch"
+    reconciliation = manifest.get("reconciliation")
+    if isinstance(reconciliation, dict):
+        try:
+            if int(reconciliation.get("input_rows")) != (
+                int(reconciliation.get("output_rows"))
+                + int(reconciliation.get("rejected_rows"))
+            ):
+                return False, "reconciliation_arithmetic_mismatch"
+        except (TypeError, ValueError):
+            return False, "reconciliation_counts_invalid"
+    return True, None
 
 
 def publish(data_dir: Path | None = None, dry_run: bool = False) -> int:
@@ -160,34 +388,58 @@ def publish(data_dir: Path | None = None, dry_run: bool = False) -> int:
         log.error("required file absent: %s", scores_path)
         return 1
 
-    # Synthesize a manifest if the producer did not write one.
+    # Refresh the manifest whenever either store advances.  The previous
+    # absent-only behavior let a healthy producer publish new parquet bytes
+    # beside a permanently stale generation record.
     manifest_path = earnings_dir / "manifest.json"
-    if not manifest_path.exists():
-        try:
-            manifest_path.write_text(
-                json.dumps(_synth_manifest(scores_path), indent=2), encoding="utf-8"
-            )
-            log.info("synthesized manifest.json from scores.parquet")
-        except Exception as exc:  # noqa: BLE001
-            log.warning("could not synthesize manifest.json (%s)", exc)
+    remote_manifest = _remote_manifest(s3, bucket)
+    try:
+        prior = _read_manifest(manifest_path) or remote_manifest
+        if _refresh_manifest(
+            manifest_path,
+            scores_path,
+            earnings_dir / "history.parquet",
+            prior=prior,
+        ):
+            log.info("refreshed manifest.json from earnings stores")
+    except Exception as exc:  # noqa: BLE001
+        log.warning("could not refresh manifest.json (%s)", exc)
+
+    manifest = _read_manifest(manifest_path)
+    valid, reason = _validate_local_generation(
+        manifest, scores_path, earnings_dir / "history.parquet",
+    )
+    if not valid:
+        log.error("refusing earnings publish: invalid local generation (%s)", reason)
+        return 1
 
     up = skip = errors = 0
 
-    for filename in _EARNINGS_FILES:
+    # Payloads first.  The manifest is the generation commit marker and is only
+    # promoted after every required local payload succeeds or is hash-current.
+    payload_files = ["scores.parquet"]
+    if (earnings_dir / "history.parquet").exists():
+        payload_files.append("history.parquet")
+
+    for filename in payload_files:
         local_path = earnings_dir / filename
-        if not local_path.exists():
-            if filename == "manifest.json":
-                log.info("manifest.json absent — skipping (optional)")
-                continue
-            log.error("required file absent: %s", local_path)
+        block_name = "scores" if filename == "scores.parquet" else "history"
+        block = manifest.get(block_name) or {}
+        key = str(block.get("key") or "")
+        if not key:
+            log.error("payload key absent from manifest: %s", filename)
             errors += 1
             continue
-
-        key = f"{_R2_PREFIX}/{filename}"
-        remote_etag = _remote_etag(s3, bucket, key)
+        remote_hash = _remote_md5(
+            s3,
+            bucket,
+            key,
+            filename=filename,
+            manifest=remote_manifest,
+        )
         local_md5 = _md5(local_path)
 
-        if remote_etag == local_md5:
+        if remote_hash == local_md5:
             log.info("unchanged: %s (md5 match)", key)
             skip += 1
             continue
@@ -203,12 +455,53 @@ def publish(data_dir: Path | None = None, dry_run: bool = False) -> int:
         try:
             s3.upload_file(
                 str(local_path), bucket, key,
-                ExtraArgs={"ContentType": _CT.get(local_path.suffix, "application/octet-stream")},
+                ExtraArgs={
+                    "ContentType": _CT.get(local_path.suffix, "application/octet-stream"),
+                    "Metadata": {"content-md5": local_md5},
+                },
             )
             log.info("uploaded: %s", key)
             up += 1
         except Exception as e:  # noqa: BLE001
             log.error("upload failed: %s — %s", key, e)
+            errors += 1
+
+    if errors:
+        log.error(
+            "payload publish incomplete; manifest generation %s NOT promoted",
+            manifest.get("generation_id"),
+        )
+        return 1
+
+    # Commit marker last.  A consumer that races the payload uploads either sees
+    # the prior manifest and rejects mismatched bytes, or sees this complete one.
+    manifest_key = f"{_R2_PREFIX}/manifest.json"
+    manifest_md5 = _md5(manifest_path)
+    remote_manifest_md5 = _remote_md5(
+        s3, bucket, manifest_key, filename="manifest.json",
+    )
+    if remote_manifest_md5 == manifest_md5:
+        log.info("unchanged: %s (md5 match)", manifest_key)
+        skip += 1
+    elif dry_run:
+        log.info("DRY-RUN: would promote generation %s", manifest.get("generation_id"))
+        up += 1
+    else:
+        try:
+            s3.upload_file(
+                str(manifest_path), bucket, manifest_key,
+                ExtraArgs={
+                    "ContentType": "application/json",
+                    "Metadata": {
+                        "content-md5": manifest_md5,
+                        "generation-id": str(manifest.get("generation_id") or ""),
+                    },
+                },
+            )
+            log.info("promoted generation: %s", manifest.get("generation_id"))
+            up += 1
+        except Exception as exc:  # noqa: BLE001
+            log.error("manifest promotion failed: %s", exc)
             errors += 1
 
     log.info(

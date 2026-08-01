@@ -1036,6 +1036,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
     if(/\.HK$/.test(t))return 'HK';                   /* Hong Kong */
     if(/\.(TO|V|CN|NE)$/.test(t))return 'CANADA';     /* TSX / TSX-V / CSE / NEO */
     var reg=String((row&&row.region)||'').toUpperCase();
+    if(reg==='CHINA'||reg==='HK'||reg==='CANADA'||reg==='OTHER')return reg;
     if(reg==='USA'||reg==='US'||reg==='N. AMERICA'||reg==='NORTH AMERICA')return 'US';
     if(reg)return 'OTHER';                            /* EUROPE / ASIA / any other tagged region */
     return /\.[A-Z]{1,4}$/.test(t)?'OTHER':'US';      /* no region field: a foreign suffix ⇒ Other, else US */
@@ -1474,7 +1475,12 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
 
   function indEcHeat(){
     var map=IND.ec&&IND.ec.regions;if(!map)return indEmpty();
-    var r=dataRegion();var reg=(r==='all')?(map.USA||map[Object.keys(map)[0]]):map[r];
+    /* The owned earnings archive has exact CHINA/HK/CANADA/OTHER buckets.
+       Prefer those; retain the coarse ASIA/EUROPE fallback for the legacy
+       EquityDesk grid seed. */
+    var exact=region==='US'?'USA':region;
+    var coarse=dataRegion();
+    var reg=exact==='all'?(map.USA||map[Object.keys(map)[0]]):(map[exact]||map[coarse]);
     if(!reg||!reg.rows||!reg.rows.length)return indEmpty();
     var weeks=reg.weeks||[];
     /* find the value range for the combined ramp */
@@ -1721,6 +1727,10 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
   }
   function ernCallsView(){
     if(!ERN.table||!(ERN.table.rows||[]).length)return ernEmpty();
+    var dataStatus=ERN.table.data_status||'empty';
+    var healthNote='';
+    if(dataStatus==='degraded')healthNote='<p class="subcap" style="color:var(--amber)">⚠ '+LT('Showing the committed latest-call fallback; fiscal quarter comparisons are unavailable until the verified history generation returns.','当前显示已提交的最近电话会回退数据；经验证的历史数据恢复前，季度对比不可用。')+'</p>';
+    else if(dataStatus==='stale')healthNote='<p class="subcap" style="color:var(--amber)">⚠ '+LT('The earnings history is stale. Latest call: ','财报历史数据已过期。最近电话会：')+esc(ERN.table.latest_call_date||'—')+'.</p>';
     var inds=ernIndustries();
     /* opt() — single-language <option> label carrying both langs on data-en/zh
        (the l-en/l-zh span trick is flattened inside <option>; relangOptions()
@@ -1759,7 +1769,7 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       '</tr>';
     }).join('');
     if(rows.length>500)body+='<tr><td colspan="'+ECOLS.length+'" style="text-align:center;padding:14px;color:var(--muted)">'+TT('Showing the first 500 — filter to narrow.','已显示前 500 场 —— 请用筛选收窄。')+'</td></tr>';
-    return filt+
+    return healthNote+filt+
       '<p class="subcap">'+LT('Click any row to read the call — tone, the points it raised, guidance and a key quote.','点击任意一行即可阅读该场电话会 —— 语气、要点、指引与一句关键引述。')+'</p>'+
       '<div class="tbl-scroll"><table class="screener" id="ern-table" style="min-width:1000px"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
   }
@@ -1819,7 +1829,15 @@ html[data-theme="light"] .stn .lab{color:color-mix(in srgb,var(--sc,var(--muted)
       '<div class="tbl-scroll"><table class="screener" style="min-width:900px"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
   }
   function ernEmpty(){
-    return '<div class="empty soon"><div class="ico">🌙</div><h3>'+TT('Warming up','正在预热')+'</h3><p>'+TT('This view is generated tonight. Try another region, or check back after the first run.','该视图今晚生成。可切换地区，或首次运行后再来查看。')+'</p></div>';
+    var status=(ERN.table&&ERN.table.data_status)||'empty';
+    var latest=(ERN.table&&ERN.table.latest_call_date)||'';
+    if(status==='degraded'){
+      return '<div class="empty soon"><div class="ico">⚠️</div><h3>'+TT('Historical lane degraded','历史数据通道降级')+'</h3><p>'+TT('Recent calls remain available, but quarter-over-quarter history is incomplete. The ingestion heartbeat has been flagged for repair.','近期电话会仍可用，但季度对比历史不完整。系统已将摄取异常标记为待修复。')+(latest?' '+TT('Latest call: ','最新电话会：')+esc(latest)+'.':'')+'</p></div>';
+    }
+    if(status==='stale'){
+      return '<div class="empty soon"><div class="ico">⚠️</div><h3>'+TT('Earnings history stale','财报历史数据已过期')+'</h3><p>'+TT('No verified call generation has landed within 14 days. Latest call: ','过去14天内没有新的已验证电话会批次。最近电话会：')+esc(latest||'—')+'.</p></div>';
+    }
+    return '<div class="empty soon"><div class="ico">⚠️</div><h3>'+TT('Earnings data unavailable','财报数据不可用')+'</h3><p>'+TT('This is an ingestion-health failure, not a scheduled warm-up. The source heartbeat and data contract need attention.','这是数据摄取健康异常，不是等待今晚生成。需要检查数据源心跳与数据合约。')+'</p></div>';
   }
   function renderErn(){
     var host=qs('#ern-body');if(!host)return;

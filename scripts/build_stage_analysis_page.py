@@ -11,8 +11,9 @@ lazily per-tab from `site/stagedata/*.json`. This builder:
      fetch them client-side (lazy; we do NOT inline 1 MB+ into the HTML).
   3. Renders templates/stage_analysis.html.j2 via lib.pages.write_page.
 
-Fail-open throughout: any missing artifact -> the corresponding surface renders a
-warm-up state ("generated tonight"), never a blank page and never a build crash.
+Fail-open throughout: any missing artifact -> the corresponding surface renders
+an explicit ingestion-health state, never a misleading scheduled "warm-up",
+never a blank page, and never a build crash.
 The stage classification is display_only / context-only (SGA-R4/R5) — never an
 authority signal or a sizing input.
 

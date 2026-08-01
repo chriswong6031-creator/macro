@@ -29,6 +29,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import engine.earnings_qual as eq  # noqa: E402
+from scripts.publish_earnings_r2 import _synth_manifest  # noqa: E402
 
 
 # ── fixtures ────────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ def _write_backfill(root: Path, records: list[dict]) -> None:
 
 def _call(ticker, name, industry, date, sent, perf, combined,
           l1=None, l2=None, fp=None) -> dict:
+    call_dt = pd.Timestamp(date)
     return {
         "company_ticker": f"{ticker} US",
         "document_ticker": ticker,
@@ -60,6 +62,8 @@ def _call(ticker, name, industry, date, sent, perf, combined,
         "gics_sector": "Information Technology",
         "gics_industry": industry,
         "call_date": date,
+        "fiscal_quarter": int(call_dt.quarter),
+        "fiscal_year": int(call_dt.year),
         "earnings_call_sent": sent,
         "earnings_call_perf": perf,
         "earnings_call_combined": combined,
@@ -67,6 +71,23 @@ def _call(ticker, name, industry, date, sent, perf, combined,
         "level2_tags": json.dumps(l2) if l2 is not None else None,
         "file_path": fp,
     }
+
+
+def _write_transport_manifest(root: Path) -> None:
+    earnings = root / "data" / "earnings_calls"
+    scores = earnings / "scores.parquet"
+    history = earnings / "history.parquet"
+    remove_scores = False
+    if not scores.exists():
+        pd.DataFrame([{
+            "ticker": "MANIFEST_ONLY",
+            "call_date": "2026-01-01",
+        }]).to_parquet(scores, index=False)
+        remove_scores = True
+    payload = _synth_manifest(scores, history if history.exists() else None)
+    (earnings / "manifest.json").write_text(json.dumps(payload), encoding="utf-8")
+    if remove_scores:
+        scores.unlink()
 
 
 # ── 1. heatmap weekly aggregation ───────────────────────────────────────────
@@ -116,6 +137,89 @@ def test_earnings_comparison_qoq_delta_join(tmp_path):
     assert a["new_tags"] == ["c"] and a["dropped_tags"] == ["a"]
 
 
+def test_exchange_qualified_issuers_never_collide(tmp_path):
+    recs = [
+        {**_call("CLS.TO", "Celestica", "Hardware", "2026-01-28", 20, 2, 22),
+         "company_ticker": "CLS CN"},
+        {**_call("CLS.TO", "Celestica", "Hardware", "2026-04-28", 28, 6, 34),
+         "company_ticker": "CLS CN"},
+        {**_call("CLS.JO", "Clicks Group", "Retail", "2026-01-24", 12, -2, 10),
+         "company_ticker": "CLS SJ"},
+        {**_call("CLS.JO", "Clicks Group", "Retail", "2026-04-24", 8, -3, 5),
+         "company_ticker": "CLS SJ"},
+    ]
+    _write_backfill(tmp_path, recs)
+
+    out = eq.earnings_comparison(root=tmp_path, write=False)
+    rows = {row["issuer_key"]: row for row in out["rows"]}
+
+    assert set(rows) == {"CLS CN", "CLS SJ"}
+    assert rows["CLS CN"]["ticker"] == "CLS.TO"
+    assert rows["CLS SJ"]["ticker"] == "CLS.JO"
+    assert rows["CLS CN"]["prior_combined"] == 22
+    assert rows["CLS SJ"]["prior_combined"] == 10
+
+
+def test_same_fiscal_period_duplicates_never_become_qoq_pair(tmp_path):
+    recs = [
+        {**_call("AAA", "Alpha", "Software", "2026-01-15", 15, 0, 15),
+         "fiscal_quarter": 1, "fiscal_year": 2026,
+         "updated_at": "2026-01-16T00:00:00Z", "id": "q1"},
+        {**_call("AAA", "Alpha", "Software", "2026-04-15", 20, 0, 20),
+         "fiscal_quarter": 2, "fiscal_year": 2026,
+         "updated_at": "2026-04-16T00:00:00Z", "id": "q2-early"},
+        {**_call("AAA", "Alpha", "Software", "2026-05-15", 27, 3, 30),
+         "fiscal_quarter": 2, "fiscal_year": 2026,
+         "updated_at": "2026-05-16T00:00:00Z", "id": "q2-latest"},
+    ]
+    _write_backfill(tmp_path, recs)
+
+    out = eq.earnings_comparison(root=tmp_path, write=False)
+    assert out["n_total"] == 1
+    row = out["rows"][0]
+    assert row["current_quarter"] == "2026Q2"
+    assert row["prior_quarter"] == "2026Q1"
+    assert row["current_combined"] == 30
+    assert row["prior_combined"] == 15
+
+
+def test_non_adjacent_reported_periods_never_masquerade_as_qoq(tmp_path):
+    recs = [
+        {**_call("CLS.JO", "Clicks Group", "Retail", "2025-10-23", 12, -2, 10),
+         "company_ticker": "CLS SJ", "fiscal_quarter": 4, "fiscal_year": 2025},
+        {**_call("CLS.JO", "Clicks Group", "Retail", "2026-04-24", 8, -3, 5),
+         "company_ticker": "CLS SJ", "fiscal_quarter": 2, "fiscal_year": 2026},
+    ]
+    _write_backfill(tmp_path, recs)
+
+    comparison = eq.earnings_comparison(root=tmp_path, write=False)
+    season = eq.earnings_season(root=tmp_path, write=False)
+    health = eq.earnings_intelligence_health(root=tmp_path, write=False)
+
+    assert comparison["n_total"] == 0
+    assert all(q["n_scored_qoq"] == 0 for q in season["quarters"])
+    assert health["qoq_eligible_issuers"] == 0
+
+
+def test_invalid_fiscal_period_is_quarantined_from_qoq(tmp_path):
+    recs = [
+        {**_call("AKSO.OL", "Aker", "Energy", "2025-10-30", 20, 0, 20),
+         "company_ticker": "AKSO NO", "fiscal_quarter": 3, "fiscal_year": 2025},
+        {**_call("AKSO.OL", "Aker", "Energy", "2026-02-12", 22, -3, 19),
+         "company_ticker": "AKSO NO", "fiscal_quarter": 4, "fiscal_year": 2925},
+        {**_call("GEHC", "GE HealthCare", "Health Care", "2026-05-12", 24, 6, 30),
+         "company_ticker": "GEHC US", "fiscal_quarter": 1, "fiscal_year": 2023},
+    ]
+    _write_backfill(tmp_path, recs)
+
+    frame = eq.load_backfill_earnings(root=tmp_path)
+    assert int(frame["invalid_fiscal_period"].sum()) == 2
+    assert eq.earnings_comparison(root=tmp_path, write=False)["n_total"] == 0
+    health = eq.earnings_intelligence_health(root=tmp_path, write=False)
+    assert health["invalid_fiscal_period_rows"] == 2
+    assert health["checks"]["fiscal_anomalies_quarantined"] is True
+
+
 # ── 2b. FIX 2 — unscored-quarter gaps must NOT top the swing ranking ─────────
 def test_earnings_comparison_unscored_zero_excluded_from_top(tmp_path):
     """A combined of 0 marks an UNSCORED call, not a true zero. A 0-vs-38 pair is
@@ -151,6 +255,26 @@ def test_earnings_comparison_unscored_zero_excluded_from_top(tmp_path):
 
 
 # ── 3. raiser / decliner split ──────────────────────────────────────────────
+def test_earnings_season_unscored_zero_excluded_from_counts(tmp_path):
+    """Season counts must share Comparison's exact combined==0 placeholder gate."""
+    recs = [
+        _call("REAL", "Real", "Software", "2026-01-15", 6, -1, 5),
+        _call("REAL", "Real", "Software", "2026-04-15", 12, 0, 12),
+        _call("GAP", "Gappy", "Software", "2026-01-10", 30, 8, 38),
+        _call("GAP", "Gappy", "Software", "2026-04-10", 5, -2, 0),
+    ]
+    _write_backfill(tmp_path, recs)
+
+    out = eq.earnings_season(quarter="2026Q2", root=tmp_path, write=False)
+
+    assert len(out["quarters"]) == 1
+    quarter = out["quarters"][0]
+    assert quarter["n_calls"] == 2
+    assert quarter["n_scored_qoq"] == 1
+    assert quarter["raisers"]["count"] == 1
+    assert quarter["decliners"]["count"] == 0
+
+
 def test_earnings_season_raiser_decliner_split(tmp_path):
     # Same quarter (2026Q2) — one clear raiser (+10), one clear decliner (-10),
     # one flat (Δ=+2, inside the ±5 dead-band → neither side).
@@ -233,7 +357,113 @@ def test_all_surfaces_fail_open_empty(tmp_path):
     # build_all also must not raise
     res = eq.build_all_earnings_surfaces(root=tmp_path)
     assert set(res) == {"ec_industry", "ec_industry_grid", "earnings_season",
-                        "earnings_compare", "earnings_table"}
+                        "earnings_compare", "earnings_table", "health"}
+    assert res["health"]["status"] == "empty"
+
+
+def test_overview_fallback_prevents_silent_zero_row_surface(tmp_path):
+    """The committed overview is a deliberate one-call-per-name fallback.
+
+    This is the production regression guard for the July 31 "Warming up"
+    incident: the full historical parquet may be absent, but an existing
+    overview seed must still produce a non-empty calls table and an explicit
+    degraded (not ready, not empty) health state.
+    """
+    p = tmp_path / "data" / "stage_analysis" / "backfill" / "equitydesk_overview.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([{
+        "ticker": "AAA",
+        "name_ui": "Alpha",
+        "gics_sector": "Information Technology",
+        "gics_industry_group": "Software & Services",
+        "gics_industry": "Software",
+        "gics_sub_industry": "Application Software",
+        "call_date": "2026-07-30",
+        "earnings_call_sent": 24,
+        "earnings_call_perf": 6,
+        "earnings_call_combined": 30,
+        "positive_highlights": "Revenue accelerated.",
+        "negative_highlights": "Margins remain mixed.",
+        "level1_tags": json.dumps(["demand_acceleration"]),
+        "level2_tags": json.dumps(["software"]),
+    }]).to_parquet(p, index=False)
+
+    table = eq.earnings_table(root=tmp_path, write=True)
+    assert table["n_rows"] == 1
+    assert table["rows"][0]["ticker"] == "AAA"
+    assert table["data_status"] == "degraded"
+    assert table["data_source_tier"] == "committed_overview_fallback"
+    health = eq.earnings_intelligence_health(root=tmp_path, write=True)
+    assert health["status"] == "degraded"
+    assert health["source_rows"] == 1
+
+
+def test_r2_history_wins_over_committed_fallback(tmp_path):
+    """The R2-transported history is canonical when both stores exist."""
+    _write_backfill(tmp_path, [
+        _call("OLD", "Legacy", "Software", "2026-01-15", 20, 0, 20),
+    ])
+    live = tmp_path / "data" / "earnings_calls" / "history.parquet"
+    live.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        _call("LIVE", "Live", "Hardware", "2026-07-30", 25, 5, 30),
+        _call("LIVE", "Live", "Hardware", "2026-04-30", 20, 2, 22),
+    ]).to_parquet(live, index=False)
+    _write_transport_manifest(tmp_path)
+
+    table = eq.earnings_table(root=tmp_path, write=False)
+    assert table["data_status"] == "ready"
+    assert table["data_source_tier"] == "r2_history"
+    assert {r["ticker"] for r in table["rows"]} == {"LIVE"}
+    health = eq.earnings_intelligence_health(root=tmp_path, write=False)
+    assert health["qoq_eligible_tickers"] == 1
+
+
+def test_unmanifested_r2_history_is_rejected_for_committed_fallback(tmp_path):
+    _write_backfill(tmp_path, [
+        _call("SAFE", "Committed", "Software", "2026-04-15", 20, 0, 20),
+    ])
+    live = tmp_path / "data" / "earnings_calls" / "history.parquet"
+    live.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        _call("UNVERIFIED", "Unverified", "Hardware", "2026-07-30", 25, 5, 30),
+    ]).to_parquet(live, index=False)
+
+    table = eq.earnings_table(root=tmp_path, write=False)
+
+    assert table["data_source_tier"] == "legacy_full_history"
+    assert {row["ticker"] for row in table["rows"]} == {"SAFE"}
+
+
+def test_new_score_event_advances_full_history_snapshot(tmp_path):
+    """The owned score producer can advance Stage beyond the import cutoff."""
+    live = tmp_path / "data" / "earnings_calls" / "history.parquet"
+    live.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        _call("AAA", "Alpha", "Software", "2026-04-30", 20, 2, 22),
+    ]).to_parquet(live, index=False)
+    pd.DataFrame([{
+        "ticker": "AAA",
+        "quarter": "Q3",
+        "year": 2026,
+        "call_date": "2026-07-31",
+        "sentiment": 2 / 3,
+        "performance": 7.5,
+        "confidence": 0.9,
+        "tags": json.dumps(["demand_acceleration"]),
+        "summary": "Demand accelerated.",
+    }]).to_parquet(live.parent / "scores.parquet", index=False)
+    _write_transport_manifest(tmp_path)
+
+    frame = eq.load_backfill_earnings(root=tmp_path)
+
+    assert len(frame) == 2
+    assert frame.attrs["source_tier"] == "r2_history_plus_score_overlay"
+    assert frame["call_dt"].max().date().isoformat() == "2026-07-31"
+    health = eq.earnings_intelligence_health(root=tmp_path, frame=frame, write=False)
+    assert health["status"] == "ready"
+    assert health["checks"]["has_full_history"] is True
+    assert health["qoq_eligible_tickers"] == 1
 
 
 # ── 7. display-tier envelope on every artifact ──────────────────────────────
@@ -412,6 +642,51 @@ def test_ec_grid_fail_open_missing_seed(tmp_path: Path):
     assert out["regions"] == {}
     assert out["n_regions"] == 0
     assert out["is_context_only"] is True and out["display_only"] is True
+
+
+def test_ec_grid_uses_history_for_usa_when_region_seed_is_absent(tmp_path: Path):
+    """A transported call archive must also unblank the EC industry grid."""
+    calls = [
+        _call("AAA", "Alpha", "Software", "2026-07-25", 24, 4, 28),
+        _call("BBB", "Beta", "Banks", "2026-07-24", 12, -2, 10),
+        _call("AAA", "Alpha", "Software", "2026-04-18", 20, 2, 22),
+    ]
+    p = tmp_path / "data" / "earnings_calls" / "history.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(calls).to_parquet(p, index=False)
+    _write_transport_manifest(tmp_path)
+
+    out = eq.ec_industry_heatmap_grid(root=tmp_path, weeks=4, write=False)
+
+    assert out["n_regions"] == 1
+    assert set(out["regions"]) == {"USA"}
+    assert out["data_source_tier"] == "r2_history"
+    assert out["data_status"] == "ready"
+    assert out["regions"]["USA"]["n_industries"] == 2
+
+
+def test_ec_grid_keeps_exchange_derived_regions_separate(tmp_path: Path):
+    calls = [
+        {**_call("AAA", "Alpha", "Software", "2026-07-25", 20, 0, 20),
+         "company_ticker": "AAA US"},
+        {**_call("600000.SS", "China Co", "Banks", "2026-07-25", 20, 0, 20),
+         "company_ticker": "600000 CH"},
+        {**_call("0700.HK", "Hong Kong Co", "Media", "2026-07-25", 20, 0, 20),
+         "company_ticker": "700 HK"},
+        {**_call("CLS.TO", "Celestica", "Hardware", "2026-07-25", 20, 0, 20),
+         "company_ticker": "CLS CN"},
+        {**_call("CLS.JO", "Clicks", "Retail", "2026-07-25", 20, 0, 20),
+         "company_ticker": "CLS SJ"},
+    ]
+    p = tmp_path / "data" / "earnings_calls" / "history.parquet"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(calls).to_parquet(p, index=False)
+    _write_transport_manifest(tmp_path)
+
+    out = eq.ec_industry_heatmap_grid(root=tmp_path, weeks=4, write=False)
+
+    assert set(out["regions"]) == {"USA", "CHINA", "HK", "CANADA", "OTHER"}
+    assert all(region["n_industries"] == 1 for region in out["regions"].values())
 
 
 def test_ec_grid_writes_artifact(tmp_path: Path):
