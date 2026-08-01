@@ -1088,9 +1088,14 @@ jobs:
           # deterministic ladder could not outlast a main that takes a commit every
           # 1-2 minutes. push_do tells contention from a real rebase conflict and
           # push_backoff spends the matching remedy, jittered, inside a hard deadline.
-          PUSH_BUDGET_SECS=600     # ~95 min of render is worth waiting 10 min for the ref
-          PUSH_MAX_ATTEMPTS=20   # let the 600s DEADLINE stop this loop, not the attempt count: 10 contention
-                                 # retries burn only ~2 min, so the raised budget above would never bind
+          # 2026-08-01 run 30703819996 measured the blobless checkout's cold
+          # porcelain fallback at 13m24s: it rebased successfully, then lost one
+          # ordinary fetch-first race, but the old 600s deadline had already
+          # expired and discarded the validated all-site render. Forty minutes
+          # admits that one cold hydration plus multiple warm contention retries,
+          # while the 180m job cap still preserves ~35m of cleanup headroom.
+          PUSH_BUDGET_SECS=2400
+          PUSH_MAX_ATTEMPTS=20   # the deadline governs cold hydration; attempts cap warm ref races
           push_retry_init "rendered site"
           while push_attempt; do
             # pre-sync collision sweep: a commit landing mid-render can TRACK a path this
@@ -1194,6 +1199,7 @@ jobs:
           push_lost
           echo "::error title=rendered site NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — main does not carry this render (the next render or the nightly re-lands it). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
           echo "### ⚠️ rendered site NOT pushed after $PUSH_ATTEMPT attempts (next render/nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
+          exit 1
       - name: remove oversized-checkout quarantine
         if: ${{ always() }}
         shell: bash
