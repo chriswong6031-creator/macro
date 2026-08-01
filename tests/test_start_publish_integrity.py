@@ -71,3 +71,8 @@ def test_start_writing_lanes_guard_before_commit_and_after_rebase() -> None:
             assert boundaries and match.end() < next_guard < min(boundaries), (
                 f"{lane} can stage or push after a sync without rerunning the conflict-marker gate"
             )
+
+
+def test_pr_marker_gate_ratchets_from_the_base_branch() -> None:
+    manifest = (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
+    assert 'check_conflict_markers.py --changed-from "origin/${CI_BASE_REF:-main}"' in manifest
