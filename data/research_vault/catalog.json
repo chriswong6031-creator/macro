@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T15:50:54.430265+00:00",
-  "count": 537,
+  "generated_at": "2026-08-01T16:00:42.517425+00:00",
+  "count": 538,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1718,6 +1718,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-grs1rcf6bwd-696fc3",
+      "title": "Asia FX Talk FOMC Talk is cheap, sharp sell off in long end US yields",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T00:01:04Z",
+      "summary_points": [
+        "**FOMC Hold with Dissents & Yield Selloff**: Fed held rates steady at July FOMC with 3 dissenters advocating hikes; market reacted sharply with 10-yr/30-yr yields rising 10bps to 4.67%, S&P 500 down 1.7%, and inflation expectations (break-even rate 2.27%) rising.",
+        "**Fed's Inflation Policy Ambiguity**: Warsh’s focus on non-core PCE metrics and lack of forward guidance created confusion, risking volatility without clear balance sheet reduction plans.",
+        "**EM Asia FX Vulnerability**: Dollar sell-off in Asia pressures EM FX/rates; current account deficit currencies (IDR, PHP) face heightened risk while CNY may outperform locally."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
