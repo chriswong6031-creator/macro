@@ -287,7 +287,13 @@ def project_score_row(row: Any) -> dict:
     except (TypeError, ValueError) as exc:
         raise ValueError(f"year is invalid: {get('year')!r}") from exc
 
-    source_hash = _text(get("source_sha256"), max_len=64).lower()
+    # New workers persist the canonical upstream body revision, which includes
+    # metadata corrections such as call_date. Legacy healthy rows predate that
+    # column and retain the rendered-text hash as a safe compatibility fallback.
+    source_hash = _text(
+        get("source_revision_sha256") or get("source_sha256"),
+        max_len=64,
+    ).lower()
     if not _SHA256_RE.fullmatch(source_hash):
         raise ValueError("source_sha256 is absent or invalid")
 
@@ -311,7 +317,7 @@ def project_score_row(row: Any) -> dict:
         "sentiment": _float(get("sentiment"), -1.0, 1.0),
         "performance": _float(get("performance"), 0.0, 10.0),
         "confidence": _float(get("confidence"), 0.0, 1.0),
-        "tone_word": _text(get("tone_word"), max_len=40),
+        "tone_word": _text(get("tone_word"), max_len=40) or "unclassified",
         "summary": summary,
         "positive_highlights": _string_list(
             get("positive_highlights"), max_items=_MAX_HIGHLIGHTS,
@@ -568,7 +574,7 @@ def adapt_earnings_calls(repo: Path) -> tuple[list[dict], str | None]:
                 themes=themes,
                 # Fixed context salience. The model's sentiment/performance
                 # values never originate Chronicle rank/gate/size authority.
-                weight_hint=1,
+                weight_hint=2,
                 links=schema.make_links(
                     source=row["source_url"],
                     receipt=f"sha256:{row['source_sha256']}",

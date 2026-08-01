@@ -700,7 +700,7 @@ def test_healthy_call_score_projects_with_lineage_citation_and_context(tmp_path,
     assert call["source_ref"] == "defeatbeta:TST:2026Q2"
     assert call["links"]["source"] == row["source_url"]
     assert call["links"]["receipt"] == "sha256:" + "a" * 64
-    assert call["weight_hint"] == 1
+    assert call["weight_hint"] == 2
 
     context = pack(
         tickers=["TST"], horizons=("short",), token_budget=5000,
@@ -712,6 +712,25 @@ def test_healthy_call_score_projects_with_lineage_citation_and_context(tmp_path,
     assert line["source_ref"] == "defeatbeta:TST:2026Q2"
     assert line["source_url"] == row["source_url"]
     assert line["receipt"] == "sha256:" + "a" * 64
+
+
+def test_call_projection_prefers_metadata_aware_revision_hash():
+    from engine.chronicle.earnings_calls import project_score_row
+
+    row = _healthy_call_score(
+        source_sha256="a" * 64,
+        source_revision_sha256="b" * 64,
+    )
+    event = project_score_row(row)
+    assert event["source_sha256"] == "b" * 64
+
+
+def test_call_projection_keeps_numeric_context_when_tone_is_unclassified():
+    from engine.chronicle.earnings_calls import project_score_row
+
+    event = project_score_row(_healthy_call_score(tone_word=None))
+    assert event["tone_word"] == "unclassified"
+    assert event["performance"] == 8.0
 
 
 def test_degraded_score_never_replaces_last_good_call_event(tmp_path, monkeypatch):
