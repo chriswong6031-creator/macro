@@ -12,6 +12,8 @@
   window.__skyDeck = true;
 
   var canvas = document.getElementById('sky-stars');
+  if (!canvas || window.__skyDeckInit) return;
+  window.__skyDeckInit = true;
   var cx = canvas.getContext('2d');
   var sunEl = document.getElementById('sky-sun');
   var moonEl = document.getElementById('sky-moon');
