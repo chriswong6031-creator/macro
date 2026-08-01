@@ -133,6 +133,14 @@
     -->
     <key>PYTHONPATH</key>
     <string>/Users/chriswong/liveflow-ops-wt</string>
+    <!--
+      FC-R6 two-tier cadence (R0.5, masterplan 2026-07-31): tier-1 (~33 roots
+      incl. Mag7 + memory names) every cycle, tier-2 round-robin in 4 buckets.
+      Coded 2026-07 but default-OFF; enabled here 2026-07-31 — halves effective
+      staleness for the names that matter under any delta_mode.
+    -->
+    <key>LIVE_FLOW_TWO_TIER</key>
+    <string>1</string>
   </dict>
 
   <key>StandardOutPath</key>

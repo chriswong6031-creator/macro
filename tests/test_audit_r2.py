@@ -313,3 +313,115 @@ def test_thetadata_eod_deliberately_carries_no_coverage_probe():
     assert "thetadata_eod" not in COVERAGE_ANCHORS
     r = _theta()
     assert not any("thetadata_eod" in w for w in r["warnings"])
+
+
+# ── options planes (R0.9, 2026-07-31): per-anchor budgets + dated-accrual probe ──
+# NOW is Thursday 2026-07-02 14:30 UTC → the accrual probe checks the SPY dated
+# keys for Wed 2026-07-01 and Tue 2026-06-30.
+
+OPT_KEYS = {
+    "options_hub/oi_movers.json":   (200, _lm(14.7), None),   # nightly, healthy
+    "live_flow/meta.json":          (200, _lm(1.0), None),    # RTH cycle, healthy
+    "levels_ledger/index.json":     (200, _lm(3.0), None),    # pre-open seal, healthy
+    "options_hub/gex_history/SPY/2026-07-01.json": (200, _lm(14.7), None),
+    "options_hub/gex_history/SPY/2026-06-30.json": (200, _lm(38.7), None),
+}
+
+
+def _opt(objects=None, **kw):
+    objs = {**FRESH, **OPT_KEYS}
+    for k, v in (objects or {}).items():
+        if v is None:
+            objs.pop(k, None)
+        else:
+            objs[k] = v
+    kw.setdefault("anchors", ["stockdata", "chinastockdata",
+                              "options_hub", "live_flow", "levels_ledger"])
+    return _probe(objs, **kw)
+
+
+def test_options_planes_are_live_config_anchors():
+    """config.yml's r2_data_plane.anchors REPLACES DEFAULT_ANCHORS wholesale, so an
+    anchor added only to the module default is inert. Pin both (chain-heat lesson:
+    the lane served an 8-day-stale artifact with no tripwire)."""
+    from lib import config
+    from scripts.audit_r2 import DEFAULT_ANCHORS
+    cfg_anchors = config.load()["r2_data_plane"]["anchors"]
+    for a in ("options_hub", "live_flow", "levels_ledger"):
+        assert a in DEFAULT_ANCHORS
+        assert a in cfg_anchors, (
+            f"{a} dropped from config r2_data_plane.anchors — the options plane "
+            "would go untripwired again")
+
+
+def test_options_plane_candidates_are_beacon_objects():
+    from scripts.audit_r2 import _candidates
+    assert _candidates("options_hub") == ["options_hub/oi_movers.json"]
+    assert _candidates("live_flow") == ["live_flow/meta.json"]
+    assert _candidates("levels_ledger") == ["levels_ledger/index.json"]
+
+
+def test_healthy_options_planes_pass():
+    r = _opt()
+    assert r["ok"] is True and not r["fail_reasons"] and not r["warnings"]
+    assert r["anchors"]["live_flow"]["anchor"] == "live_flow/meta.json"
+    assert r["anchors"]["options_hub/gex_history/accrual"]["missing"] == []
+
+
+def test_per_anchor_budget_clears_monday_options_hub():
+    """62.75h (Monday reading Friday's nightly) clears options_hub's 68h budget even
+    though it is far past the shared 26h daily budget."""
+    r = _opt({"options_hub/oi_movers.json": (200, _lm(62.75), None)})
+    assert r["ok"] is True, r["fail_reasons"]
+
+
+def test_per_anchor_budget_trips_missed_options_hub_nightly():
+    r = _opt({"options_hub/oi_movers.json": (200, _lm(86.75), None)})
+    assert r["ok"] is False
+    assert any("R2 STALE: options_hub" in f and "68" in f for f in r["fail_reasons"])
+
+
+def test_live_flow_overnight_quiet_is_ok_dead_poller_trips():
+    assert _opt({"live_flow/meta.json": (200, _lm(18.4), None)})["ok"] is True
+    r = _opt({"live_flow/meta.json": (200, _lm(42.4), None)})
+    assert any("R2 STALE: live_flow" in f for f in r["fail_reasons"])
+
+
+def test_missed_seal_trips_levels_ledger_next_day():
+    assert _opt({"levels_ledger/index.json": (200, _lm(27.0), None)})["ok"] is True
+    r = _opt({"levels_ledger/index.json": (200, _lm(51.0), None)})
+    assert any("R2 STALE: levels_ledger" in f for f in r["fail_reasons"])
+
+
+def test_config_budget_overrides_module_default():
+    r = _opt({"live_flow/meta.json": (200, _lm(18.4), None)},
+             anchor_max_age={"live_flow": 12.0})
+    assert any("R2 STALE: live_flow" in f and "12" in f for f in r["fail_reasons"])
+
+
+def test_accrual_single_day_hole_warns_not_fails():
+    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": None})
+    assert r["ok"] is True
+    assert any("R2 ACCRUAL HOLE" in w for w in r["warnings"])
+    assert r["anchors"]["options_hub/gex_history/accrual"]["missing"] == ["2026-07-01.json"]
+
+
+def test_accrual_two_missing_weekdays_fails():
+    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": None,
+              "options_hub/gex_history/SPY/2026-06-30.json": None})
+    assert r["ok"] is False
+    assert any("R2 ACCRUAL DEAD" in f for f in r["fail_reasons"])
+
+
+def test_accrual_probe_gated_on_options_hub_anchor():
+    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": None,
+              "options_hub/gex_history/SPY/2026-06-30.json": None},
+             anchors=["stockdata", "chinastockdata"])
+    assert not any("ACCRUAL" in f for f in r["fail_reasons"] + r["warnings"])
+    assert "options_hub/gex_history/accrual" not in r["anchors"]
+
+
+def test_accrual_network_error_warns_only():
+    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": URLError("boom")})
+    assert r["ok"] is True
+    assert any("R2 ACCRUAL UNREACHABLE" in w for w in r["warnings"])

@@ -274,32 +274,71 @@ def _resolve_universe(cfg: dict) -> list[str]:
 def _probe_delta_mode(session_date: str) -> str:
     """Determine whether time-filtered incremental pulls work on this terminal.
 
-    Issues one SPY call bulk_trade_quote for the full day and one with a 15-min
-    window near the end of the day.  If the time-filtered pull returns fewer rows
-    (and > 0), delta_mode="time_window".  If it returns the same or more rows (or
-    terminal doesn't support start_time), delta_mode="full_day".
+    Probes the PREVIOUS trading session, not the current one. The poller starts
+    at 09:25 ET; the original same-session probe compared the full day against a
+    14:30–14:45 window that lay in the FUTURE at probe time, so the window pull
+    always returned 0 rows and the probe concluded full_day — every day, at any
+    terminal capability. (That alone kept delta_mode=full_day after the 2026-07
+    terminal builds added working time filters.) A completed prior session gives
+    an unambiguous full-vs-window comparison at any hour of day.
+
+    Uses an EXPLICIT expiration (nearest listed at/after the probe day):
+    wildcard expiration + time filter returns silently-empty (HTTP 200, zero
+    rows) on terminal build 202607231 — see the guard in
+    collectors.thetadata.bulk_trade_quote — and a single-expiration past-day
+    pull is ~60× cheaper than the old full-chain probe.
+
+    Window is 10:00–10:15 ET so the comparison also works on half-day sessions
+    (13:00 ET close). If the prior weekday has no data (holiday), steps back up
+    to 4 more weekdays before giving up to full_day.
     """
     from collectors import thetadata as td
 
-    log.info("poller: probing delta_mode via SPY %s …", session_date)
+    log.info("poller: probing delta_mode via %s prior session …", PROBE_ROOT)
     try:
-        full = td.bulk_trade_quote(PROBE_ROOT, "call", session_date, session_date)
-        if full is None or full.empty:
-            log.info("poller: probe — no data for %s, defaulting to full_day", session_date)
+        target = datetime.strptime(session_date, "%Y-%m-%d").date()
+
+        exps = td.list_expirations(PROBE_ROOT)
+        exp_iso = None
+        if exps:
+            exp_iso = next((e for e in exps if e >= session_date), None)
+        if exp_iso is None:
+            log.info("poller: probe — no expiration at/after %s, defaulting to full_day",
+                     session_date)
+            return "full_day"
+
+        probe_day = target
+        for _ in range(5):
+            probe_day -= timedelta(days=1)
+            while probe_day.weekday() >= 5:
+                probe_day -= timedelta(days=1)
+            full = td.bulk_trade_quote(PROBE_ROOT, "call", probe_day, probe_day,
+                                       expiration=exp_iso)
+            if full is None:
+                log.info("poller: probe — full pull failed for %s, using full_day",
+                         probe_day)
+                return "full_day"
+            if not full.empty:
+                break
+            log.info("poller: probe — no %s trades on %s (holiday?), stepping back",
+                     exp_iso, probe_day)
+        else:
+            log.info("poller: probe — no prior-session data found, defaulting to full_day")
             return "full_day"
 
         n_full = len(full)
-        # Try a 15-minute window ending 15 minutes before close of trading (14:45 ET)
         win = td.bulk_trade_quote(
-            PROBE_ROOT, "call", session_date, session_date,
-            start_time="14:30:00", end_time="14:45:00",
+            PROBE_ROOT, "call", probe_day, probe_day,
+            start_time="10:00:00", end_time="10:15:00",
+            expiration=exp_iso,
         )
         if win is None:
             log.info("poller: probe — windowed pull failed, using full_day")
             return "full_day"
 
         n_win = len(win)
-        log.info("poller: probe — full=%d window(14:30-14:45)=%d", n_full, n_win)
+        log.info("poller: probe — %s exp=%s full=%d window(10:00-10:15)=%d",
+                 probe_day, exp_iso, n_full, n_win)
         if 0 < n_win < n_full:
             log.info("poller: delta_mode=time_window (time filter confirmed)")
             return "time_window"

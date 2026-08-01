@@ -3353,10 +3353,16 @@ healthcheck:
 
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-  anchors: [stockdata, chinastockdata, feeds, thetadata_eod]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
+  anchors: [stockdata, chinastockdata, feeds, thetadata_eod, options_hub, live_flow, levels_ledger]
+                      # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
                       # thetadata_eod (2026-07-30): the ~60 GB ThetaData EOD store's SOLE offsite backup —
                       # per ops/THETADATA_R2_SYNC_RUNBOOK.md the store "exists only on the ops Mac". It had NO
                       # tripwire, so a 3-night manifest freeze went unnoticed until a human read the log.
+                      # options_hub / live_flow / levels_ledger (2026-07-31, R0.9): the options planes had NO
+                      # dead-man at all — the chain-heat lane served an 8-day-stale artifact unnoticed after the
+                      # M1 migration. Each anchors on its own beacon (oi_movers.json / meta.json / index.json,
+                      # see audit_r2._DIR_CANDIDATES) with per-lane budgets in anchor_max_age_hours below.
+                      # The gex_history dated accrual is probed separately (audit_r2.ACCRUAL_ANCHORS).
                       # This list REPLACES audit_r2.DEFAULT_ANCHORS wholesale, so the anchor must be here to
                       # take effect; tests/test_audit_r2.py pins it against a silent drop.
   max_age_hours: 26   # both lanes republish daily, landing ~05-10 UTC; the 14:30 UTC heartbeat sees ~5-9h
@@ -3364,6 +3370,14 @@ r2_data_plane:
                       # thetadata_eod fits the same envelope: launchd 22:00 PT = ~05:00 UTC, so ~9.5h healthy
                       # and ~33.5h on the first missed night. Only the heartbeat uses this list — daily.yml and
                       # asia-close.yml pass their own --anchors, so their --max-age-hours 2/26 never reach it.
+  anchor_max_age_hours:   # per-lane budgets (hours) merged over audit_r2.PER_ANCHOR_MAX_AGE_H —
+    options_hub: 68       # nightly 23:45 UTC weekdays: Monday legitimately reads Friday at 62.75h;
+                          # one missed weekday nightly reads 86.75h → trips
+    live_flow: 22         # RTH-cycle lane: healthy heartbeat age ≈ minutes; clears the quiet
+                          # 18.4h overnight / 21.5h post-half-day reads; dead poller trips next day
+    levels_ledger: 30     # pre-open seal: a missed seal reads ~27h next heartbeat → trips; clears the
+                          # Tuesday-after-Monday-holiday 27h gap. Known false page: Monday after a
+                          # FRIDAY market holiday (~75h, no Friday session) — dismiss on sight
   asof_max_days: 6    # stockdata/SPY.json `asof` (content-level): last bar date; 3-day weekend + a holiday tolerated
 
 validation:
