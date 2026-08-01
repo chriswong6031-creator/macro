@@ -365,6 +365,7 @@ jobs:
           }
 
           hub() { run_py "bitcoin vector + landing hub (build_vector)" scripts.build_vector; }
+          crypto() { run_py "crypto intelligence cockpit (build_crypto)" scripts.build_crypto; }
 
           # US Sector Central hub — reads baskets.json (cl_baskets) + sector_cycles_data.js
           # (sector_cycles/country_cycles, both present in render/daily cl_misc but intentionally
@@ -571,13 +572,13 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; us_pages; libs ;;
+              spine; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; crypto; us_pages; libs ;;
             macro)
-              spine; hub; us_pages ;;
+              spine; hub; crypto; us_pages ;;
             china)
-              run_py "build china a-share dashboard (build_china)" scripts.build_china; hub ;;
+              run_py "build china a-share dashboard (build_china)" scripts.build_china; hub; crypto ;;
             hk)
-              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub ;;
+              run_py "build hong kong / hang seng (build_hk)" scripts.build_hk; hub; crypto ;;
             markets)
               run_py "build commodity vector (build_commodities)"         scripts.build_commodities
               run_py "build strategic reserves (build_spr)"               scripts.build_spr
@@ -586,7 +587,7 @@ jobs:
               run_py "cross-asset vector (build_crossasset)"              scripts.build_crossasset
               run_py "rate & inflation transmission (build_transmission)" scripts.build_transmission
               run_py "discovery leaderboard (build_discovery)"            scripts.build_discovery
-              hub ;;
+              hub; crypto ;;
             gex)
               run_py "GEX magnets board (build_gex_board)"      scripts.build_gex_board
               run_py "index vol-regime (build_vol_regime)"      scripts.build_vol_regime
@@ -597,7 +598,7 @@ jobs:
               run_py "US options screener page (build_options_screener)" scripts.build_options_screener
               # flowleaders BEFORE optionscmd (M10) — see the OIP E8 note above the step.
               flowleaders; optionscmd
-              hub ;;
+              hub; crypto ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
               run_py "news suite (build_news)"              scripts.build_news
@@ -605,7 +606,7 @@ jobs:
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
-              hub ;;
+              hub; crypto ;;
             fast)
               # Early-close provisional render (FTR W6, PR-7).
               # Runs the macro+baskets clusters only — the smallest set that gives a
@@ -622,7 +623,7 @@ jobs:
               run_py "radar upgrade (build_radar_plus)"     scripts.build_radar_plus
               run_py "radar IC ledger (build_radar_ic)"     scripts.build_radar_ic
               run_py "radar page (build_radar_page)"        scripts.build_radar_page
-              hub ;;
+              hub; crypto ;;
             *)
               echo "::error::unknown scope '$SCOPE'"; exit 1 ;;
           esac

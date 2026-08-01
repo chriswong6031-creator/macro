@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T17:15:54.926402+00:00",
-  "count": 541,
+  "generated_at": "2026-08-01T17:50:33.960920+00:00",
+  "count": 543,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1933,6 +1933,47 @@
       "tickers": [],
       "top_pick": false,
       "pages": 2,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-2xkv6mziubr-165014",
+      "title": "flash20260730",
+      "institution": "Scotiabank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-30T23:45:45Z",
+      "summary_points": [
+        "**BoE Holds Rates with Hawkish Split, Inflation Outlook Slows**: BoE maintained 3.75% rate with 6-3 hold-hike vote (more hawkish than expected), projecting 3.2% inflation in 2026 and 2.1% by 2027; markets now price ~32bps hikes by year-end vs.",
+        "prior ~42bps, signaling disinflation momentum.",
+        "**Geopolitical Energy Risks Pressure Hike Timing**: Brent crude at $90/bbl and UK gas at £150/therm amid war disruptions; energy volatility could force 25bps hike before Sept 17 despite BoE citing \"little evidence\" of second-round inflation effects.",
+        "**Critical Data Releases Drive Rate Decisions**: Q2 GDP, July/August CPI, payrolls, PMIs, and Ofgem energy cap data will determine if rate hikes occur; central scenario (3.2% inflation, 1.1% GDP growth) remains baseline but risks of persistent inflation or geopolitical shocks could trigger hikes.",
+        "**New PM Fiscal Policies Alter Inflation/Growth Risks**: Burnham’s fiscal policies introduce uncertainty; adverse oil price shock (25% higher) could push Q4-26 inflation to 3.8%, making BoE rate hikes a material risk despite current hold stance."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-4sjwyvv4wyj-b168af",
+      "title": "WBC MorningReport30Jul2026",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-30T23:44:11Z",
+      "summary_points": [
+        "**Fed Policy Ambiguity**: 9-3 rate hold with unclear forward guidance fuels market anxiety over inflation trajectory and future hikes, steepening yield curve and triggering stock sell-off.",
+        "**Geopolitical Oil Shock**: Trump's Iran strike threat spurs 7.7% Brent oil surge, amplifying energy cost risks despite delayed pass-through; Middle East tensions drive global risk asset volatility.",
+        "**Australia CPI Miss & RBA Shift**: Q2 CPI below forecast (0.6%qtr/3.9%yr) prompts RBA to hold rates this year, overriding hawkish expectations despite geopolitical energy cost pressures.",
+        "**Global Flow Reversal**: Weak dollar (DXY -0.6%), risk asset selloff, and commodity volatility reflect heightened policy uncertainty and geopolitical risk impacting cross-asset flows."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
