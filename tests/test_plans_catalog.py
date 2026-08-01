@@ -4,8 +4,12 @@ Pins config/plans.yml to the LOCKED 2026-07-27 pricing so config, the Stripe
 sandbox objects (scripts/stripe_bootstrap.py re-creates drifted prices from this
 file), and the landing page can't silently diverge:
 
-    Insider  $99/mo · $900/yr ($75/mo-equivalent, save 24%) · 7-day trial
-    Pro      $149/mo · $1,308/yr ($109/mo-equivalent, save 27%) · 7-day trial
+    Essential  $99/mo · $900/yr ($75/mo-equivalent, save 24%) · NO trial
+    Pro        $149/mo · $1,308/yr ($109/mo-equivalent, save 27%) · 7-day trial
+
+(`Essential` is the display name; the catalog key and entitlement tier stay
+`insider`. Its trial went to 0 on 2026-07-31 — everyone who wants to try the
+desk lands in Pro's, and Essential is bought outright.)
     Founding Pro  $900/yr ($75/mo-equivalent, save $408/year) · first 2,000
 
 Also verifies the billing endpoints are mounted by hitting them with a TestClient
@@ -27,10 +31,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 # The locked table (onboarding masterplan §2; landing templates/index.html shows the same).
 LOCKED = {
-    "insider": {"monthly": 9900, "annual": 90000, "trial_days": 7,
-                "annual_pm": 75, "save_pct": 24},
+    "insider": {"monthly": 9900, "annual": 90000, "trial_days": 0,
+                "annual_pm": 75, "save_pct": 24, "name": "Essential"},
     "pro":     {"monthly": 14900, "annual": 130800, "trial_days": 7,
-                "annual_pm": 109, "save_pct": 27},
+                "annual_pm": 109, "save_pct": 27, "name": "Pro"},
 }
 
 TERMINAL_INDICATORS = {
@@ -52,6 +56,8 @@ def test_catalog_locked_pricing():
     for key, want in LOCKED.items():
         prod = cat["products"][key]
         assert int(prod["trial_days"]) == want["trial_days"], f"{key}: trial drifted"
+        assert prod["name"] == want["name"], f"{key}: display name drifted"
+        assert prod["tier"] == key, f"{key}: entitlement tier must not follow a rename"
         prices = prod["prices"]
         assert int(prices["monthly"]["unit_amount"]) == want["monthly"], f"{key}: monthly drifted"
         assert int(prices["annual"]["unit_amount"]) == want["annual"], f"{key}: annual drifted"
@@ -96,11 +102,12 @@ def test_founding_pro_is_limited_annual_pro_offer():
 
 
 def test_billing_maps_tiers_trials_and_lookup_keys():
-    """app/billing.py resolves both paid tiers, both intervals, and 7-day trials."""
+    """app/billing.py resolves both paid tiers, both intervals, and each trial."""
     from app import billing
 
+    assert billing._tier_trial_days("pro") == 7
+    assert billing._tier_trial_days("insider") == 0
     for tier in ("insider", "pro"):
-        assert billing._tier_trial_days(tier) == 7
         for interval in ("monthly", "annual"):
             lk = billing._tier_to_lookup_key(tier, interval)
             assert lk == f"{tier}_2026_v2_{interval}"

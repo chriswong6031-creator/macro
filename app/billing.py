@@ -923,9 +923,14 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         # on the pricing page — that user is still choosing.
         "success_url": f"{MM_SITE_BASE}/start.html?checkout=success",
         "cancel_url": f"{MM_SITE_BASE}/plans.html?checkout=cancel",
-        "subscription_data": {"trial_period_days": _tier_trial_days(tier), "metadata": {
+        "subscription_data": {"metadata": {
             "mm_user_id": user_id, **({"mm_offer": offer_key} if offer_key else {})}},
     }
+    # A no-trial tier (plans.yml trial_days: 0) OMITS the field: Stripe's minimum for
+    # trial_period_days is 1, so sending a 0 is an API error, not "charge immediately".
+    trial_days = _tier_trial_days(tier)
+    if trial_days > 0:
+        args["subscription_data"]["trial_period_days"] = trial_days
     if discounts:
         args["discounts"] = discounts
     if _AUTOMATIC_TAX:
@@ -1143,12 +1148,17 @@ def subscribe_complete(body: SubscribeCompleteRequest, user: dict = Depends(_cur
         create_args: dict[str, Any] = {
             "customer": customer_id,
             "items": [{"price": _price_id(lookup_key)}],
-            "trial_period_days": _tier_trial_days(tier),
             "default_payment_method": si_pm,
             "payment_settings": {"save_default_payment_method": "on_subscription"},
-            "trial_settings": {"end_behavior": {"missing_payment_method": "cancel"}},
             "metadata": {"mm_user_id": user_id, **({"mm_offer": offer_key} if offer_key else {})},
         }
+        # No-trial tier (plans.yml trial_days: 0) → charge on creation. Both trial keys
+        # come off together: trial_settings only describes what happens AT trial end, so
+        # sending it beside an absent trial is meaningless, and a literal 0 is rejected.
+        trial_days = _tier_trial_days(tier)
+        if trial_days > 0:
+            create_args["trial_period_days"] = trial_days
+            create_args["trial_settings"] = {"end_behavior": {"missing_payment_method": "cancel"}}
         discounts = _offer_discount(offer_key, customer_id)
         if discounts:
             create_args["discounts"] = discounts

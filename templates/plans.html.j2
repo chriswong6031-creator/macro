@@ -9,7 +9,7 @@
 
    Design: house glass system (theme.css tokens, dark-first + full light + ZH swap).
    Each tier carries a stance colour that encodes real capability — Free = steel,
-   Insider = the house signal-blue (--info), Pro = the Mastermind-orb violet (the only
+   Essential = the house signal-blue (--info), Pro = the Mastermind-orb violet (the only
    tier with the Opus chat lane). Signature = the billing toggle that live-morphs the
    prices and blooms the "save N%" badges (annual default, masterplan §2.1).
 
@@ -24,7 +24,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plans &amp; pricing — MastermindX</title>
-{% set seo_title = "Plans & pricing — MastermindX" %}{% set seo_desc = "One market brain: every dashboard, the research desk, and the Mastermind chat. Start a 7-day trial of Insider or Pro." %}{% set seo_path = "plans.html" %}
+{% set seo_title = "Plans & pricing — MastermindX" %}{% set seo_desc = "One market brain: every dashboard, the research desk, and the Mastermind chat. Subscribe to Essential, or start a 7-day trial of Pro." %}{% set seo_path = "plans.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'light');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
@@ -401,7 +401,7 @@
         <button type="button" data-interval="monthly" aria-pressed="false">{{ t('Monthly', '按月') }}</button>
       </div>
       <p class="toggle-note" id="toggle-note">
-        <span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>
+        <span class="l-en">Founding Pro gives you every Pro feature for the Essential annual price.</span><span class="l-zh">Founding Pro 让你以 Essential 年付价格解锁 Pro 全部功能。</span>
       </p>
     </div>
 
@@ -427,8 +427,8 @@
         <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
       </section>
 
-      {# ---- INSIDER ---- #}
-      <section class="tier" aria-label="Insider plan"
+      {# ---- ESSENTIAL (internal key: insider) ---- #}
+      <section class="tier" aria-label="Essential plan"
                data-tier="insider" data-m-cents="{{ insider.monthly_cents }}" data-a-cents="{{ insider.annual_cents }}"
                data-m-pm="{{ insider.monthly_pm }}" data-a-pm="{{ insider.annual_pm }}"
                data-a-total="{{ insider.annual_total }}" data-save="{{ insider.save_pct }}">
@@ -449,8 +449,8 @@
           <li><b>{{ terminal_indicators.access.insider }} / {{ terminal_indicators.advanced_total }} {{ t('advanced indicator modules', '个高级指标模块') }}</b> — {{ t('Trend Engine, market structure &amp; oscillator signals', '趋势引擎、市场结构与振荡器信号') }}</li>
           <li>{{ t('Terminal live options', '终端实时期权') }} — <b>{{ t('included', '含') }}</b></li>
         </ul>
-        <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt">{{ t('Start 7-day trial', '开始 7 天试用') }}</span></button>
-        <p class="cta-note"><span class="l-en">Card required · cancel anytime before day 7.</span><span class="l-zh">需绑卡 · 第 7 天前可随时取消。</span></p>
+        <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt">{{ t('Subscribe now', '立即订阅') }}</span></button>
+        <p class="cta-note"><span class="l-en">Billed today · cancel anytime.</span><span class="l-zh">今日扣款 · 随时可取消。</span></p>
       </section>
 
       {# ---- PRO (the hot tier — carries the Founding Pro offer) ---- #}
@@ -464,7 +464,7 @@
                data-offer-cap="{{ founding.cap }}">
         <span class="hot-tab" data-offer-ribbon><span class="l-en">Founding rate</span><span class="l-zh">创始会员价</span></span>
         <h3>{{ pro.name }}</h3>
-        <p class="who">{{ t('Everything in Insider, plus the deep Opus chat lane for real research.', 'Insider 全部内容，另加用于深度研究的 Opus 对话通道。') }}</p>
+        <p class="who">{{ t('Everything in Essential, plus the deep Opus chat lane for real research.', 'Essential 全部内容，另加用于深度研究的 Opus 对话通道。') }}</p>
         <div class="price">
           <span class="was" data-offer-rack>${{ founding.regular_annual_pm }}</span><span class="cur">$</span><span class="amt" data-price>{{ founding.annual_pm }}</span>
           <span class="per" data-per><span class="l-en">/mo billed annually</span><span class="l-zh">/月 · 年付</span></span>
@@ -479,11 +479,11 @@
                aria-valuemin="0" aria-valuemax="{{ founding.cap }}" aria-valuenow="0">
             <span class="founding-fill" data-offer-fill></span>
           </div>
-          <p class="founding-terms">{{ t('The allotment shrinks daily · every Pro feature at the Insider annual price, locked in for as long as you stay.',
-                                        '名额每日递减 · 以 Insider 年付价格解锁 Pro 全部功能，只要不退订即永久锁定。') }}</p>
+          <p class="founding-terms">{{ t('The allotment shrinks daily · every Pro feature at the Essential annual price, locked in for as long as you stay.',
+                                        '名额每日递减 · 以 Essential 年付价格解锁 Pro 全部功能，只要不退订即永久锁定。') }}</p>
         </div>
         <ul class="tf">
-          <li><b>{{ t('Everything in Insider', 'Insider 全部内容') }}</b></li>
+          <li><b>{{ t('Everything in Essential', 'Essential 全部内容') }}</b></li>
           <li>{{ t('Mastermind chat', '操盘大脑对话') }} — <b>{{ t('unlimited', '无限量') }}</b></li>
           <li><b>{{ t('Deep Opus chat', '深度 Opus 对话') }}</b> — {{ t('150 a month', '每月 150 次') }}</li>
           <li>{{ t('Priority research answers', '优先研究回答') }}</li>
@@ -574,13 +574,13 @@
             <td class="ok">✓</td>
           </tr>
           <tr>
-            <td class="feat has-tip"><span class="ft">{{ t('Advanced indicator modules', '高级指标模块') }}</span><span class="tipbox up">{{ t('Every plan includes 21 core indicators. Free also includes Candle Painter; Insider unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.', '所有方案均含 21 个核心指标。Free 另含 K 线着色器；Insider 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Advanced indicator modules', '高级指标模块') }}</span><span class="tipbox up">{{ t('Every plan includes 21 core indicators. Free also includes Candle Painter; Essential unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.', '所有方案均含 21 个核心指标。Free 另含 K 线着色器；Essential 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。') }}</span></td>
             <td class="val">{{ terminal_indicators.access.free }} / {{ terminal_indicators.advanced_total }}<small>{{ t('Candle Painter', 'K 线着色器') }}</small></td>
             <td class="val">{{ terminal_indicators.access.insider }} / {{ terminal_indicators.advanced_total }}<small>{{ t('core trend + signals', '核心趋势 + 信号') }}</small></td>
             <td class="val">{{ t('All', '全部') }} {{ terminal_indicators.access.pro }}<small>{{ t('5 complete suites', '5 套完整工具组') }}</small></td>
           </tr>
           <tr>
-            <td class="feat has-tip"><span class="ft">{{ t('Terminal live options', '终端实时期权') }}</span><span class="mchip">{{ insider.name }}</span><span class="tipbox up">{{ t('Live options data inside the terminal — included during the trial too.', '终端内的实时期权数据——试用期同样包含。') }}</span></td>
+            <td class="feat has-tip"><span class="ft">{{ t('Terminal live options', '终端实时期权') }}</span><span class="mchip">{{ insider.name }}</span><span class="tipbox up">{{ t('Live options data inside the terminal — included on the Pro trial too.', '终端内的实时期权数据——Pro 试用期同样包含。') }}</span></td>
             <td class="no">✗</td>
             <td class="val">{{ t('Included', '含') }}<small>({{ t('trial too', '试用期也含') }})</small></td>
             <td class="val">{{ t('Included', '含') }}<small>({{ t('trial too', '试用期也含') }})</small></td>
@@ -588,9 +588,9 @@
 
           <tr class="grp"><td colspan="4">{{ t('GETTING STARTED', '开始使用') }}</td></tr>
           <tr>
-            <td class="feat"><span class="ft">{{ t('Free trial', '免费试用') }}</span><span class="mchip">{{ insider.name }}</span></td>
+            <td class="feat"><span class="ft">{{ t('Free trial', '免费试用') }}</span><span class="mchip">{{ pro.name }}</span></td>
             <td class="no">✗</td>
-            <td class="val">{{ insider.trial_days }}-{{ t('day', '天') }}<small>{{ t('card required', '需绑卡') }}</small></td>
+            <td class="no">✗</td>
             <td class="val">{{ pro.trial_days }}-{{ t('day', '天') }}<small>{{ t('card required', '需绑卡') }}</small></td>
           </tr>
         </tbody>
@@ -606,9 +606,9 @@
     {%- set chev = '<svg class="chev" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l5 5 5-5"/></svg>' -%}
     <div class="faq">
       <details>
-        <summary>{{ t('How does the 7-day trial work?', '7 天试用如何运作？') }}{{ chev|safe }}</summary>
-        <div class="ans">{{ t('You add a card and get full access for seven days. Cancel any time before day 7 and you’re never charged. If you don’t cancel, the plan renews at the price you picked.',
-                              '绑定银行卡后即获得七天完整访问。第 7 天前随时取消，不会产生任何扣费；若未取消，则按所选价格续订。') }}</div>
+        <summary>{{ t('How does the Pro 7-day trial work?', 'Pro 的 7 天试用如何运作？') }}{{ chev|safe }}</summary>
+        <div class="ans">{{ t('The trial is on Pro. You add a card and get full access for seven days — cancel any time before day 7 and you’re never charged. If you don’t cancel, Pro renews at the price you picked. Essential has no trial: it bills today, and you can cancel any time.',
+                              '试用适用于 Pro。绑定银行卡后即获得七天完整访问——第 7 天前随时取消，不会产生任何扣费；若未取消，Pro 将按所选价格续订。Essential 无试用期：今日即扣款，且随时可取消。') }}</div>
       </details>
       <details>
         <summary>{{ t('Can I switch between monthly and annual?', '可以在按月与按年之间切换吗？') }}{{ chev|safe }}</summary>
@@ -616,14 +616,14 @@
                               '可以。随时在账户中更改结算周期——按年只是每月更便宜。') }}</div>
       </details>
       <details>
-        <summary>{{ t('What’s the difference between Insider and Pro?', 'Insider 和 Pro 有什么区别？') }}{{ chev|safe }}</summary>
-        <div class="ans">{{ t('Insider unlocks the entire site and the fast chat lane. Pro adds the deep Opus chat lane — the heavyweight model for real research — plus far more chat every month.',
-                              'Insider 解锁整个网站与快速对话通道。Pro 另加深度 Opus 对话通道——用于真正研究的重量级模型——并大幅提升每月对话额度。') }}</div>
+        <summary>{{ t('What’s the difference between Essential and Pro?', 'Essential 和 Pro 有什么区别？') }}{{ chev|safe }}</summary>
+        <div class="ans">{{ t('Essential unlocks the entire site and the fast chat lane. Pro adds the deep Opus chat lane — the heavyweight model for real research — plus far more chat every month.',
+                              'Essential 解锁整个网站与快速对话通道。Pro 另加深度 Opus 对话通道——用于真正研究的重量级模型——并大幅提升每月对话额度。') }}</div>
       </details>
       <details>
         <summary>{{ t('Is the charts terminal really free?', '图表终端真的免费吗？') }}{{ chev|safe }}</summary>
-        <div class="ans">{{ t('Yes — the charts terminal is free for everyone. Live options data is the paid part, and it’s included with Insider and Pro (trial included).',
-                              '是的——图表终端对所有人免费。实时期权数据为付费部分，Insider 与 Pro 均已包含（试用期也含）。') }}</div>
+        <div class="ans">{{ t('Yes — the charts terminal is free for everyone. Live options data is the paid part, and it’s included with Essential and Pro (the Pro trial included).',
+                              '是的——图表终端对所有人免费。实时期权数据为付费部分，Essential 与 Pro 均已包含（Pro 试用期也含）。') }}</div>
       </details>
       <details>
         <summary>{{ t('Can I cancel any time?', '可以随时取消吗？') }}{{ chev|safe }}</summary>
@@ -756,7 +756,7 @@
     });
     if (note) {
       note.innerHTML = annual
-        ? '<span class="l-en">Founding Pro gives you every Pro feature for the Insider annual price.</span><span class="l-zh">Founding Pro 让你以 Insider 年付价格解锁 Pro 全部功能。</span>'
+        ? '<span class="l-en">Founding Pro gives you every Pro feature for the Essential annual price.</span><span class="l-zh">Founding Pro 让你以 Essential 年付价格解锁 Pro 全部功能。</span>'
         : '<span class="l-en">Billed month to month. Switch to annual to pay less.</span><span class="l-zh">按月结算。切换到按年更省。</span>';
     }
   }
@@ -896,7 +896,7 @@
     /* signed-out → open the account/auth modal instead of hitting the API */
     if (!isSignedIn()) {
       if (window.MDXAuth && authEnabled()) { window.MDXAuth.open('signin'); }
-      else { toast(L('Sign in to start your trial.', '登录以开始试用。')); }
+      else { toast(L('Sign in to continue.', '登录后继续。')); }
       return;
     }
     var txt = btn ? $('.btxt', btn) : null, prev = txt ? txt.textContent : '';
@@ -964,7 +964,7 @@
          that was created BEFORE that change shipped and still carries the old
          success_url baked in (sessions live ~24h). Those users must not be stranded on
          the pricing page: give them the link the old copy only ever talked about. */
-      text.textContent = L('You’re in. Your trial is live.', '搞定。试用已开通。');
+      text.textContent = L('You’re in. Your plan is live.', '搞定。方案已开通。');
       var go = document.createElement('a');
       go.href = 'start.html';
       go.className = 'fgo';
