@@ -728,6 +728,7 @@ jobs:
           # the post-rebase --fix below STAYS (it re-copies from fresh post-rebase templates/,
           # guarding the -X theirs mid-render-merge reword case, 2026-07-07 incident).
           python -m scripts.check_template_site_sync --fix || true
+          python3 scripts/check_conflict_markers.py --file site/start.html
           # templates/ too, and ONLY for the plain-copy HTML pairs (index.html, chat.html):
           # optimize_assets re-stamps their templates/ side because the --fix above rewrites
           # their site copy FROM templates/ — a stamp staged site-only is reverted before it
@@ -793,6 +794,7 @@ jobs:
               # origin/main (coherent, at most one render old).
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
+              python3 scripts/check_conflict_markers.py --file site/start.html
               if ! git diff --quiet -- site/ templates/; then
                 git add site/ templates/ && git commit -m "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"

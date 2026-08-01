@@ -25,6 +25,7 @@ Binary files (NUL in the first 1 KiB) are skipped.
 
 Usage:
     python -m scripts.check_conflict_markers [ROOT]   # default: repo root (.)
+    python -m scripts.check_conflict_markers --file PATH
     python -m scripts.check_conflict_markers --self-test
 Exit codes: 0 = clean / self-test passed · 1 = marker(s) found / self-test failed.
 """
@@ -153,9 +154,22 @@ def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     if argv and argv[0] == "--self-test":
         return _self_test()
-    root = argv[0] if argv else "."
-
-    findings = scan(root)
+    if argv and argv[0] == "--file":
+        if len(argv) != 2:
+            print(
+                "usage: check_conflict_markers.py --file PATH",
+                file=sys.stderr,
+            )
+            return 2
+        target = argv[1]
+        findings = [
+            (target, lineno, line) for lineno, line in scan_file(target)
+        ]
+        scope = os.path.abspath(target)
+    else:
+        root = argv[0] if argv else "."
+        findings = scan(root)
+        scope = os.path.abspath(root)
     if findings:
         print(
             f"check_conflict_markers: FAIL — {len(findings)} git conflict-marker "
@@ -171,7 +185,7 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
-    print(f"check_conflict_markers: OK — no git conflict markers under {os.path.abspath(root)}.")
+    print(f"check_conflict_markers: OK — no git conflict markers under {scope}.")
     return 0
 
 
