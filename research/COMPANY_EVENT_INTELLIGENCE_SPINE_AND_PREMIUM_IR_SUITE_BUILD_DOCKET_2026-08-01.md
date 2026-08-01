@@ -8,7 +8,7 @@
 
 **Decision:** build one Mastermind-native Company Event Intelligence Spine and expose it through the existing Stage Analysis, Terminal, Neural Web/Brain, Research, SEO, and X Growth products. Do not create separate Jodie, Struct, Quartr, EarningsCall.ai, or EquityDesk clones.
 
-**Delivery status at this memo cut:** the Stage recovery and Terminal transcript-discovery lanes are **merged, deployed, and live**. Stage shipped through Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181), with its mobile containment follow-up in [#4187](https://github.com/chriswong6031-creator/macro/pull/4187). Terminal transcript intelligence shipped through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound role repair in [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299). The current automatic Terminal-to-earnings forward adapter is an **in-progress implementation lane** until its tests, merge, deployment, and operating proof are recorded; no future-ingestion claim in this memo treats it as live yet.
+**Delivery status at this memo cut:** the Stage recovery and Terminal transcript-discovery lanes are **merged, deployed, and live**. Stage shipped through Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181), with its mobile containment follow-up in [#4187](https://github.com/chriswong6031-creator/macro/pull/4187). Terminal transcript intelligence shipped through Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295), with evidence-bound role repair in [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299). The automatic Terminal-to-earnings forward adapter is implemented and under review in Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303) and Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); it remains **not live** until both merge/deploy chains and an operating proof complete.
 
 **Evidence appendices:**
 
@@ -1898,7 +1898,7 @@ Exit gate recorded complete: production shows the per-ticker Transcripts tab, an
 
 **Repositories:** Terminal producer plus Macro consumer
 
-**State:** implementation and tests in progress; not yet merged, deployed, scheduled, or proven on a newly arriving production call
+**State:** implementation verified and under review in Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303) and Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); not yet merged, deployed, scheduled, or proven on a newly arriving production call
 
 This lane adds stable transcript revision hashes/dates at the producer, a durable consumer cursor and retry queue, direct transcript-to-scorer mapping, local-Qwen-first routing, inexpensive provider fallbacks, and automatic publication into the existing Stage/Company Event artifacts. It closes the future-backfill gap without creating a second transcript archive. Do not mark it shipped until both producer and consumer changes are live and an observed new or corrected call completes the full path.
 
@@ -2458,7 +2458,8 @@ The practical default is a cascade, not a single expensive model:
 3. DeepSeek V4 Flash handles overflow, provider fallback, and inexpensive structured extraction;
 4. DeepSeek V4 Pro verifies or rewrites the small subset that fails quality gates;
 5. Kimi K2.6 handles selected long-context, slide/multimodal, or Chinese-language work;
-6. the strongest interactive model is used only for hard investigations or prompt/evaluation design.
+6. Codex Terra can absorb opportunistic editorial/research batches inside an existing subscription allowance, while the explicit API/local routes remain the unattended SLA path;
+7. the strongest interactive model is used only for hard investigations or prompt/evaluation design.
 
 A deliberately generous representative operating allowance is **$15–$40/month of paid API inference plus C$5–$15/month of local electricity**. Actual scheduled text generation can be lower: the annual all-API table above shows that even 8,000 calls are inexpensive before local routing. Interactive Brain demand should still be metered separately with compact retrieval, quotas, caching, and per-query cost logs.
 
@@ -2664,7 +2665,7 @@ Update this table with PR and live evidence as lanes actually complete. “Imple
 |---|---|---|
 | REPAIR-S Stage recovery | **Shipped/live:** corrected v3 generation `ready`/manifest-valid; 50,982 accepted history rows; 3,529 listing views; latest call date 2026-07-31; 17 fiscal anomalies quarantined; zero invalid QoQ joins | Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181); responsive follow-up [#4187](https://github.com/chriswong6031-creator/macro/pull/4187); [live Stage](https://www.mastermind-x.com/stage_analysis.html) |
 | REPAIR-T Terminal transcript discovery | **Shipped/live:** 25,438 transcript bodies across 3,288 symbols; per-ticker Transcripts UI and evidence-bound speaker roles live | Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295); role repair [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299); [live Terminal](https://app.mastermind-x.com/terminal) |
-| FORWARD-E Terminal-to-earnings adapter | **In progress:** producer revision metadata, durable consumer state/retry, direct score mapping, and local-first/provider-fallback routing under implementation and test | Not yet merged/deployed; no production-new-call proof claimed |
+| FORWARD-E Terminal-to-earnings adapter | **Implemented/reviewing:** producer revision metadata, nightly change probe, durable consumer state/retry, direct score mapping, and local-first/provider-fallback routing | Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303); Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); not yet merged/deployed and no production-new-call proof claimed |
 | CEI-00A rights/source decision | Current corpus and intended redistribution posture resolved; retain the gate for any newly added source | User-authorized program constraint; per-source evidence remains required for expansion |
 | CEI-00B golden corpus | Not started | — |
 | CEI-00C experience architecture | Not started | — |
