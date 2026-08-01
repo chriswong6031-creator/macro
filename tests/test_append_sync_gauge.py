@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import math
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -172,7 +173,10 @@ def test_main_upserts_current_month(tmp_path, monkeypatch):
     }))
 
     # Write synthetic forward_logs under tmp_path
-    today = "2026-07-06"
+    # The production helper intentionally reads the current UTC month. Keep the
+    # integration fixture in that same month so this test remains valid across
+    # calendar rollovers instead of failing on the first day of each month.
+    today = datetime.now(timezone.utc).date().isoformat()
     us_ids = ["xlb", "xlc", "xle", "xlf", "xli", "xlk", "xlp", "xlre", "xlu", "xlv", "xly"]
     _make_forward_log(tmp_path, "data/sector_cycles", us_ids[:5], today, [20, 30, 50, 70, 80])
     country_ids = ["ewa", "ewc", "ewd", "ewg", "ewi"]
