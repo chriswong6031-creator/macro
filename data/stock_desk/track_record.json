@@ -1,15 +1,15 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-07-31",
-  "scored_total": 71,
-  "open": 82,
-  "unscored_neutral": 99,
+  "as_of": "2026-08-01",
+  "scored_total": 72,
+  "open": 87,
+  "unscored_neutral": 100,
   "overall": {
-    "n": 71,
+    "n": 72,
     "hits": 53,
-    "misses": 18,
-    "hit_rate": 0.746,
-    "dir_accuracy": 0.423
+    "misses": 19,
+    "hit_rate": 0.736,
+    "dir_accuracy": 0.417
   },
   "by_lean": {
     "constructive": {
@@ -27,11 +27,11 @@
       "dir_accuracy": null
     },
     "cautious": {
-      "n": 32,
+      "n": 33,
       "hits": 24,
-      "misses": 8,
-      "hit_rate": 0.75,
-      "dir_accuracy": 0.375
+      "misses": 9,
+      "hit_rate": 0.727,
+      "dir_accuracy": 0.364
     },
     "avoid": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 63,
+      "n": 64,
       "hits": 45,
-      "misses": 18,
-      "hit_rate": 0.714,
-      "dir_accuracy": 0.365
+      "misses": 19,
+      "hit_rate": 0.703,
+      "dir_accuracy": 0.359
     },
     "medium": {
       "n": 8,
@@ -64,8 +64,17 @@
       "dir_accuracy": null
     }
   },
-  "calibration_note": "71 leans scored, hit-rate 0.746 (directional accuracy 0.423).",
+  "calibration_note": "72 leans scored, hit-rate 0.736 (directional accuracy 0.417).",
   "recent": [
+    {
+      "id": "2026-06-26-DINO-5",
+      "ticker": "DINO",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": 0.3147,
+      "check_by": "2026-07-31"
+    },
     {
       "id": "2026-06-18-MCY-4",
       "ticker": "MCY",
@@ -163,15 +172,6 @@
       "conviction": "low",
       "outcome": "hit",
       "realized": 0.0105,
-      "check_by": "2026-07-30"
-    },
-    {
-      "id": "2026-07-02-CVSA-6",
-      "ticker": "CVSA",
-      "lean": "constructive",
-      "conviction": "medium",
-      "outcome": "hit",
-      "realized": -0.0223,
       "check_by": "2026-07-30"
     }
   ]

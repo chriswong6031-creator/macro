@@ -1,12 +1,12 @@
 {
   "schema": "gsc_state.v1",
-  "as_of": "2026-07-22",
+  "as_of": "2026-08-01",
   "available": false,
   "reason": "credentials not configured",
   "property": "sc-domain:mastermind-x.com",
   "window": {
-    "start": "2026-06-25",
-    "end": "2026-07-22"
+    "start": "2026-07-05",
+    "end": "2026-08-01"
   },
   "rows_fetched": 0,
   "rows_may_be_incomplete": true

@@ -1,54 +1,10 @@
 {
   "schema": "seo_work_orders.v1",
-  "as_of": "2026-07-22T08:13:13Z",
+  "as_of": "2026-08-01T04:09:03Z",
   "orders": [
     {
-      "id": "broken_internal_link",
-      "priority": 1,
-      "title": "Fix broken internal .html links",
-      "class": "broken_internal_link",
-      "severity": "high",
-      "pages": [
-        "advanced.html",
-        "ai_desk.html",
-        "aibrief.html",
-        "alerts.html",
-        "allocation.html",
-        "allocation_canada.html",
-        "allocation_china.html",
-        "allocation_hk.html",
-        "alt_data.html",
-        "anticipation.html"
-      ],
-      "pages_count": 240,
-      "suggested_fix": "Fix broken internal .html links",
-      "falsifiable_check": "Crawl internal links: zero 404s expected"
-    },
-    {
-      "id": "missing_canonical",
-      "priority": 2,
-      "title": "Add rel=canonical to all public pages",
-      "class": "missing_canonical",
-      "severity": "high",
-      "pages": [
-        "btc_strategy.html",
-        "canada_stock.html",
-        "china_stocks_lab.html",
-        "coming-soon.html",
-        "hk_lookup.html",
-        "hk_stocks_lab.html",
-        "intl_stock.html",
-        "narrative_radar.html",
-        "qa_bottom_sensors.html",
-        "seasonality.html"
-      ],
-      "pages_count": 28,
-      "suggested_fix": "Add rel=canonical to all public pages",
-      "falsifiable_check": "Check page in browser: view-source should show rel=canonical in <head>"
-    },
-    {
       "id": "missing_description",
-      "priority": 3,
+      "priority": 1,
       "title": "Add meta description to all core pages",
       "class": "missing_description",
       "severity": "high",
@@ -64,27 +20,51 @@
         "qa_bottom_sensors.html",
         "seasonality.html"
       ],
-      "pages_count": 28,
+      "pages_count": 29,
       "suggested_fix": "Add meta description to all core pages",
       "falsifiable_check": "grep 'name=.description' in page source — should be present"
     },
     {
+      "id": "missing_canonical",
+      "priority": 2,
+      "title": "Add rel=canonical to all public pages",
+      "class": "missing_canonical",
+      "severity": "high",
+      "pages": [
+        "canada_stock.html",
+        "china_stocks_lab.html",
+        "coming-soon.html",
+        "hk_lookup.html",
+        "hk_stocks_lab.html",
+        "intl_stock.html",
+        "narrative_radar.html",
+        "qa_bottom_sensors.html",
+        "seasonality.html",
+        "status.html"
+      ],
+      "pages_count": 28,
+      "suggested_fix": "Add rel=canonical to all public pages",
+      "falsifiable_check": "Check page in browser: view-source should show rel=canonical in <head>"
+    },
+    {
       "id": "canonical_not_self",
-      "priority": 4,
+      "priority": 3,
       "title": "Ensure canonical href matches the page's own URL",
       "class": "canonical_not_self",
       "severity": "high",
       "pages": [
         "baskets_china_ths.html",
-        "canada_stocks.html"
+        "btc_strategy.html",
+        "canada_stocks.html",
+        "vector_allocation.html"
       ],
-      "pages_count": 2,
+      "pages_count": 4,
       "suggested_fix": "Ensure canonical href matches the page's own URL",
       "falsifiable_check": "Load page; canonical URL in <head> should match page URL"
     },
     {
       "id": "duplicate_title",
-      "priority": 5,
+      "priority": 4,
       "title": "Make titles unique across pages",
       "class": "duplicate_title",
       "severity": "high",
@@ -98,7 +78,7 @@
     },
     {
       "id": "missing_title",
-      "priority": 6,
+      "priority": 5,
       "title": "Add <title> element to pages",
       "class": "missing_title",
       "severity": "high",
@@ -108,6 +88,28 @@
       "pages_count": 1,
       "suggested_fix": "Add <title> element to pages",
       "falsifiable_check": "grep '<title' on each affected page — should return a non-empty match"
+    },
+    {
+      "id": "missing_from_sitemap",
+      "priority": 6,
+      "title": "Add public pages to sitemap",
+      "class": "missing_from_sitemap",
+      "severity": "medium",
+      "pages": [
+        "about-research.html",
+        "advanced.html",
+        "ai_desk.html",
+        "aibrief.html",
+        "alerts.html",
+        "allocation.html",
+        "allocation_canada.html",
+        "allocation_china.html",
+        "allocation_hk.html",
+        "alt_data.html"
+      ],
+      "pages_count": 237,
+      "suggested_fix": "Add public pages to sitemap",
+      "falsifiable_check": "Run sitemap audit: zero public pages missing"
     },
     {
       "id": "missing_og",
@@ -127,72 +129,35 @@
         "qa_bottom_sensors.html",
         "seasonality.html"
       ],
-      "pages_count": 28,
+      "pages_count": 29,
       "suggested_fix": "Add og:title, og:description, og:image to all pages",
       "falsifiable_check": "Open Graph debugger or grep meta property=og: — all three present"
     },
     {
-      "id": "missing_from_sitemap",
-      "priority": 8,
-      "title": "Add public pages to sitemap",
-      "class": "missing_from_sitemap",
-      "severity": "medium",
-      "pages": [
-        "canada_stock.html",
-        "china_stocks_lab.html",
-        "coming-soon.html",
-        "hk_stocks_lab.html",
-        "index.html",
-        "intl_stock.html",
-        "mastermind.html",
-        "qa_bottom_sensors.html",
-        "status.html",
-        "stock.html"
-      ],
-      "pages_count": 15,
-      "suggested_fix": "Add public pages to sitemap",
-      "falsifiable_check": "Run sitemap audit: zero public pages missing"
-    },
-    {
       "id": "desc_length",
-      "priority": 9,
+      "priority": 8,
       "title": "Adjust description length to 50-170 chars",
       "class": "desc_length",
       "severity": "medium",
       "pages": [
-        "china_altdata.html",
         "china_mechanics.html",
         "china_policy_watch.html",
         "china_radar.html",
-        "china_special_situations.html",
-        "flow_desk.html",
-        "index.html",
-        "intraday_flow.html",
+        "china_stocks.html",
+        "measurement.html",
         "sector_central_china.html",
-        "transmission.html"
+        "start.html",
+        "state_of_themes.html",
+        "transmission.html",
+        "products/mastermind-ai.html"
       ],
       "pages_count": 10,
       "suggested_fix": "Adjust description length to 50-170 chars",
       "falsifiable_check": "Measure len(desc) for each page; assert 50 <= len <= 170"
     },
     {
-      "id": "duplicate_description",
-      "priority": 10,
-      "title": "Make meta descriptions unique across pages",
-      "class": "duplicate_description",
-      "severity": "medium",
-      "pages": [
-        "baskets_china.html",
-        "canada.html",
-        "china_policy_watch.html"
-      ],
-      "pages_count": 3,
-      "suggested_fix": "Make meta descriptions unique across pages",
-      "falsifiable_check": "Run duplicate-desc check: zero duplicates expected"
-    },
-    {
       "id": "title_length",
-      "priority": 11,
+      "priority": 9,
       "title": "Adjust title length to 15-70 chars",
       "class": "title_length",
       "severity": "medium",
@@ -206,8 +171,22 @@
       "falsifiable_check": "Measure len(title) for each page; assert 15 <= len <= 70"
     },
     {
+      "id": "duplicate_description",
+      "priority": 10,
+      "title": "Make meta descriptions unique across pages",
+      "class": "duplicate_description",
+      "severity": "medium",
+      "pages": [
+        "baskets_china.html",
+        "canada.html"
+      ],
+      "pages_count": 2,
+      "suggested_fix": "Make meta descriptions unique across pages",
+      "falsifiable_check": "Run duplicate-desc check: zero duplicates expected"
+    },
+    {
       "id": "missing_lang",
-      "priority": 12,
+      "priority": 11,
       "title": "Add lang attribute to <html> element",
       "class": "missing_lang",
       "severity": "medium",
@@ -221,15 +200,14 @@
     },
     {
       "id": "page_weight",
-      "priority": 13,
+      "priority": 12,
       "title": "Reduce HTML page weight to <2.5 MB",
       "class": "page_weight",
       "severity": "low",
       "pages": [
-        "baskets_china_ths.html",
-        "special_situations.html"
+        "baskets_china_ths.html"
       ],
-      "pages_count": 2,
+      "pages_count": 1,
       "suggested_fix": "Reduce HTML page weight to <2.5 MB",
       "falsifiable_check": "wc -c site/<page>.html < 2621440 bytes"
     }

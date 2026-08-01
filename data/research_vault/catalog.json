@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T03:44:57.913457+00:00",
-  "count": 502,
+  "generated_at": "2026-08-01T04:29:46.004982+00:00",
+  "count": 504,
   "institutions": [
     "Amova",
     "Apollo",
@@ -205,6 +205,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-qtx06deelza-28eaf5",
+      "title": "Amazon.com Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:23:22Z",
+      "summary_points": [
+        "**AWS Growth & Margins**: Q2'26 AWS revenue +37% (margin +39%), $25B annual AI/chips run rate, validating capital return; capex raised to $220B (2026) supports multi-year margin thesis.",
+        "**Financial Resilience**: $139.5B operating cash flow (12/25), net debt/EBITDA 0.1x (12/25), enabling strategic reinvestment and shareholder returns.",
+        "**Q3 Guidance Miss**: Revenue/guidance missed by 3%/2% (Q3'26) due to FX headwinds (-80bps) and Prime Day timing shift; management raised FY26 capex to $220B amid input cost risks (memory).",
+        "**Valuation Upside**: Goldman Sachs raises 12-month PT to $375 (59.2% upside) from $335, driven by AWS growth (+37% YoY) and segment multiples (AWS 29x EV/EBIT)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-caednmvzovu-ae085e",
       "title": "Asia in Focus China H2 Fiscal Outlook Reversing the Tightening",
       "institution": "Goldman Sachs",
@@ -222,6 +242,25 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-zz10w8g0ucn-192745",
+      "title": "GS ETF Color one liners & charts",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:21:01Z",
+      "summary_points": [
+        "**Levered/Inverse ETF Risk Exposure**: US-listed levered/inverse ETF AUM near $150B (shed $60B since June highs), asset-weighted leverage ratio ~2.1x – critical risk metric amid volatility.",
+        "**Semiconductor ETF Flow-Performance Divergence**: SMH/SOXX semiconductor ETFs recorded +$13B inflows despite SOXX index -21% monthly decline (worst in ~20 years), signaling decoupling of capital flows from short-term performance.",
+        "**AI ETF Thematic Dominance**: AI-themed ETFs (SMH, SOXX, SOXL, XLK) drove 19% of total US-listed ETF trading activity, with notional volumes as % of total ETF volume spiking to ~20% by 2026."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
