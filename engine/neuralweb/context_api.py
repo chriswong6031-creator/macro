@@ -79,6 +79,7 @@ from pathlib import Path
 from typing import Any
 
 from engine.fundamental_forensics.private_state import load_state
+from engine.fundamental_forensics.context_projection import compact_disclosure_context
 
 import pandas as pd
 
@@ -951,16 +952,20 @@ def _fundamental_forensics_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -
         if isinstance(item, dict)
     ]
     coverage = company.get("coverage") or {}
+    disclosures = compact_disclosure_context(company, max_findings=4)
+    value = {
+        "action": (company.get("action") or {}).get("en"),
+        "latest_period": company.get("latest_period"),
+        "latest_filed": company.get("latest_filed"),
+        "findings": compact,
+        "workbench_url": f"fundamental_forensics.html?symbol={ticker.upper()}",
+        "display_only": True,
+        "authority": "context_only",
+    }
+    if disclosures is not None:
+        value["disclosure_changes"] = disclosures
     return _present(
-        value={
-            "action": (company.get("action") or {}).get("en"),
-            "latest_period": company.get("latest_period"),
-            "latest_filed": company.get("latest_filed"),
-            "findings": compact,
-            "workbench_url": f"fundamental_forensics.html?symbol={ticker.upper()}",
-            "display_only": True,
-            "authority": "context_only",
-        },
+        value=value,
         as_of=company.get("latest_filed") or str(generated_ts.date()),
         basis="normalized_projection_snapshot_not_pit",
         coverage=_finite_or_none(coverage.get("metrics_pct")),

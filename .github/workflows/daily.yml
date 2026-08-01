@@ -681,6 +681,51 @@ jobs:
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
       - run: pip install -r requirements.txt
+      - name: restore, acquire, project, and snapshot Filing Forensics SEC sources (hard gate)
+        # This is intentionally BEFORE every broad Filing Forensics state build.
+        # The SEC source cache is private/ignored, so a clean nightly checkout has
+        # no accession evidence until this step restores the last read-back-verified
+        # R2 snapshot. A restore, strict-acquisition, projection, or source-sync
+        # failure must skip the later broad build/publish rather than silently
+        # replace entitled disclosure coverage with an empty/shallow state.
+        #
+        # The first call is restore -> acquire and refuses partial target coverage.
+        # The second is projection -> sync, with computed_at sampled only after
+        # source retrieval so its explicit clock cannot precede a receipt. The
+        # commands never render the public shell or publish private browser state.
+        env:
+          R2_RESEARCH_ENDPOINT: ${{ secrets.R2_RESEARCH_ENDPOINT }}
+          R2_RESEARCH_ACCESS_KEY_ID: ${{ secrets.R2_RESEARCH_ACCESS_KEY_ID }}
+          R2_RESEARCH_SECRET_ACCESS_KEY: ${{ secrets.R2_RESEARCH_SECRET_ACCESS_KEY }}
+          R2_RESEARCH_BUCKET: ${{ secrets.R2_RESEARCH_BUCKET }}
+        run: |
+          set -euo pipefail
+          targets=(
+            --target SMCI=0001375365
+            --target NVDA=0001045810
+            --target AAPL=0000320193
+            --target MSFT=0000789019
+            --target GOOGL=0001652044
+            --target AMZN=0001018724
+            --target META=0001326801
+            --target TSLA=0001318605
+            --target AVGO=0001730168
+            --target PLTR=0001321655
+            --target AMD=0000002488
+            --target ORCL=0001341439
+          )
+          utc_now() { python -c 'from datetime import datetime, timezone; print(datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"))'; }
+          as_of="$(utc_now)"          # SEC acceptance-time cutoff, fixed before network I/O.
+          recorded_at="$(utc_now)"    # explicit snapshot/receipt recording clock.
+
+          python -m scripts.run_fundamental_forensics_wave2 \
+            "${targets[@]}" --restore --acquire --require-complete-acquisition \
+            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$recorded_at"
+
+          computed_at="$(utc_now)"   # sampled after all retained SEC receipts exist.
+          python -m scripts.run_fundamental_forensics_wave2 \
+            "${targets[@]}" --build-projections --sync \
+            --max-tickers 12 --as-of "$as_of" --recorded-at "$recorded_at" --computed-at "$computed_at"
       - name: restore attention store from R2 (wiki chip reads it at render)
         # build_site.build_attention_data reads data/attention/*.parquet — git-ignored
         # since 2026-07-06, R2-hosted, kept current by the collect job's publish-back.

@@ -40,6 +40,34 @@ meta:
 # ============================================================
 artifacts:
 
+  fundamental-forensics-sec-source-snapshot:
+    path: fundamental_forensics/sec-source/v1/latest.json
+    format: json
+    producer: scripts/run_fundamental_forensics_wave2.py
+    known_extra_writers: []
+    owner_program: fundamental-forensics
+    cadence: daily-engine
+    storage: r2
+    asof_field: snapshot_at
+    freshness_sla_hours: 30
+    schema: fundamental_forensics.sec_source_latest/v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers:
+      - scripts/run_fundamental_forensics_wave2.py
+      - scripts/build_fundamental_forensics_disclosures.py
+    external_consumers: []
+    qual_ladder_ref: null
+    notes: >
+      Private Research R2 pointer to a content-addressed raw SEC Submissions and
+      primary-filing archive snapshot. The operator restores and hash-verifies it
+      before bounded acquisition, then commits its next pointer last after projection
+      and object read-back. It is never copied to git, the public site, or a public
+      bucket; it is an evidence/provenance rail with no score, rank, gate, or trade
+      authority.
+
   fundamental-forensics-private-state:
     path: fundamental_forensics/state.json.gz
     format: json
@@ -63,10 +91,12 @@ artifacts:
       - mastermind-x:filing-forensics-workbench
     qual_ladder_ref: null
     notes: >
-      Private Research Vault R2 object assembled from the normalized SEC panels.
-      The public repo carries only the shell and detector code; entitled browsers
-      receive this gzip through /api/forensics/state. Display/context only, not a
-      point-in-time accession store, company score, rank, gate, or trading authority.
+      Private Research Vault R2 object assembled from normalized SEC panels plus
+      optional bounded accession-aware disclosure projections whose underlying raw
+      archive remains in the separate private source snapshot. The public repo carries
+      only the shell and detector code; entitled browsers receive this gzip through
+      /api/forensics/state. Display/context only, not a company score, rank, gate, or
+      trading authority.
 
   btc-options:
     path: site/btc_options.json

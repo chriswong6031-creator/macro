@@ -50,10 +50,8 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=8d7800c8">
-<link rel="stylesheet" href="fundamental_forensics.css?v=9e40d0cb">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=8fccad75">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="fundamental_forensics.css">
 </head>
 <body class="ff-page">
 
@@ -64,7 +62,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=8fccad75">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -280,10 +278,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -374,13 +372,25 @@
           aria-selected="false" aria-controls="ff-panel-statements" tabindex="-1" data-tab="statements">
           <span class="ff-tab-index" aria-hidden="true">02</span><span class="l-en">Statements</span><span class="l-zh">财务报表</span>
         </button>
+        <button class="ff-tab" id="ff-tab-disclosures" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-disclosures" tabindex="-1" data-tab="disclosures">
+          <span class="ff-tab-index" aria-hidden="true">03</span><span class="l-en">Filing changes</span><span class="l-zh">披露变化</span>
+        </button>
+        <button class="ff-tab" id="ff-tab-redlines" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-redlines" tabindex="-1" data-tab="redlines">
+          <span class="ff-tab-index" aria-hidden="true">04</span><span class="l-en">Redlines</span><span class="l-zh">逐字对照</span>
+        </button>
+        <button class="ff-tab" id="ff-tab-timeline" type="button" role="tab"
+          aria-selected="false" aria-controls="ff-panel-timeline" tabindex="-1" data-tab="timeline">
+          <span class="ff-tab-index" aria-hidden="true">05</span><span class="l-en">Filing trail</span><span class="l-zh">申报轨迹</span>
+        </button>
         <button class="ff-tab" id="ff-tab-compare" type="button" role="tab"
           aria-selected="false" aria-controls="ff-panel-compare" tabindex="-1" data-tab="compare">
-          <span class="ff-tab-index" aria-hidden="true">03</span><span class="l-en">Compare</span><span class="l-zh">期间对比</span>
+          <span class="ff-tab-index" aria-hidden="true">06</span><span class="l-en">Compare</span><span class="l-zh">期间对比</span>
         </button>
         <button class="ff-tab" id="ff-tab-trace" type="button" role="tab"
           aria-selected="false" aria-controls="ff-panel-trace" tabindex="-1" data-tab="trace">
-          <span class="ff-tab-index" aria-hidden="true">04</span><span class="l-en">Sources</span><span class="l-zh">来源</span>
+          <span class="ff-tab-index" aria-hidden="true">07</span><span class="l-en">Sources</span><span class="l-zh">来源</span>
         </button>
       </div>
       <div class="ff-view-status" id="ff-view-status" role="status" aria-live="polite">
@@ -432,6 +442,50 @@
         </div>
       </header>
       <div id="ff-statements"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-disclosures" role="tabpanel" aria-labelledby="ff-tab-disclosures" tabindex="0" hidden>
+      <header class="ff-panel-head ff-disclosure-head">
+        <div>
+          <p class="ff-kicker"><span class="l-en">Filing change feed</span><span class="l-zh">申报变化动态</span></p>
+          <h2><span class="l-en">What changed in the filing</span><span class="l-zh">财报披露有哪些变化</span></h2>
+          <p><span class="l-en">This is a text comparison, not an explanation of motive, materiality, or financial impact.</span><span class="l-zh">这是文本对比，不代表对动机、重大性或财务影响的解释。</span></p>
+        </div>
+        <div class="ff-filter-summary" id="ff-disclosure-summary">—</div>
+      </header>
+      <div class="ff-disclosure-toolbar" aria-label="Disclosure change filters">
+        <label class="ff-topic-filter" for="ff-disclosure-section">
+          <span><span class="l-en">Section</span><span class="l-zh">章节</span></span>
+          <select id="ff-disclosure-section">
+            <option value="all">All sections / 全部章节</option>
+          </select>
+        </label>
+        <p class="ff-lexical-note"><span class="ff-lexical-glyph" aria-hidden="true">◇</span><span class="l-en">Observed wording only — open an item to read both source excerpts.</span><span class="l-zh">仅显示观察到的措辞变化；打开条目可阅读两个来源摘录。</span></p>
+      </div>
+      <div class="ff-disclosure-feed" id="ff-disclosure-feed" role="list" aria-label="Filing disclosure changes"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-redlines" role="tabpanel" aria-labelledby="ff-tab-redlines" tabindex="0" hidden>
+      <header class="ff-panel-head">
+        <div>
+          <p class="ff-kicker"><span class="l-en">Source redlines</span><span class="l-zh">来源逐字对照</span></p>
+          <h2><span class="l-en">Read the language side by side</span><span class="l-zh">并列阅读前后措辞</span></h2>
+          <p><span class="l-en">Every row links back to the matched SEC filing excerpts. Unchanged boilerplate stays out of the review queue.</span><span class="l-zh">每行都可回到匹配的 SEC 财报摘录；未变化的模板文本不会进入审阅队列。</span></p>
+        </div>
+        <div class="ff-filter-summary" id="ff-redline-summary">—</div>
+      </header>
+      <div class="ff-redline-list" id="ff-redline-list" role="list" aria-label="Filing redlines"></div>
+    </section>
+
+    <section class="ff-panel" id="ff-panel-timeline" role="tabpanel" aria-labelledby="ff-tab-timeline" tabindex="0" hidden>
+      <header class="ff-panel-head">
+        <div>
+          <p class="ff-kicker"><span class="l-en">Filing trail</span><span class="l-zh">申报轨迹</span></p>
+          <h2><span class="l-en">The filing record behind this review</span><span class="l-zh">本次审阅对应的财报记录</span></h2>
+          <p><span class="l-en">Confirm the reporting form, filing date, accession, and original SEC document before drawing a conclusion.</span><span class="l-zh">在得出结论前，请确认申报表格、申报日期、文件编号及 SEC 原文。</span></p>
+        </div>
+      </header>
+      <div class="ff-timeline" id="ff-timeline" aria-label="Filing comparison timeline"></div>
     </section>
 
     <section class="ff-panel" id="ff-panel-compare" role="tabpanel" aria-labelledby="ff-tab-compare" tabindex="0" hidden>
@@ -497,8 +551,7 @@
   </div>
 </template>
 
-<script src="theme.js?v=ba799a17" defer></script>
-<script src="fundamental_forensics.js?v=29c9b790" defer></script>
-<script defer data-whb data-root="" src="wh_banner.js?v=2d5f957e"></script>
+<script src="theme.js" defer></script>
+<script src="fundamental_forensics.js" defer></script>
 </body>
 </html>

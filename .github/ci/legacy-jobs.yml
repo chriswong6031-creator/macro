@@ -624,6 +624,12 @@ jobs:
           tests/test_fundamental_forensics_page.py
           tests/test_fundamental_forensics_private_state.py
           tests/test_fundamental_forensics_ui.py
+          tests/test_fundamental_forensics_acquisition.py
+          tests/test_fundamental_forensics_disclosure_diff.py
+          tests/test_fundamental_forensics_disclosure_projection.py
+          tests/test_fundamental_forensics_source_sync.py
+          tests/test_fundamental_forensics_wave2_operator.py
+          tests/test_sec_document_spine.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_context_api.py

@@ -307,6 +307,21 @@ lanes:
   - workflow: .github/workflows/daily.yml
     job: engine
     steps:
+      - id: fundamental_forensics_sec_restore_acquire
+        module: scripts.run_fundamental_forensics_wave2
+        note: >
+          Wave 2 Filing Forensics source spine (hard gate): restore the latest
+          private, checksum-verified SEC raw/archive snapshot, then acquire a
+          strictly bounded explicit issuer set. Partial SEC coverage fails this
+          nightly lane before the compact state may be rebuilt or published.
+          No public mirror and no render are involved.
+      - id: fundamental_forensics_disclosure_project_sync
+        module: scripts.run_fundamental_forensics_wave2
+        note: >
+          Wave 2 continuation after successful restore/acquisition: build
+          accession-aware local disclosure projections and read-back-sync the
+          raw/archive snapshot to the private Research R2 prefix. The explicit
+          compute clock is sampled after source receipt creation.
       - id: fetch_r2_attention
         module: scripts.fetch_r2
         args: [--dirs, attention]
@@ -2672,6 +2687,7 @@ modules:
       - data/edgar/fundamentals.parquet
       - data/universe/membership.parquet
       - data/breadth/ticker_sectors.parquet
+      - data/fundamental_forensics/private/disclosures/<TICKER>.json
     writes:
       - data/fundamental_forensics/private/state.json.gz
       - site/fundamental_forensics.html
@@ -2681,10 +2697,32 @@ modules:
     needs_secrets: false
     event_driven: false
     note: >
-      Broad-universe normalized projection only. The separate canonical engine preserves
-      immutable source events and accession coherence; neither lane has trading authority.
+      Broad-universe normalized projection with optional bounded accession-aware disclosure
+      slices prebuilt by the separate private source spine. Neither lane has trading authority.
       The local state is gitignored and a credentialed --publish-only step copies it to the
       private Research Vault R2 bucket after validation and byte-for-byte read-back.
+
+  - module: scripts.run_fundamental_forensics_wave2
+    reads:
+      - data/fundamental_forensics/raw/<CIK>/submissions/latest.json
+      - data/fundamental_forensics/archive/manifests/<CIK>/*/manifest.json
+      - r2://private-research/fundamental_forensics/sec-source/v1/latest.json
+    writes:
+      - data/fundamental_forensics/raw/<CIK>/submissions/*.json.gz
+      - data/fundamental_forensics/archive/objects/sha256/*/*.bin.gz
+      - data/fundamental_forensics/archive/manifests/<CIK>/*/manifest.json
+      - data/fundamental_forensics/private/disclosures/<TICKER>.json
+      - r2://private-research/fundamental_forensics/sec-source/v1/latest.json
+    impure: true
+    needs_secrets: true
+    event_driven: false
+    note: >
+      Explicit operator/collect-lane SEC source spine only. It restores a verified
+      private snapshot, fetches at most the configured comparable 10-K/10-Q documents
+      for an explicit capped issuer list, builds local disclosure projections, then
+      read-back-verifies the next immutable private snapshot. It never renders or
+      publishes browser state, never walks a universe, and never mirrors SEC source
+      bytes into git or a public bucket.
 
   - module: scripts.build_site
     reads:
