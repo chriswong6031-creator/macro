@@ -133,6 +133,26 @@ def _timestamp(value: Any, field: str) -> str:
     ).replace("+00:00", "Z")
 
 
+def _event_timeline(
+    call_value: Any,
+    source_value: Any,
+    scored_value: Any,
+) -> tuple[str, str, str]:
+    """Normalize and enforce the point-in-time lineage for one score row."""
+
+    call_date = _iso_date(call_value)
+    source_updated_at = _timestamp(source_value, "source_updated_at")
+    scored_at = _timestamp(scored_value, "scored_at")
+    call_day = date.fromisoformat(call_date)
+    source_dt = datetime.fromisoformat(source_updated_at.replace("Z", "+00:00"))
+    scored_dt = datetime.fromisoformat(scored_at.replace("Z", "+00:00"))
+    if call_day > source_dt.date():
+        raise ValueError("call_date occurs after source_updated_at")
+    if source_dt > scored_dt:
+        raise ValueError("source_updated_at occurs after scored_at")
+    return call_date, source_updated_at, scored_at
+
+
 def _string_list(
     value: Any,
     *,
@@ -223,14 +243,13 @@ def validate_call_event(row: dict) -> list[str]:
     if not _SHA256_RE.fullmatch(_text(row.get("source_sha256")).lower()):
         problems.append("source_sha256 must be 64 lowercase hex chars")
     try:
-        _iso_date(row.get("call_date"))
+        _event_timeline(
+            row.get("call_date"),
+            row.get("source_updated_at"),
+            row.get("scored_at"),
+        )
     except ValueError as exc:
         problems.append(str(exc))
-    for field in ("source_updated_at", "scored_at"):
-        try:
-            _timestamp(row.get(field), field)
-        except ValueError as exc:
-            problems.append(str(exc))
     try:
         _source_url(row.get("source_url"))
     except ValueError as exc:
@@ -297,6 +316,9 @@ def project_score_row(row: Any) -> dict:
     if not _SHA256_RE.fullmatch(source_hash):
         raise ValueError("source_sha256 is absent or invalid")
 
+    call_date, source_updated_at, scored_at = _event_timeline(
+        get("call_date"), get("source_updated_at"), get("scored_at"),
+    )
     summary = _text(get("summary"), max_len=_MAX_SUMMARY) or None
     event = {
         "schema": CALL_EVENT_SCHEMA,
@@ -305,12 +327,12 @@ def project_score_row(row: Any) -> dict:
         "ticker": ticker,
         "quarter": quarter,
         "year": year,
-        "call_date": _iso_date(get("call_date")),
+        "call_date": call_date,
         "source_type": _text(get("source"), max_len=40),
         "source_url": _source_url(get("source_url")),
         "source_sha256": source_hash,
-        "source_updated_at": _timestamp(get("source_updated_at"), "source_updated_at"),
-        "scored_at": _timestamp(get("scored_at"), "scored_at"),
+        "source_updated_at": source_updated_at,
+        "scored_at": scored_at,
         "model": _text(get("model"), max_len=120),
         "prompt_version": _text(get("prompt_version"), max_len=120),
         "analysis_schema_version": _text(get("analysis_schema_version"), max_len=120),

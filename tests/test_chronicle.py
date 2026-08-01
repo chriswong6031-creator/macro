@@ -733,6 +733,54 @@ def test_call_projection_keeps_numeric_context_when_tone_is_unclassified():
     assert event["performance"] == 8.0
 
 
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        (
+            {
+                "call_date": "2026-08-06",
+                "source_updated_at": "2026-08-01T21:00:00+00:00",
+                "scored_at": "2026-08-01T21:05:00+00:00",
+            },
+            "call_date occurs after source_updated_at",
+        ),
+        (
+            {
+                "source_updated_at": "2026-07-20T21:10:00+00:00",
+                "scored_at": "2026-07-20T21:05:00+00:00",
+            },
+            "source_updated_at occurs after scored_at",
+        ),
+    ],
+)
+def test_call_projection_rejects_noncausal_timeline(overrides, message):
+    from engine.chronicle.earnings_calls import project_score_row
+
+    with pytest.raises(ValueError, match=message):
+        project_score_row(_healthy_call_score(**overrides))
+
+
+def test_future_dated_score_never_enters_committed_call_ledger(
+    tmp_path, monkeypatch,
+):
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
+
+    root = _make_fixture_root(tmp_path)
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    _write_call_score_store(root, [_healthy_call_score(
+        call_date="2026-08-06",
+        source_updated_at="2026-08-01T21:00:00+00:00",
+        scored_at="2026-08-01T21:05:00+00:00",
+    )])
+
+    result = sync_from_scores(root)
+
+    assert result["updated"] is False
+    assert result["rejected_rows"] == 1
+    assert result["reason"] == "no_healthy_projectable_rows"
+    assert (root / CALL_EVENTS_REL).read_bytes() == b""
+
+
 def test_degraded_score_never_replaces_last_good_call_event(tmp_path, monkeypatch):
     from engine.chronicle.earnings_calls import CALL_EVENTS_REL, sync_from_scores
 
