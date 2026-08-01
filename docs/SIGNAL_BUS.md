@@ -15,7 +15,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | agentic_media | 4 |
 | biopharma-seasonality-intelligence | 1 |
 | btc-vector | 6 |
-| capital-structure-intelligence | 8 |
+| capital-structure-intelligence | 10 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
@@ -106,7 +106,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 350 |
+| display | 352 |
 | infrastructure | 109 |
 | scored | 4 |
 | shadow | 79 |
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 515 |
+| git | 517 |
 | git+r2 | 1 |
 | gitignored-local | 15 |
 | r2 | 11 |
@@ -164,14 +164,16 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 2 | 0 |
 | capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-index-coverage | `data/capital_structure/index_coverage.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | capital-structure-retrieval-attempts | `data/capital_structure/retrieval_attempts.parquet` | parquet | collect | infrastructure | 1 | 0 |
-| capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 1 | 0 |
-| capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 0 | 0 |
-| capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 0 | 0 |
-| capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 0 | 0 |
-| capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 0 | 0 |
+| capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 1 | 0 |
+| capital-structure-projection | `data/capital_structure/projection.json` | json | collect | display | 0 | 0 |
+| site-capital-structure-projection | `site/capital-structure-data/latest.json` | json | collect | display | 0 | 0 |
 
 ### causal-hypothesis-factory
 
