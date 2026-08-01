@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T12:00:21.364608+00:00",
-  "count": 526,
+  "generated_at": "2026-08-01T12:11:42.844809+00:00",
+  "count": 527,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1089,6 +1089,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-p9wjui70tqf-a71e28",
+      "title": "CEEMEA Week Ahead CNB To Hold",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:30Z",
+      "summary_points": [
+        "**Czechia CNB Rate Hike & Stance**: CNB hikes policy rate 25bp to 3.75% amid sticky core inflation; data-dependent stance signals one-time move (not cycle start), with markets pricing 40% chance of next hike.",
+        "**Hungary MNB Policy Shift**: MNB cuts policy rate to 5.75% and revises nominal neutral rate to 2.0% due to inflation target reduction, as headline CPI expected to fall to +1.5% yoy (below target band).",
+        "**Ukraine Q2 GDP Rebound vs.",
+        "Geopolitical Risk**: Q2 GDP forecast +0.6% yoy (vs -0.6% prior) but severe uncertainty from Russian attacks on civilian/energy infrastructure, slowing growth to +0.5% in 2026.",
+        "**Turkey Inflation Dynamics**: Headline inflation stable at 32.1% yoy but monthly acceleration from fuel prices and seasonal wage/tax adjustments; TRY depreciation pressures outlook, requiring sustained high rates."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
