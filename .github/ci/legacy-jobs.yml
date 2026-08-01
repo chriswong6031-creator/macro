@@ -1007,6 +1007,8 @@ jobs:
       # out of the scarce self-hosted render queue.
       - name: "render workflow size ceiling and builder ownership"
         run: python -m pytest tests/test_render_run_size_cap.py tests/test_render_builder_ownership.py -q
+      - name: render publication dead-asset fences
+        run: python -m pytest tests/test_render_dead_asset_gate.py -q
       # Same class, second instance (2026-07-27). build_canada was invoked by NO
       # workflow at all: site/canada.html existed only as a side effect of a
       # swallowed try/except inside build_vector, so a canada-only fix could ride a

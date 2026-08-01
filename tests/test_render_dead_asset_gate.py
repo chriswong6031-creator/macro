@@ -56,12 +56,48 @@ def test_engine_render_never_commits_after_a_failed_guard() -> None:
     assert "if: always()" not in commit_header
 
 
-def test_render_lanes_recheck_assets_after_porcelain_rebase_before_push() -> None:
+def test_render_lanes_guard_both_possible_porcelain_push_heads() -> None:
     for lane in LANES:
         text = _text(lane)
         rebase = text.index("git pull --rebase --autostash -X theirs origin main")
         post_rebase = text[rebase:]
-        guard = post_rebase.index("python3 scripts/check_site_asset_refs.py site")
+        guards = [
+            match.start()
+            for match in re.finditer(
+                "python3 scripts/check_site_asset_refs.py site", post_rebase
+            )
+        ]
+        first_mutator = post_rebase.index("python -m scripts.optimize_assets")
         push = post_rebase.index("if push_do")
 
-        assert guard < push, lane
+        assert len(guards) >= 2, lane
+        assert guards[0] < first_mutator < guards[1] < push, lane
+
+
+def test_render_lanes_recheck_the_healed_tree_immediately_before_commit() -> None:
+    commit_commands = {
+        "render.yml": 'commit_index "$RENDER_MESSAGE"',
+        "engine-render.yml": 'git commit -m "engine-render:',
+    }
+    for lane in LANES:
+        text = _text(lane)
+        step = text.index("- name: commit rendered site")
+        block = text[step:]
+        healed = block.index("push_staged_heal site/ templates/ || exit 1")
+        final_guard = block.index("python3 scripts/check_site_asset_refs.py site", healed)
+        commit = block.index(commit_commands[lane.name], final_guard)
+
+        assert healed < final_guard < commit, lane
+
+
+def test_render_metadata_replay_is_code_data_only() -> None:
+    text = _text(ROOT / ".github" / "workflows" / "render.yml")
+    replay = text.index("PUBLISH_COMMIT=$(push_metadata_replay_commit")
+    gate = text.rfind(
+        'git diff --quiet "$RENDER_PARENT" origin/main -- site/ templates/',
+        0,
+        replay,
+    )
+
+    assert gate != -1
+    assert replay - gate < 240

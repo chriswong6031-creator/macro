@@ -1073,6 +1073,9 @@ jobs:
           # writes the INDEX verbatim, so staged `Updated upstream / Stashed changes`
           # blocks (a conflicted autostash apply) would ship to main. Refuse instead.
           push_staged_heal site/ templates/ || exit 1
+          # The sync/runtime/marker heals above can replace pages after the standalone
+          # finalized-tree step. Validate the exact healed tree represented by the index.
+          python3 scripts/check_site_asset_refs.py site
           commit_index "$RENDER_MESSAGE"
           RENDER_COMMIT=$(git rev-parse HEAD)
           RENDER_PARENT=$(git rev-parse "$RENDER_COMMIT^")
@@ -1122,10 +1125,11 @@ jobs:
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
             # Common path: main advanced only in code/data while this run changed
-            # site/templates. Replay those disjoint tree deltas in a temporary index,
-            # create a one-parent commit on current main, and push its object ID. No
-            # checkout, rebase, or promised-blob download occurs.
-            if PUBLISH_COMMIT=$(push_metadata_replay_commit \
+            # site/templates. Keep the metadata shortcut inside that exact contract:
+            # a newer site/template delta needs the guarded porcelain path below,
+            # because an asset deletion can invalidate a page without a path conflict.
+            if git diff --quiet "$RENDER_PARENT" origin/main -- site/ templates/ && \
+              PUBLISH_COMMIT=$(push_metadata_replay_commit \
                 "$RENDER_PARENT" origin/main "$RENDER_COMMIT" \
                 "$RENDER_MESSAGE" "$PUBLISH_INDEX"); then
               echo "::notice::metadata-only replay onto $(git rev-parse --short=12 origin/main)"
@@ -1151,6 +1155,9 @@ jobs:
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
             if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
+              # Prove the rebased render commit itself before any optional heal. If a
+              # later follow-up commit is skipped, this is the exact HEAD we still push.
+              python3 scripts/check_site_asset_refs.py site
               # post-rebase template↔site re-sync (ui.template_site_sync): -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # mid-render (2026-07-07: engine-render commit 2ae709f9f0 reverted #1793's

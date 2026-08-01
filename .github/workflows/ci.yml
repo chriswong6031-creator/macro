@@ -591,6 +591,7 @@ on:
       - "tests/test_render_intl_scope.py"
       - "tests/test_render_run_size_cap.py"
       - "tests/test_render_builder_ownership.py"
+      - "tests/test_render_dead_asset_gate.py"
       - "tests/test_render_canada_scope.py"
       # OIP E8 options integrity suites (job: workflow-yaml). engine/**, scripts/** and
       # .github/workflows/** already reach their subjects; these entries are so a

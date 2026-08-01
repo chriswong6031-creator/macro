@@ -758,6 +758,9 @@ jobs:
           # commit staged `Updated upstream / Stashed changes` blocks or unmerged
           # index entries — a conflicted autostash apply is the known source.
           push_staged_heal site/ templates/ || exit 1
+          # The sync/runtime/marker heals above can replace pages after the standalone
+          # finalized-tree step. Validate the exact healed tree represented by the index.
+          python3 scripts/check_site_asset_refs.py site
           git commit -m "engine-render: regime recompute + re-render $(date -u +%F) (scope=${{ github.event.inputs.scope || 'all' }})"
           # --autostash: we commit site/ ONLY, leaving the render's throwaway data/ writes
           # unstaged; a plain `pull --rebase` refuses on a dirty tree and silently failed
@@ -786,6 +789,9 @@ jobs:
             # both sides' hashed files (next externalize_css prunes the orphan) and
             # finishes the rebase; anything else is left for the abort+retry below.
             if { git pull --rebase --autostash -X theirs origin main || bash scripts/rebase_autoresolve_hashed_css.sh; } && push_autostash_ok; then
+              # Prove the rebased render commit itself before any optional heal. If a
+              # later follow-up commit is skipped, this is the exact HEAD we still push.
+              python3 scripts/check_site_asset_refs.py site
               # post-rebase template↔site re-sync (ui.template_site_sync). -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # MID-RENDER: 2026-07-07 incident — run 28835838497 (110 min, checkout
