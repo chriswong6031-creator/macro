@@ -652,7 +652,12 @@ PUBLIC_EXACT = frozenset({
     "/research_vault_app.js", "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
-    "/robots.txt", "/sitemap.xml", "/llms.txt", "/brand-facts.json",
+    "/robots.txt",
+    # IndexNow ownership proof (engine/marketing/indexnow.py). Reviewed public: the
+    # file holds only the submission key, which the protocol requires to be publicly
+    # fetchable — that fetch IS the ownership check. No signals, no user data.
+    "/88bb90b05303e3cf469878ebc4dc7543.txt",
+    "/sitemap.xml", "/llms.txt", "/brand-facts.json",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css", "/chat_nav.css",
