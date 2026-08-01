@@ -1,9 +1,9 @@
 {
   "schema": "grading_closure.v1",
-  "generated_at": "2026-08-01T09:15:11.720930+00:00",
+  "generated_at": "2026-08-01T16:14:10.548194+00:00",
   "n_ledgers": 34,
-  "n_closed": 13,
-  "n_grader_starved": 21,
+  "n_closed": 14,
+  "n_grader_starved": 20,
   "n_log_only": 0,
   "ledgers": [
     {
@@ -11,7 +11,7 @@
       "path": "data/qledger/claims.jsonl",
       "storage": "present",
       "grader_wired": "Y:scripts/grade_qledger.py",
-      "n_logged": 29637,
+      "n_logged": 29642,
       "n_graded": 34928,
       "last_graded_at": "2026-08-01T00:47:16.034516+00:00",
       "tune_step": "N",
@@ -33,7 +33,7 @@
       "path": "data/board_ledger/hk_board.parquet",
       "storage": "present",
       "grader_wired": "Y:engine/board_ledger.py",
-      "n_logged": 345,
+      "n_logged": 347,
       "n_graded": 0,
       "last_graded_at": null,
       "tune_step": "N",
@@ -122,10 +122,10 @@
       "storage": "present",
       "grader_wired": "Y:scripts/grade_breadth_divergence.py",
       "n_logged": 168,
-      "n_graded": 0,
+      "n_graded": 9,
       "last_graded_at": null,
       "tune_step": "N",
-      "verdict": "GRADER-STARVED"
+      "verdict": "CLOSED"
     },
     {
       "key": "risk_radar_forward_log",
@@ -320,8 +320,8 @@
       "storage": "present",
       "grader_wired": "Y:scripts/grade_policy_calendar.py",
       "n_logged": 349,
-      "n_graded": 240,
-      "last_graded_at": "2026-07-30",
+      "n_graded": 264,
+      "last_graded_at": "2026-08-01",
       "tune_step": "N",
       "verdict": "CLOSED"
     },
