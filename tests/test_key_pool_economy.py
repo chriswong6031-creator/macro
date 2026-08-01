@@ -53,6 +53,53 @@ def _read_usage_rows(tmp_path: Path) -> list[dict]:
     return [json.loads(line) for line in p.read_text().splitlines() if line.strip()]
 
 
+def test_external_state_root_redirects_only_mutable_ledgers(tmp_path, monkeypatch):
+    from engine.neuralweb import key_pool
+
+    repo = tmp_path / "repo"
+    runtime = tmp_path / "runtime"
+    monkeypatch.setattr(key_pool, "_repo_root", lambda: repo)
+    monkeypatch.setenv("METABOLISM_STATE_ROOT", str(runtime))
+
+    assert key_pool.record_session("deepseek_api_key", est_tokens=123) is True
+    key_pool.record_usage_headers(
+        "deepseek_api_key", {"retry-after": "2"}, status_code=429
+    )
+
+    assert (runtime / "data" / "metabolism" / "key_ledger.jsonl").exists()
+    assert (runtime / "data" / "metabolism" / "key_usage.jsonl").exists()
+    assert key_pool._manifest_path() == repo / "config" / "capability_manifest.yml"
+    assert not (repo / "data" / "metabolism" / "key_ledger.jsonl").exists()
+
+
+def test_key_pool_explicit_root_wins_over_state_env(tmp_path, monkeypatch):
+    from engine.neuralweb import key_pool
+
+    runtime = tmp_path / "runtime"
+    explicit = tmp_path / "explicit"
+    monkeypatch.setenv("METABOLISM_STATE_ROOT", str(runtime))
+    assert key_pool.record_session("deepseek_api_key", root=explicit) is True
+    assert (explicit / "data" / "metabolism" / "key_ledger.jsonl").exists()
+    assert not runtime.exists()
+
+
+def test_key_pool_state_env_rejects_relative_and_repo_symlink(tmp_path, monkeypatch):
+    from engine.neuralweb import key_pool
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    monkeypatch.setattr(key_pool, "_repo_root", lambda: repo)
+
+    monkeypatch.setenv("METABOLISM_STATE_ROOT", ".")
+    assert key_pool.record_session("deepseek_api_key") is False
+
+    alias = tmp_path / "runtime-link"
+    alias.symlink_to(repo, target_is_directory=True)
+    monkeypatch.setenv("METABOLISM_STATE_ROOT", str(alias))
+    assert key_pool.record_session("deepseek_api_key") is False
+    assert not (repo / "data" / "metabolism" / "key_ledger.jsonl").exists()
+
+
 # ── enabled_key_ids() ─────────────────────────────────────────────────────────
 
 class TestEnabledKeyIds:

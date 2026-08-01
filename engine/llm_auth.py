@@ -1222,10 +1222,11 @@ def deliberation_spend_today(
     Returns {tokens: int, usd: float}.  Never raises — returns zeros on error.
     """
     try:
-        import pathlib as _pl  # noqa: PLC0415
-        _root = _pl.Path(root) if root is not None else _pl.Path(__file__).resolve().parent.parent
         from lib import ai_costs as _ac  # noqa: PLC0415
-        rows = _ac.read_usage(root=_root, days=1)
+        # Preserve ``None`` so AI_COSTS_STATE_ROOT remains authoritative for
+        # appliance calls. An explicit root is still honored for tests and
+        # diagnostics.
+        rows = _ac.read_usage(root=root, days=1)
         delib_lower = str(delib_model_id or "").lower()
         tokens = 0
         usd = 0.0
@@ -1293,7 +1294,7 @@ def deliberation_model(default: str = "claude-opus-4-8") -> str:
             return default
 
         # --- check today's budget (days=1 window, not 30d aggregate) ---
-        spend = deliberation_spend_today(delib, root=_root)
+        spend = deliberation_spend_today(delib)
         today_tokens = spend["tokens"]
 
         if today_tokens >= cap:

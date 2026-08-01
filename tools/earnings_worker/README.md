@@ -210,6 +210,9 @@ The bootstrap creates a sparse, clean, fast-forward-only clone at
 `/Users/chriswong/earnings-venv`, and installs
 `com.mastermind.earnings-worker`. It reuses the existing environment file only
 through `run_with_env.sh`; no secret values are copied into the plist or repo.
+Append-only AI cost and provider quota telemetry is redirected to
+`/Users/chriswong/earnings-runtime` (override with `EARNINGS_RUNTIME_ROOT`), so
+model calls cannot dirty or wedge the fast-forward-only code appliance.
 Runs occur at 17:45, 20:45, and 23:45 Vancouver time, after Terminal's 16:30
 publication window. The default provider is DeepSeek; set
 `EARNINGS_PROVIDER_ORDER=openai_compat` plus `EARNINGS_LLM_BASE_URL` and

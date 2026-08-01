@@ -28,6 +28,9 @@ def _run(script: Path, *args: str, env: dict[str, str] | None = None):
 
 def _required_env() -> dict[str, str]:
     env = os.environ.copy()
+    env.pop("AI_COSTS_STATE_ROOT", None)
+    env.pop("METABOLISM_STATE_ROOT", None)
+    env.pop("EARNINGS_RUNTIME_ROOT", None)
     env.update(
         {
             "R2_ENDPOINT": "fixture-endpoint-value",
@@ -120,6 +123,8 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
     lock = tmp_path / "lock"
     fake_python = tmp_path / "fake-python"
     capture = tmp_path / "argv.txt"
+    env_capture = tmp_path / "env.txt"
+    runtime = tmp_path / "earnings-runtime"
     source.mkdir()
     subprocess.run(["git", "init", "-b", "main"], cwd=source, check=True, capture_output=True)
     subprocess.run(
@@ -148,7 +153,10 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
     subprocess.run(["git", "push", str(origin), "main"], cwd=source, check=True, capture_output=True)
 
     fake_python.write_text(
-        "#!/bin/bash\nprintf '%s\\n' \"$@\" > \"$EARNINGS_TEST_CAPTURE\"\n",
+        "#!/bin/bash\n"
+        "printf '%s\\n' \"$@\" > \"$EARNINGS_TEST_CAPTURE\"\n"
+        "printf '%s\\n%s\\n' \"$AI_COSTS_STATE_ROOT\" \"$METABOLISM_STATE_ROOT\" "
+        "> \"$EARNINGS_TEST_ENV_CAPTURE\"\n",
         encoding="utf-8",
     )
     fake_python.chmod(fake_python.stat().st_mode | stat.S_IXUSR)
@@ -163,7 +171,9 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
             "EARNINGS_PYTHON": str(fake_python),
             "EARNINGS_REMOTE_URL": str(origin),
             "EARNINGS_LOCK_DIR": str(lock),
+            "EARNINGS_RUNTIME_ROOT": str(runtime),
             "EARNINGS_TEST_CAPTURE": str(capture),
+            "EARNINGS_TEST_ENV_CAPTURE": str(env_capture),
         }
     )
     result = _run(runner_dest, env=env)
@@ -181,6 +191,11 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
         "--terminal-state",
         str(ops / "data" / "earnings_calls" / "terminal_intake_state.json"),
     ]
+    assert env_capture.read_text(encoding="utf-8").splitlines() == [
+        str(runtime),
+        str(runtime),
+    ]
+    assert not runtime.is_relative_to(ops)
     assert not lock.exists()
     assert subprocess.run(
         ["git", "-C", str(ops), "rev-parse", "HEAD"],
@@ -217,3 +232,64 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
     assert result.returncode != 0
     assert "clone is dirty" in result.stderr
     assert not capture.exists()
+
+
+def test_runner_rejects_runtime_state_inside_code_clone(tmp_path: Path):
+    env = _required_env()
+    ops = tmp_path / "earnings-ops-wt"
+    env.update(
+        {
+            "EARNINGS_OPS_ROOT": str(ops),
+            "EARNINGS_RUNTIME_ROOT": str(ops / "runtime"),
+        }
+    )
+    result = _run(RUNNER, env=env)
+    assert result.returncode != 0
+    assert "outside the immutable code clone" in result.stderr
+
+
+def test_check_env_rejects_canonical_aliases_into_clone(tmp_path: Path):
+    env = _required_env()
+    ops = tmp_path / "earnings-ops-wt"
+    ops.mkdir()
+    alias = tmp_path / "runtime-link"
+    alias.symlink_to(ops, target_is_directory=True)
+    env.update(
+        {
+            "EARNINGS_OPS_ROOT": str(ops),
+            "EARNINGS_RUNTIME_ROOT": str(alias),
+        }
+    )
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "outside the immutable code clone" in result.stderr
+
+    env["EARNINGS_RUNTIME_ROOT"] = str(ops / "child" / "..")
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "outside the immutable code clone" in result.stderr
+
+
+def test_check_env_rejects_relative_broad_and_tcc_unsafe_roots(tmp_path: Path):
+    env = _required_env()
+    home = tmp_path / "home"
+    documents = home / "Documents"
+    documents.mkdir(parents=True)
+    ops = tmp_path / "earnings-ops-wt"
+    runtime = tmp_path / "runtime"
+    env.update(
+        {
+            "HOME": str(home),
+            "EARNINGS_OPS_ROOT": str(ops),
+            "EARNINGS_RUNTIME_ROOT": "relative-runtime",
+        }
+    )
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "must be an absolute path" in result.stderr
+
+    env["EARNINGS_RUNTIME_ROOT"] = str(runtime)
+    env["AI_COSTS_STATE_ROOT"] = str(documents / "ai-costs")
+    result = _run(RUNNER, "--check-env", env=env)
+    assert result.returncode != 0
+    assert "outside ~/Documents" in result.stderr
