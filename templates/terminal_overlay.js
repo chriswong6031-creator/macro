@@ -50,7 +50,7 @@
   var SHELL_READY_FALLBACK_MS = 7000;
   var FRAME_LOAD_FALLBACK_MS = 6000;
   var REPEAT_FRAME_LOAD_FALLBACK_MS = 2500;
-  // Lifecycle v2: rotate the immutable bundle key after the WebKit remount fix.
+  // Lifecycle v3: rotate the immutable bundle only after the live checkout advances.
   var HARD_LAUNCH_FALLBACK_MS = 9000;
   var CLOSE_ANIMATION_MS = 300;
 
