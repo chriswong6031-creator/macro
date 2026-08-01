@@ -1,0 +1,24 @@
+{
+  "contract_id": "lobe_run.v1",
+  "schema_version": "1.0.0",
+  "run_id": "run:biocatalyst:20260801T080000Z",
+  "sector": "biopharma",
+  "lobe_id": "biocatalyst_context",
+  "producer": {"service": "biocatalyst-packet-worker", "code_version": "fixture", "owner": "biocatalyst"},
+  "started_at": "2026-08-01T08:00:00Z",
+  "finished_at": "2026-08-01T08:06:00Z",
+  "knowledge_cutoff": "2026-08-01T08:00:00Z",
+  "source_watermarks": [
+    {"source_id": "clinicaltrials_gov_v2", "watermark": "2026-08-01T07:30:00Z", "observed_at": "2026-08-01T08:00:00Z", "state": "current"}
+  ],
+  "input_hashes": ["1111111111111111111111111111111111111111111111111111111111111111"],
+  "output_artifacts": [
+    {"artifact_ref": "packet:biocatalyst:trial:NCT00000001:20260801", "content_sha256": "9999999999999999999999999999999999999999999999999999999999999999", "row_count": 1}
+  ],
+  "warnings": [{"code": "CURRENT_STATE_ONLY", "source_id": "clinicaltrials_gov_v2", "detail": "Coverage begins at first observation; historical source versions are not implied.", "retryable": false}],
+  "failures": [],
+  "status": "ok",
+  "completeness": 1.0,
+  "model_versions": [],
+  "authority_manifest_ref": "authority:biocatalyst-facts:v1"
+}

@@ -1,0 +1,22 @@
+{
+  "contract_id": "outcome_label.v1",
+  "schema_version": "1.0.0",
+  "label_id": "outcome:trial:NCT00000001:registry-completion:20270801",
+  "sector": "biopharma",
+  "target_ref": "prediction:trial:NCT00000001:completion-window:v1",
+  "outcome_type": "study_conduct.registry_primary_completion_by_horizon",
+  "outcome_taxonomy_version": "1.0.0",
+  "outcome": {"kind": "censored", "value": null, "unit": null},
+  "observation_window": {"starts_at": "2026-08-01T08:10:00Z", "ends_at": "2027-08-01T08:10:00Z"},
+  "resolved_at": "2027-08-02T08:00:00Z",
+  "knowledge_cutoff": "2027-08-02T07:59:59Z",
+  "evidence_claim_refs": ["claim:trial:NCT00000001:completion-date:20270802"],
+  "source_record_refs": ["src:ctgov:NCT00000001:sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"],
+  "resolution_policy": {"policy_id": "registry-completion-resolution", "policy_version": "1.0.0", "ambiguity_handling": "censor"},
+  "resolved_by": "deterministic_policy",
+  "status": "final",
+  "prior_label_ref": null,
+  "revision_reason": null,
+  "transaction_from": "2027-08-02T08:00:01Z",
+  "transaction_to": null
+}

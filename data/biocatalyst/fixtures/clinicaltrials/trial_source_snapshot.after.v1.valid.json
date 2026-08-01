@@ -1,0 +1,49 @@
+{
+  "contract_id": "trial_source_snapshot.v1",
+  "schema_version": "1.0.0",
+  "source_snapshot_id": "ctgov_snapshot_NCT00000001_after",
+  "nct_id": "NCT00000001",
+  "source_id": "clinicaltrials_gov_v2",
+  "source_record_ref": "src:ctgov:NCT00000001:sha256:287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e",
+  "run_ref": "ctgov_run_fixture_20260801T150000Z",
+  "page_receipt_ref": "ctgov_receipt_fixture_20260801T150000Z_0",
+  "source_page_study_index": 0,
+  "source_uri": "https://clinicaltrials.gov/study/NCT00000001",
+  "raw_object_key": "biocatalyst/raw/clinicaltrials/v2/NCT00000001/287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e.json",
+  "exact_response_sha256": "f779d7770f6bd832940de3315626a05b3aa6b0a1f02448a58ed450153b02c76a",
+  "canonical_content_sha256": "287a6f76770780ad183ca84fb8b2386a55ca00f08e337b6a32a476333691a56e",
+  "hash_scope": "canonical_json_entire_study",
+  "object_key_policy": "sort_lexicographically",
+  "array_order_policy": "preserve_source_order",
+  "canonicalizer_version": "canonical_json.v1",
+  "source_schema_version": "ctgov_api_v2",
+  "license_class": "us_government_source_facts",
+  "rights_note": "Private source archive; product use requires ClinicalTrials.gov attribution and modification disclosure.",
+  "canonical_study": {
+    "protocolSection": {
+      "identificationModule": {
+        "nctId": "NCT00000001",
+        "briefTitle": "Synthetic Phase 2 Study"
+      },
+      "statusModule": {
+        "overallStatus": "RECRUITING",
+        "primaryCompletionDateStruct": {"date": "2026-12", "type": "ESTIMATED"},
+        "lastUpdatePostDateStruct": {"date": "2026-08-01", "type": "ACTUAL"}
+      },
+      "designModule": {
+        "enrollmentInfo": {"count": 160, "type": "ESTIMATED"}
+      }
+    }
+  },
+  "source_dataset_timestamp_raw": "2026-08-01T09:00:00",
+  "source_last_update_posted_at": "2026-08-01",
+  "source_published_at": "2026-08-01",
+  "source_effective_at": null,
+  "retrieved_at": "2026-08-01T15:00:04Z",
+  "first_seen_at": "2026-08-01T15:00:04Z",
+  "valid_from": null,
+  "valid_to": null,
+  "coverage_class": "current_only",
+  "transaction_from": "2026-08-01T15:00:05Z",
+  "transaction_to": null
+}

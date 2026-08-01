@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/biocatalyst/trial_coverage_epoch.v1.schema.json",
+  "title": "BioCatalyst Prospective Trial Coverage Epoch v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id", "schema_version", "coverage_epoch_id", "source_id", "scope",
+    "coverage_class", "coverage_method", "coverage_started_at", "coverage_ended_at",
+    "first_complete_run_ref", "last_complete_run_ref", "last_observed_at",
+    "historical_source_versions_ingested", "poll_target_seconds", "upstream_refresh_schedule",
+    "limitations", "transaction_from", "transaction_to"
+  ],
+  "properties": {
+    "contract_id": {"const": "trial_coverage_epoch.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "coverage_epoch_id": {"type": "string", "pattern": "^ctgov_coverage_[a-zA-Z0-9_-]+$"},
+    "source_id": {"const": "clinicaltrials_gov_v2"},
+    "scope": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "nct_ids"],
+      "properties": {"kind": {"const": "explicit_nct_allowlist"}, "nct_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^NCT[0-9]{8}$"}}}
+    },
+    "coverage_class": {"const": "current_only"},
+    "coverage_method": {"const": "prospective_api_polling"},
+    "coverage_started_at": {"type": "string", "format": "date-time"},
+    "coverage_ended_at": {"type": ["string", "null"], "format": "date-time"},
+    "first_complete_run_ref": {"type": "string", "minLength": 1},
+    "last_complete_run_ref": {"type": "string", "minLength": 1},
+    "last_observed_at": {"type": "string", "format": "date-time"},
+    "historical_source_versions_ingested": {"const": false},
+    "poll_target_seconds": {"type": "integer", "minimum": 60},
+    "upstream_refresh_schedule": {"const": "weekdays_generally_by_1400_utc"},
+    "limitations": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "enum": ["no_complete_history_before_coverage_started_at", "last_update_posted_is_not_event_time", "missing_from_incremental_query_is_not_deletion", "registry_diff_is_not_protocol_change"]}},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"}
+  }
+}

@@ -1,0 +1,260 @@
+schema: biocatalyst_source_registry.v1
+effective_at: "2026-08-01T00:00:00Z"
+owner: biocatalyst
+
+defaults:
+  unknown_rights_behavior: block_ingest_and_export
+  missing_license_class_behavior: hard_fail
+  source_fact_requires_evidence: true
+  raw_location_public: false
+  credentials_in_receipts: false
+  complete_run_required_to_advance_watermark: true
+
+license_classes:
+  us_government_source_facts:
+    raw_archive: private
+    source_fact_projection: allowed_with_source_attribution
+    bounded_product_api: allowed_with_source_attribution
+    bulk_redistribution: review_required
+    derived_model_training: review_required
+  public_access_review_required:
+    raw_archive: private_after_review
+    source_fact_projection: blocked_until_review
+    bounded_product_api: blocked_until_review
+    bulk_redistribution: blocked
+    derived_model_training: blocked_until_review
+  licensed_internal:
+    raw_archive: private
+    source_fact_projection: contract_scoped
+    bounded_product_api: entitlement_scoped
+    bulk_redistribution: blocked_unless_contract_allows
+    derived_model_training: contract_scoped
+  benchmark_only:
+    raw_archive: blocked
+    source_fact_projection: blocked
+    bounded_product_api: blocked
+    bulk_redistribution: blocked
+    derived_model_training: blocked
+
+sources:
+  clinicaltrials_gov_v2:
+    source_id: clinicaltrials_gov_v2
+    name: ClinicalTrials.gov API v2
+    owner: biocatalyst
+    producer: collectors.biocatalyst.clinicaltrials_v2
+    base_url: "https://clinicaltrials.gov/api/v2"
+    documentation_url: "https://clinicaltrials.gov/data-api/api"
+    terms_url: "https://clinicaltrials.gov/about-site/terms-conditions"
+    license_class: us_government_source_facts
+    rights_state: official_terms_operator_reviewed_for_bounded_beta
+    rights_reviewed_at: "2026-08-01T00:00:00Z"
+    rights_review_basis: official_terms_conditions_not_legal_opinion
+    production_ingest_allowed: true
+    raw_archive: private_only
+    public_projection: source_facts_with_attribution
+    distribution_obligations:
+      - attribute_clinicaltrials_gov
+      - display_source_processing_date
+      - keep_projected_data_current
+      - disclose_content_modifications
+      - do_not_assert_proprietary_rights_over_source_database
+      - do_not_use_extracted_email_addresses_for_marketing
+      - display_source_submitter_responsibility_note
+      - do_not_present_registry_as_government_validation
+    default_coverage_class: current_only
+    source_version_semantics: current_state_api_no_complete_history_claim
+    launch_critical: true
+    collection_target: hourly_canary
+    freshness_slo_seconds: 7200
+    freshness_scope: collection_pipeline_after_observed_source_refresh
+    upstream_refresh_schedule: weekdays_generally_by_1400_utc
+    upstream_dataset_timestamp_endpoint: "/version"
+    upstream_dataset_timestamp_field: dataTimestamp
+    opportunity_semantics: one_configured_poll_window
+    completeness_semantics: terminal_page_reached_and_counts_reconciled
+    maximum_consecutive_misses: 2
+    full_reconcile_target: weekly
+    overlap_seconds: 21600
+    parser_version: clinicaltrials_v2_parser.v1
+    api_schema_version: ctgov_api_v2
+    user_agent_env: BIOCATALYST_USER_AGENT
+    request_headers_allowlist:
+      - accept
+      - user-agent
+    receipt_response_headers_allowlist:
+      - content-type
+      - content-length
+      - date
+      - etag
+      - last-modified
+    prohibited_claims:
+      - complete_historical_version_record
+      - protocol_changed_from_registry_diff_alone
+      - trial_halted_on_last_update_date
+      - site_activated_from_location_appearance
+      - enrollment_velocity_from_current_count
+      - government_verified_science_or_safety
+      - source_record_is_independently_verified
+
+  aact:
+    source_id: aact
+    name: Aggregate Analysis of ClinicalTrials.gov
+    owner: biocatalyst
+    producer: collectors.biocatalyst.aact_snapshots
+    base_url: "https://aact.ctti-clinicaltrials.org/"
+    documentation_url: "https://aact.ctti-clinicaltrials.org/documentation"
+    license_class: public_access_review_required
+    rights_state: review_required_before_b1
+    production_ingest_allowed: false
+    raw_archive: blocked_until_review
+    public_projection: blocked_until_review
+    default_coverage_class: monthly_only
+    launch_critical: false
+    collection_target: every_source_release
+    freshness_slo_seconds: 86400
+    opportunity_semantics: one_published_snapshot
+    completeness_semantics: archive_checksum_and_table_manifest_reconcile
+    maximum_consecutive_misses: 1
+    prohibited_claims:
+      - daily_version_replay
+      - intramonth_change_time
+
+  openfda:
+    source_id: openfda
+    name: openFDA
+    owner: biocatalyst
+    producer: collectors.biocatalyst.openfda_regulatory
+    base_url: "https://api.fda.gov/"
+    documentation_url: "https://open.fda.gov/apis/"
+    license_class: us_government_source_facts
+    rights_state: review_required_per_dataset
+    production_ingest_allowed: false
+    raw_archive: private_only_after_dataset_review
+    public_projection: blocked_until_dataset_review
+    default_coverage_class: source_specific
+    launch_critical: false
+    collection_target: source_release
+    freshness_slo_seconds: 86400
+    opportunity_semantics: one_dataset_release_or_poll_window
+    completeness_semantics: source_specific_manifest_reconcile
+    maximum_consecutive_misses: 2
+
+  drugs_at_fda:
+    source_id: drugs_at_fda
+    name: Drugs@FDA
+    owner: biocatalyst
+    producer: collectors.biocatalyst.drugs_at_fda
+    base_url: "https://www.accessdata.fda.gov/scripts/cder/daf/"
+    documentation_url: "https://www.fda.gov/drugs/drug-approvals-and-databases/drugsfda-data-files"
+    license_class: us_government_source_facts
+    rights_state: review_required_before_b4
+    production_ingest_allowed: false
+    raw_archive: private_only_after_review
+    public_projection: blocked_until_review
+    default_coverage_class: source_release
+    launch_critical: false
+    collection_target: every_source_release
+    freshness_slo_seconds: 14400
+    opportunity_semantics: one_published_data_release
+    completeness_semantics: source_file_manifest_and_record_count_reconcile
+    maximum_consecutive_misses: 1
+
+  sec_company_facts_and_filings:
+    source_id: sec_company_facts_and_filings
+    name: SEC EDGAR
+    owner: corporate_intelligence
+    producer: null
+    base_url: "https://www.sec.gov/edgar"
+    documentation_url: "https://www.sec.gov/search-filings/edgar-application-programming-interfaces"
+    license_class: us_government_source_facts
+    rights_state: owned_by_corporate_plane
+    production_ingest_allowed: false
+    raw_archive: corporate_plane_only
+    public_projection: corporate_adapter_only
+    default_coverage_class: unavailable_to_biocatalyst
+    launch_critical: false
+    collection_target: corporate_plane_contract
+    freshness_slo_seconds: 300
+    opportunity_semantics: corporate_plane_owned
+    completeness_semantics: corporate_plane_owned
+    maximum_consecutive_misses: 0
+    prohibited_biocatalyst_actions:
+      - direct_duplicate_sec_ingest
+      - generic_document_storage
+      - generic_source_span_writer
+
+  biopharmcatalyst_benchmark:
+    source_id: biopharmcatalyst_benchmark
+    name: BioPharmCatalyst
+    owner: external_benchmark
+    producer: null
+    base_url: "https://www.biopharmcatalyst.com/"
+    documentation_url: "https://www.biopharmcatalyst.com/terms-of-use"
+    license_class: benchmark_only
+    rights_state: benchmark_behavior_only
+    production_ingest_allowed: false
+    raw_archive: blocked
+    public_projection: blocked
+    default_coverage_class: none
+    launch_critical: false
+    collection_target: none
+    freshness_slo_seconds: null
+    opportunity_semantics: none
+    completeness_semantics: none
+    maximum_consecutive_misses: 0
+    permitted_uses:
+      - behavioral_parity_review
+      - public_feature_inventory
+      - clean_room_acceptance_benchmark
+    prohibited_uses:
+      - production_data_feed
+      - authenticated_page_scraping
+      - asset_or_code_copy
+      - proprietary_historical_row_import
+
+  biopharmiq_benchmark:
+    source_id: biopharmiq_benchmark
+    name: BiopharmIQ
+    owner: external_benchmark
+    producer: null
+    base_url: "https://www.biopharmiq.com/"
+    documentation_url: "https://www.biopharmiq.com/"
+    license_class: benchmark_only
+    rights_state: benchmark_behavior_only
+    production_ingest_allowed: false
+    raw_archive: blocked
+    public_projection: blocked
+    default_coverage_class: none
+    launch_critical: false
+    collection_target: none
+    freshness_slo_seconds: null
+    opportunity_semantics: none
+    completeness_semantics: none
+    maximum_consecutive_misses: 0
+    permitted_uses:
+      - public_feature_inventory
+      - clean_room_acceptance_benchmark
+    prohibited_uses:
+      - production_data_feed
+      - authenticated_page_scraping
+      - contact_database_copy
+
+b0a_canary:
+  source_id: clinicaltrials_gov_v2
+  universe_mode: explicit_nct_allowlist
+  allowlist_config_env: BIOCATALYST_CANARY_NCTS
+  default_allowlist: []
+  production_enable_env: BIOCATALYST_ENABLED
+  default_enabled: false
+  allowed_contracts:
+    - ctgov_fetch_run.v1
+    - source_page_receipt.v1
+    - source_record.v1
+    - evidence_claim.v1
+    - trial_source_snapshot.v1
+    - trial_snapshot_observation.v1
+    - trial_snapshot.v1
+    - trial_version_diff.v1
+    - trial_coverage_epoch.v1
+    - ctgov_watermark.v1
+  allowed_product_language: "ClinicalTrials.gov's registry record changed; first observed within this interval."

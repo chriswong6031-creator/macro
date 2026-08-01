@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/prediction.v1.schema.json",
+  "title": "Sector Intelligence Prediction v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "prediction_id", "sector", "target", "issued_at", "knowledge_cutoff", "horizon", "scenarios", "uncertainty", "model", "calibration", "feature_snapshot_ref", "evidence_claim_refs", "originator_type", "llm_role", "publication_tier", "decision_authority", "permitted_decision_uses", "promotion_evidence_refs", "governance_decision_refs", "authority_manifest_ref", "status", "supersedes_prediction_id"],
+  "properties": {
+    "contract_id": {"const": "prediction.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "prediction_id": {"type": "string", "minLength": 1},
+    "sector": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_ref", "outcome_type", "outcome_definition_version"],
+      "properties": {
+        "entity_ref": {"type": "string", "minLength": 1},
+        "outcome_type": {"type": "string", "minLength": 1},
+        "outcome_definition_version": {"type": "string", "minLength": 1}
+      }
+    },
+    "issued_at": {"type": "string", "format": "date-time"},
+    "knowledge_cutoff": {"type": "string", "format": "date-time"},
+    "horizon": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["starts_at", "ends_at"],
+      "properties": {
+        "starts_at": {"type": "string", "format": "date-time"},
+        "ends_at": {"type": "string", "format": "date-time"}
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["scenario_id", "label", "probability", "lower_bound", "upper_bound"],
+        "properties": {
+          "scenario_id": {"type": "string", "minLength": 1},
+          "label": {"type": "string", "minLength": 1},
+          "probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "lower_bound": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+          "upper_bound": {"type": ["number", "null"], "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "uncertainty": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "confidence_level", "limitations"],
+      "properties": {
+        "method": {"type": "string", "minLength": 1},
+        "confidence_level": {"type": ["number", "null"], "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+        "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "model_version", "baseline_id", "training_cutoff"],
+      "properties": {
+        "model_id": {"type": "string", "minLength": 1},
+        "model_version": {"type": "string", "minLength": 1},
+        "baseline_id": {"type": ["string", "null"]},
+        "training_cutoff": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "calibration_version", "evaluated_at"],
+      "properties": {
+        "status": {"type": "string", "enum": ["not_evaluated", "shadow", "eligible", "promoted", "lapsed"]},
+        "calibration_version": {"type": ["string", "null"]},
+        "evaluated_at": {"type": ["string", "null"], "format": "date-time"}
+      }
+    },
+    "feature_snapshot_ref": {"type": "string", "minLength": 1},
+    "evidence_claim_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "originator_type": {"type": "string", "enum": ["deterministic_model", "statistical_model", "human_analyst", "llm_assisted"]},
+    "llm_role": {"type": "string", "enum": ["none", "explanation_only", "input_summarization"]},
+    "publication_tier": {"type": "string", "enum": ["DISPLAY", "SHADOW", "CONFIRMER", "SCORED"]},
+    "decision_authority": {"const": false},
+    "permitted_decision_uses": {"type": "array", "uniqueItems": true, "items": {"type": "string", "enum": ["display", "research", "explain", "confirm"]}},
+    "promotion_evidence_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "governance_decision_refs": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "authority_manifest_ref": {"type": "string", "minLength": 1},
+    "status": {"type": "string", "enum": ["shadow", "active", "expired", "withdrawn"]},
+    "supersedes_prediction_id": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"publication_tier": {"enum": ["CONFIRMER", "SCORED"]}}, "required": ["publication_tier"]},
+      "then": {
+        "properties": {
+          "promotion_evidence_refs": {"minItems": 1},
+          "governance_decision_refs": {"minItems": 1}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"originator_type": {"const": "llm_assisted"}}, "required": ["originator_type"]},
+      "then": {
+        "properties": {
+          "publication_tier": {"enum": ["DISPLAY", "SHADOW"]},
+          "llm_role": {"enum": ["explanation_only", "input_summarization"]},
+          "permitted_decision_uses": {"items": {"enum": ["display", "research", "explain"]}}
+        }
+      }
+    }
+  ]
+}

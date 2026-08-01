@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/entity_link.v1.schema.json",
+  "title": "Sector Intelligence Entity Link v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "link_id", "sector", "source_entity", "canonical_entity_ref", "method", "confidence", "valid_from", "valid_to", "transaction_from", "transaction_to", "evidence_claim_refs", "reviewer_state", "reviewed_by", "reviewed_at", "is_authoritative", "authority_manifest_ref"],
+  "properties": {
+    "contract_id": {"const": "entity_link.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "link_id": {"type": "string", "minLength": 1},
+    "sector": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "source_entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace", "external_id", "name"],
+      "properties": {
+        "namespace": {"type": "string", "minLength": 1},
+        "external_id": {"type": "string", "minLength": 1},
+        "name": {"type": ["string", "null"]}
+      }
+    },
+    "canonical_entity_ref": {"type": "string", "minLength": 1},
+    "method": {"type": "string", "enum": ["exact_identifier", "curated_alias", "deterministic_rule", "probabilistic_model", "analyst_review"]},
+    "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+    "valid_from": {"$ref": "#/$defs/nullableTemporal"},
+    "valid_to": {"$ref": "#/$defs/nullableTemporal"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "evidence_claim_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "reviewer_state": {"type": "string", "enum": ["unreviewed", "machine_checked", "analyst_approved", "analyst_rejected"]},
+    "reviewed_by": {"type": ["string", "null"]},
+    "reviewed_at": {"type": ["string", "null"], "format": "date-time"},
+    "is_authoritative": {"type": "boolean"},
+    "authority_manifest_ref": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "nullableTemporal": {"anyOf": [{"type": "null"}, {"type": "string", "format": "date"}, {"type": "string", "format": "date-time"}]}
+  }
+}

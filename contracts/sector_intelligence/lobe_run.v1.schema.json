@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/lobe_run.v1.schema.json",
+  "title": "Sector Intelligence Lobe Run v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "run_id", "sector", "lobe_id", "producer", "started_at", "finished_at", "knowledge_cutoff", "source_watermarks", "input_hashes", "output_artifacts", "warnings", "failures", "status", "completeness", "model_versions", "authority_manifest_ref"],
+  "properties": {
+    "contract_id": {"const": "lobe_run.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "run_id": {"type": "string", "minLength": 1},
+    "sector": {"type": "string", "pattern": "^[a-z][a-z0-9_-]*$"},
+    "lobe_id": {"type": "string", "minLength": 1},
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service", "code_version", "owner"],
+      "properties": {
+        "service": {"type": "string", "minLength": 1},
+        "code_version": {"type": "string", "minLength": 1},
+        "owner": {"type": "string", "minLength": 1}
+      }
+    },
+    "started_at": {"type": "string", "format": "date-time"},
+    "finished_at": {"type": ["string", "null"], "format": "date-time"},
+    "knowledge_cutoff": {"type": "string", "format": "date-time"},
+    "source_watermarks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_id", "watermark", "observed_at", "state"],
+        "properties": {
+          "source_id": {"type": "string", "minLength": 1},
+          "watermark": {"type": ["string", "null"]},
+          "observed_at": {"type": "string", "format": "date-time"},
+          "state": {"type": "string", "enum": ["current", "stale", "unknown", "failed"]}
+        }
+      }
+    },
+    "input_hashes": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/sha256"}},
+    "output_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifact_ref", "content_sha256", "row_count"],
+        "properties": {
+          "artifact_ref": {"type": "string", "minLength": 1},
+          "content_sha256": {"$ref": "#/$defs/sha256"},
+          "row_count": {"type": ["integer", "null"], "minimum": 0}
+        }
+      }
+    },
+    "warnings": {"type": "array", "items": {"$ref": "#/$defs/issue"}},
+    "failures": {"type": "array", "items": {"$ref": "#/$defs/issue"}},
+    "status": {"type": "string", "enum": ["ok", "degraded", "failed", "skipped"]},
+    "completeness": {"type": "number", "minimum": 0, "maximum": 1},
+    "model_versions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["model_id", "version"],
+        "properties": {
+          "model_id": {"type": "string", "minLength": 1},
+          "version": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "authority_manifest_ref": {"type": ["string", "null"]}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "source_id", "detail", "retryable"],
+      "properties": {
+        "code": {"type": "string", "minLength": 1},
+        "source_id": {"type": ["string", "null"]},
+        "detail": {"type": "string", "minLength": 1},
+        "retryable": {"type": "boolean"}
+      }
+    }
+  }
+}

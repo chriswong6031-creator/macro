@@ -1,0 +1,18 @@
+{
+  "contract_id": "ctgov_watermark.v1",
+  "schema_version": "1.0.0",
+  "watermark_id": "ctgov_watermark_fixture_canary_1",
+  "source_id": "clinicaltrials_gov_v2",
+  "scope_id": "ctgov_coverage_fixture_canary_1",
+  "query_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "successful_run_ref": "ctgov_run_fixture_20260801T150000Z",
+  "successful_source_dataset_timestamp_raw": "2026-08-01T09:00:00",
+  "successful_retrieved_at": "2026-08-01T15:00:04Z",
+  "overlap_seconds": 21600,
+  "candidate_run_ref": "ctgov_run_fixture_20260801T150000Z",
+  "candidate_run_state": "complete",
+  "advance_state": "advanced",
+  "advance_reason": "complete_run_reconciled",
+  "transaction_from": "2026-08-01T15:00:06Z",
+  "transaction_to": null
+}

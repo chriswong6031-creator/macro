@@ -41,6 +41,7 @@ THREE CHECKS
       scripts/build_site.py
       engine/neuralweb/cortex.py
       engine/neuralweb/ask_brain.py
+      engine/sector_intelligence/contracts.py      (enforcement-only validator)
       docs/research/                                 (research docs; prefix match)
       scripts/check_factor_boundaries.py             (this file — for selftest)
 
@@ -128,6 +129,10 @@ _ALLOWED_ACTIONS_ALLOWLIST_PREFIXES = [
     "scripts/build_site.py",
     "engine/neuralweb/cortex.py",
     "engine/neuralweb/ask_brain.py",
+    # Sector-intelligence contract enforcement may inspect allowed_actions only
+    # to reject grants above the declared authority cap. It never uses the field
+    # as a runtime behavior switch.
+    "engine/sector_intelligence/contracts.py",
     # R-ORTH rail state builder: emits allowed_actions/forbidden_actions as a
     # descriptive mirror only (RUL-ORTH-11; same RUL-NW9 category as the factor
     # state builder). It never reads the field to switch behavior.
@@ -569,6 +574,20 @@ def _run_selftest(root: Path) -> int:
         errors.append("SELFTEST FAIL (b-clean): allowlisted file produced spurious violation")
     else:
         print("  [OK] check-b-clean: allowlisted file produces no violation")
+
+    # --- (b enforcement): contract validator may reject, never drive behavior --
+    synthetic_b_enforcement = {
+        "engine/sector_intelligence/contracts.py": (
+            "actions = document.get('allowed_actions')\n"
+        ),
+    }
+    viols_b_enforcement = _check_b(root, extra_files=synthetic_b_enforcement)
+    if viols_b_enforcement:
+        errors.append(
+            "SELFTEST FAIL (b-enforcement): contract validator produced spurious violation"
+        )
+    else:
+        print("  [OK] check-b-enforcement: contract validator is enforcement-only")
 
     # --- (c): forbidden field in state builder (colon form) --
     synthetic_c = {

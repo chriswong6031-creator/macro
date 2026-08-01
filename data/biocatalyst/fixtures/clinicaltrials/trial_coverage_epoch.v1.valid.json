@@ -1,0 +1,28 @@
+{
+  "contract_id": "trial_coverage_epoch.v1",
+  "schema_version": "1.0.0",
+  "coverage_epoch_id": "ctgov_coverage_fixture_canary_1",
+  "source_id": "clinicaltrials_gov_v2",
+  "scope": {
+    "kind": "explicit_nct_allowlist",
+    "nct_ids": ["NCT00000001"]
+  },
+  "coverage_class": "current_only",
+  "coverage_method": "prospective_api_polling",
+  "coverage_started_at": "2026-07-31T15:00:04Z",
+  "coverage_ended_at": null,
+  "first_complete_run_ref": "ctgov_run_fixture_20260731T150000Z",
+  "last_complete_run_ref": "ctgov_run_fixture_20260801T150000Z",
+  "last_observed_at": "2026-08-01T15:00:04Z",
+  "historical_source_versions_ingested": false,
+  "poll_target_seconds": 3600,
+  "upstream_refresh_schedule": "weekdays_generally_by_1400_utc",
+  "limitations": [
+    "no_complete_history_before_coverage_started_at",
+    "last_update_posted_is_not_event_time",
+    "missing_from_incremental_query_is_not_deletion",
+    "registry_diff_is_not_protocol_change"
+  ],
+  "transaction_from": "2026-07-31T15:00:05Z",
+  "transaction_to": null
+}

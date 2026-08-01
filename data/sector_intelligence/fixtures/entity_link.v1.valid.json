@@ -1,0 +1,20 @@
+{
+  "contract_id": "entity_link.v1",
+  "schema_version": "1.0.0",
+  "link_id": "link:ctgov-sponsor:ORG-001",
+  "sector": "biopharma",
+  "source_entity": {"namespace": "clinicaltrials_gov_sponsor", "external_id": "Example Therapeutics", "name": "Example Therapeutics"},
+  "canonical_entity_ref": "organization:ORG-001",
+  "method": "curated_alias",
+  "confidence": 0.98,
+  "valid_from": null,
+  "valid_to": null,
+  "transaction_from": "2026-08-01T08:05:00Z",
+  "transaction_to": null,
+  "evidence_claim_refs": ["claim:trial:NCT00000001:sponsor:20260801"],
+  "reviewer_state": "analyst_approved",
+  "reviewed_by": "fixture-reviewer",
+  "reviewed_at": "2026-08-01T08:04:00Z",
+  "is_authoritative": true,
+  "authority_manifest_ref": "authority:biocatalyst-identity:v1"
+}

@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/sector_intelligence/source_record.v1.schema.json",
+  "title": "Sector Intelligence Source Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_id", "schema_version", "record_id", "source_system", "external_id", "source_uri", "object_uri", "content_sha256", "media_type", "source_published_at", "source_effective_at", "retrieved_at", "first_seen_at", "valid_from", "valid_to", "transaction_from", "transaction_to", "parser_version", "source_schema_version", "license_class", "redistribution_allowed", "source_json_path", "source_span", "rights_note"],
+  "properties": {
+    "contract_id": {"const": "source_record.v1"},
+    "schema_version": {"const": "1.0.0"},
+    "record_id": {"type": "string", "minLength": 1},
+    "source_system": {"type": "string", "minLength": 1},
+    "external_id": {"type": "string", "minLength": 1},
+    "source_uri": {"type": ["string", "null"], "format": "uri"},
+    "object_uri": {"type": ["string", "null"], "format": "uri"},
+    "content_sha256": {"$ref": "#/$defs/sha256"},
+    "media_type": {"type": "string", "minLength": 1},
+    "source_published_at": {"$ref": "#/$defs/nullableTemporal"},
+    "source_effective_at": {"$ref": "#/$defs/nullableTemporal"},
+    "retrieved_at": {"type": "string", "format": "date-time"},
+    "first_seen_at": {"type": "string", "format": "date-time"},
+    "valid_from": {"$ref": "#/$defs/nullableTemporal"},
+    "valid_to": {"$ref": "#/$defs/nullableTemporal"},
+    "transaction_from": {"type": "string", "format": "date-time"},
+    "transaction_to": {"type": ["string", "null"], "format": "date-time"},
+    "parser_version": {"type": "string", "minLength": 1},
+    "source_schema_version": {"type": ["string", "null"]},
+    "license_class": {"type": "string", "enum": ["public_domain", "us_government_source_facts", "public_access_restricted_redistribution", "licensed_internal", "licensed_redistributable", "unknown"]},
+    "redistribution_allowed": {"type": "boolean"},
+    "source_json_path": {"type": ["string", "null"]},
+    "source_span": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end", "quote_sha256"],
+          "properties": {
+            "start": {"type": "integer", "minimum": 0},
+            "end": {"type": "integer", "minimum": 0},
+            "quote_sha256": {"$ref": "#/$defs/sha256"}
+          }
+        }
+      ]
+    },
+    "rights_note": {"type": ["string", "null"]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"source_system": {"const": "clinicaltrials_gov_v2"}}, "required": ["source_system"]},
+      "then": {"properties": {"external_id": {"pattern": "^NCT[0-9]{8}$"}, "record_id": {"pattern": "^src:ctgov:NCT[0-9]{8}:sha256:[a-f0-9]{64}$"}}}
+    }
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nullableTemporal": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "string", "format": "date"},
+        {"type": "string", "format": "date-time"}
+      ]
+    }
+  }
+}
