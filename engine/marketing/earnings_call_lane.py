@@ -20,7 +20,10 @@ Public contract:
 ``enqueue_event``
     Reuses wire routing, the cross-account story lock, copy validation,
     preflight/durable outbox dedupe, card publishing, and the value gate.  A
-    rerun of the same event revision is refused *before* rendering.
+    rerun of the same event revision is refused *before* rendering.  A newer
+    revision of an already-emitted company-period is returned as an explicit
+    ``correction_required`` receipt; it is never appended as an unlabeled
+    second post.
 
 ``run_ledger``
     Reads only the committed ledger.  By default it admits calls from the last
@@ -87,10 +90,18 @@ def _http_url(value: object) -> str:
 
 
 def _short_clause(value: object, max_chars: int) -> str:
-    """A complete, word-boundary clause with no advice-shaped language."""
+    """A qualitative clause with no advice language or ungrounded numerics.
+
+    Summaries and highlights are model-produced upstream.  A number appearing
+    in that prose is therefore not its own receipt and cannot become grounded
+    merely because we copied it into ``numbers_whitelist``.  The call-event
+    contract currently has no structured numeric-fact collection, so numeric
+    model clauses are omitted in full.  Period numerics are supplied separately
+    by :func:`_structured_numbers` from the event's quarter/year fields.
+    """
 
     text = _clean(value, max_chars=max_chars * 2).strip(_TRAILING_PUNCT + " ")
-    if not text or _ADVICE_RE.search(text):
+    if not text or _ADVICE_RE.search(text) or _NUMBER_RE.search(text):
         return ""
     if len(text) > max_chars:
         cut = text[: max_chars + 1].rsplit(" ", 1)[0].strip(_TRAILING_PUNCT + " ")
@@ -112,8 +123,19 @@ def _safe_tone(value: object) -> str:
     return tone
 
 
-def _numbers(text: str) -> list[str]:
-    return list(dict.fromkeys(_NUMBER_RE.findall(str(text or ""))))
+def _structured_numbers(event: Mapping[str, Any]) -> list[str]:
+    """Numbers independently grounded by structured company-period fields."""
+
+    quarter = str(event.get("quarter") or "").upper().strip()
+    match = re.fullmatch(r"Q([1-4])", quarter)
+    try:
+        year = str(int(event.get("year")))
+    except (TypeError, ValueError):
+        year = ""
+    return list(dict.fromkeys([
+        *(match.groups() if match else ()),
+        *([year] if year else []),
+    ]))
 
 
 def _valid_event(event: Mapping[str, Any]) -> None:
@@ -182,8 +204,8 @@ def compose_event(
     from engine.marketing.copywriter import validate_copy
 
     last_violations: list[str] = []
+    numbers = _structured_numbers(event)
     for body in _candidate_bodies(event):
-        numbers = _numbers(f"{headline} {body}")
         ctx = {
             "ticker": ticker,
             "cashtag": f"${ticker}",
@@ -311,6 +333,45 @@ def _same_revision_already_emitted(event: Mapping[str, Any], items: Iterable[dic
     return False
 
 
+def _prior_revision_emission(
+    event: Mapping[str, Any], items: Iterable[dict],
+) -> dict[str, Any] | None:
+    """Return a prior emission of this story with a different revision.
+
+    There is a canonical rewrite seam, but it cannot safely serve as a general
+    correction actuator here: its status fold sees only the tracked outbox, not
+    daemon-spooled items, and identical replacement copy is deliberately a
+    no-op (which would retain stale revision provenance).  Until the outbox owns
+    an atomic correction API across both stores, fail closed and name the prior
+    item instead of risking two live versions.
+    """
+
+    event_id = str(event.get("id") or "")
+    source_record_id = str(event.get("source_record_id") or "")
+    revision = str(event.get("source_sha256") or "")
+    story_key = story_identity(event)
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        source = item.get("source")
+        if not isinstance(source, dict) or source.get("lane") != LANE:
+            continue
+        same_story = any((
+            event_id and str(source.get("event_id") or "") == event_id,
+            source_record_id
+            and str(source.get("source_record_id") or "") == source_record_id,
+            str(source.get("story_key") or "") == story_key,
+        ))
+        if not same_story:
+            continue
+        prior_revision = str(
+            source.get("revision_sha256") or source.get("source_sha256") or ""
+        )
+        if prior_revision != revision:
+            return item
+    return None
+
+
 def _media_for_event(
     event: Mapping[str, Any],
     composed: Mapping[str, Any],
@@ -392,6 +453,26 @@ def enqueue_event(
     existing = outbox.read_items_all(repo)
     if _same_revision_already_emitted(event, existing):
         return {"status": "duplicate", "reason": "event_revision", "item": None}
+
+    prior = _prior_revision_emission(event, existing)
+    if prior is not None:
+        source = prior.get("source") if isinstance(prior.get("source"), dict) else {}
+        prior_id = str(prior.get("id") or "")
+        prior_status = str(
+            outbox.current_statuses(repo).get(prior_id)
+            or prior.get("status")
+            or "unknown"
+        )
+        return {
+            "status": "correction_required",
+            "reason": "prior_revision_requires_explicit_supersede",
+            "prior_item_id": prior_id,
+            "prior_revision_sha256": str(
+                source.get("revision_sha256") or source.get("source_sha256") or ""
+            ),
+            "prior_status": prior_status,
+            "item": None,
+        }
 
     verdict = story_lock.check(
         account,
@@ -523,6 +604,9 @@ def run_ledger(
         "queued": sum(result.get("status") == "queued" for result in results),
         "dry_run": sum(result.get("status") == "dry_run" for result in results),
         "duplicates": sum(result.get("status") == "duplicate" for result in results),
+        "corrections_required": sum(
+            result.get("status") == "correction_required" for result in results
+        ),
     }
 
 

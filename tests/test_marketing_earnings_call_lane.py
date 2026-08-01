@@ -94,6 +94,31 @@ def test_advice_shaped_source_copy_is_not_relayed_and_bad_tone_falls_back():
     assert "trading recommendation" in composed["text"]
 
 
+def test_model_numeric_clauses_are_omitted_not_circularly_allowlisted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    event = _event(
+        summary="Revenue grew 93% after the model invented a spectacular quarter.",
+        positive_highlights=["Management projected 47% growth next year."],
+        negative_highlights=["Freight costs remain a near-term margin pressure."],
+    )
+
+    composed = lane.compose_event(event)
+
+    assert composed["numbers_whitelist"] == ["2", "2026"]
+    assert "93%" not in composed["text"]
+    assert "47%" not in composed["text"]
+    assert "Freight costs" in composed["text"]
+
+    calls = _hosted(monkeypatch)
+    result = lane.enqueue_event(event, root=tmp_path, now=NOW)
+    assert result["status"] == "queued", result
+    assert "93%" not in calls[0]["svg"]
+    assert "47%" not in calls[0]["svg"]
+    assert result["item"]["source"]["numbers_whitelist"] == ["2", "2026"]
+
+
 def test_non_context_event_is_rejected_even_if_every_other_field_is_valid():
     with pytest.raises(ValueError, match="context-only"):
         lane.compose_event(_event(is_context_only=False))
@@ -150,6 +175,39 @@ def test_enqueue_routes_through_outbox_and_rerun_dedupes_before_render(
     assert second["status"] == "duplicate"
     assert second["reason"] == "event_revision"
     assert len(calls) == 1, "a rerun burned a card render before dedupe"
+
+
+def test_new_revision_requires_explicit_correction_before_render_or_enqueue(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    calls = _hosted(monkeypatch)
+    first = lane.enqueue_event(_event(), root=tmp_path, now=NOW)
+    assert first["status"] == "queued", first
+
+    corrected = _event(
+        source_sha256="b" * 64,
+        source_updated_at="2026-08-01T17:30:00Z",
+        scored_at="2026-08-01T17:35:00Z",
+        summary="Management corrected its characterization of core demand.",
+    )
+    second = lane.enqueue_event(corrected, root=tmp_path, now=NOW)
+
+    assert second["status"] == "correction_required", second
+    assert second["reason"] == "prior_revision_requires_explicit_supersede"
+    assert second["prior_item_id"] == first["item"]["id"]
+    assert second["prior_revision_sha256"] == "a" * 64
+    assert second["prior_status"] == "queued"
+    assert second["item"] is None
+    assert len(calls) == 1, "a refused correction burned a second card render"
+
+    queued = [
+        json.loads(line)
+        for line in (tmp_path / "data/marketing/outbox/items.jsonl").read_text().splitlines()
+        if line.strip()
+    ]
+    assert len(queued) == 1
+    assert queued[0]["source"]["revision_sha256"] == "a" * 64
 
 
 def test_story_lock_refuses_a_second_account_before_media_work(
