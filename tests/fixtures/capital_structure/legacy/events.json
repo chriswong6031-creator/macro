@@ -1,0 +1,6 @@
+[
+  {"accession": "seed-1", "cik": "100", "ticker": "SEED", "form": "S-3", "filing_date": "2026-07-20", "_first_seen": "2026-07-20T12:00:00Z"},
+  {"accession": "historic", "cik": "200", "ticker": "OLD", "form": "424B5", "filing_date": "2026-08-02", "_first_seen": "2026-07-31T23:59:59Z"},
+  {"accession": "new-shelf", "cik": "300", "ticker": null, "form": "S-3ASR", "filing_date": "2026-08-02", "_first_seen": "2026-08-01T00:00:00Z"},
+  {"accession": "not-legacy", "cik": "400", "ticker": "NOPE", "form": "8-K", "filing_date": "2026-08-02", "_first_seen": "2026-08-02T01:00:00Z"}
+]

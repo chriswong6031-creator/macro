@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 532, (
-        f"Expected 532 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 540, (
+        f"Expected 540 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (Capital Structure Intelligence W0-W1 added discovery, index-coverage,"
+        " retrieval-attempts, source-manifest, event-versions, event-edges,"
+        " review-queue, telemetry = 532->540;"
         " (Filing Forensics v1 added fundamental-forensics-private-state = 531->532;"
         " (Government Revenue Foresight W1 added entity, award, action, snapshot,"
         " ingest-status, heartbeat, engine-payload, and site-payload artifacts = 523->531;"

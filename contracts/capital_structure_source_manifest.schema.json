@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/capital_structure_source_manifest.schema.json",
+  "title": "Capital Structure source manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema", "manifest_id", "source_system", "source_id", "issuer", "filing",
+    "document", "retrieval", "storage", "rights", "privacy", "parser", "spans"
+  ],
+  "properties": {
+    "schema": {"const": "capital_structure.source_manifest/v1"},
+    "manifest_id": {"type": "string", "pattern": "^manifest:cs:[a-f0-9]{64}$"},
+    "source_system": {"type": "string", "enum": ["sec_edgar", "issuer", "market_data", "other"]},
+    "source_id": {"type": "string", "minLength": 1},
+    "issuer": {"$ref": "#/$defs/issuer"},
+    "filing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["accession", "form", "filing_date", "accepted_at", "file_number"],
+      "properties": {
+        "accession": {"type": ["string", "null"]},
+        "form": {"type": ["string", "null"]},
+        "filing_date": {"type": ["string", "null"], "format": "date"},
+        "accepted_at": {"type": ["string", "null"], "format": "date-time"},
+        "file_number": {"type": ["string", "null"]}
+      }
+    },
+    "document": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["canonical_url", "document_name", "document_type", "document_role", "sequence", "media_type", "byte_length", "document_version", "content_sha256", "parent_manifest_id", "root_locator"],
+      "properties": {
+        "canonical_url": {"type": "string", "format": "uri"},
+        "document_name": {"type": "string", "minLength": 1},
+        "document_type": {"type": "string", "minLength": 1},
+        "document_role": {"type": "string", "enum": ["complete_submission", "primary", "exhibit", "filing_index"]},
+        "sequence": {"type": ["string", "null"]},
+        "media_type": {"type": "string", "minLength": 1},
+        "byte_length": {"type": "integer", "minimum": 0},
+        "document_version": {"type": "integer", "minimum": 1},
+        "content_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"},
+        "parent_manifest_id": {"type": ["string", "null"]},
+        "root_locator": {"type": "string", "pattern": "^sha256:[A-Fa-f0-9]{64}$"}
+      }
+    },
+    "retrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["retrieved_at", "first_seen_at", "transport_status"],
+      "properties": {
+        "retrieved_at": {"type": "string", "format": "date-time"},
+        "first_seen_at": {"type": "string", "format": "date-time"},
+        "transport_status": {"const": "retrieved", "description": "This manifest represents successfully stored content only; failed retrieval attempts belong in a separate operational log."}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend", "store_id", "object_key", "content_addressed", "retention_state"],
+      "properties": {
+        "backend": {"type": "string", "enum": ["r2", "local"]},
+        "store_id": {
+          "type": "string",
+          "enum": ["capital_structure_local", "r2_capital_structure", "r2_research", "r2_shared"],
+          "description": "Stable non-secret namespace identifying which configured object-store class retained the bytes; never a bucket name or credential."
+        },
+        "object_key": {"type": "string", "pattern": "^capital_structure/sec/sha256/[A-Fa-f0-9]{2}/[A-Fa-f0-9]{64}$"},
+        "content_addressed": {"const": true},
+        "retention_state": {"const": "retained"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"backend": {"const": "local"}}},
+          "then": {"properties": {"store_id": {"const": "capital_structure_local"}}}
+        },
+        {
+          "if": {"properties": {"backend": {"const": "r2"}}},
+          "then": {"properties": {"store_id": {"enum": ["r2_capital_structure", "r2_research", "r2_shared"]}}}
+        }
+      ]
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["redistribution_class", "attribution_required", "license_note"],
+      "properties": {
+        "redistribution_class": {"type": "string", "enum": ["public_source_link", "excerpt_permitted", "internal_only", "do_not_redistribute", "unknown"]},
+        "attribution_required": {"type": "boolean"},
+        "license_note": {"type": ["string", "null"]}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "contains_personal_data"],
+      "properties": {
+        "classification": {"type": "string", "enum": ["public", "restricted", "internal", "unknown"]},
+        "contains_personal_data": {"type": "boolean"}
+      }
+    },
+    "parser": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eligibility", "corruption_state", "parser_version"],
+      "properties": {
+        "eligibility": {"type": "string", "enum": ["eligible", "deferred", "ineligible", "unknown"]},
+        "corruption_state": {"type": "string", "enum": ["clean", "suspect", "corrupt", "unreadable", "unknown"]},
+        "parser_version": {"type": ["string", "null"]}
+      }
+    },
+    "spans": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/span"}
+    }
+  },
+  "$defs": {
+    "issuer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer_id", "cik", "ticker", "aliases"],
+      "properties": {
+        "issuer_id": {"type": "string", "minLength": 1},
+        "cik": {"type": ["string", "null"], "pattern": "^[0-9]{1,10}$"},
+        "ticker": {"type": ["string", "null"], "pattern": "^[A-Z0-9.\\-]+$"},
+        "aliases": {"type": "array", "items": {"type": "string"}, "uniqueItems": true}
+      }
+    },
+    "span": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["span_id", "locator_type", "locator", "text_sha256"],
+      "properties": {
+        "span_id": {"type": "string", "minLength": 1},
+        "locator_type": {"type": "string", "enum": ["document", "page", "table", "dom", "text_range"]},
+        "locator": {"type": "string", "minLength": 1},
+        "text_sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+      }
+    }
+  }
+}

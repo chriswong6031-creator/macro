@@ -14,6 +14,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | active-build-map | 1 |
 | agentic_media | 3 |
 | btc-vector | 6 |
+| capital-structure-intelligence | 8 |
 | causal-hypothesis-factory | 9 |
 | cbf | 2 |
 | ccw | 10 |
@@ -105,7 +106,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 348 |
-| infrastructure | 101 |
+| infrastructure | 109 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -113,7 +114,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 505 |
+| git | 513 |
 | git+r2 | 1 |
 | gitignored-local | 15 |
 | r2 | 11 |
@@ -150,6 +151,19 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | btc-regime-ledger | `data/vector/regime_ledger.jsonl` | jsonl | daily-engine | shadow | 2 | 0 |
 | btc-impulse-ledger | `data/vector/impulse_ledger.jsonl` | jsonl | daily-engine | shadow | 1 | 0 |
 | crypto-cockpit | `site/crypto_cockpit.json` | json | daily-engine | display | 0 | 0 |
+
+### capital-structure-intelligence
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| capital-structure-discovery | `data/capital_structure/discovery.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-index-coverage | `data/capital_structure/index_coverage.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-retrieval-attempts | `data/capital_structure/retrieval_attempts.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-source-manifest | `data/capital_structure/source_manifest.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| capital-structure-event-edges | `data/capital_structure/event_edges.parquet` | parquet | collect | infrastructure | 0 | 0 |
+| capital-structure-event-versions | `data/capital_structure/event_versions.parquet` | parquet | collect | infrastructure | 0 | 0 |
+| capital-structure-review-queue | `data/capital_structure/review_queue.parquet` | parquet | collect | infrastructure | 0 | 0 |
+| capital-structure-telemetry | `data/capital_structure/telemetry.json` | json | collect | infrastructure | 0 | 0 |
 
 ### causal-hypothesis-factory
 
