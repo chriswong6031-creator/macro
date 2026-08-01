@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T22:42:39.547122+00:00",
-  "count": 555,
+  "generated_at": "2026-08-01T23:01:09.594498+00:00",
+  "count": 556,
   "institutions": [
     "Amova",
     "Apollo",
@@ -60,6 +60,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-piidkttkjxe-304b19",
+      "title": "Aozora Bank (8304)",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:31Z",
+      "summary_points": [
+        "**1Q Earnings Beat**: Net business profits ¥16.2bn (+77% yoy), net income ¥11.4bn (+82% yoy), but partnership gains offset legacy asset disposal losses; 37% progress vs.",
+        "full-year guidance.",
+        "**SELL Rating Drivers**: Guidance unchanged despite strong results; unrealized losses on credit ETFs/legacy assets, rising deposit rates (0.59%), and potential front-loading of partnership gains exceeding guidance.",
+        "**Asset Quality Risks**: NPL ratio and loan loss reserve/NPLs metrics signal potential credit deterioration, undermining profitability outlook.",
+        "**Price Target vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
