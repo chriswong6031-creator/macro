@@ -2,6 +2,7 @@
   "corpus_rowed": {
     "00bc2884dc3c34ae946dca0639aed258ce29460f": "2026-08-01T01:08:01.242641+00:00",
     "01a4aa471120d8422ddf0666dd85cf7f2df20cd5": "2026-07-31T17:54:40.596641+00:00",
+    "02077bc04baab0be0c3412da6ad3ec3f06c74960": "2026-08-01T17:14:03.193178+00:00",
     "03087bffb692b3cc070af294a82915ce0080cdd3": "2026-08-01T01:08:01.242641+00:00",
     "0364f041e4d82bd69a53acebc886465f24ccfcf5": "2026-08-01T01:08:01.242641+00:00",
     "03a8c671c389b4cd69f2557875d60f556e765288": "2026-07-31T17:54:40.596641+00:00",
@@ -35,10 +36,12 @@
     "10e939a2a9e7c47993af5eb29bc8faed0175a634": "2026-08-01T01:08:01.242641+00:00",
     "10f417c0c6f6f3d600bdeb350d66bf1b90366631": "2026-08-01T16:13:31.641982+00:00",
     "1175b20a2c44da6d44730dbebb33615cdf3d0db7": "2026-08-01T09:12:06.826995+00:00",
+    "117f0e0fcc1640a86b0069db6d4bd9173b66637b": "2026-08-01T17:14:03.193178+00:00",
     "127568ff2c44ca30e0406718493b803c0b7d64c4": "2026-08-01T01:08:01.242641+00:00",
     "129bbadae7ea1926476deb2606bdee1acdd1e428": "2026-08-01T01:08:01.242641+00:00",
     "1305e590a776f276d13a79bba38e75f304545d79": "2026-08-01T04:30:31.162979+00:00",
     "13792ce2cb24132a037890c29d855f3c544b3289": "2026-08-01T01:08:01.242641+00:00",
+    "13b31e20abac4bf161486f6f332a713d4d7c8af6": "2026-08-01T17:14:03.193178+00:00",
     "13ca40fd8b359226b25aaea9b9d3e97b716e1b33": "2026-08-01T01:08:01.242641+00:00",
     "14240dda358f057f6fff327dc2baa61983abf014": "2026-08-01T01:08:01.242641+00:00",
     "14fb3bd6bece99548ad5b6f69e8d7aca183846e7": "2026-07-31T17:54:40.596641+00:00",
@@ -46,6 +49,7 @@
     "177a3d12d27f5e39cdefbe511dcc672245d05ee7": "2026-08-01T04:30:31.162979+00:00",
     "182e7987c9ea20438039b7bc565f74ab6741dca0": "2026-08-01T01:08:01.242641+00:00",
     "1886a80e74a15e4f49be7e3c41f1563d50949f56": "2026-08-01T16:13:31.641982+00:00",
+    "190515bd576826ba5d94b264ebb70e11b97dfdec": "2026-08-01T17:14:03.193178+00:00",
     "19b8e81d193a1914f10bf48164b84c732de274c0": "2026-08-01T07:03:19.379343+00:00",
     "1a0c75ce439d81aef4ee3824d431149b3bb54cf3": "2026-08-01T01:08:01.242641+00:00",
     "1a4225d0ef0759bf7b377e37a1ca4b2b50aa6db9": "2026-08-01T01:08:01.242641+00:00",
@@ -61,6 +65,7 @@
     "1ece16c158e91b864693c8818cdfc0b8749f34c9": "2026-08-01T10:47:51.121736+00:00",
     "1f2f8dc441ef9200aaddb5b08034702ab46933ad": "2026-08-01T01:08:01.242641+00:00",
     "1fc5c4f7792418788b724abaae777bfdd6c05ef4": "2026-08-01T01:08:01.242641+00:00",
+    "2027313b6a6794112b00d11143e123aeec6f97ac": "2026-08-01T17:14:03.193178+00:00",
     "205e51166b3a55ec6e3e36253d0b31bf35f097d8": "2026-08-01T14:10:57.414980+00:00",
     "208d924aea67a77302070e1cc1e76fea5a3411a2": "2026-08-01T01:08:01.242641+00:00",
     "20fbab9140cd08b995d70e26f2fa1c4347ce3b30": "2026-07-31T19:00:57.574746+00:00",
@@ -73,6 +78,7 @@
     "24de10f96880ee5544c1d2774edc3d4aa9776d88": "2026-07-31T23:34:47.271216+00:00",
     "26a295e258e68dbad2b74298e01459d49ca06b9d": "2026-08-01T01:08:01.242641+00:00",
     "27905a9e080a1d488c025063595de8ad36368ad7": "2026-08-01T09:12:06.826995+00:00",
+    "2791281fbd0879270a4c27dea599e4f36df8cfc4": "2026-08-01T17:14:03.193178+00:00",
     "279d181eb94865981b94efe375e2d0bfd0a0b105": "2026-07-31T22:34:38.296169+00:00",
     "27ab460c999408f61f5f62af993a9d57e09c2da1": "2026-08-01T01:08:01.242641+00:00",
     "27eaa6ac3175dcf00831b574b1a711a5c8d0020f": "2026-08-01T01:08:01.242641+00:00",
@@ -85,8 +91,6 @@
     "2c3b5103147fab9b6c41b3e336d063251f9895ec": "2026-08-01T01:08:01.242641+00:00",
     "2ce70a6ad1d97195dbedeac8db85c0cc980d44cf": "2026-07-31T22:34:38.296169+00:00",
     "2e14f9cad6b9c7fd6f3947bc34f9b9d2aaabc4af": "2026-08-01T01:08:01.242641+00:00",
-    "2e42eb4263c6739f65eb615f56d5130e60bd6e09": "2026-07-31T16:17:05.721809+00:00",
-    "2f1330d87b7ed3b7f8723c08aae0548b4a52c082": "2026-07-31T16:17:05.721809+00:00",
     "2fa12d5dd015197a5e6c512558d261cbd91600cc": "2026-08-01T01:08:01.242641+00:00",
     "308df76435ce29d6bce3787004889604d1aa02e2": "2026-08-01T14:10:57.414980+00:00",
     "30d0acdd0434c6dd95ce3b056891712deff4900a": "2026-08-01T01:08:01.242641+00:00",
@@ -109,6 +113,7 @@
     "372c0ba62f5de304dd756ef8ed3fff87b8dfe834": "2026-08-01T01:08:01.242641+00:00",
     "383ebc8f433c81947d794f4c5aed6707cc5e2ed3": "2026-08-01T01:08:01.242641+00:00",
     "38576e36b85193b970b35b0f64bd5c8bf08ace39": "2026-08-01T01:08:01.242641+00:00",
+    "3883882f8a91d65c0bb8dc5e1aa71f6268a037b9": "2026-08-01T17:14:03.193178+00:00",
     "38db23b9d27f7fe8c1774ae9974e546c41dd7f9b": "2026-08-01T07:03:19.379343+00:00",
     "3969b7030bfb7327f8e0b34c346e41db3eb0a341": "2026-08-01T09:12:06.826995+00:00",
     "39a59e7721a15c14c04adeb7e04e5552186996ba": "2026-08-01T01:08:01.242641+00:00",
@@ -138,12 +143,12 @@
     "457b7e751154f17aabb877d43196305b707ae5f9": "2026-08-01T07:03:19.379343+00:00",
     "45e6a733b704510184047cf693c1ed997ac64bf4": "2026-08-01T04:30:31.162979+00:00",
     "46ea64602f9a007c038d761d0e0fddf9b623fd7b": "2026-08-01T12:41:49.578603+00:00",
+    "4707ed376a4670f384baff8b682d1068a96bd519": "2026-08-01T17:14:03.193178+00:00",
     "4726a75abec3b02658d828bab0d3a649bbf45719": "2026-07-31T17:54:40.596641+00:00",
     "4805af6b95b7865211f3ccd5192447572e839819": "2026-08-01T01:08:01.242641+00:00",
     "49b2f9fa1429be2e8dffe50b28f81bc08520a6f3": "2026-08-01T01:08:01.242641+00:00",
     "49d957d6be2b7a50a1d0a006686a6bb09168b0ea": "2026-08-01T01:08:01.242641+00:00",
     "4b0a3b99908236592a6ad908c64e271fdb53c4c2": "2026-08-01T01:08:01.242641+00:00",
-    "4bf3ba7bb23a47b983b446d1c87f5c339c18d178": "2026-07-31T16:17:05.721809+00:00",
     "4bf8f8d1d9eaee85443fecdb3aeda94e5b051f4f": "2026-08-01T14:10:57.414980+00:00",
     "4c845f99dc2093e6eec77337643184b052293de7": "2026-08-01T04:30:31.162979+00:00",
     "4d04a604eefea400547e07442da25a4d0e725fbc": "2026-08-01T07:03:19.379343+00:00",
@@ -168,6 +173,7 @@
     "545972a8959b1a881d0296da17d0c85da8d81163": "2026-08-01T01:08:01.242641+00:00",
     "554cd43d975ff3738da5851a4e2984d1d5c6cad7": "2026-08-01T01:08:01.242641+00:00",
     "55765bd023fb35b0f80815d7c543fe54a0ca6409": "2026-08-01T01:08:01.242641+00:00",
+    "55bb837daf7c025242b4710f89be954f84cdf298": "2026-08-01T17:14:03.193178+00:00",
     "55fd73007fa8b18b02234052561af64c2ae0b181": "2026-08-01T09:12:06.826995+00:00",
     "562ba6b2b71b16eea0cf58f46945681d42cc2071": "2026-07-31T19:00:57.574746+00:00",
     "564912509e51a363b49a08436ce13d1986b3d12b": "2026-08-01T01:08:01.242641+00:00",
@@ -184,6 +190,7 @@
     "59dfe48ac81619cfe8e61d1ea95a74837d8df864": "2026-08-01T01:08:01.242641+00:00",
     "5a4595230a76fe59199826b6c8678f242f035ebc": "2026-08-01T01:08:01.242641+00:00",
     "5ad514131a1a4945a5d51e972fe0392ce202d02e": "2026-08-01T01:08:01.242641+00:00",
+    "5ad5b1475f411e3be904d05a8472a81b34f419f1": "2026-08-01T17:14:03.193178+00:00",
     "5aeb0d5989f880d4efd811b1f7b7b609f8b8bca4": "2026-08-01T04:30:31.162979+00:00",
     "5c6b737b80928f099b197316bfc9bddc74c5fc4c": "2026-08-01T11:48:39.137953+00:00",
     "5ca5107fc371690003c222fad3ed0ddc252910f2": "2026-08-01T01:08:01.242641+00:00",
@@ -193,6 +200,7 @@
     "5d88b4aaf9d3ddbe3208c50ee7b731aacbaf9af1": "2026-08-01T01:08:01.242641+00:00",
     "5ea07a1ed5a3ef97517d5ccb0b2a41648a82f658": "2026-08-01T01:08:01.242641+00:00",
     "5eacfa12302f060f4e838cb90db6cb2b8f7fc40e": "2026-08-01T04:30:31.162979+00:00",
+    "5eb2bba6920ebac7176e321d7ddbcbc371e0d89c": "2026-08-01T17:14:03.193178+00:00",
     "5f5d23d8d703c2ecf28a533c44c28337c91b16af": "2026-08-01T09:12:06.826995+00:00",
     "5f7f5ad0ceca5ced182d6a67fc4435ee73e3da3a": "2026-07-31T17:54:40.596641+00:00",
     "5fc4c33ca0c2592244bbdb1e8dfd527750b161a3": "2026-08-01T01:08:01.242641+00:00",
@@ -200,13 +208,14 @@
     "6052923844ba8ddfddb0c24f8e0d283e4717036e": "2026-08-01T07:03:19.379343+00:00",
     "60c8542bc4a097cca56a556fe5083edcf78e3397": "2026-08-01T11:48:39.137953+00:00",
     "6168c4351cff864493aee4d1160dd25ea3d92067": "2026-08-01T01:08:01.242641+00:00",
-    "617fb0860aac58c6654419ca72dda11f584e04cb": "2026-07-31T16:17:05.721809+00:00",
+    "617fb0860aac58c6654419ca72dda11f584e04cb": "2026-08-01T17:14:03.193178+00:00",
     "61e8478db8205037c6c4d4199d15d011f37f4f21": "2026-07-31T17:54:40.596641+00:00",
     "625d45e55fbf4241abcd1f63a6dcd3897d688978": "2026-08-01T12:41:49.578603+00:00",
     "6298c04636d3f2b6c18a24f83619a6b89568aa52": "2026-08-01T01:08:01.242641+00:00",
     "632b3bf4d47a90ec2c76a2e666561fb3d1133f0b": "2026-08-01T12:41:49.578603+00:00",
     "6391c8225150470c6dc1da06f0ecbb1277d6b3f6": "2026-08-01T01:08:01.242641+00:00",
     "63ffb460932fa2f768c428a681fd070e208f2679": "2026-08-01T16:13:31.641982+00:00",
+    "648ab96265fb734745c5298fa05f9ef18266d4f0": "2026-08-01T17:14:03.193178+00:00",
     "64d4ca5b5665ac7871f1ab95283ef2aa1f8d59b8": "2026-08-01T01:08:01.242641+00:00",
     "64de347aca03d4c64032e8aa6f297d79b4675ddd": "2026-08-01T01:08:01.242641+00:00",
     "660f78a4070be0a608412b4e837e2c78108a993c": "2026-08-01T01:08:01.242641+00:00",
@@ -226,6 +235,7 @@
     "6cc0618a1ab111f526074bc029e598c326401cf5": "2026-08-01T01:08:01.242641+00:00",
     "6ce5afade2431b410946abd99f0bd3936b566d76": "2026-08-01T11:48:39.137953+00:00",
     "6e22d89d50a837d0abadfe3baa63fa68dc6e02a7": "2026-08-01T14:10:57.414980+00:00",
+    "6ec67a93d9ec377cca452b58096e717cc70df308": "2026-08-01T17:14:03.193178+00:00",
     "6f2b96c1af3e22a63dbabbae479c9a1e73f23a95": "2026-07-31T20:21:46.975998+00:00",
     "6f94f777e7acba8058eb885675315109b204704f": "2026-08-01T09:12:06.826995+00:00",
     "7055283e34f43596b44b72d79ce37f466294862c": "2026-08-01T04:30:31.162979+00:00",
@@ -251,8 +261,7 @@
     "787d99fb47aacbc23440dafbe19a6ca289dcc398": "2026-08-01T01:08:01.242641+00:00",
     "7a4d9aa51bbca2fd36b36f3d2efcb411d30b7dfd": "2026-08-01T12:41:49.578603+00:00",
     "7adc564cda39db0400f252b12caa5a3dbf15abb8": "2026-08-01T07:03:19.379343+00:00",
-    "7b4ce1c41527ff1af9d00bafe35170689efb6d31": "2026-07-31T16:17:05.721809+00:00",
-    "7b68ed54a6553b06564cfd9a87bb50d3e0588b02": "2026-07-31T16:17:05.721809+00:00",
+    "7b68ed54a6553b06564cfd9a87bb50d3e0588b02": "2026-08-01T17:14:03.193178+00:00",
     "7b7461acac32efe8a9c0d4f2147447e0db23440f": "2026-08-01T11:48:39.137953+00:00",
     "7bb0e04aafd633236ea86e1c77d21fa8d85cc8e7": "2026-08-01T07:03:19.379343+00:00",
     "7bc89add9c6301f84c8ad569b5804c8558d9c154": "2026-08-01T14:10:57.414980+00:00",
@@ -265,6 +274,7 @@
     "7e25ac7afe1d00fbbac506c690de54131a3b2f04": "2026-08-01T14:10:57.414980+00:00",
     "7eac9209f22bac05f5b5133e6c9df7df387f310a": "2026-08-01T01:08:01.242641+00:00",
     "7f0bd37905dd6c5881c9ab79fe5f898ed873e593": "2026-08-01T01:08:01.242641+00:00",
+    "7f30dd097cad4eb0f309784a8858ea1d8bbca3e2": "2026-08-01T17:14:03.193178+00:00",
     "7fa0a94315e3c472c9e5553e961db4ff5957220e": "2026-08-01T01:08:01.242641+00:00",
     "80347ad8eeced2a4374f629e39462500bd6ba894": "2026-08-01T01:08:01.242641+00:00",
     "806ad057c56713741a71ce2fd8f235a5ada3d1c0": "2026-08-01T14:10:57.414980+00:00",
@@ -288,10 +298,8 @@
     "87251341139f3f1d4e532b53323657493827a2cc": "2026-08-01T16:13:31.641982+00:00",
     "87453b6eda34c7fbdd6e841c5039a95104ca4d04": "2026-08-01T07:03:19.379343+00:00",
     "87d16ad24eaa2b7345104fd071389f58126e3c3a": "2026-08-01T01:08:01.242641+00:00",
-    "880245ff35fc9563ae82bd1fa1cd5f8d2e413043": "2026-07-31T16:17:05.721809+00:00",
     "88367ea251df058b9ee5d2ed1db1109867e05a01": "2026-08-01T09:12:06.826995+00:00",
     "88725f593d59bd8cdef74ad090f238424bc9ac6e": "2026-08-01T07:03:19.379343+00:00",
-    "8a371c131171f9856bd8b48bdea366e41f2b1a46": "2026-07-31T16:17:05.721809+00:00",
     "8ae948e9783348db204e5773b533947623137199": "2026-08-01T16:13:31.641982+00:00",
     "8b07b0eef00a230627aeb05b1e95dc2d357b6817": "2026-08-01T01:08:01.242641+00:00",
     "8b3bc6ae9c0cc86bda4bdcb15fdfed2120989f9f": "2026-08-01T01:08:01.242641+00:00",
@@ -299,6 +307,7 @@
     "8cf8caaa76e4415c28bfcfd8460a1b065ea41f3d": "2026-08-01T01:08:01.242641+00:00",
     "8d9794b8d61b0014b4af909e95fbc5e7839e96cd": "2026-08-01T07:03:19.379343+00:00",
     "8d98b1f3fd963812ab43cffe8479fc080d457833": "2026-08-01T01:08:01.242641+00:00",
+    "8dfdd8a4b31d44caf523d8513d5ec9f1ad626539": "2026-08-01T17:14:03.193178+00:00",
     "8e7f6a3d69bdeb6d12fbe4950f1f3fe21b524f9b": "2026-08-01T09:12:06.826995+00:00",
     "8f20f147c9a49330164f824848c689f5dcff0602": "2026-08-01T01:08:01.242641+00:00",
     "8f9d7c63733c79a3bf8f31898314893a7471c9f1": "2026-08-01T04:30:31.162979+00:00",
@@ -362,10 +371,12 @@
     "aa7b2dcc9a9bbf6ac9a6ba2abf5fcc8b2b4b1126": "2026-08-01T01:08:01.242641+00:00",
     "ab63ee61222c3f85c94928f3494725ac1787a779": "2026-08-01T01:08:01.242641+00:00",
     "ab6d0dc4e26fb090365e0e376cb5377d500c00f2": "2026-08-01T01:08:01.242641+00:00",
+    "abfa4cd80e090128f5fa4c81141be22a11a29827": "2026-08-01T17:14:03.193178+00:00",
     "acd955f02cd35e27606323542b991854c1d385b6": "2026-08-01T01:08:01.242641+00:00",
     "ad003e8573a896d1e77f12031b213321cdf9f1f4": "2026-08-01T01:08:01.242641+00:00",
     "ad732fe6d1159247bed3ccccf81d970a2475c156": "2026-08-01T09:12:06.826995+00:00",
     "ad8857bb90e0f6347322e430e8a200393696ec25": "2026-08-01T07:03:19.379343+00:00",
+    "ae0ded85e0c768c1469b95906f39445d36f842ca": "2026-08-01T17:14:03.193178+00:00",
     "ae55fa6301f615a931081d2b55728c67218a98be": "2026-08-01T01:08:01.242641+00:00",
     "ae8b83fc6031c127f9624fd10041ef661b925151": "2026-08-01T01:08:01.242641+00:00",
     "aebe286974455ce19dbd56b897a40aee9e3dd4a8": "2026-07-31T19:00:57.574746+00:00",
@@ -402,7 +413,6 @@
     "bad60e380a269d6d00332382fb1ee692e77136ea": "2026-08-01T01:08:01.242641+00:00",
     "bb4008249400c29db6d87fd3e8a2198559bf0708": "2026-08-01T14:10:57.414980+00:00",
     "bc4111b5a85a9ec8722185dc2b29724ef2654fe4": "2026-08-01T01:08:01.242641+00:00",
-    "bd3b137dd6f2ece28a9b14466576c5fffb5b4cad": "2026-07-31T16:17:05.721809+00:00",
     "bd4112f7e1f1f9b829ac903f992338a1ce7d4dda": "2026-08-01T12:41:49.578603+00:00",
     "bd54a83487dfed11d7828184a0b42f651763662c": "2026-08-01T07:03:19.379343+00:00",
     "bd60877a9ef0007f51d9a2a72026e8620a56bc70": "2026-08-01T01:08:01.242641+00:00",
@@ -448,10 +458,8 @@
     "cd48ba02a9ffdfc6b60170ff7967b6181dcef5fd": "2026-08-01T04:30:31.162979+00:00",
     "cd4c92def343d0725354fdc0b45b73ec15a7def7": "2026-08-01T14:10:57.414980+00:00",
     "ce8ac99f1230f0ed4e1c5a9de34ee25f2e7e253f": "2026-08-01T01:08:01.242641+00:00",
-    "ced6a4a08426cd0d0715ac63440e026bc32b5dfc": "2026-07-31T16:17:05.721809+00:00",
     "cf293f6b3b6b1315c9c2f4d40eae22b48d2f7bb0": "2026-08-01T01:08:01.242641+00:00",
     "cfcbe13b3bdc470955cc3575a54fca9101ac5a5e": "2026-08-01T12:41:49.578603+00:00",
-    "cfda24e7e8a2a32a7bf6451157b51fd4598815ab": "2026-07-31T16:17:05.721809+00:00",
     "d0036eeb5907c9d2f5c15b4abca25a56202c2982": "2026-08-01T07:03:19.379343+00:00",
     "d09a90d91dfc38fabb9e6649d9b8048e7a37ee9a": "2026-08-01T01:08:01.242641+00:00",
     "d10fa124034ef3782c7dbdab5914844cf20dd911": "2026-08-01T14:10:57.414980+00:00",
@@ -479,6 +487,7 @@
     "dbd331ffb5809b9e20ea1b65822e5fa716689ef7": "2026-08-01T01:08:01.242641+00:00",
     "dbf161c998bd3991127a0e67e97cf23c92e79947": "2026-08-01T14:10:57.414980+00:00",
     "dc0f24bab22b453822099f0ff64034247f072874": "2026-08-01T01:08:01.242641+00:00",
+    "dc3a74aae7711c9be5a7de10b25e696941aada95": "2026-08-01T17:14:03.193178+00:00",
     "dc7e4cc55ee7324bfae966631dba95c7e9c60fcb": "2026-08-01T01:08:01.242641+00:00",
     "dc96bb97557d8de80071001c383224ed1eb991c6": "2026-08-01T01:08:01.242641+00:00",
     "ddcee6adb1b41ea801ced5f449cc3fcd95bd5df2": "2026-08-01T11:48:39.137953+00:00",
@@ -492,6 +501,7 @@
     "e2a857d2f5b16d347ea85253271cfe6f4472583e": "2026-08-01T01:08:01.242641+00:00",
     "e31dd022db67d1619cb66093ff65ff6de81cbe8d": "2026-08-01T07:03:19.379343+00:00",
     "e3ce2903bc4f6e5c6f1178d29aff2ec61ef59f90": "2026-08-01T01:08:01.242641+00:00",
+    "e3e3cd5582c713f1a5b92e7fc4ed8bfb18440385": "2026-08-01T17:14:03.193178+00:00",
     "e48b7105c4784e4f3298eaf0cfc8df474839676d": "2026-08-01T01:08:01.242641+00:00",
     "e542cdc3a9f341bcee7e81bc3674e3453c1ea109": "2026-08-01T09:12:06.826995+00:00",
     "e5a3c56c5151a25aa8e71984f5729c99992c96b5": "2026-08-01T09:12:06.826995+00:00",
@@ -533,7 +543,6 @@
     "f3876300c5638ce72fc0b38941a7b2b694cd91b1": "2026-08-01T04:30:31.162979+00:00",
     "f3b81512cd01eef3056af048ac4e3683643163ef": "2026-08-01T01:08:01.242641+00:00",
     "f4628b4d7fb2882d4c28bdfc70ee0477e2c796cd": "2026-08-01T01:08:01.242641+00:00",
-    "f465ab3bab979886b9aaf528d40c8c1b03ef4326": "2026-07-31T16:17:05.721809+00:00",
     "f4d8367360227b9cacbe601454a6327005fa3a3c": "2026-08-01T16:13:31.641982+00:00",
     "f500c36db468eb1731a2e1be61ea752d8c43283d": "2026-08-01T01:08:01.242641+00:00",
     "f70bc8976ec883921d9f549f42f3afbe5266faaa": "2026-08-01T07:03:19.379343+00:00",
@@ -563,306 +572,206 @@
     "fdc1df0604e2d73b6df417fad844523b610eca53": "2026-08-01T01:08:01.242641+00:00",
     "fe7855aa9a9e19cf029f62db3304aa608eb92dd5": "2026-08-01T01:08:01.242641+00:00",
     "fe8310e76c25b51050d053237a120fe08b594312": "2026-08-01T14:10:57.414980+00:00",
+    "ff34bd6f04187104daa375893ad22d1052e57e9e": "2026-08-01T17:14:03.193178+00:00",
     "ff409572df91dfef019987a4ae28357b79603948": "2026-07-31T22:34:38.296169+00:00",
     "ffd8ef8dee5884fd3ed12618fea7fefb5e874f09": "2026-08-01T01:08:01.242641+00:00"
   },
   "corroboration": {
-    "claim:geopolitical:sec:communication": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+    "claim:geopolitical:sec:technology": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
+        "x:firstsquawk",
         "x:zerohedge"
       ]
     },
     "claim:none:sec:technology": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk",
-        "x:financialjuice",
-        "x:zerohedge",
-        "x:whaleinsider"
-      ]
-    },
-    "claim:none:tic:AMAT": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:stockmktnewz"
-      ]
-    },
-    "claim:none:tic:AMZN": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:stockmktnewz"
-      ]
-    },
-    "head:3 palestinians injured as a result of settlers assault on them with beatings nea": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "x:firstsquawk"
       ]
     },
-    "head:ebola outbreak in the democratic republic of the congo is worsening and spiralin": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+    "head:channel 12 citing an israeli official israeli estimates that trump is closer tha": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "x:firstsquawk"
       ]
     },
-    "head:eu convenes interior ministers video conference tuesday to discuss ceuta migrant": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+    "head:chee hong tat urges asean and china to expand strategic collaboration": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
-        "x:firstsquawk",
+        "x:firstsquawk"
+      ]
+    },
+    "head:israeli army officer injured during the military operation in ali altaher height": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "x:firstsquawk"
+      ]
+    },
+    "head:jordanian official source iraq informed us that we will strike the iranaligned m": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "x:firstsquawk"
+      ]
+    },
+    "head:jordanian official source jordan informed iraq of information about plots by mil": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "x:firstsquawk"
+      ]
+    },
+    "head:jordanian source we expect iraq to take measures to rein in the militias": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "x:firstsquawk"
+      ]
+    },
+    "head:lebanese army commander every inch of our land is rightfully ours and we reject ": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "x:firstsquawk"
+      ]
+    },
+    "head:pulte after discussions with trump and jay clayton dni transition set for monday": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
         "x:financialjuice"
       ]
     },
-    "head:fdrs grandson lists texas ranch for 215 million wsj": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+    "head:russian drone hits rozetka warehouse in kyiv oblast leaving one employee dead an": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "x:firstsquawk"
       ]
     },
-    "head:iaea cause of recent nearly twohour offsite power loss at zaporizhzhya npp not y": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk",
-        "x:financialjuice"
-      ]
-    },
-    "head:iaea zaporizhzhya npp loses offsite power for 23rd time during conflict": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk",
-        "x:financialjuice"
-      ]
-    },
-    "head:iran appears responsible for cyberattacks targeting water supplies in at least s": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+    "head:trump visits american military personnel in new jersey": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "x:firstsquawk"
       ]
     },
-    "head:israeli army we have eliminated a number of hezbollah elements in the ali altahe": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:israeli military says its forces killed hezbollah operatives in southern lebanon": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:ive been doxed lefty podcaster scott galloway rips mamdani after landing on soci": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+    "head:verizon blames human error for burying a jack smith subpoena from congress https": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "x:zerohedge"
       ]
     },
-    "head:just in chinese president xi jinping and russian president putin likely to atten": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:bricsinfo"
-      ]
-    },
-    "head:just in elon musk says chinas biggest growth in electricity has come from solar ": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:bricsinfo"
-      ]
-    },
-    "head:just in india is building its own space station called bas with the first module": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:whaleinsider"
-      ]
-    },
-    "head:just in japan and the united states may unveil new policy next week to strengthe": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:watcherguru"
-      ]
-    },
-    "head:just in michael saylors strategy authorizes sale of up to 5000000000 in btc http": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:whaleinsider"
-      ]
-    },
-    "head:just in us state department tells american citizens to leave the middle east": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:bricsinfo"
-      ]
-    },
-    "head:just in us state department warns iran and its affiliated groups may target us i": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:remarks"
-      ]
-    },
-    "head:labor force participation among men aged 20 has fallen to 66 compared with 73 in": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:lebanese source lebanese delegation will propose that the city of bint jbeil be ": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:lebanese source lebanon will demand the annexation of the town of khiyam to the ": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:lebanese source lebanon will not accept israeli verification of the implementati": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:lebanese source lebanons starting point for the 7th round of negotiations is ann": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:michael saylors strategy authorizes plans to sell up to 5 billion in bitcoin htt": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:watcherguru"
-      ]
-    },
-    "head:ntroducing the unusual whales affiliate program we have revamped our affiliate p": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:unusual_whales"
-      ]
-    },
-    "head:only 66 of men age 20 were working or looking for work down from 73 in 2006 per ": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:unusual_whales"
-      ]
-    },
-    "head:this is what 215 million gets you in texas the ranch of fdrs grandson": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:stockmktnewz"
-      ]
-    },
-    "head:usbacked democracy talks sideline venezuelas opposition leader wsj": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:washington post on israeli official israel demands the complete disarmament of h": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
-    "head:washington post on israeli official we will not withdraw from the yellow line be": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
-      "sources": [
-        "x:firstsquawk"
-      ]
-    },
     "truth:117005796425040371": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117006290013696288": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117009581290419286": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117010030683816088": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011270507732212": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011459082239407": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460046411651": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117011460524966016": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117014253232654593": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117015146759027639": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016403652131870": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016448991757333": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016718142773652": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117016718934084117": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117017726186229508": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
     },
     "truth:117020029291674756": {
-      "first_ts": "2026-08-01T16:13:31.641982+00:00",
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "host:truthsocial.com"
+      ]
+    },
+    "truth:117021210137447022": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "host:truthsocial.com"
+      ]
+    },
+    "truth:117021276346508609": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "host:truthsocial.com"
+      ]
+    },
+    "truth:117021283621973335": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
+      "sources": [
+        "host:truthsocial.com"
+      ]
+    },
+    "truth:117021334217232037": {
+      "first_ts": "2026-08-01T17:14:03.193178+00:00",
       "sources": [
         "host:truthsocial.com"
       ]
@@ -874,14 +783,14 @@
   },
   "providers": {
     "cnn_truth_backfill": {
-      "etag": "\"1c76936ea7c0203fd6cd26bb15d4a29b-3\"",
+      "etag": "\"fbe16072406b60268e9571a5a8614dc2-3\"",
       "fail_count": 0,
-      "last_modified": "Sat, 01 Aug 2026 15:13:40 GMT",
-      "last_poll_ts": 1785597340.3119707
+      "last_modified": "Sat, 01 Aug 2026 16:55:22 GMT",
+      "last_poll_ts": 1785604445.329843
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1785600813.5725777
+      "last_poll_ts": 1785604444.9794946
     },
     "twitterapiio": {
       "cursors": {
@@ -889,7 +798,7 @@
         "CoinDesk": "2082526745987629109",
         "Cointelegraph": "2082534293721731175",
         "DeItaone": "2083500463106773029",
-        "FirstSquawk": "2083585271627653409",
+        "FirstSquawk": "2083602055520997458",
         "HormuzLetter": "2082513830060392629",
         "NewsWire_US": "2083554667657584947",
         "Osint613": "2083324825393623316",
@@ -897,32 +806,32 @@
         "WHPressPool": "2083549345526288895",
         "WatcherGuru": "2083577324084105591",
         "WhaleInsider": "2083586397596733505",
-        "financialjuice": "2083572918806605875",
+        "financialjuice": "2083599427151745288",
         "rawsalerts": "2083300963394158868",
         "remarks": "2083559807831699702",
         "tradfi": "2083314419795411033",
         "unusual_whales": "2083583785594183910",
-        "zerohedge": "2083579534465499376"
+        "zerohedge": "2083596144190390489"
       },
       "last_poll": {
         "BRICSinfo": 1785600813.8900664,
         "CoinDesk": 1785581275.0176852,
         "Cointelegraph": 1785581275.0176852,
-        "DeItaone": 1785600813.8900664,
-        "FirstSquawk": 1785600813.8900664,
+        "DeItaone": 1785604445.861306,
+        "FirstSquawk": 1785604445.861306,
         "HormuzLetter": 1785581275.0176852,
         "NewsWire_US": 1785600813.8900664,
         "Osint613": 1785600813.8900664,
         "StockMKTNewz": 1785600813.8900664,
-        "WHPressPool": 1785600813.8900664,
+        "WHPressPool": 1785604445.861306,
         "WatcherGuru": 1785600813.8900664,
         "WhaleInsider": 1785600813.8900664,
-        "financialjuice": 1785600813.8900664,
+        "financialjuice": 1785604445.861306,
         "rawsalerts": 1785600813.8900664,
         "remarks": 1785600813.8900664,
         "tradfi": 1785600813.8900664,
         "unusual_whales": 1785600813.8900664,
-        "zerohedge": 1785600813.8900664
+        "zerohedge": 1785604445.861306
       },
       "spend": {
         "2026-07": {
@@ -931,9 +840,9 @@
           "usd": 0.29355
         },
         "2026-08": {
-          "requests": 123,
-          "tweets": 2200,
-          "usd": 0.33195
+          "requests": 128,
+          "tweets": 2300,
+          "usd": 0.34695
         }
       }
     }
@@ -947,40 +856,40 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-01T16:13:31Z",
+  "updated_at": "2026-08-01T17:14:03Z",
   "wire": {
     "bea_news": {
       "etag": "\"fc82db231f20dd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 30 Jul 2026 12:30:00 GMT",
-      "last_poll_ts": 1785600812.5173664
+      "last_poll_ts": 1785604444.2347558
     },
     "bls_news": {
       "etag": "\"80ba6c61e820dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 12:30:33 GMT",
-      "last_poll_ts": 1785600812.3710663
+      "last_poll_ts": 1785604444.039781
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1785600813.1402335
+      "last_poll_ts": 1785604444.613787
     },
     "fed_press": {
       "etag": "\"927a7ee7f420dd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 14:00:11 GMT",
-      "last_poll_ts": 1785600812.2430437
+      "last_poll_ts": 1785604443.9061275
     },
     "marketwatch_top": {
-      "etag": "W/\"2054-q1CiIDK9P3HDsKsjmDBve3pmJAY\"",
+      "etag": "W/\"208e-MTYp1lDs/YnrghMR7WMMptuh0pA\"",
       "fail_count": 0,
-      "last_poll_ts": 1785600813.4776201
+      "last_poll_ts": 1785604444.941166
     },
     "whitehouse_actions": {
       "etag": "\"34a52cac5505dc40e7fd6e4e47eebc2b\"",
       "fail_count": 0,
       "last_modified": "Fri, 31 Jul 2026 17:38:11 GMT",
-      "last_poll_ts": 1785600812.7049186
+      "last_poll_ts": 1785604444.5355704
     }
   }
 }
