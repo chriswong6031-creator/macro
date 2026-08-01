@@ -100,6 +100,7 @@ def test_terminal_bootstrap_scores_and_acks_success(monkeypatch, tmp_path: Path)
             "scored_at": "2026-08-01T12:01:00+00:00",
             "source_record_id": kwargs.get("source_record_id"),
             "source_updated_at": kwargs.get("source_updated_at"),
+            "source_url": kwargs.get("source_url"),
             "prompt_version": "test-v1",
             "analysis_schema_version": "test/v1",
             "summary": "Revenue increased.",
@@ -125,6 +126,7 @@ def test_terminal_bootstrap_scores_and_acks_success(monkeypatch, tmp_path: Path)
     scores = eq.load_scores(repo_root)
     assert len(scores) == 1
     assert scores.iloc[0]["source_record_id"] == "defeatbeta:AAPL:2026Q3"
+    assert scores.iloc[0]["source_url"] == "/data/tx/AAPL/2026Q3.json.gz"
     assert scores.iloc[0]["degraded_reason"] is None
 
 

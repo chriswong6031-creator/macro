@@ -522,6 +522,7 @@ def score_text(
     source: str = "transcript",
     source_record_id: str | None = None,
     source_updated_at: str | None = None,
+    source_url: str | None = None,
 ) -> dict:
     """Score one earnings-call text.  Provider-agnostic; never raises.
 
@@ -538,12 +539,13 @@ def score_text(
     source      : "transcript" | "8k".
     source_record_id: stable upstream identity (preferred upsert key).
     source_updated_at: upstream commit-marker/index generation timestamp.
+    source_url: public-safe citation back to the scored source body.
 
     Returns a dict conforming to the §2 scores contract:
       { ticker, quarter, year, call_date, source, model, sentiment,
         performance, confidence, tone_word, positive_highlights,
         negative_highlights, tags, summary, source_sha256, scored_at,
-        source_record_id, source_updated_at, prompt_version,
+        source_record_id, source_updated_at, source_url, prompt_version,
         analysis_schema_version, is_context_only, degraded_reason }
     """
     cfg = cfg if cfg is not None else load_config()
@@ -570,6 +572,7 @@ def score_text(
         "scored_at": datetime.now(timezone.utc).isoformat(),
         "source_record_id": source_record_id or None,
         "source_updated_at": source_updated_at or None,
+        "source_url": source_url or None,
         "prompt_version": str(cfg.get("prompt_version") or ""),
         "analysis_schema_version": str(cfg.get("analysis_schema_version") or ""),
         "summary": None,           # SGA W5: call_summary from the model (optional)
@@ -710,7 +713,7 @@ _STORE_COLUMNS = [
     "sentiment", "performance", "confidence", "tone_word",
     "positive_highlights", "negative_highlights", "tags",
     "source_sha256", "scored_at",
-    "source_record_id", "source_updated_at", "prompt_version",
+    "source_record_id", "source_updated_at", "source_url", "prompt_version",
     "analysis_schema_version",
     "summary",   # SGA W5: model call_summary (str, nullable); live scorer fills if present
     "is_context_only", "degraded_reason",

@@ -165,6 +165,7 @@ def test_local_body_validation_and_score_mapping(tmp_path: Path):
     assert payload["quarter"] == "Q3"
     assert payload["year"] == 2026
     assert payload["source_record_id"] == "defeatbeta:AAPL:2026Q3"
+    assert payload["terminal_url"] == "/data/tx/AAPL/2026Q3.json.gz"
     assert "Tim Cook [CEO]: Revenue rose 10%" in text
     assert "Analyst: What changed?" in text
 

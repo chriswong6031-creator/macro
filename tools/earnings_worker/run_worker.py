@@ -191,6 +191,7 @@ def run(
             source=payload.get("source", "transcript"),
             source_record_id=payload.get("source_record_id"),
             source_updated_at=payload.get("source_updated_at"),
+            source_url=payload.get("terminal_url"),
         )
         if row.get("degraded_reason"):
             log.warning("scored %s DEGRADED (%s)", row.get("ticker"),
@@ -325,6 +326,7 @@ def run_terminal(
             source=payload.get("source", "transcript"),
             source_record_id=payload.get("source_record_id"),
             source_updated_at=payload.get("source_updated_at"),
+            source_url=payload.get("terminal_url"),
         )
         if row.get("degraded_reason"):
             # Keep the cursor pending.  upsert_scores may retain a degraded

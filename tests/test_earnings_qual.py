@@ -90,9 +90,11 @@ def test_score_text_persists_source_and_prompt_lineage(monkeypatch):
         call_date="2026-07-30",
         source_record_id="defeatbeta:AAPL:2026Q3",
         source_updated_at="2026-08-01T00:00:00Z",
+        source_url="/data/tx/AAPL/2026Q3.json.gz",
     )
     assert row["source_record_id"] == "defeatbeta:AAPL:2026Q3"
     assert row["source_updated_at"] == "2026-08-01T00:00:00Z"
+    assert row["source_url"] == "/data/tx/AAPL/2026Q3.json.gz"
     assert row["prompt_version"]
     assert row["analysis_schema_version"]
     assert row["summary"].startswith("Revenue grew")
