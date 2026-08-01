@@ -56,6 +56,7 @@ from engine.agg_trend import (  # noqa: E402
     read_cache,
     write_cache,
 )
+from engine.quad_screener import build_quad  # noqa: E402
 from engine.thetadata_store import store_root  # noqa: E402
 
 log = logging.getLogger("agg_trend_builder")
@@ -228,15 +229,32 @@ def main(argv: list[str] | None = None) -> int:
                  root, len(df), payload["since"], time.time() - t0,
                  path.stat().st_size / 1024)
 
+    # Cross-root board (W3). Built from the caches rather than from `built`, so a run
+    # that only refreshed a few roots still publishes a complete screener instead of a
+    # board that silently shrinks to whatever this invocation touched.
+    quad_path: Path | None = None
+    if built:
+        frames = {}
+        for p in sorted(CACHE_DIR.glob("*.parquet")):
+            df = read_cache(CACHE_DIR, p.stem)
+            if df is not None and not df.empty:
+                frames[p.stem] = df
+        asof = max((str(df["date"].max()) for df in frames.values()), default="")
+        board = build_quad(frames, asof)
+        quad_path = out_dir / "quad.json"
+        quad_path.write_text(json.dumps(board, separators=(",", ":")), encoding="utf-8")
+        log.info("agg_trend: quad board — %d roots, %d skipped for thin history",
+                 board["n_roots"], board["n_skipped"])
+
     if args.publish and built:
-        _publish(out_dir, [r for r, _ in built])
+        _publish(out_dir, [r for r, _ in built], quad_path)
 
     log.info("agg_trend: DONE — %d built, %d failed%s",
              len(built), len(failed), f" ({', '.join(failed)})" if failed else "")
     return 0
 
 
-def _publish(out_dir: Path, roots: list[str]) -> None:
+def _publish(out_dir: Path, roots: list[str], quad_path: Path | None = None) -> None:
     """Upload built payloads to R2, reusing the nightly's client and credentials."""
     try:
         from scripts.build_options_hub_nightly import _r2_client, _upload_r2
@@ -254,6 +272,12 @@ def _publish(out_dir: Path, roots: list[str]) -> None:
         if p.exists() and _upload_r2(s3, bucket, p, f"{R2_PREFIX}{root}.json"):
             ok += 1
     log.info("agg_trend: published %d/%d to R2 %s", ok, len(roots), R2_PREFIX)
+    # The board sits beside the per-root series under options_hub/, not under the
+    # aggtrend/ prefix — it is a cross-root object, and nesting it under a per-root
+    # prefix would make `agg:quad` a legal-looking f-param for a root named "quad".
+    if quad_path is not None and quad_path.exists():
+        if _upload_r2(s3, bucket, quad_path, "options_hub/quad.json"):
+            log.info("agg_trend: published quad board to R2 options_hub/quad.json")
 
 
 if __name__ == "__main__":
