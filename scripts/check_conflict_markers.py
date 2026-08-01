@@ -25,6 +25,8 @@ Binary files (NUL in the first 1 KiB) are skipped.
 
 Usage:
     python -m scripts.check_conflict_markers [ROOT]   # default: repo root (.)
+    python -m scripts.check_conflict_markers --file PATH
+    python -m scripts.check_conflict_markers --changed-from REV [ROOT]
     python -m scripts.check_conflict_markers --self-test
 Exit codes: 0 = clean / self-test passed · 1 = marker(s) found / self-test failed.
 """
@@ -32,6 +34,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -98,6 +101,50 @@ def scan(root: str = "."):
     return findings
 
 
+def _scannable_relpath(path: str) -> bool:
+    """Whether a repo-relative path belongs to the guard's shipping scope."""
+    normalized = os.path.normpath(path)
+    if normalized == ".." or normalized.startswith(".." + os.sep):
+        return False
+    top = normalized.split(os.sep, 1)[0]
+    for sub, exts in _ROOTS:
+        if top != sub:
+            continue
+        return exts is None or normalized.endswith(exts)
+    return False
+
+
+def scan_changed(root: str, revision: str):
+    """Scan only files changed between ``revision`` and HEAD.
+
+    This is the PR ratchet mode: an already-damaged generated baseline cannot
+    freeze unrelated shipping, while every in-scope file the PR touches is still
+    checked fail-closed. The full-tree default remains the deploy/sweep guard.
+    """
+    proc = subprocess.run(
+        [
+            "git", "-C", root, "diff", "--name-only", "-z",
+            "--diff-filter=ACMRTUXB", f"{revision}...HEAD", "--",
+        ],
+        capture_output=True,
+    )
+    if proc.returncode != 0:
+        detail = proc.stderr.decode("utf-8", "replace").strip()
+        raise RuntimeError(detail or f"git diff from {revision!r} failed")
+
+    findings = []
+    for rel in sorted(proc.stdout.decode("utf-8", "replace").split("\0")):
+        if not rel or not _scannable_relpath(rel):
+            continue
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path) or _looks_binary(path):
+            continue
+        for lineno, line in scan_file(path):
+            findings.append((path, lineno, line))
+    findings.sort()
+    return findings
+
+
 def _self_test() -> int:
     """Fixture check: known-bad files must be flagged, known-good must not."""
     tmp = tempfile.mkdtemp(prefix="check_conflict_markers_selftest_")
@@ -135,13 +182,52 @@ def _self_test() -> int:
         for path, lineno, _line in scan(tmp):
             got.setdefault(path, []).append(lineno)
 
-        if got == expected:
-            print("check_conflict_markers: self-test OK — bad fixtures flagged, good fixtures clean.")
+        ratchet_ok = True
+        if shutil.which("git"):
+            try:
+                def git(*args: str) -> None:
+                    subprocess.run(
+                        ["git", *args], cwd=tmp, check=True,
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                    )
+
+                git("init", "-q")
+                git("config", "user.email", "guard-selftest@example.invalid")
+                git("config", "user.name", "guard-selftest")
+                git("add", ".")
+                git("commit", "-qm", "baseline with known legacy damage")
+
+                # A clean changed file must pass even though unchanged legacy
+                # fixtures still contain markers.
+                write("site/clean.html", "<html><body>fresh and clean</body></html>\n")
+                git("add", "site/clean.html")
+                git("commit", "-qm", "clean change")
+                clean_findings = scan_changed(tmp, "HEAD~1")
+
+                # The same ratchet must fail as soon as the changed file itself
+                # introduces a conflict block.
+                write(
+                    "site/clean.html",
+                    _OPEN + "ours\n" + "good\n" + _MID + "\n" + "bad\n" + _CLOSE + "theirs\n",
+                )
+                git("add", "site/clean.html")
+                git("commit", "-qm", "bad change")
+                bad_findings = scan_changed(tmp, "HEAD~1")
+                ratchet_ok = not clean_findings and [line for _p, line, _m in bad_findings] == [1, 3, 5]
+            except (OSError, subprocess.SubprocessError, RuntimeError):
+                ratchet_ok = False
+
+        if got == expected and ratchet_ok:
+            print(
+                "check_conflict_markers: self-test OK — bad fixtures flagged, "
+                "good fixtures clean, changed-file ratchet proven."
+            )
             return 0
         print(
             "check_conflict_markers: SELF-TEST FAIL —\n"
             f"  expected: {expected}\n"
-            f"  got:      {got}",
+            f"  got:      {got}\n"
+            f"  changed-file ratchet: {'OK' if ratchet_ok else 'FAIL'}",
             file=sys.stderr,
         )
         return 1
@@ -153,9 +239,41 @@ def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     if argv and argv[0] == "--self-test":
         return _self_test()
-    root = argv[0] if argv else "."
-
-    findings = scan(root)
+    if argv and argv[0] == "--file":
+        if len(argv) != 2:
+            print(
+                "usage: check_conflict_markers.py --file PATH",
+                file=sys.stderr,
+            )
+            return 2
+        target = argv[1]
+        findings = [
+            (target, lineno, line) for lineno, line in scan_file(target)
+        ]
+        scope = os.path.abspath(target)
+    elif argv and argv[0] == "--changed-from":
+        if len(argv) not in (2, 3):
+            print(
+                "usage: check_conflict_markers.py --changed-from REV [ROOT]",
+                file=sys.stderr,
+            )
+            return 2
+        revision = argv[1]
+        root = argv[2] if len(argv) == 3 else "."
+        try:
+            findings = scan_changed(root, revision)
+        except RuntimeError as exc:
+            print(
+                f"check_conflict_markers: ERROR — cannot classify files changed "
+                f"from {revision}: {exc}",
+                file=sys.stderr,
+            )
+            return 2
+        scope = f"files changed from {revision} under {os.path.abspath(root)}"
+    else:
+        root = argv[0] if argv else "."
+        findings = scan(root)
+        scope = os.path.abspath(root)
     if findings:
         print(
             f"check_conflict_markers: FAIL — {len(findings)} git conflict-marker "
@@ -171,7 +289,7 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
-    print(f"check_conflict_markers: OK — no git conflict markers under {os.path.abspath(root)}.")
+    print(f"check_conflict_markers: OK — no git conflict markers under {scope}.")
     return 0
 
 

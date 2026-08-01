@@ -3379,10 +3379,8 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         '<script defer src="globe-deck.js"></script>'
         '<script defer src="sky.js"></script>'
         '<script src="theme.js"></script>'
-        # live-price layer (progressive enhancement) — patches the Market clock's
-        # .nb-px/.nb-chg index rows; no-ops when no Worker/snapshot URL is configured.
-        '<script src="live_config.js"></script>'
-        '<script src="live.js"></script>'
+        # live_config.js + live.js already load through the canonical product nav
+        # emitted by _hub_product_nav_html(); do not parse/execute them twice here.
         # eyebrow clock — ticks the viewer's own browser local time, second by second
         '<script>(function(){var els=document.querySelectorAll(".hub-clock");if(!els.length)return;'
         'var opt={year:"numeric",month:"short",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false,timeZoneName:"short"};'
@@ -3411,6 +3409,9 @@ def _hub_html(vm: dict, macro: dict, alerts: list, china: dict | None = None,
         'if(rm){window.scrollTo(0,to);}else{try{window.scrollTo({top:to,behavior:"smooth"});}catch(e){window.scrollTo(0,to);}}'
         '});}'
         '})();</script>'
+        # Keep the live alert rail attached across express renders. The nightly
+        # post-build injector is idempotent on data-whb, so it will not duplicate it.
+        '<script defer data-whb data-root="" src="wh_banner.js"></script>'
         '</body></html>'
     )
     return head + body

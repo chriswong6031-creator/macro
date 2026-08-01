@@ -20,6 +20,8 @@
   var DATA, byCC = {};
   try { DATA = JSON.parse(document.getElementById("globe-data").textContent); }
   catch (e) { return; }
+  if (window.__gdDeckInit) return;
+  window.__gdDeckInit = true;
   DATA.forEach(function (m) { byCC[m.cc] = m; });
 
   var motionOK = !window.matchMedia || !matchMedia("(prefers-reduced-motion: reduce)").matches;

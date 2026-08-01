@@ -30,6 +30,8 @@
   var hdr = document.querySelector('header.h'); if (!hdr) return;
   var greet = hdr.querySelector('.hub-greet'); if (!greet) return;
   var tx = greet.querySelector('.greet-tx'); if (!tx) return;
+  if (window.__hubWelcomeInit) return;
+  window.__hubWelcomeInit = true;
 
   function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
   function reduced() { try { return window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches; } catch (e) { return false; } }
