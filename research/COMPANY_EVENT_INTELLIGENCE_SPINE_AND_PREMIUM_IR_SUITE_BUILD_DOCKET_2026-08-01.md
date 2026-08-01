@@ -2528,15 +2528,24 @@ Use dependency-complete build waves, not institutional calendar estimates. Agent
 
 ### Wave B — continuous forward intake
 
-- complete and verify the in-progress Terminal-to-earnings adapter;
+- merge and deploy the Macro consumer after its review gates clear; the Terminal
+  producer is merged and fully green, while its live revision-aware index is
+  waiting on the already-running append-only fund publication lane;
 - detect new and corrected transcript revisions by stable content hash;
 - retain a durable retry queue and last-good artifacts;
 - run local Qwen first with DeepSeek/Kimi fallbacks;
+- install the reviewed Mac fallback appliance only after the consumer is on
+  `origin/main`; switch its provider order to the Windows Qwen endpoint when
+  that endpoint is continuously reachable;
 - prove that a newly available call reaches Stage and its ticker context without manual backfill.
 
 ### Wave C — evidence and digest plane
 
 - merge core identity/event/source/span schemas;
+- project each healthy R2 earnings score into a byte-stable, committed
+  `earnings.call_event.v1` Chronicle source carrying stable record identity,
+  transcript URL, source hash, model/prompt lineage, summary, highlights, and
+  context-only status; never make Chronicle read the mutable R2 parquet directly;
 - add immutable documents, correction replay, deterministic facts, one structured extraction, lexical search, and compact ticker/event manifests;
 - freeze and evaluate the golden corpus with adversarial correction drills.
 
@@ -2665,7 +2674,7 @@ Update this table with PR and live evidence as lanes actually complete. “Imple
 |---|---|---|
 | REPAIR-S Stage recovery | **Shipped/live:** corrected v3 generation `ready`/manifest-valid; 50,982 accepted history rows; 3,529 listing views; latest call date 2026-07-31; 17 fiscal anomalies quarantined; zero invalid QoQ joins | Macro [#4181](https://github.com/chriswong6031-creator/macro/pull/4181); responsive follow-up [#4187](https://github.com/chriswong6031-creator/macro/pull/4187); [live Stage](https://www.mastermind-x.com/stage_analysis.html) |
 | REPAIR-T Terminal transcript discovery | **Shipped/live:** 25,438 transcript bodies across 3,288 symbols; per-ticker Transcripts UI and evidence-bound speaker roles live | Terminal [#295](https://github.com/chriswong6031-creator/mastermind-terminal/pull/295); role repair [#299](https://github.com/chriswong6031-creator/mastermind-terminal/pull/299); [live Terminal](https://app.mastermind-x.com/terminal) |
-| FORWARD-E Terminal-to-earnings adapter | **Implemented/reviewing:** producer revision metadata, nightly change probe, durable consumer state/retry, direct score mapping, and local-first/provider-fallback routing | Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303); Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192); not yet merged/deployed and no production-new-call proof claimed |
+| FORWARD-E Terminal-to-earnings adapter | **Producer merged/green; consumer reviewing:** Terminal revision metadata and change probe are merged with all CI green. Macro adds durable retry, direct score mapping, transcript URL/hash provenance, local-first/provider-fallback routing, and a reviewed but not-yet-installed Mac fallback appliance. Live revision/dates publication, Macro merge/deploy, scheduler installation, and a production-new-call proof remain open. | Terminal [#303](https://github.com/chriswong6031-creator/mastermind-terminal/pull/303); Macro [#4192](https://github.com/chriswong6031-creator/macro/pull/4192) |
 | CEI-00A rights/source decision | Current corpus and intended redistribution posture resolved; retain the gate for any newly added source | User-authorized program constraint; per-source evidence remains required for expansion |
 | CEI-00B golden corpus | Not started | — |
 | CEI-00C experience architecture | Not started | — |

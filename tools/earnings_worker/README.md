@@ -194,6 +194,35 @@ Make sure the task **runs whether the user is logged on or not** only if the R2
 env vars are set at the **system** level; otherwise run it under your user
 account so it inherits your user env vars. The task must **never** run git.
 
+### Mac Studio fallback appliance
+
+Until the Windows Qwen endpoint is continuously reachable, the supported Mac
+fallback is a separate, TCC-safe appliance outside `~/Documents`:
+
+```bash
+./ops/bootstrap_earnings_worker.sh
+```
+
+The bootstrap creates a sparse, clean, fast-forward-only clone at
+`/Users/chriswong/earnings-ops-wt`, a dedicated virtual environment at
+`/Users/chriswong/earnings-venv`, and installs
+`com.mastermind.earnings-worker`. It reuses the existing environment file only
+through `run_with_env.sh`; no secret values are copied into the plist or repo.
+Runs occur at 17:45, 20:45, and 23:45 Vancouver time, after Terminal's 16:30
+publication window. The default provider is DeepSeek; set
+`EARNINGS_PROVIDER_ORDER=openai_compat` plus `EARNINGS_LLM_BASE_URL` and
+`EARNINGS_LLM_MODEL` to move inference to Qwen without changing code.
+
+The first default run seeds forward-only. A deliberate recent catch-up is
+allowed only before a cursor exists:
+
+```bash
+./ops/bootstrap_earnings_worker.sh --bootstrap-since YYYY-MM-DD
+```
+
+Use `./ops/bootstrap_earnings_worker.sh --check` for a read-only appliance,
+dependency, plist, and environment-name audit.
+
 ---
 
 ## Troubleshooting

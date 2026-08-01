@@ -1,0 +1,6 @@
+pandas==3.0.3
+pyarrow==24.0.0
+requests==2.34.2
+boto3==1.43.40
+PyYAML==6.0.3
+anthropic==0.109.1
