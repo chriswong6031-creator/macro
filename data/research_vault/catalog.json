@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T00:59:26.495171+00:00",
-  "count": 494,
+  "generated_at": "2026-08-01T01:32:08.103714+00:00",
+  "count": 495,
   "institutions": [
     "Amova",
     "Apollo",
@@ -264,6 +264,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-pwzjpoltyd2-34f9e8",
+      "title": "Roblox (RBLX) Q2'26 Earnings Review Continued Focus on Optimizing for the Long Term",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:19:54Z",
+      "summary_points": [
+        "**Liquidity Concern**: Current ratio of 0.95x (current liabilities exceed current assets) raises immediate operational risk despite strong EBITDA growth (124.5% YoY) and gross margins (78.1%).",
+        "**Key Near-Term Risk**: UCAN decline (younger user engagement) and fixed costs threaten growth trajectory; 2026 bookings/revs down 7-8% from prior guidance.",
+        "**Valuation Sustainability**: Premium multiples (P/E 39.6x, EV/EBITDA 37.2x) require sustained user monetization growth and margin expansion to justify 61% 12m outperformance.",
+        "**Revised Price Target**: $60.00 (23.3% upside) from $65.00, driven by adjusted 2027+ growth assumptions and lower near-term bookings guidance ($1.60bn Q3).",
+        "**Critical 2H Catalysts**: Platform initiatives (age-check verification, 70%+ US/Australia coverage) and user growth/monetization metrics essential to rebuild investor confidence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
