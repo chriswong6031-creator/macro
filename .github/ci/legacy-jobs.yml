@@ -1377,7 +1377,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # jinja2: TestZeroCoverageRendersNoStanceWord renders templates/flow_desk.html.j2
+        # to assert the panel prints no stance word on a zero-coverage day.
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2
       - name: flow-cohorts unit tests
         run: python -m pytest tests/test_flow_cohorts.py -q
 
