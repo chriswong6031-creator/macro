@@ -74,3 +74,102 @@ def test_original_payload_dict_is_not_mutated():
     assert "history" not in payload
     assert "history_asof" not in payload["coverage"]
     assert out is not payload
+
+
+# ── WP-GEX-DATES (Options Superintelligence R0.10) ───────────────────────────
+# The dated gex_history snapshots gained a sessions index (dates.json) + a
+# bounded self-heal. These pin the pure pieces: the index shape law (newest
+# first, latest == dates[0], junk dropped), the validator (reject, never
+# coerce), the calendar-driven miss computation (weekends are NOT holes — the
+# long-lived "2026-07-18 hole" note was a Saturday; the real hole is 07-20),
+# and the point-in-time trim on healed payloads (a late-published snapshot
+# must not carry history rows after the date it claims to describe).
+
+from scripts.build_options_hub_nightly import (  # noqa: E402
+    build_gex_dates_index,
+    is_gex_dates,
+    gex_history_missed_sessions,
+    _trim_history_to,
+)
+
+
+def test_gex_dates_index_sorts_newest_first_and_drops_junk():
+    idx = build_gex_dates_index(
+        ["2026-07-17", "2026-07-21", "2026-07-21", "not-a-date", None, ""],
+        root="SPY", asof="2026-07-31T02:00:00+00:00",
+    )
+    assert idx["schema"] == "options_hub.gex_dates/v1"
+    assert idx["dates"] == ["2026-07-21", "2026-07-17"]
+    assert idx["latest"] == "2026-07-21"
+    assert idx["count"] == 2
+    assert idx["root"] == "SPY"
+    assert is_gex_dates(idx)
+
+
+def test_gex_dates_index_empty_is_valid_with_null_latest():
+    idx = build_gex_dates_index([], root="NOPE", asof="")
+    assert idx["dates"] == []
+    assert idx["latest"] is None
+    assert idx["count"] == 0
+    assert is_gex_dates(idx)
+
+
+def test_is_gex_dates_rejects_rather_than_coerces():
+    good = {"root": "SPY", "dates": ["2026-07-21", "2026-07-17"], "latest": "2026-07-21"}
+    assert is_gex_dates(good)
+    assert not is_gex_dates({**good, "dates": ["2026-07-17", "2026-07-21"]})  # wrong order
+    assert not is_gex_dates({**good, "latest": "2026-07-17"})                  # latest != dates[0]
+    assert not is_gex_dates({**good, "dates": ["2026-07-21", "junk"]})         # non-date entry
+    assert not is_gex_dates({"dates": ["2026-07-21"], "latest": "2026-07-21"})  # no root
+    assert not is_gex_dates({"root": "SPY", "dates": [], "latest": "2026-07-21"})
+    assert not is_gex_dates(None)
+
+
+def test_missed_sessions_finds_the_real_hole_and_ignores_weekends():
+    # Live plane as verified 2026-07-31: snapshots exist for every session in
+    # the epoch→asof window EXCEPT Monday 2026-07-20. 07-18/19 and 07-25/26 are
+    # weekends — the calendar must not report them as holes.
+    existing = ["2026-07-30", "2026-07-29", "2026-07-28", "2026-07-27",
+                "2026-07-24", "2026-07-23", "2026-07-22", "2026-07-21",
+                "2026-07-17"]
+    missed = gex_history_missed_sessions(existing, "2026-07-30")
+    assert missed == ["2026-07-20"]
+
+
+def test_missed_sessions_includes_a_suppressed_tonight_and_orders_newest_first():
+    missed = gex_history_missed_sessions(["2026-07-17"], "2026-07-21")
+    assert missed == ["2026-07-21", "2026-07-20"]
+
+
+def test_missed_sessions_empty_plane_expects_every_session_since_epoch():
+    missed = gex_history_missed_sessions([], "2026-07-20")
+    assert missed == ["2026-07-20", "2026-07-17"]
+
+
+def test_trim_history_cuts_future_rows_and_restates_history_asof():
+    payload = {
+        "asof": "2026-07-20",
+        "coverage": {"asof": "2026-07-20", "history_asof": "2026-07-30"},
+        "history": [{"date": "2026-07-17"}, {"date": "2026-07-20"},
+                    {"date": "2026-07-21"}, {"date": "2026-07-30"}],
+    }
+    out = _trim_history_to(payload, "2026-07-20")
+    assert [h["date"] for h in out["history"]] == ["2026-07-17", "2026-07-20"]
+    assert out["coverage"]["history_asof"] == "2026-07-20"
+    # PIT law: the original dict is not mutated (fail-soft callers may reuse it).
+    assert [h["date"] for h in payload["history"]][-1] == "2026-07-30"
+    assert payload["coverage"]["history_asof"] == "2026-07-30"
+
+
+def test_trim_history_all_future_leaves_empty_history_and_null_asof():
+    payload = {"history": [{"date": "2026-07-21"}], "coverage": {}}
+    out = _trim_history_to(payload, "2026-07-20")
+    assert out["history"] == []
+    assert out["coverage"]["history_asof"] is None
+
+
+def test_trim_history_without_history_key_is_a_no_op():
+    payload = {"asof": "2026-07-20", "coverage": {"asof": "2026-07-20"}}
+    out = _trim_history_to(payload, "2026-07-20")
+    assert "history" not in out
+    assert out == payload
