@@ -178,9 +178,13 @@ def test_optional_subindustry_backfill():
 
 
 def test_build_writes_artifact_display_tier(tmp_path: Path):
-    contract = sf.build(stage_frame=_frame(), root=tmp_path, asof="2026-07-20")
+    frame = _frame().assign(stage_source_asof="2026-07-20")
+    contract = sf.build(stage_frame=frame, root=tmp_path, asof="2026-07-20")
     assert contract["is_context_only"] is True
     assert contract["display_only"] is True
+    assert contract["status"] == "ready"
+    assert contract["coverage"]["non_vacuous"] is True
+    assert contract["coverage"]["freshness"]["status"] == "current"
     p = tmp_path / "stage_analysis" / "industry_flows.json"
     assert p.exists()
     written = json.loads(p.read_text())

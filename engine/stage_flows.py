@@ -132,34 +132,13 @@ def _adapt_live_frame(df, dr: Path):
     already carries `stage_flag` (the seed path), or None if it cannot be made
     to satisfy _MIN_COLS.
     """
-    import pandas as pd
+    # Keep the adapter's public behaviour for direct callers, but delegate the
+    # actual normalization to the rank lane.  The nightly orchestrator passes
+    # this very same prepared frame to both engines, preventing taxonomy/as-of
+    # drift between ranks and flows.
+    from engine import stage_industry  # noqa: PLC0415
 
-    out = df.copy()
-    # Map the live `stage` column onto the seed's numeric `stage_flag`.
-    if "stage_flag" not in out.columns and "stage" in out.columns:
-        out["stage_flag"] = pd.to_numeric(out["stage"], errors="coerce")
-
-    need_gics = any(c not in out.columns for c in ("industry_id", "industry_name"))
-    need_region = "region" not in out.columns
-    if (need_gics or need_region) and "ticker" in out.columns:
-        gics = _load_gics_map(dr)
-        if gics is not None:
-            key = out["ticker"].astype(str).str.split().str[0].str.upper()
-            out = out.assign(_tk=key.values)
-            gmap = gics.drop_duplicates(subset=["ticker"], keep="last") \
-                       .set_index("ticker")
-            if need_region:
-                out["region"] = out["_tk"].map(gmap["region"])
-            if "industry_id" not in out.columns:
-                out["industry_id"] = out["_tk"].map(gmap["gics_industry"])
-            if "industry_name" not in out.columns:
-                out["industry_name"] = out["_tk"].map(gmap["gics_industry"])
-            if "sub_industry_id" not in out.columns:
-                out["sub_industry_id"] = out["_tk"].map(gmap["gics_sub_industry"])
-            if "sub_industry_name" not in out.columns:
-                out["sub_industry_name"] = out["_tk"].map(gmap["gics_sub_industry"])
-            out = out.drop(columns=["_tk"])
-    return out
+    return stage_industry.prepare_live_frame(df, root=dr)
 
 
 def _coerce_frame(stage_frame, dr: Path):
@@ -180,7 +159,7 @@ def _coerce_frame(stage_frame, dr: Path):
     # Adapt a live classifier frame (has `stage`, may lack GICS) to the seed
     # schema BEFORE the required-column gate, so the nightly per-name records
     # feed this engine exactly like the EquityDesk seed does.
-    if "stage_flag" not in df.columns and "stage" in df.columns:
+    if any(c not in df.columns for c in _MIN_COLS) and "ticker" in df.columns:
         df = _adapt_live_frame(df, dr)
     if any(c not in df.columns for c in _MIN_COLS):
         log.warning("stage_flows: stage frame missing required cols %s",
@@ -200,6 +179,19 @@ def _coerce_frame(stage_frame, dr: Path):
         out["mansfield_rs_change"] = float("nan")
     if "sata_score" not in out.columns:
         out["sata_score"] = float("nan")
+
+    # Never cast null taxonomy to the literal "nan" and accidentally publish a
+    # synthetic industry. Unmatched rows remain visible in coverage diagnostics
+    # but are excluded from the group aggregation itself.
+    valid_industry = (
+        out["industry_id"].notna()
+        & out["industry_name"].notna()
+        & ~out["industry_id"].astype(str).str.strip().str.lower().isin(
+            {"", "nan", "none"})
+    )
+    out = out[valid_industry].copy()
+    if out.empty:
+        return None
 
     out["industry_id"] = out["industry_id"].astype(str)
     out["sub_industry_id"] = out["sub_industry_id"].astype(str)
@@ -395,8 +387,22 @@ def build(stage_frame=None, root: Path | None = None,
         asof = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     built = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
+    from engine import stage_industry  # noqa: PLC0415
+
     prev_states = _prev_states_from_artifact(dr)
-    df = _coerce_frame(stage_frame, dr)
+    source_frame = stage_frame if stage_frame is not None else _seed_stage_frame(dr)
+    if source_frame is not None:
+        try:
+            import pandas as pd  # noqa: PLC0415
+            if not isinstance(source_frame, pd.DataFrame):
+                source_frame = pd.DataFrame(source_frame)
+            if any(c not in source_frame.columns for c in _MIN_COLS):
+                source_frame = stage_industry.prepare_live_frame(
+                    source_frame, root=dr,
+                )
+        except Exception:  # noqa: BLE001
+            source_frame = None
+    df = _coerce_frame(source_frame, dr)
     res = (flows(region=None, stage_frame=df, root=root, prev_states=prev_states)
            if df is not None else {"industry": [], "sub_industry": []})
 
@@ -407,10 +413,16 @@ def build(stage_frame=None, root: Path | None = None,
     for r in res["sub_industry"]:
         sub_by_region.setdefault(r["region"], []).append(r)
 
+    coverage = stage_industry.coverage_snapshot(
+        source_frame, expected_asof=asof, output_rows=len(res["industry"]),
+    )
+
     contract = {
         "schema": "stage_industry_flows.v1",
         "asof": asof,
         "built": built,
+        "status": coverage["status"],
+        "coverage": coverage,
         "is_context_only": True,
         "display_only": True,
         "disclaimer": ("Context only — industry stage-breadth rotation for "
@@ -436,4 +448,7 @@ def build(stage_frame=None, root: Path | None = None,
         # "::" STARTS the line, and this module's logging format prefixes every
         # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
         print(f"::warning:: stage_flows: failed to write flows ({e})", flush=True)
+    if coverage["status"] != "ready":
+        log.warning("stage_flows: degraded live coverage (%s)",
+                    ",".join(coverage["issues"]) or "unknown")
     return contract
