@@ -2,14 +2,14 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-07-31",
-  "generated_utc": "2026-08-01T19:50:01Z",
+  "generated_utc": "2026-08-01T20:14:58Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
-    "n": 8,
-    "n_eff": 2.62,
+    "n": 9,
+    "n_eff": 2.45,
     "basis": "membership-jaccard+high-tier-factor-cosine",
-    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 8 candidates \u2248 2.62 independent bets."
+    "note": "Supersedes sector-only HHI effective_bets in build_stock_board_v2 per R-B. N_eff = participation-ratio of similarity-matrix eigenvalues. 9 candidates \u2248 2.45 independent bets."
   },
   "same_thesis_groups": [
     {
@@ -17,15 +17,16 @@
         "ABNB",
         "FHI",
         "JBLU",
+        "KWR",
         "SFNC",
         "TILE"
       ],
-      "size": 5,
+      "size": 6,
       "basis": "membership-jaccard",
       "label": "Industrials"
     }
   ],
-  "earnings_coverage_frac": 0.375,
+  "earnings_coverage_frac": 0.333,
   "by_ticker": {
     "PI": {
       "verdict": "duplicate",
@@ -132,19 +133,19 @@
           "same_earnings_week": true
         },
         {
-          "ticker": "FHI",
-          "combined": 0.9329,
+          "ticker": "KWR",
+          "combined": 0.9874,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.9329,
+          "factor_cosine": 0.9874,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
         },
         {
-          "ticker": "SFNC",
-          "combined": 0.8666,
+          "ticker": "FHI",
+          "combined": 0.9329,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.8666,
+          "factor_cosine": 0.9329,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
@@ -161,6 +162,48 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as TILE \u2014 Industrials (similarity 100%).",
       "why_zh": "\u4e0e TILE \u62bc\u6ce8\u76f8\u540c \u2014 Industrials\uff08\u76f8\u4f3c\u5ea6 100%\uff09\u3002"
+    },
+    "KWR": {
+      "verdict": "duplicate",
+      "max_similarity": 0.9874,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "JBLU",
+          "combined": 0.9874,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9874,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "TILE",
+          "combined": 0.9584,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9584,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "FHI",
+          "combined": 0.8753,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.8753,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as JBLU \u2014 shared factor profile (similarity 99%).",
+      "why_zh": "\u4e0e JBLU \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 99%\uff09\u3002"
     },
     "SFNC": {
       "verdict": "duplicate",
@@ -188,10 +231,10 @@
           "same_earnings_week": null
         },
         {
-          "ticker": "ABNB",
-          "combined": 0.818,
+          "ticker": "KWR",
+          "combined": 0.8213,
           "membership_jaccard": 0.0,
-          "factor_cosine": 0.818,
+          "factor_cosine": 0.8213,
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": null
@@ -356,6 +399,15 @@
           "same_earnings_week": true
         },
         {
+          "ticker": "KWR",
+          "combined": 0.9584,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.9584,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": false
+        },
+        {
           "ticker": "FHI",
           "combined": 0.765,
           "membership_jaccard": 0.0,
@@ -363,15 +415,6 @@
           "factor_basis": "high-tier-factors:4of4",
           "shared_groups": [],
           "same_earnings_week": false
-        },
-        {
-          "ticker": "ABNB",
-          "combined": 0.668,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.668,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": true
         }
       ],
       "earnings_leg": {
@@ -396,6 +439,13 @@
       "shared_groups": []
     },
     "PI__JBLU": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.19<0.2",
+      "shared_groups": []
+    },
+    "PI__KWR": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
       "combined": 0.0,
@@ -446,6 +496,13 @@
       "factor_basis": "beta-read-thin:r2=0.20<0.2",
       "shared_groups": []
     },
+    "M__KWR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.20<0.2",
+      "shared_groups": []
+    },
     "M__SFNC": {
       "membership_jaccard": 0.0,
       "factor_cosine": null,
@@ -481,6 +538,13 @@
       "factor_cosine": null,
       "combined": 0.0,
       "factor_basis": "beta-read-thin:r2=0.20<0.2",
+      "shared_groups": []
+    },
+    "JBLU__KWR": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9874,
+      "combined": 0.9874,
+      "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
     "JBLU__SFNC": {
@@ -519,6 +583,41 @@
       "shared_groups": [
         "sector:Industrials"
       ]
+    },
+    "KWR__SFNC": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8213,
+      "combined": 0.8213,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "KWR__FHI": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.8753,
+      "combined": 0.8753,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "KWR__ABNB": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.7605,
+      "combined": 0.7605,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "KWR__BOX": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": null,
+      "combined": 0.0,
+      "factor_basis": "beta-read-thin:r2=0.08<0.2",
+      "shared_groups": []
+    },
+    "KWR__TILE": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.9584,
+      "combined": 0.9584,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
     },
     "SFNC__FHI": {
       "membership_jaccard": 1.0,
@@ -601,7 +700,7 @@
     "new_note": "similarity < 0.35 \u2192 distinct bet"
   },
   "n_eff_by_lane": {
-    "entry_open": 2.5,
+    "entry_open": 2.2,
     "setting_up": 2.3
   },
   "source_passport": {

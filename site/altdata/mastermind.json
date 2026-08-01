@@ -1,7 +1,7 @@
 {
   "schema": "altdata.mastermind.v1",
   "as_of": "2026-08-01",
-  "generated_utc": "2026-08-01T19:04:38.828690+00:00",
+  "generated_utc": "2026-08-01T21:17:41.583685+00:00",
   "contract": "Actionable alt-data axis for the Mastermind bot. Each signal: signal_score 0-100 (composite of weighted convergence + brain conviction + price confirm \u2212 extension), action \u2208 {ACCUMULATE,WATCH,AVOID}, direction \u2208 {long,short,neutral}, source \u2208 {brain,deterministic}. The bot sizes through its OWN risk framework; this is an input, not an order. Brain calls are graded vs SPY (see calibration). An extended name is never ACCUMULATE. trump_linked / affiliations flag actor ties. rolling_over names (off_high\u2264\u221215% AND 20d<0 AND below 50dma) appear in broken_signals only \u2014 crowd attention, NOT entries. entry_tier (T1/T2/T3) = validated confluence buy gate signal.",
   "regime_read": null,
   "brain_present": false,
@@ -11,7 +11,7 @@
     "lift_lb": null,
     "reason": "insufficient-n: n=17 < min_n=25",
     "evidence_asof": "2026-08-01",
-    "evaluated_at": "2026-08-01T03:16:25+00:00"
+    "evaluated_at": "2026-08-01T21:17:12+00:00"
   },
   "is_context_only": true,
   "calibration": {
@@ -20,7 +20,7 @@
     "open": 0,
     "note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does."
   },
-  "n_signals": 75,
+  "n_signals": 74,
   "n_broken": 33,
   "signals": [
     {
@@ -1553,6 +1553,42 @@
       "clamped": null
     },
     {
+      "ticker": "QCOM",
+      "signal_score": 29,
+      "conviction": "medium",
+      "action": "WATCH",
+      "direction": "neutral",
+      "source": "deterministic",
+      "weighted_score": 1.1,
+      "convergence_score": 3,
+      "channels": [
+        "affiliation",
+        "patent_cluster",
+        "special_situation"
+      ],
+      "trump_linked": false,
+      "rs_vs_spy_60d": -23.8,
+      "no_price_data": false,
+      "extended": false,
+      "rolling_over": true,
+      "off_high_252": -41.0,
+      "ret_20d": -16.2,
+      "above_50dma": false,
+      "entry_tier": null,
+      "affiliations": [
+        {
+          "actor": "Tommy Tuberville",
+          "rel": "HOLDS_STAKE",
+          "kind": "politician"
+        }
+      ],
+      "n_affiliated_actors": 1,
+      "thesis": null,
+      "second_order": [],
+      "falsifier": null,
+      "clamped": null
+    },
+    {
       "ticker": "INTC",
       "signal_score": 27,
       "conviction": "medium",
@@ -1577,41 +1613,6 @@
       "entry_tier": null,
       "affiliations": [],
       "n_affiliated_actors": 0,
-      "thesis": null,
-      "second_order": [],
-      "falsifier": null,
-      "clamped": null
-    },
-    {
-      "ticker": "QCOM",
-      "signal_score": 23,
-      "conviction": "medium",
-      "action": "WATCH",
-      "direction": "neutral",
-      "source": "deterministic",
-      "weighted_score": 0.9,
-      "convergence_score": 2,
-      "channels": [
-        "affiliation",
-        "patent_cluster"
-      ],
-      "trump_linked": false,
-      "rs_vs_spy_60d": -23.8,
-      "no_price_data": false,
-      "extended": false,
-      "rolling_over": true,
-      "off_high_252": -41.0,
-      "ret_20d": -16.2,
-      "above_50dma": false,
-      "entry_tier": null,
-      "affiliations": [
-        {
-          "actor": "Tommy Tuberville",
-          "rel": "HOLDS_STAKE",
-          "kind": "politician"
-        }
-      ],
-      "n_affiliated_actors": 1,
       "thesis": null,
       "second_order": [],
       "falsifier": null,

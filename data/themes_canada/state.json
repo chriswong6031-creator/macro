@@ -94,7 +94,7 @@
     "name_zh": "\u6cb9\u6c14\u751f\u4ea7",
     "rank": 1,
     "reco": "accumulate",
-    "score": 71
+    "score": 72
   },
   "ca_pipelines": {
     "label": "neutral",
@@ -118,7 +118,7 @@
     "name_zh": "\u623f\u5730\u4ea7\u4fe1\u6258",
     "rank": 8,
     "reco": "avoid",
-    "score": 50
+    "score": 51
   },
   "ca_silver_royalty": {
     "label": "deteriorating",

@@ -19,8 +19,8 @@
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5809,
-      "effective_factor_bets_pr": 2.6065,
+      "dominant_factor_pc_share": 0.5826,
+      "effective_factor_bets_pr": 2.5964,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -31,7 +31,7 @@
       "dispersion_pctile": 0.82,
       "avg_corr": 0.07,
       "dominant_equity_pc_share": 0.1837,
-      "effective_universe_bets_pr": 21.78,
+      "effective_universe_bets_pr": 21.79,
       "idio_dispersion_share": 0.5967
     },
     "lobes": {

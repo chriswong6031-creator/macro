@@ -12,7 +12,7 @@
       "quote": 1.1527,
       "chg": 1.3,
       "action": "SHORT",
-      "score": -22.3,
+      "score": -22.2,
       "headline": "Risk-context: net short EUR (-22)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aEUR \u51c0\u504f\u7a7a\uff08-22\uff09",
       "sub": "Led by risk index, positioning (cot).",
@@ -24,25 +24,25 @@
     },
     "GBPUSD": {
       "label": "GBP/USD",
-      "quote": 1.3487,
-      "chg": 1.0,
+      "quote": 1.3482,
+      "chg": 0.6,
       "action": "FLAT",
-      "score": 4.0,
-      "headline": "Risk-context: net neutral GBP (+4)",
-      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aGBP \u51c0\u4e2d\u6027\uff08+4\uff09",
+      "score": 1.4,
+      "headline": "Risk-context: net neutral GBP (+1)",
+      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aGBP \u51c0\u4e2d\u6027\uff08+1\uff09",
       "sub": "Led by positioning (cot), price structure.",
       "sub_zh": "\u4e3b\u5bfc\u56e0\u7d20\uff1a\u6301\u4ed3\uff08COT\uff09\u3001\u4ef7\u683c\u7ed3\u6784\u3002",
       "shock_state": "normal",
       "cycle_position": null,
       "reliable": true,
-      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aGBP \u51c0\u4e2d\u6027\uff08+4\uff09"
+      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aGBP \u51c0\u4e2d\u6027\uff08+1\uff09"
     },
     "USDJPY": {
       "label": "USD/JPY",
       "quote": 157.4,
       "chg": -2.5,
       "action": "SHORT",
-      "score": -26.9,
+      "score": -27.1,
       "headline": "Risk-context: net short JPY (-27)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aJPY \u51c0\u504f\u7a7a\uff08-27\uff09",
       "sub": "Led by trend (idiosyncratic), risk index. In the MoF intervention watch zone (~150\u2013162); conviction capped.",
@@ -57,7 +57,7 @@
       "quote": 0.8074,
       "chg": 0.3,
       "action": "FLAT",
-      "score": 15.4,
+      "score": 15.3,
       "headline": "Risk-context: net neutral CHF (+15)",
       "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aCHF \u51c0\u4e2d\u6027\uff08+15\uff09",
       "sub": "Led by carry (rate diff), price structure. SNB has historically capped CHF (2015 floor gapped ~20%).",
@@ -70,36 +70,36 @@
     "AUDUSD": {
       "label": "AUD/USD",
       "quote": 0.7025,
-      "chg": 1.3,
+      "chg": 1.2,
       "action": "SHORT",
-      "score": -31.7,
-      "headline": "Risk-context: net short AUD (-32)",
-      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-32\uff09",
+      "score": -30.0,
+      "headline": "Risk-context: net short AUD (-30)",
+      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-30\uff09",
       "sub": "Led by risk index, value (reer).",
       "sub_zh": "\u4e3b\u5bfc\u56e0\u7d20\uff1a\u98ce\u9669\u6307\u6570\u3001\u4f30\u503c\uff08REER\uff09\u3002",
       "shock_state": "normal",
       "cycle_position": null,
       "reliable": true,
-      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-32\uff09"
+      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aAUD \u51c0\u504f\u7a7a\uff08-30\uff09"
     },
     "USDCAD": {
       "label": "USD/CAD",
       "quote": 1.4017,
       "chg": -1.0,
       "action": "FLAT",
-      "score": 1.6,
-      "headline": "Risk-context: net neutral CAD (+2)",
-      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+2\uff09",
+      "score": 1.3,
+      "headline": "Risk-context: net neutral CAD (+1)",
+      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+1\uff09",
       "sub": "Led by carry (rate diff), positioning (cot).",
       "sub_zh": "\u4e3b\u5bfc\u56e0\u7d20\uff1a\u5957\u606f\uff08\u5229\u5dee\uff09\u3001\u6301\u4ed3\uff08COT\uff09\u3002",
       "shock_state": "normal",
       "cycle_position": null,
       "reliable": true,
-      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+2\uff09"
+      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aCAD \u51c0\u4e2d\u6027\uff08+1\uff09"
     },
     "USDMXN": {
       "label": "USD/MXN",
-      "quote": 17.328,
+      "quote": 17.326,
       "chg": -0.3,
       "action": "SHORT",
       "score": -43.2,
@@ -115,21 +115,21 @@
     "USDBRL": {
       "label": "USD/BRL",
       "quote": 5.0747,
-      "chg": -1.3,
+      "chg": -1.9,
       "action": "FLAT",
-      "score": -8.8,
-      "headline": "Risk-context: net neutral BRL (-9)",
-      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aBRL \u51c0\u4e2d\u6027\uff08-9\uff09",
+      "score": -8.2,
+      "headline": "Risk-context: net neutral BRL (-8)",
+      "head_zh": "\u98ce\u9669\u80cc\u666f\uff1aBRL \u51c0\u4e2d\u6027\uff08-8\uff09",
       "sub": "Led by trend (idiosyncratic), price structure.",
       "sub_zh": "\u4e3b\u5bfc\u56e0\u7d20\uff1a\u8d8b\u52bf\uff08\u7279\u5f02\uff09\u3001\u4ef7\u683c\u7ed3\u6784\u3002",
       "shock_state": "normal",
       "cycle_position": null,
       "reliable": true,
-      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aBRL \u51c0\u4e2d\u6027\uff08-9\uff09"
+      "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aBRL \u51c0\u4e2d\u6027\uff08-8\uff09"
     },
     "USDCNH": {
       "label": "USD/CNH",
-      "quote": 6.732,
+      "quote": 6.7335,
       "chg": -0.3,
       "action": "FLAT",
       "score": 15.0,
@@ -141,7 +141,7 @@
       "cycle_position": null,
       "reliable": false,
       "headline_zh": "\u98ce\u9669\u80cc\u666f\uff1aCNH \u51c0\u4e2d\u6027\uff08+15\uff09",
-      "cnh_basis_bps": -59.0,
+      "cnh_basis_bps": -57.0,
       "cnh_basis_state": "neutral"
     },
     "DXY": {
@@ -157,7 +157,7 @@
     "lean_n": 4,
     "real_rate_regime": "Restrictive real yields",
     "real_rate_z": 0.99,
-    "fed_path_bps": 55.0,
+    "fed_path_bps": 54.0,
     "fed_path_lean": "hawkish_repricing",
     "usd_pos_pctile": 78.0,
     "usd_pos_state": "neutral",
@@ -171,8 +171,8 @@
     "smile_decomp": {
       "beta": 0.0183,
       "r2": 0.064,
-      "residual_20d": -0.01728,
-      "residual_20d_z": -1.35,
+      "residual_20d": -0.01731,
+      "residual_20d_z": -1.352,
       "regime": "mixed",
       "regime_60d": "mixed",
       "safety_bid_today": false,
@@ -191,7 +191,7 @@
       "weights_note": "DXY basket weights: EUR 57.6%, JPY 13.6%, GBP 11.9% (ICE benchmark). Re-weighted to available 2y series: EUR 69.3%, JPY 16.4%, GBP 14.3%. CAD/SEK/CHF excluded (no 2y in store). Actual weights after re-norm: {'eur2y': 0.693, 'jpy2y': 0.164, 'gbp2y': 0.143}.",
       "gaps": [],
       "display_only": true,
-      "built": "2026-08-01T02:18:57.524733+00:00"
+      "built": "2026-08-01T20:23:01.313936+00:00"
     }
   },
   "transmission": {
@@ -277,63 +277,63 @@
           "ccy": "EUR",
           "ccy_zh": "\u6b27\u5143",
           "em": false,
-          "strength": 0.129,
+          "strength": 0.141,
           "vs_usd_pct": 1.3
         },
         {
           "ccy": "CHF",
           "ccy_zh": "\u745e\u90ce",
           "em": false,
-          "strength": 0.111,
+          "strength": 0.123,
           "vs_usd_pct": 1.3
         },
         {
           "ccy": "GBP",
           "ccy_zh": "\u82f1\u9551",
           "em": false,
-          "strength": 0.101,
-          "vs_usd_pct": 1.2
+          "strength": 0.013,
+          "vs_usd_pct": 1.0
         },
         {
           "ccy": "MXN",
           "ccy_zh": "\u58a8\u897f\u54e5\u6bd4\u7d22",
           "em": true,
-          "strength": -0.124,
-          "vs_usd_pct": 0.6
-        },
-        {
-          "ccy": "AUD",
-          "ccy_zh": "\u6fb3\u5143",
-          "em": false,
-          "strength": -0.136,
+          "strength": -0.11,
           "vs_usd_pct": 0.6
         },
         {
           "ccy": "CAD",
           "ccy_zh": "\u52a0\u5143",
           "em": false,
-          "strength": -0.176,
+          "strength": -0.167,
           "vs_usd_pct": 0.5
+        },
+        {
+          "ccy": "AUD",
+          "ccy_zh": "\u6fb3\u5143",
+          "em": false,
+          "strength": -0.186,
+          "vs_usd_pct": 0.4
         },
         {
           "ccy": "CNH",
           "ccy_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01",
           "em": true,
-          "strength": -0.267,
-          "vs_usd_pct": 0.3
+          "strength": -0.266,
+          "vs_usd_pct": 0.2
         },
         {
           "ccy": "BRL",
           "ccy_zh": "\u5df4\u897f\u96f7\u4e9a\u5c14",
           "em": true,
-          "strength": -0.358,
-          "vs_usd_pct": 0.0
+          "strength": -0.295,
+          "vs_usd_pct": 0.2
         },
         {
           "ccy": "USD",
           "ccy_zh": "\u7f8e\u5143",
           "em": false,
-          "strength": -0.36,
+          "strength": -0.352,
           "vs_usd_pct": 0.0
         }
       ],
@@ -342,70 +342,70 @@
           "ccy": "JPY",
           "ccy_zh": "\u65e5\u5143",
           "em": false,
-          "strength": 0.845,
+          "strength": 0.797,
           "vs_usd_pct": 2.5
         },
         {
           "ccy": "BRL",
           "ccy_zh": "\u5df4\u897f\u96f7\u4e9a\u5c14",
           "em": true,
-          "strength": 0.235,
-          "vs_usd_pct": 1.3
+          "strength": 0.477,
+          "vs_usd_pct": 1.9
         },
         {
           "ccy": "EUR",
           "ccy_zh": "\u6b27\u5143",
           "em": false,
-          "strength": 0.212,
+          "strength": 0.2,
           "vs_usd_pct": 1.3
         },
         {
           "ccy": "AUD",
           "ccy_zh": "\u6fb3\u5143",
           "em": false,
-          "strength": 0.198,
-          "vs_usd_pct": 1.3
+          "strength": 0.13,
+          "vs_usd_pct": 1.2
         },
         {
           "ccy": "CAD",
           "ccy_zh": "\u52a0\u5143",
           "em": false,
-          "strength": 0.073,
+          "strength": 0.068,
           "vs_usd_pct": 1.0
         },
         {
           "ccy": "GBP",
           "ccy_zh": "\u82f1\u9551",
           "em": false,
-          "strength": 0.07,
-          "vs_usd_pct": 1.0
+          "strength": -0.122,
+          "vs_usd_pct": 0.6
         },
         {
           "ccy": "CNH",
           "ccy_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01",
           "em": true,
-          "strength": -0.277,
+          "strength": -0.273,
           "vs_usd_pct": 0.3
         },
         {
           "ccy": "MXN",
           "ccy_zh": "\u58a8\u897f\u54e5\u6bd4\u7d22",
           "em": true,
-          "strength": -0.298,
+          "strength": -0.277,
           "vs_usd_pct": 0.3
         },
         {
           "ccy": "USD",
           "ccy_zh": "\u7f8e\u5143",
           "em": false,
-          "strength": -0.455,
+          "strength": -0.431,
           "vs_usd_pct": 0.0
         },
         {
           "ccy": "CHF",
           "ccy_zh": "\u745e\u90ce",
           "em": false,
-          "strength": -0.603,
+          "strength": -0.57,
           "vs_usd_pct": -0.3
         }
       ],
@@ -414,70 +414,70 @@
           "ccy": "CNH",
           "ccy_zh": "\u79bb\u5cb8\u4eba\u6c11\u5e01",
           "em": true,
-          "strength": 0.858,
+          "strength": 0.791,
           "vs_usd_pct": 2.6
         },
         {
           "ccy": "GBP",
           "ccy_zh": "\u82f1\u9551",
           "em": false,
-          "strength": 0.358,
-          "vs_usd_pct": 0.7
+          "strength": 0.459,
+          "vs_usd_pct": 1.3
         },
         {
           "ccy": "JPY",
           "ccy_zh": "\u65e5\u5143",
           "em": false,
-          "strength": 0.245,
+          "strength": 0.197,
           "vs_usd_pct": 0.3
         },
         {
           "ccy": "USD",
           "ccy_zh": "\u7f8e\u5143",
           "em": false,
-          "strength": 0.169,
+          "strength": 0.123,
           "vs_usd_pct": 0.0
-        },
-        {
-          "ccy": "MXN",
-          "ccy_zh": "\u58a8\u897f\u54e5\u6bd4\u7d22",
-          "em": true,
-          "strength": 0.019,
-          "vs_usd_pct": -0.6
         },
         {
           "ccy": "BRL",
           "ccy_zh": "\u5df4\u897f\u96f7\u4e9a\u5c14",
           "em": true,
-          "strength": -0.195,
-          "vs_usd_pct": -1.4
+          "strength": 0.038,
+          "vs_usd_pct": -0.3
+        },
+        {
+          "ccy": "MXN",
+          "ccy_zh": "\u58a8\u897f\u54e5\u6bd4\u7d22",
+          "em": true,
+          "strength": -0.021,
+          "vs_usd_pct": -0.6
         },
         {
           "ccy": "EUR",
           "ccy_zh": "\u6b27\u5143",
           "em": false,
-          "strength": -0.261,
+          "strength": -0.298,
           "vs_usd_pct": -1.6
-        },
-        {
-          "ccy": "CAD",
-          "ccy_zh": "\u52a0\u5143",
-          "em": false,
-          "strength": -0.291,
-          "vs_usd_pct": -1.7
         },
         {
           "ccy": "AUD",
           "ccy_zh": "\u6fb3\u5143",
           "em": false,
-          "strength": -0.297,
-          "vs_usd_pct": -1.8
+          "strength": -0.327,
+          "vs_usd_pct": -1.7
+        },
+        {
+          "ccy": "CAD",
+          "ccy_zh": "\u52a0\u5143",
+          "em": false,
+          "strength": -0.328,
+          "vs_usd_pct": -1.7
         },
         {
           "ccy": "CHF",
           "ccy_zh": "\u745e\u90ce",
           "em": false,
-          "strength": -0.605,
+          "strength": -0.635,
           "vs_usd_pct": -2.9
         }
       ]
@@ -494,11 +494,11 @@
     "dominant": null,
     "active": [],
     "intensity": {
-      "carry_unwind": 24.1,
+      "carry_unwind": 24.2,
       "dollar_wrecking_ball": 4.8,
-      "em_crisis_capital_flight": 4.5,
+      "em_crisis_capital_flight": 3.6,
       "haven_flight_risk_off": 11.0,
-      "reflation_risk_on": 10.5,
+      "reflation_risk_on": 8.8,
       "intervention_risk": 6.8
     },
     "scenarios": [
@@ -506,17 +506,17 @@
         "key": "carry_unwind",
         "name_en": "Carry Unwind / Yen-Funded Deleveraging",
         "name_zh": "\u5957\u606f\u5e73\u4ed3 / \u65e5\u5143\u878d\u8d44\u53bb\u6760\u6746",
-        "intensity": 24.1,
+        "intensity": 24.2,
         "active": false,
         "illustrative": false,
         "prob": {
           "status": "ok",
-          "p_cond": 0.1771,
+          "p_cond": 0.1784,
           "base_rate": 0.1059,
-          "wilson_lo": 0.0768,
-          "wilson_hi": 0.3576,
-          "n_raw": 271,
-          "n_eff": 27.1,
+          "wilson_lo": 0.0774,
+          "wilson_hi": 0.3598,
+          "n_raw": 269,
+          "n_eff": 26.9,
           "N": 10
         }
       },
@@ -542,17 +542,17 @@
         "key": "em_crisis_capital_flight",
         "name_en": "EM Crisis / Capital Flight",
         "name_zh": "\u65b0\u5174\u5e02\u573a\u5371\u673a / \u8d44\u672c\u5916\u9003",
-        "intensity": 4.5,
+        "intensity": 3.6,
         "active": false,
         "illustrative": true,
         "prob": {
           "status": "ok",
-          "p_cond": 0.2818,
+          "p_cond": 0.2858,
           "base_rate": 0.2753,
-          "wilson_lo": 0.2207,
-          "wilson_hi": 0.352,
-          "n_raw": 3549,
-          "n_eff": 177.4,
+          "wilson_lo": 0.2258,
+          "wilson_hi": 0.3544,
+          "n_raw": 3737,
+          "n_eff": 186.8,
           "N": 20
         }
       },
@@ -578,17 +578,17 @@
         "key": "reflation_risk_on",
         "name_en": "Reflation / Risk-On Melt-Up",
         "name_zh": "\u518d\u901a\u80c0 / \u98ce\u9669\u504f\u597d\u4e0a\u884c",
-        "intensity": 10.5,
+        "intensity": 8.8,
         "active": false,
         "illustrative": false,
         "prob": {
           "status": "ok",
-          "p_cond": 0.0585,
+          "p_cond": 0.0733,
           "base_rate": 0.0611,
-          "wilson_lo": 0.0289,
-          "wilson_hi": 0.1148,
-          "n_raw": 2461,
-          "n_eff": 123.0,
+          "wilson_lo": 0.0426,
+          "wilson_hi": 0.1233,
+          "n_raw": 3328,
+          "n_eff": 166.4,
           "N": 20
         }
       },
@@ -675,9 +675,9 @@
     "dir": "up"
   },
   "em": {
-    "cnh_basis_bps": -59.0,
+    "cnh_basis_bps": -57.0,
     "cnh_basis_state": "neutral",
-    "risk_off_composite": -0.044
+    "risk_off_composite": -0.054
   },
   "stance": {
     "word_en": "Watch \u2014 don't chase",

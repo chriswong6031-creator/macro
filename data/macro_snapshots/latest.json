@@ -1,13 +1,13 @@
 {
   "schema": "macro_snapshot.v1.2",
   "asof": "2026-08-01",
-  "oldest_component_asof": "2026-07-30",
-  "macro_context_id": "8787efdcaf0e031b",
+  "oldest_component_asof": "2026-07-31",
+  "macro_context_id": "d46987a2d5195cc4",
   "labels": {
     "us": {
       "us_quad": "Q2",
       "us_transition_state": "TRANSITIONING",
-      "us_fused_risk": "elevated",
+      "us_fused_risk": "caution",
       "us_vol_regime": "normalizing",
       "us_risk_radar": "watch",
       "us_rate_pressure": "pressure",
@@ -19,7 +19,7 @@
       "us_gamma_regime": "short",
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "collapsing (de-risk)",
+      "us_vrp_state": "normal",
       "cross_asset_verdict": "diverge"
     },
     "market": {
@@ -72,7 +72,7 @@
     "china": {
       "china_quad": "Q3",
       "china_property_regime": "Deep contraction (easing)",
-      "china_fe_band": "Neutral"
+      "china_fe_band": "Greed"
     },
     "hk": {
       "hk_quad": "Q1",
@@ -107,14 +107,14 @@
     "data/china_regime/latest.json": "2026-07-31",
     "data/hk_regime/latest.json": "2026-07-31",
     "data/canada_regime/latest.json": "2026-07-31",
-    "data/dispersion/regime.json": "2026-07-31",
-    "data/intl_regime/AU_history.parquet": "2026-07-30",
-    "data/intl_regime/EZ_history.parquet": "2026-07-30",
-    "data/intl_regime/GB_history.parquet": "2026-07-30",
-    "data/intl_regime/IN_history.parquet": "2026-07-30",
+    "data/dispersion/regime.json": "2026-08-01",
+    "data/intl_regime/AU_history.parquet": "2026-07-31",
+    "data/intl_regime/EZ_history.parquet": "2026-07-31",
+    "data/intl_regime/GB_history.parquet": "2026-07-31",
+    "data/intl_regime/IN_history.parquet": "2026-07-31",
     "data/intl_regime/JP_history.parquet": "2026-07-31",
-    "data/intl_regime/KR_history.parquet": "2026-07-30",
-    "data/intl_regime/TW_history.parquet": "2026-07-30"
+    "data/intl_regime/KR_history.parquet": "2026-07-31",
+    "data/intl_regime/TW_history.parquet": "2026-07-31"
   },
   "gaps": [],
   "display_only": true

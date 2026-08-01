@@ -1373,6 +1373,19 @@
       "regime_bucket": "Q2"
     },
     {
+      "subject": "NI",
+      "as_of": "2026-06-30",
+      "direction": 1,
+      "horizon": "21.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
       "subject": "PEP",
       "as_of": "2026-06-30",
       "direction": 1,
@@ -1412,7 +1425,46 @@
       "regime_bucket": "Q2"
     },
     {
+      "subject": "RL",
+      "as_of": "2026-06-30",
+      "direction": 1,
+      "horizon": "21.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
       "subject": "ROST",
+      "as_of": "2026-06-30",
+      "direction": 1,
+      "horizon": "5.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "ROST",
+      "as_of": "2026-06-30",
+      "direction": 1,
+      "horizon": "21.0",
+      "n_confirming_raw": 2,
+      "n_independent_confirming": 2.0,
+      "engines": [
+        "radar",
+        "us_board"
+      ],
+      "regime_bucket": "Q2"
+    },
+    {
+      "subject": "XEL",
       "as_of": "2026-06-30",
       "direction": 1,
       "horizon": "5.0",
@@ -1428,7 +1480,7 @@
       "subject": "XEL",
       "as_of": "2026-06-30",
       "direction": 1,
-      "horizon": "5.0",
+      "horizon": "21.0",
       "n_confirming_raw": 2,
       "n_independent_confirming": 2.0,
       "engines": [
@@ -4842,6 +4894,6 @@
     "confluence_strength: no clusters in lobes block — no discount"
   ],
   "produced_by": "engine/neuralweb/confluence_strength.py",
-  "produced_at": "2026-08-01T03:15:22Z",
+  "produced_at": "2026-08-01T21:16:09Z",
   "authority_check": []
 }

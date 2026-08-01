@@ -1,12 +1,12 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "MSFT-BULL-20260720",
-  "asof": "2026-07-31",
+  "asof": "2026-08-01",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 75.0,
-  "raw_confidence": 77.7,
-  "delta_vs_base": 15.0,
+  "management_confidence": 76.4,
+  "raw_confidence": 78.2,
+  "delta_vs_base": 16.4,
   "recommended_action": "hold",
   "human_state": "Advancing Cleanly",
   "components": {
@@ -14,13 +14,13 @@
     "progress": 51.6,
     "pace": 100.0,
     "retention": 50.0,
-    "overlay": 59.0
+    "overlay": 67.0
   },
   "geometry": {
     "dist_to_stop_r": 2.039,
     "dist_to_t1_r": 0.461,
     "dist_to_t2_r": 1.961,
-    "horizon_pct_used": 24.4,
+    "horizon_pct_used": 26.7,
     "p1": 0.693,
     "p2": 0.3465,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-30",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 11,
-  "tau": 0.2444
+  "days_elapsed": 12,
+  "tau": 0.2667
 }

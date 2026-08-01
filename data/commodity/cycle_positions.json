@@ -1,7 +1,7 @@
 {
   "gold": {
     "cycle_ref": "gold",
-    "pos": 1.7,
+    "pos": 1.6,
     "phase": "Trough",
     "phase_v2": "Downturn",
     "overdue": true,
@@ -25,14 +25,14 @@
   },
   "copper": {
     "cycle_ref": "copper",
-    "pos": 62.0,
-    "phase": "Expansion",
-    "phase_v2": "Expansion",
+    "pos": 61.8,
+    "phase": "Downturn",
+    "phase_v2": "Downturn",
     "overdue": true,
     "overdue_frac": 2.583,
-    "hazard_1m": 0.3858,
-    "hazard_3m": 0.0474,
-    "hazard_6m": 0.0894,
+    "hazard_1m": 0.6538,
+    "hazard_3m": 0.5595,
+    "hazard_6m": 0.5882,
     "asof": "2026-07-31"
   },
   "oil": {

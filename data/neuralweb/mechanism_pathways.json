@@ -63,42 +63,6 @@
       "scare": "credit"
     },
     {
-      "family": "fx",
-      "driver": "usd_shock",
-      "pathway_role": "alternate",
-      "as_of": "2026-08-01",
-      "direction_en": "dollar falling — risk tailwind, commodities & EM bid",
-      "direction_zh": "",
-      "confidence_ceiling": "context_only",
-      "coverage_score": null,
-      "coherence": "partial",
-      "stale_legs": [],
-      "nodes": [
-        {
-          "node_id": "driver_usd_shock",
-          "as_of": "2026-08-01",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "usd_shock",
-          "observation": {
-            "en": "dollar falling — risk tailwind, commodities & EM bid",
-            "zh": ""
-          },
-          "direction": "",
-          "value": 0.89,
-          "z_or_percentile": null,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "trigger",
-          "evidence_refs": [
-            "market_drivers.primary"
-          ]
-        }
-      ],
-      "edges": [],
-      "coverage_basis": "scare_trigger"
-    },
-    {
       "family": "rates",
       "driver": "fed_repricing",
       "pathway_role": "alternate",
@@ -121,7 +85,43 @@
             "zh": ""
           },
           "direction": "",
-          "value": 0.87,
+          "value": 0.9,
+          "z_or_percentile": null,
+          "source_tier": "display",
+          "lag_class": "same_day",
+          "pathway_role": "trigger",
+          "evidence_refs": [
+            "market_drivers.primary"
+          ]
+        }
+      ],
+      "edges": [],
+      "coverage_basis": "scare_trigger"
+    },
+    {
+      "family": "liquidity",
+      "driver": "liquidity_impulse",
+      "pathway_role": "alternate",
+      "as_of": "2026-08-01",
+      "direction_en": "net liquidity draining — risk headwind",
+      "direction_zh": "",
+      "confidence_ceiling": "context_only",
+      "coverage_score": null,
+      "coherence": "partial",
+      "stale_legs": [],
+      "nodes": [
+        {
+          "node_id": "driver_liquidity_impulse",
+          "as_of": "2026-08-01",
+          "domain": "market_drivers",
+          "source_artifact": "data/regime/latest.json#market_drivers",
+          "entity": "liquidity_impulse",
+          "observation": {
+            "en": "net liquidity draining — risk headwind",
+            "zh": ""
+          },
+          "direction": "",
+          "value": 0.76,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

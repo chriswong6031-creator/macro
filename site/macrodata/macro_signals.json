@@ -1,6 +1,6 @@
 {
   "date": "2026-07-31",
-  "generated_utc": "2026-08-01 19:05",
+  "generated_utc": "2026-08-01 19:27",
   "business_cycle": {
     "available": true,
     "asof": "2026-07-31",
@@ -4192,9 +4192,9 @@
       "vix_term_lead_lag": "coincident",
       "skew": 141.23,
       "skew_pctile": 0.23809523809523808,
-      "stock_bond_corr": 0.5248137773737395,
+      "stock_bond_corr": 0.52481377737374,
       "stock_bond_regime": "breakdown (bonds not hedging)",
-      "roro": 1.041478732008555,
+      "roro": 1.0414787320087702,
       "roro_state": "risk-on",
       "vol_target_scalar": 0.9699717920552947,
       "news_sentiment": 0.015339049510657787,
@@ -4338,7 +4338,7 @@
   "fear_euphoria": {
     "fe_score": 100,
     "band": "Euphoria",
-    "roro": 1.041478732008555,
+    "roro": 1.0414787320087702,
     "roro_state": "risk-on",
     "legs": [
       {

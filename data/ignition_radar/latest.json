@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "state": "off",
   "k_count": 0,
   "chips": [
@@ -54,8 +54,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "pct_above_50=62.3% (was 64.6% 10d ago)",
-      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=62.3%\uff0810\u65e5\u524d64.6%\uff09",
+      "detail_en": "pct_above_50=62.5% (was 64.6% 10d ago)",
+      "detail_zh": "50\u65e5\u7ebf\u4e0a\u6bd4\u4f8b=62.5%\uff0810\u65e5\u524d64.6%\uff09",
       "source": "breadth"
     },
     {
@@ -65,8 +65,8 @@
       "lit": false,
       "fresh": false,
       "since": null,
-      "detail_en": "10d mean(nh-nl)=15.7 (was 23.7 10d ago)",
-      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=15.7\uff0810\u65e5\u524d23.7\uff09",
+      "detail_en": "10d mean(nh-nl)=15.7 (was 23.5 10d ago)",
+      "detail_zh": "10\u65e5\u5747(\u65b0\u9ad8-\u65b0\u4f4e)=15.7\uff0810\u65e5\u524d23.5\uff09",
       "source": "breadth"
     },
     {
@@ -249,8 +249,8 @@
             0,
             22
           ],
-          "rs_slope_change": 0.9972,
-          "rs_slope_raw": 0.14652,
+          "rs_slope_change": 0.9973,
+          "rs_slope_raw": 0.1477,
           "mtf_confirm": 1.0,
           "mtf_ok": true,
           "commodity_flip": false
@@ -286,17 +286,17 @@
         "above_200d_rising": false
       }
     ],
-    "as_of": "2026-07-31"
+    "as_of": "2026-08-01"
   },
   "narrow_top": {
     "basket_id": "non_ai_software",
     "name": "Non-AI Software",
     "name_zh": "\u975eAI\u8f6f\u4ef6",
     "score": 0.857,
-    "streak_sessions": 3
+    "streak_sessions": 4
   },
   "radar_xref": {
-    "state": "caution",
+    "state": "watch",
     "phase": null
   },
   "accruing": "accruing \u2014 display-only until >=30 broad-state grades + operator ruling. Forward-graded by engine/ignition_audit.py (US arm).",

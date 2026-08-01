@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "state": "lean_in",
   "dispersion_pctile": 0.82,
   "avg_corr": 0.07,
@@ -153,6 +153,12 @@
       "state": "lean_in",
       "dispersion_pctile": 0.82,
       "avg_corr": 0.07
+    },
+    {
+      "as_of": "2026-08-01",
+      "state": "lean_in",
+      "dispersion_pctile": 0.82,
+      "avg_corr": 0.07
     }
   ],
   "label": "Selection pays \u2014 high dispersion",
@@ -162,7 +168,7 @@
     "n_names_used": 1493,
     "n_days_used": 252,
     "dominant_equity_pc_share": 0.1837,
-    "effective_universe_bets_pr": 21.78,
+    "effective_universe_bets_pr": 21.79,
     "idio_dispersion_share": 0.5967,
     "sector_pc_loadings": null,
     "note": "sector map not wired (deferred); display-only \u2014 DISP-EIGEN-1 registered, activation DEFERRED pending DISP-GATE-1 non-stationarity resolution",

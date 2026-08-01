@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.theme_thesis.v1",
   "as_of": "2026-08-01",
-  "generated_at": "2026-08-01T03:34:31Z",
+  "generated_at": "2026-08-01T21:35:14Z",
   "authority": {
     "is_context_only": true,
     "may_rank": false,
@@ -214,10 +214,10 @@
     },
     {
       "schema": "neuralweb.theme_thesis.v1",
-      "as_of": "2026-07-18",
+      "as_of": "2026-08-01",
       "thesis_id": "semicap_equipment.v1",
-      "content_hash": "sha256:d12ab6836177b7304e065ac37b753288f9a11294d59a32c232c47146fa1b0f25",
-      "prev_content_hash": "sha256:2bb142b2b7add1dd454b144f9039023f12ac9cc870f0b06968916795f81d587a",
+      "content_hash": "sha256:eac488c0849b8f573e5d0dac3a2ba7cc611a92746385ffbe644f31dc4bbb33dc",
+      "prev_content_hash": "sha256:d12ab6836177b7304e065ac37b753288f9a11294d59a32c232c47146fa1b0f25",
       "authority": {
         "is_context_only": true,
         "may_rank": false,
@@ -272,7 +272,7 @@
           "rule_en": "If revision_breadth for semicap_equipment turns negative, foundry capex guidance is being cut and WFE order book is deteriorating.\n",
           "state": "ARMED",
           "fired": false,
-          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.854"
+          "detail": "threshold check: 'revision_breadth' lt -0.05 → value=0.877"
         },
         {
           "id": "wfe_f2",
@@ -1535,7 +1535,7 @@
   ],
   "schema_version": 1,
   "produced_by": "scripts/build_thematic_state.py",
-  "produced_at": "2026-08-01T03:34:31Z",
-  "inputs_hash": "sha256:af89350b9258690ca9738b8fa5669182f2b8b23f609de505ab5803f66c96a28e",
+  "produced_at": "2026-08-01T21:35:14Z",
+  "inputs_hash": "sha256:38ee90c2a57af2e3e99145ae0e7a680936e99c37faf77ab2b3203b8d8e35c025",
   "tier": "display"
 }

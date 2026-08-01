@@ -7,11 +7,11 @@
     "Copper"
   ],
   "index": {
-    "ew": 932.5,
-    "vw": 1229.43,
-    "chg_1m_pct": 1.8,
+    "ew": 928.78,
+    "vw": 1223.69,
+    "chg_1m_pct": 1.4,
     "ts_trend": "up",
-    "ts_momentum": 0.692,
+    "ts_momentum": 0.683,
     "mtf": {
       "grade": "CAUTION",
       "headline": "Unconfirmed turn within a bearish bigger picture",
@@ -22,14 +22,14 @@
       "ladder_state": "COUNTERTREND BOUNCE"
     },
     "shock_state": "normal",
-    "shock_z": 0.205,
+    "shock_z": 0.112,
     "velocity": {
-      "r5": 0.9,
-      "r20": 2.6,
-      "r60": -9.0,
-      "r252": 25.5,
-      "accel": 0.095,
-      "impulse": 0.827
+      "r5": 0.5,
+      "r20": 2.2,
+      "r60": -9.4,
+      "r252": 25.0,
+      "accel": 0.086,
+      "impulse": 0.697
     },
     "benchmarks": {
       "DBC": {
@@ -48,7 +48,7 @@
     "pct_up_trend": 0.824,
     "n_bull_momentum": 9,
     "n_low_risk": 1,
-    "trend_diversity": 0.519,
+    "trend_diversity": 0.512,
     "breadth_pctile": 0.974
   },
   "confluence": {
@@ -60,12 +60,12 @@
         "class": "precious",
         "state": "Neutral",
         "null_reason": null,
-        "bottom_score": 19.0,
-        "top_score": 18.2,
+        "bottom_score": 16.0,
+        "top_score": 31.8,
         "capitulation_score": 15.4,
-        "turn_score": 25.0,
+        "turn_score": 16.7,
         "euphoria_score": 0.0,
-        "rollover_score": 44.4,
+        "rollover_score": 77.8,
         "bottom_fired": [
           {
             "code": "oversold_htf",
@@ -80,12 +80,17 @@
         ],
         "top_fired": [
           {
+            "code": "curl_dn",
+            "label_en": "Momentum rolling over",
+            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
+          },
+          {
             "code": "divergence",
             "label_en": "Momentum diverging from trend",
             "label_zh": "\u52a8\u91cf\u4e0e\u8d8b\u52bf\u80cc\u79bb"
           }
         ],
-        "n_bottom_applicable": 8,
+        "n_bottom_applicable": 9,
         "n_top_applicable": 8
       },
       {
@@ -196,22 +201,17 @@
         "class": "industrial",
         "state": "Neutral",
         "null_reason": null,
-        "bottom_score": 28.0,
-        "top_score": 18.2,
+        "bottom_score": 12.0,
+        "top_score": 27.3,
         "capitulation_score": 0.0,
-        "turn_score": 58.3,
+        "turn_score": 25.0,
         "euphoria_score": 30.8,
-        "rollover_score": 0.0,
+        "rollover_score": 22.2,
         "bottom_fired": [
           {
             "code": "curl",
             "label_en": "Momentum curl up",
             "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
-          },
-          {
-            "code": "bc_conf",
-            "label_en": "Bottom-confidence high",
-            "label_zh": "\u5e95\u90e8\u4fe1\u5fc3\u9ad8"
           }
         ],
         "top_fired": [
@@ -224,6 +224,11 @@
             "code": "cot_long",
             "label_en": "COT crowded long",
             "label_zh": "COT\u5927\u5e45\u504f\u591a"
+          },
+          {
+            "code": "cycle_top",
+            "label_en": "Cycle at peak/downturn",
+            "label_zh": "\u5468\u671f\u5904\u4e8e\u9876\u5cf0/\u4e0b\u884c"
           }
         ],
         "n_bottom_applicable": 9,
@@ -312,14 +317,14 @@
         "name": "heating_oil",
         "label": "Heating Oil",
         "class": "energy",
-        "state": "Neutral",
+        "state": "Extended \u2014 late cycle",
         "null_reason": null,
         "bottom_score": 0.0,
-        "top_score": 27.8,
+        "top_score": 44.4,
         "capitulation_score": 0.0,
         "turn_score": 0.0,
         "euphoria_score": 45.5,
-        "rollover_score": 0.0,
+        "rollover_score": 42.9,
         "bottom_fired": [],
         "top_fired": [
           {
@@ -331,9 +336,14 @@
             "code": "stretch",
             "label_en": "Price stretched above 200-day",
             "label_zh": "\u4ef7\u683c\u5927\u5e45\u504f\u79bb200\u65e5\u5747\u7ebf"
+          },
+          {
+            "code": "curl_dn",
+            "label_en": "Momentum rolling over",
+            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
-        "n_bottom_applicable": 6,
+        "n_bottom_applicable": 7,
         "n_top_applicable": 6
       },
       {
@@ -343,22 +353,22 @@
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 0.0,
-        "top_score": 18.2,
+        "top_score": 22.7,
         "capitulation_score": 0.0,
         "turn_score": 0.0,
-        "euphoria_score": 30.8,
-        "rollover_score": 0.0,
+        "euphoria_score": 15.4,
+        "rollover_score": 33.3,
         "bottom_fired": [],
         "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
           {
             "code": "cot_long",
             "label_en": "COT crowded long",
             "label_zh": "COT\u5927\u5e45\u504f\u591a"
+          },
+          {
+            "code": "curl_dn",
+            "label_en": "Momentum rolling over",
+            "label_zh": "\u52a8\u91cf\u4e0b\u94a9"
           }
         ],
         "n_bottom_applicable": 9,
@@ -399,18 +409,13 @@
         "state": "Neutral",
         "null_reason": null,
         "bottom_score": 0.0,
-        "top_score": 18.2,
+        "top_score": 9.1,
         "capitulation_score": 0.0,
         "turn_score": 0.0,
-        "euphoria_score": 30.8,
+        "euphoria_score": 15.4,
         "rollover_score": 0.0,
         "bottom_fired": [],
         "top_fired": [
-          {
-            "code": "overbought_htf",
-            "label_en": "Overbought longer-term",
-            "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
-          },
           {
             "code": "cot_long",
             "label_en": "COT crowded long",
@@ -426,7 +431,7 @@
         "class": "livestock",
         "state": "Neutral",
         "null_reason": null,
-        "bottom_score": 21.1,
+        "bottom_score": 17.4,
         "top_score": 20.0,
         "capitulation_score": 30.8,
         "turn_score": 0.0,
@@ -451,7 +456,7 @@
             "label_zh": "\u52a8\u91cf\u4e0e\u8d8b\u52bf\u80cc\u79bb"
           }
         ],
-        "n_bottom_applicable": 7,
+        "n_bottom_applicable": 8,
         "n_top_applicable": 7
       },
       {
@@ -460,13 +465,19 @@
         "class": "soft",
         "state": "Neutral",
         "null_reason": null,
-        "bottom_score": 0.0,
+        "bottom_score": 15.8,
         "top_score": 10.0,
         "capitulation_score": 0.0,
-        "turn_score": 0.0,
+        "turn_score": 50.0,
         "euphoria_score": 15.4,
         "rollover_score": 0.0,
-        "bottom_fired": [],
+        "bottom_fired": [
+          {
+            "code": "curl",
+            "label_en": "Momentum curl up",
+            "label_zh": "\u52a8\u91cf\u4e0a\u94a9"
+          }
+        ],
         "top_fired": [
           {
             "code": "overbought_htf",
@@ -474,7 +485,7 @@
             "label_zh": "\u4e2d\u5468\u671f\u8d85\u4e70"
           }
         ],
-        "n_bottom_applicable": 8,
+        "n_bottom_applicable": 7,
         "n_top_applicable": 7
       },
       {
@@ -603,54 +614,54 @@
   "assets": {
     "gold": {
       "label": "Gold",
-      "price": 4098.6,
-      "chg": -1.4,
+      "price": 4049.1,
+      "chg": -2.6,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": -1.6
+      "conviction": -9.3
     },
     "silver": {
       "label": "Silver",
-      "price": 57.78,
-      "chg": -6.7,
+      "price": 57.59,
+      "chg": -7.0,
       "alloc": 0,
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -12.2
+      "conviction": -12.3
     },
     "copper": {
       "label": "Copper",
-      "price": 6.51,
-      "chg": 5.3,
+      "price": 6.44,
+      "chg": 4.2,
       "alloc": 50,
       "risk": "Elevated",
       "trend": "up",
       "action": "HOLD",
-      "conviction": 3.1
+      "conviction": -0.2
     },
     "oil": {
       "label": "Oil \u00b7 WTI",
-      "price": 86.8,
-      "chg": 26.6,
+      "price": 84.67,
+      "chg": 23.5,
       "alloc": 50,
       "risk": "Elevated",
       "trend": "up",
       "action": "SELL",
-      "conviction": -34.1
+      "conviction": -24.3
     }
   },
   "ratios": {
     "copper_gold": {
       "value": 0.0016,
-      "chg_20d_pct": 6.65,
+      "chg_20d_pct": 6.76,
       "dir": "up"
     },
     "gold_silver": {
-      "value": 70.9407,
-      "chg_20d_pct": 4.27,
+      "value": 70.3079,
+      "chg_20d_pct": 3.34,
       "dir": "up"
     }
   }

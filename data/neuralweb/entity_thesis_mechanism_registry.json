@@ -264,12 +264,12 @@
         "hit_gradeable_share": 0.0,
         "maturity_mix": {
           "graded_5d_count": 10,
-          "graded_5d_share": 0.188679,
+          "graded_5d_share": 0.178571,
           "matured_21d_count": 6,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 53,
+        "n_claims": 56,
         "n_hit_gradeable": 0,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
@@ -290,16 +290,16 @@
           "note": "#1180 discontinuity — asof_legacy = pre-#1180 grades (fill_convention field absent in grade); next_bar = post-#1180 (fill_convention='next_bar')"
         },
         "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
-        "hit_gradeable_share": 0.94389,
+        "hit_gradeable_share": 0.944844,
         "maturity_mix": {
           "graded_5d_count": 914,
-          "graded_5d_share": 0.569825,
+          "graded_5d_share": 0.547962,
           "matured_21d_count": 0,
           "matured_63d_count": 0,
           "note": "21d/63d matured counts are 0 today — calendar-gated, not build-gated; earliest useful read ~2026-10-01"
         },
-        "n_claims": 1604,
-        "n_hit_gradeable": 1514,
+        "n_claims": 1668,
+        "n_hit_gradeable": 1576,
         "n_with_falsifier": 0,
         "source_ontology_fill": {
           "channels_fill_rate": 0.0,
@@ -516,9 +516,9 @@
       }
     },
     "global": {
-      "falsifier_coverage": 0.013626,
+      "falsifier_coverage": 0.013596,
       "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure",
-      "n_claims": 29575,
+      "n_claims": 29642,
       "n_grades": 34928,
       "n_with_falsifier": 403
     }
@@ -527,12 +527,12 @@
   "counts": {
     "edges_by_kind": {
       "governed_by": 10,
-      "member_of_thesis": 8,
+      "member_of_thesis": 9,
       "mirrored_experiment": 27,
       "rf_candidate_of_mechanism": 7
     },
     "rows_by_type": {
-      "entity": 8,
+      "entity": 9,
       "mechanism": 8,
       "species_link": 27,
       "thesis": 2
@@ -574,6 +574,15 @@
         "path": "site/factordata/reflexivity_overlay.json"
       },
       "src": "entity:US:JBLU"
+    },
+    {
+      "dst": "thesis:industrials",
+      "kind": "member_of_thesis",
+      "source": {
+        "detail": "same_thesis_groups.members",
+        "path": "site/factordata/reflexivity_overlay.json"
+      },
+      "src": "entity:US:KWR"
     },
     {
       "dst": "thesis:ai_infrastructure_capex_complex",
@@ -1008,7 +1017,7 @@
       "src": "species:T1-T4@1.0"
     }
   ],
-  "generated_utc": "2026-08-01T03:34:29.978885+00:00",
+  "generated_utc": "2026-08-01T21:35:13.686496+00:00",
   "is_context_only": true,
   "notes": "Crosswalk only; local systems remain authoritative. No invented links; unknowns stay null.",
   "possible_duplicates": [
@@ -1313,7 +1322,7 @@
   "rows": {
     "entity:US:ABNB": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:ABNB",
@@ -1326,7 +1335,7 @@
     },
     "entity:US:AVGO": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:AVGO",
@@ -1339,7 +1348,7 @@
     },
     "entity:US:FHI": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:FHI",
@@ -1352,7 +1361,7 @@
     },
     "entity:US:JBLU": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:JBLU",
@@ -1363,9 +1372,22 @@
       ],
       "ticker": "JBLU"
     },
+    "entity:US:KWR": {
+      "authority": "display_only",
+      "funnel_as_of": "2026-08-01",
+      "funnel_state": "not_eligible",
+      "market": "US",
+      "registry_id": "entity:US:KWR",
+      "registry_type": "entity",
+      "source_paths": [],
+      "thesis_ids": [
+        "thesis:industrials"
+      ],
+      "ticker": "KWR"
+    },
     "entity:US:NVDA": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:NVDA",
@@ -1378,7 +1400,7 @@
     },
     "entity:US:SFNC": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:SFNC",
@@ -1391,7 +1413,7 @@
     },
     "entity:US:TILE": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:TILE",
@@ -1404,7 +1426,7 @@
     },
     "entity:US:VRT": {
       "authority": "display_only",
-      "funnel_as_of": "2026-07-31",
+      "funnel_as_of": "2026-08-01",
       "funnel_state": "not_eligible",
       "market": "US",
       "registry_id": "entity:US:VRT",
@@ -3304,12 +3326,13 @@
         "ABNB",
         "FHI",
         "JBLU",
+        "KWR",
         "SFNC",
         "TILE"
       ],
       "registry_id": "thesis:industrials",
       "registry_type": "thesis",
-      "size": 5,
+      "size": 6,
       "source": "reflexivity_overlay.same_thesis_groups",
       "source_paths": [
         "site/factordata/reflexivity_overlay.json"
@@ -3331,7 +3354,7 @@
       "present": true
     },
     "data/neuralweb/governance.jsonl": {
-      "n": 53,
+      "n": 54,
       "present": true
     },
     "data/research/thesis_funnel_states.parquet": {

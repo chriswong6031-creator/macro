@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "us",
-  "generated_at": "2026-08-01T02:19:05.456847+00:00",
+  "generated_at": "2026-08-01T20:24:31.901806+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -122,7 +122,7 @@
       "contaminated": true,
       "algorithm": {
         "ew_buyhold": {
-          "cagr": 0.3945,
+          "cagr": 0.3947,
           "sharpe": 1.75,
           "max_dd": -0.1152,
           "calmar": 3.43,
@@ -164,8 +164,8 @@
       },
       "rank_ic": {
         "1m": {
-          "mean_ic": 0.0604,
-          "ic_t_hac": 1.38,
+          "mean_ic": 0.0603,
+          "ic_t_hac": 1.376,
           "hit": 0.56,
           "n_steps": 25
         },
@@ -181,7 +181,7 @@
           "mean": 0.0261,
           "std": 0.1151,
           "sharpe": 0.78,
-          "p05": -0.1407,
+          "p05": -0.1374,
           "n": 1069
         },
         "below_trend": {
@@ -192,7 +192,7 @@
           "n": 670
         },
         "mean_diff_t": -1.81,
-        "mean_diff_p": 0.0705
+        "mean_diff_p": 0.0708
       },
       "extension_drawdown": {
         "fwd_days": 63,
