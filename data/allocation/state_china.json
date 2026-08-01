@@ -6,14 +6,16 @@
     "cn_coal",
     "cn_consumer_elec",
     "cn_food_bev",
+    "cn_metals",
     "cn_pharma_cxo",
+    "cn_robotics",
     "cn_semis"
   ],
   "held": [
     "cn_semis",
-    "cn_food_bev",
+    "cn_metals",
     "cn_pharma_cxo",
-    "cn_coal"
+    "cn_food_bev"
   ],
   "leader": "cn_semis",
   "names": {

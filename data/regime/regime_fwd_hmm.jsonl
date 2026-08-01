@@ -17,3 +17,4 @@
 {"asof": "2026-07-28", "pred_modal_quad": "Q2", "p_quad_filtered": {"Q1": 0.0004, "Q2": 0.6635, "Q3": 0.3346, "Q4": 0.0014}, "realized_quad_at_21d": null}
 {"asof": "2026-07-29", "pred_modal_quad": "Q3", "p_quad_filtered": {"Q1": 0.0001, "Q2": 0.3312, "Q3": 0.6682, "Q4": 0.0005}, "realized_quad_at_21d": null}
 {"asof": "2026-07-30", "pred_modal_quad": "Q2", "p_quad_filtered": {"Q1": 0.0002, "Q2": 0.8754, "Q3": 0.1239, "Q4": 0.0006}, "realized_quad_at_21d": null}
+{"asof": "2026-07-31", "pred_modal_quad": "Q2", "p_quad_filtered": {"Q1": 0.0001, "Q2": 0.9067, "Q3": 0.093, "Q4": 0.0002}, "realized_quad_at_21d": null}

@@ -6,3 +6,4 @@
 {"schema": "deterioration_cascade.v1", "asof": "2026-07-27", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 5, "alerts": [], "immature": ["tw", "kr", "jp", "in", "au"], "logged_at": "2026-07-29T01:21:29+00:00"}
 {"schema": "deterioration_cascade.v1", "asof": "2026-07-28", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 8, "alerts": [], "immature": ["kr", "jp"], "logged_at": "2026-07-30T01:48:43+00:00"}
 {"schema": "deterioration_cascade.v1", "asof": "2026-07-29", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 10, "alerts": [], "immature": [], "logged_at": "2026-07-31T01:45:47+00:00"}
+{"schema": "deterioration_cascade.v1", "asof": "2026-07-31", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 10, "alerts": [], "immature": [], "logged_at": "2026-08-01T01:26:04+00:00"}

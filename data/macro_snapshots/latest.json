@@ -1,29 +1,29 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-07-31",
-  "oldest_component_asof": "2026-07-29",
-  "macro_context_id": "72189d007b106157",
+  "asof": "2026-08-01",
+  "oldest_component_asof": "2026-07-30",
+  "macro_context_id": "8787efdcaf0e031b",
   "labels": {
     "us": {
       "us_quad": "Q2",
       "us_transition_state": "TRANSITIONING",
       "us_fused_risk": "elevated",
       "us_vol_regime": "normalizing",
-      "us_risk_radar": "caution",
+      "us_risk_radar": "watch",
       "us_rate_pressure": "pressure",
       "us_business_cycle_phase": "recovery",
       "us_liquidity_quality": "neutral-hollow",
       "us_liquidity_overlay": "neutral",
       "us_froth_band": "watch",
       "us_dislocation": "calm",
-      "us_gamma_regime": null,
+      "us_gamma_regime": "short",
       "us_repricing_state": "QUIET",
       "us_vol_ts_state": "contango",
-      "us_vrp_state": "normal",
+      "us_vrp_state": "collapsing (de-risk)",
       "cross_asset_verdict": "diverge"
     },
     "market": {
-      "market_state_verdict": "MIXED"
+      "market_state_verdict": "RISK_ON"
     },
     "transmission": {
       "yield_curve_regime": "bear_steepener",
@@ -32,7 +32,7 @@
     "fx": {
       "usd_trend": "up",
       "usd_regime": "US growth premium",
-      "fx_risk": "risk-off",
+      "fx_risk": "risk-on",
       "real_rate_regime": "Restrictive real yields",
       "fx_liquidity_dir": "supportive",
       "fx_regime_radar": null,
@@ -65,7 +65,7 @@
       "commodity_confluence_state": "Neutral",
       "commodity_breadth_bucket": "broad",
       "gold_action": "HOLD",
-      "silver_action": "HOLD",
+      "silver_action": "SELL",
       "copper_action": "HOLD",
       "oil_action": "SELL"
     },
@@ -76,13 +76,13 @@
     },
     "hk": {
       "hk_quad": "Q1",
-      "hk_risk_state": "Neutral",
+      "hk_risk_state": "Risk-on",
       "hk_peg_state": "weak-side (outflow)"
     },
     "canada": {
       "canada_quad": "Q2",
       "canada_overlay_state": "Risk-on",
-      "canada_cycle_tag": "mid"
+      "canada_cycle_tag": "late"
     },
     "dispersion": {
       "dispersion_state": "lean_in"
@@ -98,23 +98,23 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-07-30",
-    "data/market_state/latest.json": "2026-07-30",
-    "data/transmission/latest.json": "2026-07-30",
-    "data/forex/latest.json": "2026-07-31",
-    "data/bonds/bond_health.json": "2026-07-30",
-    "data/commodity/latest.json": "2026-07-30",
-    "data/china_regime/latest.json": "2026-07-30",
-    "data/hk_regime/latest.json": "2026-07-30",
-    "data/canada_regime/latest.json": "2026-07-30",
-    "data/dispersion/regime.json": "2026-07-30",
-    "data/intl_regime/AU_history.parquet": "2026-07-29",
-    "data/intl_regime/EZ_history.parquet": "2026-07-29",
-    "data/intl_regime/GB_history.parquet": "2026-07-29",
-    "data/intl_regime/IN_history.parquet": "2026-07-29",
+    "data/regime/latest.json": "2026-07-31",
+    "data/market_state/latest.json": "2026-07-31",
+    "data/transmission/latest.json": "2026-07-31",
+    "data/forex/latest.json": "2026-08-01",
+    "data/bonds/bond_health.json": "2026-07-31",
+    "data/commodity/latest.json": "2026-07-31",
+    "data/china_regime/latest.json": "2026-07-31",
+    "data/hk_regime/latest.json": "2026-07-31",
+    "data/canada_regime/latest.json": "2026-07-31",
+    "data/dispersion/regime.json": "2026-07-31",
+    "data/intl_regime/AU_history.parquet": "2026-07-30",
+    "data/intl_regime/EZ_history.parquet": "2026-07-30",
+    "data/intl_regime/GB_history.parquet": "2026-07-30",
+    "data/intl_regime/IN_history.parquet": "2026-07-30",
     "data/intl_regime/JP_history.parquet": "2026-07-31",
-    "data/intl_regime/KR_history.parquet": "2026-07-29",
-    "data/intl_regime/TW_history.parquet": "2026-07-29"
+    "data/intl_regime/KR_history.parquet": "2026-07-30",
+    "data/intl_regime/TW_history.parquet": "2026-07-30"
   },
   "gaps": [],
   "display_only": true

@@ -3554,6 +3554,17 @@
           "peak": 0.211,
           "decline": 0.231
         }
+      },
+      {
+        "date": "2026-08-31",
+        "sync": 0.1882,
+        "n": 11,
+        "frac": {
+          "trough": 0.273,
+          "advance": 0.364,
+          "peak": 0.091,
+          "decline": 0.273
+        }
       }
     ],
     "country": [
@@ -7461,6 +7472,17 @@
           "peak": 0.246,
           "decline": 0.206
         }
+      },
+      {
+        "date": "2026-08-31",
+        "sync": 0.0835,
+        "n": 24,
+        "frac": {
+          "trough": 0.333,
+          "advance": 0.208,
+          "peak": 0.292,
+          "decline": 0.167
+        }
       }
     ],
     "cn_sector": [
@@ -10774,9 +10796,20 @@
           "peak": 0.032,
           "decline": 0.056
         }
+      },
+      {
+        "date": "2026-08-31",
+        "sync": 0.8088,
+        "n": 31,
+        "frac": {
+          "trough": 0.806,
+          "advance": 0.065,
+          "peak": 0.0,
+          "decline": 0.129
+        }
       }
     ]
   },
   "definition": "sync = 1 \u2212 circ_var(2\u03c0\u00b7pos/100); mean resultant length of phase angles",
-  "updated_at": "2026-07-31T02:38:36Z"
+  "updated_at": "2026-08-01T02:20:35Z"
 }

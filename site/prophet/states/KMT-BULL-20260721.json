@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "KMT-BULL-20260721",
-  "asof": "2026-07-30",
+  "asof": "2026-07-31",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 55.5,
-  "raw_confidence": 48.4,
-  "delta_vs_base": -4.5,
+  "management_confidence": 54.4,
+  "raw_confidence": 53.0,
+  "delta_vs_base": -5.6,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
-    "validity": 62.1,
+    "validity": 84.6,
     "progress": 0.0,
-    "pace": 81.1,
+    "pace": 75.9,
     "retention": 50.0,
-    "overlay": 53.0
+    "overlay": 59.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.703,
+    "dist_to_stop_r": 0.883,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 20.0,
-    "p1": -0.1981,
-    "p2": -0.0991,
+    "horizon_pct_used": 22.2,
+    "p1": -0.0778,
+    "p2": -0.0389,
     "p3": null,
-    "move_r": -0.297,
+    "move_r": -0.117,
     "mfe_r": 0.339,
     "mae_r": -0.297
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Ahead of Schedule",
+  "change_reason": "Moving Away from Stop",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 9,
-  "tau": 0.2
+  "days_elapsed": 10,
+  "tau": 0.2222
 }

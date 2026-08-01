@@ -14,6 +14,7 @@
     "energy_complex",
     "industrial_distribution",
     "insurance",
+    "mag7",
     "managed_care",
     "memory_storage",
     "non_ai_tech",
@@ -40,7 +41,7 @@
     "memory_storage",
     "cybersecurity",
     "us_sector_health",
-    "ai_neoclouds"
+    "ai_infra"
   ],
   "leader": "memory_storage",
   "names": {
@@ -58,6 +59,7 @@
     "defense": "Defense & Aerospace",
     "defensives": "Defensives",
     "energy_complex": "US Energy Complex",
+    "gold_miners": "Gold Miners",
     "housing": "Housing Chain",
     "industrial_distribution": "Industrial Distribution & Capital Goods",
     "insurance": "Insurance & Brokers",

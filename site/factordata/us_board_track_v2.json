@@ -1,10 +1,10 @@
 {
- "generated": "2026-07-31T03:30:04.305183+00:00",
+ "generated": "2026-08-01T03:12:38.202545+00:00",
  "source": "git-archaeology + forward snapshots (unioned, de-duped on as_of)",
- "board_dates_total": 11,
+ "board_dates_total": 12,
  "board_dates_range": [
   "2026-07-10",
-  "2026-07-30"
+  "2026-07-31"
  ],
  "graded_dates": [
   "2026-07-10",
@@ -20,7 +20,7 @@
  "survivorship": {
   "n_skipped_no_price": 1,
   "n_rows_skipped_no_price": 1,
-  "n_board_rows_total": 78,
+  "n_board_rows_total": 85,
   "tickers_skipped": [
    "PPTA"
   ],

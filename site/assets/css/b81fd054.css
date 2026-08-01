@@ -56,7 +56,7 @@ a{color:var(--link)}
 .meter-rail{position:relative;height:4px;margin:11px 0 7px;border-radius:4px;background:var(--line)}
 .meter-rail::before{content:"";position:absolute;left:50%;top:-3px;width:1px;height:10px;background:var(--muted);opacity:.45}
 .meter-rail i{position:absolute;top:-3px;width:2px;height:10px;border-radius:2px;background:var(--tone,var(--muted));
-  left:calc(44% - 1px)}
+  left:calc(36% - 1px)}
 .meter-note{font-size:10.5px;color:var(--muted)}
 .tape-shell{position:relative;padding:14px 12px 4px;border-top:1px solid var(--line)}
 .tape-legend{position:absolute;top:18px;left:14px;z-index:2;display:flex;gap:13px;align-items:center;

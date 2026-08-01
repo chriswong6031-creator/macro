@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.mechanism_pathways.v1",
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "display_only": true,
   "not_a_signal": true,
   "authority": {
@@ -25,143 +25,49 @@
   },
   "pathways": [
     {
-      "family": "equity-leadership",
-      "driver": "ai_semis",
+      "family": "credit_stress",
+      "driver": "credit_stress",
       "pathway_role": "primary",
-      "as_of": "2026-07-31",
-      "direction_en": "AI/semis unwind — tech-led de-rating",
-      "direction_zh": "AI/半导体回吐 — 科技主导的回调",
+      "as_of": "2026-08-01",
+      "direction_en": "Credit stress",
+      "direction_zh": "信用压力",
       "confidence_ceiling": "context_only",
-      "coverage_score": 1.0,
-      "coherence": "supported",
+      "coverage_score": null,
+      "coherence": "partial",
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_ai_semis",
-          "as_of": "2026-07-31",
+          "node_id": "driver_credit_stress",
+          "as_of": "2026-08-01",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "ai_semis",
+          "entity": "credit_stress",
           "observation": {
-            "en": "AI/semis unwind — tech-led de-rating",
-            "zh": "AI/半导体回吐 — 科技主导的回调"
+            "en": "Credit stress",
+            "zh": "信用压力"
           },
-          "direction": -1,
-          "value": 1.39,
-          "z_or_percentile": 1.32,
+          "direction": "",
+          "value": 61.0,
+          "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
           "pathway_role": "trigger",
           "evidence_refs": [
             "market_drivers.primary"
           ]
-        },
-        {
-          "node_id": "leg_ai_semis_0",
-          "as_of": "2026-07-31",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "semis RS",
-          "observation": {
-            "en": "semis RS (-2.4σ)",
-            "zh": "半导体相对强度 (-2.4σ)"
-          },
-          "direction": "negative",
-          "value": -2.4,
-          "z_or_percentile": -2.4,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[0]"
-          ]
-        },
-        {
-          "node_id": "leg_ai_semis_1",
-          "as_of": "2026-07-31",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "growth vs value",
-          "observation": {
-            "en": "growth vs value (-1.2σ)",
-            "zh": "成长对价值 (-1.2σ)"
-          },
-          "direction": "negative",
-          "value": -1.2,
-          "z_or_percentile": -1.2,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[1]"
-          ]
-        },
-        {
-          "node_id": "leg_ai_semis_2",
-          "as_of": "2026-07-31",
-          "domain": "market_drivers",
-          "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "cap-weight vs equal-weight",
-          "observation": {
-            "en": "cap-weight vs equal-weight (-1.3σ)",
-            "zh": "市值加权对等权重 (-1.3σ)"
-          },
-          "direction": "negative",
-          "value": -1.3,
-          "z_or_percentile": -1.3,
-          "source_tier": "display",
-          "lag_class": "same_day",
-          "pathway_role": "required_leg",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[2]"
-          ]
         }
       ],
-      "edges": [
-        {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_0",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "negative",
-          "observed_sign": "negative",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[0]"
-          ]
-        },
-        {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_1",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "negative",
-          "observed_sign": "negative",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[1]"
-          ]
-        },
-        {
-          "src_node": "driver_ai_semis",
-          "dst_node": "leg_ai_semis_2",
-          "mechanism_type": "evidence_leg",
-          "expected_lag": "same_day",
-          "expected_sign": "negative",
-          "observed_sign": "negative",
-          "status": "measured",
-          "evidence_refs": [
-            "market_drivers.evidence_legs[2]"
-          ]
-        }
-      ]
+      "edges": [],
+      "coverage_basis": "scare_trigger",
+      "source_trigger": "risk_radar",
+      "scare": "credit"
     },
     {
-      "family": "rates",
-      "driver": "fed_repricing",
+      "family": "fx",
+      "driver": "usd_shock",
       "pathway_role": "alternate",
-      "as_of": "2026-07-31",
-      "direction_en": "dovish repricing — cuts priced in, front-end down",
+      "as_of": "2026-08-01",
+      "direction_en": "dollar falling — risk tailwind, commodities & EM bid",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -169,17 +75,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_fed_repricing",
-          "as_of": "2026-07-31",
+          "node_id": "driver_usd_shock",
+          "as_of": "2026-08-01",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "fed_repricing",
+          "entity": "usd_shock",
           "observation": {
-            "en": "dovish repricing — cuts priced in, front-end down",
+            "en": "dollar falling — risk tailwind, commodities & EM bid",
             "zh": ""
           },
           "direction": "",
-          "value": 1.05,
+          "value": 0.89,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",
@@ -193,11 +99,11 @@
       "coverage_basis": "scare_trigger"
     },
     {
-      "family": "liquidity",
-      "driver": "liquidity_impulse",
+      "family": "rates",
+      "driver": "fed_repricing",
       "pathway_role": "alternate",
-      "as_of": "2026-07-31",
-      "direction_en": "net liquidity draining — risk headwind",
+      "as_of": "2026-08-01",
+      "direction_en": "dovish repricing — cuts priced in, front-end down",
       "direction_zh": "",
       "confidence_ceiling": "context_only",
       "coverage_score": null,
@@ -205,17 +111,17 @@
       "stale_legs": [],
       "nodes": [
         {
-          "node_id": "driver_liquidity_impulse",
-          "as_of": "2026-07-31",
+          "node_id": "driver_fed_repricing",
+          "as_of": "2026-08-01",
           "domain": "market_drivers",
           "source_artifact": "data/regime/latest.json#market_drivers",
-          "entity": "liquidity_impulse",
+          "entity": "fed_repricing",
           "observation": {
-            "en": "net liquidity draining — risk headwind",
+            "en": "dovish repricing — cuts priced in, front-end down",
             "zh": ""
           },
           "direction": "",
-          "value": 0.75,
+          "value": 0.87,
           "z_or_percentile": null,
           "source_tier": "display",
           "lag_class": "same_day",

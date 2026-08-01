@@ -1,7 +1,7 @@
 {
   "schema": "neuralweb.confluence_sequence.v1",
   "artifact_id": "confluence-sequence",
-  "asof": "2026-07-31",
+  "asof": "2026-08-01",
   "tier": "display",
   "is_context_only": true,
   "display_only": true,
@@ -1592,6 +1592,17 @@
       "n_independent_confirming_latest": 2.0
     },
     {
+      "subject": "CME",
+      "direction": 1,
+      "horizon": "5.0",
+      "persistence_streak": 0,
+      "strength_slope": null,
+      "state": "gone",
+      "last_as_of": "2026-07-13",
+      "n_sessions_in_tape": 1,
+      "n_independent_confirming_latest": 2.0
+    },
+    {
       "subject": "DOW",
       "direction": 1,
       "horizon": "5.0",
@@ -2357,14 +2368,14 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-30",
-      "n_sessions_in_tape": 8
+      "last_as_of": "2026-07-31",
+      "n_sessions_in_tape": 9
     },
     {
       "pair_id": "briefing-divergences",
-      "persistence_streak": 7,
+      "persistence_streak": 0,
       "strength_slope": 0.0,
-      "state": "stable",
+      "state": "gone",
       "last_as_of": "2026-07-31",
       "n_sessions_in_tape": 17
     },
@@ -2373,8 +2384,8 @@
       "persistence_streak": 0,
       "strength_slope": 0.0,
       "state": "gone",
-      "last_as_of": "2026-07-24",
-      "n_sessions_in_tape": 4
+      "last_as_of": "2026-07-30",
+      "n_sessions_in_tape": 5
     },
     {
       "pair_id": "regime-vs-market_state",
@@ -2393,9 +2404,9 @@
       "n_sessions_in_tape": 1
     }
   ],
-  "n_tape_rows": 412,
+  "n_tape_rows": 415,
   "gaps": [],
   "produced_by": "engine/neuralweb/confluence_sequence.py",
-  "produced_at": "2026-07-31T03:33:50Z",
+  "produced_at": "2026-08-01T03:16:24Z",
   "authority_check": []
 }

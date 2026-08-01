@@ -1,7 +1,7 @@
 {
   "schema": "transmission_chains.v1",
-  "asof": "2026-07-30",
-  "built": "2026-07-31 02:37 UTC",
+  "asof": "2026-07-31",
+  "built": "2026-08-01 02:19 UTC",
   "chains": [
     {
       "chain": "credit_spreads_refinancing",
@@ -37,7 +37,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 3.307,
+              "value": 0.812,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -55,7 +55,7 @@
               "series": "HYG/LQD",
               "metric": "ratio_ret_pct",
               "window": 22,
-              "value": 2.51,
+              "value": 2.139,
               "op": "lt",
               "threshold": -2.0,
               "passed": false
@@ -72,7 +72,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": 3.307,
+              "value": 0.812,
               "op": "lt",
               "threshold": 0,
               "passed": false
@@ -93,12 +93,12 @@
         "en": "Dollar spike → EM & multinational-EPS headwind",
         "zh": "美元飙升 → 新兴市场与跨国企业盈利承压"
       },
-      "state": "arming",
+      "state": "propagating",
       "state_label": {
-        "en": "Arming",
-        "zh": "触发中"
+        "en": "Propagating",
+        "zh": "传导中"
       },
-      "hop": 0,
+      "hop": 1,
       "n_hops": 2,
       "armable": true,
       "episode_id": "dollar_spike_em_multinational@r3:2026-07-30",
@@ -111,8 +111,8 @@
             0,
             20
           ],
-          "confirmed": false,
-          "asof": null,
+          "confirmed": true,
+          "asof": "2026-07-31",
           "value_receipt": [
             {
               "path": "transmission.usd_dir",
@@ -153,7 +153,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -3.736,
+              "value": -4.736,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -221,7 +221,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -3.736,
+              "value": -4.736,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -237,9 +237,9 @@
             "en": "EM revenue exposure",
             "zh": "新兴市场营收敞口"
           },
-          "n": 35,
+          "n": 37,
           "cuts": {},
-          "unevaluable": 2830,
+          "unevaluable": 2831,
           "names": [
             "A",
             "AAPL",
@@ -255,9 +255,11 @@
             "CCK",
             "CE",
             "CNH",
+            "CPAY",
             "CTVA",
             "DCH",
             "DD",
+            "EEFT",
             "EL",
             "FCX",
             "INGR",
@@ -288,9 +290,9 @@
             "en": "Multinational FX translation",
             "zh": "跨国汇率折算"
           },
-          "n": 147,
+          "n": 155,
           "cuts": {},
-          "unevaluable": 2638,
+          "unevaluable": 2621,
           "names": [
             "A",
             "AA",
@@ -313,6 +315,7 @@
             "APP",
             "APTV",
             "ARW",
+            "ATI",
             "AVGO",
             "AVY",
             "BA",
@@ -333,6 +336,7 @@
             "CE",
             "CMI",
             "CNH",
+            "CPAY",
             "CSCO",
             "CTVA",
             "DAN",
@@ -345,7 +349,9 @@
             "DOV",
             "DXC",
             "EBAY",
+            "EEFT",
             "EL",
+            "ELAN",
             "EMN",
             "EMR",
             "EPAM",
@@ -363,6 +369,7 @@
             "HPE",
             "HPQ",
             "HWM",
+            "ILMN",
             "INGR",
             "INTC",
             "IR",
@@ -389,6 +396,7 @@
             "MRK",
             "MRVL",
             "MSFT",
+            "NATL",
             "NEM",
             "NFLX",
             "NKE",
@@ -406,6 +414,7 @@
             "PEP",
             "PFE",
             "PPC",
+            "PRGO",
             "PVH",
             "PYPL",
             "RL",
@@ -422,6 +431,7 @@
             "SW",
             "TDY",
             "TEL",
+            "TKR",
             "TMO",
             "TTWO",
             "UBER",
@@ -451,11 +461,11 @@
             "en": "Dollar-debt burden",
             "zh": "美元债务负担"
           },
-          "n": 15,
+          "n": 17,
           "cuts": {
             "financials.debt_to_assets": 31.9
           },
-          "unevaluable": 2747,
+          "unevaluable": 2737,
           "names": [
             "APTV",
             "AVGO",
@@ -463,7 +473,9 @@
             "BKNG",
             "CCK",
             "DCH",
+            "ELAN",
             "ITW",
+            "NATL",
             "NXPI",
             "OGN",
             "OI",
@@ -484,13 +496,15 @@
             "en": "EM/commodity sector (proxy)",
             "zh": "新兴市场/商品行业（代理）"
           },
-          "n": 209,
+          "n": 219,
           "cuts": {},
           "unevaluable": 4,
           "names": [
             "AA",
             "ACDC",
+            "AEM",
             "AESI",
+            "AGI",
             "ALB",
             "ALM",
             "AM",
@@ -503,6 +517,7 @@
             "AROC",
             "ASH",
             "ATR",
+            "AU",
             "AVNT",
             "AVY",
             "AXTA",
@@ -512,6 +527,7 @@
             "BKR",
             "BKV",
             "BORR",
+            "BTG",
             "BTU",
             "CBT",
             "CC",
@@ -546,12 +562,14 @@
             "DVN",
             "ECL",
             "EE",
+            "EGO",
             "EGY",
             "EMN",
             "EOG",
             "EPM",
             "EPSN",
             "EQT",
+            "EQX",
             "ESI",
             "EU",
             "EXE",
@@ -566,6 +584,7 @@
             "FTK",
             "FUL",
             "GEF",
+            "GFI",
             "GLNG",
             "GPK",
             "GRNT",
@@ -573,9 +592,11 @@
             "HCC",
             "HL",
             "HLX",
+            "HMY",
             "HP",
             "HPK",
             "HWKN",
+            "IAG",
             "IFF",
             "INR",
             "INSW",
@@ -583,6 +604,7 @@
             "IOSP",
             "IP",
             "KALU",
+            "KGC",
             "KGEI",
             "KGS",
             "KMI",
@@ -740,7 +762,7 @@
               "series": "T10YIE",
               "metric": "ret_bp",
               "window": 22,
-              "value": 5.0,
+              "value": 4.0,
               "op": "gt",
               "threshold": 15,
               "passed": false
@@ -769,7 +791,7 @@
               "path": "state.rates.real_10y_chg_63d_bp",
               "op": "gt",
               "threshold": 30,
-              "value": 46.0,
+              "value": 45.0,
               "passed": true
             }
           ]
@@ -790,7 +812,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -0.909,
+              "value": -0.915,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -808,7 +830,7 @@
               "series": "CL=F",
               "metric": "ret_pct",
               "window": 60,
-              "value": -17.753,
+              "value": -14.076,
               "op": "gt",
               "threshold": 25,
               "passed": false
@@ -816,7 +838,7 @@
             {
               "series": "CL=F",
               "metric": "ma50_slope5",
-              "value": -1.1694,
+              "value": -0.954,
               "op": "gt",
               "threshold": 0,
               "passed": false
@@ -832,7 +854,7 @@
               "series": "T10YIE",
               "metric": "ret_bp",
               "window": 22,
-              "value": 5.0,
+              "value": 4.0,
               "op": "gt",
               "threshold": 15,
               "passed": false
@@ -855,7 +877,7 @@
               "path": "state.rates.real_10y_chg_63d_bp",
               "op": "gt",
               "threshold": 30,
-              "value": 46.0,
+              "value": 45.0,
               "passed": true
             }
           ]
@@ -870,7 +892,7 @@
               "vs": "SPY",
               "metric": "rs_pp",
               "window": 63,
-              "value": -0.909,
+              "value": -0.915,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -916,7 +938,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.58,
+              "value": 0.7,
               "passed": true
             }
           ]
@@ -937,7 +959,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -12.325,
+              "value": -9.677,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -965,7 +987,7 @@
               "path": "vol_regime.vix",
               "op": "gte",
               "threshold": 25,
-              "value": 20.66,
+              "value": 17.09,
               "passed": false
             }
           ]
@@ -979,7 +1001,7 @@
               "path": "vol_regime.vol_target_scalar",
               "op": "lt",
               "threshold": 0.85,
-              "value": 0.58,
+              "value": 0.7,
               "passed": true
             }
           ]
@@ -994,7 +1016,7 @@
               "vs": "SPLV",
               "metric": "rs_pp",
               "window": 21,
-              "value": -12.325,
+              "value": -9.677,
               "op": "lt",
               "threshold": 0,
               "passed": true
@@ -1024,10 +1046,10 @@
   ],
   "display_only": true,
   "substrate": {
-    "universe": 2928,
+    "universe": 2937,
     "substrate_asof": {
       "min": "2026-05-07",
-      "max": "2026-07-30"
+      "max": "2026-07-31"
     }
   }
 }

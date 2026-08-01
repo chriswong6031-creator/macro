@@ -2,7 +2,7 @@
   "schema": "crypto.class_state/v1",
   "tier": "display",
   "display_only": true,
-  "as_of": "2026-07-31",
+  "as_of": "2026-08-01",
   "market": {
     "stance": "Advancing, led by Bitcoin",
     "total_state": "Rising",
@@ -11,7 +11,7 @@
     "breadth_state": "Building history"
   },
   "flows": {
-    "etf": "Falling",
+    "etf": "Rising",
     "stablecoins": "Falling",
     "volume": "Quiet tape"
   },
@@ -26,13 +26,13 @@
       "trend": "Range",
       "risk": "Stressed",
       "relative": "Tracking Bitcoin",
-      "coverage": "3,186 daily observations from Yahoo close-only availability fallback."
+      "coverage": "3,714 daily observations from Coinbase daily OHLCV."
     },
     "SOL": {
-      "trend": "Range",
+      "trend": "Fading",
       "risk": "Stressed",
       "relative": "Leading Bitcoin",
-      "coverage": "2,303 daily observations from Yahoo close-only availability fallback."
+      "coverage": "1,872 daily observations from Coinbase daily OHLCV."
     }
   }
 }

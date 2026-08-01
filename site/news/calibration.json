@@ -1,8 +1,8 @@
 {
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
-  "asof": "2026-07-30",
-  "n_events_logged": 228,
+  "asof": "2026-07-31",
+  "n_events_logged": 237,
   "n_events_graded": 111,
   "classes": [
     {
@@ -60,7 +60,7 @@
     {
       "event_type": "dividend_change",
       "direction": "mixed",
-      "n": 2,
+      "n": 3,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -73,7 +73,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 39,
+      "n": 41,
       "n_graded": 14,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -86,7 +86,7 @@
     {
       "event_type": "equity_offering",
       "direction": "bearish",
-      "n": 6,
+      "n": 7,
       "n_graded": 2,
       "hit_5d": 1.0,
       "hit_21d": null,
@@ -125,7 +125,7 @@
     {
       "event_type": "litigation",
       "direction": "bearish",
-      "n": 89,
+      "n": 92,
       "n_graded": 61,
       "hit_5d": 0.39344262295081966,
       "hit_21d": null,
@@ -138,7 +138,7 @@
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 10,
+      "n": 11,
       "n_graded": 0,
       "hit_5d": null,
       "hit_21d": null,
@@ -190,7 +190,7 @@
     {
       "event_type": "policy_trade_control",
       "direction": "mixed",
-      "n": 20,
+      "n": 21,
       "n_graded": 4,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -254,7 +254,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 440,
+    "n_sampled": 462,
     "n_graded": 0,
     "classes": []
   }

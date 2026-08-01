@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "BA-BULL-20260702",
-  "asof": "2026-07-30",
+  "asof": "2026-07-31",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 49.1,
-  "raw_confidence": 51.7,
-  "delta_vs_base": -10.9,
+  "management_confidence": 48.4,
+  "raw_confidence": 47.4,
+  "delta_vs_base": -11.6,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 82.8,
+    "validity": 68.9,
     "progress": 0.0,
-    "pace": 5.0,
+    "pace": 4.3,
     "retention": 50.0,
-    "overlay": 53.0
+    "overlay": 47.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.87,
+    "dist_to_stop_r": 0.759,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 62.2,
-    "p1": -0.0869,
-    "p2": -0.0434,
+    "horizon_pct_used": 64.4,
+    "p1": -0.1607,
+    "p2": -0.0804,
     "p3": null,
-    "move_r": -0.13,
+    "move_r": -0.241,
     "mfe_r": 0.0,
     "mae_r": -0.505
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "Falling Behind Schedule",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 28,
-  "tau": 0.6222
+  "days_elapsed": 29,
+  "tau": 0.6444
 }
