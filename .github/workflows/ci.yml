@@ -216,6 +216,13 @@ on:
       # selection, 404-empty, rail-sentence condition). Same ci-test-whitelist-rot guard.
       - "tests/test_watchlist_chains_js.py"
       - "tests/fixtures/transmission/transmission_chains.json"
+      # live_flow payload consumers: the node-shelled suites that execute the intraday_flow
+      # tracker's and the stock panel's flow loaders against payloads from the real builders.
+      # templates/** and site/** already cover the pages and engine/** the builders; list the
+      # test files so a test-only edit still triggers CI (ci-test-whitelist-rot guard).
+      # Run in the live-flow-ops job.
+      - "tests/test_intraday_flow_ncp_js.py"
+      - "tests/test_stock_iflow_panel_js.py"
       # WRI W6.1: the factor-exposure engine bakes factor_betas.json that risk_core.js
       # consumes; list its emit + tests so an engine/test-only edit triggers CI
       # (ci-test-whitelist-rot guard). Run in the wri-risk-core job below.

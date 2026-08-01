@@ -522,7 +522,8 @@ var REDUCED_MOTION = window.matchMedia && window.matchMedia('(prefers-reduced-mo
 // ── Live state ─────────────────────────────────────────────────────────────
 var quoteState = {};   // ticker -> {price, changePct, vol, hi, lo}
 var pulseState = {};   // ticker -> {vwap, vol_durability, higher_lows, cum_vol, bars_today, rvol_tod, session_high, session_low}
-var flowState = {};    // ticker -> {ncp(~soft), flow_dur, badges[], session_tier, call_share}
+var flowState = {};    // ticker -> {ncp(~soft net CALL premium), net_all(~soft calls+puts),
+                       //            flow_dur, badges[], session_tier, call_share}
 var flowAsof = null, flowRTH = false;
 
 // ── View state ─────────────────────────────────────────────────────────────
@@ -610,9 +611,13 @@ function computeLegs(leader, quote, pulse, flow) {
   var L3 = rvol !== null && rvol >= RVOL_CONFIRM;
   var volDur = pulse ? (pulse.vol_durability != null ? pulse.vol_durability : null) : null;
   var L4 = volDur !== null && volDur >= DUR_MIN;
-  var L5 = false;
-  if (flow) {
-    var ncpPos = flow.ncp != null && flow.ncp > 0;
+  // Both halves must read the SAME series: flow.ncp is the cumulative net CALL
+  // premium and flow_dur scores that same minutes[].ncp series. (It used to AND the
+  // sign of day.net_soft — a net TOTAL, ncp+npp — with call-series durability.)
+  // No call read for this name → unknown leg, not a ✗.
+  var L5 = null;
+  if (flow && flow.ncp != null) {
+    var ncpPos = flow.ncp > 0;
     var durOk = flow.flow_dur != null ? flow.flow_dur >= DUR_MIN : ncpPos;  // degrade to sign if dur absent
     L5 = ncpPos && durOk;
   }
@@ -745,10 +750,11 @@ function fetchPulse() {
 }
 
 // ── Fetch: live options flow (R2, 2-3min RTH) — FIXED per real schema ──────
-// tide_current.json → top_net_impact[] gives per-root ~net premium lean (soft).
+// tide_current.json → top_net_impact[] gives a per-root ~net TOTAL premium
+//   (net_c+net_p). It carries no call/put lean and never feeds flow.ncp.
 // enrich_current.json → per-event list; aggregate per root for badges + tier.
-// tickers/<ROOT>.json → per-root minute series for the most active names →
-//   client-computed flow durability (share of positive 5-min windows).
+// tickers/<ROOT>.json → per-root cumulative minute series; the ONLY source of the
+//   call-only figures — ~net call premium and flow durability.
 var flowInflight = false;
 function fetchFlow() {
   if (flowInflight) return;
@@ -763,20 +769,24 @@ function fetchFlow() {
     flowInflight = false;
     var tide = res[0], enrich = res[1];
     var asof = null;
-    // Per-root ~net premium lean from top_net_impact (confirmed schema).
+    // Per-root ~net TOTAL premium from top_net_impact (confirmed schema).
     if (tide) {
       asof = (tide.meta && tide.meta.asof) || tide.asof || asof;
       (tide.top_net_impact || []).forEach(function(it){
         if (!it || !it.root) return;
         var ex = flowState[it.root] || {};
-        ex.ncp = it.net_prem_soft != null ? it.net_prem_soft : ex.ncp;
+        // net_prem_soft is net_c+net_p. A positive total can be pure put BUYING, so it
+        // states no side — it stays out of `ncp` and only feeds its own labelled row.
+        ex.net_all = it.net_prem_soft != null ? it.net_prem_soft : ex.net_all;
         ex.gross = it.gross != null ? it.gross : ex.gross;
         flowState[it.root] = ex;
       });
     }
     // Badges + session tier: aggregate per root from whatever event list enrich exposes.
     if (enrich) {
-      asof = (enrich.meta && enrich.meta.asof) || asof;
+      // flow.enrich/v1 stamps asof TOP-LEVEL; the legacy meta probe alone read undefined,
+      // so the stamp silently fell through to the tide's. Symmetric with the tide line above.
+      asof = (enrich.meta && enrich.meta.asof) || enrich.asof || asof;
       var events = enrich.events || enrich.feed || enrich.enriched || [];
       if (!events.length && enrich.tickers) {   // legacy rollup shape, if present
         Object.keys(enrich.tickers).forEach(function(root){
@@ -803,9 +813,15 @@ function fetchFlow() {
     }
     flowAsof = asof; flowRTH = isMarketHours();
     updateFlowStamp(asof);
-    // Deepen the most active names with a per-root fetch (flow durability).
+    // Deepen the board's own names — the per-root payload is the only source of the
+    // call-only series the lean and L5 need, and flowState is read for leaders only.
+    // top_net_impact is ranked market-wide, so its head is index roots this board never
+    // shows; taking the leaders in it (≤20 rows) covers every name that can display a
+    // lean and fetches fewer roots than the old blind first-12.
     if (tide && tide.top_net_impact) {
-      tide.top_net_impact.slice(0, 12).forEach(function(it){ if (it && it.root) fetchRootFlow(it.root); });
+      tide.top_net_impact.forEach(function(it){
+        if (it && it.root && LEADERS_BY_TK[it.root]) fetchRootFlow(it.root);
+      });
     }
     render();
   }).catch(function(){ flowInflight = false; });
@@ -832,7 +848,12 @@ function fetchRootFlow(root) {
       if (w > 0) dur = p / w;
     }
     var ex = flowState[root] || {};
-    if (d.day && d.day.net_soft != null) ex.ncp = d.day.net_soft;
+    // minutes[] is cumulative, so the last row's ncp IS the session ~net CALL premium —
+    // the same series `dur` above is scored on. day.net_soft is ncp+npp, a net total, so
+    // it lands in net_all under its own label instead of impersonating call premium.
+    var last = mins.length ? mins[mins.length - 1] : null;
+    if (last && last.ncp != null) ex.ncp = last.ncp;
+    if (d.day && d.day.net_soft != null) ex.net_all = d.day.net_soft;
     if (d.day && d.day.call_share != null) ex.call_share = d.day.call_share;
     if (dur != null) ex.flow_dur = dur;
     flowState[root] = ex;
@@ -1017,7 +1038,8 @@ function spotCard(r, i) {
   var vwapDelta = r.vwapDelta;
   var vwapV = vwapDelta!=null ? '<span class="'+(vwapDelta>=0?'pos':'neg')+'">'+fmtPct(vwapDelta)+'</span>' : '<span class="muted">—</span>';
   var leanV;
-  if (f && f.ncp != null) leanV = lz((f.ncp>0?'~call-heavy':'~put-heavy'), (f.ncp>0?'~偏看涨':'~偏看跌'))+'<span class="soft-tag">~soft</span>';
+  if (f && f.ncp != null) leanV = lz((f.ncp>0?'~call buying':'~call selling'), (f.ncp>0?'~买入看涨':'~卖出看涨'))+'<span class="soft-tag">~soft</span>';
+  else if (f && f.net_all != null) leanV = '<span class="muted">'+lz('side unknown','方向未知')+'</span>';
   else leanV = '<span class="muted">'+lz('quiet','平静')+'</span>';
   var entry = l.entry_signal || {};
   var stopV = entry.stop!=null ? fmtDollar(entry.stop) : (d && d.put_wall!=null ? '~$'+fmtNum(d.put_wall,0) : (q && q.lo!=null ? fmtDollar(q.lo) : '—'));
@@ -1073,7 +1095,10 @@ function buildRow(row) {
   var lean = '';
   if (flow && flow.ncp != null) {
     var lp = flow.ncp > 0;
-    lean = '<div class="metric-sub">'+lz((lp?'~call-heavy':'~put-heavy'), (lp?'~偏看涨':'~偏看跌'))+'<span class="soft-tag">~soft</span></div>';
+    lean = '<div class="metric-sub">'+lz((lp?'~call buying':'~call selling'), (lp?'~买入看涨':'~卖出看涨'))+'<span class="soft-tag">~soft</span></div>';
+  } else if (flow && flow.net_all != null) {
+    // Premium moved, but only the net total is in — no side to state yet.
+    lean = '<div class="metric-sub muted">'+lz('side unknown','方向未知')+'</div>';
   } else if (flowRTH) {
     lean = '<div class="metric-sub muted">'+lz('quiet tape','资金带平静')+'</div>';
   } else {
@@ -1135,6 +1160,7 @@ function detailContent(leader, quote, pulse, flow, conf, d) {
   tapeDl.push(dlRow(lz('Price vs VWAP','价格对VWAP'), vwapDelta!=null ? fmtPct(vwapDelta) : '—'));
   tapeDl.push(dlRow(lz('Higher lows','更高低点'), pulse&&pulse.higher_lows!=null ? String(pulse.higher_lows) : '—'));
   tapeDl.push(dlRow(lz('~Net call premium','~净看涨权利金'), flow&&flow.ncp!=null ? '~'+(flow.ncp>=0?'+':'')+fmtK(flow.ncp) : '—'));
+  tapeDl.push(dlRow(lz('~Net premium (calls+puts)','~净权利金（看涨+看跌）'), flow&&flow.net_all!=null ? '~'+(flow.net_all>=0?'+':'')+fmtK(flow.net_all) : '—'));
   tapeDl.push(dlRow(lz('Flow durability','资金持续'), flow&&flow.flow_dur!=null ? (flow.flow_dur*100).toFixed(0)+'%' : '—'));
   blocks.push(detailBlock(lz('Tape &amp; volume','盘口与量能'), '<div class="dl">'+tapeDl.join('')+'</div>'));
 

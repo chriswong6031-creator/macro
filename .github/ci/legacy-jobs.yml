@@ -2177,6 +2177,12 @@ jobs:
         run: pip install pytest pandas numpy pyyaml pyarrow
       - name: live flow ops test suite
         run: python -m pytest tests/test_live_flow_tiering.py -v
+      # The two surfaces that CONSUME live_flow's payloads, executed under node against
+      # payloads from the real builders. Both suites turn a schema move (or a re-pointed
+      # field) into a red instead of a quietly wrong figure. node comes from the pack-level
+      # setup-node; the suites skip loudly if it is ever absent.
+      - name: live_flow payload consumers — intraday_flow tracker + stock panel (node)
+        run: python -m pytest tests/test_intraday_flow_ncp_js.py tests/test_stock_iflow_panel_js.py -q
 
   ird-substrate-engines:
     if: ${{ false }}
