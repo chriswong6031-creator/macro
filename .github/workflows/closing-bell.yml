@@ -505,6 +505,9 @@ jobs:
           # reaches main (#3617's fix never reached one returning browser), and staging site/
           # alone would land the pair diverged and red the publish gate. Nothing else in the
           # build path writes templates/. See render.yml.
+          # refuse stash/rebase wreckage (2026-08-01 d29e4dd44d: a conflicted
+          # autostash apply was staged wholesale — 1,704 pages shipped markers)
+          bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
           git add site/
           # separate + tolerant: `git add site/ templates/` exits 128 when a pathspec
           # matches nothing, and this step runs under `-eo pipefail` — a missing
@@ -560,6 +563,9 @@ jobs:
               python -m scripts.check_template_site_sync --fix || true
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete"
+              # refuse stash/rebase wreckage (2026-08-01 d29e4dd44d: a conflicted
+              # autostash apply was staged wholesale — 1,704 pages shipped markers)
+              bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               if ! git diff --quiet -- site/ templates/; then
                 git add site/ templates/ && git commit -m "render-sync: post-rebase guards (re-stamp + closingbell)" \
                   || echo "::warning::render-sync commit failed (non-fatal)"

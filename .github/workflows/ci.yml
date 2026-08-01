@@ -48,6 +48,10 @@ on:
       # silently drop a day's engine outputs (2026-07-22 asia-close run 29904079071).
       - "scripts/rebase_autoresolve_hashed_css.sh"
       - "tests/test_rebase_autoresolve_hashed_css.py"
+      # conflict-wreckage strip gate: the push loops' other failure mode — a conflicted
+      # autostash apply staged wholesale (2026-08-01 d29e4dd44d, 1,704 marker pages).
+      - "scripts/ci/strip_conflict_markers.sh"
+      - "tests/test_strip_conflict_markers.py"
       # font-ui guard: body-level var(--font-ui) must resolve (theme.css or local def) — #2647.
       - "scripts/check_font_ui_defined.py"
       - "tests/test_check_font_ui_defined.py"

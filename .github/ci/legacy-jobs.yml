@@ -189,6 +189,13 @@ jobs:
         run: pip install pytest
       - name: autoresolver must finish rename/rename rebases on hashed css (and refuse all else)
         run: python -m pytest tests/test_rebase_autoresolve_hashed_css.py -q
+      # 2026-08-01 sibling incident: the same push loops' `pull --rebase --autostash`
+      # left a CONFLICTED autostash apply in the tree and the broad `git add site/
+      # templates/` staged it verbatim — d29e4dd44d shipped conflict markers across
+      # 1,704 committed pages, live until c1bfee482a. Every lane now runs
+      # scripts/ci/strip_conflict_markers.sh before its broad adds; this replays that.
+      - name: a conflicted stash/rebase apply must be stripped, never committed
+        run: python -m pytest tests/test_strip_conflict_markers.py -q
 
   conflict-markers:
     if: ${{ false }}
