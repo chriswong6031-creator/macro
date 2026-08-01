@@ -2046,14 +2046,20 @@
       {% endif %}
       {% if cbbc_map and cbbc_map.bellwethers %}
       {% set _cb = cbbc_map.bellwethers[0] %}
-      <div class="hkx-kv"><span class="hkx-k">{{ t('Leverage bets','杠杆仓位') }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if _cb.leverage_state == 'bearish' else ('ok' if _cb.leverage_state == 'bullish' else 'warn') }}">{{ t('Lean bearish','偏空') if _cb.leverage_state == 'bearish' else (t('Lean bullish','偏多') if _cb.leverage_state == 'bullish' else t('Balanced','均衡')) }}</span></span></div>
+      <div class="hkx-kv"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}><span class="hkx-k">{{ t('Leverage bets','杠杆仓位') }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if 'bear' in (_cb.leverage_state or '') else ('ok' if 'bull' in (_cb.leverage_state or '') else 'warn') }}">{{ t('Lean bearish','偏空') if 'bear' in (_cb.leverage_state or '') else (t('Lean bullish','偏多') if 'bull' in (_cb.leverage_state or '') else ('—' if _cb.leverage_state == 'no_data' else t('Balanced','均衡'))) }}</span></span></div>
       {% if _cb.bull_outstanding is not none and _cb.bear_outstanding is not none %}
       {% set _tot = _cb.bull_outstanding + _cb.bear_outstanding %}
-      <div class="hkx-bbar">
+      <div class="hkx-bbar"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}>
         <span class="hkx-bull" style="width:{{ (_cb.bull_outstanding / _tot * 100)|int }}%"></span>
         <span class="hkx-bear" style="width:{{ (_cb.bear_outstanding / _tot * 100)|int }}%"></span>
       </div>
       {% endif %}
+      {% endif %}
+      {# W1 freshness banner — OUTSIDE the bellwethers gate: the engine-crash
+         path returns bellwethers: [] WITH a banner, and that is exactly the
+         case a reader most needs told. #}
+      {% if cbbc_map and cbbc_map.banner %}
+      <div style="font-size:11px;color:var(--warn);margin-top:4px"><span class="l-en">{{ cbbc_map.banner.en }}</span><span class="l-zh">{{ cbbc_map.banner.zh }}</span></div>
       {% endif %}
       <div class="hkx-foot">{{ t('An early read on tomorrow\'s open, plus where crowded leveraged bets could speed up a move.','对明日开盘的早期读数，以及集中杠杆仓位可能加速行情的位置。') }}</div>
     </div>
@@ -2408,12 +2414,15 @@
             <div class="hkx-plain" style="margin-top:0">{{ t('Hong Kong has popular <b>leveraged bets</b> on big stocks. When lots pile up at one price level, a move through it can trigger forced buying or selling — speeding up the move.','香港有流行的<b>杠杆产品</b>押注大盘股。当大量仓位集中在某价位时，一旦突破可能触发强制买卖，加速行情。') | safe }}</div>
             {% if cbbc_map and cbbc_map.bellwethers %}
             {% for cb in cbbc_map.bellwethers[:2] %}
-            <div class="hkx-kv"><span class="hkx-k">{{ cb.name_en if cb.name_en is defined else '—' }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if cb.leverage_state == 'bearish' else ('ok' if cb.leverage_state == 'bullish' else 'warn') }}">{{ t('Bearish','偏空') if cb.leverage_state == 'bearish' else (t('Bullish','偏多') if cb.leverage_state == 'bullish' else t('Balanced','均衡')) }}</span></span></div>
+            <div class="hkx-kv"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}><span class="hkx-k">{{ cb.name_en if cb.name_en is defined else '—' }}</span><span class="hkx-v"><span class="hkx-stword {{ 'bad' if 'bear' in (cb.leverage_state or '') else ('ok' if 'bull' in (cb.leverage_state or '') else 'warn') }}">{{ t('Bearish','偏空') if 'bear' in (cb.leverage_state or '') else (t('Bullish','偏多') if 'bull' in (cb.leverage_state or '') else ('—' if cb.leverage_state == 'no_data' else t('Balanced','均衡'))) }}</span></span></div>
             {% if cb.bull_outstanding is not none and cb.bear_outstanding is not none %}
             {% set _tot = cb.bull_outstanding + cb.bear_outstanding %}
-            <div class="hkx-bbar"><span class="hkx-bull" style="width:{{ (cb.bull_outstanding / _tot * 100)|int }}%"></span><span class="hkx-bear" style="width:{{ (cb.bear_outstanding / _tot * 100)|int }}%"></span></div>
+            <div class="hkx-bbar"{% if cbbc_map.banner %} style="opacity:.55"{% endif %}><span class="hkx-bull" style="width:{{ (cb.bull_outstanding / _tot * 100)|int }}%"></span><span class="hkx-bear" style="width:{{ (cb.bear_outstanding / _tot * 100)|int }}%"></span></div>
             {% endif %}
             {% endfor %}
+            {% endif %}
+            {% if cbbc_map and cbbc_map.banner %}
+            <div style="font-size:11px;color:var(--warn);margin-top:6px"><span class="l-en">{{ cbbc_map.banner.en }}</span><span class="l-zh">{{ cbbc_map.banner.zh }}</span></div>
             {% endif %}
           </div>
         </div>
