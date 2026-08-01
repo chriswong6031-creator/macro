@@ -120,6 +120,22 @@ _ACTIVITY_WORDS: dict[str, str] = {
     # rate_limited is "waiting out a rate limit": the word has to carry the
     # cause, not the mechanism.
     "expired_wire": "aged out of the queue before anyone sent it",
+    # The autonomous approval desk (2026-07-31). These five answer the question
+    # the operator asked for when he said "closely audit them, then approve them
+    # so they go out quickly without me" — which is not "how many went out" but
+    # "what did the desk decide on my behalf, and what is still mine".
+    #
+    # `held` is the one that has to read exactly right. It does NOT mean the
+    # desk judged the post bad: it means the desk had nothing to check the
+    # post's numbers against and refused to bless a claim it could not verify.
+    # That queue is the operator's, and calling it "rejected" would hide the
+    # only work left for a human.
+    "desk_approved": "audited and cleared to go out",
+    "desk_quarantined": "pulled by the audit before approval",
+    "desk_held": "left for you: the audit could not check its numbers",
+    "desk_capped": "over this sweep's approval limit (re-audited next sweep)",
+    "desk_expired": "retired as too old to still be true",
+    "desk_disabled": "the audit is switched off in config",
 }
 
 # Counters that mean "a post did NOT go out because of this" — the ones that sum
@@ -134,6 +150,11 @@ _LOSS_COUNTERS = frozenset({
     # A post the desk wrote and nobody sent is a loss like any other — it is
     # only invisible because it died before the dispatch loop rather than in it.
     "expired_wire",
+    # The approval desk's four post-costing outcomes. `desk_approved` is
+    # deliberately NOT here (it is work done, and those posts go on to be
+    # counted as posted or as a dispatch-gate loss) and neither is
+    # `desk_disabled` (a config state, not a post).
+    "desk_quarantined", "desk_held", "desk_capped", "desk_expired",
 })
 
 # Lanes that draw an LLM on the marketing side. Config path → the lane's job in

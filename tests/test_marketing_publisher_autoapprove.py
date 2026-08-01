@@ -90,6 +90,23 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
     keep testing what they were written to test. The scope's own semantics
     (planned kind NOT auto-approved, mover still auto-approved) are pinned in
     tests/test_marketing_selection.py.
+
+    APPROVAL DESK OFF, EXPLICITLY. `approval_desk.enabled` ships TRUE and a
+    MISSING block reads as enabled, so a minimal config like this one arms the
+    autonomous desk — which now runs UPSTREAM of the auto-approve pass and
+    audits every queued planned-kind item (payload, number sanity, liveness,
+    chart law, banned language, dedup). Every fixture in this file is a
+    throwaway string ("Fresh post now.", "Leave this one alone.", 300 x's) that
+    the desk's payload floor correctly quarantines for carrying no number, no
+    cashtag and no dated precedent.
+
+    Same reasoning as the `auto_approve_scope: all` line below: this file
+    exercises the auto-approve MACHINERY — gates, caps, floor, jitter,
+    immediates, post-now, dark desks — and pinning its fixtures to the desk's
+    editorial bar would make sixteen unrelated tests fail the day somebody
+    tightens a check. The desk's own behaviour, and its interaction with these
+    lanes (planned item approved and dispatched in one sweep; breaking and
+    mover untouched), is pinned in tests/test_marketing_approval_desk.py.
     """
     cfg_dir = tmp_path / "config"
     cfg_dir.mkdir(parents=True, exist_ok=True)
@@ -107,7 +124,10 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
         "  channels:\n"
         f"    flagship: \"{channel}\"\n"
         "  links_allowed:\n"
-        f"    flagship: {'true' if links_allowed else 'false'}\n",
+        f"    flagship: {'true' if links_allowed else 'false'}\n"
+        # See the docstring: OFF on purpose, this file is not the desk's file.
+        "approval_desk:\n"
+        "  enabled: false\n",
         encoding="utf-8",
     )
 
@@ -1606,7 +1626,10 @@ def _write_desk_network_cfg(tmp_path: Path, *, wire_enabled: bool,
         f"    {_WIRE_DESK}: \"buf-chan-news\"\n"
         "  links_allowed:\n"
         "    flagship: true\n"
-        f"    {_WIRE_DESK}: true\n",
+        f"    {_WIRE_DESK}: true\n"
+        # OFF for the same reason _write_publish_cfg turns it off — see there.
+        "approval_desk:\n"
+        "  enabled: false\n",
         encoding="utf-8",
     )
 

@@ -1245,3 +1245,227 @@ class TestDeepSeekDoesNotSpendTheBudgetThinking:
 
         src = inspect.getsource(llm_auth.build_providers)
         assert src.count("_deepseek_no_thinking(") == 1
+
+
+class TestEmptyTextIsAGenericFaultNotADeepSeekOne:
+    """The 07-31 fix closed DeepSeek. This closes the CLASS.
+
+    `_deepseek_no_thinking` turns thinking off for one provider. The failure it
+    fixes is "any Anthropic-compatible endpoint that emits a reasoning block
+    ahead of text under a small max_tokens cap" — and this repo points eleven
+    call sites at four rungs with a per-item cap in the low hundreds of tokens.
+    So the DETECTION lives here, provider-agnostic, and callers spend their own
+    bounded number of extra calls on it.
+    """
+
+    @staticmethod
+    def _resp(blocks, stop_reason="end_turn"):
+        class B:
+            def __init__(self, type_, text=""):
+                self.type = type_
+                self.text = text
+
+        class R:
+            def __init__(self):
+                self.content = [B(*b) if isinstance(b, tuple) else B(b) for b in blocks]
+                self.stop_reason = stop_reason
+
+        return R()
+
+    def test_a_response_with_text_has_no_diagnosis(self):
+        from engine.llm_auth import empty_text_diagnosis
+
+        assert empty_text_diagnosis(self._resp([("text", "hello")])) is None
+
+    def test_the_outage_response_is_diagnosed_as_retryable(self):
+        """THE EXACT 07-31 SHAPE: one thinking block, stop_reason=max_tokens."""
+        from engine.llm_auth import empty_text_diagnosis
+
+        diag = empty_text_diagnosis(self._resp(["thinking"], stop_reason="max_tokens"))
+        assert diag["reasoning_only"] is True
+        assert diag["token_exhausted"] is True
+        assert diag["retryable"] is True
+        assert diag["blocks"] == ["thinking"]
+
+    def test_reasoning_only_is_retryable_even_when_the_stop_reason_lies(self):
+        """A compat layer that truncates and reports "end_turn" is the same fault.
+
+        Pins the deliberate `or` in `retryable`: an `and` over
+        (reasoning_only, token_exhausted) returns False here and the item dies
+        holding three untried providers.
+        """
+        from engine.llm_auth import empty_text_diagnosis
+
+        diag = empty_text_diagnosis(self._resp(["thinking"], stop_reason="end_turn"))
+        assert diag["retryable"] is True
+
+    def test_a_truncated_empty_response_with_no_blocks_is_retryable(self):
+        from engine.llm_auth import empty_text_diagnosis
+
+        diag = empty_text_diagnosis(self._resp([], stop_reason="max_tokens"))
+        assert diag["reasoning_only"] is False
+        assert diag["retryable"] is True
+
+    def test_a_deliberately_silent_response_is_not_retryable(self):
+        """No text, no reasoning, a clean stop: the model chose to say nothing.
+
+        Retrying that is spend, not recovery.
+        """
+        from engine.llm_auth import empty_text_diagnosis
+
+        diag = empty_text_diagnosis(self._resp([("tool_use",)], stop_reason="end_turn"))
+        assert diag["retryable"] is False
+
+    def test_diagnosis_never_raises_on_a_junk_object(self):
+        from engine.llm_auth import empty_text_diagnosis, response_text
+
+        assert response_text(object()) == ""
+        assert empty_text_diagnosis(object())["retryable"] is False
+
+
+class TestTheEmptyTextRetryPlanPicksALeverThatExists:
+    """One retry is all an item gets, so it must not be a byte-identical repeat."""
+
+    @staticmethod
+    def _anthropic_like():
+        class Msgs:
+            def create(self, *, model, max_tokens, system=None, messages=None,
+                       extra_body=None):
+                return None
+
+        class C:
+            messages = Msgs()
+
+        return C()
+
+    @staticmethod
+    def _codex_like():
+        # engine.codex_provider._Messages.create takes **kwargs and DISCARDS
+        # what it does not know. Advertising a switch on that signature would
+        # make the retry a repeat of the call that just failed.
+        class Msgs:
+            def create(self, **kwargs):
+                return None
+
+        class C:
+            messages = Msgs()
+
+        return C()
+
+    def test_an_extra_body_client_gets_thinking_turned_off(self):
+        from engine.llm_auth import empty_text_retry_plan
+
+        plan = empty_text_retry_plan(self._anthropic_like(), 400)
+        assert plan["how"] == "thinking_disabled"
+        assert plan["extra_body"] == {"thinking": {"type": "disabled"}}
+        assert plan["max_tokens"] == 400
+
+    def test_a_kwargs_only_client_gets_a_doubled_budget_instead(self):
+        """A **kwargs signature is NOT a capability — pins the codex case."""
+        from engine.llm_auth import client_supports_thinking_switch, empty_text_retry_plan
+
+        client = self._codex_like()
+        assert client_supports_thinking_switch(client) is False
+        plan = empty_text_retry_plan(client, 400)
+        assert plan["how"] == "max_tokens_doubled"
+        assert plan["max_tokens"] == 800
+        assert plan["extra_body"] is None
+
+    def test_a_client_that_already_sends_the_switch_gets_the_budget_instead(self):
+        """DeepSeek: re-sending a switch it already sets is a repeat, not a retry."""
+        from engine.llm_auth import _deepseek_no_thinking, empty_text_retry_plan
+
+        wrapped = _deepseek_no_thinking(self._anthropic_like())
+        plan = empty_text_retry_plan(wrapped, 400)
+        assert plan["how"] == "max_tokens_doubled"
+        assert plan["max_tokens"] == 800
+
+    def test_the_sniff_looks_through_this_modules_proxy(self):
+        """The wrapper's own create(**kw) must not answer for the endpoint."""
+        from engine.llm_auth import _deepseek_no_thinking, client_supports_thinking_switch
+
+        wrapped = _deepseek_no_thinking(self._anthropic_like())
+        assert client_supports_thinking_switch(wrapped) is True
+
+
+class TestOneRungFailoverReusesTheBuiltOrder:
+    """A caller that wants ONE more rung must not re-derive the waterfall."""
+
+    @staticmethod
+    def _p(name, dead_env=""):
+        return {"name": name, "env_var": dead_env or f"ENV_{name.upper()}",
+                "cred": "x", "client": object(), "model": "m"}
+
+    def test_providers_after_returns_the_tail_in_built_order(self):
+        from engine.llm_auth import providers_after
+
+        order = [self._p(n) for n in ("codex", "oauth", "anthropic", "deepseek")]
+        tail = providers_after(order, "oauth")
+        assert [p["name"] for p in tail] == ["anthropic", "deepseek"]
+
+    def test_an_unknown_served_name_yields_no_failover(self):
+        """Failing over to the rung that just failed is worse than dropping."""
+        from engine.llm_auth import providers_after
+
+        order = [self._p(n) for n in ("codex", "oauth")]
+        assert providers_after(order, None) == []
+        assert providers_after(order, "nope") == []
+
+    def test_first_usable_skips_credless_clientless_and_dead_rungs(self):
+        from engine import llm_auth
+
+        llm_auth.clear_dead()
+        try:
+            nocred = self._p("codex")
+            nocred["cred"] = ""
+            noclient = self._p("oauth")
+            noclient["client"] = None
+            dead = self._p("anthropic")
+            live = self._p("deepseek")
+            llm_auth.mark_dead(dead["name"], dead["env_var"], reason="auth")
+            assert llm_auth.first_usable(
+                [nocred, noclient, dead, live])["name"] == "deepseek"
+            assert llm_auth.first_usable([nocred, noclient, dead]) is None
+        finally:
+            llm_auth.clear_dead()
+
+
+class TestSDKRetriesAreNotTheEmptyTextMechanism:
+    """House memory: SDK internal retries defeat failover walks.
+
+    The finding, recorded so the next reader does not re-derive it: the
+    anthropic SDK retries on transport failures and 408/409/429/5xx — it looks
+    at the HTTP STATUS, never the body. The outage response was a clean HTTP
+    200, so no max_retries value would ever have retried it. The clamp below is
+    about HARD errors (keeping the waterfall walk as the retry), and the
+    empty-text recovery had to be built explicitly.
+    """
+
+    def test_the_writer_lane_clamps_client_retries_to_at_most_one(self):
+        from engine.marketing.copywriter import _v2_client_max_retries
+
+        assert _v2_client_max_retries({}) == 0
+        assert _v2_client_max_retries({"client_max_retries": 5}) == 1
+        assert _v2_client_max_retries({"client_max_retries": -3}) == 0
+
+    def test_an_unparseable_setting_lands_on_zero_not_an_exception(self):
+        """It is read inside provider construction: a raise here = a mute night."""
+        from engine.marketing.copywriter import _v2_client_max_retries
+
+        assert _v2_client_max_retries({"client_max_retries": "two"}) == 0
+
+    def test_the_writer_lane_actually_passes_the_clamp(self):
+        import inspect
+
+        from engine.marketing import copywriter
+
+        src = inspect.getsource(copywriter.write_posts_llm_v2)
+        assert '"client_max_retries": _v2_client_max_retries(llm_cfg)' in src
+
+    def test_the_tuning_docstring_records_the_http200_finding(self):
+        """The next reader must not have to re-probe the SDK's retry surface."""
+        from engine.llm_auth import _client_tuning_kwargs
+
+        doc = _client_tuning_kwargs.__doc__ or ""
+        assert "HTTP 200" in doc
+        assert "max_retries" in doc

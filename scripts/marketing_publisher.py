@@ -1454,6 +1454,72 @@ def main(argv: list[str] | None = None) -> int:
         log.warning("publish-time read unavailable (%s) — legacy flow unaffected",
                     _read_exc)
 
+    # ── AUTONOMOUS APPROVAL DESK (engine/marketing/approval_desk.py) ─────────
+    # THE PLANNED KINDS HAD NO PATH TO LIVE. `publish.auto_approve_scope: kinds`
+    # deliberately confines the pass below to the publish-time lane, so signal /
+    # chart / education / macro / receipt / watchlist / event / congress /
+    # insider items were left to the operator-approve path — the admin UI
+    # writing decisions.jsonl, which outbox.apply_decisions turns into a
+    # transition. THAT FILE HAS ZERO ROWS IN REPO HISTORY: every planned post
+    # that ever went out was hand-moved by an agent session, and the rest sat
+    # queued until a reaper retired them.
+    #
+    # The desk audits each queued planned item against six named checks and
+    # either approves it (actor `approval-desk`, note listing the checks that
+    # passed), quarantines it with the evidence in the note, or LEAVES IT
+    # QUEUED for a human when it cannot verify the claim. It is an ADDITIONAL
+    # bar, never a bypass: every gate below — the live tape gate, the chart law,
+    # near-dup, the voice gates, the cap, the spacing floor — still runs on
+    # anything it approves.
+    #
+    # HERE, between the publish-time generators and the auto-approve pass, for
+    # two reasons. The pass below seeds its per-account budget from items
+    # already `approved`, so the desk has to have finished before it counts;
+    # and the candidate set below the pass is what actually dispatches, so an
+    # item approved here goes out in THIS sweep rather than waiting for the
+    # next one. DRY-RUN NEVER MUTATES — the desk only reports what it would do.
+    desk_approved = desk_quarantined = desk_held = desk_capped = 0
+    desk_expired = desk_disabled = 0
+    try:
+        from engine.marketing import approval_desk as _desk  # noqa: PLC0415
+        _desk_tally = _desk.run(
+            root, cfg=cfg, now=now, live=live, account=args.account,
+            media_enabled=_media_enabled_cfg(pub_cfg), state=state,
+        )
+        desk_approved = int(_desk_tally.get("approved") or 0)
+        desk_quarantined = int(_desk_tally.get("quarantined") or 0)
+        desk_held = int(_desk_tally.get("held") or 0)
+        desk_capped = int(_desk_tally.get("capped") or 0)
+        desk_expired = int(_desk_tally.get("expired") or 0)
+        desk_disabled = 1 if _desk_tally.get("status") == "disabled" else 0
+        log.info(
+            "approval desk | status=%s considered=%d approved=%d quarantined=%d "
+            "held=%d capped=%d expired=%d by_check=%s",
+            _desk_tally.get("status"), int(_desk_tally.get("considered") or 0),
+            desk_approved, desk_quarantined, desk_held, desk_capped,
+            desk_expired, _desk_tally.get("by_check") or {},
+        )
+        if live and (desk_approved or desk_quarantined or desk_expired):
+            # Bare line-start print (house law): a logger prefix makes GitHub
+            # drop the annotation entirely. ::notice, not ::warning — this is
+            # the desk doing the job it was armed for, and the losses it names
+            # are already itemised on the Marketing Floor's loss ledger.
+            print(f"::notice title=marketing-approval-desk::approval desk "
+                  f"cleared {desk_approved}, quarantined {desk_quarantined}, "
+                  f"held {desk_held} for human review, capped {desk_capped} "
+                  f"and retired {desk_expired} planned post(s) "
+                  f"{_desk_tally.get('by_check') or {}}. A HELD item is one the "
+                  f"desk could not VERIFY, not one it judged bad — that is the "
+                  f"queue a human still owns.", flush=True)
+            # Re-fold so the auto-approve pass's budget and the candidate set
+            # below both see the desk's transitions.
+            state = _outbox.fold_state(root)
+            items_by_id = state["items"]
+            statuses = state["status"]
+    except Exception as _desk_exc:  # noqa: BLE001
+        log.warning("approval desk unavailable (%s) — planned items stay queued "
+                    "for the operator, legacy flow unaffected", _desk_exc)
+
     # ── OPTIONAL auto-approve: queued → approved for items that pass ALL gates ─
     # Gated OFF by default; enabled by publish.auto_approve OR --auto-approve.
     # This is the operator's path to full automation — leave it off during the
@@ -2652,6 +2718,15 @@ def main(argv: list[str] | None = None) -> int:
         # the silent night this alarm exists for, and leaving them out of
         # _considered would let it pass in silence.
         "aged out of the queue unposted": expired_wire,
+        # The approval desk's own losses. Same reasoning as expired_wire: they
+        # happen BEFORE the dispatch loop, so an in-loop-only trigger would let
+        # a night where the desk held every planned post pass in silence — and
+        # "nothing could be verified" is the single most important thing the
+        # operator could learn from such a night.
+        "quarantined by the approval desk": desk_quarantined,
+        "held by the approval desk for a human": desk_held,
+        "over the approval desk's per-sweep limit": desk_capped,
+        "retired by the approval desk as expired": desk_expired,
         "other quarantine": quarantined,
     }
     _considered = posted + would_post + sum(_blocked.values())
@@ -2696,7 +2771,9 @@ def main(argv: list[str] | None = None) -> int:
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
         "substance_shadow=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
-        "expired_wire=%d stuck_posting=%d auto_approved=%d",
+        "expired_wire=%d desk_approved=%d desk_quarantined=%d desk_held=%d "
+        "desk_capped=%d desk_expired=%d desk_disabled=%d "
+        "stuck_posting=%d auto_approved=%d",
         mode, posted, failed, rate_limited, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
@@ -2707,6 +2784,8 @@ def main(argv: list[str] | None = None) -> int:
         skipped_channel,
         skipped_halt, parked_dark,
         expired_wire,
+        desk_approved, desk_quarantined, desk_held, desk_capped, desk_expired,
+        desk_disabled,
         len(stuck_posting),
         len(auto_approved),
     )
@@ -2747,6 +2826,17 @@ def main(argv: list[str] | None = None) -> int:
             # posts the desk WROTE and nobody sent, and the Floor's loss ledger
             # is the only surface that says so.
             "expired_wire": expired_wire,
+            # The approval desk's tally. `desk_disabled` is a 0/1 COUNTER rather
+            # than a status string on purpose: the Floor's loss ledger renders
+            # numbers and silently SKIPS everything else, so a string here would
+            # be another tinted pane — a night with the desk switched off would
+            # read exactly like a night where it ran and cleared nothing.
+            "desk_approved": desk_approved,
+            "desk_quarantined": desk_quarantined,
+            "desk_held": desk_held,
+            "desk_capped": desk_capped,
+            "desk_expired": desk_expired,
+            "desk_disabled": desk_disabled,
             "dark_accounts": (None if _dark is None else sorted(_dark)),
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),

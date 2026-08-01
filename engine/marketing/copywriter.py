@@ -5831,6 +5831,14 @@ def _v2_system_prompt(cfg: dict, *, root: Any = None,
 _V2_STAT_KEYS = (
     "items", "llm", "llm_repair", "repairs",
     "dropped_provider", "dropped_validate", "dropped_critic",
+    # PROVIDER-RESILIENCE COUNTERS. `repairs` counts EDITORIAL second turns
+    # (violations, critic reject) and says nothing about the transport, so a
+    # night where every item silently bought a second provider call looked
+    # identical to a clean one. These two are the cost side of the 07-31 fix and
+    # the first number to look at when the spend jumps: a healthy night is ~0
+    # of both, and a night where `provider_failovers` tracks `items` is a rung
+    # that is down and should be pulled from the order.
+    "provider_retries", "provider_failovers",
 )
 _V2_STATS: dict[str, int] = {k: 0 for k in _V2_STAT_KEYS}
 #: The writer runs items in parallel and every worker bumps these. ``d[k] += 1``
@@ -6097,7 +6105,18 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
                 or ["codex", "oauth", "anthropic", "deepseek"],
                 "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
                 "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
-                "client_max_retries": llm_cfg.get("client_max_retries", 0),
+                # SDK RETRIES MUST NOT BECOME THE RETRY MECHANISM (house memory
+                # "SDK retries defeat failover walks"). The waterfall walk is
+                # this lane's retry for hard errors and the explicit empty-text
+                # recovery in `_v2_write_one` is its retry for textless 200s;
+                # an SDK that also retries the same dead credential twice just
+                # delays both by seconds per item across ~900 items. 0 is the
+                # default and the clamp keeps a config line from quietly
+                # reinstating the SDK's 2. (Measured while building this: the
+                # SDK inspects HTTP status only, so it would never have retried
+                # the 07-31 HTTP-200-no-text response at any setting — the clamp
+                # is about hard errors, not about that outage.)
+                "client_max_retries": _v2_client_max_retries(llm_cfg),
                 "client_timeout_s": llm_cfg.get("client_timeout_s", 60.0),
             },
             opus_model=model_id,
@@ -6295,6 +6314,29 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
     return results
 
 
+#: Hard ceiling on SDK-level retries for the writer's clients. See the WHY at
+#: the call site in write_posts_llm_v2.
+_V2_MAX_CLIENT_RETRIES = 1
+
+
+def _v2_client_max_retries(llm_cfg: dict) -> int:
+    """Config's ``client_max_retries``, clamped to [0, 1]. Never raises.
+
+    A bad value must land on the SAFE default rather than on an exception: this
+    is read inside the provider-construction try block, so a TypeError here
+    would be caught as "provider construction failed", empty the waterfall, and
+    turn one unparseable config line into a whole mute night — the exact failure
+    mode this wave exists to stop.
+    """
+    try:
+        want = int(llm_cfg.get("client_max_retries", 0) or 0)
+    except (TypeError, ValueError):
+        log.warning("copywriter v2: client_max_retries=%r is not an int — using 0",
+                    llm_cfg.get("client_max_retries"))
+        return 0
+    return min(_V2_MAX_CLIENT_RETRIES, max(0, want))
+
+
 def _v2_model_id(llm_cfg: dict) -> str:
     """Resolve the writer's model id from config.yml's llm_models block."""
     model_key = str(llm_cfg.get("model_key", "marketing_copy"))
@@ -6362,7 +6404,40 @@ def _v2_write_one(
     account_id = str(ctx.get("account", ""))
     kind = str(ctx.get("type", ""))
 
-    def _call(user_msg: str) -> str:
+    # PROVIDER-FAULT STATE FOR THIS ONE ITEM. `_call` records the last
+    # provider-side fault here so the drop below can NAME it.
+    #
+    # On 07-30 and again on 07-31 every one of 914 drops read "provider returned
+    # no text", and in the plan census that string is indistinguishable from
+    # "the model looked at this post and had nothing to say". There was nothing
+    # in the artifact that separated one editorial miss from a provider serving
+    # nothing 914 times in a row, which is exactly why two consecutive dark
+    # nights shipped through green runs. `provider_no_text:<provider>` is that
+    # separation, and it carries the provider because the batch-level breaker in
+    # content_studio has no other way to learn which rung broke (it sees the
+    # reason census and nothing else).
+    fault: dict[str, Any] = {}
+
+    def _messages_create(client, model, user_msg: str, *, cap: int,
+                         extra_body: dict | None):
+        """One raw request. Kept separate so the retry is provably the SAME call."""
+        kw: dict[str, Any] = {
+            "model": model, "max_tokens": cap, "system": system_prompt,
+            "messages": [{"role": "user", "content": user_msg}],
+        }
+        if extra_body:
+            kw["extra_body"] = extra_body
+        return client.messages.create(**kw)
+
+    def _do_call_factory(user_msg: str, *, same_provider_retry: bool):
+        """Build the make_call callback for one turn.
+
+        `same_provider_retry` is the per-item cost cap made explicit: the FIRST
+        walk may buy one extra call from whichever provider served nothing, the
+        failover walk below may not. Three calls is the hard ceiling for an item
+        (primary, primary retry, one failover rung) — with 915 planned posts a
+        node, an uncapped recovery is its own outage.
+        """
         def _do_call(client, model):
             # DEEPSEEK v4 THINKS BY DEFAULT, AND THAT ATE THE WHOLE BUDGET.
             #
@@ -6390,32 +6465,146 @@ def _v2_write_one(
             # llm_auth's deepseek client now defaults `thinking` off for every
             # caller (see _deepseek_no_thinking there); a lane that genuinely
             # wants reasoning still gets it by passing `thinking` explicitly.
-            resp = client.messages.create(
-                model=model, max_tokens=max_tokens, system=system_prompt,
-                messages=[{"role": "user", "content": user_msg}],
-            )
+            #
+            # AND THE SAME-SHAPED FAULT FROM ANY OTHER PROVIDER IS HANDLED BELOW.
+            # That per-provider fix closes DeepSeek. The failure CLASS is "any
+            # Anthropic-compatible endpoint that emits a reasoning block ahead of
+            # text under a small max_tokens cap", and this lane sends 400 tokens
+            # to four different rungs. So a textless response now buys one more
+            # attempt here (llm_auth.empty_text_retry_plan picks thinking-off or
+            # a doubled budget, whichever the client can actually use) before the
+            # item is allowed to die.
+            resp = _messages_create(client, model, user_msg,
+                                    cap=max_tokens, extra_body=None)
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "stop_refusal", resp
-            text = "".join(b.text for b in resp.content
-                           if getattr(b, "type", "") == "text")
-            if not text:
-                # SAY WHAT CAME BACK INSTEAD. "provider returned no text" is true
-                # and undiagnosable: it reads as an outage when the call in fact
-                # succeeded and spent its budget on something we discarded. The
-                # block types and stop_reason are the whole diagnosis, and they
-                # cost one log line at the moment they are still in hand.
-                _blocks = [str(getattr(b, "type", "?")) for b in (resp.content or [])]
-                log.warning(
-                    "copywriter v2: %s answered with no text block "
-                    "(blocks=%s, stop_reason=%s, max_tokens=%d) — if this is a "
-                    "thinking model the reasoning consumed the budget",
-                    model, _blocks or "[]", getattr(resp, "stop_reason", "?"),
-                    max_tokens)
-            return (text or None), None, resp
+            text = llm_auth.response_text(resp)
+            if text:
+                return text, None, resp
 
-        raw, _reason, _provider = llm_auth.make_call(
-            providers, _do_call, context="marketing_copy_v2")
-        return _v2_extract_text(raw or "")
+            # SAY WHAT CAME BACK INSTEAD. "provider returned no text" is true
+            # and undiagnosable: it reads as an outage when the call in fact
+            # succeeded and spent its budget on something we discarded. The
+            # block types and stop_reason are the whole diagnosis, and they
+            # cost one log line at the moment they are still in hand.
+            diag = llm_auth.empty_text_diagnosis(resp) or {}
+            log.warning(
+                "copywriter v2: %s answered with no text block "
+                "(blocks=%s, stop_reason=%s, max_tokens=%d) — if this is a "
+                "thinking model the reasoning consumed the budget",
+                model, diag.get("blocks") or "[]", diag.get("stop_reason", "?"),
+                max_tokens)
+            if not (same_provider_retry and diag.get("retryable")):
+                return None, None, resp
+
+            plan = llm_auth.empty_text_retry_plan(client, max_tokens)
+            _bump("provider_retries")
+            try:
+                resp2 = _messages_create(
+                    client, model, user_msg,
+                    cap=int(plan["max_tokens"]), extra_body=plan["extra_body"])
+            except TypeError as exc:
+                # A client whose signature advertises extra_body and then refuses
+                # the value. Swallowed on purpose: raising here would hand
+                # make_call a "transport error" and send it cascading down the
+                # whole waterfall, which is the opposite of the bounded recovery
+                # this function is allowed to spend.
+                log.warning("copywriter v2: %s rejected the %s retry (%s: %s)",
+                            model, plan["how"], type(exc).__name__, exc)
+                return None, None, resp
+            text2 = llm_auth.response_text(resp2)
+            if text2:
+                log.info("copywriter v2: %s recovered on the %s retry "
+                         "(first response was %s)",
+                         model, plan["how"], diag.get("blocks") or "[]")
+                return text2, None, resp2
+            log.warning("copywriter v2: %s still returned no text after the %s "
+                        "retry (blocks=%s, stop_reason=%s) — failing over",
+                        model, plan["how"],
+                        (llm_auth.empty_text_diagnosis(resp2) or {}).get("blocks"),
+                        getattr(resp2, "stop_reason", "?"))
+            return None, None, resp2
+
+        return _do_call
+
+    def _call(user_msg: str) -> str:
+        """One writer turn across the waterfall. "" on every provider fault.
+
+        THE GAP THIS CLOSES. `make_call` treats any call that does not RAISE as
+        a success, so a provider that answers HTTP 200 with no text ends the
+        walk — the three healthy rungs underneath it are never tried, and the
+        item dies holding a working credential list. That is the 07-30/07-31
+        shape: DeepSeek served every call, 200 every time, and codex/oauth/
+        anthropic were never asked. So the textless case gets an explicit
+        one-rung failover here, in the caller, where the per-item budget is
+        known — make_call itself must keep treating a served response as served,
+        because every other consumer depends on that.
+        """
+        fault.clear()
+        try:
+            raw, reason, served = llm_auth.make_call(
+                providers, _do_call_factory(user_msg, same_provider_retry=True),
+                context="marketing_copy_v2")
+        except Exception as exc:  # noqa: BLE001 — connection/5xx after a FULL walk
+            # make_call re-raises the last hard error only once it has tried
+            # EVERY provider, so the ladder failover for this class already
+            # happened and there is nothing left to try. It is still worth its
+            # own reason: "the transport broke" and "the model said nothing" send
+            # an operator to different places.
+            fault["reason"] = f"provider_error:{type(exc).__name__}"
+            log.warning("copywriter v2: every provider failed hard (%s: %s)",
+                        type(exc).__name__, exc)
+            return ""
+        if raw:
+            return _v2_extract_text(raw)
+
+        if reason == "stop_refusal":
+            # THE MODEL LOOKED AT THIS ITEM AND DECLINED. That is an editorial
+            # outcome, not a fault, and it must never trigger a failover: a
+            # prompt one provider refuses is a prompt the next one refuses too,
+            # so failing over would multiply every refusal by the depth of the
+            # waterfall and turn a content problem into a spend problem.
+            fault["reason"] = "provider_refusal"
+            return ""
+        if reason:
+            # rate_limited_all / auth_invalid_all / no_provider — make_call
+            # already walked everything. Nothing to fail over to.
+            fault["reason"] = f"provider_unavailable:{reason}"
+            return ""
+
+        # LADDER FAILOVER, ONE RUNG. Reuse the order build_providers produced
+        # rather than re-deriving it: that order carries key-pool balancing and
+        # cross-process cooling, and a freshly guessed order throws both away.
+        candidate = llm_auth.first_usable(
+            llm_auth.providers_after(providers, served))
+        # NAME EVERY RUNG THAT SERVED NOTHING, not just the last one. The
+        # breaker downstream turns this into "provider: X", and an operator who
+        # pulls X from provider_order when X AND the rung under it were both
+        # silent gets a second dark night — two silent rungs is a prompt/budget
+        # diagnosis, one silent rung is a provider diagnosis, and the census is
+        # the only place that distinction survives.
+        tried = [str(served or "unknown")]
+        if candidate is not None:
+            _bump("provider_failovers")
+            log.warning("copywriter v2: provider '%s' served no text — failing "
+                        "over to '%s' for this item",
+                        served, candidate.get("name"))
+            try:
+                raw2, _reason2, served2 = llm_auth.make_call(
+                    [candidate],
+                    _do_call_factory(user_msg, same_provider_retry=False),
+                    context="marketing_copy_v2_failover")
+            except Exception as exc:  # noqa: BLE001 — the failover is best effort
+                log.warning("copywriter v2: failover provider '%s' failed "
+                            "(%s: %s)", candidate.get("name"),
+                            type(exc).__name__, exc)
+                raw2, served2 = None, str(candidate.get("name") or "")
+            if raw2:
+                return _v2_extract_text(raw2)
+            tried.append(str(served2 or candidate.get("name") or "unknown"))
+
+        fault["reason"] = "provider_no_text:" + "+".join(tried)
+        return ""
 
     def _shape_and_check(text: str) -> tuple[str, str, str, list[str]]:
         """Dial pass, then every deterministic gate. -> (text, hl, body, violations).
@@ -6445,7 +6634,13 @@ def _v2_write_one(
     text = _call(_v2_user_message(payload))
     if not text:
         _bump("dropped_provider")
-        return {"mode": "dropped", "reasons": ["provider returned no text"],
+        # The reason `_call` recorded, never a generic string: the whole point of
+        # the fault dict is that a night's census can tell "the model rejected
+        # this post" from "the provider returned nothing 915 times". The legacy
+        # wording stays as the fallback so an artifact written by an older build
+        # still reads the same in content_studio's remedy table.
+        return {"mode": "dropped",
+                "reasons": [fault.get("reason") or "provider returned no text"],
                 "stage": "provider"}
 
     repaired = False

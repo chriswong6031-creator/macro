@@ -2854,3 +2854,248 @@ class TestRepeatedClosers:
             or "days=7" in inspect.getsource(persona_memory.recent_posts)
         assert "recent_posts(" in inspect.getsource(cw.memory_recent_seed)
         assert "memory_recent_seed(" in inspect.getsource(cw.write_posts_llm_v2)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 47. PROVIDER RESILIENCE — the 07-30/07-31 outage, generically
+#
+# A single provider fault deleted 914 of 915 planned posts two nights running,
+# through green CI both times. The same-day fix turned thinking off for DeepSeek;
+# these pin the CLASS. `make_call` treats any call that does not raise as a
+# success, so a rung that answers HTTP 200 with a reasoning block and no text
+# ENDS THE WALK — the healthy rungs beneath it are never asked. Three things had
+# to become true: one retry against the rung that served nothing, one failover
+# rung after that, and a drop reason that separates "the model rejected this
+# post" from "the provider returned nothing 915 times".
+# ─────────────────────────────────────────────────────────────────────────────
+
+class _ThinkBlock:
+    def __init__(self, kind: str = "thinking") -> None:
+        self.type = kind
+
+
+class _EmptyResp:
+    """The exact outage shape: reasoning only, budget exhausted, HTTP 200."""
+
+    def __init__(self, stop_reason: str = "max_tokens") -> None:
+        self.content = [_ThinkBlock()]
+        self.stop_reason = stop_reason
+        self.usage = None
+
+
+class _RefusalResp:
+    def __init__(self) -> None:
+        self.content = []
+        self.stop_reason = "refusal"
+        self.usage = None
+
+
+class _LedgerMessages:
+    """Records every request and returns whatever the script says.
+
+    `extra_body` is an EXPLICIT parameter because that is the capability
+    `llm_auth.client_supports_thinking_switch` looks for — a **kwargs signature
+    deliberately does not count (see _NoSwitchMessages below).
+    """
+
+    def __init__(self, name, script, ledger) -> None:
+        self._name = name
+        self._script = script
+        self._ledger = ledger
+
+    def create(self, *, model, max_tokens, system, messages, extra_body=None):
+        call = {"provider": self._name, "max_tokens": max_tokens,
+                "extra_body": extra_body, "system": system,
+                "user": messages[0]["content"]}
+        self._ledger.append(call)
+        n = sum(1 for c in self._ledger if c["provider"] == self._name)
+        return self._script(n=n, call=call)
+
+
+class _NoSwitchMessages(_LedgerMessages):
+    """A client whose create() cannot take extra_body — the codex shape."""
+
+    def create(self, *, model, max_tokens, system, messages):  # noqa: D102
+        return super().create(model=model, max_tokens=max_tokens, system=system,
+                              messages=messages)
+
+
+class _LedgerClient:
+    def __init__(self, name, script, ledger, *, switch=True) -> None:
+        cls = _LedgerMessages if switch else _NoSwitchMessages
+        self.messages = cls(name, script, ledger)
+
+
+def _arm_ladder(monkeypatch, rungs, *, switch=True):
+    """Arm a MULTI-rung waterfall. Returns the shared call ledger.
+
+    `rungs` is [(name, script)] in waterfall order, exactly as build_providers
+    would have returned it.
+    """
+    monkeypatch.setenv("MARKETING_LLM_ENABLED", "1")
+    ledger: list[dict] = []
+    providers = [{
+        "name": name,
+        "env_var": f"ENV_{name.upper()}",
+        "cred": "not-a-real-token",
+        "client": _LedgerClient(name, script, ledger, switch=switch),
+        "model": f"model-{name}",
+    } for name, script in rungs]
+    monkeypatch.setattr(llm_auth, "build_providers", lambda *a, **k: providers)
+    llm_auth.clear_dead()
+    cw.reset_writer_stats()
+    copy_critic.reset_critic_stats()
+    return ledger
+
+
+def _good(text: str = "$ARES dipped back to 122 and held. Not chasing it here."):
+    return lambda **_kw: _Resp('{"text": "%s"}' % text)
+
+
+def _always_empty(**_kw):
+    return _EmptyResp()
+
+
+def test_a_thinking_only_response_buys_one_retry_on_the_same_provider(monkeypatch):
+    """Step 1: the rung that served nothing gets ONE more chance, thinking off.
+
+    Pins that the second request goes to the SAME provider carrying
+    extra_body={"thinking": {"type": "disabled"}} — without it the item dies on
+    a 200 while holding a working credential, which is the whole outage.
+    """
+    def script(*, n, call):
+        return _EmptyResp() if n == 1 else _Resp(
+            '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}')
+
+    ledger = _arm_ladder(monkeypatch, [("deepseek", script), ("oauth", _good())])
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["mode"] == "llm", posts[0]
+    assert [c["provider"] for c in ledger] == ["deepseek", "deepseek"], ledger
+    assert ledger[0]["extra_body"] is None
+    assert ledger[1]["extra_body"] == {"thinking": {"type": "disabled"}}
+    stats = cw.writer_stats()
+    assert stats["provider_retries"] == 1
+    assert stats["provider_failovers"] == 0, "no failover was needed"
+
+
+def test_a_client_without_the_switch_gets_a_doubled_budget_instead(monkeypatch):
+    """The codex shape: **kwargs is not a capability, so buy budget instead."""
+    def script(*, n, call):
+        return _EmptyResp() if n == 1 else _Resp(
+            '{"text": "$ARES dipped back to 122 and held. Not chasing it here."}')
+
+    ledger = _arm_ladder(monkeypatch, [("codex", script)], switch=False)
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["mode"] == "llm", posts[0]
+    assert [c["max_tokens"] for c in ledger] == [400, 800], ledger
+    assert cw.writer_stats()["provider_retries"] == 1
+
+
+def test_a_second_empty_response_fails_over_to_the_next_rung(monkeypatch):
+    """Step 2: the walk that make_call refuses to continue, continued once.
+
+    make_call STOPS at a rung that served — so without this the oauth rung is
+    never asked and the post dies. Pins that the failover rung is the next one
+    in the ALREADY-BUILT order and that it is asked exactly once (no second
+    same-provider retry: three calls is the per-item ceiling).
+    """
+    ledger = _arm_ladder(monkeypatch, [
+        ("deepseek", _always_empty),
+        ("oauth", _good()),
+        ("anthropic", _good("never reached")),
+    ])
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["mode"] == "llm", posts[0]
+    assert [c["provider"] for c in ledger] == ["deepseek", "deepseek", "oauth"], ledger
+    stats = cw.writer_stats()
+    assert stats["provider_retries"] == 1
+    assert stats["provider_failovers"] == 1
+
+
+def test_a_second_empty_rung_drops_with_provider_no_text_naming_both(monkeypatch):
+    """Step 3: the drop reason an outage census can actually read.
+
+    "provider returned no text" is what all 914 drops said on 07-31, and in the
+    plan artifact it is indistinguishable from an editorial miss. The reason now
+    names the family AND every rung that served nothing — two silent rungs is a
+    prompt/budget diagnosis, one is a provider diagnosis, and pulling the wrong
+    one buys another dark night.
+    """
+    ledger = _arm_ladder(monkeypatch, [
+        ("deepseek", _always_empty), ("oauth", _always_empty)])
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["mode"] == "dropped"
+    assert posts[0]["stage"] == "provider"
+    assert posts[0]["reasons"] == ["provider_no_text:deepseek+oauth"], posts[0]
+    assert "text" not in posts[0], "a dropped item must carry no postable text"
+    # Ceiling: primary, primary retry, one failover rung. Nothing more.
+    assert [c["provider"] for c in ledger] == ["deepseek", "deepseek", "oauth"], ledger
+
+
+def test_the_last_rung_serving_nothing_names_itself_and_stops(monkeypatch):
+    """Nothing below the served rung: one retry, then the drop. No cascade."""
+    ledger = _arm_ladder(monkeypatch, [("deepseek", _always_empty)])
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["reasons"] == ["provider_no_text:deepseek"], posts[0]
+    assert len(ledger) == 2, ledger
+    assert cw.writer_stats()["provider_failovers"] == 0
+
+
+def test_an_editorial_rejection_never_touches_a_second_provider(monkeypatch):
+    """FAILOVER IS FOR PROVIDER FAULTS ONLY (requirement c).
+
+    A post the copy laws refuse is a content outcome. The provider answered,
+    with text, on every turn. If a validator reject reached the failover path,
+    every picky night would multiply its model spend by the depth of the
+    waterfall and a voice problem would read as an outage. Pins: drop at
+    stage=validate, the second rung untouched, and BOTH resilience counters
+    still at zero.
+    """
+    bad = _good("$ARES ripped to 999.99 and never looked back.")
+    ledger = _arm_ladder(monkeypatch, [("deepseek", bad), ("oauth", _good())])
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["mode"] == "dropped"
+    assert posts[0]["stage"] == "validate", posts[0]
+    assert {c["provider"] for c in ledger} == {"deepseek"}, ledger
+    # The draft plus exactly ONE editorial repair turn — no provider recovery.
+    assert len(ledger) == 2, ledger
+    stats = cw.writer_stats()
+    assert stats["provider_retries"] == 0
+    assert stats["provider_failovers"] == 0
+
+
+def test_a_model_refusal_is_not_an_outage_and_does_not_fail_over(monkeypatch):
+    """stop_reason=refusal is the model declining, not the transport breaking.
+
+    A prompt one rung refuses is a prompt the next rung refuses, so failing over
+    multiplies every refusal by the depth of the waterfall.
+    """
+    ledger = _arm_ladder(monkeypatch, [
+        ("deepseek", lambda **_kw: _RefusalResp()), ("oauth", _good())])
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["reasons"] == ["provider_refusal"], posts[0]
+    assert [c["provider"] for c in ledger] == ["deepseek"], ledger
+    assert cw.writer_stats()["provider_failovers"] == 0
+
+
+def test_a_hard_failure_of_every_rung_is_named_as_a_transport_fault(monkeypatch):
+    """make_call already walks the ladder on hard errors — only the NAME was missing.
+
+    "writer_exception:RuntimeError" sent the reader to the code; the reason now
+    says the transport failed after a FULL walk, which is a different desk.
+    """
+    def boom(**_kw):
+        raise ConnectionError("endpoint unreachable")
+
+    _arm_ladder(monkeypatch, [("deepseek", boom), ("oauth", boom)])
+    posts = cw.write_posts_llm_v2([_chart_ctx()], CRITIC_OFF_CFG)
+
+    assert posts[0]["stage"] == "provider"
+    assert posts[0]["reasons"] == ["provider_error:ConnectionError"], posts[0]

@@ -1048,6 +1048,20 @@ def _is_writable_day(slot: object, cfg: dict | None = None) -> bool:
 #: outage wearing an editorial costume.
 _COPY_DROP_ALARM_SHARE = 0.50
 
+#: Share of PROVIDER-STAGE drops at which the night is called an outage rather
+#: than a bad night. Same number as the drop alarm above, and deliberately so —
+#: what changes is the SEVERITY and the diagnosis, not the trip point.
+#:
+#: WHY A SECOND, LOUDER GATE (07-30 and 07-31, both through green CI). The
+#: existing gate fires at ::warning, which GitHub renders next to lint noise and
+#: which nobody reads on a run that concluded successfully. A provider that
+#: serves nothing is not a picky writer: with the no-fallback law armed, every
+#: item it touches is deleted, so a provider-dominated night is the difference
+#: between "we published less" and "we published nothing, and will again
+#: tomorrow unless someone moves". The second night is the proof that ::warning
+#: was the wrong level — the first night's warning existed and changed nothing.
+_PROVIDER_OUTAGE_SHARE = 0.50
+
 #: Stage → what an operator should actually go and check. A drop census that
 #: prints stage names makes the reader translate; naming the remedy is the whole
 #: difference between a number and an alert.
@@ -1082,21 +1096,91 @@ _PROVIDER_DROP_REMEDY: dict[str, str] = {
         "credential problem — check the model's response shape (a reasoning/"
         "thinking block ahead of the text block reads as empty) and the "
         "per-provider parse in engine/llm_auth"),
+    # The reasons below are FAMILIES: the copywriter writes them suffixed
+    # (`provider_no_text:deepseek`, `provider_error:ConnectionError`) and
+    # `_drop_reason_family` strips the suffix before the lookup. The suffix is
+    # not decoration — the breaker has no other channel through which to learn
+    # WHICH rung broke, because the reason census is the only per-drop detail
+    # that reaches this module.
+    "provider_no_text": (
+        "the provider ANSWERED and returned no usable text, so this is NOT a "
+        "credential problem. The writer already spent its one same-provider "
+        "retry and its one failover rung on each item, so every rung named in "
+        "the reason served nothing: pull the named provider out of "
+        "copywriter.llm.provider_order and check the model's response shape (a "
+        "reasoning/thinking block ahead of the text block reads as empty under "
+        "a small per_post_max_tokens)"),
+    "provider_error": (
+        "every provider in the waterfall failed HARD (connection/5xx) for these "
+        "items — a transport or endpoint problem, not a credential; the "
+        "exception type is in the reason"),
+    "provider_unavailable": (
+        "the waterfall had nothing left to try — every rung was rate-limited, "
+        "401'd, or absent; the make_call reason is in the suffix"),
+    "provider_refusal": (
+        "the MODEL refused these prompts (stop_reason=refusal) — an editorial "
+        "or prompt problem, not an outage, and deliberately never failed over"),
     "not_attempted": "the writer never ran — an arming or wiring problem, not the model",
 }
+
+#: Reason families whose suffix is a PROVIDER NAME (as opposed to an exception
+#: type or a make_call reason). Only these may be read as "which rung broke".
+_PROVIDER_TAGGED_FAMILIES = frozenset({"provider_no_text"})
+
+
+def _drop_reason_family(reason: str) -> str:
+    """`provider_no_text:deepseek` -> `provider_no_text`; anything else unchanged.
+
+    Legacy reasons carry no suffix and several contain no colon at all
+    ("provider returned no text"), so the split has to be conditional on the
+    head naming a family this module knows. Splitting unconditionally would
+    rewrite "writer_exception:APIConnectionError" into a bucket whose remedy
+    cannot name the exception, which is the one useful thing it carries.
+    """
+    head = str(reason).split(":", 1)[0]
+    return head if head in _PROVIDER_DROP_REMEDY else str(reason)
+
+
+def _is_provider_reason(reason: str) -> bool:
+    """True for any reason the provider-stage remedy table can speak to."""
+    return (_drop_reason_family(reason) in _PROVIDER_DROP_REMEDY
+            or str(reason).startswith("writer_exception:"))
 
 
 def _provider_remedy(reasons: dict[str, int]) -> str:
     """The remedy for whichever provider-stage reason actually dominated."""
-    known = {r: n for r, n in (reasons or {}).items()
-             if r in _PROVIDER_DROP_REMEDY or r.startswith("writer_exception:")}
+    known = {r: n for r, n in (reasons or {}).items() if _is_provider_reason(r)}
     if not known:
         return ""
-    worst = max(known, key=lambda r: known[r])
+    worst = str(max(known, key=lambda r: known[r]))
     if worst.startswith("writer_exception:"):
         return (f"the writer RAISED ({worst.split(':', 1)[1]}) on most items — a "
                 f"code or transport fault, not a credential")
-    return _PROVIDER_DROP_REMEDY[worst]
+    return _PROVIDER_DROP_REMEDY[_drop_reason_family(worst)]
+
+
+def _dominant_provider_fault(reasons: dict[str, int]) -> tuple[str, str, int]:
+    """(reason, provider, count) for the largest provider-family drop reason.
+
+    `provider` is "" unless the winning reason belongs to a family whose suffix
+    really is a provider name — naming "ConnectionError" as the provider would
+    send an operator looking for a rung that does not exist.
+    """
+    best_r, best_n = "", 0
+    for r, n in (reasons or {}).items():
+        try:
+            n = int(n or 0)
+        except (TypeError, ValueError):
+            continue
+        if n <= best_n or not _is_provider_reason(str(r)):
+            continue
+        best_r, best_n = str(r), n
+    if not best_r:
+        return "", "", 0
+    provider = ""
+    if _drop_reason_family(best_r) in _PROVIDER_TAGGED_FAMILIES and ":" in best_r:
+        provider = best_r.split(":", 1)[1].strip()
+    return best_r, provider, best_n
 
 
 def _alarm_on_a_planless_night(
@@ -1140,6 +1224,14 @@ def _alarm_on_a_planless_night(
     thinking consumed max_tokens (see llm_auth._deepseek_no_thinking). Naming the
     variables costs nothing when the guess is right and is quickly falsified when
     it is wrong, which is the better failure of the two.
+
+    AND IT NOW CARRIES THE OUTAGE BREAKER. The same fault ran on 07-30 and again
+    on 07-31 shape-for-shape, because a plan that came out empty is only ONE of
+    the ways a provider fault shows up — and the loudest one. A night where the
+    provider eats 60% of the plan still ships 40% of it, still reports
+    total_posts > 0, and used to say so at ::warning. The breaker below keys on
+    the PROVIDER share alone, escalates to ::error, and names the rung — see
+    `_PROVIDER_OUTAGE_SHARE`.
     """
     dropped = {str(k): int(v) for k, v in (copy_dropped or {}).items() if int(v or 0) > 0}
     n_dropped = sum(dropped.values())
@@ -1159,6 +1251,33 @@ def _alarm_on_a_planless_night(
         top = sorted(reasons.items(), key=lambda kv: -kv[1])[:3]
         detail += "; reasons: " + ", ".join(f"{k}={v}" for k, v in top)
 
+    # ── THE OUTAGE BREAKER ────────────────────────────────────────────────────
+    # Fires on the PROVIDER share alone, ahead of either branch below, because
+    # the two questions are different and only one of them is actionable
+    # tonight: "is there anything to publish" (plan-empty) versus "is the supply
+    # chain broken, and which rung" (this). On a dark night both are true and
+    # both print — two annotations with different titles, not two spellings of
+    # one fact. There is deliberately NO template fallback attached: the
+    # no-fallback law is an editorial ruling and it stands. The breaker's whole
+    # job is to be loud enough that the per-item retry/failover in
+    # engine/marketing/copywriter.py is not the only thing standing between a
+    # provider fault and a second silent night.
+    provider_n = dropped.get("provider", 0)
+    provider_share = provider_n / considered
+    tripped = provider_share > _PROVIDER_OUTAGE_SHARE
+    if tripped:
+        worst_reason, worst_provider, worst_n = _dominant_provider_fault(reasons)
+        print(f"::error title=marketing-provider-outage::"
+              f"the copy lane's PROVIDER stage lost {provider_n} of {considered} "
+              f"planned posts ({provider_share * 100:.0f}%, breaker trips above "
+              f"{_PROVIDER_OUTAGE_SHARE * 100:.0f}%). Dominant reason: "
+              f"{worst_reason or 'unrecorded'}"
+              f"{f' ({worst_n})' if worst_n else ''}; provider: "
+              f"{worst_provider or 'unrecorded'}. Dropped posts are never "
+              f"templated, so this is lost supply, not lighter copy. "
+              f"{_provider_remedy(reasons) or 'check content.copy.dropped_reasons in the plan'}.",
+              flush=True)
+
     if total_posts == 0:
         # Nothing to publish tomorrow. This is the loudest thing this module says.
         print(f"::error title=marketing-plan-empty::"
@@ -1168,7 +1287,10 @@ def _alarm_on_a_planless_night(
         return
 
     share = n_dropped / considered
-    if share >= _COPY_DROP_ALARM_SHARE:
+    # `not tripped`: when the breaker already spoke at ::error, repeating the
+    # same census at ::warning is the "two alarms for one cause" this module's
+    # docstring warns about — it trains the reader to skim both.
+    if share >= _COPY_DROP_ALARM_SHARE and not tripped:
         print(f"::warning title=marketing-copy-drops::"
               f"the writer lost {n_dropped} of {considered} posts "
               f"({share * 100:.0f}%; {detail}). {total_posts} survived. "
