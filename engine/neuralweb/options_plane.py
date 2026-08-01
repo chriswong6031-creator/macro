@@ -88,7 +88,11 @@ def _regime(net_gex_bn: float | None, dist_pct: float | None) -> str | None:
     return "long_gamma" if net_gex_bn >= 0 else "short_gamma"
 
 
-def _trend(history: list[dict] | None, latest_bn: float | None) -> tuple[str, float | None]:
+def _trend(
+    history: list[dict] | None,
+    latest_bn: float | None,
+    asof: str | None = None,
+) -> tuple[str, float | None]:
     """(regime_trend, regime_velocity_1d) from the published gex history.
 
     Trend is about the MAGNITUDE of the dealer position, not its sign: a book going from
@@ -100,8 +104,22 @@ def _trend(history: list[dict] | None, latest_bn: float | None) -> tuple[str, fl
     """
     if latest_bn is None or not isinstance(history, list) or len(history) < _TREND_MIN_SESSIONS:
         return "unknown", None
+
+    # ⚠️ Drop the tail row ONLY when it is today's. `history` comes from
+    # data/polygon_gex/summary_{ROOT}.parquet, a separately-cadenced store whose own
+    # loader documents that it "CAN lag behind the live asof by one or more sessions" —
+    # which is exactly why the payload carries coverage.history_asof. Dropping it
+    # unconditionally means comparing today against the session BEFORE the last one the
+    # history knows about: a multi-session change published as a 1-day one, and on real
+    # SPY data (07-29 -10.21, 07-30 -16.30, 07-31 -6.16) that inverts both the sign of
+    # the velocity and the trend label.
+    tail = history[-1] if isinstance(history[-1], dict) else {}
+    tail_date = str(tail.get("date") or "")
+    aligned = bool(asof) and tail_date[:10] == str(asof)[:10]
+    candidates = history[:-1] if aligned else history
+
     prev = None
-    for row in reversed(history[:-1]):
+    for row in reversed(candidates):
         if isinstance(row, dict):
             prev = _f(row.get("net_gex_bn"))
             if prev is not None:
@@ -216,7 +234,7 @@ def options_structure_block(
         if flip is not None and spot is not None and spot > 0:
             dist_pct = round((spot - flip) / spot * 100.0, 2)
 
-        trend, velocity = _trend(payload.get("history"), net_gex_bn)
+        trend, velocity = _trend(payload.get("history"), net_gex_bn, payload.get("asof"))
         share = _expiring_share(payload.get("by_expiry"))
 
         return {

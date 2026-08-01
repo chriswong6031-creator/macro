@@ -137,12 +137,21 @@ def build_root(root: str, store: str | Path | None, *, full: bool,
         have = set(pd.to_datetime(cached["date"]).dt.year.unique().tolist())
         last = str(cached["date"].max())
         cutoff = (pd.Timestamp(last) - pd.Timedelta(days=tail * 2)).date().isoformat()
-        years = [y for y in years if y not in have or y >= int(cutoff[:4])]
+        # Years split into two kinds, and they must NOT share a filter:
+        #   - years already in the cache -> only the tail needs re-deriving
+        #   - years NOT in the cache     -> read in FULL, they are new history
+        # Applying the tail cutoff to both (the original bug) meant a newly-available
+        # historical year was read, filtered down to the last ~20 days, and silently
+        # dropped — the backfill would appear to run and add nothing.
+        tail_years = {y for y in years if y >= int(cutoff[:4])}
+        new_years = {y for y in years if y not in have}
+        years = sorted(tail_years | new_years)
         if not years:
             log.info("agg_trend: %s — cache current through %s", root, last)
             return cached
     else:
         cutoff = None
+        tail_years, new_years = set(), set(years)
 
     frames: list[pd.DataFrame] = []
     for year in years:
@@ -152,7 +161,8 @@ def build_root(root: str, store: str | Path | None, *, full: bool,
         o = _read_year("oi", root, year, _OI_READ_COLS, store)
         if o.empty:
             continue
-        if cutoff is not None:
+        # Only trim the years we are re-deriving; a genuinely new year is read whole.
+        if cutoff is not None and year in tail_years and year not in new_years:
             g = g[pd.to_datetime(g["date"]).dt.date.astype(str) >= cutoff]
             o = o[pd.to_datetime(o["date"]).dt.date.astype(str) >= cutoff]
             if g.empty or o.empty:
@@ -234,17 +244,26 @@ def main(argv: list[str] | None = None) -> int:
     # board that silently shrinks to whatever this invocation touched.
     quad_path: Path | None = None
     if built:
-        frames = {}
-        for p in sorted(CACHE_DIR.glob("*.parquet")):
-            df = read_cache(CACHE_DIR, p.stem)
-            if df is not None and not df.empty:
-                frames[p.stem] = df
-        asof = max((str(df["date"].max()) for df in frames.values()), default="")
-        board = build_quad(frames, asof)
-        quad_path = out_dir / "quad.json"
-        quad_path.write_text(json.dumps(board, separators=(",", ":")), encoding="utf-8")
-        log.info("agg_trend: quad board — %d roots, %d skipped for thin history",
-                 board["n_roots"], board["n_skipped"])
+        # Guarded: the board is a NICE-TO-HAVE beside the per-root payloads, which are
+        # already written by this point. Letting one unreadable cache parquet raise here
+        # would abort before _publish and send NOTHING to R2 that night — including every
+        # root that built perfectly well.
+        try:
+            frames = {}
+            for p in sorted(CACHE_DIR.glob("*.parquet")):
+                df = read_cache(CACHE_DIR, p.stem)
+                if df is not None and not df.empty:
+                    frames[p.stem] = df
+            asof = max((str(df["date"].max()) for df in frames.values()), default="")
+            board = build_quad(frames, asof)
+            quad_path = out_dir / "quad.json"
+            quad_path.write_text(json.dumps(board, separators=(",", ":")), encoding="utf-8")
+            log.info("agg_trend: quad board — %d roots, %d skipped for thin history, "
+                     "%d trailing the board date",
+                     board["n_roots"], board["n_skipped"], board.get("n_stale", 0))
+        except Exception as exc:  # noqa: BLE001
+            log.warning("agg_trend: quad board FAILED — %s (per-root payloads unaffected)", exc)
+            quad_path = None
 
     if args.publish and built:
         _publish(out_dir, [r for r, _ in built], quad_path)

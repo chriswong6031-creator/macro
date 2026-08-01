@@ -605,6 +605,13 @@ def compute_gex(
     # moves and as time passes. Volland ships this as C-95-100 … C-5-0, so puts are
     # mapped to their call-equivalent delta (a -0.30 put lives in the 0.70 bucket)
     # and everything reads on one axis.
+    # ⚠️ COVERAGE DIFFERS FROM by_strike, deliberately. by_strike is windowed to ±20%
+    # of spot and capped at 160 rows; this is the FULL book. Windowing delta space by
+    # STRIKE would gut it — the 0-5Δ and 95-100Δ bands are far OTM/ITM by definition and
+    # live outside that window, and they are exactly what a delta view exists to show.
+    # The two therefore do NOT sum to the same total on a real index root, and
+    # `by_delta_full_n` publishes the count so a consumer can say so rather than imply
+    # the views are the same population re-indexed.
     by_delta_rows = _by_call_delta(g)
 
     # ── by expiry ─────────────────────────────────────────────────────────────
@@ -646,6 +653,7 @@ def compute_gex(
         "by_strike": by_strike_rows,
         "by_strike_full_n": by_strike_full_n,
         "by_delta": by_delta_rows,
+        "by_delta_full_n": int(len(g)),
         "by_expiry": by_expiry_rows,
         "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
         "coverage": coverage,
@@ -748,6 +756,7 @@ def _empty_gex(root: str, asof: str) -> dict:
         "by_strike": [],
         "by_strike_full_n": 0,
         "by_delta": [],
+        "by_delta_full_n": 0,
         "by_expiry": [],
         "convention": "dealer-sign per engine/gex_model (long-call/short-put)",
         "coverage": {"n_contracts": 0, "asof": asof, "oi_date": "t-1", "n_days": 0, "since": asof},

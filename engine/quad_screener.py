@@ -163,6 +163,12 @@ def build_quad(frames: dict[str, "object"], asof: str) -> dict:
             "n_days": n,
             "pctile_n": min(n, PCTILE_WINDOW_DAYS),
             "since": str(d["date"].iloc[0]),
+            # ⚠️ The row's OWN last session, not the board's. The board is rebuilt from
+            # every cached root, so a root whose cache stopped updating (its build
+            # failed, or it was simply not in this run's --roots) contributes
+            # coordinates from an old session. Without this the reader sees month-old
+            # positioning — and a month-old `spot` — under a current-dated header.
+            "asof": str(d["date"].iloc[-1]),
             # Extremes are what the board is FOR — surfacing them as a flag saves the
             # reader from eyeballing a scatter to find the two names that matter.
             "extreme": bool(
@@ -181,6 +187,9 @@ def build_quad(frames: dict[str, "object"], asof: str) -> dict:
         "min_history_days": MIN_HISTORY_DAYS,
         "pctile_window_days": PCTILE_WINDOW_DAYS,
         "extreme_pct": EXTREME_PCT,
+        # Rows whose own last session trails the board. Named, not merely derivable:
+        # a consumer that forgets to compare per-row asof would show them as current.
+        "n_stale": sum(1 for r in rows if r.get("asof") and r["asof"] < asof),
         "n_roots": len(rows),
         "n_skipped": len(skipped),
         "skipped": sorted(skipped),

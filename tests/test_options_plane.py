@@ -276,3 +276,60 @@ def test_the_block_stays_small():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+# ── Audit regression: the history store can LAG the live asof ──────────────────
+#
+# `history` comes from data/polygon_gex/summary_{ROOT}.parquet, a separately-cadenced
+# store whose loader documents that it "CAN lag behind the live asof by one or more
+# sessions" — which is why the payload carries coverage.history_asof. _trend used to
+# drop history[-1] unconditionally on the assumption it was today's row.
+#
+# Sampling 60 summary parquets on the live box found 5 stale at 2026-06-22 against 55
+# at 2026-07-31, so the lag is real, not theoretical.
+
+def test_a_lagging_history_is_not_treated_as_containing_today():
+    """The tail row is dropped only when its date actually matches asof.
+
+    Real SPY numbers: 07-29 -10.21, 07-30 -16.30, 07-31 -6.16. With asof=07-31 and a
+    history that stops at 07-30, the correct previous reading is -16.30 (the book
+    WEAKENED its short-gamma position). Dropping the tail unconditionally would compare
+    against 07-29's -10.21 and report "strengthening" — both the sign of the velocity
+    and the label inverted.
+    """
+    gaps: list[str] = []
+    b = options_structure_block(
+        REPO, gaps,
+        _reader({"SPX": _payload(
+            asof="2026-07-31",
+            net_gex_bn=-6.16,
+            spot_ref=7000.0, gamma_flip=7400.0,
+            history=[
+                {"date": "2026-07-28", "net_gex_bn": -4.0},
+                {"date": "2026-07-29", "net_gex_bn": -10.21},
+                {"date": "2026-07-30", "net_gex_bn": -16.30},   # history LAGS asof
+            ],
+        )}),
+    )
+    assert b["regime_velocity_1d"] == pytest.approx(-6.16 - (-16.30), abs=1e-6)
+    assert b["regime_trend"] == "weakening"
+
+
+def test_an_aligned_history_still_drops_the_duplicate_tail():
+    """Unchanged behaviour when the store IS current — the common case."""
+    gaps: list[str] = []
+    b = options_structure_block(
+        REPO, gaps,
+        _reader({"SPX": _payload(
+            asof="2026-07-31",
+            net_gex_bn=-6.16,
+            spot_ref=7000.0, gamma_flip=7400.0,
+            history=[
+                {"date": "2026-07-29", "net_gex_bn": -10.21},
+                {"date": "2026-07-30", "net_gex_bn": -16.30},
+                {"date": "2026-07-31", "net_gex_bn": -6.16},   # duplicate of the headline
+            ],
+        )}),
+    )
+    assert b["regime_velocity_1d"] == pytest.approx(-6.16 - (-16.30), abs=1e-6)
+    assert b["regime_trend"] == "weakening"

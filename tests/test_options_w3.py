@@ -60,13 +60,56 @@ def test_by_delta_buckets_are_published_and_ordered():
     assert all(0.0 <= r["lo"] < r["hi"] <= 1.0 for r in rows)
 
 
-def test_by_delta_conserves_the_whole_book():
-    """Re-indexing must not create or destroy exposure — only move where it is filed."""
+def test_by_delta_conserves_the_whole_book_within_the_window():
+    """Re-indexing must not create or destroy exposure — only move where it is filed.
+
+    Valid ONLY while every strike sits inside by_strike's ±20% window, which is true of
+    this fixture (90-110 against spot 100). See the test below for what happens when it
+    is not — that case is why this one is not the whole story.
+    """
     out = compute_gex(_chain(), _oi(), ASOF, "TEST")
     for col in ("gamma_net", "delta_net", "vanna_net", "charm_net"):
         by_delta = sum(r[col] for r in out["by_delta"])
         by_strike = sum(r[col] for r in out["by_strike"])
         assert by_delta == pytest.approx(by_strike, abs=len(out["by_strike"]) * 5e-5), col
+
+
+def test_by_delta_covers_the_full_book_while_by_strike_is_windowed():
+    """The two views are NOT the same population, and the payload must say so.
+
+    ⚠️ This test exists because the conservation test above gave false confidence: its
+    fixture happens to fit inside by_strike's ±20% window, so the two totals agreed and
+    the difference was invisible. On any real index root they do not agree — by_strike
+    is windowed to ±20% of spot and capped at 160 rows, while by_delta is the FULL book,
+    deliberately: the 0-5 and 95-100 delta bands are far OTM/ITM by definition and live
+    outside that window, and they are exactly what a delta view exists to show.
+
+    Windowing delta space by STRIKE would gut it. Disclosing the difference is the fix.
+    """
+    wide = [50.0, 90.0, 95.0, 100.0, 105.0, 110.0, 160.0]   # 50 and 160 are outside ±20%
+    # Call-heavy, so calls and puts do NOT cancel and the wings carry real net exposure.
+    # A symmetric book sums to zero on both views and would hide the very difference
+    # this test exists to demonstrate.
+    oi = pd.DataFrame([
+        {"expiration": EXP, "strike": float(k), "right": r,
+         "open_interest": 900.0 if r == "C" else 100.0}
+        for k in wide for r in ("C", "P")
+    ])
+    out = compute_gex(_chain(strikes=wide), oi, ASOF, "TEST")
+
+    strikes_in_ladder = {r["strike"] for r in out["by_strike"]}
+    assert 50.0 not in strikes_in_ladder and 160.0 not in strikes_in_ladder
+
+    by_delta = sum(r["gamma_net"] for r in out["by_delta"])
+    by_strike = sum(r["gamma_net"] for r in out["by_strike"])
+    assert by_delta != pytest.approx(by_strike), (
+        "the wings are missing from by_strike, so the totals cannot agree"
+    )
+
+    # The payload discloses the full-book count so a consumer can state the difference
+    # rather than imply the views are one book re-indexed.
+    assert out["by_delta_full_n"] == len(wide) * 2
+    assert out["by_strike_full_n"] == len(wide)
 
 
 def test_a_put_lands_in_its_call_equivalent_bucket():
@@ -249,3 +292,37 @@ def test_the_window_is_disclosed_in_the_payload():
     assert board["rows"][0]["pctile_n"] == min(400, PCTILE_WINDOW_DAYS)
     # n_days still reports the FULL history, which is what the thin-history gate uses.
     assert board["rows"][0]["n_days"] == 400
+
+
+# ── Audit regression: quad rows must carry their OWN session ───────────────────
+
+def test_each_quad_row_carries_its_own_last_session():
+    """A stale cache must not render as today's positioning.
+
+    The board is rebuilt from EVERY cached root, not just the ones this run refreshed,
+    so a root whose build failed (or which simply was not in --roots) contributes
+    coordinates — and a `spot` — from an old session. Without a per-row date the reader
+    sees month-old positioning under a current-dated header.
+    """
+    fresh = _frame(400, -8.1e9, 6.2e9)
+    stale = _frame(400, 1e9, 1e9)
+    stale["date"] = pd.bdate_range("2019-01-01", periods=400).strftime("%Y-%m-%d")
+
+    board = build_quad({"FRESH": fresh, "STALE": stale}, ASOF)
+    by = {r["root"]: r for r in board["rows"]}
+    assert by["FRESH"]["asof"] == str(fresh["date"].iloc[-1])
+    assert by["STALE"]["asof"] == str(stale["date"].iloc[-1])
+    assert by["STALE"]["asof"] < by["FRESH"]["asof"]
+
+
+def test_the_board_counts_how_many_rows_trail_it():
+    """Named, not merely derivable — a consumer that forgets to compare would show
+    stale rows as current."""
+    fresh = _frame(400, 1e9, 1e9)
+    stale = _frame(400, 1e9, 1e9)
+    stale["date"] = pd.bdate_range("2019-01-01", periods=400).strftime("%Y-%m-%d")
+    board = build_quad({"FRESH": fresh, "STALE": stale}, str(fresh["date"].iloc[-1]))
+    assert board["n_stale"] == 1
+
+    clean = build_quad({"A": fresh}, str(fresh["date"].iloc[-1]))
+    assert clean["n_stale"] == 0
