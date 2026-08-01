@@ -91,6 +91,7 @@ _FIRST_PARTY_CHRONICLE_SOURCES = frozenset({
 })
 
 _SITE_BASE = "https://www.mastermind-x.com"
+_SHA256_RECEIPT_RE = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -352,6 +353,11 @@ def staged_refs(root=None, cfg: dict | None = None) -> tuple[set[str], set[str]]
         obj = _read_json(path)
         if not isinstance(obj, dict):
             continue
+        # A superseded record is retained as an audit trail, not as a live
+        # draft.  Keeping its source ref or slug in the blocking sets would
+        # prevent the corrected revision from ever being staged.
+        if obj.get("status") in {"superseded", "resolved"}:
+            continue
         for s in obj.get("sources") or []:
             refs.add(str(s))
         for s in obj.get("seed_refs") or []:
@@ -359,6 +365,55 @@ def staged_refs(root=None, cfg: dict | None = None) -> tuple[set[str], set[str]]
         if obj.get("slug"):
             slugs.add(str(obj["slug"]))
     return refs, slugs
+
+
+def _earnings_call_receipt(event: dict) -> str:
+    """Validated canonical receipt for one Chronicle earnings-call event."""
+
+    if str(event.get("source") or "") != "earnings_call":
+        return ""
+    receipt = str((event.get("links") or {}).get("receipt") or "").lower()
+    return receipt if _SHA256_RECEIPT_RE.fullmatch(receipt) else ""
+
+
+def earnings_call_revisions(root=None) -> dict[str, dict]:
+    """Current Chronicle earnings-call revision by stable Press source ref.
+
+    The stable ref identifies the company-period story; ``receipt`` identifies
+    the exact transcript revision used to build it.  Invalid/missing receipts
+    remain present with ``valid=False`` so emit-time reconciliation fails
+    closed instead of treating an unverifiable event as unrelated.
+    """
+
+    out: dict[str, dict] = {}
+    for event in _read_jsonl(repo_root(root) / "data" / "chronicle" / "events.jsonl"):
+        if not isinstance(event, dict) or event.get("source") != "earnings_call":
+            continue
+        source_ref = str(event.get("source_ref") or event.get("id") or "").strip()
+        if not source_ref:
+            continue
+        ref = f"chronicle:{source_ref}"
+        receipt = _earnings_call_receipt(event)
+        candidate = {
+            "ref": ref,
+            "receipt": receipt,
+            "valid": bool(receipt),
+            "event_id": str(event.get("id") or ""),
+            "source_ref": source_ref,
+            "date": str(event.get("date") or ""),
+            "title": str(event.get("title") or ""),
+        }
+        # Chronicle is append-only in normal operation.  If a malformed fixture
+        # or hand edit leaves two rows for one source ref, deterministic event
+        # time/id ordering chooses one rather than filesystem order.
+        prior = out.get(ref)
+        key = (candidate["date"], candidate["event_id"], candidate["receipt"])
+        prior_key = (
+            prior.get("date", ""), prior.get("event_id", ""), prior.get("receipt", "")
+        ) if prior else None
+        if prior_key is None or key >= prior_key:
+            out[ref] = candidate
+    return out
 
 
 def taken_slugs(root=None) -> set[str]:
@@ -796,6 +851,16 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
             continue
 
         lead = _event_fact(ev)
+        revision_receipt = str(lead.get("receipt") or "").lower()
+        if ev.get("source") == "earnings_call" and not _SHA256_RECEIPT_RE.fullmatch(
+            revision_receipt
+        ):
+            log.warning(
+                "press.desk_planner: earnings-call candidate %s has no valid "
+                "revision receipt — skipped fail-closed",
+                ref,
+            )
+            continue
         if not _press_safe(lead["text"]):
             # The story cannot be told without a banned word. Skip it rather
             # than plan a piece that is guaranteed to be quarantined.
@@ -824,8 +889,20 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
         # but the link allowlist below keeps that URL out of prose unless its
         # logged-out path is separately approved.
         primary_url = lead.get("url")
+        source_revisions = (
+            {ref: revision_receipt} if ev.get("source") == "earnings_call" else {}
+        )
+        identity_parts = [name, ref]
+        if revision_receipt:
+            # Stable story ref, revision-specific staging identity.  The former
+            # powers dedupe; the latter preserves both audit records when a
+            # pending draft is superseded by a corrected transcript.
+            identity_parts.append(revision_receipt)
         slots.append({
-            "id": f"press-{name}-{as_of.isoformat()}-{story_key(name, ref)}",
+            "id": (
+                f"press-{name}-{as_of.isoformat()}-"
+                f"{story_key(*identity_parts)}"
+            ),
             "desk": name,
             "publication": publication,
             "byline": str(desk_cfg.get("byline") or "The Brief"),
@@ -854,6 +931,7 @@ def _plan_brief(cfg: dict, desk_cfg: dict, as_of: date, root,
                 "receipt": lead.get("receipt"),
             },
             "sources": [ref],
+            "source_revisions": source_revisions,
             "seed_refs": sorted({f["ref"] for f in facts}),
             "facts": facts,
             "raw_documents": _raw_documents_for_event(ev),

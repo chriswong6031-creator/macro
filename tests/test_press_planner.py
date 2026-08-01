@@ -125,9 +125,30 @@ def test_earnings_call_is_first_party_source_labeled_and_provenance_preserved(tm
     assert slot["primary_source"]["name"] == "Mastermind earnings-call analysis"
     assert slot["primary_source"]["url"] == event["links"]["source"]
     assert slot["primary_source"]["receipt"] == event["links"]["receipt"]
+    assert slot["source_revisions"] == {
+        "chronicle:defeatbeta:AAPL:2026Q3": event["links"]["receipt"],
+    }
     # Audit provenance is retained, but the writer cannot emit the transcript
     # URL unless it is separately admitted to the logged-out link allowlist.
     assert slot["allowed_links"] == []
+
+    corrected = _earnings_call_event()
+    corrected["links"]["receipt"] = "sha256:" + "c" * 64
+    events_path.write_text(json.dumps(corrected) + "\n", encoding="utf-8")
+    corrected_slot = P.plan(["brief"], as_of="2026-07-26", root=root)[0]
+    assert corrected_slot["id"] != slot["id"]
+    assert corrected_slot["sources"] == slot["sources"], \
+        "story identity stays stable while staging identity follows the revision"
+
+
+def test_superseded_staging_record_does_not_block_corrected_revision(tmp_path):
+    root = F.fixture_root(tmp_path, staged={"old.json": {
+        "id": "old", "status": "superseded", "slug": "old-call-read",
+        "sources": ["chronicle:defeatbeta:AAPL:2026Q3"], "seed_refs": [],
+    }})
+    refs, slugs = P.staged_refs(root)
+    assert "chronicle:defeatbeta:AAPL:2026Q3" not in refs
+    assert "old-call-read" not in slugs
 
 
 def test_no_gated_url_survives_anywhere_in_the_press_config():

@@ -65,6 +65,54 @@ def _snapshot(root: Path) -> set[str]:
     return {str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()}
 
 
+def _write_earnings_event(root: Path, receipt_char: str, *, title="Corrected call") -> str:
+    source_ref = "defeatbeta:AAPL:2026Q3"
+    event = {
+        "id": "cev-earnings-call-aapl",
+        "ts": "2026-07-26T00:00:00Z",
+        "date": "2026-07-26",
+        "source": "earnings_call",
+        "source_ref": source_ref,
+        "kind": "earnings",
+        "title": title,
+        "facts": ["Services demand accelerated after guidance."],
+        "tickers": ["AAPL"],
+        "themes": ["earnings_call"],
+        "horizon_hint": "short",
+        "weight_hint": 2,
+        "links": {
+            "site": None,
+            "source": "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz",
+            "receipt": "sha256:" + receipt_char * 64,
+        },
+    }
+    (root / "data" / "chronicle" / "events.jsonl").write_text(
+        json.dumps(event) + "\n", encoding="utf-8",
+    )
+    return f"chronicle:{source_ref}"
+
+
+def _revision_stage(ref: str, receipt_char: str, *, status="passed") -> dict:
+    receipt = "sha256:" + receipt_char * 64
+    slot = F.slot(
+        id=f"press-brief-{receipt_char}",
+        sources=[ref],
+        source_revisions={ref: receipt},
+        primary_source={
+            "kind": "first_party", "name": "Mastermind earnings-call analysis",
+            "url": "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz",
+            "ref": ref, "receipt": receipt,
+        },
+    )
+    return {
+        "id": slot["id"], "desk": "brief", "publication": "mastermind_news",
+        "as_of": "2026-07-26", "status": status, "sources": [ref],
+        "source_revisions": {ref: receipt}, "seed_refs": [],
+        "slug": "aapl-q3-call", "draft": dict(_good_draft(slot), slug="aapl-q3-call"),
+        "slot": slot, "validator_report": {"ok": True},
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # staging — the safety invariant
 # ─────────────────────────────────────────────────────────────────────────────
@@ -173,6 +221,112 @@ def test_slug_collisions_are_resolved_before_validation(tmp_path):
     assert a not in taken and a.startswith("risk-radar-moves-to-caution-")
     # Deterministic: the same story always de-collides to the same slug.
     assert a == R._unique_slug("Risk Radar Moves To Caution", slot, taken)
+
+
+def test_pending_earnings_draft_is_superseded_when_receipt_changes(tmp_path):
+    root = F.fixture_root(tmp_path)
+    ref = _write_earnings_event(root, "b")
+    path = root / "data" / "press" / "staging" / "old.json"
+    path.write_text(json.dumps(_revision_stage(ref, "a")), encoding="utf-8")
+
+    result = R.reconcile_earnings_call_revisions(root, P.load_config(root))
+    assert result["superseded"] == 1
+    item = json.loads(path.read_text(encoding="utf-8"))
+    assert item["status"] == "superseded"
+    assert item["revision_state"]["recorded"][ref] == "sha256:" + "a" * 64
+    assert item["revision_state"]["current"][ref] == "sha256:" + "b" * 64
+    blocked, slugs = P.staged_refs(root)
+    assert ref not in blocked and "aapl-q3-call" not in slugs
+
+
+def test_published_revision_change_creates_non_emittable_correction_state(tmp_path):
+    ref = "chronicle:defeatbeta:AAPL:2026Q3"
+    published_receipt = "sha256:" + "a" * 64
+    root = F.fixture_root(tmp_path, ledger_rows=[{
+        "id": "published-a", "ts": "2026-07-26T12:00:00Z", "desk": "brief",
+        "publication": "mastermind_news", "slug": "aapl-q3-call",
+        "url": "https://www.mastermind-x.com/blog/aapl-q3-call.html",
+        "sources": [ref], "source_revisions": {ref: published_receipt},
+        "seed_refs": [], "validator_report": {"ok": True}, "urls": [],
+    }])
+    _write_earnings_event(root, "b")
+
+    first = R.reconcile_earnings_call_revisions(root, P.load_config(root))
+    assert first["correction_required"] == 1
+    corrections = [
+        json.loads(path.read_text(encoding="utf-8"))
+        for path in (root / "data" / "press" / "staging").glob("*.json")
+        if not path.name.startswith("_")
+    ]
+    assert len(corrections) == 1
+    correction = corrections[0]
+    assert correction["status"] == "correction_required"
+    assert correction["draft"] is None
+    assert correction["correction"]["auto_emit_allowed"] is False
+    assert correction["correction"]["published"]["receipt"] == published_receipt
+    assert correction["correction"]["current"]["receipt"] == "sha256:" + "b" * 64
+
+    second = R.reconcile_earnings_call_revisions(root, P.load_config(root))
+    assert second["correction_required"] == 0
+    assert R.run_emit(root, P.load_config(root))["emitted"] == 0
+    assert list((root / "content" / "seo" / "blog").glob("*.md")) == []
+
+
+def test_legacy_published_call_without_receipt_fails_closed_to_correction_state(tmp_path):
+    ref = "chronicle:defeatbeta:AAPL:2026Q3"
+    root = F.fixture_root(tmp_path, ledger_rows=[{
+        "id": "legacy-published", "ts": "2026-07-26T12:00:00Z", "desk": "brief",
+        "publication": "mastermind_news", "slug": "legacy-aapl-call",
+        "url": "https://www.mastermind-x.com/blog/legacy-aapl-call.html",
+        "sources": [ref], "seed_refs": [], "validator_report": {"ok": True},
+        "urls": [],
+    }])
+    _write_earnings_event(root, "b")
+
+    result = R.reconcile_earnings_call_revisions(root, P.load_config(root))
+    assert result["published_mismatches"] == 1
+    correction = json.loads(next(
+        path for path in (root / "data" / "press" / "staging").glob("*.json")
+        if not path.name.startswith("_")
+    ).read_text(encoding="utf-8"))
+    assert correction["status"] == "correction_required"
+    assert correction["correction"]["published"]["receipt"] is None
+    assert correction["correction"]["auto_emit_allowed"] is False
+
+
+def test_emit_rechecks_receipt_and_refuses_stale_passing_draft(tmp_path):
+    root = F.fixture_root(tmp_path)
+    ref = _write_earnings_event(root, "b")
+    path = root / "data" / "press" / "staging" / "old.json"
+    path.write_text(json.dumps(_revision_stage(ref, "a")), encoding="utf-8")
+
+    out = R.run_emit(root, P.load_config(root))
+    assert out["emitted"] == 0
+    assert json.loads(path.read_text(encoding="utf-8"))["status"] == "superseded"
+    assert (root / "data" / "press" / "published.jsonl").read_text() == ""
+    assert list((root / "content" / "seo" / "blog").glob("*.md")) == []
+
+
+def test_emit_persists_revision_receipt_for_future_correction_detection(
+    tmp_path, monkeypatch,
+):
+    root = F.fixture_root(tmp_path, cutover=False)
+    ref = _write_earnings_event(root, "a")
+    stage = _revision_stage(ref, "a")
+    (root / "data" / "press" / "staging" / "current.json").write_text(
+        json.dumps(stage), encoding="utf-8",
+    )
+    monkeypatch.setattr(R, "_render_blog_subtree", lambda _root: ([], []))
+
+    out = R.run_emit(root, P.load_config(root))
+    assert out["emitted"] == 1
+    row = out["items"][0]
+    assert row["source_revisions"] == {ref: "sha256:" + "a" * 64}
+    committed = json.loads(
+        (root / "data" / "press" / "published.jsonl")
+        .read_text(encoding="utf-8").splitlines()[-1]
+    )
+    assert committed["source_revisions"] == row["source_revisions"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
