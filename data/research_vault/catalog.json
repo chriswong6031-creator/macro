@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T01:45:41.770605+00:00",
-  "count": 496,
+  "generated_at": "2026-08-01T01:59:32.169315+00:00",
+  "count": 497,
   "institutions": [
     "Amova",
     "Apollo",
@@ -467,6 +467,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-thiriqgxl4t-b617fa",
+      "title": "European Daily BoE Recap—Hurdle to Hike",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:13:16Z",
+      "summary_points": [
+        "**BoE MPC Holds Bank Rate Amid Hawkish Signals**: MPC voted 6-3 to hold rate (more hawkish than expected), with dissenters citing energy volatility; communications signal unchanged rate through 2026 due to weaker inflation evidence and limited second-round effects.",
+        "**2026 Rate Outlook: MPC Likely to Remain on Hold**: Expect rate hold throughout 2026 given restrictive policy, slack labor market, and inflation peak at 3.2% (Q4, 0.5pp below middle scenario), tempering hawkish risks.",
+        "**Market Pricing Overdone on Rate Hikes**: Market pricing for 2+ hikes by mid-2024 deemed too high; MPC’s \"nothing in what I said\" stance and Bailey’s \"tentative evidence\" on disinflation confirm hold is justified.",
+        "**Inflation & Policy Stance**: Headline inflation peak at 3.2% (Q4) with \"clear signs of underlying disinflation\" and limited second-round effects from energy volatility, reducing near-term hike urgency despite Middle East risks."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
