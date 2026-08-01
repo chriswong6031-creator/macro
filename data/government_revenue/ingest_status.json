@@ -1,0 +1,28 @@
+{
+  "actions_seen": 34181,
+  "actions_total": 34181,
+  "action_awards_attempted": 160,
+  "action_awards_succeeded": 160,
+  "award_search_limit_per_entity": 100,
+  "awards_seen": 1936,
+  "awards_total": 1936,
+  "bounded": true,
+  "detail_awards_attempted": 160,
+  "detail_awards_limit_per_entity": 8,
+  "detail_awards_succeeded": 160,
+  "effective_at": "2026-08-01",
+  "entities_requested": 21,
+  "entities_with_awards": 20,
+  "errors": [],
+  "lookback_days": 1826,
+  "max_pages_per_entity": 2,
+  "observed_at": "2026-08-01T09:41:55.385313+00:00",
+  "page_size": 50,
+  "schema_version": "government_revenue.ingest_status.v1",
+  "snapshots_total": 1936,
+  "source_urls": [
+    "https://api.usaspending.gov/api/v2/search/spending_by_award/",
+    "https://api.usaspending.gov/api/v2/awards/{award_id}/",
+    "https://api.usaspending.gov/api/v2/transactions/"
+  ]
+}

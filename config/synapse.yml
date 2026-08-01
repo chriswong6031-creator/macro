@@ -15282,6 +15282,191 @@ artifacts:
       Public-safe summary of the Marketing lobe for the Neural Web organization graph (no budgets, no
       credentials, no desk handles). Names, lifecycle states, wave status, positioning, channel priority only.
 
+  government-revenue-entities:
+    path: data/government_revenue/entities.json
+    format: json
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: on-demand
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 8760
+    schema: government_revenue_entities.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/usaspending_awards.py, engine/government_revenue/__init__.py]
+    external_consumers: []
+    notes: >
+      Curated public-company to USAspending recipient-query bridge (ticker, parent name,
+      and fuzzy recipient aliases). These seed mappings remain explicitly provisional
+      until official UEI/CAGE lineage is reviewed. This artifact never supplies a score,
+      rank, size, gate, or signal.
+
+  government-revenue-awards:
+    path: data/government_revenue/awards.parquet
+    format: parquet
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 30
+    schema: government_revenue.awards.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/__init__.py]
+    external_consumers: []
+    notes: >
+      Bounded USAspending award-detail store keyed by generated official award ID (with
+      explicit PIID fallback) and public-company entity mappings. Carries point-in-time availability and raw-source
+      identifiers so award ceilings and obligations can be reconstructed without
+      confusing contract capacity with GAAP backlog or revenue.
+
+  government-revenue-award-actions:
+    path: data/government_revenue/award_actions.parquet
+    format: parquet
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 30
+    schema: government_revenue.award_actions.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/__init__.py]
+    external_consumers: []
+    notes: >
+      Append-safe USAspending transaction/action tape for modifications, incremental
+      obligations, deobligations, descriptions, and action dates. Official public data
+      can be revised and some DoD actions can publish with material lag; observed_at and
+      source identifiers preserve the honest known-at boundary.
+
+  government-revenue-award-snapshots:
+    path: data/government_revenue/award_snapshots.parquet
+    format: parquet
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 30
+    schema: government_revenue.award_snapshots.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/__init__.py]
+    external_consumers: []
+    notes: >
+      Point-in-time award snapshots used to identify ceiling, obligation, completion,
+      and funding changes across collection runs. It is the revision tape behind the
+      workbench's what-changed view and is not an alpha surface.
+
+  government-revenue-ingest-status:
+    path: data/government_revenue/ingest_status.json
+    format: json
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 30
+    schema: government_revenue.ingest_status.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/__init__.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      Collector health and per-entity coverage receipt. Missing detail remains an honest
+      degraded state while the monthly official aggregate continues to render.
+
+  government-revenue-collector-heartbeat:
+    path: data/government_revenue/collector_heartbeat.parquet
+    format: parquet
+    producer: collectors/usaspending_awards.py
+    known_extra_writers:
+      - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 30
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/collect.py]
+    external_consumers: []
+    notes: >
+      Dated CLI/standard-runner heartbeat for the composite-key collector. The granular
+      award/action/snapshot ledgers are persisted atomically by their owning collector;
+      this tiny frame gives the shared circuit breaker and freshness machinery a normal
+      date-indexed receipt without collapsing award identities into the generic store.
+
+  government-revenue-latest:
+    path: data/government_revenue/latest.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    known_extra_writers:
+      - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
+    owner_program: government-revenue-foresight
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: company_government_revenue.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/neuralweb/mastermind_context.py, engine/prophet_bridge.py, app/government_revenue.py]
+    external_consumers: [mastermind:context]
+    notes: >
+      Canonical company-level Government Revenue Foresight projection. It combines the
+      existing USAspending monthly aggregate with bounded award/action detail to expose
+      award velocity, observed funded contract capacity, modification impulse, agency
+      concentration, catalysts, and recompete watch facts. authority.can_rank/can_size/
+      can_gate are all false. Neural Web and Prophet may annotate already-admitted names
+      only; this artifact cannot create, reorder, enlarge, or escalate a candidate.
+
+  site-government-revenue-latest:
+    path: site/government-revenue-data/latest.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    known_extra_writers:
+      - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
+    owner_program: government-revenue-foresight
+    cadence: daily-engine
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: company_government_revenue.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [site/government_revenue.html, app/government_revenue.py]
+    external_consumers: []
+    notes: >
+      Public twin of government-revenue-latest for the premium vertical workbench and
+      read-only API fallback. Byte-identical to the canonical payload at build time;
+      display/context only with the same all-false authority contract.
+
   chronicle-events:
     path: data/chronicle/events.jsonl
     format: jsonl
