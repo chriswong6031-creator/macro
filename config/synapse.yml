@@ -15514,14 +15514,158 @@ artifacts:
       this tiny frame gives the shared circuit breaker and freshness machinery a normal
       date-indexed receipt without collapsing award identities into the generic store.
 
+  government-revenue-collection-receipts:
+    path: data/government_revenue/collection_receipts.jsonl
+    format: jsonl
+    producer: collectors/usaspending_awards.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: collect
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 30
+    schema: government_revenue.collection_receipt.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [collectors/usaspending_awards.py]
+    external_consumers: []
+    notes: >
+      Append-only, hash-only USAspending retrieval-provenance receipt ledger for
+      award/detail/action pages. Each immutable event retains canonical
+      request/response SHA-256 values and source rail/page metadata; raw request or
+      response bodies, headers, and credential material are not persisted
+      (raw_response_bodies_persisted: false). A corrupt existing ledger fails closed
+      rather than being overwritten. Operational provenance/context only, never an
+      authority, score, rank, size, gate, or investment signal.
+
+  government-revenue-sam-opportunities:
+    path: data/government_revenue/opportunities.parquet
+    format: parquet
+    producer: collectors/sam_gov.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 2
+    schema: government_revenue.sam_opportunities.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/opportunities.py]
+    external_consumers: []
+    notes: >
+      Current normalized SAM.gov opportunity state for the bounded Government Revenue
+      NAICS scope. The live lane polls at a best-effort 30-minute cadence and publishes
+      every complete health receipt; its separate semantic fingerprint prevents quiet
+      polls from becoming alert events. Active SAM source updates are daily and archived
+      updates weekly; the 90-minute current-state SLA is conservative and GitHub cron is
+      not a hard-real-time guarantee. Context infrastructure only; never bidder prediction,
+      award confirmation, revenue forecast, or a scored/ranking surface.
+
+  government-revenue-sam-opportunity-revisions:
+    path: data/government_revenue/opportunity_revisions.parquet
+    format: parquet
+    producer: collectors/sam_gov.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 36
+    schema: government_revenue.sam_opportunity_revisions.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/opportunities.py]
+    external_consumers: []
+    notes: >
+      First-seen MastermindX observation ledger for distinct latest-version SAM
+      notice states. SAM's public search API does not expose a complete official
+      amendment history, so a row records when this system first observed a state,
+      not an asserted historical SAM amendment time. Replay consumers must filter
+      known_at at the requested cutoff; no authority flows from this evidence tape.
+
+  government-revenue-sam-opportunity-documents:
+    path: data/government_revenue/opportunity_documents.parquet
+    format: parquet
+    producer: collectors/sam_gov.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: known_at
+    freshness_sla_hours: 36
+    schema: government_revenue.sam_opportunity_documents.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/opportunities.py]
+    external_consumers: []
+    notes: >
+      Bounded SAM notice-description and attachment evidence receipt ledger. A
+      content hash change proves a newly observed document byte state; it is not an
+      official amendment timestamp. Link-only, deferred, and failed fetch states stay
+      explicit rather than being imputed; content is context infrastructure only.
+
+  government-revenue-sam-opportunity-ingest-status:
+    path: data/government_revenue/opportunity_ingest_status.json
+    format: json
+    producer: collectors/sam_gov.py
+    known_extra_writers: []
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: observed_at
+    freshness_sla_hours: 2
+    schema: government_revenue.sam_opportunity_ingest_status.v1
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [engine/government_revenue/opportunities.py, scripts/build_government_revenue.py]
+    external_consumers: []
+    notes: >
+      SAM opportunity query scope, pagination, coverage, and last-good receipt.
+      Partial or failed collection retains the prior normalized ledgers and is not
+      eligible for the fast-path projection commit. Receipt fields describe collection
+      health only and cannot become a company signal or authority input.
+
+  government-revenue-sam-opportunity-heartbeat:
+    path: data/government_revenue/sam_opportunity_heartbeat.parquet
+    format: parquet
+    producer: collectors/sam_gov.py
+    known_extra_writers:
+      - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: null
+    freshness_sla_hours: 2
+    schema: implicit
+    tier: infrastructure
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [scripts/collect.py]
+    external_consumers: []
+    notes: >
+      Date-indexed standard-runner heartbeat for the SAM composite-key ledger. The
+      live lane publishes it with every complete poll so a healthy quiet source remains
+      verifiably current; incomplete/failed polls cannot refresh it. It is an operational
+      receipt, never a business fact, score, gate, or forecast input.
+
   government-revenue-latest:
     path: data/government_revenue/latest.json
     format: json
     producer: scripts/build_government_revenue.py
-    known_extra_writers:
-      - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
     owner_program: government-revenue-foresight
-    cadence: daily-engine
+    cadence: intraday
     storage: git
     asof_field: as_of
     freshness_sla_hours: 36
@@ -15535,19 +15679,44 @@ artifacts:
     notes: >
       Canonical company-level Government Revenue Foresight projection. It combines the
       existing USAspending monthly aggregate with bounded award/action detail to expose
-      award velocity, observed funded contract capacity, modification impulse, agency
-      concentration, catalysts, and recompete watch facts. authority.can_rank/can_size/
+      award velocity, observed funded contract capacity, net award-action flow, agency
+      concentration, SAM opportunity/revision context, catalysts, and recompete watch facts.
+      The serialized Government Revenue lane folds every complete SAM health receipt,
+      material SAM evidence, and daily USAspending/source changes, then re-renders after
+      every rebase; generic render lanes cannot write it. The SLA remains source-content
+      availability rather than a hard cron promise. authority.can_rank/can_size/
       can_gate are all false. Neural Web and Prophet may annotate already-admitted names
       only; this artifact cannot create, reorder, enlarge, or escalate a candidate.
+
+  government-revenue-workspace:
+    path: data/government_revenue/workspace.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_procurement_workspace.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [site/government_revenue.html]
+    external_consumers: []
+    notes: >
+      Canonical standalone procurement-workspace projection. It is byte-identical to
+      the site twin and carries the same event grammar embedded in
+      government-revenue-latest. The page first-paints from a bounded shell and then
+      hydrates this generation-bound artifact. Display/context only; every authority
+      field is false and display_priority is explicitly not an investment rank.
 
   site-government-revenue-latest:
     path: site/government-revenue-data/latest.json
     format: json
     producer: scripts/build_government_revenue.py
-    known_extra_writers:
-      - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
     owner_program: government-revenue-foresight
-    cadence: daily-engine
+    cadence: intraday
     storage: git
     asof_field: as_of
     freshness_sla_hours: 36
@@ -15562,6 +15731,28 @@ artifacts:
       Public twin of government-revenue-latest for the premium vertical workbench and
       read-only API fallback. Byte-identical to the canonical payload at build time;
       display/context only with the same all-false authority contract.
+
+  site-government-revenue-workspace:
+    path: site/government-revenue-data/workspace.json
+    format: json
+    producer: scripts/build_government_revenue.py
+    owner_program: government-revenue-foresight
+    cadence: intraday
+    storage: git
+    asof_field: as_of
+    freshness_sla_hours: 36
+    schema: government_procurement_workspace.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: [site/government_revenue.html]
+    external_consumers: []
+    notes: >
+      Public byte-identical twin of government-revenue-workspace, hydrated by the
+      workbench after a bounded first paint. Its bundle id must match the embedded shell
+      before the browser accepts it. It is display/context only and cannot rank, size,
+      gate, originate, or escalate a signal.
 
   # --- Capital Structure Intelligence W0-W1: immutable SEC evidence/event spine ---
   capital-structure-discovery:

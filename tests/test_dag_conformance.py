@@ -485,6 +485,160 @@ class TestLiveConformance:
             f"Documented divergences missing 'evidence' field: {missing_evidence}"
         )
 
+    def test_government_revenue_live_lane_is_bounded_and_publish_gated(self):
+        """The SAM fast path publishes complete health and distinguishes material evidence.
+
+        This pins the safety properties that DAG module-order conformance cannot
+        see: a narrow adapter scope, non-overlapping first-seen persistence,
+        last-good behavior on partial receipts, and a bounded staged path set.
+        """
+        workflow = REPO_ROOT / ".github" / "workflows" / "government-revenue-live.yml"
+        text = workflow.read_text(encoding="utf-8")
+        import yaml
+
+        doc = yaml.safe_load(text)
+        assert "7,37 * * * *" in text, "SAM fast path must retain its 30-minute schedule"
+        triggers = doc.get("on", doc.get(True))  # PyYAML 1.1 treats bare `on` as bool.
+        push_trigger = triggers["push"]
+        assert triggers["workflow_call"]["inputs"]["projection_only"] == {
+            "description": "Fold committed evidence without polling SAM",
+            "required": True,
+            "type": "boolean",
+        }
+        assert push_trigger["branches"] == ["main"]
+        for path in (
+            "data/government_revenue/awards.parquet",
+            "data/government_revenue/award_actions.parquet",
+            "data/government_revenue/award_snapshots.parquet",
+            "data/government_revenue/entities.json",
+            "data/government_revenue/ingest_status.json",
+            "data/government_revenue/collection_receipts.jsonl",
+            "data/government_revenue/opportunities.parquet",
+            "data/government_revenue/opportunity_revisions.parquet",
+            "data/government_revenue/opportunity_documents.parquet",
+            "data/government_revenue/opportunity_ingest_status.json",
+            "data/usaspending/obligations.parquet",
+            "data/usaspending/_meta.json",
+            "collectors/sam_gov.py",
+            "lib/pages.py",
+            "templates/_interfonts.html.j2",
+            "templates/_navlinks.html.j2",
+            "templates/_seo_head.html.j2",
+            "templates/_site_nav.html.j2",
+            "templates/data_base.js",
+            "templates/government_revenue.html.j2",
+            "scripts/build_government_revenue.py",
+            "scripts/collect.py",
+        ):
+            assert path in push_trigger["paths"]
+        assert doc["concurrency"] == {
+            "group": "government-revenue-live",
+            "cancel-in-progress": False,
+        }
+        steps = doc["jobs"]["refresh"]["steps"]
+        checkout = next(step for step in steps if step.get("uses") == "actions/checkout@v4")
+        assert checkout["with"] == {"ref": "main", "fetch-depth": 1}
+        collect = next(step for step in steps if step.get("id") == "collect")
+        assert collect["if"] == (
+            "${{ github.event_name != 'push' && inputs.projection_only != true }}"
+        )
+        assert collect["continue-on-error"] is True
+        assert collect["env"]["COLLECT_LANE"] == "government-revenue-live"
+        assert collect["run"] == (
+            "python -m scripts.collect --only sam_gov_opportunities "
+            "--skip-quality --skip-shadow-importance"
+        )
+
+        gate = next(step for step in steps if step.get("id") == "gate")
+        assert gate["name"] == "gate publication on complete health or material evidence"
+        assert gate["if"] == "${{ always() }}"
+        gate_body = gate["run"]
+        assert 'status_name == "ok"' in gate_body
+        assert "not partial" in gate_body
+        assert "material_changed" in gate_body
+        assert "complete_quiet_health_receipt" in gate_body
+        assert (
+            'outcome == "success" and status_name == "ok" and not partial)'
+            in gate_body
+        )
+        assert (
+            'status_name == "ok" and not partial and material_changed'
+            not in gate_body
+        ), "A complete quiet poll must still publish its health/current-state receipt."
+        assert 'event_name == "push"' in gate_body
+        assert "main_input_generation_changed" in gate_body
+        assert "status.get(\"errors\")" not in gate_body, "source error bodies must not be logged"
+
+        build = next(step for step in steps if step.get("name") == "build Government Revenue projection")
+        commit = next(step for step in steps if step.get("name") == "commit complete evidence projection")
+        assert build["if"] == "${{ steps.gate.outputs.publish == 'yes' }}"
+        assert commit["if"] == "${{ steps.gate.outputs.publish == 'yes' }}"
+        for path in (
+            "data/government_revenue/opportunities.parquet",
+            "data/government_revenue/opportunity_revisions.parquet",
+            "data/government_revenue/opportunity_documents.parquet",
+            "data/government_revenue/opportunity_ingest_status.json",
+            "data/government_revenue/sam_opportunity_heartbeat.parquet",
+            "data/government_revenue/workspace.json",
+            "site/government-revenue-data/workspace.json",
+        ):
+            assert path in commit["run"]
+        assert "data/government_revenue/collection_receipts.jsonl" not in commit["run"], (
+            "The SAM-only fast path must never stage USAspending's append-only receipt ledger."
+        )
+        assert "scripts/ci/push_retry.sh" in commit["run"]
+        assert "push_autostash_ok" in commit["run"]
+        assert "Rebuild AFTER every successful rebase" in commit["run"]
+        assert commit["run"].count("python -m scripts.build_government_revenue") == 1
+        assert "git commit --amend --no-edit" in commit["run"]
+
+        baskets_source = (REPO_ROOT / "scripts" / "build_baskets.py").read_text(
+            encoding="utf-8"
+        )
+        assert "build_government_revenue" not in baskets_source, (
+            "The generic baskets builder must not independently own the procurement projection."
+        )
+
+        # Site-wide render lanes rewrite every HTML page. They therefore must
+        # rebuild the embedded procurement bundle both before normalization and
+        # after every successful rebase, while refusing a site/canonical split.
+        for lane in ("render.yml", "engine-render.yml"):
+            lane_text = (REPO_ROOT / ".github" / "workflows" / lane).read_text(
+                encoding="utf-8"
+            )
+            site_only_command = "python -m scripts.build_government_revenue --site-only"
+            assert lane_text.count(site_only_command) >= 2
+            rebase_at = lane_text.index("git pull --rebase --autostash -X theirs origin main")
+            rebuild_at = lane_text.index(
+                site_only_command, rebase_at
+            )
+            normalize_at = lane_text.index("python -m scripts.optimize_assets", rebuild_at)
+            assert rebase_at < rebuild_at < normalize_at
+            assert "post-rebase canonical and rebuilt procurement bundles differ" in lane_text
+
+        daily_text = (REPO_ROOT / ".github" / "workflows" / "daily.yml").read_text(
+            encoding="utf-8"
+        )
+        daily = yaml.safe_load(daily_text)
+        collect_steps = daily["jobs"]["collect"]["steps"]
+        push_data = next(step for step in collect_steps if step.get("id") == "pushdata")
+        assert 'published=true" >> "$GITHUB_OUTPUT"' in push_data["run"]
+        assert daily["jobs"]["collect"]["outputs"] == {
+            "government_revenue_projection_needed": (
+                "${{ steps.pushdata.outputs.published }}"
+            )
+        }
+        projection_job = daily["jobs"]["government_revenue_projection"]
+        assert projection_job["needs"] == "collect"
+        assert projection_job["if"] == (
+            "needs.collect.outputs.government_revenue_projection_needed == 'true'"
+        )
+        assert projection_job["uses"] == "./.github/workflows/government-revenue-live.yml"
+        assert projection_job["with"] == {"projection_only": True}
+        assert daily["jobs"]["engine"]["needs"] == [
+            "collect", "government_revenue_projection"
+        ]
+
 
 class TestBrunOrderVisibility:
     """Every `brun` slug must appear in its lane's ORDER string.

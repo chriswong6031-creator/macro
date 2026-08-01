@@ -699,6 +699,15 @@ jobs:
         # succeeded, then re-run the dead-reference guard on the finalized bytes below.
         if: ${{ success() }}
         run: |
+          # Keep the embedded procurement bundle tied to this checkout's canonical
+          # evidence before the site-wide normalizers rewrite every HTML page.
+          python -m scripts.build_government_revenue --site-only
+          if ! git diff --quiet -- \
+            data/government_revenue/latest.json \
+            data/government_revenue/workspace.json; then
+            echo "::error title=government-revenue projection drift::engine-render would publish non-canonical procurement site twins"
+            exit 1
+          fi
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
           # ::warning::, not a bare echo — this step is the only thing that moves a ?v=
@@ -793,6 +802,16 @@ jobs:
               # Prove the rebased render commit itself before any optional heal. If a
               # later follow-up commit is skipped, this is the exact HEAD we still push.
               python3 scripts/check_site_asset_refs.py site
+              # Refresh from the post-rebase evidence generation so a long-running
+              # express render cannot overwrite a newer SAM projection with its
+              # checkout-time embedded bundle.
+              python -m scripts.build_government_revenue --site-only
+              if ! git diff --quiet -- \
+                data/government_revenue/latest.json \
+                data/government_revenue/workspace.json; then
+                echo "::error title=government-revenue projection drift::post-rebase canonical and rebuilt procurement bundles differ"
+                exit 1
+              fi
               # post-rebase template↔site re-sync (ui.template_site_sync). -X theirs can
               # resurrect this run's checkout-time template copies over a reword that merged
               # MID-RENDER: 2026-07-07 incident — run 28835838497 (110 min, checkout

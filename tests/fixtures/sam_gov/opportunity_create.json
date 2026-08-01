@@ -1,0 +1,43 @@
+{
+  "noticeId": "notice-001",
+  "title": "Orbital sensor prototype",
+  "solicitationNumber": "FA0001-26-R-0001",
+  "department": "DEPARTMENT OF DEFENSE",
+  "subTier": "DEPARTMENT OF THE AIR FORCE",
+  "office": "AFLCMC SENSOR OFFICE",
+  "fullParentPathName": "DEPARTMENT OF DEFENSE.DEPARTMENT OF THE AIR FORCE.AFLCMC SENSOR OFFICE",
+  "fullParentPathCode": "097.5700.0001",
+  "postedDate": "2026-07-01 09:00:00",
+  "type": "Solicitation",
+  "baseType": "Presolicitation",
+  "archiveType": "auto15",
+  "archiveDate": "2026-08-15",
+  "typeOfSetAsideDescription": "Total Small Business Set-Aside",
+  "typeOfSetAside": "SBA",
+  "responseDeadLine": "2026-08-01 17:00:00",
+  "naicsCode": "336414",
+  "classificationCode": "1410",
+  "active": "Yes",
+  "description": "https://api.sam.gov/prod/opportunities/v1/noticedesc?noticeid=notice-001&api_key=source-token",
+  "resourceLinks": [
+    "https://api.sam.gov/prod/opportunities/v1/resources?noticeid=notice-001&resourceId=spec-v1&api_key=source-token"
+  ],
+  "placeOfPerformance": {
+    "city": {"name": "Huntsville"},
+    "state": {"code": "AL"},
+    "zip": "35806",
+    "country": {"code": "USA"}
+  },
+  "award": {
+    "number": "FA0001-26-C-0001",
+    "amount": "1250000.00",
+    "date": "2026-07-02",
+    "awardee": {"name": "Example Aerospace", "ueiSAM": "ABC123456789"}
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://api.sam.gov/opportunities/v2/search?noticeid=notice-001&api_key=source-token"
+    }
+  ]
+}

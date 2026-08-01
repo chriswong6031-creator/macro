@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/government_revenue/government_opportunity.v1.schema.json",
+  "title": "Government Revenue Normalized Opportunity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract", "notice_id", "revision_id", "title", "notice_stage", "status", "resource_links",
+    "known_at", "effective_at", "source_url", "tags", "company_candidates",
+    "documents", "defense_relevant", "authority"
+  ],
+  "properties": {
+    "contract": {"const": "government_opportunity.v1"},
+    "notice_id": {"type": "string", "minLength": 1, "maxLength": 160},
+    "solicitation_number": {"type": ["string", "null"]},
+    "revision_id": {"type": "string", "minLength": 1},
+    "title": {"type": "string", "minLength": 1},
+    "description": {"type": ["string", "null"]},
+    "notice_type": {"type": ["string", "null"]},
+    "notice_stage": {"type": "string", "minLength": 1},
+    "base_type": {"type": ["string", "null"]},
+    "status": {"type": "string", "minLength": 1},
+    "agency": {"type": ["string", "null"]},
+    "office": {"type": ["string", "null"]},
+    "organization_code": {"type": ["string", "null"]},
+    "naics_code": {"type": ["string", "null"]},
+    "psc_code": {"type": ["string", "null"]},
+    "set_aside": {"type": ["string", "null"]},
+    "posted_at": {"$ref": "#/$defs/nullableTemporal"},
+    "response_deadline": {"$ref": "#/$defs/nullableTemporal"},
+    "archive_date": {"$ref": "#/$defs/nullableTemporal"},
+    "place_of_performance": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string"},
+        {"type": "object", "additionalProperties": true}
+      ]
+    },
+    "resource_links": {
+      "type": "array", "maxItems": 40,
+      "items": {"oneOf": [{"type": "string"}, {"type": "object", "additionalProperties": true}]}
+    },
+    "known_at": {"$ref": "#/$defs/temporal"},
+    "effective_at": {"$ref": "#/$defs/temporal"},
+    "source_url": {"type": "string", "format": "uri", "pattern": "^https://(api\\.)?sam\\.gov/"},
+    "tags": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "company_candidates": {"type": "array", "maxItems": 5, "items": {"$ref": "#/$defs/companyCandidate"}},
+    "documents": {"type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/document"}},
+    "days_to_response": {"type": ["integer", "null"]},
+    "current_state": {"enum": ["verified_current", "last_observed_only"]},
+    "observation_horizon_at": {"$ref": "#/$defs/nullableTemporal"},
+    "observation_age_minutes": {"type": ["integer", "null"], "minimum": 0},
+    "observation_basis": {"type": ["string", "null"], "enum": ["last_seen_at", "known_at", null]},
+    "current_state_reason": {"type": "string", "minLength": 1},
+    "defense_relevant": {"type": "boolean"},
+    "authority": {"$ref": "#/$defs/authority"}
+  },
+  "$defs": {
+    "temporal": {
+      "oneOf": [
+        {"type": "string", "format": "date"},
+        {"type": "string", "format": "date-time"}
+      ]
+    },
+    "nullableTemporal": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "format": "date"},
+        {"type": "string", "format": "date-time"}
+      ]
+    },
+    "authority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tier", "context_only", "can_rank", "can_size", "can_gate", "can_originate_signal", "can_add_candidates", "can_escalate"],
+      "properties": {
+        "tier": {"const": "display"}, "context_only": {"const": true},
+        "can_rank": {"const": false}, "can_size": {"const": false},
+        "can_gate": {"const": false}, "can_originate_signal": {"const": false},
+        "can_add_candidates": {"const": false}, "can_escalate": {"const": false}
+      }
+    },
+    "matchReason": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "detail"],
+      "properties": {"kind": {"type": "string"}, "detail": {"type": "string"}}
+    },
+    "companyCandidate": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ticker", "name", "confidence_state", "evidence_strength", "match_reasons", "evidence_class", "label_limit", "authority"],
+      "properties": {
+        "ticker": {"type": "string", "pattern": "^[A-Z][A-Z0-9.-]{0,9}$"},
+        "name": {"type": ["string", "null"]},
+        "confidence_state": {"enum": ["probable", "tentative"]},
+        "evidence_strength": {"enum": ["high", "moderate"]},
+        "match_reasons": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/matchReason"}},
+        "evidence_class": {"const": "rule_based_exposure_candidate"},
+        "label_limit": {"const": "not a bidder probability, award forecast, or revenue estimate"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "document": {
+      "type": "object", "additionalProperties": false,
+      "required": ["title", "source_url", "content_sha256", "known_at"],
+      "properties": {
+        "document_key": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]},
+        "source_url": {"type": "string", "format": "uri", "pattern": "^https://(api\\.)?sam\\.gov/"},
+        "mime_type": {"type": ["string", "null"]},
+        "content_sha256": {"type": ["string", "null"]},
+        "known_at": {"$ref": "#/$defs/temporal"},
+        "published_at": {"$ref": "#/$defs/nullableTemporal"},
+        "hash_basis": {"type": ["string", "null"]},
+        "fetch_status": {"type": ["string", "null"]}
+      }
+    }
+  }
+}

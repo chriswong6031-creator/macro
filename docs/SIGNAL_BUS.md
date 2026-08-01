@@ -35,7 +35,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 2 |
-| government-revenue-foresight | 8 |
+| government-revenue-foresight | 16 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
 | ignition-radar | 2 |
@@ -106,8 +106,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 350 |
-| infrastructure | 110 |
+| display | 352 |
+| infrastructure | 116 |
 | scored | 4 |
 | shadow | 79 |
 
@@ -115,7 +115,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 516 |
+| git | 524 |
 | git+r2 | 1 |
 | gitignored-local | 14 |
 | r2 | 12 |
@@ -384,14 +384,22 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| government-revenue-latest | `data/government_revenue/latest.json` | json | daily-engine | display | 3 | 1 |
+| government-revenue-latest | `data/government_revenue/latest.json` | json | intraday | display | 3 | 1 |
 | government-revenue-entities | `data/government_revenue/entities.json` | json | on-demand | infrastructure | 2 | 0 |
 | government-revenue-ingest-status | `data/government_revenue/ingest_status.json` | json | collect | infrastructure | 2 | 0 |
-| site-government-revenue-latest | `site/government-revenue-data/latest.json` | json | daily-engine | display | 2 | 0 |
+| government-revenue-sam-opportunity-ingest-status | `data/government_revenue/opportunity_ingest_status.json` | json | intraday | infrastructure | 2 | 0 |
+| site-government-revenue-latest | `site/government-revenue-data/latest.json` | json | intraday | display | 2 | 0 |
 | government-revenue-award-actions | `data/government_revenue/award_actions.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | government-revenue-award-snapshots | `data/government_revenue/award_snapshots.parquet` | parquet | collect | infrastructure | 1 | 0 |
 | government-revenue-awards | `data/government_revenue/awards.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| government-revenue-collection-receipts | `data/government_revenue/collection_receipts.jsonl` | jsonl | collect | infrastructure | 1 | 0 |
 | government-revenue-collector-heartbeat | `data/government_revenue/collector_heartbeat.parquet` | parquet | collect | infrastructure | 1 | 0 |
+| government-revenue-sam-opportunities | `data/government_revenue/opportunities.parquet` | parquet | intraday | infrastructure | 1 | 0 |
+| government-revenue-sam-opportunity-documents | `data/government_revenue/opportunity_documents.parquet` | parquet | intraday | infrastructure | 1 | 0 |
+| government-revenue-sam-opportunity-heartbeat | `data/government_revenue/sam_opportunity_heartbeat.parquet` | parquet | intraday | infrastructure | 1 | 0 |
+| government-revenue-sam-opportunity-revisions | `data/government_revenue/opportunity_revisions.parquet` | parquet | intraday | infrastructure | 1 | 0 |
+| government-revenue-workspace | `data/government_revenue/workspace.json` | json | intraday | display | 1 | 0 |
+| site-government-revenue-workspace | `site/government-revenue-data/workspace.json` | json | intraday | display | 1 | 0 |
 
 ### hk-canada
 
@@ -1496,12 +1504,12 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **extra writers:**
   - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
 
-### government-revenue-latest
+### government-revenue-sam-opportunity-heartbeat
 
-- **path:** `data/government_revenue/latest.json`
-- **declared producer:** `scripts/build_government_revenue.py`
+- **path:** `data/government_revenue/sam_opportunity_heartbeat.parquet`
+- **declared producer:** `collectors/sam_gov.py`
 - **extra writers:**
-  - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
+  - scripts/collect.py — standard Adapter runner persists the returned heartbeat frame
 
 ### great-company-trap
 
@@ -1807,13 +1815,6 @@ Artifacts below have `known_extra_writers` — additional code paths that write 
 - **declared producer:** `engine/theme_adoption.py`
 - **extra writers:**
   - scripts/build_discovery_confluence.py
-
-### site-government-revenue-latest
-
-- **path:** `site/government-revenue-data/latest.json`
-- **declared producer:** `scripts/build_government_revenue.py`
-- **extra writers:**
-  - scripts/build_baskets.py — fail-soft wrapper calling the declared producer
 
 ### site-neuralweb-market-plane
 
