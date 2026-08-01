@@ -2,21 +2,22 @@
 
 # Active Build Map
 
-Generated: 2026-08-01T03:42:37.842917+00:00  |  Open PRs: 18  |  Merged (window): 500  |  base: `ffed202405df6a305ed528c1764d0c98eefdc2b1`
+Generated: 2026-08-01T19:09:40.571160+00:00  |  Open PRs: 19  |  Merged (window): 500  |  base: `a2d2dfe46671d4910a36bbb958d1acd8c8ef7f46`
 
 ## Open PRs
 
 | PR | Title | Branch | Updated | Flags |
 |----|-------|--------|---------|-------|
-| #4159 | feat(seo): IndexNow adapter + bare-path 301 aliases — post-outage reindex push | `claude/mastermind-x-seo-assessment-255a36` | 2026-08-01 | ⚠ protected:1 |
-| #4156 | design(pricing): founding meter restored+refreshed, dollar savings, entitlement-aware CTAs | `claude/founding-pricing-refresh` | 2026-08-01 | — |
-| #4154 | x-growth: superintelligence overhaul W1 — audit-driven rebuild of the supply, quality, wire, and approval lanes | `claude/x-growth-overhaul` | 2026-08-01 | ⚠ protected:1 |
+| #4190 | policy_watch: revamp to macro.html design quality | `claude/ui-enhancement-older-page-d75ac0` | 2026-08-01 | ⚠ CONFLICTING |
+| #4185 | feat(tiers): Phase 2 — the catalog speaks essential; Stripe product migrates in place | `claude/tier-essential-m2` | 2026-08-01 | ⚠ protected:2 |
+| #4183 | engine(hk_cbbc): data-keyed staleness gate for the SLD call-levels store | `claude/vigilant-dijkstra-e5f8b4` | 2026-08-01 | ⚠ CONFLICTING |
+| #4162 | outbox: fable audit of the 2026-08-01 nightly slate — approvals + rejections with named reasons | `claude/nightly-audit-0801` | 2026-08-01 | — |
 | #4132 | test(options): sweep hover + aria + script-authored copy — the tier the guard could not see | `claude/options-tip-copy-sweep` | 2026-07-31 | — |
 | #4130 | fix(gex): IV-rank band must not render through a directional token | `claude/magical-feynman-5d5479` | 2026-07-31 | — |
 | #4123 | feat(oip-w1): nav front door + Ticker workbench depth — filmstrip, search, 5 new reads | `claude/oip-w1-build` | 2026-07-31 | files-truncated |
 | #4105 | fix(ship-guard): the uncommitted gate must judge THIS checkout's work only | `claude/gallant-turing-2a018e` | 2026-07-31 | — |
 | #4070 | fix(calculators): keep the whole anchor inside each language branch — 48 t() calls shipped href="</span>" | `claude/silly-dirac-5422a9` | 2026-07-30 | ⚠ protected:2 |
-| #4067 | feat(intelligence): wire_rank.v1 sidecar — non-public ranked wire view for the Mastermind brain | `claude/wire-rank-sidecar` | 2026-07-30 | ⚠ CONFLICTING |
+| #4067 | feat(intelligence): wire_rank.v1 sidecar — non-public ranked wire view for the Mastermind brain | `claude/wire-rank-sidecar` | 2026-08-01 | — |
 | #4064 | fix(flow): sparkline skips null ledger rows + heal the 9 stranded cohort sessions | `claude/cranky-dhawan-44683d` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:2 |
 | #4063 | docs(workflows): correct leader-radar lane provenance; restore render.yml comment blocks clobbered by #3834 | `claude/leader-radar-lane-provenance` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:3 |
 | #4056 | fix(site): repair 605 dead basket links + guard dead site references | `claude/funny-tharp-1d755d` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:7 / files-truncated |
@@ -28,18 +29,22 @@ Generated: 2026-08-01T03:42:37.842917+00:00  |  Open PRs: 18  |  Merged (window)
 | #3879 | ci: guard admin/static/*.js against out-of-scope references (eslint no-undef) | `claude/priceless-robinson-0eb29a` | 2026-07-30 | ⚠ CONFLICTING / ⚠ protected:2 |
 
 > ⚠ CONFLICTING means mergeStateStatus=DIRTY — pull_request CI is suppressed on conflicting PRs (known repo failure mode).
-> ℹ 1 of 18 PRs: mergeability not yet computed by GitHub (UNKNOWN).
+> ℹ 1 of 19 PRs: mergeability not yet computed by GitHub (UNKNOWN).
 
 ## File Collisions
 
 | PR A | PR B | Shared files | Files |
 |------|------|-------------|-------|
+| #4185 | #4070 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4185 | #4049 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
+| #4185 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #4070 | #4049 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #4070 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
 | #4064 | #4041 | 2 | `engine/flow_cohorts.py`, `tests/test_flow_cohorts.py` |
 | #4063 | #4056 | 2 ⚠ | `.github/workflows/engine-render.yml`, `.github/workflows/render.yml` |
 | #4049 | #3879 | 2 ⚠ | `.github/ci/legacy-jobs.yml`, `.github/workflows/ci.yml` |
-| #4154 | #4067 | 1 | `engine/marketing/press_lane.py` |
+| #4185 | #4162 | 1 | `admin/static/app.js` |
+| #4185 | #4056 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #4132 | #4123 | 1 | `scripts/build_options_command.py` |
 | #4070 | #4056 | 1 ⚠ | `.github/workflows/ci.yml` |
 | #4063 | #4013 | 1 ⚠ | `.github/workflows/daily.yml` |
@@ -50,10 +55,54 @@ Generated: 2026-08-01T03:42:37.842917+00:00  |  Open PRs: 18  |  Merged (window)
 
 | PR | Title | Merged |
 |----|-------|--------|
+| #4206 | fix(options): six publisher defects an adversarial audit found in code I shipped today | 2026-08-01 |
+| #4205 | Fail closed on render dead-asset races | 2026-08-01 |
+| #4204 | fix(render): rebuild crypto before asset guard | 2026-08-01 |
+| #4203 | Fix render publish budget after cold rebase | 2026-08-01 |
+| #4202 | Wire earnings intelligence into Chronicle, Brain, Press, and X | 2026-08-01 |
+| #4201 | Keep earnings telemetry outside the ops clone | 2026-08-01 |
+| #4200 | Preserve headroom for guarded full-site renders | 2026-08-01 |
+| #4199 | feat(options+neuralweb): W3 — delta-space exposure, an honest screener, and the gamma regime on the market plane | 2026-08-01 |
+| #4198 | Fix Capital Structure daily DAG declaration | 2026-08-01 |
+| #4197 | feat(stage): repair live industry intelligence | 2026-08-01 |
+| #4196 | Capital Structure Intelligence: add SEC evidence spine | 2026-08-01 |
+| #4195 | Publish seasonality methodology contract | 2026-08-01 |
+| #4194 | feat(options): nine-year aggregate greek trend + repair a $1.1tn headline defect | 2026-08-01 |
+| #4193 | Biopharma seasonality intelligence foundation | 2026-08-01 |
+| #4192 | Automate Terminal-to-earnings intelligence intake | 2026-08-01 |
+| #4189 | fix(options): gamma flip was the wrong estimator — repair all three sites | 2026-08-01 |
+| #4188 | feat(biocatalyst): freeze evidence contract foundation | 2026-08-01 |
+| #4187 | fix: contain Stage earnings filters on mobile | 2026-08-01 |
+| #4186 | hk_cbbc: light up the dark W1 freshness banner on the leverage card | 2026-08-01 |
+| #4184 | Ship Filing Forensics workbench | 2026-08-01 |
+| #4182 | Government Revenue Foresight vertical workbench | 2026-08-01 |
+| #4181 | feat: repair earnings intelligence spine and Stage surfaces | 2026-08-01 |
+| #4180 | P0 follow-up: wire push_autostash_ok into every narrow single-path lane | 2026-08-01 |
+| #4179 | BioCatalyst Intelligence competitive teardown and build docket | 2026-08-01 |
+| #4178 | guard: start.html runtime single-instance gate in every start-writing lane | 2026-08-01 |
+| #4177 | guard(hk_cbbc_sld): surface the silent no-poppler host fault that froze SLD extraction 07-10..07-31 | 2026-08-01 |
+| #4176 | feat(tiers): Phase 1 — accept 'essential' everywhere it reads a tier, emit it nowhere | 2026-08-01 |
+| #4175 | research: capital structure intelligence teardown and build docket | 2026-08-01 |
+| #4174 | fix(research-vault): heal the 127 bodyless rows from the poppler-less-runner window + preflight gate + scan-only disclosure | 2026-08-01 |
+| #4173 | Restore optimized start-page artifact after stale render | 2026-08-01 |
+| #4172 | research: assess Calcbench forensics build | 2026-08-01 |
+| #4171 | P0: contain conflicted-autostash applies — the machinery behind d29e4dd44d | 2026-08-01 |
+| #4170 | docs(masterplan): Analyst OS W4 merged + live-verified record | 2026-08-01 |
+| #4169 | research: Jodie and Struct suite teardown | 2026-08-01 |
+| #4168 | feat(options-hub): R3 OI suite — oi_time / max_pain / oi_change + dead-man anchor | 2026-08-01 |
+| #4167 | fix(site): purge 1,704 stash-conflict-clobbered rendered pages | 2026-08-01 |
+| #4166 | guard: strip conflicted stash/rebase wreckage before every broad lane add | 2026-08-01 |
+| #4165 | design(nav): hover bridge + Attio-style cross-fade between mega menus | 2026-08-01 |
+| #4164 | design(pricing): Essential rename (display), radical card simplification, no-trial Essential | 2026-08-01 |
+| #4163 | Restore smooth single-instance start page runtime | 2026-08-01 |
+| #4161 | feat(brain): Analyst OS W4 — Pro full-report escalation, codex vision, Terra wire translation | 2026-08-01 |
 | #4160 | Fix Research Vault stale first paint | 2026-08-01 |
+| #4159 | feat(seo): IndexNow adapter + bare-path 301 aliases — post-outage reindex push | 2026-08-01 |
 | #4158 | Preserve mobile dashboard position after Terminal | 2026-08-01 |
 | #4157 | fix(liveflow): retry probe pulls once — transient flake must not condemn the day to full_day | 2026-08-01 |
+| #4156 | design(pricing): founding meter restored+refreshed, dollar savings, entitlement-aware CTAs | 2026-08-01 |
 | #4155 | Finalize mobile Terminal cache recovery | 2026-08-01 |
+| #4154 | x-growth: superintelligence overhaul W1 — audit-driven rebuild of the supply, quality, wire, and approval lanes | 2026-08-01 |
 | #4153 | feat(options-hub): gex_history dates.json index + bounded self-heal (R0.10) | 2026-08-01 |
 | #4152 | fix(options-plane): R0 repair & relight — seal top-up, cadence probe fix, schema v2, dead-man anchors | 2026-08-01 |
 | #4151 | Fix cached mobile Terminal lifecycle bundle | 2026-08-01 |
@@ -506,50 +555,6 @@ Generated: 2026-08-01T03:42:37.842917+00:00  |  Open PRs: 18  |  Merged (window)
 | #3656 | fix(brain): Terminal chat degraded on every chart turn — synthesis had no way to answer | 2026-07-26 |
 | #3655 | design(landing): serif display figures — Newsreader replaces Archivo Expanded Black on every big number | 2026-07-26 |
 | #3654 | feat(research-vault): raise the daily download cap to 50/day for lifetime Pro | 2026-07-26 |
-| #3652 | fix(shim): the guard's other blind spot — variable *.html targets in 9 builders | 2026-07-26 |
-| #3650 | fix(css): externalize_css must skip the plain-copy pairs — reclaim 92KB of unprunable dead CSS | 2026-07-26 |
-| #3649 | research(personality): PSS-F3 idiosyncratic residual reset — prereg + results (falsifier = residual-vs-raw + low-R² mechanism) | 2026-07-26 |
-| #3648 | fix(chronicle): gate 1 asserted cross-lane synchrony the pipeline never provides (M11) + unblank vault site links | 2026-07-26 |
-| #3646 | fix(signal-lab): publish the DSR the calibrator computed, not a hardcoded quote | 2026-07-26 |
-| #3645 | test(ftr): re-pin the 3 red tape-surface guards to the shipped surface + wire both suites into CI | 2026-07-26 |
-| #3644 | fix(daily): Terminal probe-only — never auto-launch from CI post M2→M1 migration | 2026-07-26 |
-| #3642 | fix(brain): make the language override symmetric (follow-up to #3639) | 2026-07-26 |
-| #3640 | feat(support): ship the public /support.html desk + the pinned email base and ticket ack (SEE W2) | 2026-07-26 |
-| #3639 | fix(brain): pin every turn's language to the user's profile, chips included | 2026-07-26 |
-| #3637 | feat(research-vault): measure PDF metadata instead of trusting the sidecar (Tier A) | 2026-07-26 |
-| #3636 | test(ci): close the strictly-dark unrun-suite subset (130 suites, 9 lanes) + repair 5 rotted guards | 2026-07-26 |
-| #3635 | fix(leader-radar,pages): the shim guard's blind spot, its cache trap, and its missing CI lane | 2026-07-26 |
-| #3633 | feat(billing-email): W3 — webhook receipts, trial-ending sweeper, account prefs, portal deep link | 2026-07-26 |
-| #3632 | fix(assets): unfreeze ?v= stamps for real — stage the pair, re-stamp post-rebase | 2026-07-26 |
-| #3630 | fix(china): W1 review pass — atomic PIT writes, partial-day honesty, coverage-null ledger | 2026-07-26 |
-| #3629 | fix(hooks): ship-loop guard render gate accepts descendant coverage (coalescing-lane law) | 2026-07-26 |
-| #3628 | research(personality): PSS-F2 overnight-vs-intraday decomposition flip — prereg + results (falsifier = decomposition-vs-aggregate) | 2026-07-26 |
-| #3627 | fix(api): coarsen /api/status error strings to stop path disclosure to anon callers | 2026-07-26 |
-| #3626 | fix(admin-deploy): provision boto3 for the deployed panel's R2 refresh | 2026-07-26 |
-| #3625 | fix(shim): index.html could never heal — sweep the templates/ side of paired pages | 2026-07-26 |
-| #3624 | fix(landing): bump the onboard ?v= stamps so #3617's CSS actually reaches browsers | 2026-07-26 |
-| #3623 | design(factors + macro_context): honest-verdict hero, plain words, and a site-wide chrome cleanup | 2026-07-26 |
-| #3622 | feat(case): winner autopsy JD 2023 | 2026-07-26 |
-| #3621 | feat(china): W1 — 互动易/e互动 investor Q&A, sell-side revision stream, 股东户数 collectors | 2026-07-26 |
-| #3620 | feat(case): winner autopsy SEDG 2016 | 2026-07-26 |
-| #3619 | feat(china-native): W2 — funding curve, CB plane, fund issuance, full-universe ETF shares | 2026-07-26 |
-| #3618 | feat(case): winner autopsy GTLB 2022 | 2026-07-26 |
-| #3617 | fix(onboarding): load real expanded Archivo (wdth 125) — the sheet's display face never rendered | 2026-07-26 |
-| #3616 | test(china-alpha): repair the w2a/w2b suites and wire them into CI | 2026-07-26 |
-| #3615 | fix(api,billing,tape): rate-limit /api/collect, cap /ws/tape per IP, stop raw exception leakage | 2026-07-26 |
-| #3614 | feat(case): winner autopsy TMDX 2022 | 2026-07-26 |
-| #3613 | ci(render): fire the render lane when the post-render sweeps change | 2026-07-26 |
-| #3612 | feat(leader-radar): admit build_leader_radar to both express render lanes (scope=all, serial post-band) | 2026-07-26 |
-| #3611 | fix(commodities): don't claim a downtrend the timeframe table refutes; repair dead per-timeframe wire | 2026-07-26 |
-| #3610 | design(vector): rebuild the Deep Dive shelf on the macro.html fold idiom | 2026-07-26 |
-| #3609 | fix(brain): review fix-forward on #3586 — timeout ceiling, param-rejection failover, timeline polish | 2026-07-26 |
-| #3607 | fix(ccw): unfreeze credit momentum — duplicate ISINs crashed the nightly organ | 2026-07-26 |
-| #3606 | fix(nav): expose nav_market.js publicly — it 401'd behind the regwall | 2026-07-26 |
-| #3605 | fix(research_vault): detect the all-lowercase filename stem + guard the committed catalog | 2026-07-26 |
-| #3604 | feat(admin): ingest-dark warning on the AI Response Logs tab | 2026-07-26 |
-| #3603 | feat(labs): W-LAB dual-ruler combo columns + codex-class Pick Lab cuts (V-LAB-1/4/5/6) | 2026-07-26 |
-| #3602 | design(support-email): pin the support page + email visual system (W-D) | 2026-07-26 |
-| #3601 | fix(billing): unbreak the portal for subscribers, land checkout on the desk, script the portal config | 2026-07-26 |
 
 ---
 
