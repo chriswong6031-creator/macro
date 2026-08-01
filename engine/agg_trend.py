@@ -92,6 +92,13 @@ _OI_READ_COLS = ["expiration", "strike", "right", "date", "open_interest"]
 #: payload's 30-day ATM uses.
 _ATM_BAND = 0.05
 
+#: Share of a session's contracts that must carry a greek before its sum is published.
+#:
+#: Below this the "whole-book" aggregate is a fraction of the book. It would look
+#: entirely ordinary on a chart and would sit in the same distribution the percentile
+#: ranks against, dragging the reference set toward zero. Better absent than small.
+MIN_GREEK_COVERAGE = 0.90
+
 
 def _normalise_dates(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
@@ -119,7 +126,8 @@ def daily_aggregates(greeks: pd.DataFrame, oi: pd.DataFrame) -> pd.DataFrame:
         frame with the right columns rather than raising — this runs unattended
         across 400 roots and one bad root must not sink the batch.
     """
-    cols = ["date", "spot", "n_contracts", "oi_total", "atm_iv", *GREEKS]
+    cols = ["date", "spot", "n_contracts", "oi_total", "atm_iv", *GREEKS,
+            *(f"n_{g}" for g in GREEKS)]
     if greeks is None or greeks.empty or oi is None or oi.empty:
         return pd.DataFrame(columns=cols)
 
@@ -181,8 +189,21 @@ def daily_aggregates(greeks: pd.DataFrame, oi: pd.DataFrame) -> pd.DataFrame:
     }
     for name in exposures:
         agg_spec[name] = (f"_x_{name}", "sum")
+        # ⚠️ pandas' groupby sum SKIPS NaN, so a session where only part of the chain
+        # carries a greek publishes a FRACTION of the book as a full-book reading — a
+        # number that is smaller than reality by an unknown amount and looks completely
+        # ordinary. Count the contributing rows per greek so the gap is visible instead
+        # of silent, and so a consumer can drop a thin session rather than plot it.
+        agg_spec[f"n_{name}"] = (f"_x_{name}", "count")
 
     out = m.groupby("date", as_index=False).agg(**agg_spec)
+
+    # A greek covering less than this share of the session's contracts is not a
+    # whole-book aggregate; publishing it beside full sessions would put a partial
+    # reading into the same distribution the percentile ranks against.
+    for name in exposures:
+        cov = out[f"n_{name}"] / out["n_contracts"].where(out["n_contracts"] > 0)
+        out.loc[cov < MIN_GREEK_COVERAGE, name] = np.nan
 
     # ATM IV per session — the ±5% band's median implied vol. Included because the
     # spot-vol relationship cards need vol and spot from the SAME source frame;
@@ -201,6 +222,8 @@ def daily_aggregates(greeks: pd.DataFrame, oi: pd.DataFrame) -> pd.DataFrame:
     for name in GREEKS:
         if name not in out.columns:
             out[name] = np.nan
+        if f"n_{name}" not in out.columns:
+            out[f"n_{name}"] = 0
     out = out.sort_values("date").reset_index(drop=True)
     return out[cols]
 
