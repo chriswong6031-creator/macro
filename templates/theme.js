@@ -2362,7 +2362,7 @@
     plan:        ['Plan', '订阅'],
     planLoading: ['Loading your plan…', '正在加载订阅…'],
     tierFree:    ['Free', '免费版'],
-    tierInsider: ['Insider', 'Insider'],
+    tierInsider: ['Essential', 'Essential'],
     tierPro:     ['Pro', 'Pro'],
     planTrialUntil: ['Trial until', '试用至'],
     planRenews:  ['Renews', '续订于'],
@@ -2458,7 +2458,7 @@
     resetsWeekly:['Resets every Monday.', '每周一重置。'],
     unlimited:   ['Unlimited', '无限'],
     unlimitedNote:['No monthly cap on your plan.', '你的方案没有每月上限。'],
-    deepLockedFree:['Included with Insider and Pro.', 'Insider 与 Pro 方案包含。'],
+    deepLockedFree:['Included with Essential and Pro.', 'Essential 与 Pro 方案包含。'],
     usageErr:    ['Couldn’t load usage — please try again.', '无法加载用量，请重试。'],
     capMonth:    ['This month', '本月'],
     capWeek:     ['This week', '本周'],
@@ -2468,7 +2468,7 @@
     nudgeLowT:   ['Running low', '额度不多了'],
     nudgeLowS:   ['Upgrade for more questions every month.', '升级即可每月获得更多提问额度。'],
     nudgeGetT:   ['Want deeper answers?', '想要更深入的回答？'],
-    nudgeGetS:   ['Insider and Pro add deep research questions.', 'Insider 与 Pro 提供深度研究提问。'],
+    nudgeGetS:   ['Essential and Pro add deep research questions.', 'Essential 与 Pro 提供深度研究提问。'],
     upgrade:     ['Upgrade', '升级']
   };
   function _sdL(k) { var p = SD_L[k]; return p ? p[curLang() === 'zh' ? 1 : 0] : ''; }
@@ -2500,18 +2500,30 @@
     usage:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 19a8 8 0 1 1 15 0"/><path d="m12 14.5 3.5-3.5"/><circle cx="12" cy="19" r="1.25" fill="currentColor" stroke="none"/></svg>',
     check:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 6.5"/></svg>'
   };
+  // ── tier alias (rename migration, Phase 1) ───────────────────────────────────
+  // `insider` is the WIRE value; `essential` is the display rename's alias of it
+  // (lib/tiers.py is the server's copy of the same table). theme.js ships `immutable`
+  // with a far-future max-age, so a warm cache can still be running THIS copy after the
+  // stored value flips — every tier arriving from /api/me or /api/brain/me is made
+  // canonical on the way in, and the SD_PRICE / SD_PLAN_FEATURES / label lookups below
+  // (all keyed by the wire value) take the hop too.
+  var SD_TIER_ALIAS = { essential: 'insider' };
+  function _sdNormTier(t) {
+    var v = String(t == null ? '' : t).trim().toLowerCase();
+    return SD_TIER_ALIAS[v] || v;
+  }
   // Per-month display price by tier+interval, mirroring config/plans.yml (and onboard.js
   // CENTS). Billing-hero decoration only — never a gate; the upgrade sheet owns real pricing.
   var SD_PRICE = {
-    insider: { monthly: 69, annual: 49, annualYr: 588 },
-    pro:     { monthly: 99, annual: 69, annualYr: 828 }
+    insider: { monthly: 99, annual: 75, annualYr: 900 },
+    pro:     { monthly: 149, annual: 109, annualYr: 1308 }
   };
   // Plain-word plan highlights for the Billing "what's included" summary. Kept in step
   // with plans.html.j2 / config/plans.yml; decorative only (never a gate).
   var SD_PLAN_FEATURES = {
     free:    [['US macro dashboard', '美国宏观仪表盘'], ['The Terminal — 3 indicators', 'Terminal — 3 个指标'], ['3 signals per daily list', '每个每日列表 3 条信号'], ['5 Mastermind questions a week', '每周 5 次 Mastermind 提问']],
     insider: [['Every dashboard & all research', '全部看板与研究'], ['Full Terminal + live options', '完整 Terminal + 实时期权'], ['300 Mastermind questions a month', '每月 300 次 Mastermind 提问'], ['10 deep research questions a month', '每月 10 次深度研究提问']],
-    pro:     [['Everything in Insider', 'Insider 全部功能'], ['Unlimited Mastermind questions', '无限量 Mastermind 提问'], ['150 deep research questions a month', '每月 150 次深度研究提问'], ['Priority research answers', '研究问题优先解答']]
+    pro:     [['Everything in Essential', 'Essential 全部功能'], ['Unlimited Mastermind questions', '无限量 Mastermind 提问'], ['150 deep research questions a month', '每月 150 次深度研究提问'], ['Priority research answers', '研究问题优先解答']]
   };
   // provider mini-icon markup (Google keeps its brand colours; X/email use currentColor)
   function _sdProviderIcon(kind) {
@@ -3099,7 +3111,7 @@
   function _sdPlanHeroHTML() {
     if (!_sdPlan) return '<div class="sd-skel" style="height:118px;margin:4px 0 14px"></div>';
     var p = _sdPlan;
-    var tier = p.tier || 'free';
+    var tier = _sdNormTier(p.tier) || 'free';
     var interval = p.interval || null;
     var paid = tier !== 'free';
     var chip = _sdPlanChip(p);
@@ -3133,7 +3145,7 @@
     }
     html += _sdPlanHeroHTML();
     var p = _sdPlan || {};
-    var tier = p.tier || 'free';
+    var tier = _sdNormTier(p.tier) || 'free';
     var interval = p.interval || null;
     var top = (tier === 'unlimited') || (tier === 'pro' && interval === 'annual');
     if (!top) {
@@ -3218,7 +3230,7 @@
     // fetched with the plan) so the meters paint instantly and survive a brain-endpoint miss.
     if (!_sdUsage && !_sdUsageErr) _sdLoadUsage(u);
     var q = (_sdUsage && _sdUsage.quotas) || (_sdPlan && _sdPlan.chat_budget) || null;
-    var tier = (_sdUsage && _sdUsage.tier) || (_sdPlan && _sdPlan.tier) || 'free';
+    var tier = _sdNormTier((_sdUsage && _sdUsage.tier) || (_sdPlan && _sdPlan.tier)) || 'free';
     if (!q) {
       html += _sdUsageErr
         ? '<div class="sd-note" style="text-align:center;padding:30px 10px">' + _escHtml(_sdL('usageErr')) + '</div>'
@@ -3315,7 +3327,11 @@
         return fetch(base + '/api/brain/me', { headers: { Authorization: 'Bearer ' + tok } });
       })
       .then(function (r) { if (!r || !r.ok) throw new Error('usage-' + (r && r.status)); return r.json(); })
-      .then(function (j) { _sdUsageBusy = false; _sdUsage = j || {}; _sdUsageFor = uid; if (_sdBuilt) _renderSDash(); })
+      .then(function (j) {
+        _sdUsageBusy = false; _sdUsage = j || {};
+        if (_sdUsage.tier) _sdUsage.tier = _sdNormTier(_sdUsage.tier);
+        _sdUsageFor = uid; if (_sdBuilt) _renderSDash();
+      })
       .catch(function () {
         _sdUsageBusy = false; _sdUsageErr = true;
         if (_sdBuilt && _sdSect === 'usage') _renderSDUsage(_sdAuthState(), _curUser || {});
@@ -3374,6 +3390,7 @@
   /* ---- plan block (tier + status chip + prorated upgrade) ----------------- */
   // The set of tiers that already have everything an upgrade would buy — no CTA shown.
   function _sdTierLabel(tier) {
+    tier = _sdNormTier(tier);
     if (tier === 'pro' || tier === 'unlimited') return _sdL('tierPro');
     if (tier === 'insider') return _sdL('tierInsider');
     return _sdL('tierFree');
@@ -3384,6 +3401,9 @@
     var cpe = p.current_period_end || null;
     var when = cpe ? _sdDate(cpe) : '';
     // comp / uncapped grant with no period end = lifetime.
+    // Deliberately NOT normalized: 'unlimited' has no alias, `p.tier` is already canonical
+    // (made so where /api/me lands), and tests/test_landing_pricing_cta.py pins this exact
+    // predicate as the canonical copy onboard.js must mirror.
     if ((p.tier === 'unlimited' || p.source === 'comp') && !cpe && status !== 'canceled') {
       return '<span class="sd-plan-chip live">' + _escHtml(_sdL('planLifetime')) + '</span>';
     }
@@ -3414,7 +3434,7 @@
         '</div>';
     }
     var p = _sdPlan;
-    var tier = p.tier || 'free';
+    var tier = _sdNormTier(p.tier) || 'free';
     var paid = tier !== 'free';
     var chip = _sdPlanChip(p);
     var interval = p.interval || null;
@@ -3427,7 +3447,7 @@
     var top = (tier === 'unlimited') || (tier === 'pro' && interval === 'annual');
     var cta = '';
     if (!top) {
-      // Insider (any interval) → lead with the Pro upgrade (the recommended move);
+      // Essential (any interval) → lead with the Pro upgrade (the recommended move);
       // Pro monthly → the annual switch. Free → choose a plan.
       var lblKey = !paid ? 'choosePlan'
                  : (tier === 'insider') ? 'upgradePro'
@@ -3470,7 +3490,9 @@
       return r.json();
     }).then(function (j) {
       _sdPlanBusy = false;
-      _sdPlan = j || {}; _sdPlanFor = uid;
+      _sdPlan = j || {};
+      if (_sdPlan.tier) _sdPlan.tier = _sdNormTier(_sdPlan.tier);
+      _sdPlanFor = uid;
       if (_sdBuilt) _renderSDash();               // repaint with the real plan
     }).catch(function () {
       _sdPlanBusy = false;                          // leave the loading row; a later render retries

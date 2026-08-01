@@ -484,3 +484,86 @@ def test_roster_base_is_all_users(monkeypatch):
     rows_sql = next(s for s in captured if "coalesce(e.tier,'free') as tier" in s)
     assert "from auth.users u" in rows_sql
     assert "left join public.user_entitlements e" in rows_sql
+
+
+# ===========================================================================
+# The 'essential' alias (rename migration, Phase 1)
+#
+# The console is a WRITE plane, so tolerance here is normalise-then-validate, never a
+# widened tuple: whatever survives the check is the literal string _write_comp puts into
+# user_entitlements.tier, and Phase 1 must never EMIT 'essential'.
+# ===========================================================================
+def test_change_tier_accepts_the_alias_and_writes_the_wire_value(wired):
+    state, _ = wired
+    _set_row(state, stripe_customer_id=None, tier="free", status="none")
+    payload, code = entitlements.act({"user_id": UID, "action": "change_tier",
+                                      "params": {"tier": "essential"}}, operator="operator")
+    assert code == 200 and payload["ok"] is True
+    row = state["upserts"][-1]
+    assert row["tier"] == "insider", "an alias must never reach the entitlement row"
+    assert row["status"] == "active" and row["source"] == "comp"
+    # features resolve off the CANONICAL tier, so the alias buys the same access
+    assert "site_full" in row["features"] and "terminal_live_options" in row["features"]
+    assert "chat_opus" not in row["features"]
+
+
+def test_change_tier_alias_row_is_identical_to_the_canonical_one(wired):
+    """Every field but the wall-clock stamp, so the parity claim is total rather than a
+    handful of hand-picked keys."""
+    def _write(tier):
+        _set_row(state, stripe_customer_id=None, tier="free", status="none")
+        entitlements.act({"user_id": UID, "action": "change_tier",
+                          "params": {"tier": tier}}, operator="operator")
+        return {k: v for k, v in state["upserts"][-1].items() if k != "updated_at"}
+
+    state, _ = wired
+    assert _write("essential") == _write("insider")
+
+
+def test_grant_pass_accepts_the_alias_and_writes_the_wire_value(wired):
+    state, _ = wired
+    _set_row(state, stripe_customer_id=None)
+    _payload, code = entitlements.act({"user_id": UID, "action": "grant_pass",
+                                       "params": {"kind": "monthly", "tier": "ESSENTIAL "}},
+                                      operator="operator")
+    assert code == 200
+    assert state["upserts"][-1]["tier"] == "insider"
+
+
+def test_a_still_unknown_tier_is_still_rejected(wired):
+    """Widening the alias must not widen the enum."""
+    _state, _ = wired
+    _p, code = entitlements.act({"user_id": UID, "action": "change_tier",
+                                 "params": {"tier": "platinum"}}, operator="operator")
+    assert code == 400
+    _p, code = entitlements.act({"user_id": UID, "action": "grant_pass",
+                                 "params": {"kind": "monthly", "tier": "essentialish"}},
+                                operator="operator")
+    assert code == 400
+
+
+def test_roster_filter_maps_the_alias_onto_the_stored_value(monkeypatch):
+    """?tier=essential must find the rows that are stored as 'insider' — and the filter
+    token stays allow-listed, so the SQL interpolation is unchanged."""
+    sqls: list[str] = []
+
+    def _query(sql):
+        sqls.append(sql)
+        if "count(*)" in sql and "group by" not in sql:
+            return [{"n": 0}]
+        return []
+
+    monkeypatch.setattr(users, "status", lambda: {"configured": True})
+    monkeypatch.setattr(users, "_query", _query)
+
+    entitlements.list_users(tier="essential")
+    rows_sql = _rows_query(sqls)
+    assert "coalesce(e.tier,'free') = 'insider'" in rows_sql
+    assert "essential" not in rows_sql
+
+
+def test_the_grant_tuples_stay_canonical():
+    """Named, so a future 'just add essential to the tuple' edit trips this instead of
+    quietly re-arming the write path it was meant to protect."""
+    assert entitlements._GRANT_TIERS == ("insider", "pro")
+    assert entitlements._ALL_TIERS == ("free", "insider", "pro")

@@ -147,6 +147,13 @@ _EXPECTED = {
     ("pro", "active"):     {"all", "paid", "pro"},
     ("pro", "canceled"):   {"all", "paid", "pro", "canceled"},
     ("pro", "past_due"):   {"all", "paid", "pro"},
+    # The rename migration's alias of the 'insider' wire value (lib/tiers.py). Phase 1
+    # emits only 'insider', so today these rows do not exist — they are here so that the
+    # day the stored value flips, a paying member does not silently fall OUT of `paid`
+    # (and out of every tier segment), which is exactly the "console count vs send
+    # audience disagree" divergence this module exists to prevent.
+    ("essential", "active"):   {"all", "paid", "insider"},
+    ("essential", "trialing"): {"all", "paid", "insider", "trialing"},
 }
 
 
@@ -295,3 +302,26 @@ def test_options_is_the_picker_and_carries_every_key():
     assert [o["key"] for o in opts] == list(seg.KEYS)
     for o in opts:
         assert o["label_en"] and o["label_zh"] and o["note_en"] and o["note_zh"]
+
+
+def test_the_alias_and_the_wire_value_land_in_the_same_segments():
+    """Stated as parity rather than as a second truth table, so it cannot drift from the
+    canonical rows above."""
+    for status in ("active", "trialing"):
+        wire = {k for k in seg.KEYS if seg.matches(k, seg.normalize({"tier": "insider", "status": status}))}
+        alias = {k for k in seg.KEYS if seg.matches(k, seg.normalize({"tier": "essential", "status": status}))}
+        assert alias == wire, status
+
+
+def test_the_segment_key_stays_insider_even_though_the_label_moved():
+    """Saved campaigns store their audience BY KEY — renaming it would orphan every
+    campaign already aimed at this tier. Only the display name is allowed to move."""
+    assert "insider" in seg.KEYS and "essential" not in seg.KEYS
+    assert seg.get("insider").label_en == "Essential"
+
+
+def test_the_paid_and_tier_sql_both_name_the_alias():
+    """Python-side parity above is only half the pair; the SQL plane must agree or the
+    console's count and the sweeper's audience diverge by exactly the aliased rows."""
+    for key in ("paid", "insider"):
+        assert "'essential'" in seg.where_sql(key), key

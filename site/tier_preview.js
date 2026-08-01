@@ -1,7 +1,7 @@
 /* Anonymous/Free preview controller for public dashboard shells.
    The server still owns every protected detail page and data payload. This
    layer only determines how many already-public summary rows each visitor sees:
-   anonymous = 1, registered Free = 3, Insider/Pro = the full book. */
+   anonymous = 1, registered Free = 3, Essential/Pro = the full book. */
 (function () {
   "use strict";
 
@@ -10,7 +10,19 @@
   var observer = null;
   var applying = false;
 
-  function isPaid(tier) { return tier === "insider" || tier === "pro" || tier === "unlimited"; }
+  // `insider` is the WIRE value; `essential` is the display rename's alias of it
+  // (lib/tiers.py is the server's copy of the same table). Named here, not just resolved
+  // in setTier(), because a far-future-cached copy of this file must keep a paying
+  // visitor OUT of the 3-row free cap if /api/me starts answering with the new value.
+  var TIER_ALIAS = { essential: "insider" };
+  function normTier(tier) {
+    var t = String(tier == null ? "" : tier).trim().toLowerCase();
+    return TIER_ALIAS[t] || t;
+  }
+  function isPaid(tier) {
+    var t = normTier(tier);
+    return t === "insider" || t === "pro" || t === "unlimited";
+  }
   function capFor(tier) { return isPaid(tier) ? Infinity : (tier === "free" ? 3 : 1); }
   function hasSessionCookie() {
     try {
@@ -104,15 +116,15 @@
         };
       }
       return {
-        eyebrow: "Insider access",
-        eyebrowZh: "Insider 权限",
+        eyebrow: "Essential access",
+        eyebrowZh: "Essential 权限",
         mark: "↗",
         title: "Unlock the complete action board",
         zh: "解锁完整行动面板",
         body: "See every current setup, without limits.",
         bodyZh: "无限制查看所有当前机会。",
-        action: "View Insider plans",
-        actionZh: "查看 Insider 方案",
+        action: "View Essential plans",
+        actionZh: "查看 Essential 方案",
         mode: "upgrade"
       };
     }
@@ -221,6 +233,7 @@
     }
   }
   function setTier(tier) {
+    tier = normTier(tier);
     tier = isPaid(tier) ? tier : (tier === "free" ? "free" : "anon");
     state.tier = tier;
     state.cap = capFor(tier);

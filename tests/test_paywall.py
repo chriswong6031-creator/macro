@@ -206,3 +206,60 @@ def test_policy_load_failure_denies(monkeypatch):
 def test_noncanonical_paths_deny(monkeypatch, path):
     _arm(monkeypatch)
     assert _check(path).status_code == 403
+
+
+# ===========================================================================
+# The 'essential' alias (rename migration, Phase 1)
+# ===========================================================================
+def test_essential_row_allows_exactly_like_insider(monkeypatch):
+    """An entitlement row carrying the ALIAS is the same customer as one carrying the wire
+    value. The wall gates on the FEATURE, so this passes on its own — the assertion that
+    matters is that the alias never becomes a THIRD outcome."""
+    _arm(monkeypatch)
+    monkeypatch.setattr(
+        paywall,
+        "_store_entitlement",
+        lambda uid: ({"tier": "essential", "status": "active", "features": ["site_full"]}, True),
+    )
+    r = _check()
+    assert r.status_code == 204
+    assert r.headers["x-paywall"].startswith("allow-")
+
+
+@pytest.mark.parametrize(
+    "row",
+    [
+        {"tier": "essential", "status": "past_due", "features": ["site_full"]},
+        {"tier": "essential", "status": "active", "features": []},
+    ],
+)
+def test_essential_rows_fail_closed_wherever_insider_does(monkeypatch, row):
+    _arm(monkeypatch)
+    monkeypatch.setattr(paywall, "_store_entitlement", lambda uid: (row, True))
+    r = _check()
+    assert r.status_code == 403
+    assert r.json()["locked"] is True
+
+
+def test_account_plan_label_reads_essential_for_both_keys():
+    """The account pill (site/account.js renders plan_label) must not be the one surface
+    still saying 'Insider' — config/plans.yml already names this product 'Essential', and
+    app/billing_emails.plan_name() already reads that name onto every receipt."""
+    from app.main import _PLAN_LABELS
+
+    assert _PLAN_LABELS["insider"] == "Essential"
+    assert _PLAN_LABELS["essential"] == "Essential"
+    assert _PLAN_LABELS["pro"] == "Pro"
+
+
+def test_brain_allowance_never_drops_an_aliased_paying_row_to_free():
+    """The silent failure lib/tiers.py exists to prevent: _get_allowance selects
+    quotas[tier] if tier in quotas else quotas['free'], so an unrecognised tier does not
+    raise — it hands a paying customer the free 5-a-week bucket."""
+    from engine.neuralweb import brain_gateway as gw
+
+    for lane in ("fast", "pro"):
+        assert (gw._get_allowance("essential", "active", lane)
+                == gw._get_allowance("insider", "active", lane))
+    free_fast = gw._get_allowance("free", "active", "fast")
+    assert gw._get_allowance("essential", "active", "fast") != free_fast

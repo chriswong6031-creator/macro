@@ -85,7 +85,7 @@ def test_market_terminal_showcase_uses_the_current_indicator_contract():
     assert "Five complementary systems.<br>One clearer technical workflow." in page
     assert f"complete {access['advanced_total']}-module library" in page
     assert "All five, complete · Available in Pro" in page
-    assert "Insider unlocks a curated selection" in page
+    assert "Essential unlocks a curated selection" in page
     assert "Structure Core" in page
     assert "Trend Waves" in page
     assert "Pulse Oscillator" in page
@@ -93,7 +93,7 @@ def test_market_terminal_showcase_uses_the_current_indicator_contract():
     assert "MACD Ultimate" in page
     assert "TP1–TP6" in page
     assert "complementary systems you can combine" in page
-    assert "Insider + Pro modules · one example combination" in page
+    assert "Essential + Pro modules · one example combination" in page
     assert 'data-aria-zh="选择工作流阶段"' in page
     assert "../plans.html#pricing-matrix" in page
     assert "mt-access-ladder" not in page
