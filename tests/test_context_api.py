@@ -28,6 +28,7 @@ Coverage:
 """
 from __future__ import annotations
 
+import gzip
 import json
 from datetime import date
 from pathlib import Path
@@ -44,6 +45,7 @@ from engine.neuralweb.context_api import (
     _short_int_dim,
     _insider_dim,
     _spine_dim,
+    _fundamental_forensics_dim,
     _trading_days_between,
     _signed_trading_days,
 )
@@ -118,6 +120,36 @@ def _write_spine_index(root: Path, rows: list[dict]) -> Path:
     path = root / "data" / "neuralweb" / "spine_index.parquet"
     path.parent.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_parquet(path, index=False)
+    return path
+
+
+def _write_forensics_state(root: Path) -> Path:
+    path = root / "data" / "fundamental_forensics" / "private" / "state.json.gz"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "schema": "fundamental_forensics_state.v1",
+        "generated_at": "2026-08-01T12:00:00+00:00",
+        "companies": {
+            "AAPL": {
+                "latest_period": "FY2025 Q3",
+                "latest_filed": "2026-07-31",
+                "action": {"en": "Watch the next filing", "zh": "关注下一份财报"},
+                "coverage": {"metrics_pct": 0.7778},
+                "findings": [{
+                    "id": "receivables_stretch:fy2025-q3",
+                    "detector": "receivables_stretch",
+                    "priority": "watch",
+                    "topic": "working_capital",
+                    "title_en": "Receivables are outrunning sales.",
+                    "summary_en": "Receivables grew faster than revenue.",
+                    "period_current": "FY2025 Q3",
+                    "period_prior": "FY2024 Q3",
+                }],
+            },
+        },
+    }
+    with gzip.open(path, "wt", encoding="utf-8") as fh:
+        json.dump(payload, fh)
     return path
 
 
@@ -445,7 +477,7 @@ def test_all_absent_stores_no_raise(tmp_path):
     dims = result["dimensions"]
     assert set(dims.keys()) == {
         "personality", "archetype", "regime", "sector",
-        "factor", "attention", "insider", "short_int", "options", "spine"
+        "factor", "attention", "insider", "short_int", "options", "spine", "forensics"
     }
     for name, dim in dims.items():
         assert isinstance(dim, dict), f"dimension {name} not a dict"
@@ -720,6 +752,29 @@ def test_signed_trading_days_same_day():
     """Same day → signed gap of 0."""
     d = pd.Timestamp("2026-01-05")
     assert _signed_trading_days(d, d) == 0
+
+
+def test_forensics_dimension_is_context_only_and_compact(tmp_path):
+    root = _make_root(tmp_path)
+    _write_forensics_state(root)
+    dim = _fundamental_forensics_dim("AAPL", pd.Timestamp("2026-08-02"), root)
+
+    assert dim["basis"] == "normalized_projection_snapshot_not_pit"
+    assert dim["coverage"] == pytest.approx(0.7778)
+    assert dim["value"]["authority"] == "context_only"
+    assert dim["value"]["display_only"] is True
+    assert dim["value"]["workbench_url"].endswith("?symbol=AAPL")
+    assert dim["value"]["findings"][0]["detector"] == "receivables_stretch"
+    assert "values" not in dim["value"]["findings"][0]
+
+
+def test_forensics_snapshot_never_leaks_before_generated_clock(tmp_path):
+    root = _make_root(tmp_path)
+    _write_forensics_state(root)
+    dim = _fundamental_forensics_dim("AAPL", pd.Timestamp("2026-07-31"), root)
+
+    assert dim.get("absent") is True
+    assert "unavailable for historical date" in dim["reason"]
 
 
 # ---------------------------------------------------------------------------

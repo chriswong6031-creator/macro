@@ -1816,6 +1816,15 @@ try:
 except ImportError:
     pass  # app/research.py not yet present — vault routes unavailable until RV W2
 
+# Filing Forensics private state transport. The public page is only a shell;
+# this route enforces the same authenticated site_full entitlement as the paid
+# site before reading the private Research Vault bucket.
+try:
+    from app.forensics import router as forensics_router  # noqa: E402
+    app.include_router(forensics_router)
+except ImportError:
+    pass  # additive route remains unavailable if its module is absent
+
 # Warm the SHARED corpus cache off the request path (Analyst OS W4). The chat
 # tool's mode="report" and the vault routes now read one process-wide copy
 # (engine/research_vault/corpus.py); without this, the first report call in a

@@ -2781,6 +2781,85 @@ def test_get_fundamentals_missing_keys_no_keyerror(tmp_path):
     assert r["financials"]["piotroski"] is None
 
 
+def test_get_fundamentals_adds_bounded_forensics_context_only_when_authorized(tmp_path):
+    sd = tmp_path / "site" / "stockdata"
+    sd.mkdir(parents=True)
+    (sd / "TST.json").write_text(json.dumps({"ticker": "TST", "name": "Test Co"}))
+    ff = tmp_path / "data" / "fundamental_forensics" / "private"
+    ff.mkdir(parents=True)
+    import gzip
+    payload = {
+        "schema": "fundamental_forensics_state.v1",
+        "generated_at": "2026-08-01T12:00:00+00:00",
+        "companies": {"TST": {
+            "latest_filed": "2026-07-31",
+            "action": {"en": "Review before adding risk"},
+            "coverage": {"metrics_pct": 0.8, "basis": "normalized_quarterly_projection"},
+            "findings": [{
+                "detector": "inventory_build",
+                "priority": "high",
+                "title_en": "Inventory is building faster than sales.",
+                "summary_en": "Inventory growth exceeded revenue growth.",
+                "period_current": "FY2026 Q2",
+                "values": [{"current": 0.42}],
+                "evidence": [{"url": "https://example.invalid/raw"}],
+            }],
+        }},
+    }
+    with gzip.open(ff / "state.json.gz", "wt", encoding="utf-8") as fh:
+        json.dump(payload, fh)
+
+    free_result = gw._tool_get_fundamentals({"symbol": "TST"}, tmp_path)
+    assert "filing_forensics" not in free_result
+
+    r = gw._tool_get_fundamentals(
+        {"symbol": "TST"},
+        tmp_path,
+        include_forensics=True,
+    )
+    ctx = r["filing_forensics"]
+    assert ctx["authority"] == "context_only"
+    assert ctx["display_only"] is True
+    assert ctx["workbench_url"].endswith("?symbol=TST")
+    assert ctx["findings"][0]["detector"] == "inventory_build"
+    assert "values" not in ctx["findings"][0]
+    assert "evidence" not in ctx["findings"][0]
+
+
+def test_dispatch_fundamentals_requires_active_site_full_for_forensics(tmp_path):
+    sd = tmp_path / "site" / "stockdata"
+    sd.mkdir(parents=True)
+    (sd / "TST.json").write_text(json.dumps({"ticker": "TST", "name": "Test Co"}))
+    ff = tmp_path / "data" / "fundamental_forensics" / "private"
+    ff.mkdir(parents=True)
+    import gzip
+    payload = {
+        "schema": "fundamental_forensics_state.v1",
+        "generated_at": "2026-08-01T12:00:00+00:00",
+        "companies": {"TST": {
+            "action": {"en": "Review before adding risk"},
+            "findings": [{"detector": "inventory_build", "priority": "high"}],
+        }},
+    }
+    with gzip.open(ff / "state.json.gz", "wt", encoding="utf-8") as fh:
+        json.dump(payload, fh)
+
+    args = ("get_fundamentals", {"symbol": "TST"}, tmp_path, tmp_path, "http://x")
+    free = {"tier": "free", "status": "active", "features": []}
+    paid_without_feature = {"tier": "insider", "status": "active", "features": []}
+    canceled = {"tier": "pro", "status": "canceled", "features": ["site_full"]}
+    entitled = {"tier": "insider", "status": "active", "features": ["site_full"]}
+
+    for entitlement in (free, paid_without_feature, canceled):
+        with patch.object(gw, "_resolve_tier", return_value=entitlement):
+            result = gw._dispatch_brain_tool(*args, user_id="user-1")
+        assert "filing_forensics" not in result
+
+    with patch.object(gw, "_resolve_tier", return_value=entitled):
+        result = gw._dispatch_brain_tool(*args, user_id="user-1")
+    assert result["filing_forensics"]["authority"] == "context_only"
+
+
 # --- _split_suggestions -------------------------------------------------------
 
 def test_split_suggestions_marker_present():

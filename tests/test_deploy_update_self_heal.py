@@ -49,6 +49,13 @@ def test_update_reconciles_codex_runtime_and_admin_unit():
     assert "ADMIN_UNIT_UPDATED=1" in SCRIPT
 
 
+def test_update_reconciles_api_requirements_with_retryable_content_stamp():
+    assert 'sha256sum "$APP_DIR/app/requirements.txt"' in SCRIPT
+    assert '/opt/macro-api/.venv/bin/pip install -q -r "$APP_DIR/app/requirements.txt"' in SCRIPT
+    assert "API_REQ_STAMP=/opt/macro-api/.requirements.sha256" in SCRIPT
+    assert 'if [ "$API_DEPS_OK" -ne 1 ]; then' in SCRIPT
+
+
 def test_repository_noop_does_not_skip_reconciliation():
     assert '[ "$OLD" = "$NEW" ] && exit 0' not in SCRIPT
     assert 'if [ "$OLD" != "$NEW" ]; then' in SCRIPT

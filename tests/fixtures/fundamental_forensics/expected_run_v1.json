@@ -1,0 +1,24 @@
+{
+  "canonical_bytes": 71004,
+  "canonical_sha256": "c7f48a03b94a9b312af1c10621dff9a2856072191cdf64a1c2e01bdcc4e7c7c0",
+  "run_id": "ffrun_d949850092e9cc10911a05a5e99cb4606828e5f8e7f2e155f5c58c6d754c7415",
+  "coverage": {
+    "source_fact_records": 39,
+    "distinct_fact_occurrences": 38,
+    "facts_with_source_clock": 37,
+    "normalized_observations": 36,
+    "normalization_issues": 0,
+    "statement_vintages": 4,
+    "selected_statement_vintages": 3,
+    "findings_triggered": 5,
+    "findings_clear": 0,
+    "findings_not_evaluable": 0
+  },
+  "finding_states": {
+    "accruals_trending_up": "triggered",
+    "capital_intensity_rising": "triggered",
+    "inventory_build": "triggered",
+    "margin_compression_despite_revenue_growth": "triggered",
+    "receivables_stretch": "triggered"
+  }
+}

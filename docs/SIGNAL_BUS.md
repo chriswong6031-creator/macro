@@ -32,6 +32,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | fast-turn | 4 |
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
+| fundamental-forensics | 1 |
 | government-revenue-foresight | 8 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
@@ -103,7 +104,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 347 |
+| display | 348 |
 | infrastructure | 101 |
 | scored | 4 |
 | shadow | 79 |
@@ -115,7 +116,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | git | 505 |
 | git+r2 | 1 |
 | gitignored-local | 15 |
-| r2 | 10 |
+| r2 | 11 |
 
 ## Artifacts by owner_program
 
@@ -349,6 +350,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 |---|---|---|---|---|---|---|
 | site-flow-leaders | `site/flowleaders/leaders.json` | json | daily-engine | display | 2 | 0 |
 | site-flow-leaders-page | `site/flow_leaders.html` | other | daily-engine | display | 0 | 0 |
+
+### fundamental-forensics
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| fundamental-forensics-private-state | `fundamental_forensics/state.json.gz` | json | daily-engine | display | 3 | 1 |
 
 ### government-revenue-foresight
 

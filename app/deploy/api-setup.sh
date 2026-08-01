@@ -16,6 +16,7 @@ mkdir -p /opt/macro-api
 test -d "$VENV" || python3 -m venv "$VENV"
 "$VENV/bin/pip" install -q --upgrade pip
 "$VENV/bin/pip" install -q -r "$APP_DIR/app/requirements.txt"
+sha256sum "$APP_DIR/app/requirements.txt" | cut -d' ' -f1 > /opt/macro-api/.requirements.sha256
 
 log "[2/5] pinned Codex runtime"
 bash "$APP_DIR/app/deploy/codex-runtime-setup.sh"

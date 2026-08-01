@@ -1,0 +1,85 @@
+schema: fundamental_forensics.registry/v1
+mapping_version: sec-companyfacts-usgaap-annual/v1
+mapping_available_at: "2026-08-01T00:00:00Z"
+detector_pack_version: fundamental-forensics-five/v1
+detector_pack_available_at: "2026-08-01T00:00:00Z"
+
+metrics:
+  revenue:
+    period_type: duration
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: RevenueFromContractWithCustomerExcludingAssessedTax, tier: A, priority: 10}
+      - {taxonomy: us-gaap, concept: Revenues, tier: B, priority: 20}
+      - {taxonomy: us-gaap, concept: RevenueFromContractWithCustomerIncludingAssessedTax, tier: B, priority: 30}
+      - {taxonomy: us-gaap, concept: SalesRevenueNet, tier: B, priority: 40}
+  gross_profit:
+    period_type: duration
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: GrossProfit, tier: A, priority: 10}
+  accounts_receivable:
+    period_type: instant
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: AccountsReceivableNetCurrent, tier: A, priority: 10}
+      - {taxonomy: us-gaap, concept: ReceivablesNetCurrent, tier: B, priority: 20}
+  inventory:
+    period_type: instant
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: InventoryNet, tier: A, priority: 10}
+  capital_expenditures:
+    period_type: duration
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: PaymentsToAcquirePropertyPlantAndEquipment, tier: A, priority: 10}
+  operating_income:
+    period_type: duration
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: OperatingIncomeLoss, tier: A, priority: 10}
+  net_income:
+    period_type: duration
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: NetIncomeLoss, tier: A, priority: 10}
+      - {taxonomy: us-gaap, concept: ProfitLoss, tier: B, priority: 20}
+  operating_cash_flow:
+    period_type: duration
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: NetCashProvidedByUsedInOperatingActivities, tier: A, priority: 10}
+      - {taxonomy: us-gaap, concept: NetCashProvidedByUsedInOperatingActivitiesContinuingOperations, tier: B, priority: 20}
+  assets:
+    period_type: instant
+    units: [USD]
+    aliases:
+      - {taxonomy: us-gaap, concept: Assets, tier: A, priority: 10}
+
+detectors:
+  margin_compression_despite_revenue_growth:
+    order: 10
+    formula: revenue_growth_pp >= 3 and gross_margin_current_pp < gross_margin_prior_pp
+    thresholds:
+      min_revenue_growth_pp: "3"
+  receivables_stretch:
+    order: 20
+    formula: accounts_receivable_growth_pp > revenue_growth_pp + 10
+    thresholds:
+      growth_gap_pp: "10"
+  inventory_build:
+    order: 30
+    formula: inventory_growth_pp > revenue_growth_pp + 15
+    thresholds:
+      growth_gap_pp: "15"
+  capital_intensity_rising:
+    order: 40
+    formula: capital_expenditures_growth_pp > revenue_growth_pp + 10 and capital_expenditures_growth_pp > operating_income_growth_pp + 10
+    thresholds:
+      growth_gap_pp: "10"
+  accruals_trending_up:
+    order: 50
+    formula: latest((net_income-operating_cash_flow)/assets) - oldest((net_income-operating_cash_flow)/assets) >= 0.03 over three consecutive annual periods
+    thresholds:
+      min_three_period_increase: "0.03"
