@@ -577,6 +577,27 @@ def _freshness_verdict(latest_trade_date: str | None) -> str:
     return "stale"
 
 
+def _w1_banner(freshness: str, store_empty: bool) -> dict | None:
+    """User-facing banner for the daily-XLSX CBBC store (None when healthy).
+
+    This renders on hk.html's leverage card and overnight dialog: plain
+    words only — never internal state tokens like "stale"/"dead"
+    (DESIGN_DOCTRINE glance-tier vocabulary; the old dark copy
+    interpolated the raw freshness verdict into user copy).
+    """
+    if store_empty or freshness == "dead":
+        return {
+            "en": "Leverage data unavailable",
+            "zh": "杠杆数据不可用",
+        }
+    if freshness == "stale":
+        return {
+            "en": "Leverage data is out of date — showing the last good read",
+            "zh": "杠杆数据已过期，显示最近一次有效读数",
+        }
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Ledger
 # ---------------------------------------------------------------------------
@@ -708,12 +729,7 @@ def run(data_root: Path | None = None) -> dict:
         spot_prices = _load_spot_prices(data_root)
 
         # Banner when data is stale or missing
-        banner = None
-        if freshness in ("stale", "dead") or cbbc_df.empty:
-            banner = {
-                "en": f"CBBC data {freshness} — leverage map unavailable",
-                "zh": f"牛熊证数据{('落后' if freshness == 'stale' else '缺失')}，杠杆图不可用",
-            }
+        banner = _w1_banner(freshness, cbbc_df.empty)
 
         bellwethers = []
         for ticker in _OUTPUT_TICKERS:
@@ -746,8 +762,8 @@ def run(data_root: Path | None = None) -> dict:
             "freshness": "dead",
             "bellwethers": [],
             "banner": {
-                "en": "CBBC engine error — data unavailable",
-                "zh": "牛熊证引擎错误，数据不可用",
+                "en": "Leverage data unavailable",
+                "zh": "杠杆数据不可用",
             },
             "cbbc_total_contracts": 0,
             "dw_total_contracts": 0,
