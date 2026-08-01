@@ -1023,6 +1023,11 @@ jobs:
           # diverged; the post-rebase --fix stays for the -X theirs mid-render-merge case.
           python -m scripts.check_template_site_sync --fix || true
           python3 scripts/check_conflict_markers.py --file site/start.html
+          # start runtimes single-instance (ui.start_runtime_single_instance): a stale-
+          # checkout render re-emits doubled live tags with ZERO markers (adad513bdfe),
+          # so the marker gate above can't see it — heal from HEAD (the last committed
+          # page, at most one render old) rather than forfeit the whole render.
+          python3 scripts/check_start_runtime.py --heal-from HEAD
           # templates/ is staged too, and ONLY because of the plain-copy HTML pairs
           # (index.html, chat.html): optimize_assets re-stamps their templates/ side, because
           # the --fix above rewrites their site copy FROM templates/ — a stamp staged
@@ -1157,6 +1162,7 @@ jobs:
               # autostash apply was staged wholesale — 1,704 pages shipped markers)
               bash "${GITHUB_WORKSPACE:-.}/scripts/ci/strip_conflict_markers.sh"
               python3 scripts/check_conflict_markers.py --file site/start.html
+              python3 scripts/check_start_runtime.py --heal-from origin/main
               if ! git diff --quiet -- site/ templates/; then
                 # push_staged_clean: never bake conflict markers into the follow-up
                 # commit (P0 d29e4dd44d/#4167). On a dirty scan: unstage and push the
