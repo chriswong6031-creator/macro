@@ -1,26 +1,28 @@
 {
   "schema": "options_skew.gate.v1",
-  "generated_at": "2026-07-01 14:11 UTC",
+  "generated_at": "2026-08-01 08:32 UTC",
   "scored": false,
-  "status": "insufficient_history (have 17/120 dates, 382/15 names)",
+  "status": "insufficient_history (have 41/120 dates, 401/15 names)",
   "weight": 0.0,
-  "n_dates": 17,
-  "n_names": 382,
+  "n_dates": 41,
+  "n_names": 401,
   "min_dates": 120,
   "min_names": 15,
   "ic_by_horizon": {
     "5": {
-      "n_dates": 6,
-      "mean_ic": -0.0323,
-      "hac_t": NaN
+      "n_dates": 30,
+      "mean_ic": -0.0641,
+      "hac_t": -3.73
     },
     "10": {
-      "n_dates": 1,
-      "mean_ic": NaN,
-      "hac_t": NaN
+      "n_dates": 25,
+      "mean_ic": -0.0404,
+      "hac_t": -1.66
     },
     "21": {
-      "n_dates": 0
+      "n_dates": 14,
+      "mean_ic": -0.0907,
+      "hac_t": -2.69
     }
   },
   "note": "the chain panel is too narrow/short to validate skew as a return predictor \u2192 display-only context, accruing toward a verdict"
