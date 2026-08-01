@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T22:16:05.099256+00:00",
-  "count": 554,
+  "generated_at": "2026-08-01T22:31:07.030525+00:00",
+  "count": 555,
   "institutions": [
     "Amova",
     "Apollo",
@@ -42,6 +42,27 @@
     "Zero Hedge"
   ],
   "items": [
+    {
+      "id": "marketdesk-fsfvm56gazi-7da3cb",
+      "title": "Global Healthcare Pharmaceuticals Friday Fodder Inconsistent Dynamics Through the First Week of Peak Earnings",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-01T22:13:34Z",
+      "summary_points": [
+        "**Novo ZEUS Trial Failure Amplifies Sector Pipeline Risk**: ZEUS trial miss triggered 8% stock drop, exacerbating clinical risk concerns; sector now faces heightened need for M&A/diversification to offset pipeline failure exposure.",
+        "**Regeneron & Amgen Drive Sector Fundamentals**: Regeneron’s pipeline execution (cedmisiran, Dupixent timeline) and Amgen’s commercial momentum + $16B M&A capacity (2.5x/4x levered) anchor valuation drivers.",
+        "**Sanofi Discontinuation Spurs Sector-Wide Confidence Erosion**: Sanofi’s itepekimab/balinatunfrib discontinuation caused 9% sell-off; target price cut to €79 as pipeline rebuild delays erode investor confidence.",
+        "**Novo Obesity Drug Metrics Show Commercial Resilience**: Wegovy TRx at 171.8k (1.2% WoW), 9mg uptake at 46%, and 44:56 market share (Novo/Lilly) offset pipeline concerns despite FY26 guidance upgrade.",
+        "**M&A Critical for Sector Valuation Amid Pipeline Failures**: Amgen’s $16B cash capacity and sector-wide need for M&A (to mitigate clinical risks like Novo’s ZEUS) emerge as key valuation catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 13,
+      "language": "en",
+      "needs_metadata": false
+    },
     {
       "id": "marketdesk-myfjhnohu9e-b22974",
       "title": "Credit Analysis Summer bummer for bonds",
