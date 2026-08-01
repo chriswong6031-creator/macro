@@ -51,7 +51,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from lib import config
+from lib import config, nyse_calendar
 
 log = logging.getLogger(__name__)
 
@@ -429,6 +429,11 @@ def _naaim_low_flag() -> bool:
 def _putcall_display() -> tuple:
     try:
         df = pd.read_parquet(config.data_dir() / "cboe" / "putcall.parquet")
+        # SESSION GUARD (#3721 class, review M2): putcall.parquet carries 13 non-session
+        # rows of 39 — the SAME dates as cboe/gex.parquet. This is a 20-row ROLLING MEAN,
+        # so ~6-7 of every 20 points averaged in were fabricated recomputes of a day with
+        # no trading, EVERY day — not just a bad `.iloc[-1]`.
+        df = nyse_calendar.session_rows(df, label="cboe/putcall")
         s = df["equity_pc_ratio"].dropna()
         if s.empty:
             return None, "accruing", "积累中"
@@ -459,6 +464,10 @@ def _news_bull_display(closes: pd.DataFrame) -> tuple:
 def _skew_display() -> tuple:
     try:
         df = pd.read_parquet(config.data_dir() / "options_skew" / "snapshots.parquet")
+        # SESSION GUARD (#3721 class, OIP E8 2026-07-29): this store carried 8
+        # non-session dates of 28, and a weekend row recomputes IV off a stale spot.
+        # `date.max()` below would pick that Saturday as "the latest index put-skew".
+        df = nyse_calendar.session_rows(df, "date", label="options_skew/snapshots")
         idx = df[df["underlying"].isin(["SPX", "SPY", "QQQ"])]
         if idx.empty:
             return None, "accruing", "积累中"

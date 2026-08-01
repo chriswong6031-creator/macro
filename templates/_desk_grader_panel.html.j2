@@ -1,176 +1,235 @@
 {# ============================================================================
-   UNIFIED FORWARD DESK GRADER panel — shared across the intel-hub, alt-data and
-   congress pages. Renders each desk's own scorecard: is this desk beating the
-   market? Level AND velocity IC per horizon (5/10/20/30/60/90d), on-desk vs
-   after-leaving split, proven/measuring/alarm badges, auto-findings + notes.
+   DESK SCORECARD panel — shared across the intel-hub, alt-data and congress
+   pages. Renders each desk's own scorecard: is this desk beating the market?
 
    DROP-IN:  {% import "_desk_grader_panel.html.j2" as dg %}   then   {{ dg.panel(desk_grader) }}
    A macro import does NOT inherit the parent's t() macro, so this file writes its
    own l-en/l-zh spans. NEVER put translated text in a title= — data-tip-en/zh only.
    Every dict read uses .get(...) so a missing key can't crash Jinja.
+
+   TIERING (operator order 2026-07-30, DESIGN_DOCTRINE §1): the mechanics are
+   Tier-3 STUDY content, so the whole panel is a <details> that ships CLOSED. The
+   closed <summary> still carries the verdict in plain words plus the state badge
+   — an ALARM is never hidden by the fold (Law 5: nulls printed, in plain words).
+   Opening it reveals the per-horizon grades, the findings and the notes ledger.
    ============================================================================ #}
 
 {% macro _pct(v) -%}{% if v is not none %}{{ '%+.1f'|format(v*100) }}%{% else %}—{% endif %}{%- endmacro %}
 {% macro _ic(v) -%}{% if v is not none %}{{ '%+.3f'|format(v) }}{% else %}—{% endif %}{%- endmacro %}
 
+{#- bespoke scorecard mark: a ledger card, its header rule, the graded track and
+    the point most recently scored. Line-art at 1.9 stroke so it sits in the same
+    icon family as the hub's inline set, but it belongs to this panel alone. -#}
+{% macro _mark() -%}
+<svg class="dg-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <rect x="3" y="4" width="18" height="16" rx="2.4"/>
+  <path d="M6.7 7.9h4.6"/>
+  <path d="M6.7 16.3 10.4 12.3l2.8 2.1 4.1-5.7"/>
+  <circle cx="17.3" cy="8.7" r="1.75" fill="currentColor" stroke="none"/>
+</svg>
+{%- endmacro %}
+
 {% macro _badge(status) -%}
 {%- if status == 'proven' %}<span class="dg-badge dg-proven"><span class="l-en">proven</span><span class="l-zh">已验证</span></span>
-{%- elif status == 'alarm' %}<span class="dg-badge dg-alarm"><span class="l-en">⚠ ALARM</span><span class="l-zh">⚠ 警报</span></span>
+{%- elif status == 'alarm' %}<span class="dg-badge dg-alarm"><span class="l-en">check</span><span class="l-zh">待复核</span></span>
 {%- else %}<span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span>{% endif %}
 {%- endmacro %}
 
 {% macro panel(G) -%}
 {% if G and (G.get('n_snapshots_live') or G.get('any_matured')) %}
-<section class="dg-wrap" style="margin-top:22px">
-  <h2 class="dg-h2">{{ '📊' }}
-    <span class="l-en">Desk scorecard — is this desk beating the market?</span><span class="l-zh">研究台记分卡 —— 本台是否跑赢大盘？</span>
-    <span class="dg-note">
-      <span class="l-en">every name this desk surfaces is graded against realized SPY-relative forward returns · context-only</span>
-      <span class="l-zh">本台每个入选标的均以实际相对标普前瞻收益评分 · 仅作参考</span></span>
-  </h2>
+{% set alarm = G.get('any_alarm') %}
+<details class="dg{{ ' dg-is-alarm' if alarm else '' }}">
+  <summary class="dg-sum">
+    {{ _mark() }}
+    <span class="dg-ttl"><span class="l-en">Desk scorecard</span><span class="l-zh">研究台记分卡</span></span>
+    {%- if alarm %}<span class="dg-badge dg-alarm"><span class="l-en">⚠ check</span><span class="l-zh">⚠ 待复核</span></span>
+    {%- elif G.get('any_proven') %}<span class="dg-badge dg-proven"><span class="l-en">measured</span><span class="l-zh">已测得</span></span>
+    {%- elif G.get('any_matured') %}<span class="dg-badge dg-measuring"><span class="l-en">measuring</span><span class="l-zh">测量中</span></span>
+    {%- else %}<span class="dg-badge dg-measuring"><span class="l-en">accruing</span><span class="l-zh">累积中</span></span>{% endif %}
+    {#- the verdict in plain words: the one thing a closed panel must still say -#}
+    <span class="dg-verdict">
+      {%- if alarm %}<span class="l-en">One horizon is running the wrong way</span><span class="l-zh">有一个周期方向相反</span>
+      {%- elif G.get('any_proven') %}<span class="l-en">Beating SPY at the {{ G.get('lead_time_d') }}-day mark</span><span class="l-zh">{{ G.get('lead_time_d') }}日周期跑赢标普</span>
+      {%- elif G.get('any_matured') %}<span class="l-en">Not enough evidence to call it yet</span><span class="l-zh">证据尚不足以下结论</span>
+      {%- else %}<span class="l-en">Grades land as the first horizons elapse</span><span class="l-zh">首批周期走完后开始评分</span>{% endif %}
+    </span>
+    <span class="dg-open"><span class="l-en">detail</span><span class="l-zh">详情</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+           stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+  </summary>
 
-  {# ── headline honesty line ── #}
-  <div class="dg-lead {{ 'dg-lead-alarm' if G.get('any_alarm') else '' }}">
-    {% if G.get('any_alarm') %}<b><span class="l-en">ALARM</span><span class="l-zh">警报</span></b> —
-      <span class="l-en">a matured horizon shows a significant NEGATIVE IC: this desk's ranking is anti-predictive there. See findings below.</span>
-      <span class="l-zh">某到期周期出现显著为负的信息系数：本台排序在该周期反向预测。详见下方结论。</span>
-    {% elif not G.get('any_matured') %}<b><span class="l-en">Accruing</span><span class="l-zh">累积中</span></b> —
-      <span class="l-en">the desk records its surfaced set daily and grades each name at 5 / 10 / 20 / 30 / 60 / 90 trading days.
-        First 5-day grades land ~2026-07-13. Until a horizon clears a Newey-West significance bar it is shown, not trusted.</span>
-      <span class="l-zh">本台每日记录入选名单，并在 5 / 10 / 20 / 30 / 60 / 90 交易日为每个标的评分。首批 5 日评分约于 2026-07-13 产生；信号通过 Newey-West 显著性检验前仅展示、不采信。</span>
-    {% elif G.get('any_proven') %}<b><span class="l-en">Measured edge</span><span class="l-zh">已测得优势</span></b> —
-      <span class="l-en">level IC peaks at the {{ G.get('lead_time_d') }}-day horizon. Context-only.</span>
-      <span class="l-zh">水平信息系数在 {{ G.get('lead_time_d') }} 日周期达峰。仅作参考。</span>
-    {% else %}<b><span class="l-en">Measuring</span><span class="l-zh">测量中</span></b> —
-      <span class="l-en">matured observations accruing; no horizon has cleared the significance bar yet.</span>
-      <span class="l-zh">到期观测持续累积；尚无周期通过显著性检验。</span>
+  <div class="dg-body">
+    <p class="dg-lead">
+      <span class="l-en">Every name this desk surfaces is scored against what the stock actually did next,
+        measured against SPY. Context only — never a trade instruction.</span>
+      <span class="l-zh">本台每个入选标的都以其之后的实际走势评分，并与标普对比。仅作参考 —— 绝非交易指令。</span>
+      <span class="dg-counts">
+        <span class="l-en">{{ '{:,}'.format(G.get('n_snapshots_live') or 0) }} names recorded · {{ '{:,}'.format(G.get('n_departures') or 0) }} drops tracked</span>
+        <span class="l-zh">已记录 {{ '{:,}'.format(G.get('n_snapshots_live') or 0) }} 个标的 · 已追踪 {{ '{:,}'.format(G.get('n_departures') or 0) }} 次剔除</span></span>
+    </p>
+
+    {% if G.get('any_matured') %}
+    {# ── per-horizon grades. Only the four readings a human acts on stay as
+          columns; the coverage / after-drop splits move to the row hover. ── #}
+    <div class="dg-tblwrap">
+    <table class="dg-tbl"><thead><tr>
+      <th><span class="l-en">Horizon</span><span class="l-zh">周期</span></th>
+      <th class="num"><span class="l-en">graded</span><span class="l-zh">已评分</span></th>
+      <th class="num" data-tip-en="Rank skill: does a higher score from this desk actually go with a better return? Above zero = yes. A daily Newey-West figure where the sample is mature, otherwise pooled (~)." data-tip-zh="排名预测力：本台给分越高，之后的收益是否真的越好？大于零 = 是。样本成熟时用日度 Newey-West 值，否则为合并值（~）。"><span class="l-en">rank skill</span><span class="l-zh">排名预测力</span></th>
+      <th class="num" data-tip-en="Trend skill: same question asked of the CHANGE in this desk's score over its last five readings, rather than its level." data-tip-zh="趋势预测力：同一问题，但针对本台评分在最近五次读数中的「变化」，而非水平值。"><span class="l-en">trend skill</span><span class="l-zh">趋势预测力</span></th>
+      <th class="num" data-tip-en="Average return against SPY while the name is on the desk." data-tip-zh="标的在台期间相对标普的平均收益。"><span class="l-en">vs SPY</span><span class="l-zh">对比标普</span></th>
+      <th><span class="l-en">status</span><span class="l-zh">状态</span></th>
+    </tr></thead><tbody>
+      {% for h, e in G.get('horizons', {}).items() %}
+      <tr class="{{ 'dg-row-alarm' if e.get('status') == 'alarm' else '' }}"
+          data-tip-en="After this desk dropped a name it went {{ _pct(e.get('departed', {}).get('mean_fwd_rel')) if e.get('departed', {}).get('n') else '—' }} against SPY (n={{ e.get('departed', {}).get('n') or 0 }}) · usable prices for {{ e.get('coverage', {}).get('coverage_pct') if e.get('coverage', {}).get('coverage_pct') is not none else '—' }}% of surfaced names"
+          data-tip-zh="本台剔除标的后，其相对标普走势为 {{ _pct(e.get('departed', {}).get('mean_fwd_rel')) if e.get('departed', {}).get('n') else '—' }}（样本 {{ e.get('departed', {}).get('n') or 0 }}）· 入选标的中 {{ e.get('coverage', {}).get('coverage_pct') if e.get('coverage', {}).get('coverage_pct') is not none else '—' }}% 有可用价格">
+        <td><b>{{ h }}</b><span class="l-en">d</span><span class="l-zh">日</span></td>
+        <td class="num">{{ e.get('n_matured') or 0 }}</td>
+        <td class="num {{ 'dg-neg' if (e.get('level_ic') or e.get('level_ic_pooled') or 0) < 0 else 'dg-pos' if (e.get('level_ic') or e.get('level_ic_pooled') or 0) > 0 else '' }}">
+          {%- if e.get('level_ic') is not none %}{{ _ic(e.get('level_ic')) }}
+          {%- elif e.get('level_ic_pooled') is not none %}{{ _ic(e.get('level_ic_pooled')) }}~
+          {%- else %}—{% endif %}</td>
+        <td class="num {{ 'dg-neg' if (e.get('velocity_ic') or e.get('velocity_ic_pooled') or 0) < 0 else 'dg-pos' if (e.get('velocity_ic') or e.get('velocity_ic_pooled') or 0) > 0 else '' }}">
+          {%- if e.get('velocity_ic') is not none %}{{ _ic(e.get('velocity_ic')) }}
+          {%- elif e.get('velocity_ic_pooled') is not none %}{{ _ic(e.get('velocity_ic_pooled')) }}~
+          {%- else %}—{% endif %}</td>
+        <td class="num {{ 'dg-pos' if (e.get('on_desk', {}).get('mean_fwd_rel') or 0) > 0 else 'dg-neg' if (e.get('on_desk', {}).get('mean_fwd_rel') or 0) < 0 else '' }}">{{ _pct(e.get('on_desk', {}).get('mean_fwd_rel')) }}</td>
+        <td>{{ _badge(e.get('status')) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody></table>
+    </div>
+
+    {# ── engine_version A/B (the hub-v3-trajectory pre/post experiment) ── #}
+    {% set ns = namespace(has_ev=false) %}
+    {% for h, e in G.get('horizons', {}).items() %}{% if e.get('engine_versions') %}{% set ns.has_ev = true %}{% endif %}{% endfor %}
+    {% if ns.has_ev %}
+    <div class="dg-sub">
+      <h3><span class="l-en">Before and after the engine overhaul</span><span class="l-zh">引擎改版前后对比</span></h3>
+      {% for h, e in G.get('horizons', {}).items() %}{% if e.get('engine_versions') and e.get('n_matured') %}
+      <div class="dg-ev"><span class="dg-ev-h">{{ h }}<span class="l-en">d</span><span class="l-zh">日</span></span>
+        {% for ev, s in e.engine_versions.items() %}
+        <span class="dg-ev-tag">{{ ev }} <b class="{{ 'dg-pos' if (s.get('ic_pooled') or 0) > 0 else 'dg-neg' if (s.get('ic_pooled') or 0) < 0 else '' }}">{{ _ic(s.get('ic_pooled')) }}</b>
+          <span class="mut2">n={{ s.get('n') }} · {{ _pct(s.get('mean_fwd_rel')) }}</span></span>
+        {% endfor %}
+      </div>{% endif %}{% endfor %}
+    </div>
     {% endif %}
-    <span class="dg-counts">
-      <span class="l-en">{{ '{:,}'.format(G.get('n_snapshots_live') or 0) }} live snapshots · {{ '{:,}'.format(G.get('n_departures') or 0) }} departures tracked</span>
-      <span class="l-zh">{{ '{:,}'.format(G.get('n_snapshots_live') or 0) }} 条在册快照 · 已追踪 {{ '{:,}'.format(G.get('n_departures') or 0) }} 次离场</span></span>
-  </div>
+    {% endif %}
 
-  {% if G.get('any_matured') %}
-  {# ── per-horizon table: level vs velocity IC, on-desk vs departed, coverage ── #}
-  <div class="dg-tblwrap">
-  <table class="dg-tbl"><thead><tr>
-    <th><span class="l-en">Horizon</span><span class="l-zh">周期</span></th>
-    <th class="num"><span class="l-en">n</span><span class="l-zh">样本</span></th>
-    <th class="num" data-tip-en="Cross-sectional rank-IC of the desk's SCORE LEVEL vs forward return (daily-HAC where mature, else pooled~)" data-tip-zh="本台评分水平与前瞻收益的横截面秩相关（成熟时用日度HAC，否则合并~）"><span class="l-en">IC · level</span><span class="l-zh">IC · 水平</span></th>
-    <th class="num" data-tip-en="Rank-IC of the desk's SCORE VELOCITY (Δscore over 5 snapshots) vs forward return — the owner's hypothesis" data-tip-zh="本台评分速度（5次快照的Δ分）与前瞻收益的秩相关——即所有者假设"><span class="l-en">IC · velocity</span><span class="l-zh">IC · 速度</span></th>
-    <th class="num" data-tip-en="Mean SPY-relative forward return while the name is ON the desk" data-tip-zh="标的在台期间的平均相对标普前瞻收益"><span class="l-en">on-desk</span><span class="l-zh">在台</span></th>
-    <th class="num" data-tip-en="Mean SPY-relative forward return AFTER the name left the desk — did dropping it turn out correct?" data-tip-zh="标的离台后的平均相对标普前瞻收益——剔除是否正确？"><span class="l-en">departed</span><span class="l-zh">离台</span></th>
-    <th class="num" data-tip-en="Share of surfaced names with usable yahoo-adjusted prices at this horizon (breadth cache deliberately excluded — split-corrupted)" data-tip-zh="该周期有可用雅虎复权价的入选标的占比（刻意排除拆股损坏的breadth缓存）"><span class="l-en">coverage</span><span class="l-zh">覆盖</span></th>
-    <th><span class="l-en">status</span><span class="l-zh">状态</span></th>
-  </tr></thead><tbody>
-    {% for h, e in G.get('horizons', {}).items() %}
-    <tr class="{{ 'dg-row-alarm' if e.get('status') == 'alarm' else '' }}">
-      <td><b>{{ h }}</b><span class="l-en">d</span><span class="l-zh">日</span></td>
-      <td class="num">{{ e.get('n_matured') or 0 }}</td>
-      <td class="num {{ 'dg-neg' if (e.get('level_ic') or e.get('level_ic_pooled') or 0) < 0 else 'dg-pos' if (e.get('level_ic') or e.get('level_ic_pooled') or 0) > 0 else '' }}">
-        {%- if e.get('level_ic') is not none %}{{ _ic(e.get('level_ic')) }}
-        {%- elif e.get('level_ic_pooled') is not none %}{{ _ic(e.get('level_ic_pooled')) }}~
-        {%- else %}—{% endif %}</td>
-      <td class="num {{ 'dg-neg' if (e.get('velocity_ic') or e.get('velocity_ic_pooled') or 0) < 0 else 'dg-pos' if (e.get('velocity_ic') or e.get('velocity_ic_pooled') or 0) > 0 else '' }}">
-        {%- if e.get('velocity_ic') is not none %}{{ _ic(e.get('velocity_ic')) }}
-        {%- elif e.get('velocity_ic_pooled') is not none %}{{ _ic(e.get('velocity_ic_pooled')) }}~
-        {%- else %}—{% endif %}</td>
-      <td class="num {{ 'dg-pos' if (e.get('on_desk', {}).get('mean_fwd_rel') or 0) > 0 else 'dg-neg' if (e.get('on_desk', {}).get('mean_fwd_rel') or 0) < 0 else '' }}">{{ _pct(e.get('on_desk', {}).get('mean_fwd_rel')) }}</td>
-      <td class="num {{ 'dg-pos' if (e.get('departed', {}).get('mean_fwd_rel') or 0) > 0 else 'dg-neg' if (e.get('departed', {}).get('mean_fwd_rel') or 0) < 0 else '' }}">
-        {%- if e.get('departed', {}).get('n') %}{{ _pct(e.get('departed', {}).get('mean_fwd_rel')) }}{% else %}—{% endif %}</td>
-      <td class="num mut2">{% if e.get('coverage', {}).get('coverage_pct') is not none %}{{ e.coverage.coverage_pct }}%{% else %}—{% endif %}</td>
-      <td>{{ _badge(e.get('status')) }}</td>
-    </tr>
-    {% endfor %}
-  </tbody></table>
-  </div>
-  <p class="dg-fine">
-    <span class="l-en">~ = provisional pooled IC (single cross-section); the daily Newey-West HAC IC that the "proven" gate trusts needs ≥6 grading dates. Velocity IC = the change in the desk's own score, the owner's second axis.</span>
-    <span class="l-zh">~ = 暂定合并信息系数（单一横截面）；"已验证"门槛所依赖的日度 Newey-West HAC 信息系数需≥6个评分日。速度信息系数 = 本台评分自身的变化，即所有者的第二维度。</span></p>
+    {# ── auto-findings — the automated half of the improvement loop ── #}
+    {% if G.get('auto_findings') %}
+    <div class="dg-sub">
+      <h3><span class="l-en">What the numbers say</span><span class="l-zh">数据说明了什么</span></h3>
+      <ul class="dg-list">
+        {% for f in G.auto_findings %}
+        {#- |e is load-bearing: the loader's select_autoescape keys off the file extension,
+            and these templates end in `.j2`, so autoescape is OFF. An engine string with
+            angle brackets (a note reads "data/yahoo/<T>.parquet") is otherwise parsed as an
+            unknown tag and the placeholder vanishes from the rendered note. -#}
+        <li class="dg-find dg-{{ f.get('severity') }}">
+          <span class="dg-sev">{{ {'alarm':'⚠','warn':'▲','insight':'●'}.get(f.get('severity'),'·') }}</span>
+          <span class="l-en">{{ f.get('text')|e }}</span><span class="l-zh">{{ f.get('text')|e }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
 
-  {# ── engine_version A/B (the hub-v3-trajectory pre/post experiment) ── #}
-  {% set ns = namespace(has_ev=false) %}
-  {% for h, e in G.get('horizons', {}).items() %}{% if e.get('engine_versions') %}{% set ns.has_ev = true %}{% endif %}{% endfor %}
-  {% if ns.has_ev %}
-  <div class="dg-sub">
-    <h3><span class="l-en">Engine-version A/B</span><span class="l-zh">引擎版本 A/B</span>
-      <small><span class="l-en">— pre/post overhaul, where the ledger carries the stamp</span><span class="l-zh">—— 改版前后，以账本已打戳的行为准</span></small></h3>
-    {% for h, e in G.get('horizons', {}).items() %}{% if e.get('engine_versions') and e.get('n_matured') %}
-    <div class="dg-ev"><span class="dg-ev-h">{{ h }}<span class="l-en">d</span><span class="l-zh">日</span></span>
-      {% for ev, s in e.engine_versions.items() %}
-      <span class="dg-ev-tag">{{ ev }}: <b class="{{ 'dg-pos' if (s.get('ic_pooled') or 0) > 0 else 'dg-neg' if (s.get('ic_pooled') or 0) < 0 else '' }}">IC {{ _ic(s.get('ic_pooled')) }}</b>
-        <span class="mut2">n={{ s.get('n') }} · {{ _pct(s.get('mean_fwd_rel')) }}</span></span>
-      {% endfor %}
-    </div>{% endif %}{% endfor %}
-  </div>
-  {% endif %}
-  {% endif %}
+    {# ── human notes ledger — the lessons that seed engine improvements ── #}
+    {% if G.get('notes') %}
+    <div class="dg-sub">
+      <h3><span class="l-en">Lessons logged</span><span class="l-zh">经验记录</span></h3>
+      <ul class="dg-list dg-notes">
+        {% for n in G.notes[:3] %}
+        <li><span class="dg-nd">{{ n.get('date') }}</span>
+          <span class="l-en">{{ n.get('note')|e }}</span><span class="l-zh">{{ n.get('note')|e }}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
 
-  {# ── auto-findings — the automated half of the improvement loop ── #}
-  {% if G.get('auto_findings') %}
-  <div class="dg-sub">
-    <h3><span class="l-en">Auto-findings</span><span class="l-zh">自动结论</span>
-      <small><span class="l-en">— derived from the stats each run, to improve this desk's engine</span><span class="l-zh">—— 每次运行从统计中导出，用于改进本台引擎</span></small></h3>
-    <ul class="dg-findings">
-      {% for f in G.auto_findings %}
-      <li class="dg-find dg-{{ f.get('severity') }}">
-        <span class="dg-sev">{{ {'alarm':'⚠','warn':'▲','insight':'●'}.get(f.get('severity'),'·') }}</span>
-        <span class="l-en">{{ f.get('text') }}</span><span class="l-zh">{{ f.get('text') }}</span></li>
-      {% endfor %}
-    </ul>
+    {# one merged footnote per panel — never a stack (DESIGN_DOCTRINE Law 4) #}
+    <p class="dg-fine">
+      <span class="l-en">~ marks a provisional reading from a single cross-section; the "proven" bar needs at
+        least six separate grading dates. {{ G.get('disclaimer')|e }}</span>
+      {#- Keep the straight-quote 已验证"门槛 form below, EXACTLY as written. That literal is
+          the `match` key of this panel's justified entry in the house claims allowlist
+          (data/regime/, surfaces desk_grader_panel / intelligence_hub / alt_data /
+          congress_trades) and the CI checker matches it by substring — restyling those
+          quotes to 「」 drops the phrase off the allowlist and reddens CI. The checker scans
+          comments as well as copy, so neither the guarded word nor the allowlist/checker
+          filenames can be spelled out here. -#}
+      <span class="l-zh">~ 表示来自单一横截面的暂定读数；"已验证"门槛需至少六个独立评分日。{{ G.get('disclaimer')|e }}</span></p>
   </div>
-  {% endif %}
-
-  {# ── human notes ledger — the lessons that seed engine improvements ── #}
-  {% if G.get('notes') %}
-  <div class="dg-sub">
-    <h3><span class="l-en">Notes &amp; lessons</span><span class="l-zh">笔记与经验</span>
-      <small><span class="l-en">— what we've learned, so the desk's engine keeps improving as data accrues</span><span class="l-zh">—— 已学到的经验，使本台引擎随数据累积持续改进</span></small></h3>
-    <ul class="dg-notes">
-      {% for n in G.notes[:6] %}
-      <li><span class="dg-nd">{{ n.get('date') }}</span>
-        <span class="l-en">{{ n.get('note') }}</span><span class="l-zh">{{ n.get('note') }}</span></li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
-
-  <p class="dg-disc">{{ G.get('disclaimer') }}</p>
-</section>
+</details>
 {% endif %}
 {%- endmacro %}
 
 {% macro styles() -%}
 <style>
-  .dg-wrap{border:1px solid rgba(128,128,128,.18);border-radius:14px;padding:16px 18px;background:color-mix(in srgb,var(--panel,#161a22) 60%,transparent)}
-  .dg-h2{font-size:16px;margin:0 0 10px;display:flex;flex-wrap:wrap;align-items:baseline;gap:8px}
-  .dg-note{font-size:11.5px;font-weight:400;opacity:.6}
-  .dg-lead{font-size:13px;line-height:1.55;padding:10px 12px;border-radius:9px;background:color-mix(in srgb,var(--info,#4a9eff) 9%,transparent);margin-bottom:12px}
-  .dg-lead-alarm{background:color-mix(in srgb,var(--down,#e5484d) 14%,transparent)}
-  .dg-counts{display:block;margin-top:4px;font-size:11px;opacity:.6}
-  .dg-tblwrap{overflow-x:auto}
-  .dg-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
-  .dg-tbl th,.dg-tbl td{padding:6px 9px;text-align:left;border-bottom:1px solid rgba(128,128,128,.12)}
-  .dg-tbl th.num,.dg-tbl td.num{text-align:right;font-variant-numeric:tabular-nums}
-  .dg-tbl thead th{font-size:11px;text-transform:uppercase;letter-spacing:.03em;opacity:.7;font-weight:600}
-  .dg-row-alarm{background:color-mix(in srgb,var(--down,#e5484d) 10%,transparent)}
-  .dg-pos{color:var(--up,#30a46c)}.dg-neg{color:var(--down,#e5484d)}
-  .mut2{opacity:.55}
-  .dg-badge{font-size:10.5px;padding:2px 7px;border-radius:20px;white-space:nowrap}
-  .dg-proven{background:color-mix(in srgb,var(--up,#30a46c) 20%,transparent);color:var(--up,#30a46c)}
-  .dg-measuring{background:color-mix(in srgb,var(--muted,#8b95a5) 20%,transparent);color:var(--muted,#8b95a5)}
-  .dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 22%,transparent);color:var(--down,#e5484d);font-weight:700}
-  .dg-fine,.dg-disc{font-size:11px;opacity:.55;line-height:1.5;margin:8px 0 0}
-  .dg-sub{margin-top:14px}
-  .dg-sub h3{font-size:13px;margin:0 0 7px}.dg-sub h3 small{font-weight:400;opacity:.6}
-  .dg-ev{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;margin:3px 0}
-  .dg-ev-h{font-weight:700;min-width:34px}.dg-ev-tag{padding:2px 8px;border-radius:7px;background:rgba(128,128,128,.1)}
-  .dg-findings,.dg-notes{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px}
-  .dg-find{font-size:12.5px;line-height:1.5;display:flex;gap:7px;padding:6px 9px;border-radius:8px;background:rgba(128,128,128,.07)}
-  .dg-find.dg-alarm{background:color-mix(in srgb,var(--down,#e5484d) 11%,transparent)}
-  .dg-find.dg-warn{background:color-mix(in srgb,var(--warn,#f5a623) 11%,transparent)}
-  .dg-sev{flex:0 0 auto}
-  .dg-notes li{font-size:12px;line-height:1.5;padding:5px 0;border-top:1px solid rgba(128,128,128,.1)}
-  .dg-nd{display:inline-block;min-width:78px;opacity:.5;font-variant-numeric:tabular-nums;font-size:11px}
+  /* ── desk scorecard: a Tier-3 study panel folded behind a Tier-1 summary ──
+     Tokens only (no literal greys) so the panel tracks light / dark / zh. */
+  .dg{ --dg-hair:color-mix(in srgb,var(--line,#2a2f3a) 78%,transparent);
+    margin-top:22px; border:1px solid var(--dg-hair); border-radius:12px;
+    background:color-mix(in srgb,var(--panel,#181b21) 72%,transparent); }
+  .dg-sum{ display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    padding:12px 15px; cursor:pointer; list-style:none;
+    font-size:13.5px; border-radius:12px; transition:background .16s ease; }
+  .dg-sum::-webkit-details-marker{ display:none; }
+  .dg-sum:hover{ background:color-mix(in srgb,var(--panel2,#1e222a) 55%,transparent); }
+  .dg-sum:focus-visible{ outline:2px solid var(--info,#5b9bf0); outline-offset:2px; }
+  .dg-mark{ width:17px; height:17px; flex:none; color:var(--muted,#8b93a1); }
+  .dg-is-alarm .dg-mark{ color:var(--down,#e06464); }
+  .dg-ttl{ font-weight:700; letter-spacing:-.005em; }
+  .dg-verdict{ font-size:12px; color:var(--muted,#8b93a1); }
+  .dg-open{ margin-left:auto; display:inline-flex; align-items:center; gap:4px;
+    font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:600;
+    color:var(--muted,#8b93a1); }
+  .dg-open svg{ width:13px; height:13px; transition:transform .2s ease; }
+  .dg[open] .dg-open svg{ transform:rotate(180deg); }
+  .dg[open] .dg-sum{ border-bottom:1px solid var(--dg-hair); border-radius:12px 12px 0 0; }
+  .dg-body{ padding:13px 15px 15px; }
+  .dg-lead{ font-size:12.5px; line-height:1.55; margin:0 0 12px; color:color-mix(in srgb,var(--text,#d7dce3) 82%,transparent); }
+  .dg-counts{ display:block; margin-top:3px; font-size:11px; color:var(--muted,#8b93a1); }
+  .dg-tblwrap{ overflow-x:auto; }
+  .dg-tbl{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .dg-tbl th,.dg-tbl td{ padding:6px 10px; text-align:left; border-bottom:1px solid color-mix(in srgb,var(--line,#2a2f3a) 45%,transparent); }
+  .dg-tbl th.num,.dg-tbl td.num{ text-align:right;
+    font-family:var(--font-mono,ui-monospace,Menlo,monospace); font-variant-numeric:tabular-nums; }
+  .dg-tbl thead th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    font-weight:600; color:var(--muted,#8b93a1); }
+  .dg-tbl tbody td:first-child{ font-family:var(--font-mono,ui-monospace,Menlo,monospace); }
+  .dg-row-alarm{ background:color-mix(in srgb,var(--down,#e06464) 9%,transparent); }
+  .dg-pos{ color:var(--up,#45b873); } .dg-neg{ color:var(--down,#e06464); }
+  .mut2{ color:var(--muted,#8b93a1); }
+  .dg-badge{ font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    padding:2px 8px; border-radius:6px; white-space:nowrap; }
+  .dg-proven{ background:color-mix(in srgb,var(--up,#45b873) 18%,transparent); color:var(--up,#45b873); }
+  .dg-measuring{ background:color-mix(in srgb,var(--muted,#8b93a1) 16%,transparent); color:var(--muted,#8b93a1); }
+  .dg-alarm{ background:color-mix(in srgb,var(--down,#e06464) 20%,transparent); color:var(--down,#e06464); }
+  .dg-fine{ font-size:11px; color:var(--muted,#8b93a1); line-height:1.55; margin:10px 0 0; }
+  .dg-sub{ margin-top:14px; }
+  .dg-sub h3{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; font-weight:700;
+    color:var(--muted,#8b93a1); margin:0 0 7px; }
+  .dg-ev{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; font-size:12px; margin:3px 0; }
+  .dg-ev-h{ font-weight:700; min-width:34px; font-family:var(--font-mono,ui-monospace,Menlo,monospace); }
+  .dg-ev-tag{ padding:2px 8px; border-radius:6px;
+    background:color-mix(in srgb,var(--muted,#8b93a1) 11%,transparent); }
+  .dg-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:5px; }
+  .dg-find{ font-size:12.5px; line-height:1.5; display:flex; gap:8px; padding:6px 10px; border-radius:7px;
+    background:color-mix(in srgb,var(--muted,#8b93a1) 8%,transparent); }
+  .dg-find.dg-alarm{ background:color-mix(in srgb,var(--down,#e06464) 10%,transparent); color:var(--text,#d7dce3); }
+  .dg-find.dg-warn{ background:color-mix(in srgb,var(--warn,#e0a030) 10%,transparent); }
+  .dg-sev{ flex:0 0 auto; }
+  .dg-notes li{ font-size:12px; line-height:1.5; padding:6px 0;
+    border-top:1px solid color-mix(in srgb,var(--line,#2a2f3a) 40%,transparent); }
+  .dg-nd{ display:inline-block; min-width:78px; color:var(--muted,#8b93a1);
+    font-family:var(--font-mono,ui-monospace,Menlo,monospace); font-variant-numeric:tabular-nums; font-size:11px; }
+  @media (prefers-reduced-motion:reduce){
+    .dg-sum{ transition:none; }
+    .dg-open svg{ transition:none; }
+  }
 </style>
 {%- endmacro %}

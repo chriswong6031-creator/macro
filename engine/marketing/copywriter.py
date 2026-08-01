@@ -187,11 +187,46 @@ _PRICE_SLOT_RE = re.compile(
 #: duration or a tally, not a level ("held above 20 sessions", "over 10 names").
 #: The gate stays narrow on purpose: a gate that cries wolf stops meaning
 #: anything (the copy_review doctrine).
+#:
+#: THE MOTION-PREPOSITION OVER-FIRE (2026-07-31 adversarial review). Wave 1 gave
+#: `_TARGET_SLOT_RE` the motion prepositions `toward|towards|up to|looking for|
+#: aiming for|en route to`. Those words are NOT price vocabulary the way
+#: `entry|target|t1|stop` are — English uses them for magnitudes of every kind —
+#: so three ordinary sentences started rejecting as `invented_level`:
+#:
+#:     "Volume ran up to 3 million shares"   -> invented_level '3'
+#:     "Grinding toward 5 straight weeks"    -> invented_level '5'
+#:     "toward 2 handles"                    -> invented_level '2'
+#:
+#: The unit / multiplier / tally nouns below are the minimal rule that closes
+#: all three. It is deliberately the SAME noun test the slot rule already ran
+#: rather than a second mechanism, because the discriminator is identical: a
+#: price is written BARE ("toward 190"), and a count is written with the thing
+#: it counts ("toward 5 straight weeks"). The two other discriminators the
+#: review floated — "require a decimal point or a $ prefix for the new
+#: prepositions" — were measured and rejected: they would unpin
+#: `toward 228` / `toward 44` / `looking for 228 next`, which ARE the defect-5
+#: regression pins (a fabricated target is nearly always a bare integer), and a
+#: `$` override would newly false-fire on "up to $3 million in volume".
+#:
+#: `handles` is PLURAL ONLY, on purpose. "toward 2 handles" is a move of two
+#: points; "toward the 190 handle" names a price zone and must stay catchable.
 _SLOT_NON_LEVEL_NOUNS: frozenset[str] = frozenset({
     "session", "sessions", "day", "days", "week", "weeks", "month", "months",
     "year", "years", "time", "times", "name", "names", "stock", "stocks",
     "sector", "sectors", "group", "groups", "ticker", "tickers", "point",
     "points", "bps", "minute", "minutes", "hour", "hours", "of",
+    # Magnitude multipliers: "up to 3 million shares", "toward 2 billion".
+    "million", "millions", "billion", "billions", "trillion", "trillions",
+    "thousand", "thousands",
+    # What gets counted: share/contract/lot tallies, not prices.
+    "share", "shares", "contract", "contracts", "lot", "lots", "trade",
+    "trades", "setup", "setups", "candle", "candles", "bar", "bars",
+    # Move units. Plural only — see the note above.
+    "handles", "percent", "pct",
+    # Streak adjectives that sit BETWEEN the count and its noun:
+    # "5 straight weeks", "3 consecutive closes", "4 more names".
+    "straight", "consecutive", "more", "other", "closes",
 })
 
 
@@ -832,6 +867,27 @@ def build_context(
         "loss_pct_str": loss_pct_str or "",
         "target_label": target_label,
         "stop_str": stop_str or "",
+        # THE RECEIPT'S OWN TARGET (2026-07-31 adversarial review). `target_str`
+        # was computed above, folded into `numbers_whitelist` and into the
+        # levels-first ordering, and then NEVER RETURNED — the receipt block
+        # emitted only `stop_str`. `_LEVEL_CTX_KEYS` names "target_str", so
+        # `allowed_level_tokens` was asking for a key build_context did not
+        # publish, and the failure was silent and asymmetric:
+        #
+        #   a receipt whose ticker is still on the Prophet board picks up
+        #   entry_str/t1_str from `_plan` and reads fine;
+        #   a receipt whose plan has ROLLED OFF the board (which is most of
+        #   them — the window is 30 days and the board turns over faster) has
+        #   no `_plan`, so levels = {stop_str} ALONE. The set is non-empty, so
+        #   invented_level takes the STRICT branch, and the receipt's own
+        #   target — the number the post exists to report, present in
+        #   `numbers_whitelist` and in `_receipt["target"]` — is called
+        #   invented. "I said 172 on QCOM three weeks ago and it hit 190" was
+        #   rejected for writing 190.
+        #
+        # Exact-value provenance stays out of the whitelist (contract
+        # §Rounding); this is the DISPLAY form, same as every other *_str.
+        "target_str": target_str or "",
         # Confluence
         "win_rate": win_rate,
         "win_rate_str": win_rate_str or "",
@@ -1283,26 +1339,22 @@ def validate_copy(
                 f"target / stop slot has to come from the packet)"
             )
 
-    # 6. Signal posts: invalidation / "what would change" + disclosure
-    if ctx.get("type") == "signal":
-        lower = full_text.lower()
-        has_invalidation = any(word in lower for word in (
-            "invalidat", "stop", "below", "above", "what would change",
-            "kills it", "closes below", "breaks below", "breaks above",
-        ))
-        if not has_invalidation:
-            violations.append(
-                "signal post missing invalidation / 'what would change' phrase"
-            )
-        has_disclosure = any(phrase in lower for phrase in (
-            "size appropriately", "not financial advice", "historical",
-            "not a guarantee", "do your own", "position sizing",
-            "publicly", "track it", "grade", "receipt",
-        ))
-        if not has_disclosure:
-            violations.append(
-                "signal post missing honesty disclosure / historical caveat"
-            )
+    # 6. Signal posts: the machine-voice constructions, banned.
+    #
+    # This step used to REQUIRE an invalidation phrase and an honesty caveat on
+    # every signal post. That mandate is why the house voice sounded like a
+    # machine: stack a level, a stance, a "what proves me wrong" and a "not a
+    # guarantee" into 275 chars and you get "37.1 is my trigger, 30.9 proves me
+    # wrong. One pattern isn't a guarantee" by construction. The operator graded
+    # a batch built under it F and named both halves ("no human will ever say
+    # that"; "so cringe and disgusting"). The 167 validate-stage drops in that
+    # same build were the writer reaching for human phrasing and being rejected.
+    #
+    # Risk is still welcome on a signal post. It is now the writer's job to say
+    # it like a person, and the guard's job to reject the two forms that read as
+    # generated. See config copy_laws (the "never write that a number proves YOU
+    # wrong" law) and memory marketing-voice-fact-plus-cost.
+    violations.extend(machine_risk_violations(full_text))
 
     # 6b. Expression dial + codex quirk whitelist + AM-R1 detection (XG-W1).
     # Returns [] for every account without a persona codex, so the six desks that
@@ -1382,32 +1434,74 @@ _PLATFORM_MAX_CHARS = 280
 _LIST_MIN_ROWS, _LIST_MAX_ROWS = 2, 6
 _LIST_MAX_READ_LINES = 1
 
+# NUMBER SALAD BY CONSTRUCTION (prompt autopsy 2026-07-31, defect 2). The shape
+# contracts and the number budget used to contradict each other in the same
+# request. SHAPE_CONTRACT["stack"] ordered "today's number, then the bigger
+# number, then the one that reframes it" — three numbers, minimum — and
+# SHAPE_CONTRACT["list"] ordered "2 to 6 rows, each row carries a ticker or a
+# number", while `number_soup_violations` enforced `_NUMBER_BUDGET_DEFAULT = 2`
+# on EVERY shape. A model that obeyed the stack contract exactly was rejected
+# for obeying it, burned its one repair turn, and was dropped. That is the same
+# self-cancelling failure as the HEDGES block below: an instruction whose
+# compliance is a rejection.
+#
+# TWO HALVES TO THE FIX and both are needed. (1) The budget is now per shape and
+# it is the budget each contract IMPLIES: a stack of three escalating lines gets
+# three, a list of up to six rows gets six, and the single-line shapes keep the
+# house default because three figures in one dense line IS the salad the law
+# exists to stop. (2) The contract prose is rendered FROM this dict, so the
+# number the model reads and the number the validator enforces cannot drift
+# apart again by a one-sided edit — and each contract now demands the NARRATIVE
+# LOGIC between the numbers (the second number is the base the first is measured
+# against, never a second unrelated claim), which is what actually separates an
+# argument from a data dump. A budget alone would have licensed the salad.
+_SHAPE_NUMBER_BUDGET: dict[str, int] = {
+    "one_liner": 2,
+    "two_part": 2,
+    "caption": 2,
+    "stack": 3,
+    "list": _LIST_MAX_ROWS,
+}
+
 #: One line each, in the writer's own terms. Kept as data so the prompt and the
 #: validator cannot drift apart — the prompt renders these verbatim.
 SHAPE_CONTRACT: dict[str, str] = {
     "one_liner": (
         "ONE_LINER: a single line, no line breaks at all, 140 characters max, "
         "no headline. This is the default human post shape (48.6% of the real "
-        "corpus). One thought, said once, with the number in it."
+        "corpus). One thought, said once, with the number in it. At most "
+        f"{_SHAPE_NUMBER_BUDGET['one_liner']} numbers, and a second one only "
+        "when it is what the first is measured against."
     ),
     "two_part": (
         "TWO_PART: a headline line (90 chars max), then ONE BLANK LINE, then the "
         "body (275 chars max). The blank line is the beat before the payoff. "
-        "This is a real winner shape at ~17% of the corpus, not the default."
+        "This is a real winner shape at ~17% of the corpus, not the default. At "
+        f"most {_SHAPE_NUMBER_BUDGET['two_part']} numbers across both parts."
     ),
     "stack": (
         "STACK: 2 to 5 lines separated by single newlines, no blank lines, no "
-        "headline, 275 chars total. Each line escalates or enumerates: today's "
-        "number, then the bigger number, then the one that reframes it."
+        f"headline, 275 chars total, at most {_SHAPE_NUMBER_BUDGET['stack']} "
+        "numbers in the whole post. The lines are ONE argument, not three "
+        "separate claims: line 1 is today's number, line 2 is the base it is "
+        "measured against (the prior print, the average, the same week a year "
+        "ago), line 3 says what the two of them together change. A line that "
+        "adds a number without saying what it is measured against is a data "
+        "dump, and a data dump is the shape a person scrolls past."
     ),
     "list": (
         "LIST: 2 to 6 rows, one per line, single newlines, no blank lines, no "
-        "headline, 275 chars total. Each row carries a ticker or a number. At "
-        "most one closing read line."
+        f"headline, 275 chars total, at most {_SHAPE_NUMBER_BUDGET['list']} "
+        "numbers in the whole post. Each row carries a ticker or a number, and "
+        "every row measures the SAME thing over the SAME window so the rows can "
+        "be read against each other. Six unrelated facts stacked is not a list, "
+        "it is a dump. At most one closing read line, and it says what the rows "
+        "add up to."
     ),
     "caption": (
         "CAPTION: 90 characters max, one line, no headline. A chart is attached "
-        "and it does the talking. Say the one thing the chart cannot."
+        "and it does the talking. Say the one thing the chart cannot. At most "
+        f"{_SHAPE_NUMBER_BUDGET['caption']} numbers, and usually one."
     ),
 }
 
@@ -1791,6 +1885,532 @@ _JARGON_PATTERNS: tuple[tuple[str, str], ...] = (
 )
 
 
+"""Lecture register (operator, 2026-07-30).
+
+The operator read the education posts and called them terrible, useless, and
+lecturing: "no one likes being lectured... we want to provide value without
+making it seem like we are superior to others, or cocky/arrogant/ego vibes."
+Most desks are women, and a superior register reads worse from them and costs
+follows.
+
+The template bank was built on it — "The difference between those two sentences
+is most of trading", "Anyone can show winners", "Early looks identical to wrong
+for longer than anyone admits", "The half of trading nobody talks about". But
+the LLM inherits it too, because nothing forbade it: a live sample produced both
+"Turns out doing nothing is still a position. I didn't take a trade, so there's
+no win or loss to dress up" (right) and "If you can't name what proves you wrong
+before the trade, you're not managing risk. You're waiting for the market to
+explain it with your money" (wrong, and worse than the template — it accuses
+the reader directly).
+
+The tell is grammatical person. A good post says what I DID. A lecture says what
+YOU are doing wrong, or what MOST PEOPLE fail to grasp. That is what this
+checks; the open-ended half ("does this feel superior?") belongs to the critic.
+
+A plain question to the reader ("what's your read?") is not a lecture and must
+keep passing — engagement bait is a different problem and this check must not
+suppress it.
+"""
+_LECTURE_PATTERNS: tuple[tuple[str, str], ...] = (
+    # Superiority comparisons: we know, they don't.
+    ("most people", r"\bmost (?:people|traders|of you)\b"),
+    ("nobody/no one", r"\b(?:nobody|no one) (?:talks about|admits|does|gets|understands|tells you)\b"),
+    ("anyone can", r"\banyone can\b"),
+    ("than anyone admits", r"\bthan (?:anyone|most people|anybody) (?:admits|thinks|realizes)\b"),
+    ("everyone else", r"\b(?:everyone|everybody) else\b"),
+    ("the part most skip", r"\bthe part (?:most|that most)\b"),
+    # Second-person prescription: telling the reader what they are doing wrong.
+    ("you should/need/must", r"\byou (?:should|need to|have to|must|ought to)\b"),
+    ("if you can't/don't", r"\bif you (?:can'?t|don'?t|didn'?t|aren'?t|won'?t)\b"),
+    ("you're not X-ing", r"\byou'?re not\b"),
+    ("your problem", r"\byou'?re (?:waiting|hoping|guessing|gambling|kidding)\b"),
+    # Definitional teacher-voice openers.
+    ("plain english:", r"\bplain english\s*:"),
+    ("what X actually means", r"\bwhat .{0,24} actually means\b"),
+)
+
+
+def lecture_violations(text: str) -> list[str]:
+    """Copy that lectures the reader or claims superiority over them. [] = clean.
+
+    Flags the two constructions the operator named: comparisons that put the
+    desk above "most people", and second-person prescriptions that tell the
+    reader what they are doing wrong. First-person practice statements ("I
+    didn't take a trade", "I'm waiting") are the intended register and pass.
+    """
+    low = str(text or "").lower()
+    out: list[str] = []
+    for label, pattern in _LECTURE_PATTERNS:
+        if re.search(pattern, low):
+            out.append(
+                f"lecture register '{label}': say what you did, not what the "
+                f"reader gets wrong"
+            )
+    return out[:2]
+
+
+"""The machine-voice constructions, banned by name (operator 2026-07-30).
+
+Every pattern below is quoted from a post the operator read and rejected. This
+guard replaced a MANDATE that required two of them, so it is deliberately narrow:
+it rejects the generated FORM of stating risk, never the act of stating risk. "If
+it loses 33.8 the whole thing was noise" passes. "I'm wrong below 33.8" does not.
+"""
+_MACHINE_RISK_PATTERNS: tuple[tuple[str, str], ...] = (
+    # "no human will ever say that" — risk attached to the author's ego.
+    ("I'm wrong below/above X", r"\bi'?m wrong (?:below|above|under|over)\b"),
+    ("X proves me wrong", r"\b(?:proves?|prove) me wrong\b"),
+    ("what would prove me wrong", r"\bwhat would prove (?:me|this|it) wrong\b"),
+    ("X invalidates me", r"\binvalidates? (?:me|my (?:read|thesis|call))\b"),
+    ("my trigger / my invalidation", r"\bmy (?:trigger|invalidation|line in the sand)\b"),
+    # Boilerplate caveats. An honest caveat that costs the author something is
+    # welcome and unmatched by these — this rejects the compliance-desk forms.
+    ("historical, not a guarantee", r"\bhistorical,? not a guarantee\b"),
+    ("isn't a guarantee", r"\b(?:isn'?t|is not|are not|aren'?t) a guarantee\b"),
+    ("past performance", r"\bpast performance\b"),
+    ("size appropriately", r"\bsize (?:appropriately|accordingly)\b"),
+    ("not financial advice", r"\bnot financial advice\b"),
+)
+
+# A terse symmetrical two-beat clause pair, both halves short, joined by a comma
+# — "37.1 is my trigger, 30.9 proves me wrong". The operator: "so cringe and
+# disgusting, like you're writing a poem". Requires BOTH halves under ~34 chars
+# so ordinary compound sentences do not trip it.
+# A DECIMAL POINT IS NOT A SENTENCE END (2026-07-31 adversarial review). The
+# clause classes were a bare ``[^.!?,\n]``, so the '.' inside a PRICE ended the
+# clause and the whole rule went blind on the exact post its own docstring
+# quotes as the fixture: "37.1 is my trigger, 30.9 proves me wrong." matched
+# nothing, while the digit-only rewrite "371 is my trigger, 309 proves me wrong"
+# matched fine. Motto cadence is a thing writers do WITH LEVELS, so "blind to
+# any clause containing a price" is blind to most of the class. Found by the
+# per-rule sample bank in tests/test_marketing_copy_v2.py, which is what a
+# silenced rule looks like when the counter stops being a total.
+#
+# The exemption is deliberately `\d.\d` ONLY — a period between two digits.
+# Sentence-ending periods, ellipses and abbreviations still close a clause, so
+# the rule stays a two-clause rule and does not start spanning sentences.
+_MOTTO_CLAUSE = r"(?:[^.!?,\n]|(?<=\d)\.(?=\d))"
+_MOTTO_RE = re.compile(
+    r"(?:^|(?<=[.!?]\s))(" + _MOTTO_CLAUSE + r"{6,34}),\s("
+    + _MOTTO_CLAUSE + r"{6,34})[.!?](?:\s|$)"
+)
+_MOTTO_HINGE = (
+    "is my", "proves", "kills", "matters more", "beats", "means", "wins",
+    "is the", "not the", "never the",
+)
+
+# "1. I write down the market's current story. 2. I note the fact that..."
+# A numbered list of what the MARKET did is fine (Kelly's "1) breadth narrowed
+# 2) oil didn't believe the headline" is a house signature); a numbered list of
+# how the AUTHOR thinks is what drew "what is this dogshit". The person after
+# the marker is the whole difference, so the gap between markers must allow
+# sentence punctuation — an earlier [^.\n] version matched nothing at all.
+_PROCESS_LIST_RE = re.compile(
+    r"(?:^|\s)(?:1[.)]|first,)\s*(?:i|my|we)\b[\s\S]{0,140}?"
+    r"(?:^|\s)(?:2[.)]|second,)\s*(?:i|my|we)\b",
+    re.IGNORECASE,
+)
+
+# The operator on "that's the whole observation, no target, no thesis, just
+# noting that the level is still doing its job": "absolutely hate it when you
+# observe something and then no reaction to it, then why even post, shut up
+# then? no one wants to hear you provide zero value." These are the phrases that
+# ANNOUNCE the absence of a take. The open-ended half of this class (a post that
+# is merely dull) is not enumerable and belongs to the batch auditor.
+_NO_REACTION_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("that's the whole observation", r"\bthat'?s the (?:whole|entire) (?:observation|point|post|thing)\b"),
+    ("no target, no thesis", r"\bno (?:target|thesis|call|position|trade)s?,? (?:and )?no (?:target|thesis|call|position|trade)\b"),
+    ("just noting", r"\b(?:just|merely|simply) (?:noting|observing|flagging|pointing out)\b"),
+    ("nothing to add", r"\b(?:nothing|no) (?:more )?to (?:add|say|do) (?:here|about it)\b"),
+    ("make of it what you will", r"\bmake of (?:it|that) what you will\b"),
+    ("no view", r"\b(?:i have|i've got) no (?:view|opinion|take)\b"),
+    # The CDW case: a symmetrical either/or that resolves to nothing. Operator:
+    # "i literally cant comprehend what this is saying."
+    ("symmetrical either/or", r"\beither that'?s .{4,60} or it'?s .{4,60}\b"),
+    ("don't know which", r"\b(?:don'?t|do not) know which (?:one )?(?:yet|it is)\b"),
+)
+
+# Cashtags and years are not "numbers in the copy"; prices, percentages and
+# counts are. $19.6 is a price the moment it sits next to a ticker, so the
+# cashtag strip runs first and the dollar amount is then counted. List
+# enumerators are structure, not figures — Kelly's "1) ... 2) ... 3)" must not
+# read as three numbers.
+_CASHTAG_STRIP_RE = re.compile(r"\$[A-Za-z]{1,5}(?:\.[A-Za-z])?\b")
+_LIST_MARKER_STRIP_RE = re.compile(r"(?:^|(?<=[\s(]))\d{1,2}[.)](?=\s)")
+_YEAR_STRIP_RE = re.compile(r"\b(?:19|20)\d{2}\b")
+_NUMBER_TOKEN_RE = re.compile(r"(?<![\w.])\d{1,3}(?:,\d{3})*(?:\.\d+)?%?(?![\w])")
+
+
+def machine_risk_violations(text: str) -> list[str]:
+    """Risk stated in the generated register rather than a human one. [] = clean.
+
+    Replaced the mandate that used to REQUIRE these phrases on every signal post
+    (see ``validate_copy_v2`` step 6). Stating risk is still encouraged; stating
+    it as "I'm wrong below 33.8" or "historical, not a guarantee" is not.
+    """
+    low = str(text or "").lower()
+    out: list[str] = []
+    for label, pattern in _MACHINE_RISK_PATTERNS:
+        if re.search(pattern, low):
+            out.append(
+                f"machine risk phrasing '{label}': risk belongs to the setup, "
+                f"not your ego, and never as boilerplate"
+            )
+    return out[:2]
+
+
+def motto_violations(text: str) -> list[str]:
+    """Fortune-cookie cadence: two short symmetrical clauses. [] = clean.
+
+    Narrow by design. Both halves must be short AND the second must hinge on a
+    verdict verb, so "Semis led again, breadth sat it out again" (a fact pair)
+    passes while "37.1 is my trigger, 30.9 proves me wrong" does not.
+    """
+    body = str(text or "")
+    for match in _MOTTO_RE.finditer(body):
+        second = match.group(2).lower()
+        if any(hinge in second for hinge in _MOTTO_HINGE):
+            return [
+                f"motto cadence '{match.group(0).strip()}': write a sentence a "
+                f"person would text, not an aphorism"
+            ]
+    return []
+
+
+def process_list_violations(text: str) -> list[str]:
+    """A numbered list of the author's own thinking. [] = clean."""
+    if _PROCESS_LIST_RE.search(str(text or "")):
+        return [
+            "numbered process list: a numbered list of what the market did is "
+            "fine, a numbered list of how you think is not"
+        ]
+    return []
+
+
+def no_reaction_violations(text: str) -> list[str]:
+    """Copy that announces it has no take. [] = clean.
+
+    Only the phrases that SAY so. A post that is merely dull reads clean here
+    and is the batch auditor's problem — this guard exists so the specific
+    self-cancelling forms the operator quoted can never ship again.
+    """
+    low = str(text or "").lower()
+    out: list[str] = []
+    for label, pattern in _NO_REACTION_PATTERNS:
+        if re.search(pattern, low):
+            out.append(
+                f"no-reaction post '{label}': a fact with no reaction is not a "
+                f"post; give a reaction that costs you something or cut it"
+            )
+    return out[:2]
+
+
+# A RECEIPT is a result post: entry, exit and outcome are the content, not
+# ornament, and the house Scorekeeper exemplar the operator kept carries three
+# ("$QCOM: T1 hit +9.6%, runner stopped at 177. Net positive."). The operator's
+# "shut up with all of these numbers" was aimed at SPECULATIVE level stacks on
+# forward-looking posts ("I want 151 before leaning toward 190, then 228"), so
+# the budget is per-kind rather than global.
+#: Kinds whose numbers ARE the fact, so the house "one number per post" law
+#: would delete the post rather than tighten it.
+#:
+#: `earnings` joins 2026-07-31 on the same reasoning as `receipt`: an earnings
+#: post exists to say what a company printed AGAINST what was expected, and an
+#: actual without its estimate is not a smaller claim, it is an unfalsifiable
+#: one. Four admits the EPS pair and one derived surprise with a token spare.
+#: It does NOT admit the six the fast lane used to emit (EPS pair, EPS surprise,
+#: revenue pair, revenue surprise) — that is a data dump, and the copy was
+#: rewritten to state the revenue leg in words instead.
+_NUMBER_BUDGET: dict[str, int] = {"receipt": 4, "earnings": 4}
+_NUMBER_BUDGET_DEFAULT = 2
+
+
+def number_budget_for(kind: str = "", shape: str = "") -> int:
+    """The distinct-number budget one post is allowed. The SINGLE source of truth.
+
+    Two independent reasons a post may carry more than the house default, and
+    the wider of the two wins:
+
+    * its KIND — a receipt's or an earnings post's numbers ARE the fact
+      (:data:`_NUMBER_BUDGET`);
+    * its SHAPE — a stack or a list is a multi-row form whose own contract
+      orders more than two numbers (:data:`_SHAPE_NUMBER_BUDGET`).
+
+    ``max`` rather than a precedence rule because both claims are true at once:
+    a receipt written as a list is still a receipt, and clamping it back to the
+    shape budget would reject the exact post the kind budget exists to admit.
+    An unknown kind or shape contributes the default, never a KeyError.
+    """
+    by_kind = _NUMBER_BUDGET.get(str(kind or "").strip().lower(), _NUMBER_BUDGET_DEFAULT)
+    by_shape = _SHAPE_NUMBER_BUDGET.get(
+        str(shape or "").strip().lower(), _NUMBER_BUDGET_DEFAULT)
+    return max(by_kind, by_shape)
+
+
+def number_soup_violations(text: str, limit: int | None = None, kind: str = "",
+                           shape: str = "") -> list[str]:
+    """More numbers than a person would put in one post. [] = clean.
+
+    Counts DISTINCT number tokens: a gain repeated in the headline and the body
+    is one number the reader has to hold, not two. Cashtags, list enumerators
+    ("1)", "2)") and years are structure, not figures, and are stripped first.
+
+    `shape` closes the 2026-07-31 autopsy's defect 2: the budget was flat at two
+    for every shape while SHAPE_CONTRACT ordered three numbers for a stack and
+    up to six rows for a list, so an obedient post was rejected for obedience.
+    A caller that passes no shape gets exactly the pre-fix behaviour, which is
+    what keeps the publisher's post-time screen and the older lanes unmoved.
+    """
+    if limit is None:
+        limit = number_budget_for(kind=kind, shape=shape)
+    stripped = _CASHTAG_STRIP_RE.sub(" ", str(text or ""))
+    stripped = _LIST_MARKER_STRIP_RE.sub(" ", stripped)
+    stripped = _YEAR_STRIP_RE.sub(" ", stripped)
+    found = list(dict.fromkeys(_NUMBER_TOKEN_RE.findall(stripped)))
+    if len(found) > limit:
+        return [
+            f"number soup ({len(found)} numbers: {', '.join(found[:5])}, budget "
+            f"{limit} for this shape and kind): every number after the first has "
+            f"to be what the one before it is measured against, not a new claim"
+        ]
+    return []
+
+
+#: A sentence shorter than this is house cadence, not a repeated line. The
+#: deadpan one-word verdicts ("Ugly." "Not ideal." "Watching, no position.")
+#: are the persona and MUST be free to recur; "I'm not fighting this one." is
+#: a template tell.
+_REPEAT_SENTENCE_MIN_WORDS = 5
+
+
+def _repeat_sentence_keys(text: str) -> list[str]:
+    """Normalized sentences of a post, long enough to be worth comparing.
+
+    NOT ``_sentences`` — that name is already taken at module scope by the
+    clarity gate's splitter, and defining it twice silently rebinds the module
+    global so ``dangling_levels`` starts calling THIS one. Three clarity tests
+    caught it; the same shadowing bug cost a whole fact-reuse budget earlier in
+    this program when a helper named ``_slot_day`` was defined twice.
+    """
+    flat = re.split(r"[.!?\n]+", str(text or ""))
+    out: list[str] = []
+    for part in flat:
+        norm = " ".join(re.sub(r"[^a-z0-9 ]+", " ", part.lower()).split())
+        if len(norm.split()) >= _REPEAT_SENTENCE_MIN_WORDS:
+            out.append(norm)
+    return out
+
+
+def repeated_sentence_violations(
+    text: str, prior_texts: Iterable[str] | None,
+) -> list[str]:
+    """A whole sentence this account has already published. [] = clean.
+
+    Whole-body Jaccard is the wrong instrument for the defect the operator
+    named. Two live queued posts read "Still heavy, down 3% on the week. I'm
+    not fighting this one. It has to reclaim 387 before it's even a
+    conversation." and the same thing about a different name at a different
+    price — a shared SENTENCE, verbatim, but only 0.67 Jaccard against a 0.80
+    threshold. Lowering that threshold to reach them would start cutting posts
+    that merely share a topic; an exact sentence match needs no tuning and
+    cannot drift.
+    """
+    mine = _repeat_sentence_keys(text)
+    if not mine:
+        return []
+    seen: set[str] = set()
+    for other in (prior_texts or []):
+        seen.update(_repeat_sentence_keys(other))
+    for sentence in mine:
+        if sentence in seen:
+            return [
+                f"repeated sentence: this account already posted "
+                f"\"{sentence[:80]}\". Say it a different way or drop the post"
+            ]
+    return []
+
+
+"""The cost families, and the monoculture guard over them.
+
+The fact-plus-cost law fixed the "no reaction" defect and immediately grew a new
+one. A live 8-post run under the new prompt passed 8/8 with zero drops -- and
+SEVEN of the eight said the same thing:
+
+    "I missed the bounce" / "I missed the run" / "I missed the move" /
+    "I missed the turn" / "I missed the start" / "I leaned on the bounce too
+    early" / "catching this early has cost me before"
+
+That is the retired stock closer one level up. Prescribing a REACTION rather
+than a sentence did not stop the model converging: the two operator-approved
+exemplars both happen to be regret-shaped, so "the cost" collapsed to "I was
+late". A feed where every post is the same confession reads exactly as bot-like
+as one where every post ends on the same clause, and it makes the desk sound
+like it never gets anything right.
+
+A cost has to actually vary. These families are the enumerable ones; the guard
+below fires when a single family owns too much of one account's batch.
+"""
+    # ONE family, not two. A first cut split "missed it" from "passed on it" and
+    # the guard then called a batch clean in which seven of eight posts were
+    # some flavour of "I am not in this": "I didn't buy the dip", "expensive to
+    # watch without me", "I've been early on the slide", "I passed on the
+    # breakout". Splitting a semantic cluster across families is how a
+    # monoculture guard reports health it cannot see. These all cost the writer
+    # the same thing — the admission of being outside the move — so they count
+    # together.
+_COST_FAMILIES: tuple[tuple[str, str], ...] = (
+    ("outside-the-move",
+     r"\b(?:i|we)\s+(?:missed|was late|were late|didn'?t catch|got there late|"
+     r"passed|didn'?t buy|didn'?t take|talked myself out of|sat (?:this |it )?out)\b"
+     r"|\bmissed the (?:move|run|bounce|turn|start|trade|streak)\b"
+     r"|\bwithout me\b|\btoo clever\b"
+     r"|\b(?:been|was|am)\s+early\b"
+     r"|\b(?:not|never)\s+(?:in|fishing|chasing)\s+(?:it|this)\b"
+     r"|\bfrom the sidelines?\b"),
+    ("no-explanation", r"\b(?:i|we)\s+(?:don'?t|do not)\s+(?:have|know)\b.{0,40}"
+                       r"\b(?:explanation|why|idea)\b|\bnot going to invent\b"),
+    ("was-wrong", r"\b(?:i|we)\s+(?:was|were|got it)\s+wrong\b|\bmy read was\b"),
+    ("it-hurt", r"\btuition\b|\bstopped out\b|\bit cost me\b|\btook the loss\b"),
+    ("still-unsure", r"\b(?:i|we)'?m not sure\b|\bstill don'?t (?:know|trust)\b"),
+)
+
+#: A family may own at most this share of one account's batch before it reads as
+#: a tic. 0.5 lets a genuinely regretful day stay honest without letting one
+#: confession become the house voice.
+_COST_FAMILY_MAX_SHARE = 0.5
+
+
+def cost_family(text: str) -> str:
+    """Which admission a post makes, or "" when it makes none of the known ones."""
+    low = str(text or "").lower()
+    for name, pattern in _COST_FAMILIES:
+        if re.search(pattern, low):
+            return name
+    return ""
+
+
+def cost_monoculture(texts: Iterable[str]) -> dict[str, Any]:
+    """Which cost family is eating the batch. {} when the mix is healthy.
+
+    Batch-level ON PURPOSE: no single post here is wrong, and the per-post
+    guards cannot see a pattern that only exists across a feed. Returns the
+    offending family and its share so the caller can report it in plain words.
+    """
+    seen = [cost_family(t) for t in (texts or [])]
+    named = [s for s in seen if s]
+    if len(named) < 4:          # too small a sample to call a monoculture
+        return {}
+    counts: dict[str, int] = {}
+    for s in named:
+        counts[s] = counts.get(s, 0) + 1
+    family, n = max(counts.items(), key=lambda kv: kv[1])
+    share = n / len(seen)
+    if share > _COST_FAMILY_MAX_SHARE:
+        return {"family": family, "count": n, "of": len(seen), "share": round(share, 3)}
+    return {}
+
+
+#: The trim never takes an account below this many posts. A batch in which
+#: EVERY post makes the same admission solves to keep=0 — mathematically right,
+#: operationally a self-inflicted silent night, which is the one outcome this
+#: whole program exists to prevent. A slightly repetitive feed beats an empty
+#: one; the ::warning says which it was.
+_COST_TRIM_MIN_KEEP = 3
+
+
+def trim_cost_monoculture(
+    texts: list[str], *, max_share: float = _COST_FAMILY_MAX_SHARE,
+    min_keep: int = _COST_TRIM_MIN_KEEP,
+) -> list[int]:
+    """Indices to CUT so no one cost family owns more than ``max_share``. [] = fine.
+
+    Deterministic on purpose. The auditor's ``repetitive`` criterion already
+    describes this defect ("four posts that each say 'respect the move, don't
+    chase' in different wordings are three posts too many"), but that depends on
+    a model noticing, and three rounds of prompt work moved the live share only
+    from 0.88 to 0.62 — the input mix is the cause, not the wording. Every item
+    in a watchlist batch is "a level on a name we do not hold", so "I'm outside
+    the move" is the reaction the material invites and the model converges on it.
+
+    Keeps the EARLIEST posts of the crowded family (they are the highest-salience
+    items in a plan queue) and cuts from the tail until the share is legal. Per
+    the supply-honest volume law an empty rung stays empty: nothing is re-typed
+    to replace what this removes, the account simply posts less and reads better.
+    """
+    fams = [cost_family(t) for t in (texts or [])]
+    named = [f for f in fams if f]
+    if len(named) < 4:
+        return []
+    counts: dict[str, int] = {}
+    for f in named:
+        counts[f] = counts.get(f, 0) + 1
+    family, n = max(counts.items(), key=lambda kv: kv[1])
+    total = len(fams)
+    if not 0 < max_share < 1:
+        return []
+    if n <= int(total * max_share):
+        return []
+    # CUTTING SHRINKS THE DENOMINATOR TOO. A first version kept
+    # int(total * max_share) and left 4 of 7 (0.571) still over a 0.5 cap,
+    # because it measured the share against the batch it was about to change.
+    # Solve for the keep count k directly:
+    #     k / (total - (n - k)) <= s   ->   k <= s * (total - n) / (1 - s)
+    keep = int(max_share * (total - n) / (1.0 - max_share))
+    idxs = [i for i, f in enumerate(fams) if f == family]
+    cut = sorted(idxs[max(0, keep):])
+    # Floor: never trim the account below min_keep posts.
+    surviving = total - len(cut)
+    if surviving < min_keep:
+        give_back = min(len(cut), min_keep - surviving)
+        cut = cut[give_back:]
+    return cut
+
+
+def queued_voice_violations(text: str, kind: str = "",
+                            shape: str | None = None) -> list[str]:
+    """The voice laws, runnable against copy that is ALREADY in the queue.
+
+    The queue is a bypass around every generation-time law: 187 posts were
+    sitting in it when these laws landed on 2026-07-30, all written under the
+    rules that MANDATED the machine voice. Without a post-time screen the
+    operator's F-grade batch ships tomorrow regardless of what the writer does
+    tonight — the same lesson the study-name language gate was built for after
+    the 2026-07-27 $AVGO "POC held" post fired days after its ban.
+
+    Takes the full post text (headline and body already joined, which is how
+    the outbox stores it) rather than the writer's two fields, and needs no
+    ctx. Deliberately does NOT include the whole ``validate_copy_v2`` battery:
+    the numbers whitelist and the sibling-overlap checks need a packet the
+    queue no longer has, and a check that cannot be evaluated must not
+    quarantine.
+
+    ``shape`` CLOSES A HALF-APPLIED FIX (2026-07-31 adversarial review). The
+    per-shape number budget landed in ``validate_copy_v2`` and stopped there, so
+    the writer and this post-time screen disagreed about the same post: a
+    ``stack`` carrying the three numbers its own SHAPE_CONTRACT orders passed
+    generation and was then quarantined by the queue screen under the flat
+    default of two. A gate that rejects obedience is worse than no gate — it
+    teaches the desk to stop obeying. The two screens now compute the budget the
+    same way, from the same ``number_budget_for``.
+
+    The default is ``None``, not ``""``: an outbox row that carries no recorded
+    shape gets exactly the pre-fix budget, which is what keeps every older
+    caller (tests/test_confluence_source.py, the reply lanes) unmoved. Only a
+    caller that KNOWS the shape widens the budget.
+    """
+    out: list[str] = []
+    out += machine_risk_violations(text)
+    out += motto_violations(text)
+    out += process_list_violations(text)
+    out += number_soup_violations(text, kind=kind, shape=str(shape or ""))
+    out += no_reaction_violations(text)
+    out += lecture_violations(text)
+    # batch_texts is empty on purpose: at publish time there is no batch, so
+    # only the RETIRED house closers are reachable, never the repeat rule.
+    out += stock_closer_violations(text, [])
+    return out
+
+
 def jargon_violations(text: str) -> list[str]:
     """Internal-machinery vocabulary in copy (gate 3f). [] = clean.
 
@@ -1882,6 +2502,328 @@ def batch_body_duplicate_violations(
     return []
 
 
+"""Closers the house prompt used to PRESCRIBE verbatim (operator, 2026-07-30).
+
+The copy law read `down movers carry "watching for a bottom setup, not catching it
+yet"; up movers "strength worth respecting, not chasing here"`, the VOICE block
+repeated both, and the up-mover EXEMPLAR ended with the second one. Triple-
+reinforced, so the model complied perfectly: a live 8-post sample closed FIVE of
+its six passing posts with the identical sentence. The operator read that batch
+and called it bot-like, which it was — but the model was obeying us, not being
+lazy. Two lines below the mandate the same config also said "never repeat a
+signature phrase across posts", so the config contradicted itself and the
+concrete instruction won.
+
+The prompt now asks for the STANCE in the writer's own words. This list is the
+enforcement: the mandate cannot come back by way of a prompt edit without a test
+going red. Entries are matched loosely (case, punctuation and leading filler
+ignored) because the model paraphrases the edges while keeping the spine.
+"""
+_STOCK_CLOSERS: tuple[str, ...] = (
+    "strength worth respecting not chasing here",
+    "strength worth respecting not chasing",
+    "watching for a bottom setup not catching it yet",
+    "watching for a bottom setup not catching it",
+    "size appropriately",
+    "proves me wrong size appropriately",
+)
+
+
+#: A truncated stock closer is only recognisable when enough of it survives.
+#: Below this, the final sentence is house cadence that happens to share a word
+#: with the banned line ("Watching." / "Not chasing.").
+_CLOSER_TRUNCATION_MIN_WORDS = 4
+
+
+def _closer_key(text: str, whole_text: bool = False) -> str:
+    """Normalize a post's final sentence for stock-closer comparison.
+
+    ``whole_text=True`` normalizes the ENTIRE post the same way instead. The
+    retired house lines are banned wherever they sit, not only as the closer,
+    so the outright-ban scan needs the whole body while the batch-collision
+    scan still needs the final sentence alone.
+    """
+    body = str(text or "").strip()
+    if not body:
+        return ""
+    if whole_text:
+        flat = re.sub(r"[^a-z0-9 ]+", " ", body.lower())
+        return " ".join(flat.split())
+    # Last sentence-ish chunk: split on terminal punctuation and newlines.
+    parts = [p for p in re.split(r"[.!?\n]+", body) if p.strip()]
+    if not parts:
+        return ""
+    tail = parts[-1].lower()
+    tail = re.sub(r"[^a-z0-9 ]+", " ", tail)
+    return " ".join(tail.split())
+
+
+def stock_closer_violations(
+    text: str, batch_texts: Iterable[str] | None = None,
+) -> list[str]:
+    """Post ends on a house stock closer, or on a closer already used in this batch.
+
+    Two distinct defects, one check:
+
+    * a closer this repo once mandated verbatim (:data:`_STOCK_CLOSERS`) — banned
+      outright, because the operator rejected exactly that copy;
+    * a closer that is fine once but appears on another post in the same plan —
+      the "repetitive posts" complaint, which the opener-stem and body-Jaccard
+      gates both miss when two posts differ everywhere except the last sentence.
+
+    Returns [] when clean.
+    """
+    out: list[str] = []
+
+    # The retired house lines are banned WHEREVER they appear, not only as the
+    # closer. A live queued $TSLA post read "...down 18% on the week. Watching
+    # for a bottom setup, not catching it yet. 303 is the line that matters." —
+    # the boilerplate sat in the MIDDLE, the last sentence was clean, and an
+    # end-anchored check waved it through. The phrase is what the operator
+    # rejected; its position in the post was never the point.
+    whole = _closer_key(text, whole_text=True)
+    for stock in _STOCK_CLOSERS:
+        if stock and stock in whole:
+            out.append(
+                f"stock closer: the post uses a house boilerplate line "
+                f"('{stock}'). Say the stance in your own words."
+            )
+            break
+
+    key = _closer_key(text)
+    if not key:
+        return out
+
+    if not out:
+        for stock in _STOCK_CLOSERS:
+            # Substring the other way too: the model truncates these as well,
+            # and a truncation is only recognisable against the final sentence.
+            # The word floor is load-bearing — "Watching." is a house one-word
+            # verdict AND a substring of "watching for a bottom setup not
+            # catching it yet", so an unbounded match banned the persona.
+            if len(key.split()) >= _CLOSER_TRUNCATION_MIN_WORDS and key in stock:
+                out.append(
+                    f"stock closer: the post ends on a truncated house "
+                    f"boilerplate line ('{stock}'). Say the stance in your own words."
+                )
+                break
+
+    others = [t for t in (batch_texts or []) if str(t or "").strip()]
+    for other in others:
+        if _closer_key(other) == key:
+            out.append(
+                "batch closer collision: another post in this plan already ends "
+                "on this exact sentence"
+            )
+            break
+    return out
+
+
+# ── Welded tails across DAYS, not just across one plan (autopsy defect 6) ─────
+#
+# A week of shipped posts closed 27% of the time on one of NINE sentences:
+# "Watching, no position." five times, "Patience, annoyingly, is the play."
+# five times, and seven more of the same kind. Every one of those posts cleared
+# every gate this module had, and correctly so:
+#
+#   * `_STOCK_CLOSERS` bans the closers the house prompt once MANDATED, and
+#     these were not on that list;
+#   * `stock_closer_violations`' collision arm compares against `batch_texts`,
+#     which is ONE night's plan. Five uses spread over five nights collide with
+#     nothing;
+#   * `repeated_sentence_violations` does reach back across days, but its
+#     `_REPEAT_SENTENCE_MIN_WORDS = 5` floor exists to protect the deadpan
+#     one-word verdicts, and "Watching, no position." is three words. The
+#     sentence that welded the feed shut sat exactly underneath the floor.
+#
+# So this is the day-spanning closer gate, and it is deliberately NOT the same
+# instrument as `repeated_sentence_violations`: it compares FINAL SENTENCE to
+# FINAL SENTENCE only, which is what lets its floor drop to three words without
+# touching the mid-post cadence that floor was protecting. "Ugly." and "Not
+# ideal." (one and two words) stay free to recur forever, because a one-beat
+# verdict IS the persona and the operator has never complained about one.
+#
+# THE HISTORY IT READS. `recent` is this account's durable post history, seeded
+# by `memory_recent_seed` -> `persona_memory.recent_posts(days=7)`. That is a
+# real seven days, so the window the operator measured is the window enforced.
+# A caller that passes no `recent` (the publisher's post-time screen, a lane
+# with no memory store on disk) gets [] rather than a false pass claim — the gap
+# is documented here rather than papered over with the plan's own day, which
+# would only ever catch a same-night repeat that the batch arm already has.
+_REPEAT_CLOSER_MIN_WORDS = 3
+
+
+def repeated_closer_violations(
+    text: str, recent: Iterable[dict] | None,
+) -> list[str]:
+    """This account already ended a post on this sentence in the last 7 days.
+
+    `recent` is the `{"text", "date"}` history `validate_copy_v2` already
+    threads for the codex frequency caps. Returns [] when clean, and [] when
+    there is no history to compare against.
+    """
+    key = _closer_key(text)
+    if not key or len(key.split()) < _REPEAT_CLOSER_MIN_WORDS:
+        return []
+    for row in (recent or []):
+        prior = row.get("text") if isinstance(row, dict) else row
+        if not str(prior or "").strip():
+            continue
+        if _closer_key(str(prior)) == key:
+            return [
+                f"repeated closer: this account already ended a post on "
+                f"\"{key[:70]}\" in the last 7 days. A closer that comes back "
+                f"every few days is the tell; end it in your own words for THIS "
+                f"post or cut the last line"
+            ]
+    return []
+
+
+# ── Invented ladders: a target the fact packet never carried (defect 5) ───────
+#
+# THE POST THAT PROVED IT. Kelly's $TPR signal printed "I want 151 before
+# leaning toward 190, then 228" on a plan whose only forward level was T1
+# 189.63. "190" is legitimate (189.63 in display form IS 190). "228" was
+# invented whole, and it passed every gate:
+#
+#   * the whitelist rule (validate_copy step 5) asks "is this number in the
+#     packet", and 228 WAS in the packet, as a 52-week-high chart fact. A number
+#     can be true as a fact and a fabrication as a target;
+#   * `price_slot_tokens` only recognises entry / target / t1 / t2 / stop /
+#     below / above / under / over / at / near. "leaning toward 190" and "then
+#     228" are target language that no slot word introduces, so the level arm
+#     never looked at either token.
+#
+# This gate closes the SEMANTIC half the whitelist cannot see: a number the post
+# asks the reader to aim at must come from the plan's own forward levels
+# (entry / t1 / t2 / invalidation / stop), not from anywhere else in the packet.
+# Rejection reason carries the literal token `invented_level` so the drop stage
+# is greppable in the nightly report.
+#
+# THE LADDER IS THE WHOLE POINT. "190, then 228" is two targets, and only the
+# first is introduced by a target word. So a hit licenses a scan forward through
+# `then` / `and then` / `next` continuations, each of which inherits the target
+# semantics of the number it follows. `then` is NOT a target word on its own —
+# "held for three sessions, then gave it back" must stay legal — which is why it
+# only fires as a continuation of a slot that already matched.
+_TARGET_SLOT_RE = re.compile(
+    r"\b(?:targets?|targeting|t1|t2|tp\d?|entry|stop|toward|towards|"
+    r"looking for|aiming for|up to|en route to)\b"
+    r"[\s:=]*\$?\s*"
+    r"(\d+(?:,\d{3})*(?:\.\d+)?)(?![\d.]*\s*(?:%|x\b))",
+    re.IGNORECASE,
+)
+_TARGET_LADDER_RE = re.compile(
+    r"\A[\s,]*(?:and\s+)?(?:then|next)\s+\$?\s*"
+    r"(\d+(?:,\d{3})*(?:\.\d+)?)(?![\d.]*\s*(?:%|x\b))",
+    re.IGNORECASE,
+)
+
+#: The ctx fields that ARE the plan's forward levels. Nothing else licenses a
+#: target: `numbers_whitelist` deliberately does not appear here, because the
+#: whole defect is a chart fact being promoted to a price objective.
+_LEVEL_CTX_KEYS: tuple[str, ...] = (
+    "entry_str", "t1_str", "t2_str", "inv_str", "stop_str", "target_str",
+)
+
+
+def allowed_level_tokens(ctx: dict) -> set[str]:
+    """Every display form of this item's forward levels. Empty set = no levels.
+
+    Both the display string the packet carries and the display form of its own
+    numeric value, so a model that writes "190" against a t1_str of "190" and a
+    model that writes "189.63" against the same level both clear. Nothing else
+    widens the set.
+    """
+    out: set[str] = set()
+    for key in _LEVEL_CTX_KEYS:
+        raw = str((ctx or {}).get(key) or "").strip()
+        if not raw:
+            continue
+        out.add(raw)
+        val = _finite(raw.replace(",", ""))
+        if val is not None:
+            out.add(f"{val:.2f}")
+            disp = format_display_price(val)
+            if disp:
+                out.add(disp)
+    return out
+
+
+def _level_is_allowed(token: str, allowed: set[str]) -> bool:
+    """True when *token* is one of the packet's levels, or rounds to one."""
+    tok = str(token or "").strip()
+    if tok in allowed:
+        return True
+    val = _finite(tok.replace(",", ""))
+    if val is None:
+        return False
+    if f"{val:.2f}" in allowed:
+        return True
+    disp = format_display_price(val)
+    return bool(disp and disp in allowed)
+
+
+def invented_level_violations(text: str, ctx: dict) -> list[str]:
+    """A target/level the fact packet never carried. [] = clean.
+
+    Fires on the number, not on the sentence: a post may carry as many levels as
+    its budget allows, provided every one of them came from the plan.
+
+    TWO STRICTNESSES, and which one applies is a property of the ITEM.
+
+    * The item HAS forward levels (a signal, a receipt, anything build_context
+      gave an entry / t1 / t2 / invalidation / stop). Then a target must be one
+      of THOSE. This is the $TPR case exactly: 228 was a legitimate 52-week-high
+      fact sitting in `numbers_whitelist`, and promoting a fact to a price
+      objective is the fabrication, not the number itself.
+    * The item has NO forward levels (a chart or macro post: there is no plan to
+      contradict). Then the bar falls back to the packet's own numbers, which is
+      the honest bar available. It still closes half the hole, because the
+      target LANGUAGE this gate reads ("toward 228", "then 260") is language no
+      slot word introduces, so `price_slot_tokens` never looked at those tokens
+      on any kind of item.
+
+    Deliberately never says the word "whitelist": callers grep violation lists
+    by substring to tell a licensing failure from a budget failure, and this is
+    a third thing from either.
+    """
+    src = str(text or "")
+    levels = allowed_level_tokens(ctx)
+    allowed = levels or {str(n) for n in ((ctx or {}).get("numbers_whitelist") or [])}
+    source = "this item's plan levels" if levels else "this item's fact packet"
+    out: list[str] = []
+    seen: set[str] = set()
+
+    def _report(tok: str) -> None:
+        if tok in seen or _level_is_allowed(tok, allowed):
+            return
+        seen.add(tok)
+        have = ", ".join(sorted(allowed)) if allowed else "none"
+        out.append(
+            f"invented_level '{tok}': a level the reader is asked to aim at has "
+            f"to come from {source} (this item carries: {have}). Write the level "
+            f"you were given or write no level at all"
+        )
+
+    for m in _TARGET_SLOT_RE.finditer(src):
+        nxt = re.match(r"\s*([A-Za-z']+)", src[m.end():])
+        if nxt and nxt.group(1).lower() in _SLOT_NON_LEVEL_NOUNS:
+            continue  # a duration or a tally, not a level
+        _report(m.group(1))
+        # Walk the ladder: "190, then 228, then 260" is three targets.
+        pos = m.end()
+        while True:
+            step = _TARGET_LADDER_RE.match(src[pos:])
+            if not step:
+                break
+            after = re.match(r"\s*([A-Za-z']+)", src[pos + step.end():])
+            if not (after and after.group(1).lower() in _SLOT_NON_LEVEL_NOUNS):
+                _report(step.group(1))
+            pos += step.end()
+    return out[:3]
+
+
 def validate_copy_v2(
     text: str,
     ctx: dict,
@@ -1907,6 +2849,8 @@ def validate_copy_v2(
       sibling divergence         gate 3(b) — one fact on two accounts
       batch opener collision     gate 3(i) — "Watching $X right now" x3
       batch body duplication     gate 3(i) — same sentence, different opener
+      invented level             autopsy 5 — "toward 190, then 228" off-packet
+      repeated closer            autopsy 6 — the same tail 5x in 7 days
 
     `text` is the SHAPED post (it may contain newlines). `headline` is optional
     and only for callers that already split: passing a non-empty one on any
@@ -1937,6 +2881,24 @@ def validate_copy_v2(
         text, sibling_texts if sibling_texts is not None else ctx.get("sibling_texts")))
     violations.extend(batch_stem_violations(text, batch_texts))
     violations.extend(batch_body_duplicate_violations(text, batch_texts))
+    violations.extend(stock_closer_violations(text, batch_texts))
+    violations.extend(lecture_violations(text))
+    # The batch the operator graded F, by construction (2026-07-30). Each of
+    # these rejects a form they quoted back verbatim; see the module docstring
+    # above _MACHINE_RISK_PATTERNS.
+    violations.extend(motto_violations(text))
+    violations.extend(process_list_violations(text))
+    # `shape` is threaded so the budget matches the contract the model was
+    # handed (autopsy defect 2): a stack ordered to escalate across three
+    # numbers was being rejected by a flat budget of two.
+    violations.extend(number_soup_violations(
+        text, kind=str(ctx.get("type") or ""), shape=shape))
+    violations.extend(no_reaction_violations(text))
+    # Autopsy defect 5: a target that came from nowhere in the packet.
+    violations.extend(invented_level_violations(text, ctx))
+    # Autopsy defect 6: the same final sentence this account used inside the
+    # 7-day durable history `recent` already carries for the frequency caps.
+    violations.extend(repeated_closer_violations(text, recent))
     return violations
 
 
@@ -2031,61 +2993,72 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     # it) AND an honesty caveat (historical / graded / publicly) so validate_copy
     # passes. Keep both, keep it human, keep it dry (doctrine v3).
     ("signal", "authoritative desk"): [
+        # LEVELS LIVE ON THE CHART, NOT IN THE COPY (operator 2026-07-30).
+        # Every body in this family used to print entry + target + stop and then
+        # close on a compliance caveat. Three prices in 275 chars is the "number
+        # soup" the operator named ("shut up with all of these numbers, its
+        # literally so AI like"), and "I'm wrong below {inv}" drew "no human will
+        # ever say that". Since every ticker post now ships a chart by law, the
+        # picture carries the levels and the copy carries ONE number and a
+        # reaction that costs the writer something. number_soup_violations and
+        # machine_risk_violations reject the old bodies outright, so these are
+        # not a style preference — the previous bank could no longer ship.
         (
             "Flagged {cashtag} at {entry}",
-            "{top_fact}. In at {entry}, first target {t1}. "
-            "Closes back below {inv} and I'm wrong, I'm out. Historical odds, not a promise.",
+            "{top_fact}. Flagged at {entry}. I've talked myself out of setups that "
+            "looked exactly like this and regretted it, so I'm not being clever here.",
         ),
         (
             "{cashtag} | {entry} is the line",
-            # WAS "We're long from {entry}" — a first-person POSITION claim, on
-            # the flagship's live signal copy, in direct breach of AM-R1's first
-            # hard line. It shipped because AM-R1 was prose in a spec file that
-            # nothing read; the widened detectors (XG-W1) caught it on their
-            # first sweep of this bank. "We called it at" is the house framing
-            # and the honest one: we publish graded CALLS, we never claim to
-            # hold a position.
-            "{top_fact}. We called it at {entry}, looking for {t1}. "
-            "Below {inv} the idea's dead and so is my interest. Win or lose, the result posts publicly.",
+            # "We called it at" is the house framing and the honest one: we
+            # publish graded CALLS, we never claim to hold a position. (WAS
+            # "We're long from {entry}", a first-person position claim in breach
+            # of AM-R1's first hard line.)
+            "{top_fact}. We called it at {entry}. If it loses that the whole read "
+            "was noise, and I'd rather find that out than talk myself into it.",
         ),
         (
             "{cashtag} setting up again",
-            "{top_fact}. Entry {entry}, target {t1}. "
-            "A close below {inv} kills it, no debate. Historical, not a promise.",
+            "{top_fact}. Bases like this fail more often than they work and I keep "
+            "having to remind myself of that before I get comfortable.",
         ),
         (
             "Adding {cashtag} around {entry}",
-            "{top_fact}. First take {t1}. Closes below {inv} and I take the loss. "
-            "The market doesn't care about my thesis. Historical odds only.",
+            "{top_fact}. In around {entry}. I don't have a tidy explanation for why "
+            "now and I'm not going to invent one.",
         ),
         (
             "{cashtag} at {entry}. Simple read.",
-            "{top_fact}. Target {t1}, out below {inv}. "
-            "No story, just levels. Graded either way.",
+            "{top_fact}. Levels are on the chart. I've been early on this name before "
+            "and it cost me, so I'm taking it slower this time.",
         ),
     ],
 
     # ── signal / dry, receipts-forward ───────────────────────────────────────
     ("signal", "dry, receipts-forward"): [
+        # A template asserts the same sentence about every ticker it renders, so
+        # it may never carry a FACT of its own — no invented streak, no "my last
+        # three went flat". Only {top_fact} and the packet's numbers are true.
+        # The costly reaction has to come from stance, not fabricated history.
         (
             "{cashtag}, in at {entry}",
-            "{top_fact}. Entry {entry}. T1 {t1}. Out on a close below {inv}. "
-            "Result gets posted either way. Historical, not a promise.",
+            "{top_fact}. In at {entry}. I'd rather be early and quiet about it than "
+            "loud and right for one afternoon.",
         ),
         (
-            "{cashtag} | {entry} entry, {t1} target",
-            "{top_fact}. The numbers: in {entry}, first take {t1}, dead below {inv}. "
-            "No adjectives. The result posts publicly when it resolves.",
+            "{cashtag} | the call is out there",
+            "{top_fact}. It gets published whether it works or not. That's the only part "
+            "of this I actually control.",
         ),
         (
             "{cashtag} flagged at {entry}",
-            "{top_fact}. Entry {entry}, target {t1}, stop below {inv}. "
-            "Everything else is commentary. Historical odds, no guarantees.",
+            "{top_fact}. Flagged at {entry}. No adjectives, and no interest in "
+            "defending it if the chart stops cooperating.",
         ),
         (
-            "New line: {cashtag} at {entry}",
-            "{top_fact}. T1 {t1}. Below {inv} it's over and the loss goes up "
-            "like everything else. Historical, not certain.",
+            "New line: {cashtag}",
+            "{top_fact}. Out in public now, so if it doesn't work I don't get to quietly "
+            "forget I said it.",
         ),
     ],
 
@@ -2093,48 +3066,51 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("signal", "specialist"): [
         (
             "{cashtag} at {entry}, and the group's confirming",
-            "{top_fact}. The rest of the space is moving with it, which is what I want. "
-            "In {entry}, first level {t1}. Below {inv} I'm out. Historical, not a promise.",
+            "{top_fact}. The rest of the space is moving with it. I've been burned "
+            "assuming the group carries the laggard, so I'm watching more than acting.",
         ),
         (
             "{cashtag} | the setup I wait for in this group",
-            "{top_fact}. One name is noise, the group moving is a message. "
-            "Entry {entry}, target {t1}. A close below {inv} ends it. Win or lose, the result posts publicly.",
+            "{top_fact}. One name moving is noise. I ignored this exact tell earlier "
+            "in the year because I thought I knew better.",
         ),
         (
             "{cashtag} in my corner at {entry}",
-            "{top_fact}. These names don't do this on nothing. Entry {entry}, T1 {t1}, "
-            "gone below {inv}. Historical odds, sizing beats conviction.",
+            "{top_fact}. In around {entry}. This is my group and that makes me softer "
+            "on it than I should be, which I'm trying to account for.",
         ),
         (
-            "{cashtag} at {entry} | the group told me first",
-            "{top_fact}. The space has been leaning this way for days. In {entry}, "
-            "first take {t1}. Below {inv} I was wrong. Historical, not certain.",
+            "{cashtag} | the group got there first",
+            "{top_fact}. The space has been leaning this way for a while and I was "
+            "slow to it. Adding it to the list of things I was too clever about.",
         ),
     ],
 
     # ── signal / educational ──────────────────────────────────────────────────
     ("signal", "educational"): [
+        # "educational" is a VOICE here, not a lesson. The operator: "no one likes
+        # being lectured... education posts show YOUR OWN working on something
+        # real". So this family shows the writer's own reasoning and its cost; it
+        # never explains a concept to the reader.
         (
             "A live one: {cashtag} at {entry}",
-            "{top_fact}. Setups in the abstract are easy, so here's a real one. "
-            "Entry {entry}, target {t1}. What proves me wrong: a close below {inv}. "
-            "The result posts publicly either way.",
+            "{top_fact}. In around {entry}. Setups in the abstract are easy and I've "
+            "been humbled plenty of times by ones that looked this clean.",
         ),
         (
-            "{cashtag} | what a setup actually looks like",
-            "{top_fact}. That's why {ticker} made the watch list. Entry {entry}, T1 {t1}, "
-            "out below {inv}. The stop is the whole risk plan. Historical, not a guarantee.",
+            "{cashtag} | this is the one I'd have skipped",
+            "{top_fact}. A year ago I'd have passed on this because it looked too "
+            "quiet. That habit cost me more than any single bad trade did.",
         ),
         (
             "Most days nothing qualifies. {cashtag} does.",
-            "{top_fact}. Entry {entry}, first target {t1}. "
-            "A close below {inv} and I was wrong, simple as that. Historical odds, not a promise.",
+            "{top_fact}. Most days I look at this list and do nothing, and the days "
+            "I forced something are the ones I'd take back.",
         ),
         (
-            "{cashtag} at {entry} | watch it with me",
-            "{top_fact}. Target {t1}, out below {inv}. Everyone has a target, "
-            "the stop is what makes it a trade. Graded either way.",
+            "{cashtag} at {entry} | watching it with you",
+            "{top_fact}. In around {entry}. I'll be wrong in public on some of these "
+            "and I'd rather that than quietly deleting the ones that don't work.",
         ),
     ],
 
@@ -2142,23 +3118,23 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("signal", "fast, reactive"): [
         (
             "{cashtag} moving. In at {entry}",
-            "{top_fact}. T1 {t1}. Quick out below {inv}. "
-            "On the board, graded either way.",
+            "{top_fact}. In at {entry}. Fast ones are where I make my worst "
+            "decisions, so I'm going smaller than the chart is tempting me to.",
         ),
         (
             "{cashtag} | live at {entry}",
-            "{top_fact}. Target {t1}. Below {inv} I'm gone. "
-            "Historical, no guarantees.",
+            "{top_fact}. Live at {entry}. Chasing this kind of move has cost me "
+            "before and I'm aware I'm close to doing it again.",
         ),
         (
-            "{cashtag} | {entry}, right now",
-            "{top_fact}. First take {t1}, dead below {inv}. "
-            "Size small, this is historical not certain.",
+            "{cashtag}, right now",
+            "{top_fact}. Levels are on the chart. Half of these fade by the close "
+            "and I've never once been good at telling which half in advance.",
         ),
         (
             "{cashtag} triggering at {entry}",
-            "{top_fact}. Looking for {t1}. Stop's below {inv}. "
-            "Posted and graded either way.",
+            "{top_fact}. Triggered around {entry}. Saying it out loud now so I can't "
+            "pretend later that I only liked the ones that worked.",
         ),
     ],
 
@@ -2166,23 +3142,23 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("signal", "pattern/history"): [
         (
             "{cashtag} is tracing something I've seen before",
-            "{top_fact}. Same shape as the last real run in {ticker}. In at {entry}, "
-            "target {t1}. A close below {inv} breaks the rhyme and I'm out. Graded either way.",
+            "{top_fact}. In around {entry}. I've read a shape like this correctly "
+            "and I've read one exactly like it wrong, which keeps me honest.",
         ),
         (
-            "{cashtag} | the precedent's worth a look at {entry}",
-            "{top_fact}. History doesn't repeat but it leaves charts. Entry {entry}, "
-            "T1 {t1}, out below {inv}. Historical odds, not prophecy.",
+            "{cashtag} | the precedent's worth a look",
+            "{top_fact}. History doesn't repeat but it leaves charts. It also leaves "
+            "the ones I pattern-matched into a loss, and I remember those better.",
         ),
         (
             "{cashtag} | pattern's live at {entry}",
-            "{top_fact}. Last time it looked like this the move followed. Target {t1}. "
-            "Below {inv} the pattern's done and so am I. Historical, not certain.",
+            "{top_fact}. Live around {entry}. The last time I leaned hard on this "
+            "shape it went nowhere for ages and I got bored out of it.",
         ),
         (
-            "{cashtag} at {entry}, same old song",
-            "{top_fact}. The shape has a track record. First level {t1}, stop below {inv}. "
-            "Rhyme, not repeat, and historical rhymes aren't guarantees.",
+            "{cashtag}, same old song",
+            "{top_fact}. Levels are on the chart. I trust the shape more than I "
+            "should and I'd rather say that out loud than pretend otherwise.",
         ),
     ],
 
@@ -2222,7 +3198,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{ticker} | where it stands",
-            "{top_fact}. {cashtag} at {entry}. Make of it what you will. I know what I make of it.",
+            "{top_fact}. {cashtag} at {entry}. I like it here and I've been wrong liking "
+            "things here before.",
         ),
         (
             "{cashtag} | the tape",
@@ -2459,7 +3436,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} That sets the tone for everything else today.",
         ),
         (
-            "One thing worth watching up top",
+            "One thing worth watching at these highs",
             "{top_fact} How this resolves decides how much risk I want on.",
         ),
         (
@@ -2477,7 +3454,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} I'll update when the picture shifts, not when the coverage does.",
         ),
         (
-            "Where things stand up top",
+            "Where things stand at the highs",
             "{top_fact} Staying selective on risk until this clears.",
         ),
         (
@@ -2535,7 +3512,7 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} Short version, no panel discussion required.",
         ),
         (
-            "What just shifted up top",
+            "What just shifted at the highs",
             "{top_fact} Market's still chewing. Watching the reaction more than the print.",
         ),
         (
@@ -2572,8 +3549,11 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | {gain} on {target_label}",
-            "Entry {entry}, {target_label} at {t1}, {gain}. "
-            "Next level is {t2}, or the stop takes it. Either is fine.",
+            # No first-person POSITION or P&L claim here (AM-R1): we publish
+            # graded CALLS, we never say we traded one. "I trimmed earlier than
+            # I meant to" was the first draft and the dial caught it.
+            "Entry {entry}. {target_label} hit, {gain}. I nearly talked myself out "
+            "of calling this one, so I'm taking no credit for the timing.",
         ),
         (
             "{cashtag} stopped out, {loss}",
@@ -2589,7 +3569,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("receipt", "dry, receipts-forward"): [
         (
             "{cashtag} | {target_label}: {gain}",
-            "Entry {entry}. {target_label} at {t1}, {gain}. On the page.",
+            "Entry {entry}. {target_label} hit, {gain}. Posted the losing ones too, which "
+            "is the only reason this one counts for anything.",
         ),
         (
             "{cashtag} stopped, {loss}",
@@ -2645,14 +3626,15 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "{cashtag} | said we'd post it, here it is",
-            "Entry {entry}. {target_label} at {t1}, {gain}. "
-            "The promise was the posting, not the winning.",
+            "Entry {entry}, {gain}. I said I'd post these whichever way they went, "
+            "and the ones I'd rather skip are why that promise was worth making.",
         ),
     ],
     ("receipt", "fast, reactive"): [
         (
             "{cashtag} | {target_label} tagged, {gain}",
-            "Entry {entry}. {t1} hit. {gain}. On the page, moving on.",
+            "Entry {entry}. Target hit, {gain}. Moving on before I start believing I'm "
+            "smarter than the tape.",
         ),
         (
             "{cashtag} stopped, {loss}",
@@ -3080,8 +4062,9 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
             "{top_fact} On the list, not in. I'll post when it triggers.",
         ),
         (
-            "{cashtag} on the radar, not the board",
-            "{top_fact} Tracking it. Setup unfinished.",
+            "{cashtag} is on my radar",
+            "{top_fact} Tracking it, nothing more. I have a habit of getting attached at "
+            "this stage and it rarely helps.",
         ),
         (
             "{cashtag} close, not triggered",
@@ -3277,7 +4260,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("event", "dry, receipts-forward"): [
         (
             "Today's event, numbers first",
-            "{top_fact} A few of my names care. Watching them, not the panel discussion.",
+            "{top_fact} A few of my names actually care about this one. I usually "
+            "overestimate how much the rest of them do.",
         ),
         # Template sentences must stay FACT-NEUTRAL: "the board barely moved" /
         # "not much drama in the numbers" are claims about the day that the
@@ -3311,13 +4295,15 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "My take on the group's reaction",
-            "{top_fact} The names voted. I read the votes, not the speeches.",
+            "{top_fact} The names have already voted on it. I've misread that vote enough "
+            "times to hold the read loosely.",
         ),
     ],
     ("event", "educational"): [
         (
-            "What today's event actually means",
-            "{top_fact} Watch how it gets priced, not how it gets covered. Different jobs.",
+            "How the group took today's event",
+            "{top_fact} The pricing and the coverage rarely agree, and I keep learning that "
+            "the hard way.",
         ),
         (
             "Why markets moved on this",
@@ -3336,7 +4322,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
     ("event", "fast, reactive"): [
         (
             "What just happened",
-            "{top_fact} Fast take. Watching the follow-through, not the replays.",
+            "{top_fact} Fast take, so discount it accordingly. My same-day reads are the "
+            "ones I revise most.",
         ),
         (
             "Quick read on today",
@@ -3362,7 +4349,8 @@ _TEMPLATES: dict[tuple[str, str], list[tuple[str, str]]] = {
         ),
         (
             "What happened last time we saw this",
-            "{top_fact} The setup into it has precedent. The reaction is the part history grades.",
+            "{top_fact} The setup into it has precedent. The reaction never does, and I "
+            "keep forgetting that part.",
         ),
         (
             "The usual pattern after days like this",
@@ -4015,8 +5003,24 @@ def write_posts_llm(
             "'the engine', 'the system'.\n"
             "- Every post carries a level, a take, or a real question. 'Here's the chart, "
             "thoughts?' gives nothing. Give a stance: watching, leaning, respecting, "
-            "fading, waiting, not chasing. Down movers: 'watching for a bottom setup, not "
-            "catching it yet.' Up movers: 'strength worth respecting, not chasing here.'\n"
+            "fading, waiting, not chasing. Down movers admit you aren't trying to catch "
+            "the bottom yet; up movers respect the move without chasing it. Phrase that "
+            "stance FRESH every single time — these two are banned as written: 'strength "
+            "worth respecting, not chasing here' and 'watching for a bottom setup, not "
+            "catching it yet'. They were house boilerplate and the reader noticed.\n"
+            "- NEVER LECTURE. This is the fastest way to lose a follower. Say what YOU "
+            "did and what YOU are watching. Never tell the reader what they should do, "
+            "what they are getting wrong, or what 'most people' fail to grasp. Banned "
+            "outright: 'most people', 'nobody talks about', 'anyone can', 'than anyone "
+            "admits', 'you should', 'you need to', 'if you can't', \"you're not\".\n"
+            "  Wrong: \"If you can't name what proves you wrong, you're not managing "
+            "risk. You're waiting for the market to explain it with your money.\"\n"
+            "  Right: \"Turns out doing nothing is still a position. I didn't take a "
+            "trade, so there's no win or loss to dress up.\"\n"
+            "- No ego. You are not the smartest person in the room and you never imply "
+            "it. Curiosity and honest uncertainty beat authority — 'I'm not sure yet' is "
+            "a real post and a strong one. A genuine question to the reader is welcome; "
+            "a rhetorical question that sets up your own superior answer is not.\n"
             "- The default humor is deadpan understatement ('Ugly.' 'Not ideal.' 'That "
             "settles that.'). Most posts carry zero jokes; when wit shows up it carries "
             "the read, it never decorates it. One dry line, never two.\n"
@@ -4097,13 +5101,15 @@ def write_posts_llm(
             "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
             "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
             "everywhere, kickers like 'without the noise'.\n\n"
-            "EXEMPLARS (this is the target voice):\n"
+            "EXEMPLARS — these show REGISTER, not vocabulary. Never reuse a sentence "
+            "from them verbatim; write your own line at this pitch. (The old exemplars "
+            "ended on two fixed closers and every post came back wearing them.)\n"
             "- Signal: \"Flagged $AMKR at 41.20, first target 46.80. Closes back under "
             "41 and I'm wrong, I'm out. Historical odds, not a promise.\"\n"
             "- Down mover: \"$ISRG down 14% today. The dip buyers get to find out who "
-            "was early. Watching for a bottom setup, not catching it yet.\"\n"
+            "was early. I'd rather be late here than early.\"\n"
             "- Up mover: \"$VST up 9% and every target on the street just got lapped. "
-            "Strength worth respecting, not chasing here.\"\n"
+            "Nice for anyone already in. I'm not paying this price.\"\n"
             "- Theme list: \"Solar names bleeding again. $ENPH -4.2% $SEDG -5.1% "
             "$RUN -3.8% $FSLR -2.9%. Rate cuts were supposed to fix this. Which one's "
             "actually washed out?\"\n"
@@ -4111,8 +5117,14 @@ def write_posts_llm(
             "victory lap, the runner's still working.\"\n"
             "- Receipt (loss): \"Stopped out of $COIN at 198, -3.1%. Tuition paid. "
             "Next.\"\n"
-            "- Education: \"Everyone has a target. Almost nobody has a stop. The stop "
-            "is the part that decides whether you're trading or hoping.\"\n"
+            # The old education exemplar ("Everyone has a target. Almost nobody has a
+            # stop…") was the lecture register in one line, and the whole education
+            # kind came back sounding like it. Education = your own working today,
+            # not a rule for the reader.
+            "- Education (show YOUR working on something real today, never a lesson): "
+            "\"Turns out doing nothing is still a position. I didn't take a trade, so "
+            "there's no win or loss to dress up. Cash stayed cash, which beat forcing "
+            "a setup just to feel productive.\"\n"
             "- Macro: \"Growth prints keep coming in soft while inflation sits there "
             "being inflation. The soft-landing crowd went quiet this week. Patience "
             "over heroics.\"\n"
@@ -4123,8 +5135,39 @@ def write_posts_llm(
             + "\n- Use ONLY numbers from each item's numbers_whitelist, verbatim. "
             "Never invent or recompute a number.\n"
             "- Each item's cashtag(s) must appear. Body <= 275 chars. Headline <= 90 chars.\n"
-            "- Signal posts must keep an invalidation line (what would prove you wrong) "
-            "and an honesty caveat ('historical, not a guarantee').\n"
+            "- COMMITMENT IS A COST, AND IT IS THE ONE YOU KEEP SKIPPING. Most of "
+            "these posts are about names the desk does NOT hold, so the lazy cost is "
+            "always 'I'm not in it': two live runs under this prompt produced eight "
+            "posts each in which SEVEN were some flavour of missed it / passed on it "
+            "/ been early / watched it go without me. That is as bot-written as any "
+            "repeated closer, and a desk that only ever reports being outside the "
+            "move sounds like it is never right about anything.\n"
+            "  For a name you don't hold, the cost that works is going ON RECORD: "
+            "say plainly what you would need to see, or what would make you drop it, "
+            "and accept being publicly wrong. \"314 is the line. If it goes, I was "
+            "early and I'll say so.\" That costs you something and it is not regret.\n"
+            "  AT MOST ONE POST IN THREE may say you were late, passed, or missed "
+            "it. Rotate through the others instead:\n"
+            "    * no clean explanation, and you won't invent one\n"
+            "    * your read was flatly wrong\n"
+            "    * a position hurt (tuition paid, stopped out)\n"
+            "    * you still don't know, and say so\n"
+            "    * you like it and admit that makes you soft on it\n"
+            "    * you're committing to a level and can be wrong in public\n"
+            "- NEVER write that a number proves YOU wrong. 'I'm wrong below 33.8', "
+            "'30.9 proves me wrong', 'X is my trigger' are banned outright — no human "
+            "talks like this. Risk belongs to the SETUP and only when it's the point: "
+            "'if it loses 33.8 the whole thing was noise' is a person. And the "
+            "compliance caveats are banned too: 'historical, not a guarantee', 'one "
+            "pattern isn't a guarantee', 'past performance', 'size appropriately'. An "
+            "honest caveat that COSTS you ('I've been early on this twice already') is "
+            "the good version.\n"
+            "- ONE number per post, and only when the number IS the point. Two prices "
+            "in a sentence is number soup and reads as AI on sight. A post with zero "
+            "numbers and one honest reaction beats a post with four numbers and none.\n"
+            "- No motto cadence. Terse symmetrical two-beat lines ('37.1 is my trigger, "
+            "30.9 proves me wrong') read like fortune cookies. No numbered lists of your "
+            "own process ('1. I write down the market's story. 2. I note the fact...').\n"
             "- No two headlines in the batch may share their opening words or shape.\n\n"
             "OUTPUT: a JSON array, same length and order as the input, each object "
             "exactly {\"headline\": str, \"body\": str}. No markdown, no preamble."
@@ -4423,12 +5466,97 @@ def _anti_exemplar_block() -> str:
     return "\n".join(out)
 
 
+# THE PAYLOAD CONTRACT (autopsy defect 3, 2026-07-31).
+#
+# `_v2_item_payload` shipped `codex{worldview, franchises, restraint,
+# open_promises, worn_out_phrases}`, `franchise`, `lead_with`, `pack`,
+# `win_rate`, `example_lines` and the four plan levels into every user turn, and
+# the system prompt named NONE of them. Verified programmatically: a scan of the
+# prompt text for each key returned zero hits for all of the above. The model
+# received a persona codex, a phrase-fatigue list and a promise ledger with no
+# statement of what any of them BIND, which is worse than not sending them: an
+# unexplained JSON key is read as decoration, and `worn_out_phrases` read as
+# decoration is a list of phrases the model may cheerfully reuse.
+#
+# So the prompt now carries a line per key saying what force it has. This tuple
+# is the authoritative list and the prompt is checked against it by
+# `tests/test_marketing_copy_v2.py`: a key added to the payload without a
+# contract line turns that test red, which is the only mechanism that keeps a
+# payload and a prompt from drifting apart again. Nested keys are listed with
+# their parent's name because that is how they appear in the JSON the model
+# reads.
+V2_PAYLOAD_CONTRACT_KEYS: tuple[str, ...] = (
+    "account", "persona", "kind", "shape", "shape_contract", "angle",
+    "cashtag", "cashtags", "facts", "entry", "t1", "t2", "invalidation",
+    "win_rate", "numbers_whitelist", "pack", "lead_with", "sibling_texts",
+    "franchise", "codex",
+    # nested
+    "text", "count", "example_lines", "worldview", "franchises", "restraint",
+    "open_promises", "worn_out_phrases",
+)
+
+_V2_PAYLOAD_CONTRACT_BLOCK = (
+    "PAYLOAD CONTRACT. Your item is a JSON object. Every key in it binds you, "
+    "and this is exactly how:\n"
+    "- account: which desk is posting. It is not content; never name it.\n"
+    "- persona.voice: the register you write in. It is the card below, in "
+    "short form.\n"
+    "- persona.example_lines: lines this person has actually written. "
+    "Calibration for the register, never lines to reuse or paraphrase.\n"
+    "- kind: what class of post this is (signal, chart, receipt, macro, "
+    "earnings, wire...). It sets what the post is FOR.\n"
+    "- shape / shape_contract: the form, assigned. Write exactly that form; the "
+    "contract text is repeated in the item so you cannot miss it.\n"
+    "- angle: the job this post does. Write that job.\n"
+    "- cashtag / cashtags: the tickers this post is about. If a cashtag is "
+    "present it must appear in the post, spelled exactly as given.\n"
+    "- facts / facts[].text: what our engine actually computed, already in "
+    "display form. These are the ONLY facts you may state.\n"
+    "- facts[].count: a count's numerator AND its denominator, as fields so you "
+    "never have to guess one. If you use the count you write both.\n"
+    "- entry / t1 / t2 / invalidation: this item's plan levels. A number you "
+    "ask the reader to aim at, buy at or bail at comes from THESE four and "
+    "nowhere else, not from facts, not from the whitelist, not from arithmetic "
+    "of your own. A target we did not give you is a fabricated trade and the "
+    "post is rejected for it.\n"
+    "- win_rate: the base rate behind this setup. When it is present, IT is the "
+    "hedge. Print it and let it carry the uncertainty; you need no other "
+    "caveat, and a caveat instead of the number is a worse post.\n"
+    "- numbers_whitelist: every number you are allowed to type, verbatim. Not a "
+    "list of numbers to use, a fence around the ones that exist.\n"
+    "- pack: streak rarity, since-dates and 52-week distance when we have them. "
+    "Context you may lean on; never a level.\n"
+    "- lead_with: this post exists because THIS fact fired. Open from it. If it "
+    "is present and your first line is about something else, the post is wrong "
+    "however good the line is.\n"
+    "- sibling_texts: what another desk already posted about this same fact "
+    "today. Share no six-word run with any of them.\n"
+    "- franchise: a recurring format this desk owns. Its `contract` is what the "
+    "format requires of you; its `rule`, when present, is a hard condition, not "
+    "advice.\n"
+    "- persona: the whole card this desk posts as. The two keys above are its "
+    "working parts and the card is spelled out again further down.\n"
+    "- codex: this person's cognitive layer, five keys deep:\n"
+    "- codex.worldview: how this person actually reads markets. It decides what "
+    "they NOTICE in the facts, which is upstream of how they say it.\n"
+    "- codex.franchises: the formats this person is known for.\n"
+    "- codex.restraint: what this person will not do. It outranks anything you "
+    "think would be funnier.\n"
+    "- codex.open_promises: things this account said it would follow up on. A "
+    "callback to your own earlier post is the most human move available to you "
+    "here, and almost nothing else on this list buys as much credibility. If "
+    "one of these fits tonight's fact, close the loop out loud.\n"
+    "- codex.worn_out_phrases: wording this account has already used to death. "
+    "Banned for this post. Not discouraged, banned.\n\n"
+)
+
+
 #: The v2 system prompt. v1's persona/voice/clarity/ban content is the base
 #: (masterplan §4: "v1's system prompt content is the base"); what is NEW is the
 #: shape contract, the angle, the sibling-divergence rule, the denominator law,
-#: the rounding examples, the corpus shape truth, and the anti-exemplars. What
-#: is GONE is v1's two-line assumption and its batch-JSON framing — this prompt
-#: writes ONE post.
+#: the rounding examples, the corpus shape truth, the anti-exemplars, the
+#: payload contract and the per-account persona section. What is GONE is v1's
+#: two-line assumption and its batch-JSON framing — this prompt writes ONE post.
 _V2_SYSTEM_PROMPT_BASE = (
     "You're a trader posting on X. Not a research desk, not a brand, not a "
     "model. You've lost real money before and you find the whole circus mildly "
@@ -4439,6 +5567,8 @@ _V2_SYSTEM_PROMPT_BASE = (
     "You write ONE post. The item you are given carries the account's persona, "
     "the facts our engine computed, the shape this post must take, and the "
     "angle it must work. The engine decides WHAT. You decide how it is said.\n\n"
+
+    + _V2_PAYLOAD_CONTRACT_BLOCK +
 
     "SHAPE IS ASSIGNED, NOT CHOSEN. Your item names one of these and you write "
     "exactly that:\n"
@@ -4490,12 +5620,34 @@ _V2_SYSTEM_PROMPT_BASE = (
     "68% of real posts use bare integers; strict two-decimal figures appear in "
     "5.9%. Over-precision is the loudest bot tell in this business.\n\n"
 
+    # THIS BLOCK USED TO PRESCRIBE WHAT THE VALIDATOR KILLS (autopsy defect 1,
+    # 2026-07-31). It ordered the model to write 'not financial advice', 'size
+    # appropriately' and 'do your own work' on any signal post with no base
+    # rate, while the HARD BANS block sixty lines down banned compliance caveats
+    # and `machine_risk_violations` rejects both of the first two by regex. The
+    # model was being told, in one system prompt, to write the phrase that would
+    # get its post repaired and then dropped: a guaranteed repair turn, a
+    # guaranteed validate-stage drop, and no way for an obedient model to win.
+    # The honest-uncertainty move is expressed in the house's own voice now: a
+    # condition to watch, a level that changes the read, or an admission of what
+    # the writer does not know. Every example below clears every gate in this
+    # module, which is the property `tests/test_marketing_copy_v2.py`'s
+    # prompt-vs-its-own-bans scan exists to keep true.
     "HEDGES MUST BIND. An uncertainty tail may only be about a stat that is "
     "actually in the post: 'that 78% is history, not a promise' needs the 78%. "
     "A floating 'Historical, not a promise.' on a post with no base rate is "
-    "banned. On a signal post with no base rate, be honest about what you will "
-    "DO instead: 'not financial advice', 'size appropriately', 'I'll post how "
-    "it ends either way', 'do your own work'.\n\n"
+    "banned, and so is any compliance-desk phrasing. On a post with no base "
+    "rate, honesty is a CONDITION, a LEVEL or an ADMISSION, never a caveat:\n"
+    "- the condition you are waiting on: 'this only matters if it holds "
+    "through the close'.\n"
+    "- the level that changes the read: 'under 33.8 the whole thing is a "
+    "different conversation'.\n"
+    "- what you do not know: 'no idea who is doing the buying, and that is the "
+    "part I would want before sizing up'.\n"
+    "- what you will do next, said plainly: 'I'll post how it ends either "
+    "way'.\n"
+    "If you have a base rate, the base rate IS the hedge. Print it and let it "
+    "do the work: '11 of 14 since March, which is also 3 that did not'.\n\n"
 
     "NEVER NARRATE THE MACHINERY. The reader cannot see our screen, our board, "
     "our plan or our grading. Banned outright: 'the screen', 'on my screen', "
@@ -4503,7 +5655,21 @@ _V2_SYSTEM_PROMPT_BASE = (
     "'our model', 'the engine', 'on the page', 'the read's up top'. Show a "
     "receipt, never explain that receipts exist.\n\n"
 
-    "VOICE (this is the bar; match it, don't drift formal):\n"
+    # DEFAULTS, NOT ABSOLUTES (autopsy defect 4). This block is ~4,400 tokens of
+    # account-invariant instruction against a ~180-token persona card buried in
+    # the user JSON, 24:1, and where the two disagreed the bigger block won by
+    # sheer volume. It said "No exclamation marks" flatly while Meagan's own
+    # registered habit is "at most one exclamation. She is the only desk allowed
+    # an exclamation at all", so the one thing that made one of five desks sound
+    # like a different person was instructed away before the card was read. The
+    # card is now IN this system prompt (see `persona_prompt_section`) and it
+    # OUTRANKS these defaults inside the caps it declares. The deterministic
+    # `expression_dial` pass is what keeps that from becoming a licence: a quirk
+    # the card does not register is still stripped and still rejected.
+    "VOICE. These are the HOUSE DEFAULTS. Where THIS ACCOUNT'S CARD below "
+    "registers a signature habit that contradicts one of them, the card wins, "
+    "inside the cap the card names and nowhere else. A habit no card registers "
+    "is not yours to use:\n"
     "- X is casual. Contractions always. Fragments are fine. Short is good, "
     "but natural-short, the way people type, not clipped telegraph style. "
     "Three fragments in a row is a telegram, not a voice.\n"
@@ -4518,7 +5684,9 @@ _V2_SYSTEM_PROMPT_BASE = (
     "consensus flips, euphoria at highs, and our own stopped-out trades. NEVER "
     "at named people, the reader, or politics.\n"
     "- The cheese test: if the line would survive with a laughing emoji "
-    "appended, cut it. No puns. No exclamation marks.\n"
+    "appended, cut it. By default no puns and no exclamation marks: both are "
+    "card-granted habits, so use one only if your card names it, once, and "
+    "never twice in the same post.\n"
     "- Macro: write only what the data plainly shows. Never a regime label or "
     "an internal score. If the facts are thin, say less.\n\n"
 
@@ -4534,8 +5702,11 @@ _V2_SYSTEM_PROMPT_BASE = (
     "- Meme cosplay and sitcom beats: stonks, diamond hands, paper hands, "
     "apes, fam, ser, wagmi, ngmi, 'to the moon', 'let that sink in', 'checks "
     "notes', 'narrator:', 'plot twist', 'hold my beer', 'well, that happened'.\n"
-    "- Signal posts keep an invalidation line (what would prove you wrong, "
-    "with its number) and an honest caveat.\n"
+    "- Risk never attaches to your ego: 'I'm wrong below 33.8', 'proves me "
+    "wrong', 'my trigger' are banned. Compliance caveats are banned too: "
+    "'historical, not a guarantee', 'past performance', 'size appropriately'.\n"
+    "- ONE number per post. Motto cadence (two short symmetrical clauses) and "
+    "numbered lists of your own process are banned.\n"
     "- Avoid model tells: 'Here's what it means for X', 'Let's break it down', "
     "colon-as-drama openers, the repeated 'That's the [noun].' cadence, triads "
     "everywhere, kickers like 'without the noise'.\n\n"
@@ -4615,13 +5786,159 @@ def store_exemplar_block(cfg: dict | None, *, root: Any = None,
     return "\n".join(lines) if len(lines) > 1 else ""
 
 
-def _v2_system_prompt(cfg: dict, *, root: Any = None) -> str:
-    """The system prompt, this deployment's copy_laws, and the pinned exemplars."""
+# ── The prompt-vs-its-own-bans scan (autopsy defect 1's regression pin) ──────
+#
+# The prompt has to be able to QUOTE the phrases it bans, or a ban list cannot
+# be written at all. That is exactly what made defect 1 invisible for months:
+# "size appropriately" appearing in the prompt is normal, and nobody could tell
+# the two occurrences apart by grep because one was a ban and the other was an
+# ORDER to write it.
+#
+# So the scan is paragraph-scoped, and these are the paragraph heads whose JOB
+# is to quote banned material. Everything else in the prompt is PRESCRIPTIVE:
+# what it contains, it is asking for. A banned phrase in a prescriptive
+# paragraph is a self-cancelling instruction and the test that reads this fails.
+# Adding a head here is the way to make that test go quiet, which is the point:
+# it costs an explicit, reviewable claim that the new paragraph quotes rather
+# than prescribes.
+#
+# EVERY HEAD HERE IS LOAD-BEARING, AND THAT IS ENFORCED (2026-07-31 adversarial
+# review). A mutation sweep — drop one head, re-run the scan — found four
+# entries that suppressed nothing. Two of them were dead by CONSTRUCTION and are
+# now gone:
+#
+#   "EXEMPLARS (real posts"        the corpus block is subtracted from the
+#   "THESE SHIPPED FROM THIS DESK" prompt BY VALUE before the paragraph split
+#                                  (see prescriptive_prompt_paragraphs), so all
+#                                  that survived the subtraction was the bare
+#                                  header line — house text, which has to pass
+#                                  the scan like any other order. Exempting it
+#                                  only hid a future typo.
+#
+# The other two the sweep named are kept, because the sweep ran against
+# ``_v2_system_prompt({})`` and neither paragraph EXISTS in that prompt:
+#
+#   "OTHER LAWS"        emitted only when cfg carries copy_laws. Against the
+#                       SHIPPED config/marketing.yml (36 laws, most of them ban
+#                       lists) dropping this head produces a hit. Measured, not
+#                       assumed; pinned by a test.
+#   "RATIFIED EXEMPLARS" emitted only when the exemplar store has an active
+#                       version pin. This deployment ships that store dark, so
+#                       the sweep saw nothing. The block is OTHER PEOPLE'S posts
+#                       and is NOT value-subtracted, so arming the pin would put
+#                       third-party copy under the scan and turn an operator
+#                       ratification into a red test about data rather than
+#                       about our own orders.
+#
+# BLAST RADIUS, so a future edit knows what it is holding: "VOICE." suppresses
+# exactly ONE bullet — "Never a regime label or an internal score" — worth one
+# hit ("banned vocab: 'regime'"). "THE COLD-READ LAW" holds two ('vwap', 'point
+# of control'), "NEVER NARRATE THE MACHINERY" four, and "HARD BANS" is the ban
+# list itself (~48). Deleting a head is a claim that its paragraph ORDERS
+# nothing it quotes; make that claim explicitly or leave the head alone.
+_PROMPT_BAN_QUOTING_HEADS: tuple[str, ...] = (
+    "THE COLD-READ LAW",          # "not 'the anchored VWAP', not 'the point of control'"
+    "NEVER NARRATE THE MACHINERY",
+    "VOICE.",                     # one bullet: "Never a regime label or an internal score"
+    "HARD BANS",
+    "RATIFIED EXEMPLARS",         # other accounts' posts, quoted for register
+    "OTHER LAWS",                 # config-supplied copy_laws, often ban lists
+)
+
+
+def prescriptive_prompt_paragraphs(prompt: str) -> list[str]:
+    """The paragraphs of *prompt* that ORDER something, not the ones that quote.
+
+    Blank-line separated, because that is how :data:`_V2_SYSTEM_PROMPT_BASE` is
+    assembled: every bulleted block is one paragraph with single newlines inside
+    it, so a head match identifies a whole block.
+
+    The two exemplar blocks are subtracted by VALUE before the split rather than
+    filtered by head, and they have to be: a `two_part` exemplar contains a
+    blank line of its own (the shape IS a blank line), so blank-line splitting
+    tears the exemplar block into fragments and the fragments after the first
+    carry no head to match. Subtracting the exact generated string is the only
+    form of this that cannot be defeated by an exemplar's own shape.
+    """
+    src = str(prompt or "")
+    for quoted in (_exemplar_block(), _anti_exemplar_block()):
+        if quoted:
+            src = src.replace(quoted, "")
+    out: list[str] = []
+    for para in re.split(r"\n[ \t]*\n", src):
+        body = para.strip()
+        if not body:
+            continue
+        if any(body.startswith(head) for head in _PROMPT_BAN_QUOTING_HEADS):
+            continue
+        out.append(body)
+    return out
+
+
+def persona_prompt_section(persona_card: dict | None) -> str:
+    """This account's card, rendered for the SYSTEM turn. "" when there is none.
+
+    AUTOPSY DEFECT 4: THE PERSONA WAS OUTVOTED 24 TO 1. The account-invariant
+    base prompt is ~4,400 tokens; the card was ~180 tokens of JSON in the middle
+    of the user turn's item, under a key the prompt never named. Where the two
+    disagreed the base won every time, and it disagreed on exactly the details
+    that make one desk sound unlike another: "No exclamation marks" against
+    Meagan's registered one-per-post exclamation, "No puns" against cards whose
+    signature is wordplay. Five desks converged on one voice, which is the
+    finding the operator has been reporting as "every post sounds the same".
+
+    Moving the card into the SYSTEM turn does three things the user-turn copy
+    could not. It sits in the same register as the laws it is allowed to
+    override, so "the card wins" is a statement about two neighbouring
+    paragraphs rather than about two different turns. It is present for the
+    REPAIR turn too, which restates only the violations. And it sits between the
+    house laws and the ratified exemplars, so the account's own lines are the
+    last register the model reads before the corpus register.
+
+    `example_lines` are NOT truncated here. The old payload cut them to [:2],
+    which on a two-line card was invisible and on a richer one silently deleted
+    the calibration; the card is the smallest thing in this prompt and there is
+    no budget argument for clipping it.
+    """
+    card = persona_card or {}
+    name = str(card.get("name") or "").strip()
+    voice = " ".join(str(card.get("voice") or "").split())
+    lines = [str(l).strip() for l in (card.get("example_lines") or []) if str(l).strip()]
+    if not (name or voice or lines):
+        return ""
+
+    out = ["THIS ACCOUNT'S CARD. This is who is posting, and it OUTRANKS the "
+           "house VOICE defaults above wherever the two disagree, inside the "
+           "caps this card names. A habit this card does not register is not "
+           "available to you, however well it would fit."]
+    if name:
+        out.append(f"Name: {name}")
+    if voice:
+        out.append(f"Register: {voice}")
+    if lines:
+        out.append("Lines this person has actually written. Match the rhythm "
+                   "and the stance, never the words or the numbers:")
+        out.extend(f'  "{l}"' for l in lines)
+    return "\n".join(out)
+
+
+def _v2_system_prompt(cfg: dict, *, root: Any = None,
+                      persona_card: dict | None = None) -> str:
+    """The system prompt, this deployment's copy_laws, and the pinned exemplars.
+
+    `persona_card` makes the prompt PER ACCOUNT (autopsy defect 4). Omitting it
+    returns byte-for-byte what this function returned before the card existed,
+    which is what keeps the exemplar-store pin tests and every non-writer caller
+    unmoved.
+    """
     out = _V2_SYSTEM_PROMPT_BASE
     laws = (cfg or {}).get("copy_laws") or []
     if laws:
         out += ("\n\nOTHER LAWS (from config, obey exactly):\n"
                 + "\n".join(f"- {law}" for law in laws))
+    card_block = persona_prompt_section(persona_card)
+    if card_block:
+        out += "\n\n" + card_block
     block = store_exemplar_block(cfg, root=root)
     if block:
         out += "\n\n" + block
@@ -4633,6 +5950,14 @@ def _v2_system_prompt(cfg: dict, *, root: Any = None) -> str:
 _V2_STAT_KEYS = (
     "items", "llm", "llm_repair", "repairs",
     "dropped_provider", "dropped_validate", "dropped_critic",
+    # PROVIDER-RESILIENCE COUNTERS. `repairs` counts EDITORIAL second turns
+    # (violations, critic reject) and says nothing about the transport, so a
+    # night where every item silently bought a second provider call looked
+    # identical to a clean one. These two are the cost side of the 07-31 fix and
+    # the first number to look at when the spend jumps: a healthy night is ~0
+    # of both, and a night where `provider_failovers` tracks `items` is a rung
+    # that is down and should be pulled from the order.
+    "provider_retries", "provider_failovers",
 )
 _V2_STATS: dict[str, int] = {k: 0 for k in _V2_STAT_KEYS}
 #: The writer runs items in parallel and every worker bumps these. ``d[k] += 1``
@@ -4899,7 +6224,18 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
                 or ["codex", "oauth", "anthropic", "deepseek"],
                 "codex_source_model": llm_cfg.get("codex_source_model", "gpt-5.6-sol"),
                 "codex_reasoning_effort": llm_cfg.get("codex_reasoning_effort", "medium"),
-                "client_max_retries": llm_cfg.get("client_max_retries", 0),
+                # SDK RETRIES MUST NOT BECOME THE RETRY MECHANISM (house memory
+                # "SDK retries defeat failover walks"). The waterfall walk is
+                # this lane's retry for hard errors and the explicit empty-text
+                # recovery in `_v2_write_one` is its retry for textless 200s;
+                # an SDK that also retries the same dead credential twice just
+                # delays both by seconds per item across ~900 items. 0 is the
+                # default and the clamp keeps a config line from quietly
+                # reinstating the SDK's 2. (Measured while building this: the
+                # SDK inspects HTTP status only, so it would never have retried
+                # the 07-31 HTTP-200-no-text response at any setting — the clamp
+                # is about hard errors, not about that outage.)
+                "client_max_retries": _v2_client_max_retries(llm_cfg),
                 "client_timeout_s": llm_cfg.get("client_timeout_s", 60.0),
             },
             opus_model=model_id,
@@ -4929,7 +6265,23 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
         _bump("dropped_provider", len(contexts))
         return results
 
-    system_prompt = _v2_system_prompt(cfg, root=root)
+    # THE SYSTEM PROMPT IS PER ACCOUNT NOW (autopsy defect 4), and it is built
+    # ONCE PER ACCOUNT rather than once per item: `_v2_system_prompt` reads the
+    # exemplar store off disk, and a 60-post night must not pay for that 60
+    # times. The cache is keyed on the account, guarded because the items run in
+    # a thread pool, and it is a local (not a module global) so nothing survives
+    # the call and no test can be polluted by another test's personas.
+    _prompt_cache: dict[str, str] = {}
+    _prompt_cache_lock = threading.Lock()
+
+    def _prompt_for(account_key: str, card: dict | None) -> str:
+        with _prompt_cache_lock:
+            hit = _prompt_cache.get(account_key)
+            if hit is None:
+                hit = _v2_system_prompt(cfg, root=root, persona_card=card)
+                _prompt_cache[account_key] = hit
+            return hit
+
     try:
         max_tokens = int(llm_cfg.get("per_post_max_tokens", 400))
     except (TypeError, ValueError):
@@ -4983,14 +6335,23 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
                 "name": persona_raw.get("name") or ctx.get("persona_name") or persona_id,
                 "voice": str(persona_raw.get("voice_notes")
                              or ctx.get("voice_notes") or "").strip(),
-                "example_lines": (persona_raw.get("example_lines")
-                                  or ctx.get("example_lines") or [])[:2],
+                # THE CARD'S FULL SET, not [:2] (autopsy defect 4). The example
+                # lines are the only account-specific calibration in a ~4,400
+                # token prompt and they cost a couple of hundred tokens; there
+                # was never a budget reason to clip the one thing that makes
+                # this desk sound like itself.
+                "example_lines": list(persona_raw.get("example_lines")
+                                      or ctx.get("example_lines") or []),
             } if (persona_raw or ctx.get("persona_name")) else None
             payload = _v2_item_payload(
                 ctx, persona_card=persona_card,
                 codex_by_account=codex_by_account,
                 memory_by_account=memory_by_account,
             )
+            # PER-ACCOUNT SYSTEM PROMPT. The card rides the SYSTEM turn so it is
+            # present on the repair turn too (which restates only violations)
+            # and sits beside the house defaults it is allowed to override.
+            system_prompt = _prompt_for(persona_id, persona_card)
             return _v2_write_one(
                 ctx, payload, providers=providers, system_prompt=system_prompt,
                 max_tokens=max_tokens, cfg=cfg,
@@ -5072,6 +6433,29 @@ def write_posts_llm_v2(contexts: list[dict], cfg: dict, *, root: Any = None) -> 
     return results
 
 
+#: Hard ceiling on SDK-level retries for the writer's clients. See the WHY at
+#: the call site in write_posts_llm_v2.
+_V2_MAX_CLIENT_RETRIES = 1
+
+
+def _v2_client_max_retries(llm_cfg: dict) -> int:
+    """Config's ``client_max_retries``, clamped to [0, 1]. Never raises.
+
+    A bad value must land on the SAFE default rather than on an exception: this
+    is read inside the provider-construction try block, so a TypeError here
+    would be caught as "provider construction failed", empty the waterfall, and
+    turn one unparseable config line into a whole mute night — the exact failure
+    mode this wave exists to stop.
+    """
+    try:
+        want = int(llm_cfg.get("client_max_retries", 0) or 0)
+    except (TypeError, ValueError):
+        log.warning("copywriter v2: client_max_retries=%r is not an int — using 0",
+                    llm_cfg.get("client_max_retries"))
+        return 0
+    return min(_V2_MAX_CLIENT_RETRIES, max(0, want))
+
+
 def _v2_model_id(llm_cfg: dict) -> str:
     """Resolve the writer's model id from config.yml's llm_models block."""
     model_key = str(llm_cfg.get("model_key", "marketing_copy"))
@@ -5139,21 +6523,207 @@ def _v2_write_one(
     account_id = str(ctx.get("account", ""))
     kind = str(ctx.get("type", ""))
 
-    def _call(user_msg: str) -> str:
+    # PROVIDER-FAULT STATE FOR THIS ONE ITEM. `_call` records the last
+    # provider-side fault here so the drop below can NAME it.
+    #
+    # On 07-30 and again on 07-31 every one of 914 drops read "provider returned
+    # no text", and in the plan census that string is indistinguishable from
+    # "the model looked at this post and had nothing to say". There was nothing
+    # in the artifact that separated one editorial miss from a provider serving
+    # nothing 914 times in a row, which is exactly why two consecutive dark
+    # nights shipped through green runs. `provider_no_text:<provider>` is that
+    # separation, and it carries the provider because the batch-level breaker in
+    # content_studio has no other way to learn which rung broke (it sees the
+    # reason census and nothing else).
+    fault: dict[str, Any] = {}
+
+    def _messages_create(client, model, user_msg: str, *, cap: int,
+                         extra_body: dict | None):
+        """One raw request. Kept separate so the retry is provably the SAME call."""
+        kw: dict[str, Any] = {
+            "model": model, "max_tokens": cap, "system": system_prompt,
+            "messages": [{"role": "user", "content": user_msg}],
+        }
+        if extra_body:
+            kw["extra_body"] = extra_body
+        return client.messages.create(**kw)
+
+    def _do_call_factory(user_msg: str, *, same_provider_retry: bool):
+        """Build the make_call callback for one turn.
+
+        `same_provider_retry` is the per-item cost cap made explicit: the FIRST
+        walk may buy one extra call from whichever provider served nothing, the
+        failover walk below may not. Three calls is the hard ceiling for an item
+        (primary, primary retry, one failover rung) — with 915 planned posts a
+        node, an uncapped recovery is its own outage.
+        """
         def _do_call(client, model):
-            resp = client.messages.create(
-                model=model, max_tokens=max_tokens, system=system_prompt,
-                messages=[{"role": "user", "content": user_msg}],
-            )
+            # DEEPSEEK v4 THINKS BY DEFAULT, AND THAT ATE THE WHOLE BUDGET.
+            #
+            # `deepseek-v4-pro` (llm_auth's default deepseek model) returns a
+            # ThinkingBlock BEFORE the text block on the Anthropic-compat
+            # endpoint, and bills roughly 4x the output tokens for it (probed
+            # live 2026-07-26). `max_tokens` here is per_post_max_tokens, 400 by
+            # default — enough for a post, nowhere near enough for a post PLUS
+            # the model's reasoning. The response hits the cap mid-thought and
+            # carries NO text block at all.
+            #
+            # The extraction below is correct — it filters every block of
+            # type=="text" rather than reading content[0] — so this did not look
+            # like a parse bug. It looked like the provider succeeding and
+            # returning nothing: llm_auth logs "provider 'deepseek' served after
+            # fallback" and this function returns None, so the post is dropped at
+            # stage=provider with "provider returned no text". On 2026-07-31 that
+            # was 914 of 915 planned posts, every enabled desk reporting 100%
+            # dropped, and a nightly plan with total_posts=0.
+            #
+            # FIXED AT THE PROVIDER, NOT HERE. eleven call sites across
+            # engine/marketing and engine/press build their own request through
+            # this same waterfall, so patching this one would leave ten lanes
+            # carrying the defect and the next new lane inheriting it.
+            # llm_auth's deepseek client now defaults `thinking` off for every
+            # caller (see _deepseek_no_thinking there); a lane that genuinely
+            # wants reasoning still gets it by passing `thinking` explicitly.
+            #
+            # AND THE SAME-SHAPED FAULT FROM ANY OTHER PROVIDER IS HANDLED BELOW.
+            # That per-provider fix closes DeepSeek. The failure CLASS is "any
+            # Anthropic-compatible endpoint that emits a reasoning block ahead of
+            # text under a small max_tokens cap", and this lane sends 400 tokens
+            # to four different rungs. So a textless response now buys one more
+            # attempt here (llm_auth.empty_text_retry_plan picks thinking-off or
+            # a doubled budget, whichever the client can actually use) before the
+            # item is allowed to die.
+            resp = _messages_create(client, model, user_msg,
+                                    cap=max_tokens, extra_body=None)
             if getattr(resp, "stop_reason", None) == "refusal":
                 return None, "stop_refusal", resp
-            text = "".join(b.text for b in resp.content
-                           if getattr(b, "type", "") == "text")
-            return (text or None), None, resp
+            text = llm_auth.response_text(resp)
+            if text:
+                return text, None, resp
 
-        raw, _reason, _provider = llm_auth.make_call(
-            providers, _do_call, context="marketing_copy_v2")
-        return _v2_extract_text(raw or "")
+            # SAY WHAT CAME BACK INSTEAD. "provider returned no text" is true
+            # and undiagnosable: it reads as an outage when the call in fact
+            # succeeded and spent its budget on something we discarded. The
+            # block types and stop_reason are the whole diagnosis, and they
+            # cost one log line at the moment they are still in hand.
+            diag = llm_auth.empty_text_diagnosis(resp) or {}
+            log.warning(
+                "copywriter v2: %s answered with no text block "
+                "(blocks=%s, stop_reason=%s, max_tokens=%d) — if this is a "
+                "thinking model the reasoning consumed the budget",
+                model, diag.get("blocks") or "[]", diag.get("stop_reason", "?"),
+                max_tokens)
+            if not (same_provider_retry and diag.get("retryable")):
+                return None, None, resp
+
+            plan = llm_auth.empty_text_retry_plan(client, max_tokens)
+            _bump("provider_retries")
+            try:
+                resp2 = _messages_create(
+                    client, model, user_msg,
+                    cap=int(plan["max_tokens"]), extra_body=plan["extra_body"])
+            except TypeError as exc:
+                # A client whose signature advertises extra_body and then refuses
+                # the value. Swallowed on purpose: raising here would hand
+                # make_call a "transport error" and send it cascading down the
+                # whole waterfall, which is the opposite of the bounded recovery
+                # this function is allowed to spend.
+                log.warning("copywriter v2: %s rejected the %s retry (%s: %s)",
+                            model, plan["how"], type(exc).__name__, exc)
+                return None, None, resp
+            text2 = llm_auth.response_text(resp2)
+            if text2:
+                log.info("copywriter v2: %s recovered on the %s retry "
+                         "(first response was %s)",
+                         model, plan["how"], diag.get("blocks") or "[]")
+                return text2, None, resp2
+            log.warning("copywriter v2: %s still returned no text after the %s "
+                        "retry (blocks=%s, stop_reason=%s) — failing over",
+                        model, plan["how"],
+                        (llm_auth.empty_text_diagnosis(resp2) or {}).get("blocks"),
+                        getattr(resp2, "stop_reason", "?"))
+            return None, None, resp2
+
+        return _do_call
+
+    def _call(user_msg: str) -> str:
+        """One writer turn across the waterfall. "" on every provider fault.
+
+        THE GAP THIS CLOSES. `make_call` treats any call that does not RAISE as
+        a success, so a provider that answers HTTP 200 with no text ends the
+        walk — the three healthy rungs underneath it are never tried, and the
+        item dies holding a working credential list. That is the 07-30/07-31
+        shape: DeepSeek served every call, 200 every time, and codex/oauth/
+        anthropic were never asked. So the textless case gets an explicit
+        one-rung failover here, in the caller, where the per-item budget is
+        known — make_call itself must keep treating a served response as served,
+        because every other consumer depends on that.
+        """
+        fault.clear()
+        try:
+            raw, reason, served = llm_auth.make_call(
+                providers, _do_call_factory(user_msg, same_provider_retry=True),
+                context="marketing_copy_v2")
+        except Exception as exc:  # noqa: BLE001 — connection/5xx after a FULL walk
+            # make_call re-raises the last hard error only once it has tried
+            # EVERY provider, so the ladder failover for this class already
+            # happened and there is nothing left to try. It is still worth its
+            # own reason: "the transport broke" and "the model said nothing" send
+            # an operator to different places.
+            fault["reason"] = f"provider_error:{type(exc).__name__}"
+            log.warning("copywriter v2: every provider failed hard (%s: %s)",
+                        type(exc).__name__, exc)
+            return ""
+        if raw:
+            return _v2_extract_text(raw)
+
+        if reason == "stop_refusal":
+            # THE MODEL LOOKED AT THIS ITEM AND DECLINED. That is an editorial
+            # outcome, not a fault, and it must never trigger a failover: a
+            # prompt one provider refuses is a prompt the next one refuses too,
+            # so failing over would multiply every refusal by the depth of the
+            # waterfall and turn a content problem into a spend problem.
+            fault["reason"] = "provider_refusal"
+            return ""
+        if reason:
+            # rate_limited_all / auth_invalid_all / no_provider — make_call
+            # already walked everything. Nothing to fail over to.
+            fault["reason"] = f"provider_unavailable:{reason}"
+            return ""
+
+        # LADDER FAILOVER, ONE RUNG. Reuse the order build_providers produced
+        # rather than re-deriving it: that order carries key-pool balancing and
+        # cross-process cooling, and a freshly guessed order throws both away.
+        candidate = llm_auth.first_usable(
+            llm_auth.providers_after(providers, served))
+        # NAME EVERY RUNG THAT SERVED NOTHING, not just the last one. The
+        # breaker downstream turns this into "provider: X", and an operator who
+        # pulls X from provider_order when X AND the rung under it were both
+        # silent gets a second dark night — two silent rungs is a prompt/budget
+        # diagnosis, one silent rung is a provider diagnosis, and the census is
+        # the only place that distinction survives.
+        tried = [str(served or "unknown")]
+        if candidate is not None:
+            _bump("provider_failovers")
+            log.warning("copywriter v2: provider '%s' served no text — failing "
+                        "over to '%s' for this item",
+                        served, candidate.get("name"))
+            try:
+                raw2, _reason2, served2 = llm_auth.make_call(
+                    [candidate],
+                    _do_call_factory(user_msg, same_provider_retry=False),
+                    context="marketing_copy_v2_failover")
+            except Exception as exc:  # noqa: BLE001 — the failover is best effort
+                log.warning("copywriter v2: failover provider '%s' failed "
+                            "(%s: %s)", candidate.get("name"),
+                            type(exc).__name__, exc)
+                raw2, served2 = None, str(candidate.get("name") or "")
+            if raw2:
+                return _v2_extract_text(raw2)
+            tried.append(str(served2 or candidate.get("name") or "unknown"))
+
+        fault["reason"] = "provider_no_text:" + "+".join(tried)
+        return ""
 
     def _shape_and_check(text: str) -> tuple[str, str, str, list[str]]:
         """Dial pass, then every deterministic gate. -> (text, hl, body, violations).
@@ -5183,7 +6753,13 @@ def _v2_write_one(
     text = _call(_v2_user_message(payload))
     if not text:
         _bump("dropped_provider")
-        return {"mode": "dropped", "reasons": ["provider returned no text"],
+        # The reason `_call` recorded, never a generic string: the whole point of
+        # the fault dict is that a night's census can tell "the model rejected
+        # this post" from "the provider returned nothing 915 times". The legacy
+        # wording stays as the fallback so an artifact written by an older build
+        # still reads the same in content_studio's remedy table.
+        return {"mode": "dropped",
+                "reasons": [fault.get("reason") or "provider returned no text"],
                 "stage": "provider"}
 
     repaired = False

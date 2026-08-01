@@ -1,0 +1,26 @@
+{# Load the 134 KB heatmap renderer only when a dashboard's Markets dialog opens.
+   The regional macro pages keep their heatmaps inside hidden dialogs, so eagerly
+   downloading and compiling the renderer delays every cold visit for work most
+   visitors never request. The promise is shared across repeated taps. #}
+<script>
+(function(){
+  if(window.mmLoadHeatmap)return;
+  var pending=null;
+  window.mmLoadHeatmap=function(){
+    if(window.MMHeatmap)return Promise.resolve(window.MMHeatmap);
+    if(pending)return pending;
+    pending=new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src=new URL('heatmap.js',document.baseURI).href;
+      s.async=true;
+      s.onload=function(){
+        if(window.MMHeatmap)resolve(window.MMHeatmap);
+        else{pending=null;reject(new Error('heatmap API unavailable'));}
+      };
+      s.onerror=function(){pending=null;reject(new Error('heatmap load failed'));};
+      (document.head||document.documentElement).appendChild(s);
+    });
+    return pending;
+  };
+})();
+</script>

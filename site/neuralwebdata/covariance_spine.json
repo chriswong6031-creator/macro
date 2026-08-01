@@ -1,26 +1,26 @@
 {
   "schema": "neuralweb.covariance_spine.v1",
-  "as_of": "2026-07-30",
+  "as_of": "2026-08-01",
   "display_only": true,
   "authority": "context",
   "descriptive_not_gauntleted": true,
   "blocks": {
     "rates": {
-      "dominant_pc_share": 0.825,
-      "first3_var": 0.9632,
-      "effective_dimension_pr": 1.4455,
+      "dominant_pc_share": 0.8247,
+      "first3_var": 0.9629,
+      "effective_dimension_pr": 1.446,
       "pc3_to_pc4_gap": null,
       "oos_pctile_vs_null": null,
       "curvature_stability_tag": "stable",
       "vol_match_multipliers": {
-        "pc2": 2.96,
-        "pc3": 4.33
+        "pc2": 2.94,
+        "pc3": 4.4
       },
       "source": "data/regime/latest.json#yield_curve"
     },
     "factors": {
-      "dominant_factor_pc_share": 0.5619,
-      "effective_factor_bets_pr": 2.7331,
+      "dominant_factor_pc_share": 0.5809,
+      "effective_factor_bets_pr": 2.6065,
       "n_factors_used": 7,
       "n_obs_used": 252,
       "caveat": "~3y history, annual fundamentals; descriptive only",
@@ -28,11 +28,11 @@
     },
     "dispersion": {
       "state": "lean_in",
-      "dispersion_pctile": 0.73,
+      "dispersion_pctile": 0.82,
       "avg_corr": 0.07,
-      "dominant_equity_pc_share": 0.1848,
-      "effective_universe_bets_pr": 21.76,
-      "idio_dispersion_share": 0.6204
+      "dominant_equity_pc_share": 0.1837,
+      "effective_universe_bets_pr": 21.78,
+      "idio_dispersion_share": 0.5967
     },
     "lobes": {
       "effective_independent_lobes": 1.0,
@@ -59,7 +59,7 @@
           "ca_board": 5,
           "china_news": 3,
           "china_special_sits": 5,
-          "cn_board": 5,
+          "cn_board": 1,
           "cn_importance_v0": 7,
           "cn_importance_v0_pit": 7,
           "desk:ai_desk": 5,
@@ -98,7 +98,7 @@
       "ca_board": 5,
       "china_news": 3,
       "china_special_sits": 5,
-      "cn_board": 5,
+      "cn_board": 1,
       "cn_importance_v0": 7,
       "cn_importance_v0_pit": 7,
       "desk:ai_desk": 5,

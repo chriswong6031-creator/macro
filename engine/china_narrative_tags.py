@@ -193,10 +193,16 @@ def _basket_rel20_breadth(
     valid = last_prices.notna().sum()
     breadth = float(above) / float(valid) if valid > 0 else 0.0
 
+    # Grade the same precision we publish. Otherwise a tiny negative raw value
+    # can be emitted as -0.0 while retaining a None level, making the record
+    # contradict its documented threshold contract.
+    rel20_display = round(rel20, 2)
+    breadth_display = round(breadth, 4)
+
     # Heat level
-    if rel20 >= HOT_REL20_THRESHOLD and breadth >= HOT_BREADTH_THRESHOLD:
+    if rel20_display >= HOT_REL20_THRESHOLD and breadth_display >= HOT_BREADTH_THRESHOLD:
         level: str | None = "HOT"
-    elif rel20 >= WARM_REL20_THRESHOLD and breadth >= WARM_BREADTH_THRESHOLD:
+    elif rel20_display >= WARM_REL20_THRESHOLD and breadth_display >= WARM_BREADTH_THRESHOLD:
         level = "WARMING"
     else:
         level = None
@@ -213,8 +219,8 @@ def _basket_rel20_breadth(
         "name":      name,
         "name_zh":   name_zh,
         "level":     level,
-        "rel20":     round(rel20, 2),
-        "breadth":   round(breadth, 4),
+        "rel20":     rel20_display,
+        "breadth":   breadth_display,
         "n_members": n_members,
         "n_covered": n_covered,
     }

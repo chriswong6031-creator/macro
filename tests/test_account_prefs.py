@@ -142,6 +142,9 @@ def test_client_sent_user_id_is_ignored(auth, store):
     ({"lang": "en-US"}, "lang"),
     ({"theme": "sepia"}, "theme"),
     ({"theme": ""}, "theme"),
+    ({"brain_depth": "turbo"}, "brain_depth"),
+    ({"brain_depth": "short"}, "brain_depth"),
+    ({"brain_depth": ""}, "brain_depth"),
 ])
 def test_unknown_values_are_400(auth, store, payload, bad):
     with pytest.raises(HTTPException) as ei:
@@ -199,6 +202,53 @@ def test_both_keys_in_one_call(auth, store):
     assert out["prefs"] == {"lang": "en", "theme": "dark"}
     assert auth.calls[0][2]["user_metadata"]["theme"] == "dark"
     assert store.rows[0]["body"][0]["lang"] == "en"
+
+
+# --------------------------------------------------------------------------- #
+# brain_depth (Analyst OS W3) — the chat answer-length preference
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("value, expected", [
+    ("concise", "concise"), ("standard", "standard"), ("DEEP", "deep"), (" deep ", "deep"),
+])
+def test_brain_depth_is_accepted_and_normalised(auth, store, value, expected):
+    out = account_prefs.save_prefs(account_prefs.PrefsRequest(brain_depth=value), user=USER)
+    assert out["prefs"] == {"brain_depth": expected}
+    assert auth.calls[0][2]["user_metadata"] == {
+        "display_name": "Ada", "lang": "en", "brain_depth": expected}
+
+
+def test_brain_depth_alone_does_not_touch_email_prefs(auth, store):
+    """The email mirror exists for LANGUAGE. A depth change must not write a row."""
+    out = account_prefs.save_prefs(account_prefs.PrefsRequest(brain_depth="deep"), user=USER)
+    assert out["email_prefs"] is False
+    assert store.rows == []
+
+
+def test_all_three_keys_in_one_call(auth, store):
+    out = account_prefs.save_prefs(
+        account_prefs.PrefsRequest(lang="zh", theme="dark", brain_depth="concise"), user=USER)
+    assert out["prefs"] == {"lang": "zh", "theme": "dark", "brain_depth": "concise"}
+    assert auth.calls[0][2]["user_metadata"] == {
+        "display_name": "Ada", "lang": "zh", "theme": "dark", "brain_depth": "concise"}
+    assert store.rows[0]["body"][0]["lang"] == "zh"
+
+
+def test_the_enum_table_is_the_libs(auth, store):
+    """One table, shared with the chat tool — a value the route accepts is a value the
+    gateway's set_chat_preference accepts, because there is only one list."""
+    from lib import user_prefs
+
+    assert account_prefs.LANGS is user_prefs.PREF_VALUES["lang"]
+    assert account_prefs.THEMES is user_prefs.PREF_VALUES["theme"]
+    assert account_prefs.DEPTHS is user_prefs.PREF_VALUES["brain_depth"]
+
+
+def test_the_route_still_makes_exactly_one_network_call(auth, store):
+    """The lib can read current metadata before merging; this path must NOT — the verified
+    token's record is already in hand, so a GET here would be a wasted round trip on every
+    debounced theme toggle."""
+    account_prefs.save_prefs(account_prefs.PrefsRequest(brain_depth="concise"), user=USER)
+    assert [c[0] for c in auth.calls] == ["PUT"]
 
 
 # --------------------------------------------------------------------------- #

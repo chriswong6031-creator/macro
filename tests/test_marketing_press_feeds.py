@@ -556,8 +556,13 @@ class TestDaemon:
         earn_calls = {"n": 0}
         monkeypatch.setattr(d, "_run_press_tick",
                             lambda *, dry_run: press_calls.__setitem__("n", press_calls["n"] + 1) or {})
+        # `spool` joined the signature 2026-07-31 so the Actions lane can write the
+        # git-TRACKED outbox instead of the host spool. A stub that omits it makes
+        # every tick raise TypeError into the daemon's catch-and-continue, which
+        # presents as ZERO POSTS rather than an error — the exact failure this test
+        # then reports as "the earnings lane did not run".
         monkeypatch.setattr(d, "_run_one_tick",
-                            lambda *, dry_run, armed=True: earn_calls.__setitem__("n", earn_calls["n"] + 1) or
+                            lambda *, dry_run, armed=True, spool=True: earn_calls.__setitem__("n", earn_calls["n"] + 1) or
                             {"emitted": [], "skipped": [], "quarantined": []})
         d.main(["--once", "--dry-run"])
         assert earn_calls["n"] == 1

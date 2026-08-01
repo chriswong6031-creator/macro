@@ -30,12 +30,12 @@ voice_codex:
 beat: "CN/HK breadth, policy, flows — 用本地视角讲清楚"
 tilt:
   signal: 0.29
-  chart: 0.10
+  chart: 0.20
   mover: 0.12
   theme_list: 0.08
   receipt: 0.08
   event: 0.10
-  education: 0.10
+  education: 0.00  # OFF 2026-07-30 (was 0.10)
   macro: 0.10
   watchlist: 0.03
 pipeline: hybrid

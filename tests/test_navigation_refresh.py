@@ -7,6 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 NAV = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
 THEME_JS = (ROOT / "templates" / "theme.js").read_text(encoding="utf-8")
+SITE_THEME_JS = (ROOT / "site" / "theme.js").read_text(encoding="utf-8")
 MARKET_JS = (ROOT / "templates" / "nav_market.js").read_text(encoding="utf-8")
 REFRESH_CSS = (ROOT / "templates" / "navigation-refresh.css").read_text(encoding="utf-8")
 
@@ -36,12 +37,49 @@ def test_public_research_menu_is_product_focused() -> None:
         assert f'href="{{{{ NP }}}}{public_page}"' in NAV
 
 
+def test_approved_mockup_is_the_navigation_source_of_truth() -> None:
+    for copy in (
+        "Your complete market command center",
+        "Search every published research note",
+        "What’s strengthening and fading now",
+        "Today’s strongest confirmed setups",
+        "Growth, inflation and liquidity now",
+    ):
+        assert copy in NAV
+
+    assert 'class="icon-drawing' in NAV
+    assert "APPROVED MOCKUP — SOURCE-OF-TRUTH PORT" in REFRESH_CSS
+    for marker in (
+        "grid-template-columns: minmax(0, 1fr) 245px",
+        "grid-template-columns: 62px minmax(0, 1fr)",
+        "min-height: 78px",
+        "width: 58px",
+        "height: 58px",
+        "font-size: 15px",
+        "font-weight: 650",
+        "width: 300px",
+    ):
+        assert marker in REFRESH_CSS
+
+    assert "MOCKUP_ICON_PATHS" in MARKET_JS
+    assert "MOCKUP_RESEARCH_DESCRIPTION_BY_FILE" in MARKET_JS
+    assert "legacy CSS-mask icon library" in MARKET_JS
+    assert "{{ t('Crypto', '加密') }}" not in NAV
+    assert "removeLegacyCryptoMenu(links)" in MARKET_JS
+    for label in ("Crypto Intelligence", "Bitcoin Vector", "Allocation"):
+        assert label in MARKET_JS
+    assert 'aria-label="{{ t(' not in NAV
+
+
 def test_global_cycles_uses_accessible_in_panel_drill() -> None:
     assert "data-nav-drill-open" in NAV
     assert "data-nav-drill-panel" in NAV
     assert "data-nav-drill-back" in NAV
     assert 'aria-expanded="false"' in NAV
+    assert "data-nav-drill-panel inert" in NAV
     assert "initNavDrills()" in THEME_JS
+    assert "panel.toggleAttribute('inert', !isOpen)" in THEME_JS
+    assert "panel.setAttribute('inert', '')" in THEME_JS
 
 
 def test_market_folding_reuses_canonical_menu_dom() -> None:
@@ -69,10 +107,79 @@ def test_search_is_profile_aware_animated_and_status_rich() -> None:
     ):
         assert marker in THEME_JS
 
-    assert ".nav-search.ticker-search.open { width: 340px; }" in REFRESH_CSS
+    assert ".nav-search.ticker-search.open { width: 300px; }" in REFRESH_CSS
     assert "@keyframes nrFanIn" in REFRESH_CSS
     assert "html:not([data-theme=\"light\"])" in REFRESH_CSS
     assert "@media (prefers-reduced-motion: reduce)" in REFRESH_CSS
+
+
+def test_search_uses_volume_rank_and_controlled_saas_motion() -> None:
+    assert "Number(a.v || a.vol || 0)" in THEME_JS
+    assert "Highest-volume names from the latest session" in THEME_JS
+    assert "pending === 0 || input.value.trim()" in THEME_JS
+    assert "@keyframes mockupCardSettle" in REFRESH_CSS
+    assert "@keyframes mockupResultSettle" in REFRESH_CSS
+    assert "filter: blur(" not in REFRESH_CSS.split("@keyframes mockupCardSettle", 1)[1].split("@keyframes mockupMenuSwap", 1)[0]
+    assert "closeSearch();" in THEME_JS.split("function go(x)", 1)[1].split("function rank(", 1)[0]
+    assert "document.body.classList.add('nav-search-focus')" in THEME_JS
+    assert "document.body.classList.remove('nav-search-focus')" in THEME_JS
+    assert ".ticker-symbol," in REFRESH_CSS
+    assert "text-overflow: ellipsis;" in REFRESH_CSS
+    approved = REFRESH_CSS.split("APPROVED MOCKUP — SOURCE-OF-TRUTH PORT", 1)[1]
+    assert "translate(62px, -31px)" not in approved
+    assert 'font: 720 11px/1 -apple-system' in approved
+    assert 'font: 680 12px/1 -apple-system' in approved
+
+
+def test_compact_search_contains_exchange_qualified_tickers() -> None:
+    """Long idle examples such as 600519.SS must stay inside the pill."""
+    approved = REFRESH_CSS.split("APPROVED MOCKUP — SOURCE-OF-TRUTH PORT", 1)[1]
+    search_rule = approved.split(".nav-search.ticker-search {", 1)[1].split("}", 1)[0]
+    trigger_rule = approved.split(".ticker-search .search-trigger {", 1)[1].split("}", 1)[0]
+    idle_rule = approved.split(".ticker-search .idle-ticker {", 1)[1].split("}", 1)[0]
+
+    assert "width: 128px;" in search_rule
+    assert "overflow: hidden;" in trigger_rule
+    assert "flex: 1 1 auto;" in idle_rule
+    assert "min-width: 0;" in idle_rule
+    assert "overflow: hidden;" in idle_rule
+    assert "text-overflow: ellipsis;" in idle_rule
+    assert "white-space: nowrap;" in idle_rule
+    assert "600519.SS" in THEME_JS
+
+
+def test_top_level_menu_labels_use_regular_weight() -> None:
+    approved = REFRESH_CSS.split("APPROVED MOCKUP — SOURCE-OF-TRUTH PORT", 1)[1]
+    selector = ".site-nav .nav-links > .nav-dd > a.nav-link,"
+    nav_rule = approved.split(selector, 1)[1].split("}", 1)[0]
+    assert "font-weight: 450;" in nav_rule
+    assert "font-weight: 530;" not in nav_rule
+
+
+def test_product_header_has_one_page_independent_geometry() -> None:
+    assert "body > nav.site-nav" in REFRESH_CSS
+    rule = REFRESH_CSS.split("body > nav.site-nav", 1)[1].split("}", 1)[0]
+    assert "width: min(1500px, calc(100vw - 32px)) !important;" in rule
+    assert (
+        "margin-left: calc((100% - min(1500px, calc(100vw - 32px))) / 2) "
+        "!important;"
+    ) in rule
+    assert "transform:" not in rule
+    assert "margin: 18px auto 16px !important;" in rule
+
+
+def test_start_hub_uses_canonical_product_navigation_and_demotes_clock() -> None:
+    source = (ROOT / "scripts" / "build_vector.py").read_text(encoding="utf-8")
+    assert 'get_template("_site_nav.html.j2")' in source
+    assert "+ _hub_product_nav_html()" in source
+    assert "'<div class=\"hub-live-meta\">" in source
+    assert "'<div class=\"hub-top\">'" not in source
+
+    rendered = (ROOT / "site" / "start.html").read_text(encoding="utf-8")
+    assert 'class="site-nav"' in rendered
+    assert 'body class="hub-page"' in rendered
+    assert 'class="hub-live-meta"' in rendered
+    assert 'class="hub-top"' not in rendered
 
 
 def test_search_waits_for_refresh_css_on_stale_rendered_pages() -> None:
@@ -94,7 +201,7 @@ def test_search_waits_for_refresh_css_on_stale_rendered_pages() -> None:
     assert "if (loaded) initNavSearch()" in THEME_JS
 
 
-def test_navigation_is_content_aware_and_mastermind_moved_into_research() -> None:
+def test_navigation_is_content_aware_and_research_rail_matches_mockup() -> None:
     for marker in (
         "initAdaptiveNav",
         "data-nav-layout",
@@ -104,11 +211,12 @@ def test_navigation_is_content_aware_and_mastermind_moved_into_research() -> Non
     ):
         assert marker in THEME_JS
 
-    assert 'class="nav-mastermind-cta"' in NAV
-    assert 'href="https://bot.mastermind-x.com"' in NAV
+    assert 'class="nav-mastermind-cta"' not in NAV
+    assert 'href="https://bot.mastermind-x.com"' not in NAV
+    assert "Cleaner by design" in NAV
+    assert "Detailed diagnostics and proprietary labs move to the admin console." in NAV
     shared_chrome = (ROOT / "templates" / "_site_nav.html.j2").read_text(encoding="utf-8")
     assert "mastermind-link" not in shared_chrome
-    assert '.nav-ctrls a[href*="bot.mastermind-x.com"]' in REFRESH_CSS
 
 
 def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -> None:
@@ -125,6 +233,41 @@ def test_mobile_navigation_is_a_full_height_accordion_with_full_width_search() -
 
     assert "@media (max-width:900px)" in THEME_JS
     assert "window.innerWidth > 900" in THEME_JS
+
+
+def test_mobile_ticker_input_does_not_trigger_ios_focus_zoom() -> None:
+    final_mobile_rules = REFRESH_CSS.rsplit("@media (max-width: 900px)", 1)[1]
+    assert "iOS Safari zooms the page" in final_mobile_rules
+    assert (
+        ".ticker-search .ticker-input { font-size: 16px; }"
+        in final_mobile_rules
+    )
+
+
+def test_search_preserves_chinese_ime_spaces_and_localizes_results() -> None:
+    for source in (THEME_JS, SITE_THEME_JS):
+        for marker in (
+            'maxlength="80"',
+            "compositionstart",
+            "compositionend",
+            "e.isComposing",
+            "e.keyCode === 229",
+            "normalizeSearch",
+            "nameChinese",
+            "x.z || x.zh || x.cn || x.name_zh",
+            "股票搜索结果",
+            "没有匹配的股票代码或公司。",
+            "displayName(x)",
+            "document.addEventListener('langchange', applySearchLocale)",
+        ):
+            assert marker in source
+        assert "input.value = input.value.toUpperCase().replace" not in source
+
+    ticker_input_rule = REFRESH_CSS.split(
+        ".ticker-search .ticker-input {", 1
+    )[1].split("}", 1)[0]
+    assert "text-transform: none;" in ticker_input_rule
+    assert 'html[data-lang="zh"] .ticker-search .search-esc' in REFRESH_CSS
 
 
 def test_right_edge_asset_flyouts_open_inward_without_desktop_overflow() -> None:

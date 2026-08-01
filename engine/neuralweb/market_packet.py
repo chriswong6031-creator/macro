@@ -62,6 +62,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import threading
 import time
 from datetime import datetime, timezone
@@ -1156,9 +1157,77 @@ def _zh(p: dict) -> bool:
     SHALLOW COPY by render_digest (never the caller's dict); zh rendering is
     deliberately narrow — only fields whose Chinese the DESK already computed
     (drivers labels, wire item zh, the curve-regime label) switch, so the model
-    reuses canonical desk vocabulary instead of re-translating. Everything else
-    stays English and the LANGUAGE directive handles it."""
+    reuses canonical desk vocabulary instead of re-translating. The one addition
+    is the finite quad STATE NAME map applied to the English-prose sections
+    (_ZH_STATE_TOKENS) — a name the model would otherwise copy into a Chinese
+    answer. Everything else stays English and the LANGUAGE directive handles it."""
     return p.get("_render_lang") == "zh"
+
+
+# ---------------------------------------------------------------------------
+# ZH quad-state vocabulary — desk-canonical names for the free-prose sections
+# ---------------------------------------------------------------------------
+# The prose sections (DESK READ, WATCH, CROSS-ASSET) are authored in ENGLISH by the
+# nightly builders, so a zh turn used to be fed "Cross-asset regime: Goldilocks" and
+# "…would flip us into Reflation" — and the model copied the English state word into
+# its 中文 answer (live zh probe 2026-07-30 carried a bare "Goldilocks" ×3). A model's
+# own input beats a language directive, so the token has to be Chinese BEFORE it is
+# read. The English text is otherwise left alone: this substitutes NAMES, it does not
+# translate prose (the LANGUAGE directive still owns that).
+#
+# CANONICAL SOURCE ORDER (house sources, in the order that decides a disagreement):
+#  1. engine/master_brain.py::_ZH_LEXICON_FIXUPS (~line 2362) normalizes translated
+#     中文 *to* 理想增长 and names 金发姑娘/金发姑娘（不冷不热） as the RETIRED variants
+#     being replaced — so 理想增长 is the house term for Goldilocks, and
+#     engine/alert_triage.py::_QUAD_ZH's "金发经济" LOSES (it is the only house source
+#     that says 金发经济, and nothing normalizes toward it).
+#  2. engine/i18n.py::LEX — the glossary the deterministic chips render from — agrees
+#     with (1) and supplies the rest: Goldilocks 理想增长, Reflation 再通胀,
+#     Stagflation 滞胀, Deflation 通缩, Growth-scare/Deflation 增长恐慌／通缩,
+#     "Growth scare" 增长恐慌.
+#  3. engine/alert_triage.py::_QUAD_ZH is the only house source that names Inflation
+#     (通胀) and Disinflation (去通胀); LEX has no key for either, so they come from
+#     there. Its Goldilocks entry is overruled per (1).
+#
+# FROZEN + FINITE — quad state NAMES only. Generic macro nouns (growth, slowdown,
+# recovery, contraction) are deliberately absent: they are ordinary English words in
+# this prose and replacing them would produce garbage. Matching is WHOLE-TOKEN and
+# CASE-SENSITIVE on these exact capitalized forms, so "Reflationary" and a lowercase
+# "confirms if inflation is truly cooling" are untouched; longer forms are listed
+# first because re alternation is leftmost-first, not longest-first.
+_ZH_STATE_TOKENS: tuple[tuple[str, str], ...] = (
+    ("Growth-scare/Deflation", "增长恐慌／通缩"),
+    ("Growth-scare", "增长恐慌"),
+    ("Growth scare", "增长恐慌"),
+    ("Disinflation", "去通胀"),
+    ("Stagflation", "滞胀"),
+    ("Goldilocks", "理想增长"),
+    ("Reflation", "再通胀"),
+    ("Deflation", "通缩"),
+    ("Inflation", "通胀"),
+)
+_ZH_STATE_MAP: dict[str, str] = dict(_ZH_STATE_TOKENS)
+# Letter lookarounds (not \b): a token may sit against '/', '-' or ':' and must still
+# match there, while a letter on either side means it is part of a longer word.
+_ZH_STATE_RE = re.compile(
+    "(?<![A-Za-z])(" + "|".join(re.escape(k) for k, _v in _ZH_STATE_TOKENS) + ")(?![A-Za-z])"
+)
+
+# Sections whose body is authored English prose, and therefore the only ones that
+# carry bare state tokens. The desk-precomputed zh paths (DRIVERS *_zh fields, RATES
+# curve_regime_zh, EVENTS item zh) are NOT listed — they already render Chinese.
+_ZH_STATE_SECTIONS: frozenset[str] = frozenset({"DESK", "WATCH", "CROSSASSET"})
+
+
+def _zh_state_words(text: str) -> str:
+    """Whole-token English quad-state name → desk-canonical 中文. PURE.
+
+    Applied on zh render passes ONLY (see render_digest); an EN digest is
+    byte-identical to what it was before this existed.
+    """
+    if not text:
+        return text
+    return _ZH_STATE_RE.sub(lambda m: _ZH_STATE_MAP[m.group(1)], text)
 
 
 def _render_events(p: dict) -> str:
@@ -1352,8 +1421,10 @@ def render_digest(packet: dict, char_budget: int = DEFAULT_CHAR_BUDGET,
     are never dropped, and a header with nothing under it renders as "" rather
     than an empty promise.
 
-    ``lang='zh'`` switches ONLY the desk-precomputed Chinese fields (see _zh);
-    the flag rides a shallow copy so a caller-held packet is never mutated.
+    ``lang='zh'`` switches the desk-precomputed Chinese fields (see _zh) and, in the
+    English-prose sections listed in _ZH_STATE_SECTIONS, replaces the finite quad
+    state NAMES with their desk-canonical 中文 (see _ZH_STATE_TOKENS). The flag rides
+    a shallow copy so a caller-held packet is never mutated.
     """
     if not isinstance(packet, dict):
         return ""
@@ -1373,6 +1444,11 @@ def render_digest(packet: dict, char_budget: int = DEFAULT_CHAR_BUDGET,
             except Exception as exc:  # noqa: BLE001
                 log.debug("market_packet: %s render failed (%s)", name, exc)
                 continue
+            if _zh(packet) and name in _ZH_STATE_SECTIONS:
+                # English prose sections: swap the quad state NAMES for the desk's
+                # canonical 中文 so the model cannot copy "Goldilocks" out of its own
+                # grounding into a Chinese answer (see _ZH_STATE_TOKENS).
+                text = _zh_state_words(text)
             if text and text.strip():
                 sections.append((name, text))
     except Exception as exc:  # noqa: BLE001

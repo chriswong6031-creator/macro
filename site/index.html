@@ -5,7 +5,7 @@
      plain template: templates/index.html must byte-match site/index.html
      (scripts/check_template_site_sync). EN-only for now — bilingual pass
      lands with the build wave. -->
-<html lang="en" data-lang="en">
+<html lang="en" data-lang="en" data-motion-page="landing">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -18,8 +18,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -67,7 +76,8 @@
      the body face and the display fallback, so there is nothing left to preload —
      Inter's own weights are already discovered by that stylesheet. -->
 <link rel="stylesheet" href="onboard.css?v=5c897a72">
-<link rel="stylesheet" href="landing.css?v=92eef2ef">
+<link rel="stylesheet" href="landing.css?v=e78fcdd6">
+<link rel="stylesheet" href="scene-motion.css?v=f426716d">
 </head>
 <body>
 
@@ -714,7 +724,7 @@
         <ul class="tf">
           <li data-zh="<b>全部宏观看板</b> — 美 · 中 · 港 · 加"><b>Every macro dashboard</b> — US · China · HK · Canada</li>
           <li data-zh="<b>每个列表每天 3 条信号</b>；注册前可预览 1 条"><b>3 signals per daily list</b>; preview 1 before signup</li>
-          <li data-zh="完整 Terminal — 浏览器实时图表">The full Terminal — live charts in the browser</li>
+          <li data-zh="Terminal 图表 — 21 个核心指标 + K 线着色器">Terminal charting — 21 core indicators + Candle Painter</li>
           <li data-zh="公开战绩与复盘">The public track record &amp; autopsies</li>
         </ul>
         <a class="btn js-plan-cta" data-plan="free" href="https://app.mastermind-x.com/terminal?signup=1" style="justify-content:center" data-zh="免费开始">Start free</a>
@@ -723,10 +733,11 @@
         <h3>Insider</h3>
         <p class="who" data-zh="随叫随到的分析师，配上完整的工作台席。">The working desk, with the analyst on call.</p>
         <div class="price" data-annual="$75" data-monthly="$99">$75 <span class="per">/mo billed annually</span></div>
-        <p class="bill" data-bill data-annual-en="Billed $900 a year." data-monthly-en="Billed monthly — cancel anytime." data-annual-zh="按年结算 $900。" data-monthly-zh="按月结算——随时取消。">Billed $900 a year.</p>
-        <span class="badge" data-zh="比月付省 24%">SAVE 24% VS MONTHLY</span>
+        <p class="bill" data-bill data-annual-en="" data-monthly-en="Billed monthly — cancel anytime." data-annual-zh="" data-monthly-zh="按月结算——随时取消。"></p>
+        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-insider"><span class="sv-amt" data-zh="每年省 $288">SAVE $288 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-insider" data-zh="相对按月付费：年付全年 $900，按月支付全年为 $1,188。">Compared to paying monthly. Your full annual price is $900 against $1,188 with regular monthly payments.</span></p>
         <ul class="tf">
           <li data-zh="Free 全部内容">Everything in Free</li>
+          <li data-zh="<b>31 个高级模块中的 15 个</b>——趋势引擎、市场结构与振荡器信号"><b>15 of 31 advanced modules</b> — Trend Engine, market structure &amp; oscillator signals</li>
           <li data-zh="<b>每月 300 次 Flash AI</b> + 10 次 Pro AI 深研"><b>300 Flash AI answers</b> + 10 Pro AI deep dives a month</li>
           <li data-zh="<b>日内期权流</b> — 扫单与大宗实时打印"><b>Intraday options flow</b> — sweeps &amp; blocks as they print</li>
           <li data-zh="内部人、国会与 13F 台席">The Insider, Congress &amp; 13F desks</li>
@@ -737,16 +748,17 @@
       <div class="tier hot rv" style="--d:.16s" data-founding-tier>
         <h3>Pro</h3>
         <p class="who" data-zh="为那些提出更难问题的人准备。">For the ones who ask harder questions.</p>
-        <div class="price" data-annual="$75" data-monthly="$149" data-offer-key="founding_pro" data-offer-active="true"><span class="was">$109</span>$75 <span class="per">/mo billed annually</span></div>
-        <p class="bill" data-bill data-annual-en="Billed $900 a year — the Insider annual price, for the Pro desk." data-monthly-en="Billed monthly — the founding rate is annual only." data-annual-zh="按年结算 $900——以 Insider 年付价格解锁 Pro 台席。" data-monthly-zh="按月结算——创始价仅限年付。">Billed $900 a year — the Insider annual price, for the Pro desk.</p>
-        <span class="badge" data-founding-badge data-zh="每年省 $408">SAVE $408 A YEAR</span>
+        <div class="price" data-annual="$75" data-monthly="$149" data-offer-key="founding_pro" data-offer-active="true"><span class="wasrow"><span class="wasi"><span class="was">$149</span><span class="was-q" data-zh="/月 · 月付">/mo billed monthly</span></span><span class="wasi"><span class="was">$109</span></span></span>$75 <span class="per">/mo billed annually</span></div>
+        <p class="bill" data-bill data-annual-en="" data-monthly-en="Billed monthly — the founding rate is annual only." data-annual-zh="" data-monthly-zh="按月结算——创始价仅限年付。"></p>
+        <p class="sv"><span class="badge" tabindex="0" aria-describedby="sv-tip-pro"><span class="sv-amt" data-founding-badge data-zh="每年省 $888">SAVE $888 A YEAR</span><span class="sv-i" aria-hidden="true">ⓘ</span></span><span class="sv-tip" role="tooltip" id="sv-tip-pro" data-founding-tip data-zh="相对按月付费：创始年付全年 $900，按月支付全年为 $1,788——比常规年付 $1,308 再省 $408。">Compared to paying monthly. Your founding annual price is $900 against $1,788 with regular monthly payments — and $408 under the regular annual rate of $1,308.</span></p>
         <div class="founding" data-founding>
           <div class="founding-line"><b data-zh="创始名额">FOUNDING MEMBERSHIPS</b><span class="fcount" data-founding-count data-zh="共 2,000 个，先到先得">2,000 total — first come, first served</span></div>
-          <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available" aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0"><span class="founding-fill" data-founding-fill></span></div>
-          <p class="founding-terms" data-zh="名额每日递减 · 只要不退订，$900/年 永久锁定。">The allotment shrinks daily · $900/yr locked in for as long as you stay.</p>
+          <div class="founding-track" hidden role="progressbar" aria-label="Founding Pro memberships no longer available, out of 2,000" aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0"><span class="founding-fill" data-founding-fill></span></div>
+          <p class="founding-terms" data-zh="满员即涨价 · 只要不退订，$900/年 永久锁定。">The price rises when space runs out · $900/yr locked in for as long as you stay.</p>
         </div>
         <ul class="tf">
           <li data-zh="<b>Insider 全部内容</b>"><b>Everything in Insider</b></li>
+          <li data-zh="<b>全部 31 个高级模块</b>——结构核心、趋势波、脉冲、RSI 与 MACD"><b>All 31 advanced modules</b> — Structure Core, Trend Waves, Pulse, RSI &amp; MACD</li>
           <li data-zh="每月 150 次 Pro AI 深研 + 无限量 Flash AI">150 Pro AI deep dives a month + unlimited Flash AI</li>
           <li data-zh="Mastermind 与机构研究报告">Mastermind + institutional research reports</li>
           <li data-zh="机器人组合 · MCP 即将推出">Bot Portfolios · MCP coming soon</li>
@@ -790,6 +802,7 @@
           <tr class="t-ins"><td class="feat"><span class="ft" data-zh="每日 AI 晨间简报">Daily AI morning brief</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4">TERMINAL</td></tr>
           <tr><td class="feat has-tip"><span class="ft" data-zh="实时图表">Live charting</span><span class="tipbox" data-zh="浏览器内运行——无需安装。">In the browser — nothing to install.</span></td><td class="ok">✓</td><td class="ok">✓</td><td class="ok">✓</td></tr>
+          <tr><td class="feat has-tip"><span class="ft" data-zh="高级指标模块">Advanced indicator modules</span><span class="tipbox" data-zh="所有方案均含 21 个核心指标。Free 另含 K 线着色器；Insider 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。">Every plan includes 21 core indicators. Free also includes Candle Painter; Insider unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.</span></td><td class="val">1 / 31<small data-zh="K 线着色器">Candle Painter</small></td><td class="val">15 / 31<small data-zh="核心趋势 + 信号">core trend + signals</small></td><td class="val" data-zh="全部 31 个">All 31<small data-zh="5 套完整工具组">5 complete suites</small></td></tr>
           <tr class="t-ins"><td class="feat has-tip"><span class="ft" data-zh="日内期权流">Intraday options flow</span><span class="mchip ins">INSIDER</span><span class="tipbox" data-zh="扫单与大宗成交实时打印。">Sweeps and blocks as they print.</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="t-ins"><td class="feat"><span class="ft" data-zh="财报电话会记录">Earnings call transcripts</span><span class="mchip ins">INSIDER</span></td><td class="no">✗</td><td class="ok">✓</td><td class="ok">✓</td></tr>
           <tr class="grp"><td colspan="4">MASTERMIND AI</td></tr>
@@ -872,6 +885,7 @@
   </div>
 </footer>
 
+<script src="scene-motion.js?v=5ce10d9a" defer></script>
 <script>
 /* capture hook for visual QA (see .still CSS) */
 if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
@@ -1047,9 +1061,13 @@ function applyPricing(){
   const annual = isAnnual(), zh = LANG.cur() === 'zh';
   document.querySelectorAll('.price[data-annual]').forEach(p => {
     p.childNodes.forEach(n => { if (n.nodeType === 3 && n.textContent.trim()) n.textContent = (annual ? p.dataset.annual : p.dataset.monthly) + ' '; });
-    const per = p.querySelector('.per'), was = p.querySelector('.was');
+    const per = p.querySelector('.per');
     if (per) per.textContent = zh ? (annual ? '/月 · 年付' : '/月 · 月付') : (annual ? '/mo billed annually' : '/mo billed monthly');
-    if (was) was.style.display = annual && (!p.dataset.offerKey || p.dataset.offerActive === 'true') ? '' : 'none';
+    /* the dead-price ladder is annual-only, and only while the offer it anchors is
+       live: monthly IS the struck price, so showing it struck beside itself is a lie.
+       Every rung goes together — the row wrapper and each .was inside it. */
+    const showWas = annual && (!p.dataset.offerKey || p.dataset.offerActive === 'true');
+    p.querySelectorAll('.wasrow,.was').forEach(w => { w.style.display = showWas ? '' : 'none'; });
   });
   document.querySelectorAll('.tier .badge').forEach(el => el.style.visibility = annual ? '' : 'hidden');
   document.querySelectorAll('.bill[data-bill]').forEach(el => {
@@ -1090,6 +1108,7 @@ LANG.onChange(applyPricing);
   if(!tier) return;
   const price=tier.querySelector('.price[data-offer-key]');
   const badge=tier.querySelector('[data-founding-badge]');
+  const tip=tier.querySelector('[data-founding-tip]');
   const count=tier.querySelector('[data-founding-count]');
   const fill=tier.querySelector('[data-founding-fill]');
   const track=tier.querySelector('.founding-track');
@@ -1100,7 +1119,12 @@ LANG.onChange(applyPricing);
       price.dataset.offerActive=o.active?'true':'false';
       price.dataset.annual=o.active?'$75':'$109';
       if(!o.active){
-        setBi(badge,'SAVE 27% · $1,308/YR','省 27% · $1,308/年');
+        /* offer closed: the anchor is the regular annual rack rate, so the saving is
+           measured against monthly at that rate ($1,788 − $1,308). Same sentence
+           shape as the founding tooltip — only the two numbers move. */
+        setBi(badge,'SAVE $480 A YEAR','每年省 $480');
+        setBi(tip,'Compared to paying monthly. Your full annual price is $1,308 against $1,788 with regular monthly payments.',
+          '相对按月付费：年付全年 $1,308，按月支付全年为 $1,788。');
         document.querySelectorAll('[data-mx-plan="pro"] .mx-mobile-price,[data-founding-matrix]').forEach(el=>{
           el.dataset.annual='$109/mo'+(el.matches('.mx-price')?' annual':'');
           el.dataset.annualZh='$109/月'+(el.matches('.mx-price')?' · 年付':'');
@@ -1111,8 +1135,10 @@ LANG.onChange(applyPricing);
         const left=cap-taken;
         const showCount=taken>=Number(o.public_count_threshold||0);
         const capLabel=cap.toLocaleString(),leftLabel=left.toLocaleString();
-        setBi(count,showCount?leftLabel+' of '+capLabel+' left':capLabel+' total — first come, first served',
-          showCount?'还剩 '+leftLabel+' / '+capLabel:'共 '+capLabel+' 个，先到先得');
+        /* availability framing, never a member count (HARD TRUTH LAW): the number that
+           moves is what is LEFT. It carries the weight; its frame stays quiet. */
+        setBi(count,showCount?'<b>'+leftLabel+'</b> of '+capLabel+' left':capLabel+' total — first come, first served',
+          showCount?'还剩 <b>'+leftLabel+'</b> / '+capLabel:'共 '+capLabel+' 个，先到先得');
         if(track){
           track.hidden=!showCount;
           track.setAttribute('aria-valuenow',String(taken));
@@ -1175,6 +1201,21 @@ LANG.onChange(applyPricing);
 })();
 
 /* ───── gentle live ticks: heatmap + econ/assets ───── */
+const motionVisible = (el, margin=96) => {
+  if (!el || document.hidden) return false;
+  const r=el.getBoundingClientRect();
+  return r.bottom >= -margin && r.top <= innerHeight + margin;
+};
+const motionReasonBeat = (el, fn, fallbackMs) => {
+  const scene=el&&el.closest('[data-mm-scene]');
+  if(scene){
+    scene.addEventListener('mm:phase',event=>{
+      if(event.detail&&event.detail.phase==='reason') fn();
+    });
+  } else {
+    setInterval(()=>{ if(motionVisible(el)) fn(); },fallbackMs);
+  }
+};
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documentElement.classList.contains('still')) {
   const tiles = [...document.querySelectorAll('.hm')];
   tiles.forEach(t => t.dataset.b = t.dataset.v);   // real baseline: jitter stays near it
@@ -1189,7 +1230,7 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
     t.classList.add('flash'); setTimeout(() => t.classList.remove('flash'), 420);
   };
   function heatRound(){
-    if (document.hidden) { setTimeout(heatRound, 1500); return; }
+    if (!motionVisible(tiles[0])) { setTimeout(heatRound, 1500); return; }
     const pool = [...tiles], pick = [], count = 2 + Math.floor(Math.random()*2);
     for (let k = 0; k < count && pool.length; k++) pick.push(pool.splice(Math.floor(Math.random()*pool.length), 1)[0]);
     pick.forEach((t, k) => setTimeout(() => bumpTile(t), k*280));
@@ -1200,8 +1241,8 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
     if (row) { row.classList.add('rf'); setTimeout(() => row.classList.remove('rf'), 650); } };
   const lv = [...document.querySelectorAll('.lv')];
   setInterval(() => {
-    if (document.hidden) return;
-    const el = lv[Math.floor(Math.random()*lv.length)];
+    const live=lv.filter(el=>motionVisible(el)); if(!live.length) return;
+    const el = live[Math.floor(Math.random()*live.length)];
     let v = parseFloat(el.dataset.v) + (Math.random()*.12 - .06);
     v = Math.max(-3.5, Math.min(3.5, v));
     el.dataset.v = v.toFixed(1);
@@ -1211,8 +1252,8 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
   }, 4300);
   const lvp = [...document.querySelectorAll('.lvp')];
   setInterval(() => {
-    if (document.hidden) return;
-    const el = lvp[Math.floor(Math.random()*lvp.length)];
+    const live=lvp.filter(el=>motionVisible(el)); if(!live.length) return;
+    const el = live[Math.floor(Math.random()*live.length)];
     const d = parseInt(el.dataset.d, 10);
     let p = parseFloat(el.dataset.p) + (Math.random() - .5) * parseFloat(el.dataset.s) * 2;
     el.dataset.p = p;
@@ -1221,8 +1262,8 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
   }, 4700);
   const lvd = [...document.querySelectorAll('.lvd')];
   setInterval(() => {
-    if (document.hidden || !lvd.length) return;
-    const el = lvd[Math.floor(Math.random()*lvd.length)];
+    const live=lvd.filter(el=>motionVisible(el)); if(!live.length) return;
+    const el = live[Math.floor(Math.random()*live.length)];
     let p = parseFloat(el.dataset.p) + (Math.random() - .5) * parseFloat(el.dataset.s) * 2;
     el.dataset.p = p; el.textContent = p.toFixed(2);
     rowFlash(el);
@@ -1233,10 +1274,10 @@ if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.documen
 const CALM = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const STILL = document.documentElement.classList.contains('still');
 
-/* — living market field: the curtain's vertical instruments bend as slow market
-     tides move through them. Two canvas depths plus the CSS hairline fallback keep
-     the field dimensional on desktop; coarse/mobile devices render one slower,
-     lower-resolution layer. The loop sleeps off-screen and in background tabs. — */
+/* — subtle elastic market lattice: progressively enhance the curtain's existing
+     8px grid rather than placing a second illustration behind the cards. A slow,
+     authored pressure cycle compresses, bends and releases the same fine instruments.
+     Mobile keeps the geometry but lowers density, displacement and frame rate. — */
 (function(){
   const canvas=document.getElementById('market-field');
   const cover=canvas&&canvas.closest('.cover');
@@ -1250,8 +1291,9 @@ const STILL = document.documentElement.classList.contains('still');
     deflation:[96,112,142],
     stagflation:[180,132,43]
   };
-  let target=palettes.goldilocks.slice(), colour=target.slice();
-  let width=0,height=0,dpr=1,mobile=false,active=false,raf=0,last=0;
+  const TAU=Math.PI*2, PHRASE_MS=18000;
+  let target=palettes.goldilocks.slice(),colour=target.slice();
+  let width=0,height=0,dpr=1,mobile=false,active=false,raf=0,last=0,started=performance.now();
   let pointerX=-9999,pointerY=-9999,pointerTarget=0,pointerPower=0;
   const finePointer=matchMedia('(hover:hover) and (pointer:fine)');
 
@@ -1263,7 +1305,7 @@ const STILL = document.documentElement.classList.contains('still');
     width=Math.max(1,Math.round(box.width));
     height=Math.max(1,Math.round(box.height));
     mobile=width<760||!finePointer.matches;
-    dpr=Math.min(window.devicePixelRatio||1,mobile?1.25:1.6);
+    dpr=Math.min(window.devicePixelRatio||1,mobile?1.15:1.45);
     const pixelWidth=Math.max(1,Math.round(width*dpr));
     const pixelHeight=Math.max(1,Math.round(height*dpr));
     if(canvas.width!==pixelWidth||canvas.height!==pixelHeight){
@@ -1274,65 +1316,138 @@ const STILL = document.documentElement.classList.contains('still');
   function rgba(alpha){
     return 'rgba('+colour.map(Math.round).join(',')+','+alpha+')';
   }
+  function clamp(n,a=0,b=1){ return Math.max(a,Math.min(b,n)); }
+  function smooth(a,b,n){
+    const x=clamp((n-a)/(b-a));
+    return x*x*(3-2*x);
+  }
   function gaussian(n){ return Math.exp(-(n*n)); }
-  function lineLayer(time,gap,baseAlpha,amplitude,phase,lineWidth){
-    const sweep=((time*(mobile?.018:.032)+phase*317)%(width+640))-320;
-    const echo=width+280-((time*(mobile?.009:.017)+phase*191)%(width+560));
+
+  function phraseState(time){
+    const phase=((time-started)%PHRASE_MS)/PHRASE_MS;
+    const primaryGate=smooth(.02,.14,phase)*(1-smooth(.72,.91,phase));
+    const counterGate=smooth(.21,.36,phase)*(1-smooth(.74,.9,phase));
+    const releaseProgress=clamp((phase-.49)/.39);
+    const releaseGate=phase>=.49&&phase<=.88?Math.sin(Math.PI*releaseProgress):0;
+    return {
+      phase,
+      primaryX:width*(-.13+phase*1.3),
+      primaryY:height*(.57+Math.sin(phase*TAU)*.026),
+      primaryGate,
+      counterX:width*(1.13-Math.max(0,phase-.2)*1.24),
+      counterY:height*(.43+Math.sin(phase*TAU+1.4)*.02),
+      counterGate,
+      releaseProgress,
+      releaseGate
+    };
+  }
+
+  function fieldPoint(x,y,state,phaseShift){
+    const scale=mobile?.58:1;
+    const pDx=(x-state.primaryX)/(width*.16+58);
+    const pDy=(y-state.primaryY)/(height*.42+38);
+    const primary=gaussian(pDx)*gaussian(pDy)*state.primaryGate;
+    const cDx=(x-state.counterX)/(width*.2+72);
+    const cDy=(y-state.counterY)/(height*.48+42);
+    const counter=gaussian(cDx)*gaussian(cDy)*state.counterGate*.48;
+
+    let dx=(-pDx*primary*2.15
+      +Math.sin(y*.019+state.phase*TAU+phaseShift)*primary*3.15
+      -cDx*counter*1.65
+      +Math.sin(y*.014-state.phase*TAU*.72+phaseShift)*counter*1.45)*scale;
+    let dy=(Math.sin(x*.009-state.phase*TAU*.78)*primary*1.7
+      -Math.sin(x*.007+state.phase*TAU*.58)*counter*1.15)*scale;
+
+    const originX=width*.56,originY=height*.53;
+    const rDx=x-originX,rDy=(y-originY)*1.18;
+    const radius=Math.sqrt(rDx*rDx+rDy*rDy);
+    const front=state.releaseProgress*Math.max(width,height)*.44;
+    const ring=gaussian((radius-front)/(width*.035+24))*state.releaseGate;
+    const safeRadius=Math.max(18,radius);
+    dx+=(rDx/safeRadius)*ring*1.35*scale;
+    dy+=(rDy/safeRadius)*ring*1.1*scale;
+
+    if(!mobile&&pointerPower>.002){
+      const px=x-pointerX,py=y-pointerY;
+      const distance=Math.sqrt(px*px+py*py);
+      const touch=gaussian(distance/168)*Math.sin(distance*.036-state.phase*TAU*5);
+      dx+=touch*2.6*pointerPower;
+      dy+=touch*.72*pointerPower;
+    }
+
+    dx+=Math.sin(y*.012+state.phase*TAU)*.28*scale;
+    dy+=Math.sin(x*.006-state.phase*TAU*.54)*.18*scale;
+    return {x:x+dx,y:y+dy,energy:clamp(Math.max(primary,counter,ring))};
+  }
+
+  function verticalGradient(){
     const gradient=ctx.createLinearGradient(0,0,0,height);
     gradient.addColorStop(0,rgba(0));
-    gradient.addColorStop(.2,rgba(.42));
-    gradient.addColorStop(.72,rgba(.96));
+    gradient.addColorStop(.18,rgba(.38));
+    gradient.addColorStop(.7,rgba(.92));
     gradient.addColorStop(1,rgba(0));
-    ctx.strokeStyle=gradient;
-    ctx.lineWidth=lineWidth;
-    ctx.lineCap='round';
+    return gradient;
+  }
+  function horizontalGradient(){
+    const gradient=ctx.createLinearGradient(0,0,width,0);
+    gradient.addColorStop(0,rgba(0));
+    gradient.addColorStop(.1,rgba(.34));
+    gradient.addColorStop(.5,rgba(.72));
+    gradient.addColorStop(.9,rgba(.34));
+    gradient.addColorStop(1,rgba(0));
+    return gradient;
+  }
 
-    for(let x=-gap;x<=width+gap;x+=gap){
-      const crest=gaussian((x-sweep)/(width*.19+88));
-      const counter=gaussian((x-echo)/(width*.25+116))*.62;
-      const energy=Math.min(1,crest+counter);
-      ctx.globalAlpha=baseAlpha+energy*baseAlpha*1.55;
+  function drawVerticalGrid(state){
+    const gap=mobile?12:8;
+    const sample=mobile?22:14;
+    ctx.strokeStyle=verticalGradient();
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    for(let x=0,line=0;x<=width+gap;x+=gap,line++){
+      let energy=0;
       ctx.beginPath();
-      for(let y=-8;y<=height+10;y+=mobile?18:13){
-        const depth=y/Math.max(1,height);
-        const tide=Math.sin(y*.018+time*.00022+x*.0036+phase)*amplitude*(.72+energy*2.4);
-        const interference=Math.sin(y*.007-time*.00012+x*.011+phase*1.7)*amplitude*.66;
-        let wake=0;
-        if(!mobile&&pointerPower>.002){
-          const dx=x-pointerX,dy=y-pointerY;
-          const distance=Math.sqrt(dx*dx+dy*dy);
-          wake=gaussian(distance/150)*Math.sin(distance*.045-time*.0038)*9*pointerPower*(1-depth*.24);
-        }
-        const drawX=x+tide+interference+wake;
-        if(y===-8) ctx.moveTo(drawX,y); else ctx.lineTo(drawX,y);
+      for(let y=-sample,first=true;y<=height+sample;y+=sample){
+        const point=fieldPoint(x,y,state,line%4*.13);
+        energy=Math.max(energy,point.energy);
+        if(first){ ctx.moveTo(point.x,point.y);first=false; }
+        else ctx.lineTo(point.x,point.y);
       }
+      const major=line%4===0;
+      ctx.globalAlpha=(mobile?.15:.14)+energy*(mobile?.075:.11)+(major?.018:0);
+      ctx.lineWidth=(mobile?.78:.72)+energy*(mobile?.16:.24)+(major?.08:0);
       ctx.stroke();
     }
     ctx.globalAlpha=1;
   }
-  function priceBreath(time){
-    const y0=height*.48;
-    ctx.save();
-    ctx.globalCompositeOperation='screen';
-    ctx.beginPath();
-    for(let x=-12;x<=width+12;x+=8){
-      const y=y0
-        +Math.sin(x*.0062-time*(mobile?.00023:.00038))*height*.045
-        +Math.sin(x*.014+time*.00019)*height*.018;
-      if(x===-12) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+
+  function drawHorizontalGrid(state){
+    const gap=mobile?52:40;
+    const sample=mobile?24:16;
+    ctx.strokeStyle=horizontalGradient();
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    for(let y=gap;y<height;y+=gap){
+      let energy=0;
+      ctx.beginPath();
+      for(let x=-sample,first=true;x<=width+sample;x+=sample){
+        const point=fieldPoint(x,y,state,.42);
+        energy=Math.max(energy,point.energy);
+        if(first){ ctx.moveTo(point.x,point.y);first=false; }
+        else ctx.lineTo(point.x,point.y);
+      }
+      ctx.globalAlpha=(mobile?.022:.028)+energy*(mobile?.024:.042);
+      ctx.lineWidth=mobile?.56:.62;
+      ctx.stroke();
     }
-    ctx.strokeStyle=rgba(mobile?.055:.075);
-    ctx.lineWidth=1;
-    ctx.shadowColor=rgba(.22);
-    ctx.shadowBlur=mobile?7:14;
-    ctx.stroke();
-    ctx.restore();
+    ctx.globalAlpha=1;
   }
-  function lightTide(time){
-    const x=((time*(mobile?.018:.032))%(width+640))-320;
-    const glow=ctx.createRadialGradient(x,height*.62,0,x,height*.62,width*(mobile?.34:.24));
-    glow.addColorStop(0,rgba(mobile?.075:.11));
-    glow.addColorStop(.46,rgba(mobile?.025:.04));
+
+  function fieldLight(state){
+    const radius=Math.max(90,width*(mobile?.2:.16));
+    const glow=ctx.createRadialGradient(state.primaryX,state.primaryY,0,state.primaryX,state.primaryY,radius);
+    glow.addColorStop(0,rgba((mobile?.018:.026)*state.primaryGate));
+    glow.addColorStop(.52,rgba((mobile?.006:.009)*state.primaryGate));
     glow.addColorStop(1,rgba(0));
     ctx.fillStyle=glow;
     ctx.fillRect(0,0,width,height);
@@ -1341,15 +1456,15 @@ const STILL = document.documentElement.classList.contains('still');
     ctx.clearRect(0,0,width,height);
     for(let i=0;i<3;i++) colour[i]+=(target[i]-colour[i])*.025;
     pointerPower+=(pointerTarget-pointerPower)*.055;
-    lightTide(time);
-    if(!mobile) lineLayer(time,18,.15,1.15,1.9,.72);
-    lineLayer(time,mobile?13:8,mobile?.2:.17,mobile?1.3:1.75,.35,mobile?.75:.66);
-    priceBreath(time);
+    const state=phraseState(time);
+    fieldLight(state);
+    drawHorizontalGrid(state);
+    drawVerticalGrid(state);
   }
   function frame(time){
     raf=0;
     if(!active||document.hidden) return;
-    const minFrame=mobile?32:16;
+    const minFrame=mobile?42:24;
     if(!last||time-last>=minFrame){ paint(time); last=time; }
     raf=requestAnimationFrame(frame);
   }
@@ -1378,7 +1493,8 @@ const STILL = document.documentElement.classList.contains('still');
     if(active) start(); else stop();
   },{rootMargin:'120px 0px',threshold:.01}).observe(cover);
   document.addEventListener('visibilitychange',()=>{ if(document.hidden) stop(); else start(); });
-  syncPalette(); resize();
+  syncPalette();resize();paint(performance.now());
+  cover.classList.add('market-field-live');
 })();
 
 /* — hero pyramid: one scripted regime cycle drives the gauge, the buy lane and
@@ -1671,7 +1787,7 @@ const STILL = document.documentElement.classList.contains('still');
   const MOVES=[['AI Software','buy'],['Payments','alm'],['Regional Banks','sa'],
     ['AI Software','alm'],['Payments','tp'],['Regional Banks','tp']];
   let mi=0;
-  setInterval(()=>{ if(document.hidden) return;
+  const move=()=>{
     const [key,target]=MOVES[mi++%MOVES.length];
     const chip=[...wrap.querySelectorAll('.thm')].find(c=>c.dataset.key===key);
     const tl=wrap.querySelector(`[data-lane="${target}"]`);
@@ -1683,7 +1799,8 @@ const STILL = document.documentElement.classList.contains('still');
     chip.classList.add('hot');
     requestAnimationFrame(()=>requestAnimationFrame(()=>{ chip.classList.add('mov'); chip.style.transform=''; }));
     setTimeout(()=>chip.classList.remove('mov','hot'),950);
-  },4200);
+  };
+  motionReasonBeat(wrap,move,4200);
 })();
 
 /* — filings feed (illustrative names, not real people) — */
@@ -1707,7 +1824,7 @@ const STILL = document.documentElement.classList.contains('still');
   function seed(){ box.innerHTML=''; i=0; for(let k=0;k<6;k++) row(); }
   seed();
   LANG.onChange(seed);
-  if (!CALM && !STILL) setInterval(()=>{ if(!document.hidden) row(true); },3600);
+  if (!CALM && !STILL) motionReasonBeat(box,()=>row(true),3600);
 })();
 
 /* — special situations cards — */
@@ -1732,13 +1849,14 @@ const STILL = document.documentElement.classList.contains('still');
   LANG.onChange(paint);
   if (CALM || STILL) return;
   let i=2;
-  setInterval(()=>{ if(document.hidden) return;
+  const swap=()=>{
     const slot=i%2; shown[slot]=i%CARDS.length;
     const old=box.children[slot];
     old.classList.add('swap');
     setTimeout(()=>{ if(box.children[slot]===old) box.replaceChild(card(CARDS[shown[slot]]),old); },420);
     i++;
-  },6200);
+  };
+  motionReasonBeat(box,swap,6200);
 })();
 
 /* — 13F flow bars — */
@@ -1753,12 +1871,13 @@ const STILL = document.documentElement.classList.contains('still');
     requestAnimationFrame(()=>requestAnimationFrame(()=>d.querySelector('i').style.setProperty('--w',r[5]+'%'))); });
   LANG.onChange(l=>box.querySelectorAll('.fd-row').forEach(d=>{ d.querySelector('.dt2').textContent=(l==='zh')?d._r[4]:d._r[3]; }));
   if (CALM || STILL) return;
-  setInterval(()=>{ if(document.hidden) return;
+  const updateBar=()=>{
     const bars=box.querySelectorAll('.fd-bar i');
     const b=bars[Math.floor(Math.random()*bars.length)];
     const cur=parseFloat(b.style.getPropertyValue('--w'))||40;
     b.style.setProperty('--w',Math.max(18,Math.min(92,cur+(Math.random()*14-7)))+'%');
-  },3800);
+  };
+  motionReasonBeat(box,updateBar,3800);
 })();
 
 /* — btc cycle arc — */
@@ -1807,7 +1926,7 @@ const STILL = document.documentElement.classList.contains('still');
     cmp: { xle:{en:'NEAR ZONE',zh:'接近区间'}, nvda:{en:'GATE SHUT',zh:'闸口关闭'} }
   };
   const L=()=>LANG.cur(), tx=o=>o[L()];
-  let timers=[];
+  let timers=[], active=false;
   const later=(fn,ms)=>{ const id=setTimeout(fn,ms); timers.push(id); return id; };
   const clearAll=()=>{ timers.forEach(clearTimeout); timers=[]; };
   const el=(tag,cls)=>{ const e=document.createElement(tag); if(cls) e.className=cls; return e; };
@@ -1972,12 +2091,21 @@ const STILL = document.documentElement.classList.contains('still');
   const STATIC = CALM || STILL;
   function boot(){ clearAll(); if(STATIC) renderStatic(); else { setPlaceholder(); run(); } }
   LANG.onChange(()=>{ clearAll(); thread.style.opacity='1';
-    if(STATIC) renderStatic(); else { thread.innerHTML=''; setPlaceholder(); run(); } });
+    if(STATIC) renderStatic();
+    else if(active){ thread.innerHTML=''; setPlaceholder(); run(); }
+    else { thread.innerHTML=''; setPlaceholder(); } });
   if(STATIC){ renderStatic(); return; }
   setPlaceholder();
   const sec=document.getElementById('ai');
-  const cio=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ boot(); cio.disconnect(); } }),{threshold:.2});
-  if(sec) cio.observe(sec); else boot();
+  const cio=new IntersectionObserver(es=>es.forEach(e=>{
+    const onscreen=e.isIntersecting&&e.intersectionRatio>=.12;
+    if(onscreen&&!active){ active=true; boot(); }
+    else if(!onscreen&&active){ active=false; clearAll(); thread.style.opacity='1'; }
+  }),{rootMargin:'80px 0px',threshold:[0,.12,.3]});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden) clearAll(); else if(active) boot();
+  });
+  if(sec) cio.observe(sec); else { active=true; boot(); }
 })();
 
 /* — Prophet showcase: DELAYED winning calls from the board ledger (never
@@ -2126,6 +2254,6 @@ LANG.apply(LANG.cur());
   if(document.readyState==='loading') addEventListener('DOMContentLoaded',go); else go();
 })();
 </script>
-<script src="onboard.js?v=37b179a8" defer></script>
+<script src="onboard.js?v=77624cf4" defer></script>
 </body>
 </html>

@@ -1,0 +1,22 @@
+{
+  "benchmark_id": "bear_steepener_2026-07-29",
+  "frozen": true,
+  "source": "operator handoff mastermind_ai_market_reasoning_fable_handoff.md §12 (ChatGPT Sol conversation, 2026-07-29); ratified masterplan §1",
+  "question_en": "Why are all indexes deeply red, but TLT is also red, long bonds are down, and short bonds are up?",
+  "user_supplied_data": {"YM": "-2.30%", "ES": "-1.72%", "NQ": "-2.24%", "RTY": "-1.94%", "yield_1y_bp": -5.1, "yield_2y_bp": -1.7, "yield_5y_bp": 4.6, "yield_10y_bp": 8.6, "yield_20y_bp": 12.9, "TLT": "-1.65%", "tips_10y_bp": 1.0},
+  "packet_digest_fixture": "[CURRENT DASHBOARD STATE — ≈15-min delayed; stamps per section. Ground your answer in this, but NEVER name files or fields — give the plain read. Numbers here are the desk's own reads.]\nTAPE (07-29 14:52Z, ≈15-min delayed): YM −2.30% · ES −1.72% · NQ −2.24% · RTY −1.94% | TLT −1.65%\nCURVE (07-29 14:52Z, Δbp): 1Y −5.1 · 2Y −1.7 · 5Y +4.6 · 10Y +8.6 · 20Y +12.9\nRATES DESK (07-29 14:52Z): 10Y real yield (TIPS) +1.0 Δbp",
+  "expected_properties": [
+    {"tag": "regime_from_structure", "check": "identifies bear steepening from the tenor pattern (front rally, long selloff) before naming any cause"},
+    {"tag": "family_elimination", "check": "explicitly rules OUT conventional deflationary risk-off (bonds would rally)"},
+    {"tag": "family_candidates", "check": "names inflationary risk-off / stagflation / term-premium shock as the surviving families"},
+    {"tag": "catalyst_verification", "check": "checks or asks for the day's events (oil, breakevens, geopolitics, Fed, Treasury supply) rather than inferring cause from prices alone"},
+    {"tag": "duration_arithmetic", "check": "reconciles TLT -1.65% mechanically with the long-end bp move via duration"},
+    {"tag": "second_story", "check": "flags possible independent semis/AI-capex driver behind NQ underperformance"},
+    {"tag": "front_vs_long", "check": "explains that front end and long end price different economic questions"},
+    {"tag": "conditional_signposts", "check": "ends with what-would-change-the-read conditions, no odds, no certainty"},
+    {"tag": "user_numbers_quoted", "check": "quotes the user's own numbers back in the answer"},
+    {"tag": "voice", "check": "house voice: plain words, stance line, [NEXT], no machine text, no doctrine leak"}
+  ],
+  "gold_standard_sentence": "The market is pricing weaker near-term growth but worse long-term inflation and fiscal credibility.",
+  "rubric_weights_ref": "masterplan §9"
+}

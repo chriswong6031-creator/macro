@@ -14,6 +14,15 @@
      · one hue per card: glow edge, chart, chip, score, tracker and zone label all follow the
        verb via --pvh. Hues are the dedicated --pv-* tokens (theme.css) — NEVER --up/--down,
        which flip red/green under html[data-lang="zh"]; Buy must stay green in zh.
+
+   ONE DELIBERATE EXCEPTION TO THE ONE-HUE LAW — .pv-live (Prophet Live P1, spec §5.1).
+   The card's hue encodes THE NIGHTLY VERDICT. The ◐ live chip belongs to TODAY'S TAPE: a
+   provisional, un-graded intraday read that only tonight's close settles. Painting it --pvh
+   would render a "below range" caution GREEN on a Buy card — i.e. it would claim the live
+   state is part of the confirmed verdict, which is the exact false claim the prophet_live
+   program exists to avoid. So the live chip carries its own --plvc (provisional blue) or
+   --pv-wait (caution), and the two chips stay distinguishable by glyph as well: ⚡ = nightly
+   (keeps --pvh, untouched), ◐ = live. Do not "repair" this into the one-hue law.
      · every prior disclosure survives, demoted: verdict sentence + entry headline → verb-chip
        data-tip; cautions / sector stance / chase / extension / earnings-window → the ⚠N
        popover (pure CSS hover/focus-within, no JS dependency); score meaning → Edge data-tip.
@@ -52,6 +61,13 @@
 .pv-chart svg [fill]:not([fill="none"]){fill:var(--pvh)!important;stroke:none!important}
 .pv-nochart{height:74px}
 .pv-ov{position:absolute;top:8px;display:flex;gap:5px;align-items:center;z-index:2;max-width:70%}
+{# PRE-EXISTING BUG, fixed 2026-07-30 (P1 spec §5.3): this rule lived ONLY inside the
+   @media (max-width:680px) block, so at DESKTOP width a left overlay that outgrew
+   .pv-ov{max-width:70%} did not wrap — the excess chip clipped BEHIND the .pv-px price
+   pill. Reachable today with verb + ⚡ + ⚠N on a 246px grid cell; the ◐ live chip would
+   have made it routine. The overlay is absolutely positioned, so wrapping costs no card
+   height and the grid is untouched — the second chip row sits over the sparkline. #}
+.pv-ov.pv-ovl{flex-wrap:wrap;row-gap:3px}
 .pv-ovl{left:9px}.pv-ovr{right:9px}
 .pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 13%,var(--panel));color:var(--pvh);border:1px solid color-mix(in srgb,var(--pvh) 40%,transparent)}
 .pv-buy .pv-chip{background:var(--pvh);color:#fff;border-color:transparent}
@@ -88,6 +104,20 @@
 .pv-cau:hover .pv-cau-pop,.pv-cau:focus-within .pv-cau-pop{display:block}
 .pv-cau-row{display:block;font-size:10.5px;line-height:1.45;color:var(--text);padding:2px 0}
 .pv-cau-row + .pv-cau-row{border-top:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+{# PROPHET LIVE P1 (spec §5.3) — the ◐ live chip. Reserved empty slot in every overlay,
+   filled client-side from live/prophet_live.json (dashboard.html.j2, mode=stocks only).
+   NOT --pvh: this chip is today's tape, not the nightly verdict (see the macro header). #}
+.pv-live{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;line-height:1.35;padding:2px 8px;border-radius:999px;white-space:nowrap;--plvc:#62a0e8;background:color-mix(in srgb,var(--plvc) 12%,var(--panel));color:var(--plvc);border:1px solid color-mix(in srgb,var(--plvc) 44%,transparent)}
+{# MANDATORY. A class-level `display` out-specifies the UA [hidden] rule, so without this
+   line every card on every prophet board grows an empty mystery pill. Verified by
+   computed style (tests/test_prophet_live_surface.py pins the rule's presence). #}
+.pv-live[hidden]{display:none}
+html[data-theme="light"] .pv-live{--plvc:#2f6fd0}
+{# NOT solid-filled, unlike the strip's .plv-chip--close: a solid pill out-weighs an
+   outlined verb chip, and the card's verb must stay its ruling stance (macro law). The
+   fill escalation lives on the strip, where a cross is news and has no verb to outrank. #}
+.pv-live--close{background:color-mix(in srgb,var(--plvc) 18%,var(--panel));border-color:color-mix(in srgb,var(--plvc) 70%,transparent)}
+.pv-live--drop,.pv-live--over{--plvc:var(--pv-wait)}
 [data-showmore-rows] .pvcard .pv-chart svg,[data-showmore-rows] .pvcard .pv-nochart{height:56px}
 [data-showmore-rows] .pvcard .pv-tk{font-size:11.5px}
 [data-showmore-rows] .pvcard .pv-stl span{font-size:9px}
@@ -100,11 +130,14 @@
   .pv-zn{font-size:10px}
   /* narrow cards: trigger chip collapses to the bare ⚡ glyph (the board copy
      teaches "marked ⚡"); !important outranks the html[data-lang] l-en/l-zh
-     visibility rules, which otherwise win at any width. Overlay wraps neatly
-     when verb+⚡+⚠N exceed the row instead of colliding with the price pill. */
+     visibility rules, which otherwise win at any width. The overlay's own
+     flex-wrap now applies at EVERY width (promoted above — it was a desktop
+     clipping bug), so it is no longer repeated here. */
   .pv-trg .l-en,.pv-trg .l-zh{display:none!important}
   .pv-trg{padding:2px 5px;gap:0}
-  .pv-ov.pv-ovl{flex-wrap:wrap;row-gap:3px}
+  /* same collapse-to-glyph rule for the ◐ live chip */
+  .pv-live .l-en,.pv-live .l-zh{display:none!important}
+  .pv-live{padding:2px 5px;gap:0}
 }
 </style>
 {% endmacro %}
@@ -123,6 +156,13 @@
       {%- if cx.get('trigger') %}{% set _tg = cx.trigger %}
       <span class="pv-trg{% if _tg.kind == 'imminent' %} pv-trg-soon{% endif %}"{% if _tg.get('tip_en') %} data-tip-en="{{ _tg.tip_en|e }}" data-tip-zh="{{ (_tg.get('tip_zh') or _tg.tip_en)|e }}"{% endif %}>⚡ {% if _tg.kind == 'imminent' %}{{ t('Imminent','即将触发') }}{% else %}{{ t('Triggered','已触发') }}{% endif %}</span>
       {%- endif %}
+      {#- PROPHET LIVE P1 (spec §5.2): reserved, always-present, EMPTY slot for the ◐ live
+          chip. The card is server-rendered nightly and the live state arrives every ~5
+          minutes, so this chip cannot be SSR'd — dashboard.html.j2's strip JS fills it by
+          .pvcard[data-ticker]. `hidden` + the .pv-live[hidden] rule in pv_css() means zero
+          width and zero layout change when there is no live state, which is every card on
+          every non-us_stocks board and most cards here. #}
+      <span class="pv-live" hidden></span>
       {%- if cx.get('flags') %}
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes ({{ cx.flags|length }})" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ {{ cx.flags|length }}</button><span class="pv-cau-pop" role="tooltip">{% for _f in cx.flags %}<span class="pv-cau-row">{{ t(_f[0], _f[1]) }}</span>{% endfor %}</span></span>
       {%- endif %}

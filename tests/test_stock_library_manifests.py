@@ -24,6 +24,29 @@ def test_verified_index_drops_rows_without_detail_json(tmp_path: Path):
     assert json.loads((out / "index.json").read_text()) == verified
 
 
+def test_china_and_hk_search_manifests_include_bilingual_names():
+    china = bcl._search_index_row(
+        "600547.SS",
+        "Shandong Gold Mining Co., Ltd. / 山东黄金",
+        "Materials",
+        "RALLY ON",
+        name_en="Shandong Gold Mining Co., Ltd.",
+        name_zh="山东黄金",
+    )
+    assert china["n"] == "Shandong Gold Mining Co., Ltd."
+    assert china["z"] == "山东黄金"
+
+    hong_kong = bhl._search_index_row(
+        "0700.HK",
+        "Tencent Holdings Ltd.",
+        "Technology",
+        "RALLY ON",
+        name_zh="腾讯控股",
+    )
+    assert hong_kong["n"] == "Tencent Holdings Ltd."
+    assert hong_kong["z"] == "腾讯控股"
+
+
 def test_hk_universe_prefers_deep_search_panel(tmp_path: Path, monkeypatch):
     dd = tmp_path / "data"
     (dd / "hk_breadth").mkdir(parents=True)

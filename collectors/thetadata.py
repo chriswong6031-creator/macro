@@ -193,6 +193,15 @@ WINDOW_WORKERS = 6
 WINDOW_MAX_RETRIES = 2
 WINDOW_RETRY_BACKOFF = (5, 15)   # seconds before retry 1, retry 2
 
+# bulk_trade_quote output-frame schema version (R0.4, masterplan 2026-07-31).
+#   v1: date, trade_timestamp, quote_timestamp, sequence, expiration, strike,
+#       right, price, size, exchange, bid, ask, root
+#   v2 (2026-07-31): + condition, ext_condition1-4 (raw OPRA code strings),
+#       bid_size, ask_size (numeric). Additive only — readers must select named
+#       columns and tolerate absence of the v2 columns in pre-v2 frames
+#       (hourly tape archives written before the cutover).
+BULK_TRADE_QUOTE_SCHEMA_VERSION = 2
+
 # Greek column name mapping for the order= compatibility shim.
 # v3 returns all greek orders in a single /greeks/all response.
 _FIRST_ORDER_COLS  = ["delta", "theta", "vega", "rho", "epsilon", "lambda",
@@ -1402,7 +1411,8 @@ def bulk_trade_quote(root: str, right: str,
                      end_date: date | str | int,
                      start_time: str | int | None = None,
                      end_time: str | int | None = None,
-                     near_dte_cap_days: int | None = None) -> pd.DataFrame | None:
+                     near_dte_cap_days: int | None = None,
+                     expiration: int | str | date = "*") -> pd.DataFrame | None:
     """Full-chain trade+NBBO for ONE right (call or put) on a date range.
 
     Endpoint: GET /v3/option/history/trade_quote with expiration=* and strike=*.
@@ -1426,12 +1436,25 @@ def bulk_trade_quote(root: str, right: str,
                    time are returned.
     Behavior is identical to the no-params call when both are None (additive).
 
+    ⚠ Wildcard + time filter (measured 2026-07-31, terminal build 202607231):
+      expiration=* combined with start_time/end_time returns HTTP 200 with ZERO
+      rows — silently empty, not an error — while the same window with an
+      explicit expiration returns the correct subset. A windowed wildcard call
+      is therefore routed through the per-expiration path unconditionally (any
+      date), never sent as a wildcard request.
+
     near_dte_cap_days:
-      Only used on the current-day fallback path (when the wildcard expiration
-      request is rejected with "specifying an expiration" for today's date).
+      Only used on the per-expiration path (current-day wildcard rejection, or
+      any windowed pull per the guard above).
       If set, limits per-expiration pulls to expirations where
       exp_date <= target_date + timedelta(days=near_dte_cap_days).
       None means no cap (all unexpired expirations are fetched).
+
+    expiration:
+      Explicit expiration (YYYYMMDD int / ISO str / date) to fetch a single
+      expiration instead of the whole chain. Bypasses both the current-day
+      wildcard rejection and the windowed-wildcard guard; used by the poller's
+      delta_mode probe. Default "*" (full chain).
 
     Returns None on terminal error; empty DataFrame if no trades exist.
     """
@@ -1440,9 +1463,11 @@ def bulk_trade_quote(root: str, right: str,
         return None
 
     right_norm = _normalize_right_request(right)   # "call" or "put"
+    exp_param = ("*" if str(expiration) in ("*", "0")
+                 else _date_int(expiration))
     params: dict = {
         "symbol": root.upper(),
-        "expiration": "*",
+        "expiration": exp_param,
         "strike": "*",
         "right": right_norm,
         "start_date": _date_int(start_date),
@@ -1481,6 +1506,10 @@ def bulk_trade_quote(root: str, right: str,
             parts = [v.strip().strip('"') for v in line.split(",")]
             if len(parts) < 23:
                 continue
+            # R0.4 "keep what we pay for" (schema v2): condition, ext_condition1-4,
+            # bid_size and ask_size were previously fetched and dropped here — the
+            # OPRA condition codes are the entire sweep/block/auction vocabulary and
+            # NBBO sizes feed the 5-tier exec-side ladder. Retained since v2.
             rows.append({
                 "date":            parts[4][:10] if parts[4] else None,
                 "trade_timestamp": parts[4],
@@ -1494,6 +1523,13 @@ def bulk_trade_quote(root: str, right: str,
                 "exchange":        parts[13],
                 "bid":             parts[17],
                 "ask":             parts[21],
+                "condition":       parts[11],
+                "ext_condition1":  parts[7],
+                "ext_condition2":  parts[8],
+                "ext_condition3":  parts[9],
+                "ext_condition4":  parts[10],
+                "bid_size":        parts[15],
+                "ask_size":        parts[19],
             })
         return rows
 
@@ -1509,9 +1545,28 @@ def bulk_trade_quote(root: str, right: str,
         df["ask"]      = pd.to_numeric(df["ask"],      errors="coerce")
         df["strike"]   = pd.to_numeric(df["strike"],   errors="coerce")
         df["sequence"] = pd.to_numeric(df["sequence"], errors="coerce")
+        df["bid_size"] = pd.to_numeric(df["bid_size"], errors="coerce")
+        df["ask_size"] = pd.to_numeric(df["ask_size"], errors="coerce")
+        # condition / ext_condition1-4 stay raw strings (OPRA code vocabulary —
+        # downstream classifiers own the mapping; readers must tolerate absence
+        # in pre-v2 frames).
         df["right"]    = df["right"].str.upper().str[:1]   # "CALL"→"C", "PUT"→"P"
         df["root"]     = root.upper()
         return df.reset_index(drop=True)
+
+    # Windowed-wildcard guard (see docstring): expiration=* + start_time/end_time
+    # silently returns zero rows on this terminal build. Route any windowed
+    # wildcard pull through the per-expiration path instead of trusting an
+    # empty-but-200 wildcard response.
+    if exp_param == "*" and (st_str is not None or et_str is not None):
+        return _bulk_trade_quote_per_exp(
+            root=root, right=right_norm,
+            start_date=start_date, end_date=end_date,
+            st_str=st_str, et_str=et_str,
+            near_dte_cap_days=near_dte_cap_days,
+            parse_rows=_parse_rows,
+            build_df=_build_df,
+        )
 
     try:
         rows_all = _parse_rows(

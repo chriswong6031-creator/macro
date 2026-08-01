@@ -1469,6 +1469,20 @@ def gather_btc_state(root: Path | None = None) -> dict:
     bonds = _bonds_backdrop(root)
     if bonds:
         state["bonds"] = bonds
+    # Crypto Cockpit W3: narration-only class context.  Read the published
+    # display contract verbatim through a compact whitelist; do not recompute,
+    # score, rank, size, or expose it to any Article-2 surface.
+    class_state = _read_json(root / "site" / "crypto_class_state.json")
+    if class_state and class_state.get("display_only") is True:
+        compact = {
+            "as_of": class_state.get("as_of"),
+            "display_only": True,
+            "market": class_state.get("market") or {},
+            "flows": class_state.get("flows") or {},
+            "heat": class_state.get("heat") or {},
+            "assets": class_state.get("assets") or {},
+        }
+        state["crypto_class"] = compact
     # ADB-W1 / spec §5b: inject NW BTC context packet (lazy import, never fatal)
     try:
         from engine.neuralweb import brief_context  # noqa: PLC0415

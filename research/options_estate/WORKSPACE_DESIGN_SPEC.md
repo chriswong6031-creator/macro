@@ -58,8 +58,41 @@ to the design lane, not be resolved in the build.
 14. All fixed labels are pinned EN+ZH in §5. Do not translate, re-word, or "improve" them.
 15. Stance vocabulary is closed: `Act · Get ready · Watch — don't chase · Protect gains ·
     Stand aside · Ignore`. No new stance words.
-16. Every panel carries exactly one stance chip and at most one footnote. One as-of stamp
-    per panel.
+16. **Word budget is a CEILING, not a mandate.** A panel carries *at most* one stance
+    chip, *at most* one footnote, and one as-of stamp. A panel with zero stance chips
+    meets this budget exactly as well as one with a single chip.
+
+    This item once read "every panel carries exactly one stance chip," and that wording
+    was taken as a per-panel *requirement* — which is how the identical "Watch — don't
+    chase" chip came to stack down one page until a reader learned to skip it, the
+    opposite of a decision element. **How many stance chips a page may show is governed
+    by the verdict law, not by this budget** (`OIP_MASTERPLAN.md` §3): *"Each surface
+    keeps exactly one decision element (the stance chip row of its hero/footer). New
+    shelves add facts, never verdicts — machine-checkable: one `data-verdict-surface`
+    marker per page; CI greps for duplicates."* `W1_DESIGN_SPEC.md` §0.13 states the
+    same correction for the panels that wave introduced.
+
+    Doctrine Law 1 ("stance or it doesn't ship") is satisfied either way: a panel
+    answers "so what do I do?" with a chip **or** with its plain caveat sentence. The
+    chip is one presentation of a stance, not the only sanctioned one. Pinned by
+    `tests/test_build_options_command.py::test_every_panel_answers_so_what_do_i_do`.
+
+    **Where this page's one decision element lives.** Ticker mode's name-header row —
+    the `.oew-ic-foot` holding the stance chip and the expected range — carries the bare
+    boolean attribute `data-verdict-surface`, and is the only element on the page that
+    does (markup pinned by `W1_DESIGN_SPEC.md` §5.1). Two pieces of persistent chrome
+    that predate that ruling used to render a second and third chip and no longer do:
+
+    - the `.oew-nofuse` banner — it rides the header on **all four** mode tabs, so its
+      chip repeated the read's verdict everywhere; and
+    - the "Today's measured flow" footer — it sits below the name header that already
+      carries the marker.
+
+    Both keep their sentence verbatim in EN and ZH, and their as-of stamp where they
+    have one; the sentences were always the valuable half. Neither is a verdict: one
+    says how the four readings are *presented*, the other how far the measured numbers
+    can be *trusted*. Pinned by `test_exactly_one_verdict_surface` and
+    `test_chrome_caveats_keep_the_sentence_and_drop_the_chip`.
 
 **House-contract traps (each one verified on main 2026-07-25)**
 17. **No `prefers-color-scheme`.** The house has zero such rules (`theme.css`, `theme.js`).
@@ -270,7 +303,7 @@ Prefix: **`.oew-`** (house convention is a short per-page prefix — `.gx-`, `.f
   │ │     ├ .oew-read-v                      plain state word
   │ │     ├ .oew-pips > .oew-pip[.on|.nul] ×5
   │ │     └ .oew-read-n                      supporting figure
-  │ ├ .oew-nofuse > .oew-stance + sentence
+  │ ├ .oew-nofuse > sentence              (no stance chip — §0.16: rides all 4 tabs)
   │ ├ ★ .oew-closeline[style="--oew-cov:NN%"]
   │ │   ├ .oew-cov-tick
   │ │   └ .oew-cov-label
@@ -287,8 +320,11 @@ Prefix: **`.oew-`** (house convention is a short per-page prefix — `.gx-`, `.f
 .oew-panel
 ├ .oew-phead  > h2.oew-ph-title + .oew-ph-sub + .oew-ph-right > .oew-help
 ├ .oew-pbody
-└ .oew-pfoot  > .oew-stance + sentence + .oew-asof
+└ .oew-pfoot  > [.oew-stance] + sentence + .oew-asof
 ```
+
+The stance chip is **optional** (`[…]`) and capped at one; the sentence is not. Only the
+one panel that is the read's decision element carries a chip — see §0.16.
 
 **Per-mode blocks**
 
@@ -691,7 +727,8 @@ Every `<td>` therefore carries both `data-k` and `data-k-zh`.
 
 | Law | How this design satisfies it |
 |---|---|
-| Tier 1 = state + stance | Every panel has exactly one stance chip from the closed vocabulary. Word budgets held. |
+| Tier 1 = state + stance | Every panel states its state and the reader's stance toward it in plain words — as a chip from the closed vocabulary on the one panel that is the read's decision element, and as its own caveat sentence everywhere else (§0.16). Word budgets held as ceilings. |
+| Verdict law (`OIP_MASTERPLAN.md` §3) | Exactly one decision element per page: Ticker mode's name-header `.oew-ic-foot`, the sole `data-verdict-surface`. The `.oew-nofuse` banner and the "Today's measured flow" footer state facts and cast no second verdict (§0.16). |
 | Plain words | No internal state names, study IDs, or raw slugs in visible copy. Sector names via `td()` display names. |
 | Numbers carry meaning | Every figure sits in a fill-track with a visible denominator, or arrives with an interpreting clause. |
 | Word budgets | Titles ≤4 words, subtitles ≤14, one footer sentence, one as-of per panel. |

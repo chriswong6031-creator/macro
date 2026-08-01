@@ -529,7 +529,20 @@ def test_support_is_public_in_all_three_places():
     caddy = (ROOT / "app" / "deploy" / "Caddyfile").read_text()
     # The six named above and NOWHERE else — the per-matcher tests prove each one is
     # present; this proves a seventh has not appeared somewhere nobody reviewed.
-    assert caddy.count("/support.html") == len(CADDY_BOUNDARY)
+    #
+    # `redir` lines are counted SEPARATELY, not waived: a redirect TARGET is not a
+    # boundary matcher (it decides where /support goes, not who may read it), but an
+    # unreviewed redirect is still a way to move the page, so the alias set is pinned
+    # by name below. Bumping the matcher count to absorb a redirect would blind the
+    # arithmetic to the relocation this guard exists to catch.
+    redir_lines = [l.strip() for l in caddy.splitlines()
+                   if l.strip().startswith("redir ") and "/support.html" in l]
+    assert redir_lines == ["redir /support /support.html 301"], redir_lines
+    matcher_mentions = sum(
+        l.count("/support.html") for l in caddy.splitlines()
+        if not l.strip().startswith("redir ")
+    )
+    assert matcher_mentions == len(CADDY_BOUNDARY)
 
     from app import regwall
     assert "/support.html" in regwall.PUBLIC_PATHS

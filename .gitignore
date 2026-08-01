@@ -510,6 +510,23 @@ data/marketing/learning_host/
 # the JSON queue. Verify with `git check-ignore data/marketing/outbox/media/X/Y.png`
 # (ignored) vs `.../Y.svg` (NOT ignored) after any edit here.
 data/marketing/outbox/media/**/*.png
+# HOT-TAPE intraday renders (2026-07-30). The rule above deliberately keeps
+# chart SVGs committed because the admin console previews render from them --
+# and that was correct when a night produced ~29 of them. scripts/hot_tape_radar.py
+# then armed the P1 radar, which renders a card for EVERY candidate it evaluates
+# (before it knows whether the post will ship) on every intraday sweep: 8,068
+# hottape-*.svg landed in ONE day, all of them tracked, 420 MB in the media tree.
+# That is what has been printing "too many unreachable loose objects" on every
+# git command here.
+#
+# Same argument the PNG rule already makes: the delivery plane is the public R2
+# URL on the item, the local file is a throwaway render input. The admin console
+# previews the NIGHTLY chart-NNN.svg snapshots, which stay committed -- this
+# pattern is deliberately hottape-scoped and must NOT swallow those. Verify with
+#   git check-ignore data/marketing/outbox/media/X/hottape-a-b-0000Z.svg (ignored)
+#   git check-ignore data/marketing/outbox/media/X/chart-001.svg          (NOT ignored)
+# after any edit here.
+data/marketing/outbox/media/**/hottape-*.svg
 # Publish-workflow-local fetch of the live-data branch quotes (tape gate input);
 # ephemeral per-run, never committed.
 data/marketing/live_quotes_snapshot.json
@@ -542,3 +559,19 @@ data/prophet_stage_shadow/ledger.jsonl
 # data plane) on demand via admin/mastermind_logs.refresh(); nothing in git reads it.
 data/mastermind/response_log.jsonl
 data/mastermind/response_eval.jsonl
+# Weekly answer-quality eval summary (scripts/run_brain_eval.py, W2 harness). Derived
+# from the corpus above, so it inherits the same rule — and it carries LLM-judge scores,
+# which are INTERNAL QA TELEMETRY ONLY and must never reach a public artifact or a
+# committed file the site could read. The archive copy lives on R2 under
+# mastermind_response_evals/summary/<ISO-year>-W<week>.json (private data plane).
+data/mastermind/eval_summary_latest.json
+data/mastermind/*.json.tmp
+
+# Agent worktree roots. Parallel Claude/Codex sessions create linked git worktrees
+# under these paths; they are checkouts, never content, and must never be committed.
+# `.claude/worktrees/` has historically been excluded per-clone via .git/info/exclude,
+# which every fresh clone and every new session has to rediscover — and the codex root
+# had no rule at all, so it surfaced as an untracked directory in every session's
+# `git status` and tripped the ship-loop guard on work belonging to another session.
+.claude/worktrees/
+.codex-worktrees/

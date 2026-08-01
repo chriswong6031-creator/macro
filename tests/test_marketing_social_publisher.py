@@ -96,6 +96,29 @@ class _FakePublisher:
         return [{"id": "buf-chan-123", "service": "twitter", "name": "Flagship"}]
 
 
+class _RateLimitedPublisher(_FakePublisher):
+    """The 2026-07-30 live failure, verbatim: a 429 with retryable=True.
+
+    Not `ok=False` alone — that is a VERDICT on the post and the publisher is
+    right to fail it. The whole distinction this fixture exists to exercise is
+    the transient one: the publisher and the engagement poller share ONE Buffer
+    token and ONE 24h allowance, so a metrics sweep can spend the posting
+    budget out from under a perfectly good post.
+    """
+
+    def __init__(self) -> None:
+        super().__init__(ok=False, error=(
+            'http_error 429: {"errors":[{"message":"Too many requests from '
+            'this client. Please try again later."}]}'))
+
+    def publish(self, **kwargs):
+        from engine.marketing.social_publisher import Receipt
+        self.calls.append(kwargs)
+        at = (kwargs.get("now") or _FIXED_NOW).strftime("%Y-%m-%dT%H:%M:%SZ")
+        return Receipt(False, None, None, self._error, self.backend, at,
+                       retryable=True)
+
+
 def _write_fresh_quotes(tmp_path: Path, now: str,
                         tickers: tuple[str, ...] = ("PLTR",),
                         *, only_if_absent: bool = False) -> None:
@@ -853,3 +876,312 @@ def test_posted_item_appends_publication_receipt(monkeypatch, tmp_path):
     assert row["mode"] == "live"
     assert row["correction_state"] == "clean"
     assert row["effective_copy_hash"].startswith("sha256:")
+
+
+class TestARateLimitIsNotAVerdictOnThePost:
+    """A 429 DELETED three flagship posts on 2026-07-30.
+
+    `ok=False` was the only signal a send could give, and the publisher's one
+    response to it is `transition(iid, "failed")`. `failed` is in
+    outbox._DEAD_STATUSES, so nothing ever picks the item up again — a transient
+    quota refusal was permanent. The ledger rows read:
+
+        ob-2026-07-30-85765fdcaa  posting -> failed
+        http_error 429: {"errors":[{"message":"Too many requests from this
+        client. Please try again later."}]}
+
+    Each was a good post that arrived while the shared Buffer token was out of
+    quota. The publisher and the engagement poller authenticate as ONE token
+    against ONE 24h allowance, so a metrics sweep can spend the posting budget:
+    self-inflicted and transient, and both halves say retry, not discard.
+
+    The risk grows with volume, and this change set increases volume — the press
+    wire's salience floor moved 70 -> 30 on the same day.
+    """
+
+    def _receipt(self, **kw):
+        from engine.marketing.social_publisher import Receipt
+        base = dict(ok=False, external_id=None, external_url=None,
+                    error="boom", backend="buffer", at="2026-07-31T12:00:00Z")
+        base.update(kw)
+        return Receipt(**base)
+
+    def test_retryable_defaults_false_so_nothing_else_changes(self):
+        """Every existing construction site omits it; none may become retryable."""
+        assert self._receipt().retryable is False
+        assert self._receipt(ok=True, error=None).retryable is False
+
+    def test_a_429_http_error_is_marked_retryable(self):
+        from urllib.error import HTTPError
+        from engine.marketing.social_publisher import Receipt
+
+        # The shape the live failures took, before BufferRateLimited existed.
+        exc = HTTPError("http://buffer", 429, "Too Many Requests", {}, None)
+        r = Receipt(False, None, None, f"http_error {exc.code}: x", "buffer",
+                    "2026-07-31T12:00:00Z", retryable=exc.code == 429)
+        assert r.retryable is True
+
+    def test_a_400_is_not_retryable(self):
+        """"Invalid post: Whoops" is a verdict ON THE POST — retrying it forever
+        would spin. Only quota gets a second chance."""
+        from urllib.error import HTTPError
+        from engine.marketing.social_publisher import Receipt
+
+        exc = HTTPError("http://buffer", 400, "Bad Request", {}, None)
+        r = Receipt(False, None, None, f"http_error {exc.code}: x", "buffer",
+                    "2026-07-31T12:00:00Z", retryable=exc.code == 429)
+        assert r.retryable is False
+
+    def test_a_rate_limited_item_ends_the_run_approved_via_legal_edges(
+            self, monkeypatch, tmp_path, capsys):
+        """END TO END, not a source grep. The requeue's own defect, closed.
+
+        The first cut of the fix called transition(iid, "approved") directly on
+        an item the dispatch loop had just moved to `posting` — and
+        TRANSITIONS["posting"] is {posted, failed, quarantined}. The call was
+        ILLEGAL: transition() logged and returned False, the return was never
+        checked, `rate_limited += 1` ran anyway, and the item was left stuck in
+        `posting` FOREVER (reported by the next run's stuck_posting scan, never
+        reposted). That is the exact loss the branch exists to prevent, one
+        state to the left, and it had simply not fired yet because no 429 had
+        landed since the fix shipped.
+
+        The previous version of this test asserted on the SOURCE of main() and
+        passed against that broken code — a 1400-character window that the new
+        comment block alone overflows. A grep over a branch cannot see whether
+        the transition it greps for is legal. Drive the runner instead.
+        """
+        from engine.marketing.ledgers import read_jsonl
+        from engine.marketing.outbox import current_statuses
+
+        _write_publish_cfg(tmp_path)
+        item_id = _seed_approved_item(tmp_path)
+        fake = _RateLimitedPublisher()
+
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live"],
+                            fake_publisher=fake, kill_switch=True)
+
+        assert rc == 0
+        assert fake.calls, "the fixture never reached the network seam"
+        # THE ASSERTION THE DEFECT FAILS: stuck in `posting` on the old code.
+        assert current_statuses(tmp_path)[item_id] == "approved"
+
+        ledger = [r for r in read_jsonl(
+            tmp_path / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+            if r.get("id") == item_id]
+        walk = [(r["from"], r["to"]) for r in ledger]
+        assert walk[-3:] == [("approved", "posting"),
+                             ("posting", "failed"),
+                             ("failed", "approved")], walk
+        assert "rate_limited" in (ledger[-2].get("note") or "")
+        assert "requeued" in (ledger[-1].get("note") or "")
+        # And it is genuinely re-armable: the next sweep sees an approved item.
+        assert "posting" not in current_statuses(tmp_path)[item_id]
+
+    def test_a_rate_limited_item_does_not_consume_a_posting_slot(
+            self, monkeypatch, tmp_path):
+        """The requeue must not charge the account's daily cap for a post that
+        never went out — nor for the intermediate `failed` row it walks through.
+
+        posted_today_by_account counts ids whose FOLDED status is posted/posting
+        with a ledger row dated today. The walk ends on `approved`, so the item
+        is invisible to it; the earlier `posting` row is folded over. Pinned
+        because the obvious wrong fix (leaving the item in `posting` so it
+        "holds its slot") is exactly the defect."""
+        from engine.marketing.outbox import fold_state, posted_today_by_account
+
+        _write_publish_cfg(tmp_path)
+        item_id = _seed_approved_item(tmp_path)
+
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_RateLimitedPublisher(), kill_switch=True)
+
+        state = fold_state(tmp_path)
+        # The date the counter would charge, taken from the item's OWN last
+        # ledger row rather than from the injected --now: the publisher's
+        # transitions stamp wall-clock UTC, so a hardcoded fixture date makes
+        # this assertion vacuously true on every code path.
+        charged_day = str(state["last"][item_id]["at"])[:10]
+        assert posted_today_by_account(state, charged_day) == {}, (
+            "a rate-limited post that never went out is consuming a posting "
+            "slot — the account's day shrinks by exactly the posts Buffer "
+            "refused")
+
+    def test_a_stranded_requeue_is_announced_at_line_start(
+            self, monkeypatch, tmp_path, capsys):
+        """Both legs are CHECKED, and a refusal is loud.
+
+        The old code ignored transition()'s return entirely. If either leg is
+        ever refused the item is stranded mid-post and nothing in this system
+        will move it, so the operator has to hear about it — as a bare
+        line-start annotation, because a logger prefix makes GitHub drop it.
+        """
+        from engine.marketing import outbox as OB
+
+        _write_publish_cfg(tmp_path)
+        item_id = _seed_approved_item(tmp_path)
+
+        real = OB.transition
+
+        def _refuse_the_requeue(iid, to, **kw):
+            # Only the SECOND leg — so the item really does end up stranded in
+            # `failed` with no way back, which is the shape the annotation is for.
+            if to == "approved" and kw.get("actor") == "publisher":
+                return False          # simulate a lost/rejected ledger append
+            return real(iid, to, **kw)
+
+        # main() does `from engine.marketing import outbox as _outbox`, so the
+        # local name is the module object itself — patching the attribute here
+        # reaches the call site.
+        monkeypatch.setattr(OB, "transition", _refuse_the_requeue)
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=_RateLimitedPublisher(), kill_switch=True)
+
+        out = capsys.readouterr().out
+        line = next((l for l in out.splitlines()
+                     if l.startswith("::warning title=publisher-requeue-stuck::")), "")
+        assert line, out
+        assert item_id in line, line
+
+    def test_posting_to_approved_is_NOT_a_legal_transition(self):
+        """The pin that would have caught this on day one.
+
+        `posting` is the in-flight state, and it may only resolve to a verdict:
+        posted, failed or quarantined. Anything that wants to re-arm an
+        in-flight item must walk out through `failed` first.
+        """
+        from engine.marketing import outbox as OB
+
+        legal = getattr(OB, "TRANSITIONS", None)
+        assert legal is not None, "transition table moved — this pin is blind"
+        assert "approved" not in legal["posting"], (
+            "posting -> approved became legal; if that was deliberate, the "
+            "publisher's two-step requeue should collapse back to one step")
+        assert "failed" in legal["posting"], "the only legal walk out is broken"
+
+    def test_failed_to_approved_is_a_legal_transition(self):
+        """The requeue relies on it; it was reachable but never used."""
+        from engine.marketing import outbox as OB
+
+        legal = getattr(OB, "TRANSITIONS", None)
+        assert legal is not None, "transition table moved — this pin is blind"
+        assert "approved" in legal["failed"], (
+            "failed -> approved is no longer legal, so the requeue silently "
+            "becomes a no-op and a rate-limited post is lost again")
+
+
+class TestTheFoldIsTheOnlyStatusThePublisherReads:
+    """items.jsonl's top-level `status` is FROZEN at write time.
+
+    `make_item` stamps `"status": "queued"` and `validate_item` REQUIRES that
+    value at creation; nothing ever rewrites the row. So all 236 live rows read
+    `queued` regardless of what actually happened to them, and the status ledger
+    replayed on top is the only truth. A writer that read `item["status"]`
+    instead of folding would see a fresh queue every run — which is how a
+    double-publish attempt and a reverted quarantine got into the ledger (69
+    rows whose `from` did not match the item's real prior state).
+
+    The publisher and the social backend hold NO such read today — every status
+    in `scripts/marketing_publisher.py` comes from `_outbox.fold_state(root)`
+    (`state["status"]`, threaded through as `statuses`), and
+    `engine/marketing/social_publisher.py` reads no item status at all. These
+    are the BEHAVIOURAL pins that keep it that way: a source grep would pass on
+    a read reintroduced through a helper, so drive the runner instead and put
+    the two states in open conflict.
+    """
+
+    def _seed_with_a_frozen_status(self, tmp_path: Path, *, ledger_to: str) -> str:
+        """An item whose items.jsonl row says `queued` and whose ledger does not."""
+        from engine.marketing.outbox import current_statuses
+        item_id = _seed_approved_item(
+            tmp_path,
+            text="$PLTR reclaimed the 50-day. Watching the soldiers now.")
+        from engine.marketing.outbox import transition
+        assert transition(item_id, ledger_to, actor="test", root=tmp_path)
+
+        raw = json.loads((tmp_path / "data" / "marketing" / "outbox"
+                          / "items.jsonl").read_text(encoding="utf-8").splitlines()[0])
+        assert raw["status"] == "queued", (
+            "items.jsonl no longer freezes status at write time — the premise "
+            "of this whole class moved")
+        assert current_statuses(tmp_path)[item_id] == ledger_to
+        return item_id
+
+    def test_a_quarantined_item_is_not_resurrected_by_its_frozen_row(
+            self, monkeypatch, tmp_path):
+        from engine.marketing.outbox import current_statuses
+
+        _write_publish_cfg(tmp_path)
+        item_id = self._seed_with_a_frozen_status(tmp_path, ledger_to="quarantined")
+        fake = _FakePublisher(ok=True)
+
+        assert _run_publisher(monkeypatch, tmp_path, ["--live"],
+                              fake_publisher=fake, kill_switch=True) == 0
+
+        assert fake.calls == [], (
+            "a QUARANTINED item reached the network — the dispatch loop is "
+            "reading the frozen items.jsonl status, not the ledger fold")
+        assert current_statuses(tmp_path)[item_id] == "quarantined"
+
+    def test_a_posted_item_is_never_posted_twice(self, monkeypatch, tmp_path):
+        """The double-publish shape, directly."""
+        _write_publish_cfg(tmp_path)
+        self._seed_with_a_frozen_status(tmp_path, ledger_to="posted")
+        fake = _FakePublisher(ok=True)
+
+        _run_publisher(monkeypatch, tmp_path, ["--live"],
+                       fake_publisher=fake, kill_switch=True)
+
+        assert fake.calls == [], "a POSTED item was sent a second time"
+
+    def test_the_auto_approve_pass_reads_the_fold_too(self, monkeypatch, tmp_path,
+                                                      caplog):
+        """Not just the dispatch loop: the auto-approve pass is the OTHER writer,
+        and it is the one that would have to re-approve a dead item first.
+
+        THIS is the assertion with teeth. A stale read cannot corrupt the ledger
+        — `transition()` re-folds and refuses an illegal edge, so the write
+        fails closed either way — but it CAN make the pass select a dead item as
+        a candidate and attempt the write. That attempt is observable, and its
+        absence is the proof the candidate set came from the fold. (The two
+        tests above are the weaker direction on purpose: a stale read reports
+        every item as `queued`, which is never dispatch-eligible, so they pin
+        the outcome without being able to distinguish the mechanism.)
+        """
+        import logging
+
+        from engine.marketing.ledgers import read_jsonl
+
+        cfg_dir = tmp_path / "config"
+        cfg_dir.mkdir(parents=True, exist_ok=True)
+        (cfg_dir / "marketing.yml").write_text(
+            "sentinel:\n"
+            "  max_posts_per_account_per_day: 2\n"
+            "publish:\n"
+            "  backend: buffer\n"
+            "  require_approval: true\n"
+            "  auto_approve: true\n"
+            "  auto_approve_scope: all\n"
+            "  channels:\n"
+            "    flagship: \"buf-chan-123\"\n",
+            encoding="utf-8",
+        )
+        item_id = self._seed_with_a_frozen_status(tmp_path, ledger_to="quarantined")
+
+        with caplog.at_level(logging.INFO, logger="marketing_publisher"):
+            _run_publisher(monkeypatch, tmp_path, ["--live"],
+                           fake_publisher=_FakePublisher(ok=True), kill_switch=True)
+
+        considered = [r.getMessage() for r in caplog.records
+                      if "auto-approve" in r.getMessage() and item_id in r.getMessage()]
+        assert not considered, (
+            "the auto-approve pass considered a QUARANTINED item — its candidate "
+            f"set is reading items.jsonl's frozen status, not the fold: {considered}")
+
+        rows = [r for r in read_jsonl(tmp_path / "data" / "marketing" / "outbox"
+                                      / "status_ledger.jsonl")
+                if r.get("id") == item_id]
+        assert rows[-1]["to"] == "quarantined", rows
+        assert not any(r.get("from") == "quarantined" for r in rows), (
+            "something transitioned OUT of a terminal state — the writer is "
+            "reading a stale status")

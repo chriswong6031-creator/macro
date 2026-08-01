@@ -163,6 +163,32 @@ def test_mtf_empty_on_short_history():
     assert basket_mtf.basket_mtf(short) == {}
 
 
+def test_theme_signal_falls_back_to_equal_weight_close(monkeypatch):
+    """Regions without member OHLCV still publish honest MTF structure, never fake flow."""
+    idx = pd.bdate_range("2023-01-02", periods=700)
+    level = pd.Series(100 * np.exp(np.linspace(0, 0.35, len(idx))), index=idx)
+    monkeypatch.setattr(bi, "deep_calendar", lambda members: pd.DatetimeIndex([]))
+    ts._SIG_CACHE.clear()
+    out = ts._basket_signals(_members(["CA1.TO", "CA2.TO", "CA3.TO"]),
+                             level, region="canada")
+    assert out["mtf"]["source"] == "equal_weight_close"
+    assert out["mtf"]["tf"]
+    assert out["tape"] is None
+    assert out["meta"]["flow_available"] is False
+
+
+def test_theme_signal_rejects_unrepresentative_partial_candle(patched_loader):
+    """Three covered names cannot stand in for a six-member theme's MTF/flow read."""
+    members = _members(["AAA", "BBB", "CCC", "MISS1", "MISS2", "MISS3"])
+    idx = pd.bdate_range("2023-01-02", periods=700)
+    level = pd.Series(100 * np.exp(np.linspace(0, 0.25, len(idx))), index=idx)
+    ts._SIG_CACHE.clear()
+    out = ts._basket_signals(members, level, region="us")
+    assert out["mtf"]["source"] == "equal_weight_close"
+    assert out["tape"] is None
+    assert out["meta"]["flow_available"] is False
+
+
 # ---------------------------------------------------------------- basket_tape
 def test_tape_volhole_and_flow(patched_loader):
     members = _members(["AAA", "BBB", "CCC", "DDD"])

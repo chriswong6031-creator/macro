@@ -1274,12 +1274,56 @@ class TestResearchLaneShapes:
         assert "At 10:30 GMT" in post["text"]
 
     def test_a_long_lead_point_falls_through_to_the_next_one(self, tmp_path):
-        long_point = "The desk argues at length without stopping for breath " * 12
-        item = _item("a", summary_points=[long_point, "Short and usable here."])
+        # The fallback point is SIX WORDS OR MORE on purpose. It used to be
+        # "Short and usable here." — four words — which is below
+        # value_gate.MIN_BODY_WORDS, so once the gate was armed (2026-07-30) the
+        # lane correctly abstained and this test failed on a StopIteration that
+        # looked like broken fall-through and was actually a working refusal.
+        # A four-word body is a stem, not a post; asserting the lane ships one
+        # would pin the wrong behaviour.
+        item = _item("a", summary_points=[
+            "The desk argues at length without stopping for breath " * 12,
+            "The second point carries the argument in one usable line.",
+        ])
         out = RL.build_items([{"report": item, "triage": {}}],
                              cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
         post = next(i for i in out["items"] if i["source"]["format"] == RL.FORMAT_POST)
-        assert "Short and usable here." in post["text"]
+        assert "The second point carries the argument in one usable line." in post["text"]
+
+    def test_a_thin_point_is_passed_over_for_a_substantial_one(self, tmp_path):
+        """Selection and admission must share one definition of "usable".
+
+        Selection used to ask only "does it FIT the character budget", so a
+        two-word point won the slot and the value gate — which asks "is there a
+        post here at all" — then abstained on the draft it produced. The report
+        was lost even though a later point was a whole paragraph. Neither stage
+        was wrong alone; they read different definitions. compose_post now walks
+        for the first point that clears the gate's own imported floor.
+        """
+        item = _item("a", summary_points=[
+            "Rates fell.",
+            "Two-year yields fell twelve basis points after the auction cleared.",
+        ])
+        out = RL.build_items([{"report": item, "triage": {}}],
+                             cfg=self._live_cfg(), root=tmp_path, as_of="2026-07-26")
+        post = next(i for i in out["items"] if i["source"]["format"] == RL.FORMAT_POST)
+        assert "Two-year yields fell twelve basis points" in post["text"]
+        # The thin lead is passed over, not merely appended after.
+        assert "Rates fell." not in post["text"]
+
+    def test_the_floor_is_the_value_gates_own_number_not_a_copy(self, tmp_path):
+        """A re-declared constant drifts; an imported one cannot.
+
+        This is the whole point of the fix — if someone raises the gate's floor
+        and research_lane keeps its own 6, the two stages silently disagree
+        again and the lane resumes losing posts with nobody at fault.
+        """
+        from engine.marketing.value_gate import MIN_BODY_WORDS
+
+        src = (RL.__file__ and open(RL.__file__, encoding="utf-8").read()) or ""
+        assert "from engine.marketing.value_gate import MIN_BODY_WORDS" in src
+        # No second literal floor hiding in the module.
+        assert f">= {MIN_BODY_WORDS}" not in src.replace(">= MIN_BODY_WORDS", "")
 
     def test_the_short_form_respects_the_house_char_cap(self, tmp_path):
         long_point = "The desk argues at length. " * 40

@@ -311,7 +311,40 @@ alpaca:
 # ─────────────────────────────────────────────────────────────────────────────
 wire:
   flagship_top_k_per_day: 3
-  flagship_salience_floor: 70.0
+  # THE FLOOR WAS EXACTLY THE CEILING OF ONE CLASS, AND THAT IS WHY THIS WIRE
+  # ONLY EVER POSTED BEA PRINTS (2026-07-31).
+  #
+  # It was 70.0. Read that against breaking_relevance's own taxonomy:
+  #
+  #     macro_print  55 + official 15 = 70   <- clears, EXACTLY
+  #     policy       50 + mirror   12 = 62   <- can never clear
+  #     geopolitical 40 + official 15 = 55   <- can never clear
+  #     company_news 30 + mirror   12 = 42   <- can never clear
+  #
+  # A floor set at the arithmetic ceiling of a single class silently reduced a
+  # six-source news wire to an official-macro-print relay. The evidence matches
+  # exactly: across its whole life this lane has booked TWO items, and both were
+  # BEA prints (GDP advance estimate, personal income/outlays). Trump, the White
+  # House and every company story were excluded by construction, not by editorial
+  # judgement — the pollers ran, scored, and were arithmetically incapable of
+  # clearing the bar. scripts/marketing_press_wire.floor_diagnostic had been
+  # printing the proof on every empty tick ("the highest event-class base is 55
+  # and the best press tier bonus is +12").
+  #
+  # 30.0 is read off the OBSERVED distribution, not the theoretical one. A live
+  # tick scores its 13 candidates bimodally: real classified news at 34.8 (CNBC
+  # company_news) and 37.2 (a Truth Social policy post), then unclassified `none`
+  # noise at 4.8-7.2. 30 sits in the empty middle of that gap: it admits both
+  # real items and rejects all eleven noise rows, with headroom before the noise
+  # band. Actual scores run well under the class bases (recency/keyword decay),
+  # which is why calibrating against the taxonomy alone would have been wrong.
+  #
+  # VOLUME IS NOT WHAT THIS KNOB PROTECTS — `flagship_top_k_per_day: 3` above is,
+  # and it is unchanged. Lowering the floor cannot flood the account; it can only
+  # change WHICH three items a day compete for the three slots. That is the whole
+  # point: the competition should be between the day's best stories, not between
+  # one class and nothing.
+  flagship_salience_floor: 30.0
   # Corroboration window for hearsay-class items: two independent sources must
   # arrive within this window for a hearsay item to clear to instant-publish.
   corroboration_window_s: 1800

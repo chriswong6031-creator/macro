@@ -1,28 +1,28 @@
 {
-  "date": "2026-07-29",
+  "date": "2026-07-31",
   "class": "quiet",
-  "market_vol_ratio": 1.088,
-  "up_share": 0.328,
+  "market_vol_ratio": 1.003,
+  "up_share": 0.534,
   "basis": "updown",
-  "n_megacap_rvol2": 0,
+  "n_megacap_rvol2": 2,
   "megacap_rvol": {
-    "PG": 1.63,
-    "TMUS": 1.59,
-    "V": 1.5,
-    "MSFT": 1.42,
-    "BRK-B": 1.21,
-    "BAC": 1.21,
-    "META": 1.16,
-    "CRM": 1.14
+    "AMZN": 3.22,
+    "AAPL": 2.61,
+    "MSFT": 1.89,
+    "GOOGL": 1.7,
+    "GOOG": 1.61,
+    "MA": 1.56,
+    "TMUS": 1.48,
+    "META": 1.4
   },
   "calendar": {
     "is_quarter_end": false,
-    "td_to_quarter_end": -20,
+    "td_to_quarter_end": -22,
     "in_qtr_end_window": false,
     "is_russell_recon_session": false,
     "in_recon_week": false,
     "is_sp_rebalance_session": false,
-    "is_month_end_session": false
+    "is_month_end_session": true
   },
   "summary_en": "No elevated volume or scheduled rebalancing activity.",
   "summary_zh": "无异常量能或计划中的再平衡活动。",

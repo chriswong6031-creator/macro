@@ -1,7 +1,8 @@
 /* ═══════════════════════════════════════════════════════════════════════════
    Research Vault — client app (defer-loaded; DOMContentLoaded-wrapped).
-   Hydrates from the SSR-baked #rv-catalog JSON, refreshes from the live API,
-   and drives the feed / lanes / browse tree / facets / search / PDF viewer.
+   Paints from the live API, keeps the SSR-baked #rv-catalog JSON as an explicit
+   offline fallback, and drives the feed / lanes / browse tree / facets / search /
+   PDF viewer.
 
    Auth: reuses the site's Supabase Bearer helper (window.MDXAuth) — the same
    flow site/mm_brain.js uses — to call the gated /api/research/* routes.
@@ -93,6 +94,11 @@
   /* ── catalog state ── */
   var ITEMS = [];            // normalized catalog items (see normItem)
   var TOTAL_COUNT = 0;       // full inventory count; the public bake carries only 3 items
+  var CATALOG_SUMMARY = null;// whole-vault, public-safe aggregates (even for the 3-item preview)
+  var CATALOG_PREVIEW = false;
+  var CATALOG_SOURCE = 'loading'; // 'loading' | 'live' | 'snapshot'
+  var CATALOG_REQ = 0;       // newest-request-wins guard for auth/bootstrap refresh races
+  var CATALOG_ABORT = null;
   var LANE = 'latest';
   var FILT = { inst: '', side: '', theme: '', q: '' };
   var SEARCH_HITS = null;    // set of ids from the live search API, or null (no server search)
@@ -156,6 +162,11 @@
     return d.toISOString().slice(0, 10);
   }
   function isThisWeek(x) { return x.date && x.date >= thisWeekIso(); }
+  function summaryNumber(key) {
+    if (!CATALOG_SUMMARY || CATALOG_SUMMARY[key] === null || CATALOG_SUMMARY[key] === undefined) return null;
+    var n = Number(CATALOG_SUMMARY[key]);
+    return isFinite(n) && n >= 0 ? Math.floor(n) : null;
+  }
 
   /* side stamp */
   function stampLabel(side) { return side === 'buy' ? T('BUY', '看多') : (side === 'sell' ? T('SELL', '看空') : T('IND', '独立')); }
@@ -195,26 +206,44 @@
   /* ═══════════ hero counts (client-side, descriptive only) ═══════════ */
   function updateHero() {
     var wk = ITEMS.filter(isThisWeek);
-    var newN = wk.length;
+    var derivedNewN = wk.length;
     var desks = {}; wk.forEach(function (x) { if (x.inst && x.inst !== 'Unknown') desks[x.inst] = 1; });
-    var deskN = Object.keys(desks).length;
+    var derivedDeskN = Object.keys(desks).length;
     // most-covered theme this week (falls back to all-time if none this week)
     var pool = wk.length ? wk : ITEMS;
     var tc = {}; pool.forEach(function (x) { x.tags.forEach(function (t) { tc[t] = (tc[t] || 0) + 1; }); });
-    var topTheme = ''; var best = 0;
-    Object.keys(tc).forEach(function (k) { if (tc[k] > best) { best = tc[k]; topTheme = k; } });
+    var derivedTheme = ''; var best = 0;
+    Object.keys(tc).forEach(function (k) { if (tc[k] > best) { best = tc[k]; derivedTheme = k; } });
 
-    $('fig-new').textContent = newN;
-    $('fig-desks').textContent = deskN;
+    // Anonymous/free clients receive only three report records. Never turn that
+    // entitlement slice into a whole-vault claim: prefer the server's public-safe
+    // aggregate block and stay neutral if an older API has not supplied it yet.
+    var aggregateNewN = summaryNumber('new_this_week');
+    var aggregateDeskN = summaryNumber('desks_this_week');
+    var aggregatePicks = summaryNumber('highlighted');
+    var newN = aggregateNewN !== null ? aggregateNewN : (CATALOG_PREVIEW ? null : derivedNewN);
+    var deskN = aggregateDeskN !== null ? aggregateDeskN : (CATALOG_PREVIEW ? null : derivedDeskN);
+    var picks = aggregatePicks !== null ? aggregatePicks : (CATALOG_PREVIEW ? null : ITEMS.filter(function (x) { return x.top; }).length);
+    var summaryTheme = CATALOG_SUMMARY && typeof CATALOG_SUMMARY.most_covered_theme === 'string'
+      ? CATALOG_SUMMARY.most_covered_theme.trim() : '';
+    var topTheme = summaryTheme || (CATALOG_PREVIEW ? '' : derivedTheme);
+
+    $('fig-new').textContent = newN === null ? '—' : newN;
+    $('fig-desks').textContent = deskN === null ? '—' : deskN;
     $('fig-theme').textContent = topTheme || T('—', '—');
     $('fig-total').textContent = TOTAL_COUNT;
     buildWeb();
 
     // verdict lead line
-    var picks = ITEMS.filter(function (x) { return x.top; }).length;
-    if (ITEMS.length) {
+    if (newN !== null && deskN !== null && picks !== null) {
       $('v-en-lead').textContent = newN + ' new institutional report' + (newN === 1 ? '' : 's') + ' this week · ' + picks + ' highlighted · ' + deskN + ' desk' + (deskN === 1 ? '' : 's') + ' publishing.';
       $('v-zh-lead').textContent = '本周新增 ' + newN + ' 篇机构研报 · ' + picks + ' 篇精选 · ' + deskN + ' 家研究部门在发。';
+    } else if (TOTAL_COUNT || ITEMS.length) {
+      $('v-en-lead').textContent = 'Latest preview loaded. Whole-vault weekly totals are temporarily unavailable.';
+      $('v-zh-lead').textContent = '最新预览已载入，完整库的本周统计暂不可用。';
+    } else {
+      $('v-en-lead').textContent = 'No institutional reports are available yet.';
+      $('v-zh-lead').textContent = '暂时还没有可用的机构研报。';
     }
   }
 
@@ -239,12 +268,20 @@
     if (!gNodes || !gThreads) return;
 
     // roster: institutions by report count, most-published first (→ nearer centre)
+    var summaryHasRoster = !!(CATALOG_SUMMARY && Array.isArray(CATALOG_SUMMARY.institutions));
+    var rosterUnknown = CATALOG_PREVIEW && !summaryHasRoster;
     var counts = {};
-    ITEMS.forEach(function (x) { var n = x.inst; if (n && n !== 'Unknown') counts[n] = (counts[n] || 0) + 1; });
-    var roster = Object.keys(counts).map(function (n) { return { name: n, count: counts[n] }; })
-      .sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
+    if (!rosterUnknown && !summaryHasRoster) {
+      ITEMS.forEach(function (x) { var n = x.inst; if (n && n !== 'Unknown') counts[n] = (counts[n] || 0) + 1; });
+    }
+    var roster = summaryHasRoster
+      ? CATALOG_SUMMARY.institutions.map(function (x) {
+          return { name: String(x && x.name || '').trim(), count: Math.max(0, Number(x && x.count) || 0) };
+        }).filter(function (x) { return x.name && x.name !== 'Unknown'; })
+      : Object.keys(counts).map(function (n) { return { name: n, count: counts[n] }; });
+    roster.sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); });
     var N = roster.length;
-    if ($('web-n')) $('web-n').textContent = N;
+    if ($('web-n')) $('web-n').textContent = rosterUnknown ? '—' : N;
 
     if (WEB.timer) { clearInterval(WEB.timer); WEB.timer = null; }
     WEB.cur = -1; WEB.hover = false;
@@ -253,7 +290,9 @@
     if (!N) {  // honest empty state — one quiet, unlit core (no fake desks)
       gThreads.innerHTML = ''; if (gMotes) gMotes.innerHTML = '';
       gNodes.innerHTML = '<circle cx="170" cy="95" r="4" fill="var(--rv)" opacity="0.32"/>';
-      if ($('web-sname')) $('web-sname').textContent = T('Coming online…', '正在接入…');
+      if ($('web-sname')) $('web-sname').textContent = rosterUnknown
+        ? T('Full directory temporarily unavailable', '完整名录暂不可用')
+        : T('Coming online…', '正在接入…');
       WEB.nodes = []; return;
     }
 
@@ -667,11 +706,10 @@
   }
 
   /* Supabase Bearer — the exact helper site/mm_brain.js uses.
-     When theme.js has not executed yet this resolves with NO Authorization header,
-     so the caller silently gets the anonymous response. That is fine for the first
-     paint only: wire()'s MDXAuth-onChange registration (with its 'load' fallback)
-     owns re-issuing the gated reads once a Bearer is obtainable. Do not "fix" this
-     with a polling loop — the load-event fallback is the mechanism. */
+     When theme.js has not executed yet this resolves with NO Authorization header.
+     The page now keeps its neutral loading shell up until a catalog response wins;
+     wire()'s MDXAuth-onChange registration (with its 'load' fallback) re-issues the
+     gated read once a Bearer is obtainable. Do not replace that with a polling loop. */
   function withAuth(h) {
     h = h || {};
     if (!(window.MDXAuth && window.MDXAuth.client)) return Promise.resolve(h);
@@ -1135,29 +1173,84 @@
     var n = ITEMS.filter(function (x) { return !DocState.isRead(x.id); }).length;
     $('unread-n').textContent = n;
     $('badge-latest').textContent = TOTAL_COUNT;
-    $('badge-picks').textContent = ITEMS.filter(function (x) { return x.top; }).length;
+    var picks = summaryNumber('highlighted');
+    $('badge-picks').textContent = picks !== null ? picks : (CATALOG_PREVIEW ? '—' : ITEMS.filter(function (x) { return x.top; }).length);
     $('badge-saved').textContent = ITEMS.filter(function (x) { return DocState.isSaved(x.id); }).length;
   }
 
   /* ═══════════ hydrate + refresh ═══════════ */
-  function ingest(catalog) {
+  function finishCatalogPaint(source) {
+    CATALOG_SOURCE = source;
+    doc.documentElement.classList.remove('rv-awaiting-live');
+    if (window.__rvShellTimer) { clearTimeout(window.__rvShellTimer); window.__rvShellTimer = null; }
+    var shell = $('feed-shell'); if (shell) shell.setAttribute('aria-busy', 'false');
+    var en = $('rv-status-en'), cn = $('rv-status-zh');
+    if (source === 'snapshot') {
+      if (en) en.textContent = 'Saved snapshot · live update unavailable';
+      if (cn) cn.textContent = '已保存快照 · 实时更新暂不可用';
+    } else {
+      if (en) en.textContent = 'This week · Updated hourly';
+      if (cn) cn.textContent = '本周 · 每小时更新';
+    }
+  }
+  function ingest(catalog, source) {
     var items = (catalog && Array.isArray(catalog.items)) ? catalog.items : [];
     ITEMS = items.map(normItem);
-    TOTAL_COUNT = Math.max(ITEMS.length, Number(catalog && catalog.count) || 0);
+    CATALOG_SUMMARY = catalog && catalog.summary && typeof catalog.summary === 'object' ? catalog.summary : null;
+    var aggregateTotal = summaryNumber('total');
+    TOTAL_COUNT = Math.max(ITEMS.length, Number(catalog && catalog.count) || 0, aggregateTotal || 0);
+    CATALOG_PREVIEW = !!(catalog && catalog.preview) || TOTAL_COUNT > ITEMS.length;
     buildInstFacets(); buildThemeFacets();
     buildTree(); updateHero(); updateUnread(); renderFeed();
+    finishCatalogPaint(source || 'live');
+    openDeepLink();
   }
   function hydrateFromBake() {
     var el = $('rv-catalog'); if (!el) return;
-    try { ingest(JSON.parse(el.textContent || '{}')); } catch (e) { ingest({ items: [] }); }
+    try { ingest(JSON.parse(el.textContent || '{}'), 'snapshot'); return true; }
+    catch (e) { ingest({ items: [] }, 'snapshot'); return false; }
   }
   function refreshFromApi() {
-    withAuth().then(function (h) {
-      return fetch(API + '/api/research/catalog', { headers: h, credentials: 'include' });
-    })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (j) { if (j && Array.isArray(j.items)) ingest(j); })
-      .catch(function () { /* keep the baked snapshot */ });
+    var req = ++CATALOG_REQ;
+    if (CATALOG_ABORT) { try { CATALOG_ABORT.abort(); } catch (e) {} }
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    CATALOG_ABORT = ctrl;
+    var timeout = null;
+    var request = Promise.resolve().then(function () { return withAuth(); }).then(function (h) {
+        var opts = { headers: h, credentials: 'include', cache: 'no-store' };
+        if (ctrl) opts.signal = ctrl.signal;
+        return fetch(API + '/api/research/catalog', opts);
+      })
+      .then(function (r) {
+        if (req !== CATALOG_REQ) return null;
+        if (!r.ok) throw new Error('catalog ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        if (req !== CATALOG_REQ) return false;
+        if (!j || !Array.isArray(j.items)) throw new Error('invalid catalog payload');
+        ingest(j, j.stale ? 'snapshot' : 'live');
+        return true;
+      });
+    // Cover auth bootstrap as well as network/body time. AbortController alone
+    // cannot settle a hung withAuth() promise, which could otherwise leave the
+    // first-paint shell spinning until the independent bundle-failure timer.
+    var deadline = new Promise(function (_resolve, reject) {
+      timeout = setTimeout(function () {
+        if (ctrl) ctrl.abort();
+        reject(new Error('catalog timeout'));
+      }, 10000);
+    });
+    return Promise.race([request, deadline])
+      .catch(function () {
+        if (req === CATALOG_REQ && CATALOG_SOURCE === 'loading') hydrateFromBake();
+        return false;
+      })
+      .then(function (ok) {
+        if (timeout) clearTimeout(timeout);
+        if (req === CATALOG_REQ && CATALOG_ABORT === ctrl) CATALOG_ABORT = null;
+        return ok;
+      });
   }
 
   /* ═══════════ language re-render (re-tint chrome + re-render feed) ═══════════ */
@@ -1272,6 +1365,7 @@
     // re-render feed on auth resolve so the teaser + quota/gate reflect the real session
     function onAuthResolved() {
       resolveTier();   // sets USER_TIER → re-renders the feed (teaser for non-Pro)
+      refreshFromApi(); // auth may change the catalog from the 3-item preview to full Pro
       if ($('overlay').classList.contains('open')) { refreshQuota(); if (!V.pdf) loadDocument(V.item); }
     }
     // window.MDXAuth is defined by theme.js. Since USER_TIER fails CLOSED ('anon'),
@@ -1285,10 +1379,9 @@
     if (window.MDXAuth && window.MDXAuth.onChange) window.MDXAuth.onChange(onAuthResolved);
     else window.addEventListener('load', function () {
       if (window.MDXAuth && window.MDXAuth.onChange) window.MDXAuth.onChange(onAuthResolved);
-      // boot()'s refreshFromApi() went out with no Authorization header (withAuth()
-      // resolves empty while MDXAuth is absent), so redo the gated reads now that a
-      // Bearer is obtainable. Anon stays on the preview: resolveTier() → 'anon' is a
-      // no-op re-render, and the unauthenticated catalog response is the same 3 items.
+      // Ensure there is still an anonymous request if auth never initialized, and
+      // redo the gated reads if it did. The newest-request guard safely collapses a
+      // synchronous onChange replay with this load fallback.
       resolveTier();
       refreshFromApi();
     });
@@ -1487,21 +1580,27 @@
   /* deep link from a report landing page: research_vault.html?doc=<id> opens that
      report's viewer (Pro → PDF, non-Pro → the upgrade gate). This is the SEO
      funnel's landing → conversion hop. */
+  var DEEP_LINK_OPENED = false;
   function openDeepLink() {
+    if (DEEP_LINK_OPENED) return;
     try {
       var m = /[?&]doc=([^&]+)/.exec(location.search);
       if (!m) return;
       var id = decodeURIComponent(m[1]);
-      if (ITEMS.some(function (x) { return x.id === id; })) openViewer(id);
+      if (ITEMS.some(function (x) { return x.id === id; })) { DEEP_LINK_OPENED = true; openViewer(id); }
     } catch (e) {}
   }
 
   /* ═══════════ boot ═══════════ */
   function boot() {
+    var shell = $('feed-shell'); if (shell) shell.setAttribute('aria-busy', 'true');
     wire();
-    hydrateFromBake();   // instant paint from the SSR snapshot
-    refreshFromApi();    // then hourly-fresh live catalog
-    openDeepLink();      // ?doc=<id> from an SEO report page → open that report
+    // The baked catalog is deliberately a fallback only. It can lag the hourly API
+    // by many hours, so painting it as current creates a false-data flash. Keep the
+    // neutral shell until the newest live/authenticated request wins; on failure,
+    // refreshFromApi() exposes the bake with an explicit saved-snapshot label.
+    if (window.MDXAuth && window.MDXAuth.client) refreshFromApi();
+    else if (doc.readyState === 'complete') refreshFromApi();
   }
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();

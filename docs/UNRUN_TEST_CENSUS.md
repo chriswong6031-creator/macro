@@ -216,7 +216,7 @@ between) that no workflow ran even though `ci.yml` *could* be triggered by a cha
 or their subject. Blast radius is the same as P0 — these guard
 `build_site`, `build_release_forecast`, `neuralweb/cortex`, `build_vector`, `grade_us_board`
 and 70 further publish-path modules — but a signal was at least *possible*, so they ranked
-below the strictly-dark set. 138 are now wired across thirteen lanes; two are held back.
+below the strictly-dark set. 144 are now wired across thirteen lanes (138 in the original census plus the three added by the GEX modeling-core amendment and the three added by the OIP E3 amendment below); two are held back.
 
 | job | suites | measured (clean venv) |
 |---|---|---|
@@ -229,11 +229,11 @@ below the strictly-dark set. 138 are now wired across thirteen lanes; two are he
 | `unrun-intl-collectors` | 11 | 198 / 30s |
 | `unrun-russell-breadth` | 1 | 11 / 12s |
 | `unrun-macro-panels` | 19 | 739 / 63s |
-| `unrun-market-plumbing` | 22 (+3, GEX core) | 682 / 25s (+42 / 3s) |
+| `unrun-market-plumbing` | 28 (22 + 3 GEX core + 3 OIP E3) | 682 / 25s + 42 / 3s + 188 / 11s |
 | `unrun-publish-ops` | 19 | 507 / 27s |
 | `unrun-inline-js-guard` | 1 | 14 / 2s |
 | `unrun-import-hygiene` | 1 | 4 / 48s |
-| **total** | **138** | **3767 / 324s** |
+| **total** | **144** | **3997 / 338s** |
 
 Twelve of the thirteen repeat the nine P0 lanes' `pip install` line **byte-for-byte**, so
 `run_ci_pack.py` still builds ONE venv across all twenty-two `unrun-*` jobs. The dependency set
@@ -261,6 +261,21 @@ install line, shared venv unchanged, other nine wheels confirmed unused. Subject
 were already path-covered (`engine/**`, `collectors/**`, the `scripts/*.py` catch-all);
 the three test paths are the other half of the #3488 rule, added so a suite-only edit can
 still start the workflow.
+
+**OIP E3 amendment (2026-07-29).** `unrun-market-plumbing` gained a third `run:` step
+carrying three suites: the OIP E3 positioning-persistence suite (new with that wave) plus
+the gex_state emitter and index dealer-gamma reconstruction suites, both of which were in
+the **strictly dark** class — named by no `run:` step and matched by no path pattern, so
+no possible edit could start `ci.yml` for them. The E3 wave edits both, so shipping the
+edits unverified would have rebuilt the exact hole this census exists to close. Measured
+188 tests / 11s serial (re-measured 2026-07-30 on the rebased head — the 136/5s in the
+first draft of this amendment predated the review round, which added tests to all three
+suites); import closure re-derived against the lane's existing install line
+with scipy, sklearn, jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and
+fastapi all blocked — `pytest pandas numpy pyarrow pyyaml` suffices, so the shared venv is
+unchanged. The three follow-up suites this wave flagged (the gex model layer, the gex
+engine math, the polygon accrual collector) were closed by the GEX modeling-core amendment
+above, which landed on `main` first; nothing in the GEX family is dark any more.
 
 Budget: ci-pack goes 109 → 121 legacy jobs and the balancing weight 1978 → 2280
 (+302, +15%), splitting 6/6 across the packs at `[1140, 1140]`. Weight is the pack

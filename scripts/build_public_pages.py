@@ -85,6 +85,7 @@ def plans_view_model() -> dict:
         "insider": tier_vm("insider"),
         "pro": tier_vm("pro"),
         "founding": founding,
+        "terminal_indicators": catalog.get("terminal_indicators", {}),
     }
 
 
@@ -105,6 +106,7 @@ def build(site=None) -> None:
         insider=vm["insider"],
         pro=vm["pro"],
         founding=vm["founding"],
+        terminal_indicators=vm["terminal_indicators"],
     )
     write_page(site / "plans.html", plans)
     write_page(

@@ -1,7 +1,7 @@
 {
- "asof": "2026-07-28",
- "files_checked": 234,
- "n_markers": 57586,
+ "asof": "2026-07-31",
+ "files_checked": 236,
+ "n_markers": 58094,
  "errors": [
   "site/signals/SPGI.json: markers[326]: date '2026-07-01' not strictly after previous marker '2026-07-01' (markers must be date-sorted ascending)"
  ]

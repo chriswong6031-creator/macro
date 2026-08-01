@@ -154,6 +154,23 @@ def main() -> int:
         log.error("intl engine failed (%s); skipping intl page", e)
         return 0
 
+    # Five first-class country/region macro dashboards share the freshly computed
+    # international regime records and histories.  Build them before the much
+    # slower stock-library work so a narrow ``intl`` render always refreshes the
+    # new macro routes.  Unlike an additive decoration, these are canonical
+    # navigation destinations: a failed render must be visible to Actions.
+    try:
+        from scripts.build_international_macro import build_all as _build_country_macro
+
+        _build_country_macro(latest)
+    except Exception as e:  # noqa: BLE001
+        print(
+            f"::error title=international country dashboards failed::{e}",
+            flush=True,
+        )
+        log.exception("international country dashboard render failed")
+        return 1
+
     # ---- cross-market performance / rotation / rates desks (display-only) ------
     try:                                                # inline SVG sparkline renderer
         from scripts.build_intl_library import _spark_svg

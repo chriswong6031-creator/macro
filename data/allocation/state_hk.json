@@ -6,14 +6,13 @@
     "hk_conglo",
     "hk_dividend",
     "hk_industrials",
-    "hk_tech_hardware",
-    "hk_telco_util"
+    "hk_tech_hardware"
   ],
   "held": [
     "hk_tech_hardware",
     "hk_conglo",
-    "hk_industrials",
-    "hk_dividend"
+    "hk_dividend",
+    "hk_industrials"
   ],
   "leader": "hk_miners",
   "names": {

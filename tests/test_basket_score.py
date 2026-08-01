@@ -137,6 +137,27 @@ def test_act_now_no_clean_entries():
     assert r["uncovered"] == []
 
 
+def test_act_now_surfaces_blocked_t1_t2_as_fast_turn_watch():
+    members = [
+        {"symbol": "FAST", "name": "Fast Miner", "ret_5d": 0.03, "ret_20d": -0.08,
+         "conviction": {"score": 12, "cycle_blocked": False,
+                        "signal": {"tier": "T2", "provisional": False},
+                        "entry": {"status": "bounce_wait", "headline": "turn not confirmed"}}},
+        {"symbol": "BLOCK", "name": "Blocked Miner", "ret_5d": 0.01, "ret_20d": -0.05,
+         "conviction": {"score": 0, "cycle_blocked": True,
+                        "signal": {"tier": "T1", "provisional": False},
+                        "entry": {"status": "blocked", "headline": "failed cycle"}}},
+    ]
+    r = bs.act_now_stocks(
+        members,
+        {"label": "deteriorating", "reco": "avoid",
+         "textures": {"bull_age": {"in_bull": False}}},
+    )
+    assert r["status"] == "theme_out_of_favour"
+    assert [x["symbol"] for x in r["early_turn_watch"]] == ["FAST", "BLOCK"]
+    assert all(x["blocker_en"].startswith("theme gate:") for x in r["early_turn_watch"])
+
+
 def test_act_now_uncovered_disclosed_on_every_path():
     # REGRESSION (hk_banks audit 2026-07-16): members without a conviction read (no stockdata
     # record, or a thin record without a score) were silently dropped from the ranking. Every

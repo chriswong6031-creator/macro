@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb_cycle_pattern_state.v1",
-  "asof": "2026-07-29",
+  "asof": "2026-07-31",
   "model_epoch": "price_c4414dcb",
   "gate_status": {
     "up": {
@@ -16,6 +16,21 @@
   },
   "entities": [
     {
+      "entity_id": null,
+      "native_id": "gold_miners",
+      "family": null,
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 0.1974,
+      "hazard_3m_p": 0.0474,
+      "hazard_6m_p": 0.0894,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
+    },
+    {
       "entity_id": "bloc:AAXJ",
       "native_id": "AAXJ",
       "family": "bloc",
@@ -28,7 +43,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "bloc:EEM",
@@ -43,7 +58,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "bloc:EFA",
@@ -51,20 +66,20 @@
       "family": "bloc",
       "phase_v2": "Downturn",
       "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.6414,
+      "hazard_3m_p": 0.5595,
       "hazard_6m_p": 0.7037,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "bloc:ILF",
       "native_id": "ILF",
       "family": "bloc",
-      "phase_v2": "Downturn",
+      "phase_v2": "Expansion",
       "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0841,
       "hazard_6m_p": 0.1771,
@@ -73,22 +88,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "bloc:VGK",
       "native_id": "VGK",
       "family": "bloc",
-      "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.6736,
-      "hazard_6m_p": 0.7037,
+      "phase_v2": "Peak",
+      "hazard_1m_p": 1.0,
+      "hazard_3m_p": 0.0841,
+      "hazard_6m_p": 0.1771,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "MODEL",
-        "6m": "MODEL"
+        "3m": "PRIOR",
+        "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "bloc:VPL",
@@ -103,22 +118,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "bloc:VXUS",
       "native_id": "VXUS",
       "family": "bloc",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.4936,
-      "hazard_3m_p": 0.4,
-      "hazard_6m_p": 0.5882,
+      "hazard_1m_p": 0.1974,
+      "hazard_3m_p": 0.0841,
+      "hazard_6m_p": 0.1771,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "MODEL",
-        "6m": "MODEL"
+        "3m": "PRIOR",
+        "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "cn_basket:cn_ai_compute",
@@ -133,7 +148,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_appliances",
@@ -148,13 +163,13 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_autos",
       "native_id": "cn_autos",
       "family": "cn_basket",
-      "phase_v2": "Trough",
+      "phase_v2": "Recovery",
       "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
@@ -163,7 +178,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_baijiu",
@@ -178,7 +193,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_banks",
@@ -193,7 +208,7 @@
         "3m": null,
         "6m": null
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_battery",
@@ -208,7 +223,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_brokers",
@@ -223,14 +238,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_coal",
       "native_id": "cn_coal",
       "family": "cn_basket",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.5397,
+      "hazard_1m_p": 0.1954,
       "hazard_3m_p": 0.4,
       "hazard_6m_p": 0.5882,
       "hazard_src": {
@@ -238,22 +253,22 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_consumer_elec",
       "native_id": "cn_consumer_elec",
       "family": "cn_basket",
-      "phase_v2": "Downturn",
-      "hazard_1m_p": 0.8878,
-      "hazard_3m_p": 0.7806,
-      "hazard_6m_p": 0.8,
+      "phase_v2": "Trough",
+      "hazard_1m_p": 1.0,
+      "hazard_3m_p": 0.0825,
+      "hazard_6m_p": 0.2323,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "MODEL",
-        "6m": "MODEL"
+        "3m": "PRIOR",
+        "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_defense",
@@ -268,13 +283,13 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_food_bev",
       "native_id": "cn_food_bev",
       "family": "cn_basket",
-      "phase_v2": "Recovery",
+      "phase_v2": "Expansion",
       "hazard_1m_p": 1.0,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
@@ -283,7 +298,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_gold",
@@ -298,7 +313,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_insurers",
@@ -313,11 +328,26 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_med_devices",
       "native_id": "cn_med_devices",
+      "family": "cn_basket",
+      "phase_v2": "Expansion",
+      "hazard_1m_p": 1.0,
+      "hazard_3m_p": 0.0825,
+      "hazard_6m_p": 0.2323,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-07-31"
+    },
+    {
+      "entity_id": "cn_basket:cn_metals",
+      "native_id": "cn_metals",
       "family": "cn_basket",
       "phase_v2": "Recovery",
       "hazard_1m_p": 1.0,
@@ -328,22 +358,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
-    },
-    {
-      "entity_id": "cn_basket:cn_metals",
-      "native_id": "cn_metals",
-      "family": "cn_basket",
-      "phase_v2": "Trough",
-      "hazard_1m_p": 0.5288,
-      "hazard_3m_p": 0.0825,
-      "hazard_6m_p": 0.2323,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_pharma_cxo",
@@ -358,7 +373,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_rare_earth",
@@ -373,7 +388,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_robotics",
@@ -388,7 +403,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_semis",
@@ -403,11 +418,26 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_soe_value",
       "native_id": "cn_soe_value",
+      "family": "cn_basket",
+      "phase_v2": "Expansion",
+      "hazard_1m_p": 1.0,
+      "hazard_3m_p": 0.0825,
+      "hazard_6m_p": 0.2323,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-07-31"
+    },
+    {
+      "entity_id": "cn_basket:cn_software",
+      "native_id": "cn_software",
       "family": "cn_basket",
       "phase_v2": "Recovery",
       "hazard_1m_p": 1.0,
@@ -418,22 +448,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
-    },
-    {
-      "entity_id": "cn_basket:cn_software",
-      "native_id": "cn_software",
-      "family": "cn_basket",
-      "phase_v2": "Trough",
-      "hazard_1m_p": 0.1974,
-      "hazard_3m_p": 0.0825,
-      "hazard_6m_p": 0.2323,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_basket:cn_solar",
@@ -448,7 +463,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801010",
@@ -463,7 +478,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801030",
@@ -478,13 +493,13 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801040",
       "native_id": "801040",
       "family": "cn_sector",
-      "phase_v2": "Trough",
+      "phase_v2": "Recovery",
       "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
@@ -493,7 +508,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801050",
@@ -508,29 +523,29 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801080",
       "native_id": "801080",
       "family": "cn_sector",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.8878,
-      "hazard_3m_p": 0.9589,
-      "hazard_6m_p": 0.9441,
+      "hazard_1m_p": 0.5397,
+      "hazard_3m_p": 0.4,
+      "hazard_6m_p": 0.5882,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801110",
       "native_id": "801110",
       "family": "cn_sector",
-      "phase_v2": "Trough",
-      "hazard_1m_p": 0.595,
+      "phase_v2": "Recovery",
+      "hazard_1m_p": 1.0,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
       "hazard_src": {
@@ -538,14 +553,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801120",
       "native_id": "801120",
       "family": "cn_sector",
       "phase_v2": "Recovery",
-      "hazard_1m_p": 0.1974,
+      "hazard_1m_p": 1.0,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
       "hazard_src": {
@@ -553,7 +568,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801130",
@@ -568,7 +583,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801140",
@@ -583,14 +598,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801150",
       "native_id": "801150",
       "family": "cn_sector",
       "phase_v2": "Recovery",
-      "hazard_1m_p": 0.2416,
+      "hazard_1m_p": 0.2222,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
       "hazard_src": {
@@ -598,14 +613,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801160",
       "native_id": "801160",
       "family": "cn_sector",
       "phase_v2": "Trough",
-      "hazard_1m_p": 0.1974,
+      "hazard_1m_p": 0.8571,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
       "hazard_src": {
@@ -613,14 +628,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801170",
       "native_id": "801170",
       "family": "cn_sector",
       "phase_v2": "Recovery",
-      "hazard_1m_p": 0.1974,
+      "hazard_1m_p": 1.0,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
       "hazard_src": {
@@ -628,7 +643,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801180",
@@ -643,13 +658,13 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801200",
       "native_id": "801200",
       "family": "cn_sector",
-      "phase_v2": "Trough",
+      "phase_v2": "Recovery",
       "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0825,
       "hazard_6m_p": 0.2323,
@@ -658,7 +673,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801210",
@@ -673,7 +688,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801230",
@@ -688,7 +703,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801710",
@@ -703,7 +718,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801720",
@@ -718,7 +733,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801730",
@@ -733,7 +748,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801740",
@@ -748,7 +763,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801750",
@@ -763,7 +778,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801760",
@@ -778,22 +793,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801770",
       "native_id": "801770",
       "family": "cn_sector",
-      "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.5595,
-      "hazard_6m_p": 0.5882,
+      "phase_v2": "Trough",
+      "hazard_1m_p": 0.1974,
+      "hazard_3m_p": 0.0825,
+      "hazard_6m_p": 0.2323,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "MODEL",
-        "6m": "MODEL"
+        "3m": "PRIOR",
+        "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801780",
@@ -808,7 +823,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801790",
@@ -823,7 +838,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801880",
@@ -838,7 +853,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801890",
@@ -853,22 +868,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801950",
       "native_id": "801950",
       "family": "cn_sector",
-      "phase_v2": "Downturn",
-      "hazard_1m_p": 0.502,
-      "hazard_3m_p": 0.4,
-      "hazard_6m_p": 0.5882,
+      "phase_v2": "Expansion",
+      "hazard_1m_p": 1.0,
+      "hazard_3m_p": 0.0825,
+      "hazard_6m_p": 0.2323,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "MODEL",
-        "6m": "MODEL"
+        "3m": "PRIOR",
+        "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801960",
@@ -883,7 +898,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801970",
@@ -898,7 +913,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "cn_sector:801980",
@@ -913,7 +928,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-29"
+      "date": "2026-07-31"
     },
     {
       "entity_id": "country:ECH",
@@ -928,7 +943,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EIDO",
@@ -943,7 +958,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EPOL",
@@ -958,14 +973,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWA",
       "native_id": "EWA",
       "family": "country",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 0.2171,
+      "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0841,
       "hazard_6m_p": 0.1771,
       "hazard_src": {
@@ -973,29 +988,29 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWC",
       "native_id": "EWC",
       "family": "country",
-      "phase_v2": "Peak",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0841,
-      "hazard_6m_p": 0.1771,
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 0.6876,
+      "hazard_3m_p": 0.5595,
+      "hazard_6m_p": 0.5882,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
+        "3m": "MODEL",
+        "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWD",
       "native_id": "EWD",
       "family": "country",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
+      "hazard_1m_p": 0.2417,
       "hazard_3m_p": 0.0841,
       "hazard_6m_p": 0.1771,
       "hazard_src": {
@@ -1003,14 +1018,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWG",
       "native_id": "EWG",
       "family": "country",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 0.2531,
+      "hazard_1m_p": 0.2416,
       "hazard_3m_p": 0.0841,
       "hazard_6m_p": 0.1771,
       "hazard_src": {
@@ -1018,7 +1033,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWH",
@@ -1033,7 +1048,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWI",
@@ -1048,37 +1063,37 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWJ",
       "native_id": "EWJ",
       "family": "country",
       "phase_v2": "Downturn",
+      "hazard_1m_p": 0.502,
+      "hazard_3m_p": 0.4,
+      "hazard_6m_p": 0.5882,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "MODEL",
+        "6m": "MODEL"
+      },
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "country:EWL",
+      "native_id": "EWL",
+      "family": "country",
+      "phase_v2": "Peak",
       "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.6736,
+      "hazard_3m_p": 0.6923,
       "hazard_6m_p": 0.7037,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "country:EWL",
-      "native_id": "EWL",
-      "family": "country",
-      "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0841,
-      "hazard_6m_p": 0.1771,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWN",
@@ -1093,26 +1108,11 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWP",
       "native_id": "EWP",
-      "family": "country",
-      "phase_v2": "Peak",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0841,
-      "hazard_6m_p": 0.1771,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "country:EWQ",
-      "native_id": "EWQ",
       "family": "country",
       "phase_v2": "Expansion",
       "hazard_1m_p": 1.0,
@@ -1123,7 +1123,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "country:EWQ",
+      "native_id": "EWQ",
+      "family": "country",
+      "phase_v2": "Peak",
+      "hazard_1m_p": 1.0,
+      "hazard_3m_p": 0.0841,
+      "hazard_6m_p": 0.1771,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWS",
@@ -1138,7 +1153,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWT",
@@ -1146,21 +1161,21 @@
       "family": "country",
       "phase_v2": "Downturn",
       "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.6923,
+      "hazard_3m_p": 0.6736,
       "hazard_6m_p": 0.7037,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWU",
       "native_id": "EWU",
       "family": "country",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
+      "hazard_1m_p": 0.5777,
       "hazard_3m_p": 0.0841,
       "hazard_6m_p": 0.1771,
       "hazard_src": {
@@ -1168,7 +1183,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWW",
@@ -1183,7 +1198,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWY",
@@ -1198,7 +1213,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EWZ",
@@ -1213,13 +1228,13 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:EZA",
       "native_id": "EZA",
       "family": "country",
-      "phase_v2": "Trough",
+      "phase_v2": "Downturn",
       "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0841,
       "hazard_6m_p": 0.1771,
@@ -1228,7 +1243,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:FXI",
@@ -1243,7 +1258,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:INDA",
@@ -1258,7 +1273,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "country:TUR",
@@ -1273,28 +1288,13 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:ai_agents",
       "native_id": "ai_agents",
       "family": "us_basket",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 0.2416,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_basket:ai_infra",
-      "native_id": "ai_infra",
-      "family": "us_basket",
-      "phase_v2": "Downturn",
       "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0474,
       "hazard_6m_p": 0.0894,
@@ -1303,7 +1303,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_basket:ai_infra",
+      "native_id": "ai_infra",
+      "family": "us_basket",
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 1.0,
+      "hazard_3m_p": 0.0474,
+      "hazard_6m_p": 0.0894,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:ai_neoclouds",
@@ -1318,22 +1333,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:ai_semiconductors",
       "native_id": "ai_semiconductors",
       "family": "us_basket",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.6414,
-      "hazard_6m_p": 0.7037,
+      "hazard_1m_p": 0.8878,
+      "hazard_3m_p": 0.7636,
+      "hazard_6m_p": 0.8,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:ai_software",
@@ -1348,7 +1363,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:big_pharma",
@@ -1363,7 +1378,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:critical_minerals",
@@ -1378,7 +1393,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:crypto",
@@ -1393,7 +1408,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:crypto_rails",
@@ -1408,22 +1423,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:cybersecurity",
       "native_id": "cybersecurity",
       "family": "us_basket",
-      "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
+      "phase_v2": "Peak",
+      "hazard_1m_p": 0.8878,
+      "hazard_3m_p": 1.0,
+      "hazard_6m_p": 1.0,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
+        "3m": "MODEL",
+        "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:data_center_power",
@@ -1438,7 +1453,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:defense",
@@ -1453,41 +1468,11 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:defensives",
       "native_id": "defensives",
-      "family": "us_basket",
-      "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_basket:energy_complex",
-      "native_id": "energy_complex",
-      "family": "us_basket",
-      "phase_v2": "Expansion",
-      "hazard_1m_p": 0.8571,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_basket:housing",
-      "native_id": "housing",
       "family": "us_basket",
       "phase_v2": "Expansion",
       "hazard_1m_p": 0.1974,
@@ -1498,14 +1483,29 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
-      "entity_id": "us_basket:industrial_distribution",
-      "native_id": "industrial_distribution",
+      "entity_id": "us_basket:energy_complex",
+      "native_id": "energy_complex",
+      "family": "us_basket",
+      "phase_v2": "Expansion",
+      "hazard_1m_p": 0.1974,
+      "hazard_3m_p": 0.0474,
+      "hazard_6m_p": 0.0894,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_basket:housing",
+      "native_id": "housing",
       "family": "us_basket",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6396,
+      "hazard_1m_p": 0.1954,
       "hazard_3m_p": 0.4,
       "hazard_6m_p": 0.5882,
       "hazard_src": {
@@ -1513,7 +1513,22 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_basket:industrial_distribution",
+      "native_id": "industrial_distribution",
+      "family": "us_basket",
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 0.4936,
+      "hazard_3m_p": 0.4,
+      "hazard_6m_p": 0.5882,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "MODEL",
+        "6m": "MODEL"
+      },
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:insurance",
@@ -1528,7 +1543,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:mag7",
@@ -1543,11 +1558,26 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:managed_care",
       "native_id": "managed_care",
+      "family": "us_basket",
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 0.8878,
+      "hazard_3m_p": 0.8473,
+      "hazard_6m_p": 0.8776,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "MODEL",
+        "6m": "MODEL"
+      },
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_basket:memory_storage",
+      "native_id": "memory_storage",
       "family": "us_basket",
       "phase_v2": "Downturn",
       "hazard_1m_p": 0.8878,
@@ -1558,22 +1588,7 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_basket:memory_storage",
-      "native_id": "memory_storage",
-      "family": "us_basket",
-      "phase_v2": "Downturn",
-      "hazard_1m_p": 0.8878,
-      "hazard_3m_p": 0.8661,
-      "hazard_6m_p": 0.9063,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "MODEL",
-        "6m": "MODEL"
-      },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:non_ai_software",
@@ -1588,22 +1603,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:non_ai_tech",
       "native_id": "non_ai_tech",
       "family": "us_basket",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.8878,
-      "hazard_3m_p": 0.8348,
-      "hazard_6m_p": 0.821,
+      "hazard_1m_p": 0.6876,
+      "hazard_3m_p": 0.6935,
+      "hazard_6m_p": 0.7657,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:nuclear_power",
@@ -1618,28 +1633,13 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:obesity_glp1",
       "native_id": "obesity_glp1",
       "family": "us_basket",
       "phase_v2": "Peak",
-      "hazard_1m_p": 0.8878,
-      "hazard_3m_p": 0.8661,
-      "hazard_6m_p": 0.9063,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "MODEL",
-        "6m": "MODEL"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_basket:payments_fintech",
-      "native_id": "payments_fintech",
-      "family": "us_basket",
-      "phase_v2": "Expansion",
       "hazard_1m_p": 1.0,
       "hazard_3m_p": 0.0474,
       "hazard_6m_p": 0.0894,
@@ -1648,7 +1648,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_basket:payments_fintech",
+      "native_id": "payments_fintech",
+      "family": "us_basket",
+      "phase_v2": "Expansion",
+      "hazard_1m_p": 0.2417,
+      "hazard_3m_p": 0.0474,
+      "hazard_6m_p": 0.0894,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:power_grid",
@@ -1663,7 +1678,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:quantum_computing",
@@ -1678,7 +1693,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:regional_banks",
@@ -1693,43 +1708,28 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:reshoring",
       "native_id": "reshoring",
       "family": "us_basket",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.5595,
+      "hazard_1m_p": 0.502,
+      "hazard_3m_p": 0.4,
       "hazard_6m_p": 0.5882,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:retail",
       "native_id": "retail",
       "family": "us_basket",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_basket:robotics_automation",
-      "native_id": "robotics_automation",
-      "family": "us_basket",
-      "phase_v2": "Downturn",
       "hazard_1m_p": 0.1974,
       "hazard_3m_p": 0.0474,
       "hazard_6m_p": 0.0894,
@@ -1738,7 +1738,22 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_basket:robotics_automation",
+      "native_id": "robotics_automation",
+      "family": "us_basket",
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 0.4878,
+      "hazard_3m_p": 0.0474,
+      "hazard_6m_p": 0.0894,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:semicap_equipment",
@@ -1753,7 +1768,7 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:space_economy",
@@ -1768,7 +1783,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:travel",
@@ -1776,14 +1791,14 @@
       "family": "us_basket",
       "phase_v2": "Downturn",
       "hazard_1m_p": 0.8878,
-      "hazard_3m_p": 0.8661,
-      "hazard_6m_p": 0.9063,
+      "hazard_3m_p": 0.8473,
+      "hazard_6m_p": 0.821,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:uranium_miners",
@@ -1798,7 +1813,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_comm",
@@ -1813,14 +1828,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_discretionary",
       "native_id": "us_sector_discretionary",
       "family": "us_basket",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
+      "hazard_1m_p": 0.2417,
       "hazard_3m_p": 0.0474,
       "hazard_6m_p": 0.0894,
       "hazard_src": {
@@ -1828,7 +1843,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_energy",
@@ -1843,7 +1858,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_financials",
@@ -1858,7 +1873,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_health",
@@ -1873,59 +1888,59 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_industrials",
       "native_id": "us_sector_industrials",
       "family": "us_basket",
-      "phase_v2": "Peak",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_basket:us_sector_materials",
-      "native_id": "us_sector_materials",
-      "family": "us_basket",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.5595,
+      "hazard_1m_p": 0.6396,
+      "hazard_3m_p": 0.4,
       "hazard_6m_p": 0.5882,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_basket:us_sector_materials",
+      "native_id": "us_sector_materials",
+      "family": "us_basket",
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 0.372,
+      "hazard_3m_p": 0.4,
+      "hazard_6m_p": 0.5882,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "MODEL",
+        "6m": "MODEL"
+      },
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_realestate",
       "native_id": "us_sector_realestate",
       "family": "us_basket",
-      "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
+      "phase_v2": "Peak",
+      "hazard_1m_p": 0.6876,
+      "hazard_3m_p": 0.6935,
+      "hazard_6m_p": 0.7657,
       "hazard_src": {
         "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
+        "3m": "MODEL",
+        "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_staples",
       "native_id": "us_sector_staples",
       "family": "us_basket",
       "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
+      "hazard_1m_p": 0.595,
       "hazard_3m_p": 0.0474,
       "hazard_6m_p": 0.0894,
       "hazard_src": {
@@ -1933,7 +1948,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_tech",
@@ -1942,13 +1957,13 @@
       "phase_v2": "Downturn",
       "hazard_1m_p": 0.8878,
       "hazard_3m_p": 0.8473,
-      "hazard_6m_p": 0.8696,
+      "hazard_6m_p": 0.8642,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_basket:us_sector_utilities",
@@ -1963,14 +1978,14 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLB",
       "native_id": "XLB",
       "family": "us_sector",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.502,
+      "hazard_1m_p": 0.1954,
       "hazard_3m_p": 0.4,
       "hazard_6m_p": 0.5882,
       "hazard_src": {
@@ -1978,7 +1993,7 @@
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLC",
@@ -1993,7 +2008,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLE",
@@ -2008,7 +2023,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLF",
@@ -2023,71 +2038,41 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLI",
       "native_id": "XLI",
       "family": "us_sector",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.6414,
-      "hazard_6m_p": 0.7037,
+      "hazard_1m_p": 0.642,
+      "hazard_3m_p": 0.4444,
+      "hazard_6m_p": 0.5882,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLK",
       "native_id": "XLK",
       "family": "us_sector",
       "phase_v2": "Downturn",
-      "hazard_1m_p": 0.6876,
-      "hazard_3m_p": 0.6736,
-      "hazard_6m_p": 0.7037,
+      "hazard_1m_p": 0.8878,
+      "hazard_3m_p": 0.7636,
+      "hazard_6m_p": 0.8,
       "hazard_src": {
         "1m": "MODEL",
         "3m": "MODEL",
         "6m": "MODEL"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLP",
       "native_id": "XLP",
-      "family": "us_sector",
-      "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_sector:XLRE",
-      "native_id": "XLRE",
-      "family": "us_sector",
-      "phase_v2": "Expansion",
-      "hazard_1m_p": 1.0,
-      "hazard_3m_p": 0.0474,
-      "hazard_6m_p": 0.0894,
-      "hazard_src": {
-        "1m": "MODEL",
-        "3m": "PRIOR",
-        "6m": "PRIOR"
-      },
-      "date": "2026-07-30"
-    },
-    {
-      "entity_id": "us_sector:XLU",
-      "native_id": "XLU",
       "family": "us_sector",
       "phase_v2": "Expansion",
       "hazard_1m_p": 0.1974,
@@ -2098,7 +2083,37 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_sector:XLRE",
+      "native_id": "XLRE",
+      "family": "us_sector",
+      "phase_v2": "Expansion",
+      "hazard_1m_p": 0.1974,
+      "hazard_3m_p": 0.0474,
+      "hazard_6m_p": 0.0894,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
+    },
+    {
+      "entity_id": "us_sector:XLU",
+      "native_id": "XLU",
+      "family": "us_sector",
+      "phase_v2": "Downturn",
+      "hazard_1m_p": 0.1974,
+      "hazard_3m_p": 0.0474,
+      "hazard_6m_p": 0.0894,
+      "hazard_src": {
+        "1m": "MODEL",
+        "3m": "PRIOR",
+        "6m": "PRIOR"
+      },
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLV",
@@ -2113,7 +2128,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     },
     {
       "entity_id": "us_sector:XLY",
@@ -2128,7 +2143,7 @@
         "3m": "PRIOR",
         "6m": "PRIOR"
       },
-      "date": "2026-07-30"
+      "date": "2026-08-01"
     }
   ],
   "truth_summary": {

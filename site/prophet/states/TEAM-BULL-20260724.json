@@ -1,30 +1,30 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "TEAM-BULL-20260724",
-  "asof": "2026-07-29",
+  "asof": "2026-07-31",
   "phase": "triggered_pre_t1",
   "detection_phase": "triggered_pre_t1",
-  "management_confidence": 66.4,
-  "raw_confidence": 67.7,
-  "delta_vs_base": 6.4,
+  "management_confidence": 64.9,
+  "raw_confidence": 65.1,
+  "delta_vs_base": 4.9,
   "recommended_action": "hold",
   "human_state": "Needs Follow-Through",
   "components": {
     "validity": 100.0,
-    "progress": 15.5,
-    "pace": 100.0,
+    "progress": 10.7,
+    "pace": 97.6,
     "retention": 50.0,
     "overlay": 59.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.208,
-    "dist_to_t1_r": 1.292,
-    "dist_to_t2_r": 2.792,
-    "horizon_pct_used": 11.1,
-    "p1": 0.1387,
-    "p2": 0.0693,
+    "dist_to_stop_r": 1.127,
+    "dist_to_t1_r": 1.373,
+    "dist_to_t2_r": 2.873,
+    "horizon_pct_used": 15.6,
+    "p1": 0.0848,
+    "p2": 0.0424,
     "p3": null,
-    "move_r": 0.208,
+    "move_r": 0.127,
     "mfe_r": 0.208,
     "mae_r": 0.0
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-28",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 5,
-  "tau": 0.1111
+  "days_elapsed": 7,
+  "tau": 0.1556
 }

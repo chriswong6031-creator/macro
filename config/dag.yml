@@ -465,6 +465,26 @@ lanes:
           idempotent) + nightly-gated grade advance + display summary. Forward-accrual ONLY (the
           definitive on-Prophet test the fusion backtest left open); NEVER gates/ranks Prophet
           (win-rate-gate construction is KILLED). Non-fatal; runs after build_prophet.
+      - id: build_prophet_live_pack
+        module: scripts.build_prophet_live_pack
+        note: >
+          Prophet Live arming pass (P0) — probes the SAME close-only admission gate
+          (engine/signal_gate.py) with candidate provisional closes and publishes per-name
+          trigger/fade levels to R2 live_flow/prophet_live_armed.json for the */5
+          prophet-live.yml lane. Writes NO data/ path (runtime tier). FAIL-CLOSED on parity:
+          every published price is re-verified against the real gate and one mismatch
+          publishes nothing (a missing pack darks the evaluator honestly; a wrong pack lies).
+          Non-fatal; runs after build_site so it probes the same closes the board was built from.
+      - id: reconcile_prophet_live
+        module: scripts.reconcile_prophet_live
+        note: >
+          Prophet Live reconciler (P0) — SOLE writer of data/prophet_live/forward.parquet.
+          Lists the day's R2 intraday event spool and joins confirmed? (from a verdict whose
+          basis is the row's own session) + same-day close + the next-session-close fill
+          (mirroring engine.grading.fill_index, the grade_us_board convention); union-merges
+          on (date, ticker, kind) so a rebake or double run only ever ADDS information.
+          MEASURE-DARK: nothing reads this ledger — it accrues the evidence the §6 promotion
+          gauntlet must be pre-registered on. Non-fatal; runs after the arming pass.
       # parallel band
       - id: band
         cluster:
@@ -1729,6 +1749,13 @@ lanes:
             - scripts.build_flow_desk
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            # OIP E8 (2026-07-29): options_screener.html had NO express coverage in
+            # either intraday lane (the flow_leaders #3515 freeze class). Pure function
+            # of committed data/, zero network, site/-only writes. Placed AFTER the skew
+            # and ivspread builders so it reads THIS run's snapshots, and inside cl_gex
+            # (sequential) because build_options_skew rewrites snapshots.parquet
+            # non-atomically.
+            - scripts.build_options_screener
             - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
@@ -1796,6 +1823,23 @@ lanes:
           on a live doctrine surface). Serial post-band, not cl_misc, because
           cl_gex's build_options_entry_state rewrites
           data/options_entry/state.parquet — an input here.
+      - id: build_options_command
+        module: scripts.build_options_command
+        note: >
+          Options workspace (options.html), page-only re-serialisation (scope=all,
+          serial post-band via optionscmd(), immediately after flowleaders(); also
+          the last step of the narrow scope=gex case). OIP E8 express-lane gap,
+          2026-07-29: the builder was daily.yml-ONLY, so the canonical options
+          surface held the last nightly's states while both express lanes refreshed
+          the six stores it re-serialises around it — and an edit to
+          build_options_command.py or templates/options.html.j2 never baked until
+          the nightly. Same freeze class as flow_leaders (#3515) / research_vault
+          (#3487). SERIAL POST-BAND, never a cl_gex member: its producers straddle
+          the phases (vol_regime + options_screener are cl_gex members,
+          build_flow_leaders is the post-band flowleaders() step), so a cl_gex
+          placement would bake a generation-stale Leaders mode every run — the same
+          reasoning daily.yml records for this builder. O(seconds), zero network,
+          site/-only. DISPLAY-ONLY; always exits 0.
       - id: build_leader_radar
         module: scripts.build_leader_radar
         note: >
@@ -1908,6 +1952,13 @@ lanes:
             - scripts.build_flow_desk
             - scripts.build_options_skew
             - scripts.build_options_ivspread
+            # OIP E8 (2026-07-29): options_screener.html had NO express coverage in
+            # either intraday lane (the flow_leaders #3515 freeze class). Pure function
+            # of committed data/, zero network, site/-only writes. Placed AFTER the skew
+            # and ivspread builders so it reads THIS run's snapshots, and inside cl_gex
+            # (sequential) because build_options_skew rewrites snapshots.parquet
+            # non-atomically.
+            - scripts.build_options_screener
             - scripts.build_options_entry_state
           cl_baskets:
             - scripts.build_baskets
@@ -2002,6 +2053,23 @@ lanes:
           froze site/flow_leaders.html at its pre-#3224 render. Serial post-band,
           not cl_misc, because cl_gex's build_options_entry_state rewrites
           data/options_entry/state.parquet — an input here.
+      - id: build_options_command
+        module: scripts.build_options_command
+        note: >
+          Options workspace (options.html), page-only re-serialisation (scope=all,
+          serial post-band via optionscmd(), immediately after flowleaders(); also
+          the last step of the narrow scope=gex case). OIP E8 express-lane gap,
+          2026-07-29: the builder was daily.yml-ONLY, so the canonical options
+          surface held the last nightly's states while both express lanes refreshed
+          the six stores it re-serialises around it — and an edit to
+          build_options_command.py or templates/options.html.j2 never baked until
+          the nightly. Same freeze class as flow_leaders (#3515) / research_vault
+          (#3487). SERIAL POST-BAND, never a cl_gex member: its producers straddle
+          the phases (vol_regime + options_screener are cl_gex members,
+          build_flow_leaders is the post-band flowleaders() step), so a cl_gex
+          placement would bake a generation-stale Leaders mode every run — the same
+          reasoning daily.yml records for this builder. O(seconds), zero network,
+          site/-only. DISPLAY-ONLY; always exits 0.
       - id: build_leader_radar
         module: scripts.build_leader_radar
         note: >

@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "CCS-BULL-20260601",
-  "asof": "2026-07-29",
+  "asof": "2026-07-31",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 40.0,
@@ -10,23 +10,23 @@
   "recommended_action": "trim",
   "human_state": "Overtime Stall",
   "components": {
-    "validity": 90.9,
+    "validity": 78.2,
     "progress": 0.0,
-    "pace": 12.7,
-    "retention": 48.3,
+    "pace": 10.0,
+    "retention": 45.9,
     "overlay": 47.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.932,
+    "dist_to_stop_r": 0.834,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 128.9,
-    "p1": -0.0456,
-    "p2": -0.0228,
+    "horizon_pct_used": 133.3,
+    "p1": -0.1109,
+    "p2": -0.0555,
     "p3": null,
-    "move_r": -0.068,
+    "move_r": -0.166,
     "mfe_r": 0.0,
-    "mae_r": -0.068
+    "mae_r": -0.166
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
@@ -40,11 +40,11 @@
     "ceiling": "hard cap at 92 \u2014 uncertainty is honest"
   },
   "_mfe": 0.0,
-  "_mae": -1.6800003051757812,
+  "_mae": -4.089996337890625,
   "_max_p1": 0.0,
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 58,
-  "tau": 1.2889
+  "days_elapsed": 60,
+  "tau": 1.3333
 }

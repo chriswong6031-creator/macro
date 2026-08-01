@@ -84,7 +84,13 @@
       0 0 36px -8px color-mix(in srgb,var(--mmb-info) 60%,transparent),
       0 0 0 1px color-mix(in srgb,var(--mmb-info) 26%,transparent);
     --mmb-rim-w:1.25px;--mmb-rim-o:.85;
-    --mmb-font:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}
+    --mmb-font:Inter,-apple-system,"Segoe UI",Roboto,sans-serif;
+    /* Motion tokens. ONE deceleration curve for everything that travels (long tail —
+       things arrive and settle rather than stop), one faster curve for state tints that
+       must feel instant. Named here so a hover, a landing ledger row and the panel morph
+       are visibly the same hand; MORPH_EASE in JS is the same curve. */
+    --mmb-ease:cubic-bezier(.22,1,.36,1);--mmb-ease-tint:cubic-bezier(.3,.8,.4,1);
+    --mmb-mono:ui-monospace,SFMono-Regular,Menlo,monospace}
   /* Light theme. The house light palette (theme.css) verbatim, so the chat is the
      same design family as the page behind it: #285fff primary, white panels on a
      soft #eef1f6 grid, navy-tinted shadows instead of black ones. */
@@ -186,11 +192,20 @@
   #mmb-panel.max .mmb-threads{animation:mmb-morph-in .5s .2s both cubic-bezier(.22,1,.36,1)}
   /* reduced motion: the rim parks at its start angle — still a chromatic edge, so the
      launcher keeps its presence without anything moving. */
-  @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,.mmb-tool::before,.mmb-think-h::before,
+  /* Every animation this file starts is named here, PSEUDOS INCLUDED — a kill block that
+     lists only the element leaves its ::before/::after spinning, which is exactly the
+     motion a reduced-motion user asked not to see. */
+  @media(prefers-reduced-motion:reduce){.mmb-orb,.mmb-orb::after,
     #mmb-launch::before,#mmb-launch:hover::before,
-    #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads{animation:none}
+    #mmb-panel.max .mmb-rail,#mmb-panel.max .mmb-threads,
+    .mmb-tk-row,.mmb-tk-h .lb.mmb-swap,.mmb-tk-h .mmb-tk-ic::after,
+    .mmb-recap.on .mmb-recap-list,.mmb-cards .mmb-cardp,.mmb-hero h1,.mmb-hero p,
+    .mmb-sugg .mmb-sug,.mmb-rpill.on svg .dv{animation:none}
     #mmb-panel{transition:opacity .18s ease!important}
-    .mmb-chip,.mmb-chip::after{transition:none}}
+    .mmb-chip,.mmb-chip::after,.mmb-cardp,.mmb-cardp .ci svg,.mmb-seg button,.mmb-rpill,
+    .mmb-rtip,.mmb-send,.mmb-box,.mmb-sug,.mmb-tbtn{transition:none}
+    /* the tip still appears, it just does not travel */
+    .mmb-rtip{transform:none}}
   #mmb-launch .ll{font:650 13.5px/1 var(--mmb-font);color:var(--mmb-text);white-space:nowrap}
   #mmb-launch .lk{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);margin-top:3px;white-space:nowrap}
   #mmb-launch .lt{display:flex;flex-direction:column}
@@ -237,8 +252,11 @@
   .mmb-rail .sp{flex:1}
   .mmb-threads{width:0;flex:none;overflow:hidden auto;border-right:1px solid color-mix(in srgb,var(--mmb-line) 55%,transparent);transition:width .26s ease}
   #mmb-panel.max .mmb-threads{width:236px}
-  .mmb-th-h{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px}
-  .mmb-th-h span{font:700 11px/1 var(--mmb-font);letter-spacing:.08em;text-transform:uppercase;color:var(--mmb-muted)}
+  /* Scoped to the rail on purpose. A bare .mmb-th-h span rule is uppercase + letterspaced
+     with no owner, and it silently ate the reasoning ledger's label the first time a second
+     header in this file wanted a similar name. */
+  .mmb-threads .mmb-th-h{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 10px}
+  .mmb-threads .mmb-th-h span{font:700 11px/1 var(--mmb-font);letter-spacing:.08em;text-transform:uppercase;color:var(--mmb-muted)}
   .mmb-search{display:none;align-items:center;gap:8px;margin:2px 10px 8px;padding:7px 10px;border-radius:10px;background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);border:1px solid var(--mmb-line)}
   .mmb-search.on{display:flex}
   .mmb-search>svg{width:15px;height:15px;stroke:var(--mmb-muted);fill:none;stroke-width:1.8;flex:none}
@@ -286,22 +304,49 @@
   @keyframes mmb-dotpulse{0%,100%{opacity:1}50%{opacity:.45}}
   @media(prefers-reduced-motion:reduce){.mmb-head .dot.busy{animation:none}}
   .mmb-head .sp{flex:1}
-  /* Deep Research is the Pro lane under another name (the gateway forces lane='pro'
-     for mode='research'), so when it is LIT it wears the same signature blue as the
-     Pro segment — one accent for "you are paying for depth". At rest it is inert,
-     like every other header control: the old always-violet tint read as "already on"
-     even with Fast selected, a state setLane/setResearch now make impossible.
-     The icon had no size rule and collapsed to 0x0 — sized here, so the control
-     reads as a toggle rather than a standing label. */
-  .mmb-rpill{display:inline-flex;align-items:center;gap:5px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;white-space:nowrap;flex:none;
-    color:var(--mmb-muted);background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);
-    border:1px solid var(--mmb-line);border-radius:999px;padding:6px 11px;
-    transition:color .13s,background .13s,border-color .13s}
-  .mmb-rpill svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.9;flex:none}
-  .mmb-rpill:hover{color:var(--mmb-text);background:color-mix(in srgb,var(--mmb-ink) 9%,transparent)}
-  .mmb-rpill.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));
-    color:#fff;border-color:transparent;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
+  /* Deep Research is the third stop on the depth control, not a separate mode: the
+     gateway forces lane='pro' for mode='research', so arming it lights Pro too. That
+     pair is the point — Pro in the signature blue says which bucket is being spent,
+     Deep in violet says this is a longer pass on top of it. Violet is already this
+     widget's "in flight / going deeper" accent (the caret, the busy dot, the ledger's
+     live arc), so the two lit stops read as one sentence rather than as a contradiction.
+     At REST it stays inert like its neighbours — the standing violet tint that used to
+     read as "already on" with Fast selected is a state setLane/setResearch make
+     impossible, and it is not coming back through the hover either. */
+  .mmb-rpill{position:relative;display:inline-flex;align-items:center;gap:5px;font:600 11.5px/1 var(--mmb-font);cursor:pointer;white-space:nowrap;flex:none;
+    color:var(--mmb-muted);background:transparent;border:none;border-radius:999px;padding:5px 11px 5px 9px;
+    transition:color .16s var(--mmb-ease-tint),background .16s var(--mmb-ease-tint),box-shadow .16s var(--mmb-ease-tint)}
+  .mmb-rpill svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .mmb-rpill:hover{color:color-mix(in srgb,var(--mmb-text) 80%,var(--mmb-muted));background:color-mix(in srgb,var(--mmb-ink) 7%,transparent)}
+  .mmb-rpill.on,.mmb-rpill.on:hover{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-violet) 88%,#fff),var(--mmb-violet));
+    color:#fff;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-violet) 70%,transparent)}
+  .mmb-rpill:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
+  /* a hairline before the third stop: Fast/Pro are alternatives to each other, Deep is a
+     step past both — the divider says so without a second control */
+  .mmb-rpill::before{content:'';position:absolute;left:-1px;top:5px;bottom:5px;width:1px;
+    background:color-mix(in srgb,var(--mmb-ink) 12%,transparent)}
+  .mmb-rpill.on::before,.mmb-rpill:hover::before{opacity:0}
+  /* phones: the label gives way to the mark alone (aria-label carries the name) */
+  @media(max-width:560px){.mmb-rpill .mmb-l{display:none}.mmb-rpill{padding:5px 8px}}
+  /* Arming it plays the mark's own meaning once: the two chevrons travel down through
+     the rule they sit under. One 520ms gesture on a deliberate click, never a loop. */
+  .mmb-rpill.on svg .dv{animation:mmb-dive .52s var(--mmb-ease) both}
+  @keyframes mmb-dive{0%{transform:translateY(-3px);opacity:.25}100%{transform:none;opacity:1}}
   .mmb-rpill.mmb-off{display:none}
+  /* What the toggle actually changes, in plain words — the doctrine's Tier-2 home for
+     mechanics. It opens UPWARD: the control sits on the composer, so a tip below it would
+     land off the panel; and left-anchored rather than centred, because the third stop is
+     near the panel's left edge in the compact box. */
+  .mmb-rtip{position:absolute;bottom:calc(100% + 10px);left:-6px;transform:translateY(4px);z-index:12;width:min(258px,68vw);white-space:normal;
+    pointer-events:none;opacity:0;visibility:hidden;text-align:left;
+    font:400 11.5px/1.55 var(--mmb-font);color:var(--mmb-text);
+    background:color-mix(in srgb,var(--mmb-panel) 96%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    border:1px solid var(--mmb-line);border-radius:12px;padding:10px 12px;box-shadow:var(--mmb-shadow-pop);
+    transition:opacity .18s var(--mmb-ease),transform .18s var(--mmb-ease),visibility 0s linear .18s}
+  .mmb-rpill:hover .mmb-rtip,.mmb-rpill:focus-visible .mmb-rtip{opacity:1;visibility:visible;transform:none;transition-delay:0s,0s,0s}
+  .mmb-rtip b{display:block;font:700 11.5px/1.4 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 96%,var(--mmb-hi));margin-bottom:3px}
+  .mmb-rtip .cost{display:block;margin-top:5px;color:var(--mmb-muted)}
+  @media(max-width:560px){.mmb-rtip{display:none}}
   #mmb-panel.max .mmb-menu,#mmb-panel.max .mmb-sidescrim{display:none}
   #mmb-panel:not(.max) .mmb-rail{display:none}
   #mmb-panel:not(.max) .mmb-threads{position:absolute;left:0;top:0;bottom:0;width:236px;z-index:6;display:block;
@@ -333,17 +378,36 @@
     background:var(--mmb-card);border:1px solid var(--mmb-line);
     -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-radius:15px;padding:14px;min-height:104px;
     display:flex;flex-direction:column;justify-content:space-between;gap:10px;transition:transform .14s,border-color .14s,background .14s}
-  #mmb-panel:not(.max) .mmb-cardp{min-height:0;flex-direction:row;align-items:center;padding:12px 13px}
+  /* Compact rows read left-to-right from the glyph, like every other row in the widget.
+     The column layout's justify-content:space-between followed the flex-direction flip into
+     the row and shoved the copy against the right edge — ragged-left text hanging off the
+     far side of a 26px icon, which is how the openers shipped. */
+  #mmb-panel:not(.max) .mmb-cardp{min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;padding:12px 13px}
+  #mmb-panel:not(.max) .mmb-cardp .cp{flex:1;min-width:0}
   .mmb-cardp:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--mmb-info) 42%,transparent);
     background:color-mix(in srgb,var(--mmb-info) 9%,var(--mmb-card))}
   .mmb-cardp .cp{font:500 12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 88%,var(--mmb-muted))}
   .mmb-cardp .ci{width:26px;height:26px;flex:none;border-radius:8px;display:grid;place-items:center;color:var(--mmb-info);background:color-mix(in srgb,var(--mmb-info) 12%,transparent)}
-  .mmb-cardp .ci svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8}
+  .mmb-cardp .ci svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;transition:transform .22s var(--mmb-ease)}
+  .mmb-cardp:hover .ci{background:color-mix(in srgb,var(--mmb-info) 20%,transparent)}
+  .mmb-cardp:hover .ci svg{transform:scale(1.08)}
+  .mmb-cardp:active{transform:translateY(0) scale(.995)}
+  .mmb-cardp:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
+  /* ── opening choreography ─────────────────────────────────────────────────────
+     The panel morph, the greeting and the four openers are ONE gesture, not four
+     effects: the greeting resolves first, the openers follow it in reading order, and
+     the whole sequence is over inside 500ms so the box is never a thing you wait for.
+     backwards, not both — a filled animation would keep owning the transform and eat the
+     hover lift underneath it. */
+  .mmb-hero h1{animation:mmb-rise .5s var(--mmb-ease) backwards}
+  .mmb-hero p{animation:mmb-rise .5s .06s var(--mmb-ease) backwards}
+  .mmb-cards .mmb-cardp{animation:mmb-rise .46s var(--mmb-ease) backwards;animation-delay:calc(var(--i,0)*55ms + 110ms)}
+  @keyframes mmb-rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   /* messages */
   .mmb-msg{display:flex;flex-direction:column;gap:4px;max-width:88%}
-  .mmb-msg.user{align-self:flex-end;align-items:flex-end;max-width:78%;animation:mmb-pop .2s ease-out both}
+  .mmb-msg.user{align-self:flex-end;align-items:flex-end;max-width:78%;animation:mmb-pop .34s var(--mmb-ease) backwards}
   .mmb-msg.assistant{align-self:flex-start;align-items:flex-start;max-width:100%;width:100%}
-  @keyframes mmb-pop{from{opacity:0;transform:translateY(4px) scale(.96)}to{opacity:1;transform:none}}
+  @keyframes mmb-pop{from{opacity:0;transform:translateY(14px) scale(.94)}60%{opacity:1}to{opacity:1;transform:none}}
   @media(prefers-reduced-motion:reduce){.mmb-msg.user{animation:none}}
   .mmb-bub{font:14.5px/1.62 var(--mmb-font);word-break:break-word}
   /* USER: keep the violet-tinted gradient bubble */
@@ -386,8 +450,74 @@
   @keyframes mmb-caret{0%,100%{opacity:1}50%{opacity:.25}}
   @media(prefers-reduced-motion:reduce){.mmb-caret{animation:none}}
   .mmb-stopped{color:var(--mmb-muted);font-style:italic;font-size:13px}
+  /* fallback container: the server's own SVG, used only when the live engine below has
+     no bars for the symbol. No watermark chrome is added here — that belongs to the
+     social-post renderer, not to a reply. */
   .mmb-bub .mmb-chart{margin:10px 0 2px;border-radius:12px;overflow:hidden;border:1px solid color-mix(in srgb,var(--mmb-ink) 8%,transparent);background:#0E1420}
   .mmb-bub .mmb-chart svg{display:block;width:100%;height:auto}
+  /* ── the in-chat chart ───────────────────────────────────────────────────────
+     Drawn here, live, from the desk's own daily bars — not a picture of a chart.
+     What that buys: a real price axis, panes that are not squeezed, indicators
+     computed over the FULL history (so no cold-start stub at the left edge), a
+     crosshair that reads the bar under the cursor, and a build sequence you can
+     watch. The gradient is the widget's own; the social renderer's watermark,
+     logo and CTA have no business inside a reply. */
+  #mmb-root{--mmb-up:#45b873;--mmb-dn:#e06464;--mmb-cx-a:#101725;--mmb-cx-b:#0a0d14;--mmb-cx-grid:#fff}
+  html[data-theme="light"] #mmb-root{--mmb-up:#1f9a55;--mmb-dn:#cf4040;--mmb-cx-a:#ffffff;--mmb-cx-b:#eaeff7;--mmb-cx-grid:#1c2430}
+  /* 红涨绿跌 — a price chart IS a market-direction read, so it takes the Asia
+     convention in Chinese exactly like the site's boards do (theme.css swaps
+     --up/--down under html[data-lang=zh]; the widget owns its own tokens because it
+     also runs on the Terminal, where theme.css is not loaded). */
+  html[data-lang="zh"] #mmb-root{--mmb-up:#e06464;--mmb-dn:#45b873}
+  html[data-theme="light"][data-lang="zh"] #mmb-root{--mmb-up:#cf4040;--mmb-dn:#1f9a55}
+  .mmb-cx{position:relative;margin:12px 0 4px;border-radius:14px;overflow:hidden;
+    border:1px solid color-mix(in srgb,var(--mmb-ink) 11%,transparent);
+    background:radial-gradient(120% 88% at 6% -12%,color-mix(in srgb,var(--mmb-info) 15%,transparent),transparent 58%),
+      radial-gradient(86% 70% at 104% -6%,color-mix(in srgb,var(--mmb-violet) 13%,transparent),transparent 56%),
+      linear-gradient(180deg,var(--mmb-cx-a),var(--mmb-cx-b));
+    box-shadow:var(--mmb-shadow-box);animation:mmb-cx-in .5s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-in{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:none}}
+  .mmb-cx-h{display:flex;align-items:baseline;gap:9px;padding:11px 14px 6px;min-height:34px}
+  .mmb-cx-sym{flex:none;white-space:nowrap;font:800 15px/1 var(--mmb-font);letter-spacing:-.01em;color:color-mix(in srgb,var(--mmb-text) 97%,var(--mmb-hi))}
+  .mmb-cx-tf{flex:none;white-space:nowrap;font:700 9.5px/1 var(--mmb-font);letter-spacing:.09em;text-transform:uppercase;color:var(--mmb-muted);
+    border:1px solid color-mix(in srgb,var(--mmb-ink) 15%,transparent);border-radius:5px;padding:3px 5px}
+  .mmb-cx-h .sp{flex:1;min-width:4px}
+  /* the readout: last price at rest, the hovered bar while the crosshair is live. It is the
+     part that GIVES WAY when the card is narrow — volume drops first, then it ellipsises.
+     The symbol never wraps: an "AAP / L" header is the card losing its own name. */
+  .mmb-cx-read{display:flex;align-items:baseline;justify-content:flex-end;gap:7px;min-width:0;
+    font:600 11px/1.2 var(--mmb-mono);color:var(--mmb-muted);
+    font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+  .mmb-cx.narrow .mmb-cx-vol{display:none}
+  .mmb-cx-last{font:800 15px/1 var(--mmb-mono);color:color-mix(in srgb,var(--mmb-text) 97%,var(--mmb-hi));font-variant-numeric:tabular-nums}
+  .mmb-cx-chg{font:700 11.5px/1 var(--mmb-mono);font-variant-numeric:tabular-nums}
+  .mmb-cx-chg.up{color:var(--mmb-up)}.mmb-cx-chg.dn{color:var(--mmb-dn)}
+  .mmb-cx-read b{font-weight:700;color:color-mix(in srgb,var(--mmb-text) 88%,var(--mmb-muted))}
+  .mmb-cx svg{display:block;width:100%;height:auto;touch-action:pan-y}
+  .mmb-cx-foot{display:flex;align-items:center;gap:10px;padding:0 14px 10px;font:10.5px/1.3 var(--mmb-font);color:var(--mmb-muted)}
+  .mmb-cx-key{display:inline-flex;align-items:center;gap:4px}
+  .mmb-cx-key i{width:11px;height:2px;border-radius:2px;display:inline-block;background:currentColor}
+  .mmb-cx-foot .sp{flex:1}
+  .mmb-cx-src{opacity:.75;font:10px/1.3 var(--mmb-mono)}
+  /* build sequence — candles rise from their own base, lines draw themselves, panes
+     resolve after the price. One gesture, ~1.3s end to end, then it is a static chart. */
+  .mmb-cx .cndl,.mmb-cx .vbar,.mmb-cx .hbar{transform-box:fill-box;transform-origin:center bottom;
+    animation:mmb-cx-grow .34s var(--mmb-ease) backwards}
+  .mmb-cx .hbar{transform-origin:center center}
+  @keyframes mmb-cx-grow{from{transform:scaleY(.02);opacity:.2}to{transform:none;opacity:1}}
+  .mmb-cx .draw{animation:mmb-cx-draw 1.1s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+  .mmb-cx .fade{animation:mmb-cx-fade .5s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-fade{from{opacity:0}to{opacity:1}}
+  .mmb-cx .pop{transform-box:fill-box;transform-origin:left center;animation:mmb-cx-pop .42s var(--mmb-ease) backwards}
+  @keyframes mmb-cx-pop{from{opacity:0;transform:translateX(-6px) scale(.9)}to{opacity:1;transform:none}}
+  .mmb-cx-xh{opacity:0;transition:opacity .12s ease}
+  .mmb-cx.live .mmb-cx-xh{opacity:1}
+  /* a chart that could not be drawn says so in a line rather than leaving a hole */
+  .mmb-cx-miss{padding:14px;font:12.5px/1.5 var(--mmb-font);color:var(--mmb-muted)}
+  @media(prefers-reduced-motion:reduce){
+    .mmb-cx,.mmb-cx .cndl,.mmb-cx .vbar,.mmb-cx .hbar,.mmb-cx .draw,.mmb-cx .fade,.mmb-cx .pop{animation:none}
+    .mmb-cx .draw{stroke-dashoffset:0}}
   .mmb-txt:empty,.mmb-charts:empty{display:none}
   /* assistant action row (copy · regenerate · timestamp) — space always reserved */
   .mmb-actions{display:flex;align-items:center;gap:6px;height:22px;margin-top:5px;opacity:0;transition:opacity .14s ease}
@@ -412,30 +542,95 @@
   /* visually-hidden live region */
   .mmb-sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   @media print{#mmb-root{display:none!important}}
-  .mmb-tool{font:12px/1.3 var(--mmb-font);color:var(--mmb-muted);display:flex;align-items:center;gap:7px;padding:1px 4px}
-  .mmb-tool::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--mmb-info);box-shadow:0 0 8px var(--mmb-info);animation:mmb-pulse 1.4s ease-in-out infinite}
   @keyframes mmb-pulse{0%,100%{opacity:.4;transform:scale(.85)}50%{opacity:1;transform:scale(1.1)}}
-  /* reasoning timeline — the answer is buffered server-side, so the wait carries the
-     trust: one calm current line, the last three finished steps, and a live clock. */
-  .mmb-think{display:flex;flex-direction:column;gap:4px;padding:2px 4px}
-  .mmb-think-h{display:flex;align-items:center;gap:7px;font:12.5px/1.4 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted))}
-  .mmb-think-h::before{content:'';width:7px;height:7px;flex:none;border-radius:50%;background:var(--mmb-info);box-shadow:0 0 8px var(--mmb-info);animation:mmb-pulse 1.4s ease-in-out infinite}
-  .mmb-think-h .lb{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .mmb-think-t{flex:none;font:11.5px/1 var(--mmb-font);color:var(--mmb-muted);font-variant-numeric:tabular-nums}
-  /* finished steps sit back, but not as far back in light: muted-on-white loses more
-     contrast per point of opacity than muted-on-panel does. */
-  .mmb-step{display:flex;align-items:center;gap:7px;font:11.5px/1.4 var(--mmb-font);color:var(--mmb-muted);opacity:var(--mmb-step-o)}
-  .mmb-step::before{content:'✓';flex:none;width:7px;font-size:9.5px;color:color-mix(in srgb,var(--mmb-info) 62%,var(--mmb-muted))}
+  /* ── the reasoning ledger ────────────────────────────────────────────────────
+     The gateway holds the answer back until it clears the advice filter, so the wait
+     is the only thing the user has — and a spinner spends it saying nothing. This is
+     the widget's signature surface: a worksheet that assembles itself downward.
+
+       history above  ·  the live line at the bottom  ·  the answer directly beneath
+
+     Log order, not stack order: the finished steps sit ABOVE the line that is running,
+     so the eye travels down through the work and straight into the reply that follows
+     it. A spine threads the nodes — each finished step leaves a filled node on it, so
+     "how much did it actually do" is legible without reading a single word.
+
+     Every visible string still arrives from the wire (server-owned bilingual labels,
+     leak law); what this file adds is STRUCTURE — a family glyph per step, the ticker
+     as a data chip, and one plain-language clause under the live label saying what
+     this phase is for. */
+  .mmb-think{position:relative;display:flex;flex-direction:column;gap:2px;padding:1px 0 2px}
+  .mmb-tk-rows{position:relative;display:flex;flex-direction:column;gap:2px}
+  /* The spine threads the travelled nodes and stops AT the live one — it is the path
+     already walked, so it must not dangle past the line still running (an open tail below
+     the last node reads as a rendering artefact, not as "more to come"). It brightens on
+     the way down because that end is now. Drawn on the rows, so a turn that has not
+     retired a step yet shows no stub at all. */
+  .mmb-tk-rows::before{content:'';position:absolute;left:8px;top:11px;bottom:-14px;width:1px;pointer-events:none;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 16%,transparent),
+      color-mix(in srgb,var(--mmb-info) 34%,transparent))}
+  .mmb-tk-rows:empty::before{display:none}
+  .mmb-tk-row,.mmb-tk-h{display:grid;grid-template-columns:17px minmax(0,1fr) auto;align-items:start;gap:8px;padding:2px 0}
+  /* the live line's qualifier rides WITH its label (one flex row) rather than in the grid's
+     third track — that track belongs to the clock, and a display:none chip in a track of
+     its own would leave the gutter behind it. */
+  .mmb-tk-h .lbrow{display:flex;align-items:center;gap:6px;min-width:0}
+  .mmb-tk-row{animation:mmb-row-in .34s var(--mmb-ease) backwards}
+  @keyframes mmb-row-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  /* a node on the spine: filled tile = a step that finished */
+  .mmb-tk-ic{width:17px;height:17px;flex:none;border-radius:6px;display:grid;place-items:center;position:relative;
+    background:color-mix(in srgb,var(--mmb-info) 13%,var(--mmb-panel));color:color-mix(in srgb,var(--mmb-info) 78%,var(--mmb-muted))}
+  .mmb-tk-ic svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .mmb-tk-row .mmb-tk-ic{opacity:var(--mmb-step-o)}
+  .mmb-tk-row .rl{font:11.5px/1.45 var(--mmb-font);color:var(--mmb-muted);opacity:var(--mmb-step-o);min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* the ticker is a figure, not a word — mono, so AAPL/600036.SS line up down the rail */
+  .rd{flex:none;font:600 10px/1.5 var(--mmb-mono);letter-spacing:.02em;color:color-mix(in srgb,var(--mmb-info) 82%,var(--mmb-text));
+    background:color-mix(in srgb,var(--mmb-info) 11%,transparent);border-radius:5px;padding:1px 5px;margin-top:1px}
+  .rn{flex:none;font:600 10px/1.5 var(--mmb-mono);color:var(--mmb-muted);margin-top:1px}
+  /* the live line: the one lit thing on the strip */
+  .mmb-tk-h .mmb-tk-ic{background:color-mix(in srgb,var(--mmb-info) 20%,var(--mmb-panel));color:var(--mmb-info)}
+  /* one travelling arc on the live node — the same instrument the launcher wears, so the
+     "working" signal is one idiom across the widget rather than a second invented one. */
+  @supports ((-webkit-mask-composite:xor) or (mask-composite:exclude)){
+    .mmb-tk-h .mmb-tk-ic::after{content:'';position:absolute;inset:-1.5px;border-radius:7px;padding:1.5px;pointer-events:none;
+      background:conic-gradient(from var(--mmb-ang),transparent 0 52%,var(--mmb-violet) 74%,var(--mmb-info) 88%,transparent 96%);
+      -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+      mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;
+      animation:mmb-rim 1.9s linear infinite}
+  }
+  .mmb-tk-body{min-width:0;display:flex;flex-direction:column;gap:1px}
+  .mmb-tk-h .lb{font:600 12.5px/1.4 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 86%,var(--mmb-muted));
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* the label crossfades on a phase change instead of snapping — the strip updates ~6
+     times a turn and a hard text swap reads as a flicker at that cadence. */
+  .mmb-tk-h .lb.mmb-swap{animation:mmb-lab-in .26s var(--mmb-ease) backwards}
+  @keyframes mmb-lab-in{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+  .mmb-tk-h .sb{font:11px/1.4 var(--mmb-font);color:var(--mmb-muted);opacity:.88;min-width:0;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mmb-tk-t{flex:none;font:11px/1.6 var(--mmb-mono);color:var(--mmb-muted);font-variant-numeric:tabular-nums}
+  /* Deep Research declares itself as the ledger's first line and then STAYS there while
+     the steps rotate under it: this turn is meant to take longer, and a standing header
+     is cheaper than a user wondering why the wait is different. */
+  .mmb-tk-row.mode .mmb-tk-ic{background:color-mix(in srgb,var(--mmb-violet) 16%,var(--mmb-panel));
+    color:color-mix(in srgb,var(--mmb-violet) 92%,var(--mmb-hi));opacity:1}
+  .mmb-tk-row.mode .rl{color:color-mix(in srgb,var(--mmb-text) 74%,var(--mmb-muted));opacity:1;font-weight:600}
   /* after the answer lands: one muted receipt line; click unfolds what was checked */
   .mmb-recap{margin:0 0 9px}
   .mmb-chip{display:inline-flex;align-items:center;gap:6px;padding:0;border:none;background:none;cursor:pointer;
     font:11.5px/1.4 var(--mmb-font);color:var(--mmb-muted);text-align:left;transition:color .13s}
   .mmb-chip:hover{color:color-mix(in srgb,var(--mmb-text) 72%,var(--mmb-muted))}
+  .mmb-chip .ck{width:12px;height:12px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
   .mmb-chip::after{content:'';width:5px;height:5px;flex:none;border-right:1.2px solid currentColor;border-bottom:1.2px solid currentColor;
-    transform:translateY(-1px) rotate(45deg);transition:transform .14s ease}
+    transform:translateY(-1px) rotate(45deg);transition:transform .2s var(--mmb-ease)}
   .mmb-recap.on .mmb-chip::after{transform:translateY(1px) rotate(-135deg)}
-  .mmb-recap-list{display:none;flex-direction:column;gap:3px;margin-top:6px}
-  .mmb-recap.on .mmb-recap-list{display:flex}
+  .mmb-recap-list{display:none;flex-direction:column;gap:2px;margin:7px 0 0;padding:0 0 0 1px;position:relative}
+  .mmb-recap.on .mmb-recap-list{display:flex;animation:mmb-recap-in .3s var(--mmb-ease) backwards}
+  @keyframes mmb-recap-in{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
+  .mmb-recap-list::before{content:'';position:absolute;left:8px;top:9px;bottom:9px;width:1px;
+    background:color-mix(in srgb,var(--mmb-ink) 10%,transparent);pointer-events:none}
+  .mmb-recap-list .mmb-tk-row{animation:none}
+  .mmb-recap-list .mmb-tk-ic{background:color-mix(in srgb,var(--mmb-ink) 7%,transparent);color:var(--mmb-muted)}
   .mmb-cites{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
   .mmb-cite{font:11px/1.3 var(--mmb-font);background:color-mix(in srgb,var(--mmb-info) 11%,transparent);border:1px solid color-mix(in srgb,var(--mmb-info) 26%,transparent);border-radius:999px;padding:3px 10px;color:color-mix(in srgb,var(--mmb-info) 86%,var(--mmb-text));text-decoration:none;cursor:pointer}
   .mmb-cite:hover{background:color-mix(in srgb,var(--mmb-info) 20%,transparent)}
@@ -446,8 +641,27 @@
   /* composer */
   .mmb-comp{position:relative;flex:none;padding:14px clamp(18px,6%,64px) 14px}
   #mmb-panel.max .mmb-comp{padding:14px clamp(24px,10%,120px) 16px}
-  .mmb-box{border-radius:18px;border:1px solid var(--mmb-line);background:var(--mmb-boxbg);
-    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--mmb-shadow-box);overflow:hidden}
+  /* overflow is VISIBLE, deliberately. Nothing inside the box bleeds to its edge — the
+     slash palette is inset by its own padding, the textarea and tool row are transparent —
+     but the depth control's tip has to escape upward, and the old clip swallowed its first
+     two lines. The palette's top corners are pinned below so losing the clip cannot square
+     them off. */
+  .mmb-box{border-radius:18px;border:1px solid var(--mmb-line);background:var(--mmb-boxbg);overflow:visible;
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--mmb-shadow-box);
+    transition:border-color .2s var(--mmb-ease-tint),box-shadow .2s var(--mmb-ease-tint)}
+  .mmb-slash{border-radius:17px 17px 0 0}
+  /* Focus lands on the textarea, but the RING belongs to the whole box — the box is what
+     reads as the input. focus-within rather than :focus so clicking the lane control or
+     the attach button never drops the frame the user is typing inside. */
+  .mmb-box:focus-within{border-color:color-mix(in srgb,var(--mmb-info) 40%,transparent);
+    box-shadow:var(--mmb-shadow-box),0 0 0 3px color-mix(in srgb,var(--mmb-info) 13%,transparent)}
+  .mmb-ta:focus-visible{outline:none}   /* the box carries the ring; a second one inside it is noise */
+  /* Send is the one moment the composer should answer back. A 240ms settle — the box dips
+     and returns while the bubble it just launched rises into the transcript — so pressing
+     the key FEELS like the message left, rather than like the text vanished. */
+  .mmb-box.mmb-sent{animation:mmb-recoil .24s var(--mmb-ease)}
+  @keyframes mmb-recoil{0%{transform:none}38%{transform:scale(.985) translateY(2px)}100%{transform:none}}
+  @media(prefers-reduced-motion:reduce){.mmb-box.mmb-sent{animation:none}}
   .mmb-ctx{display:none;align-items:center;gap:7px;padding:9px 12px 0}
   .mmb-ctx.on{display:flex}
   .mmb-ctx .chip{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font:600 11.5px/1 var(--mmb-font);
@@ -457,11 +671,50 @@
   .mmb-ctx .chip b{font:700 11.5px/1 var(--mmb-font);letter-spacing:.03em;color:var(--mmb-text)}
   .mmb-thumbs{display:none;flex-wrap:wrap;gap:8px;padding:10px 12px 0}
   .mmb-thumbs.on{display:flex}
-  .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:var(--mmb-plate);flex:none}
+  .mmb-thumb{position:relative;width:52px;height:52px;border-radius:10px;overflow:hidden;border:1px solid var(--mmb-line);background:var(--mmb-plate);flex:none;
+    animation:mmb-thumb-in .42s var(--mmb-ease) backwards;animation-delay:calc(var(--i,0)*55ms)}
+  /* an attachment ARRIVES — it does not blink into existence. The rotation is tiny and
+     unwinds: a picture being set down on the desk, not a card dealt at you. */
+  @keyframes mmb-thumb-in{from{opacity:0;transform:translateY(10px) scale(.82) rotate(-4deg)}to{opacity:1;transform:none}}
   .mmb-thumb img{width:100%;height:100%;object-fit:cover;display:block}
   .mmb-thumb .x{position:absolute;top:2px;right:2px;width:16px;height:16px;border:none;border-radius:50%;cursor:pointer;display:grid;place-items:center;
-    background:rgba(8,10,16,.82);color:#fff;font:700 11px/1 var(--mmb-font);padding:0}
+    background:rgba(8,10,16,.82);color:#fff;font:700 11px/1 var(--mmb-font);padding:0;
+    opacity:0;transform:scale(.7);transition:opacity .15s var(--mmb-ease),transform .15s var(--mmb-ease),background .13s}
+  .mmb-thumb:hover .x,.mmb-thumb:focus-within .x{opacity:1;transform:none}
+  @media(hover:none),(pointer:coarse){.mmb-thumb .x{opacity:1;transform:none}}
   .mmb-thumb .x:hover{background:var(--mmb-danger)}
+  /* ── drag & drop ──────────────────────────────────────────────────────────────
+     A chat that takes images should SAY so the moment a file crosses it. The overlay
+     is the whole panel — a small target you have to aim at is the thing people miss —
+     and it lights the frame it is asking you to drop into. */
+  .mmb-drop{position:absolute;inset:0;z-index:20;display:grid;place-items:center;pointer-events:none;
+    opacity:0;visibility:hidden;transition:opacity .2s var(--mmb-ease),visibility 0s linear .2s;
+    background:color-mix(in srgb,var(--mmb-panel) 72%,transparent);
+    -webkit-backdrop-filter:blur(10px) saturate(1.1);backdrop-filter:blur(10px) saturate(1.1)}
+  #mmb-panel.dropping .mmb-drop{opacity:1;visibility:visible;transition-delay:0s,0s}
+  .mmb-drop-in{display:flex;flex-direction:column;align-items:center;gap:12px;padding:26px 34px;text-align:center;
+    border-radius:20px;border:2px dashed color-mix(in srgb,var(--mmb-info) 46%,transparent);
+    background:color-mix(in srgb,var(--mmb-info) 7%,transparent);
+    transform:scale(.94);transition:transform .26s var(--mmb-ease)}
+  #mmb-panel.dropping .mmb-drop-in{transform:none}
+  .mmb-drop-ic{position:relative;width:52px;height:52px;border-radius:16px;display:grid;place-items:center;
+    color:#fff;background:linear-gradient(160deg,var(--mmb-violet),var(--mmb-glow));
+    box-shadow:0 14px 34px -12px color-mix(in srgb,var(--mmb-glow) 80%,transparent)}
+  .mmb-drop-ic svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  #mmb-panel.dropping .mmb-drop-ic{animation:mmb-drop-hover 1.8s ease-in-out infinite}
+  @keyframes mmb-drop-hover{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  /* the ring the icon is hovering over — it breathes on the offbeat, so the pair reads as
+     one object in motion rather than two things pulsing together */
+  .mmb-drop-ic::after{content:'';position:absolute;inset:-10px;border-radius:22px;
+    border:1px solid color-mix(in srgb,var(--mmb-info) 40%,transparent)}
+  #mmb-panel.dropping .mmb-drop-ic::after{animation:mmb-drop-ring 1.8s ease-in-out infinite}
+  @keyframes mmb-drop-ring{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.12);opacity:.25}}
+  .mmb-drop-t{font:700 15px/1.3 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 96%,var(--mmb-hi))}
+  .mmb-drop-s{font:400 12px/1.4 var(--mmb-font);color:var(--mmb-muted);max-width:220px}
+  @media(prefers-reduced-motion:reduce){
+    .mmb-thumb{animation:none}
+    #mmb-panel.dropping .mmb-drop-ic,#mmb-panel.dropping .mmb-drop-ic::after{animation:none}
+    .mmb-drop,.mmb-drop-in,.mmb-thumb .x{transition:none}}
   /* attached-image thumbs inside a sent user bubble */
   .mmb-bub .mmb-imgs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
   .mmb-bub .mmb-imgs img{width:120px;max-width:44vw;height:auto;border-radius:10px;border:1px solid color-mix(in srgb,#fff 18%,transparent);display:block}
@@ -473,17 +726,44 @@
      also the moment the user is about to press Enter and expect it to go. */
   .mmb-hint{display:none;font:11px/1 var(--mmb-font);color:var(--mmb-muted);white-space:nowrap;opacity:.85;min-width:0;overflow:hidden;text-overflow:ellipsis}
   .mmb-box.mmb-typing .mmb-hint{display:inline}
+  /* ── depth control (Fast / Pro / Deep) ────────────────────────────────────────
+     The three stops are not "cheap / dear / dearer", they are how deep the desk digs for
+     one question — so the marks are a depth family, drawn in this file rather than borrowed
+     from the emoji table: Fast is a single strike, Pro a cut stone with several faces, Deep
+     descends through the surface line. Fast and Pro take solid fills instead of the outline
+     language the rest of the chrome uses — at 12px a 1.8-stroke mark silts up, and these are
+     identity badges rather than affordances. */
   .mmb-seg{display:flex;flex:none;gap:2px;padding:2px;border-radius:999px;background:color-mix(in srgb,var(--mmb-ink) 5%,transparent);border:1px solid var(--mmb-line)}
-  .mmb-seg button{border:none;background:transparent;color:var(--mmb-muted);font:600 11.5px/1 var(--mmb-font);padding:5px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .mmb-seg button{display:inline-flex;align-items:center;gap:5px;border:none;background:transparent;color:var(--mmb-muted);
+    font:600 11.5px/1 var(--mmb-font);padding:5px 11px 5px 9px;border-radius:999px;cursor:pointer;white-space:nowrap;
+    transition:color .16s var(--mmb-ease-tint),background .16s var(--mmb-ease-tint),box-shadow .16s var(--mmb-ease-tint)}
+  .mmb-seg button svg{width:12px;height:12px;flex:none;fill:currentColor;stroke:none}
+  .mmb-seg button:hover{color:color-mix(in srgb,var(--mmb-text) 80%,var(--mmb-muted))}
+  .mmb-seg button.on:hover{color:#fff}
   .mmb-seg button.on{background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));color:#fff;box-shadow:0 2px 10px -3px color-mix(in srgb,var(--mmb-info) 70%,transparent)}
-  .mmb-q{font:600 11px/1 var(--mmb-font);color:var(--mmb-muted);padding:0 2px;white-space:nowrap}
+  /* the facet lines inside the Pro stone: same ink, dialled back, so the mark reads as
+     cut rather than as a filled diamond. One global rule — the stone also wears the
+     meter and would otherwise arrive un-cut there. */
+  #mmb-root .fc{fill:none;stroke:currentColor;stroke-width:1.25;opacity:.4}
+  .mmb-seg button:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
+  /* the meter wears the lane's own mark, so "which lane am I spending" needs no reading */
+  .mmb-q{display:inline-flex;align-items:center;gap:4px;font:600 11px/1 var(--mmb-mono);color:var(--mmb-muted);padding:0 2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .mmb-q svg{width:11px;height:11px;flex:none;fill:currentColor;stroke:none;opacity:.9}
+  .mmb-q:empty{display:none}
   .mmb-q.warn{color:var(--mmb-warn)}.mmb-q.empty{color:var(--mmb-danger)}
-  .mmb-tbtn{width:34px;height:34px;border:none;background:transparent;border-radius:10px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center}
+  .mmb-tbtn{width:34px;height:34px;border:none;background:transparent;border-radius:10px;color:var(--mmb-muted);cursor:pointer;display:grid;place-items:center;
+    transition:background .14s var(--mmb-ease-tint),color .14s var(--mmb-ease-tint),transform .14s var(--mmb-ease)}
   .mmb-tbtn:hover{background:color-mix(in srgb,var(--mmb-ink) 7%,transparent);color:var(--mmb-text)}
+  .mmb-tbtn:active{transform:scale(.92)}
+  .mmb-tbtn:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
   .mmb-tbtn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8}
   .mmb-send{position:relative;width:36px;height:36px;border:none;border-radius:12px;cursor:pointer;display:grid;place-items:center;color:#fff;
-    background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 6px 18px -6px color-mix(in srgb,var(--mmb-info) 75%,transparent)}
-  .mmb-send:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+    background:linear-gradient(180deg,color-mix(in srgb,var(--mmb-info) 92%,#fff),var(--mmb-info));box-shadow:0 6px 18px -6px color-mix(in srgb,var(--mmb-info) 75%,transparent);
+    transition:transform .16s var(--mmb-ease),box-shadow .16s var(--mmb-ease),opacity .16s ease,background .16s ease}
+  .mmb-send:not(:disabled):hover{transform:translateY(-1px);box-shadow:0 9px 22px -7px color-mix(in srgb,var(--mmb-info) 80%,transparent)}
+  .mmb-send:not(:disabled):active{transform:translateY(0) scale(.93)}
+  .mmb-send:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;transform:none}
+  .mmb-send:focus-visible{outline:2px solid color-mix(in srgb,var(--mmb-info) 70%,transparent);outline-offset:2px}
   .mmb-send svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;transition:opacity .14s ease}
   /* streaming: arrow crossfades to a rounded stop square (opacity-only morph) */
   .mmb-send::after{content:'';position:absolute;width:12px;height:12px;border-radius:3px;background:#fff;opacity:0;transition:opacity .14s ease;pointer-events:none}
@@ -532,8 +812,10 @@
     .mmb-comp{padding-bottom:calc(14px + env(safe-area-inset-bottom))}}
   /* follow-up suggestion chips (rendered under the latest reply) */
   .mmb-sugg{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
-  .mmb-sug{font:12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted));background:color-mix(in srgb,var(--mmb-ink) 4%,transparent);border:1px solid var(--mmb-line);border-radius:12px;padding:7px 12px;text-align:left;cursor:pointer;max-width:100%;transition:border-color .13s,background .13s,color .13s}
-  .mmb-sug:hover{border-color:color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,var(--mmb-info) 8%,transparent);color:var(--mmb-text)}
+  .mmb-sug{font:12.5px/1.35 var(--mmb-font);color:color-mix(in srgb,var(--mmb-text) 78%,var(--mmb-muted));background:color-mix(in srgb,var(--mmb-ink) 4%,transparent);border:1px solid var(--mmb-line);border-radius:12px;padding:7px 12px;text-align:left;cursor:pointer;max-width:100%;transition:border-color .16s var(--mmb-ease-tint),background .16s var(--mmb-ease-tint),color .16s var(--mmb-ease-tint),transform .16s var(--mmb-ease)}
+  .mmb-sugg .mmb-sug{animation:mmb-rise .42s var(--mmb-ease) backwards;animation-delay:calc(var(--i,0)*70ms + 40ms)}
+  .mmb-sug:hover{border-color:color-mix(in srgb,var(--mmb-info) 40%,transparent);background:color-mix(in srgb,var(--mmb-info) 8%,transparent);color:var(--mmb-text);transform:translateX(2px)}
+  .mmb-sug:active{transform:translateX(2px) scale(.99)}
   .mmb-sug .g{color:var(--mmb-muted);margin-right:6px}
   /* "explain this panel" hover affordance on dashboard island cards */
   .mmb-exp{position:absolute;top:10px;right:10px;width:26px;height:26px;border-radius:50%;cursor:pointer;padding:0;
@@ -551,6 +833,127 @@
   var CLIP = '<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>';
   var CHECK = '<svg viewBox="0 0 24 24"><path d="M5 12.5l4 4 10-10"/></svg>';
   function ic(p) { return '<svg viewBox="0 0 24 24">' + p + '</svg>'; }
+
+  /* ── depth marks ─────────────────────────────────────────────────────────────
+     Fast, Pro and Deep Research are not three prices — they are three depths on ONE
+     axis: how far down the desk goes for a single question. So they are drawn as a
+     family rather than picked out of the emoji table (⚡ / ◈, which read as two
+     unrelated stickers and rendered as somebody else's typeface on every OS):
+
+       Fast      one strike — a single pass over the tape
+       Pro       a cut stone — the same question turned to several faces
+       Research  a descent — through the surface line and down two levels below it
+
+     Fast/Pro are solid: at 12px a 1.8-stroke mark silts up, and these two are identity
+     badges rather than affordances. Research keeps the outline language because it sits
+     in the header among the outline icons. */
+  var MARK_FAST = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.9 2 5 13.6h4.9L8.6 22l8.8-11.9h-4.9z"/></svg>';
+  var MARK_PRO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.3 20.5 9 12 21.7 3.5 9z"/>' +
+    '<path class="fc" d="M3.5 9h17M12 2.3 9.1 9 12 21.7 14.9 9z"/></svg>';
+  var MARK_RESEARCH = '<path d="M4.8 5.2h14.4"/><g class="dv"><path d="M8 10.1 12 13.9l4-3.8"/><path d="M8 15.3 12 19.1l4-3.8"/></g>';
+  function laneMark(l) { return l === 'pro' ? MARK_PRO : MARK_FAST; }
+
+  /* Ledger glyphs. PHASE_IC keys the pipeline stage the wire reports; FAM keys the KIND
+     of source a step read. Both are picked from wire fields — never rendered from them. */
+  var PHASE_IC = {
+    start: '<path d="M4.5 6.5h15M4.5 12h15M4.5 17.5h8.5"/>',
+    grounding: '<circle cx="12" cy="12" r="8.6"/><path d="M3.4 12h17.2M12 3.4c2.7 2.7 2.7 14.5 0 17.2"/>',
+    model: '<path d="M6 4.2v6.3a3 3 0 0 0 3 3h8.4"/><path d="M14.6 10.6l3 2.9-3 2.9"/><path d="M6 19.8v-3.4"/>',
+    synthesis: '<path d="M12 3.2 20 7.6 12 12 4 7.6z"/><path d="M4 12.6 12 17l8-4.4"/>',
+    writing: '<path d="M4.2 19.8l3.4-.8L19.2 7.2a1.9 1.9 0 0 0-2.7-2.7L4.9 16.4z"/><path d="M14.6 6.4l2.9 2.9"/>',
+    review: '<path d="M12 3.2l7.2 3v5.9c0 4.2-2.9 7.4-7.2 8.9-4.3-1.5-7.2-4.7-7.2-8.9V6.2z"/><path d="M9 12.1l2.3 2.3 4.2-4.4"/>'
+  };
+  var FAM = {
+    tape: '<path d="M3.4 16.6l4.8-5.4 3.4 2.4L20.4 6"/><path d="M20.4 6h-4M20.4 6v4"/>',
+    screen: '<path d="M3.6 5h16.8l-6.4 7.4V20l-4-2v-5.6z"/>',
+    flow: '<path d="M3 13h3.4l2.2-6.4 3 12.6 2.3-6.2H21"/>',
+    fund: '<path d="M5 19.6V9.4M12 19.6V4.4M19 19.6v-6.8"/><path d="M3 19.6h18"/>',
+    book: '<path d="M5.4 4.4h13.2v15.2l-6.6-3.1-6.6 3.1z"/>',
+    regime: '<circle cx="12" cy="12" r="8.6"/><path d="M15.4 8.6L13.2 13.2 8.6 15.4 10.8 10.8z"/>',
+    theme: '<path d="M4.2 11.6 11.6 4.2l8.2 8.2-7.4 7.4z"/><circle cx="9" cy="9" r="1.3"/>',
+    notes: '<path d="M6.2 3.6h8L18.6 8v12.4H6.2z"/><path d="M14.2 3.6V8h4.4M9 12.4h6M9 16h4"/>',
+    chart: '<path d="M4.2 4.2v15.6h15.6"/><path d="M8.6 17v-5.2M12.6 17V7.6M16.6 17v-3.2"/>',
+    check: '<path d="M7 8.4h9.6l-3-3"/><path d="M17 15.6H7.4l3 3"/>',
+    data: '<path d="M12 5.2c4.4 0 8 1.2 8 2.6s-3.6 2.6-8 2.6-8-1.2-8-2.6 3.6-2.6 8-2.6z"/><path d="M4 7.8v8.4c0 1.4 3.6 2.6 8 2.6s8-1.2 8-2.6V7.8"/>'
+  };
+  /* The wire carries the raw tool `name` for the deployed widget's sake; it is NEVER
+     rendered (leak law — the snake_case names the old widget printed ARE an internals
+     leak). It is read here for ONE purpose: which family glyph a step wears, so twenty
+     different reads resolve to a handful of legible marks. The regex tail catches tools
+     that ship before this table is updated — a new read gets a plausible glyph, never a
+     name on screen. */
+  var TOOL_FAM = {
+    get_quote: 'tape', get_symbol_context: 'tape', get_movers: 'tape', get_stage_peers: 'tape',
+    screen_universe: 'screen',
+    get_fundamentals: 'fund', get_earnings: 'fund',
+    get_watchlist: 'book', get_portfolio_brief: 'book',
+    get_smart_money: 'flow', get_insider_activity: 'flow', get_congress_trades: 'flow',
+    read_options_entry_state: 'flow', explain_options_context: 'flow', query_options_confluence: 'flow',
+    read_china_flows: 'flow', read_theme_trade_flows: 'flow', read_liquidity_plumbing: 'flow',
+    get_house_view: 'regime', get_symbol_intel: 'regime', get_symbol_backtest: 'regime',
+    read_world_state: 'regime', read_kernel: 'regime', read_graph: 'regime', query_spine: 'regime',
+    read_cycle_pattern_state: 'regime', read_mechanism_pathways: 'regime', read_factor_state: 'regime',
+    explain_factor_context: 'regime', read_stage_analysis: 'regime', read_china_decision_packet: 'regime',
+    read_theme_state: 'theme', read_theme_thesis: 'theme', read_theme_pathways: 'theme',
+    read_theme_asymmetry: 'theme', read_theme_options_witness: 'theme', read_theme_clinical: 'theme',
+    get_market_events: 'notes', search_research: 'notes', context_search: 'notes',
+    context_open: 'notes', read_artifact: 'notes', read_special_situations: 'notes',
+    render_inline_chart: 'chart', annotate_chart: 'chart', chart_digest: 'chart',
+    read_chart_state: 'chart', measure_line: 'chart', set_chart_symbol: 'chart',
+    set_chart_timeframe: 'chart', toggle_chart_indicator: 'chart', run_chart_detection: 'chart',
+    emit_chart_command: 'chart',
+    read_contradictions: 'check', list_options_contradictions: 'check',
+    list_factor_contradictions: 'check', read_governance: 'check'
+  };
+  function toolFam(name) {
+    name = String(name || '');
+    if (TOOL_FAM[name]) return TOOL_FAM[name];
+    if (/chart|annotate|measure|indicator|detection/.test(name)) return 'chart';
+    if (/contradict|governance/.test(name)) return 'check';
+    if (/option|flow|smart_money|insider|congress/.test(name)) return 'flow';
+    if (/theme/.test(name)) return 'theme';
+    if (/research|context|artifact|event|news/.test(name)) return 'notes';
+    if (/watchlist|portfolio/.test(name)) return 'book';
+    if (/quote|price|mover|peer/.test(name)) return 'tape';
+    if (/earning|fundamental/.test(name)) return 'fund';
+    if (/screen/.test(name)) return 'screen';
+    if (/^(read|query|get|explain)_/.test(name)) return 'regime';
+    return 'data';
+  }
+  /* The second line under a running step. The server's label says WHAT it is doing; this
+     says what KIND of question it is answering by doing it — the finer grain users asked
+     for, still derived from the wire and still at "what kind of work" altitude. */
+  var FAM_SUB = {
+    tape:   ['checking what the tape actually did', '看盘面究竟走了什么'],
+    screen: ['combing the market for matches', '在全市场里筛匹配的标的'],
+    flow:   ['seeing which way the crowd is leaning', '看资金和仓位站在哪一边'],
+    fund:   ['looking at the business underneath', '看背后的基本面'],
+    book:   ['pulling up your own names', '调出你自己的持仓'],
+    regime: ['placing this in the bigger picture', '把它放进大局里看'],
+    theme:  ['following the theme it belongs to', '顺着它所属的主题看'],
+    notes:  ['reading what is already written down', '翻看已有的研究记录'],
+    chart:  ['working on the chart itself', '在图表上动手'],
+    check:  ['making sure the readings agree', '核对各处读数是否一致'],
+    data:   ['picking up one more read', '再取一份数据']
+  };
+  /* Rounds are not interchangeable: the first decides where to look, the second chases what
+     the first turned up. Saying so is the difference between progress and a stuck line. */
+  var MODEL_SUB = [
+    ['working out where to look first', '先想清楚该从哪儿查起'],
+    ['chasing what the first look turned up', '顺着第一轮的线索继续追'],
+    ['tightening the read with one more pass', '再看一轮，把结论收紧']
+  ];
+  /* One plain clause per stage — what this part of the wait is FOR. The server owns the
+     headline (bilingual, whitelisted); this is the widget's own second line, and it stays
+     at "what kind of work" altitude: never how a signal is built. */
+  var PHASE_SUB = {
+    start: ["working out what you're really asking", '先弄清你真正想问的'],
+    grounding: ["today's market state, before anything else", '先载入今日的市场状态'],
+    model: ['deciding what to look up next', '决定接下来查什么'],
+    synthesis: ['putting the pieces together', '把各条线索拼起来'],
+    writing: ['turning it into plain words', '用平实的话写出来'],
+    review: ["checking it against the desk's rules", '按台席规则复核']
+  };
 
   /* ── DOM ─────────────────────────────────────────────────────────────── */
   var root = DOC.createElement('div');
@@ -584,12 +987,17 @@
         '<div class="mmb-head">' +
           '<button class="mmb-icon mmb-menu" data-act="side" title="Chats">' + ic('<path d="M4 6h16M4 12h16M4 18h16"/>') + '</button>' +
           '<span class="ttl"><span class="dot"></span>' + LB('Mastermind Brain', '操盘大脑') + '</span>' +
-          '<button class="mmb-rpill mmb-off" data-act="research">' + ic('<path d="M12 3v3M12 18v3M3 12h3M18 12h3M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"/>') + LB('Deep Research', '深度研究') + '</button>' +
           '<div class="sp"></div>' +
           '<button class="mmb-icon" data-act="max" title="Expand">' + ic('<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>') + '</button>' +
           '<button class="mmb-icon" data-act="new" title="New chat">' + ic('<path d="M12 5v14M5 12h14"/>') + '</button>' +
           '<button class="mmb-icon" data-act="close" title="Close">' + ic('<path d="M6 6l12 12M18 6L6 18"/>') + '</button>' +
         '</div>' +
+        '<div class="mmb-drop" id="mmb-drop" aria-hidden="true"><div class="mmb-drop-in">' +
+          '<div class="mmb-drop-ic">' + ic('<rect x="3" y="4" width="18" height="14" rx="3"/><path d="M3 15l4.5-4.5 3.5 3.5 3-3L21 16"/><circle cx="9" cy="9" r="1.4"/>') + '</div>' +
+          '<div class="mmb-drop-t">' + LB('Drop it here', '拖到这里') + '</div>' +
+          '<div class="mmb-drop-s">' + LB('Charts, screenshots, anything you are looking at — I will read it.',
+                                          '图表、截图、你正在看的任何画面 — 我来读。') + '</div>' +
+        '</div></div>' +
         '<div class="mmb-scroll" id="mmb-scroll" role="log" aria-label="' + L('Conversation', '对话') + '" tabindex="0"></div>' +
         '<div id="mmb-live" class="mmb-sr" aria-live="polite" role="status"></div>' +
         '<div class="mmb-comp"><div class="mmb-upgrade" id="mmb-upgrade"></div>' +
@@ -598,7 +1006,26 @@
             '<textarea class="mmb-ta" id="mmb-ta" rows="1" maxlength="2000" data-ph-en="Ask about any dashboard, signal, or ticker…" data-ph-zh="询问任意看板、信号或标的…" placeholder="' + L('Ask about any dashboard, signal, or ticker…', '询问任意看板、信号或标的…') + '"></textarea>' +
             '<input type="file" id="mmb-file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>' +
             '<div class="mmb-tools">' +
-              '<div class="mmb-seg" id="mmb-lane"><button data-lane="fast" class="on">⚡ ' + LB('Fast', '快速') + '</button><button data-lane="pro">◈ Pro</button></div>' +
+              /* ── one control, one axis ────────────────────────────────────────────
+                 Fast, Pro and Deep Research are three stops on the same question —
+                 how deep should the desk go — so they are one control, not a segmented
+                 pair plus a pill parked in the header. Two things got better by moving
+                 it: the three depth marks now read as the family they are, and the
+                 header stopped truncating its own title ("Mastermin…") to make room. */
+              '<div class="mmb-seg" id="mmb-lane" role="group" aria-label="' + L('Answer depth', '回答深度') + '">' +
+                '<button data-lane="fast" class="on" aria-pressed="true">' + MARK_FAST + LB('Fast', '快速') + '</button>' +
+                '<button data-lane="pro" aria-pressed="false">' + MARK_PRO + '<span>Pro</span></button>' +
+                '<button class="mmb-rpill mmb-off" data-act="research" aria-pressed="false" aria-label="' + L('Deep Research', '深度研究') + '">' +
+                  ic(MARK_RESEARCH) + LB('Deep', '深度') +
+                  /* Tier-2 home for the mechanics (DESIGN_DOCTRINE §1): what the toggle
+                     actually changes, in plain words, with its price stated rather than
+                     discovered. aria-hidden + the aria-label above keep the accessible
+                     name at "Deep Research" instead of a paragraph. */
+                  '<span class="mmb-rtip" aria-hidden="true"><b>' + LB('A deeper pass on the same desk', '同一台席，更深的一遍') + '</b>' +
+                  LB('It can look up around twice as many sources, then writes a structured read that ends on a clear stance.',
+                     '可查阅约两倍的资料，并写成结构化研判，最后给出明确立场。') +
+                  '<span class="cost">' + LB('Runs on Pro · uses one Pro message', '走 Pro 通道 · 消耗一条 Pro 消息') + '</span></span>' +
+                '</button></div>' +
               /* aria-hidden: the send button's own label already says it — one announcement, not two */
               '<span class="mmb-hint" id="mmb-hint" aria-hidden="true">' + LB(SEND_KEYS + ' to send', SEND_KEYS + ' 发送') + '</span>' +
               '<div class="sp"></div>' +
@@ -884,6 +1311,535 @@
     };
   }
 
+  /* ══ in-chat chart engine ══════════════════════════════════════════════════════
+     The gateway's render_inline_chart hands back a picture produced by the SOCIAL-POST
+     renderer — watermark, logo, CTA, flat black, a price axis you cannot read and a MACD
+     squeezed into a strip. That engine is right for an image posted to a timeline and
+     wrong for a reply: here the user is looking at a chart, not receiving one.
+
+     So the widget draws its own from the same daily bars the site publishes
+     (<store>/<TICKER>.json on the data plane), and keeps the server SVG only as the
+     fallback for symbols it has no bars for. Everything below is computed client-side:
+     EMA20 / SMA50 / RSI(14) / MACD(12,26,9) over the FULL history, then the last window
+     is drawn — so no indicator starts mid-canvas the way a warm-up-less render does.
+
+     Nothing here is a signal. It draws the bars the desk already publishes; the read
+     stays in the model's words underneath.  ────────────────────────────────────────── */
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  /* Per-market stores, mirroring the data-plane prefixes in data_base.js. A suffix picks
+     the store; unknown suffixes take the US store and simply miss (→ server fallback). */
+  function chartStore(t) {
+    t = String(t || '').toUpperCase();
+    if (/\.(SS|SZ|SH)$/.test(t)) return 'chinaohlc';
+    if (/\.HK$/.test(t)) return 'hkohlc';
+    if (/\.(TO|V|CN|NE)$/.test(t)) return 'canadaohlc';
+    if (/\.(T|KS|KQ|TW|TWO|L|DE|PA|AS|MI|MC|SW|ST|HE|OL|CO|AX|NZ|SI|BO|NS)$/.test(t)) return 'intlohlc';
+    return 'ohlc';
+  }
+  /* The dashboard rewrites relative store paths to the data plane via its own fetch shim;
+     the Terminal has no shim, so the base is resolved explicitly. CFG wins, then the host
+     page's DATA_BASE, then the public data plane this widget is served alongside. */
+  var DATA_FALLBACK = 'https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev';
+  function chartBase() {
+    var b = CFG.dataBase || window.DATA_BASE || DATA_FALLBACK;
+    return String(b).replace(/\/+$/, '');
+  }
+  var barCache = {};
+  function fetchBars(ticker) {
+    var key = String(ticker || '').toUpperCase();
+    if (barCache[key]) return barCache[key];
+    var url = chartBase() + '/' + chartStore(key) + '/' + encodeURIComponent(key) + '.json';
+    barCache[key] = fetch(url, { credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        var bars = d && d.bars;
+        if (!bars || !bars.length) return null;
+        /* [date, o, h, l, c, v] — reject rows that are not a full OHLC bar rather than
+           drawing a candle out of nulls. */
+        var out = [];
+        for (var i = 0; i < bars.length; i++) {
+          var b = bars[i];
+          if (!b || b.length < 5) continue;
+          var o = +b[1], h = +b[2], lo = +b[3], c = +b[4];
+          if (!isFinite(o) || !isFinite(h) || !isFinite(lo) || !isFinite(c)) continue;
+          out.push({ d: String(b[0]), o: o, h: h, l: lo, c: c, v: isFinite(+b[5]) ? +b[5] : 0 });
+        }
+        return out.length >= 30 ? out : null;
+      })
+      .catch(function () { return null; });
+    return barCache[key];
+  }
+
+  /* ── indicator math (full-history, so the visible window is always warm) ── */
+  function emaSeries(v, n) {
+    var k = 2 / (n + 1), out = new Array(v.length), prev = null;
+    for (var i = 0; i < v.length; i++) {
+      prev = prev === null ? v[i] : v[i] * k + prev * (1 - k);
+      out[i] = i >= n - 1 ? prev : null;
+    }
+    return out;
+  }
+  function smaSeries(v, n) {
+    var out = new Array(v.length), sum = 0;
+    for (var i = 0; i < v.length; i++) {
+      sum += v[i];
+      if (i >= n) sum -= v[i - n];
+      out[i] = i >= n - 1 ? sum / n : null;
+    }
+    return out;
+  }
+  function rsiSeries(v, n) {
+    var out = new Array(v.length), g = 0, l = 0, i;
+    for (i = 1; i <= n && i < v.length; i++) { var d = v[i] - v[i - 1]; if (d >= 0) g += d; else l -= d; }
+    var ag = g / n, al = l / n;
+    for (i = 0; i < v.length; i++) out[i] = null;
+    if (v.length > n) out[n] = al === 0 ? 100 : 100 - 100 / (1 + ag / al);
+    for (i = n + 1; i < v.length; i++) {
+      var ch = v[i] - v[i - 1];
+      ag = (ag * (n - 1) + (ch > 0 ? ch : 0)) / n;
+      al = (al * (n - 1) + (ch < 0 ? -ch : 0)) / n;
+      out[i] = al === 0 ? 100 : 100 - 100 / (1 + ag / al);
+    }
+    return out;
+  }
+  function macdSeries(v) {
+    var f = emaSeries(v, 12), s = emaSeries(v, 26), line = [], i;
+    for (i = 0; i < v.length; i++) line[i] = (f[i] === null || s[i] === null) ? null : f[i] - s[i];
+    /* the signal EMA runs on the MACD line's own defined stretch, not on nulls */
+    var start = 0; while (start < line.length && line[start] === null) start++;
+    var sig = new Array(v.length), k = 2 / 10, prev = null;
+    for (i = 0; i < v.length; i++) sig[i] = null;
+    for (i = start; i < line.length; i++) {
+      prev = prev === null ? line[i] : line[i] * k + prev * (1 - k);
+      if (i - start >= 8) sig[i] = prev;
+    }
+    var hist = new Array(v.length);
+    for (i = 0; i < v.length; i++) hist[i] = (line[i] === null || sig[i] === null) ? null : line[i] - sig[i];
+    return { line: line, signal: sig, hist: hist };
+  }
+
+  /* ── small helpers ── */
+  function svgEl(tag, attrs) {
+    var e = DOC.createElementNS(SVGNS, tag);
+    if (attrs) for (var k in attrs) if (attrs[k] !== null && attrs[k] !== undefined) e.setAttribute(k, attrs[k]);
+    return e;
+  }
+  function niceStep(range, target) {
+    var raw = range / Math.max(1, target), mag = Math.pow(10, Math.floor(Math.log(raw) / Math.LN10));
+    var norm = raw / mag;
+    var step = norm >= 5 ? 10 : norm >= 2.5 ? 5 : norm >= 2 ? 2.5 : norm >= 1 ? 2 : 1;
+    return step * mag;
+  }
+  function fmtPrice(v) {
+    var a = Math.abs(v);
+    if (a >= 1000) return v.toFixed(0);
+    if (a >= 100) return v.toFixed(1);
+    if (a >= 1) return v.toFixed(2);
+    return v.toFixed(4);
+  }
+  function fmtVol(v) {
+    if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+    return String(Math.round(v));
+  }
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var MON_ZH = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+  function monLabel(iso) {
+    var p = String(iso).split('-'); var m = (+p[1] || 1) - 1;
+    return (zh() ? MON_ZH : MON)[m] + (m === 0 ? " '" + String(p[0]).slice(2) : '');
+  }
+
+  /* ── the renderer ────────────────────────────────────────────────────────────
+     One pass builds the whole SVG; the animation is CSS on the pieces, so a resize or a
+     theme flip is a plain re-render and never a half-played sequence. */
+  function drawChart(box, ticker, tf, bars) {
+    var reduced = reduceMotion();
+    var W = Math.max(280, Math.min(1100, Math.round(box.clientWidth || 420)));
+    var H = Math.round(Math.max(330, Math.min(560, W * 0.72)));
+    var PAD_R = 54, PAD_L = 8, X0 = PAD_L, X1 = W - PAD_R;
+    var plotW = X1 - X0;
+    /* one bar every ~6.4px, so a wide panel shows more history instead of fatter candles */
+    var VIS = Math.max(52, Math.min(200, Math.floor(plotW / 5.6)));
+    var TOP = 10, XAXIS = 20;
+    var priceH = Math.round((H - TOP - XAXIS) * 0.62);
+    var rsiH = Math.round((H - TOP - XAXIS) * 0.14);
+    var macdH = (H - TOP - XAXIS) - priceH - rsiH - 16;
+    var pY0 = TOP, pY1 = TOP + priceH;
+    var rY0 = pY1 + 8, rY1 = rY0 + rsiH;
+    var mY0 = rY1 + 8, mY1 = mY0 + macdH;
+
+    var close = bars.map(function (b) { return b.c; });
+    var ema20 = emaSeries(close, 20), sma50 = smaSeries(close, 50);
+    var rsi = rsiSeries(close, 14), mac = macdSeries(close);
+
+    var i0 = Math.max(0, bars.length - VIS);
+    var view = bars.slice(i0), n = view.length;
+    var step = plotW / n, cw = Math.max(1.5, Math.min(11, step * 0.66));
+    function cx(k) { return X0 + step * (k + 0.5); }
+
+    /* price scale spans the bars AND the overlays, so a moving average never leaves the pane */
+    var lo = Infinity, hi = -Infinity, k;
+    for (k = 0; k < n; k++) { if (view[k].l < lo) lo = view[k].l; if (view[k].h > hi) hi = view[k].h; }
+    for (k = i0; k < bars.length; k++) {
+      if (ema20[k] !== null) { lo = Math.min(lo, ema20[k]); hi = Math.max(hi, ema20[k]); }
+      if (sma50[k] !== null) { lo = Math.min(lo, sma50[k]); hi = Math.max(hi, sma50[k]); }
+    }
+    var padY = (hi - lo) * 0.07 || 1;
+    lo -= padY; hi += padY;
+    function py(v) { return pY1 - (v - lo) / (hi - lo) * (pY1 - pY0); }
+
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H,
+                             preserveAspectRatio: 'xMidYMid meet', role: 'img' });
+    svg.setAttribute('aria-label', ticker + ' ' + (tf || 'daily') + ' price chart');
+    var GRID = 'color-mix(in srgb, var(--mmb-cx-grid) 9%, transparent)';
+    var AXIS = 'var(--mmb-muted)';
+    function delay(ms) { return reduced ? null : ms + 'ms'; }
+
+    /* ── grid + price axis ── */
+    var gGrid = svgEl('g', { class: reduced ? '' : 'fade' });
+    if (!reduced) gGrid.style.animationDelay = '60ms';
+    var pstep = niceStep(hi - lo, 5);
+    var first = Math.ceil(lo / pstep) * pstep;
+    for (var pv = first; pv < hi; pv += pstep) {
+      var yy = py(pv);
+      gGrid.appendChild(svgEl('line', { x1: X0, x2: X1, y1: yy, y2: yy, stroke: GRID, 'stroke-width': 1 }));
+      var tl = svgEl('text', { x: X1 + 7, y: yy + 3.4, fill: AXIS, 'font-size': 10,
+                               'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+      tl.textContent = fmtPrice(pv);
+      gGrid.appendChild(tl);
+    }
+    svg.appendChild(gGrid);
+
+    /* ── volume, sunk into the bottom third of the price pane ── */
+    var vmax = 0;
+    for (k = 0; k < n; k++) if (view[k].v > vmax) vmax = view[k].v;
+    var volTop = pY1 - (pY1 - pY0) * 0.20;
+    var gVol = svgEl('g', { opacity: .34 });
+    for (k = 0; k < n && vmax > 0; k++) {
+      var vh = Math.max(0.6, (view[k].v / vmax) * (pY1 - volTop));
+      var vb = svgEl('rect', { x: cx(k) - cw / 2, y: pY1 - vh, width: cw, height: vh,
+                               fill: view[k].c >= view[k].o ? 'var(--mmb-up)' : 'var(--mmb-dn)',
+                               class: reduced ? '' : 'vbar', rx: .5 });
+      if (!reduced) vb.style.animationDelay = (120 + k * (620 / n)) + 'ms';
+      gVol.appendChild(vb);
+    }
+    svg.appendChild(gVol);
+
+    /* ── candles ── */
+    var gC = svgEl('g');
+    for (k = 0; k < n; k++) {
+      var b = view[k], up = b.c >= b.o, col = up ? 'var(--mmb-up)' : 'var(--mmb-dn)';
+      var g1 = svgEl('g', { class: reduced ? '' : 'cndl' });
+      if (!reduced) g1.style.animationDelay = (110 + k * (640 / n)) + 'ms';
+      g1.appendChild(svgEl('line', { x1: cx(k), x2: cx(k), y1: py(b.h), y2: py(b.l),
+                                     stroke: col, 'stroke-width': Math.max(1, cw * 0.16) }));
+      var yTop = py(Math.max(b.o, b.c)), bodyH = Math.max(1, Math.abs(py(b.o) - py(b.c)));
+      g1.appendChild(svgEl('rect', { x: cx(k) - cw / 2, y: yTop, width: cw, height: bodyH,
+                                     fill: col, rx: Math.min(1.5, cw * 0.2) }));
+      gC.appendChild(g1);
+    }
+    svg.appendChild(gC);
+
+    /* ── overlays: EMA20 + SMA50, drawn rather than pasted ── */
+    function linePath(series, color, width, dash, delayMs, klass) {
+      var d = '', started = false;
+      for (var j = 0; j < n; j++) {
+        var v = series[i0 + j];
+        if (v === null || v === undefined) { started = false; continue; }
+        d += (started ? 'L' : 'M') + cx(j).toFixed(1) + ' ' + py(v).toFixed(1) + ' ';
+        started = true;
+      }
+      if (!d) return null;
+      var p = svgEl('path', { d: d, fill: 'none', stroke: color, 'stroke-width': width,
+                              'stroke-linecap': 'round', 'stroke-linejoin': 'round',
+                              class: klass || '' });
+      if (dash) p.setAttribute('stroke-dasharray', dash);
+      if (!reduced && !dash) {
+        svg.appendChild(p);
+        var L = 0; try { L = p.getTotalLength(); } catch (e) { L = 0; }
+        if (L) {
+          p.style.setProperty('--len', L);
+          p.setAttribute('stroke-dasharray', L);
+          p.classList.add('draw');
+          p.style.animationDelay = delayMs + 'ms';
+        }
+        return p;
+      }
+      return p;
+    }
+    var pe = linePath(ema20, 'var(--mmb-info)', 1.5, null, 380);
+    if (pe && !pe.parentNode) svg.appendChild(pe);
+    var ps = linePath(sma50, 'var(--mmb-violet)', 1.5, null, 520);
+    if (ps && !ps.parentNode) svg.appendChild(ps);
+
+    /* ── last-price tag on the axis ── */
+    var lastBar = view[n - 1], lastY = py(lastBar.c);
+    var tag = svgEl('g', { class: reduced ? '' : 'pop' });
+    if (!reduced) tag.style.animationDelay = '900ms';
+    var tagCol = lastBar.c >= lastBar.o ? 'var(--mmb-up)' : 'var(--mmb-dn)';
+    tag.appendChild(svgEl('line', { x1: X0, x2: X1, y1: lastY, y2: lastY, stroke: tagCol,
+                                    'stroke-width': 1, 'stroke-dasharray': '2 3', opacity: .55 }));
+    tag.appendChild(svgEl('rect', { x: X1 + 2, y: lastY - 8, width: PAD_R - 6, height: 16, rx: 4, fill: tagCol }));
+    var tt = svgEl('text', { x: X1 + 5, y: lastY + 3.6, fill: '#fff', 'font-size': 10, 'font-weight': 700,
+                             'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+    tt.textContent = fmtPrice(lastBar.c);
+    tag.appendChild(tt);
+    svg.appendChild(tag);
+
+    /* ── RSI pane ── */
+    function paneLabel(y, txt, extra) {
+      /* a legend CHIP, not bare text: an unbacked label sits directly on the RSI line and
+         both become unreadable where they cross. */
+      var g = svgEl('g', { class: reduced ? '' : 'fade' });
+      var w = txt.length * 5.1 + 10;
+      g.appendChild(svgEl('rect', { x: X0 + 1, y: y + 1.5, width: w, height: 12, rx: 3,
+                                    fill: 'var(--mmb-cx-b)', opacity: .72 }));
+      var t = svgEl('text', { x: X0 + 6, y: y + 10.4, fill: AXIS, 'font-size': 9,
+                              'font-weight': 700, 'letter-spacing': .35,
+                              'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+      t.textContent = txt;
+      g.appendChild(t);
+      if (!reduced) g.style.animationDelay = (extra || 700) + 'ms';
+      return g;
+    }
+    var gR = svgEl('g');
+    gR.appendChild(svgEl('rect', { x: X0, y: rY0 + (rY1 - rY0) * 0.3, width: plotW, height: (rY1 - rY0) * 0.4,
+                                   fill: GRID, opacity: .6 }));
+    function ry(v) { return rY1 - (v / 100) * (rY1 - rY0); }
+    var prsi = '', st = false;
+    for (k = 0; k < n; k++) {
+      var rv = rsi[i0 + k];
+      if (rv === null || rv === undefined) { st = false; continue; }
+      prsi += (st ? 'L' : 'M') + cx(k).toFixed(1) + ' ' + ry(rv).toFixed(1) + ' '; st = true;
+    }
+    if (prsi) {
+      var rp = svgEl('path', { d: prsi, fill: 'none', stroke: 'var(--mmb-info)', 'stroke-width': 1.4,
+                               'stroke-linejoin': 'round' });
+      gR.appendChild(rp);
+      if (!reduced) {
+        svg.appendChild(gR);
+        var RL = 0; try { RL = rp.getTotalLength(); } catch (e2) { RL = 0; }
+        if (RL) { rp.style.setProperty('--len', RL); rp.setAttribute('stroke-dasharray', RL); rp.classList.add('draw'); rp.style.animationDelay = '760ms'; }
+      }
+    }
+    gR.appendChild(paneLabel(rY0, 'RSI 14', 720));
+    var rlast = rsi[bars.length - 1];
+    if (rlast !== null && rlast !== undefined) {
+      var rt = svgEl('text', { x: X1 + 7, y: ry(rlast) + 3.4, fill: AXIS, 'font-size': 10,
+                               'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace',
+                               class: reduced ? '' : 'fade' });
+      rt.textContent = rlast.toFixed(0);
+      if (!reduced) rt.style.animationDelay = '860ms';
+      gR.appendChild(rt);
+    }
+    if (!gR.parentNode) svg.appendChild(gR);
+
+    /* ── MACD pane: histogram + both lines, on its own scale ── */
+    var gM = svgEl('g');
+    var mlo = Infinity, mhi = -Infinity;
+    for (k = i0; k < bars.length; k++) {
+      [mac.line[k], mac.signal[k], mac.hist[k]].forEach(function (v) {
+        if (v === null || v === undefined) return;
+        if (v < mlo) mlo = v; if (v > mhi) mhi = v;
+      });
+    }
+    if (!isFinite(mlo)) { mlo = -1; mhi = 1; }
+    var mspan = Math.max(Math.abs(mlo), Math.abs(mhi)) * 1.12 || 1;
+    function my(v) { return (mY0 + mY1) / 2 - (v / mspan) * ((mY1 - mY0) / 2); }
+    gM.appendChild(svgEl('line', { x1: X0, x2: X1, y1: my(0), y2: my(0), stroke: GRID, 'stroke-width': 1 }));
+    for (k = 0; k < n; k++) {
+      var hv = mac.hist[i0 + k];
+      if (hv === null || hv === undefined) continue;
+      var y0 = my(0), y1 = my(hv), hh = Math.max(0.8, Math.abs(y1 - y0));
+      var hb = svgEl('rect', { x: cx(k) - cw / 2, y: Math.min(y0, y1), width: cw, height: hh, rx: .5,
+                               fill: hv >= 0 ? 'var(--mmb-up)' : 'var(--mmb-dn)', opacity: .55,
+                               class: reduced ? '' : 'hbar' });
+      if (!reduced) hb.style.animationDelay = (700 + k * (420 / n)) + 'ms';
+      gM.appendChild(hb);
+    }
+    function macdPath(series, color, w, delayMs) {
+      var d = '', started = false;
+      for (var j = 0; j < n; j++) {
+        var v = series[i0 + j];
+        if (v === null || v === undefined) { started = false; continue; }
+        d += (started ? 'L' : 'M') + cx(j).toFixed(1) + ' ' + my(v).toFixed(1) + ' '; started = true;
+      }
+      if (!d) return;
+      var p = svgEl('path', { d: d, fill: 'none', stroke: color, 'stroke-width': w, 'stroke-linejoin': 'round' });
+      gM.appendChild(p);
+      if (!reduced) {
+        if (!gM.parentNode) svg.appendChild(gM);
+        var L = 0; try { L = p.getTotalLength(); } catch (e3) { L = 0; }
+        if (L) { p.style.setProperty('--len', L); p.setAttribute('stroke-dasharray', L); p.classList.add('draw'); p.style.animationDelay = delayMs + 'ms'; }
+      }
+    }
+    macdPath(mac.line, 'var(--mmb-info)', 1.4, 880);
+    macdPath(mac.signal, 'var(--mmb-warn)', 1.2, 960);
+    gM.appendChild(paneLabel(mY0, 'MACD 12/26/9', 900));
+    if (!gM.parentNode) svg.appendChild(gM);
+
+    /* ── date axis: one label per month change ── */
+    var gX = svgEl('g', { class: reduced ? '' : 'fade' });
+    if (!reduced) gX.style.animationDelay = '780ms';
+    var lastMon = '';
+    for (k = 0; k < n; k++) {
+      var mo = String(view[k].d).slice(0, 7);
+      if (mo === lastMon) continue;
+      lastMon = mo;
+      if (cx(k) < X0 + 14 || cx(k) > X1 - 18) continue;
+      var xt = svgEl('text', { x: cx(k), y: H - 6, fill: AXIS, 'font-size': 9.5, 'text-anchor': 'middle',
+                               'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+      xt.textContent = monLabel(view[k].d);
+      gX.appendChild(xt);
+    }
+    svg.appendChild(gX);
+
+    /* ── crosshair: the bar under the cursor, read out in the header ── */
+    var gXh = svgEl('g', { class: 'mmb-cx-xh' });
+    var vx = svgEl('line', { x1: 0, x2: 0, y1: pY0, y2: mY1, stroke: 'var(--mmb-muted)',
+                             'stroke-width': 1, 'stroke-dasharray': '3 3' });
+    var hy = svgEl('line', { x1: X0, x2: X1, y1: 0, y2: 0, stroke: 'var(--mmb-muted)',
+                             'stroke-width': 1, 'stroke-dasharray': '3 3' });
+    var dot = svgEl('circle', { r: 3, fill: 'var(--mmb-info)' });
+    /* the two chips that make a crosshair feel like an instrument rather than a hairline:
+       the price it is sitting on, in the axis gutter, and the date it is over, on the rail */
+    var pxR = svgEl('rect', { x: X1 + 2, y: 0, width: PAD_R - 6, height: 15, rx: 4, fill: 'var(--mmb-panel2)' });
+    var pxT = svgEl('text', { x: X1 + 5, y: 0, 'font-size': 9.5, 'font-weight': 700, fill: 'var(--mmb-text)',
+                              'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+    var dtR = svgEl('rect', { x: 0, y: H - 16, width: 52, height: 14, rx: 4, fill: 'var(--mmb-panel2)' });
+    var dtT = svgEl('text', { x: 0, y: H - 5.6, 'font-size': 9, 'text-anchor': 'middle', fill: 'var(--mmb-text)',
+                              'font-family': 'ui-monospace,SFMono-Regular,Menlo,monospace' });
+    gXh.appendChild(vx); gXh.appendChild(hy); gXh.appendChild(dot);
+    gXh.appendChild(pxR); gXh.appendChild(pxT); gXh.appendChild(dtR); gXh.appendChild(dtT);
+    svg.appendChild(gXh);
+
+    return { svg: svg, view: view, n: n, cx: cx, py: py, X0: X0, X1: X1, W: W, H: H,
+             xh: { g: gXh, v: vx, h: hy, dot: dot, pxR: pxR, pxT: pxT, dtR: dtR, dtT: dtT },
+             last: lastBar, prev: view[n - 2] || view[n - 1] };
+  }
+
+  /* ── mount: shell first (so the reply never waits on a fetch), then the live draw ── */
+  function mountChart(host, j) {
+    var ticker = String(j.ticker || '').toUpperCase().slice(0, 12);
+    var tf = String(j.timeframe || 'DAILY').toLowerCase();
+    var box = el('div', 'mmb-cx');
+    var head = el('div', 'mmb-cx-h');
+    var sym = el('span', 'mmb-cx-sym'); sym.textContent = ticker || '—';
+    var tfc = el('span', 'mmb-cx-tf'); tfc.textContent = zh() ? (tf === 'daily' ? '日线' : tf) : tf;
+    var sp = el('div', 'sp');
+    var read = el('div', 'mmb-cx-read');
+    head.appendChild(sym); head.appendChild(tfc); head.appendChild(sp); head.appendChild(read);
+    box.appendChild(head);
+    var body = el('div', 'mmb-cx-body');
+    box.appendChild(body);
+    host.appendChild(box);
+
+    function fallback() {
+      /* the server's picture, when we have no bars of our own for this symbol */
+      if (!j.svg) {
+        box.removeChild(body);
+        var m = el('div', 'mmb-cx-miss');
+        m.textContent = L('No daily bars for ' + ticker + ' — the read below stands on its own.',
+                          ticker + ' 暂无日线数据 — 下方研判独立成立。');
+        box.appendChild(m);
+        return;
+      }
+      box.remove();
+      var w = el('div', 'mmb-chart'); w.innerHTML = j.svg; host.appendChild(w); stickAfter();
+    }
+
+    fetchBars(ticker).then(function (bars) {
+      if (!bars) { fallback(); return; }
+      var built = null;
+      function render() {
+        body.textContent = '';
+        built = drawChart(body, ticker, tf, bars);
+        box.classList.toggle('narrow', built.W < 470);
+        body.appendChild(built.svg);
+        paintRead(null);
+        wireCrosshair();
+        stickAfter();
+      }
+      /* header readout: last close + day change at rest, the hovered bar while tracking */
+      function paintRead(bar) {
+        read.textContent = '';
+        var b = bar || built.last, prev = bar ? null : built.prev;
+        if (bar) {
+          [[L('O', '开'), bar.o], [L('H', '高'), bar.h], [L('L', '低'), bar.l], [L('C', '收'), bar.c]]
+            .forEach(function (pair) {
+              var s = el('span'); var b2 = el('b'); b2.textContent = pair[0] + ' ';
+              s.appendChild(b2); s.appendChild(DOC.createTextNode(fmtPrice(pair[1]))); read.appendChild(s);
+            });
+          var vsp = el('span', 'mmb-cx-vol'); var vb = el('b'); vb.textContent = L('V ', '量 ');
+          vsp.appendChild(vb); vsp.appendChild(DOC.createTextNode(fmtVol(bar.v))); read.appendChild(vsp);
+          var ch = bar.o ? (bar.c - bar.o) / bar.o * 100 : 0;
+          var cs = el('span', 'mmb-cx-chg ' + (ch >= 0 ? 'up' : 'dn'));
+          cs.textContent = (ch >= 0 ? '+' : '') + ch.toFixed(2) + '%';
+          read.appendChild(cs);
+          return;
+        }
+        var last = el('span', 'mmb-cx-last'); last.textContent = fmtPrice(b.c); read.appendChild(last);
+        if (prev && prev.c) {
+          var d = (b.c - prev.c) / prev.c * 100;
+          var cg = el('span', 'mmb-cx-chg ' + (d >= 0 ? 'up' : 'dn'));
+          cg.textContent = (d >= 0 ? '+' : '') + d.toFixed(2) + '%';
+          read.appendChild(cg);
+        }
+      }
+      function wireCrosshair() {
+        var svg = built.svg;
+        function track(ev) {
+          var r = svg.getBoundingClientRect();
+          var x = (ev.clientX - r.left) / r.width * built.W;
+          var idx = Math.round((x - built.X0) / ((built.X1 - built.X0) / built.n) - 0.5);
+          if (idx < 0) idx = 0; if (idx > built.n - 1) idx = built.n - 1;
+          var bar = built.view[idx], px = built.cx(idx), pyv = built.py(bar.c);
+          var xh = built.xh;
+          xh.v.setAttribute('x1', px); xh.v.setAttribute('x2', px);
+          xh.h.setAttribute('y1', pyv); xh.h.setAttribute('y2', pyv);
+          xh.dot.setAttribute('cx', px); xh.dot.setAttribute('cy', pyv);
+          xh.pxR.setAttribute('y', pyv - 7.5); xh.pxT.setAttribute('y', pyv + 3.4);
+          xh.pxT.textContent = fmtPrice(bar.c);
+          var dx = Math.max(built.X0, Math.min(built.X1 - 52, px - 26));
+          xh.dtR.setAttribute('x', dx); xh.dtT.setAttribute('x', dx + 26);
+          xh.dtT.textContent = String(bar.d).slice(5);
+          box.classList.add('live');
+          paintRead(bar);
+        }
+        function leave() { box.classList.remove('live'); paintRead(null); }
+        svg.addEventListener('pointermove', track);
+        svg.addEventListener('pointerdown', track);
+        svg.addEventListener('pointerleave', leave);
+      }
+      render();
+
+      var foot = el('div', 'mmb-cx-foot');
+      [[L('EMA 20', 'EMA 20'), 'var(--mmb-info)'], [L('SMA 50', 'SMA 50'), 'var(--mmb-violet)']]
+        .forEach(function (kv) {
+          var s = el('span', 'mmb-cx-key'); s.style.color = kv[1];
+          var i2 = DOC.createElement('i'); s.appendChild(i2);
+          var tx = el('span'); tx.style.color = 'var(--mmb-muted)'; tx.textContent = kv[0];
+          s.appendChild(tx); foot.appendChild(s);
+        });
+      foot.appendChild(el('div', 'sp'));
+      var src = el('span', 'mmb-cx-src');
+      src.textContent = built.view[built.n - 1].d + ' · ' + built.n + (zh() ? ' 根K线' : ' bars');
+      foot.appendChild(src);
+      box.appendChild(foot);
+
+      /* a resize or a theme/language flip is a re-render, never a stretched picture */
+      var rt = 0;
+      function relayout() { if (rt) clearTimeout(rt); rt = setTimeout(function () { if (box.isConnected) render(); }, 120); }
+      if (typeof ResizeObserver === 'function') {
+        var ro = new ResizeObserver(relayout);
+        ro.observe(box);
+      }
+      DOC.addEventListener('themechange', relayout);
+      DOC.addEventListener('langchange', relayout);
+    });
+  }
+
   /* ── gateway auth: attach the Supabase Bearer token (gateway ignores the cookie) ── */
   function withAuth(h) {
     h = h || {};
@@ -915,10 +1871,13 @@
   function renderQuota() {
     var q = quotas[researchMode ? 'pro' : lane];
     if (!q) { qEl.textContent = ''; qEl.removeAttribute('title'); return; }
-    var pre = (researchMode || lane === 'pro') ? '◈ ' : '⚡ ';
+    /* the mark, not a glyph: the meter and the lane control now say "Pro" the same way,
+       so "which bucket is this spending" is answered without reading a word. */
+    var pre = laneMark((researchMode || lane === 'pro') ? 'pro' : 'fast');
+    function meter(txt) { qEl.innerHTML = pre + '<span>' + esc(txt) + '</span>'; }
     /* title is English-only per house law (no translated text in title= attrs). */
-    if (q.limit < 0) { qEl.textContent = pre + '∞'; qEl.className = 'mmb-q'; qEl.setAttribute('title', 'Unlimited'); return; }  /* unlimited */
-    qEl.textContent = pre + q.remaining + '/' + q.limit;
+    if (q.limit < 0) { meter('\u221e'); qEl.className = 'mmb-q'; qEl.setAttribute('title', 'Unlimited'); return; }  /* unlimited */
+    meter(q.remaining + '/' + q.limit);
     qEl.setAttribute('title', q.period === 'day' ? (q.remaining + ' of ' + q.limit + ' free messages left today') : (q.remaining + ' of ' + q.limit + ' left'));
     qEl.className = 'mmb-q' + (q.remaining <= 0 ? ' empty' : (q.remaining <= Math.max(1, q.limit * 0.15) ? ' warn' : ''));
   }
@@ -1153,10 +2112,10 @@
     var name = '';
     try { var u = window.MDXAuth && window.MDXAuth.user && window.MDXAuth.user(); if (u) { name = (u.user_metadata && (u.user_metadata.display_name || u.user_metadata.name)) || (u.email ? u.email.split('@')[0] : ''); } } catch (e) {}
     name = name ? (name.charAt(0).toUpperCase() + name.slice(1)) : '';
-    var cards = PROMPTS.map(function (p) {
+    var cards = PROMPTS.map(function (p, i) {
       var paths = p[0].split('|').map(function (d) { return '<path d="' + d + '"/>'; }).join('');
       var txt = L(p[1], p[2]);
-      return '<button class="mmb-cardp" data-p="' + esc(txt) + '"><div class="ci"><svg viewBox="0 0 24 24">' + paths + '</svg></div><span class="cp">' + esc(txt) + '</span></button>';
+      return '<button class="mmb-cardp" style="--i:' + i + '" data-p="' + esc(txt) + '"><div class="ci"><svg viewBox="0 0 24 24">' + paths + '</svg></div><span class="cp">' + esc(txt) + '</span></button>';
     }).join('');
     var hero = '<div class="mmb-empty" id="mmb-emptystate"><div class="mmb-hero"><h1>' +
       (name ? '<span class="g1">' + L('Hi there, ', '你好，') + '</span><span class="nm">' + esc(name) + '</span><br>' : '') +
@@ -1174,7 +2133,9 @@
   function relabel() {
     root.querySelectorAll('.mmb-l[data-en]').forEach(function (el) { el.textContent = zh() ? el.getAttribute('data-zh') : el.getAttribute('data-en'); });
     root.querySelectorAll('[data-ph-en]').forEach(function (el) { el.placeholder = zh() ? el.getAttribute('data-ph-zh') : el.getAttribute('data-ph-en'); });
+    paintPlaceholder();   /* an armed research pass keeps its own prompt through the switch */
     if (launch) launch.setAttribute('aria-label', zh() ? '问操盘大脑' : 'Ask Mastermind');  /* orb-only on phones: keep its accessible name in sync */
+    researchBtn.setAttribute('aria-label', L('Deep Research', '深度研究'));   /* label shortens to the mark on phones */
     if ($('#mmb-emptystate')) renderEmpty();
     paintThreads();   /* self-routes to the guest sign-in prompt when in guest mode */
     renderQuota();     /* refresh the meter's title in the new language sense */
@@ -1209,6 +2170,8 @@
     lastTurn = { text: text, imgs: imgs, lane: payload.lane, mode: payload.mode };
     pendingImages = []; renderThumbs();
     ta.value = ''; autosize(); clearDraft(); syncSend(); updateCounter(); closeSlash();
+    /* the composer answers the keystroke: one settle, retriggerable on a fast second send */
+    boxEl.classList.remove('mmb-sent'); void boxEl.offsetWidth; boxEl.classList.add('mmb-sent');
     pinned = true; hideJump();
     runStream(payload, true);
   }
@@ -1266,24 +2229,46 @@
 
   /* Per-turn UI + parse state. Shared by the opening POST and by every later
      re-attachment, so a resumed stream paints into the same bubble it started in. */
-  /* ── reasoning timeline (think*) ──────────────────────────────────────────────
+  /* ── the reasoning ledger (think*) ────────────────────────────────────────────
      The gateway holds the whole answer back until it clears the advice filter, so the
      wait is the only thing the user has: this strip narrates it the way a colleague
-     would — the step in progress on top (pulse dot + live clock), the last three
-     finished steps dimmed beneath with a ✓. Every label arrives as a bilingual pair on
-     the event; nothing internal is ever rendered. When the answer lands the strip folds
-     into one muted receipt line above the text.
+     would. It reads DOWNWARD like a worksheet — finished steps above, the line that is
+     running at the bottom, then the answer directly beneath it — so the eye travels
+     through the work and into the reply instead of jumping back over it.
+
+     Three things carry the narration, and none of them is a new string from the server:
+       · the server's own bilingual label is the headline (leak law — every visible
+         label ships from the gateway's two whitelists, never a tool name);
+       · a family GLYPH picked from the tool name, so "read twenty things" is legible
+         at a glance as price / flow / notes / chart work rather than twenty lines;
+       · one plain clause under the live label (PHASE_SUB) saying what this stage is
+         FOR — the part users kept asking for, and the part a label alone can't say.
 
      All state lives in ONE plain holder (`tl`) created by thinkInit(); every function
      below takes that holder and is a no-op once it has been torn down, so the send flow
      owns nothing but the holder itself and never has to guard a call. */
-  function thinkInit(host) {
-    var tl = { node: el('div', 'mmb-think'), t0: Date.now(), key: '', label: '', shown: [], record: [], checks: 0, timer: 0, dead: false };
-    var head = el('div', 'mmb-think-h');
+  function thinkInit(host, mode) {
+    var tl = { node: el('div', 'mmb-think'), t0: Date.now(), key: '', label: '', detail: '', dcls: 'rd',
+               ico: PHASE_IC.start, shown: [], record: [], checks: 0, timer: 0, dead: false };
+    tl.rows = el('div', 'mmb-tk-rows'); tl.node.appendChild(tl.rows);
+    /* Deep Research states itself once, as a standing first line (never rotated out). */
+    if (mode === 'research') {
+      var seed = thinkRow({ t: L('Deep research — a fuller pass', '深度研究 — 更完整的一遍'), i: MARK_RESEARCH });
+      seed.classList.add('mode'); tl.rows.appendChild(seed);
+      tl.record.push({ t: L('Deep research — a fuller pass', '深度研究 — 更完整的一遍'), i: MARK_RESEARCH });
+    }
+    var head = el('div', 'mmb-tk-h');
+    tl.icoEl = el('span', 'mmb-tk-ic'); tl.icoEl.innerHTML = ic(tl.ico);
+    var body = el('div', 'mmb-tk-body');
     tl.lab = el('span', 'lb'); tl.lab.textContent = L('Reading your question', '正在理解您的问题');
-    tl.clock = el('span', 'mmb-think-t'); tl.clock.textContent = '0:00';
+    tl.sub = el('span', 'sb'); tl.sub.textContent = L(PHASE_SUB.start[0], PHASE_SUB.start[1]);
+    tl.chip = el('span', 'rd'); tl.chip.style.display = 'none';
+    tl.clock = el('span', 'mmb-tk-t'); tl.clock.textContent = '0:00';
     tl.label = tl.lab.textContent; tl.key = tl.label + '|';
-    head.appendChild(tl.lab); head.appendChild(tl.clock); tl.node.appendChild(head);
+    var lbrow = el('div', 'lbrow'); lbrow.appendChild(tl.lab); lbrow.appendChild(tl.chip);
+    body.appendChild(lbrow); body.appendChild(tl.sub);
+    head.appendChild(tl.icoEl); head.appendChild(body); head.appendChild(tl.clock);
+    tl.node.appendChild(head);
     tl.timer = setInterval(function () {
       var s = Math.max(0, Math.floor((Date.now() - tl.t0) / 1000));
       tl.clock.textContent = Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
@@ -1291,31 +2276,55 @@
     if (host) host.appendChild(tl.node);
     return tl;
   }
+  /* One ledger line: glyph node on the spine, the label, and the qualifier as a data chip
+     (a ticker in mono blue, a size estimate in plain mono). Shared by the live strip and
+     by the receipt's unfolded record, so a step reads identically in both places. */
+  function thinkRow(r) {
+    var row = el('div', 'mmb-tk-row');
+    var i = el('span', 'mmb-tk-ic'); i.innerHTML = ic(r.i || FAM.data);
+    var t = el('span', 'rl'); t.textContent = r.t;
+    row.appendChild(i); row.appendChild(t);
+    if (r.d) { var d = el('span', r.dc || 'rd'); d.textContent = r.d; row.appendChild(d); }
+    return row;
+  }
   /* the strip follows the reply: placeholder bubble → real bubble, above the text */
   function thinkMount(tl, bub) { if (!tl || tl.dead) return; bub.insertBefore(tl.node, bubTxt(bub)); }
-  /* a finished step: kept in the record forever, on screen only while it is recent */
-  function thinkRetire(tl, text) {
-    if (!text) return;
-    tl.record.push(text);
-    var s = el('div', 'mmb-step'); s.textContent = text; tl.node.appendChild(s); tl.shown.push(s);
-    while (tl.shown.length > 3) { var old = tl.shown.shift(); if (old.parentNode) old.remove(); }
+  /* Retire the live line. Kept in the record forever, on screen only while it is recent —
+     a four-line window is what fits the compact panel without pushing the composer. */
+  function thinkRetire(tl) {
+    if (!tl.label) return;
+    var r = { t: tl.label, d: tl.detail, dc: tl.dcls, i: tl.ico };
+    tl.record.push(r);
+    var row = thinkRow(r); tl.rows.appendChild(row); tl.shown.push(row);
+    while (tl.shown.length > 4) { var old = tl.shown.shift(); if (old.parentNode) old.remove(); }
   }
-  /* Move to a step. `label` is the whole visible line; `extra` a qualifier (a symbol, or
-     the writing size estimate). Re-marking the SAME step only repaints the header — that
-     is how the writing estimate grows without spamming the list. Tool steps key on their
-     detail too (same tool, new symbol = a new step) and count toward the check tally. */
-  function thinkStep(tl, label, extra, isTool) {
-    if (!tl || tl.dead || !label) return;
-    var full = label + (extra ? ' · ' + extra : '');
-    var key = label + '|' + (isTool ? (extra || '') : '');
-    if (key !== tl.key) { thinkRetire(tl, tl.label); tl.key = key; }
+  /* Move to a step. `o.label` is the headline, `o.detail` the qualifier (a symbol, or the
+     writing size estimate), `o.ico` the glyph. Re-marking the SAME step only repaints the
+     head — that is how the writing estimate grows without spamming the list. Tool steps
+     key on their detail too (same tool, new symbol = a new step) and count toward the
+     check tally. */
+  function thinkStep(tl, o) {
+    if (!tl || tl.dead || !o.label) return;
+    var key = o.label + '|' + (o.isTool ? (o.detail || '') : '');
+    if (key !== tl.key) {
+      thinkRetire(tl); tl.key = key;
+      /* re-trigger the label crossfade: a phase change lands as a move, not a flicker */
+      tl.lab.classList.remove('mmb-swap'); void tl.lab.offsetWidth; tl.lab.classList.add('mmb-swap');
+    }
     /* the chip's "N checks" counts tool EVENTS (work done), not rendered lines — two
        same-labelled reads in one round are still two checks (review MINOR-5) */
-    if (isTool) tl.checks++;
+    if (o.isTool) tl.checks++;
     /* a finished tool line keeps its symbol (that is a fact worth reading back); a stage
        line drops its size estimate, which is progress, not a result. */
-    tl.label = isTool ? full : label;
-    tl.lab.textContent = full;
+    tl.label = o.label;
+    tl.detail = o.isTool ? (o.detail || '') : '';
+    tl.dcls = 'rd';
+    tl.ico = o.ico || FAM.data;
+    tl.lab.textContent = o.label;
+    tl.sub.textContent = o.sub || '';
+    tl.icoEl.innerHTML = ic(tl.ico);
+    if (o.detail) { tl.chip.textContent = o.detail; tl.chip.className = o.dcls || 'rd'; tl.chip.style.display = ''; }
+    else { tl.chip.style.display = 'none'; }
     stickAfter();
   }
   /* one `status` event. `beat` is the keepalive heartbeat — liveness only, no visual
@@ -1327,21 +2336,37 @@
        receipt never under-report a resumed run (review MINOR-6) */
     if (j.elapsed_ms > 0) { var t0s = Date.now() - j.elapsed_ms; if (t0s < tl.t0) tl.t0 = t0s; }
     if (j.phase === 'beat') return;
-    var extra = (j.phase === 'writing' && j.n > 0)
-      ? '~' + (zh() ? (j.n + ' 字') : (Math.max(1, Math.round(j.n / 6)) + ' words'))
-      : evDetail(j);
-    thinkStep(tl, evLabel(j, '', ''), extra, false);
+    var writing = j.phase === 'writing' && j.n > 0;
+    var sub = PHASE_SUB[j.phase];
+    if (j.phase === 'model') sub = MODEL_SUB[Math.min(MODEL_SUB.length - 1, Math.max(0, (j.n || 1) - 1))];
+    thinkStep(tl, {
+      label: evLabel(j, '', ''),
+      detail: writing ? ('~' + (zh() ? (j.n + ' 字') : (Math.max(1, Math.round(j.n / 6)) + ' words'))) : evDetail(j),
+      dcls: writing ? 'rn' : 'rd',
+      sub: sub ? L(sub[0], sub[1]) : '',
+      ico: PHASE_IC[j.phase] || PHASE_IC.model
+    });
   }
   /* one `tool` event — an old gateway sends no labels, so fall back to the house line */
-  function thinkTool(tl, j) { thinkStep(tl, evLabel(j, 'Reading market data', '读取市场数据'), evDetail(j), true); }
+  function thinkTool(tl, j) {
+    var key = toolFam(j.name), fam = FAM_SUB[key] || FAM_SUB.data;
+    thinkStep(tl, {
+      label: evLabel(j, 'Reading market data', '读取市场数据'),
+      detail: evDetail(j), isTool: true,
+      sub: L(fam[0], fam[1]),
+      ico: FAM[key] || FAM.data
+    });
+  }
   /* Fold into the receipt chip above the finished answer, then tear the strip down. */
   function thinkCollapse(tl, bub) {
     if (!tl || tl.dead) return null;
-    thinkRetire(tl, tl.label); tl.label = '';
+    thinkRetire(tl); tl.label = '';
     var secs = Math.max(0, Math.round((Date.now() - tl.t0) / 1000)), record = tl.record;
     thinkTeardown(tl);
     var wrap = el('div', 'mmb-recap');
     var btn = el('button', 'mmb-chip'); btn.type = 'button'; btn.setAttribute('aria-expanded', 'false');
+    btn.insertAdjacentHTML('afterbegin',
+      '<svg class="ck" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 6.5h11M4.5 11h11M4.5 15.5h6.5"/><path d="M15.5 15l2.4 2.4 4-4.4"/></svg>');
     var line = el('span');
     line.textContent = tl.checks
       ? L('Analyzed for ' + secs + 's · ' + tl.checks + (tl.checks === 1 ? ' check' : ' checks'), '分析 ' + secs + ' 秒 · ' + tl.checks + ' 项核查')
@@ -1351,7 +2376,7 @@
       var list = el('div', 'mmb-recap-list');
       list.id = 'mmb-recap-' + (++recapSeq);
       btn.setAttribute('aria-controls', list.id);
-      record.forEach(function (r) { var s = el('div', 'mmb-step'); s.textContent = r; list.appendChild(s); });
+      record.forEach(function (r) { list.appendChild(thinkRow(r)); });
       wrap.appendChild(list);
       btn.addEventListener('click', function () {
         var on = wrap.classList.toggle('on');
@@ -1383,7 +2408,7 @@
     if (!T.bub) {
       if (T.typing && T.typing.parentNode) T.typing.remove();
       T.bub = appendMsg('assistant', ''); T.stream = MdStream(bubTxt(T.bub));
-      T.stream.startCaret(); markLastAssistant(); thinkMount(T.tl, T.bub);
+      markLastAssistant(); thinkMount(T.tl, T.bub);
     }
     return T.bub;
   }
@@ -1405,10 +2430,22 @@
     /* stage narration; anything arriving after `done` is stale noise */
     else if (j.type === 'status') { if (!T.doneSeen) thinkStatus(T.tl, j); }
     else if (j.type === 'tool') { ensureBub(T); if (!T.doneSeen) thinkTool(T.tl, j); stickAfter(); }
-    else if (j.type === 'chart' && j.svg) { ensureBub(T); var cw = el('div', 'mmb-chart'); cw.innerHTML = j.svg; (T.bub.querySelector('.mmb-charts') || T.bub).appendChild(cw); stickAfter(); }
+    /* A chart event no longer means "paste this picture": the widget draws the symbol
+       itself from the published daily bars and keeps j.svg only as the fallback, so an
+       older gateway (svg, no ticker) still renders exactly as before. */
+    else if (j.type === 'chart' && (j.ticker || j.svg)) {
+      ensureBub(T);
+      mountChart(T.bub.querySelector('.mmb-charts') || T.bub, j);
+      stickAfter();
+    }
     else if (j.type === 'delta') {
       /* the answer has landed: the strip folds into the receipt above the text */
       ensureBub(T); thinkCollapse(T.tl, T.bub);
+      /* The caret arrives WITH the first character, not with the bubble. A cursor parked
+         under the ledger for the length of a 40s research pass is claiming to be typing
+         while the answer is still buffered server-side — and it reads as a stray tick
+         hanging off the bottom of the strip. */
+      if (!T.sawDelta) T.stream.startCaret();
       T.sawDelta = true; T.bub._raw = (T.bub._raw || '') + j.text; T.stream.push(j.text);
     }
     else if (j.type === 'suggest') { if (j.items && j.items.length) T.suggestions = j.items.slice(0, 3); }
@@ -1575,7 +2612,7 @@
     T.ub = ub;   /* what a retract may take back (see retractTurn) */
     /* the bouncing dots are replaced by the reasoning strip: it lives in the placeholder
        bubble until the real one exists, then moves across in ensureBub(). */
-    T.tl = thinkInit(typing.querySelector('.mmb-bub'));
+    T.tl = thinkInit(typing.querySelector('.mmb-bub'), payload.mode);
     activeStream = T;
     var apiText = payload.text || L('Please analyze the attached image.', '请分析所附图片。');
     var body = JSON.stringify({ message: apiText, lane: payload.lane, mode: payload.mode, thread_id: threadId || undefined, context: payload.ctx, images: (payload.imgs && payload.imgs.length) ? payload.imgs : undefined });
@@ -1727,7 +2764,7 @@
     scroll.appendChild(typing); stick();
     var T = newTurn({ text: question || '', imgs: [], lane: status.lane || 'fast', mode: status.mode || 'chat' }, typing);
     /* replayed status events fast-forward the strip to the run's live stage */
-    T.tl = thinkInit(typing.querySelector('.mmb-bub'));
+    T.tl = thinkInit(typing.querySelector('.mmb-bub'), status.mode);
     T.runId = status.run_id; T.threadId = status.thread_id || null; T.cursor = cursor || 0;
     saveRun(T);   /* re-arm immediately — openThread() cleared the record on its way in */
     attachRun(T);
@@ -1771,9 +2808,10 @@
      A click sends that question and removes the whole chip row (only the newest reply carries them). */
   function addSuggest(bub, items) {
     var wrap = DOC.createElement('div'); wrap.className = 'mmb-sugg';
-    items.slice(0, 3).forEach(function (q) {
+    items.slice(0, 3).forEach(function (q, i) {
       if (!q) return;
       var btn = DOC.createElement('button'); btn.className = 'mmb-sug';
+      btn.style.setProperty('--i', i);
       var g = DOC.createElement('span'); g.className = 'g'; g.textContent = '↳ ';
       btn.appendChild(g); btn.appendChild(DOC.createTextNode(String(q)));
       btn.addEventListener('click', function () { wrap.remove(); send(String(q)); });
@@ -1826,17 +2864,34 @@
      "Fast" and a lit Deep Research pill can never both be true. Picking Pro is a
      deliberate act — it costs Pro quota — so it is remembered rather than reset to
      Fast on the next page load. */
-  function paintLane() { root.querySelectorAll('#mmb-lane button').forEach(function (b) { b.classList.toggle('on', b.dataset.lane === lane); }); }
+  function paintLane() {
+    /* [data-lane] only — the third stop is Deep Research, and a blanket sweep over
+       #mmb-lane button would strip the class paintResearch() had just put on it. */
+    root.querySelectorAll('#mmb-lane button[data-lane]').forEach(function (b) {
+      var on = b.dataset.lane === lane;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
   function paintResearch() { researchBtn.classList.toggle('on', researchMode); researchBtn.setAttribute('aria-pressed', researchMode ? 'true' : 'false'); }
+  /* The composer says what the armed mode expects of it. A research pass is a question you
+     ask once and come back to — not a one-line follow-up — and the box is the only surface
+     that can say so at the moment it matters. Sourced from the data-ph-* pair when off, so
+     a live language switch (relabel) still lands on the right default. */
+  function paintPlaceholder() {
+    ta.placeholder = researchMode
+      ? L('Ask a research question — it comes back with a full write-up…', '提出一个研究问题 — 将返回完整研判…')
+      : (zh() ? ta.getAttribute('data-ph-zh') : ta.getAttribute('data-ph-en'));
+  }
   function setLane(next) {
     lane = next === 'pro' ? 'pro' : 'fast';
     if (lane === 'fast' && researchMode) researchMode = false;   /* mutually exclusive */
-    paintLane(); paintResearch(); savePrefs(); renderQuota();
+    paintLane(); paintResearch(); paintPlaceholder(); savePrefs(); renderQuota();
   }
   function setResearch(on) {
     researchMode = !!on;
     if (researchMode) lane = 'pro';                              /* research IS the Pro lane */
-    paintLane(); paintResearch(); savePrefs(); renderQuota();
+    paintLane(); paintResearch(); paintPlaceholder(); savePrefs(); renderQuota();
   }
 
   /* Lane + Deep Research are USER choices, not per-page defaults. The widget is
@@ -2051,6 +3106,47 @@
     else if (a === 'signin') { e.preventDefault(); if (window.MDXAuth) window.MDXAuth.open('signin'); }
   });
   fileEl.addEventListener('change', function () { addFiles(fileEl.files); fileEl.value = ''; });
+  /* ── drag & drop ──────────────────────────────────────────────────────────────
+     dragenter/dragleave fire for every child the pointer crosses, so a naive
+     leave-hides-it never survives the first hop between two nodes — the overlay would
+     strobe. Depth counting is the fix: the drag is over us until as many leaves as
+     enters have landed. `dragover` must preventDefault or the browser navigates to the
+     dropped file and takes the whole conversation with it. */
+  (function wireDrop() {
+    var depth = 0;
+    function hasFiles(e) {
+      var dt = e.dataTransfer; if (!dt) return false;
+      if (dt.types) for (var i = 0; i < dt.types.length; i++) if (dt.types[i] === 'Files') return true;
+      return false;
+    }
+    function show(on) { panel.classList.toggle('dropping', !!on); if (!on) depth = 0; }
+    panel.addEventListener('dragenter', function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); depth++; show(true);
+    });
+    panel.addEventListener('dragover', function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault();
+      try { e.dataTransfer.dropEffect = 'copy'; } catch (err) {}
+    });
+    panel.addEventListener('dragleave', function (e) {
+      if (!hasFiles(e)) return;
+      depth = Math.max(0, depth - 1);
+      if (!depth) show(false);
+    });
+    panel.addEventListener('drop', function (e) {
+      if (!hasFiles(e)) return;
+      e.preventDefault(); show(false);
+      /* same gate as the paperclip: attaching images is a Pro capability, and finding
+         that out from a 402 after the upload is the worse way to learn it */
+      if (!proEligible) { showUpgrade(guestMode ? { feature: 'pro' } : { feature: 'vision' }); return; }
+      addFiles(e.dataTransfer.files);
+      try { ta.focus(); } catch (err) {}
+    });
+    /* a drag that ends outside the window never fires drop or leave on us */
+    window.addEventListener('dragend', function () { show(false); });
+    window.addEventListener('drop', function (e) { if (!panel.contains(e.target)) show(false); });
+  })();
   if (searchIn) {
     searchIn.addEventListener('input', paintThreads);
     searchIn.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); toggleSearch(false); } });
@@ -2149,7 +3245,7 @@
     if (!pendingImages.length) { thumbsEl.className = 'mmb-thumbs'; thumbsEl.innerHTML = ''; syncSend(); return; }
     thumbsEl.className = 'mmb-thumbs on'; thumbsEl.innerHTML = '';
     pendingImages.forEach(function (src, i) {
-      var d = DOC.createElement('div'); d.className = 'mmb-thumb';
+      var d = DOC.createElement('div'); d.className = 'mmb-thumb'; d.style.setProperty('--i', i);
       /* set src via the DOM property (never interpolate a data URI into innerHTML) */
       var im = DOC.createElement('img'); im.src = src; im.alt = '';
       var x = DOC.createElement('button'); x.className = 'x'; x.setAttribute('data-rmimg', i); x.title = 'Remove'; x.textContent = '✕';

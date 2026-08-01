@@ -56,7 +56,8 @@ import json
 import logging
 import os
 import sys
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Callable
 
@@ -90,6 +91,16 @@ SINGLE_NAME_TRIGGERS: frozenset[str] = frozenset({
     "mover_pop", "mover_drop", "threshold_cross", "streak_rarity", "signal_fired",
     "earnings_reaction",
 })
+
+#: Triggers whose post is about a GROUP of names, and where each one keeps its
+#: [[symbol, pct], ...] constituents. These get the watchlist card, not a price
+#: chart — see :func:`resolve_group_card` for why they get one at all.
+_GROUP_ROWS_FACT: dict[str, str] = {
+    "sector_rout": "leaders",
+    "sector_rip": "leaders",
+    "contrarian_breadth": "green",
+}
+GROUP_TRIGGERS: frozenset[str] = frozenset(_GROUP_ROWS_FACT)
 
 #: A card drawn off bars older than this is a lie about "so far today".
 MAX_BAR_AGE_DAYS = 7
@@ -131,6 +142,16 @@ def _f(v: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return f if f == f and abs(f) != float("inf") else None
+
+
+def _slug(raw: Any) -> str:
+    """A filename-safe token for a group label ("REIT - Residential" -> "reit-residential").
+
+    Used in a chart_id, which becomes a path and an R2 key, so it must never
+    emit a separator or an empty string.
+    """
+    out = "".join(ch if ch.isalnum() else "-" for ch in str(raw or "").lower())
+    return "-".join(p for p in out.split("-") if p) or "market"
 
 
 def _read_json(path: Path) -> dict | None:
@@ -189,6 +210,39 @@ def _et_day(now: datetime) -> str:
 # Inputs
 # ─────────────────────────────────────────────────────────────────────────────
 
+def window_end_epoch(root: Path, *, now: datetime | None = None,
+                     demo: bool = False) -> int:
+    """Epoch seconds at which today's ET window (end + grace) closes.
+
+    The session-long pass loop stops here. Computed from the SAME config
+    ``HT.in_window`` reads and on the SAME Eastern clock, because a second
+    implementation of the DST reasoning in bash is how the shipped crons ended up
+    describing a UTC window in the first place.
+
+    Demo returns a far-future stamp: demo exists to run on a closed tape, and a
+    demo loop that stopped at the real window end could not demonstrate anything.
+    Never raises — on any failure it returns `now`, which stops the loop after one
+    pass rather than looping until the job timeout.
+    """
+    t = now or datetime.now(timezone.utc)
+    if demo:
+        return int(t.timestamp()) + 86_400
+    try:
+        cfg = HT.load_config(root)
+        end = HT._parse_hhmm(_cfg(cfg, "window_et.end", "16:05"), time(16, 5))
+        try:
+            grace = float(_cfg(cfg, "window_grace_min", HT.DEFAULTS["window_grace_min"]))
+        except (TypeError, ValueError):
+            grace = float(HT.DEFAULTS["window_grace_min"])
+        et_now = HT._et_clock(t)
+        close = et_now.replace(hour=end.hour, minute=end.minute, second=0,
+                               microsecond=0) + timedelta(minutes=max(0.0, grace))
+        return int(close.timestamp())
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: window_end_epoch failed (%s) — one pass only", exc)
+        return int(t.timestamp())
+
+
 def freshness_cfg(cfg: dict | None, *, demo: bool) -> dict:
     """The config the freshness gate ACTUALLY applies.
 
@@ -207,6 +261,41 @@ def freshness_cfg(cfg: dict | None, *, demo: bool) -> dict:
     out = dict(cfg or {})
     out["max_quote_age_min"] = _cfg(cfg, "demo.max_quote_age_min", 100000)
     return out
+
+
+@lru_cache(maxsize=4)
+def remote_quote_urls(root: Path) -> tuple[str, ...]:
+    """The VPS live plane URLs for the merge, from ``config.yml`` ``live:``.
+
+    CACHED PER ROOT because this loop fires ~81 times a session and the answer is a
+    URL — re-parsing the 4k-line config.yml on every pass to re-read one string is
+    the cost ``llm_config`` documents right above. A session that wanted a new URL
+    would be a new process anyway (the poller re-execs per run).
+
+    Resolution and the operator's off switch both live in
+    :func:`engine.marketing.live_verify.remote_quote_urls`; this only supplies the
+    config.
+
+    NO CONFIG MEANS NO REMOTE SOURCE — not "fall back to the estate default". A root
+    without a readable config.yml is a test harness or a partial checkout, not
+    production, and a resolver that reached for a hardcoded URL there would put a
+    live network call inside every unit test that builds a tmp_path root: a suite
+    that fails when a web host is down, and a source of real fetches on a machine
+    that never asked for one. The degraded behaviour is exactly the repo-local
+    merge, which is what this lane had before the remote source existed.
+    """
+    try:
+        import yaml  # noqa: PLC0415
+
+        path = root / "config.yml"
+        if not path.exists():
+            return ()
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+        return LV.remote_quote_urls(loaded if isinstance(loaded, dict) else {})
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: live.public_quotes_url unreadable (%s) - "
+                    "repo-local quote sources only this pass", exc)
+        return ()
 
 
 def load_quotes(root: Path, *, now: datetime, cfg: dict, demo: bool) -> tuple[dict, bool, float | None]:
@@ -228,7 +317,7 @@ def load_quotes(root: Path, *, now: datetime, cfg: dict, demo: bool) -> tuple[di
     definition, one ceiling — and a drop that empties the book stands the pass
     down out loud rather than detecting on what is left.
     """
-    live = LV.load_live_quotes(root)
+    live = LV.load_live_quotes(root, remote_urls=remote_quote_urls(root))
     gate_cfg = freshness_cfg(cfg, demo=demo)
     max_age = HT.effective_max_quote_age_min(live, gate_cfg)
     fresh, age = HT.quotes_fresh(live, now, gate_cfg)
@@ -591,6 +680,36 @@ def llm_config(root: Path) -> dict:
     return {"llm": block}
 
 
+#: Phrases that assert a crossing happened MOMENTS AGO. The template layer
+#: chooses between these and the standing form off `facts.crossed_in_window`
+#: (hot_tape_wire._milestone_clause); a model handed the same packet has no
+#: such gate — hot_tape_llm's validator checks numbers, calls, hedging and
+#: cashtags, and none of those can see that "just broke below 325" is a claim
+#: about a level the tape gapped through at the opening bell.
+_JUST_HAPPENED_PHRASES: tuple[str, ...] = (
+    "just broke", "just cleared", "just crossed", "just slipped",
+    "just traded through", "just fell through", "just went through",
+    "just dropped below", "just topped", "enters correction",
+    "moments ago", "just now",
+)
+
+
+def _stale_timing_hits(packet: HT.FactPacket, text: str) -> list[str]:
+    """Freshness-claiming phrases in `text` that the packet cannot support.
+
+    Only threshold crossings carry the receipt, and only when the prior tick
+    proved the level went inside our own window. Everything else — an unknown
+    memory, a level crossed at the open — may say where the price stands and
+    nothing about when it got there.
+    """
+    if str(getattr(packet, "trigger", "")) != "threshold_cross":
+        return []
+    if bool((getattr(packet, "facts", {}) or {}).get("crossed_in_window")):
+        return []
+    body = (text or "").lower()
+    return [p for p in _JUST_HAPPENED_PHRASES if p in body]
+
+
 def phrase(packet: HT.FactPacket, fallback_text: str, *, llm_cfg: dict) -> dict:
     """Phrase one packet through the P2 LLM wire desk. ALWAYS returns text.
 
@@ -599,11 +718,20 @@ def phrase(packet: HT.FactPacket, fallback_text: str, *, llm_cfg: dict) -> dict:
     (numbers trace to the FactPacket, no calls, no hedging, cashtag policy),
     the deterministic template otherwise. The try/except here is belt only.
 
-    ONE EXTRA GATE ON THE MODEL BRANCH: the LLM module's call-language list is
-    narrower than this desk's own :data:`hot_tape_wire.WIRE_BANNED` — it has no
-    "accumulate", "load up", "calls", "puts" or "bid" — and gate 0.4 is a house
-    law, not a per-module preference. Model copy that trips the wider list falls
-    back to the template, so the deterministic floor still holds.
+    TWO EXTRA GATES ON THE MODEL BRANCH.
+
+    LANGUAGE: the LLM module's call-language list is narrower than this desk's
+    own :data:`hot_tape_wire.WIRE_BANNED` — it has no "accumulate", "load up",
+    "calls", "puts" or "bid" — and gate 0.4 is a house law, not a per-module
+    preference. Model copy that trips the wider list falls back to the
+    template, so the deterministic floor still holds.
+
+    TIMING: a threshold packet whose crossing was NOT observed inside our own
+    tick window may not be phrased as something that just happened (see
+    :func:`_stale_timing_hits` and hot_tape_wire._milestone_clause). The
+    template already refuses it; a model re-writing the same packet would
+    otherwise put "just broke below $325.00" back on a level the tape gapped
+    through at the open.
     """
     result: dict = {}
     try:
@@ -627,6 +755,16 @@ def phrase(packet: HT.FactPacket, fallback_text: str, *, llm_cfg: dict) -> dict:
                   "- the deterministic template posted instead", flush=True)
             text, mode = fallback_text, "fallback_validation"
             violations = violations + [f"wire_banned:'{w}'" for w in hits]
+    if mode == "llm":
+        stale = _stale_timing_hits(packet, text)
+        if stale:
+            print("::warning title=hot-tape-llm-stale-timing::model copy for "
+                  f"{packet.key} claimed a crossing just happened "
+                  f"({','.join(stale)}) on a level whose first-cross time is "
+                  f"{(packet.facts or {}).get('cross_basis')} - the "
+                  "deterministic template posted instead", flush=True)
+            text, mode = fallback_text, "fallback_validation"
+            violations = violations + [f"stale_timing:'{w}'" for w in stale]
     return {
         "text": text,
         "mode": mode,
@@ -686,12 +824,20 @@ def needs_chart(packet: HT.FactPacket) -> bool:
     """Does the operator's every-ticker-post-carries-a-chart law apply here?
 
     Trigger family for an alert, and the SUBJECT for a context brief: a brief
-    that names one ticker is a ticker post no matter which trigger built it,
-    while a brief about a whole group is a breadth post and ships text-only in
-    P1 exactly as its alert did.
+    that names one ticker is a ticker post no matter which trigger built it.
+
+    A GROUP post owes a picture too (2026-07-31). It used to answer False here
+    — "a breadth post ships text-only in P1 exactly as its alert did" — which
+    was true about the price chart and wrong about the law. The copy names its
+    movers, so the publisher's chart law quarantines it: 19 group posts queued
+    on 2026-07-30 and all 19 died there. The picture is the watchlist card, not
+    a chart, and it is owed only when the packet actually carries the names to
+    put on it.
     """
     if packet.trigger in SINGLE_NAME_TRIGGERS:
         return True
+    if packet.trigger in GROUP_TRIGGERS:
+        return bool(group_rows(packet))
     return packet.trigger == HT.BRIEF_TRIGGER and bool(packet.ticker)
 
 
@@ -741,7 +887,16 @@ def ring_entry(
     events: list,
     cfg: dict,
 ) -> dict:
-    """One compact snapshot row: breadth + the index, for the T6 "$X in 3h" claims."""
+    """One compact snapshot row: breadth + the index, for the T6 "$X in 3h" claims.
+
+    It also carries this lane's THRESHOLD FRESHNESS MEMORY (``xk`` /
+    ``xk_full`` / ``xk_min_sev``, built by :func:`HT.cross_memory_row`). A
+    crossing test is `prev_close` vs the live price, so it stays true all
+    session once the level goes; the only evidence that a level went in the
+    last five minutes is that the PREVIOUS row did not carry it. Without this
+    block every threshold post degrades to "trades below 325" — which is why
+    the row is written on EVERY pass, eventless ones included.
+    """
     quotes = live.get("quotes") if isinstance(live.get("quotes"), dict) else {}
     n_up = n_dn = 0
     for q in quotes.values():
@@ -754,7 +909,7 @@ def ring_entry(
             n_dn += 1
     index_sym = str(_cfg(cfg, "detectors.contrarian.index_ticker", "SPY")).upper()
     index_q = quotes.get(index_sym) if isinstance(quotes, dict) else None
-    return {
+    entry = {
         "at": now.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "day": day,
         "session": HT.session_phase(now),
@@ -766,6 +921,8 @@ def ring_entry(
         "n_down": n_dn,
         "n_events": len(events or []),
     }
+    entry.update(HT.cross_memory_row(events or [], cfg))
+    return entry
 
 
 def roll_ring(root: Path, entry: dict, *, day: str) -> None:
@@ -892,6 +1049,181 @@ def _is_massive_only(ticker: str, root: Path) -> bool:
         return HYDRATE_SUBDIR in str(path).replace("\\", "/")
 
 
+def group_rows(packet: HT.FactPacket) -> list[dict[str, Any]]:
+    """The names a group post is about, as watchlist-card rows.
+
+    Both group families already carry their constituents — `sector_rout` /
+    `sector_rip` in facts["leaders"], `contrarian_breadth` in facts["green"] —
+    as [[symbol, pct], ...] in the order the copy names them. That is exactly
+    render_watchlist_card's row shape minus the price, which it degrades
+    cleanly on (no pill rather than a placeholder dash).
+
+    Returns [] when the packet is not a group post or its constituents are
+    missing/unusable, which the caller reads as "no card" and drops the post.
+    """
+    fact_key = _GROUP_ROWS_FACT.get(str(packet.trigger or ""))
+    if not fact_key:
+        return []
+    rows: list[dict[str, Any]] = []
+    for entry in (packet.facts.get(fact_key) or []):
+        try:
+            sym, pct = entry[0], entry[1]
+        except (TypeError, IndexError, KeyError):
+            continue
+        ticker = str(sym or "").strip().upper().lstrip("$")
+        pct_f = _f(pct)
+        if not ticker or pct_f is None:
+            continue
+        rows.append({"ticker": ticker, "pct_change": float(pct_f), "price": None})
+    return rows
+
+
+def _group_card_title(packet: HT.FactPacket) -> str:
+    """The card's hero line. Plain words, and it says nothing the post does not."""
+    label = str(packet.sector or "").strip()
+    if str(packet.trigger) == "contrarian_breadth":
+        return "Defensive names green"
+    verb = "selling off" if str(packet.direction) == "down" else "bid up"
+    return f"{label} {verb}".strip() if label else f"A group {verb}"
+
+
+def _group_card_subtitle(packet: HT.FactPacket) -> str | None:
+    """The panel's own caption: the breadth fact, straight out of the packet.
+
+    Deliberately NOT a second stance. The post text carries the read; a card
+    that argues alongside it can contradict it, and every number here is one
+    the packet already authorised (gate 0.3).
+    """
+    f = packet.facts
+    n_members = f.get("n_members")
+    agree = f.get("n_down") if str(packet.direction) == "down" else f.get("n_up")
+    median = _f(f.get("median_pct"))
+    if agree is None or n_members is None or median is None:
+        # A COUNT CARRIES ITS UNIVERSE (2026-07-31). "31 names green" on a card
+        # is the same numerator-with-no-universe defect as "18 groups on the
+        # move today": the reader cannot tell broad from narrow. The contrarian
+        # packet now carries the denominator; without it the card runs with no
+        # subtitle rather than with half a fact.
+        n_green, n_all = f.get("n_green"), f.get("n_defensive_members")
+        if n_green and n_all:
+            return f"{n_green} of {n_all} names green"
+        return None
+    way = "lower" if str(packet.direction) == "down" else "higher"
+    return f"{agree} of {n_members} {way}, median {median:+.1f}%"
+
+
+def _stamp_render_mode(entry: dict, published: dict, chart_id: str) -> None:
+    """Copy publish_card's render telemetry onto the media entry, and warn.
+
+    THE DEGRADED IMAGE HAS TO BE AUDIBLE — the same law content_studio's
+    ``_attach_chart_media`` follows, and the reason it exists there: when a
+    card is rastered by the legacy PIL fallback instead of headless Chrome the
+    post carries a visibly worse picture (no candles, no indicators, no footer
+    CTA), and the outbox entry looked IDENTICAL to a full SVG raster. Two lanes
+    write cards through one seam; only one of them could tell you what it got.
+
+    Bare print, line start, flushed: this runs inside an Actions step and every
+    logger in this repo prefixes, which makes GitHub drop the annotation.
+    """
+    mode = str(published.get("media_render") or "")
+    if mode:
+        entry["media_render"] = mode
+    if mode == "legacy_png":
+        print(f"::warning title=hot-tape-chart-legacy-fallback::"
+              f"{chart_id}: the SVG raster produced nothing, so this post "
+              f"carries the DEGRADED legacy PNG (no candles, no indicators, "
+              f"no footer CTA). Chrome is the rasteriser; a fallback here "
+              f"means it failed or timed out, not that the card is fine.",
+              flush=True)
+
+
+def resolve_group_card(
+    packet: HT.FactPacket,
+    *,
+    root: Path,
+    marketing_cfg: dict,
+    as_of: str,
+    now: datetime,
+) -> dict[str, Any]:
+    """The picture for a post about a GROUP of names. Same contract as
+    :func:`resolve_chart` — {"media", "published", "reason"}.
+
+    WHY THIS EXISTS. `needs_chart` used to answer False for the whole group
+    family, on the reasoning that a breadth read is not a post about one name
+    and has no price chart to draw. True, and it made the family
+    unpublishable: the copy names its movers ("Best: $SNDK +21.1%, $WDC
+    +15.2%"), and the publisher's chart law — a post that NAMES TICKERS ships
+    a picture, whatever kind it claims to be (operator 2026-07-30) —
+    quarantines every one of them. Two rules, each right on its own, that
+    between them deleted an entire post family: 19 queued on 2026-07-30, 19
+    quarantined.
+
+    A price chart was never the answer for a group. render_watchlist_card is —
+    the third member of the same card family, written for exactly this ("a
+    plain multi-ticker text post ... as a screenshot of a premium SaaS
+    watchlist panel").
+
+    The rows come straight from the packet, so nothing here can invent a name
+    or a number. The card does read bars, but only for the per-row sparkline
+    (load_closes n=10 under logo_root), and that read is silent on a miss — a
+    name with no local history draws no sparkline rather than a made-up one.
+    """
+    out: dict[str, Any] = {"media": None, "published": {}, "reason": "no-rows"}
+    rows = group_rows(packet)
+    if not rows:
+        return out
+    try:
+        from engine.marketing.chart_render import (  # noqa: PLC0415
+            chart_cta_enabled,
+            render_watchlist_card,
+        )
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+
+        svg = render_watchlist_card(
+            _group_card_title(packet),
+            rows,
+            as_of=as_of,
+            subtitle=_group_card_subtitle(packet),
+            logo_root=root,
+            cta=chart_cta_enabled(marketing_cfg),
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: group card render failed for %s: %s",
+                    packet.key, exc)
+        out["reason"] = "render-failed"
+        return out
+
+    # Keyed on the packet, not a ticker: this card is about the group.
+    chart_id = f"hottape-{packet.trigger}-{_slug(packet.sector or 'market')}-{now.strftime('%H%M')}Z"
+    try:
+        published = publish_card(svg, chart_id=chart_id, as_of=as_of, root=root)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("hot_tape_radar: publish_card failed for %s: %s", chart_id, exc)
+        published = {}
+    out["published"] = dict(published or {})
+    out["published"]["chart_id"] = chart_id
+
+    url = str((published or {}).get("media_url") or "").strip()
+    if not url.lower().startswith(("http://", "https://")):
+        out["reason"] = "no-media-url"
+        return out
+
+    entry: dict[str, Any] = {
+        "kind": "chart_svg",
+        "path": (published.get("svg_path")
+                 or f"data/marketing/outbox/media/{as_of}/{chart_id}.svg"),
+        "chart_id": chart_id,
+        "tickers": [r["ticker"] for r in rows],
+        "media_url": url,
+    }
+    if published.get("media_png_path"):
+        entry["media_png_path"] = published["media_png_path"]
+    _stamp_render_mode(entry, published or {}, chart_id)
+    out["media"] = entry
+    out["reason"] = "ok"
+    return out
+
+
 def resolve_chart(
     packet: HT.FactPacket,
     *,
@@ -987,6 +1319,7 @@ def resolve_chart(
     }
     if published.get("media_png_path"):
         entry["media_png_path"] = published["media_png_path"]
+    _stamp_render_mode(entry, published or {}, chart_id)
     out["media"] = entry
     out["reason"] = "ok"
     return out
@@ -1087,17 +1420,61 @@ def book_packet(
     phrased = phrase(packet, template_text, llm_cfg=llm_cfg)
     text = phrased["text"]
 
+    # PREFLIGHT BEFORE THE PICTURE (2026-07-30).
+    #
+    # resolve_chart() below is a Chrome raster AND an R2 upload. It used to run
+    # before enqueue, so every duplicate, near-duplicate and cap rejection paid
+    # full price for an image nobody would ever see — on a nightly render budget
+    # that is law (~67 min, 4-core-bound). Nothing enqueue rejects on depends on
+    # the media: the id hashes (account, kind, text, as_of), and the dedupe and
+    # cap checks read text and account. The deciding facts are all in hand HERE.
+    #
+    # This is an optimisation, never a gate. preflight_enqueue is fail-open and
+    # reads without the outbox lock, so it can only ever skip work it was going
+    # to lose anyway; enqueue below still runs every check authoritatively. The
+    # caller records these codes in the fired ledger (_TERMINAL_ENQUEUE_CODES),
+    # so a refusal here suppresses the re-detect on the next five-minute pass
+    # exactly as a post-render refusal did.
+    if not dry_run:
+        _pre = OB.preflight_enqueue(
+            account=account, kind="breaking", text=text, as_of=as_of,
+            root=root, cfg=marketing_cfg,
+        )
+        if _pre != "ok":
+            print(f"hot-tape REFUSE {packet.key} {_pre} (preflight, no render)",
+                  flush=True)
+            return {"status": _pre, "item_id": None, "text": text}
+
     media: list[dict] = []
     published: dict[str, Any] = {}
     chart_state = "none"
     if needs_chart(packet):
+        is_group = packet.trigger in GROUP_TRIGGERS
         if dry_run:
-            # Simulation: local bars only, no fetch, no render, no upload.
-            _, reason = load_bars(str(packet.ticker or ""), root, now=now, fetcher=None)
-            if reason != "ok":
-                print(f"hot-tape DROP {packet.key} {reason}", flush=True)
-                return {"status": f"drop:{reason}", "item_id": None, "text": text}
-            chart_state = "ok(simulated)"
+            # Simulation: local inputs only, no fetch, no render, no upload.
+            if is_group:
+                # A group card needs no bars — its rows ARE the packet — so the
+                # only way it can fail is having no names, which needs_chart
+                # already refused above.
+                chart_state = "ok(simulated,group)"
+            else:
+                _, reason = load_bars(str(packet.ticker or ""), root, now=now,
+                                      fetcher=None)
+                if reason != "ok":
+                    print(f"hot-tape DROP {packet.key} {reason}", flush=True)
+                    return {"status": f"drop:{reason}", "item_id": None, "text": text}
+                chart_state = "ok(simulated)"
+        elif is_group:
+            card = resolve_group_card(packet, root=root,
+                                      marketing_cfg=marketing_cfg,
+                                      as_of=as_of, now=now)
+            if card.get("media") is None:
+                print(f"hot-tape DROP {packet.key} {card.get('reason')}", flush=True)
+                return {"status": f"drop:{card.get('reason')}", "item_id": None,
+                        "text": text}
+            media = [card["media"]]
+            published = card.get("published") or {}
+            chart_state = "ok(group)"
         else:
             card = resolve_chart(packet, root=root, marketing_cfg=marketing_cfg,
                                  as_of=as_of, now=now, fetcher=fetcher,
@@ -1153,7 +1530,13 @@ def book_packet(
             "mode": phrased["mode"],
             "provider": phrased["provider"],
             "latency_ms": phrased["latency_ms"],
-            "violations": len(phrased["violations"]),
+            # THE STRINGS, NOT THE COUNT (2026-07-31). phrase() hands back the
+            # named violations and this stored `len(...)`, so the measured 52%
+            # validation-fallback rate was a number with no cause attached —
+            # undiagnosable from the queue, which is the only place it is
+            # recorded. Top 5: items.jsonl is read on every publisher pass.
+            "violations": [str(v) for v in (phrased["violations"] or [])][:5],
+            "violations_n": len(phrased["violations"] or []),
         }
 
     rc = OB.enqueue(item, root, cfg=marketing_cfg)
@@ -1219,6 +1602,15 @@ def emit(
     booked: list[str] = []
     llm = llm_cfg if isinstance(llm_cfg, dict) else {"llm": {}}
     said_capped = False
+    # Posts this pass DREW A CARD and then lost it. Counted because the loss is
+    # otherwise silent: a drop prints one stdout line among hundreds, the pass
+    # exits 0, and the lane reads healthy. That silence is how 2026-07-30 spent
+    # a whole session rendering 8,081 cards it could not host (boto3 was not
+    # installed, so every upload returned None) and shipped nothing. A rendered
+    # card is a Chrome raster, an R2 attempt and — because it happens after the
+    # copy pass — an LLM call, and a drop here is NOT recorded as fired, so the
+    # same story comes back on the next five-minute pass and pays it all again.
+    unhosted: list[str] = []
 
     def _over_day_cap() -> bool:
         nonlocal said_capped
@@ -1240,6 +1632,41 @@ def emit(
         if account == flagship_account and flagship_budget <= 0:
             # Budget spent this pass: the event still ships, on the wire desk.
             account = wire_account
+        # THE ROUTING DECISION, FROZEN BEFORE THE RESCUE (review, 2026-07-31).
+        # `flagship_budget` is charged against THIS value, never against the
+        # post-rescue `account`, because the two answer different questions:
+        # this one is "did the desk INTEND a flagship mirror", the other is
+        # "which desk was armed to take it". Reading the post-rescue account
+        # broke the valve in both directions:
+        #
+        #   * an intended mirror whose flagship desk was dark got rescued to the
+        #     wire, so `account == flagship_account` was False and the budget was
+        #     never charged — every big event in the pass mirrored, unbounded;
+        #   * budget exhaustion routed to the wire desk, which on the shipped
+        #     config is the DARK one, so live_account rescued it straight back to
+        #     flagship (it is first in `fallbacks`) — a mirror the budget had
+        #     already refused, and the decrement then ran a second time and drove
+        #     the budget negative.
+        #
+        # Charging the pre-rescue decision makes the code match the comment
+        # below: a dark-account rescue is FREE, and "only the biggest events get
+        # a second desk" survives however the desk_network switches are set.
+        routed_account = account
+        # LIVENESS, AFTER ROUTING AND AFTER THE MIRROR BUDGET. `emit.account`
+        # defaults to mastermind_news, a desk that is DARK in desk_network, so
+        # every sub-85 event was rendered, phrased, uploaded and enqueued only
+        # to be quarantined at dispatch with account_disabled — 19 items on
+        # 2026-07-31 alone. wire_routing exists to catch exactly this and this
+        # lane never asked it. No-op (and silent) whenever the target IS armed,
+        # or whenever liveness cannot be established: see HT.live_account.
+        #
+        # NOT charged to flagship_budget below. That budget bounds intentional
+        # MIRRORS — "only the biggest events get a second desk" — and a fallback
+        # is a rescue, not a mirror. The volume valve for a rescued item is
+        # where it always was: emit.max_per_run / max_per_day here, and the
+        # publisher's per-account daily cap and cadence resolver downstream.
+        account = HT.live_account(account, marketing_cfg=marketing_cfg, root=root,
+                                  fallbacks=(flagship_account, wire_account))
 
         result = book_packet(packet, account=account, root=root, cfg=cfg,
                              marketing_cfg=marketing_cfg, llm_cfg=llm, now=now,
@@ -1249,7 +1676,7 @@ def emit(
         if status == "would_book":
             booked.append(packet.key)
             day_used += 1
-            if account == flagship_account:
+            if routed_account == flagship_account:
                 flagship_budget -= 1
             continue
         if status == "queued":
@@ -1257,7 +1684,7 @@ def emit(
                                                  account=account))
             booked.append(result["item_id"])
             day_used += 1
-            if account == flagship_account:
+            if routed_account == flagship_account:
                 flagship_budget -= 1
             continue
         if status in _TERMINAL_ENQUEUE_CODES:
@@ -1267,6 +1694,13 @@ def emit(
             # cap rejection came back every five minutes: re-detected, re-drawn
             # (a Chrome raster + an R2 upload each time) and re-refused.
             HT.append_fired(root, HT.fired_entry(packet, item_id=None, account=account))
+            continue
+        if status in ("drop:no-media-url", "drop:render-failed"):
+            # DELIBERATELY NOT recorded as fired: an upload that blipped should
+            # be retried on the next pass, not written off for the day. The
+            # annotation below is what keeps that retry from being invisible
+            # when it is an outage rather than a blip.
+            unhosted.append(f"{packet.key} ({status.split(':', 1)[1]})")
 
     # ── Two-step publish: the context brief for an already-posted alert ──────
     # A demo is bounded to ONE post (reviewer M5). pending_briefs already
@@ -1278,6 +1712,16 @@ def emit(
             break
         if _over_day_cap():
             break
+        # Same liveness resolution as the alert loop above, and it belongs HERE
+        # rather than in pending_briefs (which is where the hardcoded
+        # `emit.account` fallback lives) for one reason: this is the function
+        # that holds `marketing_cfg`, and desk_network lives in marketing.yml,
+        # not in hot_tape.yml. Resolving at the booking seam covers the alert's
+        # inherited account AND that fallback with one call, and a brief posted
+        # to a grave is worse than an alert posted to one — it is the second
+        # half of a pair whose first half went out on a live desk.
+        account = HT.live_account(account, marketing_cfg=marketing_cfg, root=root,
+                                  fallbacks=(flagship_account, wire_account))
         result = book_packet(packet, account=account, root=root, cfg=cfg,
                              marketing_cfg=marketing_cfg, llm_cfg=llm, now=now,
                              as_of=as_of, dry_run=dry_run, fetcher=fetcher, pack=pack)
@@ -1301,6 +1745,19 @@ def emit(
             # stops the radar rebuilding and re-refusing the same brief every
             # pass until the window closes.
             HT.append_fired(root, HT.fired_entry(packet, item_id=None, account=account))
+
+    if unhosted:
+        # BARE print, line-start, flushed — never through the logger. Every
+        # builder here logs with a prefixing format, so log.warning("::warning")
+        # emits "WARNING ::warning" and GitHub silently drops it: the call
+        # reviews as an alarm and produces nothing in the Actions summary.
+        print(f"::warning title=hot-tape-unhosted-card::{len(unhosted)} post(s) "
+              f"drew a card this pass and could not host it, so they were "
+              f"dropped: {'; '.join(unhosted[:5])}"
+              f"{' ...' if len(unhosted) > 5 else ''}. Every one of these cost a "
+              f"raster and a copy pass and will be retried next pass. If this "
+              f"repeats, the R2 upload is failing (check boto3 is installed and "
+              f"R2_* are set), not the tape.", flush=True)
     return booked
 
 
@@ -1536,6 +1993,66 @@ def _parse_iso(raw: Any) -> datetime | None:
 # Entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
+#: Hot-tape render litter older than this is swept at the start of each pass.
+#: 2 days keeps today and yesterday available for an operator looking at a card
+#: in the console, and throws away everything the R2 URL already owns.
+_HOT_TAPE_RENDER_RETENTION_DAYS = 2
+
+
+def sweep_hot_tape_renders(
+    root: "Path | str",
+    *,
+    now: datetime | None = None,
+    retention_days: int = _HOT_TAPE_RENDER_RETENTION_DAYS,
+) -> int:
+    """Delete stale hottape-*.svg/.png render inputs. Returns files removed.
+
+    THE LEAK (2026-07-30): this lane renders a card for EVERY candidate it
+    evaluates, before it knows whether the post will ship, on every intraday
+    sweep. In one day that wrote 8,068 hottape-*.svg into
+    data/marketing/outbox/media/<date>/ -- a directory that is COMMITTED, because
+    the nightly chart-NNN.svg snapshots there feed the admin console preview.
+    420 MB in the media tree, ~8k new tracked files per day, and a git that had
+    started printing "too many unreachable loose objects" on every command.
+
+    The .gitignore now excludes hottape-*.svg specifically (the nightly
+    chart-NNN.svg snapshots stay committed). This is the other half: without a
+    sweep the files still accumulate on the runner's disk forever.
+
+    Deletes ONLY files matching the hottape- prefix. Never raises: a sweep
+    failure must not cost the radar its pass.
+    """
+    from pathlib import Path as _P
+    base = _P(root) / "data" / "marketing" / "outbox" / "media"
+    ts = now or datetime.now(timezone.utc)
+    cutoff = (ts - timedelta(days=retention_days)).date()
+    removed = 0
+    try:
+        if not base.is_dir():
+            return 0
+        for day_dir in base.iterdir():
+            if not day_dir.is_dir():
+                continue
+            try:
+                day = date.fromisoformat(day_dir.name)
+            except (ValueError, TypeError):
+                continue          # not a date-named dir: leave it alone
+            if day >= cutoff:
+                continue
+            for f in list(day_dir.glob("hottape-*")):
+                try:
+                    f.unlink()
+                    removed += 1
+                except OSError:
+                    pass
+    except Exception as exc:  # noqa: BLE001 — never cost the radar its pass
+        log.warning("hot_tape_radar: render sweep failed: %s", exc)
+        return removed
+    if removed:
+        log.info("hot_tape_radar: swept %d stale render file(s)", removed)
+    return removed
+
+
 def run(
     root: Path,
     *,
@@ -1554,6 +2071,9 @@ def run(
     ts = now or datetime.now(timezone.utc)
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
+
+    # Sweep this lane's own render litter before doing anything else.
+    sweep_hot_tape_renders(root, now=ts)
     cfg = HT.load_config(root)
 
     if not bool(_cfg(cfg, "enabled", True)):
@@ -1701,12 +2221,27 @@ def main(argv: list[str] | None = None) -> int:
                              "(also via env HOT_TAPE_DEMO=1); items are stamped demo")
     parser.add_argument("--root", default=None,
                         help="repo root (default: this script's parent)")
+    parser.add_argument("--window-status", action="store_true", dest="window_status",
+                        help="print IN_WINDOW=0|1 and WINDOW_END_EPOCH=<int> for the "
+                             "session-long pass loop, then exit. Detects nothing, "
+                             "writes nothing.")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s",
                         stream=sys.stderr)
     root = Path(args.root) if args.root else _repo_root()
     demo = bool(args.demo) or _flag("HOT_TAPE_DEMO")
+
+    if args.window_status:
+        # ONE window authority. The session-long loop in marketing-hot-tape.yml
+        # needs to know when to stop passing, and re-deriving the ET window in
+        # bash would be a second implementation of the DST reasoning that
+        # HT.in_window already carries — the exact split-brain that put a UTC
+        # window in the shipped crons. So it asks the radar instead.
+        print(f"IN_WINDOW={1 if (demo or HT.in_window(None, HT.load_config(root))) else 0}")
+        print(f"WINDOW_END_EPOCH={window_end_epoch(root, demo=demo)}")
+        return 0
+
     try:
         return run(root, demo=demo, dry_run=bool(args.dry_run))
     except Exception as exc:  # noqa: BLE001

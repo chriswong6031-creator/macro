@@ -202,7 +202,12 @@ def test_all_types_present_in_every_account():
     # their queues when no heatmap is present (tests run without real data).
     _MOVERS_DESK_TYPES = {"mover", "theme_list"}
     for acct in plan["accounts"]:
-        mix = acct["mix_observed"]
+        # `mix_allocated`, not `mix_observed`: the largest-remainder >=1 guarantee
+        # is a property of what the ALLOCATOR emits. `mix_observed` is recomputed
+        # from the surviving queue after the perishability cut (operator
+        # 2026-07-30) drops perishable kinds booked past D1, so it describes the
+        # shipping plan and a low-tilt kind can legitimately round to zero there.
+        mix = acct["mix_allocated"]
         # All types must have at least 1 slot out of 21 (largest-remainder guarantees this),
         # EXCEPT mover/theme_list on non-flagship accounts (heatmap-only; not in test env).
         for type_id in all_type_ids:
@@ -218,7 +223,11 @@ def test_signal_is_largest_type_in_every_account():
     cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
     plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None)
     for acct in plan["accounts"]:
-        mix = acct["mix_observed"]
+        # Allocator property (see the note in test_all_types_present_in_every_account):
+        # the tilt makes signal the biggest share of what is ALLOCATED. After the
+        # perishability cut, signal is D1-only while watchlist spans the week, so
+        # the shipping mix is deliberately not signal-led.
+        mix = acct["mix_allocated"]
         signal_count = mix.get("signal", 0)
         for type_id, count in mix.items():
             if type_id != "signal":
@@ -1114,10 +1123,10 @@ def test_content_plan_all_enabled_by_default():
 
 
 def test_slot_labels_are_the_45min_pacific_ladder():
-    """The plan schedules onto the 19-slot 45-min Pacific ladder (S1..S19),
-    replacing the old AM/PM/EOD triple; day N labels prefix D<N>-, and no legacy
-    suffix survives (outbox.slot_datetime resolves S1..S19 to real Pacific-clock
-    times)."""
+    """The plan schedules onto the 28-rung 30-min Pacific ladder (S1..S28,
+    operator re-spec 2026-07-27), replacing the old AM/PM/EOD triple; day N
+    labels prefix D<N>-, and no legacy suffix survives (outbox.slot_datetime
+    resolves S1..S28 to real Pacific-clock times)."""
     from engine.marketing.content_studio import _slot_labels
     assert _slot_labels(1, 19) == [f"D1-S{i}" for i in range(1, 20)]
     two_days = _slot_labels(2, 19)
@@ -1306,3 +1315,181 @@ def test_artifact_keep_list_covers_what_admin_renders():
     assert not missing, (
         f"admin renders {sorted(missing)} but the writer strips them — the "
         f"Content Studio badge would read empty for every post")
+
+
+# ---------------------------------------------------------------------------
+# Movers/theme desk: counted in the plan census, and first in line for a card
+# (X Growth wave 1, 2026-07-31)
+# ---------------------------------------------------------------------------
+
+def _write_heatmaps(root: Path) -> None:
+    """sp500 + themes heatmap fixtures with enough supply for 2 movers and 2
+    theme lists (movers_source wants |1D| >= 3.0 and >= 4 members per theme)."""
+    md = root / "site" / "marketdata"
+    md.mkdir(parents=True, exist_ok=True)
+    (md / "sp500_heatmap.json").write_text(json.dumps({
+        "asof": "2026-07-31",
+        "tiles": [
+            {"t": "AAPL", "name": "Apple", "sector": "Technology",
+             "perf": {"1D": 7.5}},
+            {"t": "NVDA", "name": "NVIDIA", "sector": "Technology",
+             "perf": {"1D": -9.1}},
+            {"t": "AMD", "name": "AMD", "sector": "Technology",
+             "perf": {"1D": -6.2}},
+        ],
+    }), encoding="utf-8")
+    (md / "themes_heatmap.json").write_text(json.dumps({
+        "tiles": [
+            {"t": "aicompute", "name": "Compute",
+             "sector": "Artificial Intelligence", "perf": {"1D": -3.0},
+             "members": [{"t": "NVDA", "perf": {"1D": -4.5}},
+                         {"t": "AMD", "perf": {"1D": -6.2}},
+                         {"t": "SMCI", "perf": {"1D": -5.1}},
+                         {"t": "AVGO", "perf": {"1D": -3.8}},
+                         {"t": "MRVL", "perf": {"1D": -2.5}}]},
+            {"t": "biotech", "name": "Biotech Core",
+             "sector": "Healthcare & Biotech", "perf": {"1D": 2.5},
+             "members": [{"t": "AMGN", "perf": {"1D": 4.2}},
+                         {"t": "BIIB", "perf": {"1D": 3.1}},
+                         {"t": "REGN", "perf": {"1D": 2.8}},
+                         {"t": "GILD", "perf": {"1D": 1.9}},
+                         {"t": "VRTX", "perf": {"1D": 2.2}}]},
+        ],
+    }), encoding="utf-8")
+
+
+def _reach_items(plan: dict) -> list[dict]:
+    return [it for a in plan["accounts"] for it in (a.get("queue") or [])
+            if it.get("provenance") == "movers_desk"]
+
+
+def test_movers_items_are_counted_in_the_plan_summary(tmp_path):
+    """THE FALSE-EMPTY DEFECT: the movers desk appended straight to
+    `acct_row["queue"]` and never extended `all_items`, so `total_posts` /
+    `signal_posts` / `distinctness` could not see a single mover or theme post —
+    a movers-only night reported `total_posts: 0`, which is the same reading the
+    DeepSeek copy outage produced.
+
+    With no confluence file and no filing supply under `tmp_path`, every queued
+    post came from a producer that feeds `all_items`, so the census must equal
+    the queue exactly. Pre-fix it is short by the number of reach items.
+    """
+    from engine.marketing.content_studio import content_plan
+
+    _write_heatmaps(tmp_path)
+    cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
+    plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None, root=tmp_path)
+
+    reach = _reach_items(plan)
+    assert reach, "fixture produced no movers-desk items"
+
+    queued = [it for a in plan["accounts"] for it in (a.get("queue") or [])]
+    assert plan["summary"]["total_posts"] == len(queued), (
+        f"summary.total_posts={plan['summary']['total_posts']} but the plan "
+        f"carries {len(queued)} queued posts, {len(reach)} of them movers-desk "
+        f"— the census cannot see the reach lane")
+
+
+def test_movers_items_take_real_d1_ladder_rungs(tmp_path):
+    """A MOVER-NN / THEME-NN slot cannot be emitted (outbox takes D1- only), so
+    the desk's own slot label was the reason it never published."""
+    from engine.marketing.content_studio import content_plan
+
+    _write_heatmaps(tmp_path)
+    cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
+    plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None, root=tmp_path)
+
+    reach = _reach_items(plan)
+    assert reach
+    bad = [it["slot"] for it in reach if not str(it["slot"]).startswith("D1-")]
+    assert not bad, f"movers-desk items on unemittable slots: {bad}"
+    # Each desk books a rung at most once — a double-booked time is the thing
+    # the free-pool exists to prevent.
+    for acct in plan["accounts"]:
+        d1 = [it["slot"] for it in (acct.get("queue") or [])
+              if str(it.get("slot") or "").startswith("D1-")]
+        assert len(d1) == len(set(d1)), f"{acct['id']} double-booked: {sorted(d1)}"
+
+
+def _fake_conf_many_tickers(n: int = 9) -> dict:
+    """A confluence file with `n` fresh, high-edge combos on distinct tickers —
+    enough to exhaust the whole 8-card reach budget on its own."""
+    from datetime import date, timedelta
+
+    fresh = (date.today() - timedelta(days=2)).isoformat()
+    tickers = ["CONFA", "CONFB", "CONFC", "CONFD", "CONFE",
+               "CONFF", "CONFG", "CONFH", "CONFI"][:n]
+    return {
+        "legs": [
+            {"leg_id": "golden_cross_7_35@D", "signal_id": "golden_cross_7_35",
+             "tf": "D", "kind": "event", "family": "ma_crosses", "direction": 1,
+             "display_en": "Golden Cross (7/35)", "display_zh": "黄金交叉"},
+        ],
+        "combos": {
+            "long": [
+                {
+                    "id": f"L{i:04d}", "legs": [0], "dir": 1,
+                    "name_en": f"Combo {i}",
+                    "h21": {"n": 90, "wr": 0.65, "wr_mc_test": 0.80,
+                            "n_test": 15, "months_test": 12},
+                    "edge_wr_test": 0.30, "rank_score": 0.18,
+                    "n_fires": 90, "fires_last3y": 9,
+                    "last_fire": fresh, "first_fire": "2023-01-05",
+                    "active_now": [t], "recent_fires": [],
+                }
+                for i, t in enumerate(tickers, start=1)
+            ],
+            "short": [],
+        },
+    }
+
+
+def test_reach_chart_budget_reserves_cards_for_the_movers_desk(tmp_path, monkeypatch):
+    """THE STARVED LANE: the 8-card reach budget was spent in source order, so
+    confluence — which slots posts CONF-NN and therefore CANNOT reach the outbox
+    at all — took all 8 and the movers/theme desk got none. `theme_list` and
+    `mover` are ticker-rollup kinds, and the publisher refuses a cashtag-bearing
+    post with no picture, so a chartless mover is unpublishable.
+
+    Pre-fix this test sees 8 confluence cards and 0 theme cards.
+    """
+    import engine.marketing.chart_render as chart_render
+    from engine.marketing.content_studio import content_plan
+
+    conf_dir = tmp_path / "site" / "factordata"
+    conf_dir.mkdir(parents=True)
+    (conf_dir / "tech_confluence.json").write_text(
+        json.dumps(_fake_conf_many_tickers()), encoding="utf-8")
+    _write_heatmaps(tmp_path)
+
+    # Synthetic OHLCV so the confluence lane can actually build cards without a
+    # parquet store; the renderer is stubbed because this test is about BUDGET,
+    # not artwork.
+    n = 60
+    dates = [f"2026-05-{(i % 28) + 1:02d}" for i in range(n)]
+    series = [100.0 + i for i in range(n)]
+    monkeypatch.setattr(
+        chart_render, "load_ohlcv_windowed",
+        lambda ticker, root=None, *a, **k: (
+            (dates, series, series, series, series, [1_000.0] * n), 0),
+    )
+    monkeypatch.setattr(chart_render, "render_chart_v2",
+                        lambda **kw: "<svg data-stub='conf'></svg>")
+
+    cfg = {"desk_network": {"stage": "A", "accounts": _SAMPLE_ACCOUNTS}}
+    plan = content_plan(cfg, _SAMPLE_PLANS, closes_loader=None, root=tmp_path)
+
+    charts = plan["featured_charts"]
+    conf_charts = [c for c in charts if c.get("source") == "confluence"]
+    theme_charts = [c for c in charts if c.get("source") == "theme_list"]
+
+    assert conf_charts, "fixture failed to exercise the confluence chart lane"
+    assert theme_charts, (
+        f"movers/theme desk got NO card while confluence took "
+        f"{len(conf_charts)} — the publishable lane is starved by one that "
+        f"cannot emit")
+    assert len(conf_charts) <= 2, (
+        f"confluence took {len(conf_charts)} cards; its share of the 8-card "
+        f"reach budget is 2 once the movers reserve is honoured")
+    # The TOTAL allowance is unchanged — this is a split, not a raise.
+    assert len(charts) <= 8, f"reach budget breached: {len(charts)} charts"

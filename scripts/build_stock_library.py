@@ -57,6 +57,7 @@ from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-bla
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
+from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("stock_library")
@@ -512,18 +513,33 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
             + ycfg.get("crypto", []))
     scfg = config.load().get("stock_search", {})
     extra_names = scfg.get("extra_names", {}) or {}
+    # Render-only builds do not collect fresh per-ticker Yahoo files. The tracked
+    # basket-only deep close cache is an honest fallback for curated searchable names,
+    # so a newly added basket can ship complete stock profiles on its first render.
+    basket_extra = None
+    _bep = config.data_dir() / "baskets" / "extras.parquet"
+    if _bep.exists():
+        try:
+            basket_extra = pd.read_parquet(_bep)
+        except Exception as e:  # noqa: BLE001 — one optional cache must not break the library
+            log.warning("basket extras unreadable for stock-library fallback (%s)", e)
     for t in etfs + (scfg.get("extra_tickers", []) or []):
         if t in seen or t.startswith("^"):
             continue
         df = store.read("yahoo", t)
-        if df is None:
+        close, high = None, None
+        if df is not None:
+            close, high = df["close"], df.get("high")
+        elif basket_extra is not None and t in basket_extra:
+            close = basket_extra[t].dropna()
+        if close is None or close.empty:
             continue
         lbl = extra_names.get(t)
         if lbl:  # a real single stock: show the company name + its GICS sector
-            out.append((t, df["close"], df.get("high"),
+            out.append((t, close, high,
                         str(lbl.get("name", t)), str(lbl.get("sector", ""))))
         else:    # an ETF / macro proxy
-            out.append((t, df["close"], None, ETF_LABELS.get(t, t), "ETF / macro"))
+            out.append((t, close, None, ETF_LABELS.get(t, t), "ETF / macro"))
         seen.add(t)
     return out
 
@@ -2086,6 +2102,7 @@ def main() -> int:
     _liq_map: dict[str, dict] = {}              # P0.3 liquidity/capacity hygiene (display-only, R10)
     to_write: list[tuple[str, dict]] = []
     uni = universe()
+    latest_volumes = latest_volume_map("us")
     # Bare print, NOT a logger call: GitHub only parses a workflow command when
     # "::" STARTS the line, and this module's logging format prefixes every
     # record (e.g. "WARNING ::warning ..."), which silently drops the annotation.
@@ -2731,6 +2748,7 @@ def main() -> int:
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]          # alpha-z in the index for client ranking
         index.append(idx)

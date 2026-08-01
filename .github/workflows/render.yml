@@ -40,10 +40,10 @@ on:
         default: all
         options: [all, macro, intl, china, hk, canada, markets, gex, baskets, sits]
       runner:
-        description: "Runner label — macstudio is the fast default; use render-linux as the PC fallback"
+        description: "Runner label — render-heavy is reserved; macstudio/render-linux are manual fallbacks"
         type: choice
-        default: macstudio
-        options: [render-linux, macstudio]
+        default: render-heavy
+        options: [render-heavy, render-linux, macstudio]
   push:
     branches: [main]
     # A HUMAN pushing a template or builder change auto-renders + deploys. The
@@ -131,6 +131,7 @@ on:
       - "scripts/build_intel_hub.py"
       - "scripts/build_intelligence.py"
       - "scripts/build_intl.py"
+      - "scripts/build_international_macro.py"
       - "scripts/build_intl_library.py"
       - "scripts/build_ipo.py"
       - "scripts/build_leader_radar.py"
@@ -145,9 +146,11 @@ on:
       - "scripts/build_methodology.py"
       - "scripts/build_movers_page.py"
       - "scripts/build_news.py"
+      - "scripts/build_options_command.py"
       - "scripts/build_options_entry_state.py"
       - "scripts/build_options_flow.py"
       - "scripts/build_options_ivspread.py"
+      - "scripts/build_options_screener.py"
       - "scripts/build_options_skew.py"
       - "scripts/build_override_shadow.py"
       - "scripts/build_policy_lever.py"
@@ -210,11 +213,14 @@ concurrency:
 
 jobs:
   render:
-    # The full macstudio pool is the measured fast path (40-71m quiet-box runs versus
-    # 65-108m on render-linux, with the Mac-saved zstd caches restoring natively).
-    # Keep render-linux as an explicit manual fallback; GHA has no OR-label fallback
-    # and the venv/bootstrap steps below remain portable both ways.
-    runs-on: ${{ github.event.inputs.runner || 'macstudio' }}
+    # `macstudio` currently represents logical agents on only two physical Macs.
+    # General daily/asia/codex jobs could therefore run beside this serial renderer
+    # and turn a 40-71m quiet-box build into a 2h+ run. `render-heavy` reserves one
+    # M2 host for this lane. The dispatch input retains the shared Mac pool and
+    # render-linux as explicit operator fallbacks; bootstrap remains portable.
+    runs-on:
+      - self-hosted
+      - ${{ github.event.inputs.runner || 'render-heavy' }}
     # was 75 — a scope=all render now takes 40-71m when the box is quiet (measured
     # 2026-07-11: run 29155365959 = 40m, run 29169451233 = 71.4m) and blew straight
     # through 75m under the evening merge-spree congestion (run 29172926033 CANCELLED
@@ -223,10 +229,132 @@ jobs:
     # #2271) and asia-close (#2193). 115m ≈ 1.6× the worst quiet-box run.
     timeout-minutes: 115
     steps:
+      - name: bound persisted render checkout
+        id: bound
+        # Self-hosted workspaces persist between jobs. The generated site history made
+        # their .git directories grow without bound (measured 2026-07-30: 4.5–26 GB
+        # across the local Mac pool; run 30530156302 then spent >20m in checkout's
+        # index-pack before one builder ran). Once the object store crosses 1 GiB,
+        # quarantine the oversized Git store, but RETAIN the clean current working tree:
+        # main contains ~2.85 GB / 49.7k tracked files, so deleting the tree merely trades
+        # the 26 GB history problem for a 25m+ cold download. A local metadata-only clone
+        # gives the runner a shallow partial repository whose index already describes the
+        # retained tree. A local config marker keeps later runs on that managed path:
+        # fetch/reset only real main deltas and keep skipping actions/checkout, whose
+        # unconditional detach would re-download all 49.7k current-tree blobs. The exact
+        # workspace shape is validated before any destructive command. The quarantined
+        # store lives under RUNNER_TEMP, which the runner also cleans after the job.
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -d .git ] || exit 0
+          GIT_KIB=$(du -sk .git | awk '{print $1}')
+          GIT_MAX_KIB="${CHECKOUT_GIT_MAX_KIB:-1048576}"
+          validate_workspace() {
+            case "${GITHUB_WORKSPACE:-}" in
+              */_work/*/*) ;;
+              *) echo "::error::refusing checkout reset outside a runner _work repository: ${GITHUB_WORKSPACE:-unset}"; exit 1 ;;
+            esac
+            [ "$PWD" = "$GITHUB_WORKSPACE" ] || {
+              echo "::error::refusing checkout reset because PWD is not GITHUB_WORKSPACE"
+              exit 1
+            }
+          }
+          MANAGED=$(git config --local --get macro.renderMetadataCheckout || true)
+          if [ "$MANAGED" != "true" ] \
+            && [ "$(git rev-parse --is-shallow-repository 2>/dev/null || true)" = "true" ] \
+            && [ "$(git config --local --get remote.origin.partialclonefilter || true)" = "blob:none" ]; then
+            # One-time adoption for workspaces compacted by the immediately preceding
+            # workflow revision, before the persistent marker existed. It is also safe
+            # for checkout-created shallow partial clones: reset below repairs missing or
+            # dirty paths while the stat-valid retained tree avoids unchanged blob fetches.
+            git config --local macro.renderMetadataCheckout true
+            MANAGED=true
+            echo "::notice::adopted existing shallow blobless render checkout"
+          fi
+          if [ "$MANAGED" = "true" ] && [ "${GIT_KIB:-0}" -le "$GIT_MAX_KIB" ]; then
+            validate_workspace
+            git fetch --no-tags --depth=1 origin main
+            SEED_SHA=$(git rev-parse FETCH_HEAD)
+            # Successful renders leave site/ clean but may leave throwaway data/ writes;
+            # timed-out renders can leave either namespace dirty. A hard reset with a
+            # stat-populated index fetches only dirty or main-changed paths from the
+            # promisor remote, not every unchanged working-tree blob.
+            git reset --hard "$SEED_SHA"
+            git clean -ffdx
+            git update-index --refresh
+            echo "checkout_ready=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::refreshed managed render checkout to $SEED_SHA with a $(du -sh .git | awk '{print $1}') metadata store"
+            exit 0
+          fi
+          [ "${GIT_KIB:-0}" -gt "$GIT_MAX_KIB" ] || {
+            echo "::notice::persisted checkout is $((GIT_KIB / 1024)) MiB; below the reset bound"
+            exit 0
+          }
+          validate_workspace
+          CHECKOUT_TRASH="${RUNNER_TEMP:?}/macro-git-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+          CHECKOUT_META="${RUNNER_TEMP:?}/macro-meta-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}"
+          case "$CHECKOUT_TRASH $CHECKOUT_META" in
+            "$RUNNER_TEMP"/macro-git-"$GITHUB_RUN_ID"-"$GITHUB_RUN_ATTEMPT $RUNNER_TEMP"/macro-meta-"$GITHUB_RUN_ID"-"$GITHUB_RUN_ATTEMPT") ;;
+            *) echo "::error::refusing unexpected checkout quarantine paths"; exit 1 ;;
+          esac
+          [ ! -e "$CHECKOUT_TRASH" ] && [ ! -e "$CHECKOUT_META" ] || {
+            echo "::error::refusing to overwrite an existing checkout quarantine"
+            exit 1
+          }
+          REMOTE_URL=$(git remote get-url origin)
+          # Update with the complete old store BEFORE replacing its metadata. Running
+          # actions/checkout against a blobless index invokes `checkout --detach`,
+          # which lazy-fetches every tracked blob even when the retained files match
+          # (live validation 30543197076 requested 48,877 objects). The old store
+          # already owns nearly every blob, so this fetch/reset downloads only deltas.
+          git fetch --no-tags --depth=1 origin main
+          SEED_SHA=$(git rev-parse FETCH_HEAD)
+          echo "::notice::compacting oversized persisted checkout ($((GIT_KIB / 1024)) MiB) at $SEED_SHA"
+          # A timed-out render can leave tracked and ignored builder outputs dirty.
+          # Restore the retained tree while its complete old object store is available.
+          git reset --hard "$SEED_SHA"
+          git clean -ffdx
+          echo "CHECKOUT_TRASH=$CHECKOUT_TRASH" >> "$GITHUB_ENV"
+          mv .git "$CHECKOUT_TRASH"
+          # Serve a metadata-only depth-1 clone locally. The old tree's blobs stay on
+          # disk as regular working files; they are not copied into the new object store.
+          git --git-dir="$CHECKOUT_TRASH" config uploadpack.allowFilter true
+          git clone --quiet --no-checkout --single-branch --branch main --depth=1 \
+            --filter=blob:none "file://$CHECKOUT_TRASH" "$CHECKOUT_META"
+          mv "$CHECKOUT_META/.git" "$GITHUB_WORKSPACE/.git"
+          rmdir "$CHECKOUT_META"
+          git remote set-url origin "$REMOTE_URL"
+          git config --local macro.renderMetadataCheckout true
+          # Populate index stat data from the retained clean files without checking out
+          # (and therefore without lazy-fetching) all ~49.7k current-tree blobs.
+          git reset --mixed HEAD
+          git update-index --refresh
+          echo "checkout_ready=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::retained current tree with a $(du -sh .git | awk '{print $1}') shallow metadata store"
       - uses: actions/checkout@v4
+        # checkout@v4 unconditionally detaches an existing branch before fetching its
+        # requested ref. On the managed blobless checkout that operation asks the
+        # promisor remote for the entire 2.85 GB current tree. The bound step has already
+        # updated/reset-cleaned main, both on initial compaction and every managed reuse.
+        if: steps.bound.outputs.checkout_ready != 'true'
         with:
           ref: main
-      - run: git pull origin main
+          # Keep the complete current tree (all builders need committed data + site),
+          # but never download historical generated-site blobs. Combined with the
+          # bounded reset above, each runner retains one useful tree, not tens of GB
+          # of obsolete HTML generations.
+          filter: blob:none
+          fetch-depth: 1
+          # The publish step installs one process-local token. Persisting checkout's
+          # header as well sends duplicate Authorization headers and GitHub intermittently
+          # answers HTTP 400 (run 30566352541: eight failed fetches before attempt 9).
+          persist-credentials: false
+      - run: |
+          git pull origin main
+          # A checkout-created partial clone is safe to reuse on the next render even
+          # when this run did not enter through the managed fast path.
+          git config --local macro.renderMetadataCheckout true
       - name: python 3.12 venv (self-hosted runner; Linux render-linux, Homebrew fallback)
         run: |
           VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
@@ -332,10 +460,13 @@ jobs:
               templates/china.html.j2|templates/china_news.html.j2|scripts/build_china.py) echo china;;
               templates/china_special_situations.html.j2|templates/_china_special_situations_*.html.j2|scripts/build_china_special_situations.py) echo china;;
               templates/intl.html.j2|scripts/build_intl.py) echo intl;;
+              templates/international_macro.html.j2|scripts/build_international_macro.py|engine/international_macro_dashboard.py|collectors/intl_macro.py|data/intl_risk/cb_calendar.yml|docs/INTERNATIONAL_MACRO_DATA_CONTRACT.md) echo intl;;
               templates/hk.html.j2|scripts/build_hk.py) echo hk;;
               templates/canada.html.j2|templates/canada_stock.html.j2|templates/canada_history.html.j2|templates/canada_sector.html.j2|scripts/build_canada.py|scripts/build_canada_library.py) echo canada;;
               templates/commodities.html.j2|templates/spr.html.j2|templates/forex.html.j2|templates/bonds.html.j2|templates/crossasset.html.j2|templates/transmission.html.j2|templates/discovery.html.j2|templates/macro_context.html.j2|scripts/build_commodities.py|scripts/build_spr.py|scripts/build_forex.py|scripts/build_bonds.py|scripts/build_crossasset.py|scripts/build_transmission.py|scripts/build_discovery.py|scripts/build_macro_context.py) echo markets;;
               templates/gex.html.j2|scripts/build_gex_board.py|scripts/build_options_flow.py|scripts/build_options_skew.py|scripts/build_vol_regime.py) echo gex;;
+              # OIP E8 leaf-page narrowing — rationale in the step's YAML comment block.
+              templates/options.html.j2|templates/options_screener.html.j2|scripts/build_options_command.py|scripts/build_options_screener.py) echo gex;;
               templates/baskets.html.j2|templates/methodology.html.j2|scripts/build_baskets.py|scripts/build_methodology.py) echo baskets;;
               templates/dashboard.html.j2|templates/stock.html.j2|templates/news.html.j2|scripts/build_site.py) echo macro;;
               templates/special_situations.html.j2|templates/_special_situations_*.html.j2|scripts/build_special_situations.py) echo sits;;
@@ -380,6 +511,63 @@ jobs:
           else S="$DIRTY"; echo "::notice::dirty since last covering renders -> scope=$S"
           fi
           echo "scope=$S" >> "$GITHUB_OUTPUT"
+      # ── OIP E8 express-lane coverage (2026-07-29) ──────────────────────────────
+      # NOTE ON LENGTH: this prose lives in a YAML comment ABOVE the step, not inside
+      # `run:`. The scalar has a hard ceiling GitHub enforces by DE-REGISTERING the
+      # workflow (tests/test_render_run_size_cap.py); comments here cost it nothing.
+      # engine-render.yml's twin scalar sits ~350 chars from that ceiling, so keep new
+      # explanation for BOTH lanes here and in its mirror block.
+      #
+      # build_options_command (options.html, the canonical options surface) and
+      # build_options_screener (options_screener.html + the workspace's Scanner payload
+      # site/screenerdata/rows.json) were BOTH daily.yml-only. So every express render
+      # refreshed the stores those pages describe and committed the pages unchanged — the
+      # flow_leaders (#3515) / research_vault (#3487) freeze class — and an edit to
+      # build_options_command.py or templates/options.html.j2 never baked until the
+      # nightly, because scope=all did not run the builder either.
+      #
+      # PLACEMENT LAW. build_options_command re-serialises six stores whose producers
+      # STRADDLE the phases: gex_board / vol_regime / options_screener are cl_gex members
+      # (parallel band) while build_flow_leaders is the post-band flowleaders() step. So it
+      # is a SERIAL POST-BAND step (optionscmd(), immediately after flowleaders()) and
+      # never a cl_gex member — inside the band it would re-serialise leaders.json BEFORE
+      # flowleaders() rewrote it, baking a generation-stale Leaders mode every run. Same
+      # reasoning daily.yml:1314-1324 records for the same builder.
+      # build_options_screener sits INSIDE cl_gex, after options_skew/options_ivspread, so
+      # it reads this run's snapshots; not a sibling cluster, because build_options_skew
+      # rewrites snapshots.parquet non-atomically (see the leaderradar note).
+      # The narrow `gex)` case additionally gained build_options_entry_state: it had
+      # drifted from cl_gex, refreshing the skew/ivspread snapshots without re-running the
+      # fusion that consumes them.
+      # All three are pure functions of committed data/: zero network, site/-only page
+      # writes. Measured on the real stores: build_options_screener 4.6s,
+      # build_options_command 0.4s, build_flow_leaders ~27s. Narrow gex) therefore costs
+      # about +32s (screener + flowleaders + optionscmd) and cl_gex +4.6s; scope=all pays
+      # only +0.4s because it already ran flowleaders. build_options_entry_state (6.3s) was
+      # REMOVED from the narrow case by M11 — its only output is under data/, which this
+      # lane discards.
+      # Anti-rot: tests/test_render_options_workspace_scope.py.
+      #
+      # region_of() NARROWING. templates/options.html.j2, templates/options_screener.html.j2,
+      # scripts/build_options_command.py and scripts/build_options_screener.py map to `gex`:
+      # they are LEAF pages (no other builder reads their HTML) and the `gex` scope now
+      # rebuilds both. DELIBERATELY NOT mapped: build_options_ivspread.py and
+      # build_options_entry_state.py — their stores also feed build_flow_leaders and
+      # build_site (stock_score), which `gex` does NOT run, so narrowing them would trade
+      # one staleness class for another. They keep falling through to `all`.
+      #
+      # M11: build_options_entry_state is NOT in the narrow gex) case. Its only output is
+      # data/options_entry/state.parquet and this lane commits site/ ONLY, so running it
+      # here was 6.3s of compute whose result is discarded. It stays in cl_gex (where the
+      # same is true, but the cluster is the daily-mirroring band) and in daily.yml, which
+      # is the lane that actually persists it — the drift it fixes is a daily-cadence one.
+      #
+      # M10: the narrow case calls flowleaders BEFORE optionscmd. optionscmd re-serialises
+      # site/flowleaders/leaders.json, and this scope is now reachable by a template edit
+      # via region_of, so without it a gex-scope render would bake options.html with a
+      # silently-stale Leaders block. build_flow_leaders is documented express-safe: zero
+      # data/ writes, absent-safe, exit 0, ~27s.
+      #
       # ── FD-EXP: flow_desk express-lane coverage (2026-07-30) ──────────────────
       # NOTE ON LENGTH: this prose is a YAML comment ABOVE the step, not inside `run:`.
       # The scalar has a hard ceiling GitHub enforces by DE-REGISTERING the workflow
@@ -409,6 +597,7 @@ jobs:
       # `gex)` case gets it in the same position.
       # Anti-rot: tests/test_render_flow_desk_scope.py.
       - name: re-render pages from committed data (resilient; no collect / no LLM / no EDGAR)
+        id: render_pages
         # Mirrors the RENDER steps of daily.yml's `engine` job, minus the collectors,
         # engine.run, the LLM brains + their scorers/ledgers, the EDGAR special-sits
         # sweep, notify and archive_signals. Each builder is individually resilient
@@ -500,6 +689,10 @@ jobs:
           # (an input here); serial post-band dodges the parallel read/write window.
           flowleaders() { [ -n "$FLOWLEADERS_DONE" ] && return 0; FLOWLEADERS_DONE=1; run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders; }
 
+          # options.html — SERIAL POST-BAND, after flowleaders(). Never a cl_gex member.
+          # Rationale + ordering law: the OIP E8 comment block above this step.
+          optionscmd() { [ -n "$OPTIONSCMD_DONE" ] && return 0; OPTIONSCMD_DONE=1; run_py "options workspace (build_options_command)" scripts.build_options_command; }
+
           leaderradar() { [ -n "$LEADERRADAR_DONE" ] && return 0; LEADERRADAR_DONE=1; run_py "leader radar desk (build_leader_radar)" scripts.build_leader_radar; }
 
           foresightpage() { [ -n "$FORESIGHT_DONE" ] && return 0; FORESIGHT_DONE=1; run_py "thematic foresight desk (build_foresight)" scripts.build_foresight; }
@@ -556,6 +749,9 @@ jobs:
               brun flow_desk    "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
               brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+              # OIP E8: AFTER skew/ivspread so it reads this run's snapshots; inside cl_gex
+              # because build_options_skew rewrites snapshots.parquet non-atomically.
+              brun options_screener "US options screener page (build_options_screener)" scripts.build_options_screener
               brun options_entry "options entry state fusion table (build_options_entry_state)" scripts.build_options_entry_state
             }
             cl_baskets() {
@@ -609,7 +805,7 @@ jobs:
             # fail silently in the very lanes it added (its own /research/ SEO pages
             # going dark again with no annotation). Band membership without ORDER
             # membership is a builder that runs unwatched.
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow flow_desk options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery macro_context gex_board vol_regime options_flow flow_desk options_skew options_ivspread options_screener options_entry baskets news methodology seasonality reports research_vault sectorcyc countrycyc cycle measurement markets policy_intent policy_watch index_changes stage_analysis_page tech_lab impulse"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -655,7 +851,7 @@ jobs:
           for SC in ${SCOPE//+/ }; do
           case "$SC" in
             all)
-              spine; intl; canada; band; central; flowleaders; leaderradar; foresightpage; hub; crypto; us_pages; libs; sits; csits ;;
+              spine; intl; canada; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; crypto; us_pages; libs; sits; csits ;;
             macro)
               spine; hub; crypto; us_pages; central ;;
             intl)
@@ -685,6 +881,10 @@ jobs:
               run_py "group flow heatmap & market tide (build_flow_desk)" scripts.build_flow_desk
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+              run_py "US options screener page (build_options_screener)" scripts.build_options_screener
+              # flowleaders BEFORE optionscmd: options.html re-serialises
+              # site/flowleaders/leaders.json (M10). See the OIP E8 note above the step.
+              flowleaders; optionscmd
               hub; crypto ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
@@ -701,11 +901,12 @@ jobs:
           # Watermark gate: only a render that ran every scoped builder to the end may stamp
           # from= on its commit (see commit step) — a cancelled/timed-out job skips this line.
           echo "RENDER_OK=1" >> "$GITHUB_ENV"
+          echo "complete=true" >> "$GITHUB_OUTPUT"
           exit 0
       - name: ensure node for the inline-JS guard
         # check_inline_js shells out to `node --check`. pc-render-1 (WSL2, #2771) shipped
-        # WITHOUT node, so this guard failed on every render there 07-18 — and because the
-        # commit step is if: always(), unverified JS shipped to main (the VPS serves main).
+        # WITHOUT node, so this guard failed on every render there 07-18; the old
+        # always-publish path still shipped that unverified JS. Publication is now gated.
         # setup-node installs into the runner tool cache: works on Linux AND a Mac fallback.
         uses: actions/setup-node@v4
         with:
@@ -715,6 +916,8 @@ jobs:
         # JS syntax error (e.g. an empty template var rendering the page blank), so a bad
         # render keeps the last-good site live instead of shipping a broken page.
         run: python3 scripts/check_inline_js.py site
+      - name: guard — no dead site references
+        run: python3 scripts/check_site_asset_refs.py site
       - name: guard — market-state board coherence (ui.ms_board_coherence)
         # A freshly rendered board whose verdict/score/thesis/notes disagree means the
         # render itself is broken (engine or template regression) — restore last-good
@@ -772,16 +975,9 @@ jobs:
           echo "::error title=render stockdata publish failed::R2 sync failed after 3 attempts"
           exit 1
       - name: inject data-base shim (site-wide; a re-render would strip it otherwise)
-        # always(), NOT !cancelled(): the commit below is if: always(), so a CANCELLED
-        # render still pushes site/ to main — but !cancelled() skipped this normalization
-        # first, shipping raw un-externalized pages (macro.html 1.02MB vs 570KB, china
-        # 400KB vs 234KB) on a 60s-TTL document. With renders cancelled ~24/25 on a
-        # merge-spree day, main oscillated in/out of the optimized state all day
-        # (2026-07-25: 4e78c8a891e pushed raw from cancelled run 30172913675). These are
-        # idempotent normalizers, not gates — a no-op when nothing is inline, ~5s over
-        # 237 pages, so running them in the cancellation window costs nothing and keeps
-        # "whatever we ship, we ship optimized". Guards above stay !cancelled().
-        if: always()
+        # Never normalize/publish a cancelled, timed-out, or guard-failed tree. The
+        # next render's watermark union keeps every unfinished scope dirty.
+        if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
         run: |
           python -m scripts.inject_data_base || echo "data-base shim inject skipped (additive)"
           python -m scripts.externalize_css || echo "css externalize skipped (additive)"
@@ -791,11 +987,30 @@ jobs:
           # bytes for a year (#3617/#3624), which is exactly the state we cannot see.
           python -m scripts.optimize_assets || echo "::warning::asset optimize FAILED — ?v= stamps may be stale"
       - name: commit rendered site (site/ ONLY — never data/, so ledgers stay pristine)
-        if: always()
+        if: ${{ success() && steps.render_pages.outputs.complete == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           . "${GITHUB_WORKSPACE:-.}/scripts/ci/push_retry.sh"
           git config user.name "dashboard-bot"
           git config user.email "actions@users.noreply.github.com"
+          # checkout@v4 historically persisted this header. Remove any survivor before
+          # installing the process-local token below; two Authorization headers produced
+          # repeated HTTP 400s instead of authenticating more strongly.
+          git config --local --unset-all http.https://github.com/.extraheader 2>/dev/null || true
+          if [ -n "${GITHUB_TOKEN:-}" ]; then
+            GIT_AUTH=$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\r\n')
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0=http.https://github.com/.extraheader
+            export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $GIT_AUTH"
+          fi
+          commit_index() {
+            local message="$1" parent tree commit
+            parent=$(git rev-parse HEAD)
+            tree=$(git write-tree --missing-ok)
+            commit=$(printf '%s\n' "$message" | git commit-tree "$tree" -p "$parent")
+            git update-ref HEAD "$commit" "$parent"
+          }
           # ONLY site/ — never data/ or reports/. The render may touch data/ as a build
           # side-effect (cache writes, alert appends), but committing none of it keeps the
           # nightly the single source of truth for every forward-accountability ledger.
@@ -829,16 +1044,16 @@ jobs:
           # render as "all" — an audit-trail lie) plus from= = the main SHA this run actually
           # rendered (captured post-pull in the pick step). The NEXT run's scope union diffs
           # against from=, so merges that landed DURING this render are correctly seen as
-          # un-rendered. from= is stamped ONLY when the render step ran to completion
-          # (RENDER_OK): a cancelled/timed-out run commits without it and never becomes a
-          # watermark, so any pages it skipped stay dirty for the next run.
+          # un-rendered. The step-level completion+success gate above excludes cancelled,
+          # timed-out, and guard-failed trees, so every commit is a valid watermark.
           SCOPE="${{ steps.pick.outputs.scope }}"; SCOPE="${SCOPE:-all}"
           FROM="${{ steps.pick.outputs.rendered_from }}"
-          if [ "${RENDER_OK:-0}" = "1" ] && [ -n "$FROM" ]; then
-            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
-          else
-            git commit -m "render: site re-render $(date -u +%F) (scope=$SCOPE)"
-          fi
+          RENDER_MESSAGE="render: site re-render $(date -u +%F) (scope=$SCOPE, from=$FROM)"
+          commit_index "$RENDER_MESSAGE"
+          RENDER_COMMIT=$(git rev-parse HEAD)
+          RENDER_PARENT=$(git rev-parse "$RENDER_COMMIT^")
+          PUBLISH_INDEX="${RUNNER_TEMP:?}/render-publish-${GITHUB_RUN_ID:?}-${GITHUB_RUN_ATTEMPT:?}.index"
+          PUBLISH_REF="refs/heads/render-publish-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           # This push is now the ONLY way the render reaches the live site (the VPS serves
           # committed main; there is no Pages-artifact fallback), so it MUST land.
           # --autostash parks the render's throwaway data/ writes (we commit site/ ONLY) so
@@ -870,10 +1085,37 @@ jobs:
             # authoritative. Everything else is untouched — tracked-file edits (ledgers)
             # still ride the autostash, and untracked paths main doesn't know about
             # (runner-local stores, gitignored caches) never enter the intersection.
-            git fetch origin main || true
+            if ! git fetch origin main; then
+              push_backoff
+              continue
+            fi
             comm -12 <(git ls-files --others --exclude-standard | LC_ALL=C sort) \
                      <(git ls-tree -r --name-only origin/main | LC_ALL=C sort) \
               | while IFS= read -r f; do rm -f -- "$f" || true; done
+            # Common path: main advanced only in code/data while this run changed
+            # site/templates. Replay those disjoint tree deltas in a temporary index,
+            # create a one-parent commit on current main, and push its object ID. No
+            # checkout, rebase, or promised-blob download occurs.
+            if PUBLISH_COMMIT=$(push_metadata_replay_commit \
+                "$RENDER_PARENT" origin/main "$RENDER_COMMIT" \
+                "$RENDER_MESSAGE" "$PUBLISH_INDEX"); then
+              echo "::notice::metadata-only replay onto $(git rev-parse --short=12 origin/main)"
+              # Referencing the replay commit locally lets push negotiation exclude
+              # promised objects already present on origin. Pushing an anonymous object
+              # ID makes Git hydrate those unchanged blobs before packing.
+              git update-ref "$PUBLISH_REF" "$PUBLISH_COMMIT"
+              if push_do origin "$PUBLISH_REF:refs/heads/main"; then
+                git update-ref HEAD "$PUBLISH_COMMIT"
+                git update-ref -d "$PUBLISH_REF"
+                echo "pushed rendered site on attempt $PUSH_ATTEMPT (metadata-only replay)"
+                push_won
+                exit 0
+              fi
+              git update-ref -d "$PUBLISH_REF"
+              push_backoff
+              continue
+            fi
+            echo "::notice::render output overlaps newer main; using guarded porcelain fallback"
             # rename/rename on content-hashed site/assets/css/* is deterministic across
             # retries (path conflict; -X theirs can't settle it — 2026-07-22 asia-close
             # run 29904079071 dropped a day's outputs this way). The autoresolver keeps
@@ -904,7 +1146,7 @@ jobs:
               python3 scripts/check_ms_board_coherence.py --heal-from origin/main \
                 || echo "::warning::ms-board coherence heal incomplete (incoherent board may predate this run)"
               if ! git diff --quiet -- site/ templates/; then
-                git add site/ templates/ && git commit -m "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
+                git add site/ templates/ && commit_index "render-sync: post-rebase guards (re-stamp + template re-copy + ms-board coherence)" \
                   || echo "::warning::render-sync commit failed (non-fatal — pages publish gate backstops divergence)"
               fi
               if push_do; then echo "pushed rendered site on attempt $PUSH_ATTEMPT"; push_won; exit 0; fi
@@ -915,3 +1157,13 @@ jobs:
           push_lost
           echo "::error title=rendered site NOT pushed::$PUSH_ATTEMPT rebase/push attempts failed ($PUSH_STOP) — main does not carry this render (the next render or the nightly re-lands it). Check the per-attempt [class] tags above: repeated [contention] means main is simply busier than this budget, repeated [rebase-conflict] means a NEW deterministic conflict class — see scripts/rebase_autoresolve_hashed_css.sh."
           echo "### ⚠️ rendered site NOT pushed after $PUSH_ATTEMPT attempts (next render/nightly re-lands main)" >> "$GITHUB_STEP_SUMMARY"
+      - name: remove oversized-checkout quarantine
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          [ -n "${CHECKOUT_TRASH:-}" ] || exit 0
+          case "$CHECKOUT_TRASH" in
+            "${RUNNER_TEMP:?}"/macro-git-"${GITHUB_RUN_ID:?}"-"${GITHUB_RUN_ATTEMPT:?}") ;;
+            *) echo "::error::refusing unexpected checkout quarantine path: $CHECKOUT_TRASH"; exit 1 ;;
+          esac
+          rm -rf -- "$CHECKOUT_TRASH"

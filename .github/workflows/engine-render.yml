@@ -214,6 +214,59 @@ jobs:
         # Must run AFTER build world state so world_state.json is fresh.
         # Resilient: fail-open; kept last committed context on error; never blocks the render.
         run: python -m scripts.build_nw_mastermind_context || echo "::warning::build_nw_mastermind_context failed (non-fatal) — keeping last committed mastermind_context"
+      # DELIBERATELY omitted from this lane (vetted 2026-07-25) — moved out of the `run:`
+      # scalar 2026-07-29 (OIP E8): it is pure prose about builders this lane does NOT call,
+      # and the scalar is at its GitHub length ceiling (see the NOTE ON LENGTH below).
+      #  • build_odds — a collector wearing a builder's name: refetches all 119 universe
+      #    tickers from yfinance on EVERY run (odds.stale_trading_days: 0) with no timeout —
+      #    the same violation of this lane's "NO network" invariant that keeps
+      #    build_gex_board out of the band — and its data/odds_ohlcv store is gitignored →
+      #    wiped by this job's clean checkout, so every express run would COLD-START a
+      #    full-history backfill (5-15+ min of third-party network). Its site/oddsmatrix
+      #    payloads are gitignored and R2-published by daily.yml only, so advancing
+      #    catalog.json here would silence the page's staleness banner over stale R2
+      #    matrices. odds.html keeps the last nightly's values.
+      #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its three
+      #   named bake-side blockers — the unguarded pick_lab as_of consumption, the
+      #   built_at/elapsed_s churn, and the undisclosed rs_series vintage skew — were fixed
+      #   in #3578, so the builder is now admitted as a serial post-band step.)
+      # ── OIP E8 express-lane coverage (2026-07-29) ──────────────────────────────
+      # NOTE ON LENGTH: everything below is a YAML comment ABOVE the step, because the
+      # `run:` scalar of this step is within ~350 chars of the length GitHub has been
+      # observed to accept (tests/test_render_run_size_cap.py — exceed it and GitHub
+      # DE-REGISTERS the workflow). Prose inside `run:` costs the scalar; prose here
+      # costs nothing. Keep new explanation HERE.
+      #
+      # build_options_command (options.html, the canonical options surface) and
+      # build_options_screener (options_screener.html + the workspace's Scanner payload
+      # site/screenerdata/rows.json) were BOTH daily.yml-only. So every express render
+      # refreshed the stores those pages describe and then committed the pages unchanged —
+      # the flow_leaders (#3515) / research_vault (#3487) freeze class — and an edit to
+      # build_options_command.py or templates/options.html.j2 never baked until the
+      # nightly, because scope=all did not run the builder either.
+      #
+      # PLACEMENT LAW. build_options_command re-serialises six stores whose producers
+      # STRADDLE the phases: vol_regime and options_screener are cl_gex members (parallel
+      # band) while build_flow_leaders is the post-band flowleaders() step. So it is a
+      # SERIAL POST-BAND step (optionscmd(), immediately after flowleaders()) and never a
+      # cl_gex member — inside the band it would re-serialise leaders.json BEFORE
+      # flowleaders() rewrote it, baking a generation-stale Leaders mode every run. Same
+      # reasoning daily.yml:1314-1324 records for the same builder.
+      # build_options_screener sits INSIDE cl_gex, after options_skew/options_ivspread, so
+      # it reads this run's snapshots; it must not be a sibling cluster because
+      # build_options_skew rewrites snapshots.parquet non-atomically (see leaderradar).
+      # Both are pure functions of committed data/: zero network, site/-only writes,
+      # Measured: screener 4.6s, options_command 0.4s, flowleaders ~27s -> narrow gex)
+      # about +32s, cl_gex +4.6s, scope=all +0.4s (flowleaders already ran there).
+      # Anti-rot: tests/test_render_options_workspace_scope.py.
+      #
+      # M11: build_options_entry_state is NOT in the narrow gex) case — its only output is
+      # data/options_entry/state.parquet and this lane commits site/ ONLY, so it would be
+      # 6.3s of discarded compute. It stays in cl_gex and in daily.yml (the lane that
+      # persists it).  M10: the narrow case calls flowleaders BEFORE optionscmd, because
+      # optionscmd re-serialises site/flowleaders/leaders.json and would otherwise bake a
+      # silently-stale Leaders block.
+      #
       # ── FD-EXP: flow_desk express-lane coverage (2026-07-30) ──────────────────
       # NOTE ON LENGTH: this prose is a YAML comment ABOVE the step, not inside `run:`.
       # The scalar has a hard ceiling GitHub enforces by DE-REGISTERING the workflow
@@ -344,6 +397,9 @@ jobs:
           # instead of cl_misc dodges that parallel read/write window.
           flowleaders() { run_py "flow leaders desk (build_flow_leaders)" scripts.build_flow_leaders; }
 
+          # options.html — SERIAL POST-BAND (never cl_gex): see the OIP E8 note above.
+          optionscmd() { run_py "options workspace (build_options_command)" scripts.build_options_command; }
+
           # Leader Radar — page-only rebake from COMMITTED stores (LR-EXP). Pure function of
           # committed data (~40s measured): no network, no LLM. Consumes the stores this lane
           # has just recomputed upstream, exactly like flow_leaders above (rs_series /
@@ -380,21 +436,6 @@ jobs:
           # rewrites site/basketdata/foresight_cascade.json in the same pass as its page.
           foresightpage() { run_py "thematic foresight desk (build_foresight)" scripts.build_foresight; }
 
-          # DELIBERATELY omitted from this lane (vetted 2026-07-25):
-          #  • build_odds — a collector wearing a builder's name: refetches all 119 universe
-          #    tickers from yfinance on EVERY run (odds.stale_trading_days: 0) with no
-          #    timeout — the same violation of this lane's "NO network" invariant that keeps
-          #    build_gex_board out of the band above — and its data/odds_ohlcv store is
-          #    gitignored → wiped by this job's clean checkout, so every express run would
-          #    COLD-START a full-history backfill (5-15+ min of third-party network). Its
-          #    site/oddsmatrix payloads are gitignored and R2-published by daily.yml only,
-          #    so advancing catalog.json here would silence the page's staleness banner over
-          #    stale R2 matrices. odds.html keeps the last nightly's values.
-          #  (build_leader_radar was omitted here for the same 2026-07-25 vetting; its three
-          #   named bake-side blockers — the unguarded pick_lab as_of consumption, the
-          #   built_at/elapsed_s churn, and the undisclosed rs_series vintage skew — were
-          #   fixed in #3578, so the builder is now admitted above as a serial
-          #   post-band step.)
 
           band() {
             local ART="$RUNNER_TEMP/band"; rm -rf "$ART"; mkdir -p "$ART"
@@ -433,6 +474,8 @@ jobs:
               brun flow_desk "flow desk (build_flow_desk)" scripts.build_flow_desk
               brun options_skew "single-name IV skew (build_options_skew)"   scripts.build_options_skew
               brun options_ivspread "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+              # OIP E8 (note above): AFTER skew/ivspread, inside cl_gex — not a sibling.
+              brun options_screener "US options screener page (build_options_screener)" scripts.build_options_screener
               # options_entry_state IS a pure function of committed data/ (polygon_gex,
               # options_skew/ivspread snapshots, options_flow, site/flow JSON) — no
               # network, ~2s — so unlike gex_board it belongs in this lane.
@@ -484,7 +527,7 @@ jobs:
             # research_vault added 2026-07-25 — see the twin note in render.yml: this
             # loop is what surfaces a builder's log + its rc!=0 ::error, so #3487's
             # new brun call was running unwatched in both intraday lanes.
-            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow flow_desk options_skew options_ivspread options_entry baskets news methodology seasonality reports research_vault policy_watch index_changes stage_analysis_page tech_lab impulse"
+            local ORDER="china hk commodities spr forex bonds crossasset transmission discovery vol_regime options_flow flow_desk options_skew options_ivspread options_screener options_entry baskets news methodology seasonality reports research_vault policy_watch index_changes stage_analysis_page tech_lab impulse"
             echo "### ⏱ parallel band — per-builder wall-time" >> "$GITHUB_STEP_SUMMARY"
             for slug in $ORDER; do
               [ -f "$ART/$slug.log" ] || continue
@@ -528,7 +571,7 @@ jobs:
 
           case "$SCOPE" in
             all)
-              spine; band; central; flowleaders; leaderradar; foresightpage; hub; us_pages; libs ;;
+              spine; band; central; flowleaders; optionscmd; leaderradar; foresightpage; hub; us_pages; libs ;;
             macro)
               spine; hub; us_pages ;;
             china)
@@ -551,6 +594,9 @@ jobs:
               run_py "flow desk (build_flow_desk)" scripts.build_flow_desk
               run_py "single-name IV skew (build_options_skew)" scripts.build_options_skew
               run_py "single-name IV spread (build_options_ivspread)" scripts.build_options_ivspread
+              run_py "US options screener page (build_options_screener)" scripts.build_options_screener
+              # flowleaders BEFORE optionscmd (M10) — see the OIP E8 note above the step.
+              flowleaders; optionscmd
               hub ;;
             baskets)
               run_py "thematic baskets (build_baskets)"     scripts.build_baskets
@@ -592,6 +638,8 @@ jobs:
       - name: guard — inline JS must parse
         # Same gate as render.yml/pages.yml: a JS syntax error keeps the last-good site live.
         run: python3 scripts/check_inline_js.py site
+      - name: guard — no dead site references
+        run: python3 scripts/check_site_asset_refs.py site
       - name: guard — market-state board coherence (ui.ms_board_coherence)
         # A freshly rendered board whose verdict/score/thesis/notes disagree means the
         # render itself is broken (engine or template regression) — restore last-good

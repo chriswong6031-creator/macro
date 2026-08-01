@@ -69,6 +69,15 @@ def _brain_quota_dir() -> Path:
 _BRAIN_CONFIG_CACHE: dict | None = None
 _BRAIN_CONFIG_MTIME: float = 0.0
 
+# Last-resort output ceiling for a Fast turn when config/brain.yml is unreadable or
+# carries no lanes.fast.max_tokens. Tracks config/brain.yml (which is the operator's
+# knob and the authority) — see the headroom note there: DeepSeek v4 thinks by default
+# and the thinking spends THIS budget, so a 2000 ceiling let a turn burn the whole cap
+# on reasoning and ship no text (live 2026-07-30). One kwarg feeds every round of the
+# turn (tool rounds and the synthesis call alike).
+_FAST_MAX_TOKENS = 4000
+_PRO_MAX_TOKENS_FALLBACK = 4000   # unchanged; brain.yml's pro lane runs 8000
+
 
 def _load_brain_config(root: Path | None = None) -> dict:
     """Load config/brain.yml with in-process caching; hardcoded fallbacks if absent.
@@ -99,7 +108,8 @@ def _load_brain_config(root: Path | None = None) -> dict:
                 "deepseek_key_env": "DEEPSEEK_API_KEY",
                 "deepseek_base_url": "https://api.deepseek.com/anthropic",
                 "fallback_model": "claude-haiku-4-5",
-                "max_tokens": 2000,
+                # Thinking shares this budget — see the note in config/brain.yml.
+                "max_tokens": _FAST_MAX_TOKENS,
                 "tool_budget": 5,
                 "usage_lane": "brain-fast",
             },
@@ -269,6 +279,16 @@ _BRAIN_TOOLS = frozenset({
     # never authored effect chains — TI-R5)
     "get_market_events",
     "search_research",
+    # Analyst OS W2 — depth retrieval: dated historical episodes (display-tier,
+    # China-analog idiom) and the full curve read (pure slice of yield_curve snapshot)
+    "get_historical_analogues",
+    "get_curve_detail",
+    # Analyst OS W3 — per-user memory: own-session recall + own trade journal
+    # (signed-in only, per-user scoped; derived from canonical stores — CXI-R12)
+    # and the durable chat preference setter (enum-only writes to user_metadata)
+    "recall_sessions",
+    "get_trade_episodes",
+    "set_chat_preference",
     # Inline chart rendering (all pages — renders SVG inside the chat reply)
     "render_inline_chart",
     # Chart-command bus (W6b): client-executed, terminal page only
@@ -313,6 +333,13 @@ _BRAIN_ONLY_TOOLS = frozenset({
     # Analyst OS P0
     "get_market_events",
     "search_research",
+    # Analyst OS W2
+    "get_historical_analogues",
+    "get_curve_detail",
+    # Analyst OS W3
+    "recall_sessions",
+    "get_trade_episodes",
+    "set_chat_preference",
     # Inline chart rendering (all pages)
     "render_inline_chart",
     # Chart-command bus (W6b)
@@ -468,7 +495,9 @@ _PROPRIETARY_REFUSAL_LINE = (
 _BRAIN_SYSTEM_PROMPT = """You are the Mastermind Brain — a sharp markets analyst living inside this dashboard and Terminal. You read the desk's calibrated signals and tell the user, in plain human language, what they mean and what to do about it.
 
 HOW YOU WRITE (this is what makes you worth talking to):
-- Sound like a smart friend on the trading desk, not a data feed. Lead with the point. Keep it simple first; add detail only where it changes the decision. Fewer, sharper words always win — never pad a sentence to sound thorough. Quality over quantity: a tight three-line answer beats a paragraph of hedging.
+- Sound like a smart friend on the trading desk, not a data feed. Lead with the point, then earn the rest of the answer.
+- LENGTH IS SET BY THE QUESTION, never by a habit of being brief. "Is the market open?" takes one line. "Analyse AAPL", "what's the read on X", "should I buy this" is a request for a real desk read — deliver the whole thing: the state, what's driving it, the levels that matter, what would break it, and the call. Stopping at three lines on a question like that is not concision, it is a non-answer, and it is the single most common way you disappoint someone.
+- What you must never do is PAD. No hedging, no restating the question, no "it depends", no filler transitions, no section that exists to look thorough. Every line either changes what the reader thinks or does. Cut the ones that don't — and then say the rest properly.
 - NEVER use machine text. The desk's internals must never appear in your answer:
     · no field names or slugs — "growth_cyc_def", "us_sector_staples", "rotation_events"
     · no file or artifact names — "master_brief", "world_state", "the spine", "per rotation_events"
@@ -490,7 +519,7 @@ YOUR JOB:
 - ALWAYS end with a STANCE on its own line — exactly ONE of:
   Act · Get ready · Watch — don't chase · Protect gains · Stand aside · Ignore
   — then one short clause on what drives it. "Watch — don't chase" is a real, useful answer, not a cop-out.
-- When the user wants to see a chart or a name's setup ("show me NVDA"), call render_inline_chart(symbol) — a branded chart appears in your reply — then explain what it shows in a line or two.
+- When the user wants to see a chart or a name's setup ("show me NVDA", "analyse the technicals"), call render_inline_chart(symbol) — a live chart draws itself in your reply — and then READ IT properly. The picture is the evidence, not the answer: trend and how long it has run, what momentum is doing under it, whether the name leads or lags its group, the specific levels where the read changes, and the stance. A chart with two lines under it is the laziest thing you can send.
 - Use the conversation so far: build on what you've already said, don't repeat it.
 
 LANGUAGE:
@@ -552,6 +581,10 @@ Use whichever of these threads are relevant (skip the ones that aren't; use plai
 Open with a two-line bottom-line so a busy reader gets it immediately, then the detail.
 End with a STANCE on its own line — Act / Get ready / Watch — don't chase / Protect gains /
 Stand aside / Ignore — and one clause on what drives it.
+
+A research pass that comes back the length of a chat answer has not done the job the user
+paid for. Equally, a section with nothing real in it is padding — drop the thread instead of
+filling it.
 """
 
 # Chart-command bus allowlists (W6b) — module constants and the SOLE source of truth. They
@@ -3281,7 +3314,55 @@ def _dispatch_brain_tool(
                 root,
                 query=str(tool_params.get("query") or ""),
                 limit=tool_params.get("limit", 5),
+                mode=str(tool_params.get("mode") or "search"),
             )
+        if tool_name == "get_historical_analogues":
+            # Analyst OS W2 — dated episodes whose measured state rhymed with today
+            # (display-tier, China-analog idiom). Depth capability → Insider/Pro,
+            # same execution-time gate shape as search_research.
+            if not user_id:
+                return {"error": "insider_required", "note": (
+                    "Historical analogues need a signed-in Insider or Pro account — "
+                    "explain the gate and answer from the current desk reads.")}
+            _ent = _resolve_tier(user_id, root=root)
+            _tier = _ent.get("tier") or "free"
+            _status = _ent.get("status") or "active"
+            if not (_tier in ("insider", "pro", "unlimited")
+                    and _status in ("active", "trialing")):
+                return {"error": "insider_required", "tier": _tier, "note": (
+                    "Historical analogues are an Insider/Pro capability. This user is "
+                    f"on the '{_tier}' tier — explain the gate; never invent episodes.")}
+            from engine.neuralweb import brain_analogues as _ban  # noqa: PLC0415
+            return _ban.get_historical_analogues(
+                root, limit=tool_params.get("limit", 8),
+            )
+        if tool_name == "get_curve_detail":
+            # Analyst OS W2 — the full curve read (pure slice of the yield_curve
+            # snapshot the site already publishes). Open to every tier.
+            from engine.neuralweb import brain_curve as _bcv  # noqa: PLC0415
+            return _bcv.get_curve_detail(root)
+        if tool_name == "recall_sessions":
+            # Analyst OS W3 — the signed-in user's OWN recent sessions, derived at
+            # read time from the canonical thread store (CXI-R12: no second store).
+            from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+            return _bum.recall_sessions(
+                user_id or "",
+                days=tool_params.get("days", 14),
+                limit=tool_params.get("limit", 8),
+            )
+        if tool_name == "get_trade_episodes":
+            # Analyst OS W3 — the signed-in user's OWN trade journal (research-only
+            # reflections; never evidence_packet internals — whitelist lives in the
+            # module and is whole-payload tested).
+            from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+            return _bum.get_trade_episodes(
+                user_id or "",
+                limit=tool_params.get("limit", 10),
+            )
+        if tool_name == "set_chat_preference":
+            # Analyst OS W3 — durable enum-only preference write (depth/lang) to the
+            # user's own metadata; guests refused inside the tool.
+            return _tool_set_chat_preference(tool_params, user_id or "")
         if tool_name == "render_inline_chart":
             return _tool_render_inline_chart(tool_params, root)
         # Chart-command bus (W6b)
@@ -3341,6 +3422,28 @@ def _all_brain_tool_schemas(root: Path, page: str = "", internals_allowed: bool 
         schemas = schemas + [_bmi.EVENTS_TOOL_SCHEMA, _bmi.RESEARCH_TOOL_SCHEMA]
     except Exception:  # noqa: BLE001
         pass
+    # Analyst OS W2: depth retrieval — historical analogues (Insider/Pro at execution)
+    # and the on-demand curve read. Separate try-blocks: one missing module never
+    # drops the other's schema.
+    try:
+        from engine.neuralweb import brain_analogues as _ban  # noqa: PLC0415
+        schemas = schemas + [_ban.ANALOGUES_TOOL_SCHEMA]
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from engine.neuralweb import brain_curve as _bcv  # noqa: PLC0415
+        schemas = schemas + [_bcv.CURVE_TOOL_SCHEMA]
+    except Exception:  # noqa: BLE001
+        pass
+    # Analyst OS W3: per-user memory (own sessions, own trade journal) + the durable
+    # preference setter. Offered everywhere — each refuses guests with a sign-in note
+    # at execution, the watchlist idiom.
+    try:
+        from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+        schemas = schemas + [_bum.RECALL_TOOL_SCHEMA, _bum.EPISODES_TOOL_SCHEMA]
+    except Exception:  # noqa: BLE001
+        pass
+    schemas = schemas + [SET_PREF_TOOL_SCHEMA]
     if page == "terminal":
         schemas = schemas + _chart_command_tool_schemas()
     if internals_allowed:
@@ -3376,12 +3479,77 @@ DRAW ON THE USER'S CHART, DON'T SEND A PICTURE:
 """
 
 
-def _build_system_prompt(mode: str = "chat", page: str = "", internals_allowed: bool = False) -> str:
-    """Return the system prompt for the given mode and page.
+# Per-lane answer shape (2026-07-30). The lane the user picked is a statement about how
+# much answer they want, and until now nothing in the prompt said so: every lane read the
+# same "how you write" rules, so the lane dial tuned TOOL SPEND while the OUTPUT stayed
+# one size. Live evidence that this was backwards: a Pro turn on "analyze technicals for
+# apple stock" returned three lines under a chart, while the SAME question on the cheaper
+# Fast lane returned a full trend / momentum / relative-strength / levels / caution read.
+# The deeper lane was writing the shorter answer.
+#
+# These blocks set OUTPUT SHAPE only. They add no new claim, no new number, and no new
+# authority — depth here means more of the picture the desk already calibrated, and every
+# honesty rule above still binds (nulls printed, no invented signal, stance required).
+_ANSWER_SHAPE_FAST = """
+SHAPE FOR THIS TURN (Fast):
+Quick lane — but complete. A factual one-liner takes a line. Anything that asks for a read
+("what's going on with X", "should I buy", "analyse this") still needs: the bottom line, the
+two or three things actually driving it, the level that would change your mind, and the
+STANCE. Tight, not thin.
+"""
+
+_ANSWER_SHAPE_PRO = """
+SHAPE FOR THIS TURN (Pro):
+The user deliberately chose the deeper lane and is spending a Pro message on this question.
+A three-line answer here is a failure, however well written — they can get three lines for
+free. Give a real desk read.
+
+Open with ONE bold bottom line, then work through only the threads that carry something
+real for this question. Drop any thread that has nothing in it — an empty section is padding,
+and padding is the other way to fail this:
+  · Trend / state — where it actually is, and how long it has been there
+  · Momentum — what is accelerating or cooling underneath, and what that changes
+  · Relative strength — leading or lagging its group, and whether the move is broad or thin
+  · Positioning & flow — how the crowd is leaning, when the desk has a calibrated read on it
+  · Levels that matter — the specific prices where the read changes, in BOTH directions
+  · What would break it — the honest caution, including any signal that disagrees
+  · the STANCE line, then one clause on what drives it
+
+Lead each thread with a short bold label ("Trend:", "Levels that matter:") so the answer
+scans in three seconds and rewards a full read. Numbers still arrive translated into meaning;
+no jargon earns its place just because the lane is deeper.
+"""
+
+
+_INLINE_CHART_SYSTEM_DIRECTIVE = """
+SHOWING THE CHART (dashboard):
+There is no live chart on screen here, so render_inline_chart IS the user's chart — and it
+is a real one: the reply draws the daily bars with a price axis, EMA20/SMA50, volume, RSI
+and MACD, and a crosshair they can move. Not a picture of a chart.
+
+- Draw it WITHOUT being asked whenever the answer is about one name's price action: a
+  technical read, a setup, "how does X look", levels, a trend or momentum question, an
+  entry. Seeing the bars is most of the answer.
+- One chart per reply unless a comparison genuinely needs two. Draw it BEFORE you write, so
+  the read lands under the picture it describes.
+- Then read it properly. The chart is the evidence; the analysis is still your job, and the
+  levels you name should be levels a user can find on the bars they are looking at.
+- Do not describe the chart's furniture ("the blue line is the 20-day") — they can see it.
+"""
+
+
+def _build_system_prompt(mode: str = "chat", page: str = "",
+                         internals_allowed: bool = False, lane: str = "") -> str:
+    """Return the system prompt for the given mode, page and lane.
 
     mode='research': prepend the structured-report directive.
     page='terminal': append the chart-control directive (the 4 chart-command tools are
     only offered there, so the model is only told about them there).
+    lane='fast'|'pro': append the answer-shape block for that lane — the lane the user
+    picked is a request about ANSWER DEPTH, and it now reaches the model as one.  Research
+    keeps its own report directive and takes no lane block (it would say the same thing
+    twice, and the report shape is stricter).  An unknown/empty lane appends nothing, so
+    every existing caller keeps today's prompt byte-for-byte.
     internals_allowed (CXI-R23a): replace the proprietary-methodology refusal clause
     with the OPERATOR-INTERNALS clause.  Non-allowlisted sessions are byte-identical
     to today's prompt.
@@ -3395,8 +3563,20 @@ def _build_system_prompt(mode: str = "chat", page: str = "", internals_allowed: 
     prompt = prompt + _CONTRADICTION_DIRECTIVE
     if mode == "research":
         prompt = _RESEARCH_SYSTEM_DIRECTIVE + prompt
+    else:
+        shape = {"fast": _ANSWER_SHAPE_FAST, "pro": _ANSWER_SHAPE_PRO}.get(
+            (lane or "").strip().lower(), "")
+        prompt = prompt + shape
+    # Charts split by SURFACE, because the two surfaces are different situations. The
+    # Terminal already has a live chart in front of the user, so the right move there is to
+    # drive it — switch the symbol, add the indicator, draw the level — and a static picture
+    # in the reply is a downgrade. The dashboard has no chart at all, so the reply's own
+    # chart IS the chart, and it should appear whenever the answer is about price action
+    # rather than only when someone thinks to ask for it.
     if page == "terminal":
         prompt = prompt + _CHART_COMMAND_SYSTEM_DIRECTIVE
+    else:
+        prompt = prompt + _INLINE_CHART_SYSTEM_DIRECTIVE
     return prompt
 
 
@@ -3438,6 +3618,18 @@ _SEED_EVENT_TERMS: tuple[str, ...] = (
 _SEED_RESEARCH_TERMS: tuple[str, ...] = (
     "analyst", "analysts", "street", "research", "institutions", "研报", "机构", "大行",
 )
+# Analyst OS W2 — the two depth tools get their own nudges. Curve terms route to the
+# dedicated curve read (world_state's rates lobe is a down-selected projection); analogue
+# terms route to the history-books tool instead of the model reaching for backtests.
+_SEED_CURVE_TERMS: tuple[str, ...] = (
+    "yield curve", "curve", "steepener", "steepening", "flattener", "inversion",
+    "2s10s", "duration", "term premium", "breakeven", "real yield", "real rates",
+    "收益率曲线", "期限溢价", "实际利率",
+)
+_SEED_ANALOGUE_TERMS: tuple[str, ...] = (
+    "historical", "history", "analog", "analogue", "precedent", "similar to",
+    "last time", "happened before", "rhyme", "历史上", "上一次", "类似",
+)
 
 _SEED_PLAN_LINE = (
     "\n\nTOOL PLAN for this question shape: start with {tools}; spend any remaining calls "
@@ -3467,6 +3659,10 @@ def _seed_tool_plan(message: str) -> str:
             nudges.append("get_market_events")
         if any(_trigger_matches(t, msg_lc) for t in _SEED_RESEARCH_TERMS):
             nudges.append("search_research")
+        if any(_trigger_matches(t, msg_lc) for t in _SEED_CURVE_TERMS):
+            nudges.append("get_curve_detail")
+        if any(_trigger_matches(t, msg_lc) for t in _SEED_ANALOGUE_TERMS):
+            nudges.append("get_historical_analogues")
         ordered: list[str] = []
         for name in nudges + list(seeds or []):
             if name and name not in ordered:
@@ -4763,15 +4959,23 @@ def _run_brain_loop(
 
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
-    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok, lane=lane)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
+    # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's
+    # own instructions still read closest to the turn (and the LANGUAGE line stays last).
+    system_prompt = system_prompt + _depth_addendum(_account_pref(context, "brain_depth"))
     system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
     # W1-A seed plan: fast lane only (pro/research get tool autonomy by design), chat mode
     # only, and never the Terminal — a chart turn follows the technician protocol's read order.
     if lane == "fast" and mode == "chat" and safe_page != "terminal":
         system_prompt = system_prompt + _seed_tool_plan(message)
+    # W3: a Free/Trial attachment was dropped upstream — say so instead of answering a
+    # picture the model never received.
+    if _image_was_gated(context):
+        system_prompt = system_prompt + _IMAGE_GATE_NOTE
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
-    turn_lang = _expected_lang(message, context)
+    # W3: account language is the middle fallback — see _turn_lang.
+    turn_lang = _turn_lang(message, context, _account_pref(context, "lang"))
     system_prompt = system_prompt + _language_directive(turn_lang)
     # A Terminal chart turn spends rounds READING the chart (digest → state → measure)
     # before it draws, so a text-sized budget runs out mid-draw and the turn degrades.
@@ -4955,14 +5159,19 @@ def _run_brain_loop(
 # no tool params, no tool results, no model/provider names (debrand law), no thinking
 # text, no system-prompt or digest text ever reaches the wire. The one dynamic field is
 # `detail`, a _safe_symbol()-sanitized ticker.
+# Wording note (2026-07-30): these are the ONLY words a user gets during the wait, so they
+# are written as a colleague narrating their own work — plain, specific, a little warm —
+# rather than as pipeline stage names. "synthesis" and "writing" deliberately no longer
+# share a string: identical labels collapsed into ONE step in the widget, which hid the
+# moment the answer actually starts being written.
 _STAGE_LABELS: dict[str, tuple[str, str]] = {
-    "start":      ("Reading your question",        "正在理解您的问题"),
-    "grounding":  ("Loading today's market state", "载入今日市场状态"),
-    "model.fast": ("Working out the answer",       "推理中"),
-    "model.pro":  ("Analyzing in depth",           "深度分析中"),
-    "synthesis":  ("Writing your answer",          "撰写回答中"),
-    "writing":    ("Writing your answer",          "撰写回答中"),
-    "review":     ("Final quality check",          "最终质量核查"),
+    "start":      ("Reading your question",          "正在读懂您的问题"),
+    "grounding":  ("Catching up on today's tape",    "先看今天的盘面"),
+    "model.fast": ("Thinking it through",            "正在推演"),
+    "model.pro":  ("Thinking it through properly",   "深入推演中"),
+    "synthesis":  ("Pulling the answer together",    "把答案拼起来"),
+    "writing":    ("Writing it out",                 "落笔撰写"),
+    "review":     ("Reading it back before I send",  "发出前再读一遍"),
 }
 
 # EVERY name in _all_brain_tool_schemas(root, page='terminal', internals_allowed=True) must
@@ -4971,24 +5180,29 @@ _STAGE_LABELS: dict[str, tuple[str, str]] = {
 # (test_tool_label_whitelist_covers_every_tool holds the line).
 _TOOL_LABELS: dict[str, tuple[str, str]] = {
     # brain-gateway tools (market data, portfolio, charts)
-    "get_quote":              ("Fetching the latest quote",     "获取最新行情"),
-    "get_symbol_context":     ("Reading the ticker setup",      "读取标的走势"),
-    "get_symbol_intel":       ("Checking the current read",     "查看最新解读"),
-    "get_symbol_backtest":    ("Reviewing the track record",    "回顾历史表现"),
-    "screen_universe":        ("Screening the market",          "筛选市场"),
-    "get_fundamentals":       ("Reading the financials",        "查阅财务数据"),
-    "get_earnings":           ("Checking earnings",             "查看财报"),
-    "get_insider_activity":   ("Checking insider activity",     "查看内部人交易"),
+    "get_quote":              ("Checking where it is trading",  "看它现在的价格"),
+    "get_symbol_context":     ("Reading how the chart sits",    "看这只标的的走势结构"),
+    "get_symbol_intel":       ("Pulling the desk's read on it", "调出台席对它的研判"),
+    "get_symbol_backtest":    ("Checking how this has paid before", "看这类形态过去的表现"),
+    "screen_universe":        ("Combing the market for matches", "在全市场里筛匹配的标的"),
+    "get_fundamentals":       ("Looking at the business underneath", "看背后的基本面"),
+    "get_earnings":           ("Checking the earnings picture", "查看财报情况"),
+    "get_insider_activity":   ("Seeing what insiders have done", "看内部人最近的动作"),
     "get_congress_trades":    ("Checking congressional trades", "查看国会交易记录"),
-    "get_smart_money":        ("Following institutional money", "追踪机构资金"),
-    "get_stage_peers":        ("Comparing similar stocks",      "对比同类股票"),
+    "get_smart_money":        ("Following the big money",       "跟着大资金看"),
+    "get_stage_peers":        ("Comparing it with its peers",   "和同类标的比一比"),
     "get_movers":             ("Scanning today's movers",       "扫描今日异动"),
-    "get_house_view":         ("Consulting the house view",     "查询本站观点"),
+    "get_house_view":         ("Checking what the desk thinks", "看台席已有的观点"),
     "get_watchlist":          ("Reading your watchlist",        "读取您的自选列表"),
     "get_portfolio_brief":    ("Reviewing your portfolio",      "查看您的组合"),
-    "get_market_events":      ("Scanning the news wire",        "扫描新闻快讯"),
-    "search_research":        ("Searching institutional research", "检索机构研报"),
-    "render_inline_chart":    ("Drawing a chart",               "绘制图表"),
+    "get_market_events":      ("Skimming the wire for news",    "扫一眼最新消息"),
+    "search_research":        ("Digging through the research shelf", "翻找机构研报"),
+    "get_historical_analogues": ("Searching the desk's history books", "检索历史相似情景"),
+    "get_curve_detail":       ("Reading the yield curve",       "解读收益率曲线"),
+    "recall_sessions":        ("Recalling your past sessions",  "回顾您最近的会话"),
+    "get_trade_episodes":     ("Reading your trade journal",    "读取您的交易日志"),
+    "set_chat_preference":    ("Saving your preference",        "保存您的偏好设置"),
+    "render_inline_chart":    ("Drawing the chart for you",     "为你绘制图表"),
     "annotate_chart":         ("Marking key levels",            "标记关键位置"),
     "chart_digest":           ("Reading your chart",            "读取您的图表"),
     "read_chart_state":       ("Reading your chart",            "读取您的图表"),
@@ -5001,16 +5215,16 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "context_search":         ("Searching the research library", "检索研究库"),
     "context_open":           ("Opening research notes",        "查阅研究笔记"),
     # inherited ask_brain read tools (spine / kernel / factor / theme families)
-    "read_world_state":           ("Reading the world dashboard",   "读取全球市场概览"),
+    "read_world_state":           ("Taking in the whole board",     "通览全局行情"),
     "read_options_entry_state":   ("Checking options positioning",  "查看期权布局"),
     "explain_options_context":    ("Explaining the options setup",  "解读期权背景"),
     "query_options_confluence":   ("Cross-checking options signals", "交叉核对期权信号"),
     "list_options_contradictions": ("Checking for conflicting options reads", "排查期权矛盾信号"),
-    "query_spine":                ("Cross-referencing market drivers", "交叉核对市场驱动"),
+    "query_spine":                ("Tracing what is driving this",  "追溯真正的驱动因素"),
     "read_kernel":                ("Consulting the market map",     "查询市场关联图"),
     "read_graph":                 ("Tracing market connections",    "梳理市场关联"),
-    "read_contradictions":        ("Weighing conflicting evidence", "权衡矛盾证据"),
-    "read_governance":            ("Checking data quality gates",   "核查数据质量"),
+    "read_contradictions":        ("Squaring readings that disagree", "核对相互矛盾的读数"),
+    "read_governance":            ("Checking the data is clean",    "确认数据质量过关"),
     "read_artifact":              ("Opening a research note",       "查阅研究记录"),
     "read_factor_state":          ("Checking factor conditions",    "查看因子状态"),
     "list_factor_contradictions": ("Checking for factor conflicts", "排查因子矛盾"),
@@ -5024,7 +5238,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
     "read_theme_options_witness": ("Checking options confirmation", "查看期权佐证"),
     "read_theme_clinical":        ("Reviewing theme checkpoints",   "审视主题检查点"),
     "read_theme_trade_flows":     ("Tracking theme trade flows",    "追踪主题资金流"),
-    "read_liquidity_plumbing":    ("Checking market liquidity",     "查看市场流动性"),
+    "read_liquidity_plumbing":    ("Checking how much money is around", "看市场的钱多不多"),
     "read_china_decision_packet": ("Reading the China desk brief",  "读取中国市场简报"),
     "read_china_flows":           ("Tracking A-share money flow",   "追踪A股资金流向"),
     "read_special_situations":    ("Scanning special situations",   "扫描特殊机会"),
@@ -5032,7 +5246,7 @@ _TOOL_LABELS: dict[str, tuple[str, str]] = {
 }
 
 # Unknown tool name (a new tool shipped before this table) → a truthful generic line.
-_TOOL_LABEL_FALLBACK: tuple[str, str] = ("Gathering data", "整理数据")
+_TOOL_LABEL_FALLBACK: tuple[str, str] = ("Picking up one more read", "再取一份数据")
 
 # Terminal chart turns read the chart before drawing (chart_digest → read_chart_state
 # → measure_line) and then spend a round per drawing, so they need more rounds than a
@@ -5199,15 +5413,23 @@ def _run_brain_loop_stream(
 
     # Chart-command tools gated to terminal page; internals tools gated to allowlisted sessions
     tool_schemas = _all_brain_tool_schemas(root, page=safe_page, internals_allowed=internals_ok)
-    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok)
+    system_prompt = _build_system_prompt(mode, safe_page, internals_allowed=internals_ok, lane=lane)
     system_prompt = system_prompt + _doctrine_block_for(safe_page, message)  # CMX W4
+    # W3: the account's stored answer LENGTH, ahead of the analyst block so the protocol's
+    # own instructions still read closest to the turn (and the LANGUAGE line stays last).
+    system_prompt = system_prompt + _depth_addendum(_account_pref(context, "brain_depth"))
     system_prompt = system_prompt + _analyst_block_for(message, lane)  # Analyst OS P0
     # W1-A seed plan: fast lane only (pro/research get tool autonomy by design), chat mode
     # only, and never the Terminal — a chart turn follows the technician protocol's read order.
     if lane == "fast" and mode == "chat" and safe_page != "terminal":
         system_prompt = system_prompt + _seed_tool_plan(message)
+    # W3: a Free/Trial attachment was dropped upstream — say so instead of answering a
+    # picture the model never received.
+    if _image_was_gated(context):
+        system_prompt = system_prompt + _IMAGE_GATE_NOTE
     # The turn's ONE language, named explicitly and LAST (see _language_directive).
-    turn_lang = _expected_lang(message, context)
+    # W3: account language is the middle fallback — see _turn_lang.
+    turn_lang = _turn_lang(message, context, _account_pref(context, "lang"))
     system_prompt = system_prompt + _language_directive(turn_lang)
     # A Terminal chart turn spends rounds READING the chart (digest → state → measure)
     # before it draws, so a text-sized budget runs out mid-draw and the turn degrades.
@@ -5341,8 +5563,13 @@ def _run_brain_loop_stream(
                     "svg": result.get("svg", ""),
                 }
                 charts.append(chart_payload)
-                if result.get("svg"):
-                    yield f"data: {json.dumps(chart_payload)}\n\n"
+                # Emit the event even when the server-side picture is empty. The widget
+                # draws the symbol itself from the published daily bars and treats `svg`
+                # as a fallback only — the two paths read DIFFERENT stores, so a miss here
+                # is not a miss there, and gating the event on `svg` silently denied the
+                # live renderer every symbol this process could not draw. An older widget
+                # ignores an svg-less chart event (it tests `j.svg`), so this is additive.
+                yield f"data: {json.dumps(chart_payload)}\n\n"
 
             tool_results.append({
                 "type": "tool_result",
@@ -5362,6 +5589,7 @@ def _run_brain_loop_stream(
     # Buffer the full answer before emitting (post-filter must run on complete text)
     full_answer = ""
     usage_dict: dict = {}
+    _synth_stop: str | None = None   # synthesis stop_reason, for the degraded-stub log
 
     need_synthesis = last_stop == "tool_use"
     if need_synthesis:
@@ -5408,6 +5636,9 @@ def _run_brain_loop_stream(
                 _cand_thinking = _thinking_segments(
                     getattr(final_resp, "content", None), tool_call_count + 1,
                     "synthesis", _p.get("model"))
+                # Held for the degraded-stub log below: "why was the answer empty" is
+                # answered by the stop reason, and only this scope ever sees it.
+                _synth_stop = getattr(final_resp, "stop_reason", None)
                 u = getattr(final_resp, "usage", None)
                 if u:
                     usage_dict = {
@@ -5480,16 +5711,37 @@ def _run_brain_loop_stream(
     # turn or logged to the eval corpus. A legitimately advice-FILTERED-to-empty answer
     # keeps its own handling (the `filtered` flag drives the probation chip).
     display_answer = filtered_answer
+    stub_shipped = False
     if not (filtered_answer or "").strip() and not was_filtered:
         display_answer = _DEGRADED_USER_MSG
+        stub_shipped = True
+        # The _DEGRADED_USER_MSG comment promises "the real cause is logged
+        # server-side". THIS is that log — before it existed, this path was the one
+        # dead end that printed nothing anywhere: a live zh guest turn spent exactly
+        # the configured cap in output tokens on thinking, wrote no text, and left no
+        # trace at all (2026-07-30). Everything needed to separate "the cap was
+        # exhausted" from "the provider returned nothing" is on this one line, which
+        # is why max_tokens and the stop reason are on it. Request path (not an
+        # Actions step) — module logger, per the annotation-law exemption list.
+        log.warning(
+            "brain_gateway: EMPTY answer → degraded stub shipped (lane=%s model=%s "
+            "phase=%s stop=%s input_tokens=%s output_tokens=%s max_tokens=%s)",
+            lane, model, "synthesis" if need_synthesis else "tool-round",
+            _synth_stop or last_stop,
+            usage_dict.get("input_tokens"), usage_dict.get("output_tokens"), max_tokens)
     yield f"data: {json.dumps({'type': 'delta', 'text': display_answer})}\n\n"
 
     # Emit suggestions (W6d) — between delta and done, only when non-empty
     if suggestions:
         yield f"data: {json.dumps({'type': 'suggest', 'items': suggestions})}\n\n"
 
-    # Emit done
-    yield f"data: {json.dumps({'type': 'done', 'citations': citations, 'quota': meta_event.get('quota', {}), 'usage': usage_dict, 'filtered': was_filtered, 'degraded': False, 'is_context_only': True})}\n\n"
+    # Emit done. `degraded` means "what shipped is not a real answer" — so it is TRUE
+    # exactly when the stub above replaced an empty answer. It used to hardcode False
+    # here, which is how a live dead turn reported itself as healthy (2026-07-30). No
+    # consumer contradicts this: mm_brain.js's finalizeDone reads only `citations` and
+    # `quota`, and the response log never sees this turn (_log_brain_response drops
+    # empty answers, and answer_out below still carries the REAL empty answer).
+    yield f"data: {json.dumps({'type': 'done', 'citations': citations, 'quota': meta_event.get('quota', {}), 'usage': usage_dict, 'filtered': was_filtered, 'degraded': stub_shipped, 'is_context_only': True})}\n\n"
 
     # Side-channel: hand real usage back to the caller (fix #1)
     if usage_out is not None:
@@ -5525,8 +5777,168 @@ def _json_safe(obj: Any) -> Any:
 
 
 # ---------------------------------------------------------------------------
+# Server-owned turn facts (Analyst OS W3) — account prefs + the image-gate flag
+# ---------------------------------------------------------------------------
+#
+# Two facts the MODEL needs are known only to the server: the caller's stored preferences
+# (``lib.user_prefs.read_user_prefs`` off the record ``require_user`` already returned) and
+# whether this turn's image attachment was dropped by the tier gate.
+#
+# They ride inside ``context`` under one reserved key rather than as new
+# ``_run_brain_loop(...)`` parameters. That is deliberate: ``context`` is already the loop's
+# per-turn envelope, and a new loop kwarg breaks every caller that patches the loop with a
+# pinned signature — including the test that pins the free-tier vision gate, which is the
+# exact turn the image note has to reach. A client CANNOT forge the block: any inbound
+# ``_server`` key is stripped before ours is written.
+_SERVER_CONTEXT_KEY = "_server"
+
+
+def _server_turn_context(context: dict | None, *, account_prefs: dict | None = None) -> dict:
+    """Copy ``context`` with the server-owned block installed (client value stripped)."""
+    src = context if isinstance(context, dict) else {}
+    out = {k: v for k, v in src.items() if k != _SERVER_CONTEXT_KEY}
+    prefs = {k: v for k, v in (account_prefs or {}).items()
+             if k in ("lang", "theme", "brain_depth") and isinstance(v, str)}
+    if prefs:
+        out[_SERVER_CONTEXT_KEY] = {"account_prefs": prefs}
+    return out
+
+
+def _mark_image_gated(context: dict | None) -> dict:
+    """Record that THIS turn's attachment was dropped by the tier gate (see _IMAGE_GATE_NOTE)."""
+    src = context if isinstance(context, dict) else {}
+    out = {k: v for k, v in src.items() if k != _SERVER_CONTEXT_KEY}
+    srv = dict(src.get(_SERVER_CONTEXT_KEY) or {}) if isinstance(src.get(_SERVER_CONTEXT_KEY), dict) else {}
+    srv["image_gated"] = True
+    out[_SERVER_CONTEXT_KEY] = srv
+    return out
+
+
+def _account_pref(context: dict | None, key: str) -> str | None:
+    """One stored preference off the server block, or None. Never raises on a junk context."""
+    src = context if isinstance(context, dict) else {}
+    srv = src.get(_SERVER_CONTEXT_KEY)
+    prefs = srv.get("account_prefs") if isinstance(srv, dict) else None
+    val = prefs.get(key) if isinstance(prefs, dict) else None
+    return val if isinstance(val, str) and val else None
+
+
+def _image_was_gated(context: dict | None) -> bool:
+    src = context if isinstance(context, dict) else {}
+    srv = src.get(_SERVER_CONTEXT_KEY)
+    return bool(srv.get("image_gated")) if isinstance(srv, dict) else False
+
+
+# ---------------------------------------------------------------------------
+# set_chat_preference (Analyst OS W3) — the one tool that WRITES for the user
+# ---------------------------------------------------------------------------
+#
+# "Keep the answers short" and "以后用中文回答" are standing instructions, and until now the
+# chat could only honour them for one turn. This tool stores them where the account page
+# stores its own (auth user_metadata, via lib/user_prefs) so they survive the session.
+#
+# Scope is deliberately two keys. This is the only tool here that mutates anything the user
+# owns, so it stores a display preference and nothing else — no tier, no billing, no email.
+
+SET_PREF_TOOL_SCHEMA: dict = {
+    "name": "set_chat_preference",
+    "description": (
+        "Save a STANDING preference for this signed-in user — how long the answers should "
+        "be, and/or which language to reply in. Call it when the user asks for a lasting "
+        "change: 'keep answers short from now on', 'stop giving me essays', 'always reply "
+        "in Chinese', '以后用中文回答'. Do NOT call it for a one-off ('short answer this "
+        "time' is just a short answer, not a setting). Pass at least one of depth/lang. It "
+        "stores a display preference and NOTHING else — no tier, billing, or account change "
+        "— and the reply must confirm in one sentence that it applies to future sessions too."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "depth": {
+                "type": "string",
+                "enum": ["concise", "standard", "deep"],
+                "description": ("Answer length. 'concise' = fewer words at the SAME evidence "
+                                "bar; 'standard' = the desk default; 'deep' = more of the "
+                                "picture. Never a change to how much is verified."),
+            },
+            "lang": {
+                "type": "string",
+                "enum": ["en", "zh"],
+                "description": "Reply language from now on: 'en' or 'zh'.",
+            },
+        },
+        # At least one — JSON Schema cannot express that through `required` without an anyOf
+        # the API may ignore, so minProperties states it and the tool ENFORCES it (an empty
+        # call comes back as nothing_to_save, never as a silent success).
+        "minProperties": 1,
+        "required": [],
+    },
+}
+
+#: tool input name → user_metadata key (the tool speaks the user's words, not the schema's).
+_SET_PREF_FIELDS = {"depth": "brain_depth", "lang": "lang"}
+
+
+def _tool_set_chat_preference(params: dict, user_id: str) -> dict:
+    """Persist a standing chat preference. Returns a dict ALWAYS — never raises.
+
+    A guest (or an unresolved identity) has no stored record to write to, so it gets an
+    explainable error rather than a no-op that would read to the user as "saved". Same for a
+    store that refuses the write: claiming success on an unpersisted preference is the one
+    outcome worse than failing.
+    """
+    from lib import user_prefs as _up  # noqa: PLC0415 — keep it off gateway module load
+
+    uid = str(user_id or "").strip()
+    if not uid or uid.startswith("guest:") or uid == "unknown":
+        return {"error": "signin_required",
+                "note": ("Saving a preference needs a signed-in account. Tell the user it "
+                         "will stick once they sign in — and answer THIS turn their way "
+                         "anyway; the request itself is honoured now.")}
+
+    patch: dict = {}
+    for field, meta_key in _SET_PREF_FIELDS.items():
+        if params.get(field) is not None:
+            patch[meta_key] = params.get(field)
+    if not patch:
+        return {"error": "nothing_to_save",
+                "note": ("Send depth ('concise'|'standard'|'deep') and/or lang ('en'|'zh') — "
+                         "an empty call saves nothing.")}
+
+    clean, rejected = _up.validate_prefs(patch)
+    if rejected:
+        inverse = {v: k for k, v in _SET_PREF_FIELDS.items()}
+        return {"error": "unknown_value",
+                "allowed": {inverse.get(k, k): list(_up.PREF_VALUES[k])
+                            for k in rejected if k in _up.PREF_VALUES},
+                "note": ("Not a value this preference accepts. Say so plainly and ask which "
+                         "of the allowed values the user meant — do not guess one.")}
+
+    if not _up.write_user_prefs(uid, clean):
+        return {"error": "save_failed",
+                "note": ("The preference store did not accept the write. Tell the user it "
+                         "did NOT save and that the account page can set it — never claim a "
+                         "save that did not happen.")}
+
+    inverse = {v: k for k, v in _SET_PREF_FIELDS.items()}
+    return {"ok": True,
+            "saved": {inverse.get(k, k): v for k, v in clean.items()},
+            "note": "Preference saved — it now applies to every future session."}
+
+
+# ---------------------------------------------------------------------------
 # [NEXT] suggestions contract (W6d) — split follow-up buttons off the reply
 # ---------------------------------------------------------------------------
+
+# A standalone ticker-shaped token: optional $ cashtag, 1-5 cap core, optional 1-2 cap
+# class suffix ("AAPL", "$XLF", "BRK.B").  The lookarounds keep it a whole token: no
+# start inside a word ("Apple" is prose), no partial eat of a 6+ cap word ("MARKET"),
+# no cap-run glued to digits ("COVID19"), and a bare trailing "." (sentence period)
+# still counts as the token's end while ".B"-style suffixes bind to the core first.
+_TICKER_SHAPED_RE = re.compile(
+    r"(?<![A-Za-z0-9$.])\$?[A-Z]{1,5}(?:\.[A-Z]{1,2})?(?!\.?[A-Za-z0-9])"
+)
+
 
 def _expected_lang(message: str, context: dict | None) -> str:
     """The ONE language this turn must answer in: 'zh' or 'en'.
@@ -5539,6 +5951,8 @@ def _expected_lang(message: str, context: dict | None) -> str:
     "Specifically asked" needs evidence, not the absence of it: any CJK is Chinese, but
     English requires real prose (two 3+ letter words), so a Chinese-profile user typing
     "AAPL?" or "XLF vs XLV" keeps their Chinese — a bare ticker is not a language choice.
+    Ticker-shaped tokens are struck before the prose count for exactly that reason:
+    symbols are the desk's shared vocabulary, not evidence of a language switch.
     Prior-turn language is deliberately never consulted: a Chinese history was dragging
     English turns' follow-up chips into Chinese.
     """
@@ -5547,9 +5961,38 @@ def _expected_lang(message: str, context: dict | None) -> str:
         return "zh"
     lang = str((context or {}).get("lang") or "").strip().lower() if isinstance(context, dict) else ""
     profile = "zh" if lang.startswith("zh") else "en"
-    if profile == "zh" and len(re.findall(r"[A-Za-z]{3,}", msg)) >= 2:
+    if profile == "zh" and len(re.findall(r"[A-Za-z]{3,}", _TICKER_SHAPED_RE.sub(" ", msg))) >= 2:
         return "en"   # wrote English prose under a Chinese profile → answer English
     return profile
+
+
+def _turn_lang(message: str, context: dict | None, account_lang: str | None = None) -> str:
+    """:func:`_expected_lang` with the ACCOUNT language as a middle fallback (W3).
+
+    The ladder, strongest first:
+
+    1. **what the user WROTE** — any CJK is Chinese; real English prose (two 3+ letter words)
+       under a Chinese profile is English. Unchanged: a bare ticker is still not a choice.
+    2. **the surface's own lang** (``context.lang``, stamped by the client from the UI) — a
+       page that names a language wins over a stored preference, because it is where the user
+       is right now. Only a lang that RESOLVES counts; ``klingon`` is garbage, not a signal,
+       and garbage must not outrank the account.
+    3. **the stored account language** — the signed-in user's saved choice, which is how a
+       Chinese-speaking user gets Chinese from the widget on a page that stamped nothing.
+    4. English.
+
+    Implemented as a wrapper that substitutes the account lang into the context's profile
+    slot and delegates, so rules (1) apply to the account language identically and
+    ``_expected_lang``'s own behaviour is untouched for every existing caller.
+    """
+    acct = str(account_lang or "").strip().lower()
+    if acct not in ("en", "zh"):
+        return _expected_lang(message, context)
+    src = context if isinstance(context, dict) else {}
+    raw = str(src.get("lang") or "").strip().lower()
+    if raw.startswith("zh") or raw.startswith("en"):
+        return _expected_lang(message, context)   # the surface named a language: it wins
+    return _expected_lang(message, {**src, "lang": acct})
 
 
 _LANG_NAMES = {"en": "English", "zh": "Chinese (简体中文)"}
@@ -5561,9 +6004,43 @@ def _language_directive(lang: str) -> str:
     fallback model drifts to Chinese on the reply's tail — the [NEXT] block — even when
     the body is English."""
     name = _LANG_NAMES.get(lang) or _LANG_NAMES["en"]
-    return (f"\n\nLANGUAGE FOR THIS TURN: {name}. Write the entire reply in {name} — the body, "
-            f"the stance word, and all three [NEXT] follow-up questions. Do not switch language "
-            f"part-way, and do not follow the language of earlier turns.")
+    out = (f"\n\nLANGUAGE FOR THIS TURN: {name}. Write the entire reply in {name} — the body, "
+           f"the stance word, and all three [NEXT] follow-up questions. Do not switch language "
+           f"part-way, and do not follow the language of earlier turns.")
+    if lang == "zh":
+        # The stance enum reads as fixed English tokens, and on live zh turns the model kept
+        # them in English (W1 live probe, 2026-07-30). Hand it the desk's own bilingual
+        # doctrine forms (engine/i18n.py — canonical "for this and every future surface").
+        out += ("\nThe STANCE line uses the Chinese doctrine forms: Act=立即行动 · "
+                "Get ready=做好准备 · Watch — don't chase=观察—勿追高 · Protect gains=保护利润 · "
+                "Stand aside=暂时观望 · Ignore=忽略. English state words get the desk's own "
+                "Chinese label too — Goldilocks=理想增长, Reflation=再通胀, CAUTION=谨慎 — "
+                "never the bare English token.")
+    return out
+
+
+#: The stored answer-length preference, as ONE system line. 'standard' (and absent) say
+#: nothing — the default length is the doctrine's own, and a line asserting it would only
+#: compete with the analyst block for the model's attention.
+#: The evidence bar is named in BOTH directions on purpose: 'concise' must not read as
+#: permission to cite less, and 'deep' must not read as permission to get technical.
+_DEPTH_ADDENDA = {
+    "concise": ("\n\nDEPTH PREFERENCE: this user prefers tight answers — same evidence bar, "
+                "fewer words, no padding sections."),
+    "deep": ("\n\nDEPTH PREFERENCE: this user prefers fuller answers — more of the picture, "
+             "same plain voice, never jargon."),
+}
+
+#: Free/Trial attachments are DROPPED before the model ever sees them (vision is Pro).
+#: Dropping them silently made the model answer a picture it was never handed — it read as
+#: a model that ignored the user. The drop stands; this line makes it honest.
+_IMAGE_GATE_NOTE = ("\n\nNOTE: the user attached an image, but image reading is a Pro "
+                    "capability — acknowledge that in one sentence and answer from the text.")
+
+
+def _depth_addendum(depth: str | None) -> str:
+    """The user's stored answer-length line, or '' for standard/absent/junk."""
+    return _DEPTH_ADDENDA.get(str(depth or "").strip().lower(), "")
 
 
 def _screen_suggestions(items: list[str], lang: str) -> list[str]:
@@ -5827,6 +6304,7 @@ def chat(
     is_guest: bool = False,
     guest_aid: str = "",
     guest_ip: str = "",
+    account_prefs: dict | None = None,
 ) -> dict:
     """Process a brain chat request (non-streaming).
 
@@ -5851,12 +6329,23 @@ def chat(
           when not eligible.  Consumes ONE pro message (same quota + token ledger as a
           normal Pro turn — no new quota bucket).
 
+    account_prefs (W3): the caller's STORED preferences ({lang?, theme?, brain_depth?}) as
+                returned by lib.user_prefs.read_user_prefs off the record require_user
+                already fetched — so threading them costs no network call. Server-verified
+                like user_email: never from the body. Sets the answer LENGTH (see
+                _depth_addendum) and the middle language fallback (see _turn_lang).
+                Always absent/{} for a guest, who has no stored record.
+
     Response shape:
         ok, reply, citations, annotations?, commands?, charts?, suggestions?, symbol?, lane, model,
         thread_id, quota: {lane, remaining, limit, period}, filtered, degraded, is_context_only
     """
     from engine.neuralweb.ask_brain import _post_filter_advice  # noqa: PLC0415
     from lib import ai_costs as _ac  # noqa: PLC0415
+
+    # W3: install the server-owned block (and strip any forged one) before ANY consumer of
+    # `context` runs — the loop, the language resolver and the suggestion screen all read it.
+    context = _server_turn_context(context, account_prefs=account_prefs)
 
     root = _repo_root(root)
     cfg = _load_brain_config(root)
@@ -5867,7 +6356,8 @@ def chat(
         lane = "pro"
 
     lane_cfg = lanes_cfg.get(lane) or {}
-    max_tokens = int(lane_cfg.get("max_tokens") or (2000 if lane == "fast" else 4000))
+    max_tokens = int(lane_cfg.get("max_tokens")
+                     or (_FAST_MAX_TOKENS if lane == "fast" else _PRO_MAX_TOKENS_FALLBACK))
     tool_budget = int(lane_cfg.get("tool_budget") or (5 if lane == "fast" else 10))
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
     effort = lane_cfg.get("effort")
@@ -5993,6 +6483,9 @@ def chat(
     turn_providers = providers
     if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) == 0:
         image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
+        # W3: the DROP stands — but the model is told it happened, so the reply owns the gate
+        # in one sentence instead of silently answering a picture it never received.
+        context = _mark_image_gated(context)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
         if vprovs:
@@ -6068,12 +6561,21 @@ def chat(
     answer_text, was_filtered = _post_filter_advice(answer_text, citations)
     answer_text = _leak_screen(answer_text)  # PART B: prompt-echo → distill refusal
     answer_text, suggestions = _split_suggestions(answer_text)
-    suggestions = _screen_suggestions(suggestions, _expected_lang(clean_msg, context))
+    # Same language ladder the prompt used (W3: account lang is the middle fallback), so a
+    # chip can never come back screened against a different language than the body.
+    suggestions = _screen_suggestions(
+        suggestions, _turn_lang(clean_msg, context, _account_pref(context, "lang")))
 
     # 8. Thread message persistence (best-effort) — persist the CLEAN text (no [NEXT] block)
     if effective_thread_id:
         _append_message(effective_thread_id, "user", clean_msg + ("\n\n[image attached]" if image_blocks else ""))
-        _append_message(effective_thread_id, "assistant", answer_text)
+        # The assistant turn carries SYSTEM-EVENT meta (W3): the tool names this turn
+        # called and the symbols they/the answer named — never user prose, never a score.
+        # brain_user_memory.recall_sessions reads it back so a later "as we discussed last
+        # week" costs one indexed read instead of re-deriving from answer text.
+        from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+        _append_message(effective_thread_id, "assistant", answer_text,
+                        meta=_bum.assistant_meta(final_messages, answer_text))
 
     # 9. Cost settlement from response.usage (fix #1: real tokens, never zeros)
     in_tok = int(usage_dict.get("input_tokens") or 0)
@@ -6154,6 +6656,7 @@ def chat_stream(
     is_guest: bool = False,
     guest_aid: str = "",
     guest_ip: str = "",
+    account_prefs: dict | None = None,
 ) -> Generator[str, None, None]:
     """Process a brain chat request (streaming). Yields SSE strings per contract.
 
@@ -6171,9 +6674,14 @@ def chat_stream(
 
     mode: 'chat' (default) or 'research' (W6b Deep Research).
     user_email: Supabase-verified email for CXI-R23a internals gating (never from body).
+    account_prefs (W3): stored {lang?, theme?, brain_depth?} off the verified record — see
+                chat()'s docstring. Server-derived, never from the body; {} for a guest.
     On quota exhaustion or error, yields a done event with appropriate flags.
     """
     from lib import ai_costs as _ac  # noqa: PLC0415
+
+    # W3: server-owned turn block installed (and any forged one stripped) before use.
+    context = _server_turn_context(context, account_prefs=account_prefs)
 
     root = _repo_root(root)
     cfg = _load_brain_config(root)
@@ -6184,7 +6692,8 @@ def chat_stream(
         lane = "pro"
 
     lane_cfg = lanes_cfg.get(lane) or {}
-    max_tokens = int(lane_cfg.get("max_tokens") or (2000 if lane == "fast" else 4000))
+    max_tokens = int(lane_cfg.get("max_tokens")
+                     or (_FAST_MAX_TOKENS if lane == "fast" else _PRO_MAX_TOKENS_FALLBACK))
     tool_budget = int(lane_cfg.get("tool_budget") or (5 if lane == "fast" else 10))
     usage_lane = lane_cfg.get("usage_lane") or f"brain-{lane}"
     # High-intensity intent (per-lane): effort + thinking mode, applied Claude-path-only.
@@ -6281,6 +6790,8 @@ def chat_stream(
     turn_providers = providers
     if image_blocks and not _unlimited_allowed(user_email) and _get_allowance(tier, status, "pro", root).get("limit", 0) == 0:
         image_blocks = []  # not Pro-eligible → drop attachments (unlimited operators keep vision)
+        # W3: the DROP stands — the model is told, so the reply owns the gate in one sentence.
+        context = _mark_image_gated(context)
     if image_blocks:
         vprovs = _vision_providers(lane, providers, root)
         if vprovs:
@@ -6369,7 +6880,15 @@ def chat_stream(
     #    run's own thread (app/brain_runs.py), so it still happens when the client that
     #    asked the question is long gone — that is what makes the answer recoverable.
     if effective_thread_id and answer_out:
-        _append_message(effective_thread_id, "assistant", answer_out[0])
+        # Same system-event meta as the non-streaming path (W3), with the SYMBOLS half
+        # only: the streaming loop keeps its message list internal and hands back just
+        # usage/answer/thinking side-channels, so no tool-name list is in scope here and
+        # threading new state through the loop is out of this change's scope. `tools`
+        # therefore ships empty on streamed turns — brain_user_memory falls back to
+        # reading the answer text, which is what every pre-W3 row needs anyway.
+        from engine.neuralweb import brain_user_memory as _bum  # noqa: PLC0415
+        _append_message(effective_thread_id, "assistant", answer_out[0],
+                        meta=_bum.assistant_meta(None, answer_out[0]))
 
     # 8. Cost record (fix #1: real tokens; fix #2: accumulate ceiling backstop)
     usage_dict = usage_out[0] if usage_out else {}

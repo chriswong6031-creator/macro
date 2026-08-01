@@ -47,13 +47,14 @@ log = logging.getLogger(__name__)
 # trend cannot be ENTER/ACCUMULATE), not in pretending to forecast returns.
 WEIGHTS = {"trend": 0.26, "breadth": 0.18, "impulse": 0.07, "macro": 0.18,
            "mtf": 0.16, "volhole": 0.05, "crowding": 0.10}
+MIN_CANDLE_MEMBER_COVERAGE = 0.60  # below this, use the full-basket close level and omit flow
 
-# Non-US regions (China A-shares / HK / Canada) carry NO consolidated candle (the OHLCV store
-# is US-only) and NO macro prior (the _MACRO_PRIOR / _SECTOR_PROXY maps below are US-keyed). So
-# abroad the mtf/vol-hole legs and the macro leg are structurally unavailable. Rather than score
-# those regions with (a) a dead-0 macro leg dragging every score toward 50 and (b) the validated
-# drawdown-control gate (long_below_trend) running BLIND on an empty candle, we feed the gates two
-# PRICE-ONLY, region-available proxies computed from the basket's own equal-weight level:
+# Non-US regions (China A-shares / HK / Canada) usually carry no member-level OHLCV candle (the
+# deep store is US-first) and no macro prior (the _MACRO_PRIOR / _SECTOR_PROXY maps below are
+# US-keyed). A close-only equal-weight fallback now supplies honest D/3D/W/M structure everywhere;
+# volume/tape legs remain absent when volume is unavailable. Rather than score those regions with
+# (a) a dead-0 macro leg dragging every score toward 50 or (b) a blind drawdown-control gate, we
+# also feed the gates two PRICE-ONLY, region-available proxies from the basket's own level:
 #   • ext_abs   — how stretched the level is above its 50d MA vs its OWN trailing-year history
 #                 (a self-referential z; a steady region-leader is ~0-1, a parabolic blow-off is
 #                 high). Replaces the cross-sectional rs_pctile "extension" gate, which pins every
@@ -531,12 +532,19 @@ def _crowding_pen(fp: dict, lead: dict, crowd: dict | None) -> tuple[float, list
 _SIG_CACHE: dict[tuple, dict] = {}
 
 
-def _basket_signals(members: list[dict], conv_map: dict | None = None) -> dict:
-    """Build the basket's consolidated CANDLE (deep, current-membership) and run the MTF +
-    tape engines on it. Cached by membership so build_baskets reuses it for the detail pages.
-    {} when no member OHLCV resolves (e.g. non-US regions — the store is US-only today), in
-    which case the mtf/volhole legs renormalise out of the score cleanly."""
-    key = tuple(sorted(m.get("ticker", "") for m in members))
+def _basket_signals(members: list[dict], level: pd.Series | None = None,
+                    region: str = "us", conv_map: dict | None = None) -> dict:
+    """Run MTF/tape on a consolidated member candle, with an all-region close-only fallback.
+
+    The preferred path uses member OHLCV and can publish tape/flow. When that store cannot
+    resolve a region, the already-computed equal-weight close level still supports the MTF
+    engine's D/3D/W/M structure. The fallback is explicitly stamped and never fabricates
+    volume, whale or flow fields. Cached by region/membership/as-of for detail-page reuse.
+    """
+    level_last = None
+    if level is not None and not level.dropna().empty:
+        level_last = str(level.dropna().index[-1])
+    key = (region, level_last, tuple(sorted(m.get("ticker", "") for m in members)))
     if key in _SIG_CACHE:
         return _SIG_CACHE[key]
     out: dict = {}
@@ -545,12 +553,36 @@ def _basket_signals(members: list[dict], conv_map: dict | None = None) -> dict:
         if len(idx) >= 60:
             cand, meta = basket_index.consolidated_candle(members, idx, "equal", conv_map, pit=False)
             if cand is not None:
-                out = {"mtf": basket_mtf.basket_mtf(cand),
-                       "tape": basket_tape.basket_tape(cand, meta),
-                       "meta": meta}
+                n_total = int(meta.get("n_total") or len(members) or 0)
+                n_live = int(meta.get("n_live") or 0)
+                member_cov = n_live / n_total if n_total else 0.0
+                meta["member_coverage_pct"] = round(member_cov, 3)
+                if member_cov >= MIN_CANDLE_MEMBER_COVERAGE:
+                    mtf = basket_mtf.basket_mtf(cand)
+                    if mtf:
+                        mtf["source"] = "member_ohlcv"
+                    out = {"mtf": mtf,
+                           "tape": basket_tape.basket_tape(cand, meta),
+                           "meta": meta}
+                else:
+                    log.info("basket candle coverage %.0f%% below %.0f%% floor; "
+                             "using full-basket close-only MTF",
+                             member_cov * 100, MIN_CANDLE_MEMBER_COVERAGE * 100)
     except Exception as e:  # noqa: BLE001 — additive overlay
         log.warning("basket signals failed: %s", e)
         out = {}
+    if not out.get("mtf") and level is not None:
+        try:
+            close = pd.to_numeric(level, errors="coerce").dropna()
+            if len(close) >= 60:
+                mtf = basket_mtf.basket_mtf(pd.DataFrame({"close": close}))
+                if mtf:
+                    mtf["source"] = "equal_weight_close"
+                    out = {"mtf": mtf, "tape": None,
+                           "meta": {"basis": "equal_weight_close",
+                                    "flow_available": False, "n_bars": int(len(close))}}
+        except Exception as e:  # noqa: BLE001 — additive overlay
+            log.warning("basket close-only MTF fallback failed: %s", e)
     _SIG_CACHE[key] = out
     return out
 
@@ -966,9 +998,9 @@ def compute_theme_intel(region: str = "us") -> dict | None:
         macro, m_why = _macro_leg(bid, mc)
         crowd_pen, c_why = _crowding_pen(fp, lead, crowd)
 
-        # consolidated-candle legs (deep, current-membership): multi-timeframe trend structure +
-        # vol-compression regime. Whale/flow ride along as display-only context (not scored).
-        sig = _basket_signals(members)
+        # Multi-timeframe structure prefers a deep consolidated OHLCV candle; all regions
+        # fall back to the equal-weight close level. Tape/flow only exists on the OHLCV path.
+        sig = _basket_signals(members, lvl, region)
         mtf = sig.get("mtf") or {}
         tape = sig.get("tape") or {}
         mtf_leg = mtf.get("momentum_score")
@@ -1081,7 +1113,8 @@ def compute_theme_intel(region: str = "us") -> dict | None:
             "long_sign": fp.get("long_sign"),            # 200d trend sign proxy (non-US)
             "perf": {k: {"rel": _r((perf.get(k) or {}).get("rel"), 4),
                          "ret": _r((perf.get(k) or {}).get("ret"), 4)} for k in
-                     ("5d", "20d", "60d", "ytd")},
+                     ("1d", "5d", "10d", "20d", "60d", "ytd")},
+            "timing": _timing_snapshot(lvl, bench, i, fp),
             "breadth": breadth_d,
             "impulse": impulse_d,
             "leadership": {"breadth": lead.get("breadth"), "top": (lead.get("top") or [])[:3]},
@@ -1378,3 +1411,44 @@ def _ret_rel(lvl: pd.Series, bench: pd.Series, i: int, h: int) -> float | None:
         return float((lv1 / lv0 - 1.0) - (bv1 / bv0 - 1.0))
     except Exception:  # noqa: BLE001
         return None
+
+
+def _timing_snapshot(lvl: pd.Series, bench: pd.Series, i: int, fp: dict | None) -> dict:
+    """Display-only short-horizon tape and velocity, computed identically in every region.
+
+    Returns are basket-minus-benchmark decimals. Velocity measures the change in the 1-day
+    relative return since yesterday and the change in the 5-day relative return since five
+    sessions ago. `accel_z` is the existing group-flow acceleration texture. Nothing here
+    changes the validated score, lifecycle label or recommendation.
+    """
+    rel = {f"{h}d": _ret_rel(lvl, bench, i, h) for h in (1, 5, 10, 20)}
+    prev_1d = _ret_rel(lvl, bench, i - 1, 1)
+    prev_5d = _ret_rel(lvl, bench, i - 5, 5)
+
+    def _delta(now: float | None, prev: float | None) -> float | None:
+        return None if now is None or prev is None else float(now - prev)
+
+    v1 = _delta(rel["1d"], prev_1d)
+    v5 = _delta(rel["5d"], prev_5d)
+    accel = (fp or {}).get("accel_z")
+    if accel is not None and accel >= 0.4 and (v5 or 0.0) > 0:
+        state = "accelerating"
+    elif accel is not None and accel <= -0.4 and (v5 or 0.0) < 0:
+        state = "decelerating"
+    elif v5 is not None and v5 > 0.005:
+        state = "improving"
+    elif v5 is not None and v5 < -0.005:
+        state = "weakening"
+    else:
+        state = "steady"
+    return {
+        "relative": {k: _r(v, 4) for k, v in rel.items()},
+        "velocity_1d": _r(v1, 4),
+        "velocity_5d": _r(v5, 4),
+        "accel_z": _r(accel, 2),
+        "state": state,
+        "state_zh": {"accelerating": "加速", "decelerating": "减速",
+                     "improving": "改善", "weakening": "转弱",
+                     "steady": "平稳"}[state],
+        "display_only": True,
+    }

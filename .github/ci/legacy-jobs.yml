@@ -640,6 +640,27 @@ jobs:
       # guard itself against the committed registry, not just its pytest coverage.
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
+      # PROPHET LIVE P0 gates. This job, not a new one: the parity suite drives the
+      # REAL engine.signal_gate over seeded close series, so it needs pandas + numpy
+      # (present in this job's install line above) and pyarrow for the reconciler's
+      # parquet round-trip. Any importorskip here would be a disarmed test — the deps
+      # are provably installed, so there is none.
+      #   G0.1 parity  tests/test_prophet_live_pack.py       (~25s, real gate calls)
+      #   G0.2/3/5/6   tests/test_prophet_live_evaluator.py
+      #   ledger law   tests/test_prophet_live_reconcile.py
+      #   VPS lane     tests/test_prophet_live_vps_lane.py — quote source, the atomic
+      #                served write, the serving gate (/live/prophet_live.json is NOT
+      #                public), the systemd unit/timer, macro-update's reconciliation
+      #                and the workflow's self-disabling backstop gate (§4.2a/§4.4a).
+      #                Stdlib + pyyaml only, so it rides in this job rather than
+      #                needing one of its own.
+      - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
+        run: >
+          python -m pytest
+          tests/test_prophet_live_pack.py
+          tests/test_prophet_live_evaluator.py
+          tests/test_prophet_live_reconcile.py
+          tests/test_prophet_live_vps_lane.py -q
 
   collector-registry:
     if: ${{ false }}
@@ -848,8 +869,8 @@ jobs:
         #    `try: import requests / except: requests = None`. Drop the dep and the lane silently
         #    exercises that degraded branch instead of the shipped one.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 requests
-      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0)
-        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py -q
+      - name: neural-web core suite (mastermind context + confluence + spine query + ask brain + world state + R5 macro context + ADB-W1 brief context + ADB-W2 forward calendar + Analyst OS P0 + W2)
+        run: python -m pytest tests/test_mastermind_context.py tests/test_confluence.py tests/test_spine_query.py tests/test_ask_brain.py tests/test_world_state.py tests/test_macro_snapshot.py tests/test_macro_context_authority.py tests/test_law_dates.py tests/test_confluence_strength.py tests/test_neuralweb_health.py tests/test_neuralweb_daily_brief.py tests/test_brief_context.py tests/test_forward_calendar.py tests/test_orchestrator_log.py tests/test_mastermind_feedback.py tests/test_admin_orchestrator.py tests/test_admin_prophet.py tests/test_admin_trade_memory.py tests/test_brain_doctrine.py tests/test_mastermind_response_log.py tests/test_admin_mastermind_logs.py tests/test_brain_analyst_doctrine.py tests/test_brain_analyst_wiring.py tests/test_market_packet.py tests/test_brain_market_intel.py tests/test_brain_seed_router.py tests/test_brain_analogues.py tests/test_brain_curve.py tests/test_response_eval.py tests/test_brain_user_memory.py tests/test_user_prefs.py -q
 
   cn-standout-audit:
     if: ${{ false }}
@@ -883,8 +904,21 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # Deps grew 2026-07-30 (#3977). This job was `pytest pyyaml` — right for the
+      # workflow-YAML steps — but OIP E8 attached five options suites whose assertions are
+      # DATA-layer: they build DataFrames, round-trip parquet, and drive builders that
+      # render templates and fetch over HTTP. Only the first added step ran before ci-pack-1
+      # died, so its `No module named 'jinja2'` hid four more steps that would have failed
+      # the same way on pandas/jinja2/requests. Verified minimal by installing one package
+      # at a time in a clean venv (2026-07-30): pytest+pyyaml alone collects none of the
+      # four; +pandas leaves parquet writes failing; +pyarrow leaves 15 jinja2 and 11
+      # requests failures; the set below runs all five green (31+52+38+33+23 = 177 tests).
+      # numpy is transitive via pandas and named for the record, as causal-factory does.
+      # NOT patched with importorskip anywhere — a suite that skips in the only job naming
+      # it executes NOWHERE while reading green, which is the class the
+      # check_skip_only_suites.py steps below exist to catch.
       - name: install minimal deps
-        run: pip install pytest pyyaml
+        run: pip install pytest pyyaml pandas numpy pyarrow jinja2 requests
       - name: check_workflow_yaml selftest
         run: python scripts/check_workflow_yaml.py --selftest
       - name: "all workflow files must parse with on:/jobs: blocks"
@@ -933,6 +967,37 @@ jobs:
       # so the minimal pytest+pyyaml install above is enough.
       - name: render-lane scope contract (canada must be first-class, not a build_vector hook)
         run: python -m pytest tests/test_render_canada_scope.py -q
+      # OIP E8 (2026-07-29). Same #3718 class as the intl suite above: this PR shipped
+      # five guards and, on first push, NO `run:` step named any of them — the
+      # options-workspace suite appeared only in a render.yml YAML COMMENT, which is
+      # enough to satisfy audit_unrun_tests.py's text matcher (tightened in the same
+      # commit to read `run:` steps only, so a comment can no longer fake coverage).
+      # Deps: see the install step's note — these five need the data stack, not just
+      # pytest+pyyaml. The express-lane suite itself is stdlib + bash (it shells out to
+      # execute render.yml's `region_of` for real) and its one RUNTIME probe stubs jinja2
+      # when absent rather than skipping, so it stays runnable in a thin env too.
+      - name: options express-lane coverage contract (workspace + screener must stay wired)
+        run: python -m pytest tests/test_render_options_workspace_scope.py -q
+      # #3721 weekend-row class. The options stores accrue non-session rows that RECOMPUTE
+      # IV/spot/walls off a stale price; unfiltered they corrupt .iloc[-1], percentile
+      # windows and positional lookbacks — including the n_obs count that gates
+      # call_skew_rich into the CROWDED state.
+      - name: options readers must session-filter dated stores
+        run: python -m pytest tests/test_options_session_guards.py -q
+      # The ×100 class, hit twice. Both incidents survived tests whose FIXTURES encoded
+      # the bug, so this suite asserts against fixture-shaped AND prod-shaped inputs and
+      # simulates a newest-vintage-only flip.
+      - name: options ingestion seams must assert percent-vs-fraction
+        run: python -m pytest tests/test_options_unit_seams.py -q
+      # R8 one coverage shape across the four family builders; pins the honesty rules
+      # (unknown stays None, never a fabricated 100%; staleness is calendar-derived).
+      - name: options coverage object contract
+        run: python -m pytest tests/test_options_coverage_object.py -q
+      # E5: daily.yml invokes collectors.equity_earnings BARE, and that module's __main__
+      # used to be a three-ticker smoke test — the whole-universe sweep had never run.
+      # Pins the entry point AND the coverage-aware tripwire that could not see it.
+      - name: earnings sweep entry point + coverage-aware tripwire
+        run: python -m pytest tests/test_earnings_sweep_entrypoint.py -q
       # FD-EXP (2026-07-30). Third instance of the same class: build_flow_desk was
       # daily.yml-ONLY, so flow_desk.html/json + flowdata/cohorts.json refreshed once a
       # night while both express lanes rebuilt the stores around them (#3515 flow_leaders,
@@ -3029,7 +3094,7 @@ jobs:
         # import closure is stdlib + pyyaml (cadence_resolver, personas, accounts,
         # outbox and sentinel all stay on those two in the lanes above), and
         # nothing is importorskip-gated.
-        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py -q
+        run: python -m pytest tests/test_marketing_engine.py tests/test_marketing_sentinel.py tests/test_marketing_content.py tests/test_admin_marketing.py tests/test_admin_marketing_floor.py tests/test_marketing_personas.py tests/test_marketing_event_language.py tests/test_marketing_press_feeds.py tests/test_marketing_breaking.py tests/test_marketing_fastlane.py tests/test_wires_rail_b4b.py tests/test_marketing_press_copy.py tests/test_marketing_intelligence_desk.py tests/test_marketing_ramp_cta_jitter.py tests/test_marketing_expression_dial.py tests/test_marketing_cadence_spine.py tests/test_marketing_chart_coverage.py tests/test_marketing_desk_feeds.py tests/test_marketing_reply_desk.py tests/test_marketing_forward_booking.py tests/test_marketing_recall.py tests/test_marketing_learning.py tests/test_marketing_reply_producer.py tests/test_marketing_scoring_brain.py tests/test_marketing_hot_tape_llm.py tests/test_marketing_hot_tape.py tests/test_marketing_hot_tape_radar.py tests/test_marketing_copy_v2.py tests/test_marketing_copy_auditor.py tests/test_marketing_bare_cashtag.py tests/test_marketing_voice_laws.py tests/test_marketing_publisher_names.py tests/test_marketing_media_backfill.py tests/test_chart_facts.py tests/test_confluence_source.py tests/test_chart_since_setup.py tests/test_marketing_selection.py tests/test_marketing_press_wire.py tests/test_marketing_x_intel.py tests/test_marketing_reply_voice.py tests/test_marketing_filing_lanes.py tests/test_marketing_cadence_ramp_coherence.py -q
       - name: reply-target register validates (config/reply_targets.yml)
         # The register is operator-curated, so a bad handle or an unknown tier is
         # an editing mistake, not a code change. Runs as its own step so a
@@ -3171,7 +3236,23 @@ jobs:
         # display-rounding guards were SKIP-ONLY. The thin lane keeps the file
         # for its pandas-free config and gating tests; the parquet-backed tests
         # execute here.
-        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py -q -rs
+        #
+        # FOUR SUITES JOIN 2026-07-30, same class, fifth time — and two of them were
+        # wired into the THIN marketing-engine lane hours earlier by the very edit
+        # that was supposed to end their darkness (#4030). They had sat UNRUN — named
+        # by no job at all — which is why a 90-bar 52-week window shipped a high that
+        # was 18.2% wrong on MSFT and 11 of 12 names with it. Naming them in the thin
+        # lane traded one darkness for another:
+        #   * test_confluence_honesty / test_tech_confluence import numpy at MODULE
+        #     level, so they turned marketing-engine red at COLLECTION (pack-3).
+        #   * test_chart_facts / test_marketing_bare_cashtag carry importorskip gates
+        #     the thin lane can never satisfy, so every gated test SKIPPED and
+        #     check_skip_only_suites.py failed the build (pack-1) — precisely the
+        #     "green and weaker in the same commit" trade that guard exists to refuse.
+        # The gates stay; the suites get a lane that satisfies them. The thin lane
+        # keeps test_chart_facts and test_marketing_bare_cashtag for their
+        # dependency-free tests, which is the split the guard is asking for.
+        run: python -m pytest tests/test_marketing_content.py tests/test_marketing_live_verify.py tests/test_marketing_breaking.py tests/test_marketing_weekend_levels.py tests/test_marketing_chart_coverage.py tests/test_marketing_hot_tape_pack.py tests/test_marketing_filing_lanes.py tests/test_chart_facts.py tests/test_marketing_bare_cashtag.py tests/test_confluence_honesty.py tests/test_tech_confluence.py -q -rs
 
   publish-r2-client:
     if: ${{ false }}
@@ -3706,7 +3787,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: page/render builders whose output ships to the site
-        run: python -m pytest tests/test_ai_desk_page.py tests/test_build_chart_data.py tests/test_build_odds_observability.py tests/test_build_sector_map.py tests/test_committee_template.py tests/test_confluence_screener_page.py tests/test_contagion_card_render.py tests/test_flow_leaders_render_markers.py tests/test_macro_signals_render.py tests/test_movers_page.py tests/test_nav_submenu_icons.py tests/test_sector_nav_links.py tests/test_site_semantics_refs.py tests/test_sp500_heatmap_caps.py tests/test_stage_analysis_page.py tests/test_stocktable_data.py tests/test_template_items_footgun.py tests/test_trading_journal_xlsx.py tests/test_us_stocks_w8g_table.py -q
+        run: python -m pytest tests/test_ai_desk_page.py tests/test_build_chart_data.py tests/test_build_odds_observability.py tests/test_build_sector_map.py tests/test_committee_template.py tests/test_confluence_screener_page.py tests/test_contagion_card_render.py tests/test_flow_leaders_render_markers.py tests/test_macro_signals_render.py tests/test_movers_page.py tests/test_nav_icon_refresh.py tests/test_nav_submenu_icons.py tests/test_sector_nav_links.py tests/test_site_semantics_refs.py tests/test_sp500_heatmap_caps.py tests/test_stage_analysis_page.py tests/test_stocktable_data.py tests/test_template_items_footgun.py tests/test_trading_journal_xlsx.py tests/test_us_stocks_w8g_table.py -q
 
   unrun-builders-stores:
     # store/ops builders behind the nightly data lanes.
@@ -3955,6 +4036,26 @@ jobs:
       # nine blocked wheels are confirmed unused. All 42 green on main at wiring time.
       - name: GEX modeling core — walls/surface model, greeks + dealer-sign engine, polygon per-strike accrual
         run: python -m pytest tests/test_gex_model.py tests/test_gex_engine.py tests/test_polygon_gex.py -q
+      # OIP E3 positioning persistence (2026-07-29). Three suites, ~11 s serial.
+      #
+      # test_gex_state.py and test_index_gex_history.py were BOTH dark: named by no
+      # `run:` step in any of the workflows, so the gex_state emitter and the index
+      # dealer-gamma reconstruction had no CI at all. This wave edits both, so leaving
+      # them unwired would ship the edits unverified — the unrun-suite rot class.
+      # test_positioning_persistence.py is new with the wave and is wired at birth.
+      #
+      # Import closure verified against THIS job's install line with scipy, sklearn,
+      # jinja2, plotly, requests, bs4, openpyxl, statsmodels, matplotlib and fastapi all
+      # blocked: pytest + pandas + numpy + pyarrow + pyyaml is sufficient. engine/
+      # gex_state.py deliberately keeps a pandas-free import (the positioning reads are
+      # lazy-imported inside the functions), and that property is itself asserted.
+      #
+      # The three remaining dark suites in this family that this wave flagged as the
+      # follow-up (the gex model layer, the gex engine math, and the polygon accrual
+      # collector) are now wired by the GEX modeling-core step directly above, which
+      # landed on main before this branch rebased. Nothing in the family is dark.
+      - name: OIP E3 positioning persistence — oi_delta clusters, wall persistence, index-GEX rebuild routing
+        run: python -m pytest tests/test_positioning_persistence.py tests/test_gex_state.py tests/test_index_gex_history.py -q
 
   unrun-publish-ops:
     # publish/transport, asset pipeline, ticker pages and the nightly ops tripwires.

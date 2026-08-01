@@ -23,6 +23,7 @@ Coverage (per contract):
 from __future__ import annotations
 
 import json
+import logging
 import pathlib
 import re
 import sys
@@ -143,7 +144,7 @@ def test_config_fallback_when_absent():
     gw._BRAIN_CONFIG_CACHE = None
     cfg = gw._load_brain_config(empty_root)
     gw._BRAIN_CONFIG_CACHE = None  # reset after test
-    assert cfg.get("lanes", {}).get("fast", {}).get("max_tokens") == 2000
+    assert cfg.get("lanes", {}).get("fast", {}).get("max_tokens") == gw._FAST_MAX_TOKENS == 4000
     assert cfg.get("lanes", {}).get("pro", {}).get("max_tokens") == 8000
 
 
@@ -1710,6 +1711,81 @@ def test_chat_mode_system_prompt_unchanged():
     assert "Turn every number into meaning" in prompt
     # Non-terminal pages must NOT be told about the chart-control tools.
     assert "CHART CONTROL" not in prompt
+
+
+def test_chart_behaviour_splits_by_surface():
+    """Terminal drives the live chart; the dashboard draws its own in the reply.
+
+    The two surfaces are different situations, and one prompt cannot serve both: in the
+    Terminal a static picture is a downgrade from the chart already on screen, while on
+    the dashboard the reply's chart IS the only chart there is.
+    """
+    dash = gw._build_system_prompt("chat", page="dashboard")
+    term = gw._build_system_prompt("chat", page="terminal")
+
+    # dashboard: draw it, unprompted, when the answer is about price action
+    assert "SHOWING THE CHART (dashboard)" in dash
+    assert "WITHOUT being asked" in dash
+    assert "CHART CONTROL" not in dash
+    # terminal: drive the user's chart instead of sending a picture of one
+    assert "CHART CONTROL" in term
+    assert "DRAW ON THE USER'S CHART, DON'T SEND A PICTURE" in term
+    assert "SHOWING THE CHART (dashboard)" not in term
+    # an unset page is the dashboard (the widget only sends 'terminal' from the Terminal)
+    assert "SHOWING THE CHART (dashboard)" in gw._build_system_prompt("chat", page="")
+
+
+def test_answer_shape_is_lane_scaled_not_one_size():
+    """The lane the user picked reaches the model as a request about ANSWER DEPTH.
+
+    Live regression this pins (2026-07-30): a Pro turn on "analyze technicals for apple
+    stock" came back three lines under a chart while the SAME question on the cheaper Fast
+    lane produced a full trend / momentum / relative-strength / levels / caution read. The
+    deeper lane was writing the shorter answer, because nothing in the prompt distinguished
+    them — the lane dial tuned tool spend only.
+    """
+    fast = gw._build_system_prompt("chat", lane="fast")
+    pro = gw._build_system_prompt("chat", lane="pro")
+    bare = gw._build_system_prompt("chat")
+
+    assert "SHAPE FOR THIS TURN (Fast)" in fast
+    assert "SHAPE FOR THIS TURN (Pro)" in pro
+    # Pro is told, in terms, that the failure mode is the short answer — and that padding
+    # the length back out with empty sections is the other way to fail.
+    assert "three-line answer here is a failure" in pro
+    assert "padding" in pro
+    assert "Levels that matter" in pro
+    # the two lanes must not collapse into the same instruction
+    assert fast != pro
+    # an unknown/absent lane changes nothing for existing callers
+    assert bare == gw._build_system_prompt("chat", lane="")
+    assert "SHAPE FOR THIS TURN" not in bare
+
+    # research keeps its own report directive and does NOT also take a lane block (research
+    # forces lane='pro' upstream, so a naive append would say it twice)
+    research = gw._build_system_prompt("research", lane="pro")
+    assert "RESEARCH MODE" in research
+    assert "SHAPE FOR THIS TURN" not in research
+
+
+def test_prompt_no_longer_targets_a_three_line_answer():
+    """The old 'a tight three-line answer beats a paragraph' line WAS the terseness bug.
+
+    Its intent (no padding, no hedging) survives; its length target does not — a model
+    that follows instructions literally read it as a ceiling and answered analysis
+    requests in three lines.
+    """
+    for prompt in (gw._build_system_prompt("chat"),
+                   gw._build_system_prompt("chat", lane="fast"),
+                   gw._build_system_prompt("chat", lane="pro"),
+                   gw._build_system_prompt("research")):
+        assert "three-line answer beats" not in prompt
+        assert "Fewer, sharper words always win" not in prompt
+    base = gw._build_system_prompt("chat")
+    assert "LENGTH IS SET BY THE QUESTION" in base
+    assert "What you must never do is PAD" in base
+    # a chart is evidence to read, not a substitute for the read
+    assert "laziest thing you can send" in base
 
 
 def test_terminal_system_prompt_describes_chart_tools_as_display_only():
@@ -3864,21 +3940,25 @@ def test_status_event_sequence_two_round_tool_turn(tmp_path):
     models = [e for e in parsed if e.get("phase") == "model"]
     assert [e["n"] for e in models] == [1, 2]
     # Pro wording, with the pass count baked in from round 2 on
-    assert models[0]["label_en"] == "Analyzing in depth"
-    assert models[1]["label_en"] == "Analyzing in depth · pass 2"
-    assert models[1]["label_zh"] == "深度分析中 · 第 2 轮"
+    assert (models[0]["label_en"], models[0]["label_zh"]) == gw._STAGE_LABELS["model.pro"]
+    assert models[1]["label_en"] == gw._STAGE_LABELS["model.pro"][0] + " \u00b7 pass 2"
+    assert models[1]["label_zh"] == gw._STAGE_LABELS["model.pro"][1] + " \u00b7 \u7b2c 2 \u8f6e"
     # elapsed_ms is loop-local and never goes backwards
     elapsed = [e["elapsed_ms"] for e in parsed if e["type"] == "status"]
     assert elapsed == sorted(elapsed) and elapsed[0] >= 0
 
 
 def test_status_model_label_is_lane_specific(tmp_path):
-    """The Fast lane reasons, it does not 'analyze in depth' — labels track the lane."""
+    """The Fast lane reasons, it does not 'think it through properly' — labels track the lane."""
     root = _make_temp_root()
     parsed = _stream_events(_two_round_client(), root, tmp_path, lane="fast")
     models = [e for e in parsed if e.get("phase") == "model"]
-    assert models[0]["label_en"] == "Working out the answer"
-    assert models[0]["label_zh"] == "推理中"
+    # against the table, so the copy stays editable and the LANE SPLIT stays pinned
+    assert (models[0]["label_en"], models[0]["label_zh"]) == gw._STAGE_LABELS["model.fast"]
+    assert gw._STAGE_LABELS["model.fast"] != gw._STAGE_LABELS["model.pro"]
+    # round 2 onward carries the pass count so a multi-round wait reads as progress
+    if len(models) > 1:
+        assert "pass 2" in models[1]["label_en"]
 
 
 def test_status_grounding_skipped_when_digest_empty(tmp_path):
@@ -3910,7 +3990,7 @@ def test_status_writing_beats_report_length_only(tmp_path):
     writing = [e for e in parsed if e.get("phase") == "writing"]
     assert len(writing) >= 2
     assert [e["n"] for e in writing] == sorted(e["n"] for e in writing)
-    assert all(e["label_en"] == "Writing your answer" for e in writing)
+    assert all((e["label_en"], e["label_zh"]) == gw._STAGE_LABELS["writing"] for e in writing)
     assert all("Steady" not in json.dumps(e) for e in writing)
     # Still exactly one delta, still after every writing beat
     types = [e["type"] for e in parsed]
@@ -3947,8 +4027,11 @@ def test_tool_event_carries_whitelist_label_and_sanitized_detail(tmp_path):
     `name` for the deployed widget."""
     ev = json.loads(gw._tool_event("get_quote", {"symbol": "aapl"})[6:])
     assert ev["type"] == "tool" and ev["name"] == "get_quote"
-    assert ev["label_en"] == "Fetching the latest quote"
-    assert ev["label_zh"] == "获取最新行情"
+    # assert against the TABLE, not a copy string: the contract is "the label ships from the
+    # whitelist", and pinning the wording turns every copy pass into a red test.
+    assert (ev["label_en"], ev["label_zh"]) == gw._TOOL_LABELS["get_quote"]
+    assert ev["label_en"] and ev["label_zh"] and ev["label_en"] != ev["label_zh"]
+    assert "get_quote" not in ev["label_en"]   # never the raw name as user-visible copy
     assert ev["detail"] == "AAPL"
 
 
@@ -3969,7 +4052,10 @@ def test_tool_event_unknown_name_uses_fallback_label():
     """A tool shipped before its label falls back to a truthful generic line — never the
     raw snake_case name as user-visible copy."""
     ev = json.loads(gw._tool_event("some_future_tool", {})[6:])
-    assert (ev["label_en"], ev["label_zh"]) == ("Gathering data", "整理数据")
+    assert (ev["label_en"], ev["label_zh"]) == gw._TOOL_LABEL_FALLBACK
+    en, zh = gw._TOOL_LABEL_FALLBACK
+    assert en and zh and en != zh
+    assert "some_future_tool" not in en and "_" not in en   # never the raw name
     assert ev["name"] == "some_future_tool"  # machine field still exact
 
 
@@ -3991,7 +4077,14 @@ def test_stage_labels_are_bilingual_and_complete():
     for key in ("start", "grounding", "model.fast", "model.pro", "synthesis", "writing", "review"):
         en, zh = gw._STAGE_LABELS[key]
         assert en and zh and en != zh
-    assert gw._STAGE_LABELS["synthesis"] == gw._STAGE_LABELS["writing"]
+    # synthesis and writing must NOT share a string. The widget keys a step on its label, so
+    # identical copy collapsed the two into one line and hid the moment the answer starts
+    # being written — the most reassuring beat in the whole wait.
+    assert gw._STAGE_LABELS["synthesis"] != gw._STAGE_LABELS["writing"]
+    # every stage reads as a person narrating their own work, never as a pipeline stage name
+    for key, (en, _zh) in gw._STAGE_LABELS.items():
+        assert "_" not in en, key
+        assert en[0].isupper(), key
 
 
 # ── B5: prompt caching ───────────────────────────────────────────────────────
@@ -4811,3 +4904,602 @@ def test_contradiction_doctrine_does_not_tell_the_model_to_pick_a_winner():
         low = prompt.lower()
         assert "lean on the fresher" not in low
         assert "say the data may be off" not in low
+
+
+# ---------------------------------------------------------------------------
+# Silent max_tokens exhaustion on the fast lane (live defect, 2026-07-30)
+# ---------------------------------------------------------------------------
+# A guest zh turn spent EXACTLY the 2000-token fast cap in output tokens and wrote no
+# text — DeepSeek v4 thinks by default and the thinking spends max_tokens — so the user
+# got _DEGRADED_USER_MSG. Two things then made it invisible: the `done` event still said
+# degraded:false, and nothing anywhere was logged, even though the _DEGRADED_USER_MSG
+# comment promises "the real cause is logged server-side".
+
+def test_degraded_stub_reports_degraded_and_logs_the_cause(tmp_path, caplog):
+    """The exact live shape: a round that stops AT the cap carrying only a thinking
+    block. The stub ships (users must never see a blank bubble), `done` says degraded,
+    and one server-side line carries the cause — lane, model, phase, stop reason,
+    both token counts, and the configured cap."""
+    truncated = _MockResponse([_ThinkBlock()], "max_tokens",
+                              usage=_MockUsage(input_tokens=51_500, output_tokens=4000))
+    client = _CaptureClient(responses=[truncated])
+    root = _make_temp_root()
+    with caplog.at_level(logging.WARNING, logger="engine.neuralweb.brain_gateway"):
+        parsed = _stream_events(client, root, tmp_path, lane="fast")
+
+    delta = next(e for e in parsed if e["type"] == "delta")
+    done = next(e for e in parsed if e["type"] == "done")
+    assert "temporarily unavailable" in delta["text"].lower()      # visible, not blank
+    assert done["degraded"] is True, done
+    line = next((r.getMessage() for r in caplog.records
+                 if "degraded stub shipped" in r.getMessage()), None)
+    assert line is not None, [r.getMessage() for r in caplog.records]
+    for frag in ("lane=fast", "model=deepseek-v4-flash", "phase=tool-round",
+                 "stop=max_tokens", "input_tokens=51500", "output_tokens=4000",
+                 f"max_tokens={gw._FAST_MAX_TOKENS}"):
+        assert frag in line, (frag, line)
+
+
+def test_degraded_stub_log_names_the_synthesis_phase_too(tmp_path, caplog):
+    """The other empty-answer route: the SYNTHESIS stream returns no text and there is
+    no candidate left to fail over to. Same stub, same degraded flag, phase=synthesis so
+    the log distinguishes it from a truncated tool round."""
+    class _EmptyStreamCtx(_FakeStreamCtx):
+        @property
+        def text_stream(self):
+            return iter(())
+
+    class _EmptyClient(_CaptureClient):
+        def stream(self, **kwargs):
+            self.stream_kwargs.append(kwargs)
+            return _EmptyStreamCtx("")
+
+    client = _EmptyClient(responses=[
+        _MockResponse([_MockBlock("tool_use", name="get_quote",
+                                  input_={"symbol": "aapl"}, id_="t1")], "tool_use"),
+        # stop_reason tool_use with NO tool_use block ends Phase 1 and forces synthesis;
+        # a thinking-only round leaves nothing for the salvage pass to recover either.
+        _MockResponse([_ThinkBlock()], "tool_use"),
+    ])
+    with caplog.at_level(logging.WARNING, logger="engine.neuralweb.brain_gateway"):
+        parsed = _stream_events(client, _make_temp_root(), tmp_path, lane="fast")
+    done = next(e for e in parsed if e["type"] == "done")
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert "temporarily unavailable" in delta["text"].lower()
+    assert done["degraded"] is True, done
+    line = next((r.getMessage() for r in caplog.records
+                 if "degraded stub shipped" in r.getMessage()), None)
+    assert line is not None, [r.getMessage() for r in caplog.records]
+    assert "phase=synthesis" in line, line
+    assert f"max_tokens={gw._FAST_MAX_TOKENS}" in line, line
+
+
+def test_a_real_answer_is_never_marked_degraded(tmp_path):
+    """The flag means 'what shipped is not a real answer' — a healthy turn keeps False."""
+    parsed = _stream_events(_two_round_client(), root=_make_temp_root(),
+                            tmp_path=tmp_path, lane="fast")
+    delta = next(e for e in parsed if e["type"] == "delta")
+    done = next(e for e in parsed if e["type"] == "done")
+    assert "temporarily unavailable" not in delta["text"].lower()
+    assert done["degraded"] is False, done
+
+
+def test_filtered_to_empty_answer_is_not_marked_degraded(tmp_path):
+    """An advice-FILTERED answer is a different condition with its own flag: `filtered`
+    drives the probation chip, and degraded must not swallow it (the stub is not shown
+    on that path either — see the display-substitution comment)."""
+    root = _make_temp_root()
+    with patch("engine.neuralweb.ask_brain._post_filter_advice", return_value=("", True)):
+        parsed = _stream_events(_two_round_client(), root, tmp_path, lane="fast")
+    done = next(e for e in parsed if e["type"] == "done")
+    delta = next(e for e in parsed if e["type"] == "delta")
+    assert done["filtered"] is True and done["degraded"] is False, done
+    assert "temporarily unavailable" not in delta["text"].lower()
+
+
+def test_fast_lane_output_cap_carries_thinking_headroom():
+    """The cap governing the fast lane's final answer call is 4000 in the REAL
+    config/brain.yml, and the hardcoded fallback agrees. The pro lane, research mode and
+    both tool BUDGETS are untouched."""
+    repo = pathlib.Path(__file__).resolve().parent.parent
+    gw._BRAIN_CONFIG_CACHE = None
+    try:
+        cfg = gw._load_brain_config(repo)
+        assert cfg["lanes"]["fast"]["max_tokens"] == 4000
+        assert cfg["lanes"]["pro"]["max_tokens"] == 8000        # unchanged
+        assert cfg["research"]["max_tokens"] == 8000            # unchanged
+        assert cfg["lanes"]["fast"]["tool_budget"] == 5         # unchanged
+        assert cfg["lanes"]["pro"]["tool_budget"] == 10         # unchanged
+        # An unreadable config must not silently drop back to the 2000 that broke.
+        gw._BRAIN_CONFIG_CACHE = None
+        fallback = gw._load_brain_config(pathlib.Path(tempfile.mkdtemp()))
+        assert fallback["lanes"]["fast"]["max_tokens"] == gw._FAST_MAX_TOKENS == 4000
+        assert fallback["lanes"]["pro"]["max_tokens"] == 8000
+    finally:
+        gw._BRAIN_CONFIG_CACHE = None
+
+
+def test_fast_cap_reaches_the_synthesis_call_and_every_tool_round(tmp_path):
+    """Pin the cap AT the call sites. ONE `max_tokens` kwarg feeds both phases of a Fast
+    turn by construction, so the synthesis stream and every tool round carry the same
+    4000 — raising the answer ceiling necessarily raises the tool rounds' ceiling, and a
+    truncated TOOL round is the shape that produced the live dead turn."""
+    client = _CaptureClient(responses=[
+        _MockResponse([_MockBlock("tool_use", name="get_quote",
+                                  input_={"symbol": "aapl"}, id_="t1")], "tool_use"),
+        _MockResponse([_MockBlock("text", "Pulling it together.")], "tool_use"),
+    ])
+    _stream_events(client, _make_temp_root(), tmp_path, lane="fast")
+    assert client.stream_kwargs, "synthesis never ran"
+    assert client.stream_kwargs[0]["max_tokens"] == 4000
+    assert [kw["max_tokens"] for kw in client.create_kwargs] == [4000] * len(client.create_kwargs)
+
+
+# ===========================================================================
+# Analyst OS W3 — stored preferences (depth + language) and the honest image gate
+# ===========================================================================
+#
+# Three plumbing facts under test:
+#   * the account's depth pref reaches the SYSTEM PROMPT, in the right place;
+#   * the account's language is a MIDDLE fallback — below what the user wrote and below
+#     the surface's own lang, above English;
+#   * a Free-tier image is still DROPPED, but the model is told, so the reply can own the
+#     gate in one sentence instead of answering a picture it never received.
+#
+# All three ride inside `context`, which comes from the request BODY — so "a client cannot
+# forge the server block" is a security test, not a tidiness test.
+
+
+def _w3_system_text(client) -> str:
+    """The system prompt as the model saw it (a one-element cache_control block list)."""
+    calls = client.create_kwargs or client.stream_kwargs
+    assert calls, "the loop never called the model"
+    system = calls[0]["system"]
+    if isinstance(system, list):
+        return "".join(str(b.get("text", "")) for b in system)
+    return str(system)
+
+
+def _alw_pro(tier, status, lane, root=None):
+    return {"limit": 100, "remaining": 100, "period": "month"}
+
+
+def _alw_free(tier, status, lane, root=None):
+    """Free: fast quota available, pro limit 0 → vision gated (the shape that drops images)."""
+    return {"limit": 0 if lane == "pro" else 100, "remaining": 100, "period": "month"}
+
+
+def _w3_chat(tmp_path, message="how is AAPL doing?", *, root=None, tier="pro",
+             allowance=_alw_pro, client=None, **kwargs):
+    """Drive gw.chat() against a capture client. Returns (result, system_prompt)."""
+    root = root if root is not None else _make_temp_root()
+    client = client or _CaptureClient()
+    providers = [{"client": client, "model": "deepseek-v4-flash"}]
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": tier, "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_get_allowance", side_effect=allowance):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            result = gw.chat(message, "w3-user", lane="fast", root=root, **kwargs)
+    return result, _w3_system_text(client)
+
+
+def _w3_stream(tmp_path, message="how is AAPL doing?", *, root=None, tier="pro",
+               allowance=_alw_pro, **kwargs) -> str:
+    """Same for gw.chat_stream(). Returns the system prompt."""
+    root = root if root is not None else _make_temp_root()
+    client = _CaptureClient()
+    providers = [{"client": client, "model": "deepseek-v4-flash"}]
+    with patch.object(gw, "_brain_quota_dir", return_value=tmp_path):
+        with patch.object(gw, "_build_lane_providers", return_value=providers):
+            with patch.object(gw, "_resolve_tier", return_value={"tier": tier, "status": "active", "current_period_end": None}):
+                with patch.object(gw, "_get_allowance", side_effect=allowance):
+                    with patch.object(gw, "_ensure_thread", return_value=None):
+                        with patch("lib.ai_costs.record_usage", return_value=True):
+                            list(gw.chat_stream(message, "w3-user", lane="fast", root=root, **kwargs))
+    return _w3_system_text(client)
+
+
+# ── 1. The language ladder ───────────────────────────────────────────────────
+
+def test_turn_lang_ladder_message_then_surface_then_account():
+    """message content > context.lang > account lang > English."""
+    # 1. what the user WROTE wins over both, in both directions (the operator rule).
+    assert gw._turn_lang("苹果现在可以买吗", {"lang": "en"}, "en") == "zh"
+    assert gw._turn_lang("Is AAPL a buy right now?", {"lang": "zh"}, "zh") == "en"
+    # 2. the surface's own lang beats the stored pref — it is where the user IS right now.
+    assert gw._turn_lang("AAPL?", {"lang": "en"}, "zh") == "en"
+    assert gw._turn_lang("AAPL?", {"lang": "zh"}, "en") == "zh"
+    assert gw._turn_lang("AAPL?", {"lang": "zh-CN"}, "en") == "zh"
+    # 3. nothing stamped by the surface → the stored account language decides. This is the
+    #    turn that used to answer English to a Chinese-speaking user.
+    assert gw._turn_lang("AAPL?", {}, "zh") == "zh"
+    assert gw._turn_lang("AAPL?", None, "zh") == "zh"
+    assert gw._turn_lang("AAPL?", {"page": "dashboard"}, "zh") == "zh"
+    assert gw._turn_lang("AAPL?", {}, "en") == "en"
+    # ...and real English prose flips a zh ACCOUNT exactly as it flips a zh surface.
+    assert gw._turn_lang("what is the market doing today", {}, "zh") == "en"
+    # 4. nothing to go on at all → English, never a guess.
+    assert gw._turn_lang("AAPL?", {}, None) == "en"
+    assert gw._turn_lang("AAPL?", {}, "") == "en"
+
+
+def test_a_single_word_is_not_enough_english_to_override_a_stored_zh():
+    """'hello' is one word — the same bar a zh PROFILE already gets (two 3+ letter words).
+    The account pref inherits that bar rather than inventing a looser one."""
+    assert gw._turn_lang("hello", {}, "zh") == "zh"
+    assert gw._turn_lang("hello there", {}, "zh") == "en"
+
+
+def test_the_english_prose_bar_ignores_ticker_shaped_tokens():
+    """HISTORY: the prose bar (`[A-Za-z]{3,}` twice) originally counted TICKERS as
+    prose, so a Chinese-profile user typing 'XLF vs XLV' was answered in English even
+    though _expected_lang's own docstring offered that exact string as a bare-ticker
+    turn that KEEPS Chinese. The W3 wrapper pinned that defect as inherited-not-
+    introduced (this test's previous body) rather than fix it mid-lane; the fix landed
+    right after: ticker-shaped tokens (optional $ cashtag, 1-5 caps, optional .X class
+    suffix) are struck before the prose count, so symbols are never a language choice."""
+    assert gw._expected_lang("XLF vs XLV", {"lang": "zh"}) == "zh"
+    assert gw._turn_lang("XLF vs XLV", {}, "zh") == "zh"
+    # cashtags and class-suffix tickers are the same shape, not prose
+    assert gw._expected_lang("$AAPL vs $MSFT", {"lang": "zh"}) == "zh"
+    assert gw._expected_lang("BRK.B vs BF.B?", {"lang": "zh"}) == "zh"
+    # a sentence period after a ticker does not turn it back into prose
+    assert gw._expected_lang("XLF vs XLV.", {"lang": "zh"}) == "zh"
+    # one ticker is still under the bar, in both the context and the account form
+    assert gw._expected_lang("XLF", {"lang": "zh"}) == "zh"
+    assert gw._turn_lang("XLF", {}, "zh") == "zh"
+    # real prose AROUND tickers still flips — the bar moved, not the operator rule
+    assert gw._expected_lang("should I buy XLF or XLV", {"lang": "zh"}) == "en"
+    assert gw._turn_lang("should I buy XLF or XLV", {}, "zh") == "en"
+    # prose the strip must NOT eat: mixed case and 6+ cap words are words, not tickers
+    assert gw._expected_lang("Apple looks strong", {"lang": "zh"}) == "en"
+    assert gw._expected_lang("MARKET CRASHING today", {"lang": "zh"}) == "en"
+
+
+def test_garbage_surface_lang_does_not_outrank_the_account():
+    """'klingon' is not a language CHOICE, it is a client that stamped nothing usable — so
+    the stored preference is still the best evidence on the table."""
+    assert gw._turn_lang("hello", {"lang": "klingon"}, "zh") == "zh"
+    assert gw._turn_lang("hello", {"lang": "fr"}, "zh") == "zh"
+    assert gw._turn_lang("hello", {"lang": ""}, "zh") == "zh"
+    # ...and with no stored pref, the pinned English fallback stands.
+    assert gw._turn_lang("hello", {"lang": "klingon"}, None) == "en"
+
+
+def test_a_junk_account_lang_is_ignored_never_guessed():
+    assert gw._turn_lang("AAPL?", {}, "klingon") == "en"
+    assert gw._turn_lang("AAPL?", {}, "zh-CN") == "en"   # only the STORED enum counts
+    assert gw._turn_lang("AAPL?", {}, 5) == "en"
+
+
+def test_expected_lang_is_untouched_for_every_existing_caller():
+    """_turn_lang is a WRAPPER: with no account lang it must equal _expected_lang exactly,
+    which is what keeps the pinned matrix (and every current call site) intact."""
+    for msg in ("hello", "AAPL?", "苹果", "Is AAPL a buy right now?", "", "XLF"):
+        for ctx in ({}, None, {"lang": "zh"}, {"lang": "en"}, {"lang": "klingon"}):
+            assert gw._turn_lang(msg, ctx) == gw._expected_lang(msg, ctx)
+
+
+def test_the_stored_language_reaches_the_prompt_directive(tmp_path):
+    _, system = _w3_chat(tmp_path, "AAPL?", account_prefs={"lang": "zh"})
+    assert "LANGUAGE FOR THIS TURN: Chinese" in system
+    _, system = _w3_chat(tmp_path, "AAPL?")
+    assert "LANGUAGE FOR THIS TURN: English" in system
+
+
+def test_the_surface_lang_still_wins_over_the_stored_one(tmp_path):
+    _, system = _w3_chat(tmp_path, "AAPL?", context={"lang": "en"},
+                         account_prefs={"lang": "zh"})
+    assert "LANGUAGE FOR THIS TURN: English" in system
+
+
+# ── 2. The depth addendum ────────────────────────────────────────────────────
+
+def test_depth_addendum_copy_names_the_evidence_bar_in_both_directions():
+    """'concise' must not read as permission to cite less, and 'deep' must not read as
+    permission to get technical — those are the two ways a length dial becomes a quality dial."""
+    concise, deep = gw._depth_addendum("concise"), gw._depth_addendum("deep")
+    assert "fewer words" in concise and "same evidence bar" in concise
+    assert "more of the picture" in deep and "never jargon" in deep
+    assert concise.startswith("\n\nDEPTH PREFERENCE:") and deep.startswith("\n\nDEPTH PREFERENCE:")
+
+
+def test_standard_and_junk_depths_say_nothing():
+    for value in ("standard", "STANDARD", None, "", "turbo", "short", 5, {}):
+        assert gw._depth_addendum(value) == ""
+
+
+def test_depth_addendum_reaches_the_system_prompt(tmp_path):
+    _, system = _w3_chat(tmp_path, account_prefs={"brain_depth": "concise"})
+    assert "DEPTH PREFERENCE" in system and "fewer words" in system
+    system = _w3_stream(tmp_path, account_prefs={"brain_depth": "deep"})
+    assert "DEPTH PREFERENCE" in system and "more of the picture" in system
+
+
+def test_no_depth_line_without_a_stored_preference(tmp_path):
+    for prefs in (None, {}, {"brain_depth": "standard"}, {"lang": "zh"}):
+        _, system = _w3_chat(tmp_path, account_prefs=prefs)
+        assert "DEPTH PREFERENCE" not in system, f"prefs={prefs!r}"
+    assert "DEPTH PREFERENCE" not in _w3_stream(tmp_path)
+
+
+def test_depth_precedes_the_analyst_block_and_language_stays_last(tmp_path):
+    """Ordering is load-bearing. The LANGUAGE line is last because recency beats the model's
+    own guess (see _language_directive); the analyst protocol must read closer to the turn
+    than a length preference does."""
+    for system in (_w3_chat(tmp_path, account_prefs={"brain_depth": "deep"})[1],
+                   _w3_stream(tmp_path, account_prefs={"brain_depth": "deep"})):
+        i_depth = system.index("DEPTH PREFERENCE")
+        i_analyst = system.index("THE ANALYST PROTOCOL")
+        i_lang = system.index("LANGUAGE FOR THIS TURN")
+        assert i_depth < i_analyst < i_lang
+        assert system.rstrip().endswith(gw._language_directive("en").rstrip())
+
+
+# ── 3. The honest image gate ─────────────────────────────────────────────────
+
+def test_a_gated_image_turn_tells_the_model_the_attachment_was_dropped(tmp_path):
+    """Vision stays Pro-only and the image is still dropped (pinned separately) — but the
+    silence made the model answer a picture it was never handed, which reads to the user as
+    a model that ignored them."""
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        _, system = _w3_chat(tmp_path, "what is this?", tier="free", allowance=_alw_free,
+                             images=[_TINY_PNG_DATA_URI])
+    assert "the user attached an image" in system
+    assert "image reading is a Pro capability" in system
+    assert "acknowledge that in one sentence" in system
+    # ...and it must not displace the language line from last position.
+    assert system.index("image reading is a Pro") < system.index("LANGUAGE FOR THIS TURN")
+
+
+def test_the_gated_image_note_rides_the_stream_turn_too(tmp_path):
+    with patch.dict("os.environ", {"SUPABASE_SERVICE_ROLE_KEY": "", "SUPABASE_URL": ""}):
+        system = _w3_stream(tmp_path, "what is this?", tier="free", allowance=_alw_free,
+                            images=[_TINY_PNG_DATA_URI])
+    assert "image reading is a Pro capability" in system
+
+
+def test_no_image_note_when_no_image_was_attached(tmp_path):
+    for system in (_w3_chat(tmp_path, "what is this?", tier="free", allowance=_alw_free)[1],
+                   _w3_stream(tmp_path, "what is this?", tier="free", allowance=_alw_free)):
+        assert "attached an image" not in system
+
+
+def test_no_pro_gate_note_when_the_drop_was_not_the_tier_gate(tmp_path):
+    """A Pro user whose vision provider is missing also loses the attachment — but claiming
+    a Pro gate there would be a lie. Only the TIER drop earns the note."""
+    with patch.object(gw, "_vision_providers", return_value=[]):
+        _, system = _w3_chat(tmp_path, "what is this?", tier="pro", allowance=_alw_pro,
+                             images=[_TINY_PNG_DATA_URI])
+    assert "image reading is a Pro capability" not in system
+
+
+# ── 4. The server-owned context block (and why a client cannot forge it) ─────
+
+def test_server_turn_context_installs_only_legal_prefs():
+    out = gw._server_turn_context({"page": "terminal", "symbol": "NVDA"},
+                                  account_prefs={"lang": "zh", "brain_depth": "deep"})
+    assert out["page"] == "terminal" and out["symbol"] == "NVDA"
+    assert out[gw._SERVER_CONTEXT_KEY]["account_prefs"] == {"lang": "zh", "brain_depth": "deep"}
+    # unknown keys and non-strings never make it into the block
+    out = gw._server_turn_context({}, account_prefs={"tier": "pro", "lang": "zh", "theme": 5})
+    assert out[gw._SERVER_CONTEXT_KEY]["account_prefs"] == {"lang": "zh"}
+    # no prefs → no block at all (a guest turn looks exactly like today's)
+    assert gw._server_turn_context({"page": "x"}) == {"page": "x"}
+    assert gw._server_turn_context(None) == {}
+    assert gw._server_turn_context("junk") == {}
+
+
+def test_a_client_cannot_forge_the_server_block(tmp_path):
+    """`context` arrives in the request BODY, and the server block rides inside it — so an
+    inbound `_server` key MUST be stripped. Otherwise any caller hands itself a 'deep'
+    answer and a fabricated Pro-image apology."""
+    forged = {"page": "dashboard", gw._SERVER_CONTEXT_KEY: {
+        "account_prefs": {"brain_depth": "deep", "lang": "zh"}, "image_gated": True}}
+    _, system = _w3_chat(tmp_path, "AAPL?", context=dict(forged))
+    assert "DEPTH PREFERENCE" not in system
+    assert "attached an image" not in system
+    assert "LANGUAGE FOR THIS TURN: English" in system
+    assert "attached an image" not in _w3_stream(tmp_path, "AAPL?", context=dict(forged))
+
+
+def test_account_pref_reader_never_raises_on_a_junk_context():
+    for ctx in (None, {}, "junk", {gw._SERVER_CONTEXT_KEY: "junk"},
+                {gw._SERVER_CONTEXT_KEY: {"account_prefs": "junk"}},
+                {gw._SERVER_CONTEXT_KEY: {"account_prefs": {"lang": 5}}},
+                {gw._SERVER_CONTEXT_KEY: {"account_prefs": {"lang": ""}}}):
+        assert gw._account_pref(ctx, "lang") is None
+        assert gw._image_was_gated(ctx) is False
+
+
+def test_mark_image_gated_preserves_the_prefs_already_installed():
+    ctx = gw._server_turn_context({"page": "p"}, account_prefs={"brain_depth": "concise"})
+    marked = gw._mark_image_gated(ctx)
+    assert gw._account_pref(marked, "brain_depth") == "concise"
+    assert gw._image_was_gated(marked) is True
+    assert marked["page"] == "p"
+    # the original is not mutated (the caller reassigns; a shared dict would leak the flag
+    # into whatever else holds a reference to this turn's context)
+    assert gw._image_was_gated(ctx) is False
+
+
+# ── 5. set_chat_preference (the one tool that writes for the user) ───────────
+
+def test_set_pref_tool_schema_mirrors_the_stored_enum_table():
+    from lib import user_prefs
+
+    schema = gw.SET_PREF_TOOL_SCHEMA
+    assert schema["name"] == "set_chat_preference"
+    props = schema["input_schema"]["properties"]
+    assert props["depth"]["enum"] == list(user_prefs.PREF_VALUES["brain_depth"])
+    assert props["lang"]["enum"] == list(user_prefs.PREF_VALUES["lang"])
+    # at least one field — stated in the schema AND enforced by the tool (see below)
+    assert schema["input_schema"]["minProperties"] == 1
+    # the description must tell the model when NOT to call it: a one-off is not a setting
+    assert "one-off" in schema["description"]
+
+
+def test_set_chat_preference_saves_depth_and_language(monkeypatch):
+    from lib import user_prefs
+
+    calls = []
+
+    def _write(user_id, patch_, **kw):
+        calls.append((user_id, patch_, kw))
+        return True
+
+    monkeypatch.setattr(user_prefs, "write_user_prefs", _write)
+    out = gw._tool_set_chat_preference({"depth": "concise", "lang": "zh"}, "user-42")
+    assert out["ok"] is True
+    assert out["saved"] == {"depth": "concise", "lang": "zh"}
+    assert out["note"] == "Preference saved — it now applies to every future session."
+    # stored under the metadata key the ACCOUNT PAGE reads ('brain_depth'), not the tool's
+    # input name — otherwise the chat and the account card would disagree forever.
+    assert calls == [("user-42", {"brain_depth": "concise", "lang": "zh"}, {})]
+
+
+@pytest.mark.parametrize("uid", ["", "   ", "guest:abc123", "guest:ip:deadbeef",
+                                "guest:anon", "unknown"])
+def test_set_chat_preference_refuses_an_unsigned_identity(uid, monkeypatch):
+    """A guest has no record to write to. A silent no-op would read to the user as 'saved'."""
+    from lib import user_prefs
+
+    monkeypatch.setattr(user_prefs, "write_user_prefs",
+                        lambda *a, **k: pytest.fail("a guest turn must never write"))
+    out = gw._tool_set_chat_preference({"depth": "concise"}, uid)
+    assert out["error"] == "signin_required"
+    assert "signed-in" in out["note"]
+    assert "ok" not in out
+
+
+@pytest.mark.parametrize("params, allowed", [
+    ({"depth": "brief"}, {"depth": ["concise", "standard", "deep"]}),
+    ({"lang": "klingon"}, {"lang": ["en", "zh"]}),
+    ({"depth": 5}, {"depth": ["concise", "standard", "deep"]}),
+])
+def test_set_chat_preference_junk_value_returns_the_allowed_ones(params, allowed, monkeypatch):
+    from lib import user_prefs
+
+    monkeypatch.setattr(user_prefs, "write_user_prefs",
+                        lambda *a, **k: pytest.fail("a rejected value must write nothing"))
+    out = gw._tool_set_chat_preference(params, "user-42")
+    assert out["error"] == "unknown_value"
+    assert out["allowed"] == allowed
+    assert "ok" not in out
+
+
+@pytest.mark.parametrize("params", [{}, {"depth": None, "lang": None}, {"nope": "x"}])
+def test_set_chat_preference_empty_call_saves_nothing(params, monkeypatch):
+    from lib import user_prefs
+
+    monkeypatch.setattr(user_prefs, "write_user_prefs",
+                        lambda *a, **k: pytest.fail("nothing to save must not write"))
+    out = gw._tool_set_chat_preference(params, "user-42")
+    assert out["error"] == "nothing_to_save"
+
+
+def test_set_chat_preference_never_claims_a_save_that_failed(monkeypatch):
+    from lib import user_prefs
+
+    monkeypatch.setattr(user_prefs, "write_user_prefs", lambda *a, **k: False)
+    out = gw._tool_set_chat_preference({"lang": "zh"}, "user-42")
+    assert out["error"] == "save_failed"
+    assert "did NOT save" in out["note"]
+    assert "ok" not in out
+
+
+@pytest.mark.parametrize("params", [None, {"lang": []}, {"depth": {"a": 1}},
+                                    {"depth": "concise", "lang": "fr"}])
+def test_set_chat_preference_returns_a_dict_never_raises(params, monkeypatch):
+    from lib import user_prefs
+
+    monkeypatch.setattr(user_prefs, "write_user_prefs",
+                        lambda *a, **k: pytest.fail("no junk shape may reach the store"))
+    out = gw._tool_set_chat_preference(params or {}, "user-42")
+    assert isinstance(out, dict) and "error" in out and "ok" not in out
+
+
+# ── 6. The routes thread the prefs off the record they already hold ──────────
+
+def _prefs_route_user(metadata: dict | None) -> dict:
+    user = {"id": "route-prefs-user", "email": "r@x.com", "_is_guest": False,
+            "_guest_aid": "", "_guest_ip": ""}
+    if metadata is not None:
+        user["user_metadata"] = metadata
+    return user
+
+
+def test_brain_chat_route_threads_stored_prefs_off_the_verified_record():
+    """The route already HOLDS the record (require_user returned it), so the prefs cost no
+    second fetch — that is the whole reason they are read here and not in the gateway."""
+    from fastapi.testclient import TestClient
+    import app.main as main
+
+    captured: dict = {}
+
+    def _fake_chat(**kwargs):
+        captured.update(kwargs)
+        return {"ok": True, "reply": "hi", "citations": [], "lane": "fast", "model": "m",
+                "thread_id": None, "quota": {}, "filtered": False, "degraded": False,
+                "is_context_only": True}
+
+    client = TestClient(main.app)
+    main.app.dependency_overrides[main._brain_user_or_guest] = lambda: _prefs_route_user(
+        {"display_name": "Ada", "lang": "zh", "brain_depth": "concise", "theme": "sepia"})
+    try:
+        with patch.object(gw, "chat", _fake_chat):
+            resp = client.post("/api/brain/chat", json={"message": "hi"})
+        assert resp.status_code == 200, resp.text
+        # Legal values only: 'sepia' is not a theme, so it never reaches the gateway, and
+        # 'display_name' is not a preference at all.
+        assert captured["account_prefs"] == {"lang": "zh", "brain_depth": "concise"}
+    finally:
+        main.app.dependency_overrides.clear()
+
+
+def test_brain_chat_route_sends_empty_prefs_for_a_guest():
+    from fastapi.testclient import TestClient
+    import app.main as main
+
+    captured: dict = {}
+
+    def _fake_chat(**kwargs):
+        captured.update(kwargs)
+        return {"ok": True, "reply": "hi", "citations": [], "lane": "fast", "model": "m",
+                "thread_id": None, "quota": {}, "filtered": False, "degraded": False,
+                "is_context_only": True}
+
+    client = TestClient(main.app)
+    main.app.dependency_overrides[main._brain_user_or_guest] = lambda: _prefs_route_user(None)
+    try:
+        with patch.object(gw, "chat", _fake_chat):
+            resp = client.post("/api/brain/chat", json={"message": "hi"})
+        assert resp.status_code == 200, resp.text
+        assert captured["account_prefs"] == {}
+    finally:
+        main.app.dependency_overrides.clear()
+
+
+def test_brain_stream_route_threads_stored_prefs():
+    from fastapi.testclient import TestClient
+    import app.main as main
+
+    captured: dict = {}
+
+    def _fake_stream(**kwargs):
+        captured.update(kwargs)
+        yield 'data: {"type": "done", "citations": []}\n\n'
+
+    client = TestClient(main.app)
+    main.app.dependency_overrides[main._brain_user_or_guest] = lambda: _prefs_route_user(
+        {"lang": "zh", "brain_depth": "deep"})
+    try:
+        with patch.object(gw, "chat_stream", _fake_stream):
+            resp = client.post("/api/brain/stream", json={"message": "hi"})
+        assert resp.status_code == 200, resp.text
+        resp.read()
+        assert captured["account_prefs"] == {"lang": "zh", "brain_depth": "deep"}
+    finally:
+        main.app.dependency_overrides.clear()

@@ -652,15 +652,22 @@ PUBLIC_EXACT = frozenset({
     "/research_vault_app.js", "/support.html", "/unsubscribe.html",
     "/privacy.html", "/terms.html", "/disclaimer.html",
     "/favicon.svg", "/favicon.ico", "/apple-touch-icon.png",
-    "/robots.txt", "/sitemap.xml", "/llms.txt", "/brand-facts.json",
-    "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js", "/landing.css", "/chat.css", "/chat_nav.css",
+    "/robots.txt",
+    # IndexNow ownership proof (engine/marketing/indexnow.py). Reviewed public: the
+    # file holds only the submission key, which the protocol requires to be publicly
+    # fetchable — that fetch IS the ownership check. No signals, no user data.
+    "/88bb90b05303e3cf469878ebc4dc7543.txt",
+    "/sitemap.xml", "/llms.txt", "/brand-facts.json",
+    "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
+    "/landing.css", "/scene-motion.css", "/scene-motion.js",
+    "/chat.css", "/chat_nav.css",
     "/theme.css", "/navigation-refresh.css", "/product-nav-icons.css",
     "/logo_config.js", "/stock-logos.js", "/theme.js", "/dashboard-icons.css",
     "/dashboard-icons.js", "/chart_i18n.js", "/timemachine.js", "/tablesort.js",
     "/charts.js", "/risk_state_live.js", "/release_publications_live.js",
     "/heatmap.js", "/stocktable.js", "/globe-deck.js", "/sky.js",
     "/hub-welcome.js", "/vendor/d3-array.min.js", "/vendor/d3-geo.min.js",
-    "/vendor/topojson-client.min.js", "/account.js",
+    "/vendor/topojson-client.min.js", "/world-110m.json", "/account.js",
     # Ad Central Plane O split-test shim — public for the same reason theme.js is:
     # it runs on anonymous visitors before auth resolves (AD_CENTRAL_MASTERPLAN §2).
     "/adtest.js",

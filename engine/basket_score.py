@@ -367,18 +367,63 @@ def act_now_stocks(members: list, theme: dict) -> dict:
     risk_reco = reco in ("avoid", "trim")
     constructive = label in ("emerging", "dominant")
     downtrend = (in_bull is False) and not constructive
+    theme_blocked = risk_label or risk_reco or downtrend
+
+    def early_turn_watch(theme_reason: str | None = None,
+                         theme_reason_zh: str | None = None) -> list[dict]:
+        """Surface fast T1/T2 evidence that is not yet an actionable theme-gated buy."""
+        out = []
+        for m in members or []:
+            c = m.get("conviction") or {}
+            sig = c.get("signal") or {}
+            tier = sig.get("tier")
+            if tier not in ("T1", "T2"):
+                continue
+            entry = c.get("entry") or {}
+            status = entry.get("status")
+            clean = (status in ("buy_now", "partial") and not c.get("cycle_blocked")
+                     and (c.get("score") or 0) >= 50)
+            if clean and not theme_blocked:
+                continue
+            if theme_reason:
+                blocker_en = f"theme gate: {theme_reason}"
+                blocker_zh = f"主题门槛：{theme_reason_zh or theme_reason}"
+            elif c.get("cycle_blocked"):
+                blocker_en = "slow cycle has not confirmed the turn"
+                blocker_zh = "慢周期尚未确认转折"
+            elif status:
+                blocker_en = entry.get("headline") or status.replace("_", " ")
+                blocker_zh = entry.get("headline_zh") or blocker_en
+            else:
+                blocker_en = "fast turn has not opened a clean entry"
+                blocker_zh = "快速转折尚未形成干净入场"
+            out.append({
+                "symbol": m.get("symbol"), "name": m.get("name"),
+                "tier": tier, "provisional": bool(sig.get("provisional")),
+                "score": c.get("score"), "cycle_blocked": bool(c.get("cycle_blocked")),
+                "entry_status": status, "entry_headline": entry.get("headline"),
+                "entry_headline_zh": entry.get("headline_zh"),
+                "blocker_en": blocker_en, "blocker_zh": blocker_zh,
+                "ret_5d": m.get("ret_5d"), "ret_20d": m.get("ret_20d"),
+            })
+        tier_rank = {"T2": 2, "T1": 1}
+        out.sort(key=lambda x: (-tier_rank.get(x["tier"], 0), -(x.get("score") or 0),
+                                x.get("symbol") or ""))
+        return out[:12]
+
     # Members the ranker can NEVER surface — no conviction read (not in the per-stock
     # library, or a thin record without a score). Carried on every payload so the detail
     # page prints the gap explicitly: an all-uncovered basket must read as a coverage
     # gap, not a misleading "no clean entry".
     uncovered = [m.get("symbol") for m in members or []
                  if (m.get("conviction") or {}).get("score") is None]
-    if risk_label or risk_reco or downtrend:
+    if theme_blocked:
         why = label if risk_label else reco if risk_reco else "downtrend"
         why_en = "in a downtrend" if why == "downtrend" else str(why)
         why_zh = {"deteriorating": "走弱", "fading": "退潮", "avoid": "建议回避",
                   "trim": "建议减持", "downtrend": "处于下行趋势"}.get(why, str(why))
         return {"status": "theme_out_of_favour", "buys": [], "uncovered": uncovered,
+                "early_turn_watch": early_turn_watch(why_en, why_zh),
                 "note_en": "Theme is out of favour (" + why_en + ") — no stock buys recommended here right now.",
                 "note_zh": "主题暂不被青睐（" + why_zh + "）— 当前不建议买入该主题个股。"}
     buys = []
@@ -405,14 +450,17 @@ def act_now_stocks(members: list, theme: dict) -> dict:
                          "verdict_zh": c.get("verdict_zh"), "entry_pct": ep,
                          "entry_status": status, "act_level": entry.get("act_level"),
                          "zone_low": entry.get("zone_low"), "zone_high": entry.get("zone_high"),
-                         "ret_20d": m.get("ret_20d"), "ret_ytd": m.get("ret_ytd"),
+                         "ret_5d": m.get("ret_5d"), "ret_20d": m.get("ret_20d"),
+                         "ret_ytd": m.get("ret_ytd"),
                          "rationale": m.get("rationale")})
     buys.sort(key=lambda x: (-(x.get("act_level") or 0), -(x.get("entry_pct") or 0), -(x.get("score") or 0)))
     if not buys:
         return {"status": "no_clean_entries", "buys": [], "uncovered": uncovered,
+                "early_turn_watch": early_turn_watch(),
                 "note_en": "Theme is in favour, but no member has a clean entry right now — most are extended or mid-trend. Wait for a pullback.",
                 "note_zh": "主题尚可，但当前无成分股具备干净入场点 — 多数已延展或处于趋势中段。等待回调。"}
-    return {"status": "ok", "buys": buys[:12], "uncovered": uncovered}
+    return {"status": "ok", "buys": buys[:12], "uncovered": uncovered,
+            "early_turn_watch": early_turn_watch()}
 
 
 _BREADTH_DIR = {"us": "breadth", "china": "china_breadth",

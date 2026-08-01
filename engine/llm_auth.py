@@ -46,6 +46,7 @@ the token string is never logged.
 """
 from __future__ import annotations
 
+import inspect
 import logging
 import re
 import threading
@@ -525,6 +526,20 @@ def _client_tuning_kwargs(cfg: dict) -> dict:
     Absent keys are OMITTED (never passed as None) so every existing consumer
     builds byte-identical clients. An unusable value is logged and dropped —
     a bad config line must never fail client construction.
+
+    WHAT max_retries DOES **NOT** COVER (measured while building the 07-31
+    empty-text guard; house memory "SDK retries defeat failover walks"). The
+    anthropic SDK retries on transport failures and on 408/409/429/5xx only —
+    it inspects the HTTP status, never the body. The outage response was a
+    clean **HTTP 200** carrying a thinking block and no text, so no value of
+    max_retries would ever have retried it, and `max_retries=0` (what
+    engine/marketing/copywriter.py's v2 lane sets) does not disable a retry
+    that was never going to happen. That is why the empty-text recovery had to
+    be built explicitly in `empty_text_diagnosis` / `empty_text_retry_plan`
+    rather than bought from the client. max_retries remains the wrong lever for
+    HARD errors too, for the original reason: the failover chain is this
+    module's retry, and an SDK that retries the same dead credential twice
+    just delays the walk.
     """
     out: dict = {}
     retries = cfg.get("client_max_retries")
@@ -546,6 +561,276 @@ def _client_tuning_kwargs(cfg: dict) -> dict:
             except Exception:  # noqa: BLE001 — httpx absent/stubbed: a plain float is accepted too
                 out["timeout"] = secs
     return out
+
+
+class _NoThinkingMessages:
+    """`messages` proxy that defaults DeepSeek's thinking mode OFF.
+
+    An explicit `thinking=` (or one already inside `extra_body`) always wins, so
+    a lane that genuinely wants reasoning simply asks for it.
+    """
+
+    def __init__(self, inner: "Any") -> None:
+        self._inner = inner
+
+    def __getattr__(self, name: str) -> "Any":
+        return getattr(self._inner, name)
+
+    def create(self, **kw: "Any") -> "Any":
+        extra = dict(kw.get("extra_body") or {})
+        if "thinking" not in kw and "thinking" not in extra:
+            extra["thinking"] = {"type": "disabled"}
+            kw["extra_body"] = extra
+        return self._inner.create(**kw)
+
+
+class _DeepSeekClient:
+    """Thin pass-through wrapper; only `.messages` behaves differently."""
+
+    #: Read by `empty_text_retry_plan`. A client that ALREADY sends
+    #: thinking=disabled on every call cannot be recovered by sending it again —
+    #: for this one the useful second attempt is a bigger output budget.
+    thinking_disabled_by_default = True
+
+    def __init__(self, inner: "Any") -> None:
+        self._inner = inner
+        self.messages = _NoThinkingMessages(inner.messages)
+
+    def __getattr__(self, name: str) -> "Any":
+        return getattr(self._inner, name)
+
+
+def _deepseek_no_thinking(client: "Any") -> "Any":
+    """Wrap a DeepSeek client so it stops spending the caller's budget thinking.
+
+    THE OUTAGE THIS FIXES (2026-07-31). `deepseek-v4-pro` — llm_auth's default
+    DeepSeek model — returns a ThinkingBlock BEFORE the text block on the
+    Anthropic-compat endpoint and bills roughly 4x the output tokens for it
+    (probed live 2026-07-26). Callers here pass a SMALL `max_tokens` because
+    they want one short answer: the marketing copywriter sends 400, enough for a
+    post and nowhere near enough for a post plus the model's reasoning. The
+    response hits the cap mid-thought and comes back carrying NO text block.
+
+    Every symptom pointed away from the cause. llm_auth logged "provider
+    'deepseek' served after fallback" — the call genuinely succeeded. The
+    callers' extraction was correct (they filter every block of type=="text"
+    rather than reading content[0], so this was not the classic content[0] bug).
+    The post was simply dropped at stage=provider with "provider returned no
+    text", which reads as an outage. On the 2026-07-31 nightly that was 914 of
+    915 planned posts and a content plan with total_posts=0.
+
+    FIXED HERE RATHER THAN IN THE CALLERS. Eleven sites across engine/marketing
+    and engine/press build their own request and hand it to make_call; patching
+    the one that was on fire would leave ten carrying the defect and every future
+    lane inheriting it. The provider is the thing that thinks, so the provider is
+    where it is turned off — and a lane that wants reasoning still gets it by
+    passing `thinking` explicitly, which this never overrides.
+
+    Wrapping rather than subclassing keeps every other attribute (usage hooks,
+    `with_options`, `close`) pointing at the real client. Fail-soft: if the
+    client has no `.messages` at all (a stub in a test), the original is
+    returned untouched.
+    """
+    try:
+        if getattr(client, "messages", None) is None:
+            return client
+        return _DeepSeekClient(client)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("llm_auth: could not wrap DeepSeek client (%s) — "
+                    "thinking stays at its default", exc)
+        return client
+
+
+# --------------------------------------------------------------------------- #
+# Empty-text responses: the GENERIC form of the 2026-07-30/31 outage
+# --------------------------------------------------------------------------- #
+#
+# `_deepseek_no_thinking` above fixes the instance. This block fixes the CLASS.
+#
+# What actually happened, twice: a provider answered HTTP 200, spent the whole
+# `max_tokens` budget on a reasoning block, and returned a response carrying no
+# text block at all. `make_call` cannot see that — a call that does not raise is
+# a success, so the waterfall STOPS at the provider that served nothing and the
+# three healthy rungs below it are never tried. 914 of 915 planned posts died
+# that way on 07-30 and again on 07-31, through green CI both nights.
+#
+# Nothing about that is DeepSeek-specific. Any Anthropic-compatible endpoint
+# that emits reasoning ahead of text under a small output cap produces exactly
+# this shape, and this repo points eleven call sites at four providers with a
+# per-item cap in the low hundreds of tokens. So the DETECTION and the RECOVERY
+# PLAN live here, provider-agnostic and reusable, while the decision of how many
+# extra calls an item may buy stays with the caller (a nightly batch of 915
+# items and a single user-facing turn cannot share that budget).
+
+#: `stop_reason` values meaning "the answer was cut off because the output
+#: budget ran out". Anthropic says "max_tokens"; the compat endpoints in front
+#: of other model families report the same condition under their own spelling,
+#: and an unknown spelling must not silently read as a clean stop.
+TOKEN_EXHAUSTION_STOP_REASONS = frozenset({
+    "max_tokens", "max_output_tokens", "max_completion_tokens", "length",
+})
+
+#: Content-block types that carry REASONING rather than the answer. A response
+#: made only of these is a model that thought and never spoke.
+REASONING_BLOCK_TYPES = frozenset({"thinking", "redacted_thinking", "reasoning"})
+
+#: The one extra_body switch that turns reasoning off on the Anthropic-compatible
+#: endpoints that support it.
+THINKING_DISABLED_EXTRA_BODY: dict = {"thinking": {"type": "disabled"}}
+
+
+def response_text(resp: "Any") -> str:
+    """Every text block of an Anthropic-shaped response, concatenated.
+
+    NEVER raises: a response object that does not have the expected shape reads
+    as "no text", which is the same thing the caller would have to do anyway.
+    Filtering on ``type == "text"`` (rather than reading ``content[0]``) is
+    deliberate — it is what makes a leading thinking block a MISSING ANSWER
+    rather than a crash, and it is why the 07-31 outage looked like a success.
+    """
+    try:
+        return "".join(
+            str(getattr(b, "text", "") or "")
+            for b in (getattr(resp, "content", None) or [])
+            if str(getattr(b, "type", "")) == "text"
+        )
+    except Exception:  # noqa: BLE001 — a diagnosis helper must never be the fault
+        return ""
+
+
+def empty_text_diagnosis(resp: "Any") -> dict | None:
+    """``None`` when the response carries text; otherwise WHY it did not.
+
+    Returns ``{"blocks", "stop_reason", "reasoning_only", "token_exhausted",
+    "retryable"}``. ``retryable`` is the caller's go/no-go for spending ONE more
+    call on the same provider.
+
+    THE `retryable` RULE IS DELIBERATELY WIDER THAN THE OBSERVED FAULT. The
+    07-31 response was reasoning-only AND stop_reason=max_tokens, so an
+    ``and`` would have caught it. It is an ``or`` here because both halves are
+    independently diagnostic: a reasoning-only body is the thinking fault
+    whatever the endpoint chose to call its stop reason (several compat layers
+    report "end_turn" after truncating), and a truncated response with no text
+    is a budget fault whatever blocks it happens to carry. The cost of the
+    widening is bounded by the caller — one extra call — and the cost of the
+    narrowing was two dark nights.
+    """
+    if response_text(resp):
+        return None
+    try:
+        blocks = [str(getattr(b, "type", "?") or "?")
+                  for b in (getattr(resp, "content", None) or [])]
+    except Exception:  # noqa: BLE001
+        blocks = []
+    stop_reason = str(getattr(resp, "stop_reason", "") or "")
+    reasoning_only = bool(blocks) and all(b in REASONING_BLOCK_TYPES for b in blocks)
+    token_exhausted = stop_reason in TOKEN_EXHAUSTION_STOP_REASONS
+    return {
+        "blocks": blocks,
+        "stop_reason": stop_reason or "?",
+        "reasoning_only": reasoning_only,
+        "token_exhausted": token_exhausted,
+        "retryable": bool(reasoning_only or token_exhausted),
+    }
+
+
+def _innermost_messages(client: "Any") -> "Any":
+    """Walk `.messages` through this module's proxy wrappers to the real API.
+
+    `_DeepSeekClient` puts a `_NoThinkingMessages` proxy in front of the SDK's
+    `messages`, and that proxy's ``create(**kw)`` accepts anything. Sniffing the
+    proxy would therefore answer questions about the WRAPPER rather than about
+    the endpoint. The loop is bounded so a self-referential stub cannot hang a
+    nightly.
+    """
+    msgs = getattr(client, "messages", None)
+    for _ in range(4):
+        inner = getattr(msgs, "_inner", None)
+        if inner is None:
+            break
+        msgs = inner
+    return msgs
+
+
+def client_supports_thinking_switch(client: "Any") -> bool:
+    """True when this client's ``messages.create`` takes an ``extra_body`` kwarg.
+
+    EXPLICIT PARAMETER ONLY — a bare ``**kwargs`` does NOT count, and that
+    distinction is the whole point. `engine.codex_provider._Messages.create`
+    takes ``**kwargs`` and silently discards everything it does not recognise,
+    so a ``**kwargs``-accepting signature would advertise a switch that does
+    nothing and turn the one retry we allow into a byte-identical repeat of the
+    call that just failed. The real Anthropic SDK names ``extra_body`` in its
+    signature; that name is the capability.
+    """
+    create = getattr(_innermost_messages(client), "create", None)
+    if create is None:
+        return False
+    try:
+        params = inspect.signature(create).parameters
+    except (TypeError, ValueError):  # builtins / C-level callables
+        return False
+    return "extra_body" in params
+
+
+def empty_text_retry_plan(client: "Any", max_tokens: int) -> dict:
+    """How to ask ONE more time after a textless response.
+
+    Returns ``{"how", "max_tokens", "extra_body"}``:
+
+      * ``thinking_disabled`` — the endpoint takes the extra_body switch, so the
+        cheapest fix is to stop paying for reasoning we discard;
+      * ``max_tokens_doubled`` — it does not (or it already sends the switch on
+        every call), so buy enough budget for the reasoning AND the answer.
+
+    A client that already defaults thinking off is routed to the doubling branch
+    on purpose: sending a switch that is already set is a repeat of the failed
+    call, not a retry.
+    """
+    if (client_supports_thinking_switch(client)
+            and not getattr(client, "thinking_disabled_by_default", False)):
+        return {"how": "thinking_disabled",
+                "max_tokens": int(max_tokens),
+                "extra_body": dict(THINKING_DISABLED_EXTRA_BODY)}
+    try:
+        doubled = max(1, int(max_tokens) * 2)
+    except (TypeError, ValueError):
+        doubled = int(max_tokens or 1)
+    return {"how": "max_tokens_doubled", "max_tokens": doubled, "extra_body": None}
+
+
+def providers_after(providers: list[dict], name: str | None) -> list[dict]:
+    """The tail of the waterfall BELOW the provider named ``name``.
+
+    The order is the one `build_providers` already produced — a caller doing a
+    one-rung failover must not re-derive it, because that order carries pool
+    balancing and cross-process cooling that a fresh guess would throw away.
+    An unknown name yields [] rather than the whole list: failing over to the
+    provider that just failed is worse than dropping the item.
+    """
+    if not providers or not name:
+        return []
+    for i, p in enumerate(providers):
+        if p.get("name") == name:
+            return list(providers[i + 1:])
+    return []
+
+
+def first_usable(providers: list[dict]) -> dict | None:
+    """The first descriptor `make_call` would actually try, or None.
+
+    Same three gates make_call applies (credential present, client built, not
+    marked dead this process) so a caller that wants exactly ONE more attempt
+    can hand make_call a one-element list and get one attempt rather than a
+    silent skip.
+    """
+    for p in providers or []:
+        if not p.get("cred") or p.get("client") is None:
+            continue
+        if is_dead(str(p.get("name", "")), str(p.get("env_var", ""))):
+            continue
+        return p
+    return None
 
 
 def build_providers(
@@ -884,7 +1169,7 @@ def build_providers(
                 client_kwargs = {"api_key": key, "base_url": ds_base, **tuning}
                 if http_client is not None:
                     client_kwargs["http_client"] = http_client
-                client = anthropic.Anthropic(**client_kwargs)
+                client = _deepseek_no_thinking(anthropic.Anthropic(**client_kwargs))
                 out.append({"name": "deepseek", "env_var": env, "cred": key,
                              "client": client, "model": ds_model,
                              "cap_id": "deepseek_api_key"})

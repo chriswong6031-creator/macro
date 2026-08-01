@@ -48,7 +48,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib import nyse_calendar
+from lib import nyse_calendar, options_coverage
 
 log = logging.getLogger("build_options_command")
 
@@ -229,6 +229,36 @@ def _pips(fraction, total: int = 5) -> int:
 # ─────────────────────────────────────────────────────────────────────────────
 # Session receipt + coverage (the close line's honesty fact)
 # ─────────────────────────────────────────────────────────────────────────────
+def _source_asof(payload) -> str | None:
+    """A store's own session stamp, whatever it calls it.  None when unreadable."""
+    if not isinstance(payload, dict):
+        return None
+    for key in ("asof", "as_of", "session", "date", "built"):
+        v = payload.get(key)
+        if isinstance(v, str) and v[:4].isdigit():
+            return v[:10]
+    return None
+
+
+def _gex_index_asof(payload) -> str | None:
+    """site/gex/index.json is a LIST of per-symbol rows, each carrying its own `asof`."""
+    if not isinstance(payload, list) or not payload:
+        return None
+    stamps = [r.get("asof") for r in payload
+              if isinstance(r, dict) and isinstance(r.get("asof"), str)]
+    return max(stamps) if stamps else None
+
+
+def _source_n(payload, key: str) -> int | None:
+    """A store's own covered-names count.  None (never 0) when it does not publish one."""
+    if not isinstance(payload, dict):
+        return None
+    v = payload.get(key)
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return None
+    return int(v)
+
+
 def build_session(stores: dict, missing: list[str]) -> dict:
     """The session stamp: date, OI vintage, coverage share, quality word.
 
@@ -347,6 +377,60 @@ def build_session(stores: dict, missing: list[str]) -> dict:
         "quality_tip_zh": tip_zh,
         "cov_tip_en": cov_tip_en,
         "cov_tip_zh": cov_tip_zh,
+        # OIP R8 — the shared options coverage object, ADDITIVE. Every key above is
+        # untouched; no surface reads this yet (later waves adopt it). One comparable
+        # shape across build_options_command / build_gex_board / build_options_screener /
+        # build_flow_desk, so the estate can print one honest coverage sentence instead
+        # of four incomparable ones. See lib/options_coverage.py.
+        "coverage_v1": options_coverage.coverage_object(
+            universe_name_en="Options names we track",
+            universe_name_zh="我们跟踪的期权标的",
+            universe_n=universe,
+            covered_n=covered,
+            asof=coverage_asof or session_date,
+            sources=[
+                options_coverage.source(
+                    "flow_desk", "Options tape", "期权成交",
+                    asof=_source_asof(stores.get("flow_desk")),
+                    # minor 6 (review): flow_desk.json publishes n_names under `read`,
+                    # not at the top level, so this was always None.
+                    n=_source_n((stores.get("flow_desk") or {}).get("read")
+                                if isinstance(stores.get("flow_desk"), dict) else None,
+                                "n_names"),
+                ),
+                options_coverage.source(
+                    "screener", "Scanner rows", "筛选表标的",
+                    asof=coverage_asof, n=universe,
+                ),
+                options_coverage.source(
+                    "leaders", "Flow leaders", "资金领跑",
+                    asof=_source_asof(stores.get("leaders")),
+                    # leaders.json counts its universe as coverage.n_universe
+                    n=_source_n((stores.get("leaders") or {}).get("coverage")
+                                if isinstance(stores.get("leaders"), dict) else None,
+                                "n_universe"),
+                ),
+                options_coverage.source(
+                    "market_structure", "Index structure", "指数结构",
+                    asof=_source_asof(stores.get("market_structure")),
+                ),
+                options_coverage.source(
+                    "vol", "Volatility regime", "波动状态",
+                    asof=_source_asof(stores.get("vol")),
+                ),
+                options_coverage.source(
+                    "gex", "Dealer positioning", "做市商持仓",
+                    # minor 6 (review): site/gex/index.json is a LIST of per-symbol rows,
+                    # so _source_asof (a dict reader) always returned None. Read the asof
+                    # off the first row, and count the board's real breadth from the list
+                    # rather than the 4 index payloads the Brief happens to inline.
+                    asof=_gex_index_asof(stores.get("gex_index")),
+                    n=(len(stores.get("gex_index"))
+                       if isinstance(stores.get("gex_index"), list)
+                       else None),
+                ),
+            ],
+        ),
     }
 
 

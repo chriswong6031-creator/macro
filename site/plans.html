@@ -13,8 +13,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -44,7 +53,7 @@
 <link rel="stylesheet" href="assets/css/e044882d.css?v=e044882d">
 
 
-<link rel="stylesheet" href="assets/css/d9c35778.css?v=d9c35778">
+<link rel="stylesheet" href="assets/css/afee43a4.css?v=afee43a4">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 </head>
 <body class="page-plans public-page">
@@ -186,7 +195,7 @@
           <li><span class="l-en">Special situations</span><span class="l-zh">特殊事件</span> — <b><span class="l-en">the 3 newest filings</span><span class="l-zh">最新 3 份申报</span></b></li>
           <li><span class="l-en">Committee &amp; brief — a teaser</span><span class="l-zh">委员会与简报 — 预览</span></li>
           <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">5 quick questions a week</span><span class="l-zh">每周 5 个快速提问</span></b></li>
-          <li><span class="l-en">Charts terminal</span><span class="l-zh">图表终端</span> — <b><span class="l-en">free for everyone</span><span class="l-zh">所有人免费</span></b></li>
+          <li><span class="l-en">Terminal charting</span><span class="l-zh">Terminal 图表</span> — <b>21 <span class="l-en">core indicators</span><span class="l-zh">个核心指标</span></b> + <span class="l-en">Candle Painter</span><span class="l-zh">K 线着色器</span></li>
         </ul>
         <button class="btn" data-act="free" type="button"><span class="btxt"><span class="l-en">Sign in — it’s free</span><span class="l-zh">登录 — 完全免费</span></span></button>
         <p class="cta-note" id="free-note"><span class="l-en">Your current plan.</span><span class="l-zh">你当前的方案。</span></p>
@@ -211,6 +220,7 @@
           <li><b><span class="l-en">The special situations desk</span><span class="l-zh">完整特殊事件交易台</span></b> — <span class="l-en">activist, M&amp;A, spin-offs, take-privates</span><span class="l-zh">维权、并购、分拆、私有化</span></li>
           <li><span class="l-en">Committee, brief &amp; track record</span><span class="l-zh">委员会、简报与业绩记录</span> — <span class="l-en">in full</span><span class="l-zh">完整版</span></li>
           <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">300 a month</span><span class="l-zh">每月 300 次</span></b></li>
+          <li><b>15 / 31 <span class="l-en">advanced indicator modules</span><span class="l-zh">个高级指标模块</span></b> — <span class="l-en">Trend Engine, market structure &amp; oscillator signals</span><span class="l-zh">趋势引擎、市场结构与振荡器信号</span></li>
           <li><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></li>
         </ul>
         <button class="btn primary" data-act="subscribe" data-tier="insider" type="button"><span class="btxt"><span class="l-en">Start 7-day trial</span><span class="l-zh">开始 7 天试用</span></span></button>
@@ -250,6 +260,7 @@
           <li><span class="l-en">Mastermind chat</span><span class="l-zh">操盘大脑对话</span> — <b><span class="l-en">unlimited</span><span class="l-zh">无限量</span></b></li>
           <li><b><span class="l-en">Deep Opus chat</span><span class="l-zh">深度 Opus 对话</span></b> — <span class="l-en">150 a month</span><span class="l-zh">每月 150 次</span></li>
           <li><span class="l-en">Priority research answers</span><span class="l-zh">优先研究回答</span></li>
+          <li><b><span class="l-en">All</span><span class="l-zh">全部</span> 31 <span class="l-en">advanced indicator modules</span><span class="l-zh">个高级指标模块</span></b> — <span class="l-en">all five suites</span><span class="l-zh">5 套工具组全解锁</span></li>
           <li><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span> — <b><span class="l-en">included</span><span class="l-zh">含</span></b></li>
         </ul>
         <button class="btn primary" data-act="subscribe" data-tier="pro" type="button"><span class="btxt"><span class="l-en">Try Pro free for 7 days</span><span class="l-zh">免费试用 Pro 7 天</span></span></button>
@@ -330,6 +341,12 @@
             <td class="val"><span class="l-en">Free</span><span class="l-zh">免费</span></td>
             <td class="ok">✓</td>
             <td class="ok">✓</td>
+          </tr>
+          <tr>
+            <td class="feat has-tip"><span class="ft"><span class="l-en">Advanced indicator modules</span><span class="l-zh">高级指标模块</span></span><span class="tipbox up"><span class="l-en">Every plan includes 21 core indicators. Free also includes Candle Painter; Insider unlocks 15 of 31 advanced modules; Pro unlocks all five suites and all 31 modules.</span><span class="l-zh">所有方案均含 21 个核心指标。Free 另含 K 线着色器；Insider 解锁 31 个高级模块中的 15 个；Pro 解锁 5 套工具组的全部 31 个模块。</span></span></td>
+            <td class="val">1 / 31<small><span class="l-en">Candle Painter</span><span class="l-zh">K 线着色器</span></small></td>
+            <td class="val">15 / 31<small><span class="l-en">core trend + signals</span><span class="l-zh">核心趋势 + 信号</span></small></td>
+            <td class="val"><span class="l-en">All</span><span class="l-zh">全部</span> 31<small><span class="l-en">5 complete suites</span><span class="l-zh">5 套完整工具组</span></small></td>
           </tr>
           <tr>
             <td class="feat has-tip"><span class="ft"><span class="l-en">Terminal live options</span><span class="l-zh">终端实时期权</span></span><span class="mchip">Insider</span><span class="tipbox up"><span class="l-en">Live options data inside the terminal — included during the trial too.</span><span class="l-zh">终端内的实时期权数据——试用期同样包含。</span></span></td>
@@ -434,7 +451,7 @@
 
 <div id="ptoast" role="alert"></div>
 
-<script src="theme.js?v=0943b4d5" defer></script>
+<script src="theme.js?v=e4951de3" defer></script>
 
 <script>
 (function(){
@@ -557,7 +574,7 @@
   sync();
 })();
 </script>
-<script src="onboard.js?v=37b179a8" defer></script>
+<script src="onboard.js?v=77624cf4" defer></script>
 <script>
 /* plans.js (inline) — billing toggle + Stripe checkout wiring.
 

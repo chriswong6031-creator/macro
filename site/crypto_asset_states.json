@@ -1,0 +1,86 @@
+{
+  "schema": "crypto.asset_states/v1",
+  "tier": "display",
+  "display_only": true,
+  "authority": "states_only",
+  "generated_at": "2026-08-01T03:07:29.024667+00:00",
+  "as_of": "2026-08-01",
+  "assets": {
+    "ETH": {
+      "symbol": "ETH",
+      "display_only": true,
+      "authority": "states_only",
+      "allocation": null,
+      "recommendation": null,
+      "as_of": "2026-08-01",
+      "coverage": {
+        "available": true,
+        "observations": 3714,
+        "first_date": "2016-06-01",
+        "last_date": "2026-08-01",
+        "source": "coinbase",
+        "note_en": "3,714 daily observations from Coinbase daily OHLCV.",
+        "note_zh": "Coinbase 日频 OHLCV已积累 3,714 个日频观测。"
+      },
+      "price": 1863.39,
+      "change_30d_pct": 9.7,
+      "trend": {
+        "state": "Range",
+        "state_zh": "震荡",
+        "votes": "2/4"
+      },
+      "risk": {
+        "state": "Stressed",
+        "state_zh": "承压",
+        "drawdown_pct": -61.43,
+        "realized_vol_30d_pct": 41.1
+      },
+      "relative": {
+        "state": "Tracking Bitcoin",
+        "state_zh": "跟随比特币",
+        "change_90d_pct": 0.2
+      },
+      "summary_en": "Range; stressed risk; tracking bitcoin over 90 days.",
+      "summary_zh": "震荡；风险承压；90 日内跟随比特币。",
+      "tone": "neutral"
+    },
+    "SOL": {
+      "symbol": "SOL",
+      "display_only": true,
+      "authority": "states_only",
+      "allocation": null,
+      "recommendation": null,
+      "as_of": "2026-08-01",
+      "coverage": {
+        "available": true,
+        "observations": 1872,
+        "first_date": "2021-06-17",
+        "last_date": "2026-08-01",
+        "source": "coinbase",
+        "note_en": "1,872 daily observations from Coinbase daily OHLCV.",
+        "note_zh": "Coinbase 日频 OHLCV已积累 1,872 个日频观测。"
+      },
+      "price": 72.9,
+      "change_30d_pct": -9.59,
+      "trend": {
+        "state": "Fading",
+        "state_zh": "走弱",
+        "votes": "0/4"
+      },
+      "risk": {
+        "state": "Stressed",
+        "state_zh": "承压",
+        "drawdown_pct": -70.55,
+        "realized_vol_30d_pct": 33.9
+      },
+      "relative": {
+        "state": "Leading Bitcoin",
+        "state_zh": "领先比特币",
+        "change_90d_pct": 8.51
+      },
+      "summary_en": "Fading; stressed risk; leading bitcoin over 90 days.",
+      "summary_zh": "走弱；风险承压；90 日内领先比特币。",
+      "tone": "bear"
+    }
+  }
+}

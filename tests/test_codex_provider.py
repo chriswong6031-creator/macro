@@ -198,3 +198,62 @@ def test_inline_image_fails_as_provider_specific_unsupported_feature(monkeypatch
                 }],
             }],
         )
+
+
+class TestACodexFailureSaysWhatWentWrong:
+    """`Codex provider error (error)` is not a diagnosis, it is a shrug.
+
+    "error" is the FALLBACK classification — engine/codex_lane/runner._classify_error
+    returns it when the CLI output matched neither the usage-limit nor the auth
+    phrase list. So that line means "Codex failed for a reason we did not
+    recognise", and printing only the kind discarded `raw_tail`, the one field
+    that says what it actually was.
+
+    It mattered: the 2026-07-31 nightly logged that line four times per post for
+    every post, fell through to DeepSeek, and ended with zero posts planned.
+    Codex is the FIRST provider in the marketing order and the one the operator
+    wants used, and its failures were unreadable.
+    """
+
+    def test_a_generic_failure_carries_the_cli_tail(self):
+        from engine.codex_provider import CodexProviderError, _message_from_result
+
+        try:
+            _message_from_result(
+                {"ok": False, "error_kind": "error",
+                 "raw_tail": "stream disconnected before completion"}, None)
+        except CodexProviderError as exc:
+            assert "stream disconnected before completion" in str(exc)
+        else:
+            raise AssertionError("no error raised")
+
+    def test_an_empty_tail_says_so_rather_than_pretending(self):
+        from engine.codex_provider import CodexProviderError, _message_from_result
+
+        try:
+            _message_from_result(
+                {"ok": False, "error_kind": "error", "raw_tail": ""}, None)
+        except CodexProviderError as exc:
+            assert "no output captured" in str(exc)
+        else:
+            raise AssertionError("no error raised")
+
+    def test_the_classified_kinds_keep_their_exact_prefixes(self):
+        """llm_auth classifies retry/failover on the 429 and 401 prefixes.
+
+        Enriching the GENERIC branch must not disturb the ones a caller matches
+        on, or a usage limit stops being recognised as a usage limit.
+        """
+        from engine.codex_provider import CodexProviderError, _message_from_result
+
+        for kind, expected in (("usage_limit", "429 Codex usage limit reached"),
+                               ("auth", "401 Codex authentication failed"),
+                               ("timeout", "Codex provider timeout"),
+                               ("not_installed", "Codex provider not installed")):
+            try:
+                _message_from_result(
+                    {"ok": False, "error_kind": kind, "raw_tail": "noise"}, None)
+            except CodexProviderError as exc:
+                assert str(exc) == expected, (kind, str(exc))
+            else:
+                raise AssertionError(f"no error raised for {kind}")

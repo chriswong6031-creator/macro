@@ -28,6 +28,10 @@ on:
       - "config.yml"
       - "site/**"
       - "scripts/check_inline_js.py"
+      # dead-reference guard: a page linking a file that isn't in the tree is a
+      # silent 404 (pruned stylesheet #3988/#4042; the 605-page ../baskets/ typo).
+      - "scripts/check_site_asset_refs.py"
+      - "tests/test_check_site_asset_refs.py"
       - "scripts/check_site_js.py"
       - "scripts/check_nav_gap.py"
       - "scripts/check_nav_mega.py"
@@ -554,6 +558,20 @@ on:
       - "tests/test_render_run_size_cap.py"
       - "tests/test_render_builder_ownership.py"
       - "tests/test_render_canada_scope.py"
+      # OIP E8 options integrity suites (job: workflow-yaml). engine/**, scripts/** and
+      # .github/workflows/** already reach their subjects; these entries are so a
+      # TEST-ONLY edit still starts CI, per the two-halves law.
+      - "tests/test_render_options_workspace_scope.py"
+      - "tests/test_options_session_guards.py"
+      - "tests/test_options_unit_seams.py"
+      - "tests/test_options_coverage_object.py"
+      - "tests/test_earnings_sweep_entrypoint.py"
+      # ...and the two shared libs they guard, so a change to either re-runs them.
+      - "lib/options_units.py"
+      - "lib/options_coverage.py"
+      - "lib/nyse_calendar.py"
+      - "collectors/equity_earnings.py"
+      - "scripts/audit_earnings_freshness.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -621,6 +639,13 @@ on:
       - "tests/test_market_packet.py"
       - "tests/test_brain_market_intel.py"
       - "tests/test_brain_seed_router.py"
+      # Analyst OS W2: analogue engine + curve-detail tool + offline eval harness.
+      - "tests/test_brain_analogues.py"
+      - "tests/test_brain_curve.py"
+      - "tests/test_response_eval.py"
+      # Analyst OS W3: per-user memory tools + prefs plumbing.
+      - "tests/test_brain_user_memory.py"
+      - "tests/test_user_prefs.py"
       # The two cortex suites gate their own jobs ('cortex provider routing + tool loop'
       # and 'cortex ADB-W3 two-way read tools + parity') but were never listed here, so a
       # TEST-ONLY edit to either file triggered no ci.yml run at all and the suite it
@@ -898,6 +923,32 @@ on:
       - "engine/prophet_bridge.py"
       - "scripts/build_prophet.py"
       - "tests/test_prophet_options_context.py"
+      # PROPHET LIVE P0 (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md).
+      # G0.1 is a PARITY gate: the published interval must reproduce signal_gate's
+      # verdict, so an edit to the gate, the cascade, the arming probe, the intraday
+      # state machine OR the workflow that runs it has to retrigger the parity suite.
+      # Without these lines a PR touching only these files matches nothing in this
+      # filter, ci.yml never starts, and the guard cannot fire on the change it guards.
+      - "engine/prophet_live/**"
+      - "engine/signal_gate.py"
+      - "engine/confluence_tiers.py"
+      - "scripts/build_prophet_live_pack.py"
+      - "scripts/prophet_live_evaluator.py"
+      - "scripts/reconcile_prophet_live.py"
+      - ".github/workflows/prophet-live.yml"
+      - "tests/test_prophet_live_pack.py"
+      - "tests/test_prophet_live_evaluator.py"
+      - "tests/test_prophet_live_reconcile.py"
+      - "tests/fixtures/prophet_live/import_probe.py"
+      # PROPHET LIVE VPS lane (§4.2a/§4.4a). The unit files, the reconciler that
+      # installs them and the provisioner that arms them are the subjects of
+      # test_prophet_live_vps_lane.py — a PR touching only a unit file must retrigger
+      # the guard that reads it, or the guard fires on everyone else's PR instead
+      # (the #3488 failure mode).
+      - "app/deploy/macro-live-prophet.service"
+      - "app/deploy/macro-live-prophet.timer"
+      - "app/deploy/live-setup.sh"
+      - "tests/test_prophet_live_vps_lane.py"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"
@@ -1167,6 +1218,15 @@ on:
       # press-wire bridge + intel loop + reply voice + filing lanes. Scripts
       # and workflows listed so a script-only edit still reaches the lane.
       - "tests/test_marketing_copy_v2.py"
+      - "tests/test_marketing_voice_laws.py"
+      - "tests/test_marketing_publisher_names.py"
+      - "tests/test_marketing_media_backfill.py"
+      - ".github/workflows/marketing-earnings-wire.yml"
+      - "tests/test_chart_facts.py"
+      - "tests/test_confluence_source.py"
+      - "tests/test_confluence_honesty.py"
+      - "tests/test_tech_confluence.py"
+      - "tests/test_chart_since_setup.py"
       - "tests/test_marketing_selection.py"
       - "tests/test_marketing_press_wire.py"
       - "tests/test_marketing_x_intel.py"
@@ -1200,6 +1260,13 @@ on:
       - "tests/test_admin_marketing.py"
       - "admin/marketing.py"
       - "config/marketing.yml"
+      # Marketing floor / model desk / X lanes (2026-07-29): the operator's view
+      # inside the factory — per-station yield with every loss named, model
+      # routing + the OAuth key-pool balancer, and the E-wave lanes' live/dark
+      # state. Listed so a PR touching only the panel or only its suite still
+      # reaches the marketing-engine lane.
+      - "tests/test_admin_marketing_floor.py"
+      - "admin/marketing_floor.py"
       # Content Studio W1 selection layer (LLM-first masterplan §0, 2026-07-29):
       # cross-day cooldowns, the fact-reuse budget, the degenerate-stat gate,
       # the shape mixer, the emit-time no-fallback refusal, stale-queued expiry
@@ -1209,6 +1276,23 @@ on:
       # dry-run workflow is listed because the suite's live-config assertions
       # are the only thing pinning that lane's arming keys.
       - "tests/test_marketing_selection.py"
+      # Batch auditor (operator 2026-07-30): the only gate that reads a whole
+      # day at once, so it is the only one that can see cross-post monotony.
+      - "tests/test_marketing_copy_auditor.py"
+      - "engine/marketing/copy_auditor.py"
+      # Bare-cashtag law (operator 2026-07-30): a post that names tickers
+      # ships a picture. The kind-keyed media gate structurally could not
+      # see theme_list/mover, which is what was auto-posting naked.
+      - "tests/test_marketing_bare_cashtag.py"
+      - "tests/test_marketing_voice_laws.py"
+      - "tests/test_marketing_publisher_names.py"
+      - "tests/test_marketing_media_backfill.py"
+      - ".github/workflows/marketing-earnings-wire.yml"
+      - "tests/test_chart_facts.py"
+      - "tests/test_confluence_source.py"
+      - "tests/test_confluence_honesty.py"
+      - "tests/test_tech_confluence.py"
+      - "tests/test_chart_since_setup.py"
       - ".github/workflows/marketing-copy-dryrun.yml"
       # chart coverage (#3895, 2026-07-28): every ticker-bearing post carries an
       # illustration; the live gate picks the card VARIANT rather than vetoing it;
@@ -1340,6 +1424,15 @@ on:
       # otherwise never reach the marketing-engine lane (test-whitelist-rot,
       # the same failure mode the four entries above exist for).
       - "tests/test_marketing_copy_v2.py"
+      - "tests/test_marketing_voice_laws.py"
+      - "tests/test_marketing_publisher_names.py"
+      - "tests/test_marketing_media_backfill.py"
+      - ".github/workflows/marketing-earnings-wire.yml"
+      - "tests/test_chart_facts.py"
+      - "tests/test_confluence_source.py"
+      - "tests/test_confluence_honesty.py"
+      - "tests/test_tech_confluence.py"
+      - "tests/test_chart_since_setup.py"
       - "scripts/marketing_copy_dryrun.py"
       # D02 per-post metrics poller + chart-image (PNG) pipeline. The poller
       # reads back Buffer analytics; media_publish uploads chart PNGs to R2;
@@ -1672,6 +1765,9 @@ on:
       - "tests/test_flow_leaders_render_markers.py"
       - "tests/test_macro_signals_render.py"
       - "tests/test_movers_page.py"
+      # product-nav-icons.css is the icon authority test_nav_submenu_icons.py now
+      # checks the nav partial against, so its own guard must not stay dark.
+      - "tests/test_nav_icon_refresh.py"
       - "tests/test_nav_submenu_icons.py"
       - "tests/test_sector_nav_links.py"
       - "tests/test_site_semantics_refs.py"
@@ -1969,6 +2065,21 @@ on:
       - "tests/test_gex_engine.py"
       - "tests/test_gex_model.py"
       - "tests/test_polygon_gex.py"
+      # OIP E3 positioning persistence (2026-07-29), wired into unrun-market-plumbing.
+      # engine/** already covers engine/positioning_persistence.py, engine/gex_state.py
+      # and engine/market_gamma.py, and scripts/build_index_gex_history.py rides the
+      # scripts/*.py catch-all — so these three entries are the OTHER half: a suite-only
+      # edit (a re-pin of the back-compat key snapshot, a new truth-table case) must
+      # still be able to START ci.yml. Both suites below existed BEFORE this wave and
+      # were reachable from no path pattern at all.
+      - "tests/test_positioning_persistence.py"
+      - "tests/test_gex_state.py"
+      - "tests/test_index_gex_history.py"
+      # The launchd lane that produces data/index_gex_history off the render path. A
+      # plist/runner-only edit changes the artifact's cadence and its push tail, so it
+      # must reach the suite that pins the resolver routing and the R2 registration.
+      - "ops/launchd/com.macro.indexgexhistory.plist"
+      - "ops/launchd/run_index_gex_history.sh"
       - "scripts/backtest_event_priors.py"
       - "scripts/build_attention_deterministic.py"
       - "scripts/build_discovery_confluence.py"
@@ -2020,6 +2131,8 @@ on:
       - "scripts/signal_sanity.py"
       # unrun-inline-js-guard
       - "tests/test_check_inline_js.py"
+      # unrun-dead-reference-guard
+      - "tests/test_check_site_asset_refs.py"
       # unrun-import-hygiene — the ratchet AST-scans engine/, lib/, scripts/ and
       # research/ for import-time process-global state.  engine/** and lib/** are
       # already broad catch-alls above; scripts/ and research/ were only covered

@@ -39,6 +39,7 @@ from engine.setups import CA_ALPHA_WEIGHT, entry_open_first, rank_setups, setup_
 from engine import signal_gate  # noqa: E402 — owner's confluence T1->T4 cascade (layered ON main's alpha/alignment gate)
 from engine.technicals import season_line, seasonality, snapshot  # noqa: E402
 from lib import config, store  # noqa: E402
+from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("canada_library")
@@ -782,6 +783,7 @@ def main(alpha: dict | None = None) -> dict | None:
     index, cand, built, failed, limited = [], [], 0, 0, 0
     sector_by: dict[str, str] = {}
     uni = universe()
+    latest_volumes = latest_volume_map("ca")
 
     liq = current_liquidity()                  # macro overlay threaded into analyze()
     basket_tw = _basket_tailwind_map()         # Conviction "theme tailwind" axis
@@ -950,6 +952,7 @@ def main(alpha: dict | None = None) -> dict | None:
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write[ticker] = (safe, rec)           # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
+        attach_latest_volume(idx, ticker, latest_volumes)
         if rec.get("alpha", {}).get("alpha") is not None:
             idx["a"] = rec["alpha"]["alpha"]
         index.append(idx)

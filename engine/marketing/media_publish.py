@@ -173,11 +173,39 @@ def publish_card(
     # ── PNG (what X actually receives) ────────────────────────────────────────
     png = b""
     render_mode = "svg_raster"
-    try:
-        from engine.marketing.chart_render import rasterize_svg  # noqa: PLC0415
-        png = rasterize_svg(svg)
-    except Exception as exc:  # noqa: BLE001
-        log.warning("publish_card: raster failed for %s: %s", chart_id, exc)
+    # RETRY ONCE BEFORE ACCEPTING A WORSE PICTURE (2026-07-30).
+    #
+    # A fallback is one failed launch away, and the fallback is a visibly worse
+    # image — no candles, no indicators, no footer CTA — on a live account.
+    #
+    # Measured on this host: a card rasters in 3 to 4 seconds when asked on its
+    # own, and 15 of 23 took the fallback on a local plan build competing with
+    # other Chrome work. Production's own PNGs are all the real card (2026-07-29:
+    # 21 of 21 at 2000x1760), so this is contention, not an absent binary — the
+    # exact failure a retry is for, and the exact failure a single attempt turns
+    # into a permanently worse picture.
+    #
+    # rasterize_svg is deterministic, writes only inside its own temp dir and is
+    # already fail-soft, so a second attempt is safe and idempotent. It costs
+    # nothing on the happy path and is only paid where the alternative was
+    # shipping the degraded card anyway. Bounded at ONE retry: if Chrome is
+    # genuinely missing (CI, the ubuntu publish runner) this must not turn every
+    # card into two doomed launches.
+    for _attempt in (1, 2):
+        try:
+            from engine.marketing.chart_render import rasterize_svg  # noqa: PLC0415
+            png = rasterize_svg(svg)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("publish_card: raster attempt %d failed for %s: %s",
+                        _attempt, chart_id, exc)
+        if png:
+            break
+        if _attempt == 1:
+            from engine.marketing.chart_render import find_chrome  # noqa: PLC0415
+            if not find_chrome():
+                break      # no binary — a retry cannot help, and would double the cost
+            log.warning("publish_card: raster produced nothing for %s — retrying "
+                        "once before accepting the degraded legacy PNG", chart_id)
     if not png and legacy_png is not None:
         log.warning("publish_card: no SVG raster for %s — falling back to the legacy "
                     "PNG (no footer CTA); install Chrome on this host", chart_id)

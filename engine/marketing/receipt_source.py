@@ -33,8 +33,52 @@ from datetime import date, datetime, timezone
 from typing import Callable
 
 
-_MAX_AGE_DAYS = 14
+#: How far back a RESOLVED plan may be and still be worth a receipt post.
+#:
+#: WAS 14, AND THAT IS WHY THE RECEIPTS DESK HAD NEVER PRODUCED ONE (2026-07-31).
+#: The window was set to a freshness intuition; the measurement disagrees. On the
+#: live `site/prophet/index.json` (63 plans) exactly six had a resolved outcome —
+#: three with a DONE profit level, three invalidated — and their signal dates were
+#: 21 to 22 days old. Every one of them fell outside a 14-day window, so the desk
+#: drew its share of the nightly tilt and emitted nothing, permanently, while six
+#: real receipts sat just past the edge.
+#:
+#: The mismatch is structural, not a bad week: Prophet's swing horizon is 2-4
+#: weeks (a target takes that long to hit or fail), so a window shorter than the
+#: horizon it grades can only ever be empty. 30 days covers the horizon with room
+#: for the grading lag.
+#:
+#: A receipt is not a tape claim and does not decay like one. "Three weeks ago I
+#: said X, here is how it resolved" is a STRONGER post than a three-day-old one,
+#: because the outcome is settled — and it is the one post shape that pays a cost
+#: to make, which is the house voice law. Overridable per-call and from config
+#: (`copywriter.receipt_max_age_days`) so tightening it back is one line.
+_MAX_AGE_DAYS = 30
 _KIND_PRIORITY = {"mixed": 3, "win": 2, "loss": 1}
+
+
+def receipt_max_age_days(cfg: dict | None = None) -> int:
+    """The reader of `copywriter.receipt_max_age_days`. Call it from EVERY lane.
+
+    A config key nothing reads is a lie in a config file; this function exists so
+    the knob is real. Falls back to the measured default above.
+
+    THE DOCSTRING USED TO SAY "THE SINGLE READER" AND THAT WAS FALSE (2026-07-31
+    adversarial review). Three lanes call :func:`graded_receipts`, and only
+    content_studio threaded a window through it; ``allies.track_record_stats``
+    and ``sentinel.receipts_context`` took the bare in-code default, so an
+    operator who tightened the config to 14 would have seen the studio's receipt
+    supply move while the ally kits' win-rate denominator and the sentinel's
+    cherry-pick window silently kept grading a 30-day book. Two numbers computed
+    off two different windows, both printed as "the track record". Both call
+    sites now resolve the same knob; see the ``cfg`` parameter each grew.
+    """
+    raw = ((cfg or {}).get("copywriter") or {}).get("receipt_max_age_days")
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return _MAX_AGE_DAYS
+    return n if n > 0 else _MAX_AGE_DAYS
 
 
 def _parse_date(s: object) -> date | None:
@@ -43,6 +87,32 @@ def _parse_date(s: object) -> date | None:
         return date(int(parts[0]), int(parts[1]), int(parts[2]))
     except Exception:
         return None
+
+
+def _is_resolved(plan: dict) -> bool:
+    """Did something CONCRETE happen to this plan — a target hit, or invalidation?
+
+    The same test `graded_receipts` applies below, extracted so a caller can ask
+    "does resolved supply exist?" WITHOUT the freshness window. That distinction
+    is the whole point: zero receipts because nothing resolved is a quiet week,
+    zero receipts because every resolution fell outside the window is a famine,
+    and telling them apart needs this predicate on its own.
+    """
+    if not isinstance(plan, dict):
+        return False
+    if str(plan.get("phase") or "") == "invalidated":
+        return True
+    try:
+        entry = float(plan.get("entry") or 0)
+    except (TypeError, ValueError):
+        return False
+    if entry <= 0:
+        return False
+    profit_plan = plan.get("profit_plan") or []
+    if not isinstance(profit_plan, list):
+        return False
+    return any(isinstance(lvl, dict) and str(lvl.get("status", "")).upper() == "DONE"
+               for lvl in profit_plan)
 
 
 def _age_days(signal_date: object, today: str | None = None) -> int | None:

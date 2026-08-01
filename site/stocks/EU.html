@@ -33,8 +33,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -654,7 +663,7 @@
     
     
     <div class="throw">
-      <a href="../baskets/uranium_miners.html"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></a>
+      <a href="../basket/uranium_miners.html"><span class="l-en">Uranium &amp; Nuclear Fuel</span><span class="l-zh">铀矿与核燃料</span></a>
       <span class="tm">Uranium miners, developers and fuel-cycle/enrichment — the fuel supply side of the nuclear revival (distinct from utilities and SMR reactor developers).</span>
       <span class="okx q" style="font-size:10px;"><span class="l-en">Laggard · room</span><span class="l-zh">落后 · 有空间</span></span>
     </div>

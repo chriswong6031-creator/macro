@@ -1107,6 +1107,23 @@
     var side = pos >= 0 ? "left:50%;width:" + pct + "%" : "right:50%;width:" + pct + "%";
     return '<span class="gd-bar"><i style="' + side + ';background:' + color + '"></i></span>';
   }
+  // The nightly DATA payload is only a fallback once live.js has patched the
+  // geo-anchored pebble. Read the card's initial quote from that already-live
+  // pebble, then bind the card nodes to the same nb-px/nb-chg patch path so a
+  // pinned card continues to update on subsequent quote polls.
+  function liveIndexReading(m) {
+    var isl = islEls[m.cc];
+    var px = isl && isl.querySelector(".isl-px");
+    var chg = isl && isl.querySelector(".isl-chg");
+    var fallbackUp = (m.index_chg_pct || 0) >= 0;
+    return {
+      price: px && px.textContent ? px.textContent.trim() : (m.index_price || "—"),
+      change: chg && chg.textContent
+        ? chg.textContent.trim()
+        : ((fallbackUp ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%")),
+      up: chg ? chg.classList.contains("up") : fallbackUp
+    };
+  }
   // Keep the tooltip in the layout long enough for its exit transition to finish.
   // Repeated pointermove events over the same country do not restart the entrance;
   // moving directly to another country does, which makes the content change legible.
@@ -1168,14 +1185,13 @@
   // non-interactive, no focus steal, no role=dialog, no live announcement.
   function showTip(m, cx, cy, pinned, isTour) {
     if (isTour) { showMiniTip(m); return; }
-    var q = m.quad, up = (m.index_chg_pct || 0) >= 0;
+    var q = m.quad, idx = liveIndexReading(m), up = idx.up;
     var risk = (m.recession != null || m.drawdown_risk != null)
       ? (m.recession != null ? bilingual("Recession " + m.recession + "/100", "衰退 " + m.recession + "/100") : "")
         + (m.drawdown_risk != null ? " · " + bilingual("drawdown " + m.drawdown_risk, "回撤 " + m.drawdown_risk) : "")
       : bilingual(m.risk_text_en, m.risk_text_zh);
     var conf = Math.round((m.confidence || 0) * 5), dots = "";
     for (var i = 0; i < 5; i++) dots += i < conf ? "●" : "○";
-    var chgColor = up ? "var(--up)" : "var(--down)";
     tip.innerHTML =
       '<div class="gd-tip-h"><span class="gd-tip-flag">' + m.flag + '</span>' +
         '<span class="gd-tip-name">' + bilingual(m.name_en, m.name_zh) + '</span>' +
@@ -1188,8 +1204,8 @@
       '<div class="gd-tip-row"><span class="gd-tip-k">' + bilingual("Confidence", "置信度") + '</span><span class="gd-dots">' + dots + '</span>' +
         (m.data_limited ? '<span class="gd-lim">' + bilingual("limited data", "数据有限") + '</span>' : '') + '</div>' +
       '<div class="gd-tip-idx"><span>' + bilingual(m.index_name_en, m.index_name_zh) + '</span>' +
-        '<b>' + (m.index_price || "—") + '</b>' +
-        '<span class="gd-chg" style="color:' + chgColor + '">' + (up ? "+" : "") + (m.index_chg_pct == null ? "" : m.index_chg_pct + "%") + '</span></div>' +
+        '<b class="nb-px" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + idx.price + '</b>' +
+        '<span class="gd-chg nb-chg ' + (up ? "up" : "down") + '" data-sym="' + (m.index_sym || "") + '" data-mkt="idx">' + idx.change + '</span></div>' +
       '<div class="gd-tip-foot">' + bilingual("Descriptive regime read — not a forecast.", "描述性周期读数，非预测。") +
         (m.macro_asof ? ' · ' + bilingual("as of " + m.macro_asof, "截至 " + m.macro_asof) : '') + '</div>' +
       '<a class="gd-tip-go" href="' + m.href + '">' + bilingual("Open dashboard →", "打开看板 →") + '</a>';

@@ -614,8 +614,8 @@ def compose_text(headline: object, body: object) -> str:
     return "\n\n".join(p for p in parts if p)
 
 
-def _value_gate_enforced(cfg: dict | None) -> bool:
-    """Is the Gift-Grip-Proof gate armed to BLOCK, or only to record?
+def _value_gate_enforced(cfg: dict | None, kind: str | None = None) -> bool:
+    """Is the Gift-Grip-Proof gate armed to BLOCK this kind, or only to record?
 
     THE SINGLE READER of `config/marketing.yml` `value_gate.enforce`. Ships
     false (the XG-W2 "LAND DARK" precedent): every emission carries its verdict
@@ -625,8 +625,52 @@ def _value_gate_enforced(cfg: dict | None) -> bool:
     A config key nothing reads is a lie in a config file, which is precisely
     what the XG-W3 review caught — so this function exists to be the reader, and
     `tests/test_marketing_desk_feeds.py` asserts both branches are live.
+
+    ARMING IS PER-KIND, BECAUSE THE EVIDENCE IS PER-KIND (2026-07-30).
+    `value_gate.py`'s own PRE-ARMING REQUIREMENT is that the regression corpus
+    cover the kinds enforcement will police, and it names the reason: a gate
+    armed on the kinds that happened to be in one nightly plan is "validated on
+    the generator it polices". The measured corpus
+    (`data/marketing/outbox/items.jsonl`, 154 stamped emissions) covers eight
+    kinds. It does not cover `wire`, `earnings`, `receipt`, `reply` or `news` —
+    for those the honest count of observations is ZERO, and a global boolean
+    would silence them on no evidence at all.
+
+    So `enforce` arms only the kinds listed in `value_gate.enforce_kinds`. An
+    emission of any other kind keeps its verdict RECORDED and ships, and the
+    caller announces the unmeasured kind so it stops being unmeasured. This is
+    the same posture the repo takes everywhere else: display-tier freely,
+    authority only where it was earned.
+
+    `enforce_kinds` absent (or empty) with `enforce: true` means EVERY kind —
+    the old global behaviour — so an operator can still arm the whole board in
+    one line once the corpus justifies it.
     """
-    return bool(((cfg or {}).get("value_gate") or {}).get("enforce", False))
+    block = (cfg or {}).get("value_gate") or {}
+    if not bool(block.get("enforce", False)):
+        return False
+    armed = block.get("enforce_kinds")
+    if not armed:
+        return True
+    if kind is None:
+        # No kind supplied: the caller cannot say what it is emitting, so it
+        # gets the conservative answer rather than a silent block.
+        return False
+    return str(kind) in {str(k) for k in armed}
+
+
+def value_gate_kind_is_measured(cfg: dict | None, kind: str | None) -> bool:
+    """Does `kind` sit inside the armed set? False means "recorded, not policed".
+
+    Exists so a caller can tell an abstention it ACTED on from one it merely
+    noticed, and log them differently — the distinction that was invisible while
+    both printed "would abstain".
+    """
+    block = (cfg or {}).get("value_gate") or {}
+    armed = block.get("enforce_kinds")
+    if not armed:
+        return True
+    return kind is not None and str(kind) in {str(k) for k in armed}
 
 
 def stamp_value_gate(
@@ -956,6 +1000,207 @@ def posted_today_rows_by_account(
 # Enqueue
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _rejection_reason(
+    *,
+    item_id: str,
+    account: str,
+    as_of: str,
+    text: str,
+    ctx: dict,
+    cap: int,
+) -> str | None:
+    """Why `enqueue` would refuse this item, or None if it would accept it.
+
+    EXTRACTED SO A PREFLIGHT CANNOT DRIFT FROM THE REAL CHECK (2026-07-30).
+    Every rejection here is a function of (id, account, as_of, text) — NOT of
+    media. That is what makes `preflight_enqueue` below possible and honest: a
+    caller can learn the verdict before paying for a picture, and it learns it
+    from THIS function rather than from a second copy of these rules that would
+    quietly diverge on the next edit. A preflight that disagrees with the gate
+    is worse than no preflight — it either wastes the render it promised to
+    save, or silently drops a post the gate would have taken.
+    """
+    if item_id in ctx["ids"]:
+        return "duplicate"
+    # Cross-night near-dup: identical copy re-emitted on a later day gets
+    # a fresh id (as_of is in the hash), so the id check above misses it.
+    # recent_texts holds account-scoped normalized text from the window;
+    # absent for legacy _ctx callers → the guard no-ops (back-compat).
+    new_text = _normalize_text(str(text or ""))
+    if (account, new_text) in ctx.get("recent_texts", ()):
+        return "duplicate"
+    # Near-duplicate ("deeply reworded" law, 2026-07-27): also reject a
+    # lightly-edited repeat — token Jaccard ≥ 0.7 vs any same-account text
+    # in the window. recent_texts_by_account maps account → its normalized
+    # texts; absent for legacy _ctx callers → the guard no-ops.
+    prior_texts = ctx.get("recent_texts_by_account", {}).get(account, ())
+    if any(near_duplicate(new_text, prior) for prior in prior_texts):
+        return "duplicate"
+    # CROSS-ACCOUNT near-dup radar (XG-W2). The guard above is strictly
+    # same-account; with seven live accounts the failure that matters is
+    # TWO of ours posting near-identical text, which reads as one
+    # operator running a fleet — the coordination signal the near-dup
+    # bar exists to deny. Same Jaccard machinery, wider corpus, stricter
+    # threshold (sentinel.near_dup_jaccard — see cross_account_threshold).
+    xa_thresh = ctx.get("cross_account_threshold")
+    if xa_thresh is not None:
+        by_account = ctx.get("recent_texts_by_account", {})
+        for other_acct, other_texts in by_account.items():
+            if other_acct == account:
+                continue
+            if any(near_duplicate(new_text, prior, threshold=xa_thresh)
+                   for prior in other_texts):
+                log.warning(
+                    "outbox.enqueue: %s rejected — near-identical to a "
+                    "recent %s item (cross-account jaccard >= %.2f)",
+                    account, other_acct, xa_thresh)
+                return "cross_account_duplicate"
+    # Cap: every existing same-day item consumed a slot regardless of
+    # status (quarantined/failed included — refilling a bad slot the
+    # same day is how retry-spam starts). A negative cap = unlimited
+    # (autonomous cadence) → never blocks on volume.
+    if cap >= 0 and ctx["day_counts"].get((account, as_of), 0) >= cap:
+        return "cap_exceeded"
+    return None
+
+
+def _enqueue_ctx(root: Path | str | None, as_of: object, cfg: dict | None) -> dict:
+    """The corpus `_rejection_reason` reads. Built identically for both callers."""
+    existing = read_items_all(root)
+    dead = dead_item_ids(root)
+    ctx = {
+        "ids": {i.get("id") for i in existing},
+        "day_counts": {},
+        "recent_texts": {
+            _text_key(i.get("account"), i.get("text"))
+            for i in existing
+            if _within_text_window(i.get("as_of"), as_of)
+            and str(i.get("id") or "") not in dead
+        },
+        "recent_texts_by_account": _recent_texts_by_account(existing, as_of, dead),
+        "cross_account_threshold": cross_account_threshold(cfg),
+    }
+    for i in existing:
+        key = (i.get("account"), i.get("as_of"))
+        ctx["day_counts"][key] = ctx["day_counts"].get(key, 0) + 1
+    return ctx
+
+
+def preflight_enqueue(
+    *,
+    account: str,
+    kind: str,
+    text: str,
+    as_of: str,
+    root: Path | str | None = None,
+    cfg: dict | None = None,
+    max_per_account_day: int | None = None,
+) -> str:
+    """Would `enqueue` refuse this copy? Answered WITHOUT building the media.
+
+    Returns the same code `enqueue` would ("duplicate", "cross_account_duplicate",
+    "cap_exceeded") or "ok".
+
+    WHY THIS EXISTS. A lane that draws a chart card before enqueueing pays a
+    Chrome raster AND an R2 upload for every duplicate, near-duplicate and cap
+    rejection — a picture nobody will ever see, charged against a nightly render
+    budget that is law (~67 min, 4-core-bound). The deciding text always exists
+    before the render; only the ordering was wrong. Callers keep their own
+    account of that; this function stays generic, and deliberately knows nothing
+    about which program calls it.
+
+    FAIL-OPEN BY CONSTRUCTION. Any error returns "ok", so a preflight that
+    cannot read the corpus costs a wasted render at worst and can never become a
+    publish outage. It is an optimisation, not a gate: `enqueue` still runs every
+    one of these checks under the outbox lock, which is where the answer is
+    authoritative. This function races by design — it reads without the lock —
+    and that is safe precisely because it can only skip work, never admit any.
+    """
+    try:
+        item_id = _item_id(account, kind, text, as_of)
+        cap = (max_per_account_day if max_per_account_day is not None
+               else effective_cap(cfg or {}))
+        ctx = _enqueue_ctx(root, as_of, cfg)
+        return _rejection_reason(
+            item_id=item_id, account=account, as_of=as_of,
+            text=text, ctx=ctx, cap=cap,
+        ) or "ok"
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.preflight_enqueue: %s — assuming ok", exc)
+        return "ok"
+
+
+def _parse_ts(value: object) -> datetime | None:
+    """Parse an outbox timestamp ("...Z" or ISO) to an aware UTC datetime.
+
+    None for "immediate", "", or anything unparseable — those carry no schedule
+    to compare, and a floor that guessed at them would invent one.
+    """
+    raw = str(value or "").strip()
+    if not raw or raw.lower() == "immediate":
+        return None
+    try:
+        ts = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+    return ts if ts.tzinfo is not None else ts.replace(tzinfo=timezone.utc)
+
+
+def apply_schedule_floor(item: dict, *, now: datetime | None = None) -> str | None:
+    """Clamp `scheduled_at` forward so a post is never scheduled before it existed.
+
+    Returns the ORIGINAL scheduled_at when the item was clamped, else None.
+    Mutates `item` in place — deliberately: the caller keeps the dict it queued
+    (the governor lanes log and index off it), and a copy corrected only on the
+    persisted row would leave the caller's state disagreeing with the ledger
+    about when its own post goes out. Because the mutation is visible to the
+    caller, :func:`enqueue` calls this only AFTER the duplicate/cap checks have
+    passed — see the call site for why a rejected item must come back untouched.
+
+    THE DEFECT (X Growth audit, 2026-07-31): 41 items in one week carried a
+    `scheduled_at` EARLIER than their own `created_at` — a slot ladder resolved
+    against the content date while the run itself happened hours later, so an
+    item created 15:46Z was booked for 13:00Z the same day. It poisons every
+    "was this late?" measurement downstream: an item can be nine hours overdue
+    the instant it is written, so lateness stops measuring the pipeline and
+    starts measuring the ladder's arithmetic.
+
+    WHAT THIS DOES **NOT** FIX (stated plainly because an earlier draft of this
+    docstring claimed it, adversarial review 2026-07-31). Clamping to
+    `created_at` moves the due time from "hours before the item existed" to "the
+    moment the item existed" — which is still in the PAST by the time any
+    publish sweep sees it. The item is therefore still due-now, still lands in
+    the same undifferentiated backlog, and a batch of them still drains
+    back-to-back. Only the LATENESS MEASUREMENT is repaired here. What actually
+    spaces the burst is the publisher's own `min_minutes_between_posts` floor;
+    what would prevent it is a lane that books an honest future slot.
+
+    THE CLAMP IS TO `created_at`, NOT TO A LATER LADDER SLOT. Choosing the next
+    free slot needs the whole day's ladder occupancy, which this function has no
+    business knowing and no lock over; creation time is the earliest moment the
+    post could honestly have gone out. The original value is preserved in
+    `source.scheduled_at_original` so a lane emitting bad slots stays diagnosable
+    rather than being silently tidied up.
+    """
+    created = _parse_ts(item.get("created_at")) or (now or datetime.now(timezone.utc))
+    sched = _parse_ts(item.get("scheduled_at"))
+    if sched is None or sched >= created:
+        return None
+    original = str(item.get("scheduled_at") or "")
+    item["scheduled_at"] = created.strftime("%Y-%m-%dT%H:%M:%SZ")
+    src = item.get("source")
+    if not isinstance(src, dict):
+        src = {}
+        item["source"] = src
+    src["scheduled_at_original"] = original
+    log.warning(
+        "outbox.enqueue: %s scheduled %s BEFORE it was created %s — clamped "
+        "forward to creation time (lane %r)",
+        item.get("id"), original, item.get("created_at"), item.get("provenance"),
+    )
+    return original
+
+
 def enqueue(
     item: dict,
     root: Path | str | None = None,
@@ -1002,48 +1247,30 @@ def enqueue(
                else effective_cap(cfg or {}))
 
         def _check_and_append(ctx: dict) -> str:
-            if item_id in ctx["ids"]:
-                return "duplicate"
-            # Cross-night near-dup: identical copy re-emitted on a later day gets
-            # a fresh id (as_of is in the hash), so the id check above misses it.
-            # recent_texts holds account-scoped normalized text from the window;
-            # absent for legacy _ctx callers → the guard no-ops (back-compat).
+            rejection = _rejection_reason(
+                item_id=item_id, account=account, as_of=as_of,
+                text=str(item.get("text") or ""), ctx=ctx, cap=cap,
+            )
+            if rejection is not None:
+                return rejection
+            # SCHEDULE FLOOR — here rather than in each lane because every lane
+            # that builds a slot ladder can get this wrong and only this seam
+            # sees them all; `scheduled_at` is not part of the item id (which
+            # hashes account/kind/text/as_of), so clamping it cannot change
+            # dedupe behaviour and running it after the checks is free.
+            #
+            # AFTER THE CHECKS, NOT BEFORE (adversarial review, 2026-07-31). The
+            # clamp mutates the CALLER's dict — deliberately, so the lane and the
+            # ledger agree about a queued post — but it used to run at the top of
+            # enqueue, before `_rejection_reason`. A duplicate or over-cap item
+            # therefore came back to its lane rewritten ("queued" it never was),
+            # with a `source.scheduled_at_original` breadcrumb about a row that
+            # does not exist and a WARNING in the log about a post nobody queued.
+            # Nothing is written here until the item is actually accepted, so
+            # nothing should be rewritten either.
+            apply_schedule_floor(item)
             new_text = _normalize_text(str(item.get("text") or ""))
             text_key = (account, new_text)
-            if text_key in ctx.get("recent_texts", ()):
-                return "duplicate"
-            # Near-duplicate ("deeply reworded" law, 2026-07-27): also reject a
-            # lightly-edited repeat — token Jaccard ≥ 0.7 vs any same-account text
-            # in the window. recent_texts_by_account maps account → its normalized
-            # texts; absent for legacy _ctx callers → the guard no-ops.
-            prior_texts = ctx.get("recent_texts_by_account", {}).get(account, ())
-            if any(near_duplicate(new_text, prior) for prior in prior_texts):
-                return "duplicate"
-            # CROSS-ACCOUNT near-dup radar (XG-W2). The guard above is strictly
-            # same-account; with seven live accounts the failure that matters is
-            # TWO of ours posting near-identical text, which reads as one
-            # operator running a fleet — the coordination signal the near-dup
-            # bar exists to deny. Same Jaccard machinery, wider corpus, stricter
-            # threshold (sentinel.near_dup_jaccard — see cross_account_threshold).
-            xa_thresh = ctx.get("cross_account_threshold")
-            if xa_thresh is not None:
-                by_account = ctx.get("recent_texts_by_account", {})
-                for other_acct, other_texts in by_account.items():
-                    if other_acct == account:
-                        continue
-                    if any(near_duplicate(new_text, prior, threshold=xa_thresh)
-                           for prior in other_texts):
-                        log.warning(
-                            "outbox.enqueue: %s rejected — near-identical to a "
-                            "recent %s item (cross-account jaccard >= %.2f)",
-                            account, other_acct, xa_thresh)
-                        return "cross_account_duplicate"
-            # Cap: every existing same-day item consumed a slot regardless of
-            # status (quarantined/failed included — refilling a bad slot the
-            # same day is how retry-spam starts). A negative cap = unlimited
-            # (autonomous cadence) → never blocks on volume.
-            if cap >= 0 and ctx["day_counts"].get((account, as_of), 0) >= cap:
-                return "cap_exceeded"
             target = _host_items_path(root) if spool else _items_path(root)
             if not append_jsonl(target, item):
                 log.warning("outbox.enqueue: append_jsonl failed for item %r", item_id)
@@ -1065,28 +1292,13 @@ def enqueue(
             # UNION corpus (tracked + daemon spool): a question of the form "does
             # this content already exist on this host?" must see every emission,
             # or a daemon-side item would be invisible to the guards.
-            existing = read_items_all(root)
             # Quarantined/failed items are excluded from the TEXT corpus only —
             # a dead item is not competing for the slot, so it must not veto a
-            # live desk. It still counts toward the cap below (see that comment).
-            dead = dead_item_ids(root)
-            ctx = {
-                "ids": {i.get("id") for i in existing},
-                "day_counts": {},
-                "recent_texts": {
-                    _text_key(i.get("account"), i.get("text"))
-                    for i in existing
-                    if _within_text_window(i.get("as_of"), as_of)
-                    and str(i.get("id") or "") not in dead
-                },
-                "recent_texts_by_account": _recent_texts_by_account(
-                    existing, as_of, dead),
-                "cross_account_threshold": cross_account_threshold(cfg),
-            }
-            for i in existing:
-                key = (i.get("account"), i.get("as_of"))
-                ctx["day_counts"][key] = ctx["day_counts"].get(key, 0) + 1
-            return _check_and_append(ctx)
+            # live desk. It still counts toward the cap (see _rejection_reason).
+            # Built by the SAME helper `preflight_enqueue` uses, so the two can
+            # never answer differently because their corpora were assembled
+            # differently.
+            return _check_and_append(_enqueue_ctx(root, as_of, cfg))
 
     except Exception as exc:  # noqa: BLE001
         log.warning("outbox.enqueue: unexpected error: %s", exc)
@@ -1442,9 +1654,13 @@ def slot_datetime(as_of: str, slot: str) -> str | None:
 
     A day slot is ``D<n>-<suffix>``: day n runs on ``as_of + (n-1) days`` (D1 is
     as_of itself). Two suffix families resolve:
-      * ladder ``S1``..``S19`` — the 45-minute Pacific clock ladder (4:00 AM–5:30
-        PM local, 45-min steps), converted to UTC per-date via zoneinfo so DST is
-        handled correctly;
+      * ladder ``S1``..``S28`` — the Pacific clock ladder (4:00 AM–5:30 PM
+        local, 30-min steps: see _LADDER_START_PT / _LADDER_STEP_MIN /
+        _LADDER_N_SLOTS, which are the only source of truth), converted to UTC
+        per-date via zoneinfo so DST is handled correctly. This line read
+        "S1..S19 … 45-min steps" through two widenings of the ladder; the movers
+        seating now depends on the upper slots existing, so a reader who trusted
+        the doc would conclude S20+ resolves to None and the seating is broken;
       * legacy ``AM``/``PM``/``EOD`` — fixed UTC times, kept so pre-ladder items
         (and their tests) still resolve.
     Returns None for immediate/publish-time slots (MOVER-/THEME-/CONF-, or any
@@ -1497,6 +1713,18 @@ def _scheduled_at_for_slot(slot: str, as_of: str) -> str:
     return slot_datetime(as_of, slot) or "immediate"
 
 
+#: Slot families that are unemittable ON PURPOSE and permanently, so their skip
+#: count is a fact rather than an alarm (see the annotation block at the end of
+#: emit_from_content_plan). `CONF` is the confluence lane: content_studio slots
+#: it CONF-NN knowing this function takes D1- only, and its census note states
+#: the choice outright — relabelling the slot would start publishing copy whose
+#: win rate is a selection-on-test-half statistic, and a lane earns publication
+#: on evidence, not on a prefix change. Anything NOT in this set that reaches
+#: the unemittable bucket is a producer that went dark by accident and IS worth
+#: waking the operator for.
+_EXPECTED_UNEMITTABLE_FAMILIES: frozenset[str] = frozenset({"CONF"})
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # W1 no-fallback lane + stale-queued expiry
 # (research/MARKETING_CONTENT_STUDIO_LLM_FIRST_MASTERPLAN_BY_FABLE.md §0 gate 1,
@@ -1516,6 +1744,54 @@ _LLM_MODES: frozenset[str] = frozenset({"llm", "llm_repair"})
 
 #: How far past its slot a planned item may sit before tonight's plan retires it.
 _STALE_QUEUED_HOURS = 36
+
+#: Provenances whose items :func:`expire_stale_wire` retires. These are the fast
+#: lanes: they enqueue with ``scheduled_at="immediate"``, they carry no ladder
+#: slot, and NOTHING ever swept them.
+#:
+#: `fastlane` and `neural_web` are deliberately absent — this reaper takes only
+#: the three lanes whose stall was measured (see the docstring), and adopting a
+#: lane whose retirement policy nobody has stated would be this function
+#: guessing on that lane's behalf. Add one when its perishability is known.
+#:
+#: ONE LINE ON PURPOSE. The tape radar's safety-stack guard (in its own test
+#: module) forbids this file from naming that program except through a reviewed,
+#: token-pinned allowance — "a reviewed exception, recorded by name, rather than
+#: a loosened rule". So the reference is confined to the single line below, and
+#: every comment around it says "the fast lanes" instead.
+_WIRE_PROVENANCES: frozenset[str] = frozenset({"press_lane", "hot_tape", "publisher_live_movers"})  # noqa: E501
+
+#: Per-kind TTL, in hours, for a wire item that never got dispatched.
+#:
+#: DERIVED FROM THE LANES' OWN FRESHNESS CONSTANTS, deliberately loosened:
+#:   * the tape radar's ``two_step.max_age_min`` = 60 — "past this the moment
+#:     has passed and a 'context brief' is a history lesson";
+#:   * its ``CARRYOVER_MAX_AGE_MIN`` = 20 — how long a booked-but-unposted alert
+#:     may still ride a fresh dispatch;
+#:   * publish_time_content _DEFAULTS["max_quote_age_min"] = 45 — past this the
+#:     lane will not even WRITE a price claim, let alone stand behind one.
+#:
+#: Those say the copy is dead within the hour. The TTL is 3h, i.e. ~3x the
+#: longest of them, because this reaper is TERMINAL and the failure it must not
+#: have is shredding a live queue during a two-hour publish-sweep outage. The
+#: publisher's tape gate already refuses a stale price claim non-terminally; this
+#: is the backstop for items that gate never even reaches.
+#:
+#: MEASURED: the AMZN/COIN movers created 2026-07-31T15:32:53Z sat `queued` with
+#: zero ledger rows for 8h — their "right now" long dead — because
+#: expire_stale_planned takes `content_studio` provenance only and skips
+#: `scheduled_at == "immediate"` outright, which is every row this lane writes.
+_WIRE_TTL_HOURS_BY_KIND: dict[str, float] = {
+    "breaking": 3.0,
+    "mover": 3.0,
+    "theme_list": 3.0,
+}
+
+#: TTL for a wire-provenance item of any other kind (`event` — the publish-time
+#: daily read — and anything a lane adds later). Longer because it is not a
+#: five-minute tape claim, still bounded because an unswept queue is how this
+#: defect happened.
+_WIRE_TTL_HOURS_DEFAULT: float = 12.0
 
 
 def planned_kinds() -> frozenset[str]:
@@ -1622,6 +1898,167 @@ def expire_stale_planned(
     return out
 
 
+def _wire_item_born_at(it: dict, last_row: dict | None,
+                       decision_row: dict | None = None) -> datetime | None:
+    """The moment the wire reaper's idle clock starts. None when nothing parses.
+
+    "Born" is IDLE-birth, not creation: the clock restarts every time somebody
+    touches the item, so what the TTL measures is "how long has this sat with
+    nobody doing anything about it", never "how long since it was written".
+
+    NOT ``scheduled_at``: every lane in :data:`_WIRE_PROVENANCES` enqueues with
+    the literal string ``"immediate"``, which is exactly why
+    :func:`expire_stale_planned` — whose age comes from ``scheduled_at`` and
+    whose first act on an immediate row is ``continue`` ("no slot to be late
+    for") — could never have retired one of these even had the provenance
+    matched.
+
+    THE PRECEDENCE DEFECT (adversarial review, 2026-07-31). This function used
+    to read ``created_at`` FIRST and fall through to the ledger only when it was
+    missing — and :func:`make_item` ALWAYS stamps ``created_at``. So the ledger
+    rung was dead code for every real item, and the docstring's own promise
+    ("an item an operator touched five minutes ago is treated as five minutes
+    old, not eight hours") was unreachable in production. Reproduced: item
+    created 14:00Z, operator approved it 17:59Z, the 18:00Z sweep quarantined it
+    — TERMINALLY, one minute after a human said ship it. The documented
+    mitigation existed only in the fixture shapes the tests invented.
+
+    Ladder, newest-touch first:
+      1. the LATEST of (last APPLIED ledger row ``at``, latest decision row
+         ``at``) — ANY activity restarts the clock. Both logs matter and neither
+         subsumes the other: an operator's approve/hold lands in
+         ``decisions.jsonl`` IMMEDIATELY, while the matching ledger row is only
+         written when :func:`apply_decisions` next runs, so an item approved
+         between the decision and the actuator has a fresh decision row and a
+         stale (or absent) ledger row. Taking the max is what makes a
+         human/desk touch — ``admin``/``operator`` decisions, the
+         ``approval-desk`` and ``actuator`` transitions — reset the clock by
+         itself, which is the whole point of this fix;
+      2. ``created_at`` — stamped by make_item; the honest birth time, and the
+         right answer for an item NOBODY has touched (the AMZN/COIN movers had
+         zero ledger rows at 8h, which is exactly the stall this reaper exists
+         for);
+      3. ``as_of`` at 00:00Z — a date-only floor for pre-stamp rows.
+
+    Returning None (nothing parsed) means the item is NEVER expired. A malformed
+    stamp must not be the reason a post is destroyed — the same rule
+    _item_age_days states in the publisher.
+    """
+    # Rung 1: newest touch across BOTH activity logs. max() over what parsed,
+    # not "ledger else decision" — either log can be the newer one.
+    touches = [
+        ts for ts in (_parse_ts((last_row or {}).get("at")),
+                      _parse_ts((decision_row or {}).get("at")))
+        if ts is not None
+    ]
+    if touches:
+        return max(touches)
+    # Rungs 2 and 3: never touched — fall back to when it was written.
+    for raw in (it.get("created_at"), it.get("as_of")):
+        parsed = _parse_ts(raw)
+        if parsed is not None:
+            return parsed
+    return None
+
+
+def expire_stale_wire(
+    root: Path | str | None = None,
+    *,
+    now: datetime | None = None,
+    ttl_hours_by_kind: dict[str, float] | None = None,
+    default_ttl_hours: float = _WIRE_TTL_HOURS_DEFAULT,
+    provenances: frozenset[str] | set[str] | None = None,
+    exempt_ids: frozenset[str] | set[str] | None = None,
+    actor: str = "wire_expiry",
+) -> dict[str, Any]:
+    """Retire wire-lane items that outlived the moment they were written about.
+
+    THE DEFECT. :func:`expire_stale_planned` is scoped to ``content_studio``
+    provenance, and the note above it says why: "the wire lanes (press/fastlane)
+    and weekend_levels manage their own retirement". They do not. Nothing in
+    this repo sweeps an item from any of the lanes in :data:`_WIRE_PROVENANCES`,
+    so a breaking/mover row that no ``--post-now`` batch happened to select sits
+    `queued` FOREVER. Measured on 2026-07-31: the AMZN and COIN movers created
+    at 15:32:53Z carried ZERO status-ledger rows eight hours later — their copy
+    says "right now" about a tape that closed — and the operator's audit had to
+    quarantine them by hand alongside 14 older siblings.
+
+    Two separate reasons the planned reaper could never have covered them, both
+    load-bearing: the provenance filter, AND the ``scheduled_at == "immediate"``
+    skip, which every one of these rows trips (see :func:`_wire_item_born_at`).
+
+    TTL IS PER KIND (:data:`_WIRE_TTL_HOURS_BY_KIND`) because perishability is:
+    a `breaking` alert and a `mover` claim are five-minute facts, the
+    publish-time daily read is not. Ages from IDLE TIME, not from a slot
+    (a wire item has no slot) and not from creation — any touch in the ledger or
+    the decisions log restarts the clock; see :func:`_wire_item_born_at`.
+
+    ``exempt_ids``: ids this sweep must leave alone whatever their age. The
+    publisher passes its ``--post-now`` set, because the reaper runs BEFORE
+    post-now id resolution and would otherwise let the very run summoned to
+    dispatch a breaking item quarantine it on the way in.
+
+    `expired` is not a new ledger status, for the same reason expire_stale_planned
+    gives: TRANSITIONS is a safety contract. The item goes to `quarantined`
+    (terminal, reachable from both live statuses) with the note
+    ``expired_stale_wire: …`` so the admin quarantine view carries the reason
+    verbatim and is greppable.
+
+    Returns {"expired": n, "ids": [...], "by_kind": {kind: n}}. Never raises:
+    housekeeping failing must not stop a dispatch.
+    """
+    out: dict[str, Any] = {"expired": 0, "ids": [], "by_kind": {}}
+    try:
+        ts_now = now if now is not None else datetime.now(timezone.utc)
+        ttls = dict(_WIRE_TTL_HOURS_BY_KIND)
+        if ttl_hours_by_kind:
+            ttls.update({str(k): float(v) for k, v in ttl_hours_by_kind.items()})
+        lanes = frozenset(provenances) if provenances is not None else _WIRE_PROVENANCES
+        spared = frozenset(exempt_ids or ())
+        state = fold_state(root)
+        for iid, it in (state.get("items") or {}).items():
+            if iid in spared:
+                # An id this run was explicitly told to dispatch. Checked FIRST,
+                # ahead of every other filter, so no future scope change can
+                # sneak past it.
+                continue
+            if str(state["status"].get(iid) or "") not in ("queued", "approved"):
+                continue
+            if str(it.get("provenance") or "") not in lanes:
+                continue
+            kind = str(it.get("kind") or "")
+            ttl_h = float(ttls.get(kind, default_ttl_hours))
+            if ttl_h <= 0:
+                continue          # a lane may opt out by configuring 0
+            # Both activity logs, because either can hold the newest touch —
+            # see _wire_item_born_at for why an operator approval is visible in
+            # decisions.jsonl before the ledger ever hears about it.
+            born = _wire_item_born_at(
+                it,
+                (state.get("last") or {}).get(iid),
+                (state.get("decisions") or {}).get(iid),
+            )
+            if born is None:
+                continue          # unparseable birth → never expire (fail-open)
+            age_h = (ts_now - born).total_seconds() / 3600.0
+            if age_h < ttl_h:
+                continue
+            note = (f"expired_stale_wire: {kind or 'item'} sat untouched "
+                    f"{age_h:.1f}h (ttl {ttl_h:.0f}h) — the moment it was "
+                    f"written about is gone")
+            if transition(iid, "quarantined", actor=actor, root=root,
+                          note=note, now=ts_now, _state=state):
+                out["expired"] += 1
+                out["ids"].append(iid)
+                out["by_kind"][kind] = out["by_kind"].get(kind, 0) + 1
+        if out["expired"]:
+            log.info("outbox.expire_stale_wire: retired %d stale wire item(s) %s",
+                     out["expired"], out["by_kind"])
+    except Exception as exc:  # noqa: BLE001
+        log.warning("outbox.expire_stale_wire failed: %s", exc)
+    return out
+
+
 def emit_from_content_plan(
     plan: dict,
     root: Path | str | None = None,
@@ -1658,8 +2095,8 @@ def emit_from_content_plan(
     what the last emit did and why items were skipped.
 
     Returns a summary dict: {emitted, skipped_dupe, skipped_cap, skipped_gate,
-    skipped_sentinel, skipped_invalid, skipped_not_llm, expired, media_written,
-    by_account}.
+    skipped_sentinel, skipped_invalid, skipped_not_llm, skipped_slot_mismatch,
+    skipped_slot_by_family, expired, media_written, by_account}.
     """
     ts_now = now if now is not None else datetime.now(timezone.utc)
     as_of: str = plan.get("as_of") or ts_now.strftime("%Y-%m-%d")
@@ -1678,6 +2115,17 @@ def emit_from_content_plan(
         "skipped_sentinel": 0,
         "skipped_invalid": 0,
         "skipped_not_llm": 0,
+        # SLOT-PREFIX REFUSALS, COUNTED (defect closed 2026-07-31). The skip
+        # below is the oldest and quietest gate in this function and it
+        # incremented NOTHING: the 2026-07-31 emit activity row read
+        # {emitted: 0, skipped_dupe: 0, skipped_cap: 0, skipped_gate: 0,
+        # skipped_sentinel: 0, skipped_invalid: 0, skipped_not_llm: 0} while six
+        # live movers/theme_list items were dropped on the floor. Every counter
+        # zero and nothing emitted reads as "the plan was empty"; it was not.
+        # `by_slot_family` names WHICH labels were refused, because the two
+        # populations behave completely differently — see the annotation below.
+        "skipped_slot_mismatch": 0,
+        "skipped_slot_by_family": {},
         "expired": 0,
         "media_written": 0,
         "by_account": {},
@@ -1734,6 +2182,23 @@ def emit_from_content_plan(
                     slot = qi.get("slot") or ""
 
                     if not slot.startswith(f"{day_prefix}-"):
+                        # COUNTED, and bucketed by label family. A bare
+                        # `continue` here is what let the movers desk exist for
+                        # two weeks without publishing anything: the emit summary
+                        # and the activity row both said every counter was zero.
+                        #
+                        # The family split is the whole point. `D2`..`D7` are the
+                        # FORWARD ladder and are supposed to be skipped — nothing
+                        # reads a previous plan, tomorrow regenerates the whole
+                        # week, so those are noise, not a fault. Anything else
+                        # (MOVER-, THEME-, CONF-, a bare label) is a producer that
+                        # minted a slot this function can NEVER take: that lane
+                        # cannot publish as built, whatever its census says, and
+                        # that is worth an annotation.
+                        counts["skipped_slot_mismatch"] += 1
+                        _fam = slot.split("-", 1)[0] if "-" in slot else (slot or "(none)")
+                        counts["skipped_slot_by_family"][_fam] = (
+                            counts["skipped_slot_by_family"].get(_fam, 0) + 1)
                         continue
 
                     # The live gate protects the ENTRY CLAIM, so it only bars an
@@ -1884,6 +2349,38 @@ def emit_from_content_plan(
                                          ("invalidation", "invalidation")):
                             if plan_block.get(_pk) is not None:
                                 source[_sk] = plan_block.get(_pk)
+                        # THE TARGETS TRAVEL TOO (approval-desk concern #1,
+                        # measured 11/185 items on the 2026-07-31 corpus). The
+                        # loop above copied direction/entry/invalidation and
+                        # stopped, so a signal/watchlist post that printed its
+                        # own plan's T1 — the copywriter whitelists t1/t2 from
+                        # `plan["targets"]` and the templates literally say
+                        # "T1 {target1}" — reached approval_desk with no source
+                        # level to match it against and read as `invented_level`.
+                        # The desk has read `source.t1`/`.t2`/`.target`
+                        # defensively since it was built (approval_desk
+                        # `_LEVEL_SOURCE_KEYS`) precisely so the day an emitter
+                        # stamped them the desk would widen by itself; this is
+                        # that day.
+                        #
+                        # `targets` is the plan's own shape (an ordered list),
+                        # so t1/t2 are positions in it; the flat `t1`/`t2`/
+                        # `target` keys are read first for the lanes that build
+                        # a plan block by hand. Absent values are OMITTED, never
+                        # stubbed — the same rule the W1 telemetry block above
+                        # follows, and a stubbed None would look to the desk like
+                        # a level the plan asserted.
+                        _tgts = plan_block.get("targets")
+                        _tgts = list(_tgts) if isinstance(_tgts, (list, tuple)) else []
+                        for _sk, _pv in (
+                            ("t1", plan_block.get("t1") if plan_block.get("t1") is not None
+                                   else (_tgts[0] if len(_tgts) > 0 else None)),
+                            ("t2", plan_block.get("t2") if plan_block.get("t2") is not None
+                                   else (_tgts[1] if len(_tgts) > 1 else None)),
+                            ("target", plan_block.get("target")),
+                        ):
+                            if _pv is not None:
+                                source[_sk] = _pv
                     _mv_blk = qi.get("_mover_data")
                     if isinstance(_mv_blk, dict) and _mv_blk.get("pct") is not None:
                         source["baseline_pct"] = _mv_blk.get("pct")
@@ -1908,11 +2405,19 @@ def emit_from_content_plan(
                         counts["value_gate_would_block"] = (
                             counts.get("value_gate_would_block", 0) + 1
                         )
-                        if _value_gate_enforced(cfg):
+                        _k = qi.get("type") or "signal"
+                        if _value_gate_enforced(cfg, _k):
                             counts["value_gate_blocked"] = (
                                 counts.get("value_gate_blocked", 0) + 1
                             )
                             continue
+                        # Recorded, not policed. Counted separately so the two
+                        # never read as one number: an unmeasured kind that
+                        # abstains is a REQUEST FOR EVIDENCE, not a rejection.
+                        if not value_gate_kind_is_measured(cfg, _k):
+                            counts["value_gate_unmeasured_kind"] = (
+                                counts.get("value_gate_unmeasured_kind", 0) + 1
+                            )
 
                     try:
                         item = make_item(
@@ -1979,6 +2484,41 @@ def emit_from_content_plan(
                 f"(copywriter.llm.required). [{_breakdown}]",
                 flush=True,
             )
+
+    # UNEMITTABLE SLOT LABELS — one annotation per emit, and only for the
+    # families that can never resolve. A `D2`..`D7` skip is the designed forward
+    # ladder (regenerated nightly, never emitted) and must NOT raise an alarm, or
+    # this fires every night on ~800 items and stops being read. A non-day label
+    # means a producer built posts on a slot this function refuses by
+    # construction — the movers desk shipped MOVER-NN/THEME-NN for two weeks and
+    # published nothing, and the silence was the reason nobody saw it.
+    #
+    # `CONF` IS EXCLUDED FROM THE ALARM, NOT FROM THE COUNT (adversarial review,
+    # 2026-07-31). Confluence is deliberately, permanently unemittable: it slots
+    # CONF-NN and content_studio's own reserve comment says so in as many words
+    # ("this lane CANNOT publish as built … deliberately NOT fixed by relabelling
+    # the slot", `_confluence_census`), because publication has to be earned on
+    # evidence rather than on a prefix change. So this warning fired EVERY
+    # nightly on a state nobody intends to change — which is the definition of
+    # alarm fatigue, and it trains the operator to scroll past the annotation on
+    # the night a REAL lane (a new MOVER-/THEME-/bare label) goes dark. It stays
+    # in `skipped_slot_by_family` and therefore in the activity row, where the
+    # count is a fact rather than an alarm.
+    _unemittable = {
+        fam: n for fam, n in counts["skipped_slot_by_family"].items()
+        if not (len(fam) >= 2 and fam[0] == "D" and fam[1:].isdigit())
+        and fam not in _EXPECTED_UNEMITTABLE_FAMILIES
+    }
+    if _unemittable:
+        _fam_breakdown = ", ".join(
+            f"{k}={v}" for k, v in sorted(_unemittable.items()))
+        print(
+            f"::warning title=marketing_unemittable_slots::"
+            f"{sum(_unemittable.values())} plan item(s) for {as_of} carry a slot "
+            f"label the outbox can never emit — emit takes {day_prefix}- only, so "
+            f"these lanes publish NOTHING as built. [{_fam_breakdown}]",
+            flush=True,
+        )
 
     _append_activity(root, {
         "at": ts_now.strftime("%Y-%m-%dT%H:%M:%SZ"),

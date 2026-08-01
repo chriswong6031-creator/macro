@@ -277,7 +277,14 @@
   // like every other public UI asset. This loader remains as a resilient fallback
   // for local/custom builds that serve the sources without the production bake.
   var _mmOverlayScript = null, _mmOverlayWaiters = [];
-  var _mmThemeScript = document.currentScript;
+  var _mmThemeScript = document.currentScript ||
+    document.querySelector('script[src$="theme.js"],script[src*="theme.js?"]');
+  var _mmSharedAssetRoot = (function () {
+    try {
+      return new URL('.', _mmThemeScript && _mmThemeScript.src
+        ? _mmThemeScript.src : location.href).href;
+    } catch (e) { return ''; }
+  })();
   var _mmOverlaySrc = (function () {
     try {
       return new URL('terminal_overlay.js', _mmThemeScript && _mmThemeScript.src
@@ -431,12 +438,19 @@
     if (window.__mmAccountLoading) return;
     window.__mmAccountLoading = true;
     window.MM_API = window.MM_API || 'https://app.mastermind-x.com';
-    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    /* Derive the shared-asset root from this script's own URL.  The previous
+       pathname special-case only knew about /sectors/, so every other nested
+       estate (/basket_canada/, /basket/, /rotation/, …) requested account.js
+       from its page folder.  That 404 also prevented account.js from loading
+       nav_market.js, leaving those pages on the legacy dropdown.  The rendered
+       theme.js reference already carries the correct ../ depth, so reuse it as
+       the single source of truth for every current and future nested page. */
+    var pfx = _mmSharedAssetRoot;
     var s = document.createElement('script');
     // Keep the dynamic dependency cache-safe too. theme.js itself is
     // content-hashed in every page; this explicit release key prevents a
     // year-cached account.js from pinning an older navigation loader.
-    s.src = pfx + 'account.js?v=20260730-nav2'; s.async = true;
+    s.src = pfx + 'account.js?v=20260731-folded2'; s.async = true;
     document.head.appendChild(s);
   })();
 
@@ -603,11 +617,11 @@
      that set data-lib is just relabelled, since it now searches the whole world).
      Path-depth aware so it works from /sectors/ too. No-ops without a .nav-search. */
   var STOCK_MARKETS = [
-    { key: 'us',   lib: 'stockdata/index.json',       target: 'stock.html',        flag: '🇺🇸', mkt: 'US',     examples: ['NVDA', 'AAPL', 'MSFT'] },
-    { key: 'cn',   lib: 'chinastockdata/index.json',  target: 'china_lookup.html', flag: '🇨🇳', mkt: 'China',  examples: ['600519.SS', '000858.SZ'] },
-    { key: 'hk',   lib: 'hkstockdata/index.json',     target: 'hk_lookup.html',    flag: '🇭🇰', mkt: 'HK',     examples: ['0700.HK', '9988.HK'] },
-    { key: 'ca',   lib: 'canadastockdata/index.json', target: 'canada_stock.html', flag: '🇨🇦', mkt: 'Canada', examples: ['SHOP.TO', 'SU.TO'] },
-    { key: 'intl', lib: 'intlstockdata/index.json',   target: 'intl_stock.html',   flag: '🌐', mkt: 'Intl',   examples: ['7203.T', 'ASML.AS'] }
+    { key: 'us',   lib: 'stockdata/index.json',       target: 'stock.html',        flag: '🇺🇸', mkt: 'US',     mktZh: '美国',   examples: ['NVDA', 'AAPL', 'MSFT'] },
+    { key: 'cn',   lib: 'chinastockdata/index.json',  target: 'china_lookup.html', flag: '🇨🇳', mkt: 'China',  mktZh: '中国A股', examples: ['600519.SS', '000858.SZ'] },
+    { key: 'hk',   lib: 'hkstockdata/index.json',     target: 'hk_lookup.html',    flag: '🇭🇰', mkt: 'HK',     mktZh: '香港',   examples: ['0700.HK', '9988.HK'] },
+    { key: 'ca',   lib: 'canadastockdata/index.json', target: 'canada_stock.html', flag: '🇨🇦', mkt: 'Canada', mktZh: '加拿大', examples: ['SHOP.TO', 'SU.TO'] },
+    { key: 'intl', lib: 'intlstockdata/index.json',   target: 'intl_stock.html',   flag: '🌐', mkt: 'Intl',   mktZh: '国际',   examples: ['7203.T', 'ASML.AS'] }
   ];
 
   function initNavDrills() {
@@ -627,7 +641,9 @@
       else {
         if (returnTrigger) returnTrigger.setAttribute('aria-expanded', 'false');
       }
-      if (panel) panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+      if (panel) {
+        panel.toggleAttribute('inert', !isOpen);
+      }
       if (isOpen && panel) {
         var first = panel.querySelector('[data-nav-drill-back], a, button');
         if (first) window.setTimeout(function () { first.focus(); }, 80);
@@ -643,7 +659,9 @@
       openPanel.classList.remove('is-open');
       if (trigger) { trigger.setAttribute('aria-expanded', 'false'); trigger.focus(); }
       var panel = openPanel.querySelector(':scope > [data-nav-drill-panel]');
-      if (panel) panel.setAttribute('aria-hidden', 'true');
+      if (panel) {
+        panel.setAttribute('inert', '');
+      }
     });
   }
 
@@ -745,20 +763,21 @@
     if (box.getAttribute('data-ticker-search-ready') === '1') return;
     if (!ensureNavSearchCss(box)) return;
     box.setAttribute('data-ticker-search-ready', '1');
-    var phEn = 'Ticker or company';
-    var phZh = '股票代码或公司';
-    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    var pfx = _mmSharedAssetRoot;
+    var initialCopy = curLang() === 'zh'
+      ? { trigger: '搜索股票', input: '搜索股票代码或公司', close: '关闭股票搜索', closeShort: '关闭', results: '股票搜索结果' }
+      : { trigger: 'Search tickers', input: 'Search stocks', close: 'Close ticker search', closeShort: 'Esc', results: 'Ticker search results' };
     var icon = '<svg class="search-glyph" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg>';
     box.className = 'nav-search ticker-search';
     box.innerHTML =
-      '<button class="search-trigger" type="button" aria-label="Search tickers" aria-expanded="false" aria-controls="ticker-search-dropdown">' +
+      '<button class="search-trigger" type="button" aria-label="' + initialCopy.trigger + '" aria-expanded="false" aria-controls="ticker-search-dropdown">' +
         icon + '<span class="idle-ticker" aria-hidden="true"></span>' +
       '</button>' +
       '<div class="search-expanded">' + icon +
-        '<input class="ticker-input" type="text" inputmode="search" maxlength="10" autocomplete="off" spellcheck="false" aria-label="Search stocks" aria-autocomplete="list" aria-controls="ticker-search-dropdown">' +
-        '<button class="search-esc" type="button" aria-label="Close ticker search">Esc</button>' +
+        '<input class="ticker-input" type="text" inputmode="search" maxlength="80" autocomplete="off" spellcheck="false" aria-label="' + initialCopy.input + '" aria-autocomplete="list" aria-controls="ticker-search-dropdown">' +
+        '<button class="search-esc" type="button" aria-label="' + initialCopy.close + '">' + initialCopy.closeShort + '</button>' +
       '</div>' +
-      '<div class="ticker-dropdown" id="ticker-search-dropdown" role="listbox" aria-label="Ticker search results"></div>';
+      '<div class="ticker-dropdown" id="ticker-search-dropdown" role="listbox" aria-label="' + initialCopy.results + '"></div>';
     ensureNavLogoAssets(box);
 
     var trigger = box.querySelector('.search-trigger');
@@ -768,11 +787,90 @@
     var idleTicker = box.querySelector('.idle-ticker');
     var lib = [], libsStarted = false, pending = 0, page = 0, selected = -1;
     var pageRows = [], idleTimer = 0, idleIndex = 0, idleChars = 0, deleting = false;
+    var isComposing = false;
 
     function esc(value) {
       return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
       });
+    }
+
+    function searchCopy() {
+      if (curLang() === 'zh') {
+        return {
+          placeholder: '股票代码或公司名称',
+          trigger: '搜索股票',
+          input: '搜索股票代码或公司',
+          close: '关闭股票搜索',
+          closeShort: '关闭',
+          results: '股票搜索结果',
+          allMarkets: '全部市场',
+          loadingTitle: '正在加载全球股票库',
+          loadingSub: '正在准备热门股票和公司匹配…',
+          loadingEmpty: '最新股票库正在加载。',
+          popularTitle: '热门股票',
+          popularSub: '上一交易时段成交量最高的股票',
+          rankingTitle: '正在按成交量排序',
+          rankingSub: '正在读取您所选市场的上一交易时段…',
+          rankingEmpty: '正在准备成交量最高的股票。',
+          selectTicker: '选择股票并在终端中打开',
+          stillLoading: '仍在加载匹配市场…',
+          noMatches: '没有匹配的股票代码或公司。',
+          company: '公司',
+          inLibrary: '已收录',
+          logoAttribution: 'Logo 由 Logo.dev 提供'
+        };
+      }
+      return {
+        placeholder: 'Ticker or company',
+        trigger: 'Search tickers',
+        input: 'Search stocks',
+        close: 'Close ticker search',
+        closeShort: 'Esc',
+        results: 'Ticker search results',
+        allMarkets: 'All markets',
+        loadingTitle: 'Loading your market universe',
+        loadingSub: 'Preparing popular tickers and company matches…',
+        loadingEmpty: 'The latest ticker libraries are loading.',
+        popularTitle: 'Popular tickers',
+        popularSub: 'Highest-volume names from the latest session',
+        rankingTitle: 'Ranking today’s active names',
+        rankingSub: 'Reading the latest completed session across your markets…',
+        rankingEmpty: 'Preparing your highest-volume tickers.',
+        selectTicker: 'Select a ticker to open Terminal',
+        stillLoading: 'Still loading matching markets…',
+        noMatches: 'No ticker or company matches this search.',
+        company: 'Company',
+        inLibrary: 'IN LIBRARY',
+        logoAttribution: 'Logos by Logo.dev'
+      };
+    }
+
+    function normalizeSearch(value) {
+      var text = String(value == null ? '' : value);
+      try { text = text.normalize('NFKC'); } catch (e) {}
+      return text.trim().replace(/\s+/g, ' ').toUpperCase();
+    }
+
+    function nameEnglish(x) {
+      var explicit = String(x.en || x.name_en || '').trim();
+      var raw = explicit || String(x.n || '').trim();
+      var split = raw.indexOf(' / ');
+      return split > -1 ? (raw.slice(0, split).trim() || raw) : raw;
+    }
+
+    function nameChinese(x) {
+      var explicit = String(x.z || x.zh || x.cn || x.name_zh || '').trim();
+      if (explicit) return explicit;
+      var raw = String(x.n || '').trim();
+      var split = raw.lastIndexOf(' / ');
+      var candidate = split > -1 ? raw.slice(split + 3).trim() : '';
+      return /[\u3400-\u9fff]/.test(candidate) ? candidate : '';
+    }
+
+    function displayName(x) {
+      var c = searchCopy(), en = nameEnglish(x), zh = nameChinese(x);
+      return curLang() === 'zh' ? (zh || en || c.company) : (en || zh || c.company);
     }
 
     function marketPreference() {
@@ -800,15 +898,26 @@
     }
 
     function profileLabel() {
-      var names = marketPreference().enabled.map(function (key) { return marketMeta(key).mkt; });
-      return names.join(' · ') || 'All markets';
+      var zh = curLang() === 'zh';
+      var names = marketPreference().enabled.map(function (key) {
+        var meta = marketMeta(key);
+        return zh ? (meta.mktZh || meta.mkt) : meta.mkt;
+      });
+      return names.join(' · ') || searchCopy().allMarkets;
     }
 
-    function setPlaceholder() {
-      input.placeholder = document.documentElement.getAttribute('data-lang') === 'zh' ? phZh : phEn;
+    function applySearchLocale() {
+      var c = searchCopy();
+      input.placeholder = c.placeholder;
+      input.setAttribute('aria-label', c.input);
+      trigger.setAttribute('aria-label', c.trigger);
+      closeButton.setAttribute('aria-label', c.close);
+      closeButton.textContent = c.closeShort;
+      dropdown.setAttribute('aria-label', c.results);
+      if (box.classList.contains('open')) render();
     }
-    setPlaceholder();
-    document.addEventListener('langchange', setPlaceholder);
+    applySearchLocale();
+    document.addEventListener('langchange', applySearchLocale);
 
     function loadLibs() {
       if (libsStarted) return;
@@ -826,13 +935,21 @@
           lib = lib.concat(data || []);
         }).catch(function () {}).then(function () {
           pending -= 1;
-          if (box.classList.contains('open')) render();
+          /* Popular rows are one composed snapshot. Repainting after each of
+             five libraries arrives made cards repeatedly disappear, reorder
+             and replay their entrance. Wait for the complete market set; a
+             typed query can still progressively return early matches. */
+          if (box.classList.contains('open') && (pending === 0 || input.value.trim())) render();
         });
       });
     }
 
     function go(x) {
       if (!x) return;
+      /* Collapse the search before Terminal mounts. Keeping the expanded input
+         alive under the overlay squeezed long exchange-qualified symbols (for
+         example 600519.SS) into the compact nav lane. */
+      closeSearch();
       try {
         if (window.mmTrack) window.mmTrack('search', {
           ticker: x.t,
@@ -844,12 +961,13 @@
     }
 
     function rank(x, value) {
-      var ticker = String(x.t || '').toUpperCase(), name = String(x.n || '').toUpperCase();
+      var ticker = normalizeSearch(x.t), en = normalizeSearch(nameEnglish(x));
+      var zh = normalizeSearch(nameChinese(x)), raw = normalizeSearch(x.n);
       if (ticker === value) return 0;
       if (ticker.indexOf(value) === 0) return 1;
-      if (name.indexOf(value) === 0) return 2;
+      if (en.indexOf(value) === 0 || zh.indexOf(value) === 0 || raw.indexOf(value) === 0) return 2;
       if (ticker.indexOf(value) > -1) return 3;
-      if (name.indexOf(value) > -1) return 4;
+      if (en.indexOf(value) > -1 || zh.indexOf(value) > -1 || raw.indexOf(value) > -1) return 4;
       return 9;
     }
 
@@ -883,27 +1001,54 @@
     }
 
     function logoMarkup(x) {
-      return '<span data-stock-logo data-ticker="' + esc(x.t) + '" data-company="' + esc(x.n || '') +
+      return '<span data-stock-logo data-ticker="' + esc(x.t) + '" data-company="' + esc(nameEnglish(x)) +
         '" data-market="' + esc(x._mk || '') + '" data-flag="' + esc(x._fl || '') + '" data-logo-size="38"></span>';
     }
 
+    function statusLabel(status) {
+      var value = String(status || '').trim().toUpperCase();
+      if (curLang() !== 'zh') return value || searchCopy().inLibrary;
+      var labels = {
+        'DECLINE': '下跌阶段',
+        'BOTTOM WATCH': '底部观察',
+        'TURN SIGNALED': '转折信号',
+        'FRESH BUY': '新买点',
+        'RALLY ON': '上涨延续',
+        'TOP WATCH': '顶部观察',
+        'ROLLING OVER': '开始转弱',
+        'COUNTERTREND BOUNCE': '逆势反弹',
+        'CONFIRMING TURN': '确认转折',
+        'LIMITED': '数据积累中'
+      };
+      return labels[value] || value || searchCopy().inLibrary;
+    }
+
+    function marketLabel(x) {
+      var meta = marketMeta(x._key);
+      return curLang() === 'zh' ? (meta.mktZh || x._mk || '') : (meta.mkt || x._mk || '');
+    }
+
     function resultMarkup(x, index, popular) {
-      var status = String(x.st || '').trim();
+      var c = searchCopy(), status = String(x.st || '').trim();
       var klass = popular ? 'fan-card' : 'result-row';
+      var openLabel = curLang() === 'zh'
+        ? '在终端中打开 ' + String(x.t || '')
+        : 'Open ' + String(x.t || '') + ' in Terminal';
       return '<button class="' + klass + '" type="button" role="option" data-result-index="' + index +
-        '" style="--i:' + index + '" aria-label="Open ' + esc(x.t) + ' in Terminal">' +
+        '" style="--i:' + index + '" aria-label="' + esc(openLabel) + '">' +
           logoMarkup(x) +
           '<span><span class="ticker-symbol">' + esc(x.t) + '</span><span class="ticker-name">' +
-            esc(x.n || 'Company') + (popular ? '' : ' · ' + esc(x._mk || '')) + '</span></span>' +
+            esc(displayName(x)) + (popular ? '' : ' · ' + esc(marketLabel(x))) + '</span></span>' +
           (popular
-            ? '<span class="market-code">' + esc(x._mk || '') + '</span>'
-            : '<span class="signal-status ' + statusClass(status) + '">' + esc(status || 'IN LIBRARY') + '</span>') +
+            ? '<span class="market-code">' + esc(marketLabel(x)) + '</span>'
+            : '<span class="signal-status ' + statusClass(status) + '">' + esc(statusLabel(status)) + '</span>') +
         '</button>';
     }
 
     function attribution() {
       return window.MMX_LOGO_DEV_TOKEN
-        ? '<div class="logo-dev-attribution"><a href="https://logo.dev" target="_blank" rel="noopener">Logos by Logo.dev</a></div>'
+        ? '<div class="logo-dev-attribution"><a href="https://logo.dev" target="_blank" rel="noopener">' +
+          esc(searchCopy().logoAttribution) + '</a></div>'
         : '';
     }
 
@@ -912,21 +1057,31 @@
     }
 
     function render() {
-      var query = input.value.trim().toUpperCase();
+      var c = searchCopy();
+      var queryDisplay = input.value.trim().replace(/\s+/g, ' ');
+      var query = normalizeSearch(queryDisplay);
       selected = -1;
       if (!query) {
+        if (pending > 0) {
+          dropdown.innerHTML =
+            '<div class="search-drop-head"><div><div class="search-drop-title">' + esc(c.rankingTitle) + '</div>' +
+            '<div class="search-drop-sub">' + esc(c.rankingSub) + '</div></div>' +
+            '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
+            '<div class="empty-search">' + esc(c.rankingEmpty) + '</div>';
+          return;
+        }
         pageRows = popularRows();
         if (!pageRows.length) {
           dropdown.innerHTML =
-            '<div class="search-drop-head"><div><div class="search-drop-title">Loading your market universe</div>' +
-            '<div class="search-drop-sub">Preparing popular tickers and company matches…</div></div>' +
+            '<div class="search-drop-head"><div><div class="search-drop-title">' + esc(c.loadingTitle) + '</div>' +
+            '<div class="search-drop-sub">' + esc(c.loadingSub) + '</div></div>' +
             '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
-            '<div class="empty-search">The latest ticker libraries are loading.</div>';
+            '<div class="empty-search">' + esc(c.loadingEmpty) + '</div>';
           return;
         }
         dropdown.innerHTML =
-          '<div class="search-drop-head"><div><div class="search-drop-title">Popular tickers</div>' +
-          '<div class="search-drop-sub">Latest active names in your markets</div></div>' +
+          '<div class="search-drop-head"><div><div class="search-drop-title">' + esc(c.popularTitle) + '</div>' +
+          '<div class="search-drop-sub">' + esc(c.popularSub) + '</div></div>' +
           '<span class="market-profile">' + esc(profileLabel()) + '</span></div>' +
           '<div class="fan-grid">' + pageRows.map(function (x, i) { return resultMarkup(x, i, true); }).join('') + '</div>' +
           attribution();
@@ -949,18 +1104,21 @@
         var buttons = [];
         for (var i = start; i < end; i++) {
           buttons.push('<button type="button" data-search-page="' + i + '" class="' + (i === page ? 'active' : '') +
-            '" aria-label="Results page ' + (i + 1) + '">' + (i + 1) + '</button>');
+            '" aria-label="' + (curLang() === 'zh' ? '结果第 ' + (i + 1) + ' 页' : 'Results page ' + (i + 1)) +
+            '">' + (i + 1) + '</button>');
         }
         pagination = '<div class="search-pagination">' + buttons.join('') + '</div>';
       }
+      var resultTitle = curLang() === 'zh'
+        ? '“' + esc(queryDisplay) + '” 的匹配结果（' + matches.length + '）'
+        : matches.length + ' match' + (matches.length === 1 ? '' : 'es') + ' for “' + esc(queryDisplay) + '”';
       dropdown.innerHTML =
-        '<div class="search-drop-head"><div><div class="search-drop-title">' + matches.length + ' match' +
-        (matches.length === 1 ? '' : 'es') + ' for “' + esc(query) + '”</div>' +
-        '<div class="search-drop-sub">Select a ticker to open Terminal</div></div>' +
-        '<span class="market-profile">All markets</span></div>' +
+        '<div class="search-drop-head"><div><div class="search-drop-title">' + resultTitle + '</div>' +
+        '<div class="search-drop-sub">' + esc(c.selectTicker) + '</div></div>' +
+        '<span class="market-profile">' + esc(c.allMarkets) + '</span></div>' +
         (pageRows.length
           ? '<div class="results-list">' + pageRows.map(function (x, i) { return resultMarkup(x, i, false); }).join('') + '</div>' + pagination
-          : '<div class="empty-search">' + (pending > 0 ? 'Still loading matching markets…' : 'No ticker or company matches this search.') + '</div>') +
+          : '<div class="empty-search">' + esc(pending > 0 ? c.stillLoading : c.noMatches) + '</div>') +
         attribution();
       enhanceLogos();
     }
@@ -974,6 +1132,7 @@
 
     function openSearch() {
       box.classList.add('open');
+      document.body.classList.add('nav-search-focus');
       trigger.setAttribute('aria-expanded', 'true');
       loadLibs();
       page = 0;
@@ -983,6 +1142,7 @@
 
     function closeSearch() {
       box.classList.remove('open');
+      document.body.classList.remove('nav-search-focus');
       trigger.setAttribute('aria-expanded', 'false');
       input.blur();
       selected = -1;
@@ -1023,12 +1183,19 @@
 
     trigger.addEventListener('click', openSearch);
     closeButton.addEventListener('click', closeSearch);
-    input.addEventListener('input', function () {
-      input.value = input.value.toUpperCase().replace(/[^A-Z0-9.^-]/g, '').slice(0, 10);
+    input.addEventListener('compositionstart', function () { isComposing = true; });
+    input.addEventListener('compositionend', function () {
+      isComposing = false;
+      page = 0;
+      render();
+    });
+    input.addEventListener('input', function (e) {
+      if (isComposing || e.isComposing) return;
       page = 0;
       render();
     });
     input.addEventListener('keydown', function (e) {
+      if (isComposing || e.isComposing || e.key === 'Process' || e.keyCode === 229) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         selected = Math.min(selected + 1, pageRows.length - 1);
@@ -3177,7 +3344,7 @@
     // whitelist: signin (default) · signup · upgrade (post-login monetization sheet)
     var m = (mode === 'signup') ? 'signup' : (mode === 'upgrade') ? 'upgrade' : 'signin';
     if (window.MMOnboard && window.MMOnboard.open) { window.MMOnboard.open(m); return; }
-    var pfx = location.pathname.indexOf('/sectors/') > -1 ? '../' : '';
+    var pfx = _mmSharedAssetRoot;
     if (window.__mmOnboardLoading) return;    // second click while loading — first one will open
     window.__mmOnboardLoading = true;
     var s = document.createElement('script');
@@ -5080,12 +5247,14 @@
     closeTimer: 0,
     readyTimer: 0,
     shellFallbackTimer: 0,
+    frameLoadFallbackTimer: 0,
     toastTimer: 0,
     slowTimer: 0,
     positionTimer: 0,
     loadingStartedAt: 0,
     activeMinLoaderMs: 0,
     completedLaunches: 0,
+    launchSerial: 0,
     scrollX: 0,
     scrollY: 0,
     rootScrollBehavior: '',
@@ -5100,6 +5269,10 @@
   var FIRST_LOADER_MS = 900;
   var REPEAT_LOADER_MS = 0;
   var SHELL_READY_FALLBACK_MS = 7000;
+  var FRAME_LOAD_FALLBACK_MS = 6000;
+  var REPEAT_FRAME_LOAD_FALLBACK_MS = 2500;
+  // Lifecycle v3: rotate the immutable bundle only after the live checkout advances.
+  var HARD_LAUNCH_FALLBACK_MS = 9000;
   var CLOSE_ANIMATION_MS = 300;
 
   function isDashboardHost() {
@@ -5257,7 +5430,7 @@
     return root;
   }
 
-  function createFrame() {
+  function createFrame(initialUrl) {
     if (!state.overlay) return null;
     var stage = state.overlay.querySelector('.mmto-stage');
     if (!stage) return null;
@@ -5273,23 +5446,27 @@
       state.overlay.classList.remove('is-ready', 'is-slow');
       state.overlay.classList.add('is-loading');
       startSlowTimer();
+      scheduleFrameLoadFallback(frame);
     });
+    if (initialUrl) frame.src = initialUrl;
     stage.insertBefore(frame, state.loader || stage.firstChild);
     state.frame = frame;
     return frame;
   }
 
-  function ensureFrame() {
+  function ensureFrame(initialUrl) {
     if (state.frame && state.frame.isConnected) return state.frame;
-    return createFrame();
+    return createFrame(initialUrl);
   }
 
   function resetFrameState() {
     clearTimeout(state.readyTimer);
     clearTimeout(state.shellFallbackTimer);
+    clearTimeout(state.frameLoadFallbackTimer);
     clearTimeout(state.slowTimer);
     state.readyTimer = 0;
     state.shellFallbackTimer = 0;
+    state.frameLoadFallbackTimer = 0;
     state.ready = false;
     state.booted = false;
     state.path = '';
@@ -5302,11 +5479,32 @@
     state.frame = null;
     resetFrameState();
     if (!old) return;
-    // A new DOM node is required here. Merely pointing the old iframe at
-    // about:blank leaves its WebKit compositor layer alive and can make the
-    // next cross-origin document paint as a permanently black surface.
-    try { old.src = 'about:blank'; } catch (e) {}
-    if (old.parentNode) old.parentNode.removeChild(old);
+    // Do not navigate or synchronously remove a cross-origin iframe while
+    // WebKit is still delivering that iframe's terminal:close postMessage.
+    // iOS can carry the interrupted navigation into the next same-URL iframe,
+    // leaving the parent loader visible forever. Hide it now, then retire the
+    // browsing context after the message task has fully unwound.
+    old.classList.remove('mmto-frame');
+    old.classList.add('mmto-retiring-frame');
+    old.setAttribute('aria-hidden', 'true');
+    old.style.display = 'none';
+    setTimeout(function () {
+      if (old.parentNode) old.parentNode.removeChild(old);
+    }, 0);
+  }
+
+  function freshMobileLaunchUrl(raw) {
+    try {
+      var url = new URL(raw, location.href);
+      state.launchSerial += 1;
+      // A unique document URL prevents iOS WebKit from reviving the iframe it
+      // just discarded from its page cache. Static chunks and chart data keep
+      // their normal cache keys, so this does not sacrifice warm-load speed.
+      url.searchParams.set('_mm_launch', Date.now().toString(36) + '-' + state.launchSerial);
+      return url.toString();
+    } catch (e) {
+      return raw;
+    }
   }
 
   function setLaunchOrigin(trigger) {
@@ -5363,12 +5561,15 @@
     });
   }
 
-  function unlockDashboard() {
+  function unlockDashboard(options) {
     if (!state.bodyStyle) return;
     var restoreX = state.scrollX;
     var restoreY = state.scrollY;
     var restoreBehavior = state.rootScrollBehavior;
-    var restoreFocus = state.activeElement;
+    // Mobile/touch browsers can honor preventScroll late, after our scroll pin,
+    // and jump the dashboard to the focused ticker. The remount path skips that
+    // keyboard-only restoration; desktop keeps it for accessibility.
+    var restoreFocus = options && options.restoreFocus === false ? null : state.activeElement;
     state.locked.forEach(function (rec) {
       try { rec.el.inert = rec.inert; } catch (e) {}
       if (rec.aria == null) rec.el.removeAttribute('aria-hidden');
@@ -5443,7 +5644,9 @@
     if (data && data.symbol) state.symbol = data.symbol;
     clearTimeout(state.slowTimer);
     clearTimeout(state.shellFallbackTimer);
+    clearTimeout(state.frameLoadFallbackTimer);
     state.shellFallbackTimer = 0;
+    state.frameLoadFallbackTimer = 0;
     if (!wasReady) state.completedLaunches += 1;
     if (!state.overlay) return;
     state.overlay.classList.remove('is-loading', 'is-slow');
@@ -5478,6 +5681,20 @@
     }, SHELL_READY_FALLBACK_MS);
   }
 
+  function scheduleFrameLoadFallback(frame, delay) {
+    clearTimeout(state.frameLoadFallbackTimer);
+    state.frameLoadFallbackTimer = setTimeout(function () {
+      state.frameLoadFallbackTimer = 0;
+      if (state.frame !== frame || !state.open || state.ready) return;
+      // A successful visual-ready message still wins. This is only the
+      // fail-open path for WebKit restores where the document paints but its
+      // cross-origin ready message never reaches the parent.
+      markReady({ path: state.path, symbol: state.symbol, state: 'frame-load-fallback' });
+    }, delay == null
+      ? (state.completedLaunches ? REPEAT_FRAME_LOAD_FALLBACK_MS : FRAME_LOAD_FALLBACK_MS)
+      : delay);
+  }
+
   function shouldRemountFrame() {
     var compact = false;
     try {
@@ -5501,10 +5718,12 @@
     }
 
     clearTimeout(state.closeTimer);
+    var remount = shouldRemountFrame();
     // Every compact/mobile launch gets a genuinely new iframe element. This
-    // also covers a rapid reopen before the 650ms closing animation completed.
-    if (!state.open && shouldRemountFrame() && state.frame) destroyFrame();
-    var frame = ensureFrame();
+    // also covers a rapid reopen before the closing animation completed.
+    if (!state.open && remount && state.frame) destroyFrame();
+    var launchUrl = remount ? freshMobileLaunchUrl(config.url) : config.url;
+    var frame = ensureFrame(launchUrl);
     if (!frame) {
       location.href = config.directUrl || config.url;
       return;
@@ -5531,7 +5750,10 @@
     if (!state.booted) {
       state.booted = true;
       beginLoading(root);
-      frame.src = config.url;
+      // The load handler shortens this guard once WebKit confirms a document
+      // load. Until then, never allow a failed iframe navigation to strand the
+      // user behind an infinite branded splash.
+      scheduleFrameLoadFallback(frame, HARD_LAUNCH_FALLBACK_MS);
       return;
     }
 
@@ -5566,7 +5788,7 @@
     if (remount) {
       state.overlay.classList.remove('is-closing');
       destroyFrame();
-      unlockDashboard();
+      unlockDashboard({ restoreFocus: false });
       return;
     }
 

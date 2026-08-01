@@ -7,8 +7,8 @@
    "receiver": "xlv",
    "tier": "primary",
    "started": "2026-07-13",
-   "lapse_count": 0,
-   "confirm_streak": 1,
+   "lapse_count": 2,
+   "confirm_streak": 0,
    "last_receipts": {
     "event_type": "into_strength",
     "donor_signature": "contagion_bleed",
@@ -43,8 +43,8 @@
    "receiver": "xlv",
    "tier": "primary",
    "started": "2026-07-13",
-   "lapse_count": 0,
-   "confirm_streak": 1,
+   "lapse_count": 2,
+   "confirm_streak": 0,
    "last_receipts": {
     "event_type": "into_strength",
     "donor_signature": "contagion_bleed",
@@ -79,7 +79,7 @@
    "receiver": "xlf",
    "tier": "secondary",
    "started": "2026-07-10",
-   "lapse_count": 1,
+   "lapse_count": 3,
    "confirm_streak": 0,
    "last_receipts": {
     "event_type": "into_strength",
@@ -115,7 +115,7 @@
    "receiver": "xlf",
    "tier": "secondary",
    "started": "2026-07-10",
-   "lapse_count": 1,
+   "lapse_count": 3,
    "confirm_streak": 0,
    "last_receipts": {
     "event_type": "into_strength",

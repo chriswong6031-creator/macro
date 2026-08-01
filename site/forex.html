@@ -14,8 +14,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -32,7 +41,7 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 </style>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>Forex Vector — Jul 30, 2026</title>
+<title>Forex Vector — Aug 01, 2026</title>
 
 <meta name="description" content="An FX hub tracking the US dollar regime, major currency crosses and how currency moves transmit into equities and macro.">
 <link rel="canonical" href="https://www.mastermind-x.com/forex.html">
@@ -54,14 +63,14 @@
 
 <link rel="stylesheet" href="product-nav-icons.css?v=093ad1ea">
 <link rel="stylesheet" href="assets/css/a90faa97.css?v=a90faa97">
-<link rel="preload" as="style" href="navigation-refresh.css?v=6e249584">
+<link rel="preload" as="style" href="navigation-refresh.css?v=3ee9d113">
 </head>
 <body>
 <nav class="site-nav" style="max-width:1180px;margin:18px auto 16px;padding:0 20px">
   
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=6e249584">
+    <link rel="stylesheet" href="navigation-refresh.css?v=3ee9d113">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -182,17 +191,19 @@
       <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
         <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
         <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Crypto Cockpit</span><span class="l-zh">加密驾驶舱</span><span class="d"><span class="l-en">Market board · flows · leverage</span><span class="l-zh">市场看板 · 资金流 · 杠杆</span></span></a>
-        <a href="vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">State · risk · cycle · strategy</span><span class="l-zh">状态 · 风险 · 周期 · 策略</span></span></a>
-        <a href="crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation</span><span class="l-zh">配置</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-        <a href="vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategy Track Record</span><span class="l-zh">策略历史表现</span><span class="d"><span class="l-en">Cycle and risk-allocation evidence</span><span class="l-zh">周期与风险配置证据</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -213,48 +224,46 @@
     
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-main">
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
-              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
-              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
-              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
-              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
-              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
-              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
-              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
-              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
-              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
             </div>
           </section>
         </div>
-        <aside class="nav-mega-rail">
-          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
-            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
-              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
             </button>
-            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+            <div class="nav-drill-panel" data-nav-drill-panel inert>
               <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
               <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
               <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
@@ -265,7 +274,11 @@
               <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+          <a class="rail-link nav-rail-item" href="intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
         </aside>
       </div>
     </div>
@@ -311,15 +324,15 @@
     <div class="hero-grid">
       
       <div>
-        <div class="hero-eyebrow"><span class="l-en">FOREX · Jul 30, 2026</span><span class="l-zh">FOREX · Jul 30, 2026</span></div>
+        <div class="hero-eyebrow"><span class="l-en">FOREX · Aug 01, 2026</span><span class="l-zh">FOREX · Aug 01, 2026</span></div>
         <div class="hero-state tone-usd_up">
           <span class="l-en">Dollar strong</span>
           <span class="l-zh">美元偏强</span>
         </div>
         <div style="margin:8px 0 0">
-          <span class="stance-chip alert">
-            <span class="l-en">Get ready</span>
-            <span class="l-zh">做好准备</span>
+          <span class="stance-chip calm">
+            <span class="l-en">Watch — don&#39;t chase</span>
+            <span class="l-zh">观望，别追</span>
           </span>
         </div>
         <p class="hero-sentence">
@@ -328,9 +341,9 @@
         </p>
         <div class="hero-kpi-row">
           <div class="hkpi"><span class="l-en">Broad USD</span><span class="l-zh">广义美元</span><b>120.71</b></div>
-          <div class="hkpi">DXY<b class="nb-px" data-sym="DX-Y.NYB" data-mkt="fx">100.8</b></div>
-          <div class="hkpi"><span class="l-en">63d move</span><span class="l-zh">63日走势</span><b>1.7%</b></div>
-          <div class="hkpi"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span><b><span class="l-en">risk-off</span><span class="l-zh">避险</span></b></div>
+          <div class="hkpi">DXY<b class="nb-px" data-sym="DX-Y.NYB" data-mkt="fx">99.8</b></div>
+          <div class="hkpi"><span class="l-en">63d move</span><span class="l-zh">63日走势</span><b>1.6%</b></div>
+          <div class="hkpi"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span><b><span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></b></div>
         </div>
         
         
@@ -383,10 +396,10 @@
           <svg class="spark-svg" viewBox="0 0 440 60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
             
             
-            <polyline points="0.0,30.0 3.5,33.7 7.0,31.6 10.6,28.3 14.1,25.8 17.6,31.1 21.1,33.2 24.6,32.8 28.2,32.4 31.7,27.4 35.2,27.3 38.7,29.2 42.2,30.9 45.8,31.1 49.3,34.9 52.8,29.9 56.3,35.1 59.8,37.0 63.4,34.0 66.9,30.6 70.4,26.6 73.9,20.2 77.4,24.8 81.0,21.1 84.5,13.1 88.0,16.6 91.5,17.8 95.0,18.7 98.6,14.5 102.1,11.3 105.6,16.2 109.1,19.3 112.6,15.9 116.2,17.4 119.7,13.7 123.2,16.7 126.7,14.2 130.2,16.5 133.8,13.0 137.3,5.4 140.8,2.0 144.3,10.8 147.8,11.9 151.4,12.6 154.9,12.6 158.4,8.6 161.9,18.7 165.4,21.5 169.0,23.3 172.5,23.7 176.0,27.1 179.5,28.8 183.0,29.7 186.6,31.2 190.1,30.1 193.6,33.0 197.1,34.8 200.6,32.5 204.2,32.8 207.7,34.6 211.2,33.0 214.7,33.6 218.2,34.9 221.8,35.2 225.3,33.1 228.8,37.3 232.3,44.0 235.8,43.9 239.4,42.5 242.9,42.5 246.4,41.4 249.9,42.5 253.4,47.0 257.0,41.4 260.5,41.0 264.0,37.5 267.5,41.2 271.0,40.6 274.6,44.5 278.1,45.8 281.6,45.5 285.1,47.6 288.6,48.2 292.2,51.1 295.7,57.0 299.2,53.9 302.7,56.0 306.2,43.9 309.8,45.7 313.3,43.7 316.8,37.8 320.3,48.0 323.8,54.2 327.4,57.3 330.9,53.3 334.4,55.3 337.9,56.7 341.4,58.0 345.0,46.4 348.5,46.4 352.0,45.3 355.5,45.8 359.0,50.5 362.6,55.5 366.1,49.7 369.6,47.9 373.1,51.5 376.6,49.9 380.2,48.3 383.7,44.9 387.2,47.3 390.7,42.6 394.2,40.9 397.8,39.1 401.3,36.2 404.8,30.5 408.3,29.1 411.8,31.5 415.4,37.7 418.9,35.2 422.4,30.6 425.9,27.0 429.4,26.8 433.0,27.7 436.5,26.5 440.0,23.0" fill="none" stroke="#6F6F6F" stroke-width="1.5" opacity="0.45" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="0.0,31.6 3.5,28.3 7.0,25.8 10.6,31.1 14.1,33.2 17.6,32.8 21.1,32.4 24.6,27.4 28.2,27.3 31.7,29.2 35.2,30.9 38.7,31.1 42.2,34.9 45.8,29.9 49.3,35.1 52.8,37.0 56.3,34.0 59.8,30.6 63.4,26.6 66.9,20.2 70.4,24.8 73.9,21.1 77.4,13.1 81.0,16.6 84.5,17.8 88.0,18.7 91.5,14.5 95.0,11.3 98.6,16.2 102.1,19.3 105.6,15.9 109.1,17.4 112.6,13.7 116.2,16.7 119.7,14.2 123.2,16.5 126.7,13.0 130.2,5.4 133.8,2.0 137.3,10.8 140.8,11.9 144.3,12.6 147.8,12.6 151.4,8.6 154.9,18.7 158.4,21.5 161.9,23.3 165.4,23.7 169.0,27.1 172.5,28.8 176.0,29.7 179.5,31.2 183.0,30.1 186.6,33.0 190.1,34.8 193.6,32.5 197.1,32.8 200.6,34.6 204.2,33.0 207.7,33.6 211.2,34.9 214.7,35.2 218.2,33.1 221.8,37.3 225.3,44.0 228.8,43.9 232.3,42.5 235.8,42.5 239.4,41.4 242.9,42.5 246.4,47.0 249.9,41.4 253.4,41.0 257.0,37.5 260.5,41.2 264.0,40.6 267.5,44.5 271.0,45.8 274.6,45.5 278.1,47.6 281.6,48.2 285.1,51.1 288.6,57.0 292.2,53.9 295.7,56.0 299.2,43.9 302.7,45.7 306.2,43.7 309.8,37.8 313.3,48.0 316.8,54.2 320.3,57.3 323.8,53.3 327.4,55.3 330.9,56.7 334.4,58.0 337.9,46.4 341.4,46.4 345.0,45.3 348.5,45.8 352.0,50.5 355.5,55.5 359.0,49.7 362.6,47.9 366.1,51.5 369.6,49.9 373.1,48.3 376.6,44.9 380.2,47.3 383.7,42.6 387.2,40.9 390.7,39.1 394.2,36.2 397.8,30.5 401.3,29.1 404.8,31.5 408.3,37.7 411.8,35.2 415.4,30.6 418.9,27.0 422.4,26.8 425.9,27.7 429.4,26.5 433.0,20.1 436.5,26.9 440.0,28.0" fill="none" stroke="#6F6F6F" stroke-width="1.5" opacity="0.45" stroke-linejoin="round" stroke-linecap="round"/>
             
             
-            <polyline points="0.0,51.8 3.5,45.2 7.0,50.7 10.6,46.7 14.1,43.2 17.6,46.9 21.1,55.5 24.6,57.1 28.2,58.0 31.7,56.9 35.2,57.1 38.7,54.1 42.2,52.6 45.8,47.0 49.3,50.5 52.8,51.2 56.3,51.1 59.8,53.6 63.4,51.7 66.9,52.9 70.4,40.9 73.9,30.0 77.4,35.2 81.0,28.1 84.5,29.2 88.0,28.9 91.5,40.1 95.0,32.1 98.6,24.5 102.1,14.2 105.6,20.6 109.1,24.4 112.6,23.0 116.2,19.5 119.7,18.1 123.2,22.9 126.7,20.2 130.2,20.2 133.8,16.5 137.3,9.5 140.8,3.8 144.3,7.3 147.8,20.3 151.4,14.9 154.9,15.9 158.4,17.5 161.9,35.3 165.4,37.6 169.0,38.2 172.5,36.3 176.0,45.3 179.5,45.2 183.0,45.2 186.6,49.2 190.1,47.0 193.6,44.2 197.1,41.8 200.6,40.2 204.2,40.0 207.7,42.6 211.2,39.4 214.7,34.8 218.2,40.8 221.8,44.8 225.3,38.6 228.8,41.6 232.3,49.0 235.8,50.2 239.4,49.8 242.9,49.6 246.4,42.9 249.9,43.6 253.4,40.9 257.0,32.2 260.5,35.4 264.0,29.8 267.5,33.9 271.0,31.0 274.6,32.1 278.1,33.8 281.6,33.6 285.1,35.7 288.6,37.9 292.2,33.8 295.7,35.7 299.2,30.7 302.7,31.1 306.2,20.8 309.8,21.5 313.3,22.6 316.8,23.2 320.3,20.3 323.8,29.0 327.4,31.7 330.9,32.6 334.4,30.7 337.9,16.4 341.4,14.3 345.0,7.1 348.5,2.0 352.0,7.0 355.5,9.4 359.0,8.5 362.6,8.9 366.1,5.8 369.6,12.2 373.1,10.2 376.6,10.5 380.2,6.0 383.7,11.3 387.2,14.9 390.7,11.5 394.2,15.3 397.8,17.6 401.3,17.3 404.8,14.5 408.3,14.5 411.8,14.4 415.4,13.8 418.9,13.9 422.4,9.1 425.9,11.9 429.4,11.9 433.0,11.9 436.5,11.9 440.0,11.9" fill="none" stroke="#4559DC" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <polyline points="0.0,50.7 3.5,46.7 7.0,43.2 10.6,46.9 14.1,55.5 17.6,57.1 21.1,58.0 24.6,56.9 28.2,57.1 31.7,54.1 35.2,52.6 38.7,47.0 42.2,50.5 45.8,51.2 49.3,51.1 52.8,53.6 56.3,51.7 59.8,52.9 63.4,40.9 66.9,30.0 70.4,35.2 73.9,28.1 77.4,29.2 81.0,28.9 84.5,40.1 88.0,32.1 91.5,24.5 95.0,14.2 98.6,20.6 102.1,24.4 105.6,23.0 109.1,19.5 112.6,18.1 116.2,22.9 119.7,20.2 123.2,20.2 126.7,16.5 130.2,9.5 133.8,3.8 137.3,7.3 140.8,20.3 144.3,14.9 147.8,15.9 151.4,17.5 154.9,35.3 158.4,37.6 161.9,38.2 165.4,36.3 169.0,45.3 172.5,45.2 176.0,45.2 179.5,49.2 183.0,47.0 186.6,44.2 190.1,41.8 193.6,40.2 197.1,40.0 200.6,42.6 204.2,39.4 207.7,34.8 211.2,40.8 214.7,44.8 218.2,38.6 221.8,41.6 225.3,49.0 228.8,50.2 232.3,49.8 235.8,49.6 239.4,42.9 242.9,43.6 246.4,40.9 249.9,32.2 253.4,35.4 257.0,29.8 260.5,33.9 264.0,31.0 267.5,32.1 271.0,33.8 274.6,33.6 278.1,35.7 281.6,37.9 285.1,33.8 288.6,35.7 292.2,30.7 295.7,31.1 299.2,20.8 302.7,21.5 306.2,22.6 309.8,23.2 313.3,20.3 316.8,29.0 320.3,31.7 323.8,32.6 327.4,30.7 330.9,16.4 334.4,14.3 337.9,7.1 341.4,2.0 345.0,7.0 348.5,9.4 352.0,8.5 355.5,8.9 359.0,5.8 362.6,12.2 366.1,10.2 369.6,10.5 373.1,6.0 376.6,11.3 380.2,14.9 383.7,11.5 387.2,15.3 390.7,17.6 394.2,17.3 397.8,14.5 401.3,14.5 404.8,14.4 408.3,13.8 411.8,13.9 415.4,9.1 418.9,11.9 422.4,11.9 425.9,11.9 429.4,11.9 433.0,11.9 436.5,11.9 440.0,11.9" fill="none" stroke="#4559DC" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
           </svg>
           <div class="spark-legend">
             <span><i style="background:#4559DC"></i> <span class="l-en">Broad USD</span><span class="l-zh">广义美元</span></span>
@@ -414,8 +427,8 @@
           <span class="l-en">High real rates</span><span class="l-zh">实际利率偏高</span>
         </div>
         <div class="tip-pop">
-          <div class="l-en">Restrictive real yields — 10y real yield: 2.41% · Fed path 50bp priced to 12m · Futures-market positioning neutral</div>
-          <div class="l-zh">实际利率偏紧 — 10年实际收益率：2.41% · 美联储路径12个月定价50bp · 期货市场持仓中性</div>
+          <div class="l-en">Restrictive real yields — 10y real yield: 2.41% · Fed path 55bp priced to 12m · Futures-market positioning neutral</div>
+          <div class="l-zh">实际利率偏紧 — 10年实际收益率：2.41% · 美联储路径12个月定价55bp · 期货市场持仓中性</div>
         </div>
       </div>
       
@@ -453,13 +466,13 @@
       
       <div class="why-tile" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="wt-lab"><span class="l-en">Liquidity</span><span class="l-zh">流动性</span></div>
-        <div class="wt-state flat">
-          <span class="l-en">Tightening</span><span class="l-zh">净收紧</span>
+        <div class="wt-state up">
+          <span class="l-en">Adding</span><span class="l-zh">净投放</span>
           
         </div>
         <div class="tip-pop">
-          <div class="l-en">Net Fed liquidity falling — tends to support the dollar. Net change: -56B / 63d.</div>
-          <div class="l-zh">美联储净流动性下降 — 往往支撑美元。净变化：-56B / 63天。</div>
+          <div class="l-en">Net Fed liquidity falling — tends to support the dollar. Net change: +81B / 63d.</div>
+          <div class="l-zh">美联储净流动性下降 — 往往支撑美元。净变化：+81B / 63天。</div>
         </div>
       </div>
     </div>
@@ -712,63 +725,63 @@
       <div class="smeter" data-h="1w" hidden>
         
         <div class="srow">
+          <div class="sccy">JPY</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:50.0%;left:50%"></span></div>
+          <div class="spct">+3.9%</div>
+        </div>
+        
+        <div class="srow">
           <div class="sccy">EUR</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:20.4%;left:50%"></span></div>
-          <div class="spct">+0.5%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:6.5%;left:50%"></span></div>
+          <div class="spct">+1.3%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CHF</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:19.4%;left:50%"></span></div>
-          <div class="spct">+0.5%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">MXN</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:15.3%;left:50%"></span></div>
-          <div class="spct">+0.4%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">CAD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:14.3%;left:50%"></span></div>
-          <div class="spct">+0.4%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:5.5%;left:50%"></span></div>
+          <div class="spct">+1.3%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">GBP</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:12.2%;left:50%"></span></div>
-          <div class="spct">+0.3%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:5.1%;left:50%"></span></div>
+          <div class="spct">+1.2%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">CNH</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:2.6%;left:50%"></span></div>
-          <div class="spct">+0.2%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">USD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:5.1%;right:50%"></span></div>
-          <div class="spct">+0.0%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">JPY</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:13.7%;right:50%"></span></div>
-          <div class="spct">-0.2%</div>
+          <div class="sccy">MXN</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:6.2%;right:50%"></span></div>
+          <div class="spct">+0.6%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">AUD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:21.1%;right:50%"></span></div>
-          <div class="spct">-0.3%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:6.8%;right:50%"></span></div>
+          <div class="spct">+0.6%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">CAD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:8.8%;right:50%"></span></div>
+          <div class="spct">+0.5%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">CNH</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:13.4%;right:50%"></span></div>
+          <div class="spct">+0.3%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">BRL</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:44.2%;right:50%"></span></div>
-          <div class="spct">-0.8%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:17.9%;right:50%"></span></div>
+          <div class="spct">+0.0%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">USD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:18.0%;right:50%"></span></div>
+          <div class="spct">+0.0%</div>
         </div>
         
       </div>
@@ -776,63 +789,63 @@
       <div class="smeter" data-h="1m" >
         
         <div class="srow">
-          <div class="sccy">CAD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:32.8%;left:50%"></span></div>
-          <div class="spct">+1.2%</div>
+          <div class="sccy">JPY</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:42.2%;left:50%"></span></div>
+          <div class="spct">+2.5%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">BRL</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:14.0%;left:50%"></span></div>
-          <div class="spct">+0.6%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">AUD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:13.0%;left:50%"></span></div>
-          <div class="spct">+0.6%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:11.8%;left:50%"></span></div>
+          <div class="spct">+1.3%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">EUR</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:11.3%;left:50%"></span></div>
-          <div class="spct">+0.5%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:10.6%;left:50%"></span></div>
+          <div class="spct">+1.3%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">CNH</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:7.9%;left:50%"></span></div>
-          <div class="spct">+0.4%</div>
+          <div class="sccy">AUD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:9.9%;left:50%"></span></div>
+          <div class="spct">+1.3%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">MXN</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:0.8%;right:50%"></span></div>
-          <div class="spct">+0.1%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">USD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:4.5%;right:50%"></span></div>
-          <div class="spct">+0.0%</div>
+          <div class="sccy">CAD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:3.6%;left:50%"></span></div>
+          <div class="spct">+1.0%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">GBP</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:11.8%;right:50%"></span></div>
-          <div class="spct">-0.2%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:3.5%;left:50%"></span></div>
+          <div class="spct">+1.0%</div>
         </div>
         
         <div class="srow">
-          <div class="sccy">JPY</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:18.8%;right:50%"></span></div>
-          <div class="spct">-0.5%</div>
+          <div class="sccy">CNH</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:13.9%;right:50%"></span></div>
+          <div class="spct">+0.3%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">MXN</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:14.9%;right:50%"></span></div>
+          <div class="spct">+0.3%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">USD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:22.8%;right:50%"></span></div>
+          <div class="spct">+0.0%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CHF</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:43.1%;right:50%"></span></div>
-          <div class="spct">-1.2%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:30.1%;right:50%"></span></div>
+          <div class="spct">-0.3%</div>
         </div>
         
       </div>
@@ -841,62 +854,62 @@
         
         <div class="srow">
           <div class="sccy">CNH</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:42.4%;left:50%"></span></div>
-          <div class="spct">+1.7%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">USD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:21.4%;left:50%"></span></div>
-          <div class="spct">+0.0%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:42.9%;left:50%"></span></div>
+          <div class="spct">+2.6%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">GBP</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:6.8%;left:50%"></span></div>
-          <div class="spct">-1.2%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">MXN</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:6.2%;left:50%"></span></div>
-          <div class="spct">-1.2%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">EUR</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:2.3%;right:50%"></span></div>
-          <div class="spct">-1.9%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">AUD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:4.2%;right:50%"></span></div>
-          <div class="spct">-2.1%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">CAD</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:4.5%;right:50%"></span></div>
-          <div class="spct">-2.1%</div>
-        </div>
-        
-        <div class="srow">
-          <div class="sccy">BRL</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:11.1%;right:50%"></span></div>
-          <div class="spct">-2.6%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:17.9%;left:50%"></span></div>
+          <div class="spct">+0.7%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">JPY</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:26.0%;right:50%"></span></div>
-          <div class="spct">-3.8%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:12.2%;left:50%"></span></div>
+          <div class="spct">+0.3%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">USD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:8.5%;left:50%"></span></div>
+          <div class="spct">+0.0%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">MXN</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill pos" style="width:0.9%;left:50%"></span></div>
+          <div class="spct">-0.6%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">BRL</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:9.8%;right:50%"></span></div>
+          <div class="spct">-1.4%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">EUR</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:13.1%;right:50%"></span></div>
+          <div class="spct">-1.6%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">CAD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:14.5%;right:50%"></span></div>
+          <div class="spct">-1.7%</div>
+        </div>
+        
+        <div class="srow">
+          <div class="sccy">AUD</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:14.8%;right:50%"></span></div>
+          <div class="spct">-1.8%</div>
         </div>
         
         <div class="srow">
           <div class="sccy">CHF</div>
-          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:28.6%;right:50%"></span></div>
-          <div class="spct">-4.0%</div>
+          <div class="sbar"><span class="smid"></span><span class="sfill neg" style="width:30.2%;right:50%"></span></div>
+          <div class="spct">-2.9%</div>
         </div>
         
       </div>
@@ -935,8 +948,8 @@
           
           
           
-          <div class="l-en">Carry-trade unwind: intensity 12%. In 1094 similar past days, ≈1 in 10 saw the adverse move within 10d (history is thin — wide uncertainty).</div>
-          <div class="l-zh">套息平仓：强度12%。在1094个类似历史日中，约1/10在10天内出现不利走势（历史样本薄，不确定性宽）。</div>
+          <div class="l-en">Carry-trade unwind: intensity 24%. In 271 similar past days, ≈2 in 10 saw the adverse move within 10d (history is thin — wide uncertainty).</div>
+          <div class="l-zh">套息平仓：强度24%。在271个类似历史日中，约2/10在10天内出现不利走势（历史样本薄，不确定性宽）。</div>
           
         </div>
       </div>
@@ -955,8 +968,8 @@
           
           
           
-          <div class="l-en">Dollar squeeze: intensity 5%. In 3935 similar past days, ≈1 in 10 saw the adverse move within 20d (history is thin — wide uncertainty).</div>
-          <div class="l-zh">美元挤压：强度5%。在3935个类似历史日中，约1/10在20天内出现不利走势（历史样本薄，不确定性宽）。</div>
+          <div class="l-en">Dollar squeeze: intensity 5%. In 3943 similar past days, ≈1 in 10 saw the adverse move within 20d (history is thin — wide uncertainty).</div>
+          <div class="l-zh">美元挤压：强度5%。在3943个类似历史日中，约1/10在20天内出现不利走势（历史样本薄，不确定性宽）。</div>
           
         </div>
       </div>
@@ -966,7 +979,7 @@
       
       
       <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot building"></span>
+        <span class="sdot quiet"></span>
         <span><span class="l-en">EM outflows</span><span class="l-zh">新兴市场资金外流</span></span>
         <div class="tip-pop">
           
@@ -975,8 +988,8 @@
           
           
           
-          <div class="l-en">EM outflows: intensity 40%. In 377 similar past days, ≈4 in 10 saw the adverse move within 20d (history is thin — wide uncertainty). Pattern illustrative — managed market.</div>
-          <div class="l-zh">新兴市场资金外流：强度40%。在377个类似历史日中，约4/10在20天内出现不利走势（历史样本薄，不确定性宽）。 情景示意 — 受管理市场。</div>
+          <div class="l-en">EM outflows: intensity 4%. In 3549 similar past days, ≈3 in 10 saw the adverse move within 20d (history is thin — wide uncertainty). Pattern illustrative — managed market.</div>
+          <div class="l-zh">新兴市场资金外流：强度4%。在3549个类似历史日中，约3/10在20天内出现不利走势（历史样本薄，不确定性宽）。 情景示意 — 受管理市场。</div>
           
         </div>
       </div>
@@ -995,8 +1008,8 @@
           
           
           
-          <div class="l-en">Flight to safety: intensity 4%. In 4698 similar past days, ≈1 in 10 saw the adverse move within 15d (history is thin — wide uncertainty).</div>
-          <div class="l-zh">避险出逃：强度4%。在4698个类似历史日中，约1/10在15天内出现不利走势（历史样本薄，不确定性宽）。</div>
+          <div class="l-en">Flight to safety: intensity 11%. In 3066 similar past days, ≈2 in 10 saw the adverse move within 15d (history is thin — wide uncertainty).</div>
+          <div class="l-zh">避险出逃：强度11%。在3066个类似历史日中，约2/10在15天内出现不利走势（历史样本薄，不确定性宽）。</div>
           
         </div>
       </div>
@@ -1006,13 +1019,17 @@
       
       
       <div class="stress-dot-item" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <span class="sdot building"></span>
+        <span class="sdot quiet"></span>
         <span><span class="l-en">Risk-on rally</span><span class="l-zh">风险偏好回升</span></span>
         <div class="tip-pop">
           
           
-          <div class="l-en">Risk-on rally: intensity 54%. Insufficient past cases to estimate frequency.</div>
-          <div class="l-zh">风险偏好回升：强度54%。历史案例不足，无法估计频率。</div>
+          
+          
+          
+          
+          <div class="l-en">Risk-on rally: intensity 10%. In 2461 similar past days, ≈1 in 10 saw the adverse move within 20d (history is thin — wide uncertainty).</div>
+          <div class="l-zh">风险偏好回升：强度10%。在2461个类似历史日中，约1/10在20天内出现不利走势（历史样本薄，不确定性宽）。</div>
           
         </div>
       </div>
@@ -1031,8 +1048,8 @@
           
           
           
-          <div class="l-en">Intervention watch: intensity 4%. In 3514 similar past days, fewer than 1 in 10 saw the adverse move within 10d (history is thin — wide uncertainty). Pattern illustrative — managed market.</div>
-          <div class="l-zh">干预关注：强度4%。在3514个类似历史日中，不到一成在10天内出现不利走势（历史样本薄，不确定性宽）。 情景示意 — 受管理市场。</div>
+          <div class="l-en">Intervention watch: intensity 7%. In 2816 similar past days, fewer than 1 in 10 saw the adverse move within 10d (history is thin — wide uncertainty). Pattern illustrative — managed market.</div>
+          <div class="l-zh">干预关注：强度7%。在2816个类似历史日中，不到一成在10天内出现不利走势（历史样本薄，不确定性宽）。 情景示意 — 受管理市场。</div>
           
         </div>
       </div>
@@ -1073,8 +1090,8 @@
           <div class="pair-nick"><em><span class="l-en">The world&#39;s most traded pair</span><span class="l-zh">全球交易量最大货币对</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="EURUSD=X" data-mkt="fx">1.1471</div>
-          <div class="chg up">+0.5% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="EURUSD=X" data-mkt="fx">1.1527</div>
+          <div class="chg up">+1.3% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -1100,7 +1117,7 @@
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,9.3 2.4,6.6 4.8,2.0 7.2,2.8 9.6,3.6 12.0,4.1 14.4,4.1 16.8,5.2 19.2,5.0 21.6,8.7 24.0,9.9 26.4,6.0 28.8,8.4 31.2,9.5 33.6,7.2 36.0,7.9 38.4,10.4 40.8,14.0 43.2,19.0 45.6,17.6 48.0,19.2 50.4,24.2 52.8,18.7 55.2,19.0 57.6,23.0 60.0,24.3 62.4,29.3 64.8,25.5 67.2,23.2 69.6,27.6 72.0,21.0 74.4,22.0 76.8,19.3 79.2,18.8 81.6,21.9 84.0,23.5 86.4,26.0 88.8,27.8 91.2,21.2 93.6,20.2 96.0,23.1 98.4,24.9 100.8,23.1 103.2,14.7 105.6,16.2 108.0,14.4 110.4,15.3 112.8,9.9 115.2,8.1 117.6,7.5 120.0,9.1 122.4,11.5 124.8,9.0 127.2,11.3 129.6,13.5 132.0,14.8 134.4,13.5 136.8,12.5 139.2,12.8 141.6,14.8 144.0,12.2 146.4,12.3 148.8,14.3 151.2,13.0 153.6,11.1 156.0,12.0 158.4,9.9 160.8,9.2 163.2,11.8 165.6,12.9 168.0,16.1 170.4,18.9 172.8,16.5 175.2,19.3 177.6,18.2 180.0,18.5 182.4,17.2 184.8,17.5 187.2,17.6 189.6,18.7 192.0,16.6 194.4,16.8 196.8,17.6 199.2,18.4 201.6,19.1 204.0,19.0 206.4,24.2 208.8,23.9 211.2,23.5 213.6,23.4 216.0,21.1 218.4,18.9 220.8,19.5 223.2,20.0 225.6,19.1 228.0,25.1 230.4,27.9 232.8,27.7 235.2,29.8 237.6,32.5 240.0,34.0 242.4,33.6 244.8,32.2 247.2,30.1 249.6,30.6 252.0,32.6 254.4,30.0 256.8,29.1 259.2,28.9 261.6,31.1 264.0,30.1 266.4,29.4 268.8,31.1 271.2,32.2 273.6,29.9 276.0,27.2 278.4,28.7 280.8,29.7 283.2,30.3 285.6,31.1 288.0,30.7 290.4,32.7 292.8,31.6 295.2,33.1 297.6,32.1 300.0,27.2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,6.6 2.4,2.0 4.8,2.8 7.2,3.6 9.6,4.1 12.0,4.1 14.4,5.2 16.8,5.0 19.2,8.7 21.6,9.9 24.0,6.0 26.4,8.4 28.8,9.5 31.2,7.2 33.6,7.9 36.0,10.4 38.4,14.0 40.8,19.0 43.2,17.6 45.6,19.2 48.0,24.2 50.4,18.7 52.8,19.0 55.2,23.0 57.6,24.3 60.0,29.3 62.4,25.5 64.8,23.2 67.2,27.6 69.6,21.0 72.0,22.0 74.4,19.3 76.8,18.8 79.2,21.9 81.6,23.5 84.0,26.0 86.4,27.8 88.8,21.2 91.2,20.2 93.6,23.1 96.0,24.9 98.4,23.1 100.8,14.7 103.2,16.2 105.6,14.4 108.0,15.3 110.4,9.9 112.8,8.1 115.2,7.5 117.6,9.1 120.0,11.5 122.4,9.0 124.8,11.3 127.2,13.5 129.6,14.8 132.0,13.5 134.4,12.5 136.8,12.8 139.2,14.8 141.6,12.2 144.0,12.3 146.4,14.3 148.8,13.0 151.2,11.1 153.6,12.0 156.0,9.9 158.4,9.2 160.8,11.8 163.2,12.9 165.6,16.1 168.0,18.9 170.4,16.5 172.8,19.3 175.2,18.2 177.6,18.5 180.0,17.2 182.4,17.5 184.8,17.6 187.2,18.7 189.6,16.6 192.0,16.8 194.4,17.6 196.8,18.4 199.2,19.1 201.6,19.0 204.0,24.2 206.4,23.9 208.8,23.5 211.2,23.4 213.6,21.1 216.0,18.9 218.4,19.5 220.8,20.0 223.2,19.1 225.6,25.1 228.0,27.9 230.4,27.7 232.8,29.8 235.2,32.5 237.6,34.0 240.0,33.6 242.4,32.2 244.8,30.1 247.2,30.6 249.6,32.6 252.0,30.0 254.4,29.1 256.8,28.9 259.2,31.1 261.6,30.1 264.0,29.4 266.4,31.1 268.8,32.2 271.2,29.9 273.6,27.2 276.0,28.7 278.4,29.7 280.8,30.3 283.2,31.1 285.6,30.7 288.0,32.7 290.4,31.6 292.8,33.1 295.2,32.1 297.6,27.4 300.0,23.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -1113,8 +1130,8 @@
           <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
             <span class="l-en">Paid to hold: -1.4%/yr</span><span class="l-zh">持有有息：-1.4%/年</span>
             <div class="tip-pop">
-              <div class="l-en">Interest-rate edge (carry): -1.38% annualised. Carry/vol: -0.3.</div>
-              <div class="l-zh">利差优势（套息）：-1.38%年化。套息/波动：-0.3。</div>
+              <div class="l-en">Interest-rate edge (carry): -1.38% annualised. Carry/vol: -0.29.</div>
+              <div class="l-zh">利差优势（套息）：-1.38%年化。套息/波动：-0.29。</div>
             </div>
           </span>
         
@@ -1177,8 +1194,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Trader crowding: for. Pull on the score: -0.11.</div>
-          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：-0.11。</div>
+          <div class="l-en">Trader crowding: for. Pull on the score: -0.12.</div>
+          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：-0.12。</div>
         </div>
       </div>
       
@@ -1199,19 +1216,6 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Its own trend: against. Pull on the score: +0.04.</div>
-          <div class="l-zh">自身趋势：利空。对评分的拉动：+0.04。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
@@ -1225,12 +1229,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
-        <div class="fc-dir against">○</div>
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: against. Pull on the score: -0.02.</div>
-          <div class="l-zh">形态结构：利空。对评分的拉动：-0.02。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.02.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.02。</div>
         </div>
       </div>
       
@@ -1242,8 +1246,34 @@
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Long-rate gap: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">长端利差：利空。对评分的拉动：-0.01。</div>
+          <div class="l-en">Long-rate gap: against. Pull on the score: -0.02.</div>
+          <div class="l-zh">长端利差：利空。对评分的拉动：-0.02。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Its own trend: flat/neutral. Pull on the score: +0.02.</div>
+          <div class="l-zh">自身趋势：中性。对评分的拉动：+0.02。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Chart structure: against. Pull on the score: -0.01.</div>
+          <div class="l-zh">形态结构：利空。对评分的拉动：-0.01。</div>
         </div>
       </div>
       
@@ -1255,21 +1285,8 @@
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.00.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.00。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: +0.00.</div>
-          <div class="l-zh">突发冲击：中性。对评分的拉动：+0.00。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -1289,8 +1306,8 @@
           <div class="pair-nick"><em><span class="l-en">UK rates and fiscal mood</span><span class="l-zh">英国利率与财政情绪</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="GBPUSD=X" data-mkt="fx">1.3367</div>
-          <div class="chg dn">-0.2% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="GBPUSD=X" data-mkt="fx">1.3487</div>
+          <div class="chg up">+1.0% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -1303,8 +1320,8 @@
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean 2 of ±100, confidence 58% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向2（±100范围），信心58% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean 4 of ±100, confidence 62% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向4（±100范围），信心62% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -1315,8 +1332,8 @@
       
       
       
-      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,2.0 2.4,6.4 4.8,11.2 7.2,13.6 9.6,8.6 12.0,11.1 14.4,11.0 16.8,6.8 19.2,11.5 21.6,17.3 24.0,17.1 26.4,21.0 28.8,19.9 31.2,20.8 33.6,24.7 36.0,16.1 38.4,16.5 40.8,19.1 43.2,21.1 45.6,28.4 48.0,23.7 50.4,20.6 52.8,27.2 55.2,16.0 57.6,22.6 60.0,16.1 62.4,16.7 64.8,20.3 67.2,22.3 69.6,29.0 72.0,33.6 74.4,28.7 76.8,24.6 79.2,29.6 81.6,32.6 84.0,29.3 86.4,17.7 88.8,18.2 91.2,15.7 93.6,18.2 96.0,9.8 98.4,5.6 100.8,5.7 103.2,9.0 105.6,11.9 108.0,8.7 110.4,10.2 112.8,10.8 115.2,13.2 117.6,9.8 120.0,8.2 122.4,9.2 124.8,11.7 127.2,3.7 129.6,5.2 132.0,8.7 134.4,6.1 136.8,4.5 139.2,7.0 141.6,4.3 144.0,3.6 146.4,8.3 148.8,9.0 151.2,18.4 153.6,24.2 156.0,15.6 158.4,18.1 160.8,15.4 163.2,15.5 165.6,12.1 168.0,11.1 170.4,14.0 172.8,16.7 175.2,14.7 177.6,14.2 180.0,13.6 182.4,14.0 184.8,15.9 187.2,15.9 189.6,22.3 192.0,22.4 194.4,19.7 196.8,20.4 199.2,16.8 201.6,14.2 204.0,14.4 206.4,16.7 208.8,16.0 211.2,24.7 213.6,31.5 216.0,29.1 218.4,29.1 220.8,31.1 223.2,28.4 225.6,31.7 228.0,34.0 230.4,32.5 232.8,31.9 235.2,27.9 237.6,28.2 240.0,26.2 242.4,22.1 244.8,21.3 247.2,21.1 249.6,17.9 252.0,21.3 254.4,18.1 256.8,16.7 259.2,17.7 261.6,18.7 264.0,21.4 266.4,18.0 268.8,8.0 271.2,12.3 273.6,14.2 276.0,14.6 278.4,15.6 280.8,19.2 283.2,19.5 285.6,23.9 288.0,23.3 290.4,23.3 292.8,21.2 295.2,25.4 297.6,25.6 300.0,20.1" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
+        <polyline points="0.0,4.9 2.4,10.0 4.8,12.5 7.2,7.2 9.6,9.9 12.0,9.8 14.4,5.4 16.8,10.3 19.2,16.5 21.6,16.2 24.0,20.3 26.4,19.2 28.8,20.1 31.2,24.2 33.6,15.1 36.0,15.6 38.4,18.3 40.8,20.4 43.2,28.1 45.6,23.2 48.0,19.9 50.4,26.8 52.8,15.1 55.2,21.9 57.6,15.2 60.0,15.8 62.4,19.6 64.8,21.7 67.2,28.8 69.6,33.5 72.0,28.4 74.4,24.1 76.8,29.3 79.2,32.6 81.6,29.1 84.0,16.8 86.4,17.4 88.8,14.8 91.2,17.4 93.6,8.5 96.0,4.1 98.4,4.3 100.8,7.7 103.2,10.8 105.6,7.4 108.0,8.9 110.4,9.6 112.8,12.1 115.2,8.5 117.6,6.9 120.0,7.9 122.4,10.5 124.8,2.1 127.2,3.7 129.6,7.4 132.0,4.6 134.4,2.9 136.8,5.6 139.2,2.7 141.6,2.0 144.0,6.9 146.4,7.7 148.8,17.6 151.2,23.6 153.6,14.6 156.0,17.2 158.4,14.5 160.8,14.6 163.2,11.0 165.6,9.9 168.0,12.9 170.4,15.7 172.8,13.7 175.2,13.2 177.6,12.6 180.0,13.0 182.4,15.0 184.8,15.0 187.2,21.7 189.6,21.8 192.0,19.0 194.4,19.7 196.8,15.9 199.2,13.2 201.6,13.3 204.0,15.8 206.4,15.0 208.8,24.2 211.2,31.4 213.6,28.8 216.0,28.8 218.4,31.0 220.8,28.1 223.2,31.6 225.6,34.0 228.0,32.4 230.4,31.8 232.8,27.6 235.2,27.9 237.6,25.8 240.0,21.4 242.4,20.6 244.8,20.4 247.2,17.1 249.6,20.7 252.0,17.2 254.4,15.8 256.8,16.8 259.2,17.9 261.6,20.8 264.0,17.2 266.4,6.6 268.8,11.2 271.2,13.1 273.6,13.6 276.0,14.6 278.4,18.5 280.8,18.8 283.2,23.3 285.6,22.8 288.0,22.8 290.4,20.5 292.8,25.0 295.2,25.2 297.6,19.3 300.0,10.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -1353,10 +1370,10 @@
           
           
           <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Avoid</span><span class="l-zh">回避</span>
+            <span class="l-en">Follow the trend</span><span class="l-zh">顺势</span>
             <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: AVOID — Downtrend confirmed across timeframes. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：回避 — 各周期确认下行。仅为技术择时叠加，非经收益验证。</div>
+              <div class="l-en">Multi-timeframe grade: TREND-FOLLOW — Aligned uptrend across timeframes. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：顺势 — 各周期一致向上。仅为技术择时叠加，非经收益验证。</div>
             </div>
           </span>
         
@@ -1380,8 +1397,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Trader crowding: for. Pull on the score: +0.04.</div>
-          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：+0.04。</div>
+          <div class="l-en">Trader crowding: for. Pull on the score: +0.06.</div>
+          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：+0.06。</div>
         </div>
       </div>
       
@@ -1393,8 +1410,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: -0.04.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.04。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: -0.06.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.06。</div>
         </div>
       </div>
       
@@ -1402,12 +1419,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir flat">−</div>
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: flat/neutral. Pull on the score: +0.02.</div>
-          <div class="l-zh">自身趋势：中性。对评分的拉动：+0.02。</div>
+          <div class="l-en">Chart structure: for. Pull on the score: +0.02.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：+0.02。</div>
         </div>
       </div>
       
@@ -1428,12 +1445,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: +0.01.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：+0.01。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -1458,8 +1475,8 @@
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.01.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.01。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -1467,12 +1484,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir against">○</div>
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：-0.01。</div>
+          <div class="l-en">Its own trend: flat/neutral. Pull on the score: -0.00.</div>
+          <div class="l-zh">自身趋势：中性。对评分的拉动：-0.00。</div>
         </div>
       </div>
       
@@ -1481,11 +1498,11 @@
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
-        <div class="fc-dir against">○</div>
+        <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Long-rate gap: against. Pull on the score: -0.00.</div>
-          <div class="l-zh">长端利差：利空。对评分的拉动：-0.00。</div>
+          <div class="l-en">Long-rate gap: flat/neutral. Pull on the score: -0.00.</div>
+          <div class="l-zh">长端利差：中性。对评分的拉动：-0.00。</div>
         </div>
       </div>
       
@@ -1515,8 +1532,8 @@
           <div class="pair-nick"><em><span class="l-en">The China-growth barometer</span><span class="l-zh">中国增长晴雨表</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="AUDUSD=X" data-mkt="fx">0.6961</div>
-          <div class="chg up">+0.6% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="AUDUSD=X" data-mkt="fx">0.7025</div>
+          <div class="chg up">+1.3% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -1529,8 +1546,8 @@
         <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -37 of ±100, confidence 82% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-37（±100范围），信心82% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -32 of ±100, confidence 76% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-32（±100范围），信心76% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -1542,7 +1559,7 @@
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,13.2 2.4,17.2 4.8,17.2 7.2,12.5 9.6,14.0 12.0,17.4 14.4,13.7 16.8,18.8 19.2,16.0 21.6,21.1 24.0,24.6 26.4,16.6 28.8,12.5 31.2,11.8 33.6,16.1 36.0,21.5 38.4,16.6 40.8,13.4 43.2,19.6 45.6,15.6 48.0,21.3 50.4,21.5 52.8,22.2 55.2,26.4 57.6,30.8 60.0,33.6 62.4,34.0 64.8,28.2 67.2,27.9 69.6,28.9 72.0,30.9 74.4,28.4 76.8,15.9 79.2,18.9 81.6,16.0 84.0,20.4 86.4,14.2 88.8,11.8 91.2,8.2 93.6,9.5 96.0,11.4 98.4,8.3 100.8,9.7 103.2,9.6 105.6,11.8 108.0,10.7 110.4,7.0 112.8,7.3 115.2,11.7 117.6,6.2 120.0,5.3 122.4,8.8 124.8,6.0 127.2,3.6 129.6,5.6 132.0,3.4 134.4,2.7 136.8,3.3 139.2,2.0 141.6,5.2 144.0,11.8 146.4,8.4 148.8,13.6 151.2,10.2 153.6,10.3 156.0,9.6 158.4,8.6 160.8,8.6 163.2,11.5 165.6,9.1 168.0,7.8 170.4,9.1 172.8,8.3 175.2,11.4 177.6,11.6 180.0,18.5 182.4,18.8 184.8,20.1 187.2,22.4 189.6,18.2 192.0,18.1 194.4,15.8 196.8,16.1 199.2,16.2 201.6,16.8 204.0,20.5 206.4,20.9 208.8,20.7 211.2,20.7 213.6,21.7 216.0,22.4 218.4,28.5 220.8,29.8 223.2,29.7 225.6,29.7 228.0,29.7 230.4,30.1 232.8,31.1 235.2,28.8 237.6,30.4 240.0,28.5 242.4,26.4 244.8,26.9 247.2,25.4 249.6,28.0 252.0,26.9 254.4,26.3 256.8,25.5 259.2,25.5 261.6,26.5 264.0,28.3 266.4,23.8 268.8,21.3 271.2,22.0 273.6,23.1 276.0,23.6 278.4,21.9 280.8,21.9 283.2,22.8 285.6,24.5 288.0,23.3 290.4,23.3 292.8,22.4 295.2,22.9 297.6,23.9 300.0,25.0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,17.2 2.4,17.2 4.8,12.5 7.2,14.0 9.6,17.4 12.0,13.7 14.4,18.8 16.8,16.0 19.2,21.1 21.6,24.6 24.0,16.6 26.4,12.5 28.8,11.8 31.2,16.1 33.6,21.5 36.0,16.6 38.4,13.4 40.8,19.6 43.2,15.6 45.6,21.3 48.0,21.5 50.4,22.2 52.8,26.4 55.2,30.8 57.6,33.6 60.0,34.0 62.4,28.2 64.8,27.9 67.2,28.9 69.6,30.9 72.0,28.4 74.4,15.9 76.8,18.9 79.2,16.0 81.6,20.4 84.0,14.2 86.4,11.8 88.8,8.2 91.2,9.5 93.6,11.4 96.0,8.3 98.4,9.7 100.8,9.6 103.2,11.8 105.6,10.7 108.0,7.0 110.4,7.3 112.8,11.7 115.2,6.2 117.6,5.3 120.0,8.8 122.4,6.0 124.8,3.6 127.2,5.6 129.6,3.4 132.0,2.7 134.4,3.3 136.8,2.0 139.2,5.2 141.6,11.8 144.0,8.4 146.4,13.6 148.8,10.2 151.2,10.3 153.6,9.6 156.0,8.6 158.4,8.6 160.8,11.5 163.2,9.1 165.6,7.8 168.0,9.1 170.4,8.3 172.8,11.4 175.2,11.6 177.6,18.5 180.0,18.8 182.4,20.1 184.8,22.4 187.2,18.2 189.6,18.1 192.0,15.8 194.4,16.1 196.8,16.2 199.2,16.8 201.6,20.5 204.0,20.9 206.4,20.7 208.8,20.7 211.2,21.7 213.6,22.4 216.0,28.5 218.4,29.8 220.8,29.7 223.2,29.7 225.6,29.7 228.0,30.1 230.4,31.1 232.8,28.8 235.2,30.4 237.6,28.5 240.0,26.4 242.4,26.9 244.8,25.4 247.2,28.0 249.6,26.9 252.0,26.3 254.4,25.5 256.8,25.5 259.2,26.5 261.6,28.3 264.0,23.8 266.4,21.3 268.8,22.0 271.2,23.1 273.6,23.6 276.0,21.9 278.4,21.9 280.8,22.8 283.2,24.5 285.6,23.3 288.0,23.3 290.4,22.4 292.8,22.9 295.2,23.9 297.6,25.1 300.0,20.0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -1619,8 +1636,8 @@
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Cheap or rich: against. Pull on the score: -0.17.</div>
-          <div class="l-zh">估值高低：利空。对评分的拉动：-0.17。</div>
+          <div class="l-en">Cheap or rich: against. Pull on the score: -0.16.</div>
+          <div class="l-zh">估值高低：利空。对评分的拉动：-0.16。</div>
         </div>
       </div>
       
@@ -1645,8 +1662,21 @@
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Long-rate gap: against. Pull on the score: -0.04.</div>
-          <div class="l-zh">长端利差：利空。对评分的拉动：-0.04。</div>
+          <div class="l-en">Long-rate gap: against. Pull on the score: -0.05.</div>
+          <div class="l-zh">长端利差：利空。对评分的拉动：-0.05。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Chart structure: for. Pull on the score: +0.03.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：+0.03。</div>
         </div>
       </div>
       
@@ -1680,25 +1710,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: +0.01.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：+0.01。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：-0.01。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -1710,8 +1727,8 @@
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.01.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.01。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -1731,8 +1748,8 @@
           <div class="pair-nick"><em><span class="l-en">The oil currency</span><span class="l-zh">石油货币</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDCAD=X" data-mkt="fx">1.4037</div>
-          <div class="chg dn">-1.2% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDCAD=X" data-mkt="fx">1.4017</div>
+          <div class="chg dn">-1.0% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -1745,8 +1762,8 @@
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean 7 of ±100, confidence 58% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向7（±100范围），信心58% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean 2 of ±100, confidence 52% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向2（±100范围），信心52% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -1758,7 +1775,7 @@
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,30.6 2.4,28.4 4.8,28.1 7.2,29.3 9.6,29.3 12.0,29.7 14.4,29.5 16.8,29.4 19.2,30.9 21.6,29.6 24.0,32.9 26.4,33.6 28.8,33.8 31.2,32.9 33.6,31.4 36.0,27.6 38.4,28.9 40.8,28.6 43.2,26.7 45.6,26.4 48.0,27.6 50.4,26.6 52.8,25.3 55.2,22.5 57.6,20.7 60.0,18.4 62.4,17.0 64.8,18.2 67.2,19.5 69.6,17.5 72.0,16.1 74.4,17.8 76.8,21.2 79.2,20.8 81.6,22.1 84.0,19.7 86.4,24.0 88.8,24.9 91.2,26.6 93.6,28.1 96.0,27.9 98.4,30.9 100.8,30.2 103.2,29.6 105.6,28.2 108.0,29.3 110.4,32.0 112.8,29.1 115.2,29.5 117.6,34.0 120.0,33.6 122.4,32.0 124.8,32.8 127.2,31.2 129.6,30.0 132.0,29.0 134.4,29.2 136.8,28.3 139.2,27.9 141.6,27.0 144.0,25.1 146.4,26.2 148.8,25.8 151.2,25.8 153.6,24.4 156.0,23.1 158.4,23.0 160.8,22.9 163.2,21.1 165.6,24.1 168.0,23.4 170.4,21.3 172.8,21.1 175.2,18.7 177.6,18.1 180.0,16.2 182.4,15.6 184.8,15.7 187.2,16.1 189.6,14.8 192.0,14.0 194.4,15.7 196.8,15.3 199.2,14.0 201.6,13.7 204.0,8.6 206.4,6.6 208.8,6.1 211.2,6.2 213.6,5.0 216.0,5.7 218.4,3.2 220.8,2.0 223.2,3.7 225.6,4.0 228.0,4.8 230.4,4.2 232.8,3.3 235.2,3.5 237.6,2.9 240.0,4.2 242.4,3.8 244.8,3.5 247.2,3.3 249.6,3.5 252.0,5.3 254.4,5.6 256.8,6.0 259.2,6.0 261.6,5.5 264.0,6.2 266.4,11.0 268.8,11.7 271.2,11.7 273.6,12.5 276.0,12.5 278.4,10.0 280.8,8.4 283.2,9.3 285.6,9.3 288.0,9.0 290.4,9.0 292.8,9.3 295.2,7.4 297.6,8.3 300.0,11.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,28.1 2.4,29.3 4.8,29.3 7.2,29.7 9.6,29.5 12.0,29.4 14.4,30.9 16.8,29.6 19.2,32.9 21.6,33.6 24.0,33.8 26.4,32.9 28.8,31.4 31.2,27.6 33.6,28.9 36.0,28.6 38.4,26.7 40.8,26.4 43.2,27.6 45.6,26.6 48.0,25.3 50.4,22.5 52.8,20.7 55.2,18.4 57.6,17.0 60.0,18.2 62.4,19.5 64.8,17.5 67.2,16.1 69.6,17.8 72.0,21.2 74.4,20.8 76.8,22.1 79.2,19.7 81.6,24.0 84.0,24.9 86.4,26.6 88.8,28.1 91.2,27.9 93.6,30.9 96.0,30.2 98.4,29.6 100.8,28.2 103.2,29.3 105.6,32.0 108.0,29.1 110.4,29.5 112.8,34.0 115.2,33.6 117.6,32.0 120.0,32.8 122.4,31.2 124.8,30.0 127.2,29.0 129.6,29.2 132.0,28.3 134.4,27.9 136.8,27.0 139.2,25.1 141.6,26.2 144.0,25.8 146.4,25.8 148.8,24.4 151.2,23.1 153.6,23.0 156.0,22.9 158.4,21.1 160.8,24.1 163.2,23.4 165.6,21.3 168.0,21.1 170.4,18.7 172.8,18.1 175.2,16.2 177.6,15.6 180.0,15.7 182.4,16.1 184.8,14.8 187.2,14.0 189.6,15.7 192.0,15.3 194.4,14.0 196.8,13.7 199.2,8.6 201.6,6.6 204.0,6.1 206.4,6.2 208.8,5.0 211.2,5.7 213.6,3.2 216.0,2.0 218.4,3.7 220.8,4.0 223.2,4.8 225.6,4.2 228.0,3.3 230.4,3.5 232.8,2.9 235.2,4.2 237.6,3.8 240.0,3.5 242.4,3.3 244.8,3.5 247.2,5.3 249.6,5.6 252.0,6.0 254.4,6.0 256.8,5.5 259.2,6.2 261.6,11.0 264.0,11.7 266.4,11.7 268.8,12.5 271.2,12.5 273.6,10.0 276.0,8.4 278.4,9.3 280.8,9.3 283.2,9.0 285.6,9.0 288.0,9.3 290.4,7.4 292.8,8.3 295.2,11.7 297.6,12.9 300.0,12.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -1781,11 +1798,453 @@
           
           
           
+          <span class="mini-chip value-fair" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">Fair</span><span class="l-zh">合理</span>
+            <div class="tip-pop">
+              <div class="l-en">Cheap or rich vs 5y REER history: -5.0% gap.</div>
+              <div class="l-zh">相对5年REER历史的估值偏离：-5.0%。</div>
+            </div>
+          </span>
+        
+        
+        
+          
+          
+          
+          <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">WAIT</span><span class="l-zh">等待</span>
+            <div class="tip-pop">
+              <div class="l-en">Multi-timeframe grade: WAIT — Mixed / transitional. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：等待 — 混合 / 过渡。仅为技术择时叠加，非经收益验证。</div>
+            </div>
+          </span>
+        
+      </div>
+      
+
+      
+      
+
+      
+      
+      <div class="factor-grid">
+      
+      
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Interest-rate edge</span><span class="l-zh">利差优势</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Interest-rate edge: against. Pull on the score: +0.11.</div>
+          <div class="l-zh">利差优势：利空。对评分的拉动：+0.11。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Trader crowding: for. Pull on the score: +0.09.</div>
+          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：+0.09。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Choppiness: for. Pull on the score: -0.08.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.08。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Chart structure: for. Pull on the score: -0.07.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：-0.07。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Sudden shocks: for. Pull on the score: -0.06.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：-0.06。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Cheap or rich: for. Pull on the score: +0.04.</div>
+          <div class="l-zh">估值高低：利多。对评分的拉动：+0.04。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Long-rate gap: against. Pull on the score: -0.02.</div>
+          <div class="l-zh">长端利差：利空。对评分的拉动：-0.02。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Its own trend: against. Pull on the score: -0.01.</div>
+          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.01。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
+        </div>
+      </div>
+      
+      </div>
+      
+
+      
+      
+    </div>
+  
+  </div>
+  
+  
+  
+  <div class="sec-head">
+    <span class="l-en">Safe havens</span><span class="l-zh">避险货币</span>
+    <span class="faint"> · 2</span>
+  </div>
+  <div class="board-grid">
+  
+    <div class="card">
+      <div class="pair-head">
+        <div>
+          <div class="pair-name"><span class="l-en">USD/JPY</span><span class="l-zh">美元/日元</span></div>
+          
+          
+          <div class="pair-nick"><em><span class="l-en">The funding currency — moves fast in panics</span><span class="l-zh">融资货币 — 恐慌时波动剧烈</span></em></div>
+        </div>
+        <div style="text-align:right">
+          <div class="quote nb-px" data-sym="USDJPY=X" data-mkt="fx">157.4</div>
+          <div class="chg dn">-2.5% <span class="faint">/ 1mo</span></div>
+        </div>
+      </div>
+
+      
+      
+      
+      
+      
+      <div style="margin:8px 0">
+        <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
+          <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
+          <div class="tip-pop">
+            <div class="l-en">Model lean -27 of ±100, confidence 82% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-27（±100范围），信心82% — 基于历史数据测算，仅作背景。</div>
+          </div>
+        </span>
+        
+      </div>
+
+      
+
+      
+      
+      
+      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
+        <polyline points="0.0,32.6 2.4,34.0 4.8,29.4 7.2,28.0 9.6,30.4 12.0,29.6 14.4,25.8 16.8,24.9 19.2,25.9 21.6,23.6 24.0,21.7 26.4,20.2 28.8,22.5 31.2,20.9 33.6,18.2 36.0,20.0 38.4,19.2 40.8,16.3 43.2,15.9 45.6,14.8 48.0,16.2 50.4,16.9 52.8,14.2 55.2,19.7 57.6,15.8 60.0,18.1 62.4,17.4 64.8,15.4 67.2,14.4 69.6,12.8 72.0,14.0 74.4,17.8 76.8,17.5 79.2,15.1 81.6,14.2 84.0,14.5 86.4,17.4 88.8,17.6 91.2,16.2 93.6,14.5 96.0,15.9 98.4,17.1 100.8,17.1 103.2,15.9 105.6,16.0 108.0,17.0 110.4,15.4 112.8,15.1 115.2,14.3 117.6,14.8 120.0,15.5 122.4,14.9 124.8,13.0 127.2,22.6 129.6,23.0 132.0,21.9 134.4,20.5 136.8,24.0 139.2,23.0 141.6,22.9 144.0,21.8 146.4,20.5 148.8,20.0 151.2,18.4 153.6,17.0 156.0,16.9 158.4,16.4 160.8,16.9 163.2,16.5 165.6,16.7 168.0,16.7 170.4,15.8 172.8,14.8 175.2,15.7 177.6,15.5 180.0,14.6 182.4,13.6 184.8,13.7 187.2,13.6 189.6,12.6 192.0,13.0 194.4,12.4 196.8,12.0 199.2,13.2 201.6,13.0 204.0,13.9 206.4,13.7 208.8,12.9 211.2,12.3 213.6,11.7 216.0,9.7 218.4,9.7 220.8,9.7 223.2,9.3 225.6,8.9 228.0,8.8 230.4,8.3 232.8,8.1 235.2,8.5 237.6,8.4 240.0,8.2 242.4,7.8 244.8,5.7 247.2,6.0 249.6,9.2 252.0,9.2 254.4,7.3 256.8,6.5 259.2,6.0 261.6,6.5 264.0,7.9 266.4,6.3 268.8,7.0 271.2,7.4 273.6,6.4 276.0,6.0 278.4,6.1 280.8,4.0 283.2,4.3 285.6,2.1 288.0,2.8 290.4,2.3 292.8,2.0 295.2,3.7 297.6,13.0 300.0,21.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      
+
+      
+      
+      <div class="chip-row">
+        
+        
+          
+          <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">Paid to hold: -2.8%/yr</span><span class="l-zh">持有有息：-2.8%/年</span>
+            <div class="tip-pop">
+              <div class="l-en">Interest-rate edge (carry): -2.79% annualised. Carry/vol: -0.44.</div>
+              <div class="l-zh">利差优势（套息）：-2.79%年化。套息/波动：-0.44。</div>
+            </div>
+          </span>
+        
+        
+        
+          
+          
+          
           <span class="mini-chip value-cheap" tabindex="0" data-tip-en="." data-tip-zh=".">
             <span class="l-en">Cheap vs history</span><span class="l-zh">相对历史偏低</span>
             <div class="tip-pop">
-              <div class="l-en">Cheap or rich vs 5y REER history: -5.1% gap.</div>
-              <div class="l-zh">相对5年REER历史的估值偏离：-5.1%。</div>
+              <div class="l-en">Cheap or rich vs 5y REER history: -13.4% gap.</div>
+              <div class="l-zh">相对5年REER历史的估值偏离：-13.4%。</div>
+            </div>
+          </span>
+        
+        
+        
+          
+          
+          
+          <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">Caution</span><span class="l-zh">谨慎</span>
+            <div class="tip-pop">
+              <div class="l-en">Multi-timeframe grade: CAUTION — Unconfirmed turn within a bearish bigger picture. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：谨慎 — 偏空大格局内的未确认转向。仅为技术择时叠加，非经收益验证。</div>
+            </div>
+          </span>
+        
+      </div>
+      
+
+      
+      
+
+      
+      
+      <div class="factor-grid">
+      
+      
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Its own trend: against. Pull on the score: -0.15.</div>
+          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.15。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Choppiness: for. Pull on the score: -0.08.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.08。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.05.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.05。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Interest-rate edge</span><span class="l-zh">利差优势</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Interest-rate edge: against. Pull on the score: -0.05.</div>
+          <div class="l-zh">利差优势：利空。对评分的拉动：-0.05。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
+        <div class="fc-dir for">●</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Trader crowding: for. Pull on the score: -0.05.</div>
+          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：-0.05。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Cheap or rich: against. Pull on the score: +0.02.</div>
+          <div class="l-zh">估值高低：利空。对评分的拉动：+0.02。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Long-rate gap: against. Pull on the score: -0.01.</div>
+          <div class="l-zh">长端利差：利空。对评分的拉动：-0.01。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.01.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.01。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Chart structure: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">形态结构：中性。对评分的拉动：+0.00。</div>
+        </div>
+      </div>
+      
+      </div>
+      
+
+      
+      <span class="peg-note">⚑ <span class="l-en">In the MoF intervention watch zone (~150–162); conviction capped.</span><span class="l-zh">处于财务省干预观察区（约150–162）；信心受限。</span></span>
+    </div>
+  
+    <div class="card">
+      <div class="pair-head">
+        <div>
+          <div class="pair-name"><span class="l-en">USD/CHF</span><span class="l-zh">美元/瑞郎</span></div>
+          
+          
+          <div class="pair-nick"><em><span class="l-en">The quiet haven</span><span class="l-zh">低调避险</span></em></div>
+        </div>
+        <div style="text-align:right">
+          <div class="quote nb-px" data-sym="USDCHF=X" data-mkt="fx">0.8074</div>
+          <div class="chg up">+0.3% <span class="faint">/ 1mo</span></div>
+        </div>
+      </div>
+
+      
+      
+      
+      
+      
+      <div style="margin:8px 0">
+        <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
+          <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
+          <div class="tip-pop">
+            <div class="l-en">Model lean 15 of ±100, confidence 67% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向15（±100范围），信心67% — 基于历史数据测算，仅作背景。</div>
+          </div>
+        </span>
+        
+      </div>
+
+      
+
+      
+      
+      
+      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
+        <polyline points="0.0,33.6 2.4,32.3 4.8,30.3 7.2,32.6 9.6,31.0 12.0,31.3 14.4,32.3 16.8,31.6 19.2,34.0 21.6,28.1 24.0,26.1 26.4,27.8 28.8,26.9 31.2,26.5 33.6,28.6 36.0,28.2 38.4,26.2 40.8,23.9 43.2,20.9 45.6,22.1 48.0,24.2 50.4,19.2 52.8,21.7 55.2,22.3 57.6,23.2 60.0,22.2 62.4,19.9 64.8,17.9 67.2,14.6 69.6,14.5 72.0,16.0 74.4,18.3 76.8,15.3 79.2,13.7 81.6,15.7 84.0,20.6 86.4,20.0 88.8,20.3 91.2,19.2 93.6,25.2 96.0,26.7 98.4,26.5 100.8,25.2 103.2,24.9 105.6,28.2 108.0,26.9 110.4,24.2 112.8,23.3 115.2,23.3 117.6,23.9 120.0,21.5 122.4,20.5 124.8,26.4 127.2,26.6 129.6,24.7 132.0,26.4 134.4,28.0 136.8,27.2 139.2,28.7 141.6,28.5 144.0,27.0 146.4,26.3 148.8,24.6 151.2,22.6 153.6,24.4 156.0,21.6 158.4,22.9 160.8,23.1 163.2,25.8 165.6,25.4 168.0,24.0 170.4,22.3 172.8,24.9 175.2,26.1 177.6,23.4 180.0,22.0 182.4,20.2 184.8,21.6 187.2,16.8 189.6,15.6 192.0,14.9 194.4,14.5 196.8,17.6 199.2,16.8 201.6,18.6 204.0,18.4 206.4,18.0 208.8,18.9 211.2,14.8 213.6,11.3 216.0,10.4 218.4,10.4 220.8,9.4 223.2,8.8 225.6,8.2 228.0,6.4 230.4,7.7 232.8,9.3 235.2,8.0 237.6,9.6 240.0,8.9 242.4,8.6 244.8,11.6 247.2,12.0 249.6,11.2 252.0,8.8 254.4,9.3 256.8,10.3 259.2,9.5 261.6,8.5 264.0,5.0 266.4,8.7 268.8,11.5 271.2,9.1 273.6,9.1 276.0,8.0 278.4,6.5 280.8,5.4 283.2,3.7 285.6,3.1 288.0,3.1 290.4,4.1 292.8,2.1 295.2,2.0 297.6,5.9 300.0,9.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+      </svg>
+      
+
+      
+      
+      <div class="chip-row">
+        
+        
+          
+          <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">Paid to hold: -3.7%/yr</span><span class="l-zh">持有有息：-3.7%/年</span>
+            <div class="tip-pop">
+              <div class="l-en">Interest-rate edge (carry): -3.67% annualised. Carry/vol: -0.62.</div>
+              <div class="l-zh">利差优势（套息）：-3.67%年化。套息/波动：-0.62。</div>
+            </div>
+          </span>
+        
+        
+        
+          
+          
+          
+          <span class="mini-chip value-fair" tabindex="0" data-tip-en="." data-tip-zh=".">
+            <span class="l-en">Fair</span><span class="l-zh">合理</span>
+            <div class="tip-pop">
+              <div class="l-en">Cheap or rich vs 5y REER history: +1.6% gap.</div>
+              <div class="l-zh">相对5年REER历史的估值偏离：+1.6%。</div>
             </div>
           </span>
         
@@ -1822,21 +2281,8 @@
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Interest-rate edge: against. Pull on the score: +0.12.</div>
-          <div class="l-zh">利差优势：利空。对评分的拉动：+0.12。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Trader crowding: for. Pull on the score: +0.10.</div>
-          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：+0.10。</div>
+          <div class="l-en">Interest-rate edge: against. Pull on the score: +0.17.</div>
+          <div class="l-zh">利差优势：利空。对评分的拉动：+0.17。</div>
         </div>
       </div>
       
@@ -1848,8 +2294,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: -0.07.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.07。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: -0.11.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.11。</div>
         </div>
       </div>
       
@@ -1858,24 +2304,11 @@
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
-        <div class="fc-dir for">●</div>
+        <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: -0.05.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：-0.05。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Cheap or rich: for. Pull on the score: +0.04.</div>
-          <div class="l-zh">估值高低：利多。对评分的拉动：+0.04。</div>
+          <div class="l-en">Chart structure: against. Pull on the score: +0.09.</div>
+          <div class="l-zh">形态结构：利空。对评分的拉动：+0.09。</div>
         </div>
       </div>
       
@@ -1884,11 +2317,11 @@
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir for">●</div>
+        <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: for. Pull on the score: -0.04.</div>
-          <div class="l-zh">突发冲击：利多。对评分的拉动：-0.04。</div>
+          <div class="l-en">Sudden shocks: against. Pull on the score: +0.03.</div>
+          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.03。</div>
         </div>
       </div>
       
@@ -1900,8 +2333,21 @@
         <div class="fc-dir against">○</div>
         <div class="tip-pop">
           
-          <div class="l-en">Long-rate gap: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">长端利差：利空。对评分的拉动：-0.01。</div>
+          <div class="l-en">Long-rate gap: against. Pull on the score: -0.02.</div>
+          <div class="l-zh">长端利差：利空。对评分的拉动：-0.02。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
+        <div class="fc-dir against">○</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Trader crowding: against. Pull on the score: -0.02.</div>
+          <div class="l-zh">持仓拥挤度：利空。对评分的拉动：-0.02。</div>
         </div>
       </div>
       
@@ -1910,11 +2356,11 @@
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
         <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir against">○</div>
+        <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.01。</div>
+          <div class="l-en">Its own trend: flat/neutral. Pull on the score: +0.01.</div>
+          <div class="l-zh">自身趋势：中性。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -1928,435 +2374,6 @@
           
           <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.00.</div>
           <div class="l-zh">风险情绪：中性。对评分的拉动：-0.00。</div>
-        </div>
-      </div>
-      
-      </div>
-      
-
-      
-      
-    </div>
-  
-  </div>
-  
-  
-  
-  <div class="sec-head">
-    <span class="l-en">Safe havens</span><span class="l-zh">避险货币</span>
-    <span class="faint"> · 2</span>
-  </div>
-  <div class="board-grid">
-  
-    <div class="card">
-      <div class="pair-head">
-        <div>
-          <div class="pair-name"><span class="l-en">USD/JPY</span><span class="l-zh">美元/日元</span></div>
-          
-          
-          <div class="pair-nick"><em><span class="l-en">The funding currency — moves fast in panics</span><span class="l-zh">融资货币 — 恐慌时波动剧烈</span></em></div>
-        </div>
-        <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDJPY=X" data-mkt="fx">163.362</div>
-          <div class="chg up">+0.5% <span class="faint">/ 1mo</span></div>
-        </div>
-      </div>
-
-      
-      
-      
-      
-      
-      <div style="margin:8px 0">
-        <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
-          <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
-          <div class="tip-pop">
-            <div class="l-en">Model lean -39 of ±100, confidence 93% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-39（±100范围），信心93% — 基于历史数据测算，仅作背景。</div>
-          </div>
-        </span>
-        
-      </div>
-
-      
-
-      
-      
-      
-      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,33.9 2.4,34.0 4.8,31.6 7.2,32.9 9.6,28.5 12.0,27.1 14.4,29.5 16.8,28.6 19.2,25.0 21.6,24.1 24.0,25.1 26.4,22.9 28.8,21.1 31.2,19.6 33.6,21.9 36.0,20.3 38.4,17.7 40.8,19.4 43.2,18.6 45.6,15.8 48.0,15.4 50.4,14.4 52.8,15.7 55.2,16.4 57.6,13.7 60.0,19.1 62.4,15.4 64.8,17.5 67.2,16.9 69.6,14.9 72.0,14.0 74.4,12.5 76.8,13.6 79.2,17.3 81.6,16.9 84.0,14.6 86.4,13.8 88.8,14.1 91.2,16.9 93.6,17.1 96.0,15.7 98.4,14.1 100.8,15.4 103.2,16.6 105.6,16.6 108.0,15.5 110.4,15.6 112.8,16.5 115.2,15.0 117.6,14.6 120.0,13.9 122.4,14.4 124.8,15.0 127.2,14.4 129.6,12.6 132.0,21.9 134.4,22.3 136.8,21.3 139.2,19.9 141.6,23.2 144.0,22.3 146.4,22.2 148.8,21.1 151.2,19.9 153.6,19.4 156.0,17.8 158.4,16.5 160.8,16.4 163.2,15.9 165.6,16.4 168.0,16.0 170.4,16.2 172.8,16.2 175.2,15.3 177.6,14.4 180.0,15.3 182.4,15.0 184.8,14.2 187.2,13.2 189.6,13.3 192.0,13.2 194.4,12.2 196.8,12.7 199.2,12.0 201.6,11.6 204.0,12.8 206.4,12.6 208.8,13.5 211.2,13.3 213.6,12.5 216.0,11.9 218.4,11.4 220.8,9.4 223.2,9.5 225.6,9.5 228.0,9.0 230.4,8.6 232.8,8.5 235.2,8.1 237.6,7.9 240.0,8.3 242.4,8.2 244.8,8.0 247.2,7.6 249.6,5.6 252.0,5.8 254.4,9.0 256.8,9.0 259.2,7.1 261.6,6.3 264.0,5.8 266.4,6.3 268.8,7.7 271.2,6.1 273.6,6.8 276.0,7.2 278.4,6.3 280.8,5.9 283.2,6.0 285.6,4.0 288.0,4.3 290.4,2.1 292.8,2.7 295.2,2.3 297.6,2.0 300.0,3.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-      </svg>
-      
-
-      
-      
-      <div class="chip-row">
-        
-        
-          
-          <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Paid to hold: -2.8%/yr</span><span class="l-zh">持有有息：-2.8%/年</span>
-            <div class="tip-pop">
-              <div class="l-en">Interest-rate edge (carry): -2.79% annualised. Carry/vol: -0.9.</div>
-              <div class="l-zh">利差优势（套息）：-2.79%年化。套息/波动：-0.9。</div>
-            </div>
-          </span>
-        
-        
-        
-          
-          
-          
-          <span class="mini-chip value-cheap" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Cheap vs history</span><span class="l-zh">相对历史偏低</span>
-            <div class="tip-pop">
-              <div class="l-en">Cheap or rich vs 5y REER history: -13.4% gap.</div>
-              <div class="l-zh">相对5年REER历史的估值偏离：-13.4%。</div>
-            </div>
-          </span>
-        
-        
-        
-          
-          
-          
-          <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Avoid</span><span class="l-zh">回避</span>
-            <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: AVOID — Downtrend confirmed across timeframes. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：回避 — 各周期确认下行。仅为技术择时叠加，非经收益验证。</div>
-            </div>
-          </span>
-        
-      </div>
-      
-
-      
-      
-
-      
-      
-      <div class="factor-grid">
-      
-      
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Its own trend: against. Pull on the score: -0.22.</div>
-          <div class="l-zh">自身趋势：利空。对评分的拉动：-0.22。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Choppiness: for. Pull on the score: -0.07.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.07。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Interest-rate edge</span><span class="l-zh">利差优势</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Interest-rate edge: against. Pull on the score: -0.05.</div>
-          <div class="l-zh">利差优势：利空。对评分的拉动：-0.05。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Trader crowding: for. Pull on the score: -0.04.</div>
-          <div class="l-zh">持仓拥挤度：利多。对评分的拉动：-0.04。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Chart structure: against. Pull on the score: -0.04.</div>
-          <div class="l-zh">形态结构：利空。对评分的拉动：-0.04。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Cheap or rich</span><span class="l-zh">估值高低</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Cheap or rich: against. Pull on the score: +0.02.</div>
-          <div class="l-zh">估值高低：利空。对评分的拉动：+0.02。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.01.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.01。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Long-rate gap: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">长端利差：利空。对评分的拉动：-0.01。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: +0.00.</div>
-          <div class="l-zh">突发冲击：中性。对评分的拉动：+0.00。</div>
-        </div>
-      </div>
-      
-      </div>
-      
-
-      
-      
-    </div>
-  
-    <div class="card">
-      <div class="pair-head">
-        <div>
-          <div class="pair-name"><span class="l-en">USD/CHF</span><span class="l-zh">美元/瑞郎</span></div>
-          
-          
-          <div class="pair-nick"><em><span class="l-en">The quiet haven</span><span class="l-zh">低调避险</span></em></div>
-        </div>
-        <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDCHF=X" data-mkt="fx">0.8137</div>
-          <div class="chg up">+1.2% <span class="faint">/ 1mo</span></div>
-        </div>
-      </div>
-
-      
-      
-      
-      
-      
-      <div style="margin:8px 0">
-        <span class="action-chip higher" tabindex="0" data-tip-en="." data-tip-zh=".">
-          <span class="l-en">Leaning higher</span><span class="l-zh">倾向走高</span>
-          <div class="tip-pop">
-            <div class="l-en">Model lean 24 of ±100, confidence 73% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向24（±100范围），信心73% — 基于历史数据测算，仅作背景。</div>
-          </div>
-        </span>
-        
-      </div>
-
-      
-
-      
-      
-      
-      <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-up">
-        <polyline points="0.0,34.0 2.4,33.6 4.8,32.3 7.2,30.3 9.6,32.6 12.0,31.0 14.4,31.3 16.8,32.3 19.2,31.6 21.6,34.0 24.0,28.1 26.4,26.1 28.8,27.8 31.2,26.9 33.6,26.5 36.0,28.6 38.4,28.2 40.8,26.2 43.2,23.9 45.6,20.9 48.0,22.1 50.4,24.2 52.8,19.2 55.2,21.7 57.6,22.3 60.0,23.2 62.4,22.2 64.8,19.9 67.2,17.9 69.6,14.6 72.0,14.5 74.4,16.0 76.8,18.3 79.2,15.3 81.6,13.7 84.0,15.7 86.4,20.6 88.8,20.0 91.2,20.3 93.6,19.2 96.0,25.2 98.4,26.7 100.8,26.5 103.2,25.2 105.6,24.9 108.0,28.2 110.4,26.9 112.8,24.2 115.2,23.3 117.6,23.3 120.0,23.9 122.4,21.5 124.8,20.5 127.2,26.4 129.6,26.6 132.0,24.7 134.4,26.4 136.8,28.0 139.2,27.2 141.6,28.7 144.0,28.5 146.4,27.0 148.8,26.3 151.2,24.6 153.6,22.6 156.0,24.4 158.4,21.6 160.8,22.9 163.2,23.1 165.6,25.8 168.0,25.4 170.4,24.0 172.8,22.3 175.2,24.9 177.6,26.1 180.0,23.4 182.4,22.0 184.8,20.2 187.2,21.6 189.6,16.8 192.0,15.6 194.4,14.9 196.8,14.5 199.2,17.6 201.6,16.8 204.0,18.6 206.4,18.4 208.8,18.0 211.2,18.9 213.6,14.8 216.0,11.3 218.4,10.4 220.8,10.4 223.2,9.4 225.6,8.8 228.0,8.2 230.4,6.4 232.8,7.7 235.2,9.3 237.6,8.0 240.0,9.6 242.4,8.9 244.8,8.6 247.2,11.6 249.6,12.0 252.0,11.2 254.4,8.8 256.8,9.3 259.2,10.3 261.6,9.5 264.0,8.5 266.4,5.0 268.8,8.7 271.2,11.5 273.6,9.1 276.0,9.1 278.4,8.0 280.8,6.5 283.2,5.4 285.6,3.7 288.0,3.1 290.4,3.1 292.8,4.1 295.2,2.1 297.6,2.0 300.0,5.7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-      </svg>
-      
-
-      
-      
-      <div class="chip-row">
-        
-        
-          
-          <span class="mini-chip carry" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Paid to hold: -3.7%/yr</span><span class="l-zh">持有有息：-3.7%/年</span>
-            <div class="tip-pop">
-              <div class="l-en">Interest-rate edge (carry): -3.67% annualised. Carry/vol: -0.64.</div>
-              <div class="l-zh">利差优势（套息）：-3.67%年化。套息/波动：-0.64。</div>
-            </div>
-          </span>
-        
-        
-        
-          
-          
-          
-          <span class="mini-chip value-fair" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Fair</span><span class="l-zh">合理</span>
-            <div class="tip-pop">
-              <div class="l-en">Cheap or rich vs 5y REER history: +1.6% gap.</div>
-              <div class="l-zh">相对5年REER历史的估值偏离：+1.6%。</div>
-            </div>
-          </span>
-        
-        
-        
-          
-          
-          
-          <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Avoid</span><span class="l-zh">回避</span>
-            <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: AVOID — Downtrend confirmed across timeframes. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：回避 — 各周期确认下行。仅为技术择时叠加，非经收益验证。</div>
-            </div>
-          </span>
-        
-      </div>
-      
-
-      
-      
-
-      
-      
-      <div class="factor-grid">
-      
-      
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Interest-rate edge</span><span class="l-zh">利差优势</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Interest-rate edge: against. Pull on the score: +0.18.</div>
-          <div class="l-zh">利差优势：利空。对评分的拉动：+0.18。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Chart structure</span><span class="l-zh">形态结构</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Chart structure: against. Pull on the score: +0.11.</div>
-          <div class="l-zh">形态结构：利空。对评分的拉动：+0.11。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
-        <div class="fc-dir for">●</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Choppiness: for. Pull on the score: -0.09.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.09。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: against. Pull on the score: +0.06.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.06。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Long-rate gap</span><span class="l-zh">长端利差</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Long-rate gap: against. Pull on the score: -0.03.</div>
-          <div class="l-zh">长端利差：利空。对评分的拉动：-0.03。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Its own trend: flat/neutral. Pull on the score: +0.02.</div>
-          <div class="l-zh">自身趋势：中性。对评分的拉动：+0.02。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Trader crowding: against. Pull on the score: -0.01.</div>
-          <div class="l-zh">持仓拥挤度：利空。对评分的拉动：-0.01。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Risk mood</span><span class="l-zh">风险情绪</span></div>
-        <div class="fc-dir flat">−</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -2399,8 +2416,8 @@
           <div class="pair-nick"><em><span class="l-en">High-carry EM bellwether</span><span class="l-zh">高息新兴市场风向标</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDMXN=X" data-mkt="fx">17.4414</div>
-          <div class="chg dn">-0.1% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDMXN=X" data-mkt="fx">17.328</div>
+          <div class="chg dn">-0.3% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -2413,8 +2430,8 @@
         <span class="action-chip lower" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">Leaning lower</span><span class="l-zh">倾向走低</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -37 of ±100, confidence 87% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-37（±100范围），信心87% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -43 of ±100, confidence 90% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-43（±100范围），信心90% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -2426,7 +2443,7 @@
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,32.1 2.4,31.9 4.8,33.4 7.2,30.6 9.6,29.1 12.0,34.0 14.4,29.1 16.8,31.5 19.2,32.2 21.6,30.8 24.0,27.3 26.4,27.7 28.8,16.5 31.2,18.8 33.6,15.5 36.0,6.6 38.4,16.4 40.8,18.9 43.2,14.2 45.6,11.5 48.0,9.9 50.4,16.1 52.8,17.0 55.2,11.2 57.6,14.4 60.0,8.3 62.4,13.0 64.8,14.7 67.2,13.2 69.6,9.0 72.0,2.0 74.4,2.1 76.8,9.9 79.2,11.8 81.6,11.1 84.0,10.0 86.4,13.5 88.8,21.3 91.2,23.3 93.6,25.6 96.0,23.8 98.4,28.5 100.8,29.2 103.2,29.5 105.6,29.4 108.0,25.6 110.4,27.5 112.8,27.2 115.2,26.6 117.6,24.3 120.0,24.3 122.4,25.5 124.8,25.2 127.2,20.9 129.6,22.9 132.0,23.3 134.4,21.1 136.8,26.7 139.2,29.2 141.6,28.5 144.0,30.4 146.4,31.1 148.8,30.0 151.2,31.9 153.6,30.0 156.0,26.5 158.4,28.7 160.8,24.7 163.2,27.7 165.6,27.9 168.0,29.1 170.4,28.1 172.8,27.9 175.2,25.2 177.6,27.6 180.0,26.5 182.4,26.2 184.8,27.9 187.2,27.0 189.6,28.5 192.0,22.8 194.4,22.7 196.8,23.1 199.2,24.1 201.6,29.5 204.0,28.3 206.4,32.3 208.8,31.9 211.2,30.5 213.6,30.7 216.0,27.9 218.4,26.1 220.8,27.5 223.2,26.4 225.6,25.9 228.0,20.1 230.4,18.0 232.8,21.4 235.2,21.7 237.6,21.5 240.0,22.6 242.4,21.9 244.8,20.0 247.2,22.4 249.6,22.9 252.0,22.4 254.4,25.3 256.8,21.0 259.2,19.6 261.6,20.5 264.0,21.7 266.4,21.1 268.8,24.2 271.2,25.7 273.6,24.6 276.0,22.2 278.4,20.5 280.8,24.3 283.2,24.7 285.6,24.7 288.0,21.3 290.4,21.9 292.8,23.6 295.2,23.5 297.6,23.6 300.0,23.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,33.4 2.4,30.6 4.8,29.1 7.2,34.0 9.6,29.1 12.0,31.5 14.4,32.2 16.8,30.8 19.2,27.3 21.6,27.7 24.0,16.5 26.4,18.8 28.8,15.5 31.2,6.6 33.6,16.4 36.0,18.9 38.4,14.2 40.8,11.5 43.2,9.9 45.6,16.1 48.0,17.0 50.4,11.2 52.8,14.4 55.2,8.3 57.6,13.0 60.0,14.7 62.4,13.2 64.8,9.0 67.2,2.0 69.6,2.1 72.0,9.9 74.4,11.8 76.8,11.1 79.2,10.0 81.6,13.5 84.0,21.3 86.4,23.3 88.8,25.6 91.2,23.8 93.6,28.5 96.0,29.2 98.4,29.5 100.8,29.4 103.2,25.6 105.6,27.5 108.0,27.2 110.4,26.6 112.8,24.3 115.2,24.3 117.6,25.5 120.0,25.2 122.4,20.9 124.8,22.9 127.2,23.3 129.6,21.1 132.0,26.7 134.4,29.2 136.8,28.5 139.2,30.4 141.6,31.1 144.0,30.0 146.4,31.9 148.8,30.0 151.2,26.5 153.6,28.7 156.0,24.7 158.4,27.7 160.8,27.9 163.2,29.1 165.6,28.1 168.0,27.9 170.4,25.2 172.8,27.6 175.2,26.5 177.6,26.2 180.0,27.9 182.4,27.0 184.8,28.5 187.2,22.8 189.6,22.7 192.0,23.1 194.4,24.1 196.8,29.5 199.2,28.3 201.6,32.3 204.0,31.9 206.4,30.5 208.8,30.7 211.2,27.9 213.6,26.1 216.0,27.5 218.4,26.4 220.8,25.9 223.2,20.1 225.6,18.0 228.0,21.4 230.4,21.7 232.8,21.5 235.2,22.6 237.6,21.9 240.0,20.0 242.4,22.4 244.8,22.9 247.2,22.4 249.6,25.3 252.0,21.0 254.4,19.6 256.8,20.5 259.2,21.7 261.6,21.1 264.0,24.2 266.4,25.7 268.8,24.6 271.2,22.2 273.6,20.5 276.0,24.3 278.4,24.7 280.8,24.7 283.2,21.3 285.6,21.9 288.0,23.6 290.4,23.5 292.8,23.6 295.2,23.5 297.6,26.5 300.0,27.0" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2443,8 +2460,8 @@
           <span class="mini-chip value-rich" tabindex="0" data-tip-en="." data-tip-zh=".">
             <span class="l-en">Rich</span><span class="l-zh">偏高</span>
             <div class="tip-pop">
-              <div class="l-en">Cheap or rich vs 5y REER history: +10.9% gap.</div>
-              <div class="l-zh">相对5年REER历史的估值偏离：+10.9%。</div>
+              <div class="l-en">Cheap or rich vs 5y REER history: +10.8% gap.</div>
+              <div class="l-zh">相对5年REER历史的估值偏离：+10.8%。</div>
             </div>
           </span>
         
@@ -2454,10 +2471,10 @@
           
           
           <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Buy the dip</span><span class="l-zh">逢低买入</span>
+            <span class="l-en">Follow the trend</span><span class="l-zh">顺势</span>
             <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: BUY-THE-DIP — Healthy pullback within an uptrend. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：逢低买入 — 上升趋势内的健康回调。仅为技术择时叠加，非经收益验证。</div>
+              <div class="l-en">Multi-timeframe grade: TREND-FOLLOW — Aligned uptrend across timeframes. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：顺势 — 各周期一致向上。仅为技术择时叠加，非经收益验证。</div>
             </div>
           </span>
         
@@ -2481,8 +2498,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: for. Pull on the score: -0.15.</div>
-          <div class="l-zh">自身趋势：利多。对评分的拉动：-0.15。</div>
+          <div class="l-en">Its own trend: for. Pull on the score: -0.16.</div>
+          <div class="l-zh">自身趋势：利多。对评分的拉动：-0.16。</div>
         </div>
       </div>
       
@@ -2507,21 +2524,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: -0.02.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：-0.02。</div>
-        </div>
-      </div>
-      
-      
-      
-      
-      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
-        <div class="fc-dir against">○</div>
-        <div class="tip-pop">
-          
-          <div class="l-en">Sudden shocks: against. Pull on the score: +0.01.</div>
-          <div class="l-zh">突发冲击：利空。对评分的拉动：+0.01。</div>
+          <div class="l-en">Chart structure: for. Pull on the score: -0.05.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：-0.05。</div>
         </div>
       </div>
       
@@ -2546,8 +2550,21 @@
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.00.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.00。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
+        </div>
+      </div>
+      
+      
+      
+      
+      <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir flat">−</div>
+        <div class="tip-pop">
+          
+          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: -0.00.</div>
+          <div class="l-zh">突发冲击：中性。对评分的拉动：-0.00。</div>
         </div>
       </div>
       
@@ -2580,8 +2597,8 @@
           <div class="pair-nick"><em><span class="l-en">Commodity-linked carry</span><span class="l-zh">商品挂钩套息</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDBRL=X" data-mkt="fx">5.1371</div>
-          <div class="chg dn">-0.6% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDBRL=X" data-mkt="fx">5.0747</div>
+          <div class="chg dn">-1.3% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -2594,8 +2611,8 @@
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean -9 of ±100, confidence 50% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向-9（±100范围），信心50% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean -9 of ±100, confidence 49% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向-9（±100范围），信心49% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         
@@ -2607,7 +2624,7 @@
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,10.2 2.4,9.2 4.8,11.1 7.2,13.6 9.6,14.0 12.0,15.4 14.4,17.5 16.8,16.6 19.2,17.1 21.6,14.0 24.0,5.9 26.4,9.5 28.8,7.0 31.2,8.5 33.6,11.4 36.0,14.6 38.4,15.5 40.8,8.4 43.2,2.0 45.6,9.2 48.0,12.3 50.4,7.1 52.8,10.3 55.2,3.3 57.6,9.3 60.0,9.3 62.4,9.0 64.8,9.1 67.2,8.9 69.6,6.9 72.0,12.3 74.4,15.2 76.8,15.1 79.2,15.0 81.6,16.4 84.0,15.5 86.4,19.3 88.8,19.7 91.2,26.5 93.6,27.3 96.0,28.1 98.4,27.5 100.8,27.9 103.2,26.4 105.6,30.5 108.0,26.3 110.4,28.1 112.8,24.6 115.2,28.5 117.6,26.9 120.0,27.3 122.4,25.6 124.8,29.2 127.2,30.6 129.6,28.1 132.0,32.4 134.4,32.0 136.8,31.1 139.2,33.5 141.6,34.0 144.0,33.8 146.4,25.0 148.8,26.6 151.2,22.3 153.6,26.5 156.0,22.5 158.4,26.0 160.8,25.6 163.2,25.0 165.6,26.1 168.0,23.5 170.4,21.4 172.8,23.0 175.2,23.9 177.6,24.0 180.0,25.3 182.4,21.1 184.8,22.3 187.2,13.5 189.6,11.5 192.0,12.5 194.4,12.4 196.8,18.3 199.2,22.2 201.6,22.2 204.0,22.3 206.4,21.2 208.8,19.2 211.2,17.7 213.6,13.2 216.0,16.2 218.4,15.6 220.8,15.5 223.2,15.1 225.6,11.9 228.0,11.2 230.4,12.2 232.8,14.0 235.2,14.0 237.6,14.0 240.0,13.2 242.4,13.7 244.8,10.2 247.2,10.1 249.6,14.3 252.0,13.0 254.4,16.0 256.8,14.0 259.2,14.5 261.6,16.8 264.0,18.8 266.4,18.8 268.8,15.7 271.2,20.3 273.6,20.0 276.0,18.3 278.4,17.3 280.8,19.0 283.2,20.3 285.6,22.2 288.0,19.6 290.4,21.2 292.8,21.2 295.2,20.7 297.6,17.6 300.0,16.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,11.1 2.4,13.6 4.8,14.0 7.2,15.4 9.6,17.5 12.0,16.6 14.4,17.1 16.8,14.0 19.2,5.9 21.6,9.5 24.0,7.0 26.4,8.5 28.8,11.4 31.2,14.6 33.6,15.5 36.0,8.4 38.4,2.0 40.8,9.2 43.2,12.3 45.6,7.1 48.0,10.3 50.4,3.3 52.8,9.3 55.2,9.3 57.6,9.0 60.0,9.1 62.4,8.9 64.8,6.9 67.2,12.3 69.6,15.2 72.0,15.1 74.4,15.0 76.8,16.4 79.2,15.5 81.6,19.3 84.0,19.7 86.4,26.5 88.8,27.3 91.2,28.1 93.6,27.5 96.0,27.9 98.4,26.4 100.8,30.5 103.2,26.3 105.6,28.1 108.0,24.6 110.4,28.5 112.8,26.9 115.2,27.3 117.6,25.6 120.0,29.2 122.4,30.6 124.8,28.1 127.2,32.4 129.6,32.0 132.0,31.1 134.4,33.5 136.8,34.0 139.2,33.8 141.6,25.0 144.0,26.6 146.4,22.3 148.8,26.5 151.2,22.5 153.6,26.0 156.0,25.6 158.4,25.0 160.8,26.1 163.2,23.5 165.6,21.4 168.0,23.0 170.4,23.9 172.8,24.0 175.2,25.3 177.6,21.1 180.0,22.3 182.4,13.5 184.8,11.5 187.2,12.5 189.6,12.4 192.0,18.3 194.4,22.2 196.8,22.2 199.2,22.3 201.6,21.2 204.0,19.2 206.4,17.7 208.8,13.2 211.2,16.2 213.6,15.6 216.0,15.5 218.4,15.1 220.8,11.9 223.2,11.2 225.6,12.2 228.0,14.0 230.4,14.0 232.8,14.0 235.2,13.2 237.6,13.7 240.0,10.2 242.4,10.1 244.8,14.3 247.2,13.0 249.6,16.0 252.0,14.0 254.4,14.5 256.8,16.8 259.2,18.8 261.6,18.8 264.0,15.7 266.4,20.3 268.8,20.0 271.2,18.3 273.6,17.3 276.0,19.0 278.4,20.3 280.8,22.2 283.2,19.6 285.6,21.2 288.0,21.2 290.4,20.7 292.8,17.6 295.2,16.5 297.6,17.3 300.0,21.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2624,8 +2641,8 @@
           <span class="mini-chip value-rich" tabindex="0" data-tip-en="." data-tip-zh=".">
             <span class="l-en">Rich</span><span class="l-zh">偏高</span>
             <div class="tip-pop">
-              <div class="l-en">Cheap or rich vs 5y REER history: +6.4% gap.</div>
-              <div class="l-zh">相对5年REER历史的估值偏离：+6.4%。</div>
+              <div class="l-en">Cheap or rich vs 5y REER history: +6.3% gap.</div>
+              <div class="l-zh">相对5年REER历史的估值偏离：+6.3%。</div>
             </div>
           </span>
         
@@ -2635,10 +2652,10 @@
           
           
           <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Caution</span><span class="l-zh">谨慎</span>
+            <span class="l-en">DON&#39;T CHASE</span><span class="l-zh">勿追高</span>
             <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: CAUTION — Unconfirmed turn within a bearish bigger picture. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：谨慎 — 偏空大格局内的未确认转向。仅为技术择时叠加，非经收益验证。</div>
+              <div class="l-en">Multi-timeframe grade: DON&#39;T CHASE — Rally intact — the bigger picture is against it. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：勿追高 — 反弹未破，但大格局不利。仅为技术择时叠加，非经收益验证。</div>
             </div>
           </span>
         
@@ -2662,8 +2679,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: -0.17.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：-0.17。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: -0.18.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：-0.18。</div>
         </div>
       </div>
       
@@ -2675,8 +2692,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: for. Pull on the score: +0.08.</div>
-          <div class="l-zh">自身趋势：利多。对评分的拉动：+0.08。</div>
+          <div class="l-en">Its own trend: for. Pull on the score: +0.09.</div>
+          <div class="l-zh">自身趋势：利多。对评分的拉动：+0.09。</div>
         </div>
       </div>
       
@@ -2688,8 +2705,8 @@
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Chart structure: for. Pull on the score: +0.02.</div>
-          <div class="l-zh">形态结构：利多。对评分的拉动：+0.02。</div>
+          <div class="l-en">Chart structure: for. Pull on the score: +0.03.</div>
+          <div class="l-zh">形态结构：利多。对评分的拉动：+0.03。</div>
         </div>
       </div>
       
@@ -2710,12 +2727,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
-        <div class="fc-dir flat">−</div>
+        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Trader crowding: flat/neutral. Pull on the score: +0.02.</div>
-          <div class="l-zh">持仓拥挤度：中性。对评分的拉动：+0.02。</div>
+          <div class="l-en">Sudden shocks: for. Pull on the score: +0.01.</div>
+          <div class="l-zh">突发冲击：利多。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -2727,8 +2744,8 @@
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.00.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.00。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.00.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.00。</div>
         </div>
       </div>
       
@@ -2736,12 +2753,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Sudden shocks</span><span class="l-zh">突发冲击</span></div>
+        <div class="fc-label"><span class="l-en">Trader crowding</span><span class="l-zh">持仓拥挤度</span></div>
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Sudden shocks: flat/neutral. Pull on the score: +0.00.</div>
-          <div class="l-zh">突发冲击：中性。对评分的拉动：+0.00。</div>
+          <div class="l-en">Trader crowding: flat/neutral. Pull on the score: -0.00.</div>
+          <div class="l-zh">持仓拥挤度：中性。对评分的拉动：-0.00。</div>
         </div>
       </div>
       
@@ -2761,8 +2778,8 @@
           <div class="pair-nick"><em><span class="l-en">Beijing-managed — watched for stress</span><span class="l-zh">北京管理 — 关注压力信号</span></em></div>
         </div>
         <div style="text-align:right">
-          <div class="quote nb-px" data-sym="USDCNH=X" data-mkt="fx">6.7395</div>
-          <div class="chg dn">-0.4% <span class="faint">/ 1mo</span></div>
+          <div class="quote nb-px" data-sym="USDCNH=X" data-mkt="fx">6.732</div>
+          <div class="chg dn">-0.3% <span class="faint">/ 1mo</span></div>
         </div>
       </div>
 
@@ -2775,8 +2792,8 @@
         <span class="action-chip flat" tabindex="0" data-tip-en="." data-tip-zh=".">
           <span class="l-en">No clear lean</span><span class="l-zh">无明显倾向</span>
           <div class="tip-pop">
-            <div class="l-en">Model lean 15 of ±100, confidence 51% — measured on past data, shown for context.</div>
-            <div class="l-zh">模型倾向15（±100范围），信心51% — 基于历史数据测算，仅作背景。</div>
+            <div class="l-en">Model lean 15 of ±100, confidence 53% — measured on past data, shown for context.</div>
+            <div class="l-zh">模型倾向15（±100范围），信心53% — 基于历史数据测算，仅作背景。</div>
           </div>
         </span>
         <span class="less-tested"><span class="l-en">less tested</span><span class="l-zh">检验不足</span></span>
@@ -2788,7 +2805,7 @@
       
       
       <svg viewBox="0 0 300 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="width:100%;display:block;margin:6px 0" class="sp-dn">
-        <polyline points="0.0,2.7 2.4,2.5 4.8,2.2 7.2,2.8 9.6,3.5 12.0,2.2 14.4,2.1 16.8,2.0 19.2,2.8 21.6,2.7 24.0,3.7 26.4,3.3 28.8,5.5 31.2,6.5 33.6,5.7 36.0,6.5 38.4,6.2 40.8,6.4 43.2,7.5 45.6,8.3 48.0,8.8 50.4,9.1 52.8,9.6 55.2,11.0 57.6,11.5 60.0,9.9 62.4,10.3 64.8,9.3 67.2,10.0 69.6,10.5 72.0,11.5 74.4,10.7 76.8,11.0 79.2,11.6 81.6,11.2 84.0,12.9 86.4,12.7 88.8,12.1 91.2,13.3 93.6,13.3 96.0,14.1 98.4,13.8 100.8,13.3 103.2,12.4 105.6,14.0 108.0,14.5 110.4,13.9 112.8,14.3 115.2,14.7 117.6,16.0 120.0,16.2 122.4,17.0 124.8,17.5 127.2,17.9 129.6,19.5 132.0,18.7 134.4,18.1 136.8,18.2 139.2,19.1 141.6,20.0 144.0,22.4 146.4,23.1 148.8,21.5 151.2,18.5 153.6,16.5 156.0,18.5 158.4,15.1 160.8,16.9 163.2,16.5 165.6,19.9 168.0,19.5 170.4,18.9 172.8,16.8 175.2,27.3 177.6,26.0 180.0,27.4 182.4,27.2 184.8,27.6 187.2,28.5 189.6,29.0 192.0,29.5 194.4,30.1 196.8,30.1 199.2,30.1 201.6,28.6 204.0,28.8 206.4,27.4 208.8,28.0 211.2,28.6 213.6,28.4 216.0,29.3 218.4,29.8 220.8,34.0 223.2,33.5 225.6,33.6 228.0,33.3 230.4,30.6 232.8,31.4 235.2,31.4 237.6,31.7 240.0,29.5 242.4,28.8 244.8,29.0 247.2,29.3 249.6,29.5 252.0,29.8 254.4,30.5 256.8,30.8 259.2,29.6 261.6,29.4 264.0,29.2 266.4,30.6 268.8,30.8 271.2,30.8 273.6,31.9 276.0,30.9 278.4,30.6 280.8,31.0 283.2,31.5 285.6,31.5 288.0,31.0 290.4,30.5 292.8,31.0 295.2,31.6 297.6,31.0 300.0,31.9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <polyline points="0.0,2.2 2.4,2.8 4.8,3.5 7.2,2.2 9.6,2.1 12.0,2.0 14.4,2.8 16.8,2.7 19.2,3.7 21.6,3.3 24.0,5.5 26.4,6.5 28.8,5.7 31.2,6.5 33.6,6.2 36.0,6.4 38.4,7.5 40.8,8.3 43.2,8.8 45.6,9.1 48.0,9.6 50.4,11.0 52.8,11.5 55.2,9.9 57.6,10.3 60.0,9.3 62.4,10.0 64.8,10.5 67.2,11.5 69.6,10.7 72.0,11.0 74.4,11.6 76.8,11.2 79.2,12.9 81.6,12.7 84.0,12.1 86.4,13.3 88.8,13.3 91.2,14.1 93.6,13.8 96.0,13.3 98.4,12.4 100.8,14.0 103.2,14.5 105.6,13.9 108.0,14.3 110.4,14.7 112.8,16.0 115.2,16.2 117.6,17.0 120.0,17.5 122.4,17.9 124.8,19.5 127.2,18.7 129.6,18.1 132.0,18.2 134.4,19.1 136.8,20.0 139.2,22.4 141.6,23.1 144.0,21.5 146.4,18.5 148.8,16.5 151.2,18.5 153.6,15.1 156.0,16.9 158.4,16.5 160.8,19.9 163.2,19.5 165.6,18.9 168.0,16.8 170.4,27.3 172.8,26.0 175.2,27.4 177.6,27.2 180.0,27.6 182.4,28.5 184.8,29.0 187.2,29.5 189.6,30.1 192.0,30.1 194.4,30.1 196.8,28.6 199.2,28.8 201.6,27.4 204.0,28.0 206.4,28.6 208.8,28.4 211.2,29.3 213.6,29.8 216.0,34.0 218.4,33.5 220.8,33.6 223.2,33.3 225.6,30.6 228.0,31.4 230.4,31.4 232.8,31.7 235.2,29.5 237.6,28.8 240.0,29.0 242.4,29.3 244.8,29.5 247.2,29.8 249.6,30.5 252.0,30.8 254.4,29.6 256.8,29.4 259.2,29.2 261.6,30.6 264.0,30.8 266.4,30.8 268.8,31.9 271.2,30.9 273.6,30.6 276.0,31.0 278.4,31.5 280.8,31.5 283.2,31.0 285.6,30.5 288.0,31.0 290.4,31.6 292.8,31.0 295.2,31.9 297.6,33.0 300.0,32.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
       </svg>
       
 
@@ -2816,10 +2833,10 @@
           
           
           <span class="mini-chip mtf" tabindex="0" data-tip-en="." data-tip-zh=".">
-            <span class="l-en">Avoid</span><span class="l-zh">回避</span>
+            <span class="l-en">Caution</span><span class="l-zh">谨慎</span>
             <div class="tip-pop">
-              <div class="l-en">Multi-timeframe grade: AVOID — Downtrend confirmed across timeframes. Technical timing overlay only; not a return-checked signal.</div>
-              <div class="l-zh">多周期评级：回避 — 各周期确认下行。仅为技术择时叠加，非经收益验证。</div>
+              <div class="l-en">Multi-timeframe grade: CAUTION — Unconfirmed turn within a bearish bigger picture. Technical timing overlay only; not a return-checked signal.</div>
+              <div class="l-zh">多周期评级：谨慎 — 偏空大格局内的未确认转向。仅为技术择时叠加，非经收益验证。</div>
             </div>
           </span>
         
@@ -2829,7 +2846,7 @@
       
       
       <div class="cnh-basis s-neutral">
-        <b><span class="l-en">Offshore–onshore CNH basis</span><span class="l-zh">离岸–在岸人民币基差</span>:</b> -48 bps —
+        <b><span class="l-en">Offshore–onshore CNH basis</span><span class="l-zh">离岸–在岸人民币基差</span>:</b> -59 bps —
         <span class="l-en">broadly aligned with the onshore fix.</span><span class="l-zh">与在岸中间价大体一致。</span>
       </div>
       
@@ -2844,12 +2861,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
+        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Choppiness: for. Pull on the score: +0.10.</div>
-          <div class="l-zh">波动风险：利多。对评分的拉动：+0.10。</div>
+          <div class="l-en">Its own trend: for. Pull on the score: +0.11.</div>
+          <div class="l-zh">自身趋势：利多。对评分的拉动：+0.11。</div>
         </div>
       </div>
       
@@ -2857,12 +2874,12 @@
       
       
       <div class="factor-cell" tabindex="0" data-tip-en="." data-tip-zh=".">
-        <div class="fc-label"><span class="l-en">Its own trend</span><span class="l-zh">自身趋势</span></div>
+        <div class="fc-label"><span class="l-en">Choppiness</span><span class="l-zh">波动风险</span></div>
         <div class="fc-dir for">●</div>
         <div class="tip-pop">
           
-          <div class="l-en">Its own trend: for. Pull on the score: +0.10.</div>
-          <div class="l-zh">自身趋势：利多。对评分的拉动：+0.10。</div>
+          <div class="l-en">Choppiness: for. Pull on the score: +0.11.</div>
+          <div class="l-zh">波动风险：利多。对评分的拉动：+0.11。</div>
         </div>
       </div>
       
@@ -2900,8 +2917,8 @@
         <div class="fc-dir flat">−</div>
         <div class="tip-pop">
           
-          <div class="l-en">Risk mood: flat/neutral. Pull on the score: -0.01.</div>
-          <div class="l-zh">风险情绪：中性。对评分的拉动：-0.01。</div>
+          <div class="l-en">Risk mood: flat/neutral. Pull on the score: +0.01.</div>
+          <div class="l-zh">风险情绪：中性。对评分的拉动：+0.01。</div>
         </div>
       </div>
       
@@ -2954,19 +2971,19 @@
       <span class="wt-q" tabindex="0" data-tip-en="." data-tip-zh=".">?
         <div class="tip-pop" style="min-width:230px">
           <div class="l-en">
-            Yearly gain: +0.8%
-            · Gain per unit of swing: 0.13
+            Yearly gain: +0.7%
+            · Gain per unit of swing: 0.12
             · Worst fall: -38%
             | Pre-2008: +0.7% / 0.15
-            | Post-2008: +0.8% / 0.13
+            | Post-2008: +0.7% / 0.11
             — past data only.
           </div>
           <div class="l-zh">
-            年化收益：+0.8%
-            · 单位波动收益：0.13
+            年化收益：+0.7%
+            · 单位波动收益：0.12
             · 最大回撤：-38%
             | 2008前：+0.7% / 0.15
-            | 2008后：+0.8% / 0.13
+            | 2008后：+0.7% / 0.11
             — 仅基于历史数据。
           </div>
         </div>
@@ -2988,19 +3005,19 @@
       <span class="wt-q" tabindex="0" data-tip-en="." data-tip-zh=".">?
         <div class="tip-pop" style="min-width:230px">
           <div class="l-en">
-            Yearly gain: -2.2%
-            · Gain per unit of swing: -0.15
+            Yearly gain: -2.1%
+            · Gain per unit of swing: -0.14
             · Worst fall: -50%
             | Pre-2008: -2.9% / -0.22
-            | Post-2008: -1.8% / -0.10
+            | Post-2008: -1.5% / -0.08
             — past data only.
           </div>
           <div class="l-zh">
-            年化收益：-2.2%
-            · 单位波动收益：-0.15
+            年化收益：-2.1%
+            · 单位波动收益：-0.14
             · 最大回撤：-50%
             | 2008前：-2.9% / -0.22
-            | 2008后：-1.8% / -0.10
+            | 2008后：-1.5% / -0.08
             — 仅基于历史数据。
           </div>
         </div>
@@ -3026,7 +3043,7 @@
             · Gain per unit of swing: 0.12
             · Worst fall: -33%
             | Pre-2008: +1.0% / 0.20
-            | Post-2008: -0.4% / -0.03
+            | Post-2008: -0.5% / -0.04
             — past data only.
           </div>
           <div class="l-zh">
@@ -3034,7 +3051,7 @@
             · 单位波动收益：0.12
             · 最大回撤：-33%
             | 2008前：+1.0% / 0.20
-            | 2008后：-0.4% / -0.03
+            | 2008后：-0.5% / -0.04
             — 仅基于历史数据。
           </div>
         </div>
@@ -3051,6 +3068,60 @@
   </div>
   <div class="card">
     <div class="timeline">
+    
+      <div class="tl-day">Sat Aug 01</div>
+      
+      <div class="tl-ev sev-info" data-tl-event="1">
+        
+        
+        
+        <span class="tl-type"><span class="l-en">Triple-Red</span><span class="l-zh">triple_red</span></span>
+        <span class="tl-asset">Dollar</span>
+        
+        
+        
+        <span class="tl-head"><span class="l-en">Triple-red cleared: safe-haven function may be restoring</span><span class="l-zh">三重下跌解除：避险功能可能恢复</span></span>
+      </div>
+      
+      <div class="tl-ev sev-high" data-tl-event="1">
+        
+        
+        
+        <span class="tl-type"><span class="l-en">Sudden move</span><span class="l-zh">突然波动</span></span>
+        <span class="tl-asset">USD/JPY</span>
+        
+        
+        
+        <span class="tl-head"><span class="l-en">USD/JPY: Unusual move the dollar and rates don&#39;t explain (up)</span><span class="l-zh">USD/JPY：出现美元与利率无法解释的异常上行</span></span>
+      </div>
+      
+    
+      <div class="tl-day">Fri Jul 31</div>
+      
+      <div class="tl-ev sev-high" data-tl-event="1">
+        
+        
+        
+        <span class="tl-type"><span class="l-en">Triple-Red</span><span class="l-zh">triple_red</span></span>
+        <span class="tl-asset">Dollar</span>
+        
+        
+        
+        <span class="tl-head"><span class="l-en">Triple-red: USD, equities, and Treasuries all declining</span><span class="l-zh">三重下跌：美元、股市、国债同步下行</span></span>
+      </div>
+      
+      <div class="tl-ev sev-high" data-tl-event="1">
+        
+        
+        
+        <span class="tl-type"><span class="l-en">Sudden move</span><span class="l-zh">突然波动</span></span>
+        <span class="tl-asset">EUR/USD</span>
+        
+        
+        
+        <span class="tl-head"><span class="l-en">EUR/USD: Unusual move the dollar and rates don&#39;t explain (up)</span><span class="l-zh">EUR/USD：出现美元与利率无法解释的异常上行</span></span>
+      </div>
+      
     
       <div class="tl-day">Thu Jul 30</div>
       
@@ -3130,6 +3201,18 @@
         
         
         <span class="tl-head"><span class="l-en">Triple-red cleared: safe-haven function may be restoring</span><span class="l-zh">三重下跌解除：避险功能可能恢复</span></span>
+      </div>
+      
+      <div class="tl-ev sev-info" data-tl-event="1">
+        
+        
+        
+        <span class="tl-type"><span class="l-en">Positioning</span><span class="l-zh">持仓</span></span>
+        <span class="tl-asset">GBP/USD</span>
+        
+        
+        
+        <span class="tl-head"><span class="l-en">GBP/USD Speculators very short</span><span class="l-zh">GBP/USD 投机者严重做空</span></span>
       </div>
       
     
@@ -4423,36 +4506,6 @@
       </div>
       
     
-      <div class="tl-day">Tue Jun 02</div>
-      
-      <div class="tl-ev sev-high" data-tl-event="1">
-        
-        
-        
-        <span class="tl-type"><span class="l-en">Sudden move</span><span class="l-zh">突然波动</span></span>
-        <span class="tl-asset">USD/CAD</span>
-        
-        
-        
-        <span class="tl-head"><span class="l-en">USD/CAD: Unusual move the dollar and rates don&#39;t explain (down)</span><span class="l-zh">USD/CAD：出现美元与利率无法解释的异常下行</span></span>
-      </div>
-      
-    
-      <div class="tl-day">Mon Jun 01</div>
-      
-      <div class="tl-ev sev-high" data-tl-event="1">
-        
-        
-        
-        <span class="tl-type"><span class="l-en">Choppiness</span><span class="l-zh">波动性</span></span>
-        <span class="tl-asset">EUR/USD</span>
-        
-        
-        
-        <span class="tl-head"><span class="l-en">EUR/USD risk turned Calm</span><span class="l-zh">EUR/USD 风险转为平静</span></span>
-      </div>
-      
-    
     </div>
     <button class="tl-more" type="button">
       <span class="lbl-open l-en">See more</span>
@@ -4469,7 +4522,7 @@
       <span class="l-en">This page describes today's currency backdrop. It moves with markets and does not predict them; nothing here is a trade recommendation. Pair reads are measured on past data and shown for context.</span>
       <span class="l-zh">本页描述今日货币背景。随市场变化，不预测市场走势；本页内容不构成任何交易建议。货币对读数基于历史数据测算，仅作背景参考。</span>
     </div>
-    <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> Jul 30, 2026 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-07-30 08:46 UTC · <span class="l-en">Data</span><span class="l-zh">数据</span> 1996-10-30..2026-07-30
+    <div class="meta-foot"><span class="l-en">As of</span><span class="l-zh">截至</span> Aug 01, 2026 · <span class="l-en">built</span><span class="l-zh">构建于</span> 2026-08-01 02:18 UTC · <span class="l-en">Data</span><span class="l-zh">数据</span> 1996-10-30..2026-08-01
     </div>
   </div>
 </div>
@@ -4534,9 +4587,10 @@
   });
 })();
 </script>
-<script src="theme.js?v=0943b4d5" defer></script>
+<script src="theme.js?v=e4951de3" defer></script>
 <footer class="site-footer">
   <span>© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

@@ -1,0 +1,189 @@
+name: prophet-live
+# ─────────────────────────────────────────────────────────────────────────────
+# PROPHET LIVE — BACKSTOP LANE, not the product cadence
+# (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md §4.2 + §4.2a).
+#
+# THE PRODUCT LANE IS THE VPS TIMER (app/deploy/macro-live-prophet.{service,timer}).
+# This workflow's crons ask for every 5 minutes; GitHub does not deliver it. Measured
+# 2026-07-30 on this repo: marketing-hot-tape.yml, also */5 in RTH, ran 09:07Z then
+# 12:19Z — ~3h12m apart; live-quotes.yml (*/15) ran ~90 min apart. With ~58 workflows
+# here, frequent schedules are deprioritised and a 5-minute product cadence is not
+# purchasable at any price. Worse, since the 2026-07-27 VPS cutover the */5 legs that
+# refresh the `live-data` branch self-disable, so the quote artifact this lane fetches
+# below is refreshed only by the throttled */15 leg (measured 83 min old at 13:41Z,
+# 118 min at 14:16Z, against a 12-minute per-quote freshness gate).
+#
+# So this lane is kept for what it is actually good for: a rollback path and a
+# ~90-minute backstop that still evaluates when the VPS is down or being rebuilt. It
+# stands itself down while the VPS is primary (see the job `if:` below), exactly like
+# live-quotes / intraday-fastpath / live-breadth / btc-live do.
+#
+# When it does run it loads the nightly armed pack from R2, merges the freshest
+# 15-min-delayed quote view, and publishes provisional per-name states plus an event
+# spool. The nightly build arms the levels; this lane only compares a price to them.
+# There is no second signal engine and nothing here confirms anything — the nightly
+# does that.
+#
+# WHAT THE ARTIFACTS ARE FOR. Primarily the forward ledger
+# (data/prophet_live/forward.parquet, written by the nightly reconciler), which accrues
+# the evidence the §6 promotion gauntlet needs before any state earns authority. The
+# P1 surface reads a SERVED COPY of the same payload — written by the VPS lane onto its
+# own live plane, behind the registration/entitlement gate, never from this runner
+# (there is no /var/lib/macro-live here, so the served write is skipped with a notice).
+#
+# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: a per-session lane
+# on the render pool would eat the nightly's budget, which is law (masterplan §3
+# runner-placement law, hot-tape precedent).
+#
+# LEDGER LAW (G0.2). This lane writes NO data/ path and commits nothing. Note
+# `permissions: contents: read` and the total absence of a git step — the only
+# outputs from a runner are R2 keys. The nightly reconciler is the sole writer of
+# data/prophet_live/, and the nightly build is the sole advancer of any ledger.
+#
+# WHY IT IS SAFE. Nothing here confirms, grades or advances anything; no alert channel
+# is wired (that is P2); the served payload is gated, not public; and the kill switch
+# below stands the whole lane down without a commit.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # GITHUB CRON HAS NO TIMEZONE — it is UTC, always. The session window is
+    # 09:25-16:15 America/New_York, which is 13:25-20:15Z under EDT and
+    # 14:25-21:15Z under EST, so a single UTC pair is wrong for half the year:
+    # from the November clock change it would wake an hour before the open and
+    # go dark for the last hour of every session — the hour whose state matters
+    # most, because close-dependence shrinks as the session ends.
+    #
+    # These crons therefore span BOTH regimes, 13:25Z through 21:15Z, and
+    # engine/prophet_live/live_states.in_window trims the off-season edges on
+    # the EASTERN clock (an EST 13:25Z tick is 08:25 ET and stands down; an EDT
+    # 21:15Z tick is 17:15 ET and stands down). The cost of the overlap is a
+    # handful of ~20-second no-op runs a day on ubuntu-latest; the cost of
+    # getting it wrong is a dark hour every session for five months.
+    #
+    # Three crons because GitHub's cron cannot express "every 5 minutes from
+    # :25 of one hour to :15 of another".
+    - cron: "25,30,35,40,45,50,55 13 * * 1-5"
+    - cron: "*/5 14-20 * * 1-5"
+    - cron: "0,5,10,15 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: >-
+          DRY RUN — load the pack and quotes, evaluate, print the artifact and the
+          transitions, and write NOTHING to R2. The PR receipt mode.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read      # LEDGER LAW: this lane never commits. Do not widen this.
+
+concurrency:
+  # Two passes must never overlap: both would read the same previous artifact,
+  # both would see the same pass as the debounce predecessor, and a cross could
+  # be promoted on one repeated tick instead of two distinct ones. Never cancel a
+  # pass in flight either — it may already have published the state map, and the
+  # next tick is only five minutes away.
+  group: prophet-live
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    # TWO GATES, and the nesting is the point.
+    #
+    # PROPHET_LIVE_DISABLED is the program's kill switch and binds ALWAYS — a manual
+    # dispatch must not be able to run a lane the operator has stood down.
+    #
+    # VPS_LIVE_PRIMARY is the host gate, the estate's standing idiom (live-quotes.yml,
+    # intraday-fastpath.yml, live-breadth.yml, btc-live.yml): while the VPS timer owns
+    # the cadence, the scheduled legs here self-disable so there is exactly one writer
+    # per artifact. workflow_dispatch bypasses THIS one only — that is the rollback
+    # path (dispatch while the VPS is being rebuilt; set the variable false for a
+    # sustained failover, per docs/VPS_LIVE_ORCHESTRATION.md §Deployment and cutover).
+    if: ${{ vars.PROPHET_LIVE_DISABLED != 'true' && (github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true') }}
+    runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
+    # A pass is seconds of compute plus two small R2 round trips. 8 minutes is
+    # generous head-room and small enough that a wedged run frees the concurrency
+    # group before the next cron.
+    timeout-minutes: 8
+    steps:
+      - name: checkout (shallow + sparse + blobless)
+        # SHALLOW, SPARSE AND BLOBLESS. This lane runs ~80 times a day and needs
+        # no history at all: it reads code plus two committed quote artifacts and
+        # publishes to R2. A full clone of this heavy-churn repo is ~2.8GB across
+        # ~48k files and has blown a 25-minute job on its own (marketing-publish,
+        # 2026-07-28). The cone below is this lane's exact read surface, and cone
+        # mode always includes top-level files, so config.yml comes along:
+        #   engine, scripts, lib   — the code (live_verify + prophet_live + the
+        #                            NYSE session calendar)
+        #   site/live              — display quote snapshot (quotes.json)
+        #   site/marketdata        — sp500 heatmap (the pct-only fallback)
+        # data/marketing/ is NOT in the cone: the quote snapshot below is fetched
+        # from the live-data branch into a runner-local path and never committed.
+        # Adding a read path to the evaluator means adding it HERE too.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine
+            scripts
+            lib
+            site/live
+            site/marketdata
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # NO PANDAS, deliberately — ~40s of install this lane would pay 80 times a
+        # day. live_verify imports pandas only inside its earnings helper, which
+        # this lane never calls; live_states and the state machine are stdlib.
+        # pyyaml: config.yml's prophet_live block. boto3: R2. The two PUTs are
+        # S3 API calls — the public r2.dev base is read-only, and reads go through
+        # the same authenticated client on purpose so a CDN-cached copy of the
+        # previous pass can never corrupt the debounce counters.
+        run: pip install --quiet pyyaml boto3
+
+      - name: fetch full-universe live quotes (evaluator input)
+        # Copied from marketing-hot-tape.yml / marketing-publish.yml. The live-data
+        # orphan branch carries a ~2k-symbol quotes.json refreshed every 5 min in
+        # RTH (15-min-delayed prices) — the SAME merge the rest of the estate
+        # reasons about, so this lane and the content desks never disagree about
+        # the tape. No vendor API call, no key.
+        #
+        # The destination is runner-local scratch that is never staged: there is no
+        # git step in this workflow at all (LEDGER LAW).
+        #
+        # Fail-soft: without the snapshot load_live_quotes falls back to
+        # site/live/quotes.json + the sp500 heatmap, and the per-name freshness
+        # gate darks whatever is left stale rather than guessing.
+        run: |
+          mkdir -p data/marketing
+          if git fetch --depth 1 origin live-data && \
+             git show FETCH_HEAD:quotes.json > data/marketing/live_quotes_snapshot.json 2>/dev/null; then
+            echo "live quotes snapshot: $(wc -c < data/marketing/live_quotes_snapshot.json) bytes"
+          else
+            echo "::warning title=prophet-live::live-data quotes unavailable — falling back to site/live artifacts"
+            rm -f data/marketing/live_quotes_snapshot.json
+          fi
+
+      - name: evaluate the armed pack against the live tape
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          # The same R2 data plane every build_* script publishes to. Absent creds
+          # → the pass still evaluates off the public mirror and publishes nothing,
+          # which is honest: the artifact keeps its previous stamp and the next
+          # pass sees no debounce predecessor.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          if [ "${DRY_RUN:-}" = "true" ]; then
+            python -m scripts.prophet_live_evaluator --dry-run
+          else
+            python -m scripts.prophet_live_evaluator
+          fi

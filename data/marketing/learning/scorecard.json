@@ -1,5 +1,5 @@
 {
-  "as_of": "2026-07-30",
+  "as_of": "2026-08-01",
   "bottleneck": {
     "accounts": [
       {
@@ -7,7 +7,7 @@
         "author_replies": 0,
         "contributions": 4,
         "engagements": 0,
-        "impressions": 25,
+        "impressions": 33,
         "measured": 4,
         "replies_abstained": 0,
         "replies_enqueued": 0,
@@ -17,21 +17,21 @@
       {
         "account": "flagship",
         "author_replies": 0,
-        "contributions": 26,
-        "engagements": 5,
-        "impressions": 236,
-        "measured": 16,
+        "contributions": 38,
+        "engagements": 13,
+        "impressions": 446,
+        "measured": 21,
         "replies_abstained": 0,
         "replies_enqueued": 0,
         "replies_sent": 0,
-        "unmeasured": 10
+        "unmeasured": 17
       },
       {
         "account": "founder",
         "author_replies": 0,
         "contributions": 6,
         "engagements": 0,
-        "impressions": 209,
+        "impressions": 257,
         "measured": 4,
         "replies_abstained": 0,
         "replies_enqueued": 0,
@@ -42,8 +42,8 @@
         "account": "meagan",
         "author_replies": 0,
         "contributions": 3,
-        "engagements": 1,
-        "impressions": 74,
+        "engagements": 3,
+        "impressions": 98,
         "measured": 3,
         "replies_abstained": 0,
         "replies_enqueued": 0,
@@ -54,8 +54,8 @@
         "account": "sophia",
         "author_replies": 0,
         "contributions": 4,
-        "engagements": 6,
-        "impressions": 72,
+        "engagements": 7,
+        "impressions": 120,
         "measured": 3,
         "replies_abstained": 0,
         "replies_enqueued": 0,
@@ -75,9 +75,9 @@
         "hook_family": "weekend_levels",
         "register": "unknown"
       },
-      "med_adjusted": 0.018151,
-      "med_impressions": 16.0,
-      "med_label": 0.037037,
+      "med_adjusted": 0.013901,
+      "med_impressions": 17.0,
+      "med_label": 0.034483,
       "n": 15,
       "n_labelled": 9,
       "n_null": 6,
@@ -87,13 +87,45 @@
     {
       "dims": {
         "account": "flagship",
+        "format": "breaking",
+        "hook_family": "press_lane",
+        "register": "unknown"
+      },
+      "med_adjusted": -0.020582,
+      "med_impressions": 4.0,
+      "med_label": 0.0,
+      "n": 7,
+      "n_labelled": 2,
+      "n_null": 5,
+      "verdict": "seeding",
+      "verdict_note": "2 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
+        "format": "breaking",
+        "hook_family": "hot_tape",
+        "register": "unknown"
+      },
+      "med_adjusted": -0.020582,
+      "med_impressions": 3.0,
+      "med_label": 0.0,
+      "n": 5,
+      "n_labelled": 3,
+      "n_null": 2,
+      "verdict": "seeding",
+      "verdict_note": "3 labelled rows against an n-floor of 20 — no ranking claim is made from this cell"
+    },
+    {
+      "dims": {
+        "account": "flagship",
         "format": "watchlist",
         "hook_family": "content_studio",
         "register": "unknown"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 10.5,
-      "med_label": 0.0,
+      "med_adjusted": 0.012478,
+      "med_impressions": 47.5,
+      "med_label": 0.03306,
       "n": 5,
       "n_labelled": 4,
       "n_null": 1,
@@ -107,8 +139,8 @@
         "hook_family": "content_studio",
         "register": "persona"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 43.0,
+      "med_adjusted": -0.020582,
+      "med_impressions": 45.0,
       "med_label": 0.0,
       "n": 3,
       "n_labelled": 1,
@@ -123,9 +155,9 @@
         "hook_family": "content_studio",
         "register": "persona"
       },
-      "med_adjusted": 0.072023,
-      "med_impressions": 22.0,
-      "med_label": 0.090909,
+      "med_adjusted": 0.062751,
+      "med_impressions": 34.0,
+      "med_label": 0.083333,
       "n": 3,
       "n_labelled": 3,
       "n_null": 0,
@@ -139,8 +171,8 @@
         "hook_family": "claude_rewrite",
         "register": "persona"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 4.5,
+      "med_adjusted": -0.020582,
+      "med_impressions": 6.0,
       "med_label": 0.0,
       "n": 2,
       "n_labelled": 2,
@@ -155,8 +187,8 @@
         "hook_family": "content_studio",
         "register": "persona"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 8.0,
+      "med_adjusted": -0.020582,
+      "med_impressions": 10.5,
       "med_label": 0.0,
       "n": 2,
       "n_labelled": 2,
@@ -171,9 +203,9 @@
         "hook_family": "content_studio",
         "register": "unknown"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 9.5,
-      "med_label": 0.0,
+      "med_adjusted": 0.001157,
+      "med_impressions": 29.5,
+      "med_label": 0.021739,
       "n": 2,
       "n_labelled": 2,
       "n_null": 0,
@@ -187,8 +219,8 @@
         "hook_family": "content_studio",
         "register": "unknown"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 7.0,
+      "med_adjusted": -0.020582,
+      "med_impressions": 13.0,
       "med_label": 0.0,
       "n": 2,
       "n_labelled": 1,
@@ -203,8 +235,8 @@
         "hook_family": "claude_rewrite",
         "register": "persona"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 68.0,
+      "med_adjusted": -0.020582,
+      "med_impressions": 76.5,
       "med_label": 0.0,
       "n": 2,
       "n_labelled": 2,
@@ -251,8 +283,8 @@
         "hook_family": "claude_rewrite",
         "register": "persona"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 30.0,
+      "med_adjusted": -0.020582,
+      "med_impressions": 59.0,
       "med_label": 0.0,
       "n": 1,
       "n_labelled": 1,
@@ -267,9 +299,9 @@
         "hook_family": "claude_rewrite",
         "register": "persona"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 34.0,
-      "med_label": 0.0,
+      "med_adjusted": 0.001157,
+      "med_impressions": 46.0,
+      "med_label": 0.021739,
       "n": 1,
       "n_labelled": 1,
       "n_null": 0,
@@ -283,8 +315,8 @@
         "hook_family": "content_studio",
         "register": "analysis"
       },
-      "med_adjusted": -0.018886,
-      "med_impressions": 19.0,
+      "med_adjusted": -0.020582,
+      "med_impressions": 25.0,
       "med_label": 0.0,
       "n": 1,
       "n_labelled": 1,
@@ -299,9 +331,9 @@
         "hook_family": "content_studio",
         "register": "persona"
       },
-      "med_adjusted": 0.028733,
-      "med_impressions": 21.0,
-      "med_label": 0.047619,
+      "med_adjusted": 0.053492,
+      "med_impressions": 27.0,
+      "med_label": 0.074074,
       "n": 1,
       "n_labelled": 1,
       "n_null": 0,
@@ -343,7 +375,7 @@
       "thread_saturation"
     ],
     "max_supported": 1,
-    "n_labelled": 30,
+    "n_labelled": 35,
     "requested": [
       "parent_size",
       "post_age",
@@ -358,8 +390,8 @@
     "hook_family"
   ],
   "n_floor": 20,
-  "n_rows": 43,
-  "n_rows_all_time": 43,
+  "n_rows": 55,
+  "n_rows_all_time": 55,
   "north_star": {
     "active": false,
     "follower_floor": 250,
@@ -376,35 +408,68 @@
     "angle": [
       {
         "angle": "unknown",
-        "med_adjusted": -0.018886,
-        "med_impressions": 15.5,
+        "med_adjusted": -0.020582,
+        "med_impressions": 22.0,
         "med_label": 0.0,
-        "n": 43,
-        "n_labelled": 30,
-        "n_null": 13
+        "n": 55,
+        "n_labelled": 35,
+        "n_null": 20
       }
     ],
     "note": "Marginal tables, one dimension at a time — NOT extra joint-cell dimensions. See labels.PROVENANCE_DIMS for the cardinality arithmetic. 'unknown' is a real bucket: an item that carried no shape/angle/trigger is counted, never dropped.",
     "shape": [
       {
-        "med_adjusted": -0.018886,
-        "med_impressions": 15.5,
+        "med_adjusted": -0.020582,
+        "med_impressions": 22.0,
         "med_label": 0.0,
-        "n": 43,
-        "n_labelled": 30,
-        "n_null": 13,
+        "n": 55,
+        "n_labelled": 35,
+        "n_null": 20,
         "shape": "unknown"
       }
     ],
     "trigger": [
       {
-        "med_adjusted": -0.018886,
-        "med_impressions": 15.5,
+        "med_adjusted": -0.020582,
+        "med_impressions": 22.0,
         "med_label": 0.0,
-        "n": 43,
-        "n_labelled": 30,
-        "n_null": 13,
+        "n": 50,
+        "n_labelled": 32,
+        "n_null": 18,
         "trigger": "unknown"
+      },
+      {
+        "med_adjusted": null,
+        "med_impressions": null,
+        "med_label": null,
+        "n": 2,
+        "n_labelled": 0,
+        "n_null": 2,
+        "trigger": "mover_pop",
+        "verdict": "seeding",
+        "verdict_note": "0 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+      },
+      {
+        "med_adjusted": -0.020582,
+        "med_impressions": 3.0,
+        "med_label": 0.0,
+        "n": 2,
+        "n_labelled": 2,
+        "n_null": 0,
+        "trigger": "sector_rip",
+        "verdict": "seeding",
+        "verdict_note": "2 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
+      },
+      {
+        "med_adjusted": -0.020582,
+        "med_impressions": 7.0,
+        "med_label": 0.0,
+        "n": 1,
+        "n_labelled": 1,
+        "n_null": 0,
+        "trigger": "sector_rout",
+        "verdict": "seeding",
+        "verdict_note": "1 labelled rows against an n-floor of 20 — this row may not be cited for a quota or weight move"
       }
     ]
   },

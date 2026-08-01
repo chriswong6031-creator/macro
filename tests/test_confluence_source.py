@@ -383,13 +383,64 @@ def test_win_rate_hook_contains_disclosure():
     }
     headline, body = win_rate_hook(sig)
     full_copy = (headline + " " + body).lower()
-    # Must contain some form of honest disclosure
-    has_disclosure = (
-        "historical" in full_copy
-        or "not a guarantee" in full_copy
-        or "past" in full_copy
-    )
-    assert has_disclosure, f"No disclosure found in hook copy: {headline!r} | {body!r}"
+    # WAS: "historical" / "not a guarantee" / "past". Those exact forms are now
+    # BANNED by copywriter.machine_risk_violations (operator 2026-07-30: the
+    # compliance-desk caveat is the machine voice), so a test demanding them was
+    # demanding copy the publisher would quarantine. The disclosure this hook
+    # owes is sharper anyway, because the two claims it has to walk back are
+    # specific: the figure is a STUDY statistic, not our record, and the sample
+    # is the UNIVERSE, not this ticker.
+    assert "not our trading record" in full_copy, (
+        f"the hook no longer disowns the track-record reading: {body!r}")
+    assert "universe-wide" in full_copy and "not this one name" in full_copy, (
+        f"the hook attributes a pooled sample to one ticker again: {body!r}")
+
+
+def test_win_rate_hook_never_claims_a_track_record():
+    """The CRITICAL finding this copy shipped with (2026-07-30 audit).
+
+    The headline read "Our technical signals have resolved higher 87.5% of the
+    time from this spot" — where win_rate is h21.wr_mc_test AND `_score` RANKS on
+    sqrt(edge_wr_test * wr_mc_test), the same test statistic. That publishes a
+    selection-on-test-half number as a first-person TRACK RECORD, which the
+    repo's epistemics law forbids: display-tier until gauntleted.
+    """
+    from engine.marketing.confluence_source import win_rate_hook
+
+    sig = {
+        "ticker": "SLB", "cashtag": "$SLB", "combo_id": "L0038",
+        "combo_name": "x", "win_rate": 87.5, "edge": 30.6, "n_fires": 72,
+        "fires_last3y": 9, "last_fire": "2026-07-28", "first_fire": "1975-01-02",
+        "legs_plain": [], "leg_families": [], "side": "long",
+    }
+    headline, body = win_rate_hook(sig)
+    low = (headline + " " + body).lower()
+    for claim in ("our technical signals have resolved",
+                  "we've gone", "they've gone", "our track record"):
+        assert claim not in low, f"track-record claim back in the hook: {claim!r}"
+
+
+def test_win_rate_hook_clears_the_publish_time_voice_gate():
+    """It carried FOUR numbers, so it could never have shipped anyway.
+
+    win rate + n_fires + fires_last3y + the "3 years" itself is number soup by
+    construction, and copywriter.number_soup_violations trips above two. A hook
+    that cannot pass the gate is a lane that silently produces nothing.
+    """
+    from engine.marketing.copywriter import (
+        banned_language, queued_voice_violations)
+    from engine.marketing.confluence_source import win_rate_hook
+
+    sig = {
+        "ticker": "NVDA", "cashtag": "$NVDA", "combo_id": "L1", "combo_name": "x",
+        "win_rate": 86.0, "edge": 22.0, "n_fires": 85, "fires_last3y": 9,
+        "last_fire": "2026-07-17", "first_fire": "2019-01-04",
+        "legs_plain": [], "leg_families": [], "side": "long",
+    }
+    headline, body = win_rate_hook(sig)
+    full = f"{headline}\n{body}"
+    assert queued_voice_violations(full, "signal") == [], full
+    assert banned_language(full) == [], full
 
 
 # ---------------------------------------------------------------------------
@@ -743,3 +794,66 @@ def test_win_rate_hook_on_real_fired_combos():
         assert f"${sig['ticker']}" in public_copy, (
             f"Cashtag missing for {sig['ticker']}: {public_copy[:200]}"
         )
+
+
+class TestTheConfluenceLaneCannotPublishAsBuilt:
+    """Nine posts a night, zero in the outbox, ever — and the console said 9.
+
+    The lane labels its slots `CONF-NN`. `outbox.emit_from_content_plan` skips
+    every item whose slot does not start with `D1-`. That single unconditional
+    `continue` means a confluence post cannot reach the outbox no matter what
+    else it survives, which matches the record exactly: the outbox provenance
+    census has never contained one.
+
+    Pinned rather than repaired. Relabelling the slot would start PUBLISHING
+    copy whose headline number is a selection-on-test-half statistic this lane
+    has already had to be corrected about once (win_rate_hook, 2026-07-30). A
+    lane earns publication on evidence, not on a prefix change. These tests keep
+    the blocker visible so the next person does not rediscover it from an
+    artifact, and fail loudly if the slot convention silently changes.
+    """
+
+    def test_the_emitter_skips_a_conf_slot_and_takes_a_d1_one(self, tmp_path):
+        from engine.marketing import outbox as OB
+
+        plan = {"as_of": "2026-07-30", "accounts": [{"id": "flagship", "queue": [
+            {"id": "post-conf-flagship-001", "type": "signal", "account": "flagship",
+             "ticker": "SLB", "cashtag": "$SLB", "headline": "h", "body": "b",
+             "slot": "CONF-01", "source": "confluence", "status": "drafted",
+             "provenance": "neural_web"},
+            {"id": "post-d1", "type": "signal", "account": "flagship",
+             "ticker": "AAA", "cashtag": "$AAA", "headline": "h", "body": "b",
+             "slot": "D1-S01", "status": "drafted", "provenance": "neural_web"},
+        ]}]}
+        result = OB.emit_from_content_plan(plan, root=tmp_path)
+        assert result.get("emitted") == 1, (
+            "both items emitted — the CONF- slot is no longer being skipped. If "
+            "that is intentional, this lane is now PUBLISHING and its win-rate "
+            "copy needs the evidence review it has never had."
+        )
+        texts = " ".join(str(i.get("text") or "") for i in OB.read_items(tmp_path))
+        assert "SLB" not in texts
+
+    def test_the_census_names_the_blocker_rather_than_the_symptom(self):
+        from engine.marketing.content_studio import _confluence_census
+
+        out = _confluence_census(
+            [{"id": "flagship", "queue": []}],
+            [{"ticker": "SLB", "combo_id": "L0038", "win_rate": 87.5, "edge": 30.6}],
+            1,
+        )
+        assert out["built"] == 1 and out["surviving"] == 0
+        note = out["note"]
+        assert "CONF-NN" in note and "D1-" in note, (
+            "the note has gone back to describing a gap without its cause"
+        )
+
+    def test_a_healthy_lane_reports_plainly(self):
+        from engine.marketing.content_studio import _confluence_census
+
+        out = _confluence_census(
+            [{"id": "flagship", "queue": [{"source": "confluence"}]}],
+            [{"ticker": "SLB"}], 1,
+        )
+        assert out["surviving"] == 1 and out["dropped_before_queue"] == 0
+        assert "live" in out["note"]

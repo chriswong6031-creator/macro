@@ -216,47 +216,112 @@ ran.
    8h) track lane count far more tightly than requested-tick count, which points
    at a per-lane floor rather than a proportional share of a repo budget. Not
    worth spending the estate's schedule budget to find out.
-3. **In-run multi-pass — SHIPPED 2026-07-30.** One delivered tick does `PASSES`
-   passes `PASS_INTERVAL_S` apart, each committing and dispatching on its own so
-   latency is per-pass, not per-run. At 3×300s this takes the mean to **~17 min**
-   (23% of crosses land inside a covered 10-min window and wait ~2.5 min; the
-   rest wait out the ~33-min hole). That makes the **median** compliant and
-   leaves the **tail** where it was — passes are clustered, so the holes between
-   delivered ticks are untouched. It is a multiplier on whatever GitHub gives us,
-   which is exactly why it is robust to either throttling model.
-4. **Session-long poller** — a chained pair of long jobs (the 6h job cap does not
-   cover a 7h40m session) looping every 5 min, bootstrapped by one delivered tick
-   a day with an hourly re-bootstrap cron as the dead-man. True 5-min cadence,
-   fully compliant distribution. Cost: ~7.7h/day of GitHub-hosted Linux ≈
-   **$77/month**. No new host, no new credential.
-5. **External ticker via `repository_dispatch`** — RECOMMENDED TARGET. A launchd
-   timer on the Mac Studio fires `repository_dispatch` every 5 min during the ET
-   window. `repository_dispatch` and `workflow_dispatch` are the two documented
-   exceptions to GitHub's "GITHUB_TOKEN events do not create workflow runs" rule,
-   so this composes with the existing publisher dispatch. Actions cost is only
-   the real pass time (~12 × 1.5 min/hour ≈ **$23/month**), it gives an exact
-   5-min cadence, and the ticker is ~10 lines. Costs: a fine-grained PAT with
-   `actions:write` (GITHUB_TOKEN does not exist outside Actions), and host-ops on
-   the Studio — negligible load (one curl per tick), but it does put a product
-   dependency on a machine whose job is the render pool.
+3. **In-run multi-pass** — shipped 2026-07-30 as a stepping stone, then
+   superseded by 5 the same day. Bounded to 3 passes it took the mean to ~17 min
+   but left the tail untouched, because the passes cluster and the ~33-minute
+   holes between delivered ticks remain.
+4. **External `repository_dispatch` ticker** (Mac Studio launchd timer) — an exact
+   cadence and near-zero Actions cost, but it needs a **fine-grained PAT with
+   `actions:write`** (GITHUB_TOKEN does not exist outside Actions) and puts a
+   product dependency on the render-pool host. The PAT is operator-only work.
+5. **Session-long poller — CHOSEN AND SHIPPED (operator delegated the call
+   2026-07-30).** One bootstrap tick runs the lane as a session: a 2-entry matrix
+   with `max-parallel: 1` gives two serialized halves (a GitHub *job* caps at 6h;
+   the window is 6h50m), each looping every `PASS_INTERVAL_S` until the ET window
+   closes or its own `JOB_BUDGET_S` is spent. **True 5-minute cadence, so the whole
+   latency distribution is compliant rather than just the median.**
 
-**Recommendation.** Ship 3 (done). Then 5, because it is both the cheapest and
-the only option that makes the whole latency distribution compliant rather than
-just the median; 4 is the fallback if putting the ticker on the Studio is
-unwanted. Both 4 and 5 are standing-cost/host decisions and belong to the
-operator, not to a defect-fix chip — which is why this section states the
-numbers rather than picking for them.
+**Why 5 over 4 — and a correction.** An earlier draft of this section priced 5 at
+~$77/month and 4 at ~$23/month and recommended 4 on cost. **Both figures were
+wrong: this repo is PUBLIC, and GitHub-hosted runner minutes are free and
+unlimited for public repositories.** Cost was the entire case for 4, and it does
+not exist. What remains is that 4 needs a credential and a host and 5 needs
+neither — so 5 wins outright.
+
+A self-dispatch chain of short runs was also considered and rejected: it would
+rest on the GITHUB_TOKEN `workflow_dispatch` carve-out, and nothing in this repo
+demonstrates that carve-out working. `metabolism-cycle.yml` writes exactly such a
+chain, yet every one of its `workflow_dispatch` runs was human-triggered. `sleep`
+in a job needs no such premise.
+
+**What the poller does NOT fix.** It does not make the crons deliver. They are
+demoted to two jobs only: bootstrapping the session, and acting as the crash
+dead-man. If a half dies mid-session, the next delivered tick (~45 min at the
+measured rate) starts a fresh session for the remainder — so a crash costs up to
+~45 minutes of coverage, not the day. `fail-fast: false` keeps half 2 alive when
+half 1 dies, and the concurrency group makes a tick arriving mid-session queue and
+then stand down out-of-window harmlessly. Worth revisiting 4 if that ~45-minute
+crash window ever proves material.
 
 **Standing rule.** A cadence claim in this repo is about *delivered* runs, never
 about the cron expression. When tuning any intraday lane, measure delivery first
 (`gh api "/repos/:owner/:repo/actions/runs?created=<from>..<to>&event=schedule"`)
 and treat the crontab as an upper bound that reality will not honour.
 
+#### §3.6a Delivery VERIFIED, and the interval is a trailing sleep (2026-07-30)
+
+The poller works, and the honest number is **~11 min, not 5**. Measured on run
+`30556666110` (the session bootstrapped 15:26Z), counted from its own pass banners:
+
+| | passes | span | mean gap |
+|---|---|---|---|
+| half 1 | 20 | 15:26:59Z → 18:56:20Z | **11.0 min** |
+| half 2 | 7 | 19:03:46Z → 20:09:28Z | 11.0 min |
+| **session** | **27** | 4h42m | — |
+
+Against **6 delivered scheduled runs in the whole 8h window on 2026-07-29**, that
+is the fix working: 27 passes from one bootstrap tick, and the cron's delivery
+rate no longer bounds the lane.
+
+**Why 11 and not 5.** `PASS_INTERVAL_S: "300"` is a `sleep` *between* passes, not a
+period — the delivered gap is 300s **plus the pass's own runtime**. Measured that
+runtime grows through the session: the first three gaps are ~6.4 min (a ~1.4 min
+pass), the rest ~11.7 min (a ~6.7 min pass) as more events fire and more cards
+render. So the cadence degrades exactly when the tape is busiest, which is the
+wrong way round.
+
+**Gate 0.1 is nevertheless met.** At an 11.0 min gap the mean wait to be looked at
+is ~5.5 min, plus ~1 min radar and ~3 min dispatch → **~9.5 min mean, ~15 min
+tail**, inside the ≤20 min gate. Recorded rather than tuned: closing 11 → 5 means
+deadline-scheduling the loop (sleep to the next 5-minute boundary instead of a
+fixed 300s) and is only worth doing if the tail approaches the gate. **Do not
+quote "5-minute cadence" for this lane** — the shipped, measured figure is ~11 min,
+degrading to ~12 under load.
+
 ## §4 Data inventory — have vs need
 
 | Capability | Source | Status |
 |---|---|---|
-| 5-min live quotes, ~2.1k names | radar self-fetch (primary, 2026-07-30) + live-data branch + site/live + heatmap | HAVE (freshness-safe merge since #3913; the radar no longer depends on another lane's commit cadence, and the ceiling allows for the feed's declared ~15-min delay) |
+| 5-min live quotes, ~2.1k names | radar self-fetch (primary, 2026-07-30) + VPS live plane (macro floor, 2026-07-30) + live-data branch + site/live + heatmap | HAVE (freshness-safe merge since #3913; the radar no longer depends on another lane's commit cadence, and the ceiling allows for the feed's declared ~15-min delay) |
+
+**§4.1 The quote-source ladder, and what each rung is actually for.** Re-derived
+2026-07-30 after a Prophet Live live-verification flagged the shared seam as
+starved. Every rung is merged freshest-wins by
+`live_verify._merge_quotes`, so a stale rung can never displace a fresh one:
+
+| rung | coverage | freshness | written by |
+|---|---|---|---|
+| radar self-fetch | ≤900 names (the actionable universe) | seconds | **this lane** |
+| VPS live plane (`live.public_quotes_url`) | **34 macro symbols only** | ~30s | VPS systemd timer |
+| `live-data` branch snapshot | ~2,100 names | throttled GH lane | live-quotes.yml |
+| `site/live` + heatmap | ~30 / ~500 | throttled GH lane | fastpath / nightly |
+
+Rungs 3 and 4 are all written by GitHub lanes, so **they inherit the delivery rate
+§3.6 measures** — on 2026-07-30T13:41Z the branch snapshot was 83 minutes old
+against a 27-minute radar ceiling. That is why rung 1 exists and why it is
+primary.
+
+**Rung 2 is a macro floor, not a coverage source — do not mistake it for one.**
+`https://www.mastermind-x.com/live/quotes.json` is the 34-symbol DISPLAY set:
+indices, ETFs, futures, FX, crypto, and *no single-name equity at all*. The
+~2,100-name `quotes_full.json` behind it is deliberately not web-addressable
+(`app/deploy/Caddyfile` exempts only `/live/quotes.json`, `/live/breadth.json`,
+`/live/release_publications.json` from the `@reg_asset` default-deny route). What
+it buys is that the contrarian detector's index proxy (`SPY`) and every macro
+reference stay current even when both the self-fetch and the GitHub lanes are
+down — measured 31 seconds old while the branch was 83 minutes old. What it
+cannot do is verify a single-name claim. A consumer that needs coverage still
+fetches its own tape.
 | Sector membership + sizes | sp500_heatmap tiles (503, sector+size) | HAVE |
 | Daily bars, 20k names | data/massive_stock_day | HAVE |
 | Earnings calendar + AH/BMO flag | data/earnings/earnings.parquet (1,364) | HAVE |

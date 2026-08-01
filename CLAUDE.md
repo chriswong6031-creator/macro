@@ -12,6 +12,21 @@ Signal-engine + static-site repo (engines in `engine/`, builders in `scripts/`, 
 - `.claude/hooks/ship_loop_guard.py` makes this contract executable: SessionStart snapshots pre-existing dirt and Stop refuses session-created uncommitted, unpushed, unmerged, unrendered, or not-live work. An escape ladder now keeps an unsatisfiable gate from trapping a session forever: an EXTERNAL blocker exits at 2 consecutive OR 3 cumulative external blocks; ANY code (including internal ones — unmerged/unpushed/uncommitted/unsafe_branch/guard_error) exits at 10 consecutive OR 15 total blocks. Every exit still requires an explicit `SHIP LOOP BLOCKED:` evidence report with `stop_hook_active` set (no first-attempt bailout); local cleanup, authentication setup, and waiting do not qualify. An IN-FLIGHT covering render DEFERS rather than blocks (operator 2026-07-27) — a queued/running render whose head covers the merge satisfies the gate and the session proceeds to live verification, because the VPS's 3-min pull makes the merge live regardless, the shared lane owns the re-bake, and the nightly `scope=all` re-render is the backstop; a lane that NEVER started or that concluded FAILED with no in-flight successor still blocks. The CI gate is base-side-aware (a merged head's red that provably pre-existed on main — same check red on ≥2 independent sibling PR heads pre-merge, or a green ci.yml run on a main descendant — is excluded BY NAME, fail-closed otherwise); operator lever for a healed base: `gh workflow run ci.yml --ref main` clears every pinned merge with one green run.
 - `render.yml` is a shared coalescing lane: one successful push render at a merge SHA or any later main descendant covers that merge through the workflow's dirty-scope union. Monitor the shared covering run. **A paired plain-copy asset PR needs no render at all** — a non-`.j2` `templates/<name>` that also ships as `site/<name>` (the pairs `scripts/check_template_site_sync.py` enumerates) is committed straight to main and served by the VPS's 3-min pull, so it is live in minutes regardless; the guard exempts it. You forfeit only the `?v=` re-stamp, which matters for the Caddyfile's `immutable` list (`theme.js`, `live.js`, `theme.css`, `product-nav-icons.css`, `onboard.*`, `landing.css`, `account.js`, `nav_market.js`, `supabase.js`, `data_base.js`, `chat*.css`, `assets/{css,landing}/*`) — warm caches there keep the old body until a later render re-hashes the referencing pages. Never cancel or manually re-run an in-progress `render`, `engine-render`, or `daily` merely to unblock this session; a long job inside its timeout is not evidence that it is wedged. Re-run only after an unsuccessful conclusion, diagnosis/correction, and with one session owning the recovery.
 
+## Navigation source-of-truth (STANDING)
+
+The site has exactly two global header families. Authenticated/product pages use
+`templates/_site_nav.html.j2`; its inventory is
+`templates/_navlinks.html.j2`, with behavior and appearance owned by
+`templates/navigation-refresh.css`, `templates/nav_market.js`, and
+`templates/theme.js`. Anonymous/corporate pages use
+`templates/_public_nav.html.j2`, `_public_chrome_css.html.j2`, and
+`_public_chrome_js.html.j2`; the hand-authored landing mirrors that family in
+`templates/index.html`/`templates/landing.css` and is parity-guarded by
+`tests/test_public_chrome.py`. Never create or locally resize a third page
+header. `nav_prefix` may vary by directory depth; typography, geometry, menu
+contents, search behavior, responsive breakpoints, and motion may vary only in
+the shared family source.
+
 ## Model routing (STANDING — token economy)
 
 The main session may run a frontier model (Fable/Opus). **Never let fan-outs inherit it.** Workflow `agent()` calls and Agent-tool spawns inherit the session model unless you pass `model:` explicitly — under ultracode that silently burns frontier tokens on mechanical work. Route every spawn:

@@ -224,12 +224,31 @@ def test_no_ledger_write_guard(tmp_path, monkeypatch):
 # Test 3: 5d-change nulls when history < 5 trading days
 # ---------------------------------------------------------------------------
 
-def _make_skew_rows(ticker: str, n_days: int, base_date_str: str = "2026-06-21") -> list[dict]:
-    """Generate n_days of skew rows starting from base_date_str."""
+def _session_dates(n: int, base_date_str: str = "2026-06-22") -> list[str]:
+    """n consecutive NYSE SESSION dates from base_date_str (inclusive if it is one).
+
+    NOT consecutive calendar days.  These generators used to step `timedelta(days=i)`
+    from 2026-06-21 — a SUNDAY — so a "7 row" fixture contained 2 weekend rows and
+    only 5 sessions.  The loaders under test session-filter their stores now (the
+    #3721 weekend-row class: a non-session snapshot recomputes IV off a stale spot,
+    so it is a fabricated observation), and LOOKBACK_TRADING_DAYS has always meant
+    TRADING days.  Generating real sessions makes `n_days` mean what the tests below
+    already assert it means, and keeps the fixtures from drifting into a holiday.
+    """
+    from lib import nyse_calendar
+    out: list[str] = []
+    d = _dt.date.fromisoformat(base_date_str)
+    while len(out) < n:
+        if nyse_calendar.is_session(d):
+            out.append(d.isoformat())
+        d += _dt.timedelta(days=1)
+    return out
+
+
+def _make_skew_rows(ticker: str, n_days: int, base_date_str: str = "2026-06-22") -> list[dict]:
+    """Generate n_days of skew rows over consecutive SESSIONS from base_date_str."""
     rows = []
-    base = _dt.date.fromisoformat(base_date_str)
-    for i in range(n_days):
-        d = str(base + _dt.timedelta(days=i))
+    for i, d in enumerate(_session_dates(n_days, base_date_str)):
         rows.append({
             "date": d, "underlying": ticker, "asof": d,
             "spot": 100.0, "tenor_days": 30.0,
@@ -241,12 +260,10 @@ def _make_skew_rows(ticker: str, n_days: int, base_date_str: str = "2026-06-21")
     return rows
 
 
-def _make_ivspread_rows(ticker: str, n_days: int, base_date_str: str = "2026-06-21") -> list[dict]:
-    """Generate n_days of ivspread rows starting from base_date_str."""
+def _make_ivspread_rows(ticker: str, n_days: int, base_date_str: str = "2026-06-22") -> list[dict]:
+    """Generate n_days of ivspread rows over consecutive SESSIONS from base_date_str."""
     rows = []
-    base = _dt.date.fromisoformat(base_date_str)
-    for i in range(n_days):
-        d = str(base + _dt.timedelta(days=i))
+    for i, d in enumerate(_session_dates(n_days, base_date_str)):
         rows.append({
             "date": d, "underlying": ticker, "asof": d,
             "spot": 100.0, "tenor_days": 30.0,

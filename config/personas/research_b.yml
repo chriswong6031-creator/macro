@@ -26,12 +26,12 @@ voice_codex:
 beat: "Single-stock why-is-it-moving fast desk"
 tilt:
   signal: 0.42
-  chart: 0.10
+  chart: 0.14
   mover: 0.12
   theme_list: 0.12
   receipt: 0.05
   event: 0.08
-  education: 0.04
+  education: 0.00  # OFF 2026-07-30 (was 0.04)
   macro: 0.03
   watchlist: 0.04
 pipeline: hybrid

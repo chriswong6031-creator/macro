@@ -90,6 +90,23 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
     keep testing what they were written to test. The scope's own semantics
     (planned kind NOT auto-approved, mover still auto-approved) are pinned in
     tests/test_marketing_selection.py.
+
+    APPROVAL DESK OFF, EXPLICITLY. `approval_desk.enabled` ships TRUE and a
+    MISSING block reads as enabled, so a minimal config like this one arms the
+    autonomous desk — which now runs UPSTREAM of the auto-approve pass and
+    audits every queued planned-kind item (payload, number sanity, liveness,
+    chart law, banned language, dedup). Every fixture in this file is a
+    throwaway string ("Fresh post now.", "Leave this one alone.", 300 x's) that
+    the desk's payload floor correctly quarantines for carrying no number, no
+    cashtag and no dated precedent.
+
+    Same reasoning as the `auto_approve_scope: all` line below: this file
+    exercises the auto-approve MACHINERY — gates, caps, floor, jitter,
+    immediates, post-now, dark desks — and pinning its fixtures to the desk's
+    editorial bar would make sixteen unrelated tests fail the day somebody
+    tightens a check. The desk's own behaviour, and its interaction with these
+    lanes (planned item approved and dispatched in one sweep; breaking and
+    mover untouched), is pinned in tests/test_marketing_approval_desk.py.
     """
     cfg_dir = tmp_path / "config"
     cfg_dir.mkdir(parents=True, exist_ok=True)
@@ -107,7 +124,10 @@ def _write_publish_cfg(tmp_path: Path, *, channel: str = "buf-chan-123",
         "  channels:\n"
         f"    flagship: \"{channel}\"\n"
         "  links_allowed:\n"
-        f"    flagship: {'true' if links_allowed else 'false'}\n",
+        f"    flagship: {'true' if links_allowed else 'false'}\n"
+        # See the docstring: OFF on purpose, this file is not the desk's file.
+        "approval_desk:\n"
+        "  enabled: false\n",
         encoding="utf-8",
     )
 
@@ -528,7 +548,11 @@ def test_admin_publisher_dryrun_wrapper_no_writes(monkeypatch, tmp_path):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _mover_text(pct: float = 0.5) -> str:
-    return f"$PLTR +{pct:.1f}% today. Strength worth respecting, not chasing."
+    # NOT "Strength worth respecting, not chasing" — that is a RETIRED house
+    # closer (operator 2026-07-30) and the publisher's voice gate quarantines
+    # it on sight. These tests are about auto-approve ROUTING, so the fixture
+    # copy has to be copy that would actually ship.
+    return f"$PLTR +{pct:.1f}% today, and I keep underestimating this one."
 
 
 def test_scoped_auto_approves_publisher_lane_mover(monkeypatch, tmp_path):
@@ -1602,7 +1626,10 @@ def _write_desk_network_cfg(tmp_path: Path, *, wire_enabled: bool,
         f"    {_WIRE_DESK}: \"buf-chan-news\"\n"
         "  links_allowed:\n"
         "    flagship: true\n"
-        f"    {_WIRE_DESK}: true\n",
+        f"    {_WIRE_DESK}: true\n"
+        # OFF for the same reason _write_publish_cfg turns it off — see there.
+        "approval_desk:\n"
+        "  enabled: false\n",
         encoding="utf-8",
     )
 
@@ -2025,3 +2052,152 @@ def test_post_now_park_plus_unknown_id_still_exits_red(monkeypatch, tmp_path):
     assert rc == 3
     assert fake.calls == []
     assert current_statuses(tmp_path)[iid] == "quarantined"   # the real one parked
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The silent night.
+#
+# Every other annotation in the publisher names a PER-ITEM reason. The aggregate
+# outcome -- "the whole night produced nothing" -- was silent, so on 2026-07-29
+# zero posts went out and the operator found out by looking at the account
+# instead of at the run. A machine that cannot tell you it failed is not
+# autonomous, it is unattended.
+#
+# These drive the publisher LOOP, not the predicates. That distinction is not
+# academic: the bare-cashtag gate shipped green while writing into a `counters`
+# dict that was never defined, because its tests only exercised the pure
+# function and never walked main().
+# ─────────────────────────────────────────────────────────────────────────────
+class TestSilentNightAlarm:
+    def test_zero_posted_with_candidates_raises_a_loud_error(
+            self, monkeypatch, tmp_path, capsys):
+        """A post exists, none go out, and the run says so at ::error level."""
+        _write_publish_cfg(tmp_path, auto_approve=False)
+        # Queued and never approved: considered, blocked, zero posted.
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[0])
+
+        fake = _FakePublisher(ok=True)
+        rc = _run_publisher(monkeypatch, tmp_path, ["--live"],
+                            fake_publisher=fake, kill_switch=True)
+        assert rc == 0
+        assert fake.calls == [], "fixture assumption: nothing should have posted"
+
+        out = capsys.readouterr().out
+        hits = [ln for ln in out.splitlines()
+                if ln.startswith("::error title=marketing-zero-posted::")]
+        # Line-START, bare print: a logger prefix makes GitHub drop it silently.
+        assert hits, f"no silent-night alarm in output:\n{out[-1500:]}"
+        assert "NOTHING POSTED" in hits[0]
+
+    def test_a_night_that_posts_stays_quiet(self, monkeypatch, tmp_path, capsys):
+        """The alarm must not cry wolf, or it gets ignored like every other one."""
+        from engine.marketing.outbox import current_statuses
+
+        _write_publish_cfg(tmp_path, auto_approve=True)
+        qid = _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[1])
+
+        fake = _FakePublisher(ok=True)
+        assert _run_publisher(monkeypatch, tmp_path, ["--live"],
+                              fake_publisher=fake, kill_switch=True) == 0
+        assert current_statuses(tmp_path)[qid] == "posted", "fixture must post"
+
+        out = capsys.readouterr().out
+        assert "marketing-zero-posted" not in out, "alarm fired on a good night"
+
+    def test_an_empty_queue_is_not_an_alarm(self, monkeypatch, tmp_path, capsys):
+        """Nothing was DUE. That is a supply problem the plan lane owns, and
+        firing here would train the operator to ignore the annotation."""
+        _write_publish_cfg(tmp_path, auto_approve=True)
+
+        fake = _FakePublisher(ok=True)
+        assert _run_publisher(monkeypatch, tmp_path, ["--live"],
+                              fake_publisher=fake, kill_switch=True) == 0
+        out = capsys.readouterr().out
+        assert "marketing-zero-posted" not in out, "alarm fired on an empty queue"
+
+    def test_a_dry_run_never_alarms(self, monkeypatch, tmp_path, capsys):
+        """--live only. A dry run posting nothing is the point of a dry run."""
+        _write_publish_cfg(tmp_path, auto_approve=True)
+        _seed_queued_item(tmp_path, text=_DISTINCT_BODIES[2])
+
+        assert _run_publisher(monkeypatch, tmp_path, [], kill_switch=False) == 0
+        out = capsys.readouterr().out
+        assert "marketing-zero-posted" not in out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The post-time voice screen judges a post by ITS OWN SHAPE
+# (adversarial review, 2026-07-31)
+#
+# THE DEFECT, end to end: the LLM prompt ORDERS a `stack` to carry three numbers
+# (copywriter.SHAPE_CONTRACT), validate_copy_v2 admits it under the per-shape
+# budget, outbox.emit_from_content_plan persists the shape at `source.shape` —
+# and then the publisher's post-time screen called queued_voice_violations with
+# no shape at all, re-judging the post at the shapeless default of two and
+# TERMINALLY quarantining it at dispatch. A post written to spec, paid for,
+# queued, and killed for obedience. Two halves, one in each file; this is the
+# call-site half.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: 3 distinct numbers, no cashtag (a cashtag on a price kind pulls in the live
+#: tape gate, which is a different test's subject). Over the shapeless budget of
+#: 2, inside the `stack` budget of 3.
+_THREE_NUMBER_STACK = (
+    "Three numbers off this morning's claims print, and then I will shut up "
+    "about it.\n\n"
+    "Initial claims 218.0 thousand, the four-week average 223.5 thousand, "
+    "continuing claims 1.94 million. I had been braced for a worse number "
+    "and I hedged into it, which cost me a decent week."
+)
+
+
+def _voice_quarantine_notes(tmp_path: Path, iid: str) -> list[str]:
+    """The voice screen's quarantine notes for one item, and only those.
+
+    Asserting on the NOTE rather than on the final status is deliberate: a
+    dispatch can end `posted` or `failed` for reasons that have nothing to do
+    with this gate, and either a bare "not quarantined" or a bare "posted"
+    assertion would go green the day an unrelated gate changed.
+    """
+    from engine.marketing.ledgers import read_jsonl
+    rows = read_jsonl(tmp_path / "data" / "marketing" / "outbox" / "status_ledger.jsonl")
+    return [str(r.get("note") or "") for r in rows
+            if r.get("id") == iid
+            and str(r.get("note") or "").startswith("voice laws (queue vintage):")]
+
+
+def test_a_three_number_stack_survives_the_dispatch_voice_screen(monkeypatch, tmp_path):
+    """The item's recorded shape reaches the gate, so the gate uses the stack
+    budget the writer was held to."""
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    iid = _seed_queued_kind(tmp_path, kind="macro", provenance="content_studio",
+                            text=_THREE_NUMBER_STACK,
+                            source={"shape": "stack", "angle": "data"})
+
+    fake = _FakePublisher(ok=True)
+    _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                   fake_publisher=fake, kill_switch=True)
+
+    assert _voice_quarantine_notes(tmp_path, iid) == [], (
+        "a post written to its own shape contract was killed at dispatch")
+
+
+def test_a_shapeless_item_still_gets_the_narrow_budget(monkeypatch, tmp_path):
+    """THE ANTI-VACUITY CONTROL, and the compatibility pin in one.
+
+    Identical copy, no recorded shape — a pre-W1 outbox row. It must still trip
+    the gate at the shapeless budget of two, which proves (a) the gate is armed
+    at all, so the test above is not passing on a disabled screen, and (b)
+    threading the shape did not quietly widen the budget for every queued item.
+    """
+    _write_publish_cfg(tmp_path, auto_approve=False, cap=-1, floor_min=0)
+    iid = _seed_queued_kind(tmp_path, kind="macro", provenance="content_studio",
+                            text=_THREE_NUMBER_STACK, source={"angle": "data"})
+
+    fake = _FakePublisher(ok=True)
+    _run_publisher(monkeypatch, tmp_path, ["--live", "--post-now", iid],
+                   fake_publisher=fake, kill_switch=True)
+
+    notes = _voice_quarantine_notes(tmp_path, iid)
+    assert len(notes) == 1, notes
+    assert "number soup (3 numbers" in notes[0], notes

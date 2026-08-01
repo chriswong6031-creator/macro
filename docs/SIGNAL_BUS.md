@@ -23,6 +23,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | china-system | 6 |
 | codex-b5 | 1 |
 | codex-docket-b6 | 3 |
+| crypto-cockpit | 3 |
 | cycle-intelligence | 14 |
 | dannytrades | 1 |
 | engine-fix | 18 |
@@ -63,7 +64,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | nw-context-intelligence | 3 |
 | nw-mastermind-bridge | 5 |
 | nw-rails | 7 |
-| options-alpha | 7 |
+| options-alpha | 8 |
 | options-intelligence-program | 6 |
 | options-nw-entry-intelligence | 3 |
 | oracle | 29 |
@@ -101,7 +102,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 341 |
+| display | 345 |
 | infrastructure | 95 |
 | scored | 4 |
 | shadow | 79 |
@@ -110,7 +111,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 494 |
+| git | 497 |
+| git+r2 | 1 |
 | gitignored-local | 15 |
 | r2 | 10 |
 
@@ -248,6 +250,14 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | watchlist-sentinel-cooldown | `data/alerts/watchlist_sentinel_cooldown.json` | json | daily-engine | infrastructure | 1 | 0 |
 | watchlist-sentinel-states | `data/alerts/watchlist_sentinel_states.json` | json | daily-engine | infrastructure | 1 | 0 |
 
+### crypto-cockpit
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| btc-options | `site/btc_options.json` | json | daily-engine | display | 3 | 0 |
+| crypto-asset-states | `site/crypto_asset_states.json` | json | daily-engine | display | 1 | 0 |
+| crypto-class-state | `site/crypto_class_state.json` | json | daily-engine | display | 1 | 0 |
+
 ### cycle-intelligence
 
 | id | path | format | cadence | tier | consumers | external consumers |
@@ -277,9 +287,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 37 | 3 |
-| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 19 | 0 |
-| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 18 | 0 |
+| regime-latest | `data/regime/latest.json` | json | daily-engine | infrastructure | 37 | 4 |
+| regime-history | `data/regime/regime_history.parquet` | parquet | daily-engine | infrastructure | 19 | 1 |
+| breadth-breadth | `data/breadth/breadth.parquet` | parquet | collect | infrastructure | 18 | 1 |
 | breadth-sp1500-pit | `data/breadth/sp1500_pit_membership.parquet` | parquet | on-demand | infrastructure | 11 | 0 |
 | market-state-latest | `data/market_state/latest.json` | json | daily-engine | display | 8 | 0 |
 | risk-radar-forward-log | `data/risk_radar/forward_log.jsonl` | jsonl | daily-engine | display | 7 | 0 |
@@ -586,9 +596,9 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 2 | 2 |
 | prophet-trade-plan | `prophet/trade_plan/<ID>.json` | json | daily-engine | display | 2 | 1 |
 | options-flow-chain-heat | `live_flow/chain_heat_current.json` | json | collect | display | 1 | 1 |
-| options-structure-gex-state | `options_structure/gex_state/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | options-structure-matrix | `options_structure/matrix/<ROOT>.json` | json | daily-engine | display | 1 | 1 |
 | prophet-management-state | `prophet/state/<ID>.json` | json | daily-engine | display | 1 | 1 |
 | options-structure-structural | `options_structure/structural/<ROOT>.json` | json | daily-engine | shadow | 1 | 0 |
@@ -615,7 +625,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 12 | 2 |
+| world-state | `data/neuralweb/world_state.json` | json | daily-engine | infrastructure | 12 | 3 |
 | liquidity-plumbing | `data/neuralweb/liquidity_plumbing.json` | json | daily-engine | shadow | 5 | 0 |
 | machine-registry | `data/neuralweb/machine_registry.jsonl` | jsonl | nightly-cortex | infrastructure | 5 | 0 |
 | spine-index | `data/neuralweb/spine_index.parquet` | parquet | daily-engine | infrastructure | 5 | 0 |
@@ -723,9 +733,10 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | polygon-gex-summaries | `data/polygon_gex/summary_*.parquet` | parquet | collect | display | 4 | 0 |
+| gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 3 | 0 |
 | options-skew-snapshots | `data/options_skew/snapshots.parquet` | parquet | collect | display | 3 | 0 |
+| polygon-gex-chains | `data/polygon_gex/chains/<DATE>.parquet` | parquet | collect | display | 3 | 0 |
 | vol-regime-gate | `data/vol_regime/gate.json` | json | on-demand | scored | 3 | 0 |
-| gex-state-history | `data/index_gex_history/*.parquet` | parquet | weekly | display | 2 | 0 |
 | vol-regime-basket-overlay-gate | `data/vol_regime/basket_overlay_gate.json` | json | on-demand | scored | 2 | 0 |
 | options-flow-index | `site/flow/index.json` | json | collect | display | 0 | 1 |
 | options-ivspread-snapshots | `data/options_ivspread/snapshots.parquet` | parquet | collect | display | 1 | 0 |
@@ -857,7 +868,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
 | opex-risk-snapshot | `site/vol/regime.json` | json | daily-engine | display | 3 | 2 |
-| rates-command-latest | `data/rates_command/latest.json` | json | daily-engine | display | 2 | 2 |
+| rates-command-latest | `data/rates_command/latest.json` | json | daily-engine | display | 2 | 3 |
 | event-windows-snapshot | `site/event_windows/snapshot.json` | json | daily-engine | display | 3 | 0 |
 | event-windows-forward-log | `data/event_windows/forward_log.jsonl` | jsonl | daily-engine | display | 2 | 0 |
 | options-surface-index-etf | `data/options_surface/index_etf.parquet` | parquet | theta-ops-nightly | display | 1 | 0 |
@@ -1077,19 +1088,19 @@ flowchart LR
     C_engine_briefing_py["engine/briefing.py"]
     C_engine_china_intel_analysis_py["engine/china_intel_analysis.py"]
     C_engine_china_intel_bus_py["engine/china_intel_bus.py"]
-    OVF_regime_latest["...+36 more"]
+    OVF_regime_latest["...+37 more"]
     A_regime_history["regime-history"]
     C_engine_alerts_py["engine/alerts.py"]
     C_engine_board_ledger_py["engine/board_ledger.py"]
     C_engine_neuralweb_context_api_py["engine/neuralweb/context_api.py"]
     C_engine_neuralweb_lagging_py["engine/neuralweb/lagging.py"]
-    OVF_regime_history["...+15 more"]
+    OVF_regime_history["...+16 more"]
     P_collectors_breadth_py(("collectors/breadth.py"))
     A_breadth_breadth["breadth-breadth"]
     C_engine_anticipation_py["engine/anticipation.py"]
     C_engine_basket_score_py["engine/basket_score.py"]
     C_engine_neuralweb_world_state_py["engine/neuralweb/world_state.py"]
-    OVF_breadth_breadth["...+14 more"]
+    OVF_breadth_breadth["...+15 more"]
     P_scripts_seed_us_sector_baskets_py(("scripts/seed_us_sector_baskets.py"))
     A_baskets_membership["baskets-membership"]
     C_engine_demand_ledger_py["engine/demand_ledger.py"]
@@ -1110,6 +1121,13 @@ flowchart LR
     C_engine_altdata_confirmers_py["engine/altdata_confirmers.py"]
     C_engine_altdata_signals_py["engine/altdata_signals.py"]
     OVF_altdata_by_ticker["...+11 more"]
+    P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
+    A_world_state["world-state"]
+    C_scripts_build_feeds_py["scripts/build_feeds.py"]
+    C_scripts_notify_py["scripts/notify.py"]
+    C_scripts_build_impulse_py["scripts/build_impulse.py"]
+    C_engine_etf_pulse_py["engine/etf_pulse.py"]
+    OVF_world_state["...+11 more"]
     P_engine_qledger_py(("engine/qledger.py"))
     A_qledger_claims["qledger-claims"]
     C_engine_communique_diff_py["engine/communique_diff.py"]
@@ -1117,13 +1135,6 @@ flowchart LR
     C_engine_neuralweb_query_py["engine/neuralweb/query.py"]
     C_engine_qledger_ui_py["engine/qledger_ui.py"]
     OVF_qledger_claims["...+10 more"]
-    P_engine_neuralweb_world_state_py(("engine/neuralweb/world_state.py"))
-    A_world_state["world-state"]
-    C_scripts_build_feeds_py["scripts/build_feeds.py"]
-    C_scripts_notify_py["scripts/notify.py"]
-    C_scripts_build_impulse_py["scripts/build_impulse.py"]
-    C_engine_etf_pulse_py["engine/etf_pulse.py"]
-    OVF_world_state["...+10 more"]
     P_scripts_midsmall_pit_py(("scripts/midsmall_pit.py"))
     A_breadth_sp1500_pit["breadth-sp1500-pit"]
     C_engine_grading_py["engine/grading.py"]
@@ -1202,18 +1213,18 @@ flowchart LR
     A_altdata_by_ticker --> C_engine_altdata_signals_py
     A_altdata_by_ticker --> C_engine_briefing_py
     A_altdata_by_ticker --> OVF_altdata_by_ticker
-    P_engine_qledger_py --> A_qledger_claims
-    A_qledger_claims --> C_engine_communique_diff_py
-    A_qledger_claims --> C_engine_missing_tape_py
-    A_qledger_claims --> C_engine_neuralweb_query_py
-    A_qledger_claims --> C_engine_qledger_ui_py
-    A_qledger_claims --> OVF_qledger_claims
     P_engine_neuralweb_world_state_py --> A_world_state
     A_world_state --> C_scripts_build_feeds_py
     A_world_state --> C_scripts_notify_py
     A_world_state --> C_scripts_build_impulse_py
     A_world_state --> C_engine_etf_pulse_py
     A_world_state --> OVF_world_state
+    P_engine_qledger_py --> A_qledger_claims
+    A_qledger_claims --> C_engine_communique_diff_py
+    A_qledger_claims --> C_engine_missing_tape_py
+    A_qledger_claims --> C_engine_neuralweb_query_py
+    A_qledger_claims --> C_engine_qledger_ui_py
+    A_qledger_claims --> OVF_qledger_claims
     P_scripts_midsmall_pit_py --> A_breadth_sp1500_pit
     A_breadth_sp1500_pit --> C_engine_grading_py
     A_breadth_sp1500_pit --> C_engine_group_flow_py

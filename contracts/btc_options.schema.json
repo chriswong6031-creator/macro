@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/btc_options.schema.json",
+  "title": "Bitcoin options display contract",
+  "type": "object",
+  "required": [
+    "schema", "tier", "display_only", "as_of", "coverage",
+    "volatility", "positioning", "gamma", "basis"
+  ],
+  "properties": {
+    "schema": {"const": "crypto.btc_options/v1"},
+    "tier": {"const": "display"},
+    "display_only": {"const": true},
+    "as_of": {"type": ["string", "null"], "format": "date"},
+    "coverage": {"type": "object"},
+    "volatility": {"type": "object"},
+    "positioning": {"type": "object"},
+    "gamma": {"type": "object"},
+    "basis": {"type": "object"}
+  }
+}

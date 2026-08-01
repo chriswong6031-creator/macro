@@ -46,3 +46,17 @@ def test_mobile_globe_is_touchless_and_scroll_safe():
     assert 'if (e.pointerType === "touch") return;' in globe_js
     assert "if (touchlessMobile) return;" in globe_js
     assert 'matchMedia("(hover: none) and (pointer: coarse)").matches' in globe_js
+
+
+def test_country_tooltip_uses_the_same_live_quote_as_its_pebble():
+    globe_js = (ROOT / "site" / "globe-deck.js").read_text()
+
+    assert "function liveIndexReading(m)" in globe_js
+    assert 'isl.querySelector(".isl-px")' in globe_js
+    assert 'isl.querySelector(".isl-chg")' in globe_js
+    assert 'var q = m.quad, idx = liveIndexReading(m), up = idx.up;' in globe_js
+    assert '<b class="nb-px" data-sym="' in globe_js
+    assert '<span class="gd-chg nb-chg ' in globe_js
+    assert "' + idx.price + '" in globe_js
+    assert "' + idx.change + '" in globe_js
+    assert '<b>\' + (m.index_price || "—") + \'</b>' not in globe_js

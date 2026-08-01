@@ -841,7 +841,7 @@ def _load_options_skew(
     #                        on a count padded with non-trading days (the n-gate-vacuous
     #                        class). Filtering makes the 21 mean 21 sessions.
     # Fail-open: session_rows returns the frame unchanged if filtering would empty it.
-    df = nyse_calendar_session_rows(df, date_col)
+    df = nyse_calendar_session_rows(df, date_col, label="options_skew/snapshots")
 
     # ...and a read that silently failed open is the padded-count defect the guard
     # exists to stop, so it must announce itself (session_rows' docstring leaves the

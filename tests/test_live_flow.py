@@ -577,7 +577,14 @@ class TestCollectorAdditiveParams:
         assert "end_time" not in p
 
     def test_start_time_str_in_params(self, monkeypatch):
-        """start_time='09:30:00' → start_time param present in request as HH:MM:SS.mmm string."""
+        """start_time='09:30:00' → start_time reaches the wire as HH:MM:SS.mmm.
+
+        Since the R0.6 windowed-wildcard guard (2026-07-31), a windowed pull with
+        the default wildcard expiration is routed through the per-expiration path
+        (wildcard+time returns silently-empty on terminal build 202607231), so the
+        time params are asserted on the per-exp requests and NO wildcard request
+        may be sent at all.
+        """
         captured_params: list[dict] = []
 
         def _mock_stream(session, path, params):
@@ -586,20 +593,23 @@ class TestCollectorAdditiveParams:
 
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         monkeypatch.setattr("collectors.thetadata._stream_lines", _mock_stream)
+        monkeypatch.setattr("collectors.thetadata.list_expirations",
+                            lambda sym: ["2026-07-05"])
 
         from collectors.thetadata import bulk_trade_quote, _time_to_str
         bulk_trade_quote("SPY", "call", "20260702", "20260702",
                          start_time="09:30:00", end_time="10:00:00")
 
-        p = captured_params[0]
-        assert "start_time" in p
-        assert "end_time" in p
-        # "09:30:00" → "09:30:00.000"
-        assert p["start_time"] == _time_to_str("09:30:00")
-        assert p["end_time"]   == _time_to_str("10:00:00")
+        assert captured_params, "expected at least one per-exp request"
+        assert all(p["expiration"] != "*" for p in captured_params), (
+            "windowed wildcard request must never be sent (silently-empty)")
+        for p in captured_params:
+            assert p["start_time"] == _time_to_str("09:30:00")
+            assert p["end_time"]   == _time_to_str("10:00:00")
 
     def test_start_time_int_passed_as_str(self, monkeypatch):
-        """start_time as ms int → converted to HH:MM:SS.mmm string."""
+        """start_time as ms int → converted to HH:MM:SS.mmm string (per-exp path —
+        see the windowed-wildcard guard note above)."""
         captured_params: list[dict] = []
 
         def _mock_stream(session, path, params):
@@ -608,10 +618,13 @@ class TestCollectorAdditiveParams:
 
         monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
         monkeypatch.setattr("collectors.thetadata._stream_lines", _mock_stream)
+        monkeypatch.setattr("collectors.thetadata.list_expirations",
+                            lambda sym: ["2026-07-05"])
 
         from collectors.thetadata import bulk_trade_quote, _time_to_str
         bulk_trade_quote("SPY", "call", "20260702", "20260702",
                          start_time=34_200_000)
+        assert captured_params, "expected at least one per-exp request"
         assert captured_params[0]["start_time"] == _time_to_str(34_200_000)
         assert captured_params[0]["start_time"] == "09:30:00.000"
 

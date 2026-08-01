@@ -1,0 +1,668 @@
+{
+  "schema": "international_macro_dashboard.v1",
+  "route": "united_kingdom.html",
+  "cc": "GB",
+  "name": "United Kingdom",
+  "name_zh": "英国",
+  "flag": "🇬🇧",
+  "scope_en": "United Kingdom national economy; FTSE 100 and FTSE 250 are market context.",
+  "scope_zh": "英国全国经济；富时100与富时250仅作市场背景。",
+  "asof": "2026-07-30",
+  "built": "2026-08-01 03:03 UTC",
+  "regime": {
+    "quad": "Q2",
+    "name": "Reflation",
+    "growth_score": 0.6,
+    "inflation_score": 0.5,
+    "confidence": 0.55,
+    "liquidity": "unknown",
+    "recession_score": 0.0,
+    "recession_band": "low",
+    "data_limited": false
+  },
+  "decision": {
+    "score": 54,
+    "state": "balanced",
+    "state_en": "Balanced",
+    "state_zh": "均衡",
+    "action_en": "Stay selective while sticky services inflation offsets improving growth.",
+    "action_zh": "服务通胀黏性抵消增长改善时保持精选。",
+    "transitions_en": [
+      "Upgrade: real-wage gains broaden into consumption and housing stabilization.",
+      "Policy turn: services inflation and wage growth cool enough for durable BoE easing.",
+      "Downgrade: gilt yields and mortgage resets tighten into weaker labour demand."
+    ],
+    "transitions_zh": [
+      "上调：实际工资增长扩散至消费与住房企稳。",
+      "政策转折：服务通胀与工资增速降温，支持持续降息。",
+      "下调：国债收益率与按揭重定价收紧，并传导至劳动力需求走弱。"
+    ],
+    "parts": {
+      "base": 50.0,
+      "growth": 13.2,
+      "inflation": -5.0,
+      "recession": -0.0,
+      "liquidity": 0.0,
+      "risk_state": -4.0
+    },
+    "method_en": "50 + growth impulse − inflation pressure − recession stress + liquidity + current calibrated-risk state. Descriptive, not a forecast.",
+    "method_zh": "50 + 增长脉冲 − 通胀压力 − 衰退压力 + 流动性 + 当前校准风险状态。仅作描述，不是预测。"
+  },
+  "history": {
+    "values": [
+      42,
+      43,
+      31,
+      37,
+      46,
+      31,
+      32,
+      41,
+      46,
+      46,
+      46,
+      46,
+      47,
+      61,
+      51,
+      51,
+      51,
+      51,
+      51,
+      51,
+      51,
+      51,
+      50,
+      50,
+      50,
+      60,
+      51,
+      52,
+      52,
+      51,
+      51,
+      51,
+      51,
+      51,
+      52,
+      52,
+      52,
+      52,
+      52,
+      57,
+      62,
+      57,
+      57,
+      56,
+      56,
+      47,
+      52,
+      52,
+      52,
+      61,
+      52,
+      47,
+      47,
+      57,
+      48,
+      57,
+      53,
+      54,
+      58,
+      58
+    ],
+    "dates": [
+      "2026-05-08",
+      "2026-05-11",
+      "2026-05-12",
+      "2026-05-13",
+      "2026-05-14",
+      "2026-05-15",
+      "2026-05-18",
+      "2026-05-19",
+      "2026-05-20",
+      "2026-05-21",
+      "2026-05-22",
+      "2026-05-25",
+      "2026-05-26",
+      "2026-05-27",
+      "2026-05-28",
+      "2026-05-29",
+      "2026-06-01",
+      "2026-06-02",
+      "2026-06-03",
+      "2026-06-04",
+      "2026-06-05",
+      "2026-06-08",
+      "2026-06-09",
+      "2026-06-10",
+      "2026-06-11",
+      "2026-06-12",
+      "2026-06-15",
+      "2026-06-16",
+      "2026-06-17",
+      "2026-06-18",
+      "2026-06-19",
+      "2026-06-22",
+      "2026-06-23",
+      "2026-06-24",
+      "2026-06-25",
+      "2026-06-26",
+      "2026-06-29",
+      "2026-06-30",
+      "2026-07-01",
+      "2026-07-02",
+      "2026-07-03",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-20",
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+      "2026-07-27",
+      "2026-07-28",
+      "2026-07-29",
+      "2026-07-30"
+    ],
+    "points": "0.00,58.00 1.69,57.00 3.39,69.00 5.08,63.00 6.78,54.00 8.47,69.00 10.17,68.00 11.86,59.00 13.56,54.00 15.25,54.00 16.95,54.00 18.64,54.00 20.34,53.00 22.03,39.00 23.73,49.00 25.42,49.00 27.12,49.00 28.81,49.00 30.51,49.00 32.20,49.00 33.90,49.00 35.59,49.00 37.29,50.00 38.98,50.00 40.68,50.00 42.37,40.00 44.07,49.00 45.76,48.00 47.46,48.00 49.15,49.00 50.85,49.00 52.54,49.00 54.24,49.00 55.93,49.00 57.63,48.00 59.32,48.00 61.02,48.00 62.71,48.00 64.41,48.00 66.10,43.00 67.80,38.00 69.49,43.00 71.19,43.00 72.88,44.00 74.58,44.00 76.27,53.00 77.97,48.00 79.66,48.00 81.36,48.00 83.05,39.00 84.75,48.00 86.44,53.00 88.14,53.00 89.83,43.00 91.53,52.00 93.22,43.00 94.92,47.00 96.61,46.00 98.31,42.00 100.00,42.00",
+    "min": 31,
+    "max": 62,
+    "start": "2026-05-08",
+    "end": "2026-07-30"
+  },
+  "market": {
+    "index_label": "FTSE 100 / FTSE 250",
+    "currency_label": "GBP/USD",
+    "equity": {
+      "price": 10897.3,
+      "off_52w_high": -0.1,
+      "above_50d": true,
+      "above_200d": true,
+      "realvol": 11.3,
+      "rsi": 69.0,
+      "ext_z": -0.24,
+      "ext_grade": "intrend",
+      "drawdown_risk": 0.0,
+      "drawdown_band": "low",
+      "bubble_flag": false
+    }
+  },
+  "policy": {
+    "bank": "Bank of England",
+    "short": "BoE",
+    "rate": 3.71,
+    "curve": 1.23
+  },
+  "risk": {
+    "state": "caution",
+    "top_score": 74,
+    "dominant_en": "Parabolic extension / exhaustion",
+    "dominant_zh": "抛物线伸展／透支",
+    "h21": 0.186,
+    "measure": ">=5% index pullback within h business days (measured on this market's own history)",
+    "trajectory": {
+      "intensity": 73.6,
+      "peak": 80.7,
+      "peak_days_ago": 1,
+      "off_peak": 7.0,
+      "velocity": 16.7,
+      "phase": "rising",
+      "reached_risk": true,
+      "state_now": "caution",
+      "odds_now": 0.186,
+      "odds_peak": 0.186,
+      "odds_delta": 0.0,
+      "spark": [
+        63.5,
+        64.9,
+        70.8,
+        77.6,
+        75.4,
+        49.6,
+        50.2,
+        47.0,
+        39.9,
+        54.8,
+        63.8,
+        65.3,
+        57.9,
+        40.1,
+        36.4,
+        30.8,
+        33.9,
+        56.7,
+        56.9,
+        72.4,
+        73.2,
+        80.4,
+        80.7,
+        73.6
+      ],
+      "spark_pts": "3.0,9.9 6.9,9.3 10.8,7.0 14.7,4.2 18.7,5.1 22.6,15.5 26.5,15.2 30.4,16.5 34.3,19.4 38.2,13.4 42.1,9.8 46.0,9.2 50.0,12.1 53.9,19.3 57.8,20.8 61.7,23.0 65.6,21.8 69.5,12.6 73.4,12.5 77.3,6.3 81.3,6.0 85.2,3.1 89.1,3.0 93.0,5.8",
+      "spark_peak": {
+        "x": 89.1,
+        "y": 3.0
+      },
+      "spark_last": {
+        "x": 93.0,
+        "y": 5.8
+      },
+      "spark_w": 96,
+      "spark_h": 26,
+      "window": 30
+    },
+    "scares": [
+      {
+        "scare": "extension",
+        "tier": "A",
+        "label_en": "Parabolic extension / exhaustion",
+        "label_zh": "抛物线伸展／透支",
+        "score": 80.1,
+        "band": "elevated",
+        "firing_legs": [
+          {
+            "leg": "ext_idx",
+            "pctile": 0.827,
+            "confirmed": false
+          },
+          {
+            "leg": "ext_etf",
+            "pctile": 0.775,
+            "confirmed": false
+          }
+        ]
+      },
+      {
+        "scare": "rate_shock",
+        "tier": "A",
+        "label_en": "US rate shock",
+        "label_zh": "美债利率冲击",
+        "score": 76.6,
+        "band": "caution",
+        "firing_legs": [
+          {
+            "leg": "us_rate_10y",
+            "pctile": 0.831,
+            "confirmed": false
+          },
+          {
+            "leg": "us_real_rate",
+            "pctile": 0.819,
+            "confirmed": false
+          },
+          {
+            "leg": "us_rate_2y",
+            "pctile": 0.648,
+            "confirmed": false
+          }
+        ]
+      },
+      {
+        "scare": "capital_flow",
+        "tier": "A",
+        "label_en": "Sterling depreciation / outflows",
+        "label_zh": "英镑贬值／资金外流",
+        "score": 38.7,
+        "band": "calm",
+        "firing_legs": []
+      }
+    ],
+    "calibrated": true
+  },
+  "metrics": [
+    {
+      "key": "cpi_yoy",
+      "label_en": "Inflation",
+      "label_zh": "通胀",
+      "raw": 3.4,
+      "value": "3.40% y/y",
+      "unit": "% y/y",
+      "asof": "2025-03"
+    },
+    {
+      "key": "gdp_yoy",
+      "label_en": "Real growth",
+      "label_zh": "实际增长",
+      "raw": 0.91,
+      "value": "0.91% y/y",
+      "unit": "% y/y",
+      "asof": "2026-01"
+    },
+    {
+      "key": "unemployment",
+      "label_en": "Unemployment",
+      "label_zh": "失业率",
+      "raw": 5.0,
+      "value": "5.00%",
+      "unit": "%",
+      "asof": "2026-02"
+    },
+    {
+      "key": "yield_10y",
+      "label_en": "10-year yield",
+      "label_zh": "10年期收益率",
+      "raw": 4.8,
+      "value": "4.80%",
+      "unit": "%",
+      "asof": "2026-06"
+    },
+    {
+      "key": "policy_rate",
+      "label_en": "Policy / short rate",
+      "label_zh": "政策/短端利率",
+      "raw": 3.71,
+      "value": "3.71%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "curve",
+      "label_en": "10y minus short rate",
+      "label_zh": "10年期减短端",
+      "raw": 1.23,
+      "value": "1.23pp",
+      "unit": "pp",
+      "asof": null
+    },
+    {
+      "key": "fx",
+      "label_en": "FX reference",
+      "label_zh": "汇率参考",
+      "raw": 1.3367,
+      "value": "1.34",
+      "unit": "",
+      "asof": null
+    },
+    {
+      "key": "fx_strength_3m",
+      "label_en": "Currency strength, 3m",
+      "label_zh": "货币强弱，3个月",
+      "raw": -0.48,
+      "value": "-0.48%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "drawdown",
+      "label_en": "Index from 52w high",
+      "label_zh": "指数距52周高点",
+      "raw": -0.1,
+      "value": "-0.10%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "realvol",
+      "label_en": "Realized volatility",
+      "label_zh": "实现波动率",
+      "raw": 11.3,
+      "value": "11.30%",
+      "unit": "%",
+      "asof": null
+    }
+  ],
+  "lenses": [
+    {
+      "key": "policy",
+      "title_en": "BoE policy",
+      "title_zh": "英央行政策",
+      "why_en": "Services inflation and wages dominate the reaction function.",
+      "why_zh": "服务通胀与工资主导政策反应函数。",
+      "value": "3.71%",
+      "available": true,
+      "metric": "policy_rate",
+      "source_key": "boe",
+      "source": "Bank of England",
+      "source_url": "https://www.bankofengland.co.uk/boeapps/database/"
+    },
+    {
+      "key": "services",
+      "title_en": "Services inflation",
+      "title_zh": "服务通胀",
+      "why_en": "The clearest domestic persistence test.",
+      "why_zh": "最清晰的国内通胀黏性检验。",
+      "value": "3.40% y/y",
+      "available": true,
+      "metric": "cpi_yoy",
+      "source_key": "ons",
+      "source": "Office for National Statistics",
+      "source_url": "https://developer.ons.gov.uk/"
+    },
+    {
+      "key": "wages",
+      "title_en": "Wage growth",
+      "title_zh": "工资增长",
+      "why_en": "Real-income support versus persistence risk.",
+      "why_zh": "实际收入支持与通胀黏性风险的平衡。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "ons",
+      "source": "Office for National Statistics",
+      "source_url": "https://developer.ons.gov.uk/"
+    },
+    {
+      "key": "gilts",
+      "title_en": "Gilt curve",
+      "title_zh": "英国国债曲线",
+      "why_en": "Links policy, fiscal risk and mortgage pricing.",
+      "why_zh": "连接货币政策、财政风险与按揭定价。",
+      "value": "1.23pp",
+      "available": true,
+      "metric": "curve",
+      "source_key": "boe",
+      "source": "Bank of England",
+      "source_url": "https://www.bankofengland.co.uk/boeapps/database/"
+    },
+    {
+      "key": "housing",
+      "title_en": "Housing & mortgages",
+      "title_zh": "住房与按揭",
+      "why_en": "A high-frequency household cash-flow transmission channel.",
+      "why_zh": "家庭现金流的高频传导渠道。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "boe",
+      "source": "Bank of England",
+      "source_url": "https://www.bankofengland.co.uk/boeapps/database/"
+    },
+    {
+      "key": "fiscal",
+      "title_en": "Fiscal context",
+      "title_zh": "财政背景",
+      "why_en": "Supply, taxes and issuance can alter the rate path.",
+      "why_zh": "供给、税收与发债可改变利率路径。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "obr",
+      "source": "Office for Budget Responsibility",
+      "source_url": "https://obr.uk/data/"
+    },
+    {
+      "key": "sterling",
+      "title_en": "Sterling",
+      "title_zh": "英镑",
+      "why_en": "Imported inflation and cross-border confidence signal.",
+      "why_zh": "输入性通胀与跨境信心信号。",
+      "value": "1.34",
+      "available": true,
+      "metric": "fx",
+      "source_key": "boe",
+      "source": "Bank of England",
+      "source_url": "https://www.bankofengland.co.uk/boeapps/database/"
+    }
+  ],
+  "events": [
+    {
+      "date": "2026-06-18",
+      "bank": "BoE",
+      "name_en": "Bank of England Monetary Policy Committee",
+      "name_zh": "英格兰银行货币政策委员会",
+      "state": "released",
+      "outcome_en": "Decision date passed — verify the official release",
+      "outcome_zh": "决议日期已过——请核对官方发布",
+      "source": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+    },
+    {
+      "date": "2026-07-30",
+      "bank": "BoE",
+      "name_en": "Bank of England Monetary Policy Committee",
+      "name_zh": "英格兰银行货币政策委员会",
+      "state": "released",
+      "outcome_en": "Decision date passed — verify the official release",
+      "outcome_zh": "决议日期已过——请核对官方发布",
+      "source": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+    },
+    {
+      "date": "2026-09-17",
+      "bank": "BoE",
+      "name_en": "Bank of England Monetary Policy Committee",
+      "name_zh": "英格兰银行货币政策委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+    },
+    {
+      "date": "2026-11-05",
+      "bank": "BoE",
+      "name_en": "Bank of England Monetary Policy Committee",
+      "name_zh": "英格兰银行货币政策委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+    },
+    {
+      "date": "2026-12-17",
+      "bank": "BoE",
+      "name_en": "Bank of England Monetary Policy Committee",
+      "name_zh": "英格兰银行货币政策委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates"
+    }
+  ],
+  "health": [
+    {
+      "metric": "cpi_yoy",
+      "asof": "2025-03",
+      "age_days": 518,
+      "state": "stale",
+      "label_en": "Inflation",
+      "label_zh": "通胀"
+    },
+    {
+      "metric": "gdp",
+      "asof": "2026-01",
+      "age_days": 212,
+      "state": "stale",
+      "label_en": "Growth",
+      "label_zh": "增长"
+    },
+    {
+      "metric": "unemployment",
+      "asof": "2026-02",
+      "age_days": 181,
+      "state": "stale",
+      "label_en": "Labour",
+      "label_zh": "就业"
+    },
+    {
+      "metric": "yield_10y",
+      "asof": "2026-06",
+      "age_days": 61,
+      "state": "fresh",
+      "label_en": "Rates",
+      "label_zh": "利率"
+    }
+  ],
+  "sources": [
+    {
+      "key": "boe",
+      "provider": "Bank of England",
+      "url": "https://www.bankofengland.co.uk/boeapps/database/",
+      "cadence": "Daily / monthly",
+      "access": "Official IADB downloads",
+      "licence": "BoE terms of use",
+      "role": "Policy, SONIA, gilt curve, money, credit and mortgages",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "ons",
+      "provider": "Office for National Statistics",
+      "url": "https://developer.ons.gov.uk/",
+      "cadence": "Release dependent",
+      "access": "Keyless v1 beta API",
+      "licence": "Open Government Licence",
+      "role": "CPI, wages, labour, GDP, production, trade and housing",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "obr",
+      "provider": "Office for Budget Responsibility",
+      "url": "https://obr.uk/data/",
+      "cadence": "Forecast-event dependent",
+      "access": "Official downloads",
+      "licence": "Open Government Licence",
+      "role": "Fiscal context and forecast assumptions",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "fred",
+      "provider": "Federal Reserve Bank of St. Louis (official-source republisher)",
+      "url": "https://fred.stlouisfed.org/",
+      "cadence": "Source dependent",
+      "access": "Keyless CSV",
+      "licence": "FRED terms; underlying series terms retained",
+      "role": "Operational fallback for OECD, Eurostat and central-bank series",
+      "status": "active fallback"
+    }
+  ],
+  "caveat_en": "ONS labour-market estimates carry survey-response and methodology uncertainty; the dashboard treats labour as one input, not a standalone trigger.",
+  "caveat_zh": "ONS劳动力市场估计受调查回复率与方法变化影响；本看板将就业视为一项输入，而非独立触发器。",
+  "navigation": [
+    {
+      "cc": "JP",
+      "name": "Japan",
+      "route": "japan.html",
+      "active": false
+    },
+    {
+      "cc": "KR",
+      "name": "South Korea",
+      "route": "south_korea.html",
+      "active": false
+    },
+    {
+      "cc": "EZ",
+      "name": "Euro Area",
+      "route": "euro_area.html",
+      "active": false
+    },
+    {
+      "cc": "GB",
+      "name": "United Kingdom",
+      "route": "united_kingdom.html",
+      "active": true
+    },
+    {
+      "cc": "IN",
+      "name": "India",
+      "route": "india.html",
+      "active": false
+    }
+  ]
+}

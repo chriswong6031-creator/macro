@@ -592,9 +592,20 @@ def _daemon():
     return d
 
 
-def _wire(iid: str) -> dict:
-    """One published wires.v1 item (only `id` matters to the sidecar)."""
-    return {"id": iid, "ts": "2026-07-29T17:59:00Z", "en": f"headline {iid}"}
+def _wire(iid: str, *, fresh: bool = False) -> dict:
+    """One published wires.v1 item (only `id` matters to the sidecar).
+
+    `fresh=True` stamps the item at the RUN's wall clock. Required by any test
+    that drives the real `_run_press_tick`, whose `now` is the wall clock: the
+    wires sink age-filters the window (`rail_max_age_h`, 48h), so a fixed
+    fixture date is a time bomb — green on build day, red two days later when
+    the sink silently ages the item out (the repo's known fixture-date +
+    wall-clock-gate trap; it detonated here on 2026-07-31). Tests that pass an
+    explicit `now` into the helpers keep the fixed stamp for determinism.
+    """
+    ts = (datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          if fresh else "2026-07-29T17:59:00Z")
+    return {"id": iid, "ts": ts, "en": f"headline {iid}"}
 
 
 def _armed_cfg() -> dict:
@@ -898,7 +909,10 @@ def test_a_live_tick_persists_the_ordering_map_after_the_sink(
     d._PRESS_STATE_PATH.write_text("{}", encoding="utf-8")
     monkeypatch.setattr(pl, "run_press_tick", lambda *a, **k: {
         "emitted": [], "skipped": [], "digest": [], "blocked": [],
-        "rail": [_wire("hot"), _wire("cold")],
+        # fresh=True: this test drives the REAL tick, whose clock is the wall
+        # clock — a fixed fixture date ages out of the 48h window and empties
+        # the sidecar (detonated 2026-07-31).
+        "rail": [_wire("hot", fresh=True), _wire("cold", fresh=True)],
         "_rail_order": {"hot": 91.0, "cold": 44.0},
         "intelligence": [], "corpus": [], "_seen": [],
     })
@@ -909,3 +923,193 @@ def test_a_live_tick_persists_the_ordering_map_after_the_sink(
     assert payload["ids"] == ["hot", "cold"]
     persisted = json.loads(d._PRESS_STATE_PATH.read_text(encoding="utf-8"))
     assert persisted["wire_rank_order"] == {"hot": 91.0, "cold": 44.0}
+class TestTheEarningsPostObeysTheHouseVoice:
+    """It emitted six numbers and no point of view, and nobody had seen it.
+
+    The lane is dark by accident — nothing runs `--lane earnings`; the only
+    systemd unit drives `--lane press`. Driven by hand on 2026-07-31 it produced:
+
+        🧾 $AAPL (Q3 2026) earnings: BEAT.
+        EPS $2.11 vs $1.98 est (+6.6%). Rev $98.40B vs $97.10B est (+1.3%).
+        After-hours earnings drop.
+
+    Six distinct figures against a house budget of two, an emoji lead, a shouted
+    machine token for a verdict, and not one word that costs us anything. Arming
+    the lane in that state would have re-introduced the exact voice this whole
+    program removed.
+    """
+
+    @staticmethod
+    def _emit(tmp_path, **kw):
+        import json
+        from datetime import datetime, timezone
+
+        from engine.marketing.earnings_feed import _event_id
+        from engine.marketing.fastlane import run_tick
+
+        ev = {"id": _event_id(kw.get("ticker", "AAPL"), "Q3 2026", "t"),
+              "ticker": kw.get("ticker", "AAPL"), "when": "2026-07-31T20:30:00",
+              "eps_actual": kw.get("eps_actual", 2.11),
+              "eps_est": kw.get("eps_est", 1.98),
+              "rev_actual": kw.get("rev_actual", 98.4e9),
+              "rev_est": kw.get("rev_est", 97.1e9),
+              "quarter": kw.get("quarter", "Q3 2026"), "source": "t"}
+        run_tick([ev], root=tmp_path,
+                 now=datetime(2026, 7, 31, 21, 0, tzinfo=timezone.utc),
+                 universe={ev["ticker"]}, dry_run=False, cta=True, spool=False)
+        for f in (tmp_path / "data" / "marketing" / "outbox").glob("items*.jsonl"):
+            for line in f.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    return json.loads(line)["text"]
+        raise AssertionError("the earnings lane emitted nothing")
+
+    def test_it_clears_the_number_budget(self, tmp_path):
+        from engine.marketing.copywriter import number_soup_violations
+
+        text = self._emit(tmp_path)
+        assert not number_soup_violations(text, kind="earnings"), text
+
+    def test_the_verdict_reads_as_english_not_as_a_token(self, tmp_path):
+        """`verdict` is BEAT/MISS/INLINE. Lowercasing it into a sentence gave
+        "$AAPL miss on the Q3 2026", which is not English."""
+        beat = self._emit(tmp_path / "a", eps_actual=2.11, eps_est=1.98)
+        miss = self._emit(tmp_path / "b", eps_actual=1.80, eps_est=1.98)
+        assert "beat on Q3 2026" in beat, beat
+        assert "missed on Q3 2026" in miss, miss
+        assert "miss on the" not in miss
+
+    def test_a_missing_quarter_still_reads(self, tmp_path):
+        text = self._emit(tmp_path, quarter=None)
+        assert "on the quarter." in text, text
+
+    def test_the_revenue_leg_is_words_not_a_second_pair_of_figures(self, tmp_path):
+        """Same claim told twice is a data dump, not a stronger post."""
+        ahead = self._emit(tmp_path / "a", rev_actual=98.4e9, rev_est=97.1e9)
+        light = self._emit(tmp_path / "b", rev_actual=92.0e9, rev_est=97.1e9)
+        assert "Revenue came in ahead too." in ahead
+        assert "Revenue came in light." in light
+        for text in (ahead, light):
+            assert "B vs $" not in text, "the revenue figures are back in the copy"
+
+    def test_it_carries_a_reaction_that_costs_something(self, tmp_path):
+        """The house voice law: a fact PLUS a reaction that costs you."""
+        text = self._emit(tmp_path)
+        assert "don't trade the print" in text, text
+
+    def test_it_passes_the_shared_guards(self, tmp_path):
+        from engine.marketing.copywriter import banned_language
+        from engine.marketing.value_gate import evaluate
+
+        text = self._emit(tmp_path)
+        assert not banned_language(text), text
+        hl, bd = text.split("\n\n", 1)
+        assert evaluate(hl, bd, kind="earnings", has_media=True).verdict == "pass"
+
+    def test_the_whitelist_does_not_vouch_for_numbers_the_copy_never_says(self, tmp_path):
+        """The whitelist CERTIFIES a figure as ours. Listing one the post never
+        prints widens the certificate for nothing — the quiet direction for a
+        guard to weaken in."""
+        import json
+
+        from datetime import datetime, timezone
+
+        from engine.marketing.earnings_feed import _event_id
+        from engine.marketing.fastlane import run_tick
+
+        ev = {"id": _event_id("AAPL", "Q3 2026", "wl"), "ticker": "AAPL",
+              "when": "2026-07-31T20:30:00", "eps_actual": 2.11, "eps_est": 1.98,
+              "rev_actual": 98.4e9, "rev_est": 97.1e9, "quarter": "Q3 2026",
+              "source": "t"}
+        run_tick([ev], root=tmp_path,
+                 now=datetime(2026, 7, 31, 21, 0, tzinfo=timezone.utc),
+                 universe={"AAPL"}, dry_run=False, cta=True, spool=False)
+        for f in (tmp_path / "data" / "marketing" / "outbox").glob("items*.jsonl"):
+            for line in f.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                wl = (item.get("source") or {}).get("numbers_whitelist") or []
+                text = item["text"]
+                for token in wl:
+                    assert str(token) in text, (
+                        f"whitelisted {token!r} never appears in the post")
+
+
+class TestTheEarningsLaneIsActuallyArmed:
+    """The lane existed and nothing ran it. This pins the wiring that does.
+
+    Three switches, and they are not the same one — getting it wrong is how a
+    workflow runs 36 times a day and does nothing:
+
+        MARKETING_FASTLANE_ENABLED   arms the daemon; without it a live run
+                                     prints one line and exits 0 before fetching
+        MARKETING_OUTBOX_ENABLED     lets the lane WRITE the queue
+        MARKETING_PUBLISH_ENABLED    lets marketing-publish.yml SEND
+
+    The first must be present or the workflow is inert. The last must be ABSENT
+    or this lane stops being queue-only and starts posting to live accounts.
+    """
+
+    WORKFLOW = "​.github/workflows/marketing-earnings-wire.yml".replace("​", "")
+
+    def _wf(self):
+        import pathlib
+
+        import pytest
+
+        yaml = pytest.importorskip("yaml")
+        p = pathlib.Path(self.WORKFLOW)
+        assert p.exists(), "the earnings lane has no workflow — it is dark again"
+        return yaml.safe_load(p.read_text(encoding="utf-8"))
+
+    def _run_env(self):
+        job = self._wf()["jobs"]["earnings"]
+        step = next(s for s in job["steps"] if s.get("name") == "run the earnings lane")
+        return step["env"], step["run"]
+
+    def test_the_daemon_switch_is_set_or_every_pass_is_a_no_op(self):
+        env, _ = self._run_env()
+        assert env.get("MARKETING_FASTLANE_ENABLED") == "1"
+        assert env.get("MARKETING_OUTBOX_ENABLED") == "1"
+
+    def test_the_SEND_switch_is_absent_so_the_lane_stays_queue_only(self):
+        env, _ = self._run_env()
+        assert "MARKETING_PUBLISH_ENABLED" not in env, (
+            "this lane would now POST to live accounts instead of queueing"
+        )
+
+    def test_it_writes_the_TRACKED_outbox_not_the_host_spool(self):
+        """spool=True routes to the GITIGNORED items-host.jsonl, which the
+        publisher never folds — the split-brain that kept the press wire dark."""
+        _, run = self._run_env()
+        assert "--no-spool" in run
+
+    def test_it_stays_off_the_render_pool(self):
+        """The nightly's ~67-minute budget is law."""
+        assert self._wf()["jobs"]["earnings"]["runs-on"] == "ubuntu-latest"
+
+    def test_it_polls_the_reporting_windows_on_weekdays_only(self):
+        on = self._wf().get(True) or self._wf().get("on")
+        crons = [e["cron"] for e in on["schedule"]]
+        assert crons, "no schedule — the lane is dark again"
+        fields = crons[0].split()
+        assert fields[4] == "1-5", "weekend passes poll a calendar that cannot move"
+        assert "11-13" in fields[1] and "20-22" in fields[1], fields[1]
+
+    def test_the_earnings_calendar_is_in_the_checkout_cone(self):
+        """earnings.parquet IS the input. Coning it out makes the lane blind."""
+        job = self._wf()["jobs"]["earnings"]
+        cone = job["steps"][0]["with"]["sparse-checkout"].split()
+        assert "data/earnings" in cone
+        install = next(s for s in job["steps"] if s.get("name") == "install deps")
+        assert "pandas" in install["run"], "the parquet cannot be read without it"
+
+    def test_the_daemon_exposes_the_no_spool_flag(self):
+        """The workflow's command is only honest if the flag exists."""
+        from scripts.marketing_fastlane_daemon import main  # noqa: F401
+        import inspect
+        import scripts.marketing_fastlane_daemon as D
+
+        src = inspect.getsource(D)
+        assert '"--no-spool"' in src
+        assert "spool=args.spool" in src, "the flag is parsed but never threaded"

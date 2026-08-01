@@ -1470,6 +1470,20 @@
    ]
   },
   {
+   "match": "以经验证的一道闸为准",
+   "backing": "ZH counterpart of 'validated gate governs' on the macro_signals surface. research/DISLOCATION_VALIDATION.md — the hardened Phase-0 validation of the Fed-put master switch (PUT-ABSENT = recession(Sahm>=0.5) OR sustained 10y breakeven>=2.5%), SPY 1997-2026: stress episodes split by put state, honest lens (hit-rate AND conditional max-drawdown), episode-declustered, bootstrap CI, split-half + LOYO. Measured on the composite STRESS set at 252d: PUT-PRESENT 76.5% hit / medRet +16.9% vs PUT-ABSENT 40.0% / -3.4%, with the stand-aside side ~2x deeper p10 drawdown. THIS is the gate the dislocation panel means by 'the validated gate' — NOT sector_central's absolute-trend gate and NOT the spvector re-deploy overlay, whose entries this claim rode until the `surfaces` list became enforceable (2026-07-29). The panel's own copy keeps the AI/GPR cross-checks CONTEXT-ONLY ('it never changes the verdict').  Re-scoped 2026-07-30: the stress-selloff readout that carries this sentence was demoted off the macro board (operator: \"all machine language ... nothing they can remotely understand\") to templates/macro_signals.html.j2 §5, so the same engine copy now renders on site/macro_signals.html. Same claim, same backing, same panel — only the page it lives on changed.",
+   "surfaces": [
+    "macro_signals"
+   ]
+  },
+  {
+   "match": "以经验证的美联储托底闸为准",
+   "backing": "ZH counterpart of 'validated fed-put gate governs' on the macro_signals surface. research/DISLOCATION_VALIDATION.md — the hardened Phase-0 validation of the Fed-put master switch (PUT-ABSENT = recession(Sahm>=0.5) OR sustained 10y breakeven>=2.5%), SPY 1997-2026: stress episodes split by put state, honest lens (hit-rate AND conditional max-drawdown), episode-declustered, bootstrap CI, split-half + LOYO. Measured on the composite STRESS set at 252d: PUT-PRESENT 76.5% hit / medRet +16.9% vs PUT-ABSENT 40.0% / -3.4%, with the stand-aside side ~2x deeper p10 drawdown. THIS is the gate the dislocation panel means by 'the validated gate' — NOT sector_central's absolute-trend gate and NOT the spvector re-deploy overlay, whose entries this claim rode until the `surfaces` list became enforceable (2026-07-29). The panel's own copy keeps the AI/GPR cross-checks CONTEXT-ONLY ('it never changes the verdict').  Re-scoped 2026-07-30: the stress-selloff readout that carries this sentence was demoted off the macro board (operator: \"all machine language ... nothing they can remotely understand\") to templates/macro_signals.html.j2 §5, so the same engine copy now renders on site/macro_signals.html. Same claim, same backing, same panel — only the page it lives on changed.",
+   "surfaces": [
+    "macro_signals"
+   ]
+  },
+  {
    "match": "dg-badge dg-proven",
    "backing": "Desk-grader 'proven' / 已验证 BADGE label pair (templates/_desk_grader_panel.html.j2, included by alt_data / congress_trades / intelligence_hub). The badge renders ONLY where engine/desk_grader._proven_status returns 'proven', which needs n>=MIN_PROVEN_N(40) matured observations, |Newey-West HAC t|>=2 of the RIGHT sign, and MIN_DATES_IC(6) grading dates for the daily IC summary. Engine-gated label, hidden otherwise — same family as the SCORED-chip pairs. The sibling entry '已验证\"门槛' allowlists the fine-print that states this threshold; this one covers the badge it gates.",
    "surfaces": [
@@ -1615,18 +1629,20 @@
   },
   {
    "match": "validated gate governs",
-   "backing": "research/DISLOCATION_VALIDATION.md — the dislocation Gate-1 Fed-put switch (engine/dislocation.py). HONEST SCOPE: of the four measured separations only the MEDIAN 3-month drawdown clears its bootstrap CI (+3.9pp, 95% CI [+0.3, +6.3], episode block bootstrap, ~10 put-absent crises). Hit-rate (+30.3pp, CI [-5.1, +63.0]) and median 63d return (+7.4pp, CI [-2.7, +12.3]) SPAN ZERO and are indistinguishable from the unconditional base at this effective sample — they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not by significance. So 'validated' here means validated AS A DRAWDOWN/RISK FILTER only, never as return alpha, and the phrase exists solely to rank the deterministic gate ABOVE an LLM/GPR narrative cross-check. The composite CI was measured on VIX>30 | drawdown<=-12% | VRP>0.90 and does NOT cover a backwardation-only firing (engine/dislocation.evidence_scope emits that scoping per firing). Engine copy was reworded to 'measured gate governs' on 2026-07-29; this entry backs the remaining hardcoded template copy. Previously this phrase passed only via the sector_central/gex 'validated gate' entry, whose backing cites a different study and whose surfaces do not include this page.",
+   "backing": "research/DISLOCATION_VALIDATION.md — the dislocation Gate-1 Fed-put switch (engine/dislocation.py). HONEST SCOPE: of the four measured separations only the MEDIAN 3-month drawdown clears its bootstrap CI (+3.9pp, 95% CI [+0.3, +6.3], episode block bootstrap, ~10 put-absent crises). Hit-rate (+30.3pp, CI [-5.1, +63.0]) and median 63d return (+7.4pp, CI [-2.7, +12.3]) SPAN ZERO and are indistinguishable from the unconditional base at this effective sample — they are carried by sign-consistency (leave-one-year-out 26/28, both split-halves), not by significance. So 'validated' here means validated AS A DRAWDOWN/RISK FILTER only, never as return alpha, and the phrase exists solely to rank the deterministic gate ABOVE an LLM/GPR narrative cross-check. The composite CI was measured on VIX>30 | drawdown<=-12% | VRP>0.90 and does NOT cover a backwardation-only firing (engine/dislocation.evidence_scope emits that scoping per firing). Engine copy was reworded to 'measured gate governs' on 2026-07-29; this entry backs the remaining hardcoded template copy. Previously this phrase passed only via the sector_central/gex 'validated gate' entry, whose backing cites a different study and whose surfaces do not include this page.  Re-scoped 2026-07-30: the stress-selloff readout that carries this sentence was demoted off the macro board (operator: \"all machine language ... nothing they can remotely understand\") to templates/macro_signals.html.j2 §5, so the same engine copy now renders on site/macro_signals.html. Same claim, same backing, same panel — only the page it lives on changed.",
    "surfaces": [
     "macro",
-    "dashboard"
+    "dashboard",
+    "macro_signals"
    ]
   },
   {
    "match": "validated fed-put gate governs",
-   "backing": "same dislocation Gate-1 artifact and the same honest scope as 'validated gate governs' above (research/DISLOCATION_VALIDATION.md): validated as a DRAWDOWN filter only — the hit-rate and median-return CIs span zero. Distinct from the spvector 'validated fed-put gate' entry, whose re-deploy overlay study does not cover this surface.",
+   "backing": "same dislocation Gate-1 artifact and the same honest scope as 'validated gate governs' above (research/DISLOCATION_VALIDATION.md): validated as a DRAWDOWN filter only — the hit-rate and median-return CIs span zero. Distinct from the spvector 'validated fed-put gate' entry, whose re-deploy overlay study does not cover this surface.  Re-scoped 2026-07-30: the stress-selloff readout that carries this sentence was demoted off the macro board (operator: \"all machine language ... nothing they can remotely understand\") to templates/macro_signals.html.j2 §5, so the same engine copy now renders on site/macro_signals.html. Same claim, same backing, same panel — only the page it lives on changed.",
    "surfaces": [
     "macro",
-    "dashboard"
+    "dashboard",
+    "macro_signals"
    ]
   }
  ]

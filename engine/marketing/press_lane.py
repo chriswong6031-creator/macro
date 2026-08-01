@@ -31,9 +31,10 @@ Public API:
 
 State (daemon-local, gitignored — data/marketing/press/):
     state["flagship_counter"] = {"day": "YYYY-MM-DD", "count": N}
+    state["transient_refusals"] = {emission_key: consecutive_env_refusals}
     (the seen-ledger + provider cursors live in the same state file, owned by the
-     daemon; this module only reads/advances the flagship counter and the
-     corroboration window.)
+     daemon; this module only reads/advances the flagship counter, the
+     corroboration window and the transient-refusal retry tally.)
 """
 from __future__ import annotations
 
@@ -75,6 +76,59 @@ _FALLBACK_ACCOUNT = "flagship"
 # (priority must be an int) and which no consumer ever compared against anything.
 _BREAKING_PRIORITY = 1
 
+#: Cashtags in post copy — the SAME shape scripts/marketing_publisher.py's
+#: `_CASHTAG_RE` uses, because this gate exists to answer that gate's question
+#: one step earlier: "will the publisher call this a ticker post?"
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
+
+#: Card hosting census for one tick — read by the daemon/dry-run report so the
+#: press lane's picture coverage is a number, not an anecdote. `unhosted_refused`
+#: is the subset that cost a post (a cashtag item with no hosted card cannot ship
+#: at all: bare it would be quarantined by the publisher and text-only it would
+#: violate the every-ticker-post-carries-a-chart law).
+_MEDIA_HOST_TALLY: dict[str, int] = {
+    "cards": 0, "hosted": 0, "unhosted": 0, "unhosted_refused": 0,
+}
+
+
+def media_host_stats() -> dict:
+    """A COPY of this process's card-hosting census."""
+    return dict(_MEDIA_HOST_TALLY)
+
+
+def reset_media_host_stats() -> None:
+    """Zero the card-hosting census (tests + the dry-run report)."""
+    for k in _MEDIA_HOST_TALLY:
+        _MEDIA_HOST_TALLY[k] = 0
+
+
+#: Refusal reasons that are a property of the ENVIRONMENT, not of the copy.
+#:
+#: A TRANSIENT REFUSAL MUST NOT ENTER A PERMANENT LEDGER (adversarial review,
+#: 2026-07-31). Everything else `_emit_outbox_item` can refuse — invalid item,
+#: banned language, a duplicate, a near-dup, a cap — is decided by the generated
+#: TEXT and gives the same answer on every retry, which is why the caller marks
+#: those seen. ``media_unhosted`` is not in that class: it fires when the Chrome
+#: raster loses a race, when the R2 upload blips, when boto3 or the R2_* creds
+#: are missing on the host. One flaky raster on a breaking cashtag story used to
+#: bury that story for the whole life of the seen ledger, and the LLM spend that
+#: produced its copy bought nothing.
+_TRANSIENT_REFUSALS: frozenset[str] = frozenset({"media_unhosted"})
+
+#: Consecutive transient refusals of the SAME story before the lane alarms. A
+#: retry loop that never surfaces is the other half of the same fault: a host
+#: that is genuinely down (no creds, no boto3) would otherwise re-render, re-pay
+#: and re-refuse the same item every tick in silence. Three ticks is the press
+#: daemon's ~15 minutes — long enough to ride out a raster blip, short enough
+#: that a real outage lands in the Actions summary the same hour.
+_TRANSIENT_RETRY_ALARM_AT = 3
+
+#: Cap on the per-story retry tally carried in daemon state. Bounded like every
+#: other ledger here: the counter exists to spot a stuck story, not to be a
+#: history. Oldest entries (insertion order) are dropped first.
+_TRANSIENT_TALLY_CAP = 500
+
+
 _DEFAULT_FLAGSHIP_TOP_K = 3
 _DEFAULT_FLAGSHIP_FLOOR = 70.0
 _DEFAULT_CORROBORATION_WINDOW_S = 1800
@@ -83,6 +137,39 @@ _DEFAULT_CORROBORATION_WINDOW_S = 1800
 # the rail shows everything above this (incl. digest-class items), X gets top-K.
 _DEFAULT_RAIL_FLOOR = 40.0
 _DEFAULT_RAIL_MAX_ITEMS = 50
+
+#: `policy` ONLY, and the exclusions are each a measured decision rather than a
+#: judgement call — every one of these was scored before the set was written:
+#:
+#:   geopolitical  "Israel and Iran agree to ceasefire after two weeks of
+#:                 strikes" scores 36.0 and matches NO ticker, sector or macro
+#:                 key. It is also one of the most market-moving headlines a
+#:                 wire can carry. Requiring a nexus here blocks exactly the
+#:                 story this lane should be fastest on, so geopolitical is out:
+#:                 war, ceasefires and sanctions are market events as a class.
+#:   company_news  about a company by construction (43.5 / 36.0 in the live
+#:                 sample, both with tickers) — and a company whose name the
+#:                 ticker universe happens not to carry must still ship.
+#:   macro_print   a print IS the market event ("Real GDP increased at an
+#:                 annual rate of 1.5 percent" -> 52.5, macro_keys=['gdp']).
+#:
+#: That leaves `policy`, the one class that holds domestic political content
+#: which can be loud and mean nothing for a tape.
+_NEXUS_REQUIRED_CLASSES: frozenset[str] = frozenset({"policy"})
+
+
+def _no_market_nexus(scored: dict) -> bool:
+    """True when a politics-scored item demonstrates no connection to markets.
+
+    `matched` is breaking_relevance's own output — the tickers, sectors and
+    macro keys it found in the headline. An item in a class that scores on the
+    speaker rather than the content, which matched NONE of the three, is
+    political content that happens to be loud. Anything else passes.
+    """
+    if str(scored.get("event_class") or "") not in _NEXUS_REQUIRED_CLASSES:
+        return False
+    m = scored.get("matched") or {}
+    return not (m.get("tickers") or m.get("sectors") or m.get("macro_keys"))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
@@ -610,6 +697,69 @@ def _clamp_for_x(headline: str, body: str, *, attribution: str = "",
                        tape_stamp=tape_stamp)
 
 
+def _host_card_media(
+    entry: dict,
+    svg: str,
+    *,
+    item_id: str,
+    as_of: str,
+    root: Path,
+) -> bool:
+    """Raster the press card and publish the PNG; stamp the media entry. -> hosted?
+
+    THE DEFECT THIS CLOSES (2026-07-31). This lane rendered a breaking card into
+    `payload["card_svg"]`, wrote the raw SVG to `data/marketing/outbox/media/` and
+    stopped there. Nothing in press_lane.py or breaking_summary.py ever called
+    `rasterize_svg` or `media_publish.publish_card`, so every press item shipped a
+    media[] entry with no `media_url` — and Buffer/X can only attach a HOSTED
+    image (`_media_paths_for` skips non-http paths). The card was rendered,
+    committed and unreachable: every press post went out text-only, and a press
+    item carrying a cashtag was permanently unpostable (the publisher quarantines
+    a bare cashtag post — "YOU WILL NOT SHIP THESE TEXT ONLY"). The publish
+    workflow has pip-installed boto3 since 159537bcfe for exactly this call.
+
+    ONE SEAM: `media_publish.publish_card` is the same function the hot-tape lane
+    goes through (`hot_tape_radar.resolve_chart`), so the posted PNG is a raster
+    of the SAME SVG the admin preview shows — the 2026-07-26 drift incident's
+    rule. The hot-tape card contract is copied exactly: `media_url`,
+    `media_png_path` and `media_render` land on the media entry.
+
+    FAIL-SOFT BY CONSTRUCTION: `publish_card` never raises, and the try/except is
+    the second belt — a missing Chrome, absent R2 credentials or a boto3-less
+    checkout must degrade the PICTURE, never take down the wire lane. A False
+    return puts the caller back on exactly the pre-fix behaviour (local SVG only)
+    for a cashtag-free item.
+
+    `chart_id` is the FEED item id and `as_of` the item's own as_of, so the
+    sidecar key scripts/marketing_media_backfill.py writes
+    (``<as_of>/<chart_id>``) matches what the publisher looks up — an upload that
+    fails tonight is recoverable tomorrow instead of lost.
+    """
+    try:
+        from engine.marketing.media_publish import publish_card  # noqa: PLC0415
+
+        published = publish_card(svg, chart_id=item_id, as_of=as_of, root=root) or {}
+    except Exception as exc:  # noqa: BLE001
+        print(f"::warning title=press-lane-card-publish-failed::{item_id}: "
+              f"{type(exc).__name__}: {exc}", flush=True)
+        return False
+
+    url = str(published.get("media_url") or "").strip()
+    if not url.lower().startswith(("http://", "https://")):
+        # A PNG may still have been written locally — keep the pointer so the
+        # backfill can upload it later without re-rastering.
+        if published.get("media_png_path"):
+            entry["media_png_path"] = published["media_png_path"]
+        return False
+
+    entry["media_url"] = url
+    if published.get("media_png_path"):
+        entry["media_png_path"] = published["media_png_path"]
+    if published.get("media_render"):
+        entry["media_render"] = published["media_render"]
+    return True
+
+
 def _emit_outbox_item(
     root: Path,
     item_id: str,
@@ -637,11 +787,13 @@ def _emit_outbox_item(
     near-dup and cross-account near-dup guards that live in ``enqueue``. The lane
     now goes through the front door.
 
-    Returns the item dict, or None when validation, the language gate, or the
-    queue refused it (the caller records a skip). ``dry_run`` builds and validates
-    but writes nothing — the media SVG included. ``refusal``, when supplied, is
-    filled with {"reason": ...} so the caller's skip census names the gate that
-    fired instead of a generic refusal.
+    Returns the item dict, or None when validation, the language gate, the card
+    host, or the queue refused it (the caller records a skip). ``dry_run`` builds
+    and validates but writes nothing — the media SVG, its PNG raster and the R2
+    upload included, which is why a dry run cannot report the media_unhosted
+    verdict a live run can. ``refusal``, when supplied, is filled with
+    {"reason": ...} so the caller's skip census names the gate that fired instead
+    of a generic refusal.
 
     ``text_override`` is the PLATFORM-CLAMPED post text (M1). The item still
     carries the full headline/body fields for the rail and the admin preview, but
@@ -660,6 +812,43 @@ def _emit_outbox_item(
         [{"kind": "chart_svg", "path": media_rel, "chart_id": item_id}]
         if svg else []
     )
+
+    # The text the publisher will actually screen (the M1 clamp's, when present).
+    _post_text = (text_override if text_override is not None
+                  else _ob.compose_text(headline, body))
+
+    # ── CARD RASTER + HOST ───────────────────────────────────────────────────
+    # Runs BEFORE the value gate so `has_media` is the truth (a card nobody can
+    # fetch is not media) and before make_item so the media_url rides on the item
+    # the queue stores. Skipped on dry_run: a dry run writes nothing, and this
+    # step is a Chrome raster plus an R2 upload.
+    if media and not dry_run:
+        _MEDIA_HOST_TALLY["cards"] += 1
+        if _host_card_media(media[0], svg, item_id=item_id, as_of=as_of, root=root):
+            _MEDIA_HOST_TALLY["hosted"] += 1
+        else:
+            _MEDIA_HOST_TALLY["unhosted"] += 1
+            _cashtags = sorted(set(_CASHTAG_RE.findall(_post_text)))
+            if _cashtags:
+                # A CASHTAG POST WITHOUT A PICTURE DOES NOT SHIP (operator
+                # 2026-07-30). Enqueuing it would burn a queue slot on an item
+                # the publisher quarantines as a bare cashtag post, so refuse it
+                # here where the caller's skip census can name the reason.
+                _MEDIA_HOST_TALLY["unhosted_refused"] += 1
+                print("::warning title=press-lane-card-unhosted::"
+                      f"{item_id}: card could not be hosted (no media_url) and the "
+                      f"copy names {' '.join(_cashtags)} — not enqueued", flush=True)
+                if refusal is not None:
+                    refusal["reason"] = "media_unhosted"
+                    refusal["violations"] = list(_cashtags)
+                return None
+            # No cashtag: the post is prose the publisher ships text-only, so
+            # drop the unreachable media entry rather than hand the queue a
+            # pointer to a picture that will never resolve.
+            print("::warning title=press-lane-card-unhosted::"
+                  f"{item_id}: card could not be hosted (no media_url) — posting "
+                  "text-only (no cashtag in the copy)", flush=True)
+            media = []
 
     _source: dict = {
         "lane": "press",
@@ -684,21 +873,35 @@ def _emit_outbox_item(
     )
     if _would_block:
         _verdict = _source.get("value_gate") or {}
-        print(
-            "::notice title=press-lane-value-gate::"
-            f"{item_id}: would abstain ({','.join(_verdict.get('reasons') or [])}) "
-            f"— enforce={_verdict.get('enforced')}",
-            flush=True,
-        )
-        if _ob._value_gate_enforced(cfg):
+        # SAY WHICH IT IS (2026-07-30). One line served both modes, so an armed
+        # refusal announced itself in the conditional voice — "would abstain …
+        # enforce=True" is what a dropped post looked like in the nightly log,
+        # and a reader scanning for trouble sees a rehearsal. A post that does
+        # not ship is a ::warning, not a ::notice.
+        _enforced = _ob._value_gate_enforced(cfg, "breaking")
+        _why = ",".join(_verdict.get("reasons") or [])
+        if _enforced:
+            print("::warning title=press-lane-value-gate::"
+                  f"{item_id}: ABSTAINED, not posted ({_why})", flush=True)
+        elif not _ob.value_gate_kind_is_measured(cfg, "breaking"):
+            # The kind is outside the armed set: the verdict is EVIDENCE being
+            # collected, not a judgment being applied. Say so, or the next
+            # reader arms it on a corpus that never contained this kind.
+            print("::notice title=press-lane-value-gate::"
+                  f"{item_id}: abstains on an UNMEASURED kind (breaking) — "
+                  f"recorded, post ships ({_why})", flush=True)
+        else:
+            print("::notice title=press-lane-value-gate::"
+                  f"{item_id}: would abstain ({_why}) — shadow mode, post ships",
+                  flush=True)
+        if _enforced:
             return None
 
     try:
         item = _ob.make_item(
             account=account,
             kind="breaking",
-            text=(text_override if text_override is not None
-                  else _ob.compose_text(headline, body)),
+            text=_post_text,
             as_of=as_of,
             media=media,
             scheduled_at="immediate",
@@ -1058,7 +1261,8 @@ def run_press_tick(
         now:        current UTC datetime (injectable for tests).
         cfg:        full marketing.yml dict (for breaking.llm gating + relevance cfg).
         press_cfg:  parsed press_sources.yml dict (satire list, wire caps).
-        state:      daemon-local mutable state (flagship counter, corroboration seen).
+        state:      daemon-local mutable state (flagship counter, corroboration
+                    seen, transient-refusal retry tally).
         seen_ids:   ids already emitted (dedupe). When None, no cross-tick dedupe
                     (the daemon passes its persisted seen-set).
         dry_run:    compute everything, write nothing.
@@ -1092,6 +1296,9 @@ def run_press_tick(
     from engine.marketing.press_corroboration import corroboration_decision
 
     root = Path(root)
+    # PER-TICK card census. Zeroed here so the number this tick returns is this
+    # tick's, not a process-lifetime running total the daemon would misread.
+    reset_media_host_stats()
     breaking_cfg = cfg.get("breaking", {}) if isinstance(cfg, dict) else {}
     wire_cfg = (press_cfg or {}).get("wire", {}) if isinstance(press_cfg, dict) else {}
     top_k = int(wire_cfg.get("flagship_top_k_per_day", _DEFAULT_FLAGSHIP_TOP_K))
@@ -1129,6 +1336,13 @@ def run_press_tick(
     if counter.get("day") != _day_key(now):
         counter["day"] = _day_key(now)
         counter["count"] = 0
+
+    # Transient-refusal retry tally: emission_key -> CONSECUTIVE refusals whose
+    # reason is environmental (see _TRANSIENT_REFUSALS). Lives in daemon state
+    # rather than in `seen` on purpose — `seen` is the "never again" ledger and
+    # these items are explicitly coming back next tick. Cleared the moment the
+    # story emits or is settled by a copy-property refusal.
+    transient_tries: dict = state.setdefault("transient_refusals", {})
 
     # Corroboration window ledger: claim_key -> {sources:list, first_ts:iso}.
     # Prune entries older than the window so the state file cannot grow unbounded
@@ -1411,6 +1625,35 @@ def run_press_tick(
             skipped.append({"id": iid, "reason": "below_flagship_floor",
                             "salience": s.get("salience")})
             continue
+        if _no_market_nexus(s):
+            # A MARKETS ACCOUNT DOES NOT RELAY POLITICS FOR ITS OWN SAKE.
+            #
+            # Lowering flagship_salience_floor 70 -> 30 on 2026-07-31 was right —
+            # at 70 only `macro_print + official` could ever clear (55 + 15,
+            # exactly), so the wire was a BEA-print relay and company news,
+            # tariffs and every other class were excluded by arithmetic. But the
+            # floor is a proxy for "worth posting", not for "about markets", and
+            # dropping it admitted the whole `policy` class on salience alone.
+            #
+            # That class holds both of these, and they score the same:
+            #   "Trump announces 50% tariff on Chinese semiconductors"  -> tariffs
+            #   "how much Money and Prestige the Supreme Court has lost" -> nothing
+            #
+            # The first is the reason this lane exists. The second is a political
+            # grievance with no market nexus, and the dry run on 2026-07-31 booked
+            # it to the FLAGSHIP account. The separating signal was already
+            # computed and thrown away: `matched`. The tariff item matches
+            # macro_keys=['tariffs']; the grievance matches no ticker, no sector
+            # and no macro key at all.
+            #
+            # Scoped to the two classes the floor change opened. company_news and
+            # macro_print are untouched — they are about markets by construction,
+            # and a company story whose name the universe happens not to carry
+            # must still ship.
+            skipped.append({"id": iid, "reason": "no_market_nexus",
+                            "salience": s.get("salience"),
+                            "event_class": s.get("event_class")})
+            continue
         if counter["count"] >= top_k:
             skipped.append({"id": iid, "reason": "flagship_top_k_reached",
                             "salience": s.get("salience")})
@@ -1575,25 +1818,58 @@ def run_press_tick(
             text_override=_clamp["text"],
         )
         if out_item is None:
-            # RECORDED AS SEEN, deliberately. The canonical path refused it
-            # (invalid, duplicate, cross-account near-dup, or over cap), and the
-            # LLM summarize-with-citation call above has ALREADY been paid for.
-            # The refusal cannot be evaluated any earlier — every guard that
-            # produced it keys on the generated TEXT — so leaving the item
-            # unseen means re-generating and re-refusing the same story on every
-            # tick, forever, burning billed spend on an outcome we already know.
-            # Every refusal reason is a stable property of the copy, so a retry
-            # cannot change the answer. The seen ledger is size-capped and rolls
-            # (daemon _PRESS_SEEN_CAP), so this is a suppression with a horizon,
-            # not a permanent kill.
-            seen.add(_emission_key(s))
-            _skip_row = {"id": iid,
-                         "reason": str(_refusal.get("reason") or "outbox_refused"),
-                         "account": account}
+            _reason = str(_refusal.get("reason") or "outbox_refused")
+            _ekey = _emission_key(s)
+            if _reason in _TRANSIENT_REFUSALS:
+                # NOT RECORDED AS SEEN. The invariant below holds only for
+                # refusals decided by the COPY; this one is decided by the
+                # environment (a lost Chrome raster, an R2 blip, absent creds),
+                # and marking it seen turned a five-second outage into a
+                # permanent kill of a breaking story. It comes back next tick.
+                #
+                # The retry is COUNTED so it cannot be silent: a host that is
+                # genuinely down would otherwise re-render, re-pay and re-refuse
+                # the same item every tick with nothing in the summary.
+                _tries = int(transient_tries.get(_ekey, 0) or 0) + 1
+                transient_tries[_ekey] = _tries
+                if _tries >= _TRANSIENT_RETRY_ALARM_AT and \
+                        _tries % _TRANSIENT_RETRY_ALARM_AT == 0:
+                    # BARE print, line-start, flushed — never through the logger
+                    # (this module's format prefixes the line and GitHub then
+                    # drops the annotation silently).
+                    print(f"::warning title=press-lane-transient-refusal-stuck::"
+                          f"{iid}: refused {_tries} ticks in a row with "
+                          f"{_reason!r} — this is an ENVIRONMENT fault, not the "
+                          f"copy, and every attempt paid for a raster and an LLM "
+                          f"call. Check the card host (boto3 installed, R2_* set) "
+                          f"rather than the story.", flush=True)
+                # Bound the tally: it is a stuck-story detector, not a history.
+                if len(transient_tries) > _TRANSIENT_TALLY_CAP:
+                    for _stale in list(transient_tries)[:-_TRANSIENT_TALLY_CAP]:
+                        transient_tries.pop(_stale, None)
+            else:
+                # RECORDED AS SEEN, deliberately. The canonical path refused it
+                # (invalid, banned language, duplicate, cross-account near-dup,
+                # or over cap), and the LLM summarize-with-citation call above
+                # has ALREADY been paid for. The refusal cannot be evaluated any
+                # earlier — every guard that produced it keys on the generated
+                # TEXT — so leaving the item unseen means re-generating and
+                # re-refusing the same story on every tick, forever, burning
+                # billed spend on an outcome we already know. EVERY REASON THAT
+                # REACHES THIS BRANCH IS A STABLE PROPERTY OF THE COPY, so a
+                # retry cannot change the answer; the transient class above is
+                # the exception the old blanket comment wrongly claimed did not
+                # exist. The seen ledger is size-capped and rolls (daemon
+                # _PRESS_SEEN_CAP), so this is a suppression with a horizon, not
+                # a permanent kill.
+                seen.add(_ekey)
+                transient_tries.pop(_ekey, None)   # settled: the streak is over
+            _skip_row = {"id": iid, "reason": _reason, "account": account}
             if _refusal.get("violations"):
                 _skip_row["violations"] = list(_refusal["violations"])[:4]
             skipped.append(_skip_row)
             continue
+        transient_tries.pop(_emission_key(s), None)   # it shipped; streak over
         counter["count"] = int(counter["count"]) + 1
         # Record the MIRROR-COLLAPSED key so a later tick from EITHER mirror is a
         # dedupe skip. (There is no per-item outbox FILENAME any more — XG-W2
@@ -1785,6 +2061,10 @@ def run_press_tick(
         "intelligence": intelligence,
         # XG-W5: labeling/eval corpus for this tick (host-local sink; see daemon).
         "corpus": corpus_rows,
+        # Card-hosting census for this process: {cards, hosted, unhosted,
+        # unhosted_refused}. A tally nobody reads is half a fix — the lane shipped
+        # every card unhostable for weeks precisely because no number said so.
+        "media_host": media_host_stats(),
         # The full seen-set AFTER this tick, including MIRROR-COLLAPSED emission
         # keys (M1). The daemon persists this verbatim so cross-tick dedupe works
         # for mirror pairs — recording out_item["id"] alone would miss the collapse.

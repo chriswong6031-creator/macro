@@ -39,17 +39,24 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from scripts.publish_r2 import _DATA_DIRS, _client, _md5, _remote_etags  # noqa: E402
+from scripts.publish_r2 import (  # noqa: E402
+    _DATA_DIRS, _client, _md5, _remote_etags, _transfer_config,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("fetch_r2")
 
 
 def fetch(dirs, workers: int = 16) -> int:
-    s3 = _client()
+    # Size the pool for THIS leg's concurrency: download_file fans a large object
+    # out into concurrent ranged GETs exactly as upload_file fans out parts, so
+    # the restore leg starves the same way the publish leg did (see _pool_size).
+    s3 = _client(workers)
     if s3 is None:
         log.info("no R2 creds (R2_ENDPOINT/ACCESS_KEY_ID/SECRET_ACCESS_KEY) — skip")
         return 0
+    _xfer = _transfer_config()
+    _xfer_kw = {} if _xfer is None else {"Config": _xfer}
     from lib import config
     bucket = os.environ["R2_BUCKET"]
     cfg = config.load()["storage"]
@@ -83,7 +90,7 @@ def fetch(dirs, workers: int = 16) -> int:
             key, p = kp
             p.parent.mkdir(parents=True, exist_ok=True)
             tmp = p.parent / (p.name + ".r2tmp")
-            s3.download_file(bucket, key, str(tmp))
+            s3.download_file(bucket, key, str(tmp), **_xfer_kw)
             tmp.replace(p)
 
         try:

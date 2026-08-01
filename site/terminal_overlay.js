@@ -26,12 +26,14 @@
     closeTimer: 0,
     readyTimer: 0,
     shellFallbackTimer: 0,
+    frameLoadFallbackTimer: 0,
     toastTimer: 0,
     slowTimer: 0,
     positionTimer: 0,
     loadingStartedAt: 0,
     activeMinLoaderMs: 0,
     completedLaunches: 0,
+    launchSerial: 0,
     scrollX: 0,
     scrollY: 0,
     rootScrollBehavior: '',
@@ -46,6 +48,10 @@
   var FIRST_LOADER_MS = 900;
   var REPEAT_LOADER_MS = 0;
   var SHELL_READY_FALLBACK_MS = 7000;
+  var FRAME_LOAD_FALLBACK_MS = 6000;
+  var REPEAT_FRAME_LOAD_FALLBACK_MS = 2500;
+  // Lifecycle v3: rotate the immutable bundle only after the live checkout advances.
+  var HARD_LAUNCH_FALLBACK_MS = 9000;
   var CLOSE_ANIMATION_MS = 300;
 
   function isDashboardHost() {
@@ -203,7 +209,7 @@
     return root;
   }
 
-  function createFrame() {
+  function createFrame(initialUrl) {
     if (!state.overlay) return null;
     var stage = state.overlay.querySelector('.mmto-stage');
     if (!stage) return null;
@@ -219,23 +225,27 @@
       state.overlay.classList.remove('is-ready', 'is-slow');
       state.overlay.classList.add('is-loading');
       startSlowTimer();
+      scheduleFrameLoadFallback(frame);
     });
+    if (initialUrl) frame.src = initialUrl;
     stage.insertBefore(frame, state.loader || stage.firstChild);
     state.frame = frame;
     return frame;
   }
 
-  function ensureFrame() {
+  function ensureFrame(initialUrl) {
     if (state.frame && state.frame.isConnected) return state.frame;
-    return createFrame();
+    return createFrame(initialUrl);
   }
 
   function resetFrameState() {
     clearTimeout(state.readyTimer);
     clearTimeout(state.shellFallbackTimer);
+    clearTimeout(state.frameLoadFallbackTimer);
     clearTimeout(state.slowTimer);
     state.readyTimer = 0;
     state.shellFallbackTimer = 0;
+    state.frameLoadFallbackTimer = 0;
     state.ready = false;
     state.booted = false;
     state.path = '';
@@ -248,11 +258,32 @@
     state.frame = null;
     resetFrameState();
     if (!old) return;
-    // A new DOM node is required here. Merely pointing the old iframe at
-    // about:blank leaves its WebKit compositor layer alive and can make the
-    // next cross-origin document paint as a permanently black surface.
-    try { old.src = 'about:blank'; } catch (e) {}
-    if (old.parentNode) old.parentNode.removeChild(old);
+    // Do not navigate or synchronously remove a cross-origin iframe while
+    // WebKit is still delivering that iframe's terminal:close postMessage.
+    // iOS can carry the interrupted navigation into the next same-URL iframe,
+    // leaving the parent loader visible forever. Hide it now, then retire the
+    // browsing context after the message task has fully unwound.
+    old.classList.remove('mmto-frame');
+    old.classList.add('mmto-retiring-frame');
+    old.setAttribute('aria-hidden', 'true');
+    old.style.display = 'none';
+    setTimeout(function () {
+      if (old.parentNode) old.parentNode.removeChild(old);
+    }, 0);
+  }
+
+  function freshMobileLaunchUrl(raw) {
+    try {
+      var url = new URL(raw, location.href);
+      state.launchSerial += 1;
+      // A unique document URL prevents iOS WebKit from reviving the iframe it
+      // just discarded from its page cache. Static chunks and chart data keep
+      // their normal cache keys, so this does not sacrifice warm-load speed.
+      url.searchParams.set('_mm_launch', Date.now().toString(36) + '-' + state.launchSerial);
+      return url.toString();
+    } catch (e) {
+      return raw;
+    }
   }
 
   function setLaunchOrigin(trigger) {
@@ -309,12 +340,15 @@
     });
   }
 
-  function unlockDashboard() {
+  function unlockDashboard(options) {
     if (!state.bodyStyle) return;
     var restoreX = state.scrollX;
     var restoreY = state.scrollY;
     var restoreBehavior = state.rootScrollBehavior;
-    var restoreFocus = state.activeElement;
+    // Mobile/touch browsers can honor preventScroll late, after our scroll pin,
+    // and jump the dashboard to the focused ticker. The remount path skips that
+    // keyboard-only restoration; desktop keeps it for accessibility.
+    var restoreFocus = options && options.restoreFocus === false ? null : state.activeElement;
     state.locked.forEach(function (rec) {
       try { rec.el.inert = rec.inert; } catch (e) {}
       if (rec.aria == null) rec.el.removeAttribute('aria-hidden');
@@ -389,7 +423,9 @@
     if (data && data.symbol) state.symbol = data.symbol;
     clearTimeout(state.slowTimer);
     clearTimeout(state.shellFallbackTimer);
+    clearTimeout(state.frameLoadFallbackTimer);
     state.shellFallbackTimer = 0;
+    state.frameLoadFallbackTimer = 0;
     if (!wasReady) state.completedLaunches += 1;
     if (!state.overlay) return;
     state.overlay.classList.remove('is-loading', 'is-slow');
@@ -424,6 +460,20 @@
     }, SHELL_READY_FALLBACK_MS);
   }
 
+  function scheduleFrameLoadFallback(frame, delay) {
+    clearTimeout(state.frameLoadFallbackTimer);
+    state.frameLoadFallbackTimer = setTimeout(function () {
+      state.frameLoadFallbackTimer = 0;
+      if (state.frame !== frame || !state.open || state.ready) return;
+      // A successful visual-ready message still wins. This is only the
+      // fail-open path for WebKit restores where the document paints but its
+      // cross-origin ready message never reaches the parent.
+      markReady({ path: state.path, symbol: state.symbol, state: 'frame-load-fallback' });
+    }, delay == null
+      ? (state.completedLaunches ? REPEAT_FRAME_LOAD_FALLBACK_MS : FRAME_LOAD_FALLBACK_MS)
+      : delay);
+  }
+
   function shouldRemountFrame() {
     var compact = false;
     try {
@@ -447,10 +497,12 @@
     }
 
     clearTimeout(state.closeTimer);
+    var remount = shouldRemountFrame();
     // Every compact/mobile launch gets a genuinely new iframe element. This
-    // also covers a rapid reopen before the 650ms closing animation completed.
-    if (!state.open && shouldRemountFrame() && state.frame) destroyFrame();
-    var frame = ensureFrame();
+    // also covers a rapid reopen before the closing animation completed.
+    if (!state.open && remount && state.frame) destroyFrame();
+    var launchUrl = remount ? freshMobileLaunchUrl(config.url) : config.url;
+    var frame = ensureFrame(launchUrl);
     if (!frame) {
       location.href = config.directUrl || config.url;
       return;
@@ -477,7 +529,10 @@
     if (!state.booted) {
       state.booted = true;
       beginLoading(root);
-      frame.src = config.url;
+      // The load handler shortens this guard once WebKit confirms a document
+      // load. Until then, never allow a failed iframe navigation to strand the
+      // user behind an infinite branded splash.
+      scheduleFrameLoadFallback(frame, HARD_LAUNCH_FALLBACK_MS);
       return;
     }
 
@@ -512,7 +567,7 @@
     if (remount) {
       state.overlay.classList.remove('is-closing');
       destroyFrame();
-      unlockDashboard();
+      unlockDashboard({ restoreFocus: false });
       return;
     }
 

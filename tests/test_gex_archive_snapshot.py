@@ -43,11 +43,16 @@ def test_market_context_reads_cboe(tmp_path):
     cboe.mkdir()
     pd.DataFrame({"skew": [120.0, 146.72]},
                  index=pd.to_datetime(["2026-06-17", "2026-06-18"])).to_parquet(cboe / "skew.parquet")
+    # 2026-06-19 is JUNETEENTH — the exchange is closed. _market_context session-filters
+    # these cboe stores now (the #3721 weekend-row class: putcall.parquet held 13
+    # non-session rows of 39, and both the published level AND the *_asof stamp come off
+    # the last row), so a holiday-dated fixture row is correctly discarded. Use the next
+    # real session, 2026-06-22, so "the latest row" is unambiguous.
     pd.DataFrame({"index_pc_ratio": [1.1, 1.333], "equity_pc_ratio": [1.0, 1.339]},
-                 index=pd.to_datetime(["2026-06-18", "2026-06-19"])).to_parquet(cboe / "putcall.parquet")
+                 index=pd.to_datetime(["2026-06-18", "2026-06-22"])).to_parquet(cboe / "putcall.parquet")
     ctx = bg._market_context(tmp_path)
     assert ctx["skew"] == 146.72 and ctx["skew_asof"] == "2026-06-18"
-    assert ctx["index_pc_ratio"] == 1.333 and ctx["put_call_asof"] == "2026-06-19"
+    assert ctx["index_pc_ratio"] == 1.333 and ctx["put_call_asof"] == "2026-06-22"
 
 
 def test_snapshot_flattens_and_dedups_in_archive(tmp_path):

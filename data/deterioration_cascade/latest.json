@@ -1,1 +1,1 @@
-{"schema": "deterioration_cascade.v1", "asof": "2026-07-28", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 8, "alerts": [], "immature": ["kr", "jp"]}
+{"schema": "deterioration_cascade.v1", "asof": "2026-07-31", "state": "STEADY", "n_alert": 0, "n_escalating": 0, "d3_alert": 0, "n_mature": 10, "alerts": [], "immature": []}

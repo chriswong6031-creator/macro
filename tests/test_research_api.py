@@ -188,16 +188,24 @@ def test_catalog_exposes_only_three_summaries_until_pro(client, monkeypatch):
 
     public = c.get("/api/research/catalog")
     assert public.status_code == 200
-    assert public.json()["count"] == 5
-    assert public.json()["institutions"] == []
-    assert [item["id"] for item in public.json()["items"]] == [
+    public_body = public.json()
+    assert public_body["count"] == 5
+    assert public_body["preview"] is True
+    assert public_body["summary"]["total"] == 5
+    assert public_body["summary"]["new_this_week"] == 0
+    assert public_body["summary"]["institutions"] == []
+    assert public_body["institutions"] == []
+    assert [item["id"] for item in public_body["items"]] == [
         "report-0", "report-1", "report-2",
     ]
 
     monkeypatch.setattr(research_mod, "_optional_tier", lambda _authorization: "pro")
     pro = c.get("/api/research/catalog", headers=_AUTH)
     assert pro.status_code == 200
-    assert len(pro.json()["items"]) == 5
+    pro_body = pro.json()
+    assert pro_body["preview"] is False
+    assert pro_body["summary"]["total"] == 5
+    assert len(pro_body["items"]) == 5
 
 
 def test_search_returns_body_hit_from_seeded_corpus(client):

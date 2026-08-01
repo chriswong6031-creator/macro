@@ -5,7 +5,7 @@
      (hub cards / related links). Chrome (nav+gear+footer+LANG/MMX_NAV JS) is copied
      byte-exact from site/index.html with hrefs depth-fixed for /products/ — when the
      landing chrome changes, re-sync these blocks. -->
-<html lang="en" data-lang="en">
+<html lang="en" data-lang="en" data-motion-page="mastermind-ai">
 <head>
 <script data-dbase>(function () {
   window.DATA_BASE = window.DATA_BASE || "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev";  // R2 public data plane (flip: clear to revert to Pages)
@@ -18,8 +18,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -71,7 +80,7 @@
 <link rel="icon" href="../favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="../apple-touch-icon.png">
 <link rel="stylesheet" href="../onboard.css?v=5c897a72">
-<link rel="stylesheet" href="../landing.css?v=92eef2ef">
+<link rel="stylesheet" href="../landing.css?v=e78fcdd6">
 <style>
 /* ════════════════════════════════════════════════════════════════
    PRODUCT-PAGE SHARED LAYER — identical bytes on all three pages.
@@ -385,6 +394,7 @@ html[data-lang="zh"] .ma-meter,html[data-lang="zh"] .ma-protag,html[data-lang="z
 html.still .ma-thread>*,html.still .ma-plot .cn,html.still .ma-plot .lvl,html.still .ma-spark{animation:none}
 html.still .ma-spark{left:calc(100% - 14px);opacity:1}
 </style>
+<link rel="stylesheet" href="../scene-motion.css?v=f426716d">
 </head>
 <body>
 <nav class="nav" aria-label="Main">
@@ -920,6 +930,7 @@ html.still .ma-spark{left:calc(100% - 14px);opacity:1}
   </div>
 </footer>
 
+<script src="../scene-motion.js?v=5ce10d9a" defer></script>
 <script>
 /* capture hook for visual QA (see .still CSS) */
 if (location.search.indexOf('still') !== -1) document.documentElement.classList.add('still');
@@ -1084,8 +1095,8 @@ document.querySelectorAll('.rv:not(.in)').forEach(el => io.observe(el));
 LANG.apply(LANG.cur());
 </script>
 <script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';</script>
-<script src="../mm_brain.js?v=710b5ebd" defer></script>
-<script src="../onboard.js?v=37b179a8" defer></script>
+<script src="../mm_brain.js?v=fcfa7196" defer></script>
+<script src="../onboard.js?v=77624cf4" defer></script>
 <script defer data-whb data-root="../" src="../wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

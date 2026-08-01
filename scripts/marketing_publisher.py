@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import logging
 import os
 import re
@@ -60,6 +61,9 @@ if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 from engine.marketing.copywriter import banned_language as _banned_language  # noqa: E402
 from engine.marketing.copywriter import headline_fragments as _headline_fragments  # noqa: E402
+from engine.marketing.copywriter import queued_voice_violations as _queued_voice_violations  # noqa: E402
+from engine.marketing.copywriter import batch_body_duplicate_violations as _batch_body_duplicate_violations  # noqa: E402
+from engine.marketing.copywriter import repeated_sentence_violations as _repeated_sentence_violations  # noqa: E402
 
 log = logging.getLogger("marketing_publisher")
 
@@ -378,6 +382,38 @@ _CHART_BEARING_KINDS: frozenset[str] = frozenset({
     "signal", "chart", "watchlist", "receipt",
 })
 
+# ROLLUPS: not about ONE name, but about the basket they enumerate — so a post
+# that lists $ALL $ERIE $TRV is about those three, and shipping it bare is the
+# text-only failure the operator named. Distinct from _CHART_BEARING_KINDS
+# because a rollup only owes a picture when one was actually BUILT for it (see
+# _missing_required_media, which requires a non-empty media[] first).
+#
+# `macro`, `education`, `event`, `wire` and `breaking` are deliberately ABSENT.
+# A breadth read may mention $SPY in passing; that is not a post about $SPY, and
+# holding it for an upload strangles the desks' non-ticker voice for a rule
+# written about rollups.
+_TICKER_ROLLUP_KINDS: frozenset[str] = frozenset({
+    "theme_list", "mover",
+})
+
+# Kinds whose post is REFUSED for naming a ticker with no card of any sort —
+# the scope of :func:`_bare_cashtag_post`'s no-media-at-all branch. DERIVED from
+# the two sets above (widening either widens this) plus `breaking`.
+#
+# `breaking` is here and NOT in _TICKER_ROLLUP_KINDS on purpose. The deferral
+# gate's question is "can the backfill still rescue this?", and for a breaking
+# item the answer is no — the moment is gone long before a backfill runs. This
+# gate's question is "does this post owe a picture?", and for the hot-tape group
+# posts the answer is yes: 19 of them queued bare on 2026-07-30 and every one
+# was quarantined here, which is why the radar now draws each a card.
+#
+# Everything else in outbox.KINDS — macro, education, event, wire, earnings,
+# congress, insider — is deliberately OUT. See the long note in
+# _bare_cashtag_post for why, and for the uncomfortable congress/insider case.
+_BARE_CASHTAG_KINDS: frozenset[str] = (
+    _CHART_BEARING_KINDS | _TICKER_ROLLUP_KINDS | frozenset({"breaking"})
+)
+
 # A ticker post whose chart never resolves may not defer forever. Past this age
 # the publisher gives up and QUARANTINES it instead of shipping it bare: an
 # entry-timing read this stale is not worth posting even if the picture finally
@@ -386,7 +422,11 @@ _CHART_BEARING_KINDS: frozenset[str] = frozenset({
 # number: one is an upload race, the other a misconfiguration).
 _MEDIA_DEFER_MAX_AGE_DAYS = 3
 
-_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}\b")
+#: Cashtags in post copy. `$ALL` / `$ERIE` / `$BRK.B` — 1-5 letters with an
+#: optional class suffix. Deliberately not anchored to the item's
+#: `source.ticker`: the posts the bare-cashtag gate catches carry their tickers
+#: ONLY in the text.
+_CASHTAG_RE = re.compile(r"\$[A-Z]{1,5}(?:\.[A-Z])?\b")
 
 
 def _item_age_days(it: dict, now: datetime) -> int:
@@ -426,6 +466,249 @@ def _item_ticker(it: dict) -> str:
     return hit.group(0).lstrip("$") if hit else ""
 
 
+#: (path, mtime) -> symbols. The membership store is rewritten nightly; a
+#: publisher run must not re-read a 3,500-row parquet per item.
+_SYMBOL_UNIVERSE_CACHE: dict[str, tuple[float, frozenset[str]]] = {}
+
+#: Below this the universe is not credible enough to refuse a post on — a
+#: truncated or half-written parquet must not silently quarantine the night.
+_SYMBOL_UNIVERSE_MIN = 500
+
+
+#: Per-symbol price stores. The filenames ARE the universe, so this costs a
+#: directory listing and reads no parquet. These are the widest and most
+#: honest source: if the engine holds a price history for a name, that name
+#: trades. Index membership alone is NOT enough — $TEAM (Atlassian) sits in no
+#: US index membership row and no earnings-calendar vintage, so a
+#: membership-only universe called it fake and would have quarantined four
+#: legitimate charted posts.
+_PRICE_STORE_DIRS = (
+    ("data", "baskets", "ohlcv"),
+    ("data", "yahoo"),
+    ("data", "tape_flow", "daily"),
+)
+
+
+def _symbol_universe(root: Path | str = ".") -> frozenset[str]:
+    """Every symbol we can prove exists. Empty frozenset = "could not tell".
+
+    Union of stores already maintained for other reasons, so this adds no new
+    data dependency:
+      * ``data/baskets/ohlcv/*.parquet`` + ``data/yahoo`` + ``data/tape_flow``
+        — one file per symbol we hold price history for, the widest source;
+      * ``data/universe/membership.parquet`` — index membership, ACTIVE rows
+        only, the one source that knows a listing DIED;
+      * ``data/earnings/earnings.parquet`` — the reporting calendar;
+      * ``site/marketdata/sp500_heatmap.json`` — the rendered board.
+
+    Returns EMPTY (not a partial set) when the stores are missing or too small
+    to trust, because a half-loaded universe would read as "these symbols do
+    not exist" and quarantine a whole night's posts.
+    """
+    root = Path(root)
+    membership = root / "data" / "universe" / "membership.parquet"
+    # Cache key folds in the price dirs' mtimes: a nightly that adds a symbol
+    # must invalidate, or a brand-new name reads as fake for the rest of the run.
+    stamps: list[float] = []
+    for parts in _PRICE_STORE_DIRS:
+        d = root.joinpath(*parts)
+        try:
+            stamps.append(d.stat().st_mtime if d.exists() else 0.0)
+        except OSError:
+            stamps.append(0.0)
+    try:
+        stamps.append(membership.stat().st_mtime if membership.exists() else 0.0)
+    except OSError:
+        stamps.append(0.0)
+    mtime = max(stamps) if stamps else 0.0
+
+    cache_key = str(root.resolve()) if root.exists() else str(root)
+    hit = _SYMBOL_UNIVERSE_CACHE.get(cache_key)
+    if hit is not None and hit[0] == mtime:
+        return hit[1]
+
+    symbols: set[str] = set()
+    for parts in _PRICE_STORE_DIRS:
+        d = root.joinpath(*parts)
+        try:
+            if d.is_dir():
+                symbols |= {f.stem.upper() for f in d.glob("*.parquet")}
+        except OSError as exc:
+            log.warning("[publisher] price store %s unreadable: %s", d, exc)
+    try:
+        import pandas as pd  # noqa: PLC0415
+        if membership.exists():
+            df = pd.read_parquet(membership, columns=["ticker", "active"])
+            # ACTIVE only. One ticker holds one row per index, and a name that
+            # MIGRATES is active=False on the row it left — so "alive" is
+            # active on ANY row, never active on every row.
+            live = df[df["active"].astype(bool)]
+            symbols |= {str(t).upper() for t in live["ticker"].tolist()}
+        earnings = root / "data" / "earnings" / "earnings.parquet"
+        if earnings.exists():
+            symbols |= {
+                str(t).upper()
+                for t in pd.read_parquet(earnings, columns=[]).index.tolist()
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[publisher] symbol universe load failed: %s", exc)
+    try:
+        heatmap = root / "site" / "marketdata" / "sp500_heatmap.json"
+        if heatmap.exists():
+            data = json.loads(heatmap.read_text(encoding="utf-8"))
+            symbols |= {
+                str(t.get("t", "")).upper()
+                for t in (data.get("tiles") or []) if t.get("t")
+            }
+    except Exception as exc:  # noqa: BLE001
+        log.warning("[publisher] heatmap universe load failed: %s", exc)
+
+    out = frozenset(symbols) if len(symbols) >= _SYMBOL_UNIVERSE_MIN else frozenset()
+    _SYMBOL_UNIVERSE_CACHE[cache_key] = (mtime, out)
+    return out
+
+
+#: Cashtags that are correct FinTwit usage but are NOT equities, so they appear
+#: in no equity price store, no index membership file and no earnings calendar.
+#: Without this the gate accuses a perfectly standard macro post of naming a
+#: fake ticker and quarantines it TERMINALLY: $VIX, $SPX, $DXY, $BTC and $ETH
+#: all failed on the first live check of the gate shipped earlier today.
+#: ETFs ($SPY/$QQQ/$TLT/$GLD) need no entry — they are real listings and the
+#: price stores already carry them.
+_NON_EQUITY_CASHTAGS: frozenset[str] = frozenset({
+    # Index / volatility / rates / dollar
+    "SPX", "NDX", "DJI", "DJIA", "RUT", "VIX", "VVIX", "MOVE", "DXY", "TNX",
+    "TYX", "IRX", "US10Y", "US02Y", "US30Y", "COMP", "NYA", "SOX", "BKX",
+    # Majors + crypto, both common in this desk's macro and crypto copy
+    "BTC", "ETH", "SOL", "XRP", "DOGE", "ADA", "BNB", "LTC", "AVAX", "LINK",
+    "EUR", "JPY", "GBP", "CNY", "CNH", "AUD", "CAD", "CHF", "MXN",
+    # Commodities quoted as cashtags
+    "WTI", "BRENT", "GOLD", "SILVER", "COPPER", "NATGAS", "CL", "NG", "HG",
+})
+
+
+def _unknown_cashtags(it: dict, root: Path | str = ".") -> list[str]:
+    """Cashtags in the copy that no live store can vouch for. [] = all fine.
+
+    Operator 2026-07-30, on a filing post that shipped `$N`: "Wtf is N? Theres
+    no ticker called N. This post also makes zero sense." N is in the
+    membership file with ``active=False`` — it has not traded in years, and the
+    filing lane never checked.
+
+    Returns [] when the universe is unavailable: a post is never refused on the
+    strength of a store we could not read. The check has to be able to say "I
+    looked it up and it is not there", not "I do not know".
+    """
+    universe = _symbol_universe(root)
+    if not universe:
+        return []
+    found = _CASHTAG_RE.findall(str(it.get("text") or ""))
+    seen: list[str] = []
+    for tag in found:
+        sym = tag.lstrip("$").upper()
+        if sym in _NON_EQUITY_CASHTAGS:
+            continue          # real, just not an equity in our stores
+        if sym not in universe and sym not in seen:
+            seen.append(sym)
+    return seen
+
+
+def _deferral_covers(it: dict) -> bool:
+    """True when :func:`_missing_required_media` would take this item.
+
+    The two gates hand off to each other, and until 2026-07-31 the handoff was
+    an assumption rather than a check: _bare_cashtag_post stepped aside for any
+    item carrying a media[] entry, on the grounds that the deferral gate owns
+    "a chart was built and the URL is missing". The deferral gate owns only the
+    kinds in these two sets, so the assumption was false for every other kind
+    and the item fell through both.
+
+    Derived from the same frozensets the deferral gate reads, so the two cannot
+    drift apart: widening one widens this.
+    """
+    kind = str(it.get("kind") or "")
+    return kind in _CHART_BEARING_KINDS or kind in _TICKER_ROLLUP_KINDS
+
+
+def _bare_cashtag_post(it: dict, pub_cfg: dict, media_paths: list[str]) -> str:
+    """A post that names tickers and ships no picture. Returns the tickers, or "".
+
+    OPERATOR LAW, 2026-07-30, stated in these words after seeing the live
+    account: "YOU WILL NOT SHIP THESE TEXT ONLY, ID RATHER YOU DESTROY THE
+    ENTIRE ENGINE THAN SHIP TEXT ONLY, CUZ NO ONE CARES ABOUT THESE TICKER POSTS
+    IF UR GOING TO SHIP THEM NAKED WITH NO CHARTS."
+
+    :func:`_missing_required_media` could not enforce that. It keys on
+    ``_CHART_BEARING_KINDS`` (signal/chart/watchlist/receipt) AND requires a
+    ``media[]`` entry to already exist — it defers a post whose chart was BUILT
+    and failed to upload. The posts actually reaching the timeline were
+    `theme_list` and `mover`: not chart-bearing kinds, carrying no media at all,
+    so both conditions missed and they auto-posted bare. Measured on the live
+    flagship account: "Insurance - Property & Casualty: 7 of 7 names lower right
+    now, median -3.9%. Worst: $ERIE -6.1%, $TRV -4.6%, $ALL -4.1%" — 3 views.
+    Its siblings drew 1, 2 and 4.
+
+    So the rule is keyed on what the operator actually said: a post that NAMES
+    TICKERS ships a picture. A post with no cashtag (macro prose, education, a
+    breadth read) is unaffected.
+
+    TWO CASES, AND ONLY ONE OF THEM IGNORES THE KIND (defect closed 2026-07-31):
+
+    * A CARD WAS BUILT (media[] holds a dict) and its URL never resolved. The
+      producing lane decided this post owes a picture; shipping it without one
+      is the violation regardless of kind, so every kind is covered. That is the
+      hole `breaking` fell through, and it stays closed.
+    * NO CARD AT ALL. Here the KIND decides, exactly as it decides for
+      :func:`_missing_required_media` — see the contract stated at
+      ``_TICKER_ROLLUP_KINDS``: "`macro`, `education`, `event`, `wire` … are
+      deliberately ABSENT. A breadth read may mention $SPY in passing; that is
+      not a post about $SPY, and holding it for an upload strangles the desks'
+      non-ticker voice for a rule written about rollups."
+
+      This function ran ``_CASHTAG_RE.findall`` unconditionally over EVERY kind,
+      which quietly overrode that contract at the one seam where it has teeth:
+      a macro read ending "even $SPY is stretched", for which no lane builds a
+      chart and none ever will, was QUARANTINED — terminal, on a post that owes
+      nothing. `_missing_required_media` refused the same widening by text
+      ("THE KIND DECIDES, NOT THE TEXT"); this gate now says the same thing.
+
+      `breaking` IS in scope here on purpose, unlike in the deferral gate: the
+      hot-tape group posts that drew the operator's complaint are `breaking`,
+      19 of them queued and quarantined on 2026-07-30, and the radar now draws
+      each one a card precisely to satisfy this gate. Dropping `breaking` would
+      re-open the outage.
+
+      `congress`/`insider` are OUT, deliberately and uncomfortably: their posts
+      ARE about one name, but no lane builds them a chart, so putting them in
+      scope would not hold a filing post pending a picture — it would kill the
+      filings desk outright. That is a product decision, not a gate fix.
+    """
+    if not _media_enabled_cfg(pub_cfg) or media_paths:
+        # Media globally off → nothing can resolve a picture and gating on that
+        # would wedge every ticker post, same reasoning as the deferral gate.
+        return ""
+    _built_a_card = any(isinstance(m, dict) for m in (it.get("media") or []))
+    if not _built_a_card and str(it.get("kind") or "") not in _BARE_CASHTAG_KINDS:
+        # Prose that mentions a ticker in passing and never claimed a picture.
+        return ""
+    if _built_a_card and _deferral_covers(it):
+        # A chart exists but has no URL yet — that is the DEFERRAL case above,
+        # which is recoverable via the backfill. Not this rule's business.
+        #
+        # ONLY when the deferral gate will ACTUALLY take it (2026-07-31). This
+        # used to step aside for any non-empty media[], on the reasoning that
+        # the deferral gate owns that case. It owns only the kinds it lists,
+        # and `breaking` is deliberately in neither _CHART_BEARING_KINDS nor
+        # _TICKER_ROLLUP_KINDS — so a breaking post with cashtags and a card
+        # whose upload failed fell between the two gates and SHIPPED BARE, the
+        # one outcome both rules exist to prevent. `breaking` is the kind the
+        # hot-tape and press lanes emit, i.e. most of the account's volume,
+        # and the press wire could not host a card at all until this change.
+        return ""
+    found = _CASHTAG_RE.findall(str(it.get("text") or ""))
+    return " ".join(sorted(set(found))) if found else ""
+
+
 def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> bool:
     """True when this is a ticker post that HAS a chart and cannot reach it.
 
@@ -446,11 +729,40 @@ def _missing_required_media(it: dict, pub_cfg: dict, media_paths: list[str]) -> 
     """
     if not _media_enabled_cfg(pub_cfg) or media_paths:
         return False
-    if str(it.get("kind") or "").strip().lower() not in _CHART_BEARING_KINDS:
-        return False
     if not any(isinstance(m, dict) for m in (it.get("media") or [])):
         return False
-    return bool(_item_ticker(it))
+    kind = str(it.get("kind") or "").strip().lower()
+    if kind in _CHART_BEARING_KINDS:
+        return bool(_item_ticker(it))
+    # ROLLUP kinds whose post is ABOUT the names it lists (2026-07-30).
+    #
+    # The kind list above was the whole test, and it left a hole exactly where
+    # the operator's complaint lives. A `theme_list` or `mover` rollup whose
+    # chart WAS rendered and whose R2 upload then failed carries a media[] dict
+    # with no media_url. It is not a chart-bearing kind, so this gate waved it
+    # through; and _bare_cashtag_post treats a built-but-unresolved chart as the
+    # recoverable DEFERRAL case, so that waved it through too. Both gates
+    # deferred to the other and the post shipped BARE with $ALL $ERIE $TRV in it
+    # — the precise failure that drew "ID RATHER YOU DESTROY THE ENTIRE ENGINE
+    # THAN SHIP TEXT ONLY".
+    #
+    # SCOPED TO THE ROLLUPS, NOT TO "ANY CASHTAG". The first version of this
+    # returned on `_CASHTAG_RE.search(text)` alone, which quietly overrode the
+    # contract stated at _CHART_BEARING_KINDS: a breadth post reading "231 of 231
+    # names above the 200-day. Even $SPY is stretched." names a ticker IN PASSING
+    # and is not about it. Holding that for an upload is how a text-only voice
+    # gets strangled by a rule written for rollups, and
+    # tests/test_marketing_forward_booking.py pins it as a contract precisely so
+    # a later widening has to argue with something. THE KIND DECIDES, NOT THE
+    # TEXT — the same principle the set above rests on.
+    #
+    # Deferring (not quarantining) is right here for the same reason it is right
+    # above: the chart exists, so the URL is recoverable by the backfill, and the
+    # bounded _MEDIA_DEFER_MAX_AGE_DAYS escape still quarantines it if the
+    # picture never arrives.
+    if kind not in _TICKER_ROLLUP_KINDS:
+        return False
+    return bool(_CASHTAG_RE.search(str(it.get("text") or "")))
 
 
 def _chart_ids_for(it: dict) -> str:
@@ -1004,6 +1316,56 @@ def main(argv: list[str] | None = None) -> int:
         return _outbox.effective_cap_for(cfg, account, _post_date,
                                          root=root, ramp=_ramp)
 
+    # ── Wire reaper: retire fast-lane items whose moment is gone ─────────────
+    # The nightly emit calls outbox.expire_stale_planned, which is scoped to
+    # content_studio provenance AND skips scheduled_at == "immediate" — so the
+    # fast lanes (outbox._WIRE_PROVENANCES: the press wire, the tape radar and
+    # this file's own publish-time mover generator), which write nothing BUT
+    # immediate rows, were swept by nobody. Their stale rows are not
+    # inert: they sit in the near-dup corpus vetoing tonight's coverage of the
+    # same story, and they clog the admin queue with "right now" copy about a
+    # tape that closed hours ago (AMZN/COIN movers, 2026-07-31, 8h queued with
+    # zero ledger rows).
+    #
+    # HERE, not in the nightly emit, because the publish sweep is the lane that
+    # actually owns wire dispatch and it runs on the ladder — a reaper that only
+    # ran at plan time would leave a full trading day unswept. Before the fold
+    # below so the run's own candidate set never sees an item this pass retired.
+    # DRY-RUN NEVER MUTATES: quarantine is terminal and a projection must not
+    # destroy the queue it is projecting.
+    #
+    # POST-NOW IS EXEMPT (#3960 minor). This pass runs here, ahead of the fold,
+    # for the reason above — and post-now id resolution does not happen until
+    # ~250 lines below it. Without the exemption the operator's own
+    # `--post-now <id>` on a breaking item that took a while to get a human
+    # decision is self-defeating: the run summoned to send it quarantines it
+    # (TERMINALLY) on the way in, and the dispatch it was called for finds
+    # nothing. The pass is NOT reordered — the fold below must still never see
+    # an item this sweep retired — the named ids are simply spared, which is the
+    # narrowest possible fix and cannot widen the reaper's blast radius.
+    expired_wire = 0
+    if live:
+        try:
+            _wire_expiry = _outbox.expire_stale_wire(root, now=now,
+                                                     exempt_ids=post_now)
+            expired_wire = int(_wire_expiry.get("expired") or 0)
+            if expired_wire:
+                # Bare line-start print (house law): a logger prefix makes GitHub
+                # drop the annotation. A retirement is a LOSS — the desk wrote
+                # these posts and nobody sent them — so it is a warning, not a
+                # notice, and it names the kinds so "why did the movers vanish"
+                # is answerable from the Actions summary alone.
+                print(f"::warning title=marketing-wire-expired::{expired_wire} "
+                      f"wire item(s) quarantined as expired_stale_wire "
+                      f"{_wire_expiry.get('by_kind') or {}} — they sat queued past "
+                      f"their kind's TTL and their copy no longer describes the "
+                      f"tape. A recurring count here means the dispatch lane is "
+                      f"not picking wire items up, not that the copy was bad.",
+                      flush=True)
+        except Exception as _wire_exc:  # noqa: BLE001 — housekeeping never breaks a run
+            log.warning("wire expiry unavailable (%s) — queue unswept this pass",
+                        _wire_exc)
+
     state = _outbox.fold_state(root)
     items_by_id = state["items"]
     statuses = state["status"]
@@ -1047,10 +1409,14 @@ def main(argv: list[str] | None = None) -> int:
         pt_dropped = len(_pt_report.get("dropped") or [])
         log.info(
             "publish-time generation | enabled=%s slot=%s quotes=%s "
-            "generated=%d would_generate=%d dropped=%d",
+            "generated=%d would_generate=%d dropped=%d cards_deferred_dry_run=%d",
             _pt_report.get("enabled"), _pt_report.get("slot") or "-",
             _pt_report.get("quote_source"), pt_generated,
             len(_pt_report.get("would_generate") or []), pt_dropped,
+            # A dry sweep resolves no cards (contract: live=False writes
+            # NOTHING); without this count an operator reading the dry log
+            # cannot tell deferred-by-design from a dead card lane.
+            int(_pt_report.get("cards_deferred_dry_run") or 0),
         )
         for _d in (_pt_report.get("dropped") or []):
             log.info("  pt drop: %s — %s", _d.get("reason"), _d.get("detail"))
@@ -1102,6 +1468,72 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as _read_exc:  # noqa: BLE001
         log.warning("publish-time read unavailable (%s) — legacy flow unaffected",
                     _read_exc)
+
+    # ── AUTONOMOUS APPROVAL DESK (engine/marketing/approval_desk.py) ─────────
+    # THE PLANNED KINDS HAD NO PATH TO LIVE. `publish.auto_approve_scope: kinds`
+    # deliberately confines the pass below to the publish-time lane, so signal /
+    # chart / education / macro / receipt / watchlist / event / congress /
+    # insider items were left to the operator-approve path — the admin UI
+    # writing decisions.jsonl, which outbox.apply_decisions turns into a
+    # transition. THAT FILE HAS ZERO ROWS IN REPO HISTORY: every planned post
+    # that ever went out was hand-moved by an agent session, and the rest sat
+    # queued until a reaper retired them.
+    #
+    # The desk audits each queued planned item against six named checks and
+    # either approves it (actor `approval-desk`, note listing the checks that
+    # passed), quarantines it with the evidence in the note, or LEAVES IT
+    # QUEUED for a human when it cannot verify the claim. It is an ADDITIONAL
+    # bar, never a bypass: every gate below — the live tape gate, the chart law,
+    # near-dup, the voice gates, the cap, the spacing floor — still runs on
+    # anything it approves.
+    #
+    # HERE, between the publish-time generators and the auto-approve pass, for
+    # two reasons. The pass below seeds its per-account budget from items
+    # already `approved`, so the desk has to have finished before it counts;
+    # and the candidate set below the pass is what actually dispatches, so an
+    # item approved here goes out in THIS sweep rather than waiting for the
+    # next one. DRY-RUN NEVER MUTATES — the desk only reports what it would do.
+    desk_approved = desk_quarantined = desk_held = desk_capped = 0
+    desk_expired = desk_disabled = 0
+    try:
+        from engine.marketing import approval_desk as _desk  # noqa: PLC0415
+        _desk_tally = _desk.run(
+            root, cfg=cfg, now=now, live=live, account=args.account,
+            media_enabled=_media_enabled_cfg(pub_cfg), state=state,
+        )
+        desk_approved = int(_desk_tally.get("approved") or 0)
+        desk_quarantined = int(_desk_tally.get("quarantined") or 0)
+        desk_held = int(_desk_tally.get("held") or 0)
+        desk_capped = int(_desk_tally.get("capped") or 0)
+        desk_expired = int(_desk_tally.get("expired") or 0)
+        desk_disabled = 1 if _desk_tally.get("status") == "disabled" else 0
+        log.info(
+            "approval desk | status=%s considered=%d approved=%d quarantined=%d "
+            "held=%d capped=%d expired=%d by_check=%s",
+            _desk_tally.get("status"), int(_desk_tally.get("considered") or 0),
+            desk_approved, desk_quarantined, desk_held, desk_capped,
+            desk_expired, _desk_tally.get("by_check") or {},
+        )
+        if live and (desk_approved or desk_quarantined or desk_expired):
+            # Bare line-start print (house law): a logger prefix makes GitHub
+            # drop the annotation entirely. ::notice, not ::warning — this is
+            # the desk doing the job it was armed for, and the losses it names
+            # are already itemised on the Marketing Floor's loss ledger.
+            print(f"::notice title=marketing-approval-desk::approval desk "
+                  f"cleared {desk_approved}, quarantined {desk_quarantined}, "
+                  f"held {desk_held} for human review, capped {desk_capped} "
+                  f"and retired {desk_expired} planned post(s) "
+                  f"{_desk_tally.get('by_check') or {}}. A HELD item is one the "
+                  f"desk could not VERIFY, not one it judged bad — that is the "
+                  f"queue a human still owns.", flush=True)
+            # Re-fold so the auto-approve pass's budget and the candidate set
+            # below both see the desk's transitions.
+            state = _outbox.fold_state(root)
+            items_by_id = state["items"]
+            statuses = state["status"]
+    except Exception as _desk_exc:  # noqa: BLE001
+        log.warning("approval desk unavailable (%s) — planned items stay queued "
+                    "for the operator, legacy flow unaffected", _desk_exc)
 
     # ── OPTIONAL auto-approve: queued → approved for items that pass ALL gates ─
     # Gated OFF by default; enabled by publish.auto_approve OR --auto-approve.
@@ -1247,6 +1679,16 @@ def main(argv: list[str] | None = None) -> int:
     posted = failed = quarantined = skipped_cap = skipped_channel = would_post = 0
     tape_quarantined = tape_skipped = skipped_floor = deferred_immediate = 0
     forward_booked = deferred_no_media = 0
+    # The 2026-07-30 voice/chart/symbol gates. Plain ints like every other
+    # counter in this function: an earlier draft wrote into a `counters` dict
+    # that was never defined anywhere, which would have raised NameError the
+    # first time a gate actually fired.
+    quarantined_bare_cashtag = quarantined_unknown_cashtag = 0
+    quarantined_voice_laws = quarantined_run_duplicate = 0
+    #: Sends refused for quota, not for content — requeued rather than failed.
+    #: Counted separately because "3 failed" and "3 will retry next sweep" are
+    #: opposite facts and the summary line was reporting them as the same one.
+    rate_limited = 0
 
     # ── Global min-spacing floor (publish.min_minutes_between_any_posts) ──────
     # Post-time anti-spam guard: at most one post per floor-minute window across
@@ -1461,6 +1903,14 @@ def main(argv: list[str] | None = None) -> int:
                     "ungated this run", _ht_exc)
         _ht_orphan_status = None
 
+    # Texts already cleared THIS RUN, per account. The generation-time batch
+    # dedup cannot see across vintages, so a queue holding several nights of
+    # copy ships the same sentence repeatedly: a live queue had "I'm not
+    # fighting this one. It has to reclaim X before it's even a conversation."
+    # on three different names, all clearing every other gate. Per account
+    # because a repeat across two desks is a repeat no reader ever sees.
+    _run_texts: dict[str, list[str]] = {}
+
     for it in approved_due:
         iid = it["id"]
         account = it.get("account", "")
@@ -1661,6 +2111,62 @@ def main(argv: list[str] | None = None) -> int:
             quarantined += 1
             continue
 
+        # -- voice gate: same argument, newer laws ---------------------------
+        # The queue held 187 posts written under the rules that MANDATED the
+        # machine voice ("I'm wrong below 33.8", "historical, not a
+        # guarantee"). Those rules were retired 2026-07-30 after the operator
+        # graded a batch F, but retiring a rule does not rewrite copy already
+        # enqueued — without this screen the graded-F batch posts tomorrow no
+        # matter what the writer does tonight.
+        #
+        # THE SHAPE TRAVELS WITH THE ITEM (adversarial review, 2026-07-31). The
+        # number budget inside this screen is per SHAPE as well as per kind:
+        # SHAPE_CONTRACT ORDERS three numbers for a `stack`, up to six rows for a
+        # list. Calling with no shape made this gate re-judge every queued post
+        # at the shapeless default of two — so an obedient 3-number stack was
+        # written by the LLM, paid for, queued, and then TERMINALLY quarantined
+        # here for doing exactly what the prompt demanded. The shape has been
+        # persisted at `source.shape` since W1 telemetry
+        # (outbox.emit_from_content_plan), so the fix is to hand it over, not to
+        # loosen the budget. A pre-W1 item carries no shape and gets the
+        # unchanged shapeless behaviour.
+        _voice_src = it.get("source") if isinstance(it.get("source"), dict) else {}
+        _voice = _queued_voice_violations(
+            text, str(it.get("kind") or ""),
+            shape=str(_voice_src.get("shape") or ""),
+        )
+        if _voice:
+            reason = "voice laws (queue vintage): " + "; ".join(_voice[:2])
+            print(f"::warning title=marketing-voice-gate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_voice[0][:120]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by voice gate: %s",
+                        iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            quarantined_voice_laws += 1
+            continue
+
+        # -- run dedup: the queue is not a bypass around "don't repeat yourself"
+        # The FIRST of a near-duplicate pair posts; the clones do not. Terminal
+        # by design — the defect is the copy itself, so waiting cannot fix it.
+        _prior = _run_texts.get(account) or []
+        _dupe = (_batch_body_duplicate_violations(text, _prior)
+                 or _repeated_sentence_violations(text, _prior))
+        if _dupe:
+            reason = "near-duplicate of a post already cleared this run: " + _dupe[0]
+            print(f"::warning title=marketing-run-duplicate::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — {_dupe[0][:110]}",
+                  flush=True)
+            log.warning("item %s (%s) QUARANTINED by run dedup: %s", iid, account, reason)
+            if live:
+                _outbox.transition(iid, "quarantined", actor="publisher", root=root, note=reason)
+            quarantined += 1
+            quarantined_run_duplicate += 1
+            continue
+        _run_texts.setdefault(account, []).append(text)
+
         # -- headline-shape gate: fragment headlines are vintage-proof too ---
         # validate_copy 4f (#3907) rejects fragment headlines ("Circling",
         # "is close", "Radar check on") at GENERATION time, but the queue is
@@ -1845,6 +2351,44 @@ def main(argv: list[str] | None = None) -> int:
         # waiver silently converted a charted entry-timing read into a naked call
         # — the one failure mode the gate exists for. A deferred item is not
         # refused, it retries the moment the media backfill lands.
+        # A post that NAMES TICKERS ships a picture (operator 2026-07-30). Unlike
+        # the deferral below there is no chart coming — nothing was rendered — so
+        # this quarantines rather than waits. It runs FIRST because the deferral
+        # gate structurally cannot see these: they are not chart-bearing kinds
+        # and carry no media[] entry.
+        _bare = _bare_cashtag_post(it, pub_cfg, media_paths)
+        if _bare:
+            print(f"::warning title=marketing-bare-cashtag::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — names {_bare} "
+                  f"with no chart. A ticker post ships a picture or it does not "
+                  f"ship.", flush=True)
+            log.warning("item %s (%s/%s) quarantined — bare cashtags %s, no media",
+                        iid, account, it.get("kind"), _bare)
+            if live:
+                _outbox.transition(
+                    iid, "quarantined", actor="publisher", root=root,
+                    note=f"bare cashtag post: names {_bare} with no chart")
+            quarantined_bare_cashtag += 1
+            continue
+
+        # A cashtag no live store can vouch for is a factual error, not a
+        # styling problem, so it is quarantined outright — the copy cannot be
+        # repaired by waiting. Silent when the universe is unreadable.
+        _unknown = _unknown_cashtags(it)
+        if _unknown:
+            print(f"::warning title=marketing-unknown-cashtag::item {iid} "
+                  f"({account}/{it.get('kind')}) quarantined — "
+                  f"{', '.join('$' + s for s in _unknown)} not in any live "
+                  f"symbol store (delisted or never existed).", flush=True)
+            log.warning("item %s (%s/%s) quarantined — unknown cashtags %s",
+                        iid, account, it.get("kind"), _unknown)
+            if live:
+                _outbox.transition(
+                    iid, "quarantined", actor="publisher", root=root,
+                    note=f"unknown cashtag(s): {', '.join(_unknown)}")
+            quarantined_unknown_cashtag += 1
+            continue
+
         if _missing_required_media(it, pub_cfg, media_paths):
             _charts = _chart_ids_for(it)
             _age_days = _item_age_days(it, now)
@@ -2021,6 +2565,89 @@ def main(argv: list[str] | None = None) -> int:
             log.info("item %s POSTED via %s id=%s%s", iid, receipt.backend,
                      receipt.external_id,
                      (f" (scheduled {send_scheduled_at})" if booked_at > now else ""))
+        elif getattr(receipt, "retryable", False):
+            # A RATE LIMIT IS NOT A VERDICT ON THE POST.
+            #
+            # `failed` is in outbox._DEAD_STATUSES — nothing ever picks an item
+            # up again — so treating a 429 as a failure DELETED the post. Three
+            # flagship posts died that way on 2026-07-30 ("http_error 429: Too
+            # many requests from this client"), each a perfectly good post that
+            # arrived while the shared Buffer token was out of quota. The
+            # publisher and the engagement poller authenticate as ONE token and
+            # share ONE 24h allowance, so a metrics sweep can spend the posting
+            # budget — this is self-inflicted and transient, and both halves of
+            # that sentence say "retry", not "discard".
+            #
+            # Back to `approved`, so the next scheduled sweep re-picks it with
+            # every gate re-evaluated: the tape gate will refuse it if the number
+            # has gone stale in the meantime, which is exactly the check that
+            # should decide a retry, not this one.
+            #
+            # ROUTED THROUGH `failed`, AND BOTH LEGS CHECKED (defect closed
+            # 2026-07-31). The first cut of this branch called
+            # transition(iid, "approved") directly — on an item THIS LOOP had
+            # moved to `posting` twenty lines earlier, and
+            # TRANSITIONS["posting"] is {posted, failed, quarantined}. So the
+            # call was ILLEGAL: transition() logged "illegal transition
+            # 'posting'->'approved'" and returned False, the return was never
+            # inspected, and `rate_limited += 1` ran anyway. The item stayed in
+            # `posting` FOREVER — reported by the next run's stuck_posting scan
+            # and never reposted (the no-double-post guarantee) — which is the
+            # very loss this branch exists to prevent, one state to the left.
+            # It had not fired yet only because no 429 had landed since.
+            #
+            # posting -> failed -> approved is the ONLY legal walk from
+            # in-flight back to postable, so it is the walk we take, and each
+            # leg's return value gates the next.
+            #
+            # THE DAILY CAP IS NOT DOUBLE-CHARGED. Two counters decide an
+            # account's day and neither moves here: outbox.posted_today_by_account
+            # counts ids whose FOLDED status is posted/posting with a ledger row
+            # dated today, and this walk ends on `approved` (the intermediate
+            # `failed` row is folded over by the `approved` row appended
+            # microseconds later — the fold keeps only the last transition per
+            # id); and the in-loop `posted_today[account]` / `_cadence_history`
+            # bumps live in the receipt.ok branch alone. Correct in both
+            # directions: nothing was sent, so no slot was spent, and the retry
+            # competes for tomorrow's slots on equal terms.
+            #
+            # KNOWN COST, ACCEPTED: fold_state counts transitions INTO `failed`
+            # as `attempts`, so a rate limit now burns one of the
+            # MAX_POST_ATTEMPTS (2) that outbox.apply_decisions spends before it
+            # quarantines an operator re-approval. That path only triggers for an
+            # item sitting AT `failed` when a fresh approve arrives, and this one
+            # leaves `failed` immediately — but an item that later genuinely
+            # fails reaches the human-look bar sooner. A post that has burned
+            # three dispatch attempts deserves that look.
+            _rl_err = receipt.error or "buffer 429"
+            _rl_receipt = {"backend": receipt.backend, "error": receipt.error,
+                           "at": receipt.at}
+            _rl_failed = _outbox.transition(
+                iid, "failed", actor="publisher", root=root,
+                note=f"rate_limited (transient), not a verdict on the post: {_rl_err}",
+                receipt=_rl_receipt)
+            _rl_requeued = _rl_failed and _outbox.transition(
+                iid, "approved", actor="publisher", root=root,
+                note=f"requeued for the next sweep after a rate limit: {_rl_err}",
+                receipt=_rl_receipt)
+            if _rl_requeued:
+                rate_limited += 1
+                log.warning("item %s RATE-LIMITED, requeued: %s", iid, receipt.error)
+            else:
+                # An unrequeued item is stranded mid-flight and NOTHING else in
+                # this system will move it — the next run's stuck_posting scan
+                # reports it and deliberately refuses to repost it. Bare
+                # line-start print: a logger prefix makes GitHub drop the
+                # annotation (house law), and this is the one outcome an
+                # operator has to act on by hand.
+                print(f"::warning title=publisher-requeue-stuck::item {iid} "
+                      f"({account}) hit a rate limit and could NOT be requeued "
+                      f"({'posting->failed' if not _rl_failed else 'failed->approved'} "
+                      f"refused). It is stranded mid-post and will not retry on "
+                      f"its own — re-arm it from the admin Outbox. Error: "
+                      f"{_rl_err}", flush=True)
+                log.error("item %s RATE-LIMITED and STRANDED: failed=%s approved=%s",
+                          iid, _rl_failed, _rl_requeued)
         else:
             _outbox.transition(iid, "failed", actor="publisher", root=root,
                                note=receipt.error or "publish failed",
@@ -2087,22 +2714,109 @@ def main(argv: list[str] | None = None) -> int:
             f"arming it would have dropped every one.",
             flush=True,
         )
+    # ── SILENT-NIGHT ALARM ───────────────────────────────────────────────────
+    # THE failure mode this system actually has. Every other annotation in this
+    # file names a PER-ITEM reason; the aggregate "the whole night produced
+    # nothing" was silent, so on 2026-07-29 zero posts went out and the operator
+    # found out by looking at the account instead of at the run. A machine that
+    # cannot tell you it failed is not autonomous, it is just unattended.
+    #
+    # Fires on the shape that matters: candidates existed and none of them
+    # posted. A genuinely empty queue is NOT an alarm (nothing was due), it is a
+    # supply problem the plan lane reports on its own.
+    _blocked = {
+        # Phrased as a WAIT, not a loss, because that is what it now is: the
+        # item went back to approved and the next sweep re-picks it. Reading
+        # "failed" here for what is really "Buffer was out of quota for a few
+        # minutes" is precisely the confusion that let three posts be discarded
+        # on 2026-07-30 without anyone noticing they were recoverable.
+        "waiting out a Buffer rate limit": rate_limited,
+        "held for a chart": deferred_no_media,
+        "no fresh quote to verify the price claim": tape_skipped,
+        "price claim contradicted the tape": tape_quarantined,
+        "named tickers with no chart": quarantined_bare_cashtag,
+        "named a ticker no price store knows": quarantined_unknown_cashtag,
+        "reads machine-written": quarantined_voice_laws,
+        "repeats a post already sent": quarantined_run_duplicate,
+        "same skeleton as a recent post": quarantined_frame,
+        "over the desk's daily cap": skipped_cap,
+        "too soon after the last post": skipped_cadence,
+        "no channel wired": skipped_channel,
+        "desk halted": skipped_halt,
+        "below the salience floor": skipped_floor,
+        # Retired BEFORE the loop rather than inside it, and counted here anyway:
+        # a night where eight wire posts aged out and none went out is exactly
+        # the silent night this alarm exists for, and leaving them out of
+        # _considered would let it pass in silence.
+        "aged out of the queue unposted": expired_wire,
+        # The approval desk's own losses. Same reasoning as expired_wire: they
+        # happen BEFORE the dispatch loop, so an in-loop-only trigger would let
+        # a night where the desk held every planned post pass in silence — and
+        # "nothing could be verified" is the single most important thing the
+        # operator could learn from such a night.
+        "quarantined by the approval desk": desk_quarantined,
+        "held by the approval desk for a human": desk_held,
+        "over the approval desk's per-sweep limit": desk_capped,
+        "retired by the approval desk as expired": desk_expired,
+        "other quarantine": quarantined,
+    }
+    _considered = posted + would_post + sum(_blocked.values())
+    # Supply that never even reached the loop. A night also goes silent when
+    # every post sits unapproved: with auto-approve off and nobody awake, the
+    # gate counters all read zero and an in-loop-only trigger stays quiet about
+    # the exact outcome it exists to report. Counted separately so the message
+    # can say WHICH shape it is.
+    try:
+        _waiting = sum(1 for _s in statuses.values()
+                       if str(_s) in ("queued", "approved"))
+    except Exception:  # noqa: BLE001 — an alarm must never break the run
+        _waiting = 0
+    if live and posted == 0 and (_considered > 0 or _waiting > 0):
+        _top = sorted(_blocked.items(), key=lambda kv: -kv[1])[:3]
+        _why = ", ".join(f"{n} {label}" for label, n in _top if n)
+        if not _why:
+            _why = (f"{_waiting} post(s) still waiting for approval"
+                    if _waiting else "no reason recorded")
+        # ::error, not ::warning — a silent night is the outcome this whole
+        # program exists to prevent, and it must not read like routine noise in
+        # the Actions summary. Bare line-start print: a logger prefix makes
+        # GitHub drop the annotation entirely.
+        print(
+            f"::error title=marketing-zero-posted::NOTHING POSTED. "
+            f"{_considered} post(s) reached the dispatch loop and "
+            f"{_waiting} were still waiting; none went out. "
+            f"Top reasons: {_why}. Check the Marketing Floor for the full "
+            f"loss ledger.",
+            flush=True,
+        )
+        log.error("SILENT NIGHT: considered=%d waiting=%d posted=0 top_reasons=%s",
+                  _considered, _waiting, _top)
+
     log.info(
-        "%s complete | posted=%d failed=%d quarantined=%d would_post=%d "
+        "%s complete | posted=%d failed=%d rate_limited=%d quarantined=%d would_post=%d "
         "tape_quarantined=%d tape_skipped=%d skipped_floor=%d "
         "forward_booked=%d deferred_immediate=%d deferred_no_media=%d "
         "skipped_cap=%d skipped_cadence=%d cadence_shadow=%d deferred_xa=%d "
+        "quarantined_bare_cashtag=%d quarantined_unknown_cashtag=%d "
+        "quarantined_voice_laws=%d quarantined_run_duplicate=%d "
         "quarantined_frame=%d skipped_filler=%d quarantined_substance=%d "
         "substance_shadow=%d "
         "skipped_no_channel=%d skipped_halt=%d parked_dark=%d "
+        "expired_wire=%d desk_approved=%d desk_quarantined=%d desk_held=%d "
+        "desk_capped=%d desk_expired=%d desk_disabled=%d "
         "stuck_posting=%d auto_approved=%d",
-        mode, posted, failed, quarantined, would_post,
+        mode, posted, failed, rate_limited, quarantined, would_post,
         tape_quarantined, tape_skipped, skipped_floor,
         forward_booked, deferred_immediate, deferred_no_media,
         skipped_cap, skipped_cadence, shadow_cadence, deferred_xa,
+        quarantined_bare_cashtag, quarantined_unknown_cashtag,
+        quarantined_voice_laws, quarantined_run_duplicate,
         quarantined_frame, skipped_filler, quarantined_substance, shadow_substance,
         skipped_channel,
         skipped_halt, parked_dark,
+        expired_wire,
+        desk_approved, desk_quarantined, desk_held, desk_capped, desk_expired,
+        desk_disabled,
         len(stuck_posting),
         len(auto_approved),
     )
@@ -2114,6 +2828,7 @@ def main(argv: list[str] | None = None) -> int:
             "cap": cap,
             "posted": posted,
             "failed": failed,
+            "rate_limited": rate_limited,
             "quarantined": quarantined,
             "would_post": would_post,
             "tape_quarantined": tape_quarantined,
@@ -2126,6 +2841,10 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_cadence": skipped_cadence,
             "cadence_shadow": shadow_cadence,
             "deferred_cross_account": deferred_xa,
+            "quarantined_bare_cashtag": quarantined_bare_cashtag,
+            "quarantined_unknown_cashtag": quarantined_unknown_cashtag,
+            "quarantined_voice_laws": quarantined_voice_laws,
+            "quarantined_run_duplicate": quarantined_run_duplicate,
             "quarantined_frame": quarantined_frame,
             "skipped_filler": skipped_filler,
             "quarantined_substance": quarantined_substance,
@@ -2134,6 +2853,21 @@ def main(argv: list[str] | None = None) -> int:
             "skipped_halt": skipped_halt,
             "halted_accounts": sorted(_halts),
             "parked_dark": parked_dark,
+            # The wire reaper's tally. A counter, not a footnote: these are
+            # posts the desk WROTE and nobody sent, and the Floor's loss ledger
+            # is the only surface that says so.
+            "expired_wire": expired_wire,
+            # The approval desk's tally. `desk_disabled` is a 0/1 COUNTER rather
+            # than a status string on purpose: the Floor's loss ledger renders
+            # numbers and silently SKIPS everything else, so a string here would
+            # be another tinted pane — a night with the desk switched off would
+            # read exactly like a night where it ran and cleared nothing.
+            "desk_approved": desk_approved,
+            "desk_quarantined": desk_quarantined,
+            "desk_held": desk_held,
+            "desk_capped": desk_capped,
+            "desk_expired": desk_expired,
+            "desk_disabled": desk_disabled,
             "dark_accounts": (None if _dark is None else sorted(_dark)),
             "stuck_posting": len(stuck_posting),
             "auto_approved": len(auto_approved),

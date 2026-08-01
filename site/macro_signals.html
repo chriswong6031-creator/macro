@@ -15,8 +15,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -43,15 +52,15 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
-<link rel="stylesheet" href="assets/css/fa854d96.css?v=fa854d96">
+<link rel="stylesheet" href="assets/css/0f65962f.css?v=0f65962f">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=6e249584">
+<link rel="preload" as="style" href="navigation-refresh.css?v=3ee9d113">
 </head>
 <body class="page-macro">
 
 
 
-<div class="msx-aurora au-red" aria-hidden="true">
+<div class="msx-aurora" aria-hidden="true">
   <div class="au-b2"></div>
   <div class="au-b3"></div>
 </div>
@@ -61,7 +70,7 @@
   
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=6e249584">
+    <link rel="stylesheet" href="navigation-refresh.css?v=3ee9d113">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -182,17 +191,19 @@
       <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
         <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
         <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Crypto Cockpit</span><span class="l-zh">加密驾驶舱</span><span class="d"><span class="l-en">Market board · flows · leverage</span><span class="l-zh">市场看板 · 资金流 · 杠杆</span></span></a>
-        <a href="vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">State · risk · cycle · strategy</span><span class="l-zh">状态 · 风险 · 周期 · 策略</span></span></a>
-        <a href="crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation</span><span class="l-zh">配置</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-        <a href="vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategy Track Record</span><span class="l-zh">策略历史表现</span><span class="d"><span class="l-en">Cycle and risk-allocation evidence</span><span class="l-zh">周期与风险配置证据</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -213,48 +224,46 @@
     
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-main">
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
-              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
-              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
-              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
-              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
-              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
-              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
-              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
-              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
-              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
             </div>
           </section>
         </div>
-        <aside class="nav-mega-rail">
-          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
-            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
-              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
             </button>
-            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+            <div class="nav-drill-panel" data-nav-drill-panel inert>
               <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
               <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
               <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
@@ -265,7 +274,11 @@
               <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+          <a class="rail-link nav-rail-item" href="intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
         </aside>
       </div>
     </div>
@@ -324,11 +337,11 @@
         
         
         
-          <span class="l-en">Defensive tape — protect first; opportunities can wait.</span><span class="l-zh">防御行情 — 先保护本金，机会可以等。</span>
+          <span class="l-en">Conditions support staying invested — watch the usual risks.</span><span class="l-zh">环境支持持仓 — 留意常规风险。</span>
         
       </div>
       
-      <div class="muted sm" style="margin-top:8px"><span class="l-en">As of</span><span class="l-zh">数据截至</span> 2026-07-29</div>
+      <div class="muted sm" style="margin-top:8px"><span class="l-en">As of</span><span class="l-zh">数据截至</span> 2026-07-31</div>
       
     </div>
 
@@ -351,17 +364,17 @@
               <stop offset="100%" stop-color="var(--up)"/>
             </linearGradient>
           </defs>
-          <g id="gneedle-growth" style="transform:rotate(-29.97deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
+          <g id="gneedle-growth" style="transform:rotate(11.969999999999999deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
             <line x1="60" y1="68" x2="60" y2="26"
-              stroke="var(--down)"
+              stroke="var(--up)"
               stroke-width="2.5" stroke-linecap="round"
-              style="filter:drop-shadow(0 0 4px var(--down))"/>
-            <circle cx="60" cy="68" r="4" fill="var(--down)"/>
+              style="filter:drop-shadow(0 0 4px var(--up))"/>
+            <circle cx="60" cy="68" r="4" fill="var(--up)"/>
           </g>
         </svg>
-        <div class="gauge-value bad">
+        <div class="gauge-value good">
           
-            <span class="l-en">FALLING</span><span class="l-zh">下行</span>
+            <span class="l-en">RISING</span><span class="l-zh">上行</span>
           
           <span class="help">?<span class="tip"><span class="l-en">Growth dial. Score −1..+1 maps to 0..100 on the arc. Built from market prices (leading) plus economic data confirmation.</span><span class="l-zh">增长刻度盘。分数−1..+1映射为弧上0..100。由市场价格（领先）加经济数据确认构建。</span></span></span>
         </div>
@@ -384,7 +397,7 @@
               <stop offset="100%" stop-color="var(--down)"/>
             </linearGradient>
           </defs>
-          <g id="gneedle-inflation" style="transform:rotate(50.400000000000006deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
+          <g id="gneedle-inflation" style="transform:rotate(64.80000000000001deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
             <line x1="60" y1="68" x2="60" y2="26"
               stroke="var(--warn)"
               stroke-width="2.5" stroke-linecap="round"
@@ -418,7 +431,7 @@
               <stop offset="100%" stop-color="var(--down)"/>
             </linearGradient>
           </defs>
-          <g id="gneedle-fg" style="transform:rotate(-3.5999999999999943deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
+          <g id="gneedle-fg" style="transform:rotate(0.0deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
             <line x1="60" y1="68" x2="60" y2="26"
               stroke="var(--warn)"
               stroke-width="2.5" stroke-linecap="round"
@@ -451,16 +464,16 @@
               <stop offset="100%" stop-color="var(--down)"/>
             </linearGradient>
           </defs>
-          <g id="gneedle-vix" style="transform:rotate(28.91846573045484deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
+          <g id="gneedle-vix" style="transform:rotate(-19.991617770326897deg);transform-origin:60px 68px;transition:transform .8s cubic-bezier(.22,.9,.3,1);">
             <line x1="60" y1="68" x2="60" y2="26"
-              stroke="var(--warn)"
+              stroke="var(--up)"
               stroke-width="2.5" stroke-linecap="round"
-              style="filter:drop-shadow(0 0 4px var(--warn))"/>
-            <circle cx="60" cy="68" r="4" fill="var(--warn)"/>
+              style="filter:drop-shadow(0 0 4px var(--up))"/>
+            <circle cx="60" cy="68" r="4" fill="var(--up)"/>
           </g>
         </svg>
-        <div class="gauge-value warn">
-          <span class="l-en"><span class="l-en">elevated</span><span class="l-zh">偏高</span></span><span class="l-zh"><span class="l-en">elevated</span><span class="l-zh">偏高</span></span>
+        <div class="gauge-value good">
+          <span class="l-en"><span class="l-en">normal</span><span class="l-zh">正常</span></span><span class="l-zh"><span class="l-en">normal</span><span class="l-zh">正常</span></span>
           <span class="help">?<span class="tip"><span class="l-en">VIX percentile (0=lowest ever, 100=highest ever). Regime bands: calm &lt;16, normal 16-20, stressed 20-28, crisis &gt;28. Technical detail in VIX section below.</span><span class="l-zh">VIX百分位（0=历史最低，100=历史最高）。区间：平静&lt;16，正常16-20，受压20-28，危机&gt;28。技术细节见下方VIX板块。</span></span></span>
         </div>
       </div>
@@ -470,9 +483,9 @@
     <div class="hero-ms">
       
       
-      <a href="macro.html" class="ms-pill ms-red">
+      <a href="macro.html" class="ms-pill ms-green">
         <span class="l-en">Market state:</span><span class="l-zh">市场状态：</span>
-        <span class="l-en">Red</span><span class="l-zh">红灯</span>
+        <span class="l-en">Green</span><span class="l-zh">绿灯</span>
       </a>
       
     </div>
@@ -521,9 +534,9 @@
         <span style="flex:0 0 80px;font-size:13px"><span class="l-en">Leading</span><span class="l-zh">领先</span></span>
         <span style="flex:0 0 90px;font-size:12px;color:var(--muted)"><span class="l-en">turning up</span><span class="l-zh">转强</span></span>
         <div class="tier-bar-wrap">
-          <div class="tier-bar-fill pos" style="width:51.5%;background:var(--up)"></div>
+          <div class="tier-bar-fill pos" style="width:32.7%;background:var(--up)"></div>
         </div>
-        <span class="help">?<span class="tip"><span class="l-en">Leading tier: mom6=+0.51, diffusion=100, n=4</span><span class="l-zh">领先 层：mom6=+0.51, 扩散=100, n=4</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Leading tier: mom6=+0.33, diffusion=100, n=4</span><span class="l-zh">领先 层：mom6=+0.33, 扩散=100, n=4</span></span></span>
       </div>
       
       
@@ -536,9 +549,9 @@
         <span style="flex:0 0 80px;font-size:13px"><span class="l-en">Coincident</span><span class="l-zh">同步</span></span>
         <span style="flex:0 0 90px;font-size:12px;color:var(--muted)"><span class="l-en">turning down</span><span class="l-zh">转弱</span></span>
         <div class="tier-bar-wrap">
-          <div class="tier-bar-fill " style="width:19.5%;background:var(--down)"></div>
+          <div class="tier-bar-fill " style="width:18.5%;background:var(--down)"></div>
         </div>
-        <span class="help">?<span class="tip"><span class="l-en">Coincident tier: mom6=-0.20, diffusion=100, n=2</span><span class="l-zh">同步 层：mom6=-0.20, 扩散=100, n=2</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Coincident tier: mom6=-0.19, diffusion=67, n=3</span><span class="l-zh">同步 层：mom6=-0.19, 扩散=67, n=3</span></span></span>
       </div>
       
       
@@ -608,18 +621,18 @@
       <div class="sig-label"><span class="l-en">System stress</span><span class="l-zh">系统压力</span></div>
       <div class="sig-value"><span class="l-en">calm</span><span class="l-zh">平静</span></div>
       <div class="sig-meaning"><span class="l-en">stress inside the financial system (OFR)</span><span class="l-zh">金融体系内部压力(OFR)</span></div>
-      <span class="help">?<span class="tip"><span class="l-en">OFR FSI: -2.40 · Top channel: — · CP funding: <span class="l-en">normal</span><span class="l-zh">正常</span></span><span class="l-zh">OFR FSI: -2.40 · 主要渠道: — · 商业票据融资: <span class="l-en">normal</span><span class="l-zh">正常</span></span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">OFR FSI: -1.92 · Top channel: — · CP funding: <span class="l-en">normal</span><span class="l-zh">正常</span></span><span class="l-zh">OFR FSI: -1.92 · 主要渠道: — · 商业票据融资: <span class="l-en">normal</span><span class="l-zh">正常</span></span></span></span>
     </div>
     
 
     
     
     
-    <div class="sig-tile warn">
+    <div class="sig-tile good">
       <div class="sig-label"><span class="l-en">Growth right now</span><span class="l-zh">当前增长</span></div>
-      <div class="sig-value">+1.5%</div>
+      <div class="sig-value">+5.0%</div>
       <div class="sig-meaning"><span class="l-en">live estimate of this quarter&#39;s growth</span><span class="l-zh">本季度增长的实时估计</span></div>
-      <span class="help">?<span class="tip"><span class="l-en">GDPNow: +1.5% · WEI: +2.93</span><span class="l-zh">GDPNow: +1.5% · 周度经济指数: +2.93</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">GDPNow: +5.0% · WEI: +2.46</span><span class="l-zh">GDPNow: +5.0% · 周度经济指数: +2.46</span></span></span>
     </div>
     
 
@@ -643,7 +656,7 @@
       
       <div class="sig-value"><span class="l-en">labor firm</span><span class="l-zh">就业稳固</span></div>
       <div class="sig-meaning"><span class="l-en">layoffs steady</span><span class="l-zh">裁员平稳</span></div>
-      <span class="help">?<span class="tip"><span class="l-en">Initial claims YoY: -6.4% · Indeed postings 3m: -0.4% · Withheld taxes YoY: +2.5%</span><span class="l-zh">初请同比: -6.4% · Indeed招聘3月: -0.4% · 预扣税同比: +2.5%</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">Initial claims YoY: -8.6% · Indeed postings 3m: -0.7% · Withheld taxes YoY: +3.1%</span><span class="l-zh">初请同比: -8.6% · Indeed招聘3月: -0.7% · 预扣税同比: +3.1%</span></span></span>
     </div>
     
 
@@ -654,7 +667,7 @@
       <div class="sig-label"><span class="l-en">Risk appetite</span><span class="l-zh">风险偏好</span></div>
       <div class="sig-value"><span class="l-en">risk-on</span><span class="l-zh">偏好风险</span></div>
       <div class="sig-meaning"><span class="l-en">how much risk investors are reaching for</span><span class="l-zh">投资者的冒险意愿</span></div>
-      <span class="help">?<span class="tip"><span class="l-en">RORO: +0.41 · VRP: +10.2 · VIX term: 0.96 · Stock-bond corr: +0.52</span><span class="l-zh">RORO: +0.41 · 方差风险溢价: +10.2 · VIX期限: 0.96 · 股债相关: +0.52</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">RORO: +1.07 · VRP: +3.6 · VIX term: 0.84 · Stock-bond corr: +0.52</span><span class="l-zh">RORO: +1.07 · 方差风险溢价: +3.6 · VIX期限: 0.84 · 股债相关: +0.52</span></span></span>
     </div>
     
 
@@ -663,10 +676,8 @@
     
     <div class="sig-tile warn">
       <div class="sig-label"><span class="l-en">Capitulation</span><span class="l-zh">投降信号</span></div>
-      <div class="sig-value">1<small style="font-size:11px">/3</small></div>
+      <div class="sig-value">0<small style="font-size:11px">/3</small></div>
       <div class="sig-meaning"><span class="l-en">distress-selling signal — contrarian</span><span class="l-zh">极度悲观信号 — 逆向参考</span></div>
-      
-      <span class="help">?<span class="tip"><span class="l-en">Signals firing: VRP extreme</span><span class="l-zh">触发信号: VRP extreme</span></span></span>
       
     </div>
     
@@ -687,11 +698,11 @@
   
   <div style="font-size:14px;font-weight:600;margin-bottom:8px"><span class="l-en">The money tide is going out — a headwind.</span><span class="l-zh">资金潮退去 — 逆风。</span>
     
-    <span class="chip chip-neg" style="margin-left:8px;vertical-align:middle">-173<span class="l-en">bn / 4wk</span><span class="l-zh">十亿 / 4周</span></span>
+    <span class="chip chip-neg" style="margin-left:8px;vertical-align:middle">-201<span class="l-en">bn / 4wk</span><span class="l-zh">十亿 / 4周</span></span>
     
   </div>
   
-  <div class="chart"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible"><line x1="50" y1="145.0" x2="580" y2="145.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="46" y="149.0" text-anchor="end" font-size="10" fill="var(--muted)">5750</text><line x1="50" y1="102.0" x2="580" y2="102.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="46" y="106.0" text-anchor="end" font-size="10" fill="var(--muted)">5933</text><line x1="50" y1="59.0" x2="580" y2="59.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="46" y="63.0" text-anchor="end" font-size="10" fill="var(--muted)">6116</text><text x="50.0" y="214" text-anchor="start" font-size="10" fill="var(--muted)">Jul 2024</text><text x="580.0" y="214" text-anchor="end" font-size="10" fill="var(--muted)">Jul 2026</text><path d="M50.0,188.0 L50.0,77.1 L51.0,77.7 L52.0,107.1 L53.0,75.7 L54.1,67.2 L55.1,64.3 L56.1,61.1 L57.1,61.9 L58.1,67.4 L59.1,68.6 L60.2,75.2 L61.2,77.2 L62.2,72.0 L63.2,52.2 L64.2,58.8 L65.2,62.4 L66.2,60.8 L67.3,66.5 L68.3,65.4 L69.3,64.4 L70.3,75.3 L71.3,83.9 L72.3,91.5 L73.4,89.6 L74.4,90.8 L75.4,90.8 L76.4,86.4 L77.4,85.2 L78.4,73.9 L79.4,73.6 L80.5,74.7 L81.5,66.2 L82.5,60.3 L83.5,55.1 L84.5,58.9 L85.5,86.1 L86.6,85.0 L87.6,94.7 L88.6,92.8 L89.6,94.4 L90.6,108.7 L91.6,106.1 L92.6,113.3 L93.7,107.7 L94.7,116.6 L95.7,150.0 L96.7,111.9 L97.7,123.8 L98.7,107.4 L99.8,105.8 L100.8,106.6 L101.8,109.4 L102.8,106.0 L103.8,100.1 L104.8,101.4 L105.8,101.4 L106.9,101.5 L107.9,97.4 L108.9,98.4 L109.9,97.6 L110.9,101.1 L111.9,94.9 L113.0,100.0 L114.0,88.0 L115.0,92.1 L116.0,99.7 L117.0,100.9 L118.0,100.9 L119.0,111.8 L120.1,77.1 L121.1,85.0 L122.1,79.0 L123.1,91.8 L124.1,87.3 L125.1,86.3 L126.1,86.3 L127.2,94.6 L128.2,105.0 L129.2,101.0 L130.2,71.2 L131.2,83.1 L132.2,85.3 L133.3,93.7 L134.3,96.7 L135.3,95.4 L136.3,95.6 L137.3,94.7 L138.3,97.3 L139.3,97.3 L140.4,97.8 L141.4,103.5 L142.4,103.1 L143.4,105.5 L144.4,94.4 L145.4,91.6 L146.5,99.9 L147.5,92.6 L148.5,84.8 L149.5,79.4 L150.5,77.6 L151.5,103.7 L152.5,98.3 L153.6,97.1 L154.6,88.8 L155.6,80.7 L156.6,90.8 L157.6,92.5 L158.6,93.3 L159.7,86.1 L160.7,110.5 L161.7,114.5 L162.7,159.0 L163.7,166.9 L164.7,101.3 L165.7,94.5 L166.8,97.5 L167.8,87.9 L168.8,74.9 L169.8,71.7 L170.8,76.0 L171.8,80.9 L172.9,81.1 L173.9,71.4 L174.9,71.5 L175.9,76.2 L176.9,76.2 L177.9,78.4 L178.9,76.2 L180.0,100.4 L181.0,96.1 L182.0,100.0 L183.0,108.4 L184.0,113.3 L185.0,117.7 L186.1,124.5 L187.1,104.9 L188.1,105.9 L189.1,106.4 L190.1,109.6 L191.1,112.1 L192.1,116.0 L193.2,111.5 L194.2,101.1 L195.2,101.2 L196.2,97.3 L197.2,97.3 L198.2,95.2 L199.3,93.2 L200.3,88.3 L201.3,86.3 L202.3,86.6 L203.3,71.5 L204.3,69.4 L205.3,75.2 L206.4,92.8 L207.4,67.5 L208.4,63.1 L209.4,64.0 L210.4,63.1 L211.4,62.9 L212.5,66.2 L213.5,58.3 L214.5,44.4 L215.5,31.2 L216.5,34.6 L217.5,53.4 L218.5,48.6 L219.6,51.7 L220.6,43.8 L221.6,40.7 L222.6,45.3 L223.6,41.3 L224.6,43.2 L225.7,46.7 L226.7,50.5 L227.7,101.4 L228.7,36.7 L229.7,41.9 L230.7,31.9 L231.7,28.0 L232.8,23.8 L233.8,34.5 L234.8,28.8 L235.8,19.6 L236.8,16.0 L237.8,37.0 L238.9,77.2 L239.9,78.3 L240.9,70.1 L241.9,73.0 L242.9,89.4 L243.9,90.3 L244.9,91.1 L246.0,78.2 L247.0,71.8 L248.0,90.8 L249.0,97.3 L250.0,137.7 L251.0,95.9 L252.0,89.2 L253.1,87.5 L254.1,87.2 L255.1,95.6 L256.1,87.4 L257.1,87.2 L258.1,90.9 L259.2,91.8 L260.2,89.5 L261.2,61.0 L262.2,69.3 L263.2,83.9 L264.2,70.7 L265.2,74.4 L266.3,76.3 L267.3,71.3 L268.3,71.3 L269.3,69.0 L270.3,71.4 L271.3,60.8 L272.4,84.7 L273.4,63.1 L274.4,53.9 L275.4,56.1 L276.4,46.4 L277.4,44.1 L278.4,54.5 L279.5,43.7 L280.5,40.2 L281.5,30.9 L282.5,34.3 L283.5,65.0 L284.5,62.9 L285.6,64.5 L286.6,64.5 L287.6,44.7 L288.6,53.0 L289.6,54.3 L290.6,58.7 L291.6,61.5 L292.7,77.2 L293.7,146.3 L294.7,74.6 L295.7,74.4 L296.7,55.2 L297.7,55.2 L298.8,60.5 L299.8,63.3 L300.8,57.1 L301.8,41.5 L302.8,39.6 L303.8,51.9 L304.8,54.3 L305.9,50.9 L306.9,51.2 L307.9,52.2 L308.9,56.5 L309.9,58.5 L310.9,54.5 L312.0,44.8 L313.0,48.8 L314.0,56.9 L315.0,70.0 L316.0,70.3 L317.0,102.5 L318.0,46.8 L319.1,57.0 L320.1,62.9 L321.1,66.3 L322.1,69.4 L323.1,69.8 L324.1,73.4 L325.2,77.3 L326.2,69.5 L327.2,70.7 L328.2,58.7 L329.2,66.0 L330.2,72.4 L331.2,72.7 L332.3,78.7 L333.3,86.0 L334.3,92.0 L335.3,96.3 L336.3,92.6 L337.3,95.2 L338.4,93.2 L339.4,93.2 L340.4,111.5 L341.4,104.5 L342.4,106.7 L343.4,106.2 L344.4,109.2 L345.5,112.3 L346.5,107.6 L347.5,110.6 L348.5,114.2 L349.5,149.4 L350.5,141.9 L351.6,136.2 L352.6,138.3 L353.6,138.3 L354.6,139.8 L355.6,130.3 L356.6,128.2 L357.6,128.1 L358.7,139.4 L359.7,145.8 L360.7,164.2 L361.7,143.2 L362.7,143.9 L363.7,141.9 L364.8,145.0 L365.8,142.9 L366.8,135.2 L367.8,135.5 L368.8,135.1 L369.8,135.1 L370.8,146.0 L371.9,147.6 L372.9,159.2 L373.9,159.8 L374.9,160.4 L375.9,165.6 L376.9,161.4 L378.0,171.4 L379.0,169.8 L380.0,177.0 L381.0,182.5 L382.0,184.1 L383.0,188.0 L384.0,178.2 L385.1,171.3 L386.1,173.1 L387.1,176.2 L388.1,178.3 L389.1,176.1 L390.1,180.2 L391.1,180.2 L392.2,172.9 L393.2,176.8 L394.2,175.6 L395.2,168.0 L396.2,168.3 L397.2,167.7 L398.3,171.1 L399.3,166.0 L400.3,169.1 L401.3,175.3 L402.3,168.4 L403.3,168.4 L404.3,182.9 L405.4,180.0 L406.4,177.7 L407.4,174.5 L408.4,167.4 L409.4,165.2 L410.4,167.6 L411.5,157.9 L412.5,150.1 L413.5,146.5 L414.5,145.9 L415.5,174.7 L416.5,168.4 L417.5,160.3 L418.6,156.1 L419.6,153.5 L420.6,160.7 L421.6,150.5 L422.6,139.1 L423.6,139.1 L424.7,150.4 L425.7,154.0 L426.7,146.8 L427.7,165.8 L428.7,165.8 L429.7,120.6 L430.7,125.5 L431.8,117.7 L432.8,136.7 L433.8,134.0 L434.8,134.4 L435.8,139.6 L436.8,135.7 L437.9,132.9 L438.9,147.6 L439.9,153.9 L440.9,153.9 L441.9,161.9 L442.9,154.4 L443.9,158.2 L445.0,160.7 L446.0,171.0 L447.0,178.3 L448.0,172.4 L449.0,176.4 L450.0,160.4 L451.1,161.7 L452.1,162.0 L453.1,157.8 L454.1,159.2 L455.1,157.4 L456.1,159.8 L457.1,167.2 L458.2,154.2 L459.2,157.1 L460.2,154.8 L461.2,154.8 L462.2,157.4 L463.2,151.2 L464.3,154.9 L465.3,152.2 L466.3,151.0 L467.3,154.1 L468.3,139.4 L469.3,142.5 L470.3,133.6 L471.4,146.9 L472.4,144.3 L473.4,137.7 L474.4,136.7 L475.4,134.6 L476.4,140.3 L477.5,141.3 L478.5,123.8 L479.5,124.6 L480.5,123.9 L481.5,154.8 L482.5,153.0 L483.5,138.1 L484.6,139.7 L485.6,136.9 L486.6,146.0 L487.6,138.3 L488.6,128.8 L489.6,125.4 L490.7,131.5 L491.7,136.1 L492.7,145.4 L493.7,116.8 L494.7,110.0 L495.7,104.8 L496.7,109.8 L497.8,102.2 L498.8,87.0 L499.8,84.7 L500.8,88.5 L501.8,101.5 L502.8,106.4 L503.9,137.7 L504.9,148.7 L505.9,155.1 L506.9,164.5 L507.9,162.6 L508.9,156.8 L509.9,148.0 L511.0,149.0 L512.0,155.7 L513.0,152.9 L514.0,154.2 L515.0,151.5 L516.0,123.4 L517.0,128.7 L518.1,124.2 L519.1,122.6 L520.1,118.6 L521.1,116.9 L522.1,120.6 L523.1,118.1 L524.2,105.6 L525.2,104.1 L526.2,93.5 L527.2,101.4 L528.2,111.3 L529.2,108.1 L530.2,104.0 L531.3,112.7 L532.3,112.7 L533.3,126.1 L534.3,119.2 L535.3,120.7 L536.3,135.9 L537.4,122.4 L538.4,124.8 L539.4,118.3 L540.4,117.8 L541.4,113.2 L542.4,117.8 L543.4,114.3 L544.5,104.1 L545.5,103.7 L546.5,107.6 L547.5,146.2 L548.5,148.9 L549.5,139.6 L550.6,128.3 L551.6,128.3 L552.6,135.7 L553.6,132.3 L554.6,126.4 L555.6,119.5 L556.6,125.3 L557.7,120.3 L558.7,135.7 L559.7,105.9 L560.7,97.5 L561.7,99.0 L562.7,100.6 L563.8,101.5 L564.8,90.2 L565.8,89.7 L566.8,86.9 L567.8,89.8 L568.8,98.5 L569.8,98.7 L570.9,104.9 L571.9,103.2 L572.9,106.2 L573.9,117.3 L574.9,107.0 L575.9,116.9 L577.0,119.0 L578.0,123.1 L579.0,137.9 L580.0,138.3 L580.0,188.0 Z" fill="var(--info)" fill-opacity=".08" stroke="none"/><polyline points="50.0,77.1 51.0,77.7 52.0,107.1 53.0,75.7 54.1,67.2 55.1,64.3 56.1,61.1 57.1,61.9 58.1,67.4 59.1,68.6 60.2,75.2 61.2,77.2 62.2,72.0 63.2,52.2 64.2,58.8 65.2,62.4 66.2,60.8 67.3,66.5 68.3,65.4 69.3,64.4 70.3,75.3 71.3,83.9 72.3,91.5 73.4,89.6 74.4,90.8 75.4,90.8 76.4,86.4 77.4,85.2 78.4,73.9 79.4,73.6 80.5,74.7 81.5,66.2 82.5,60.3 83.5,55.1 84.5,58.9 85.5,86.1 86.6,85.0 87.6,94.7 88.6,92.8 89.6,94.4 90.6,108.7 91.6,106.1 92.6,113.3 93.7,107.7 94.7,116.6 95.7,150.0 96.7,111.9 97.7,123.8 98.7,107.4 99.8,105.8 100.8,106.6 101.8,109.4 102.8,106.0 103.8,100.1 104.8,101.4 105.8,101.4 106.9,101.5 107.9,97.4 108.9,98.4 109.9,97.6 110.9,101.1 111.9,94.9 113.0,100.0 114.0,88.0 115.0,92.1 116.0,99.7 117.0,100.9 118.0,100.9 119.0,111.8 120.1,77.1 121.1,85.0 122.1,79.0 123.1,91.8 124.1,87.3 125.1,86.3 126.1,86.3 127.2,94.6 128.2,105.0 129.2,101.0 130.2,71.2 131.2,83.1 132.2,85.3 133.3,93.7 134.3,96.7 135.3,95.4 136.3,95.6 137.3,94.7 138.3,97.3 139.3,97.3 140.4,97.8 141.4,103.5 142.4,103.1 143.4,105.5 144.4,94.4 145.4,91.6 146.5,99.9 147.5,92.6 148.5,84.8 149.5,79.4 150.5,77.6 151.5,103.7 152.5,98.3 153.6,97.1 154.6,88.8 155.6,80.7 156.6,90.8 157.6,92.5 158.6,93.3 159.7,86.1 160.7,110.5 161.7,114.5 162.7,159.0 163.7,166.9 164.7,101.3 165.7,94.5 166.8,97.5 167.8,87.9 168.8,74.9 169.8,71.7 170.8,76.0 171.8,80.9 172.9,81.1 173.9,71.4 174.9,71.5 175.9,76.2 176.9,76.2 177.9,78.4 178.9,76.2 180.0,100.4 181.0,96.1 182.0,100.0 183.0,108.4 184.0,113.3 185.0,117.7 186.1,124.5 187.1,104.9 188.1,105.9 189.1,106.4 190.1,109.6 191.1,112.1 192.1,116.0 193.2,111.5 194.2,101.1 195.2,101.2 196.2,97.3 197.2,97.3 198.2,95.2 199.3,93.2 200.3,88.3 201.3,86.3 202.3,86.6 203.3,71.5 204.3,69.4 205.3,75.2 206.4,92.8 207.4,67.5 208.4,63.1 209.4,64.0 210.4,63.1 211.4,62.9 212.5,66.2 213.5,58.3 214.5,44.4 215.5,31.2 216.5,34.6 217.5,53.4 218.5,48.6 219.6,51.7 220.6,43.8 221.6,40.7 222.6,45.3 223.6,41.3 224.6,43.2 225.7,46.7 226.7,50.5 227.7,101.4 228.7,36.7 229.7,41.9 230.7,31.9 231.7,28.0 232.8,23.8 233.8,34.5 234.8,28.8 235.8,19.6 236.8,16.0 237.8,37.0 238.9,77.2 239.9,78.3 240.9,70.1 241.9,73.0 242.9,89.4 243.9,90.3 244.9,91.1 246.0,78.2 247.0,71.8 248.0,90.8 249.0,97.3 250.0,137.7 251.0,95.9 252.0,89.2 253.1,87.5 254.1,87.2 255.1,95.6 256.1,87.4 257.1,87.2 258.1,90.9 259.2,91.8 260.2,89.5 261.2,61.0 262.2,69.3 263.2,83.9 264.2,70.7 265.2,74.4 266.3,76.3 267.3,71.3 268.3,71.3 269.3,69.0 270.3,71.4 271.3,60.8 272.4,84.7 273.4,63.1 274.4,53.9 275.4,56.1 276.4,46.4 277.4,44.1 278.4,54.5 279.5,43.7 280.5,40.2 281.5,30.9 282.5,34.3 283.5,65.0 284.5,62.9 285.6,64.5 286.6,64.5 287.6,44.7 288.6,53.0 289.6,54.3 290.6,58.7 291.6,61.5 292.7,77.2 293.7,146.3 294.7,74.6 295.7,74.4 296.7,55.2 297.7,55.2 298.8,60.5 299.8,63.3 300.8,57.1 301.8,41.5 302.8,39.6 303.8,51.9 304.8,54.3 305.9,50.9 306.9,51.2 307.9,52.2 308.9,56.5 309.9,58.5 310.9,54.5 312.0,44.8 313.0,48.8 314.0,56.9 315.0,70.0 316.0,70.3 317.0,102.5 318.0,46.8 319.1,57.0 320.1,62.9 321.1,66.3 322.1,69.4 323.1,69.8 324.1,73.4 325.2,77.3 326.2,69.5 327.2,70.7 328.2,58.7 329.2,66.0 330.2,72.4 331.2,72.7 332.3,78.7 333.3,86.0 334.3,92.0 335.3,96.3 336.3,92.6 337.3,95.2 338.4,93.2 339.4,93.2 340.4,111.5 341.4,104.5 342.4,106.7 343.4,106.2 344.4,109.2 345.5,112.3 346.5,107.6 347.5,110.6 348.5,114.2 349.5,149.4 350.5,141.9 351.6,136.2 352.6,138.3 353.6,138.3 354.6,139.8 355.6,130.3 356.6,128.2 357.6,128.1 358.7,139.4 359.7,145.8 360.7,164.2 361.7,143.2 362.7,143.9 363.7,141.9 364.8,145.0 365.8,142.9 366.8,135.2 367.8,135.5 368.8,135.1 369.8,135.1 370.8,146.0 371.9,147.6 372.9,159.2 373.9,159.8 374.9,160.4 375.9,165.6 376.9,161.4 378.0,171.4 379.0,169.8 380.0,177.0 381.0,182.5 382.0,184.1 383.0,188.0 384.0,178.2 385.1,171.3 386.1,173.1 387.1,176.2 388.1,178.3 389.1,176.1 390.1,180.2 391.1,180.2 392.2,172.9 393.2,176.8 394.2,175.6 395.2,168.0 396.2,168.3 397.2,167.7 398.3,171.1 399.3,166.0 400.3,169.1 401.3,175.3 402.3,168.4 403.3,168.4 404.3,182.9 405.4,180.0 406.4,177.7 407.4,174.5 408.4,167.4 409.4,165.2 410.4,167.6 411.5,157.9 412.5,150.1 413.5,146.5 414.5,145.9 415.5,174.7 416.5,168.4 417.5,160.3 418.6,156.1 419.6,153.5 420.6,160.7 421.6,150.5 422.6,139.1 423.6,139.1 424.7,150.4 425.7,154.0 426.7,146.8 427.7,165.8 428.7,165.8 429.7,120.6 430.7,125.5 431.8,117.7 432.8,136.7 433.8,134.0 434.8,134.4 435.8,139.6 436.8,135.7 437.9,132.9 438.9,147.6 439.9,153.9 440.9,153.9 441.9,161.9 442.9,154.4 443.9,158.2 445.0,160.7 446.0,171.0 447.0,178.3 448.0,172.4 449.0,176.4 450.0,160.4 451.1,161.7 452.1,162.0 453.1,157.8 454.1,159.2 455.1,157.4 456.1,159.8 457.1,167.2 458.2,154.2 459.2,157.1 460.2,154.8 461.2,154.8 462.2,157.4 463.2,151.2 464.3,154.9 465.3,152.2 466.3,151.0 467.3,154.1 468.3,139.4 469.3,142.5 470.3,133.6 471.4,146.9 472.4,144.3 473.4,137.7 474.4,136.7 475.4,134.6 476.4,140.3 477.5,141.3 478.5,123.8 479.5,124.6 480.5,123.9 481.5,154.8 482.5,153.0 483.5,138.1 484.6,139.7 485.6,136.9 486.6,146.0 487.6,138.3 488.6,128.8 489.6,125.4 490.7,131.5 491.7,136.1 492.7,145.4 493.7,116.8 494.7,110.0 495.7,104.8 496.7,109.8 497.8,102.2 498.8,87.0 499.8,84.7 500.8,88.5 501.8,101.5 502.8,106.4 503.9,137.7 504.9,148.7 505.9,155.1 506.9,164.5 507.9,162.6 508.9,156.8 509.9,148.0 511.0,149.0 512.0,155.7 513.0,152.9 514.0,154.2 515.0,151.5 516.0,123.4 517.0,128.7 518.1,124.2 519.1,122.6 520.1,118.6 521.1,116.9 522.1,120.6 523.1,118.1 524.2,105.6 525.2,104.1 526.2,93.5 527.2,101.4 528.2,111.3 529.2,108.1 530.2,104.0 531.3,112.7 532.3,112.7 533.3,126.1 534.3,119.2 535.3,120.7 536.3,135.9 537.4,122.4 538.4,124.8 539.4,118.3 540.4,117.8 541.4,113.2 542.4,117.8 543.4,114.3 544.5,104.1 545.5,103.7 546.5,107.6 547.5,146.2 548.5,148.9 549.5,139.6 550.6,128.3 551.6,128.3 552.6,135.7 553.6,132.3 554.6,126.4 555.6,119.5 556.6,125.3 557.7,120.3 558.7,135.7 559.7,105.9 560.7,97.5 561.7,99.0 562.7,100.6 563.8,101.5 564.8,90.2 565.8,89.7 566.8,86.9 567.8,89.8 568.8,98.5 569.8,98.7 570.9,104.9 571.9,103.2 572.9,106.2 573.9,117.3 574.9,107.0 575.9,116.9 577.0,119.0 578.0,123.1 579.0,137.9 580.0,138.3" fill="none" stroke="var(--info)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="580.0" cy="138.3" r="3.5" fill="var(--info)"/><text x="586.0" y="142.3" font-size="10" fill="var(--info)">+5779bn</text></svg></div>
+  <div class="chart"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible"><line x1="50" y1="145.0" x2="580" y2="145.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="46" y="149.0" text-anchor="end" font-size="10" fill="var(--muted)">5750</text><line x1="50" y1="102.0" x2="580" y2="102.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="46" y="106.0" text-anchor="end" font-size="10" fill="var(--muted)">5933</text><line x1="50" y1="59.0" x2="580" y2="59.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="46" y="63.0" text-anchor="end" font-size="10" fill="var(--muted)">6116</text><text x="50.0" y="214" text-anchor="start" font-size="10" fill="var(--muted)">Jul 2024</text><text x="580.0" y="214" text-anchor="end" font-size="10" fill="var(--muted)">Jul 2026</text><path d="M50.0,188.0 L50.0,107.1 L51.0,75.7 L52.0,67.2 L53.0,64.3 L54.1,61.1 L55.1,61.9 L56.1,67.4 L57.1,68.6 L58.1,75.2 L59.1,77.2 L60.2,72.0 L61.2,52.2 L62.2,58.8 L63.2,62.4 L64.2,60.8 L65.2,66.5 L66.2,65.4 L67.3,64.4 L68.3,75.3 L69.3,83.9 L70.3,91.5 L71.3,89.6 L72.3,90.8 L73.4,90.8 L74.4,86.4 L75.4,85.2 L76.4,73.9 L77.4,73.6 L78.4,74.7 L79.4,66.2 L80.5,60.3 L81.5,55.1 L82.5,58.9 L83.5,86.1 L84.5,85.0 L85.5,94.7 L86.6,92.8 L87.6,94.4 L88.6,108.7 L89.6,106.1 L90.6,113.3 L91.6,107.7 L92.6,116.6 L93.7,150.0 L94.7,111.9 L95.7,123.8 L96.7,107.4 L97.7,105.8 L98.7,106.6 L99.8,109.4 L100.8,106.0 L101.8,100.1 L102.8,101.4 L103.8,101.4 L104.8,101.5 L105.8,97.4 L106.9,98.4 L107.9,97.6 L108.9,101.1 L109.9,94.9 L110.9,100.0 L111.9,88.0 L113.0,92.1 L114.0,99.7 L115.0,100.9 L116.0,100.9 L117.0,111.8 L118.0,77.1 L119.0,85.0 L120.1,79.0 L121.1,91.8 L122.1,87.3 L123.1,86.3 L124.1,86.3 L125.1,94.6 L126.1,105.0 L127.2,101.0 L128.2,71.2 L129.2,83.1 L130.2,85.3 L131.2,93.7 L132.2,96.7 L133.3,95.4 L134.3,95.6 L135.3,94.7 L136.3,97.3 L137.3,97.3 L138.3,97.8 L139.3,103.5 L140.4,103.1 L141.4,105.5 L142.4,94.4 L143.4,91.6 L144.4,99.9 L145.4,92.6 L146.5,84.8 L147.5,79.4 L148.5,77.6 L149.5,103.7 L150.5,98.3 L151.5,97.1 L152.5,88.8 L153.6,80.7 L154.6,90.8 L155.6,92.5 L156.6,93.3 L157.6,86.1 L158.6,110.5 L159.7,114.5 L160.7,159.0 L161.7,166.9 L162.7,101.3 L163.7,94.5 L164.7,97.5 L165.7,87.9 L166.8,74.9 L167.8,71.7 L168.8,76.0 L169.8,80.9 L170.8,81.1 L171.8,71.4 L172.9,71.5 L173.9,76.2 L174.9,76.2 L175.9,78.4 L176.9,76.2 L177.9,100.4 L178.9,96.1 L180.0,100.0 L181.0,108.4 L182.0,113.3 L183.0,117.7 L184.0,124.5 L185.0,104.9 L186.1,105.9 L187.1,106.4 L188.1,109.6 L189.1,112.1 L190.1,116.0 L191.1,111.5 L192.1,101.1 L193.2,101.2 L194.2,97.3 L195.2,97.3 L196.2,95.2 L197.2,93.2 L198.2,88.3 L199.3,86.3 L200.3,86.6 L201.3,71.5 L202.3,69.4 L203.3,75.2 L204.3,92.8 L205.3,67.5 L206.4,63.1 L207.4,64.0 L208.4,63.1 L209.4,62.9 L210.4,66.2 L211.4,58.3 L212.5,44.4 L213.5,31.2 L214.5,34.6 L215.5,53.4 L216.5,48.6 L217.5,51.7 L218.5,43.8 L219.6,40.7 L220.6,45.3 L221.6,41.3 L222.6,43.2 L223.6,46.7 L224.6,50.5 L225.7,101.4 L226.7,36.7 L227.7,41.9 L228.7,31.9 L229.7,28.0 L230.7,23.8 L231.7,34.5 L232.8,28.8 L233.8,19.6 L234.8,16.0 L235.8,37.0 L236.8,77.2 L237.8,78.3 L238.9,70.1 L239.9,73.0 L240.9,89.4 L241.9,90.3 L242.9,91.1 L243.9,78.2 L244.9,71.8 L246.0,90.8 L247.0,97.3 L248.0,137.7 L249.0,95.9 L250.0,89.2 L251.0,87.5 L252.0,87.2 L253.1,95.6 L254.1,87.4 L255.1,87.2 L256.1,90.9 L257.1,91.8 L258.1,89.5 L259.2,61.0 L260.2,69.3 L261.2,83.9 L262.2,70.7 L263.2,74.4 L264.2,76.3 L265.2,71.3 L266.3,71.3 L267.3,69.0 L268.3,71.4 L269.3,60.8 L270.3,84.7 L271.3,63.1 L272.4,53.9 L273.4,56.1 L274.4,46.4 L275.4,44.1 L276.4,54.5 L277.4,43.7 L278.4,40.2 L279.5,30.9 L280.5,34.3 L281.5,65.0 L282.5,62.9 L283.5,64.5 L284.5,64.5 L285.6,44.7 L286.6,53.0 L287.6,54.3 L288.6,58.7 L289.6,61.5 L290.6,77.2 L291.6,146.3 L292.7,74.6 L293.7,74.4 L294.7,55.2 L295.7,55.2 L296.7,60.5 L297.7,63.3 L298.8,57.1 L299.8,41.5 L300.8,39.6 L301.8,51.9 L302.8,54.3 L303.8,50.9 L304.8,51.2 L305.9,52.2 L306.9,56.5 L307.9,58.5 L308.9,54.5 L309.9,44.8 L310.9,48.8 L312.0,56.9 L313.0,70.0 L314.0,70.3 L315.0,102.5 L316.0,46.8 L317.0,57.0 L318.0,62.9 L319.1,66.3 L320.1,69.4 L321.1,69.8 L322.1,73.4 L323.1,77.3 L324.1,69.5 L325.2,70.7 L326.2,58.7 L327.2,66.0 L328.2,72.4 L329.2,72.7 L330.2,78.7 L331.2,86.0 L332.3,92.0 L333.3,96.3 L334.3,92.6 L335.3,95.2 L336.3,93.2 L337.3,93.2 L338.4,111.5 L339.4,104.5 L340.4,106.7 L341.4,106.2 L342.4,109.2 L343.4,112.3 L344.4,107.6 L345.5,110.6 L346.5,114.2 L347.5,149.4 L348.5,141.9 L349.5,136.2 L350.5,138.3 L351.6,138.3 L352.6,139.8 L353.6,130.3 L354.6,128.2 L355.6,128.1 L356.6,139.4 L357.6,145.8 L358.7,164.2 L359.7,143.2 L360.7,143.9 L361.7,141.9 L362.7,145.0 L363.7,142.9 L364.8,135.2 L365.8,135.5 L366.8,135.1 L367.8,135.1 L368.8,146.0 L369.8,147.6 L370.8,159.2 L371.9,159.8 L372.9,160.4 L373.9,165.6 L374.9,161.4 L375.9,171.4 L376.9,169.8 L378.0,177.0 L379.0,182.5 L380.0,184.1 L381.0,188.0 L382.0,178.2 L383.0,171.3 L384.0,173.1 L385.1,176.2 L386.1,178.3 L387.1,176.1 L388.1,180.2 L389.1,180.2 L390.1,172.9 L391.1,176.8 L392.2,175.6 L393.2,168.0 L394.2,168.3 L395.2,167.7 L396.2,171.1 L397.2,166.0 L398.3,169.1 L399.3,175.3 L400.3,168.4 L401.3,168.4 L402.3,182.9 L403.3,180.0 L404.3,177.7 L405.4,174.5 L406.4,167.4 L407.4,165.2 L408.4,167.6 L409.4,157.9 L410.4,150.1 L411.5,146.5 L412.5,145.9 L413.5,174.7 L414.5,168.4 L415.5,160.3 L416.5,156.1 L417.5,153.5 L418.6,160.7 L419.6,150.5 L420.6,139.1 L421.6,139.1 L422.6,150.4 L423.6,154.0 L424.7,146.8 L425.7,165.8 L426.7,165.8 L427.7,120.6 L428.7,125.5 L429.7,117.7 L430.7,136.7 L431.8,134.0 L432.8,134.4 L433.8,139.6 L434.8,135.7 L435.8,132.9 L436.8,147.6 L437.9,153.9 L438.9,153.9 L439.9,161.9 L440.9,154.4 L441.9,158.2 L442.9,160.7 L443.9,171.0 L445.0,178.3 L446.0,172.4 L447.0,176.4 L448.0,160.4 L449.0,161.7 L450.0,162.0 L451.1,157.8 L452.1,159.2 L453.1,157.4 L454.1,159.8 L455.1,167.2 L456.1,154.2 L457.1,157.1 L458.2,154.8 L459.2,154.8 L460.2,157.4 L461.2,151.2 L462.2,154.9 L463.2,152.2 L464.3,151.0 L465.3,154.1 L466.3,139.4 L467.3,142.5 L468.3,133.6 L469.3,146.9 L470.3,144.3 L471.4,137.7 L472.4,136.7 L473.4,134.6 L474.4,140.3 L475.4,141.3 L476.4,123.8 L477.5,124.6 L478.5,123.9 L479.5,154.8 L480.5,153.0 L481.5,138.1 L482.5,139.7 L483.5,136.9 L484.6,146.0 L485.6,138.3 L486.6,128.8 L487.6,125.4 L488.6,131.5 L489.6,136.1 L490.7,145.4 L491.7,116.8 L492.7,110.0 L493.7,104.8 L494.7,109.8 L495.7,102.2 L496.7,87.0 L497.8,84.7 L498.8,88.5 L499.8,101.5 L500.8,106.4 L501.8,137.7 L502.8,148.7 L503.9,155.1 L504.9,164.5 L505.9,162.6 L506.9,156.8 L507.9,148.0 L508.9,149.0 L509.9,155.7 L511.0,152.9 L512.0,154.2 L513.0,151.5 L514.0,123.4 L515.0,128.7 L516.0,124.2 L517.0,122.6 L518.1,118.6 L519.1,116.9 L520.1,120.6 L521.1,118.1 L522.1,105.6 L523.1,104.1 L524.2,93.5 L525.2,101.4 L526.2,111.3 L527.2,108.1 L528.2,104.0 L529.2,112.7 L530.2,112.7 L531.3,126.1 L532.3,119.2 L533.3,120.7 L534.3,135.9 L535.3,122.4 L536.3,124.8 L537.4,118.3 L538.4,117.8 L539.4,113.2 L540.4,117.8 L541.4,114.3 L542.4,104.1 L543.4,103.7 L544.5,107.6 L545.5,146.2 L546.5,148.9 L547.5,139.6 L548.5,128.3 L549.5,128.3 L550.6,135.7 L551.6,132.3 L552.6,126.4 L553.6,119.5 L554.6,125.3 L555.6,120.3 L556.6,135.7 L557.7,105.9 L558.7,97.5 L559.7,99.0 L560.7,100.6 L561.7,101.5 L562.7,90.2 L563.8,89.7 L564.8,86.9 L565.8,89.8 L566.8,98.5 L567.8,98.7 L568.8,104.9 L569.8,103.2 L570.9,106.2 L571.9,117.3 L572.9,107.0 L573.9,116.9 L574.9,119.0 L575.9,123.1 L577.0,137.9 L578.0,141.4 L579.0,147.6 L580.0,147.8 L580.0,188.0 Z" fill="var(--info)" fill-opacity=".08" stroke="none"/><polyline points="50.0,107.1 51.0,75.7 52.0,67.2 53.0,64.3 54.1,61.1 55.1,61.9 56.1,67.4 57.1,68.6 58.1,75.2 59.1,77.2 60.2,72.0 61.2,52.2 62.2,58.8 63.2,62.4 64.2,60.8 65.2,66.5 66.2,65.4 67.3,64.4 68.3,75.3 69.3,83.9 70.3,91.5 71.3,89.6 72.3,90.8 73.4,90.8 74.4,86.4 75.4,85.2 76.4,73.9 77.4,73.6 78.4,74.7 79.4,66.2 80.5,60.3 81.5,55.1 82.5,58.9 83.5,86.1 84.5,85.0 85.5,94.7 86.6,92.8 87.6,94.4 88.6,108.7 89.6,106.1 90.6,113.3 91.6,107.7 92.6,116.6 93.7,150.0 94.7,111.9 95.7,123.8 96.7,107.4 97.7,105.8 98.7,106.6 99.8,109.4 100.8,106.0 101.8,100.1 102.8,101.4 103.8,101.4 104.8,101.5 105.8,97.4 106.9,98.4 107.9,97.6 108.9,101.1 109.9,94.9 110.9,100.0 111.9,88.0 113.0,92.1 114.0,99.7 115.0,100.9 116.0,100.9 117.0,111.8 118.0,77.1 119.0,85.0 120.1,79.0 121.1,91.8 122.1,87.3 123.1,86.3 124.1,86.3 125.1,94.6 126.1,105.0 127.2,101.0 128.2,71.2 129.2,83.1 130.2,85.3 131.2,93.7 132.2,96.7 133.3,95.4 134.3,95.6 135.3,94.7 136.3,97.3 137.3,97.3 138.3,97.8 139.3,103.5 140.4,103.1 141.4,105.5 142.4,94.4 143.4,91.6 144.4,99.9 145.4,92.6 146.5,84.8 147.5,79.4 148.5,77.6 149.5,103.7 150.5,98.3 151.5,97.1 152.5,88.8 153.6,80.7 154.6,90.8 155.6,92.5 156.6,93.3 157.6,86.1 158.6,110.5 159.7,114.5 160.7,159.0 161.7,166.9 162.7,101.3 163.7,94.5 164.7,97.5 165.7,87.9 166.8,74.9 167.8,71.7 168.8,76.0 169.8,80.9 170.8,81.1 171.8,71.4 172.9,71.5 173.9,76.2 174.9,76.2 175.9,78.4 176.9,76.2 177.9,100.4 178.9,96.1 180.0,100.0 181.0,108.4 182.0,113.3 183.0,117.7 184.0,124.5 185.0,104.9 186.1,105.9 187.1,106.4 188.1,109.6 189.1,112.1 190.1,116.0 191.1,111.5 192.1,101.1 193.2,101.2 194.2,97.3 195.2,97.3 196.2,95.2 197.2,93.2 198.2,88.3 199.3,86.3 200.3,86.6 201.3,71.5 202.3,69.4 203.3,75.2 204.3,92.8 205.3,67.5 206.4,63.1 207.4,64.0 208.4,63.1 209.4,62.9 210.4,66.2 211.4,58.3 212.5,44.4 213.5,31.2 214.5,34.6 215.5,53.4 216.5,48.6 217.5,51.7 218.5,43.8 219.6,40.7 220.6,45.3 221.6,41.3 222.6,43.2 223.6,46.7 224.6,50.5 225.7,101.4 226.7,36.7 227.7,41.9 228.7,31.9 229.7,28.0 230.7,23.8 231.7,34.5 232.8,28.8 233.8,19.6 234.8,16.0 235.8,37.0 236.8,77.2 237.8,78.3 238.9,70.1 239.9,73.0 240.9,89.4 241.9,90.3 242.9,91.1 243.9,78.2 244.9,71.8 246.0,90.8 247.0,97.3 248.0,137.7 249.0,95.9 250.0,89.2 251.0,87.5 252.0,87.2 253.1,95.6 254.1,87.4 255.1,87.2 256.1,90.9 257.1,91.8 258.1,89.5 259.2,61.0 260.2,69.3 261.2,83.9 262.2,70.7 263.2,74.4 264.2,76.3 265.2,71.3 266.3,71.3 267.3,69.0 268.3,71.4 269.3,60.8 270.3,84.7 271.3,63.1 272.4,53.9 273.4,56.1 274.4,46.4 275.4,44.1 276.4,54.5 277.4,43.7 278.4,40.2 279.5,30.9 280.5,34.3 281.5,65.0 282.5,62.9 283.5,64.5 284.5,64.5 285.6,44.7 286.6,53.0 287.6,54.3 288.6,58.7 289.6,61.5 290.6,77.2 291.6,146.3 292.7,74.6 293.7,74.4 294.7,55.2 295.7,55.2 296.7,60.5 297.7,63.3 298.8,57.1 299.8,41.5 300.8,39.6 301.8,51.9 302.8,54.3 303.8,50.9 304.8,51.2 305.9,52.2 306.9,56.5 307.9,58.5 308.9,54.5 309.9,44.8 310.9,48.8 312.0,56.9 313.0,70.0 314.0,70.3 315.0,102.5 316.0,46.8 317.0,57.0 318.0,62.9 319.1,66.3 320.1,69.4 321.1,69.8 322.1,73.4 323.1,77.3 324.1,69.5 325.2,70.7 326.2,58.7 327.2,66.0 328.2,72.4 329.2,72.7 330.2,78.7 331.2,86.0 332.3,92.0 333.3,96.3 334.3,92.6 335.3,95.2 336.3,93.2 337.3,93.2 338.4,111.5 339.4,104.5 340.4,106.7 341.4,106.2 342.4,109.2 343.4,112.3 344.4,107.6 345.5,110.6 346.5,114.2 347.5,149.4 348.5,141.9 349.5,136.2 350.5,138.3 351.6,138.3 352.6,139.8 353.6,130.3 354.6,128.2 355.6,128.1 356.6,139.4 357.6,145.8 358.7,164.2 359.7,143.2 360.7,143.9 361.7,141.9 362.7,145.0 363.7,142.9 364.8,135.2 365.8,135.5 366.8,135.1 367.8,135.1 368.8,146.0 369.8,147.6 370.8,159.2 371.9,159.8 372.9,160.4 373.9,165.6 374.9,161.4 375.9,171.4 376.9,169.8 378.0,177.0 379.0,182.5 380.0,184.1 381.0,188.0 382.0,178.2 383.0,171.3 384.0,173.1 385.1,176.2 386.1,178.3 387.1,176.1 388.1,180.2 389.1,180.2 390.1,172.9 391.1,176.8 392.2,175.6 393.2,168.0 394.2,168.3 395.2,167.7 396.2,171.1 397.2,166.0 398.3,169.1 399.3,175.3 400.3,168.4 401.3,168.4 402.3,182.9 403.3,180.0 404.3,177.7 405.4,174.5 406.4,167.4 407.4,165.2 408.4,167.6 409.4,157.9 410.4,150.1 411.5,146.5 412.5,145.9 413.5,174.7 414.5,168.4 415.5,160.3 416.5,156.1 417.5,153.5 418.6,160.7 419.6,150.5 420.6,139.1 421.6,139.1 422.6,150.4 423.6,154.0 424.7,146.8 425.7,165.8 426.7,165.8 427.7,120.6 428.7,125.5 429.7,117.7 430.7,136.7 431.8,134.0 432.8,134.4 433.8,139.6 434.8,135.7 435.8,132.9 436.8,147.6 437.9,153.9 438.9,153.9 439.9,161.9 440.9,154.4 441.9,158.2 442.9,160.7 443.9,171.0 445.0,178.3 446.0,172.4 447.0,176.4 448.0,160.4 449.0,161.7 450.0,162.0 451.1,157.8 452.1,159.2 453.1,157.4 454.1,159.8 455.1,167.2 456.1,154.2 457.1,157.1 458.2,154.8 459.2,154.8 460.2,157.4 461.2,151.2 462.2,154.9 463.2,152.2 464.3,151.0 465.3,154.1 466.3,139.4 467.3,142.5 468.3,133.6 469.3,146.9 470.3,144.3 471.4,137.7 472.4,136.7 473.4,134.6 474.4,140.3 475.4,141.3 476.4,123.8 477.5,124.6 478.5,123.9 479.5,154.8 480.5,153.0 481.5,138.1 482.5,139.7 483.5,136.9 484.6,146.0 485.6,138.3 486.6,128.8 487.6,125.4 488.6,131.5 489.6,136.1 490.7,145.4 491.7,116.8 492.7,110.0 493.7,104.8 494.7,109.8 495.7,102.2 496.7,87.0 497.8,84.7 498.8,88.5 499.8,101.5 500.8,106.4 501.8,137.7 502.8,148.7 503.9,155.1 504.9,164.5 505.9,162.6 506.9,156.8 507.9,148.0 508.9,149.0 509.9,155.7 511.0,152.9 512.0,154.2 513.0,151.5 514.0,123.4 515.0,128.7 516.0,124.2 517.0,122.6 518.1,118.6 519.1,116.9 520.1,120.6 521.1,118.1 522.1,105.6 523.1,104.1 524.2,93.5 525.2,101.4 526.2,111.3 527.2,108.1 528.2,104.0 529.2,112.7 530.2,112.7 531.3,126.1 532.3,119.2 533.3,120.7 534.3,135.9 535.3,122.4 536.3,124.8 537.4,118.3 538.4,117.8 539.4,113.2 540.4,117.8 541.4,114.3 542.4,104.1 543.4,103.7 544.5,107.6 545.5,146.2 546.5,148.9 547.5,139.6 548.5,128.3 549.5,128.3 550.6,135.7 551.6,132.3 552.6,126.4 553.6,119.5 554.6,125.3 555.6,120.3 556.6,135.7 557.7,105.9 558.7,97.5 559.7,99.0 560.7,100.6 561.7,101.5 562.7,90.2 563.8,89.7 564.8,86.9 565.8,89.8 566.8,98.5 567.8,98.7 568.8,104.9 569.8,103.2 570.9,106.2 571.9,117.3 572.9,107.0 573.9,116.9 574.9,119.0 575.9,123.1 577.0,137.9 578.0,141.4 579.0,147.6 580.0,147.8" fill="none" stroke="var(--info)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="580.0" cy="147.8" r="3.5" fill="var(--info)"/><text x="586.0" y="151.8" font-size="10" fill="var(--info)">+5738bn</text></svg></div>
 </div>
 
 <div class="panel span6 rail-money anim-d3" id="credit">
@@ -702,7 +713,7 @@
   
   <div style="font-size:14px;font-weight:600;margin-bottom:8px"><span class="l-en">Credit calm, participation healthy — no smoke.</span><span class="l-zh">信用平稳，参与度健康 — 无警讯。</span></div>
   
-  <div class="chart"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible"><line x1="50" y1="145.0" x2="580" y2="145.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><line x1="50" y1="102.0" x2="580" y2="102.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><line x1="50" y1="59.0" x2="580" y2="59.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="50" y="214" text-anchor="start" font-size="10" fill="var(--muted)">Jul 2024</text><text x="580" y="214" text-anchor="end" font-size="10" fill="var(--muted)">Jul 2026</text><path d="M50.0,188.0 L50.0,142.0 L51.0,136.1 L52.0,131.8 L53.0,123.3 L54.1,91.8 L55.1,73.9 L56.1,96.0 L57.1,104.6 L58.1,112.2 L59.1,111.4 L60.2,108.8 L61.2,107.1 L62.2,113.9 L63.2,126.7 L64.2,128.4 L65.2,135.2 L66.2,131.8 L67.3,130.1 L68.3,135.2 L69.3,136.9 L70.3,140.3 L71.3,138.6 L72.3,136.9 L73.4,140.3 L74.4,142.0 L75.4,138.6 L76.4,126.7 L77.4,123.3 L78.4,128.4 L79.4,119.9 L80.5,122.4 L81.5,113.9 L82.5,115.6 L83.5,119.9 L84.5,121.6 L85.5,125.8 L86.6,131.8 L87.6,135.2 L88.6,144.6 L89.6,140.3 L90.6,140.3 L91.6,135.2 L92.6,136.9 L93.7,141.2 L94.7,141.2 L95.7,150.5 L96.7,147.1 L97.7,148.0 L98.7,149.7 L99.8,162.5 L100.8,157.3 L101.8,153.9 L102.8,158.2 L103.8,153.9 L104.8,154.8 L105.8,155.6 L106.9,159.0 L107.9,161.6 L108.9,162.5 L109.9,163.3 L110.9,163.3 L111.9,159.9 L113.0,157.3 L114.0,159.0 L115.0,162.5 L116.0,168.4 L117.0,165.9 L118.0,170.1 L119.0,163.3 L120.1,167.6 L121.1,164.2 L122.1,165.0 L123.1,175.2 L124.1,176.1 L125.1,184.6 L126.1,184.6 L127.2,186.3 L128.2,183.7 L129.2,187.1 L130.2,176.9 L131.2,176.9 L132.2,179.5 L133.3,181.2 L134.3,186.3 L135.3,186.3 L136.3,183.7 L137.3,180.3 L138.3,179.5 L139.3,179.5 L140.4,176.9 L141.4,180.3 L142.4,182.0 L143.4,182.0 L144.4,182.0 L145.4,181.2 L146.5,181.2 L147.5,181.2 L148.5,183.7 L149.5,182.0 L150.5,180.3 L151.5,179.5 L152.5,174.4 L153.6,176.1 L154.6,160.8 L155.6,165.0 L156.6,165.9 L157.6,165.0 L158.6,165.0 L159.7,165.0 L160.7,166.7 L161.7,158.2 L162.7,159.9 L163.7,159.9 L164.7,163.3 L165.7,169.3 L166.8,173.5 L167.8,171.0 L168.8,166.7 L169.8,168.4 L170.8,169.3 L171.8,165.9 L172.9,170.1 L173.9,176.9 L174.9,176.1 L175.9,183.7 L176.9,183.7 L177.9,186.3 L178.9,188.0 L180.0,186.3 L181.0,187.1 L182.0,182.0 L183.0,182.0 L184.0,180.3 L185.0,181.2 L186.1,180.3 L187.1,176.1 L188.1,177.8 L189.1,179.5 L190.1,182.0 L191.1,181.2 L192.1,182.0 L193.2,182.0 L194.2,182.9 L195.2,182.9 L196.2,185.4 L197.2,185.4 L198.2,185.4 L199.3,180.3 L200.3,182.0 L201.3,171.8 L202.3,171.8 L203.3,166.7 L204.3,169.3 L205.3,169.3 L206.4,164.2 L207.4,158.2 L208.4,153.9 L209.4,163.3 L210.4,153.9 L211.4,155.6 L212.5,139.5 L213.5,134.4 L214.5,136.1 L215.5,119.0 L216.5,131.8 L217.5,137.8 L218.5,133.5 L219.6,136.9 L220.6,138.6 L221.6,135.2 L222.6,148.8 L223.6,145.4 L224.6,136.9 L225.7,130.1 L226.7,113.1 L227.7,106.3 L228.7,110.5 L229.7,117.3 L230.7,67.1 L231.7,29.6 L232.8,16.0 L233.8,19.4 L234.8,36.4 L235.8,32.2 L236.8,45.8 L237.8,56.0 L238.9,60.3 L239.9,54.3 L240.9,66.2 L241.9,66.2 L242.9,54.3 L243.9,68.8 L244.9,89.2 L246.0,90.9 L247.0,96.0 L248.0,90.9 L249.0,90.1 L250.0,73.0 L251.0,86.7 L252.0,102.0 L253.1,102.0 L254.1,96.9 L255.1,96.0 L256.1,109.7 L257.1,108.0 L258.1,140.3 L259.2,145.4 L260.2,144.6 L261.2,136.1 L262.2,139.5 L263.2,135.2 L264.2,136.1 L265.2,131.8 L266.3,125.8 L267.3,119.0 L268.3,119.0 L269.3,132.7 L270.3,133.5 L271.3,134.4 L272.4,126.7 L273.4,130.1 L274.4,136.9 L275.4,133.5 L276.4,137.8 L277.4,145.4 L278.4,142.9 L279.5,142.9 L280.5,142.9 L281.5,138.6 L282.5,137.8 L283.5,144.6 L284.5,138.6 L285.6,139.5 L286.6,139.5 L287.6,142.0 L288.6,142.9 L289.6,148.0 L290.6,149.7 L291.6,149.7 L292.7,151.4 L293.7,156.5 L294.7,160.8 L295.7,163.3 L296.7,170.1 L297.7,170.1 L298.8,165.0 L299.8,159.9 L300.8,158.2 L301.8,159.9 L302.8,155.6 L303.8,157.3 L304.8,157.3 L305.9,153.1 L306.9,160.8 L307.9,159.0 L308.9,162.5 L309.9,161.6 L310.9,167.6 L312.0,168.4 L313.0,166.7 L314.0,168.4 L315.0,165.0 L316.0,162.5 L317.0,165.0 L318.0,142.0 L319.1,151.4 L320.1,154.8 L321.1,154.8 L322.1,157.3 L323.1,158.2 L324.1,158.2 L325.2,159.0 L326.2,161.6 L327.2,162.5 L328.2,163.3 L329.2,163.3 L330.2,161.6 L331.2,158.2 L332.3,157.3 L333.3,163.3 L334.3,170.1 L335.3,171.8 L336.3,171.8 L337.3,174.4 L338.4,168.4 L339.4,166.7 L340.4,159.9 L341.4,163.3 L342.4,166.7 L343.4,167.6 L344.4,166.7 L345.5,164.2 L346.5,166.7 L347.5,171.8 L348.5,171.0 L349.5,174.4 L350.5,171.0 L351.6,171.0 L352.6,177.8 L353.6,176.9 L354.6,179.5 L355.6,177.8 L356.6,178.6 L357.6,173.5 L358.7,174.4 L359.7,175.2 L360.7,170.1 L361.7,169.3 L362.7,169.3 L363.7,170.1 L364.8,173.5 L365.8,168.4 L366.8,166.7 L367.8,157.3 L368.8,137.8 L369.8,137.8 L370.8,143.7 L371.9,157.3 L372.9,149.7 L373.9,149.7 L374.9,153.9 L375.9,155.6 L376.9,152.2 L378.0,156.5 L379.0,163.3 L380.0,170.1 L381.0,168.4 L382.0,173.5 L383.0,165.9 L384.0,158.2 L385.1,149.7 L386.1,142.0 L387.1,148.8 L388.1,142.0 L389.1,140.3 L390.1,151.4 L391.1,151.4 L392.2,151.4 L393.2,145.4 L394.2,147.1 L395.2,142.0 L396.2,136.1 L397.2,138.6 L398.3,138.6 L399.3,136.9 L400.3,140.3 L401.3,144.6 L402.3,153.1 L403.3,153.1 L404.3,157.3 L405.4,158.2 L406.4,159.9 L407.4,162.5 L408.4,163.3 L409.4,165.9 L410.4,162.5 L411.5,162.5 L412.5,160.8 L413.5,163.3 L414.5,160.8 L415.5,160.8 L416.5,154.8 L417.5,153.9 L418.6,157.3 L419.6,161.6 L420.6,163.3 L421.6,167.6 L422.6,166.7 L423.6,166.7 L424.7,165.0 L425.7,164.2 L426.7,166.7 L427.7,169.3 L428.7,169.3 L429.7,167.6 L430.7,169.3 L431.8,171.0 L432.8,171.0 L433.8,173.5 L434.8,175.2 L435.8,175.2 L436.8,174.4 L437.9,173.5 L438.9,177.8 L439.9,182.9 L440.9,182.9 L441.9,176.1 L442.9,179.5 L443.9,183.7 L445.0,180.3 L446.0,179.5 L447.0,177.8 L448.0,176.9 L449.0,172.7 L450.0,170.1 L451.1,169.3 L452.1,165.9 L453.1,165.0 L454.1,155.6 L455.1,164.2 L456.1,166.7 L457.1,165.0 L458.2,166.7 L459.2,159.9 L460.2,157.3 L461.2,158.2 L462.2,158.2 L463.2,165.0 L464.3,163.3 L465.3,165.0 L466.3,157.3 L467.3,155.6 L468.3,158.2 L469.3,154.8 L470.3,144.6 L471.4,150.5 L472.4,146.3 L473.4,155.6 L474.4,153.1 L475.4,142.0 L476.4,136.9 L477.5,148.0 L478.5,145.4 L479.5,138.6 L480.5,129.2 L481.5,130.1 L482.5,134.4 L483.5,136.1 L484.6,130.1 L485.6,132.7 L486.6,136.9 L487.6,136.9 L488.6,138.6 L489.6,135.2 L490.7,117.3 L491.7,113.9 L492.7,129.2 L493.7,139.5 L494.7,138.6 L495.7,142.0 L496.7,148.8 L497.8,142.9 L498.8,158.2 L499.8,161.6 L500.8,158.2 L501.8,157.3 L502.8,166.7 L503.9,165.9 L504.9,165.0 L505.9,167.6 L506.9,164.2 L507.9,165.9 L508.9,166.7 L509.9,165.0 L511.0,165.0 L512.0,166.7 L513.0,165.9 L514.0,168.4 L515.0,167.6 L516.0,172.7 L517.0,171.8 L518.1,172.7 L519.1,174.4 L520.1,171.0 L521.1,169.3 L522.1,171.0 L523.1,168.4 L524.2,168.4 L525.2,173.5 L526.2,170.1 L527.2,167.6 L528.2,165.0 L529.2,170.1 L530.2,171.8 L531.3,175.2 L532.3,175.2 L533.3,176.9 L534.3,177.8 L535.3,176.9 L536.3,176.9 L537.4,176.9 L538.4,177.8 L539.4,174.4 L540.4,175.2 L541.4,173.5 L542.4,174.4 L543.4,171.8 L544.5,170.1 L545.5,171.8 L546.5,177.8 L547.5,182.0 L548.5,177.8 L549.5,184.6 L550.6,182.0 L551.6,182.0 L552.6,182.9 L553.6,177.8 L554.6,173.5 L555.6,171.8 L556.6,167.6 L557.7,170.1 L558.7,174.4 L559.7,175.2 L560.7,174.4 L561.7,175.2 L562.7,176.9 L563.8,181.2 L564.8,178.6 L565.8,178.6 L566.8,179.5 L567.8,179.5 L568.8,176.9 L569.8,177.8 L570.9,177.8 L571.9,176.1 L572.9,179.5 L573.9,179.5 L574.9,180.3 L575.9,172.7 L577.0,171.0 L578.0,169.3 L579.0,166.7 L580.0,166.7 L580.0,188.0 Z" fill="var(--down)" fill-opacity=".08" stroke="none"/><polyline points="50.0,142.0 51.0,136.1 52.0,131.8 53.0,123.3 54.1,91.8 55.1,73.9 56.1,96.0 57.1,104.6 58.1,112.2 59.1,111.4 60.2,108.8 61.2,107.1 62.2,113.9 63.2,126.7 64.2,128.4 65.2,135.2 66.2,131.8 67.3,130.1 68.3,135.2 69.3,136.9 70.3,140.3 71.3,138.6 72.3,136.9 73.4,140.3 74.4,142.0 75.4,138.6 76.4,126.7 77.4,123.3 78.4,128.4 79.4,119.9 80.5,122.4 81.5,113.9 82.5,115.6 83.5,119.9 84.5,121.6 85.5,125.8 86.6,131.8 87.6,135.2 88.6,144.6 89.6,140.3 90.6,140.3 91.6,135.2 92.6,136.9 93.7,141.2 94.7,141.2 95.7,150.5 96.7,147.1 97.7,148.0 98.7,149.7 99.8,162.5 100.8,157.3 101.8,153.9 102.8,158.2 103.8,153.9 104.8,154.8 105.8,155.6 106.9,159.0 107.9,161.6 108.9,162.5 109.9,163.3 110.9,163.3 111.9,159.9 113.0,157.3 114.0,159.0 115.0,162.5 116.0,168.4 117.0,165.9 118.0,170.1 119.0,163.3 120.1,167.6 121.1,164.2 122.1,165.0 123.1,175.2 124.1,176.1 125.1,184.6 126.1,184.6 127.2,186.3 128.2,183.7 129.2,187.1 130.2,176.9 131.2,176.9 132.2,179.5 133.3,181.2 134.3,186.3 135.3,186.3 136.3,183.7 137.3,180.3 138.3,179.5 139.3,179.5 140.4,176.9 141.4,180.3 142.4,182.0 143.4,182.0 144.4,182.0 145.4,181.2 146.5,181.2 147.5,181.2 148.5,183.7 149.5,182.0 150.5,180.3 151.5,179.5 152.5,174.4 153.6,176.1 154.6,160.8 155.6,165.0 156.6,165.9 157.6,165.0 158.6,165.0 159.7,165.0 160.7,166.7 161.7,158.2 162.7,159.9 163.7,159.9 164.7,163.3 165.7,169.3 166.8,173.5 167.8,171.0 168.8,166.7 169.8,168.4 170.8,169.3 171.8,165.9 172.9,170.1 173.9,176.9 174.9,176.1 175.9,183.7 176.9,183.7 177.9,186.3 178.9,188.0 180.0,186.3 181.0,187.1 182.0,182.0 183.0,182.0 184.0,180.3 185.0,181.2 186.1,180.3 187.1,176.1 188.1,177.8 189.1,179.5 190.1,182.0 191.1,181.2 192.1,182.0 193.2,182.0 194.2,182.9 195.2,182.9 196.2,185.4 197.2,185.4 198.2,185.4 199.3,180.3 200.3,182.0 201.3,171.8 202.3,171.8 203.3,166.7 204.3,169.3 205.3,169.3 206.4,164.2 207.4,158.2 208.4,153.9 209.4,163.3 210.4,153.9 211.4,155.6 212.5,139.5 213.5,134.4 214.5,136.1 215.5,119.0 216.5,131.8 217.5,137.8 218.5,133.5 219.6,136.9 220.6,138.6 221.6,135.2 222.6,148.8 223.6,145.4 224.6,136.9 225.7,130.1 226.7,113.1 227.7,106.3 228.7,110.5 229.7,117.3 230.7,67.1 231.7,29.6 232.8,16.0 233.8,19.4 234.8,36.4 235.8,32.2 236.8,45.8 237.8,56.0 238.9,60.3 239.9,54.3 240.9,66.2 241.9,66.2 242.9,54.3 243.9,68.8 244.9,89.2 246.0,90.9 247.0,96.0 248.0,90.9 249.0,90.1 250.0,73.0 251.0,86.7 252.0,102.0 253.1,102.0 254.1,96.9 255.1,96.0 256.1,109.7 257.1,108.0 258.1,140.3 259.2,145.4 260.2,144.6 261.2,136.1 262.2,139.5 263.2,135.2 264.2,136.1 265.2,131.8 266.3,125.8 267.3,119.0 268.3,119.0 269.3,132.7 270.3,133.5 271.3,134.4 272.4,126.7 273.4,130.1 274.4,136.9 275.4,133.5 276.4,137.8 277.4,145.4 278.4,142.9 279.5,142.9 280.5,142.9 281.5,138.6 282.5,137.8 283.5,144.6 284.5,138.6 285.6,139.5 286.6,139.5 287.6,142.0 288.6,142.9 289.6,148.0 290.6,149.7 291.6,149.7 292.7,151.4 293.7,156.5 294.7,160.8 295.7,163.3 296.7,170.1 297.7,170.1 298.8,165.0 299.8,159.9 300.8,158.2 301.8,159.9 302.8,155.6 303.8,157.3 304.8,157.3 305.9,153.1 306.9,160.8 307.9,159.0 308.9,162.5 309.9,161.6 310.9,167.6 312.0,168.4 313.0,166.7 314.0,168.4 315.0,165.0 316.0,162.5 317.0,165.0 318.0,142.0 319.1,151.4 320.1,154.8 321.1,154.8 322.1,157.3 323.1,158.2 324.1,158.2 325.2,159.0 326.2,161.6 327.2,162.5 328.2,163.3 329.2,163.3 330.2,161.6 331.2,158.2 332.3,157.3 333.3,163.3 334.3,170.1 335.3,171.8 336.3,171.8 337.3,174.4 338.4,168.4 339.4,166.7 340.4,159.9 341.4,163.3 342.4,166.7 343.4,167.6 344.4,166.7 345.5,164.2 346.5,166.7 347.5,171.8 348.5,171.0 349.5,174.4 350.5,171.0 351.6,171.0 352.6,177.8 353.6,176.9 354.6,179.5 355.6,177.8 356.6,178.6 357.6,173.5 358.7,174.4 359.7,175.2 360.7,170.1 361.7,169.3 362.7,169.3 363.7,170.1 364.8,173.5 365.8,168.4 366.8,166.7 367.8,157.3 368.8,137.8 369.8,137.8 370.8,143.7 371.9,157.3 372.9,149.7 373.9,149.7 374.9,153.9 375.9,155.6 376.9,152.2 378.0,156.5 379.0,163.3 380.0,170.1 381.0,168.4 382.0,173.5 383.0,165.9 384.0,158.2 385.1,149.7 386.1,142.0 387.1,148.8 388.1,142.0 389.1,140.3 390.1,151.4 391.1,151.4 392.2,151.4 393.2,145.4 394.2,147.1 395.2,142.0 396.2,136.1 397.2,138.6 398.3,138.6 399.3,136.9 400.3,140.3 401.3,144.6 402.3,153.1 403.3,153.1 404.3,157.3 405.4,158.2 406.4,159.9 407.4,162.5 408.4,163.3 409.4,165.9 410.4,162.5 411.5,162.5 412.5,160.8 413.5,163.3 414.5,160.8 415.5,160.8 416.5,154.8 417.5,153.9 418.6,157.3 419.6,161.6 420.6,163.3 421.6,167.6 422.6,166.7 423.6,166.7 424.7,165.0 425.7,164.2 426.7,166.7 427.7,169.3 428.7,169.3 429.7,167.6 430.7,169.3 431.8,171.0 432.8,171.0 433.8,173.5 434.8,175.2 435.8,175.2 436.8,174.4 437.9,173.5 438.9,177.8 439.9,182.9 440.9,182.9 441.9,176.1 442.9,179.5 443.9,183.7 445.0,180.3 446.0,179.5 447.0,177.8 448.0,176.9 449.0,172.7 450.0,170.1 451.1,169.3 452.1,165.9 453.1,165.0 454.1,155.6 455.1,164.2 456.1,166.7 457.1,165.0 458.2,166.7 459.2,159.9 460.2,157.3 461.2,158.2 462.2,158.2 463.2,165.0 464.3,163.3 465.3,165.0 466.3,157.3 467.3,155.6 468.3,158.2 469.3,154.8 470.3,144.6 471.4,150.5 472.4,146.3 473.4,155.6 474.4,153.1 475.4,142.0 476.4,136.9 477.5,148.0 478.5,145.4 479.5,138.6 480.5,129.2 481.5,130.1 482.5,134.4 483.5,136.1 484.6,130.1 485.6,132.7 486.6,136.9 487.6,136.9 488.6,138.6 489.6,135.2 490.7,117.3 491.7,113.9 492.7,129.2 493.7,139.5 494.7,138.6 495.7,142.0 496.7,148.8 497.8,142.9 498.8,158.2 499.8,161.6 500.8,158.2 501.8,157.3 502.8,166.7 503.9,165.9 504.9,165.0 505.9,167.6 506.9,164.2 507.9,165.9 508.9,166.7 509.9,165.0 511.0,165.0 512.0,166.7 513.0,165.9 514.0,168.4 515.0,167.6 516.0,172.7 517.0,171.8 518.1,172.7 519.1,174.4 520.1,171.0 521.1,169.3 522.1,171.0 523.1,168.4 524.2,168.4 525.2,173.5 526.2,170.1 527.2,167.6 528.2,165.0 529.2,170.1 530.2,171.8 531.3,175.2 532.3,175.2 533.3,176.9 534.3,177.8 535.3,176.9 536.3,176.9 537.4,176.9 538.4,177.8 539.4,174.4 540.4,175.2 541.4,173.5 542.4,174.4 543.4,171.8 544.5,170.1 545.5,171.8 546.5,177.8 547.5,182.0 548.5,177.8 549.5,184.6 550.6,182.0 551.6,182.0 552.6,182.9 553.6,177.8 554.6,173.5 555.6,171.8 556.6,167.6 557.7,170.1 558.7,174.4 559.7,175.2 560.7,174.4 561.7,175.2 562.7,176.9 563.8,181.2 564.8,178.6 565.8,178.6 566.8,179.5 567.8,179.5 568.8,176.9 569.8,177.8 570.9,177.8 571.9,176.1 572.9,179.5 573.9,179.5 574.9,180.3 575.9,172.7 577.0,171.0 578.0,169.3 579.0,166.7 580.0,166.7" fill="none" stroke="var(--down)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="580.0" cy="166.7" r="3" fill="var(--down)"/><text x="586" y="170.7" font-size="10" fill="var(--down)">2.8%</text><text x="46" y="146.0" text-anchor="end" font-size="10" fill="var(--down)">3</text><path d="M50.0,188.0 L50.0,66.6 L51.0,68.6 L52.0,61.8 L53.0,79.3 L54.1,93.7 L55.1,114.7 L56.1,104.1 L57.1,108.9 L58.1,94.8 L59.1,87.6 L60.2,94.1 L61.2,86.2 L62.2,84.8 L63.2,73.1 L64.2,68.6 L65.2,61.1 L66.2,65.9 L67.3,58.7 L68.3,63.1 L69.3,50.7 L70.3,54.2 L71.3,55.6 L72.3,56.2 L73.4,53.5 L74.4,47.3 L75.4,47.3 L76.4,65.5 L77.4,68.6 L78.4,73.1 L79.4,87.6 L80.5,77.6 L81.5,78.3 L82.5,73.1 L83.5,66.2 L84.5,61.1 L85.5,56.6 L86.6,54.2 L87.6,58.0 L88.6,41.8 L89.6,50.7 L90.6,45.9 L91.6,46.6 L92.6,53.5 L93.7,44.6 L94.7,42.1 L95.7,39.7 L96.7,48.7 L97.7,52.5 L98.7,59.7 L99.8,55.2 L100.8,67.9 L101.8,65.5 L102.8,57.3 L103.8,62.4 L104.8,53.2 L105.8,47.3 L106.9,52.1 L107.9,51.1 L108.9,54.9 L109.9,52.5 L110.9,63.5 L111.9,71.4 L113.0,73.4 L114.0,77.2 L115.0,86.5 L116.0,82.0 L117.0,90.3 L118.0,89.3 L119.0,102.0 L120.1,98.6 L121.1,99.6 L122.1,88.9 L123.1,76.9 L124.1,72.8 L125.1,71.0 L126.1,72.8 L127.2,77.2 L128.2,75.9 L129.2,82.4 L130.2,88.6 L131.2,84.5 L132.2,90.6 L133.3,86.2 L134.3,77.2 L135.3,73.8 L136.3,65.5 L137.3,63.8 L138.3,62.4 L139.3,62.4 L140.4,61.4 L141.4,65.5 L142.4,72.8 L143.4,74.5 L144.4,80.7 L145.4,81.7 L146.5,83.1 L147.5,90.6 L148.5,94.8 L149.5,96.2 L150.5,100.6 L151.5,105.8 L152.5,117.1 L153.6,151.2 L154.6,148.4 L155.6,139.8 L156.6,139.8 L157.6,129.9 L158.6,129.9 L159.7,130.2 L160.7,138.8 L161.7,151.9 L162.7,151.5 L163.7,151.5 L164.7,153.6 L165.7,142.6 L166.8,143.3 L167.8,143.3 L168.8,141.9 L169.8,141.9 L170.8,156.7 L171.8,152.9 L172.9,142.9 L173.9,129.9 L174.9,120.6 L175.9,113.7 L176.9,113.7 L177.9,94.1 L178.9,100.3 L180.0,94.4 L181.0,94.8 L182.0,80.7 L183.0,92.4 L184.0,97.9 L185.0,88.2 L186.1,97.9 L187.1,104.1 L188.1,102.7 L189.1,94.4 L190.1,94.1 L191.1,97.9 L192.1,96.8 L193.2,93.7 L194.2,102.0 L195.2,90.3 L196.2,90.6 L197.2,90.6 L198.2,85.1 L199.3,83.8 L200.3,86.2 L201.3,95.5 L202.3,94.1 L203.3,95.1 L204.3,95.1 L205.3,103.0 L206.4,93.4 L207.4,106.1 L208.4,117.5 L209.4,109.9 L210.4,115.8 L211.4,108.2 L212.5,117.5 L213.5,131.9 L214.5,136.1 L215.5,141.6 L216.5,131.9 L217.5,122.0 L218.5,125.0 L219.6,118.9 L220.6,122.6 L221.6,129.9 L222.6,119.5 L223.6,118.9 L224.6,115.1 L225.7,119.5 L226.7,128.8 L227.7,120.9 L228.7,118.5 L229.7,116.1 L230.7,134.3 L231.7,168.0 L232.8,176.0 L233.8,178.0 L234.8,161.5 L235.8,163.2 L236.8,155.3 L237.8,145.0 L238.9,145.3 L239.9,152.2 L240.9,146.7 L241.9,146.7 L242.9,161.5 L243.9,147.1 L244.9,140.5 L246.0,129.2 L247.0,129.3 L248.0,125.5 L249.0,116.2 L250.0,112.5 L251.0,113.5 L252.0,87.1 L253.1,90.2 L254.1,95.6 L255.1,89.1 L256.1,80.2 L257.1,77.5 L258.1,61.0 L259.2,64.8 L260.2,73.0 L261.2,57.5 L262.2,48.3 L263.2,48.3 L264.2,48.3 L265.2,69.6 L266.3,76.1 L267.3,77.5 L268.3,77.5 L269.3,58.6 L270.3,70.7 L271.3,67.3 L272.4,62.4 L273.4,64.5 L274.4,60.7 L275.4,61.4 L276.4,66.2 L277.4,58.3 L278.4,56.9 L279.5,50.7 L280.5,53.2 L281.5,49.0 L282.5,59.7 L283.5,56.6 L284.5,67.6 L285.6,72.4 L286.6,72.4 L287.6,71.0 L288.6,60.7 L289.6,55.2 L290.6,68.6 L291.6,63.8 L292.7,61.4 L293.7,57.6 L294.7,45.9 L295.7,53.5 L296.7,49.4 L297.7,49.4 L298.8,58.0 L299.8,59.0 L300.8,59.0 L301.8,57.3 L302.8,66.6 L303.8,62.4 L304.8,80.0 L305.9,75.2 L306.9,69.7 L307.9,68.3 L308.9,75.2 L309.9,58.3 L310.9,53.8 L312.0,60.7 L313.0,57.3 L314.0,67.9 L315.0,69.0 L316.0,79.0 L317.0,86.2 L318.0,98.6 L319.1,90.6 L320.1,91.0 L321.1,95.8 L322.1,91.7 L323.1,87.2 L324.1,91.3 L325.2,81.0 L326.2,72.4 L327.2,78.6 L328.2,83.4 L329.2,83.8 L330.2,75.5 L331.2,75.5 L332.3,79.6 L333.3,62.4 L334.3,73.8 L335.3,74.5 L336.3,72.1 L337.3,74.5 L338.4,75.5 L339.4,75.5 L340.4,86.2 L341.4,87.9 L342.4,83.8 L343.4,83.8 L344.4,82.7 L345.5,85.5 L346.5,88.6 L347.5,74.1 L348.5,80.3 L349.5,88.2 L350.5,95.1 L351.6,90.6 L352.6,86.9 L353.6,86.2 L354.6,90.3 L355.6,85.1 L356.6,91.7 L357.6,99.2 L358.7,88.9 L359.7,88.9 L360.7,84.8 L361.7,86.9 L362.7,87.6 L363.7,81.4 L364.8,85.5 L365.8,90.0 L366.8,90.0 L367.8,98.9 L368.8,121.6 L369.8,112.3 L370.8,101.3 L371.9,101.3 L372.9,116.8 L373.9,109.2 L374.9,96.2 L375.9,93.4 L376.9,99.6 L378.0,96.8 L379.0,95.8 L380.0,88.9 L381.0,104.1 L382.0,114.4 L383.0,115.4 L384.0,116.1 L385.1,119.5 L386.1,119.5 L387.1,117.1 L388.1,120.2 L389.1,110.9 L390.1,106.8 L391.1,100.3 L392.2,96.7 L393.2,109.4 L394.2,111.8 L395.2,122.5 L396.2,121.1 L397.2,124.6 L398.3,132.2 L399.3,116.0 L400.3,113.5 L401.3,96.3 L402.3,88.4 L403.3,88.4 L404.3,82.9 L405.4,95.3 L406.4,97.7 L407.4,93.2 L408.4,90.5 L409.4,91.8 L410.4,101.1 L411.5,104.6 L412.5,92.9 L413.5,83.2 L414.5,85.6 L415.5,81.8 L416.5,88.7 L417.5,84.9 L418.6,87.7 L419.6,88.4 L420.6,80.8 L421.6,80.8 L422.6,79.8 L423.6,79.8 L424.7,78.7 L425.7,75.6 L426.7,79.8 L427.7,89.4 L428.7,89.4 L429.7,84.2 L430.7,79.1 L431.8,70.8 L432.8,79.3 L433.8,65.9 L434.8,63.8 L435.8,65.5 L436.8,70.4 L437.9,63.1 L438.9,61.4 L439.9,63.1 L440.9,63.1 L441.9,77.6 L442.9,67.3 L443.9,68.3 L445.0,71.7 L446.0,67.3 L447.0,72.6 L448.0,80.5 L449.0,77.1 L450.0,72.6 L451.1,73.0 L452.1,79.2 L453.1,70.6 L454.1,75.4 L455.1,69.2 L456.1,70.6 L457.1,69.9 L458.2,72.3 L459.2,81.2 L460.2,78.8 L461.2,78.8 L462.2,76.1 L463.2,73.0 L464.3,77.8 L465.3,74.4 L466.3,81.6 L467.3,80.5 L468.3,79.5 L469.3,74.0 L470.3,79.5 L471.4,81.6 L472.4,90.2 L473.4,87.1 L474.4,98.1 L475.4,110.4 L476.4,111.1 L477.5,116.2 L478.5,120.4 L479.5,132.4 L480.5,132.0 L481.5,129.3 L482.5,127.2 L483.5,136.8 L484.6,139.2 L485.6,152.6 L486.6,145.8 L487.6,144.4 L488.6,140.6 L489.6,148.9 L490.7,154.0 L491.7,153.3 L492.7,146.1 L493.7,141.0 L494.7,135.8 L495.7,135.8 L496.7,130.0 L497.8,135.8 L498.8,103.5 L499.8,101.8 L500.8,111.4 L501.8,101.5 L502.8,95.3 L503.9,98.1 L504.9,96.7 L505.9,82.9 L506.9,80.9 L507.9,88.4 L508.9,93.2 L509.9,92.6 L511.0,97.0 L512.0,99.1 L513.0,97.7 L514.0,102.5 L515.0,91.9 L516.0,93.6 L517.0,99.1 L518.1,96.0 L519.1,91.9 L520.1,96.0 L521.1,98.4 L522.1,101.8 L523.1,100.1 L524.2,108.7 L525.2,107.0 L526.2,111.4 L527.2,100.5 L528.2,106.6 L529.2,97.7 L530.2,95.0 L531.3,89.5 L532.3,89.5 L533.3,90.8 L534.3,92.9 L535.3,90.8 L536.3,94.3 L537.4,98.7 L538.4,97.7 L539.4,101.5 L540.4,92.2 L541.4,93.9 L542.4,98.1 L543.4,88.8 L544.5,100.5 L545.5,91.2 L546.5,82.9 L547.5,79.5 L548.5,75.7 L549.5,95.3 L550.6,92.9 L551.6,92.9 L552.6,93.0 L553.6,86.1 L554.6,78.5 L555.6,78.5 L556.6,78.2 L557.7,76.4 L558.7,81.4 L559.7,79.0 L560.7,72.1 L561.7,72.1 L562.7,70.3 L563.8,71.4 L564.8,77.6 L565.8,77.9 L566.8,70.0 L567.8,74.1 L568.8,78.3 L569.8,80.4 L570.9,71.7 L571.9,76.9 L572.9,80.7 L573.9,84.9 L574.9,79.0 L575.9,85.6 L577.0,74.8 L578.0,68.9 L579.0,63.1 L580.0,73.1 L580.0,188.0 Z" fill="var(--up)" fill-opacity=".08" stroke="none"/><polyline points="50.0,66.6 51.0,68.6 52.0,61.8 53.0,79.3 54.1,93.7 55.1,114.7 56.1,104.1 57.1,108.9 58.1,94.8 59.1,87.6 60.2,94.1 61.2,86.2 62.2,84.8 63.2,73.1 64.2,68.6 65.2,61.1 66.2,65.9 67.3,58.7 68.3,63.1 69.3,50.7 70.3,54.2 71.3,55.6 72.3,56.2 73.4,53.5 74.4,47.3 75.4,47.3 76.4,65.5 77.4,68.6 78.4,73.1 79.4,87.6 80.5,77.6 81.5,78.3 82.5,73.1 83.5,66.2 84.5,61.1 85.5,56.6 86.6,54.2 87.6,58.0 88.6,41.8 89.6,50.7 90.6,45.9 91.6,46.6 92.6,53.5 93.7,44.6 94.7,42.1 95.7,39.7 96.7,48.7 97.7,52.5 98.7,59.7 99.8,55.2 100.8,67.9 101.8,65.5 102.8,57.3 103.8,62.4 104.8,53.2 105.8,47.3 106.9,52.1 107.9,51.1 108.9,54.9 109.9,52.5 110.9,63.5 111.9,71.4 113.0,73.4 114.0,77.2 115.0,86.5 116.0,82.0 117.0,90.3 118.0,89.3 119.0,102.0 120.1,98.6 121.1,99.6 122.1,88.9 123.1,76.9 124.1,72.8 125.1,71.0 126.1,72.8 127.2,77.2 128.2,75.9 129.2,82.4 130.2,88.6 131.2,84.5 132.2,90.6 133.3,86.2 134.3,77.2 135.3,73.8 136.3,65.5 137.3,63.8 138.3,62.4 139.3,62.4 140.4,61.4 141.4,65.5 142.4,72.8 143.4,74.5 144.4,80.7 145.4,81.7 146.5,83.1 147.5,90.6 148.5,94.8 149.5,96.2 150.5,100.6 151.5,105.8 152.5,117.1 153.6,151.2 154.6,148.4 155.6,139.8 156.6,139.8 157.6,129.9 158.6,129.9 159.7,130.2 160.7,138.8 161.7,151.9 162.7,151.5 163.7,151.5 164.7,153.6 165.7,142.6 166.8,143.3 167.8,143.3 168.8,141.9 169.8,141.9 170.8,156.7 171.8,152.9 172.9,142.9 173.9,129.9 174.9,120.6 175.9,113.7 176.9,113.7 177.9,94.1 178.9,100.3 180.0,94.4 181.0,94.8 182.0,80.7 183.0,92.4 184.0,97.9 185.0,88.2 186.1,97.9 187.1,104.1 188.1,102.7 189.1,94.4 190.1,94.1 191.1,97.9 192.1,96.8 193.2,93.7 194.2,102.0 195.2,90.3 196.2,90.6 197.2,90.6 198.2,85.1 199.3,83.8 200.3,86.2 201.3,95.5 202.3,94.1 203.3,95.1 204.3,95.1 205.3,103.0 206.4,93.4 207.4,106.1 208.4,117.5 209.4,109.9 210.4,115.8 211.4,108.2 212.5,117.5 213.5,131.9 214.5,136.1 215.5,141.6 216.5,131.9 217.5,122.0 218.5,125.0 219.6,118.9 220.6,122.6 221.6,129.9 222.6,119.5 223.6,118.9 224.6,115.1 225.7,119.5 226.7,128.8 227.7,120.9 228.7,118.5 229.7,116.1 230.7,134.3 231.7,168.0 232.8,176.0 233.8,178.0 234.8,161.5 235.8,163.2 236.8,155.3 237.8,145.0 238.9,145.3 239.9,152.2 240.9,146.7 241.9,146.7 242.9,161.5 243.9,147.1 244.9,140.5 246.0,129.2 247.0,129.3 248.0,125.5 249.0,116.2 250.0,112.5 251.0,113.5 252.0,87.1 253.1,90.2 254.1,95.6 255.1,89.1 256.1,80.2 257.1,77.5 258.1,61.0 259.2,64.8 260.2,73.0 261.2,57.5 262.2,48.3 263.2,48.3 264.2,48.3 265.2,69.6 266.3,76.1 267.3,77.5 268.3,77.5 269.3,58.6 270.3,70.7 271.3,67.3 272.4,62.4 273.4,64.5 274.4,60.7 275.4,61.4 276.4,66.2 277.4,58.3 278.4,56.9 279.5,50.7 280.5,53.2 281.5,49.0 282.5,59.7 283.5,56.6 284.5,67.6 285.6,72.4 286.6,72.4 287.6,71.0 288.6,60.7 289.6,55.2 290.6,68.6 291.6,63.8 292.7,61.4 293.7,57.6 294.7,45.9 295.7,53.5 296.7,49.4 297.7,49.4 298.8,58.0 299.8,59.0 300.8,59.0 301.8,57.3 302.8,66.6 303.8,62.4 304.8,80.0 305.9,75.2 306.9,69.7 307.9,68.3 308.9,75.2 309.9,58.3 310.9,53.8 312.0,60.7 313.0,57.3 314.0,67.9 315.0,69.0 316.0,79.0 317.0,86.2 318.0,98.6 319.1,90.6 320.1,91.0 321.1,95.8 322.1,91.7 323.1,87.2 324.1,91.3 325.2,81.0 326.2,72.4 327.2,78.6 328.2,83.4 329.2,83.8 330.2,75.5 331.2,75.5 332.3,79.6 333.3,62.4 334.3,73.8 335.3,74.5 336.3,72.1 337.3,74.5 338.4,75.5 339.4,75.5 340.4,86.2 341.4,87.9 342.4,83.8 343.4,83.8 344.4,82.7 345.5,85.5 346.5,88.6 347.5,74.1 348.5,80.3 349.5,88.2 350.5,95.1 351.6,90.6 352.6,86.9 353.6,86.2 354.6,90.3 355.6,85.1 356.6,91.7 357.6,99.2 358.7,88.9 359.7,88.9 360.7,84.8 361.7,86.9 362.7,87.6 363.7,81.4 364.8,85.5 365.8,90.0 366.8,90.0 367.8,98.9 368.8,121.6 369.8,112.3 370.8,101.3 371.9,101.3 372.9,116.8 373.9,109.2 374.9,96.2 375.9,93.4 376.9,99.6 378.0,96.8 379.0,95.8 380.0,88.9 381.0,104.1 382.0,114.4 383.0,115.4 384.0,116.1 385.1,119.5 386.1,119.5 387.1,117.1 388.1,120.2 389.1,110.9 390.1,106.8 391.1,100.3 392.2,96.7 393.2,109.4 394.2,111.8 395.2,122.5 396.2,121.1 397.2,124.6 398.3,132.2 399.3,116.0 400.3,113.5 401.3,96.3 402.3,88.4 403.3,88.4 404.3,82.9 405.4,95.3 406.4,97.7 407.4,93.2 408.4,90.5 409.4,91.8 410.4,101.1 411.5,104.6 412.5,92.9 413.5,83.2 414.5,85.6 415.5,81.8 416.5,88.7 417.5,84.9 418.6,87.7 419.6,88.4 420.6,80.8 421.6,80.8 422.6,79.8 423.6,79.8 424.7,78.7 425.7,75.6 426.7,79.8 427.7,89.4 428.7,89.4 429.7,84.2 430.7,79.1 431.8,70.8 432.8,79.3 433.8,65.9 434.8,63.8 435.8,65.5 436.8,70.4 437.9,63.1 438.9,61.4 439.9,63.1 440.9,63.1 441.9,77.6 442.9,67.3 443.9,68.3 445.0,71.7 446.0,67.3 447.0,72.6 448.0,80.5 449.0,77.1 450.0,72.6 451.1,73.0 452.1,79.2 453.1,70.6 454.1,75.4 455.1,69.2 456.1,70.6 457.1,69.9 458.2,72.3 459.2,81.2 460.2,78.8 461.2,78.8 462.2,76.1 463.2,73.0 464.3,77.8 465.3,74.4 466.3,81.6 467.3,80.5 468.3,79.5 469.3,74.0 470.3,79.5 471.4,81.6 472.4,90.2 473.4,87.1 474.4,98.1 475.4,110.4 476.4,111.1 477.5,116.2 478.5,120.4 479.5,132.4 480.5,132.0 481.5,129.3 482.5,127.2 483.5,136.8 484.6,139.2 485.6,152.6 486.6,145.8 487.6,144.4 488.6,140.6 489.6,148.9 490.7,154.0 491.7,153.3 492.7,146.1 493.7,141.0 494.7,135.8 495.7,135.8 496.7,130.0 497.8,135.8 498.8,103.5 499.8,101.8 500.8,111.4 501.8,101.5 502.8,95.3 503.9,98.1 504.9,96.7 505.9,82.9 506.9,80.9 507.9,88.4 508.9,93.2 509.9,92.6 511.0,97.0 512.0,99.1 513.0,97.7 514.0,102.5 515.0,91.9 516.0,93.6 517.0,99.1 518.1,96.0 519.1,91.9 520.1,96.0 521.1,98.4 522.1,101.8 523.1,100.1 524.2,108.7 525.2,107.0 526.2,111.4 527.2,100.5 528.2,106.6 529.2,97.7 530.2,95.0 531.3,89.5 532.3,89.5 533.3,90.8 534.3,92.9 535.3,90.8 536.3,94.3 537.4,98.7 538.4,97.7 539.4,101.5 540.4,92.2 541.4,93.9 542.4,98.1 543.4,88.8 544.5,100.5 545.5,91.2 546.5,82.9 547.5,79.5 548.5,75.7 549.5,95.3 550.6,92.9 551.6,92.9 552.6,93.0 553.6,86.1 554.6,78.5 555.6,78.5 556.6,78.2 557.7,76.4 558.7,81.4 559.7,79.0 560.7,72.1 561.7,72.1 562.7,70.3 563.8,71.4 564.8,77.6 565.8,77.9 566.8,70.0 567.8,74.1 568.8,78.3 569.8,80.4 570.9,71.7 571.9,76.9 572.9,80.7 573.9,84.9 574.9,79.0 575.9,85.6 577.0,74.8 578.0,68.9 579.0,63.1 580.0,73.1" fill="none" stroke="var(--up)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="580.0" cy="73.1" r="3" fill="var(--up)"/><text x="586" y="87.1" font-size="10" fill="var(--up)">67%</text></svg></div>
+  <div class="chart"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible"><line x1="50" y1="145.0" x2="580" y2="145.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><line x1="50" y1="102.0" x2="580" y2="102.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><line x1="50" y1="59.0" x2="580" y2="59.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="50" y="214" text-anchor="start" font-size="10" fill="var(--muted)">Jul 2024</text><text x="580" y="214" text-anchor="end" font-size="10" fill="var(--muted)">Jul 2026</text><path d="M50.0,188.0 L50.0,131.8 L51.0,123.3 L52.0,91.8 L53.0,73.9 L54.1,96.0 L55.1,104.6 L56.1,112.2 L57.1,111.4 L58.1,108.8 L59.1,107.1 L60.2,113.9 L61.2,126.7 L62.2,128.4 L63.2,135.2 L64.2,131.8 L65.2,130.1 L66.2,135.2 L67.3,136.9 L68.3,140.3 L69.3,138.6 L70.3,136.9 L71.3,140.3 L72.3,142.0 L73.4,138.6 L74.4,126.7 L75.4,123.3 L76.4,128.4 L77.4,119.9 L78.4,122.4 L79.4,113.9 L80.5,115.6 L81.5,119.9 L82.5,121.6 L83.5,125.8 L84.5,131.8 L85.5,135.2 L86.6,144.6 L87.6,140.3 L88.6,140.3 L89.6,135.2 L90.6,136.9 L91.6,141.2 L92.6,141.2 L93.7,150.5 L94.7,147.1 L95.7,148.0 L96.7,149.7 L97.7,162.5 L98.7,157.3 L99.8,153.9 L100.8,158.2 L101.8,153.9 L102.8,154.8 L103.8,155.6 L104.8,159.0 L105.8,161.6 L106.9,162.5 L107.9,163.3 L108.9,163.3 L109.9,159.9 L110.9,157.3 L111.9,159.0 L113.0,162.5 L114.0,168.4 L115.0,165.9 L116.0,170.1 L117.0,163.3 L118.0,167.6 L119.0,164.2 L120.1,165.0 L121.1,175.2 L122.1,176.1 L123.1,184.6 L124.1,184.6 L125.1,186.3 L126.1,183.7 L127.2,187.1 L128.2,176.9 L129.2,176.9 L130.2,179.5 L131.2,181.2 L132.2,186.3 L133.3,186.3 L134.3,183.7 L135.3,180.3 L136.3,179.5 L137.3,179.5 L138.3,176.9 L139.3,180.3 L140.4,182.0 L141.4,182.0 L142.4,182.0 L143.4,181.2 L144.4,181.2 L145.4,181.2 L146.5,183.7 L147.5,182.0 L148.5,180.3 L149.5,179.5 L150.5,174.4 L151.5,176.1 L152.5,160.8 L153.6,165.0 L154.6,165.9 L155.6,165.0 L156.6,165.0 L157.6,165.0 L158.6,166.7 L159.7,158.2 L160.7,159.9 L161.7,159.9 L162.7,163.3 L163.7,169.3 L164.7,173.5 L165.7,171.0 L166.8,166.7 L167.8,168.4 L168.8,169.3 L169.8,165.9 L170.8,170.1 L171.8,176.9 L172.9,176.1 L173.9,183.7 L174.9,183.7 L175.9,186.3 L176.9,188.0 L177.9,186.3 L178.9,187.1 L180.0,182.0 L181.0,182.0 L182.0,180.3 L183.0,181.2 L184.0,180.3 L185.0,176.1 L186.1,177.8 L187.1,179.5 L188.1,182.0 L189.1,181.2 L190.1,182.0 L191.1,182.0 L192.1,182.9 L193.2,182.9 L194.2,185.4 L195.2,185.4 L196.2,185.4 L197.2,180.3 L198.2,182.0 L199.3,171.8 L200.3,171.8 L201.3,166.7 L202.3,169.3 L203.3,169.3 L204.3,164.2 L205.3,158.2 L206.4,153.9 L207.4,163.3 L208.4,153.9 L209.4,155.6 L210.4,139.5 L211.4,134.4 L212.5,136.1 L213.5,119.0 L214.5,131.8 L215.5,137.8 L216.5,133.5 L217.5,136.9 L218.5,138.6 L219.6,135.2 L220.6,148.8 L221.6,145.4 L222.6,136.9 L223.6,130.1 L224.6,113.1 L225.7,106.3 L226.7,110.5 L227.7,117.3 L228.7,67.1 L229.7,29.6 L230.7,16.0 L231.7,19.4 L232.8,36.4 L233.8,32.2 L234.8,45.8 L235.8,56.0 L236.8,60.3 L237.8,54.3 L238.9,66.2 L239.9,66.2 L240.9,54.3 L241.9,68.8 L242.9,89.2 L243.9,90.9 L244.9,96.0 L246.0,90.9 L247.0,90.1 L248.0,73.0 L249.0,86.7 L250.0,102.0 L251.0,102.0 L252.0,96.9 L253.1,96.0 L254.1,109.7 L255.1,108.0 L256.1,140.3 L257.1,145.4 L258.1,144.6 L259.2,136.1 L260.2,139.5 L261.2,135.2 L262.2,136.1 L263.2,131.8 L264.2,125.8 L265.2,119.0 L266.3,119.0 L267.3,132.7 L268.3,133.5 L269.3,134.4 L270.3,126.7 L271.3,130.1 L272.4,136.9 L273.4,133.5 L274.4,137.8 L275.4,145.4 L276.4,142.9 L277.4,142.9 L278.4,142.9 L279.5,138.6 L280.5,137.8 L281.5,144.6 L282.5,138.6 L283.5,139.5 L284.5,139.5 L285.6,142.0 L286.6,142.9 L287.6,148.0 L288.6,149.7 L289.6,149.7 L290.6,151.4 L291.6,156.5 L292.7,160.8 L293.7,163.3 L294.7,170.1 L295.7,170.1 L296.7,165.0 L297.7,159.9 L298.8,158.2 L299.8,159.9 L300.8,155.6 L301.8,157.3 L302.8,157.3 L303.8,153.1 L304.8,160.8 L305.9,159.0 L306.9,162.5 L307.9,161.6 L308.9,167.6 L309.9,168.4 L310.9,166.7 L312.0,168.4 L313.0,165.0 L314.0,162.5 L315.0,165.0 L316.0,142.0 L317.0,151.4 L318.0,154.8 L319.1,154.8 L320.1,157.3 L321.1,158.2 L322.1,158.2 L323.1,159.0 L324.1,161.6 L325.2,162.5 L326.2,163.3 L327.2,163.3 L328.2,161.6 L329.2,158.2 L330.2,157.3 L331.2,163.3 L332.3,170.1 L333.3,171.8 L334.3,171.8 L335.3,174.4 L336.3,168.4 L337.3,166.7 L338.4,159.9 L339.4,163.3 L340.4,166.7 L341.4,167.6 L342.4,166.7 L343.4,164.2 L344.4,166.7 L345.5,171.8 L346.5,171.0 L347.5,174.4 L348.5,171.0 L349.5,171.0 L350.5,177.8 L351.6,176.9 L352.6,179.5 L353.6,177.8 L354.6,178.6 L355.6,173.5 L356.6,174.4 L357.6,175.2 L358.7,170.1 L359.7,169.3 L360.7,169.3 L361.7,170.1 L362.7,173.5 L363.7,168.4 L364.8,166.7 L365.8,157.3 L366.8,137.8 L367.8,137.8 L368.8,143.7 L369.8,157.3 L370.8,149.7 L371.9,149.7 L372.9,153.9 L373.9,155.6 L374.9,152.2 L375.9,156.5 L376.9,163.3 L378.0,170.1 L379.0,168.4 L380.0,173.5 L381.0,165.9 L382.0,158.2 L383.0,149.7 L384.0,142.0 L385.1,148.8 L386.1,142.0 L387.1,140.3 L388.1,151.4 L389.1,151.4 L390.1,151.4 L391.1,145.4 L392.2,147.1 L393.2,142.0 L394.2,136.1 L395.2,138.6 L396.2,138.6 L397.2,136.9 L398.3,140.3 L399.3,144.6 L400.3,153.1 L401.3,153.1 L402.3,157.3 L403.3,158.2 L404.3,159.9 L405.4,162.5 L406.4,163.3 L407.4,165.9 L408.4,162.5 L409.4,162.5 L410.4,160.8 L411.5,163.3 L412.5,160.8 L413.5,160.8 L414.5,154.8 L415.5,153.9 L416.5,157.3 L417.5,161.6 L418.6,163.3 L419.6,167.6 L420.6,166.7 L421.6,166.7 L422.6,165.0 L423.6,164.2 L424.7,166.7 L425.7,169.3 L426.7,169.3 L427.7,167.6 L428.7,169.3 L429.7,171.0 L430.7,171.0 L431.8,173.5 L432.8,175.2 L433.8,175.2 L434.8,174.4 L435.8,173.5 L436.8,177.8 L437.9,182.9 L438.9,182.9 L439.9,176.1 L440.9,179.5 L441.9,183.7 L442.9,180.3 L443.9,179.5 L445.0,177.8 L446.0,176.9 L447.0,172.7 L448.0,170.1 L449.0,169.3 L450.0,165.9 L451.1,165.0 L452.1,155.6 L453.1,164.2 L454.1,166.7 L455.1,165.0 L456.1,166.7 L457.1,159.9 L458.2,157.3 L459.2,158.2 L460.2,158.2 L461.2,165.0 L462.2,163.3 L463.2,165.0 L464.3,157.3 L465.3,155.6 L466.3,158.2 L467.3,154.8 L468.3,144.6 L469.3,150.5 L470.3,146.3 L471.4,155.6 L472.4,153.1 L473.4,142.0 L474.4,136.9 L475.4,148.0 L476.4,145.4 L477.5,138.6 L478.5,129.2 L479.5,130.1 L480.5,134.4 L481.5,136.1 L482.5,130.1 L483.5,132.7 L484.6,136.9 L485.6,136.9 L486.6,138.6 L487.6,135.2 L488.6,117.3 L489.6,113.9 L490.7,129.2 L491.7,139.5 L492.7,138.6 L493.7,142.0 L494.7,148.8 L495.7,142.9 L496.7,158.2 L497.8,161.6 L498.8,158.2 L499.8,157.3 L500.8,166.7 L501.8,165.9 L502.8,165.0 L503.9,167.6 L504.9,164.2 L505.9,165.9 L506.9,166.7 L507.9,165.0 L508.9,165.0 L509.9,166.7 L511.0,165.9 L512.0,168.4 L513.0,167.6 L514.0,172.7 L515.0,171.8 L516.0,172.7 L517.0,174.4 L518.1,171.0 L519.1,169.3 L520.1,171.0 L521.1,168.4 L522.1,168.4 L523.1,173.5 L524.2,170.1 L525.2,167.6 L526.2,165.0 L527.2,170.1 L528.2,171.8 L529.2,175.2 L530.2,175.2 L531.3,176.9 L532.3,177.8 L533.3,176.9 L534.3,176.9 L535.3,176.9 L536.3,177.8 L537.4,174.4 L538.4,175.2 L539.4,173.5 L540.4,174.4 L541.4,171.8 L542.4,170.1 L543.4,171.8 L544.5,177.8 L545.5,182.0 L546.5,177.8 L547.5,184.6 L548.5,182.0 L549.5,182.0 L550.6,182.9 L551.6,177.8 L552.6,173.5 L553.6,171.8 L554.6,167.6 L555.6,170.1 L556.6,174.4 L557.7,175.2 L558.7,174.4 L559.7,175.2 L560.7,176.9 L561.7,181.2 L562.7,178.6 L563.8,178.6 L564.8,179.5 L565.8,179.5 L566.8,176.9 L567.8,177.8 L568.8,177.8 L569.8,176.1 L570.9,179.5 L571.9,179.5 L572.9,180.3 L573.9,172.7 L574.9,171.0 L575.9,169.3 L577.0,166.7 L578.0,164.2 L579.0,166.7 L580.0,166.7 L580.0,188.0 Z" fill="var(--down)" fill-opacity=".08" stroke="none"/><polyline points="50.0,131.8 51.0,123.3 52.0,91.8 53.0,73.9 54.1,96.0 55.1,104.6 56.1,112.2 57.1,111.4 58.1,108.8 59.1,107.1 60.2,113.9 61.2,126.7 62.2,128.4 63.2,135.2 64.2,131.8 65.2,130.1 66.2,135.2 67.3,136.9 68.3,140.3 69.3,138.6 70.3,136.9 71.3,140.3 72.3,142.0 73.4,138.6 74.4,126.7 75.4,123.3 76.4,128.4 77.4,119.9 78.4,122.4 79.4,113.9 80.5,115.6 81.5,119.9 82.5,121.6 83.5,125.8 84.5,131.8 85.5,135.2 86.6,144.6 87.6,140.3 88.6,140.3 89.6,135.2 90.6,136.9 91.6,141.2 92.6,141.2 93.7,150.5 94.7,147.1 95.7,148.0 96.7,149.7 97.7,162.5 98.7,157.3 99.8,153.9 100.8,158.2 101.8,153.9 102.8,154.8 103.8,155.6 104.8,159.0 105.8,161.6 106.9,162.5 107.9,163.3 108.9,163.3 109.9,159.9 110.9,157.3 111.9,159.0 113.0,162.5 114.0,168.4 115.0,165.9 116.0,170.1 117.0,163.3 118.0,167.6 119.0,164.2 120.1,165.0 121.1,175.2 122.1,176.1 123.1,184.6 124.1,184.6 125.1,186.3 126.1,183.7 127.2,187.1 128.2,176.9 129.2,176.9 130.2,179.5 131.2,181.2 132.2,186.3 133.3,186.3 134.3,183.7 135.3,180.3 136.3,179.5 137.3,179.5 138.3,176.9 139.3,180.3 140.4,182.0 141.4,182.0 142.4,182.0 143.4,181.2 144.4,181.2 145.4,181.2 146.5,183.7 147.5,182.0 148.5,180.3 149.5,179.5 150.5,174.4 151.5,176.1 152.5,160.8 153.6,165.0 154.6,165.9 155.6,165.0 156.6,165.0 157.6,165.0 158.6,166.7 159.7,158.2 160.7,159.9 161.7,159.9 162.7,163.3 163.7,169.3 164.7,173.5 165.7,171.0 166.8,166.7 167.8,168.4 168.8,169.3 169.8,165.9 170.8,170.1 171.8,176.9 172.9,176.1 173.9,183.7 174.9,183.7 175.9,186.3 176.9,188.0 177.9,186.3 178.9,187.1 180.0,182.0 181.0,182.0 182.0,180.3 183.0,181.2 184.0,180.3 185.0,176.1 186.1,177.8 187.1,179.5 188.1,182.0 189.1,181.2 190.1,182.0 191.1,182.0 192.1,182.9 193.2,182.9 194.2,185.4 195.2,185.4 196.2,185.4 197.2,180.3 198.2,182.0 199.3,171.8 200.3,171.8 201.3,166.7 202.3,169.3 203.3,169.3 204.3,164.2 205.3,158.2 206.4,153.9 207.4,163.3 208.4,153.9 209.4,155.6 210.4,139.5 211.4,134.4 212.5,136.1 213.5,119.0 214.5,131.8 215.5,137.8 216.5,133.5 217.5,136.9 218.5,138.6 219.6,135.2 220.6,148.8 221.6,145.4 222.6,136.9 223.6,130.1 224.6,113.1 225.7,106.3 226.7,110.5 227.7,117.3 228.7,67.1 229.7,29.6 230.7,16.0 231.7,19.4 232.8,36.4 233.8,32.2 234.8,45.8 235.8,56.0 236.8,60.3 237.8,54.3 238.9,66.2 239.9,66.2 240.9,54.3 241.9,68.8 242.9,89.2 243.9,90.9 244.9,96.0 246.0,90.9 247.0,90.1 248.0,73.0 249.0,86.7 250.0,102.0 251.0,102.0 252.0,96.9 253.1,96.0 254.1,109.7 255.1,108.0 256.1,140.3 257.1,145.4 258.1,144.6 259.2,136.1 260.2,139.5 261.2,135.2 262.2,136.1 263.2,131.8 264.2,125.8 265.2,119.0 266.3,119.0 267.3,132.7 268.3,133.5 269.3,134.4 270.3,126.7 271.3,130.1 272.4,136.9 273.4,133.5 274.4,137.8 275.4,145.4 276.4,142.9 277.4,142.9 278.4,142.9 279.5,138.6 280.5,137.8 281.5,144.6 282.5,138.6 283.5,139.5 284.5,139.5 285.6,142.0 286.6,142.9 287.6,148.0 288.6,149.7 289.6,149.7 290.6,151.4 291.6,156.5 292.7,160.8 293.7,163.3 294.7,170.1 295.7,170.1 296.7,165.0 297.7,159.9 298.8,158.2 299.8,159.9 300.8,155.6 301.8,157.3 302.8,157.3 303.8,153.1 304.8,160.8 305.9,159.0 306.9,162.5 307.9,161.6 308.9,167.6 309.9,168.4 310.9,166.7 312.0,168.4 313.0,165.0 314.0,162.5 315.0,165.0 316.0,142.0 317.0,151.4 318.0,154.8 319.1,154.8 320.1,157.3 321.1,158.2 322.1,158.2 323.1,159.0 324.1,161.6 325.2,162.5 326.2,163.3 327.2,163.3 328.2,161.6 329.2,158.2 330.2,157.3 331.2,163.3 332.3,170.1 333.3,171.8 334.3,171.8 335.3,174.4 336.3,168.4 337.3,166.7 338.4,159.9 339.4,163.3 340.4,166.7 341.4,167.6 342.4,166.7 343.4,164.2 344.4,166.7 345.5,171.8 346.5,171.0 347.5,174.4 348.5,171.0 349.5,171.0 350.5,177.8 351.6,176.9 352.6,179.5 353.6,177.8 354.6,178.6 355.6,173.5 356.6,174.4 357.6,175.2 358.7,170.1 359.7,169.3 360.7,169.3 361.7,170.1 362.7,173.5 363.7,168.4 364.8,166.7 365.8,157.3 366.8,137.8 367.8,137.8 368.8,143.7 369.8,157.3 370.8,149.7 371.9,149.7 372.9,153.9 373.9,155.6 374.9,152.2 375.9,156.5 376.9,163.3 378.0,170.1 379.0,168.4 380.0,173.5 381.0,165.9 382.0,158.2 383.0,149.7 384.0,142.0 385.1,148.8 386.1,142.0 387.1,140.3 388.1,151.4 389.1,151.4 390.1,151.4 391.1,145.4 392.2,147.1 393.2,142.0 394.2,136.1 395.2,138.6 396.2,138.6 397.2,136.9 398.3,140.3 399.3,144.6 400.3,153.1 401.3,153.1 402.3,157.3 403.3,158.2 404.3,159.9 405.4,162.5 406.4,163.3 407.4,165.9 408.4,162.5 409.4,162.5 410.4,160.8 411.5,163.3 412.5,160.8 413.5,160.8 414.5,154.8 415.5,153.9 416.5,157.3 417.5,161.6 418.6,163.3 419.6,167.6 420.6,166.7 421.6,166.7 422.6,165.0 423.6,164.2 424.7,166.7 425.7,169.3 426.7,169.3 427.7,167.6 428.7,169.3 429.7,171.0 430.7,171.0 431.8,173.5 432.8,175.2 433.8,175.2 434.8,174.4 435.8,173.5 436.8,177.8 437.9,182.9 438.9,182.9 439.9,176.1 440.9,179.5 441.9,183.7 442.9,180.3 443.9,179.5 445.0,177.8 446.0,176.9 447.0,172.7 448.0,170.1 449.0,169.3 450.0,165.9 451.1,165.0 452.1,155.6 453.1,164.2 454.1,166.7 455.1,165.0 456.1,166.7 457.1,159.9 458.2,157.3 459.2,158.2 460.2,158.2 461.2,165.0 462.2,163.3 463.2,165.0 464.3,157.3 465.3,155.6 466.3,158.2 467.3,154.8 468.3,144.6 469.3,150.5 470.3,146.3 471.4,155.6 472.4,153.1 473.4,142.0 474.4,136.9 475.4,148.0 476.4,145.4 477.5,138.6 478.5,129.2 479.5,130.1 480.5,134.4 481.5,136.1 482.5,130.1 483.5,132.7 484.6,136.9 485.6,136.9 486.6,138.6 487.6,135.2 488.6,117.3 489.6,113.9 490.7,129.2 491.7,139.5 492.7,138.6 493.7,142.0 494.7,148.8 495.7,142.9 496.7,158.2 497.8,161.6 498.8,158.2 499.8,157.3 500.8,166.7 501.8,165.9 502.8,165.0 503.9,167.6 504.9,164.2 505.9,165.9 506.9,166.7 507.9,165.0 508.9,165.0 509.9,166.7 511.0,165.9 512.0,168.4 513.0,167.6 514.0,172.7 515.0,171.8 516.0,172.7 517.0,174.4 518.1,171.0 519.1,169.3 520.1,171.0 521.1,168.4 522.1,168.4 523.1,173.5 524.2,170.1 525.2,167.6 526.2,165.0 527.2,170.1 528.2,171.8 529.2,175.2 530.2,175.2 531.3,176.9 532.3,177.8 533.3,176.9 534.3,176.9 535.3,176.9 536.3,177.8 537.4,174.4 538.4,175.2 539.4,173.5 540.4,174.4 541.4,171.8 542.4,170.1 543.4,171.8 544.5,177.8 545.5,182.0 546.5,177.8 547.5,184.6 548.5,182.0 549.5,182.0 550.6,182.9 551.6,177.8 552.6,173.5 553.6,171.8 554.6,167.6 555.6,170.1 556.6,174.4 557.7,175.2 558.7,174.4 559.7,175.2 560.7,176.9 561.7,181.2 562.7,178.6 563.8,178.6 564.8,179.5 565.8,179.5 566.8,176.9 567.8,177.8 568.8,177.8 569.8,176.1 570.9,179.5 571.9,179.5 572.9,180.3 573.9,172.7 574.9,171.0 575.9,169.3 577.0,166.7 578.0,164.2 579.0,166.7 580.0,166.7" fill="none" stroke="var(--down)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="580.0" cy="166.7" r="3" fill="var(--down)"/><text x="586" y="170.7" font-size="10" fill="var(--down)">2.8%</text><text x="46" y="135.8" text-anchor="end" font-size="10" fill="var(--down)">3</text><path d="M50.0,188.0 L50.0,61.8 L51.0,79.3 L52.0,93.7 L53.0,114.7 L54.1,104.1 L55.1,108.9 L56.1,94.8 L57.1,87.6 L58.1,94.1 L59.1,86.2 L60.2,84.8 L61.2,73.1 L62.2,68.6 L63.2,61.1 L64.2,65.9 L65.2,58.7 L66.2,63.1 L67.3,50.7 L68.3,54.2 L69.3,55.6 L70.3,56.2 L71.3,53.5 L72.3,47.3 L73.4,47.3 L74.4,65.5 L75.4,68.6 L76.4,73.1 L77.4,87.6 L78.4,77.6 L79.4,78.3 L80.5,73.1 L81.5,66.2 L82.5,61.1 L83.5,56.6 L84.5,54.2 L85.5,58.0 L86.6,41.8 L87.6,50.7 L88.6,45.9 L89.6,46.6 L90.6,53.5 L91.6,44.6 L92.6,42.1 L93.7,39.7 L94.7,48.7 L95.7,52.5 L96.7,59.7 L97.7,55.2 L98.7,67.9 L99.8,65.5 L100.8,57.3 L101.8,62.4 L102.8,53.2 L103.8,47.3 L104.8,52.1 L105.8,51.1 L106.9,54.9 L107.9,52.5 L108.9,63.5 L109.9,71.4 L110.9,73.4 L111.9,77.2 L113.0,86.5 L114.0,82.0 L115.0,90.3 L116.0,89.3 L117.0,102.0 L118.0,98.6 L119.0,99.6 L120.1,88.9 L121.1,76.9 L122.1,72.8 L123.1,71.0 L124.1,72.8 L125.1,77.2 L126.1,75.9 L127.2,82.4 L128.2,88.6 L129.2,84.5 L130.2,90.6 L131.2,86.2 L132.2,77.2 L133.3,73.8 L134.3,65.5 L135.3,63.8 L136.3,62.4 L137.3,62.4 L138.3,61.4 L139.3,65.5 L140.4,72.8 L141.4,74.5 L142.4,80.7 L143.4,81.7 L144.4,83.1 L145.4,90.6 L146.5,94.8 L147.5,96.2 L148.5,100.6 L149.5,105.8 L150.5,117.1 L151.5,151.2 L152.5,148.4 L153.6,139.8 L154.6,139.8 L155.6,129.9 L156.6,129.9 L157.6,130.2 L158.6,138.8 L159.7,151.9 L160.7,151.5 L161.7,151.5 L162.7,153.6 L163.7,142.6 L164.7,143.3 L165.7,143.3 L166.8,141.9 L167.8,141.9 L168.8,156.7 L169.8,152.9 L170.8,142.9 L171.8,129.9 L172.9,120.6 L173.9,113.7 L174.9,113.7 L175.9,94.1 L176.9,100.3 L177.9,94.4 L178.9,94.8 L180.0,80.7 L181.0,92.4 L182.0,97.9 L183.0,88.2 L184.0,97.9 L185.0,104.1 L186.1,102.7 L187.1,94.4 L188.1,94.1 L189.1,97.9 L190.1,96.8 L191.1,93.7 L192.1,102.0 L193.2,90.3 L194.2,90.6 L195.2,90.6 L196.2,85.1 L197.2,83.8 L198.2,86.2 L199.3,95.5 L200.3,94.1 L201.3,95.1 L202.3,95.1 L203.3,103.0 L204.3,93.4 L205.3,106.1 L206.4,117.5 L207.4,109.9 L208.4,115.8 L209.4,108.2 L210.4,117.5 L211.4,131.9 L212.5,136.1 L213.5,141.6 L214.5,131.9 L215.5,122.0 L216.5,125.0 L217.5,118.9 L218.5,122.6 L219.6,129.9 L220.6,119.5 L221.6,118.9 L222.6,115.1 L223.6,119.5 L224.6,128.8 L225.7,120.9 L226.7,118.5 L227.7,116.1 L228.7,134.3 L229.7,168.0 L230.7,176.0 L231.7,178.0 L232.8,161.5 L233.8,163.2 L234.8,155.3 L235.8,145.0 L236.8,145.3 L237.8,152.2 L238.9,146.7 L239.9,146.7 L240.9,161.5 L241.9,147.1 L242.9,140.5 L243.9,129.2 L244.9,129.3 L246.0,125.5 L247.0,116.2 L248.0,112.5 L249.0,113.5 L250.0,87.1 L251.0,90.2 L252.0,95.6 L253.1,89.1 L254.1,80.2 L255.1,77.5 L256.1,61.0 L257.1,64.8 L258.1,73.0 L259.2,57.5 L260.2,48.3 L261.2,48.3 L262.2,48.3 L263.2,69.6 L264.2,76.1 L265.2,77.5 L266.3,77.5 L267.3,58.6 L268.3,70.7 L269.3,67.3 L270.3,62.4 L271.3,64.5 L272.4,60.7 L273.4,61.4 L274.4,66.2 L275.4,58.3 L276.4,56.9 L277.4,50.7 L278.4,53.2 L279.5,49.0 L280.5,59.7 L281.5,56.6 L282.5,67.6 L283.5,72.4 L284.5,72.4 L285.6,71.0 L286.6,60.7 L287.6,55.2 L288.6,68.6 L289.6,63.8 L290.6,61.4 L291.6,57.6 L292.7,45.9 L293.7,53.5 L294.7,49.4 L295.7,49.4 L296.7,58.0 L297.7,59.0 L298.8,59.0 L299.8,57.3 L300.8,66.6 L301.8,62.4 L302.8,80.0 L303.8,75.2 L304.8,69.7 L305.9,68.3 L306.9,75.2 L307.9,58.3 L308.9,53.8 L309.9,60.7 L310.9,57.3 L312.0,67.9 L313.0,69.0 L314.0,79.0 L315.0,86.2 L316.0,98.6 L317.0,90.6 L318.0,91.0 L319.1,95.8 L320.1,91.7 L321.1,87.2 L322.1,91.3 L323.1,81.0 L324.1,72.4 L325.2,78.6 L326.2,83.4 L327.2,83.8 L328.2,75.5 L329.2,75.5 L330.2,79.6 L331.2,62.4 L332.3,73.8 L333.3,74.5 L334.3,72.1 L335.3,74.5 L336.3,75.5 L337.3,75.5 L338.4,86.2 L339.4,87.9 L340.4,83.8 L341.4,83.8 L342.4,82.7 L343.4,85.5 L344.4,88.6 L345.5,74.1 L346.5,80.3 L347.5,88.2 L348.5,95.1 L349.5,90.6 L350.5,86.9 L351.6,86.2 L352.6,90.3 L353.6,85.1 L354.6,91.7 L355.6,99.2 L356.6,88.9 L357.6,88.9 L358.7,84.8 L359.7,86.9 L360.7,87.6 L361.7,81.4 L362.7,85.5 L363.7,90.0 L364.8,90.0 L365.8,98.9 L366.8,121.6 L367.8,112.3 L368.8,101.3 L369.8,101.3 L370.8,116.8 L371.9,109.2 L372.9,96.2 L373.9,93.4 L374.9,99.6 L375.9,96.8 L376.9,95.8 L378.0,88.9 L379.0,104.1 L380.0,114.4 L381.0,115.4 L382.0,116.1 L383.0,119.5 L384.0,119.5 L385.1,117.1 L386.1,120.2 L387.1,110.9 L388.1,106.8 L389.1,100.3 L390.1,96.7 L391.1,109.4 L392.2,111.8 L393.2,122.5 L394.2,121.1 L395.2,124.6 L396.2,132.2 L397.2,116.0 L398.3,113.5 L399.3,96.3 L400.3,88.4 L401.3,88.4 L402.3,82.9 L403.3,95.3 L404.3,97.7 L405.4,93.2 L406.4,90.5 L407.4,91.8 L408.4,101.1 L409.4,104.6 L410.4,92.9 L411.5,83.2 L412.5,85.6 L413.5,81.8 L414.5,88.7 L415.5,84.9 L416.5,87.7 L417.5,88.4 L418.6,80.8 L419.6,80.8 L420.6,79.8 L421.6,79.8 L422.6,78.7 L423.6,75.6 L424.7,79.8 L425.7,89.4 L426.7,89.4 L427.7,84.2 L428.7,79.1 L429.7,70.8 L430.7,79.3 L431.8,65.9 L432.8,63.8 L433.8,65.5 L434.8,70.4 L435.8,63.1 L436.8,61.4 L437.9,63.1 L438.9,63.1 L439.9,77.6 L440.9,67.3 L441.9,68.3 L442.9,71.7 L443.9,67.3 L445.0,72.6 L446.0,80.5 L447.0,77.1 L448.0,72.6 L449.0,73.0 L450.0,79.2 L451.1,70.6 L452.1,75.4 L453.1,69.2 L454.1,70.6 L455.1,69.9 L456.1,72.3 L457.1,81.2 L458.2,78.8 L459.2,78.8 L460.2,76.1 L461.2,73.0 L462.2,77.8 L463.2,74.4 L464.3,81.6 L465.3,80.5 L466.3,79.5 L467.3,74.0 L468.3,79.5 L469.3,81.6 L470.3,90.2 L471.4,87.1 L472.4,98.1 L473.4,110.4 L474.4,111.1 L475.4,116.2 L476.4,120.4 L477.5,132.4 L478.5,132.0 L479.5,129.3 L480.5,127.2 L481.5,136.8 L482.5,139.2 L483.5,152.6 L484.6,145.8 L485.6,144.4 L486.6,140.6 L487.6,148.9 L488.6,154.0 L489.6,153.3 L490.7,146.1 L491.7,141.0 L492.7,135.8 L493.7,135.8 L494.7,130.0 L495.7,135.8 L496.7,103.5 L497.8,101.8 L498.8,111.4 L499.8,101.5 L500.8,95.3 L501.8,98.1 L502.8,96.7 L503.9,82.9 L504.9,80.9 L505.9,88.4 L506.9,93.2 L507.9,92.6 L508.9,97.0 L509.9,99.1 L511.0,97.7 L512.0,102.5 L513.0,91.9 L514.0,93.6 L515.0,99.1 L516.0,96.0 L517.0,91.9 L518.1,96.0 L519.1,98.4 L520.1,101.8 L521.1,100.1 L522.1,108.7 L523.1,107.0 L524.2,111.4 L525.2,100.5 L526.2,106.6 L527.2,97.7 L528.2,95.0 L529.2,89.5 L530.2,89.5 L531.3,90.8 L532.3,92.9 L533.3,90.8 L534.3,94.3 L535.3,98.7 L536.3,97.7 L537.4,101.5 L538.4,92.2 L539.4,93.9 L540.4,98.1 L541.4,88.8 L542.4,100.5 L543.4,91.2 L544.5,82.9 L545.5,79.5 L546.5,75.7 L547.5,95.3 L548.5,92.9 L549.5,92.9 L550.6,93.0 L551.6,86.1 L552.6,78.5 L553.6,78.5 L554.6,78.2 L555.6,76.4 L556.6,81.4 L557.7,79.0 L558.7,72.1 L559.7,72.1 L560.7,70.3 L561.7,71.4 L562.7,77.6 L563.8,77.9 L564.8,70.0 L565.8,74.1 L566.8,78.3 L567.8,80.4 L568.8,71.7 L569.8,76.9 L570.9,80.7 L571.9,84.9 L572.9,79.0 L573.9,85.6 L574.9,74.8 L575.9,68.9 L577.0,63.1 L578.0,73.1 L579.0,77.7 L580.0,80.8 L580.0,188.0 Z" fill="var(--up)" fill-opacity=".08" stroke="none"/><polyline points="50.0,61.8 51.0,79.3 52.0,93.7 53.0,114.7 54.1,104.1 55.1,108.9 56.1,94.8 57.1,87.6 58.1,94.1 59.1,86.2 60.2,84.8 61.2,73.1 62.2,68.6 63.2,61.1 64.2,65.9 65.2,58.7 66.2,63.1 67.3,50.7 68.3,54.2 69.3,55.6 70.3,56.2 71.3,53.5 72.3,47.3 73.4,47.3 74.4,65.5 75.4,68.6 76.4,73.1 77.4,87.6 78.4,77.6 79.4,78.3 80.5,73.1 81.5,66.2 82.5,61.1 83.5,56.6 84.5,54.2 85.5,58.0 86.6,41.8 87.6,50.7 88.6,45.9 89.6,46.6 90.6,53.5 91.6,44.6 92.6,42.1 93.7,39.7 94.7,48.7 95.7,52.5 96.7,59.7 97.7,55.2 98.7,67.9 99.8,65.5 100.8,57.3 101.8,62.4 102.8,53.2 103.8,47.3 104.8,52.1 105.8,51.1 106.9,54.9 107.9,52.5 108.9,63.5 109.9,71.4 110.9,73.4 111.9,77.2 113.0,86.5 114.0,82.0 115.0,90.3 116.0,89.3 117.0,102.0 118.0,98.6 119.0,99.6 120.1,88.9 121.1,76.9 122.1,72.8 123.1,71.0 124.1,72.8 125.1,77.2 126.1,75.9 127.2,82.4 128.2,88.6 129.2,84.5 130.2,90.6 131.2,86.2 132.2,77.2 133.3,73.8 134.3,65.5 135.3,63.8 136.3,62.4 137.3,62.4 138.3,61.4 139.3,65.5 140.4,72.8 141.4,74.5 142.4,80.7 143.4,81.7 144.4,83.1 145.4,90.6 146.5,94.8 147.5,96.2 148.5,100.6 149.5,105.8 150.5,117.1 151.5,151.2 152.5,148.4 153.6,139.8 154.6,139.8 155.6,129.9 156.6,129.9 157.6,130.2 158.6,138.8 159.7,151.9 160.7,151.5 161.7,151.5 162.7,153.6 163.7,142.6 164.7,143.3 165.7,143.3 166.8,141.9 167.8,141.9 168.8,156.7 169.8,152.9 170.8,142.9 171.8,129.9 172.9,120.6 173.9,113.7 174.9,113.7 175.9,94.1 176.9,100.3 177.9,94.4 178.9,94.8 180.0,80.7 181.0,92.4 182.0,97.9 183.0,88.2 184.0,97.9 185.0,104.1 186.1,102.7 187.1,94.4 188.1,94.1 189.1,97.9 190.1,96.8 191.1,93.7 192.1,102.0 193.2,90.3 194.2,90.6 195.2,90.6 196.2,85.1 197.2,83.8 198.2,86.2 199.3,95.5 200.3,94.1 201.3,95.1 202.3,95.1 203.3,103.0 204.3,93.4 205.3,106.1 206.4,117.5 207.4,109.9 208.4,115.8 209.4,108.2 210.4,117.5 211.4,131.9 212.5,136.1 213.5,141.6 214.5,131.9 215.5,122.0 216.5,125.0 217.5,118.9 218.5,122.6 219.6,129.9 220.6,119.5 221.6,118.9 222.6,115.1 223.6,119.5 224.6,128.8 225.7,120.9 226.7,118.5 227.7,116.1 228.7,134.3 229.7,168.0 230.7,176.0 231.7,178.0 232.8,161.5 233.8,163.2 234.8,155.3 235.8,145.0 236.8,145.3 237.8,152.2 238.9,146.7 239.9,146.7 240.9,161.5 241.9,147.1 242.9,140.5 243.9,129.2 244.9,129.3 246.0,125.5 247.0,116.2 248.0,112.5 249.0,113.5 250.0,87.1 251.0,90.2 252.0,95.6 253.1,89.1 254.1,80.2 255.1,77.5 256.1,61.0 257.1,64.8 258.1,73.0 259.2,57.5 260.2,48.3 261.2,48.3 262.2,48.3 263.2,69.6 264.2,76.1 265.2,77.5 266.3,77.5 267.3,58.6 268.3,70.7 269.3,67.3 270.3,62.4 271.3,64.5 272.4,60.7 273.4,61.4 274.4,66.2 275.4,58.3 276.4,56.9 277.4,50.7 278.4,53.2 279.5,49.0 280.5,59.7 281.5,56.6 282.5,67.6 283.5,72.4 284.5,72.4 285.6,71.0 286.6,60.7 287.6,55.2 288.6,68.6 289.6,63.8 290.6,61.4 291.6,57.6 292.7,45.9 293.7,53.5 294.7,49.4 295.7,49.4 296.7,58.0 297.7,59.0 298.8,59.0 299.8,57.3 300.8,66.6 301.8,62.4 302.8,80.0 303.8,75.2 304.8,69.7 305.9,68.3 306.9,75.2 307.9,58.3 308.9,53.8 309.9,60.7 310.9,57.3 312.0,67.9 313.0,69.0 314.0,79.0 315.0,86.2 316.0,98.6 317.0,90.6 318.0,91.0 319.1,95.8 320.1,91.7 321.1,87.2 322.1,91.3 323.1,81.0 324.1,72.4 325.2,78.6 326.2,83.4 327.2,83.8 328.2,75.5 329.2,75.5 330.2,79.6 331.2,62.4 332.3,73.8 333.3,74.5 334.3,72.1 335.3,74.5 336.3,75.5 337.3,75.5 338.4,86.2 339.4,87.9 340.4,83.8 341.4,83.8 342.4,82.7 343.4,85.5 344.4,88.6 345.5,74.1 346.5,80.3 347.5,88.2 348.5,95.1 349.5,90.6 350.5,86.9 351.6,86.2 352.6,90.3 353.6,85.1 354.6,91.7 355.6,99.2 356.6,88.9 357.6,88.9 358.7,84.8 359.7,86.9 360.7,87.6 361.7,81.4 362.7,85.5 363.7,90.0 364.8,90.0 365.8,98.9 366.8,121.6 367.8,112.3 368.8,101.3 369.8,101.3 370.8,116.8 371.9,109.2 372.9,96.2 373.9,93.4 374.9,99.6 375.9,96.8 376.9,95.8 378.0,88.9 379.0,104.1 380.0,114.4 381.0,115.4 382.0,116.1 383.0,119.5 384.0,119.5 385.1,117.1 386.1,120.2 387.1,110.9 388.1,106.8 389.1,100.3 390.1,96.7 391.1,109.4 392.2,111.8 393.2,122.5 394.2,121.1 395.2,124.6 396.2,132.2 397.2,116.0 398.3,113.5 399.3,96.3 400.3,88.4 401.3,88.4 402.3,82.9 403.3,95.3 404.3,97.7 405.4,93.2 406.4,90.5 407.4,91.8 408.4,101.1 409.4,104.6 410.4,92.9 411.5,83.2 412.5,85.6 413.5,81.8 414.5,88.7 415.5,84.9 416.5,87.7 417.5,88.4 418.6,80.8 419.6,80.8 420.6,79.8 421.6,79.8 422.6,78.7 423.6,75.6 424.7,79.8 425.7,89.4 426.7,89.4 427.7,84.2 428.7,79.1 429.7,70.8 430.7,79.3 431.8,65.9 432.8,63.8 433.8,65.5 434.8,70.4 435.8,63.1 436.8,61.4 437.9,63.1 438.9,63.1 439.9,77.6 440.9,67.3 441.9,68.3 442.9,71.7 443.9,67.3 445.0,72.6 446.0,80.5 447.0,77.1 448.0,72.6 449.0,73.0 450.0,79.2 451.1,70.6 452.1,75.4 453.1,69.2 454.1,70.6 455.1,69.9 456.1,72.3 457.1,81.2 458.2,78.8 459.2,78.8 460.2,76.1 461.2,73.0 462.2,77.8 463.2,74.4 464.3,81.6 465.3,80.5 466.3,79.5 467.3,74.0 468.3,79.5 469.3,81.6 470.3,90.2 471.4,87.1 472.4,98.1 473.4,110.4 474.4,111.1 475.4,116.2 476.4,120.4 477.5,132.4 478.5,132.0 479.5,129.3 480.5,127.2 481.5,136.8 482.5,139.2 483.5,152.6 484.6,145.8 485.6,144.4 486.6,140.6 487.6,148.9 488.6,154.0 489.6,153.3 490.7,146.1 491.7,141.0 492.7,135.8 493.7,135.8 494.7,130.0 495.7,135.8 496.7,103.5 497.8,101.8 498.8,111.4 499.8,101.5 500.8,95.3 501.8,98.1 502.8,96.7 503.9,82.9 504.9,80.9 505.9,88.4 506.9,93.2 507.9,92.6 508.9,97.0 509.9,99.1 511.0,97.7 512.0,102.5 513.0,91.9 514.0,93.6 515.0,99.1 516.0,96.0 517.0,91.9 518.1,96.0 519.1,98.4 520.1,101.8 521.1,100.1 522.1,108.7 523.1,107.0 524.2,111.4 525.2,100.5 526.2,106.6 527.2,97.7 528.2,95.0 529.2,89.5 530.2,89.5 531.3,90.8 532.3,92.9 533.3,90.8 534.3,94.3 535.3,98.7 536.3,97.7 537.4,101.5 538.4,92.2 539.4,93.9 540.4,98.1 541.4,88.8 542.4,100.5 543.4,91.2 544.5,82.9 545.5,79.5 546.5,75.7 547.5,95.3 548.5,92.9 549.5,92.9 550.6,93.0 551.6,86.1 552.6,78.5 553.6,78.5 554.6,78.2 555.6,76.4 556.6,81.4 557.7,79.0 558.7,72.1 559.7,72.1 560.7,70.3 561.7,71.4 562.7,77.6 563.8,77.9 564.8,70.0 565.8,74.1 566.8,78.3 567.8,80.4 568.8,71.7 569.8,76.9 570.9,80.7 571.9,84.9 572.9,79.0 573.9,85.6 574.9,74.8 575.9,68.9 577.0,63.1 578.0,73.1 579.0,77.7 580.0,80.8" fill="none" stroke="var(--up)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="580.0" cy="80.8" r="3" fill="var(--up)"/><text x="586" y="94.8" font-size="10" fill="var(--up)">62%</text></svg></div>
 </div>
 
 
@@ -717,7 +728,7 @@
   
   <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px">
     <div>
-      <div style="font-size:32px;font-weight:800;font-family:var(--num)">48</div>
+      <div style="font-size:32px;font-weight:800;font-family:var(--num)">50</div>
       <div class="muted sm">/ 100</div>
     </div>
     <div>
@@ -725,7 +736,7 @@
       <div class="muted sm" style="margin-top:4px">11 <span class="l-en">legs driving it</span><span class="l-zh">项指标合成</span></div>
     </div>
     <div style="flex:1;min-width:100px">
-      <div class="pgauge"><i style="left:48%"></i></div>
+      <div class="pgauge"><i style="left:50%"></i></div>
       <div class="pends"><span><span class="l-en">Fear</span><span class="l-zh">恐惧</span></span><span><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span></div>
     </div>
   </div>
@@ -737,19 +748,19 @@
   
   <div class="leg">
     <span style="flex:0 0 130px;font-size:12.5px"><span class="l-en">Junk demand (HY OAS)</span><span class="l-zh">高收益需求（HY 利差）</span></span>
-    <div class="leg-bar"><i style="width:30.633333333333333%;background:var(--up)"></i></div>
+    <div class="leg-bar"><i style="width:30.233333333333334%;background:var(--up)"></i></div>
     <span class="muted sm" style="flex:0 0 60px;text-align:right">+0.9</span>
   </div>
   
   <div class="leg">
     <span style="flex:0 0 130px;font-size:12.5px"><span class="l-en">NAAIM exposure</span><span class="l-zh">NAAIM 仓位敞口</span></span>
-    <div class="leg-bar"><i style="width:23.4%;background:var(--up)"></i></div>
-    <span class="muted sm" style="flex:0 0 60px;text-align:right">+0.7</span>
+    <div class="leg-bar"><i style="width:17.3%;background:var(--up)"></i></div>
+    <span class="muted sm" style="flex:0 0 60px;text-align:right">+0.5</span>
   </div>
   
   <div class="leg">
-    <span style="flex:0 0 130px;font-size:12.5px"><span class="l-en">52-week strength (new-high ratio)</span><span class="l-zh">52周强势（新高比例）</span></span>
-    <div class="leg-bar"><i style="width:13.766666666666666%;background:var(--up)"></i></div>
+    <span style="flex:0 0 130px;font-size:12.5px"><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></span>
+    <div class="leg-bar"><i style="width:12.8%;background:var(--up)"></i></div>
     <span class="muted sm" style="flex:0 0 60px;text-align:right">+0.4</span>
   </div>
   
@@ -771,72 +782,72 @@
         
         <tr>
           <td class="l"><b><span class="l-en">SPX momentum (vs 125d MA)</span><span class="l-zh">标普动量（对比125日均线）</span></b></td>
-          <td>2.67 <span class="muted sm">% above/below MA</span></td>
-          <td class=" sm">+0.01</td>
-          <td class="sm muted">8431</td>
+          <td>4.33 <span class="muted sm">% above/below MA</span></td>
+          <td class=" sm">+0.28</td>
+          <td class="sm muted">8432</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">52-week strength (new-high ratio)</span><span class="l-zh">52周强势（新高比例）</span></b></td>
-          <td>0.88 <span class="muted sm">ratio 0-1</span></td>
-          <td class=" sm">+0.41</td>
-          <td class="sm muted">14965</td>
+          <td>0.58 <span class="muted sm">ratio 0-1</span></td>
+          <td class=" sm">-0.49</td>
+          <td class="sm muted">14966</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">McClellan oscillator</span><span class="l-zh">麦克莱伦振荡器</span></b></td>
-          <td>8.10 <span class="muted sm">oscillator</span></td>
-          <td class=" sm">+0.19</td>
-          <td class="sm muted">16202</td>
+          <td>-5.40 <span class="muted sm">oscillator</span></td>
+          <td class=" sm">-0.12</td>
+          <td class="sm muted">16203</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">Junk demand (HY OAS)</span><span class="l-zh">高收益需求（HY 利差）</span></b></td>
-          <td>2.84 <span class="muted sm">OAS bps</span></td>
-          <td class="pos sm">+0.92</td>
-          <td class="sm muted">7723</td>
+          <td>2.87 <span class="muted sm">OAS bps</span></td>
+          <td class="pos sm">+0.91</td>
+          <td class="sm muted">7724</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">Safe haven demand (SPY − TLT 20d)</span><span class="l-zh">避险需求（SPY−TLT 20日）</span></b></td>
-          <td>1.46 <span class="muted sm">20d ret diff %</span></td>
-          <td class=" sm">+0.14</td>
-          <td class="sm muted">6018</td>
+          <td>2.63 <span class="muted sm">20d ret diff %</span></td>
+          <td class=" sm">+0.33</td>
+          <td class="sm muted">6019</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">VIX level</span><span class="l-zh">VIX 水平</span></b></td>
-          <td>20.70 <span class="muted sm">VIX points</span></td>
-          <td class=" sm">-0.16</td>
-          <td class="sm muted">9212</td>
+          <td>17.10 <span class="muted sm">VIX points</span></td>
+          <td class=" sm">+0.30</td>
+          <td class="sm muted">9213</td>
         </tr>
         
         <tr>
           <td class="l"><b><span class="l-en">VIX trend (20d change)</span><span class="l-zh">VIX 趋势（20日变动）</span></b></td>
-          <td>4.21 <span class="muted sm">VIX 20d delta</span></td>
-          <td class="neg sm">-0.81</td>
-          <td class="sm muted">9192</td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></b></td>
-          <td>0.96 <span class="muted sm">ratio (&gt;=1=backwardation)</span></td>
-          <td class="neg sm">-0.64</td>
-          <td class="sm muted">5040</td>
-        </tr>
-        
-        <tr>
-          <td class="l"><b><span class="l-en">CBOE SKEW (tail risk pricing)</span><span class="l-zh">CBOE SKEW（尾部风险定价）</span></b></td>
-          <td>143.00 <span class="muted sm">SKEW index</span></td>
-          <td class="neg sm">-1.70</td>
+          <td>0.50 <span class="muted sm">VIX 20d delta</span></td>
+          <td class=" sm">-0.10</td>
           <td class="sm muted">9193</td>
         </tr>
         
         <tr>
+          <td class="l"><b><span class="l-en">VIX term structure (VIX/VIX3M)</span><span class="l-zh">VIX 期限结构（VIX/VIX3M）</span></b></td>
+          <td>0.88 <span class="muted sm">ratio (&gt;=1=backwardation)</span></td>
+          <td class=" sm">+0.38</td>
+          <td class="sm muted">5041</td>
+        </tr>
+        
+        <tr>
+          <td class="l"><b><span class="l-en">CBOE SKEW (tail risk pricing)</span><span class="l-zh">CBOE SKEW（尾部风险定价）</span></b></td>
+          <td>139.60 <span class="muted sm">SKEW index</span></td>
+          <td class="neg sm">-1.41</td>
+          <td class="sm muted">9194</td>
+        </tr>
+        
+        <tr>
           <td class="l"><b><span class="l-en">NAAIM exposure</span><span class="l-zh">NAAIM 仓位敞口</span></b></td>
-          <td>84.00 <span class="muted sm">% exposure 0-200</span></td>
-          <td class="pos sm">+0.70</td>
-          <td class="sm muted">1046</td>
+          <td>79.70 <span class="muted sm">% exposure 0-200</span></td>
+          <td class="pos sm">+0.52</td>
+          <td class="sm muted">1047</td>
         </tr>
         
         <tr>
@@ -869,8 +880,8 @@
       <span class="help">?<span class="tip"><span class="l-en">Two composites exist deliberately. Fear/Greed is the wide aggregate. Fear↔Euphoria is the RORO-side read (risk-on/risk-off positioning). They often agree; when they diverge, the divergence itself is the signal.</span><span class="l-zh">两个合成指标并存有意为之。恐惧/贪婪是宽幅综合。恐惧↔欣喜是RORO侧读（风险开/关持仓）。通常一致；背离时背离本身即是信号。</span></span></span>
     </div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-      <span style="font-size:18px;font-weight:700;font-family:var(--num)">81</span>
-      <span class="badge"><span class="l-en">Greed</span><span class="l-zh">贪婪</span></span>
+      <span style="font-size:18px;font-weight:700;font-family:var(--num)">100</span>
+      <span class="badge"><span class="l-en">Euphoria</span><span class="l-zh">欣喜</span></span>
       
       <span class="chip chip-neg">
         <span class="l-en">diverges</span><span class="l-zh">背离</span>
@@ -908,7 +919,7 @@
       <td class="l"><span class="l-en">10-yr Treasury futures speculators</span><span class="l-zh">10年期美债 期货投机者</span></td>
       <td class="l">
         
-        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:3.3%"></i></div>
+        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:3.6%"></i></div>
         
         <span class="sm"><span class="l-en">extreme short</span><span class="l-zh">极度做空</span></span>
          <span class="muted sm">— <span class="l-en">everyone is already short — most extreme in our records; reversal fuel</span><span class="l-zh">大家都已做空 — 我们记录中最极端；反转燃料</span></span>
@@ -920,7 +931,7 @@
       <td class="l"><span class="l-en">US Dollar futures speculators</span><span class="l-zh">美元 期货投机者</span></td>
       <td class="l">
         
-        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:62.8%"></i></div>
+        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:63.0%"></i></div>
         
         <span class="sm"><span class="l-en">leaning long</span><span class="l-zh">偏向做多</span></span>
          <span class="muted sm">— <span class="l-en">above normal, nothing extreme</span><span class="l-zh">高于正常，但不极端</span></span>
@@ -932,7 +943,7 @@
       <td class="l"><span class="l-en">Gold futures speculators</span><span class="l-zh">黄金 期货投机者</span></td>
       <td class="l">
         
-        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:92.8%"></i></div>
+        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:91.7%"></i></div>
         
         <span class="sm"><span class="l-en">crowded long</span><span class="l-zh">拥挤做多</span></span>
          <span class="muted sm">— <span class="l-en">everyone is already long — crowded; late to join</span><span class="l-zh">大家都已做多 — 拥挤；加入已晚</span></span>
@@ -944,7 +955,7 @@
       <td class="l"><span class="l-en">Pro fund managers</span><span class="l-zh">专业基金经理</span></td>
       <td class="l">
         
-        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:72.0%"></i></div>
+        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:63.3%"></i></div>
         
         <span class="sm"><span class="l-en">leaning invested</span><span class="l-zh">偏向重仓</span></span>
          <span class="muted sm">— <span class="l-en">above normal, nothing extreme</span><span class="l-zh">高于正常，但不极端</span></span>
@@ -966,8 +977,8 @@
       <td class="l"><span class="l-en">Market-maker effect</span><span class="l-zh">做市商效应</span></td>
       <td class="l">
         
-        <span class="sm"><span class="l-en">amplifying swings</span><span class="l-zh">放大波动</span></span>
-         <span class="muted sm">— <span class="l-en">market-makers&#39; hedging adds fuel to moves — expect bigger swings both ways</span><span class="l-zh">做市商对冲为波动添柴 — 预期双向波动更大</span></span>
+        <span class="sm"><span class="l-en">dampening swings</span><span class="l-zh">抑制波动</span></span>
+         <span class="muted sm">— <span class="l-en">market-makers&#39; hedging absorbs moves — calmer tape likely (and we&#39;re near the tipping point — it can flip any day)</span><span class="l-zh">做市商对冲吸收波动 — 盘面可能更平静（且我们已接近临界点 — 随时可能反转）</span></span>
         
       </td>
     </tr>
@@ -976,10 +987,10 @@
       <td class="l"><span class="l-en">Fear gauge</span><span class="l-zh">恐慌指标</span></td>
       <td class="l">
         
-        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:77.9%"></i></div>
+        <div class="pgauge" style="width:100px;display:inline-block;vertical-align:middle"><i style="left:19.8%"></i></div>
         
-        <span class="sm"><span class="l-en">leaning stressed</span><span class="l-zh">偏向紧张</span></span>
-         <span class="muted sm">— <span class="l-en">above normal, nothing extreme</span><span class="l-zh">高于正常，但不极端</span></span>
+        <span class="sm"><span class="l-en">leaning calm</span><span class="l-zh">偏向平静</span></span>
+         <span class="muted sm">— <span class="l-en">below normal, nothing extreme</span><span class="l-zh">低于正常，但不极端</span></span>
         
       </td>
     </tr>
@@ -994,11 +1005,11 @@
 <div class="panel span6 rail-mood anim-d4" id="vix-monitor">
   <h2><span class="l-en">VIX — volatility level</span><span class="l-zh">VIX — 波动率水平</span></h2>
   <div class="sub" style="margin-bottom:8px">
-    <span style="font-size:24px;font-weight:700;font-family:var(--num)">20.66</span>
-    <span class="neg" style="margin-left:6px">+2.45 (+13.5%)</span>
-    <span class="badge" style="margin-left:8px"><span class="l-en"><span class="l-en">elevated</span><span class="l-zh">偏高</span></span><span class="l-zh"><span class="l-en">elevated</span><span class="l-zh">偏高</span></span></span>
+    <span style="font-size:24px;font-weight:700;font-family:var(--num)">15.99</span>
+    <span class="pos" style="margin-left:6px">-1.10 (-6.4%)</span>
+    <span class="badge" style="margin-left:8px"><span class="l-en"><span class="l-en">normal</span><span class="l-zh">正常</span></span><span class="l-zh"><span class="l-en">normal</span><span class="l-zh">正常</span></span></span>
     
-    <div class="muted sm" style="margin-top:4px"><span class="l-en">Term structure:</span><span class="l-zh">期限结构:</span> <b>0.96</b> — <span class="l-en"><span class="l-en">contango</span><span class="l-zh">正向</span></span><span class="l-zh"><span class="l-en">contango</span><span class="l-zh">正向</span></span></div>
+    <div class="muted sm" style="margin-top:4px"><span class="l-en">Term structure:</span><span class="l-zh">期限结构:</span> <b>0.84</b> — <span class="l-en"><span class="l-en">contango</span><span class="l-zh">正向</span></span><span class="l-zh"><span class="l-en">contango</span><span class="l-zh">正向</span></span></div>
     
   </div>
   
@@ -1008,7 +1019,7 @@
     <span class="chip chip-warn"><span class="l-en">Stressed 20–28</span><span class="l-zh">受压20–28</span></span>
     <span class="chip chip-neg"><span class="l-en">Crisis &gt;28</span><span class="l-zh">危机&gt;28</span></span>
   </div>
-  <div class="chart"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible"><line x1="44" y1="145.0" x2="620" y2="145.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="40" y="149.0" text-anchor="end" font-size="10" fill="var(--muted)">16</text><line x1="44" y1="102.0" x2="620" y2="102.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="40" y="106.0" text-anchor="end" font-size="10" fill="var(--muted)">19</text><line x1="44" y1="59.0" x2="620" y2="59.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="40" y="63.0" text-anchor="end" font-size="10" fill="var(--muted)">22</text><line x1="44" y1="146.1" x2="620" y2="146.1" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="4 4" opacity="0.6"/><line x1="44" y1="89.7" x2="620" y2="89.7" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="4 4" opacity="0.6"/><text x="44" y="214" text-anchor="start" font-size="10" fill="var(--muted)">Apr 30</text><text x="620" y="214" text-anchor="end" font-size="10" fill="var(--muted)">Jul 29</text><path d="M44.0,188.0 L44.0,133.5 L53.0,132.1 L62.0,113.8 L71.0,126.6 L80.0,126.5 L89.0,130.9 L98.0,129.3 L107.0,112.5 L116.0,118.0 L125.0,119.7 L134.0,128.3 L143.0,111.8 L152.0,120.4 L161.0,117.0 L170.0,125.8 L179.0,135.4 L188.0,136.2 L197.0,137.8 L206.0,131.8 L215.0,142.0 L224.0,149.8 L233.0,155.7 L242.0,145.4 L251.0,149.3 L260.0,145.2 L269.0,154.6 L278.0,68.3 L287.0,104.9 L296.0,91.5 L305.0,58.3 L314.0,97.6 L323.0,122.4 L332.0,143.3 L341.0,140.3 L350.0,111.7 L359.0,140.4 L368.0,135.1 L377.0,128.0 L386.0,96.8 L395.0,109.0 L404.0,105.3 L413.0,112.1 L422.0,122.8 L431.0,139.7 L440.0,137.8 L449.0,144.0 L458.0,144.0 L467.0,152.2 L476.0,144.3 L485.0,133.4 L494.0,148.4 L503.0,159.8 L512.0,129.7 L521.0,139.0 L530.0,150.7 L539.0,135.8 L548.0,107.0 L557.0,108.7 L566.0,131.3 L575.0,137.1 L584.0,108.0 L593.0,109.7 L602.0,108.4 L611.0,114.9 L620.0,80.3 L620.0,188.0 Z" fill="var(--warn)" fill-opacity=".08" stroke="none"/><polyline points="44.0,133.5 53.0,132.1 62.0,113.8 71.0,126.6 80.0,126.5 89.0,130.9 98.0,129.3 107.0,112.5 116.0,118.0 125.0,119.7 134.0,128.3 143.0,111.8 152.0,120.4 161.0,117.0 170.0,125.8 179.0,135.4 188.0,136.2 197.0,137.8 206.0,131.8 215.0,142.0 224.0,149.8 233.0,155.7 242.0,145.4 251.0,149.3 260.0,145.2 269.0,154.6 278.0,68.3 287.0,104.9 296.0,91.5 305.0,58.3 314.0,97.6 323.0,122.4 332.0,143.3 341.0,140.3 350.0,111.7 359.0,140.4 368.0,135.1 377.0,128.0 386.0,96.8 395.0,109.0 404.0,105.3 413.0,112.1 422.0,122.8 431.0,139.7 440.0,137.8 449.0,144.0 458.0,144.0 467.0,152.2 476.0,144.3 485.0,133.4 494.0,148.4 503.0,159.8 512.0,129.7 521.0,139.0 530.0,150.7 539.0,135.8 548.0,107.0 557.0,108.7 566.0,131.3 575.0,137.1 584.0,108.0 593.0,109.7 602.0,108.4 611.0,114.9 620.0,80.3" fill="none" stroke="var(--warn)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="620.0" cy="80.3" r="3.5" fill="var(--warn)"/><text x="608.0" y="74.3" font-size="10" fill="var(--warn)">20.7</text></svg></div>
+  <div class="chart"><svg viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;display:block;overflow:visible"><line x1="44" y1="145.0" x2="620" y2="145.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="40" y="149.0" text-anchor="end" font-size="10" fill="var(--muted)">16</text><line x1="44" y1="102.0" x2="620" y2="102.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="40" y="106.0" text-anchor="end" font-size="10" fill="var(--muted)">19</text><line x1="44" y1="59.0" x2="620" y2="59.0" stroke="var(--line)" stroke-width="1" stroke-dasharray="3 3"/><text x="40" y="63.0" text-anchor="end" font-size="10" fill="var(--muted)">22</text><line x1="44" y1="146.1" x2="620" y2="146.1" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="4 4" opacity="0.6"/><line x1="44" y1="89.7" x2="620" y2="89.7" stroke="var(--muted)" stroke-width="0.8" stroke-dasharray="4 4" opacity="0.6"/><text x="44" y="214" text-anchor="start" font-size="10" fill="var(--muted)">May 04</text><text x="620" y="214" text-anchor="end" font-size="10" fill="var(--muted)">Jul 31</text><path d="M44.0,188.0 L44.0,113.8 L53.0,126.6 L62.0,126.5 L71.0,130.9 L80.0,129.3 L89.0,112.5 L98.0,118.0 L107.0,119.7 L116.0,128.3 L125.0,111.8 L134.0,120.4 L143.0,117.0 L152.0,125.8 L161.0,135.4 L170.0,136.2 L179.0,137.8 L188.0,131.8 L197.0,142.0 L206.0,149.8 L215.0,155.7 L224.0,145.4 L233.0,149.3 L242.0,145.2 L251.0,154.6 L260.0,68.3 L269.0,104.9 L278.0,91.5 L287.0,58.3 L296.0,97.6 L305.0,122.4 L314.0,143.3 L323.0,140.3 L332.0,111.7 L341.0,140.4 L350.0,135.1 L359.0,128.0 L368.0,96.8 L377.0,109.0 L386.0,105.3 L395.0,112.1 L404.0,122.8 L413.0,139.7 L422.0,137.8 L431.0,144.0 L440.0,144.0 L449.0,152.2 L458.0,144.3 L467.0,133.4 L476.0,148.4 L485.0,159.8 L494.0,129.7 L503.0,139.0 L512.0,150.7 L521.0,135.8 L530.0,107.0 L539.0,108.7 L548.0,131.3 L557.0,137.1 L566.0,108.0 L575.0,109.7 L584.0,108.4 L593.0,114.9 L602.0,80.3 L611.0,130.7 L620.0,146.2 L620.0,188.0 Z" fill="var(--warn)" fill-opacity=".08" stroke="none"/><polyline points="44.0,113.8 53.0,126.6 62.0,126.5 71.0,130.9 80.0,129.3 89.0,112.5 98.0,118.0 107.0,119.7 116.0,128.3 125.0,111.8 134.0,120.4 143.0,117.0 152.0,125.8 161.0,135.4 170.0,136.2 179.0,137.8 188.0,131.8 197.0,142.0 206.0,149.8 215.0,155.7 224.0,145.4 233.0,149.3 242.0,145.2 251.0,154.6 260.0,68.3 269.0,104.9 278.0,91.5 287.0,58.3 296.0,97.6 305.0,122.4 314.0,143.3 323.0,140.3 332.0,111.7 341.0,140.4 350.0,135.1 359.0,128.0 368.0,96.8 377.0,109.0 386.0,105.3 395.0,112.1 404.0,122.8 413.0,139.7 422.0,137.8 431.0,144.0 440.0,144.0 449.0,152.2 458.0,144.3 467.0,133.4 476.0,148.4 485.0,159.8 494.0,129.7 503.0,139.0 512.0,150.7 521.0,135.8 530.0,107.0 539.0,108.7 548.0,131.3 557.0,137.1 566.0,108.0 575.0,109.7 584.0,108.4 593.0,114.9 602.0,80.3 611.0,130.7 620.0,146.2" fill="none" stroke="var(--warn)" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="620.0" cy="146.2" r="3.5" fill="var(--warn)"/><text x="608.0" y="140.2" font-size="10" fill="var(--warn)">16.0</text></svg></div>
 </div>
 
 
@@ -1029,44 +1040,77 @@
       <td class="l"><b><span class="l-en">Gold</span><span class="l-zh">黄金</span></b></td>
       <td class="sm">
         <span class="l-en">below trend</span><span class="l-zh">趋势下方</span>
-        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 54 · 50d: below</span><span class="l-zh">RSI(14): 54 · 50日: 下方</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 50 · 50d: below</span><span class="l-zh">RSI(14): 50 · 50日: 下方</span></span></span>
       </td>
-      <td class="neg">-12.0%</td>
-      <td class="neg">-22.0%</td>
+      <td class="neg">-12.8%</td>
+      <td class="neg">-22.9%</td>
     </tr>
     
     <tr>
       <td class="l"><b><span class="l-en">Crude Oil</span><span class="l-zh">原油</span></b></td>
       <td class="sm">
         <span class="l-en">above trend</span><span class="l-zh">趋势上方</span>
-        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 55 · 50d: above</span><span class="l-zh">RSI(14): 55 · 50日: 上方</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 58 · 50d: above</span><span class="l-zh">RSI(14): 58 · 50日: 上方</span></span></span>
       </td>
-      <td class="neg">-13.9%</td>
-      <td class="neg">-25.2%</td>
+      <td class="neg">-14.1%</td>
+      <td class="neg">-23.2%</td>
     </tr>
     
     <tr>
       <td class="l"><b><span class="l-en">Copper</span><span class="l-zh">铜</span></b></td>
       <td class="sm">
         <span class="l-en">above trend</span><span class="l-zh">趋势上方</span>
-        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 55 · 50d: above</span><span class="l-zh">RSI(14): 55 · 50日: 上方</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 60 · 50d: above</span><span class="l-zh">RSI(14): 60 · 50日: 上方</span></span></span>
       </td>
-      <td class="neg">-0.5%</td>
-      <td class="">-4.0%</td>
+      <td class="neg">-1.9%</td>
+      <td class="">-2.1%</td>
     </tr>
     
     <tr>
       <td class="l"><b><span class="l-en">US Dollar</span><span class="l-zh">美元</span></b></td>
       <td class="sm">
         <span class="l-en">above trend</span><span class="l-zh">趋势上方</span>
-        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 47 · 50d: above</span><span class="l-zh">RSI(14): 47 · 50日: 上方</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">RSI(14): 34 · 50d: below</span><span class="l-zh">RSI(14): 34 · 50日: 下方</span></span></span>
       </td>
-      <td class="pos">+3.0%</td>
-      <td class="">-0.8%</td>
+      <td class="pos">+1.5%</td>
+      <td class="">-1.8%</td>
     </tr>
     
     </tbody>
   </table>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="panel span12 rail-mood anim-d5 dislo-panel" id="dislocation" style="--lit:var(--muted);--dlp:var(--up)">
+  
+  <h2><span class="l-en">Stress selloff filter</span><span class="l-zh">压力抛售过滤器</span>
+    <span class="help">?<span class="tip"><span class="l-en">A risk FILTER that sits in FRONT of the capitulation gauge: when a stress dislocation hits (VIX panic, a &gt;10% drawdown, a variance-premium extreme or VIX backwardation), it asks ONE question — is the Fed put present? PUT-ABSENT = a recession is underway (real-time Sahm &gt;= 0.50) OR inflation locks the Fed (sustained 10y breakeven &gt;= 2.5%). What the replay actually shows: it REFUSED the 2008 crash (put-absent from 2008-04), but it printed buyable early in the 2000-02 bear and twice in 2022 with the breakeven within 0.02pp of the cutoff. So this is a drawdown filter with known misses, not a knife-proof shield, and not a bounce-catcher — measured on SPY 1997-2026, see research/DISLOCATION_VALIDATION.md.</span><span class="l-zh">位于恐慌触底指标之前的风险过滤器：当压力错位出现（VIX 恐慌、&gt;10% 回撤、方差溢价极端或 VIX 倒挂）时，它只问一个问题 — 美联储托底是否在位？托底缺失＝衰退进行中（实时 Sahm ≥ 0.50）或通胀锁住美联储（持续十年期盈亏平衡 ≥ 2.5%）。回放实际显示：它拒绝了 2008 年的崩盘（自 2008-04 起判定托底缺失），但在 2000-02 熊市早期给出过「可买入」，2022 年内亦有两次，且这两次盈亏平衡率距阈值均在 0.02 个百分点以内。因此这是一个存在已知漏判的回撤过滤器，既非防飞刀的护盾，也不是抄反弹的工具 — 基于标普 1997-2026 实测。</span></span></span>
+  </h2>
+  <p class="dlx-sub"><span class="l-en">One question, asked when selling turns stressed: would the Fed still step in? It filters how deep the damage usually gets — it never says buy.</span><span class="l-zh">当抛售转为压力状态时只问一个问题：美联储是否仍会出手？它过滤的是「通常会跌多深」，而非买入时机。</span></p>
+
+  
+  
+  <p class="dlx-dormant"><b><span class="l-en">Quiet right now.</span><span class="l-zh">当前休眠。</span></b>
+    <span class="l-en">Markets are not in a stress selloff, so this filter is asleep. It wakes only when one of four stress readings crosses its line — and you will see it on the macro board when it does.</span><span class="l-zh">市场未处于压力抛售，该过滤器处于休眠。仅当四项压力读数之一越线时才会启动 — 届时宏观看板会提示。</span></p>
+  
 </div>
 
 
@@ -1097,7 +1141,7 @@
     
     <div class="sub span6">
       <h3><span class="l-en">Dollar regime</span><span class="l-zh">美元周期</span>
-        <span class="help">?<span class="tip"><span class="l-en">Desk legs — real yield z: +1.00 · Fed path: +50bp to 12m · REER gap: +0.8% · COT pctile: 78 · trend legs up: 3/4 · liquidity: soft · smile confirmation: medium</span><span class="l-zh">操盘台分项 — 实际利率z: +1.00 · 美联储路径: +50bp/12月 · REER缺口: +0.8% · COT百分位: 78 · 趋势上行: 3/4 · 流动性: soft · 微笑确认: medium</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Desk legs — real yield z: +1.00 · Fed path: +48bp to 12m · REER gap: +0.8% · COT pctile: 78 · trend legs up: 3/4 · liquidity: supportive · smile confirmation: high</span><span class="l-zh">操盘台分项 — 实际利率z: +1.00 · 美联储路径: +48bp/12月 · REER缺口: +0.8% · COT百分位: 78 · 趋势上行: 3/4 · 流动性: supportive · 微笑确认: high</span></span></span>
       </h3>
       
       
@@ -1119,7 +1163,7 @@
       
       
       
-      <span class="chip"><span class="l-en">held </span><span class="l-zh">已持续</span>102<span class="l-en"> days</span><span class="l-zh">天</span></span>
+      <span class="chip"><span class="l-en">held </span><span class="l-zh">已持续</span>103<span class="l-en"> days</span><span class="l-zh">天</span></span>
       
     </div>
     
@@ -1136,27 +1180,14 @@
       
       
       <div class="str-bar-row">
-        <span class="str-ccy ">CAD</span>
+        <span class="str-ccy ">JPY</span>
         <div class="str-bar-track">
           
-          <div class="str-bar-fill pos-fill" style="width:32.800000000000004%"></div>
+          <div class="str-bar-fill pos-fill" style="width:26.450000000000003%"></div>
           
           <div class="str-bar-center"></div>
         </div>
-        <span class="str-val pos">+1.2%</span>
-      </div>
-      
-      
-      
-      <div class="str-bar-row">
-        <span class="str-ccy str-em">BRL</span>
-        <div class="str-bar-track">
-          
-          <div class="str-bar-fill pos-fill" style="width:14.000000000000002%"></div>
-          
-          <div class="str-bar-center"></div>
-        </div>
-        <span class="str-val pos">+0.6%</span>
+        <span class="str-val pos">+1.5%</span>
       </div>
       
       
@@ -1165,11 +1196,11 @@
         <span class="str-ccy ">AUD</span>
         <div class="str-bar-track">
           
-          <div class="str-bar-fill pos-fill" style="width:12.950000000000001%"></div>
+          <div class="str-bar-fill pos-fill" style="width:17.95%"></div>
           
           <div class="str-bar-center"></div>
         </div>
-        <span class="str-val pos">+0.6%</span>
+        <span class="str-val pos">+1.3%</span>
       </div>
       
       
@@ -1178,50 +1209,37 @@
         <span class="str-ccy ">EUR</span>
         <div class="str-bar-track">
           
-          <div class="str-bar-fill pos-fill" style="width:11.3%"></div>
+          <div class="str-bar-fill pos-fill" style="width:17.7%"></div>
           
           <div class="str-bar-center"></div>
         </div>
-        <span class="str-val pos">+0.5%</span>
+        <span class="str-val pos">+1.3%</span>
       </div>
       
       
       
       <div class="str-bar-row">
-        <span class="str-ccy str-em">CNH</span>
+        <span class="str-ccy ">CAD</span>
         <div class="str-bar-track">
           
-          <div class="str-bar-fill pos-fill" style="width:7.9%"></div>
+          <div class="str-bar-fill pos-fill" style="width:10.4%"></div>
           
           <div class="str-bar-center"></div>
         </div>
-        <span class="str-val pos">+0.4%</span>
+        <span class="str-val pos">+1.1%</span>
       </div>
       
       
       
       <div class="str-bar-row">
-        <span class="str-ccy str-em">MXN</span>
+        <span class="str-ccy str-em">BRL</span>
         <div class="str-bar-track">
           
-          <div class="str-bar-fill neg-fill" style="width:0.75%"></div>
+          <div class="str-bar-fill pos-fill" style="width:10.35%"></div>
           
           <div class="str-bar-center"></div>
         </div>
-        <span class="str-val neg">+0.1%</span>
-      </div>
-      
-      
-      
-      <div class="str-bar-row">
-        <span class="str-ccy ">USD</span>
-        <div class="str-bar-track">
-          
-          <div class="str-bar-fill neg-fill" style="width:4.5%"></div>
-          
-          <div class="str-bar-center"></div>
-        </div>
-        <span class="str-val neg">—</span>
+        <span class="str-val pos">+1.1%</span>
       </div>
       
       
@@ -1230,11 +1248,37 @@
         <span class="str-ccy ">GBP</span>
         <div class="str-bar-track">
           
-          <div class="str-bar-fill neg-fill" style="width:11.799999999999999%"></div>
+          <div class="str-bar-fill pos-fill" style="width:0.2%"></div>
           
           <div class="str-bar-center"></div>
         </div>
-        <span class="str-val neg">-0.2%</span>
+        <span class="str-val pos">+0.8%</span>
+      </div>
+      
+      
+      
+      <div class="str-bar-row">
+        <span class="str-ccy str-em">MXN</span>
+        <div class="str-bar-track">
+          
+          <div class="str-bar-fill neg-fill" style="width:3.0%"></div>
+          
+          <div class="str-bar-center"></div>
+        </div>
+        <span class="str-val neg">+0.8%</span>
+      </div>
+      
+      
+      
+      <div class="str-bar-row">
+        <span class="str-ccy str-em">CNH</span>
+        <div class="str-bar-track">
+          
+          <div class="str-bar-fill neg-fill" style="width:12.55%"></div>
+          
+          <div class="str-bar-center"></div>
+        </div>
+        <span class="str-val neg">+0.5%</span>
       </div>
       
       <div class="muted sm" style="margin-top:6px"><span class="l-en">% move vs the dollar. Trailing move, not a forecast.</span><span class="l-zh">兑美元%变动。仅为近端走势，非预测。</span></div>
@@ -1258,7 +1302,7 @@
         
         <span class="l-en">Carry Unwind / Yen-Funded Deleveraging</span>
         <span class="l-zh">套息平仓 / 日元融资去杠杆</span>
-        <span class="muted sm">12/100</span>
+        <span class="muted sm">21/100</span>
         
         
         
@@ -1266,7 +1310,7 @@
         
         
         
-        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 12/100 · At this stress level, 15% of past cases saw the adverse move (base rate 11%, 95% CI 9–22%, n=1094)</span><span class="l-zh">压力强度 12/100 · 同等压力的历史案例中15%出现不利走势（基率11%，95%区间9–22%，n=1094）</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 21/100 · At this stress level, 17% of past cases saw the adverse move (base rate 11%, 95% CI 8–32%, n=377)</span><span class="l-zh">压力强度 21/100 · 同等压力的历史案例中17%出现不利走势（基率11%，95%区间8–32%，n=377）</span></span></span>
       </span>
       
       
@@ -1274,7 +1318,7 @@
         
         <span class="l-en">EM Crisis / Capital Flight</span>
         <span class="l-zh">新兴市场危机 / 资本外逃</span>
-        <span class="muted sm">40/100</span>
+        <span class="muted sm">42/100</span>
         
         
         
@@ -1282,7 +1326,23 @@
         
         
         
-        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 40/100 · At this stress level, 35% of past cases saw the adverse move (base rate 28%, 95% CI 18–58%, n=377). Managed/intervened regime truncates history — illustrative only.</span><span class="l-zh">压力强度 40/100 · 同等压力的历史案例中35%出现不利走势（基率28%，95%区间18–58%，n=377）。受管理/干预体制截断历史 — 仅供示意。</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 42/100 · At this stress level, 36% of past cases saw the adverse move (base rate 28%, 95% CI 18–59%, n=344). Managed/intervened regime truncates history — illustrative only.</span><span class="l-zh">压力强度 42/100 · 同等压力的历史案例中36%出现不利走势（基率28%，95%区间18–59%，n=344）。受管理/干预体制截断历史 — 仅供示意。</span></span></span>
+      </span>
+      
+      
+      <span class="stress-chip  ">
+        
+        <span class="l-en">Acute Safe-Haven Flight / Risk-Off</span>
+        <span class="l-zh">急性避险 / 风险规避</span>
+        <span class="muted sm">14/100</span>
+        
+        
+        
+        
+        
+        
+        
+        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 14/100 · At this stress level, 18% of past cases saw the adverse move (base rate 8%, 95% CI 13–24%, n=2653)</span><span class="l-zh">压力强度 14/100 · 同等压力的历史案例中18%出现不利走势（基率8%，95%区间13–24%，n=2653）</span></span></span>
       </span>
       
       
@@ -1290,7 +1350,7 @@
         
         <span class="l-en">Reflation / Risk-On Melt-Up</span>
         <span class="l-zh">再通胀 / 风险偏好上行</span>
-        <span class="muted sm">54/100</span>
+        <span class="muted sm">55/100</span>
         
         
         
@@ -1298,7 +1358,23 @@
         
         
         
-        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 54/100 · Not enough history at this stress level for a reliable read</span><span class="l-zh">压力强度 54/100 · 此压力水平历史样本不足，无可靠读数</span></span></span>
+        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 55/100 · Not enough history at this stress level for a reliable read</span><span class="l-zh">压力强度 55/100 · 此压力水平历史样本不足，无可靠读数</span></span></span>
+      </span>
+      
+      
+      <span class="stress-chip  ">
+        
+        <span class="l-en">FX Intervention Risk (BoJ/MoF · SNB)</span>
+        <span class="l-zh">外汇干预风险（日银/财务省 · 瑞士央行）</span>
+        <span class="muted sm">7/100</span>
+        
+        
+        
+        
+        
+        
+        
+        <span class="help">?<span class="tip"><span class="l-en">Stress intensity 7/100 · At this stress level, 3% of past cases saw the adverse move (base rate 4%, 95% CI 2–6%, n=2745). Managed/intervened regime truncates history — illustrative only.</span><span class="l-zh">压力强度 7/100 · 同等压力的历史案例中3%出现不利走势（基率4%，95%区间2–6%，n=2745）。受管理/干预体制截断历史 — 仅供示意。</span></span></span>
       </span>
       
       
@@ -1320,7 +1396,7 @@
         <span class="l-zh">离岸人民币：无异常压力</span>
       </div>
       
-      <span class="help">?<span class="tip"><span class="l-en">CNH basis: -48bp</span><span class="l-zh">CNH基差: -48bp</span></span></span>
+      <span class="help">?<span class="tip"><span class="l-en">CNH basis: -65bp</span><span class="l-zh">CNH基差: -65bp</span></span></span>
       
     </div>
     
@@ -1369,6 +1445,16 @@
       
       <div class="what-changed-row">
         <span class="sev-dot sev-high"></span>
+        <span class="muted sm" style="flex:0 0 84px;white-space:nowrap">2026-07-31</span>
+        <span>
+          <span class="l-en">Triple-red: USD, equities, and Treasuries all declining</span>
+          <span class="l-zh">三重下跌：美元、股市、国债同步下行</span>
+        </span>
+      </div>
+      
+      
+      <div class="what-changed-row">
+        <span class="sev-dot sev-high"></span>
         <span class="muted sm" style="flex:0 0 84px;white-space:nowrap">2026-07-30</span>
         <span>
           <span class="l-en">Triple-red: USD, equities, and Treasuries all declining</span>
@@ -1400,16 +1486,6 @@
       <div class="what-changed-row">
         <span class="sev-dot sev-low"></span>
         <span class="muted sm" style="flex:0 0 84px;white-space:nowrap">2026-07-27</span>
-        <span>
-          <span class="l-en">Triple-red cleared: safe-haven function may be restoring</span>
-          <span class="l-zh">三重下跌解除：避险功能可能恢复</span>
-        </span>
-      </div>
-      
-      
-      <div class="what-changed-row">
-        <span class="sev-dot sev-low"></span>
-        <span class="muted sm" style="flex:0 0 84px;white-space:nowrap">2026-07-26</span>
         <span>
           <span class="l-en">Triple-red cleared: safe-haven function may be restoring</span>
           <span class="l-zh">三重下跌解除：避险功能可能恢复</span>
@@ -1458,16 +1534,16 @@
   }
   function init(){
     
-    setNeedle('gneedle-growth', -30.0);
+    setNeedle('gneedle-growth', 12.0);
     
     
-    setNeedle('gneedle-inflation', 50.4);
+    setNeedle('gneedle-inflation', 64.8);
     
     
-    setNeedle('gneedle-fg', -3.6);
+    setNeedle('gneedle-fg', 0.0);
     
     
-    setNeedle('gneedle-vix', 28.9);
+    setNeedle('gneedle-vix', -20.0);
     
   }
   if(document.readyState === 'loading'){
@@ -1477,6 +1553,11 @@
   }
 })();
 </script>
-<script src="theme.js?v=0943b4d5" defer></script>
+<<<<<<< Updated upstream
+<script src="theme.js?v=e4951de3" defer></script>
+=======
+<script src="theme.js?v=e4951de3" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
+>>>>>>> Stashed changes
 </body>
 </html>

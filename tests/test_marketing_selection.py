@@ -87,13 +87,21 @@ _STATUS_PATH: dict[str, tuple[str, ...]] = {
 def _seed_item(tmp_path: Path, *, ticker: str, as_of: str, kind: str = "watchlist",
                account: str = "flagship", text: str | None = None,
                status: str | None = None, scheduled_at: str = "immediate",
-               provenance: str = "content_studio") -> str:
+               provenance: str = "content_studio",
+               now: datetime = _FIXED_NOW) -> str:
     """Enqueue one outbox item through the CANONICAL path and return its id.
 
     Written with make_item/enqueue/transition rather than hand-rolled JSONL so
     the fixture exercises the same schema and the same status machine the
     nightly does — a hand-built row that drifts from make_item would make these
     tests pass against a shape that does not exist in production.
+
+    `now` stamps `created_at`. A test that wants an item PAST ITS SLOT must move
+    the creation time back rather than the slot time back: `enqueue` clamps a
+    `scheduled_at` earlier than its own `created_at` forward (the X Growth W1g
+    schedule floor — 41 live posts were booked before they existed), so a
+    backdated slot on a fresh item is no longer a state the queue can hold. An
+    item goes stale in production by SITTING there, which is what this models.
     """
     from engine.marketing.outbox import make_item, enqueue, transition
     item = make_item(
@@ -105,7 +113,7 @@ def _seed_item(tmp_path: Path, *, ticker: str, as_of: str, kind: str = "watchlis
         slot="D1-S1",
         provenance=provenance,
         source={"ticker": ticker},
-        now=_FIXED_NOW,
+        now=now,
     )
     assert enqueue(item, root=tmp_path, max_per_account_day=99) == "queued"
     for step in _STATUS_PATH[status or "queued"]:
@@ -375,7 +383,12 @@ def test_degenerate_gate_reads_structured_fields_too():
     assert dropped == 1
 
     assert is_degenerate_count(231, 231) is True
-    assert is_degenerate_count(1, 231) is True        # <= 5% is degenerate too
+    # Saturation-only (fix-wave ruling, mirroring market_facts): the default
+    # band's low arm is gone because a washout ("1 of 231") is the rarest and
+    # most newsworthy breadth print, not noise. A positive lo remains a config
+    # opt-in — pinned in test_degenerate_band_is_configurable.
+    assert is_degenerate_count(1, 231) is False
+    assert is_degenerate_count(0, 231) is False       # "no triggers" is information
     assert is_degenerate_count(18, 30) is False
     assert is_degenerate_count(5, 0) is False         # unknown denominator != degenerate
 
@@ -575,10 +588,14 @@ def test_planned_item_36h_past_its_slot_is_quarantined(tmp_path):
     """A post written against a two-night-old close must not still be pending."""
     from engine.marketing.outbox import expire_stale_planned, fold_state
 
+    # Created two nights ago, each booked AFTER its own creation — the shape a
+    # queue actually reaches when a post sits unposted, not a slot backdated
+    # past its creation (which enqueue now clamps forward).
+    _written = _FIXED_NOW - timedelta(hours=50)
     stale = _seed_item(tmp_path, ticker="FDS", as_of=_YESTERDAY,
-                       scheduled_at=_sched(48))
+                       scheduled_at=_sched(48), now=_written)
     fresh = _seed_item(tmp_path, ticker="TEL", as_of=_YESTERDAY,
-                       scheduled_at=_sched(2))
+                       scheduled_at=_sched(2), now=_written)
 
     out = expire_stale_planned(tmp_path, now=_FIXED_NOW)
     assert out["expired"] == 1 and out["ids"] == [stale]
@@ -592,15 +609,25 @@ def test_planned_item_36h_past_its_slot_is_quarantined(tmp_path):
 
 
 def test_expiry_leaves_immediate_and_foreign_lanes_alone(tmp_path):
-    """No slot to be late for; and the wire lanes retire their own items."""
+    """No slot to be late for, and another reaper owns the wire lanes.
+
+    The docstring used to say "the wire lanes … retire their own items", which
+    was simply untrue — nothing swept them and they sat queued forever (see
+    tests/test_marketing_wire_expiry.py). This function's SCOPE is unchanged and
+    still correct; only the claim about who covers the rest was wrong.
+    outbox.expire_stale_wire is that cover, and weekend_levels still has none.
+    """
     from engine.marketing.outbox import expire_stale_planned, fold_state
 
+    _written = _FIXED_NOW - timedelta(hours=50)
     imm = _seed_item(tmp_path, ticker="AAPL", as_of=_YESTERDAY,
-                     scheduled_at="immediate")
+                     scheduled_at="immediate", now=_written)
     wire = _seed_item(tmp_path, ticker="MSFT", as_of=_YESTERDAY, kind="breaking",
-                      provenance="press_lane", scheduled_at=_sched(48))
+                      provenance="press_lane", scheduled_at=_sched(48),
+                      now=_written)
     weekend = _seed_item(tmp_path, ticker="AMD", as_of=_YESTERDAY,
-                         provenance="weekend_levels", scheduled_at=_sched(48))
+                         provenance="weekend_levels", scheduled_at=_sched(48),
+                         now=_written)
 
     assert expire_stale_planned(tmp_path, now=_FIXED_NOW)["expired"] == 0
     status = fold_state(tmp_path)["status"]
@@ -612,7 +639,7 @@ def test_emit_runs_the_expiry_pass_first(tmp_path):
     from engine.marketing.outbox import emit_from_content_plan, fold_state
 
     stale = _seed_item(tmp_path, ticker="FDS", as_of=_YESTERDAY,
-                       scheduled_at=_sched(48))
+                       scheduled_at=_sched(48), now=_FIXED_NOW - timedelta(hours=50))
     result = emit_from_content_plan(
         _plan(_plan_item(id="p1")), root=tmp_path, cfg=_emit_cfg(True),
         day_prefix="D1", now=_FIXED_NOW)
@@ -885,3 +912,133 @@ def test_shapes_literal_never_drifts_between_the_two_modules():
     from engine.marketing import content_studio as cs
     from engine.marketing import copywriter as cw
     assert tuple(cs.SHAPES) == tuple(cw.SHAPES)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Perishability (operator 2026-07-30)
+# The planner books a SEVEN-day forward queue. Copy claiming something about the
+# current tape is false by the time a D5 slot arrives, so the publisher's
+# live-tape gate refused it and logged `tape_skipped` — that counter fired on
+# every sweep of 2026-07-29 and is why ZERO posts went out that day. The gate
+# was right; pre-writing perishable copy a week ahead was the bug.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestPerishableForwardBookings:
+    def _rows(self):
+        return [{"id": "flagship", "queue": [
+            {"id": "a", "type": "signal",    "slot": "D1-S1"},
+            {"id": "b", "type": "signal",    "slot": "D4-S3"},
+            {"id": "c", "type": "watchlist", "slot": "D6-S2"},
+            {"id": "d", "type": "education", "slot": "D7-S9"},
+            {"id": "e", "type": "macro",     "slot": "D2-S1"},
+            {"id": "f", "type": "receipt",   "slot": "D5-S4"},
+        ]}]
+
+    def test_perishable_kinds_are_dropped_past_day_one(self):
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = self._rows()
+        counts = drop_stale_forward_bookings(rows, cfg=None)
+        assert counts["dropped_perishable_forward"] == 2
+        assert counts["by_kind"] == {"signal": 1, "macro": 1}
+
+    def test_evergreen_kinds_keep_the_full_horizon(self):
+        """A level that has held 23 sessions still reads true on Friday."""
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = self._rows()
+        drop_stale_forward_bookings(rows, cfg=None)
+        kept = [i["id"] for i in rows[0]["queue"]]
+        assert "c" in kept and "d" in kept and "f" in kept   # watchlist/education/receipt
+
+    def test_day_one_perishable_survives(self):
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = self._rows()
+        drop_stale_forward_bookings(rows, cfg=None)
+        assert "a" in [i["id"] for i in rows[0]["queue"]]
+
+    def test_an_unparseable_slot_is_never_dropped(self):
+        """Fail OPEN on a slot-format change: dropping on a parse failure would
+        silently empty the whole queue if the ladder label ever moved."""
+        from engine.marketing.content_studio import drop_stale_forward_bookings
+        rows = [{"id": "x", "queue": [
+            {"id": "n", "type": "signal", "slot": None},
+            {"id": "m", "type": "signal", "slot": "weird-format"},
+        ]}]
+        counts = drop_stale_forward_bookings(rows, cfg=None)
+        assert counts["dropped_perishable_forward"] == 0
+        assert len(rows[0]["queue"]) == 2
+
+    def test_config_drives_the_rule(self):
+        from engine.marketing.content_studio import (
+            drop_stale_forward_bookings, perishable_kinds, perishable_max_day)
+        cfg = {"selection": {"perishable_kinds": ["watchlist"], "perishable_max_day": 2}}
+        assert perishable_kinds(cfg) == frozenset({"watchlist"})
+        assert perishable_max_day(cfg) == 2
+        rows = self._rows()
+        counts = drop_stale_forward_bookings(rows, cfg=cfg)
+        # only the D6 watchlist now; signals/macro are evergreen under this cfg
+        assert counts["by_kind"] == {"watchlist": 1}
+
+    def test_shipped_config_is_the_d1_only_rule(self):
+        import yaml, pathlib
+        from engine.marketing.content_studio import perishable_kinds, perishable_max_day
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        assert perishable_max_day(cfg) == 1
+        assert {"signal", "chart", "macro", "event"} <= perishable_kinds(cfg)
+        # evergreen kinds must NOT be in the perishable set
+        assert not ({"watchlist", "education", "receipt"} & perishable_kinds(cfg))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Failed-signal disposal (operator 2026-07-30)
+# A planned signal whose entry the live gate cannot stand behind used to be
+# RE-TYPED into a watchlist post. Measured on the live plan: 168 of 335
+# watchlist posts were demoted signals (39 of 57 on the shipping day) and 125
+# had failed for AGE alone. They all wore the same proximity copy, which is
+# where the batch auditor's "mechanically uniform" verdict came from.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestFailedSignalDisposal:
+    def test_the_shipped_rule_demotes_only_real_states(self):
+        import yaml, pathlib
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        allowed = set((cfg.get("selection") or {}).get("demotable_gate_reasons") or [])
+        assert allowed == {"runaway", "underwater"}, (
+            "stale and unverified must NOT demote — there is nothing honest to "
+            "post about a three-week-old idea or a name we cannot price")
+
+    def test_gate_reasons_classify_as_expected(self):
+        """The disposal rule keys on this classifier; pin its buckets."""
+        from engine.marketing.copywriter import watch_reason_from_gate
+        assert watch_reason_from_gate("signal is 13d old (max 10d)") == "stale"
+        assert watch_reason_from_gate(
+            "ran away +14.9% — no longer actionable (last=283.87, entry=247.10)") == "runaway"
+        assert watch_reason_from_gate(
+            "underwater -2.2% (last=393.35, entry=402.30)") == "underwater"
+        assert watch_reason_from_gate("no close data — cannot verify") == "unverified"
+
+    def test_unrecognised_prose_falls_to_stale_and_is_therefore_dropped(self):
+        """Fail-safe direction: an unknown failure drops rather than becoming
+        filler, because we cannot say what would be true about it."""
+        import yaml, pathlib
+        from engine.marketing.copywriter import watch_reason_from_gate
+        cfg = yaml.safe_load(pathlib.Path("config/marketing.yml").read_text())
+        allowed = set((cfg.get("selection") or {}).get("demotable_gate_reasons") or [])
+        assert watch_reason_from_gate("something nobody has seen before") == "stale"
+        assert "stale" not in allowed
+
+    def test_the_report_records_what_was_dropped_and_why(self):
+        """Supply-honest volume is only auditable if the plan prints the loss."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        assert '"signals_dropped_not_demoted"' in src
+        assert '"signals_dropped_by_reason"' in src
+        assert '"demotable_gate_reasons"' in src
+
+    def test_dropped_signals_never_reach_the_writer(self):
+        """A dead idea must not cost a model call: the drop happens after the
+        gate and before Phase 2 builds a context."""
+        import inspect
+        from engine.marketing import content_studio
+        src = inspect.getsource(content_studio)
+        drop_at = src.index("_stale_dropped = [d for d in queue")
+        phase2_at = src.index("# Phase 2: build all contexts")
+        assert drop_at < phase2_at, "the drop must precede context building"

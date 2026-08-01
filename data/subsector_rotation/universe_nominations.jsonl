@@ -1,0 +1,12 @@
+{"date":"2026-07-31","theme":"Artificial Intelligence","donor":"aiedge","receiver":"aienterprise","confidence":0.589,"both_confirmed":false}
+{"date":"2026-07-31","theme":"Crypto & Blockchain","donor":"blockchainmining","receiver":"blockchainenterprise","confidence":0.584,"both_confirmed":false}
+{"date":"2026-07-31","theme":"Transportation & Logistics","donor":"transportationtrucking","receiver":"transportationnextgen","confidence":0.57,"both_confirmed":false}
+{"date":"2026-07-31","theme":"Cloud Computing","donor":"cloudhardware","receiver":"clouddatabases","confidence":0.385,"both_confirmed":false}
+{"date":"2026-07-31","theme":"Hardware","donor":"hardwarestorage","receiver":"hardwareprinting","confidence":0.355,"both_confirmed":false}
+{"date":"2026-07-31","theme":"Quantum Computing","donor":"quantumenablingtech","receiver":"quantumsoftware","confidence":0.306,"both_confirmed":false}
+{"date":"2026-08-01","theme":"Cloud Computing","donor":"clouddatacenters","receiver":"cloudhyperscalers","confidence":0.597,"both_confirmed":false}
+{"date":"2026-08-01","theme":"Transportation & Logistics","donor":"transportationtrucking","receiver":"transportationnextgen","confidence":0.56,"both_confirmed":false}
+{"date":"2026-08-01","theme":"Crypto & Blockchain","donor":"blockchainmining","receiver":"blockchainenterprise","confidence":0.555,"both_confirmed":false}
+{"date":"2026-08-01","theme":"Autonomous Systems","donor":"autonomousspecialized","receiver":"autonomoussoftware","confidence":0.361,"both_confirmed":false}
+{"date":"2026-08-01","theme":"Artificial Intelligence","donor":"aiedge","receiver":"aidata","confidence":0.35,"both_confirmed":false}
+{"date":"2026-08-01","theme":"Electric Vehicles","donor":"evssuppliers","receiver":"evsmanufacturers","confidence":0.293,"both_confirmed":false}

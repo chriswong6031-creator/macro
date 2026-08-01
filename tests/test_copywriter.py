@@ -243,30 +243,56 @@ def test_validate_invented_number():
     assert number_v, f"Expected number violation for 226.50, got: {violations}"
 
 
-def test_validate_signal_missing_invalidation():
+# These two tests used to pin the OPPOSITE law: that a signal post is REJECTED
+# unless it carries an invalidation phrase and an honesty caveat. That mandate is
+# what produced the machine voice — "37.1 is my trigger, 30.9 proves me wrong.
+# One pattern isn't a guarantee" is what you get when both are compulsory inside
+# 275 chars. The operator graded a batch built under it F and quoted both halves
+# back ("no human will ever say that"). The mandate is gone; these now pin the
+# ban. See memory marketing-voice-fact-plus-cost.
+
+
+def test_signal_post_without_an_invalidation_phrase_is_fine_now():
+    """The mandate is gone: no invalidation line is no longer a violation."""
     from engine.marketing.copywriter import validate_copy
     ctx = {
         "ticker": "PLTR", "type": "signal", "emoji_budget": 0,
         "numbers_whitelist": ["120.00", "150.00"],
     }
-    headline = "$PLTR at 120.00"
-    body = "Buy $PLTR today. Target 150.00. Great setup."
-    violations = validate_copy(headline, body, ctx)
+    violations = validate_copy(
+        "$PLTR at 120.00",
+        "Held 120.00 for three weeks. I passed on this shape last quarter and "
+        "regretted it, so I'm not being clever about it twice.",
+        ctx,
+    )
     inv_v = [v for v in violations if "invalidat" in v.lower() or "what would change" in v.lower()]
-    assert inv_v, f"Expected invalidation violation, got: {violations}"
+    assert not inv_v, f"invalidation mandate should be retired, got: {violations}"
 
 
-def test_validate_signal_missing_disclosure():
-    from engine.marketing.copywriter import validate_copy
-    ctx = {
-        "ticker": "NVDA", "type": "signal", "emoji_budget": 0,
-        "numbers_whitelist": ["500.00", "400.00", "600.00"],
-    }
-    headline = "$NVDA at 500.00"
-    body = "Entry 500.00. Below 400.00 kills it. Target 600.00."
-    violations = validate_copy(headline, body, ctx)
-    disc_v = [v for v in violations if "disclosure" in v.lower() or "honesty" in v.lower()]
-    assert disc_v, f"Expected disclosure violation, got: {violations}"
+def test_risk_stated_against_the_authors_ego_is_rejected():
+    """'I'm wrong below X' / 'proves me wrong' — operator: no human says this."""
+    from engine.marketing.copywriter import machine_risk_violations
+    for text in (
+        "$PLTR held 120.00. I'm wrong below 118.",
+        "37.1 is my trigger, 30.9 proves me wrong.",
+        "Entry 45. What would prove me wrong: a close under 41.",
+    ):
+        assert machine_risk_violations(text), f"should be rejected: {text!r}"
+
+
+def test_boilerplate_caveats_are_rejected():
+    """The compliance-desk forms are banned; a caveat that COSTS you passes."""
+    from engine.marketing.copywriter import machine_risk_violations
+    for text in (
+        "$COHR is there now. Historical, not a guarantee.",
+        "One pattern isn't a guarantee.",
+        "Past performance says otherwise.",
+        "Size appropriately.",
+    ):
+        assert machine_risk_violations(text), f"should be rejected: {text!r}"
+    assert machine_risk_violations(
+        "If it loses 33.8 the whole thing was noise. I've been early twice already."
+    ) == [], "a human caveat that costs the author something must pass"
 
 
 def test_validate_duplicate_headline():
@@ -616,14 +642,151 @@ def test_graded_receipts_mixed_from_done_then_invalidated():
 
 
 def test_graded_receipts_freshness_gate():
-    """Signal older than 14 days → excluded from receipts."""
-    from engine.marketing.receipt_source import graded_receipts
+    """Signal older than the configured window → excluded from receipts.
+
+    The window is config-owned (`copywriter.receipt_max_age_days`, widened
+    14→30 on 2026-07-31 because resolved plans mature at 21-22 days and a
+    14-day window starved the desk to zero forever). Pinning a literal age
+    here re-created the starvation bug as a test failure, so the stale
+    fixture is derived from the live window instead.
+    """
+    from engine.marketing.receipt_source import graded_receipts, receipt_max_age_days
+    beyond = receipt_max_age_days() + 5
     plan = _make_signal_plan(
-        "OLD", entry=100.0, inv=90.0, signal_date=_old_date(20),
+        "OLD", entry=100.0, inv=90.0, signal_date=_old_date(beyond),
         phase="invalidated",
     )
     receipts = graded_receipts([plan])
     assert receipts == [], f"Expected empty receipts for stale plan, got {receipts}"
+    # And the boundary the other way: inside the window still counts.
+    fresh = _make_signal_plan(
+        "NEW", entry=100.0, inv=90.0,
+        signal_date=_old_date(max(receipt_max_age_days() - 5, 1)),
+        phase="invalidated",
+    )
+    assert graded_receipts([fresh]), "a within-window resolution must produce a receipt"
+
+
+# ── the window BOUNDARY, and the lanes that were not reading it ─────────────
+#
+# 2026-07-31 adversarial review, finding 6. `receipt_max_age_days`' docstring
+# claimed to be "THE single reader" of `copywriter.receipt_max_age_days`. Three
+# lanes call `graded_receipts` and only content_studio threaded a window
+# through, so an operator who tightened the knob would have moved the Studio's
+# receipt supply while `allies.track_record_stats` (the win rate a kit prints)
+# and `sentinel.receipts_context` (the cherry-pick audit window) silently kept
+# grading a 30-day book. Two numbers off two windows, both called "the track
+# record".
+
+def test_graded_receipts_window_boundary_is_inclusive_at_exactly_max_age():
+    """`age > max_age_days` is the gate, so age == max is IN.
+
+    An off-by-one here is invisible in production and expensive: it is one
+    day of resolved supply on a desk whose whole supply is six plans.
+    """
+    from engine.marketing.receipt_source import graded_receipts, receipt_max_age_days
+    window = receipt_max_age_days()
+    assert window == 30, "boundary fixtures below are written against 30"
+    plan = _make_signal_plan(
+        "EDGE", entry=100.0, inv=90.0, signal_date=_old_date(window),
+        phase="invalidated",
+    )
+    receipts = graded_receipts([plan])
+    assert len(receipts) == 1, f"age == {window} must be inside the window"
+    assert receipts[0]["ticker"] == "EDGE"
+
+
+def test_graded_receipts_window_boundary_excludes_one_day_past_it():
+    from engine.marketing.receipt_source import graded_receipts, receipt_max_age_days
+    window = receipt_max_age_days()
+    plan = _make_signal_plan(
+        "EDGE", entry=100.0, inv=90.0, signal_date=_old_date(window + 1),
+        phase="invalidated",
+    )
+    assert graded_receipts([plan]) == [], f"age == {window + 1} must be outside"
+
+
+def _write_prophet_index(root, plans: list[dict]) -> None:
+    """A real site/prophet/index.json under *root*, the way both lanes read it."""
+    import json as _json
+
+    d = root / "site" / "prophet"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "index.json").write_text(_json.dumps({"plans": plans}), encoding="utf-8")
+
+
+def test_allies_track_record_reads_the_config_window(tmp_path):
+    """MUTATION CHECK for the allies half, driven through the real function.
+
+    A plan 20 days old is inside the default 30-day window and outside a
+    config-tightened 14-day one. Pre-fix this call site passed no window at all,
+    so BOTH configs reported the same single win and the kit's printed win rate
+    could not be moved from config.
+    """
+    from engine.marketing import allies
+
+    _write_prophet_index(tmp_path, [_make_signal_plan(
+        "WIN", entry=100.0, inv=90.0, signal_date=_old_date(20),
+        phase="triggered_pre_t1",
+        profit_plan=[{"level": 120.0, "label": "T1", "status": "DONE", "action": ""}],
+    )])
+
+    wide = allies.track_record_stats(tmp_path, cfg={})
+    tight = allies.track_record_stats(
+        tmp_path, cfg={"copywriter": {"receipt_max_age_days": 14}})
+
+    assert wide["wins"] == 1, wide
+    assert wide["graded_n"] == 1, wide
+    assert tight["wins"] == 0, tight
+    assert tight["graded_n"] == 0, tight
+
+
+def test_sentinel_receipts_context_reads_the_config_window(tmp_path):
+    """MUTATION CHECK for the sentinel half, driven through the real function
+    with a real prophet index on disk."""
+    from engine.marketing import sentinel
+
+    _write_prophet_index(tmp_path, [_make_signal_plan(
+        "WIN", entry=100.0, inv=90.0, signal_date=_old_date(20),
+        phase="triggered_pre_t1",
+        profit_plan=[{"level": 120.0, "label": "T1", "status": "DONE", "action": ""}],
+    )])
+
+    _age, wide = sentinel.receipts_context(tmp_path, cfg={})
+    assert wide == [{"ticker": "WIN", "outcome": "win"}], wide
+
+    _age, tight = sentinel.receipts_context(
+        tmp_path, cfg={"copywriter": {"receipt_max_age_days": 14}})
+    assert tight == [], tight
+
+
+def test_every_graded_receipts_call_site_threads_a_window():
+    """SOURCE-LEVEL PIN, because the defect was a MISSING argument and a missing
+    argument is exactly what a runtime test does not see: the call worked, it
+    just quietly used a different window.
+
+    The docstring's "THE single reader" claim was the whole reason nobody
+    looked, so this asserts the property instead of the prose.
+    """
+    import inspect
+
+    from engine.marketing import allies, content_studio, sentinel
+    from engine.marketing.receipt_source import receipt_max_age_days
+
+    for mod, fn_name in ((allies, "track_record_stats"),
+                         (sentinel, "receipts_context")):
+        src = inspect.getsource(getattr(mod, fn_name))
+        assert "graded_receipts(" in src, (mod.__name__, fn_name)
+        assert "max_age_days=" in src, (
+            f"{mod.__name__}.{fn_name} calls graded_receipts with no window")
+        assert "receipt_max_age_days(" in src, (
+            f"{mod.__name__}.{fn_name} does not resolve the config knob")
+        assert "cfg" in inspect.signature(getattr(mod, fn_name)).parameters, (
+            f"{mod.__name__}.{fn_name} has no cfg to thread")
+
+    # The lane that already did it, kept honest the same way.
+    assert "receipt_max_age_days(cfg)" in inspect.getsource(content_studio)
+    assert "single reader" not in (receipt_max_age_days.__doc__ or "").split("\n")[0]
 
 
 def test_graded_receipts_deduplicate_richest():
@@ -1367,8 +1530,21 @@ def _movers_desk_items(monkeypatch, tmp_path, tiles, themes) -> list[dict]:
 
     md = tmp_path / "site" / "marketdata"
     md.mkdir(parents=True, exist_ok=True)
+    # asof is a PINNED LITERAL. It used to read date.today() with a comment
+    # claiming "the mover lane's session-staleness law refuses to build 'today'
+    # claims from a non-today session". THAT LAW IS NOT ON THIS PATH — it is the
+    # publish-time lane's (publish_time_content._tape_stale / _cand_session,
+    # which this fixture never enters). The nightly content_studio movers block
+    # reads the heatmap and builds; nothing in it compares `asof` to a clock.
+    # Mutation-checked: pinning the date leaves every assertion below green, so
+    # the comment was describing a gate that does not exist and the wall-clock
+    # read was a nondeterminism the fixture did not need.
+    #
+    # The real load-bearing facts about this fixture are stated at the cfg below
+    # (two desks, so the reach items find free D1 rungs) and at the closes_loader
+    # (a mover cannot be seated without a card).
     (md / "sp500_heatmap.json").write_text(json.dumps({
-        "asof": "2026-07-24",
+        "asof": "2026-07-31",
         "tiles": [{"t": t, "name": t, "sector": "Information Technology",
                    "perf": {"1D": pct}} for t, pct in tiles],
     }), encoding="utf-8")
@@ -1380,11 +1556,29 @@ def _movers_desk_items(monkeypatch, tmp_path, tiles, themes) -> list[dict]:
     }), encoding="utf-8")
 
     from engine.marketing.content_studio import content_plan
+    # Two desks, not one: reach items seat on REAL free D1 rungs since the
+    # 2026-07-31 slot fix, and a single desk carrying an entire day's planned
+    # queue legitimately exhausts its ladder (drop is designed + counted as
+    # content.movers.unseated). Production runs 6+ desks; two is the smallest
+    # fixture that seats all four stance/tone forks this test asserts on.
     cfg = {"desk_network": {"stage": "A", "accounts": [
         {"id": "flagship", "kind": "branded", "beat": "What changed",
          "voice": "authoritative desk"},
+        {"id": "founder", "kind": "personal", "beat": "Conviction and cost",
+         "voice": "dry, receipts-forward"},
     ]}}
-    plan = content_plan(cfg, [], closes_loader=None, root=tmp_path)
+    # A MOVER WITHOUT A CARD IS NOT A POST. `mover` is a bare-cashtag kind, so a
+    # chartless one is terminally quarantined at dispatch — content_studio's
+    # card-less unseat pass (2026-07-31) therefore drops it from the queue before
+    # the plan is returned. `closes_loader=None` means no mover card can render,
+    # which means ZERO mover items come back and the `len(movers) >= 4` assertion
+    # below would be testing the absence of the lane. Synthetic bars are the
+    # cheapest way to let the card path complete.
+    def _closes(_ticker: str):
+        return ([f"2026-06-{d:02d}" for d in range(1, 31)],
+                [100.0 + i * 0.5 for i in range(30)])
+
+    plan = content_plan(cfg, [], closes_loader=_closes, root=tmp_path)
     return [it for row in plan["accounts"] for it in row["queue"]
             if isinstance(it, dict) and it.get("provenance") == "movers_desk"]
 
@@ -1426,15 +1620,20 @@ def test_mover_and_theme_copy_survives_the_clarity_gate(monkeypatch, tmp_path):
 def test_every_movers_desk_question_survives_the_clarity_gate():
     """Both reply-bait pools land verbatim in theme bodies — walk all of them.
 
-    A single content_plan run only reaches the questions its theme names hash
-    to, so the pools are walked directly to cover the ones the tapes miss.
-    """
-    from engine.marketing.movers_source import _QUESTION_DOWN, _QUESTION_UP
+    A single content_plan run only reaches the tails its theme names hash to,
+    so the pools are walked directly to cover the ones the tapes miss.
 
-    pools = list(_QUESTION_DOWN) + list(_QUESTION_UP)
+    Renamed from _QUESTION_* to _TAIL_* on 2026-07-31, when the reply-bait
+    pools were replaced by stance / watch-condition tails (see movers_source:
+    a question aimed at the READER costs the author nothing). The clarity gate
+    is unchanged and every line still has to pass it.
+    """
+    from engine.marketing.movers_source import _TAIL_DOWN, _TAIL_UP
+
+    pools = list(_TAIL_DOWN) + list(_TAIL_UP)
     bad = [f"{v} in {q!r}" for q in pools for v in _clarity_gate_violations(q)]
-    assert len(pools) >= 8, f"only {len(pools)} questions walked — guard is vacuous"
-    assert not bad, "movers-desk reply-bait trips the gate:\n" + "\n".join(bad)
+    assert len(pools) >= 8, f"only {len(pools)} tails walked — guard is vacuous"
+    assert not bad, "movers-desk tails trip the gate:\n" + "\n".join(bad)
 
 
 def test_through_is_not_treated_as_a_level_preposition():

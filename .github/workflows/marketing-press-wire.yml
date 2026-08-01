@@ -128,7 +128,15 @@ jobs:
         # anthropic: the llm_auth provider waterfall behind breaking_summary.
         # pyarrow: chart_render falls back to it when pandas is absent, so the
         # breaking card renders instead of silently degrading to card_svg="".
-        run: pip install --quiet pyyaml requests anthropic pyarrow
+        #
+        # boto3 joins 2026-07-31, and the R2 block below with it. Rendering the
+        # card was only ever half the job: publish_card writes the SVG and the
+        # PNG, then needs a client and credentials to turn it into a public
+        # https URL, and Buffer cannot fetch a repo path. Without them
+        # publish_chart_png returns None on every card and every press post
+        # ships text-only — silently, at full green. Both live wire posts on
+        # main carry media_url: null for exactly this reason.
+        run: pip install --quiet pyyaml requests anthropic pyarrow boto3
 
       - name: run the press wire
         id: wire
@@ -162,6 +170,21 @@ jobs:
           # these lines is inert until the secrets land.
           ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID }}
           ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY }}
+
+          # ── R2: WHERE THE CARD BECOMES A PICTURE ────────────────────────────
+          # This lane renders a breaking card for every wire post and, until
+          # 2026-07-31, could not host one. publish_card writes the SVG and the
+          # PNG locally, then publish_chart_png needs a client (boto3, added to
+          # the install line above) AND these credentials to produce the public
+          # https URL Buffer fetches — a repo path is not something X can load.
+          # Absent either, the upload fail-softs to None and the post ships
+          # text-only, which is invisible: no failure, no annotation, just a
+          # media_url of null on the item. Both live press posts on main carry
+          # exactly that.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
 
           # ── THE LLM WATERFALL ───────────────────────────────────────────────
           # breaking_summary is double-gated (config breaking.llm.enabled AND this

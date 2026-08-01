@@ -5246,3 +5246,423 @@ button.obx-btn-reject:hover:not(:disabled) {
     height: 25px;
   }
 }
+
+/* ==========================================================================
+   MARKETING FLOOR — the factory-floor view
+   Operator brief 2026-07-29: "it's like a factory with its window panes all
+   tinted and me as the CEO unable to see the inside."
+
+   The design act here is inversion. Every other panel in this console draws
+   what SUCCEEDED. These panels draw what LEAKED: the loss figure is the
+   second-largest type in a station cell, the yield bar fills with the LOST
+   share rather than the kept share, and the rail between stations dies —
+   dashed and dim — downstream of the worst leak. The eye should land on the
+   break without reading a word.
+   ========================================================================== */
+:root {
+  /* Loss hue. Deliberately not --warn or --bad: those already mean "a rule
+     tripped" and "something is broken" elsewhere in the console. Material
+     stopping on the line is a third thing — expected, measurable, and the
+     subject of the page. Burnt copper reads as sediment, not alarm. */
+  --loss:     #d08a4e;
+  --loss-dim: rgba(208, 138, 78, .18);
+  --loss-bg:  rgba(208, 138, 78, .10);
+}
+
+/* ---- 1 · THE LINE ------------------------------------------------------- */
+.flr-line-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 20px 18px 16px;
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+}
+.flr-line {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(126px, 1fr);
+  align-items: stretch;
+  gap: 0;
+  min-width: 760px;
+}
+.flr-stn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 2px 10px 0;
+  background: none;
+  border: 0;
+  border-radius: var(--r-sm);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--dur) var(--ease);
+}
+.flr-stn:hover  { background: rgba(255,255,255,.028); }
+.flr-stn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.flr-stn-name {
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.flr-stn-n {
+  font: 700 30px/1.02 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+.flr-stn-n.is-zero  { color: var(--faint); }
+.flr-stn-what {
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--muted);
+  min-height: 28px;
+}
+
+/* The rail. A station's incoming rail carries the flow that reached it, so the
+   segment is drawn on the station and points backwards. Dashed once the line
+   has already broken upstream — the operator should see the plant go cold. */
+.flr-stn + .flr-stn::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 30px;
+  width: 2px;
+  height: 26px;
+  background: var(--accent);
+  opacity: .5;
+  border-radius: 2px;
+}
+.flr-stn.is-cold::before {
+  background: repeating-linear-gradient(
+    to bottom, var(--faint) 0 3px, transparent 3px 6px);
+  opacity: .55;
+}
+
+/* Loss readout: the number that matters most on this page. */
+.flr-stn-loss {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font: 600 15px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--loss);
+}
+.flr-stn-loss-word {
+  font: 400 10.5px/1.25 var(--sans);
+  color: var(--loss);
+  opacity: .82;
+}
+.flr-stn-loss-none {
+  font: 400 10.5px/1.25 var(--sans);
+  color: var(--faint);
+}
+
+/* Yield bar, inverted: the filled portion is what was LOST. */
+.flr-yield {
+  position: relative;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,.07);
+  overflow: hidden;
+  margin: 5px 0 2px;
+}
+.flr-yield > i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  background: var(--loss);
+  opacity: .75;
+  border-radius: 2px;
+}
+
+/* The break marker — one per page, on the worst leak. */
+.flr-stn.is-break { background: var(--loss-bg); }
+.flr-stn.is-break .flr-stn-name { color: var(--loss); }
+.flr-break-tag {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--loss-dim);
+  border: 1px solid rgba(208,138,78,.34);
+  font: 650 9.5px/1.5 var(--sans);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--loss);
+}
+.flr-line-foot {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.flr-line-foot b { color: var(--text); font-weight: 600; }
+
+/* ---- 2 · BLOCKERS ------------------------------------------------------ */
+.flr-blk {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  margin-bottom: 8px;
+}
+.flr-blk-stop  { border-left-color: var(--bad);  background: linear-gradient(90deg, var(--bad-bg), transparent 42%); }
+.flr-blk-high  { border-left-color: var(--loss); background: linear-gradient(90deg, var(--loss-bg), transparent 42%); }
+.flr-blk-watch { border-left-color: var(--faint); }
+.flr-blk-cost {
+  flex: 0 0 auto;
+  min-width: 58px;
+  text-align: right;
+  font: 700 21px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--loss);
+}
+.flr-blk-cost small {
+  display: block;
+  margin-top: 3px;
+  font: 400 9.5px/1.2 var(--sans);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.flr-blk-cost.is-none { color: var(--faint); font-size: 15px; }
+.flr-blk-body { flex: 1 1 auto; min-width: 0; }
+.flr-blk-title {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.flr-blk-why {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.flr-blk-fix {
+  margin-top: 7px;
+  padding-left: 10px;
+  border-left: 2px solid var(--grid);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+.flr-blk-fix::first-line { font-weight: 500; }
+.flr-blk-go {
+  display: inline-block;
+  margin-top: 8px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: 600 11.5px/1 var(--sans);
+  color: var(--accent);
+  cursor: pointer;
+}
+.flr-blk-go:hover { text-decoration: underline; }
+
+/* ---- 3 · AUTHORSHIP --------------------------------------------------- */
+.flr-auth-bar {
+  display: flex;
+  height: 26px;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--grid);
+  margin: 10px 0 9px;
+}
+.flr-auth-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  font: 600 10.5px/1 var(--mono);
+  color: #0a0c10;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.flr-auth-seg.is-model  { background: var(--accent-cyan); }
+.flr-auth-seg.is-tmpl   { background: var(--loss); }
+.flr-auth-seg.is-none   { background: var(--faint); }
+.flr-auth-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 15px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.flr-auth-key i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: baseline;
+}
+
+/* ---- 4 · LEDGER + TABLES ---------------------------------------------- */
+.flr-led {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(214px, 1fr));
+  gap: 7px;
+}
+.flr-led-row {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+.flr-led-row.is-loss  { border-color: rgba(208,138,78,.3); }
+.flr-led-row.is-zero  { opacity: .46; }
+.flr-led-row.is-good  { border-color: rgba(61,220,132,.32); }
+.flr-led-n {
+  flex: 0 0 auto;
+  min-width: 30px;
+  font: 700 15px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.flr-led-row.is-loss .flr-led-n { color: var(--loss); }
+.flr-led-row.is-good .flr-led-n { color: var(--ok); }
+.flr-led-w { font-size: 11.5px; line-height: 1.35; color: var(--muted); }
+.flr-led-raw {
+  font: 400 10px/1 var(--mono);
+  color: var(--faint);
+  margin-left: 4px;
+}
+
+/* Yield table: the bar sits behind the row so the worst desks read as a
+   ragged left edge you can scan without reading numbers. */
+.flr-yt-bar {
+  position: relative;
+  display: block;
+  height: 16px;
+  min-width: 2px;
+  border-radius: 3px;
+  background: var(--ok);
+  opacity: .8;
+}
+.flr-yt-bar.is-low { background: var(--loss); }
+.flr-kill {
+  font: 700 14px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--loss);
+}
+
+/* ---- 5 · LANES + MODEL DESK ------------------------------------------- */
+.flr-lane {
+  display: grid;
+  grid-template-columns: 11px minmax(0, 1fr) auto;
+  gap: 13px;
+  align-items: center;
+  padding: 12px 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  margin-bottom: 7px;
+}
+.flr-lane-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.flr-lane-dot.s-live     { background: var(--ok);   box-shadow: 0 0 0 3px rgba(61,220,132,.16); }
+.flr-lane-dot.s-stale    { background: var(--loss); box-shadow: 0 0 0 3px var(--loss-dim); }
+.flr-lane-dot.s-dark     { background: var(--faint); }
+.flr-lane-dot.s-tripped  { background: var(--bad);  box-shadow: 0 0 0 3px rgba(255,107,107,.16); }
+.flr-lane-dot.s-quiet,
+.flr-lane-dot.s-accruing,
+.flr-lane-dot.s-shadow   { background: var(--muted); }
+.flr-lane-name { font-size: 13px; font-weight: 620; color: var(--text); }
+.flr-lane-what { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.flr-lane-detail {
+  font-size: 11px;
+  color: var(--faint);
+  margin-top: 5px;
+  line-height: 1.45;
+}
+.flr-lane-state {
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.flr-lane-state b { display: block; font-size: 12px; color: var(--text); font-weight: 620; }
+
+/* Provider waterfall: rung order IS the information, so it is drawn as a
+   descent with the active rung raised out of the stack. */
+.flr-fall { display: flex; flex-direction: column; gap: 0; }
+.flr-rung {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 190px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-left: 0;
+}
+.flr-rung:first-child { border-radius: var(--r-md) var(--r-md) 0 0; }
+.flr-rung:last-child  { border-radius: 0 0 var(--r-md) var(--r-md); }
+.flr-rung + .flr-rung { border-top: 0; }
+.flr-rung.is-first {
+  background: linear-gradient(90deg, rgba(56,224,212,.11), transparent 55%);
+  border-left: 3px solid var(--accent-cyan);
+}
+.flr-rung-i {
+  font: 700 11px/1 var(--mono);
+  color: var(--faint);
+}
+.flr-rung.is-first .flr-rung-i { color: var(--accent-cyan); }
+.flr-rung-n { font-size: 12.5px; font-weight: 620; color: var(--text); }
+.flr-rung-w { font-size: 11.5px; line-height: 1.45; color: var(--muted); }
+
+.flr-key {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  margin-bottom: 5px;
+}
+.flr-key.s-cooling { border-color: rgba(208,138,78,.3); }
+.flr-key.s-absent  { opacity: .55; }
+.flr-key-id { font: 500 12px/1.3 var(--mono); color: var(--text); }
+.flr-key-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.flr-key-load {
+  min-width: 96px;
+  font: 400 10.5px/1.4 var(--sans);
+  color: var(--faint);
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flr-stn { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .flr-blk { flex-direction: column; gap: 8px; }
+  .flr-blk-cost { text-align: left; min-width: 0; }
+  .flr-rung { grid-template-columns: 20px minmax(0, 1fr); }
+  .flr-rung-w { grid-column: 1 / -1; }
+  .flr-key { grid-template-columns: minmax(0, 1fr); }
+  .flr-key-load { text-align: left; }
+}

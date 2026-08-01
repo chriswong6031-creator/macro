@@ -37,6 +37,8 @@ jobs:
       # last-good site live instead of shipping a broken page. See PRs #152/#155.
       - name: guard — inline JS must parse
         run: python3 scripts/check_inline_js.py site
+      - name: guard — no dead site references
+        run: python3 scripts/check_site_asset_refs.py site
       # Guard: the inline-JS guard skips external `src=` bundles, so a syntax error
       # in a standalone site/*.js file (e.g. curly smart-quote delimiters — the
       # markets.html regression, PR #1004→#1353) sails past it and blanks the page.

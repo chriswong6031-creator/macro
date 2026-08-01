@@ -30,6 +30,7 @@ the last close on weekends).
 from __future__ import annotations
 
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -147,12 +148,17 @@ def cited_level(lv: dict[str, Any], state: str) -> tuple[str, float]:
 #
 # Two changes:
 #  1. The LLM copywriter is now the PRIMARY writer for this lane (write_copy →
-#     copywriter.write_posts_llm, the same persona/voice lane content_studio
-#     uses). This lane used to be the one queue that never touched it.
-#  2. Everything below is now only the DETERMINISTIC FLOOR for when the LLM is
-#     off or fails. Even the floor obeys the design doctrine: lead with the plain
-#     state, name at most ONE level, vary the sentence shape per state so a run
-#     of posts does not share a skeleton.
+#     copywriter.write_posts_llm_v2, the same per-post persona/voice lane
+#     content_studio uses). This lane used to be the one queue that never
+#     touched it, and until 2026-07-31 it was still on the RETIRED v1 batch
+#     entry point, whose documented failure mode is a silent 100% template
+#     fallback.
+#  2. Everything below is now only the DETERMINISTIC FLOOR for when NOBODY ARMED
+#     THE WRITER (no config flag, no MARKETING_LLM_ENABLED) — an armed lane that
+#     produces no model copy DROPS the post instead, because `watchlist` is a
+#     planned kind and the no-fallback law covers it. Even the floor obeys the
+#     design doctrine: lead with the plain state, name at most ONE level, vary
+#     the sentence shape per state so a run of posts does not share a skeleton.
 
 def _week_clause(wk: float) -> str:
     if abs(wk) < 0.5:
@@ -234,8 +240,10 @@ _FRAMES: dict[str, tuple[str, ...]] = {
     "leading": (
         "Up at 52-week highs, {wk}. Nothing broken here, and I'd rather respect "
         "that than argue with it. {s20} is the line I want it to keep.",
-        "{wk_cap} and pressing new highs. Strength worth respecting, not chasing "
-        "up here. First thing I'd watch on a pullback is {s20}.",
+        # Was "Strength worth respecting, not chasing up here" — retired as house
+        # boilerplate 2026-07-30 (it was leaking onto nearly every post).
+        "{wk_cap} and pressing new highs. Good for anyone already in; I'm not "
+        "paying up here. First thing I'd watch on a pullback is {s20}.",
         "New highs, {wk}. This is what leadership looks like while it lasts. "
         "{s20} is where I'd start paying attention.",
         "{wk_cap}, right at the highs. No cracks I can point at. If that changes "
@@ -448,37 +456,77 @@ def render_post(ticker: str, lv: dict[str, Any], *, variant: int = 0,
 # LLM voice lane (primary) — the same copywriter every other queue goes through
 # ─────────────────────────────────────────────────────────────────────────────
 
+def lane_armed(cfg: dict | None) -> bool:
+    """Is the LLM writer lane switched on for this run?
+
+    A MUTE LANE IS NOT A DROP (mirrors content_studio's phase-3 check). When the
+    config flag is off or MARKETING_LLM_ENABLED is unset, nobody asked for model
+    copy — tests and local runs are in that state constantly — and the honest
+    output is this lane's own deterministic floor, not an empty weekend. When the
+    lane IS armed, a post the writer will not write is a post we do not have.
+    """
+    llm = ((cfg or {}).get("copywriter") or {}).get("llm") or {}
+    if not bool(llm.get("enabled", False)):
+        return False
+    return os.environ.get("MARKETING_LLM_ENABLED", "").strip().lower() in (
+        "1", "true", "yes")
+
+
 def write_copy(
     specs: list[dict[str, Any]],
     cfg: dict | None,
     *,
     account: str = "flagship",
-) -> list[tuple[str, str]]:
-    """Rewrite each spec's floor copy in the account's real voice. Fail-soft.
+    root: Path | str | None = None,
+) -> list[tuple[str, str] | None]:
+    """Write each spec in the account's real voice. Fail-soft, NEVER templated.
 
     specs: [{"ticker", "lv", "dates", "o","h","l","c","v", "headline", "body"}]
            — "headline"/"body" are the deterministic floor from render_post().
 
-    Returns one (headline, body) per spec, in order. The floor is returned
-    unchanged for any post the LLM lane does not produce clean copy for, so this
-    can only ever improve the copy, never drop a post.
+    Returns one entry per spec, in order: a (headline, body) pair, or None
+    meaning THIS POST IS DROPPED. The caller must skip a None; it may not
+    substitute anything for it.
 
-    Gating is the copywriter's own (config copywriter.llm.enabled AND the
-    MARKETING_LLM_ENABLED env var), so tests and local runs never hit the network.
+    MIGRATED OFF THE v1 BATCH WRITER (X Growth W1g, 2026-07-31). This lane called
+    `copywriter.write_posts_llm`, the retired batch path whose documented failure
+    mode is a SILENT 100% template fallback: it asks one model call for the whole
+    batch as a single JSON array, and when that reply truncates or fails to parse
+    the function returns None and every post silently reverts to template prose
+    (copywriter.py, `write_posts_llm`). That is the exact incident the
+    Content Studio wave was built to end — a persona lane armed, credentialed,
+    and producing not one live post. `write_posts_llm_v2` calls per post, so one
+    bad reply costs one post, and it DROPS rather than templating.
 
-    The PROVIDER WATERFALL is the copywriter's too, and deliberately so: the whole
-    `copywriter` block (its `llm` sub-block included) is handed to
-    write_posts_llm below, so weekend levels inherits the marketing-copywriter
-    lane's ChatGPT-first routing (codex/Sol leading, the key_pool-balanced Claude
-    oauth rung behind it — operator directive 2026-07-29) with no second copy of
-    those keys to drift. There is no separate weekend-levels usage lane.
+    WHY DROP AND NOT FALL BACK TO THE FLOOR. `watchlist` is a planned kind and
+    the no-fallback law (masterplan §0 gate 1) covers it: a planned post whose
+    model copy fails is dropped and counted. The floor copy is good prose, but it
+    is still template prose, and the whole point of the wave is that the reader
+    stops meeting it. The floor keeps exactly one job — being what ships when
+    nobody armed the writer at all (`lane_armed` above) — plus its old job of
+    seeding the writer's context.
+
+    WEEKEND SEMANTICS SURVIVE THE MOVE. Contexts are still built from level facts
+    with `type="watchlist"`, so the post stays an evergreen levels read with no
+    "today" claim, and `_assert_clean` still runs on whatever the model returns.
+
+    The PROVIDER WATERFALL is the copywriter's, and deliberately so: the whole
+    `copywriter` block (its `llm` sub-block included) is handed to the writer, so
+    weekend levels inherits the marketing-copywriter lane's ChatGPT-first routing
+    (codex/Sol leading, the key_pool-balanced Claude oauth rung behind it —
+    operator directive 2026-07-29) with no second copy of those keys to drift.
     """
-    floor = [(str(s.get("headline") or ""), str(s.get("body") or "")) for s in specs]
+    floor: list[tuple[str, str] | None] = [
+        (str(s.get("headline") or ""), str(s.get("body") or "")) for s in specs
+    ]
     if not specs:
+        return floor
+    if not lane_armed(cfg):
+        log.info("weekend_levels: LLM writer not armed — shipping the floor copy")
         return floor
 
     try:
-        from engine.marketing.copywriter import build_context, write_posts_llm  # noqa: PLC0415
+        from engine.marketing.copywriter import build_context, write_posts_llm_v2  # noqa: PLC0415
         from engine.marketing import chart_facts as _cf  # noqa: PLC0415
 
         cw_cfg = ((cfg or {}).get("copywriter") or {})
@@ -509,36 +557,60 @@ def write_copy(
             ctx = build_context(item, persona=persona, facts=facts or None)
             ctx["type"] = "watchlist"
             ctx["voice"] = persona.get("voice_notes", "") or ctx.get("voice", "")
+            # `two_part` is the only shape that carries a headline, and this
+            # lane's post IS a headline plus a body — asking for any other shape
+            # would guarantee an empty headline and a drop on every item.
+            ctx["shape"] = "two_part"
+            # The writer's per-account frequency caps key off the post's date;
+            # the spec carries the CONTENT day (the weekend being written for).
+            if s.get("as_of"):
+                ctx["as_of"] = str(s.get("as_of"))
             contexts.append(ctx)
 
-        posts = write_posts_llm(contexts, cw_cfg)
+        posts = write_posts_llm_v2(contexts, cw_cfg, root=root)
         if not posts or len(posts) != len(specs):
-            return floor
+            # A writer that answers with the wrong SHAPE is a writer we cannot
+            # read: drop the batch rather than guess which post is which. This
+            # is not the mute case (checked above) — the lane is armed.
+            log.warning("weekend_levels: writer returned %d result(s) for %d "
+                        "spec(s) — dropping the batch",
+                        len(posts or []), len(specs))
+            return [None] * len(specs)
 
-        out: list[tuple[str, str]] = []
+        out: list[tuple[str, str] | None] = []
         for i, post in enumerate(posts):
-            # mode "llm_fallback" means the LLM output failed validation and the
-            # copywriter substituted its own generic template. OUR floor is
-            # purpose-built for this lane and known compliant, so prefer it.
-            if str(post.get("mode")) != "llm":
-                out.append(floor[i])
+            ticker = str(specs[i].get("ticker") or "")
+            # v2 modes: "llm" | "llm_repair" survive; "dropped" is a post we do
+            # not have. There is no template mode to fall back to any more, and
+            # that absence is the point.
+            mode = str((post or {}).get("mode") or "")
+            if not mode.startswith("llm"):
+                log.info("weekend_levels: %s dropped by the writer (%s: %s)",
+                         ticker, (post or {}).get("stage"), (post or {}).get("reasons"))
+                out.append(None)
                 continue
             hl = str(post.get("headline") or "").strip()
             bd = str(post.get("body") or "").strip()
             if not hl or not bd:
-                out.append(floor[i])
+                log.info("weekend_levels: %s dropped — writer returned no "
+                         "headline/body", ticker)
+                out.append(None)
                 continue
             try:
-                _assert_clean(f"{hl}\n\n{bd}", str(specs[i].get("ticker") or ""))
+                _assert_clean(f"{hl}\n\n{bd}", ticker)
             except ValueError as exc:
-                log.warning("weekend_levels: LLM copy rejected (%s) — using the floor", exc)
-                out.append(floor[i])
+                log.warning("weekend_levels: %s dropped — copy rejected (%s)",
+                            ticker, exc)
+                out.append(None)
                 continue
             out.append((hl, bd))
         return out
-    except Exception as exc:  # noqa: BLE001 — voice is an upgrade, never a gate
-        log.warning("weekend_levels: LLM copy lane unavailable (%s) — using the floor", exc)
-        return floor
+    except Exception as exc:  # noqa: BLE001
+        # The lane is ARMED and the writer path broke (import, provider
+        # construction, a raise out of a helper). Dropping is the law's answer;
+        # the floor is only for a lane nobody armed.
+        log.warning("weekend_levels: writer lane unavailable (%s) — posts dropped", exc)
+        return [None] * len(specs)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -708,6 +780,57 @@ def _chart_cta_enabled(cfg: dict | None) -> bool:
         return True
 
 
+def already_built(
+    root: Path | str | None,
+    *,
+    as_of: str,
+    account: str = "flagship",
+    provenance: str = "weekend_levels",
+) -> int:
+    """How many items this lane has EVER built for (account, as_of) — any status.
+
+    The idempotence read. Fail-soft: an unreadable queue answers 0, because a
+    lane that cannot see the outbox must still be able to fill an empty day.
+
+    STATUS-BLIND ON PURPOSE (defect closed 2026-07-31; the incident it replays is
+    2026-07-26). This used to call `rewrite.live_items_for`, which filters out
+    every TERMINAL status — and `posted` is terminal. So the guard could only see
+    a batch that had not shipped yet: the 03:13 batch of eight queued, POSTED
+    through the morning, and by the 09:52 rerun every one of its rows was
+    invisible to this check. The lane read "nothing built for 2026-07-26",
+    rebuilt the whole day, and produced a second contradictory post per slot —
+    eight more Chrome rasters and eight more R2 uploads against a render budget
+    that is law. An idempotence guard that goes blind the moment its work
+    SUCCEEDS is the exact inverse of the guarantee it advertises: the better the
+    lane performs, the sooner it duplicates itself.
+
+    "Built" therefore means ANY row for this (account, as_of, provenance) triple
+    in items.jsonl, whatever the ledger later did to it — posted, quarantined,
+    failed, recalled, superseded. The row is the receipt that the work was done.
+
+    WHAT THIS COSTS, stated plainly: quarantining a bad batch no longer re-arms
+    the lane for the same day (the old docstring named that as the recovery path
+    and it is now gone). That is the correct trade — a duplicate slate on a live
+    timeline is a public contradiction, while a day with a quarantined batch and
+    no replacement is merely a quiet day. Re-running a day on purpose is an
+    operator action: supersede the rows through `engine.marketing.rewrite`
+    (which passes `skip_if_queued=False` precisely because it OWNS regeneration),
+    or build under a different `as_of`.
+    """
+    try:
+        from engine.marketing.outbox import fold_state  # noqa: PLC0415
+        state = fold_state(root)
+        return sum(
+            1 for it in (state.get("items") or {}).values()
+            if str(it.get("account") or "") == account
+            and str(it.get("as_of") or "") == as_of
+            and str(it.get("provenance") or "") == provenance
+        )
+    except Exception as exc:  # noqa: BLE001
+        log.warning("weekend_levels: queue unreadable for idempotence check: %s", exc)
+        return 0
+
+
 def build_items(
     root: Path | str | None,
     *,
@@ -720,6 +843,7 @@ def build_items(
     max_items: int = 8,
     cfg: dict | None = None,
     with_media: bool = True,
+    skip_if_queued: bool = True,
 ) -> list[dict[str, Any]]:
     """Build outbox item dicts (via outbox.make_item) for the reach tickers.
 
@@ -729,11 +853,42 @@ def build_items(
          Without it the deterministic floor copy ships.
     with_media: render + attach the v2 chart card per post (default on). Set
          False in tests to skip chart rendering entirely.
+    skip_if_queued: return [] when this lane already has a live item for
+         (account, as_of). The REWRITE path passes False — it exists precisely
+         to regenerate copy for items that are already queued, and supersedes
+         them one for one (engine.marketing.rewrite.apply_rewrite).
 
     Returns at most *max_items* items, one per ticker that has usable data and
     compliant copy. Never raises — a bad ticker is skipped with a warning.
+
+    IDEMPOTENT BY DEFAULT (2026-07-26 double slate). This lane ran twice for
+    as_of=2026-07-26 — a 03:13 batch and a 09:52 batch — and produced EIGHT
+    items each time: a second, contradictory post for every slot, which the
+    operator deleted by hand. The downstream `supersede_lane` retirement added
+    later still lets the second run render eight fresh chart cards and write
+    eight rows before retiring the first eight, so a re-run costs eight Chrome
+    rasters and eight R2 uploads against a render budget that is law. Detecting
+    the day up front is cheaper and is what "never duplicate" actually means.
+    A PARTIAL first run is deliberately treated as built: this returns [] when
+    ANY item exists for the day. Refilling the rest of a ladder needs slot
+    occupancy this function does not have, and the day-cap is the real limiter
+    anyway.
+
+    "ANY item" is STATUS-BLIND — including a batch that already posted. See
+    `already_built` for why the old live-items-only read let a shipped 03:13
+    batch look like an empty day at 09:52, and for the recovery path that
+    replaces "quarantine it to re-arm the lane".
     """
     from engine.marketing.outbox import make_item  # noqa: PLC0415
+
+    if skip_if_queued:
+        _existing = already_built(root, as_of=as_of, account=account,
+                                  provenance=provenance)
+        if _existing:
+            log.info("weekend_levels: %s already built %d item(s) for %s "
+                     "(any status) — skipping (idempotent re-run)",
+                     account, _existing, as_of)
+            return []
 
     ts_now = now if now is not None else datetime.now(timezone.utc)
     picks = [t.upper() for t in (tickers or _DEFAULT_REACH_TICKERS)]
@@ -780,23 +935,32 @@ def build_items(
     if not specs:
         return []
 
-    # ── Pass 2: real voice (falls back to the floor per post) ────────────────
-    copy = write_copy(specs, cfg, account=account)
+    # ── Pass 2: real voice. A None here is a DROPPED post, never a template ──
+    # (see write_copy: the v2 writer drops, it does not fall back).
+    copy = write_copy(specs, cfg, account=account, root=root)
+    _dropped = sum(1 for c in copy if c is None)
+    if _dropped:
+        log.warning("weekend_levels: writer dropped %d/%d post(s) — those slots "
+                    "ship nothing", _dropped, len(specs))
 
     # ── Pass 2b: quality review (advisory, never a gate) ─────────────────────
     # The mechanical half costs nothing and catches the failure this lane
     # actually shipped: eight posts sharing one skeleton. Findings ride on the
     # item so the Outbox can show the operator WHICH posts collide; nothing is
-    # dropped or rewritten here.
-    review_posts: list[dict[str, Any]] = []
+    # dropped or rewritten here. Reviews are keyed by TICKER, not by position,
+    # because a dropped post leaves no copy to review and the two lists would
+    # otherwise slide out of alignment.
+    review_by_ticker: dict[str, dict] = {}
     try:
         from engine.marketing.copy_review import review_batch  # noqa: PLC0415
+        _reviewable = [(s, c) for s, c in zip(specs, copy) if c is not None]
         _rev = review_batch(
-            [{"id": s["ticker"], "headline": h, "body": b}
-             for s, (h, b) in zip(specs, copy)],
+            [{"id": s["ticker"], "headline": c[0], "body": c[1]}
+             for s, c in _reviewable],
             cfg, root=root,
         )
-        review_posts = _rev.get("posts") or []
+        for _s_c, _rp in zip(_reviewable, (_rev.get("posts") or [])):
+            review_by_ticker[str(_s_c[0].get("ticker") or "")] = _rp or {}
         for _f in (_rev.get("batch") or []):
             log.warning("weekend_levels: copy review [%s] %s",
                         _f.get("severity"), _f.get("detail"))
@@ -808,7 +972,13 @@ def build_items(
     for i, spec in enumerate(specs):
         ticker = str(spec["ticker"])
         lv = spec["lv"]
-        headline, body = copy[i] if i < len(copy) else (spec["headline"], spec["body"])
+        written = copy[i] if i < len(copy) else None
+        if written is None:
+            # The writer dropped this post. NOTHING is substituted — not the
+            # floor, not a template. Skipping BEFORE build_card also means a
+            # dropped post never spends a Chrome raster or an R2 upload.
+            continue
+        headline, body = written
         text = f"{headline}\n\n{body}"
         try:
             _assert_clean(text, ticker)
@@ -852,11 +1022,10 @@ def build_items(
         # Advisory review finding, surfaced next to the post in the Outbox.
         # Only attached when there IS something to say — a clean post carries
         # no marker, so a reviewed queue does not look uniformly suspicious.
-        if i < len(review_posts):
-            _r = review_posts[i] or {}
-            if _r.get("issues") or str(_r.get("verdict") or "ok") != "ok":
-                source["review"] = {"verdict": _r.get("verdict") or "ok",
-                                    "issues": _r.get("issues") or []}
+        _r = review_by_ticker.get(ticker) or {}
+        if _r.get("issues") or str(_r.get("verdict") or "ok") != "ok":
+            source["review"] = {"verdict": _r.get("verdict") or "ok",
+                                "issues": _r.get("issues") or []}
 
         try:
             item = make_item(

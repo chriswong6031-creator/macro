@@ -139,6 +139,47 @@
 		}
 	}
 
+	# ── Bare-path aliases (backlink + crawler hygiene) ────────────────────────
+	#
+	# Extensionless URL guesses — /blog, /start, /plans — carry no ".html" and no
+	# trailing slash, so they miss BOTH the *.html document matcher and the
+	# /blog/* style prefix exclusions below. They therefore landed in @reg_asset
+	# and died at the registration wall's 401 JSON: a crawler or an inbound link
+	# got a hard auth error where a page exists. These 301 them onto the canonical
+	# sitemap form instead.
+	#
+	# `redir` sorts BEFORE `handle`/`file_server` in Caddy's default directive
+	# order, so these resolve ahead of the Site Access Boundary below (this snippet
+	# is imported at the top level of the site block — it is NOT wrapped in an
+	# explicit `route`, which would swap ordering to written order). Redirecting
+	# onto a regwalled .html target is intentional and safe: the gate still runs on
+	# the redirected request.
+	#
+	# Section hubs -> the canonical /<section>/index.html the sitemap lists.
+	redir /blog /blog/index.html 301
+	redir /blog/ /blog/index.html 301
+	redir /learn /learn/index.html 301
+	redir /learn/ /learn/index.html 301
+	redir /products /products/index.html 301
+	redir /products/ /products/index.html 301
+	redir /tools /tools/index.html 301
+	redir /tools/ /tools/index.html 301
+	redir /stocks /stocks/index.html 301
+	redir /stocks/ /stocks/index.html 301
+	redir /research /research/index.html 301
+	redir /research/ /research/index.html 301
+	# Top-level pages -> the same name with its extension.
+	redir /start /start.html 301
+	redir /plans /plans.html 301
+	redir /macro /macro.html 301
+	redir /support /support.html 301
+	redir /privacy /privacy.html 301
+	redir /terms /terms.html 301
+	redir /disclaimer /disclaimer.html 301
+	redir /us_stocks /us_stocks.html 301
+	redir /research_vault /research_vault.html 301
+	redir /confluence_screener /confluence_screener.html 301
+
 	# ── Site Access Boundary ──────────────────────────────────────────────────
 	#
 	# DEFAULT-DENY STATIC SERVING. Only the explicit public funnel/assets listed
@@ -219,7 +260,7 @@
 	# original leak: direct JSON/JS/model-output URLs no longer bypass auth.
 	# PUBLIC-BOUNDARY-START
 	@reg_asset {
-		not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /chat.css /chat_nav.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+		not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /chat_nav.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 	}
 	# PUBLIC-BOUNDARY-END
 	handle @reg_asset {
@@ -314,7 +355,7 @@
 		# tests/test_regwall_json_gate.py), so content is still only ever served
 		# from inside `handle @reg_asset` after the gate returns 2xx.
 		@reg_asset_err {
-			not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /chat.css /chat_nav.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
+			not path /api/* /ws/tape / /index.html /plans.html /confluence_screener.html /macro.html /start.html /us_stocks.html /research_vault.html /research_vault_app.js /support.html /unsubscribe.html /privacy.html /terms.html /disclaimer.html /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /chat_nav.css /theme.css /navigation-refresh.css /product-nav-icons.css /logo_config.js /stock-logos.js /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /live/quotes.json /live/breadth.json /live/release_publications.json /live/wires.json /live/intelligence.json /prophet/showcase.json /factordata/tech_lab.json /assets/css/* /assets/landing/* /factordata/tech_events/* /stocks/* /products/* /tools/* /learn/* /blog/* /research/* /fonts/* *.html
 		}
 		handle @reg_asset_err {
 			header Cache-Control "private, no-store"
@@ -359,7 +400,7 @@
 	# extension matcher here would override a protected response's no-store and
 	# turn the CDN into an authentication bypass.
 	@public_static {
-		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /assets/css/* /assets/landing/* /fonts/*
+		path /favicon.svg /favicon.ico /apple-touch-icon.png /robots.txt /88bb90b05303e3cf469878ebc4dc7543.txt /sitemap.xml /llms.txt /brand-facts.json /onboard.css /onboard.js /tier_preview.css /tier_preview.js /landing.css /scene-motion.css /scene-motion.js /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /dashboard-icons.css /dashboard-icons.js /chart_i18n.js /timemachine.js /tablesort.js /charts.js /risk_state_live.js /release_publications_live.js /heatmap.js /stocktable.js /globe-deck.js /sky.js /hub-welcome.js /vendor/d3-array.min.js /vendor/d3-geo.min.js /vendor/topojson-client.min.js /world-110m.json /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /research_vault_app.js /prophet/showcase.json /assets/css/* /assets/landing/* /fonts/*
 		not query v=*
 	}
 	header @public_static Cache-Control "public, max-age=300, must-revalidate"
@@ -379,7 +420,7 @@
 	# re-revalidated on every page navigation — the dominant mobile cost. Refs
 	# WITHOUT ?v= (e.g. a page rendered before the sweep) keep the short TTL above.
 	@public_versioned {
-		path /onboard.css /onboard.js /landing.css /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/landing/*
+		path /onboard.css /onboard.js /landing.css /scene-motion.css /scene-motion.js /chat.css /chat_nav.css /theme.css /product-nav-icons.css /theme.js /release_publications_live.js /adtest.js /account.js /nav_market.js /supabase.js /data_base.js /live.js /live_config.js /assets/css/* /assets/landing/*
 		query v=*
 	}
 	header @public_versioned Cache-Control "public, max-age=31536000, immutable"

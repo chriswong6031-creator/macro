@@ -8,3 +8,5 @@
 {"date": "2026-07-27", "trend_state": "rolling_over", "structure_chip": "recovering", "k7_trend": 1, "cw_r10": -0.034482, "generals": []}
 {"date": "2026-07-28", "trend_state": "rolling_over", "structure_chip": "recovering", "k7_trend": 1, "cw_r10": -0.036855, "generals": []}
 {"date": "2026-07-29", "trend_state": "rolling_over", "structure_chip": "recovering", "k7_trend": 1, "cw_r10": -0.071411, "generals": []}
+{"date": "2026-07-30", "trend_state": "rolling_over", "structure_chip": "recovering", "k7_trend": 2, "cw_r10": -0.03877, "generals": []}
+{"date": "2026-07-31", "trend_state": "cooling", "structure_chip": "recovering", "k7_trend": 2, "cw_r10": 0.002173, "generals": ["MSFT", "AMZN"]}

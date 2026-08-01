@@ -7,8 +7,49 @@ these files are what it must end up looking like.
 | File | What it is |
 |---|---|
 | `strip.html` | The mockup itself. Self-contained: theme tokens copied verbatim from `templates/theme.css`, strip CSS verbatim from spec §3, prophet-card CSS verbatim from `_prophet_card.html.j2`'s `pv_css()` plus the new `.pv-live` chip (spec §5.3). **This file, not the PNGs, is the authoritative reference** — it carries the exact CSS. |
-| `build_refs.py` | Playwright shot harness. `python3 mockups/refs/prophet_live/build_refs.py`. Also prints the height-invariance proof. |
-| `shots/*.png` | 2× crops: `{specimen}_{theme}_{lang}.png`, plus `_mobile_` at 375px. |
+| `build_refs.py` | Playwright shot harness for the MOCKUP. `python3 mockups/refs/prophet_live/build_refs.py`. Also prints the height-invariance proof. |
+| `shots/*.png` | 2× crops of the mockup: `{specimen}_{theme}_{lang}.png`, plus `_mobile_` at 375px. |
+| **`verify_p1.py`** | **Acceptance harness for the SHIPPED build** (added with the P1 PR). Renders the real `dashboard.html.j2` with the real `us_standouts.json`, serves `site/` over loopback so the page's own `fetch('live/prophet_live.json')` resolves, freezes the ET clock per specimen, and drives the production JS path. Prints the five proofs and exits non-zero on any failure, so it doubles as a pre-push gate. |
+| `p1_shots/*.png` | 2× crops from `verify_p1.py` — the shipped surface, not the mockup. Includes `strip_closed` and `strip_overflow`, which the mockup has no specimen for. |
+
+## Which numbers to trust
+
+The mockup's height numbers (231.25 / 233.25 / 284.34px) do **not** carry over: the real
+page inherits `line-height:1.5` where the mockup inherited `normal`, so a baseline-aligned
+row measures 26.06px there against 24.5px here. The shipped build pins the row height and
+derives the body reservation from it (`--plv-rh`). `verify_p1.py` is the source of truth
+for the shipped surface; re-run it, never quote the mockup.
+
+The panel's height is **constant across modes at every width** but varies BY width (the
+copy wraps differently): 243.25px from 700px up, rising to 369.09px at 320px in en. Quote
+the matrix `verify_p1.py` prints, not a single number.
+
+## Height invariance is a SWEEP, not three measurements
+
+`HEIGHT_WIDTHS` × {en, zh} × **every specimen the harness defines**, and the run exits
+non-zero on any variance.
+
+Both halves of that sentence are scar tissue, and the gate narrowed twice:
+
+1. The width list was hardcoded to the three configurations the PR body happened to quote,
+   so it could only ever agree with the claim being made. It passed while the panel shoved
+   the board by up to **32.75px** at nine other widths.
+2. The mode list was then hand-written and omitted `strip_noread` — the one specimen added
+   that round, and the one still shoving (**17.00px** at 320/340 en, from the `#plv-asof`
+   box). "308 measurements, variance 0.00" and an independent reviewer's "17.00px" were
+   both true at the same time.
+
+So: `modes` is **derived** from the specimen dict (a new specimen joins the sweep by
+existing — a specimen that is not swept is a crop that lies), and `HEIGHT_WIDTHS` is pinned
+by length and membership in `tests/test_prophet_live_surface.py`, because a prose comment
+saying "never trim this back" is not a guard. Mutating the list to `(375, 1180)` used to
+leave the whole suite green.
+
+Four boxes vary with the mode — `.plv-token`, `.plv-sub`, `.plv-fn`, `.plv-asof` — and all
+four are fixed the same structural way rather than with per-breakpoint numbers: every
+variant stays in the DOM stacked in one grid cell with `visibility:hidden`, so the browser
+reserves the worst case at whatever width and language it renders. If you add a mode or
+change any of that copy, re-run — do not re-measure by hand.
 
 ## Specimens
 

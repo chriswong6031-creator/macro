@@ -16,6 +16,16 @@ def test_public_dashboard_shells_and_controller_are_allowlisted():
     assert "/macro.html" not in set(policy["free_registered"]["exact"])
 
 
+def test_public_hub_globe_topology_is_allowlisted():
+    """The public shell must not fetch its map geometry through the regwall."""
+    policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text())
+    public = set(policy["public"]["exact"])
+    html = (ROOT / "site" / "start.html").read_text()
+
+    assert 'data-topo="world-110m.json"' in html
+    assert "/world-110m.json" in public
+
+
 def test_stock_preview_controller_enforces_one_three_full():
     js = (ROOT / "templates" / "tier_preview.js").read_text()
     assert 'state = { tier: "anon", cap: 1 }' in js
@@ -43,9 +53,13 @@ def test_stock_preview_uses_one_surface_cta_per_primary_decision_system():
 
 def test_dashboard_wires_preview_and_macro_detail_gate():
     template = (ROOT / "templates" / "dashboard.html.j2").read_text()
+    theme = (ROOT / "templates" / "theme.js").read_text()
     assert '<script src="tier_preview.js"></script>' in template
     assert '<link rel="stylesheet" href="tier_preview.css">' in template
-    assert '<script src="onboard.js"></script>' in template
+    assert '<script src="onboard.js"></script>' not in template
+    assert '<link rel="stylesheet" href="onboard.css">' not in template
+    assert "onboard.js is lazy-loaded" in theme
+    assert "s.src = pfx + 'onboard.js'" in theme
     assert "window.MMXAccessPreview.isAnon()" in template
     assert "window.MMXAccessPreview.openSignin()" in template
     for selector in (

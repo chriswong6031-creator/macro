@@ -215,7 +215,12 @@ class TestFreshnessTripwire:
                 for i in range(100)}
         _make_earnings_parquet(tmp_path / "earnings", rows, base_name="earnings.parquet")
         result = self._run_audit(tmp_path, max_age_td=2)
-        assert result["ok"] is True
+        # `ok` now means "this audit found NOTHING wrong" (review minor 8: it used to
+        # track fail_reasons only, so the artifact published ok:true beside a populated
+        # errors list). This fixture's as_of is the module's hardcoded TODAY = 2026-07-14,
+        # which the wall clock has long overtaken, so the coverage check correctly errors.
+        # The assertion this test is actually about is the STRUCTURAL one: no fail_reason.
+        assert not result["fail_reasons"]
         # The only valid warning path here is the age-based one; emptiness guards must not fire.
         emptiness_warns = [w for w in result["warnings"]
                            if "empty" in w.lower() or "suspiciously small" in w.lower()
@@ -236,7 +241,12 @@ class TestFreshnessTripwire:
         p = tmp_path / "earnings" / "earnings.parquet"
         df.to_parquet(p)
         result = self._run_audit(tmp_path, max_age_td=2)
-        assert result["ok"] is True
+        # `ok` now means "this audit found NOTHING wrong" (review minor 8: it used to
+        # track fail_reasons only, so the artifact published ok:true beside a populated
+        # errors list). This fixture's as_of is the module's hardcoded TODAY = 2026-07-14,
+        # which the wall clock has long overtaken, so the coverage check correctly errors.
+        # The assertion this test is actually about is the STRUCTURAL one: no fail_reason.
+        assert not result["fail_reasons"]
         assert result["warnings"]
         assert any("with_next_date=0" in w for w in result["warnings"])
 

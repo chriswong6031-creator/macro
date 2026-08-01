@@ -46,6 +46,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # The repository keeps generated site releases in Git. The fences
+          # need the commit graph and current tree, not historical site blobs.
+          filter: blob:none
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
@@ -192,6 +195,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          filter: blob:none
           fetch-depth: 0
       - uses: actions/setup-python@v5
         with:

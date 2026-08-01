@@ -1898,9 +1898,66 @@ def test_committed_config_block_parses_and_matches_the_code_defaults():
     for lane in desk_feed.LANES:
         assert resolved["lanes"][lane] == float(block["lane_weights"][lane])
 
-    # The value gate lands RECORD-ONLY, per the XG-W2 arming precedent.
-    assert cfg["value_gate"]["enforce"] is False
+    # THE VALUE GATE IS ARMED (2026-07-30), PER KIND.
+    #
+    # This assertion used to read `enforce is False` and it was the right pin
+    # while the gate was unmeasured: XG-W2's precedent is that a publish gate
+    # lands record-only and an operator arms it after reading a cycle. That cycle
+    # has been read — and re-read, because the first reading counted 14
+    # `grip:no_hook` abstentions that were an empty-headline bug rather than
+    # editorial verdicts.
+    #
+    # What replaces the pin is the thing that actually protects the desks: arming
+    # may never exceed the corpus. `enforce_kinds` must be a NON-EMPTY list, and
+    # every kind in it must be one the committed corpus has observations for. A
+    # future edit that arms `wire` or `reply` — kinds with zero observations —
+    # fails here rather than silencing a lane on no evidence.
+    vg = cfg["value_gate"]
+    assert vg["enforce"] is True
+    armed = vg.get("enforce_kinds")
+    assert isinstance(armed, list) and armed, (
+        "enforce_kinds must be an explicit non-empty list — an absent or empty "
+        "list arms EVERY kind, including kinds the corpus has never seen"
+    )
+    measured = _corpus_kinds_with_stamped_verdicts()
+    unmeasured = sorted(set(armed) - measured)
+    assert not unmeasured, (
+        f"armed kinds with no stamped observations in the corpus: {unmeasured}. "
+        "Extend data/marketing/outbox/items.jsonl coverage before arming them, "
+        "or drop them from enforce_kinds — zero observations buys zero authority."
+    )
+
     assert cfg["persona_memory"]["retention_days"] > 7
+
+
+def _corpus_kinds_with_stamped_verdicts() -> set:
+    """Kinds the committed outbox corpus actually carries a gate verdict for.
+
+    Read from the artifact rather than hard-coded, so the arming test tracks the
+    corpus instead of a list someone has to remember to update.
+    """
+    import json
+
+    path = ROOT / "data" / "marketing" / "outbox" / "items.jsonl"
+    if not path.exists():
+        return set()
+    kinds = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except Exception:  # noqa: BLE001
+            continue
+        if not isinstance(row, dict):
+            continue
+        verdict = (row.get("source") or {}).get("value_gate")
+        if isinstance(verdict, dict) and verdict.get("verdict") in {"pass", "abstain"}:
+            kind = (verdict.get("components") or {}).get("kind") or row.get("kind")
+            if kind:
+                kinds.add(str(kind))
+    return kinds
 
 
 def test_chronicle_seam_has_exactly_one_call_site():

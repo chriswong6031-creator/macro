@@ -1,6 +1,7 @@
 {
   "reconstructed": true,
   "engine": "engine.gex_engine.compute_gex",
+  "store_root": "/Users/chriswong/theta-ops-wt/data/thetadata_eod",
   "dealer_sign": "long-call/short-put (call +1, put -1); regime long above flip, short below",
   "era_min_year": 2017,
   "roots_read": {
@@ -51,12 +52,33 @@
       2024,
       2025,
       2026
+    ],
+    "SPX": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
+    ],
+    "SPXW": [
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023,
+      2024,
+      2025,
+      2026
     ]
   },
-  "roots_excluded_native_index": [
-    "SPX",
-    "SPXW"
-  ],
+  "roots_excluded_native_index": [],
   "note": "SPX/SPXW excluded unless _backfill_state 'completed' lists them; read only completed roots/years (house mid-write law).",
   "cfg": {
     "strike_window_pct": 0.25,
@@ -68,55 +90,60 @@
   },
   "overlap_audit_2026_06_15_onward": {
     "SPY": {
-      "n_overlap": 13,
-      "net_gex_corr_raw": 0.8605,
-      "regime_agreement_raw": 0.8462,
-      "mean_abs_net_gex_diff_raw": 2.5441,
+      "n_overlap": 20,
+      "net_gex_corr_raw": 0.7803,
+      "regime_agreement_raw": 0.8,
+      "mean_abs_net_gex_diff_raw": 2.736,
       "spot_tol_frac": 0.005,
-      "n_same_spot": 9,
-      "net_gex_corr_same_spot": 0.9727,
-      "regime_agreement_same_spot": 0.8889,
-      "mean_abs_net_gex_diff_same_spot": 1.5889
+      "n_same_spot": 14,
+      "net_gex_corr_same_spot": 0.9367,
+      "regime_agreement_same_spot": 0.9286,
+      "mean_abs_net_gex_diff_same_spot": 1.6275
     },
     "QQQ": {
-      "n_overlap": 13,
-      "net_gex_corr_raw": 0.7385,
-      "regime_agreement_raw": 0.8462,
-      "mean_abs_net_gex_diff_raw": 1.6597,
+      "n_overlap": 20,
+      "net_gex_corr_raw": 0.6989,
+      "regime_agreement_raw": 0.9,
+      "mean_abs_net_gex_diff_raw": 1.5297,
       "spot_tol_frac": 0.005,
-      "n_same_spot": 5,
-      "net_gex_corr_same_spot": 0.9707,
+      "n_same_spot": 7,
+      "net_gex_corr_same_spot": 0.968,
       "regime_agreement_same_spot": 1.0,
-      "mean_abs_net_gex_diff_same_spot": 0.6332
+      "mean_abs_net_gex_diff_same_spot": 0.6106
     },
     "IWM": {
-      "n_overlap": 13,
-      "net_gex_corr_raw": 0.3341,
+      "n_overlap": 20,
+      "net_gex_corr_raw": 0.6452,
       "regime_agreement_raw": 1.0,
-      "mean_abs_net_gex_diff_raw": 0.4686,
+      "mean_abs_net_gex_diff_raw": 0.548,
       "spot_tol_frac": 0.005,
-      "n_same_spot": 6,
-      "net_gex_corr_same_spot": 0.9262,
+      "n_same_spot": 9,
+      "net_gex_corr_same_spot": 0.9387,
       "regime_agreement_same_spot": 1.0,
-      "mean_abs_net_gex_diff_same_spot": 0.2518,
-      "audit_note": "FRAGILE: same-spot corr 0.9262 is tolerance-sensitive (0.2%->0.9977 n=4, 0.5%->0.9262 n=6, 1.0%->0.3341 n=13). Unlike SPY/QQQ/DIA which degrade monotonically (consistent with timing-lag confound), IWM collapses as rows in the 0.5-1.0% drift band are added, suggesting genuine model divergence at those sessions. regime_agreement_same_spot=1.0 is uninformative: the IWM all-short cluster (-0.4 to -2.0 $bn) means every row agrees by default. Registration is provisional; widen evidence as polygon_gex accumulates more IWM overlap days."
+      "mean_abs_net_gex_diff_same_spot": 0.2993
     },
     "DIA": {
-      "n_overlap": 13,
-      "net_gex_corr_raw": 0.8669,
-      "regime_agreement_raw": 0.7692,
-      "mean_abs_net_gex_diff_raw": 0.0572,
+      "n_overlap": 20,
+      "net_gex_corr_raw": 0.6647,
+      "regime_agreement_raw": 0.75,
+      "mean_abs_net_gex_diff_raw": 0.0795,
       "spot_tol_frac": 0.005,
-      "n_same_spot": 10,
-      "net_gex_corr_same_spot": 0.9105,
+      "n_same_spot": 15,
+      "net_gex_corr_same_spot": 0.836,
       "regime_agreement_same_spot": 0.8,
-      "mean_abs_net_gex_diff_same_spot": 0.0452
+      "mean_abs_net_gex_diff_same_spot": 0.0516
+    },
+    "SPX": {
+      "note": "no live polygon summary to audit against"
+    },
+    "SPXW": {
+      "note": "no live polygon summary to audit against"
     },
     "SPY_vs_cboe_SPX": {
-      "n_overlap": 15,
-      "net_gex_corr_raw": 0.9221,
+      "n_overlap": 19,
+      "net_gex_corr_raw": 0.8651,
       "regime_agreement_raw": null,
-      "mean_abs_net_gex_diff_raw": 52.4643,
+      "mean_abs_net_gex_diff_raw": 47.9092,
       "spot_tol_frac": 0.005,
       "n_same_spot": 0,
       "net_gex_corr_same_spot": null,

@@ -87,7 +87,8 @@ CRISES = {
 def load_inputs():
     spy = pd.read_parquet(DATA / "yahoo" / "SPY.parquet")["close"].rename("SPY").dropna()
     vix = pd.read_parquet(DATA / "yahoo" / "_VIX.parquet")["close"].rename("vix").dropna()
-    bill = pd.read_parquet(DATA / "fred" / "DTB3.parquet")["us3m"].rename("bill")
+    # positional read: the DTB3 column follows its config alias (us3m -> us3m_bill, 2026-07-30)
+    bill = pd.read_parquet(DATA / "fred" / "DTB3.parquet").iloc[:, 0].rename("bill")
     sahm = pd.read_parquet(DATA / "fred" / "SAHMREALTIME.parquet")["sahm"]
     be = pd.read_parquet(DATA / "fred" / "T10YIE.parquet")["breakeven_10y"]
     cot = pd.read_parquet(DATA / "cot" / "cot_es_spx.parquet")["net_spec_pct_oi"]

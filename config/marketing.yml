@@ -165,6 +165,7 @@ sentinel:
   # publish-time half would have quarantined 5 of 6 every night with nothing
   # upstream saying so. -1 = unlimited.
   max_filler_per_account_per_day: 1
+
   # THE BAR (operator 2026-07-28): "a post must name a ticker, state a dated
   # fact with its numbers, and then say something that FOLLOWS from that fact."
   # This gate covers the first two clauses over every ORIGINATED post from every
@@ -630,6 +631,90 @@ publish:
     flagship: true
 
 # ─────────────────────────────────────────────────────────────────────────────
+# AUTONOMOUS APPROVAL DESK — engine/marketing/approval_desk.py
+# Wired into scripts/marketing_publisher.py's sweep, between the publish-time
+# generators and the candidate selection.
+#
+# WHY IT EXISTS. `publish.auto_approve_scope: kinds` above confines the
+# auto-approve pass to the publish-time lane, so the nine PLANNED kinds
+# (signal, chart, education, macro, receipt, watchlist, event, congress,
+# insider) were left to the operator-approve path: the admin UI writes
+# data/marketing/outbox/decisions.jsonl and outbox.apply_decisions turns an
+# `approve` row into a transition. THAT FILE HAS ZERO ROWS IN REPO HISTORY.
+# Every planned post that ever reached X was hand-moved by an agent session,
+# and the rest sat queued until a reaper retired them. The desk is the operator
+# instruction "closely audit them, then approve them so they go out quickly
+# without me" written as a machine gate: six named checks, three verdicts
+# (approve / quarantine with the evidence in the note / leave it for a human).
+#
+# The desk is an ADDITIONAL bar, never a bypass. Everything an approved item
+# faced before — the live tape gate, the chart law, near-dup, the voice gates,
+# the per-account cap, the spacing floor — still runs at dispatch.
+# ─────────────────────────────────────────────────────────────────────────────
+approval_desk:
+  # SHIPS TRUE. The operator asked for the autonomy explicitly, so this line is
+  # the kill switch rather than the arming switch: `false` returns the planned
+  # kinds to the (empty) manual-approval path they have been stuck in. A
+  # MISSING block also reads as enabled — deleting the key must not silently
+  # disarm a desk somebody asked for.
+  enabled: true
+
+  # Per-sweep approval ceiling. A trickle valve, not a quality bound: the
+  # measured nightly plan is ~218 items across seven desks, and clearing all of
+  # them in one sweep hands the dispatch loop a backlog that the daily caps and
+  # the 4-minute spacing floor then meter out over DAYS — which lets queue order
+  # decide what ships and buries the freshest reads behind the stalest. 40 per
+  # sweep against a ~30-sweep day keeps the approved pool near what the lane can
+  # actually drain. Overflow is not rejected: it stays `queued` and is re-audited
+  # next sweep against fresher evidence.
+  max_approvals_per_sweep: 40
+
+  # The kinds the desk polices. `breaking` is absent (it has a working
+  # all-gates-passed immediate path and a TTL in minutes); `mover` and
+  # `theme_list` are absent (kind-scoped auto-approve already clears them
+  # seconds after generation); `wire`, `earnings`, `reply` and `news` lanes own
+  # their own admission.
+  kinds:
+    - signal
+    - chart
+    - education
+    - macro
+    - receipt
+    - watchlist
+    - event
+    - congress
+    - insider
+
+  # Liveness. Matches outbox._STALE_QUEUED_HOURS (36) on purpose, so the desk's
+  # bar and the nightly reaper's bar are ONE number. The desk RUNS
+  # outbox.expire_stale_planned at this age (filling the gap that it only ever
+  # ran at nightly emit, never during the trading day) and then applies the same
+  # bar itself to the planned items that reaper does not cover — chiefly the
+  # weekend_levels watchlist lane, which is a planned kind on a real ladder slot
+  # and was swept by nobody.
+  ttl_hours: 36
+
+  # Per-kind override, only meaningful when STRICTER than ttl_hours above (the
+  # reaper has already taken anything older in the covered set). Ships empty:
+  # nothing about liveness changes until an operator says a kind perishes faster.
+  ttl_hours_by_kind: {}
+
+  # Same-account near-dup bar for the desk's dedup check, against what this
+  # account actually POSTED in the last 7 days. Deliberately LOOSER than the
+  # publisher's post-time gate (outbox._NEAR_DUP_JACCARD = 0.7), which still
+  # runs on everything the desk approves: at 0.85 the desk refuses to bless the
+  # obvious repeats, and the tighter gate stays the last word before the network.
+  dedup_jaccard: 0.85
+
+  # Max |target / quoted price - 1|, in percent, before a printed target is a
+  # hard fail. Every kind the desk polices is SWING-HORIZON (2-4 weeks) — the
+  # intraday kinds are all out of scope — so there is no horizon to branch on.
+  # Past 35% over that window the number is almost always a chart fact (a
+  # 52-week high, a prior cycle peak) that the writer promoted into a price
+  # objective. Measured example: "$LPG at 43.91 ... Target 68.41" (+55.8%).
+  max_target_move_pct: 35
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Cadence resolver (XG-W2) — the PER-ACCOUNT posting law
 # engine/marketing/cadence_resolver.py; wired into scripts/marketing_publisher.py
 #
@@ -788,13 +873,67 @@ persona_memory:
   retention_days: 90
 
 value_gate:
-  # RECORD-ONLY at W3 (the XG-W2 "LAND DARK" precedent). Every emission carries
-  # its Gift-Grip-Proof verdict in item metadata from day one — that is the §0
-  # gate — but making an abstention BLOCK a live desk is a separate arming
-  # decision for the operator/session, not a builder's, and it wants one cycle
-  # of recorded verdicts read first. Flipping this to true is what turns the
-  # verdict into a publish gate.
-  enforce: false
+  # ARMED 2026-07-30, PER KIND. This landed dark on purpose: "a separate arming
+  # decision for the operator/session, not a builder's, and it wants one cycle of
+  # recorded verdicts read first."
+  #
+  # THE FIRST READING OF THAT CYCLE WAS WRONG, AND THE CORRECTION IS THE REASON
+  # THIS BLOCK IS SHAPED THE WAY IT IS. It recorded 132 pass / 22 abstain and
+  # called all 22 the operator's F-grade class, with "grip 14" among the failing
+  # legs. Those 14 were not editorial verdicts. `grip` reads the HEADLINE, and
+  # every producer that emits a post as one block — which is what a post on X
+  # actually is — passed `headline=""`, so all eight grip devices scored False on
+  # copy that plainly had a hook ("$EQT returned to 51.7, where buyers had
+  # history", "$ARLO, 4 green closes deep. I respect 14.2, won't chase"). 64% of
+  # what the gate blocked was plumbing wearing an editorial costume, and it was
+  # read as evidence FOR arming. value_gate.evaluate now derives the hook from the
+  # body's first line when no headline is supplied.
+  #
+  # RE-MEASURED over the same 154 stamped emissions in
+  # data/marketing/outbox/items.jsonl: 142 pass / 12 abstain (7.8%). Legs:
+  # proof:below_reasoning 5, proof:below_hard 5, grip:no_hook 3,
+  # gift:no_informational_surplus 3. All 12 are the class the operator graded F:
+  #   * FIVE near-identical `event` posts opening "The AI and chip trade is
+  #     unwinding today, with tech leading the selloff" (proof:below_hard) —
+  #     the same paragraph re-headlined five ways;
+  #   * "How I keep myself honest / Every call gets its result posted" (twice)
+  #     and "Last time the tape looked like this" — narrating the receipts
+  #     concept instead of showing a receipt (proof:below_reasoning);
+  #   * "The base-rate way of thinking", "Using analogues without kidding
+  #     yourself" — education with no fact in it (gift:no_informational_surplus);
+  #   * "Macro without the jargon", "The discipline a watch list enforces" —
+  #     bare template stems (grip:no_hook).
+  #
+  # Blocking 7.8% is the right trade on a desk whose operator has said twice that
+  # volume is already too high and quality is the problem. Every block is counted
+  # as `value_gate_blocked` and the verdict is stamped either way, so the console
+  # shows exactly what it cost. The gate is fail-soft: if it raises, the item is
+  # treated as PASSING, so an outage cannot silence the desks.
+  enforce: true
+
+  # ARMED KINDS — the corpus above, and nothing else.
+  #
+  # value_gate.py's PRE-ARMING REQUIREMENT is that the regression corpus cover
+  # the kinds enforcement polices, and it names the failure precisely: a gate
+  # armed on whatever kinds happened to appear in one nightly plan is "validated
+  # on the generator it polices". These eight are the kinds actually observed in
+  # the 154 stamped emissions. `wire`, `earnings`, `receipt`, `reply` and `news`
+  # have ZERO observations, and `theme_list`/`mover` reach the queue through
+  # lanes that never call the gate at all — arming those on a global boolean
+  # would silence them on no evidence whatsoever.
+  #
+  # An unarmed kind still gets its verdict STAMPED and still ships, and the lane
+  # announces it as an UNMEASURED kind so it stops being unmeasured. Delete this
+  # list to arm every kind at once, once a corpus justifies it.
+  enforce_kinds:
+    - signal
+    - watchlist
+    - event
+    - chart
+    - macro
+    - education
+    - breaking
+    - insider
 
 departments:
   growth_os:
@@ -825,12 +964,12 @@ desk_network:
       # Flagship: signals-first flagship; operator law: signal is highest weight on every account
       tilt:
         signal: 0.40
-        chart: 0.12
+        chart: 0.17
         mover: 0.10
         theme_list: 0.09
         receipt: 0.08
         event: 0.06
-        education: 0.05
+        education: 0.00  # OFF 2026-07-30 (was 0.05) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.05
         watchlist: 0.05
 
@@ -846,12 +985,12 @@ desk_network:
       # Receipts: signals-first; receipt + chart secondary; accountability desk
       tilt:
         signal: 0.38
-        chart: 0.12
+        chart: 0.17
         mover: 0.10
         theme_list: 0.10
         receipt: 0.10
         event: 0.05
-        education: 0.05
+        education: 0.00  # OFF 2026-07-30 (was 0.05) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.04
         watchlist: 0.06
 
@@ -867,12 +1006,12 @@ desk_network:
       # Theme: signals-first; theme_list + mover boost for group reach
       tilt:
         signal: 0.39
-        chart: 0.11
+        chart: 0.17
         mover: 0.11
         theme_list: 0.12
         receipt: 0.06
         event: 0.07
-        education: 0.06
+        education: 0.00  # OFF 2026-07-30 (was 0.06) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.04
         watchlist: 0.04
 
@@ -888,12 +1027,12 @@ desk_network:
       # Research A: signals-first; education secondary; chart-rich explainer desk
       tilt:
         signal: 0.36
-        chart: 0.14
+        chart: 0.22
         mover: 0.10
         theme_list: 0.09
         receipt: 0.08
         event: 0.07
-        education: 0.08
+        education: 0.00  # OFF 2026-07-30 (was 0.08) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.04
         watchlist: 0.04
 
@@ -909,12 +1048,12 @@ desk_network:
       # Research B: highest signal weight; max mover + theme_list for reach
       tilt:
         signal: 0.42
-        chart: 0.10
+        chart: 0.14
         mover: 0.12
         theme_list: 0.12
         receipt: 0.05
         event: 0.08
-        education: 0.04
+        education: 0.00  # OFF 2026-07-30 (was 0.04) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.03
         watchlist: 0.04
 
@@ -930,12 +1069,12 @@ desk_network:
       # Research C: signals-first; chart + watchlist secondary; pattern context desk
       tilt:
         signal: 0.37
-        chart: 0.13
+        chart: 0.20
         mover: 0.09
         theme_list: 0.08
         receipt: 0.09
         event: 0.05
-        education: 0.07
+        education: 0.00  # OFF 2026-07-30 (was 0.07) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.05
         watchlist: 0.07
 
@@ -953,12 +1092,12 @@ desk_network:
       # register lives in copywriter.personas.founder below.
       tilt:
         signal: 0.34
-        chart: 0.10
+        chart: 0.15
         mover: 0.12
         theme_list: 0.10
         receipt: 0.07
         event: 0.09
-        education: 0.05
+        education: 0.00  # OFF 2026-07-30 (was 0.05) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.08
         watchlist: 0.05
 
@@ -1016,13 +1155,16 @@ desk_network:
       enabled: true
       created: "2026-07-28"       # Buffer attach date — drives ramp tier lookup (D02)
       tilt:
-        signal: 0.30
-        chart: 0.14
+        # education's 0.16 went to chart, which pushed chart level with signal
+        # and broke the "signal is strictly the largest weight" invariant. The
+        # surplus lands on signal instead; both are chart-bearing kinds.
+        signal: 0.38
+        chart: 0.22
         mover: 0.00
         theme_list: 0.06
         receipt: 0.08
         event: 0.00
-        education: 0.16
+        education: 0.00  # OFF 2026-07-30 (was 0.16) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.16
         watchlist: 0.10
 
@@ -1038,12 +1180,12 @@ desk_network:
       created: "2026-07-28"
       tilt:
         signal: 0.30
-        chart: 0.13
+        chart: 0.28
         mover: 0.00
         theme_list: 0.07
         receipt: 0.08
         event: 0.00
-        education: 0.15
+        education: 0.00  # OFF 2026-07-30 (was 0.15) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.18
         watchlist: 0.09
 
@@ -1056,12 +1198,12 @@ desk_network:
       created: "2026-07-28"
       tilt:
         signal: 0.32
-        chart: 0.18
+        chart: 0.30
         mover: 0.00
         theme_list: 0.05
         receipt: 0.12
         event: 0.00
-        education: 0.12
+        education: 0.00  # OFF 2026-07-30 (was 0.12) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.14
         watchlist: 0.07
 
@@ -1080,12 +1222,12 @@ desk_network:
       zh: true
       tilt:
         signal: 0.29
-        chart: 0.15
+        chart: 0.27
         mover: 0.00
         theme_list: 0.09
         receipt: 0.07
         event: 0.00
-        education: 0.12
+        education: 0.00  # OFF 2026-07-30 (was 0.12) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.20
         watchlist: 0.08
 
@@ -1125,10 +1267,10 @@ desk_network:
         event: 0.24
         mover: 0.14
         macro: 0.10
-        chart: 0.08
+        chart: 0.11
         theme_list: 0.06
         receipt: 0.04
-        education: 0.03
+        education: 0.00  # OFF 2026-07-30 (was 0.03) — see _DEFAULT_TILT note in content_studio.py
         watchlist: 0.03
 
     - id: mastermind_research
@@ -1164,11 +1306,11 @@ desk_network:
       # (engine/press/research_lane.py — no new outbox kinds).
       tilt:
         signal: 0.28
-        education: 0.16
+        education: 0.00  # OFF 2026-07-30 (was 0.16) — see _DEFAULT_TILT note in content_studio.py
         macro: 0.14
         receipt: 0.12
         event: 0.08
-        chart: 0.08
+        chart: 0.24
         theme_list: 0.08
         mover: 0.03
         watchlist: 0.03
@@ -1180,19 +1322,75 @@ desk_network:
 # pass regardless of whether the LLM or the deterministic fallback wrote it.
 # ─────────────────────────────────────────────────────────────────────────────
 copywriter:
+  # How old a RESOLVED Prophet plan may be and still earn a receipt post.
+  #
+  # WAS 14 IN CODE, WHICH IS WHY THE RECEIPTS DESK HAD NEVER PRODUCED ONE.
+  # Measured on the live board 2026-07-31 (site/prophet/index.json, 63 plans):
+  # every plan that had actually resolved was 21-22 days old, so a 14-day window
+  # admitted ZERO of them. The desk drew its share of the nightly tilt and
+  # emitted nothing, every night, while real receipts sat just past the edge.
+  #
+  # The mismatch is structural rather than a bad week: Prophet's swing horizon is
+  # 2-4 weeks, so a window shorter than the horizon it grades can only ever be
+  # empty. At 30 the same board yields 2 receipts ($MS, $QCOM).
+  #
+  # A receipt does not decay like a tape claim. "Three weeks ago I said X, here
+  # is how it resolved" is STRONGER than a three-day-old one because the outcome
+  # is settled — and it is the one post shape that costs something to make, which
+  # is the house voice law. Lower this to tighten; the plan announces a starved
+  # desk either way (::warning marketing-receipts-starved).
+  receipt_max_age_days: 30
+
   copy_laws:
     - sound like a real person on X, not a desk or a brand; contractions always, fragments are fine, natural-short not telegraph-short
     - NO em dashes and NO spaced en dashes anywhere; use a period, a comma, or a new sentence (hyphens in compounds like 52-week are fine)
     - mix "I" and "we"; "I" for takes and watching, "we" for the shop and the track record; never "our model", "the engine", "the system"
     - every post carries a level, a take, or a real question a trader would ask; a stance (watching, leaning, respecting, fading, waiting, not chasing) beats "thoughts?"
-    - down movers carry "watching for a bottom setup, not catching it yet"; up movers "strength worth respecting, not chasing here"
+    # This law used to PRESCRIBE two closers verbatim. The model complied: a live
+    # 8-post sample closed five of six passing posts with the identical sentence,
+    # which the operator correctly called bot-like (2026-07-30). Ask for the
+    # stance, never the sentence — and see the "never repeat a signature phrase"
+    # law below, which the old wording directly contradicted.
+    - down movers admit you are not trying to catch the bottom yet; up movers respect the strength without chasing it. Write that stance fresh every time, in your own words. Never close two posts in a plan with the same sentence
+    - 'banned closers (these were once house boilerplate and are now forbidden): "strength worth respecting, not chasing here", "watching for a bottom setup, not catching it yet", "size appropriately"'
+    # Operator 2026-07-30: "no one likes being lectured... we want to provide
+    # value without making it seem like we are superior to others, or
+    # cocky/arrogant/ego vibes." Most desks are women and a superior register
+    # reads worse from them and costs follows. The tell is grammatical person:
+    # say what I DID, never what YOU are doing wrong.
+    - NEVER lecture. Say what you did and what you are watching, in the first person. Do not tell the reader what they should do, what they get wrong, or what "most people" fail to understand
+    - 'banned superiority constructions: "most people", "nobody talks about", "anyone can", "than anyone admits", "everyone else", "the part most skip", "you should", "you need to", "if you can''t", "you''re not"'
+    - no ego. You are not the smartest person in the room and you never imply it. Curiosity and honest uncertainty beat authority; "I''m not sure yet" is a real post and a strong one
+    - a genuine question to the reader is welcome; a rhetorical question that sets up your own superior answer is not
+    - education posts show YOUR OWN working on something real from today, never a definition, a lesson, or a rule for the reader. If it could open with "Plain English:" or "What X actually means", it is the wrong post
     - the track-record promise (win or lose it goes on the page) belongs on at most 1 post in 4, phrased like a person; never narrate the concept of receipts or accountability
     - 'macro posts state only what the data plainly shows in observable words; NO regime label, NO internal score, NO "(read: ...)" aside'
     - 'banned words: vertical, signal stack (say "our technical signals"), receipt book, accountability layer, honest model, regime, goldilocks, growth score, inflation score, de-rating, narrative, positioning in, implications for, the backdrop'
     - 'avoid model tells: "here''s what it means for X", "let''s break it down", colon-as-drama openers, the repeated "That''s the [noun]." cadence, triads everywhere, kickers like "without the noise"'
     - never repeat a headline or signature phrase across posts in the same plan
     - cashtag on every ticker post; max 275 chars; at most 1 emoji unless the persona budget says 0
-    - signal posts carry an invalidation or "what would prove me wrong" line and an honest caveat ("historical, not a guarantee")
+    # THE post law (operator 2026-07-30, after grading a full batch F). The two
+    # posts they approved and the two they hated separate on exactly one axis:
+    # whether the reaction COST the author something. "Hershey's closed green
+    # eight days in a row. I don't have a clever explanation and I'm not going to
+    # invent one." (refuses to fake insight) and "Ares is up about 12% in a
+    # month. I looked at it twice and passed both times." (admits being wrong)
+    # both cost. "EQT is back at the price where buyers kept showing up... that's
+    # the whole observation" does not, and drew "why even post, shut up then?"
+    - 'every post is a FACT plus a reaction that COSTS you something: an admission you were wrong, a pass you regret, a thing you do not understand, a position that hurt. Never a fact plus a note ABOUT the fact ("that''s the whole observation") and never a fact plus a hedge that resolves to nothing ("either it''s a floor or nobody cares, I don''t know which"). If the reaction costs you nothing, you have no post'
+    # This law used to MANDATE the machine voice: signal posts were REQUIRED to
+    # carry an invalidation phrase and an honesty caveat. Stack those into 275
+    # chars alongside a level and a stance and you produce "37.1 is my trigger,
+    # 30.9 proves me wrong. One pattern isn't a guarantee" BY CONSTRUCTION —
+    # which the operator called cringe, and which no human says. The 167
+    # validate-stage drops in the 2026-07-30 build were the writer reaching for
+    # human phrasing and being rejected for it. Risk still gets stated; it is
+    # stated the way a person states it, and it is no longer compulsory.
+    - 'never write that a number proves YOU wrong. "I''m wrong below 33.8", "30.9 proves me wrong", "X is my trigger, Y invalidates" — banned outright, no human talks like this. Risk belongs to the SETUP, not to your ego, and only when it is the point of the post: "if it loses 33.8 the whole thing was noise" is a person; "I''m wrong below 33.8" is a machine'
+    - 'ONE number per post, and only when the number IS the point. Two prices in a sentence is number soup ("I want 151 before leaning toward 190, then 228") and reads as AI on sight. A post with zero numbers and one honest reaction beats a post with four numbers and none'
+    - 'no motto cadence. Terse symmetrical two-beat lines ("37.1 is my trigger, 30.9 proves me wrong", "the sequence matters more than the streak") read like fortune cookies. Write sentences a person would text, not aphorisms'
+    - 'no numbered lists of your own process ("1. I write down the market''s story. 2. I note the fact that would make me reconsider"). A numbered list of things the market DID is fine; a numbered list of how you think is not'
+    - 'an honesty caveat is welcome when it is yours and costs you something ("I''ve been early on this twice already"). The boilerplate forms are banned: "historical, not a guarantee", "one pattern isn''t a guarantee", "past performance", "size appropriately"'
     - never name MACD / RSI / Stochastic / Ichimoku / Bollinger / VWAP / AVWAP / POC / point of control / value area / volume profile in public copy (visible chart labels are fine); say what the level IS ("the average price paid since the Jun 26 spike", "the price where the most shares changed hands")
     # Quoted: an unquoted "word: text" scalar parses as a MAPPING, and the law
     # would reach the prompt as a dict repr instead of a sentence.
@@ -1218,7 +1416,7 @@ copywriter:
       name: "The Desk"
       voice_notes: >
         Senior PM texting a smart friend. Terse, bone-dry, unimpressed; has seen
-        enough cycles that nothing on the screen surprises him. Says the fact,
+        enough cycles that nothing much surprises him any more. Says the fact,
         says the take, stops. The occasional one-word verdict ("Ugly.") is his
         whole personality. Mixes "I" for the read and "we" for the shop's calls.
         No exclamation marks, ever. Emoji budget: 0-1 (a rare 📌 or 👀).
@@ -1320,7 +1518,7 @@ copywriter:
     sophia:
       name: "Sophia"
       voice_notes: >
-        Marketing Lead, the narrative architect. Polished, narrative, measured,
+        Marketing Lead, the story architect. Polished, story-led, measured,
         with zero exclamations ever. Calm confidence, one elegant image at most,
         sparing questions. She writes about the story the market currently
         believes, who needs it to stay true, and the fact that changes its
@@ -1340,7 +1538,7 @@ copywriter:
         conditional confidence, fragments where they sharpen the rhythm. Pointed
         questions only when they are answerable. Her job is the variable that
         confirms or breaks the popular claim: what moved first, what is already
-        priced, which market finances the story, and what would prove it wrong.
+        priced, which market finances the story, and what would break the claim.
         Signature habits, one per post: a numbered micro-list, or chart-detective
         framing. Never a number she cannot verify, never a hedging softener
         ("kinda", "maybe"), never condescension. Emoji budget: 1 (🔍 📊)
@@ -1371,6 +1569,43 @@ copywriter:
   llm:
     enabled: true            # nightly copy generation; deterministic fallback if unavailable
     model_key: "marketing_copy"   # resolved via config.yml llm_models block; sonnet-class
+    # ── Batch auditor (operator 2026-07-30, one-week probation) ─────────────
+    # "Have a LLM auditor approve or disapprove of planned posts for at least 1
+    # week... able to stop posts that are bad (bot like posts, doesn't make
+    # sense, has errors, repetitive posts...)".
+    #
+    # Reads the WHOLE DAY at once, which is the only way to catch the defect
+    # that got batches rejected. On a live 16-post run it cut 9 for `repetitive`
+    # — every one a variation on "I respect the move, I'm not chasing". The
+    # per-post cold-read critic passed 16/16, and the exact-match closer ban
+    # passed all 16 too because no two used the same sentence. Only a reader
+    # holding the whole day at once sees it.
+    #
+    # DE-ESCALATION ONLY: it may cut a post and must name a reason; it can never
+    # rewrite, add or promote one. Terra, not Sol — it judges, it never writes.
+    auditor:
+      enabled: true
+      provider_order: [codex, oauth, anthropic, deepseek]
+      codex_source_model: "gpt-5.6-terra"
+      codex_reasoning_effort: medium
+      oauth_pool_lane: marketing-auditor
+      usage_lane: marketing-auditor
+      window: 20
+      # HOW FAR INTO THE PLAN THE AUDITOR READS (0 = the whole horizon).
+      #
+      # 1 = D1 ONLY, and that is CORRECT. I widened this to 0 earlier on
+      # 2026-07-30 on the reasoning that evergreen watchlist/receipt copy
+      # forward-books and "reaches its slot", so 73 D2-D7 posts were shipping
+      # unjudged. That premise was wrong, and the code says so plainly:
+      # outbox.emit_from_content_plan takes day_prefix="D1" (outbox.py:1630) and
+      # the governor takes the default, so ONLY D1 slots are ever emitted. The
+      # outbox confirms it -- across its whole history it holds 185 D1 items,
+      # 4 LIVE, 19 HOT and ZERO D2+.
+      #
+      # D2-D7 is a PROJECTION that the next nightly regenerates from fresh facts.
+      # Auditing it spends model calls judging posts that can never post, which
+      # is exactly what the original D1 pin said. Restored.
+      max_day: 1
     max_posts_per_run: 60
     daily_token_cap: 300000
 
@@ -1466,6 +1701,36 @@ copywriter:
 # lead with that fact.
 # ─────────────────────────────────────────────────────────────────────────────
 selection:
+  # ── Perishability (operator 2026-07-30) ────────────────────────────────────
+  # The planner books a SEVEN-day forward queue. Copy that makes a claim about
+  # the current tape ("closed green 3 sessions in a row") is false by the time a
+  # D5 slot arrives, so the publisher's live-tape gate refused it and logged
+  # `tape_skipped` — that counter fired on every sweep of 2026-07-29 and is why
+  # ZERO posts went out that day. The gate was right; pre-writing perishable
+  # copy a week ahead was the bug.
+  #
+  # Perishable kinds are D1-only. Evergreen kinds (watchlist levels, receipts,
+  # education) keep the full horizon — a level that has held 23 sessions still
+  # reads true on Friday. Raise perishable_max_day only if the plan starts
+  # re-baking intraday; a 7-day perishable queue cannot be made fresh by a knob.
+  perishable_kinds: [signal, chart, macro, event, mover, theme_list]
+  perishable_max_day: 1
+
+  # ── Which live-gate failures may still become a post (operator 2026-07-30) ──
+  # A planned signal whose entry the live gate cannot stand behind used to be
+  # RE-TYPED into a watchlist post. Measured on the live plan: 168 of 335
+  # watchlist posts were demoted signals — 39 of 57 on the shipping day — and
+  # 125 of those had failed for AGE alone (12 to 20 days old against a 10-day
+  # ceiling). They all came out in the same proximity copy ("$X is close",
+  # "Watching $X, not buying yet", "$X is past me"), which is where the batch
+  # auditor's "mechanically uniform" verdict came from.
+  #
+  # `runaway` and `underwater` are real states with something true to say, so
+  # they still demote. `stale` and `unverified` leave: there is nothing honest
+  # to post about a three-week-old idea or a name we cannot price. This is the
+  # rule apply_reuse_budget already states — "never re-typed into filler,
+  # because supply-honest volume means an empty rung stays empty".
+  demotable_gate_reasons: [runaway, underwater]
   # Sessions a name is off the board for coverage kinds (watchlist/chart/receipt).
   ticker_cooldown_days: 3
   # Longer for a directional call: a repeat inside a week reads as the same

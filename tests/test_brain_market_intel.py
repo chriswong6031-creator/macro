@@ -27,6 +27,10 @@ Coverage:
   17-25  research search: scoring, recency decay, top_pick, truncation, short query,
          corrupt/missing catalog, real-catalog smoke
   26-27  tool schemas
+  28-35  W2 ranked-wire sidecar: ladder, freshness gate, permutation, unknown ids,
+         nightly pool untouched, output whitelist unchanged, never written
+  36-46  W2 street clusters: convergence admission, one-house exclusion, dead
+         fields ignored, determinism, ambient words, honest empty, real catalog
 """
 from __future__ import annotations
 
@@ -49,9 +53,17 @@ NOW = datetime(2026, 7, 29, 15, 0, tzinfo=timezone.utc)
 
 @pytest.fixture(autouse=True)
 def _isolate_ladder(monkeypatch):
-    """Make the path ladder host-independent (see this module's docstring)."""
+    """Make BOTH path ladders host-independent (see this module's docstring).
+
+    The ranked-wire sidecar (W2) adds a second ladder on the STATE dir, which is
+    just as real on a deployed host as the public live dir — an unneutralised
+    /var/lib/macro-live/state/wire_rank.json would silently reorder the wire pool
+    in every ordering test on that machine and nowhere else.
+    """
     monkeypatch.delenv("MACRO_LIVE_DIR", raising=False)
     monkeypatch.setattr(bmi, "_VPS_LIVE_DIR", "/nonexistent/macro-live/public/live")
+    monkeypatch.delenv("MACRO_LIVE_STATE_DIR", raising=False)
+    monkeypatch.setattr(bmi, "_VPS_STATE_DIR", "/nonexistent/macro-live/state")
 
 
 # --------------------------------------------------------------------------- #
@@ -774,7 +786,9 @@ def test_research_tool_schema_shape_and_attribution_instruction():
     schema = bmi.RESEARCH_TOOL_SCHEMA
     assert schema["name"] == "search_research"
     props = schema["input_schema"]["properties"]
-    assert set(props) == {"query", "limit"}
+    # `mode` joined query/limit with the W2 street-clusters build; `required` did
+    # NOT change, so the gateway's existing query=… call site keeps working.
+    assert set(props) == {"query", "limit", "mode"}
     assert props["query"]["type"] == "string" and props["limit"]["type"] == "integer"
     assert schema["input_schema"]["required"] == ["query"]
     assert "1..8" in props["limit"]["description"] and "default 5" in props["limit"]["description"]
@@ -784,7 +798,534 @@ def test_research_tool_schema_shape_and_attribution_instruction():
     assert "never present" in description
 
 
+def test_research_tool_schema_offers_both_modes_and_fences_convergence():
+    """The model must be able to reach clusters mode, and must be told what a
+    convergence count is NOT — many desks agreeing is a crowding fact, not
+    evidence the view is right."""
+    props = bmi.RESEARCH_TOOL_SCHEMA["input_schema"]["properties"]
+    assert props["mode"]["type"] == "string"
+    assert props["mode"]["enum"] == ["search", "clusters"]
+    description = bmi.RESEARCH_TOOL_SCHEMA["description"]
+    assert "clusters" in description, "the mode is unreachable if never mentioned"
+    assert "crowding" in description
+    assert "not evidence" in description.lower()
+
+
 def test_both_schemas_are_json_serialisable():
     """They are handed to the Anthropic SDK verbatim."""
     for schema in (bmi.EVENTS_TOOL_SCHEMA, bmi.RESEARCH_TOOL_SCHEMA):
         assert json.loads(json.dumps(schema)) == schema
+
+
+# --------------------------------------------------------------------------- #
+# 28-35  W2 — the ranked-wire sidecar
+# --------------------------------------------------------------------------- #
+# WHY A SIDECAR AT ALL: the news desk DECLINED salience on the public wires.v1
+# payload (their leak law — internal ranking numbers never ride a user-fetchable
+# file, ruled 2026-07-30). So the desk's ordering arrives out-of-band on a
+# NON-public state path, as ids in best-first order and no numbers at all. There
+# is nothing to leak and nothing an LLM could re-present as a desk probability.
+def _write_rank(directory: pathlib.Path, ids, *, minutes_ago: float = 1.0,
+                schema: str = "wire_rank.v1", updated_at: object = None,
+                omit_ids: bool = False) -> pathlib.Path:
+    """Publish a wire_rank.v1 sidecar into `directory`."""
+    directory.mkdir(parents=True, exist_ok=True)
+    payload: dict = {"schema": schema}
+    payload["updated_at"] = (
+        updated_at if updated_at is not None
+        else (NOW - timedelta(minutes=minutes_ago)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    )
+    if not omit_ids:
+        payload["ids"] = ids
+    path = directory / "wire_rank.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+def _three_wires(root: pathlib.Path) -> None:
+    """Three wire items whose RECENCY order is c, b, a (newest first)."""
+    _write_wires(root / "site" / "live", [
+        _wire("a", "Oldest item", hours_ago=3),
+        _wire("b", "Middle item", hours_ago=2),
+        _wire("c", "Newest item", hours_ago=1),
+    ])
+
+
+def test_a_fresh_sidecar_reorders_the_wire_pool(tmp_path):
+    """Position, not score: the sidecar names ids best-first and that becomes the
+    order. Recency here would be c, b, a — so an unchanged order would prove
+    nothing, which is why the fixture inverts it."""
+    _three_wires(tmp_path)
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["a", "b", "c"])
+    assert [e["headline"] for e in _events(tmp_path)] == [
+        "Oldest item", "Middle item", "Newest item",
+    ]
+
+
+def test_a_stale_sidecar_is_ignored_in_favour_of_honest_recency(tmp_path):
+    """A wire window turns over in minutes, so an hour-old ranking would pin a
+    dead lead story to the top of a live tape. Past the age bound it is dropped."""
+    _three_wires(tmp_path)
+    press = tmp_path / "data" / "marketing" / "press"
+    _write_rank(press, ["a", "b", "c"], minutes_ago=bmi._WIRE_RANK_MAX_AGE_MIN + 1)
+    assert [e["headline"] for e in _events(tmp_path)] == [
+        "Newest item", "Middle item", "Oldest item",
+    ]
+    # Just inside the bound it applies again — the gate is the age, not the file.
+    _write_rank(press, ["a", "b", "c"], minutes_ago=bmi._WIRE_RANK_MAX_AGE_MIN - 1)
+    assert [e["headline"] for e in _events(tmp_path)][0] == "Oldest item"
+
+
+def test_no_sidecar_leaves_the_recency_order_untouched(tmp_path):
+    """The default state today: the desk publishes no sidecar, and the honest
+    answer is recency."""
+    _three_wires(tmp_path)
+    assert bmi._resolve_wire_rank_path(tmp_path) is None
+    assert [e["headline"] for e in _events(tmp_path)] == [
+        "Newest item", "Middle item", "Oldest item",
+    ]
+
+
+def test_ids_absent_from_the_sidecar_keep_their_order_after_the_ranked_ones(tmp_path):
+    """A partial ranking is normal — the desk ranks what it scored. Unnamed items
+    must not be dropped or shuffled; they fall in behind, still newest-first."""
+    _write_wires(tmp_path / "site" / "live", [
+        _wire("a", "Oldest item", hours_ago=4),
+        _wire("b", "Middle item", hours_ago=3),
+        _wire("c", "Newer item", hours_ago=2),
+        _wire("d", "Newest item", hours_ago=1),
+    ])
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["b"])
+    assert [e["headline"] for e in _events(tmp_path, limit=10)] == [
+        "Middle item",                      # the one ranked id leads
+        "Newest item", "Newer item", "Oldest item",   # the rest, still by recency
+    ]
+
+
+def test_unknown_and_malformed_ids_are_ignored(tmp_path):
+    """Ids for items outside the window (or plain junk) must not reorder anything
+    they do not name, and must not crash the read."""
+    _three_wires(tmp_path)
+    _write_rank(tmp_path / "data" / "marketing" / "press",
+                ["ghost-1", None, 42, {"id": "b"}, "", "  ", "b"])
+    assert [e["headline"] for e in _events(tmp_path)] == [
+        "Middle item",                            # the only real id
+        "Newest item", "Oldest item",
+    ]
+
+
+@pytest.mark.parametrize("kwargs, why", [
+    ({"omit_ids": True}, "no ids list at all"),
+    ({"updated_at": "not-a-date"}, "an unparseable stamp cannot be shown fresh"),
+    ({"updated_at": ""}, "a blank stamp cannot be shown fresh"),
+])
+def test_a_malformed_sidecar_degrades_to_recency(tmp_path, kwargs, why):
+    """Every degraded case falls back to the honest order rather than erroring.
+
+    An unstamped ranking is treated as UNUSABLE, not as fresh: assuming freshness
+    is exactly how a dead daemon's last ordering outlives it.
+    """
+    _three_wires(tmp_path)
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["a", "b", "c"], **kwargs)
+    assert [e["headline"] for e in _events(tmp_path)] == [
+        "Newest item", "Middle item", "Oldest item",
+    ], why
+
+
+def test_corrupt_sidecar_json_degrades_to_recency(tmp_path):
+    _three_wires(tmp_path)
+    press = tmp_path / "data" / "marketing" / "press"
+    press.mkdir(parents=True, exist_ok=True)
+    (press / "wire_rank.json").write_text("{not json", encoding="utf-8")
+    assert [e["headline"] for e in _events(tmp_path)][0] == "Newest item"
+
+
+def test_a_renamed_schema_still_ranks(tmp_path):
+    """Loose schema check, matching _wire_items: a reader that hard-failed on a
+    rename would go dark on a schema bump, and every field access is defensive."""
+    _three_wires(tmp_path)
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["a"],
+                schema="wire_rank.v2")
+    assert [e["headline"] for e in _events(tmp_path)][0] == "Oldest item"
+
+
+def test_the_state_dir_env_wins_over_the_dev_sink(tmp_path, monkeypatch):
+    """MACRO_LIVE_STATE_DIR is the deployed override (app/deploy/live-setup.sh:80,
+    scripts/vps_live_orchestrator.py:459) — the STATE dir, never the public one."""
+    _three_wires(tmp_path)
+    state = tmp_path / "hoststate"
+    _write_rank(state, ["a"])
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["c"])
+    monkeypatch.setenv("MACRO_LIVE_STATE_DIR", str(state))
+
+    assert bmi._resolve_wire_rank_path(tmp_path) == state / "wire_rank.json"
+    assert [e["headline"] for e in _events(tmp_path)][0] == "Oldest item"
+
+
+def test_an_empty_state_dir_falls_through_to_the_dev_sink(tmp_path, monkeypatch):
+    """File-exists, not dir-exists — the same divergence from the writer ladder
+    that _resolve_wires_path makes: on a dev box the state dir exists and is empty
+    while the dev sink holds the real file."""
+    _three_wires(tmp_path)
+    empty = tmp_path / "hoststate"
+    empty.mkdir(parents=True)
+    monkeypatch.setenv("MACRO_LIVE_STATE_DIR", str(empty))
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["a"])
+
+    assert bmi._resolve_wire_rank_path(tmp_path) == tmp_path / "data/marketing/press/wire_rank.json"
+    assert [e["headline"] for e in _events(tmp_path)][0] == "Oldest item"
+
+
+def test_the_sidecar_never_reorders_the_nightly_pool(tmp_path):
+    """Source-major ordering is untouched: the desk ranks the intraday tape, not
+    last night's digest, so a sidecar naming a digest id changes nothing and the
+    wire items still come first."""
+    _write_wires(tmp_path / "site" / "live", [_wire("w1", "Wire item", hours_ago=5)])
+    _write_nightly(tmp_path, headlines=[
+        _nightly_item("Digest one", hours_ago=1),
+        _nightly_item("Digest two", hours_ago=2),
+    ])
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["Digest two", "w1"])
+    events = _events(tmp_path, limit=5)
+    assert [e["source_kind"] for e in events] == ["live_wire", "nightly", "nightly"]
+    assert [e["headline"] for e in events] == ["Wire item", "Digest one", "Digest two"]
+
+
+def test_the_sidecar_adds_no_output_field_and_leaks_no_value(tmp_path):
+    """The sidecar's ONLY effect is a permutation. EVENT_FIELDS is unchanged, so
+    no id, position or ranking artefact can reach the model's context — the same
+    mechanical guarantee as the TI-R5 whitelist tests above."""
+    _three_wires(tmp_path)
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["c", "a", "b"])
+    result = bmi.get_market_events(tmp_path, now=NOW)
+
+    for event in result["events"]:
+        assert not set(event) - set(bmi.EVENT_FIELDS)
+        assert event["salience"] is None, "a position is not a score"
+    blob = json.dumps(result, ensure_ascii=False)
+    for banned in ("wire_rank", "rank", "position", "\"ids\"", "\"id\""):
+        assert banned not in blob, f"{banned!r} leaked into the payload"
+
+
+def test_reading_the_sidecar_never_writes_it(tmp_path):
+    """This module is a READER. The daemon owns the file."""
+    _three_wires(tmp_path)
+    press = tmp_path / "data" / "marketing" / "press"
+    path = _write_rank(press, ["a", "b", "c"])
+    before = (path.read_bytes(), path.stat().st_mtime_ns)
+    _events(tmp_path)
+    assert (path.read_bytes(), path.stat().st_mtime_ns) == before
+    assert sorted(p.name for p in press.iterdir()) == ["wire_rank.json"]
+
+
+def test_the_wire_rank_helper_returns_positions_not_scores(tmp_path):
+    """Unit-level: the reader hands back {id: position} and nothing numeric from
+    the file, because the file deliberately contains no numbers to hand back."""
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["x", "y", "z"])
+    assert bmi._wire_rank_order(tmp_path, NOW) == {"x": 0, "y": 1, "z": 2}
+    # A duplicated id keeps its FIRST (best) position.
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["x", "y", "x"])
+    assert bmi._wire_rank_order(tmp_path, NOW) == {"x": 0, "y": 1}
+    # An empty ids list is not a ranking.
+    _write_rank(tmp_path / "data" / "marketing" / "press", [])
+    assert bmi._wire_rank_order(tmp_path, NOW) is None
+
+
+def test_a_future_stamped_sidecar_is_clock_skew_not_staleness(tmp_path):
+    """Same rule _recency_factor applies to research dates: a stamp ahead of the
+    caller's instant is a skewed writer, not a stale file."""
+    _three_wires(tmp_path)
+    _write_rank(tmp_path / "data" / "marketing" / "press", ["a"], minutes_ago=-30)
+    assert [e["headline"] for e in _events(tmp_path)][0] == "Oldest item"
+
+
+# --------------------------------------------------------------------------- #
+# 36-46  W2 — street clusters
+# --------------------------------------------------------------------------- #
+def _clusters(root, **kw) -> dict:
+    return bmi.search_research(root, "", mode="clusters", now=NOW, **kw)
+
+
+def test_a_convergent_theme_is_reported_with_its_houses(tmp_path):
+    """Three notes on one subject from three different houses IS the street
+    converging, and the houses are named so the user can weigh them."""
+    _catalog(tmp_path, [
+        _note("t1", "Iran Oil Supply Shock", institution="Goldman Sachs"),
+        _note("t2", "Iran Escalation And Crude", institution="J.P. Morgan"),
+        _note("t3", "The Iran Premium In Brent", institution="ING"),
+        _note("x1", "Japanese Government Bond Supply", institution="MUFG"),
+    ])
+    result = _clusters(tmp_path)
+    assert result["schema"] == "brain.research_clusters.v1"
+    assert result["count_scanned"] == 4
+    themes = {c["theme"]: c for c in result["clusters"]}
+    assert "iran" in themes, f"no iran theme in {list(themes)}"
+    iran = themes["iran"]
+    assert iran["n_reports"] == 3
+    assert iran["n_institutions"] == 3
+    assert iran["institutions"] == ["Goldman Sachs", "ING", "J.P. Morgan"]
+    assert [r["id"] for r in iran["reports"]] == ["t1", "t2", "t3"]
+    assert "not consensus-as-authority" in result["note"]
+
+
+def test_one_house_repeating_itself_is_not_convergence(tmp_path):
+    """The institution count is the ONLY thing separating "the street is focused
+    on X" from "one desk published three notes on its own idea"."""
+    _catalog(tmp_path, [
+        _note("a1", "Tariff Escalation Risk", institution="Citi"),
+        _note("a2", "Tariff Deadline Preview", institution="Citi"),
+        _note("a3", "Tariff Pass Through", institution="Citi"),
+    ])
+    assert _clusters(tmp_path)["clusters"] == []
+
+
+def test_a_theme_below_the_report_floor_is_excluded(tmp_path):
+    """Two notes is a coincidence, not a theme."""
+    _catalog(tmp_path, [
+        _note("a1", "Copper Squeeze Deepens", institution="Citi"),
+        _note("a2", "Copper Inventories Fall", institution="UBS"),
+    ])
+    assert _clusters(tmp_path)["clusters"] == []
+    # A third house tips it over the bar.
+    _catalog(tmp_path, [
+        _note("a1", "Copper Squeeze Deepens", institution="Citi"),
+        _note("a2", "Copper Inventories Fall", institution="UBS"),
+        _note("a3", "Copper And The Grid", institution="ING"),
+    ])
+    assert [c["theme"] for c in _clusters(tmp_path)["clusters"]] == ["copper"]
+
+
+def test_the_dead_tags_and_tickers_fields_are_never_read(tmp_path):
+    """`tags`/`tickers`/`desk` are filled 0/374 in the committed catalog. A theme
+    keyed off one would return nothing forever; a theme keyed off a POPULATED one
+    in some future vintage still must not appear until that is a deliberate build.
+    """
+    items = [
+        _note("g1", "Unrelated Alpha", institution="Citi"),
+        _note("g2", "Unrelated Beta", institution="UBS"),
+        _note("g3", "Unrelated Gamma", institution="ING"),
+    ]
+    for item in items:
+        item["tags"] = ["semiconductors", "semiconductors"]
+        item["tickers"] = ["NVDA"]
+        item["desk"] = "equities"
+    _catalog(tmp_path, items)
+    blob = json.dumps(_clusters(tmp_path), ensure_ascii=False)
+    assert "semiconductors" not in blob and "NVDA" not in blob
+    assert "equities" not in blob
+
+
+def test_clusters_are_deterministic_under_catalog_reordering(tmp_path):
+    """A catalog rebuild reorders `items`; the themes must not move. An unstable
+    convergence read would look like the street changed its mind overnight."""
+    items = [
+        _note("i1", "Iran Oil Supply Shock", days=0.5, institution="Goldman Sachs"),
+        _note("i2", "Iran Escalation And Crude", days=1.0, institution="J.P. Morgan"),
+        _note("i3", "The Iran Premium In Brent", days=1.5, institution="ING"),
+        _note("c1", "Credit Spreads Widen", days=0.2, institution="Natixis"),
+        _note("c2", "Credit Issuance Surge", days=0.8, institution="Morgan Stanley"),
+        _note("c3", "Private Credit Stress", days=2.0, institution="UBS"),
+    ]
+    _catalog(tmp_path, items)
+    first = _clusters(tmp_path)
+    _catalog(tmp_path, list(reversed(items)))
+    second = _clusters(tmp_path)
+    assert first == second
+    # Both themes clear the bar, and the order between them is total.
+    assert [c["theme"] for c in first["clusters"]] == ["credit", "iran"]
+
+
+def test_reports_are_the_newest_three_and_carry_no_summary_text(tmp_path):
+    """A convergence answer needs WHO and WHEN, not five bullet points per note —
+    the model can call search mode for the content of any one of them."""
+    # 6 tariff notes inside a 30-note window: a term carried by EVERY note in the
+    # catalog is ambient by definition, so the fixture has to look like a real
+    # window rather than a single-subject slab.
+    items = [
+        _note(f"n{i}", f"Tariff Escalation {i}", days=i,
+              institution=f"House {i}", points=["a bullet that must not ship"])
+        for i in range(6)
+    ]
+    items += [_note(f"f{i}", f"Unrelated Subject{i} Coverage", days=i * 0.1,
+                    institution=f"Filler {i}") for i in range(24)]
+    _catalog(tmp_path, items)
+    cluster = _clusters(tmp_path)["clusters"][0]
+    assert cluster["theme"].startswith("tariff") or "tariff" in cluster["theme"]
+    assert cluster["n_reports"] == 6
+    assert [r["id"] for r in cluster["reports"]] == ["n0", "n1", "n2"], "newest three"
+    assert set(cluster["reports"][0]) == {"id", "title", "institution", "published_at"}
+    assert "a bullet that must not ship" not in json.dumps(cluster)
+
+
+def test_window_days_is_the_theme_s_own_span(tmp_path):
+    """"6 houses inside a day" and "6 houses across a fortnight" are different
+    facts about convergence; the catalog's rolling window cannot express either."""
+    _catalog(tmp_path, [
+        _note("a", "Tariff One", days=0.0, institution="Citi"),
+        _note("b", "Tariff Two", days=1.0, institution="UBS"),
+        _note("c", "Tariff Three", days=2.5, institution="ING"),
+    ])
+    assert _clusters(tmp_path)["clusters"][0]["window_days"] == 2.5
+
+
+def test_top_pick_count_is_carried(tmp_path):
+    _catalog(tmp_path, [
+        _note("a", "Tariff One", institution="Citi", top_pick=True),
+        _note("b", "Tariff Two", institution="UBS"),
+        _note("c", "Tariff Three", institution="ING", top_pick=True),
+    ])
+    assert _clusters(tmp_path)["clusters"][0]["top_pick_count"] == 2
+
+
+def test_report_furniture_never_becomes_a_theme(tmp_path):
+    """"JPM GLOBAL MARKET INTELLIGENCE" and "DB Research Europe" are recurring
+    PUBLICATION SERIES names. A theme called "market" or "research" would be the
+    vague glance-tier copy the design doctrine bans, and it is not a subject."""
+    _catalog(tmp_path, [
+        _note("a", "Global Market Intelligence Weekly Update", institution="J.P. Morgan"),
+        _note("b", "Daily Market Research Note", institution="UBS"),
+        _note("c", "Weekly Market Commentary Update", institution="Nuveen"),
+    ])
+    themes = {c["theme"] for c in _clusters(tmp_path)["clusters"]}
+    for furniture in ("market", "research", "weekly", "update", "daily", "global"):
+        assert furniture not in themes, f"{furniture!r} was reported as a theme"
+
+
+def test_an_ambient_word_is_not_reported_as_a_theme(tmp_path):
+    """A term in more than a quarter of the window is the week's vocabulary. Its
+    "N houses wrote about it" reads as convergence when it is just weather."""
+    items = [_note(f"r{i}", f"Risk Assessment Subject{i}", institution=f"House {i}")
+             for i in range(20)]
+    items += [_note(f"i{i}", f"Iran Escalation Take{i}", institution=f"Bank {i}")
+              for i in range(4)]
+    _catalog(tmp_path, items)
+    themes = {c["theme"] for c in _clusters(tmp_path)["clusters"]}
+    assert "risk" not in themes, "an ambient word was sold as convergence"
+    assert "assessment" not in themes
+    # The real subject survives. Its label carries both terms that cover the same
+    # four notes ("escalation iran") — that is the doc-set merge folding one
+    # subject said two ways into a single theme, not two themes.
+    assert any("iran" in theme for theme in themes), themes
+    assert len(themes) == 1
+
+
+def test_an_empty_catalog_is_honest_rather_than_broken(tmp_path):
+    """`clusters: []` over a HEALTHY vault means nothing cleared the bar — the
+    model can say so instead of claiming the read failed."""
+    _catalog(tmp_path, [])
+    result = _clusters(tmp_path)
+    assert result["clusters"] == [] and result["count_scanned"] == 0
+    assert result["note"] != "research vault unavailable"
+    assert "not consensus-as-authority" in result["note"]
+
+
+def test_a_missing_or_corrupt_catalog_reports_unavailable_in_clusters_mode(tmp_path):
+    result = _clusters(tmp_path)
+    assert result["schema"] == "brain.research_clusters.v1"
+    assert result["clusters"] == [] and result["note"] == "research vault unavailable"
+
+    directory = tmp_path / "data" / "research_vault"
+    directory.mkdir(parents=True)
+    (directory / "catalog.json").write_text("{not json", encoding="utf-8")
+    assert _clusters(tmp_path)["note"] == "research vault unavailable"
+
+
+def test_max_clusters_caps_the_reported_themes(tmp_path):
+    items = []
+    for n, subject in enumerate(("iran", "copper", "tariff", "vietnam", "cocoa", "lithium")):
+        for house in ("Citi", "UBS", "ING"):
+            items.append(_note(f"{subject}-{house}", f"{subject.title()} Outlook Note",
+                               institution=house, days=n * 0.1))
+    _catalog(tmp_path, items)
+    assert len(_clusters(tmp_path)["clusters"]) == 5, "default max_clusters"
+    raw = bmi._research_clusters(bmi._catalog_items(tmp_path), now=NOW, max_clusters=2)
+    assert len(raw["clusters"]) == 2
+
+
+def test_clusters_carry_no_score_or_confidence_key(tmp_path):
+    """Counts and a day-span are facts. A score would be an authority claim this
+    display-tier retrieval read has no gauntlet for."""
+    _catalog(tmp_path, [
+        _note("a", "Tariff One", institution="Citi"),
+        _note("b", "Tariff Two", institution="UBS"),
+        _note("c", "Tariff Three", institution="ING"),
+    ])
+    cluster = _clusters(tmp_path)["clusters"][0]
+    assert set(cluster) == {
+        "theme", "n_reports", "n_institutions", "institutions", "window_days",
+        "top_pick_count", "reports",
+    }
+    blob = json.dumps(_clusters(tmp_path)).lower()
+    for banned in ("score", "confidence", "conviction", "probability", "validated"):
+        assert banned not in blob
+
+
+def test_search_mode_is_the_default_and_unchanged(tmp_path):
+    """The P0 envelope is untouched — the gateway's existing call site passes no
+    mode at all, and a typo must not cost the user his search."""
+    _catalog(tmp_path, [_note("r", "Momentum Crowding Risk", points=["p1"])])
+    baseline = _search(tmp_path, "momentum crowding")
+    assert set(baseline) == {"query", "results", "count_scanned", "note"}
+    for mode in (None, "search", "SEARCH", " search ", "clusterz", "", 7, ["clusters"]):
+        result = bmi.search_research(tmp_path, "momentum crowding", now=NOW, mode=mode)
+        assert result == baseline, f"mode={mode!r} did not fall back to search"
+
+
+def test_clusters_mode_is_recognised_case_and_whitespace_insensitively(tmp_path):
+    _catalog(tmp_path, [
+        _note("a", "Tariff One", institution="Citi"),
+        _note("b", "Tariff Two", institution="UBS"),
+        _note("c", "Tariff Three", institution="ING"),
+    ])
+    for mode in ("clusters", "CLUSTERS", " Clusters "):
+        assert bmi.search_research(tmp_path, "", now=NOW, mode=mode)["schema"] == \
+            "brain.research_clusters.v1"
+
+
+def test_clusters_mode_ignores_the_query_and_the_short_query_gate(tmp_path):
+    """Convergence is a property of the whole window. Filtering it by search terms
+    would answer "who agrees with my premise", and the 2-token gate must not fire
+    on a mode that never reads the query."""
+    _catalog(tmp_path, [
+        _note("a", "Tariff One", institution="Citi"),
+        _note("b", "Tariff Two", institution="UBS"),
+        _note("c", "Tariff Three", institution="ING"),
+    ])
+    for query in ("", "x", None, "completely unrelated words"):
+        result = bmi.search_research(tmp_path, query, now=NOW, mode="clusters")
+        assert [c["theme"] for c in result["clusters"]] == ["tariff"], query
+        assert result["note"] != "query too short"
+
+
+@pytest.mark.skipif(
+    not (ROOT / "data" / "research_vault" / "catalog.json").exists(),
+    reason="data/research_vault/catalog.json not present in this checkout",
+)
+def test_real_catalog_clusters_are_coherent():
+    """The committed vault at the WALL clock, like its search sibling: the one test
+    that proves clusters work against real data as it ages.
+
+    Every reported theme must be a real subject word carried by the TITLE of every
+    member — that is the whole reason membership is title-anchored (a bag-of-words
+    build over title+summary produced a 51-report 'hike fed rate' cluster whose
+    members had nothing in common).
+    """
+    result = bmi.search_research(ROOT, "", mode="clusters")
+    assert result["count_scanned"] > 100, "the real catalog was scanned"
+    assert result["clusters"], "the real catalog converges on something"
+    assert len(result["clusters"]) <= 5
+    for cluster in result["clusters"]:
+        assert cluster["n_reports"] >= 3
+        assert cluster["n_institutions"] >= 2
+        assert len(cluster["institutions"]) == cluster["n_institutions"]
+        assert cluster["theme"] and cluster["theme"] == cluster["theme"].lower()
+        assert 1 <= len(cluster["reports"]) <= 3
+        first_term = cluster["theme"].split()[0]
+        for report in cluster["reports"]:
+            assert first_term in (report["title"] or "").lower(), (
+                f"{first_term!r} is not in the title of {report['title']!r} — the "
+                "theme is not the note's own declared subject"
+            )
+    # Themes are distinct: the doc-set merge folds one subject said two ways.
+    themes = [c["theme"] for c in result["clusters"]]
+    assert len(set(themes)) == len(themes)

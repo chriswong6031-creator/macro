@@ -2,60 +2,80 @@
 {% macro t(en, zh='') -%}
 <span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
 {%- endmacro %}
-{#- inline SVG icons (Lucide-style, currentColor) -#}
+{#- inline SVG icons (Lucide-style, currentColor). Icons carry exactly ONE meaning on
+    this page — "a desk" — plus the two inline markers (a dated event, a data channel).
+    Section marks use the accent tick instead, so an icon always means something. -#}
 {% macro ic(name) -%}
 {% set P = {
-  'command':  '<path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2"/><circle cx="12" cy="12" r="3.2"/>',
   'news':     '<path d="M4 5h13v14H6a2 2 0 0 1-2-2zM17 9h3v8a2 2 0 0 1-2 2M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/>',
   'alt':      '<path d="M3 21h18M5 21V9m5 12V5m5 16v-8m5 8V3"/>',
   'radar':    '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><path d="M12 12 19 7"/>',
   'board':    '<rect x="3.5" y="4" width="17" height="16" rx="2"/><path d="M8 14l2.5-3 2.5 2 3-4"/>',
   'policy':   '<path d="M3 21h18M5 21V10m4 11V10m6 11V10m4 11V10M12 3 3 8h18z"/>',
-  'edge':     '<path d="m13 3-9 11h7l-1 7 9-11h-7z"/>',
-  'warn':     '<path d="M12 3 2.5 20h19zM12 10v4m0 3v.5"/>',
-  'sector':   '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2.1 5L8.5 15.5l2.1-5z"/>',
   'pulse':    '<path d="M3 12h4l2.5-7 4 14 2.5-7H21"/>',
   'cal':      '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3.5v3m8-3v3"/>'
 } %}
 <svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
   stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ P.get(name,'')|safe }}</svg>
 {%- endmacro %}
-{#- 5-desk agreement matrix: one dot per desk coloured by direction -#}
-{% macro matrix(dirs) -%}
-<span class="mtx" title="news · alt · radar · board · policy">
+{#- 5-desk agreement matrix: one dot per desk coloured by direction. A non-verbal
+    encoding — it needs no vocabulary, so the conviction bar it replaced is gone. -#}
+{% macro matrix(dirs, conv=none, nconf=none) -%}
+<span class="mtx" data-tip-en="Which desks read this name the same way — news · alt-data · radar · buy-board · policy. Green up, red down, grey no lean, empty means that desk never looked.{% if conv is not none %} Agreement score {{ conv|round|int }}{% if nconf %} across {{ nconf }} desk{{ 's' if nconf != 1 else '' }}{% endif %}.{% endif %}"
+  data-tip-zh="哪些台对该标的读法一致 —— 新闻 · 另类数据 · 雷达 · 买入榜 · 政策。绿色看多，红色看空，灰色无倾向，空白表示该台从未覆盖。{% if conv is not none %}一致度 {{ conv|round|int }}{% if nconf %}，来自 {{ nconf }} 个台{% endif %}。{% endif %}">
 {%- for k in ['news','alt','radar','standout','policy'] -%}
 {% set d = dirs.get(k) %}
 <span class="cell {{ 'up' if d==1 else 'dn' if d==-1 else 'nz' if d==0 else 'off' }}"></span>
 {%- endfor -%}
 </span>
 {%- endmacro %}
-{#- lifecycle stage chip (the V2 headline read) -#}
-{% set STAGE_ZH = {'emerging':'萌芽','early':'早期','consensus':'共识','exhausted':'透支','distribution':'派发','building':'酝酿','discovery':'发掘'} %}
+{#- lifecycle stage chip — the plain-word stance that heads every row -#}
+{% set STAGE_ZH = {'emerging':'萌芽','early':'早期','consensus':'共识','exhausted':'透支','distribution':'派发','building':'酝酿','discovery':'发掘','faltering':'走弱'} %}
 {% macro stage(s) -%}
-<span class="stage {{ s }}"><span class="l-en">{{ s }}</span><span class="l-zh">{{ STAGE_ZH.get(s, s) }}</span></span>
+<span class="chip st-{{ s }}"><span class="l-en">{{ s }}</span><span class="l-zh">{{ STAGE_ZH.get(s, s) }}</span></span>
 {%- endmacro %}
-{#- edge-remaining bar (0..1 → % of the move still ahead) -#}
-{% macro edgebar(e) -%}
-<div class="edge"><span class="lab"><span class="l-en">edge left</span><span class="l-zh">剩余空间</span></span>
-<span class="ebar"><i style="width:{{ ((e or 0)*100)|round|int }}%"></i></span>
-<span class="ev">{{ ((e or 0)*100)|round|int }}%</span></div>
+{#- room-left rail: how much of the move the engine still reads as un-priced.
+    ONE receipt explains the encoding per panel (band legend / rail label) rather than
+    thirty identical hovers — a constant belongs in the panel, once. -#}
+{% set ROOM_EN = "How much of the move this page still reads as un-priced. Built from where the name sits in its own range, how loud the tape around it already is, and how far it has already run. The colour says which way the desks lean: green up, red down — so a high reading on a red row means most of the fall is still ahead." %}
+{% set ROOM_ZH = "本页判断该标的还有多少幅度尚未被消化。依据它在自身区间中的位置、周围盘面已经多喧闹、以及已经跑了多远。颜色表示各台的方向倾向：绿色偏多，红色偏空 —— 因此红色行上的高数值意味着大部分跌幅仍在前方。" %}
+{% macro roomrail(e, accent='var(--info)') -%}
+<div class="room" style="--accent:{{ accent }}">
+  <span class="lab" data-tip-en="{{ ROOM_EN }}" data-tip-zh="{{ ROOM_ZH }}">{{ t('room left', '剩余空间') }}</span>
+  <span class="trk"><i style="width:{{ ((e or 0)*100)|round|int }}%"></i></span>
+  <span class="v">{{ ((e or 0)*100)|round|int }}%</span>
+</div>
 {%- endmacro %}
-{#- ⚡ prime-entry badge — the owner's validated T1-T4 confluence verdict. i18n via the
+{#- ⚡ prime-entry badge — the owner's T1-T4 confluence verdict. i18n via the
     data-tip-en/zh popover pattern (NEVER translated text in a title= attribute). -#}
 {% macro entrybadge(eg) -%}
-{% if eg %}{% if eg.get('buyable') %}<span class="egate buy" data-tip-en="Validated confluence buy · tier {{ eg.get('tier') or '—' }}" data-tip-zh="已验证共振买入 · 层级 {{ eg.get('tier') or '—' }}">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span>{% if eg.get('tier') %} {{ eg.tier }}{% endif %}</span>{% elif eg.get('flat_sell') %}<span class="egate no" data-tip-en="Not a confluence buy (flat/sell)" data-tip-zh="非共振买入（观望/卖出）"><span class="l-en">no entry</span><span class="l-zh">无入场</span></span>{% endif %}{% endif %}
+{% if eg %}{% if eg.get('buyable') %}<span class="chip en-buy" data-tip-en="Validated confluence buy · tier {{ eg.get('tier') or '—' }}" data-tip-zh="已验证共振买入 · 层级 {{ eg.get('tier') or '—' }}">⚡ <span class="l-en">entry</span><span class="l-zh">入场</span>{% if eg.get('tier') %} {{ eg.tier }}{% endif %}</span>{% endif %}{% endif %}
 {%- endmacro %}
-{#- honest price-trajectory chips: off-high %, RS pp, rolling-over/basing state -#}
-{% macro tchips(tr) -%}
-{% if tr %}<div class="tchips">
-{%- if tr.get('off_high_252') is not none %}<span class="tchip {{ 'bad' if tr.off_high_252 <= -0.15 else '' }}">{{ (tr.off_high_252*100)|round|int }}% <span class="l-en">off high</span><span class="l-zh">距高点</span></span>{% endif %}
-{%- if tr.get('rs_vs_spy_60d') is not none %}<span class="tchip {{ 'good' if tr.rs_vs_spy_60d > 0 else 'bad' }}">{{ '%+d'|format(tr.rs_vs_spy_60d|round|int) }}pp <span class="l-en">RS 60d</span><span class="l-zh">相对强度</span></span>{% endif %}
-{%- if tr.get('rolling_over') %}<span class="tchip bad"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>{% elif tr.get('basing') %}<span class="tchip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>{% endif %}
-</div>{% endif %}
+{#- price-trajectory state. Only the shape words live here — the off-high and
+    relative-strength figures already arrive inside edge_drivers, so printing them
+    twice in one row was the same fact wearing two hats. -#}
+{% macro tstate(tr) -%}
+{% if tr %}{% if tr.get('rolling_over') %}<span class="chip warn"><span class="l-en">rolling over</span><span class="l-zh">见顶回落</span></span>{% elif tr.get('basing') %}<span class="chip good"><span class="l-en">basing</span><span class="l-zh">筑底</span></span>{% endif %}{% endif %}
 {%- endmacro %}
-{#- qledger honesty chip macro (D10) -#}
-{% macro ql_chip(chip) -%}
-{% if chip %}<span class="ql-chip {{ chip.css_class }}"><span class="l-en">{{ chip.label }}</span><span class="l-zh">{{ chip.label_zh }}</span></span>{% else %}<span class="ql-chip ql-chip-ungraded"><span class="l-en">UNGRADED · n=0</span><span class="l-zh">未评级 · n=0</span></span>{% endif %}
+{#- edge drivers: the row-specific reasons. Replaces the stage-templated sentence
+    that used to repeat itself verbatim down every row of the ledger. -#}
+{% macro drivers(ds) -%}
+{% if ds %}<div class="drv">{% for d in ds %}{% if d.startswith('⚠') %}<span class="cau">{{ d|e }}</span>{% else %}<b>{{ d|e }}</b>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
+{%- endmacro %}
+{#- flags, de-duplicated against the stage chip that already says the same thing -#}
+{% set FLAG_ZH = {'early_edge':'早期优势','discovery':'发掘','stealth_accumulation':'隐性吸筹','crowded_top':'拥挤','confirmed_trend':'趋势确认','theme_wide':'主题共振','fading':'退潮','policy_conflict':'政策相悖','policy_aligned':'政策顺风','catalyst':'催化','isolated':'孤立','velocity_spike':'加速'} %}
+{% set FLAG_SKIP = ['emerging','early','exhausted','distribution','fading','discovery'] %}
+{% macro flags(fs) -%}
+{% set keep = [] %}{% for f in (fs or []) %}{% if f not in FLAG_SKIP %}{% set _ = keep.append(f) %}{% endif %}{% endfor %}
+{%- for f in keep[:2] %}<span class="chip {{ 'crowd' if f=='crowded_top' else 'good' if f in ['confirmed_trend','theme_wide','stealth_accumulation','policy_aligned'] else 'bad' if f=='policy_conflict' else 'cat' if f=='catalyst' else 'info' if f in ['early_edge','velocity_spike'] else 'mut' }}"><span class="l-en">{{ f.replace('_',' ') }}</span><span class="l-zh">{{ FLAG_ZH.get(f, f.replace('_',' ')) }}</span></span>{% endfor %}
+{%- endmacro %}
+{#- desk track-record state. The chip's own label is machine-generated (qledger D10,
+    never hand-written) so it rides the hover as the receipt; Tier 1 shows only the
+    translated state word, the STAGE_ZH slug-to-label pattern the doctrine ratifies. -#}
+{% set QL_ZH = {'UNGRADED':'未评分','ACCRUING':'评分中','GRADED':'已评分'} %}
+{% macro qlword(chip) -%}
+{% set c = chip or {'state':'UNGRADED','css_class':'ql-ungraded','label':'UNGRADED · n=0','label_zh':'未评级 · n=0'} %}
+<span class="gw {{ c.css_class }}"><span class="l-en">{{ (c.state or 'UNGRADED')|lower }}</span><span class="l-zh">{{ QL_ZH.get(c.state, '未评分') }}</span></span>
 {%- endmacro %}
 {% set _ql = qledger_chips or {} %}
 {% set MC = hub.macro_context or {} %}
@@ -65,222 +85,312 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Intelligence Hub</title>
-{% set seo_title = "Intelligence Hub — Mastermind" %}{% set seo_desc = "Ranked market intelligence across signal desks — what is emerging now, ranked by edge remaining rather than consensus." %}{% set seo_path = "intelligence_hub.html" %}
+{% set seo_title = "Intelligence Hub — Mastermind" %}{% set seo_desc = "Ranked market intelligence across signal desks — what is emerging now, ranked by how much of the move is still ahead rather than by consensus." %}{% set seo_path = "intelligence_hub.html" %}
 {% include "_seo_head.html.j2" %}
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
-  body.page-hub{ margin:0; background:var(--bg); color:var(--text);
-    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
-  #sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;--cs:clamp(120px,13vw,214px)}
-  @media(max-width:560px){ #sky{--cs:clamp(92px,26vw,124px)} }
-  #sky-stars{position:absolute;inset:0;width:100%;height:100%;display:block}
-  #sky-sun{position:absolute;width:var(--cs);height:var(--cs);border-radius:50%;
-    transform:translate(-50%,calc(-50% + 80vh));opacity:0;
-    transition:transform 1.7s cubic-bezier(.16,.78,.29,1),opacity 1.25s ease}
-  #sky[data-sky="day"] #sky-sun{transform:translate(-50%,-50%);opacity:1}
-  #sky-sun{background:radial-gradient(circle at 50% 50%,#fffdf7 0%,#fff2cc 20%,#ffd87f 40%,#ffb84d 58%,rgba(255,156,54,.34) 76%,transparent 84%);
-    box-shadow:0 0 46px 6px rgba(255,226,150,.6),0 0 110px 28px rgba(255,192,92,.38),0 0 220px 86px rgba(255,170,68,.18)}
-  .hub-wrap{ max-width:1240px; margin:0 auto; padding:10px 18px 72px; position:relative; z-index:1; }
-  body.page-hub > .site-nav{ max-width:1240px; margin:14px auto 8px; padding:0 18px; }
-  .ic-svg{ width:15px;height:15px;flex:none;vertical-align:middle; }
-  /* hero */
-  .hh{ margin:14px 0 8px; }
-  .hh .eyebrow{ display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--muted);
-    padding:4px 12px;border-radius:999px;background:color-mix(in srgb,var(--panel) 70%,transparent);
-    border:1px solid color-mix(in srgb,var(--line) 75%,transparent);backdrop-filter:blur(8px); }
-  .hh .live{ width:7px;height:7px;border-radius:50%;background:var(--ok);position:relative; }
-  .hh .live::after{ content:"";position:absolute;inset:-4px;border-radius:50%;border:1.5px solid var(--ok);opacity:.5;animation:hp 2.4s ease-out infinite; }
-  @keyframes hp{0%{transform:scale(.6);opacity:.6}100%{transform:scale(1.7);opacity:0}}
-  .hh h1{ font-size:clamp(30px,4.6vw,50px);font-weight:800;letter-spacing:-.022em;margin:11px 0 5px;
-    background:linear-gradient(110deg,var(--text),color-mix(in srgb,var(--info) 65%,var(--text)) 60%,color-mix(in srgb,var(--text) 50%,transparent));
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-    text-shadow:0 1px 36px color-mix(in srgb,var(--info) 24%,transparent); }
-  .hh p{ margin:0;color:var(--muted);max-width:720px;font-size:14.5px;line-height:1.5; }
-  /* macro command bar */
-  .cmdbar{ display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 4px; }
-  .cmdbar .mc{ font-size:12px;font-weight:600;padding:6px 12px;border-radius:10px;display:inline-flex;gap:7px;align-items:center;
-    background:color-mix(in srgb,var(--panel) 72%,transparent);border:1px solid color-mix(in srgb,var(--line) 75%,transparent); }
-  .cmdbar .mc b{ color:var(--text);font-weight:700; } .cmdbar .mc span{ color:var(--muted); }
-  .cmdbar .mc.hot{ border-color:color-mix(in srgb,var(--up) 50%,var(--line));color:var(--up); }
-  /* desk status board — 176px floor keeps the widest ledger chip (ACCRUING · NN/25 DATES)
-     inside the card padding; the .ql-chip ellipsis guard below is the never-bleed backstop */
-  .desks{ display:grid;gap:11px;grid-template-columns:repeat(auto-fit,minmax(176px,1fr));margin:16px 0 6px; }
-  .desk{ padding:13px 14px;border-radius:14px;text-decoration:none;display:block;transition:.16s ease;
-    background:color-mix(in srgb,var(--panel) 80%,transparent);border:1px solid color-mix(in srgb,var(--line) 80%,transparent); }
-  .desk:hover{ transform:translateY(-3px);border-color:color-mix(in srgb,var(--info) 45%,var(--line)); }
-  .desk .dh{ display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text); }
-  .desk .dh .dot{ width:7px;height:7px;border-radius:50%;margin-left:auto;background:var(--down); }
-  .desk .dh .dot.on{ background:var(--ok);box-shadow:0 0 8px color-mix(in srgb,var(--ok) 70%,transparent); }
-  .desk small{ display:block;margin-top:5px;color:var(--muted);font-size:11.5px; }
-  /* band header */
-  .band{ display:flex;align-items:center;gap:12px;margin:30px 0 13px; }
-  .band h2{ font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0;
-    white-space:nowrap;display:flex;align-items:center;gap:7px; }
-  .band h2 .ic-svg{ color:var(--accent,var(--info)); }
-  .band .ln{ flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent); }
-  .band .cnt{ font-size:11.5px;color:color-mix(in srgb,var(--text) 52%,transparent);white-space:nowrap; }
-  /* glass */
-  .glass{ background:color-mix(in srgb,var(--panel) 82%,transparent);border:1px solid color-mix(in srgb,var(--line) 82%,transparent);
-    border-radius:15px;backdrop-filter:blur(13px) saturate(1.08);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 6%,transparent),0 8px 26px -18px rgba(0,0,0,.5); }
-  .acc{ position:relative;overflow:hidden; }
-  .acc::before{ content:"";position:absolute;top:0;left:0;right:0;height:2.5px;background:linear-gradient(90deg,var(--accent,var(--info)),transparent 78%);opacity:.85; }
-  /* alert cards */
-  .alerts{ display:grid;gap:13px;grid-template-columns:1fr 1fr; }
-  @media(max-width:760px){ .alerts{ grid-template-columns:1fr; } }
-  .alert{ padding:14px 15px; }
-  .alert h3{ font-size:13px;font-weight:700;margin:0 0 10px;display:flex;align-items:center;gap:8px; }
-  .alert h3 .ic-svg{ width:16px;height:16px; }
-  /* .arow layout/type is row-scoped (not .alert-scoped) so it survives the .lst-wrap
-     "View all" overlay moving the list node out of the panel; borders stay in-flow-only
-     because the overlay draws its own separators */
-  .arow{ display:flex;align-items:center;gap:9px;padding:8px 0; }
-  .alert .arow{ border-top:1px solid color-mix(in srgb,var(--line) 55%,transparent); }
-  .alert .arow:first-of-type{ border-top:0; }
-  .arow .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:52px; }
-  .arow .rd{ font-size:12px;color:color-mix(in srgb,var(--text) 70%,transparent);line-height:1.35; }
-  /* command list */
-  .cmd{ display:flex;flex-direction:column;gap:8px; }
-  .row{ display:grid;grid-template-columns:122px 52px 86px 1fr;gap:12px;align-items:center;padding:11px 14px; }
-  @media(max-width:760px){ .row{ grid-template-columns:92px 46px 1fr;gap:9px; } .row .conv{ display:none; } }
-  .row .id .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:14px; }
-  .row .id .nm{ font-size:10.5px;color:var(--muted);display:block;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px; }
-  .convbar{ position:relative;height:7px;border-radius:99px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden; }
-  .convbar i{ position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--info),var(--up)); }
-  .convbar.dn i{ background:linear-gradient(90deg,var(--warn),var(--down)); }
-  .convn{ font-size:11px;color:var(--muted);margin-top:3px;text-align:right; }
-  .conf{ font-size:11px;font-weight:700;text-align:center;color:var(--muted); }
-  .conf b{ font-size:15px;color:var(--text);display:block; }
-  .rd2{ font-size:12.5px;color:color-mix(in srgb,var(--text) 76%,transparent);line-height:1.4; }
-  .flags{ display:flex;gap:5px;flex-wrap:wrap;margin-top:5px; }
-  .fl{ font-size:9.5px;font-weight:700;letter-spacing:.02em;padding:1px 7px;border-radius:6px;text-transform:uppercase;
-    background:color-mix(in srgb,var(--text) 9%,transparent);color:var(--muted); }
-  .fl.edge,.fl.stealth{ background:color-mix(in srgb,var(--info) 22%,transparent);color:var(--info); }
-  .fl.crowd{ background:color-mix(in srgb,var(--warn) 24%,transparent);color:var(--warn); }
-  .fl.conf{ background:color-mix(in srgb,var(--up) 20%,transparent);color:var(--up); }
-  .fl.fade,.fl.conflict{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
-  .fl.pol{ background:color-mix(in srgb,#8b5cf6 22%,transparent);color:#a78bfa; }
-  .fl.iso{ background:color-mix(in srgb,var(--orange,var(--warn)) 18%,transparent);color:var(--orange,var(--warn)); }
-  .peers{ font-size:9.5px;font-weight:600;color:color-mix(in srgb,var(--text) 50%,transparent);
-    font-family:ui-monospace,Menlo,monospace;padding:1px 4px; }
-  /* agreement matrix */
-  .mtx{ display:inline-flex;gap:3px;align-items:center; }
-  .mtx .cell{ width:9px;height:14px;border-radius:3px;background:color-mix(in srgb,var(--line) 70%,transparent); }
+  /* ══ Intelligence Hub ══════════════════════════════════════════════════════
+     The page is an instrument, not a poster. One hairline system, one radius,
+     one card fill, mono reserved for figures, and a single bright element — the
+     room-left spine down the Command ledger — which draws the page's own thesis
+     (how much of the move is still ahead) as the structure of the list itself.
+
+     Removed 2026-07-30 (operator order): the ambient sky canvas and its sun. A
+     drifting starfield behind four hundred figures competes with the only thing
+     on the page that matters, and the sun's 220px glow washed the top cards.
+     `sky.js` stays in the tree — start.html still owns that treatment.
+     ────────────────────────────────────────────────────────────────────────── */
+  body.page-hub{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-ui);
+    --r:10px;
+    --card:color-mix(in srgb,var(--panel) 92%,transparent);
+    --card-2:color-mix(in srgb,var(--panel) 62%,transparent);
+    --hair:color-mix(in srgb,var(--line) 78%,transparent);
+    --hair-soft:color-mix(in srgb,var(--line) 44%,transparent);
+    --dim:color-mix(in srgb,var(--text) 74%,transparent);
+    --cat:#8b5cf6;
+    --fig:var(--font-mono); }
+  .hub-wrap{ max-width:1200px; margin:0 auto; padding:6px 20px 64px; position:relative; z-index:1; }
+  body.page-hub > .site-nav{ max-width:1200px; margin:14px auto 6px; padding:0 20px; }
+  .ic-svg{ width:14px; height:14px; flex:none; vertical-align:middle; }
+  /* every figure on the page is mono + tabular; words never are */
+  .f{ font-family:var(--fig); font-variant-numeric:tabular-nums; }
+
+  /* ── hero: identity left, market state right, one rule under both ── */
+  .hh{ display:grid; grid-template-columns:minmax(0,1fr) auto; gap:16px 32px; align-items:end;
+    margin:16px 0 0; padding-bottom:17px; border-bottom:1px solid var(--hair); }
+  @media(max-width:880px){ .hh{ grid-template-columns:1fr; align-items:start; } }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:10.5px; font-weight:700;
+    letter-spacing:.13em; text-transform:uppercase; color:var(--muted); }
+  .eyebrow time{ font-family:var(--fig); letter-spacing:.04em; }
+  .live{ width:6px; height:6px; border-radius:50%; background:var(--ok); position:relative; flex:none; }
+  .live::after{ content:""; position:absolute; inset:-4px; border-radius:50%;
+    border:1.5px solid var(--ok); opacity:.5; animation:hp 2.6s ease-out infinite; }
+  @keyframes hp{ 0%{ transform:scale(.55); opacity:.55 } 100%{ transform:scale(1.75); opacity:0 } }
+  .hh h1{ font-size:clamp(29px,3.7vw,41px); font-weight:800; letter-spacing:-.033em; line-height:1.03;
+    margin:10px 0 8px; color:var(--text); }
+  .deck{ margin:0; font-size:14px; line-height:1.5; color:var(--dim); max-width:58ch; }
+  .deck .lens-q{ vertical-align:baseline; }
+  /* market state: an instrument readout, not another row of pills */
+  .state{ display:flex; flex-wrap:wrap; align-items:baseline; row-gap:9px; }
+  .state i{ font-style:normal; display:inline-flex; align-items:baseline; gap:7px; padding:0 15px;
+    border-left:1px solid var(--hair); font-size:10px; font-weight:700; letter-spacing:.11em;
+    text-transform:uppercase; color:var(--muted); white-space:nowrap; }
+  .state i:first-child{ border-left:0; padding-left:0; }
+  /* the engine hands these down lower-cased ("mid", "expanding"); capitalise at render
+     so the readout doesn't mix cases beside "Goldilocks" / "Hawkish" */
+  .state b{ font-size:13px; font-weight:700; letter-spacing:-.008em; text-transform:capitalize;
+    color:var(--text); }
+  .state i.hot b{ color:var(--up); }
+  @media(max-width:880px){ .state i:first-child{ padding-left:0 } .state{ margin-top:4px } }
+
+  /* ── desk rail: six links, one container, hairline cells ── */
+  .rail{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); margin:18px 0 2px;
+    border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+  .rl{ display:flex; align-items:center; gap:8px; min-width:0; padding:11px 13px;
+    text-decoration:none; color:var(--text); font-size:12.5px; font-weight:600;
+    border-left:1px solid var(--hair-soft); transition:background .16s ease, color .16s ease; }
+  .rl:first-child{ border-left:0; }
+  .rl:hover{ background:color-mix(in srgb,var(--info) 9%,transparent); color:var(--info); }
+  .rl .ic-svg{ color:var(--muted); transition:color .16s ease; }
+  .rl:hover .ic-svg{ color:var(--info); }
+  .rl .rn{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rl .gw{ margin-left:auto; font-size:9px; font-weight:700; letter-spacing:.06em;
+    text-transform:uppercase; white-space:nowrap; }
+  .rl .lamp{ width:6px; height:6px; border-radius:50%; flex:none; background:var(--down); }
+  .rl .lamp.on{ background:var(--ok); }
+  .ql-chip-ungraded, .gw.ql-ungraded{ color:var(--muted); }
+  .ql-chip-accruing{ color:var(--warn); }
+  .ql-chip-graded-pos{ color:var(--up); }
+  .ql-chip-graded-neg{ color:var(--down); }
+  @media(max-width:1040px){
+    .rail{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .rl{ border-left:1px solid var(--hair-soft); }
+    .rl:nth-child(3n+1){ border-left:0; }
+    .rl:nth-child(n+4){ border-top:1px solid var(--hair-soft); }
+  }
+  @media(max-width:620px){
+    .rail{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .rl{ border-left:1px solid var(--hair-soft); }
+    .rl:nth-child(3n+1){ border-left:1px solid var(--hair-soft); }
+    .rl:nth-child(odd){ border-left:0; }
+    .rl:nth-child(n+3){ border-top:1px solid var(--hair-soft); }
+    .rl .gw{ display:none; }
+  }
+
+  /* ── section mark: an accent tick, a label, a rule, a count ── */
+  .band{ display:flex; align-items:center; gap:11px; margin:34px 0 12px; }
+  .band .tick{ width:3px; height:14px; border-radius:2px; flex:none;
+    background:var(--accent,var(--info)); }
+  .band h2{ margin:0; font-size:11.5px; font-weight:800; letter-spacing:.11em; text-transform:uppercase;
+    color:var(--text); white-space:nowrap; }
+  .band .ln{ flex:1; height:1px; min-width:14px;
+    background:linear-gradient(90deg,var(--hair),transparent 94%); }
+  .band .n{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11.5px;
+    font-weight:700; color:var(--muted); flex:none; }
+  .band .legend{ display:inline-flex; align-items:center; gap:6px; flex:none; font-size:10px;
+    font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .band .legend .lg{ width:3px; height:12px; border-radius:2px;
+    background:linear-gradient(to top,var(--up) 62%,var(--hair-soft) 62%); }
+  @media(max-width:620px){ .band .legend{ display:none } }
+
+  /* ── one card system ── */
+  .card{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); }
+  .empty{ font-size:12.5px; color:var(--muted); padding:11px 0; }
+  /* Stance line — every signal band answers "so what do I do" ONCE, here, in plain
+     words (DESIGN_DOCTRINE Law 1 + Law 4). This is what the stage-templated sentence
+     that used to reprint itself on every row was reaching for. */
+  .stance{ font-size:11.5px; line-height:1.5; color:var(--muted); margin:-3px 0 11px; max-width:78ch; }
+  .stance b{ color:color-mix(in srgb,var(--text) 80%,transparent); font-weight:600; }
+
+  /* ── one chip system: state · good · caution · bad · catalyst · neutral ── */
+  .chip{ font-size:9.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    padding:2px 7px; border-radius:5px; white-space:nowrap; flex:none;
+    background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); }
+  .chip.good, .chip.st-early{ background:color-mix(in srgb,var(--up) 17%,transparent); color:var(--up); }
+  .chip.info, .chip.st-emerging, .chip.st-discovery{
+    background:color-mix(in srgb,var(--info) 20%,transparent); color:var(--info); }
+  .chip.warn, .chip.crowd, .chip.st-faltering{
+    background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }
+  .chip.bad, .chip.st-exhausted, .chip.st-distribution{
+    background:color-mix(in srgb,var(--down) 17%,transparent); color:var(--down); }
+  .chip.cat{ background:color-mix(in srgb,var(--cat) 20%,transparent);
+    color:color-mix(in srgb,var(--cat) 68%,var(--text)); }
+  .chip.en-buy{ display:inline-flex; align-items:center; gap:3px; cursor:help;
+    background:color-mix(in srgb,var(--up) 22%,transparent); color:var(--up);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 38%,transparent) inset; }
+  .chip.src{ background:color-mix(in srgb,var(--info) 14%,transparent); color:var(--info); }
+
+  /* ── shared row atoms ── */
+  .tk{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-weight:700; font-size:14.5px;
+    letter-spacing:-.015em; }
+  .px{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px; color:var(--muted);
+    white-space:nowrap; }
+  .nm{ font-size:10.5px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .score{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:20px; font-weight:700;
+    letter-spacing:-.035em; color:var(--text); line-height:1; }
+  .rd{ font-size:12px; line-height:1.45; color:var(--dim); }
+  .drv{ font-size:10.5px; line-height:1.5; color:var(--muted); margin-top:5px; }
+  .drv b{ color:color-mix(in srgb,var(--text) 80%,transparent); font-weight:600; }
+  .drv .cau{ color:var(--warn); }
+  .cline{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .watch{ font-size:10px; color:var(--muted); margin-top:5px; }
+  .watch b{ color:color-mix(in srgb,var(--text) 72%,transparent); font-weight:600; }
+
+  /* room-left rail — the figure keeps the precision the bar can only suggest */
+  .room{ display:flex; align-items:center; gap:9px; }
+  .room .lab{ font-size:9px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--muted); white-space:nowrap; }
+  .room .trk{ flex:1; min-width:36px; height:3px; border-radius:2px; background:var(--hair-soft);
+    overflow:hidden; }
+  .room .trk i{ display:block; height:100%; background:var(--accent,var(--info)); }
+  .room .v{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
+    font-weight:700; color:color-mix(in srgb,var(--text) 84%,transparent); }
+
+  /* ── agreement matrix ── */
+  .mtx{ display:inline-flex; gap:3px; align-items:center; cursor:help; }
+  .mtx .cell{ width:8px; height:14px; border-radius:2px; background:var(--hair-soft); }
   .mtx .cell.up{ background:var(--up); } .mtx .cell.dn{ background:var(--down); }
-  .mtx .cell.nz{ background:color-mix(in srgb,var(--muted) 60%,transparent); }
-  .mtx .cell.off{ background:color-mix(in srgb,var(--line) 45%,transparent);opacity:.5; }
-  .fal{ font-size:10.5px;color:color-mix(in srgb,var(--text) 50%,transparent);margin-top:4px; }
-  .fal b{ color:color-mix(in srgb,var(--down) 80%,var(--text));font-weight:600; }
-  /* sector heat */
-  .heat{ display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); }
-  .sec{ padding:11px 13px; }
-  .sec .sh{ display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700; }
-  .sec .etf{ font-family:ui-monospace,Menlo,monospace;font-size:10px;padding:1px 6px;border-radius:6px;
-    background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info); }
-  .sec .pol{ margin-left:auto;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:6px; }
-  .sec .pol.up{ background:color-mix(in srgb,var(--up) 20%,transparent);color:var(--up); }
-  .sec .pol.dn{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
-  .sec .meter{ height:6px;border-radius:99px;margin:8px 0 6px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden; }
-  .sec .meter i{ display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--info),var(--up)); }
-  .sec small{ font-size:10.5px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap; }
-  .sec small b{ color:var(--text); }
-  .disc{ font-size:11px;color:color-mix(in srgb,var(--text) 48%,transparent);margin-top:14px;line-height:1.5; }
-  .empty{ font-size:12.5px;color:var(--muted);padding:9px 0; }
-  /* ── V2: lifecycle stage chip + edge-remaining + opportunity ── */
-  .stage{ font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:6px;white-space:nowrap; }
-  .stage.emerging{ background:color-mix(in srgb,var(--info) 26%,transparent);color:var(--info);box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 35%,transparent) inset; }
-  .stage.early{ background:color-mix(in srgb,var(--up) 20%,transparent);color:var(--up); }
-  .stage.consensus{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
-  .stage.exhausted{ background:color-mix(in srgb,var(--down) 20%,transparent);color:var(--down); }
-  .stage.distribution{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
-  .stage.faltering{ background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn);box-shadow:0 0 0 1px color-mix(in srgb,var(--warn) 30%,transparent) inset; }
-  .stage.discovery{ background:color-mix(in srgb,var(--info) 24%,transparent);color:var(--info);box-shadow:0 0 0 1px color-mix(in srgb,var(--info) 35%,transparent) inset; }
-  .stage.building{ background:color-mix(in srgb,var(--text) 10%,transparent);color:var(--muted); }
-  /* ⚡ prime-entry badge (validated T1-T4 confluence) + honest price chips */
-  .egate{ display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:800;letter-spacing:.03em;
-    padding:2px 6px;border-radius:6px;white-space:nowrap;cursor:default; }
-  .egate.buy{ background:color-mix(in srgb,var(--up) 24%,transparent);color:var(--up);box-shadow:0 0 0 1px color-mix(in srgb,var(--up) 40%,transparent) inset; }
-  .egate.no{ background:color-mix(in srgb,var(--muted) 16%,transparent);color:var(--muted); }
-  .tchips{ display:flex;flex-wrap:wrap;gap:5px;margin-top:5px; }
-  .tchip{ font-size:9px;font-weight:700;padding:1.5px 6px;border-radius:5px;white-space:nowrap;
-    background:color-mix(in srgb,var(--line) 55%,transparent);color:color-mix(in srgb,var(--text) 70%,transparent); }
-  .tchip.bad{ background:color-mix(in srgb,var(--down) 16%,transparent);color:var(--down); }
-  .tchip.good{ background:color-mix(in srgb,var(--up) 16%,transparent);color:var(--up); }
-  /* discovery cards */
-  .dcard .et .src{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
-    background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info); }
-  .dcard .off{ font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:5px;
-    background:color-mix(in srgb,var(--up) 18%,transparent);color:var(--up);margin-left:4px; }
-  .dcard .dscore{ margin-left:auto;font-size:15px;font-weight:800;color:var(--info); }
-  .dcard .dchan{ font-size:10.5px;color:color-mix(in srgb,var(--text) 64%,transparent);line-height:1.4;margin-top:5px; }
-  .opp{ display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:46px; }
-  .opp b{ font-size:19px;font-weight:800;line-height:1;letter-spacing:-.02em;
-    background:linear-gradient(120deg,var(--info),var(--up));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
-  .opp small{ font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-top:2px; }
-  .edge{ display:flex;align-items:center;gap:7px;margin-top:5px; }
-  .edge .lab{ font-size:9.5px;color:var(--muted);white-space:nowrap;text-transform:uppercase;letter-spacing:.03em; }
-  .edge .ebar{ position:relative;flex:1;height:5px;border-radius:99px;background:color-mix(in srgb,var(--line) 60%,transparent);overflow:hidden;max-width:120px; }
-  .edge .ebar i{ position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--warn),var(--up)); }
-  .edge .ev{ font-size:9.5px;font-weight:700;color:color-mix(in srgb,var(--text) 70%,transparent);min-width:26px; }
-  .drv{ font-size:10px;color:color-mix(in srgb,var(--text) 55%,transparent);margin-top:3px;line-height:1.3; }
-  .drv b{ color:color-mix(in srgb,var(--up) 80%,var(--text));font-weight:600; }
-  /* emerging hero cards */
-  .ecards{ display:grid;gap:11px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); }
-  .ecard{ padding:13px 14px;position:relative; }
-  .ecard .et{ display:flex;align-items:center;gap:8px;margin-bottom:3px; }
-  .ecard .et .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:800;font-size:15px; }
-  .ecard .et .nm{ font-size:10px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-  .ecard .et .oppn{ margin-left:auto;font-size:17px;font-weight:800;
-    background:linear-gradient(120deg,var(--info),var(--up));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent; }
-  .ecard .erd{ font-size:11.5px;color:color-mix(in srgb,var(--text) 74%,transparent);line-height:1.4;margin:6px 0 2px; }
-  /* catalyst rows */
-  .cats{ display:grid;gap:8px;grid-template-columns:1fr 1fr; }
-  @media(max-width:760px){ .cats{ grid-template-columns:1fr; } }
-  .catrow{ display:flex;align-items:flex-start;gap:9px;padding:9px 12px; }
-  .catrow .tk{ font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:12.5px;min-width:50px; }
-  .catrow .cb{ font-size:11px;color:color-mix(in srgb,var(--text) 68%,transparent);line-height:1.35; }
-  .catrow .ct{ font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:6px;white-space:nowrap;
-    background:color-mix(in srgb,#8b5cf6 20%,transparent);color:#a78bfa; }
-  .catrow .age{ font-size:9.5px;color:var(--muted);white-space:nowrap;margin-left:auto; }
-  /* live price chip (patched intraday by live.js) */
-  .nb-px{ font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;
-    color:color-mix(in srgb,var(--text) 72%,transparent);white-space:nowrap; }
-  .ecard .et .nb-px, .dcard .et .nb-px{ margin-left:2px; }
-  footer.hf{ margin-top:30px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent);font-size:11px;color:var(--muted);line-height:1.6; }
-  @media (prefers-reduced-motion:reduce){ .desk,.row{transition:none} .hh .live::after{animation:none} }
-  /* qledger honesty chips (D10) */
-  .ql-chip { display:inline-block; font:700 9px/1.4 ui-monospace,Menlo,monospace;
-    letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:6px;
-    border:1px solid; white-space:nowrap; vertical-align:middle;
-    min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; box-sizing:border-box; }
-  .ql-chip-ungraded { background:color-mix(in srgb,var(--muted) 12%,transparent);
-    color:var(--muted); border-color:color-mix(in srgb,var(--muted) 28%,transparent); }
-  .ql-chip-accruing { background:color-mix(in srgb,var(--warn) 14%,transparent);
-    color:var(--warn); border-color:color-mix(in srgb,var(--warn) 35%,transparent); }
-  .ql-chip-graded-pos { background:color-mix(in srgb,var(--up) 14%,transparent);
-    color:var(--up); border-color:color-mix(in srgb,var(--up) 35%,transparent); }
-  .ql-chip-graded-neg { background:color-mix(in srgb,var(--down) 14%,transparent);
-    color:var(--down); border-color:color-mix(in srgb,var(--down) 35%,transparent); }
-  .desk-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:5px; }
-  /* signal scorecard horizon cards — labelled stat cells (no chip cramming) */
-  .heat.trh-heat{ grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); }
-  .trh .sh{ flex-wrap:nowrap; }
-  .trh .trh-h{ white-space:nowrap; }
-  .trh .pol.mea{ background:color-mix(in srgb,var(--muted) 22%,transparent);color:var(--muted); }
-  .trh-grid{ display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;margin-top:9px; }
-  .trh-cell{ min-width:0; }
-  .trh-lab{ display:block;font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
-    color:var(--muted);margin-bottom:2px;line-height:1.35; }
-  .trh-val{ font-size:14px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums; }
-  .trh-val.pos{ color:var(--up); } .trh-val.neg{ color:var(--down); }
-  /* plain-word answer to the question-framed stage labels — the word carries the verdict,
-     the colour only reinforces it (sign convention on the number itself stays untouched) */
-  .trh-ans{ font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em; }
-  .trh-ans.ok{ color:var(--up); } .trh-ans.bad{ color:var(--down); }
+  .mtx .cell.nz{ background:color-mix(in srgb,var(--muted) 55%,transparent); }
+  .mtx .cell.off{ background:color-mix(in srgb,var(--line) 40%,transparent); }
+
+  /* ── emerging: the page's hero. The only cards that get an accent edge. ──
+     Card faces are uniform by construction (no prose block one card carries and its
+     siblings don't) and the bottom strip is pushed down with margin-top:auto, so the
+     room-left rails line up across the row instead of leaving a hollow band under
+     the shortest card. Never `align-items:start` — that hides a void, it can't fix it. */
+  .ecards{ display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(272px,1fr)); }
+  .ecard{ position:relative; padding:14px 15px 13px; overflow:hidden;
+    display:flex; flex-direction:column; }
+  .ecard.lead::before{ content:""; position:absolute; inset:0 auto 0 0; width:2px;
+    background:var(--accent,var(--info)); }
+  /* the figure stays pinned to the top-right corner however far the chips wrap */
+  .ecard .et{ display:flex; align-items:baseline; gap:8px 7px; flex-wrap:wrap; padding-right:38px; }
+  .ecard .et .score, .ecard .et .dscore{ position:absolute; top:12px; right:15px; margin:0; }
+  .ecard .nm{ margin-top:3px; }
+  .ecard .rd{ margin:8px 0 0; }
+  .ecard .room{ margin-top:auto; padding-top:11px; border-top:1px solid var(--hair-soft); }
+  .ecard .foot{ margin-top:7px; font-size:10px; color:var(--muted);
+    display:flex; align-items:center; gap:5px; }
+  .ecard .foot .ic-svg{ width:12px; height:12px; }
+
+  /* ── discovery: same anatomy, quieter, no accent edge. The reason clamps to two
+        lines so fourteen cards can't each set their own height. ── */
+  .dcard .rd{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; }
+  .dscore{ font-family:var(--fig); font-variant-numeric:tabular-nums;
+    font-size:15px; font-weight:700; color:var(--info); }
+  .dchan{ font-size:10px; color:var(--muted); margin-top:auto; padding-top:8px;
+    display:flex; align-items:center; gap:5px; min-width:0; }
+  .dchan .ic-svg{ width:12px; height:12px; flex:none; }
+  .dchan .ch{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ── two-up alert panels ── */
+  /* minmax(0,1fr), not 1fr: the catalyst briefs are nowrap-ellipsised, and a bare 1fr
+     resolves to minmax(auto,1fr) — their min-content width would let that column push
+     the other panel down to a sliver */
+  .alerts{ display:grid; gap:12px; grid-template-columns:minmax(0,1fr) minmax(0,1fr); margin-top:6px; }
+  /* minmax(0,…) here too — a bare 1fr is minmax(auto,1fr) and the nowrap briefs would
+     set the column's min-content width, scrolling the whole page sideways on mobile */
+  @media(max-width:820px){ .alerts{ grid-template-columns:minmax(0,1fr); } }
+  .panel{ padding:13px 15px 14px; }
+  .panel h3{ display:flex; align-items:center; gap:10px; margin:0 0 3px; font-size:11px;
+    font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--text); }
+  .panel h3 .tick{ width:3px; height:12px; border-radius:2px; flex:none; background:var(--accent,var(--info)); }
+  .panel h3 .n{ margin-left:auto; font-family:var(--fig); font-variant-numeric:tabular-nums;
+    font-size:11px; font-weight:700; color:var(--muted); letter-spacing:0; }
+  /* row-scoped, so the "View all" overlay can move these rows out of the panel
+     and they still lay out; separators stay in-flow-only (the overlay draws its own) */
+  .arow{ display:flex; align-items:center; gap:10px; padding:8px 0; font-size:12px; }
+  .panel .arow{ border-top:1px solid var(--hair-soft); }
+  .arow .tk{ font-size:12.5px; min-width:48px; flex:none; }
+  .arow .ab{ color:var(--dim); line-height:1.4; min-width:0; flex:1; }
+  .arow .age{ margin-left:auto; font-family:var(--fig); font-size:10px; color:var(--muted);
+    white-space:nowrap; }
+  .arow .pct{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11.5px;
+    font-weight:700; color:var(--down); }
+  /* one line per catalyst, ellipsised: two-line briefs made this panel taller than
+     its neighbour and parked a dead band under the shorter one */
+  .arow.cat-row .ab{ display:flex; align-items:center; gap:8px; overflow:hidden; }
+  .arow.cat-row .cb{ min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* ══ Command ledger — the signature ════════════════════════════════════════
+     One container, thirty rows, no per-row card. A single rule runs down the
+     left edge and each row's segment fills from the bottom by how much of the
+     move is still ahead — so scrolling the ledger shows the edge draining away.
+     The bar is the shape; the mono figure beside the score keeps the precision.
+     ─────────────────────────────────────────────────────────────────────────── */
+  .led{ border:1px solid var(--hair); border-radius:var(--r); background:var(--card); overflow:hidden; }
+  .led-row{ display:grid; grid-template-columns:26px 150px 52px 55px minmax(0,1fr);
+    align-items:center; gap:0 14px; padding:10px 15px 10px 0; min-height:58px; }
+  .led > .led-row + .led-row{ border-top:1px solid var(--hair-soft); }
+  .sp{ align-self:stretch; position:relative; }
+  .sp::before{ content:""; position:absolute; left:11px; top:0; bottom:0; width:3px;
+    background:linear-gradient(to top, var(--sp-c) var(--sp-p), var(--hair-soft) var(--sp-p)); }
+  .led-row .id{ min-width:0; }
+  .led-row .id .tkline{ display:flex; align-items:baseline; gap:7px; }
+  .led-row .score{ text-align:right; }
+  .led-row .rmv{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:11px;
+    font-weight:700; color:var(--muted); text-align:right; }
+  @media(max-width:820px){
+    .led-row{ grid-template-columns:22px 118px 46px minmax(0,1fr); gap:0 11px; }
+    .led-row .mtxc{ display:none; }
+    .sp::before{ left:9px; }
+  }
+
+  /* ── track record: the plain read, with the study panel folded beneath ── */
+  .trh{ display:grid; gap:11px; grid-template-columns:repeat(auto-fill,minmax(258px,1fr)); }
+  .trc{ padding:12px 14px 13px; }
+  .trc .th{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
+  .trc .th .h{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:12.5px;
+    font-weight:700; letter-spacing:-.01em; }
+  .trc .th .chip{ margin-left:auto; }
+  .trg{ display:grid; grid-template-columns:1fr 1fr; gap:9px 14px; }
+  .trcell{ min-width:0; }
+  .trlab{ display:block; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.06em;
+    color:var(--muted); margin-bottom:3px; line-height:1.35; }
+  .trval{ font-family:var(--fig); font-variant-numeric:tabular-nums; font-size:13.5px; font-weight:700;
+    color:var(--text); }
+  .trval.pos{ color:var(--up); } .trval.neg{ color:var(--down); }
+  .trans{ font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; }
+  .trans.ok{ color:var(--up); } .trans.bad{ color:var(--down); }
+  .note{ font-size:12px; line-height:1.55; color:var(--dim); padding:12px 15px; }
+  .note b{ color:var(--text); }
+
+  /* ── sector heat: one container, one column of bars ──
+     Six scattered cards each drew their meter at a different x-offset and width, so
+     the one comparison the panel exists to make — which sector is hottest — had to be
+     done by reading numbers. Aligned in a single list the bars share a scale and the
+     ranking is legible without any vocabulary at all. */
+  .slist{ overflow:hidden; }
+  .srow{ display:grid; grid-template-columns:46px minmax(110px,200px) minmax(70px,1fr) auto;
+    align-items:center; gap:0 14px; padding:10px 15px; font-size:12.5px; }
+  .slist > .srow + .srow{ border-top:1px solid var(--hair-soft); }
+  .srow .etf{ font-family:var(--fig); font-size:9.5px; font-weight:700; letter-spacing:.03em;
+    padding:2px 5px; border-radius:5px; text-align:center;
+    background:color-mix(in srgb,var(--info) 14%,transparent); color:var(--info); }
+  .srow .snm{ font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    display:flex; align-items:center; gap:7px; min-width:0; }
+  .srow .meter{ height:4px; border-radius:2px; background:var(--hair-soft); overflow:hidden; }
+  .srow .meter i{ display:block; height:100%; background:var(--accent,var(--info)); }
+  .srow .sf{ font-size:10px; color:var(--muted); display:flex; gap:12px; white-space:nowrap; }
+  .srow .sf b{ font-family:var(--fig); font-variant-numeric:tabular-nums;
+    color:color-mix(in srgb,var(--text) 80%,transparent); }
+  @media(max-width:620px){
+    .srow{ grid-template-columns:46px minmax(0,1fr) auto; row-gap:8px; }
+    .srow .meter{ grid-column:1 / -1; }
+  }
+
+  footer.hf{ margin-top:32px; padding-top:15px; border-top:1px solid var(--hair);
+    font-size:11px; color:var(--muted); line-height:1.6; }
+  footer.hf time{ font-family:var(--fig); }
+  @media (prefers-reduced-motion:reduce){
+    .rl, .rl .ic-svg{ transition:none; }
+    .live::after{ animation:none; }
+  }
 </style>
 </head>
 <body class="page-hub">
-<div id="sky" aria-hidden="true"><canvas id="sky-stars"></canvas><div id="sky-sun"></div></div>
 <nav class="site-nav">
   {% include "_navlinks.html.j2" %}
   <div class="nav-search"><span class="mag">🔎</span>
@@ -295,220 +405,237 @@
 </nav>
 
 <div class="hub-wrap">
+  {# ── hero: the deck is one line; the method lives one click away (Tier 2) ── #}
   <header class="hh">
-    <span class="eyebrow"><span class="live"></span>{{ t('Central command · five desks fused', '中枢指挥 · 五台融合') }}
-      {%- if built %} · <time datetime="{{ built }}">{{ built[:10] }}</time>{% endif %}</span>
-    <h1>{{ t('Intelligence Hub', '情报中心') }}</h1>
-    <p>{{ t('Ranked by EDGE REMAINING — genuine signal × how much of the move is still ahead × a leading desk firing before the crowd — not by how many desks agree (agreement is a lagging, consensus condition). The hero is what is EMERGING: a leading desk positioning into a quiet tape with room to run. The crowd-favourite that has already run is demoted on purpose. Context only, never a trade trigger.',
-            '按「剩余空间」排序 —— 真实信号 × 行情尚未走完的幅度 × 领先信号台抢在人群之前发动 —— 而非看多少台一致（一致性是滞后的共识状态）。主推「萌芽」机会：领先信号台在安静的盘面中悄悄建仓、仍有上行空间。已经跑完的人群宠儿被刻意下调。仅供参考，绝非交易触发。') }}</p>
+    <div>
+      <span class="eyebrow"><span class="live"></span>{{ t('Live', '实时') }}
+        {%- if built %} · <time datetime="{{ built }}">{{ built[:10] }}</time>{% endif %}</span>
+      <h1>{{ t('Intelligence Hub', '情报中心') }}</h1>
+      <p class="deck">{{ t('What still has room to run — surfaced before the crowd arrives.',
+                          '仍有上行空间的机会 —— 抢在人群之前浮出水面。') }}
+        <button class="lens-q" type="button" aria-label="How this page ranks names"
+          data-tip-en="Ranked by genuine signal × how much of the move is still ahead × whether a leading desk fired before the crowd. Deliberately NOT ranked by how many desks agree — agreement is a lagging condition, so a crowd favourite that has already run is demoted. Five desks vote on each name: news flow, alt-data, divergence radar, buy-board, policy intent. Context only, never a trade trigger."
+          data-tip-zh="排序依据：真实信号 × 行情尚未走完的幅度 × 领先信号台是否抢在人群之前发动。刻意不按「多少台一致」排序 —— 一致性是滞后条件，因此已经跑完的人群宠儿会被下调。五台对每个标的投票：新闻流、另类数据、背离雷达、买入榜、政策意图。仅供参考，绝非交易触发。">?</button></p>
+    </div>
+    <div class="state">
+      {% if MC.regime %}<i class="hot">{{ t('Regime', '格局') }} <b>{{ MC.regime }}{% if MC.quad %} {{ MC.quad }}{% endif %}</b></i>{% endif %}
+      {% if MC.cycle %}<i>{{ t('Cycle', '周期') }} <b>{{ MC.cycle }}</b></i>{% endif %}
+      {% if MC.liquidity %}<i>{{ t('Liquidity', '流动性') }} <b>{{ MC.liquidity }}</b></i>{% endif %}
+      {% if MC.fed_stance %}<i>{{ t('Fed', '美联储') }} <b>{{ MC.fed_stance }}</b></i>{% endif %}
+    </div>
   </header>
 
-  {# ── macro command frame ── #}
-  <div class="cmdbar">
-    {% if MC.regime %}<span class="mc hot"><b>{{ MC.regime }}</b>{% if MC.quad %} <span>{{ MC.quad }}</span>{% endif %}</span>{% endif %}
-    {% if MC.cycle %}<span class="mc">{{ t('Cycle', '周期') }} <b>{{ MC.cycle }}</b></span>{% endif %}
-    {% if MC.liquidity %}<span class="mc">{{ t('Liquidity', '流动性') }} <b>{{ MC.liquidity }}</b></span>{% endif %}
-    {% if MC.fed_stance %}<span class="mc">{{ t('Fed', '美联储') }} <b>{{ MC.fed_stance }}</b></span>{% endif %}
-    {% if hub.n_emerging %}<span class="mc hot">{{ t('Emerging', '萌芽') }} <b>{{ hub.n_emerging }}</b></span>{% endif %}
-    {% if hub.n_discovery %}<span class="mc hot" style="border-color:color-mix(in srgb,var(--info) 50%,var(--line));color:var(--info)">{{ t('Discovery', '发掘') }} <b>{{ hub.n_discovery }}</b></span>{% endif %}
-    {% if hub.counts and hub.counts.catalyst %}<span class="mc">{{ t('Catalysts', '催化') }} <b>{{ hub.counts.catalyst }}</b></span>{% endif %}
-    {% if hub.n_actionable %}<span class="mc">{{ t('Actionable', '可操作') }} <b>{{ hub.n_actionable }}</b></span>{% endif %}
-    {% if hub.n_universe %}<span class="mc">{{ t('Universe', '覆盖') }} <b>{{ hub.n_universe }}</b></span>{% endif %}
-  </div>
-  {# posture banner removed by operator order 2026-07-11 — regime/cycle chips above carry the state #}
-
-  {# ── desk status board ── #}
-  <div class="desks">
-    {% set DK = [('news','News','news.html','News flow · the tape'),
-                 ('alt_data','Alt-Data','alt_data.html','Smart-money signal'),
-                 ('radar','Divergence Radar','radar.html','Activity vs price'),
-                 ('standout','Buy-Board','us_stocks.html','Prophet signals'),
-                 ('policy','Policy Watch','policy_watch.html','Realpolitik intent'),
-                 ('special','Special Sits','special_situations.html','Dated catalysts')] %}
+  {# ── desk rail. Purpose + grading receipt ride the hover; Tier 1 keeps the
+        name, the live lamp and the translated grading state. ── #}
+  <div class="rail">
+    {% set DK = [('news','News','新闻流','news.html','News flow — the tape','新闻流 —— 盘面'),
+                 ('alt_data','Alt-Data','另类数据','alt_data.html','Smart-money signal','聪明钱信号'),
+                 ('radar','Radar','背离雷达','radar.html','Divergence radar — activity vs price','背离雷达 —— 活跃度对比价格'),
+                 ('standout','Buy-Board','买入榜','us_stocks.html','Prophet buy signals','先知买入信号'),
+                 ('policy','Policy','政策观察','policy_watch.html','Policy watch — realpolitik intent','政策观察 —— 政策实际意图'),
+                 ('special','Special','特殊事件','special_situations.html','Special situations — dated catalysts','特殊事件 —— 有日期的催化')] %}
     {% set DICON = {'news':'news','alt_data':'alt','radar':'radar','standout':'board','policy':'policy','special':'cal'} %}
-    {% for key,label,href,desc in DK %}{% set live = (hub.desks.get(key) or {}).get('live') %}
-    <a class="desk" href="{{ href }}">
-      <div class="dh">{{ ic(DICON.get(key,'command')) }} {{ label }}<span class="dot {{ 'on' if live else '' }}"></span></div>
-      <small>{{ desc }}{% if not live %} · {{ t('offline', '离线') }}{% endif %}</small>
-      <div class="desk-chips">{{ ql_chip(_ql.get(key)) }}</div>
+    {% for key,label,label_zh,href,desc,desc_zh in DK %}
+    {% set live = (hub.desks.get(key) or {}).get('live') %}
+    {% set qc = _ql.get(key) %}
+    <a class="rl" href="{{ href }}"
+       data-tip-en="{{ desc }} · {{ 'live' if live else 'offline' }} · track record: {{ (qc.label if qc else 'UNGRADED · n=0') }}"
+       data-tip-zh="{{ desc_zh }} · {{ '在线' if live else '离线' }} · track record: {{ (qc.label_zh if qc else '未评级 · n=0') }}">
+      {{ ic(DICON.get(key,'news')) }}<span class="rn">{{ t(label, label_zh) }}</span>{{ qlword(qc) }}<span class="lamp {{ 'on' if live else '' }}"></span>
     </a>{% endfor %}
   </div>
 
-  {# China Lens module removed by operator order 2026-07-11 — the packet artifact
-     (site/intel_hub/regions/china.json) is still built for downstream readers;
-     the US hub no longer renders it. #}
-
-  {# ── EMERGING EDGE — the pre-consensus hero (highest value) ── #}
+  {# ── EMERGING EDGE — the pre-consensus hero ── #}
   {% set EM = hub.emerging or [] %}{% set EX = hub.exhausted or [] %}{% set CA = hub.catalysts or [] %}
-  <div class="band"><h2 style="--accent:var(--info)">{{ ic('edge') }} {{ t('Emerging edge — before the crowd', '萌芽优势 —— 抢在人群之前') }}</h2><span class="ln"></span>
-    <span class="cnt">{{ t('a leading desk firing into a quiet tape, with room to run', '领先信号台在安静盘面发动，仍有上行空间') }}</span></div>
+  <div class="band" style="--accent:var(--info)"><span class="tick"></span>
+    <h2>{{ t('Emerging edge', '萌芽优势') }}</h2><span class="ln"></span><span class="n">{{ EM|length }}</span></div>
+  <div class="stance">{{ t("A leading desk is positioned; the tape has not confirmed yet. <b>Watch — don't chase.</b>",
+                          '领先信号台已建仓，盘面尚未确认。<b>观察 —— 不要追高。</b>') }}</div>
   {% if EM %}
   <div class="ecards">
     {% for d in EM %}
-    <div class="glass acc ecard" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' }}">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}{{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}
-        <span class="oppn">{{ d.opportunity_score|round|int }}</span></div>
-      <div class="nm" style="font-size:10.5px;color:var(--muted)">{{ d.name }}</div>
-      <div class="erd">{{ d.read }}</div>
-      {{ edgebar(d.edge_remaining) }}
-      {{ tchips(d.trajectory) }}
-      {% if d.edge_drivers %}<div class="drv">{% for dr in d.edge_drivers %}{% if dr.startswith('⚠') %}<span style="color:var(--warn)">{{ dr }}</span>{% else %}<b>{{ dr }}</b>{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</div>{% endif %}
-      {% if d.catalyst and d.catalyst.live %}<div class="drv">{{ ic('cal') }} {{ d.catalyst.category }}{% if d.catalyst.days_since is not none %} · {{ d.catalyst.days_since }}{{ t('d ago','天前') }}{% endif %}</div>{% endif %}
+    <div class="card ecard lead" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' }}">
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
+        {{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}{{ tstate(d.trajectory) }}
+        <span class="score">{{ d.opportunity_score|round|int }}</span></div>
+      {% if d.name and d.name != d.ticker %}<div class="nm">{{ d.name|e }}</div>{% endif %}
+      {{ drivers(d.edge_drivers) }}
+      {{ roomrail(d.edge_remaining, 'var(--info)' if d.stage=='emerging' else 'var(--up)') }}
+      {% if d.catalyst and d.catalyst.live %}<div class="foot">{{ ic('cal') }} {{ d.catalyst.category|e }}{% if d.catalyst.days_since is not none %} · {{ d.catalyst.days_since }}{{ t('d ago','天前') }}{% endif %}</div>{% endif %}
     </div>{% endfor %}
   </div>
-  {% else %}<div class="empty">{{ t('No emerging pre-consensus setups today — the tape is led by names that have already moved.', '今日无萌芽期的领先机会 —— 盘面由已经发动的标的主导。') }}</div>{% endif %}
+  {% else %}<div class="empty">{{ t('Nothing emerging today — the tape is led by names that have already moved.', '今日无萌芽机会 —— 盘面由已经发动的标的主导。') }}</div>{% endif %}
 
-  {# ── DISCOVERY — off-desk / ignored leading signals (needles in the haystack) ── #}
+  {# ── DISCOVERY — leading signals the desks dropped or never read ── #}
   {% if hub.discovery %}
-  <div class="band"><h2 style="--accent:var(--info)">{{ ic('radar') }} {{ t('Discovery — what the desks miss', '发掘 —— 各台遗漏之处') }}</h2><span class="ln"></span>
-    <span class="cnt">{{ t('a leading signal the five desks dropped or never read', '五台丢弃或从未读取的领先信号') }}</span></div>
-  <div class="ecards">
+  <div class="band" style="--accent:var(--info)"><span class="tick"></span>
+    <h2>{{ t('Discovery', '发掘') }}</h2><span class="ln"></span>
+    <span class="legend">{{ t('what the desks miss', '各台遗漏之处') }}</span>
+    <span class="n">{{ hub.discovery|length }}</span></div>
+  <div class="stance">{{ t('Leads no desk has picked up yet. <b>Watch</b> — a lead is not a signal.',
+                          '尚无信号台采纳的线索。<b>观察</b> —— 线索不等于信号。') }}</div>
+  {# one row on the face, the rest behind the shared "View all" overlay #}
+  <div class="lst-wrap" data-ovl-title-en="Discovery — what the desks miss" data-ovl-title-zh="发掘 —— 各台遗漏之处" data-ovl-accent="var(--info)">
+  <div class="ecards lst-collapse lst-cap4 is-collapsed">
     {% for d in hub.discovery %}{% set dd = d.discovery or {} %}
-    <div class="glass acc ecard dcard" style="--accent:var(--info)">
-      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
-        <span class="src">{{ (dd.source or '')|replace('_',' ') }}</span>
-        {% if dd.off_desk %}<span class="off">{{ t('off-desk','非台内') }}</span>{% endif %}
+    <div class="card ecard dcard">
+      <div class="et"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}
+        <span class="chip src">{{ (dd.source or '')|replace('_',' ')|e }}</span>
+        {% if dd.off_desk %}<span class="chip good">{{ t('off-desk','非台内') }}</span>{% endif %}
         <span class="dscore">{{ ((dd.disc_score or 0)*100)|round|int }}</span></div>
-      <div class="erd">{{ dd.reason }}</div>
-      {% if dd.channels %}<div class="dchan">{{ ic('pulse') }} {{ dd.channels|join(' · ') }}</div>{% endif %}
-      <div class="drv" style="margin-top:6px">{{ stage(d.stage) }}
-        <span style="color:var(--muted)">· {{ t('surfaced into the command list','已上榜可见') if d.stage != 'discovery' else t('not yet on any desk','尚未进入任何信号台') }}</span></div>
+      <div class="rd" style="margin-top:8px">{{ dd.reason|e }}</div>
+      {# prettify the machine slugs — raw `github_momentum` is banned at glance tier #}
+      {% if dd.channels %}<div class="dchan">{{ ic('pulse') }} <span class="ch">{{ dd.channels|map('replace','_',' ')|join(' · ')|e }}</span></div>{% endif %}
     </div>{% endfor %}
+  </div>
+  <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>
   </div>
   {% endif %}
 
-  {# ── exhausted (fade) + live catalysts — full lists behind the shared .lst-wrap
-        "View all" overlay (CSS caps the in-flow view at 7 rows / 5 on narrow) ── #}
-  <div class="alerts" style="margin-top:18px">
-    <div class="glass acc alert" style="--accent:var(--down)"
-         data-ovl-title-en="Exhausted — already run, fade-risk" data-ovl-title-zh="透支 —— 已跑完，派发风险" data-ovl-accent="var(--down)">
-      <h3>{{ ic('warn') }} {{ t('Exhausted — already run, fade-risk', '透支 —— 已跑完，派发风险') }} <span class="cnt">{{ EX|length }}</span></h3>
+  {# ── exhausted (fade) + dated catalysts. Both lists used to reprint one
+        stage-templated sentence on every row; a constant belongs in the panel,
+        not per row (DESIGN_DOCTRINE Law 4), so the rows now carry only what
+        actually varies. Full lists sit behind the shared "View all" overlay. ── #}
+  <div class="alerts">
+    <div class="card panel" style="--accent:var(--down)"
+         data-ovl-title-en="Exhausted — already run" data-ovl-title-zh="透支 —— 已跑完" data-ovl-accent="var(--down)">
+      <h3><span class="tick"></span>{{ t('Exhausted — already run', '透支 —— 已跑完') }} <span class="n">{{ EX|length }}</span></h3>
+      <div class="stance" style="margin:2px 0 6px">{{ t('Desks lean bearish and price is rolling over. <b>De-risk — not a long.</b>', '各台偏空且价格见顶回落。<b>降低风险 —— 不宜做多。</b>') }}</div>
+      {#- the stage chip earns its place only when the list actually holds more than one
+          stage; seven identical chips are a constant, and a constant belongs to the
+          panel, not to every row (DESIGN_DOCTRINE Law 4) -#}
+      {% set EX_STAGES = EX|map(attribute='stage')|reject('none')|unique|list %}
       {% if EX %}<div class="lst-wrap"><div class="lst-collapse is-collapsed">
       {% for d in EX %}<div class="arow">
-        <span class="tk">{{ d.ticker }}</span>
-        <span class="rd">{{ stage(d.stage) }} <b style="color:var(--down)">{{ (d.edge_remaining*100)|round|int }}%</b> {{ t('edge left','剩余') }} · {{ d.read }}</span></div>{% endfor %}
+        <span class="tk">{{ d.ticker }}</span>{% if EX_STAGES|length > 1 %}{{ stage(d.stage) }}{% endif %}
+        <span class="ab">{{ t('room left','剩余空间') }} <span class="pct">{{ (d.edge_remaining*100)|round|int }}%</span></span></div>{% endfor %}
       </div>
       <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button></div>
       {% else %}<div class="empty">{{ t('Nothing flagged exhausted today.', '今日无透支标的。') }}</div>{% endif %}
     </div>
-    <div class="glass acc alert" style="--accent:#a78bfa"
-         data-ovl-title-en="Live catalysts — dated events" data-ovl-title-zh="在途催化 —— 有确定日期的事件" data-ovl-accent="#a78bfa">
-      <h3>{{ ic('cal') }} {{ t('Live catalysts — dated events', '在途催化 —— 有确定日期的事件') }} <span class="cnt">{{ CA|length }}</span></h3>
+    <div class="card panel" style="--accent:var(--cat)"
+         data-ovl-title-en="Dated catalysts" data-ovl-title-zh="有日期的催化" data-ovl-accent="var(--cat)">
+      <h3><span class="tick"></span>{{ t('Dated catalysts', '有日期的催化') }} <span class="n">{{ CA|length }}</span></h3>
+      <div class="stance" style="margin:2px 0 6px">{{ t('Events with a known date. <b>Context for timing — not a reason to buy.</b>', '有确定日期的事件。<b>用于把握时点 —— 而非买入理由。</b>') }}</div>
       {% if CA %}<div class="lst-wrap"><div class="lst-collapse is-collapsed">
-      {% for d in CA %}{% set c = d.catalyst or {} %}<div class="arow">
+      {% for d in CA %}{% set c = d.catalyst or {} %}<div class="arow cat-row">
         <span class="tk">{{ d.ticker }}</span>
-        <span class="rd"><span class="ct" style="font-size:9px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,#8b5cf6 18%,transparent);color:#a78bfa">{{ c.category }}</span>
-          {%- if c.days_since is not none %} <span style="color:var(--muted)">{{ c.days_since }}{{ t('d ago','天前') }}</span>{% endif %}
-          {%- if c.brief %}<br>{{ c.brief|truncate(120) }}{% endif %}</span></div>{% endfor %}
+        <span class="ab"><span class="chip cat">{{ c.category|e }}</span>{% if c.brief %}<span class="cb">{{ c.brief|e }}</span>{% endif %}</span>
+        {%- if c.days_since is not none %}<span class="age">{{ c.days_since }}{{ t('d','天') }}</span>{% endif %}</div>{% endfor %}
       </div>
       <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button></div>
       {% else %}<div class="empty">{{ t('No fresh dated catalysts in-universe.', '覆盖范围内暂无新催化事件。') }}</div>{% endif %}
     </div>
   </div>
 
-  {# ── command list (ranked by OPPORTUNITY = edge remaining × signal) ── #}
-  <div class="band"><h2 style="--accent:var(--up)">{{ ic('command') }} {{ t('Command — ranked by opportunity', '指挥榜 —— 按机会值排序') }}</h2><span class="ln"></span>
-    <span class="cnt">{{ t('edge remaining × signal × leading gap', '剩余空间 × 信号 × 领先差') }}</span></div>
+  {# ── COMMAND LEDGER ── #}
+  <div class="band" style="--accent:var(--up)"><span class="tick"></span>
+    <h2>{{ t('Command', '指挥榜') }}</h2><span class="ln"></span>
+    <span class="legend" data-tip-en="{{ ROOM_EN }}" data-tip-zh="{{ ROOM_ZH }}"><span class="lg"></span>{{ t('room left', '剩余空间') }}</span>
+    <span class="n">{{ hub.command|length }}</span></div>
+  <div class="stance">{{ t('Most room left first. <b>Nothing here is an entry unless it carries ⚡.</b>',
+                          '剩余空间最大者居前。<b>未带 ⚡ 者均非入场信号。</b>') }}</div>
   <div class="lst-wrap" data-ovl-title-en="Command — ranked by opportunity" data-ovl-title-zh="指挥榜 —— 按机会值排序" data-ovl-accent="var(--up)">
-  <div class="cmd lst-collapse is-collapsed">
+  <div class="led lst-collapse is-collapsed">
     {% for d in hub.command %}
-    <div class="glass acc row" style="--accent:{{ 'var(--info)' if d.stage=='emerging' else 'var(--up)' if d.lean>0 else 'var(--down)' if d.lean<0 else 'var(--info)' }}">
-      <div class="id"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}<span class="nm">{{ d.name }}</span>{{ matrix(d.directions) }}</div>
-      <div class="opp"><b>{{ d.opportunity_score|round|int }}</b><small>{{ t('opp','机会') }}</small></div>
-      <div class="conv">
-        <div class="convbar {{ 'dn' if d.lean<0 else '' }}"><i style="width:{{ d.composite_conviction }}%"></i></div>
-        <div class="convn">{{ t('conv','信念') }} {{ d.composite_conviction|round|int }} · {{ d.n_confirm }}{{ t('d','台') }}</div>
+    {% set acc = 'var(--info)' if d.stage=='emerging' else 'var(--down)' if d.stage in ['exhausted','distribution'] else 'var(--up)' if d.lean>0 else 'var(--info)' %}
+    <div class="led-row">
+      <span class="sp" style="--sp-c:{{ acc }};--sp-p:{{ ((d.edge_remaining or 0)*100)|round|int }}%"></span>
+      <div class="id">
+        <div class="tkline"><span class="tk">{{ d.ticker }}</span>{% if d.price is not none %}<span class="nb-px px" data-sym="{{ d.ticker }}" data-mkt="us">${{ '%.2f'|format(d.price) }}</span>{% endif %}</div>
+        {% if d.name and d.name != d.ticker %}<div class="nm">{{ d.name|e }}</div>{% endif %}
       </div>
+      <div><div class="score">{{ d.opportunity_score|round|int }}</div>
+        <div class="rmv">{{ ((d.edge_remaining or 0)*100)|round|int }}%</div></div>
+      <div class="mtxc">{{ matrix(d.directions, d.composite_conviction, d.n_confirm) }}</div>
       <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">{{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}
-          {% if d.leading_gap and d.leading_gap>0 %}<span style="font-size:9.5px;color:var(--info);font-weight:700">{{ t('leads crowd by','领先') }} +{{ d.leading_gap }}</span>{% endif %}</div>
-        <div class="rd2">{{ d.read }}</div>
-        {{ edgebar(d.edge_remaining) }}
-        {{ tchips(d.trajectory) }}
-        <div class="flags">{% for f in d.flags %}{% if f not in ['emerging'] %}<span class="fl {{ 'edge' if f in ['early_edge','discovery'] else 'stealth' if f=='stealth_accumulation' else 'crowd' if f=='crowded_top' else 'conf' if f in ['confirmed_trend','theme_wide'] else 'fade' if f=='fading' else 'conflict' if f=='policy_conflict' else 'pol' if f in ['policy_aligned','catalyst'] else 'iso' if f=='isolated' else '' }}">{{ f.replace('_',' ') }}</span>{% endif %}{% endfor %}
-          {%- if d.peers %}<span class="peers" title="basket peers also confirming">+{{ d.peer_confirm }} {{ t('peers', '同伴') }}: {{ d.peers|join(' ') }}</span>{% endif %}</div>
-        {% if d.falsifier %}<div class="fal">{{ t('Falsifier', '证伪点') }}: <b>{{ d.falsifier }}</b></div>{% endif %}
+        <div class="cline">{{ stage(d.stage) }}{{ entrybadge(d.entry_gate) }}{{ tstate(d.trajectory) }}{{ flags(d.flags) }}
+          {%- if d.leading_gap and d.leading_gap>0 %}<span class="chip info">{{ t('leads by','领先') }} +{{ d.leading_gap }}</span>{% endif %}</div>
+        {{ drivers(d.edge_drivers) }}
+        {% if d.falsifier %}<div class="watch">{{ t('Watching', '关注') }}: <b>{{ d.falsifier|e }}</b></div>{% endif %}
       </div>
     </div>{% endfor %}
   </div>
   <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show">{{ t('Show more','显示更多') }} ▾</span><span class="lm-hide">{{ t('Show less','收起') }} ▴</span></button>
   </div>
 
-  {# ── SIGNAL SCORECARD — the falsifiable track-record (measure, don't assert) ── #}
+  {# ── TRACK RECORD — one band: the plain read, then the study panel folded ── #}
   {% set TR = hub.track_record %}
+  <div class="band" style="--accent:var(--ok)"><span class="tick"></span>
+    <h2>{{ t('Track record', '历史战绩') }}</h2><span class="ln"></span>
+    <span class="legend">{{ t('is the edge real?', '优势是否真实？') }}</span></div>
   {% if TR and TR.n_snapshots %}
-  <div class="band"><h2 style="--accent:var(--ok)">{{ ic('pulse') }} {{ t('Signal scorecard — is the edge real?', '信号记分卡 —— 优势是否真实？') }}</h2><span class="ln"></span>
-    <span class="cnt">{{ t('the hub graded against what actually happened — context only, not a trade signal', '以实际走势检验本台 —— 仅供参考，非交易信号') }}</span></div>
   {% if not TR.any_matured %}
-  <div class="glass acc" style="padding:13px 16px;font-size:12.5px;color:color-mix(in srgb,var(--text) 80%,transparent);line-height:1.5">
-    {{ ic('cal') }} <b>{{ t('Measuring', '测量中') }}</b> — {{ t('the hub records every claim it makes (opportunity rank + lifecycle stage) and grades it against realized SPY-relative forward returns.', '本台记录每一次判断（机会排名 + 生命周期阶段），并以实际相对SPY的前瞻收益评分。') }}
-    <b>{{ TR.n_snapshots }}</b> {{ t('claims recorded; grading begins as the 5 / 10 / 21 / 63-day horizons elapse. Until a signal clears a Newey-West significance bar it is shown but not trusted.', '条判断已记录；待 5 / 10 / 21 / 63 天周期走完即开始评分。信号通过 Newey-West 显著性检验前，仅展示、不被采信。') }}
+  <div class="card note">
+    <b>{{ t('Measuring', '测量中') }}</b> — {{ t('every call this page makes is recorded and scored against what the stock actually did next.', '本页的每一次判断都会被记录，并以标的之后的实际走势评分。') }}
+    <span class="f">{{ TR.n_snapshots }}</span> {{ t('recorded so far; the first scores land as the 5 / 10 / 21 / 63-day marks pass.', '条判断已记录；待 5 / 10 / 21 / 63 天周期走完即产出首批评分。') }}
   </div>
   {% else %}
-  <div class="heat trh-heat">
+  <div class="trh">
     {% for h, e in TR.horizons.items() %}{% if e.get('n_matured') %}
     {% set ic_v = e.get('opportunity_ic') if e.get('opportunity_ic') is not none else e.get('opportunity_ic_pooled') %}
     {% set ic_pooled = e.get('opportunity_ic') is none and e.get('opportunity_ic_pooled') is not none %}
     {% set stg = e.get('by_stage') or {} %}
-    <div class="glass acc sec trh">
-      <div class="sh"><span class="trh-h">{{ h }}{{ t('d', '天') }} {{ t('horizon', '周期') }}</span>
-        {% if TR.proven.get(h) %}<span class="pol up" data-tip-en="Cleared the pre-registered significance bar at this horizon" data-tip-zh="该周期已通过预登记的显著性检验">{{ t('proven', '已验证') }}</span>
-        {% else %}<span class="pol mea" data-tip-en="Still accruing graded calls at this horizon — shown, not yet trusted" data-tip-zh="该周期样本仍在累积 —— 仅展示，尚未采信">{{ t('measuring', '测量中') }}</span>{% endif %}</div>
-      <div class="trh-grid">
-        <div class="trh-cell" data-tip-en="Information coefficient: correlation between the hub's opportunity rank and the realized SPY-relative return {{ h }} trading days later. Above zero = higher-ranked names did better; below zero = they did worse.{% if ic_pooled %} Thin sample at this horizon, so the value is pooled across horizons (~).{% endif %}" data-tip-zh="信息系数：机会排名与{{ h }}个交易日后实际相对SPY收益的相关性。大于零 = 排名越高表现越好；小于零 = 表现更差。{% if ic_pooled %}该周期样本较少，取跨周期合并值（~）。{% endif %}">
-          <span class="trh-lab">{{ t('rank skill', '排名预测力') }}</span>
-          <b class="trh-val {{ 'pos' if ic_v is not none and ic_v > 0 else 'neg' if ic_v is not none and ic_v < 0 else '' }}">{% if ic_v is not none %}{{ '%+.3f'|format(ic_v) }}{{ '~' if ic_pooled else '' }}{% else %}—{% endif %}</b>
+    <div class="card trc">
+      <div class="th"><span class="h">{{ h }}{{ t('d', '天') }}</span>
+        {% if TR.proven.get(h) %}<span class="chip good" data-tip-en="Cleared the pre-registered significance bar at this horizon" data-tip-zh="该周期已通过预登记的显著性检验">{{ t('proven', '已验证') }}</span>
+        {% else %}<span class="chip" data-tip-en="Still accruing scored calls at this horizon — shown, not yet trusted" data-tip-zh="该周期样本仍在累积 —— 仅展示，尚未采信">{{ t('measuring', '测量中') }}</span>{% endif %}</div>
+      <div class="trg">
+        <div class="trcell" data-tip-en="Does a higher rank from this page actually go with a better return {{ h }} trading days later, measured against SPY? Above zero = yes.{% if ic_pooled %} Thin sample here, so the value is pooled across horizons (~).{% endif %}" data-tip-zh="本页排名越高，{{ h }} 个交易日后相对标普的收益是否真的越好？大于零 = 是。{% if ic_pooled %}该周期样本较少，取跨周期合并值（~）。{% endif %}">
+          <span class="trlab">{{ t('rank skill', '排名预测力') }}</span>
+          <b class="trval {{ 'pos' if ic_v is not none and ic_v > 0 else 'neg' if ic_v is not none and ic_v < 0 else '' }}">{% if ic_v is not none %}{{ '%+.3f'|format(ic_v) }}{{ '~' if ic_pooled else '' }}{% else %}—{% endif %}</b>
         </div>
-        <div class="trh-cell" data-tip-en="Matured claims graded at this horizon" data-tip-zh="该周期已到期并完成评分的判断数">
-          <span class="trh-lab">{{ t('graded calls', '已评分判断') }}</span>
-          <b class="trh-val">{{ '{:,}'.format(e.n_matured) }}</b>
+        <div class="trcell" data-tip-en="Calls that have reached this horizon and been scored" data-tip-zh="已到期并完成评分的判断数">
+          <span class="trlab">{{ t('scored', '已评分') }}</span>
+          <b class="trval">{{ '{:,}'.format(e.n_matured) }}</b>
         </div>
         {% if stg.get('emerging') %}{% set em = stg.emerging.mean_fwd_rel*100 %}
-        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names the hub tagged 'emerging'. A real edge shows up positive — 'yes' means the call worked." data-tip-zh="被标记「萌芽」标的的平均相对SPY前瞻收益。真实优势应为正 ——「是」表示判断成立。">
-          <span class="trh-lab">{{ t('emerging: beat SPY?', '萌芽：跑赢SPY？') }}</span>
-          <b class="trh-val">{{ '%+.1f'|format(em) }}%</b> <span class="trh-ans {{ 'ok' if em > 0 else 'bad' }}">{{ t('yes','是') if em > 0 else t('no','否') }}</span>
+        <div class="trcell" data-tip-en="Average return against SPY for names this page tagged 'emerging'. A real edge shows up positive." data-tip-zh="被标记「萌芽」的标的相对标普的平均收益。真实优势应为正。">
+          <span class="trlab">{{ t('emerging beat SPY?', '萌芽跑赢标普？') }}</span>
+          <b class="trval">{{ '%+.1f'|format(em) }}%</b> <span class="trans {{ 'ok' if em > 0 else 'bad' }}">{{ t('yes','是') if em > 0 else t('no','否') }}</span>
         </div>{% endif %}
         {% if stg.get('exhausted') %}{% set exv = stg.exhausted.mean_fwd_rel*100 %}
-        <div class="trh-cell" data-tip-en="Average SPY-relative forward return of names tagged 'exhausted' (fade calls). The call works when this is negative — they lagged as predicted; 'yes' means it did." data-tip-zh="被标记「透支」标的的平均相对SPY前瞻收益。判断成立时应为负（如期跑输）——「是」表示如期兑现。">
-          <span class="trh-lab">{{ t('exhausted: lagged SPY?', '透支：跑输SPY？') }}</span>
-          <b class="trh-val">{{ '%+.1f'|format(exv) }}%</b> <span class="trh-ans {{ 'ok' if exv < 0 else 'bad' }}">{{ t('yes','是') if exv < 0 else t('no','否') }}</span>
+        <div class="trcell" data-tip-en="Average return against SPY for names tagged 'exhausted'. These are fade calls, so the call worked when this is negative." data-tip-zh="被标记「透支」的标的相对标普的平均收益。此为看跌判断，因此为负时判断成立。">
+          <span class="trlab">{{ t('exhausted lagged SPY?', '透支跑输标普？') }}</span>
+          <b class="trval">{{ '%+.1f'|format(exv) }}%</b> <span class="trans {{ 'ok' if exv < 0 else 'bad' }}">{{ t('yes','是') if exv < 0 else t('no','否') }}</span>
         </div>{% endif %}
       </div>
     </div>{% endif %}{% endfor %}
   </div>
-  {% if TR.lead_time_d %}<div class="drv" style="margin-top:8px">{{ ic('edge') }} {{ t('Measured lead-time', '测得领先期') }}: <b>{{ TR.lead_time_d }}{{ t('d', '天') }}</b> · {{ t('where the opportunity-IC peaks', '机会IC峰值所在') }}</div>{% endif %}
   {% endif %}
   {% endif %}
 
+  {# UNIFIED FORWARD DESK GRADER — Tier-3 mechanics, shipped folded #}
+  {{ dg.styles() }}
+  {{ dg.panel(hub.desk_grader) }}
+
   {# ── sector heat ── #}
   {% if hub.sector_heat %}
-  <div class="band"><h2 style="--accent:var(--orange)">{{ ic('sector') }} {{ t('Sector heat', '板块热度') }}</h2><span class="ln"></span>
-    <span class="cnt">{{ t('where the desks cluster', '各台聚集之处') }}</span></div>
-  <div class="heat">
+  <div class="band" style="--accent:var(--orange)"><span class="tick"></span>
+    <h2>{{ t('Sector heat', '板块热度') }}</h2><span class="ln"></span>
+    <span class="legend">{{ t('where the desks cluster', '各台聚集之处') }}</span></div>
+  <div class="card slist">
     {% for s in hub.sector_heat %}
-    <div class="glass acc sec" style="--accent:{{ 'var(--up)' if s.net_lean>0 else 'var(--down)' if s.net_lean<0 else 'var(--info)' }}">
-      <div class="sh"><span class="etf">{{ s.etf }}</span> {{ s.name }}
-        {% if s.policy_tilt %}<span class="pol {{ 'up' if s.policy_tilt>0 else 'dn' }}">{{ t('policy', '政策') }} {{ '↑' if s.policy_tilt>0 else '↓' }}</span>{% endif %}</div>
-      <div class="meter"><i style="width:{{ s.mean_conviction }}%"></i></div>
-      <small><span>{{ t('mean', '均') }} <b>{{ s.mean_conviction }}</b></span><span>{{ t('names', '名') }} <b>{{ s.n }}</b></span>
-        {% if s.early_edge %}<span style="color:var(--info)">{{ t('edge', '优势') }} <b>{{ s.early_edge }}</b></span>{% endif %}
-        {% if s.crowded_top %}<span style="color:var(--warn)">{{ t('crowded', '拥挤') }} <b>{{ s.crowded_top }}</b></span>{% endif %}</small>
+    <div class="srow" style="--accent:{{ 'var(--up)' if s.net_lean>0 else 'var(--down)' if s.net_lean<0 else 'var(--info)' }}"
+         data-tip-en="Average conviction across the {{ s.n }} name{{ 's' if s.n != 1 else '' }} the desks surfaced here: {{ s.mean_conviction }} of 100. The bars share one scale, so a longer bar is a hotter sector." data-tip-zh="各台在此板块入选的 {{ s.n }} 个标的平均信念度：{{ s.mean_conviction }} / 100。各条形共用同一标尺，越长表示越热。">
+      <span class="etf">{{ s.etf }}</span>
+      <span class="snm">{{ s.name|e }}{% if s.policy_tilt %}<span class="chip {{ 'good' if s.policy_tilt>0 else 'bad' }}">{{ t('policy', '政策') }} {{ '↑' if s.policy_tilt>0 else '↓' }}</span>{% endif %}</span>
+      <span class="meter"><i style="width:{{ s.mean_conviction }}%"></i></span>
+      <span class="sf"><span><b>{{ s.n }}</b> {{ t('names', '标的') }}</span>
+        {% if s.early_edge %}<span style="color:var(--info)"><b>{{ s.early_edge }}</b> {{ t('early', '早期') }}</span>{% endif %}
+        {% if s.crowded_top %}<span style="color:var(--warn)"><b>{{ s.crowded_top }}</b> {{ t('crowded', '拥挤') }}</span>{% endif %}</span>
     </div>{% endfor %}
   </div>
   {% endif %}
 
-  {# ── UNIFIED FORWARD DESK GRADER (5/10/20/30/60/90d, level+velocity, leave-tracking) ── #}
-  {{ dg.styles() }}
-  {{ dg.panel(hub.desk_grader) }}
-
   <footer class="hf">
     {{ t('Built', '生成于') }} <time datetime="{{ built }}">{{ built[:16].replace('T',' ') }}</time> UTC ·
-    {{ hub.disclaimer }}
+    {% if hub.n_universe %}{{ t('scanned', '扫描') }} <span class="f">{{ '{:,}'.format(hub.n_universe) }}</span> {{ t('names', '标的') }} · {% endif %}
+    {{ hub.disclaimer|e }}
   </footer>
 </div>
 <script src="theme.js"></script>
-<script defer src="sky.js"></script>
-{# intraday progressive enhancement: live (~15-min) prices + nightly-band divergence chips on
-   the surfaced names. No-ops if not configured/served — the slow-brain scores stay nightly. #}
+{# intraday progressive enhancement: live (~15-min) prices on the surfaced names.
+   No-ops if not configured/served — the slow-brain scores stay nightly. #}
 </body>
 </html>

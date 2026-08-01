@@ -136,15 +136,20 @@ def test_hero_lead_story_renders():
 
 
 def test_impact_ring_content_is_compact_and_centered():
-    """The score and label use explicit tight line boxes inside the ring.
+    """The score stays self-contained and gives mobile headlines full width.
 
     Without this guard they inherit the page's 1.6 line-height, spreading the
-    two rows into the ring edge and crowding the adjacent lead headline.
+    two rows into the ring edge. On mobile the ring belongs in the eyebrow row,
+    rather than reserving scarce horizontal space beside the lead headline.
     """
     html = _render_full()
     assert "flex-direction:column; align-items:center; justify-content:center" in html
+    assert "overflow:hidden;" in html
     assert ".nx-impact b{ position:relative; font-size:17px; font-weight:800; line-height:1;" in html
     assert "font-size:8px; line-height:1; letter-spacing:.06em; text-align:center;" in html
+    assert 'grid-template-areas:"eyebrow impact" "body body"' in html
+    assert ".nx-lead-row{ display:contents; }" in html
+    assert ".nx-lead-title{ overflow-wrap:anywhere; }" in html
 
 
 def test_feed_renders_ranked_story_cards():

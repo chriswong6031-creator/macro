@@ -1280,9 +1280,9 @@
           '<div class="fl-accruing-msg">' +
             esc(lz(
               "Flow accruing since " + FLOW_ACCRUAL_SINCE + " — no data yet for this name. "
-                + "Magnitude signals (premium, 0DTE, ΔOI) populate once the S3 pull runs.",
+                + "Magnitude signals (premium, same-day share, ΔOI) populate once the S3 pull runs.",
               "流动数据自 " + FLOW_ACCRUAL_SINCE + " 起积累中 — 该标的暂无数据。"
-                + "S3拉取运行后，量级信号（权利金、0DTE、ΔOI）将自动填充。"
+                + "S3拉取运行后，量级信号（权利金、当日到期占比、ΔOI）将自动填充。"
             )) +
           "</div>" +
         "</div>";
@@ -1298,7 +1298,10 @@
     function chip(k, val, cls, soft) { return '<span class="fl-chip ' + (cls || "") + (soft ? " soft" : "") + '"><span class="k">' + k + '</span><span class="v">' + val + "</span></span>"; }
     var chips =
       chip(lz("Premium", "权利金"), bn(f.premium_mn), "") +
-      chip("0DTE", f.zerodte_share == null ? "—" : Math.round(f.zerodte_share * 100) + "%", "") +
+      // Plain words on the glance tier: the acronym this chip label used to carry
+      // is banned Tier-1 vocabulary (docs/DESIGN_DOCTRINE.md Law 2) and nothing on
+      // this page defines it. "Same-day" is the estate's house phrase for it.
+      chip(lz("Same-day", "当日到期"), f.zerodte_share == null ? "—" : Math.round(f.zerodte_share * 100) + "%", "") +
       ((f.new_positions && f.new_positions.fresh_contracts != null) ? chip(lz("New positions", "新建仓"), f.new_positions.fresh_contracts, "") : "") +
       chip("P/C", f.pc_ratio == null ? "—" : f.pc_ratio, "") +
       // ΔOI positioning — RELIABLE (no signing), so it is NOT soft and carries its tone directly
@@ -1325,8 +1328,8 @@
         (div ? '<div class="fl-sec"><div class="fl-h">' + lz("Flow vs the dealer-sign assumption", "流动 vs 做市商符号假设") + "</div><ul>" + div + "</ul></div>" : "") +
         (np2 ? '<div class="fl-sec"><div class="fl-h">' + lz("Fresh positioning (volume > OI)", "新建仓（成交>未平仓）") + "</div><ul>" + np2 + "</ul></div>" : "") +
         '<div class="fl-foot">' + esc(lz(
-          "Reliable (no signing): premium, 0DTE, new positions, P/C. Direction (~) is SOFT — tick-rule recovers net buy/sell only " + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) + "%" : "~") + " of the time on minute bars (option ticks are delta-dominated; per-trade " + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) + "%" : "~80%") + " vs NBBO, Databento-calibrated). EOD, as of " + (f.asof || "") + ". Never a buy/sell.",
-          "可靠（无需定向）：权利金、0DTE、新建仓、P/C。方向(~)为软信号 — tick规则在分钟数据上仅约" + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) : "") + "%能还原净买卖（期权由delta主导；逐笔约" + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) : 80) + "% 对NBBO，经Databento校准）。收盘数据，截至 " + (f.asof || "") + "。绝非买卖信号。")) + "</div>" +
+          "Reliable (no signing): premium, same-day share, new positions, P/C. Direction (~) is SOFT — tick-rule recovers net buy/sell only " + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) + "%" : "~") + " of the time on minute bars (option ticks are delta-dominated; per-trade " + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) + "%" : "~80%") + " vs NBBO, Databento-calibrated). EOD, as of " + (f.asof || "") + ". Never a buy/sell.",
+          "可靠（无需定向）：权利金、当日到期占比、新建仓、P/C。方向(~)为软信号 — tick规则在分钟数据上仅约" + (sg.net_sign_recovery != null ? Math.round(sg.net_sign_recovery * 100) : "") + "%能还原净买卖（期权由delta主导；逐笔约" + (sg.per_trade_agreement != null ? Math.round(sg.per_trade_agreement * 100) : 80) + "% 对NBBO，经Databento校准）。收盘数据，截至 " + (f.asof || "") + "。绝非买卖信号。")) + "</div>" +
       "</div>";
   }
   function renderWeather() {

@@ -11,13 +11,22 @@ name: marketing-hot-tape
 # so a sector rout crossing at 10:04 ET is at Buffer by ~10:13 (gate 0.1 asks
 # for ≤20 min).
 #
+# THAT CADENCE IS THE LOOP'S, NOT THE CRON'S (2026-07-30). GitHub delivers ~1.4
+# of this lane's ~92 daily ticks per hour — 6.5%, measured — so a run that did one
+# pass and exited left a ~43-minute mean detection gap and the lane missed its own
+# latency gate before any detector ran. A run is now a SESSION: it passes every
+# PASS_INTERVAL_S until the ET window closes, and the crons are demoted to
+# bootstrap + crash dead-man. See masterplan §3.6 and the job comment below.
+#
 # TWO-STEP PUBLISH (codex law, §10 E1): an alert at severity ≥90 earns ONE
 # follow-up "context brief" — mechanism, affected names, what we are watching —
 # filed on a LATER tick out of its own budget. The alert wins speed; the brief
 # wins reposts.
 #
-# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: 81 runs a
-# day on the render pool would eat the nightly's budget, which is law.
+# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: a session-long
+# poller on the render pool would eat the nightly's budget, which is law. On this
+# PUBLIC repo GitHub-hosted minutes are free, which is what makes trading runner
+# time for latency the right call here.
 #
 # WHY IT IS SAFE. This workflow only QUEUES posts. Nothing here can publish:
 # sending is marketing-publish.yml's job and that runner self-downgrades to
@@ -28,7 +37,7 @@ name: marketing-hot-tape
 #
 # LEDGER LAW (masterplan §6): the radar writes ONLY the outbox, its own snapshot
 # ring and its fired ledger. It never advances a forward ledger — the nightly is
-# the sole advancer of those, and this loop runs 81 times a day.
+# the sole advancer of those, and this loop passes ~80 times a session.
 # ─────────────────────────────────────────────────────────────────────────────
 on:
   schedule:
@@ -89,22 +98,51 @@ concurrency:
 jobs:
   radar:
     runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
-    # A pass is ~1-2 min (Chrome raster ~13s each, up to 3 cards, plus the push
-    # race and a possible ~25s self-fetch). A run is now PASSES of those with
-    # PASS_INTERVAL_S between them — 3 x 300s = 10 min of sleep plus ~5 min of
-    # work — so the old 12 would kill the run mid-third-pass. 20 covers the
-    # planned 15 with margin; raise it together with PASSES, never separately.
-    timeout-minutes: 20
+    # ── SESSION-LONG POLLER (operator decision 2026-07-30, masterplan §3.6) ────
+    # TWO HALVES OF ONE SESSION, SERIALIZED. GitHub caps a JOB at 6h and the ET
+    # window (09:25-16:05 + 10m grace) is 6h50m, so no single job can cover it.
+    # A 2-entry matrix with max-parallel: 1 runs the same steps twice in sequence,
+    # which beats duplicating the block or chaining via self-dispatch (that would
+    # rest on the GITHUB_TOKEN workflow_dispatch carve-out, which nothing in this
+    # repo demonstrates — metabolism-cycle writes such a chain but every one of
+    # its workflow_dispatch runs was human-triggered).
+    #
+    # ORDER-INDEPENDENT BY DESIGN: each half loops until the window closes or its
+    # own JOB_BUDGET_S runs out, so it does not matter which half GitHub starts
+    # first. Whichever runs first covers the front; the second continues from
+    # wherever that stopped, and exits after a single ~15s check if the window has
+    # already closed. A late bootstrap is handled the same way — the budget is
+    # wall-clock from the job's own start, and the deadline is absolute.
+    #
+    # WHY A POLLER AT ALL: the crons ask for a pass every 5 min and GitHub
+    # delivers ~1.4/hour (6.5% of this lane's ticks; see §3.6 for the estate-wide
+    # measurement). Runner minutes are FREE on this public repo, so the honest
+    # trade is runner time for latency, and latency is the entire product claim.
+    # The crons stay as the BOOTSTRAP and the crash dead-man: the concurrency
+    # group serializes, so a tick delivered while a session run is alive queues
+    # and then stands down out-of-window harmlessly, while a tick delivered after
+    # a crash starts a fresh session run for the remainder.
+    strategy:
+      fail-fast: false          # half 2 must still run if half 1 dies
+      max-parallel: 1           # SERIALIZED — this is what makes them consecutive
+      matrix:
+        half: [1, 2]
+    # 3h35m of budget inside a 3h50m timeout, twice = 7h10m for a 6h50m window,
+    # so a bootstrap up to ~20 min late still reaches the close. Each figure is
+    # under the 6h job cap with room to spare. Raise JOB_BUDGET_S and this
+    # together, never separately — a budget past the timeout is a killed run.
+    timeout-minutes: 230
     steps:
       - name: checkout (shallow + sparse + write token)
         # SHALLOW ON PURPOSE. marketing-publish.yml ran fetch-depth: 0 and on
         # 2026-07-28 the clone of this heavy-churn repo grew past that job's 25m
         # timeout — the 12:58Z sweep spent 12:58:08→13:23:07 inside `checkout`,
-        # was cancelled, and the desks published nothing all day. This lane runs
-        # 81 times a day on a 12m budget, so a full clone is not survivable here
-        # at all. Nothing needs history: the radar reads artifacts at HEAD and
-        # the commit step below puts one commit on top of main. The push loop
-        # deepens to 20 so `pull --rebase` always has a merge base.
+        # was cancelled, and the desks published nothing all day. A full clone is
+        # not survivable here either: this checkout happens twice a session and
+        # every minute of it is a minute the tape is unwatched. Nothing needs
+        # history: the radar reads artifacts at HEAD and each pass puts one commit
+        # on top of main. The push loop deepens to 20 so `pull --rebase` always has
+        # a merge base.
         #
         # SPARSE + BLOBLESS ON TOP OF THAT. fetch-depth alone still materializes
         # the whole tree: ~2.8GB across ~48k tracked files, most of it stores
@@ -177,43 +215,64 @@ jobs:
         # the 2026-07-26 silent-mute shape. The install is seconds, not the ~40s
         # pandas costs, and the module keeps its import LAZY so the thin CI lane
         # (pytest+pyyaml+jinja2, no anthropic) still collects.
-        run: pip install --quiet pyyaml requests pyarrow anthropic
+        #
+        # boto3 joins 2026-07-31, and its absence is why this lane has never put
+        # a picture on a post. The step below hands the runner a full set of R2
+        # secrets; media_publish.publish_chart_png needs boto3 to spend them, and
+        # without it takes the one branch that only log.warning()s:
+        #   "media_publish: boto3 not installed — cannot upload chart PNG"
+        # publish_card then returns media_url=None, hot_tape_radar reads that as
+        # `no-media-url`, sets media=None, and the post goes to the outbox with
+        # no media[] entry at all. Measured on 2026-07-30: 8,081 cards rendered
+        # and committed (392 MB), ZERO rows in media_urls.jsonl, and all 19
+        # hot-tape posts chartless — one of which reached the live account naming
+        # $COHR $GLW $JBL with no picture, the exact thing the operator's chart
+        # law forbids. The backfill lane cannot heal these: it attaches URLs to
+        # media[] entries, and these items have none.
+        run: pip install --quiet pyyaml requests pyarrow anthropic boto3
 
-      - name: run the radar (multi-pass)
+      - name: run the radar (session-long, one pass every PASS_INTERVAL_S)
         id: radar
         env:
-          # ── MULTI-PASS: why one delivered tick does several passes ────────────
+          # ── WHY THIS LOOPS FOR THE WHOLE SESSION ──────────────────────────────
           # The schedule above asks for a pass every 5 minutes. GitHub does not
           # deliver it. Measured across the 8h RTH window on 2026-07-29: 104
           # scheduled runs delivered across ALL 46 scheduled workflows in this
-          # repo, of which this lane got 6 of its ~92 ticks (6.5%) — about 1.4
-          # passes an hour, a ~43-minute mean detection gap. Gate 0.1 asks for
-          # booked-at-Buffer within 20 minutes of the cross; at a 43-minute gap
-          # the median event misses that before the radar has even looked.
+          # repo, of which this lane got 6 of its ~92 ticks (6.5%) — ~1.4 passes an
+          # hour, a ~43-minute mean detection gap, against a gate that asks for
+          # booked-at-Buffer inside 20 minutes. The median event missed that before
+          # the radar had even looked.
           #
-          # Starvation is a GitHub-side property of this repo's schedule load, so
-          # adding crons does not reliably buy delivery (every high-frequency lane
-          # here lands at ~1/hour regardless of how many ticks it asks for —
-          # live-quotes 8.6%, vps-live-heartbeat 12.5%, merge-on-green 12.5%).
-          # What DOES work is spending each delivered tick better: one run does
-          # PASSES passes spaced PASS_INTERVAL_S apart, so delivery rate stops
-          # being the cadence. 3 passes at 5 minutes turns a ~43-minute mean gap
-          # into ~14 minutes for ~13 minutes of runner time per delivered tick.
+          # Starvation is GitHub-side and per-lane, so more or denser crons do not
+          # buy delivery (live-quotes 8.6%, vps-live-heartbeat 12.5%,
+          # merge-on-green 12.5% — all ~1/hour regardless of ticks requested). The
+          # only levers are spending a delivered tick better, or not depending on
+          # delivery. This does the second: one delivered tick per session buys a
+          # genuine 5-minute cadence for the whole window, so the cadence is ours
+          # rather than GitHub's.
           #
-          # This is a MULTIPLIER, not a fix for the underlying starvation, and it
-          # is deliberately bounded rather than session-long: guaranteeing a true
-          # 5-minute cadence needs a persistent poller or an off-GitHub ticker,
-          # which is a standing-cost decision for the operator, not something to
-          # slip in here. See research/MARKETING_HOT_TAPE_MASTERPLAN.md §3.6.
+          # The trade is runner time for latency, and on this PUBLIC repo
+          # GitHub-hosted minutes are free, so the trade is nearly free. (An
+          # earlier draft of §3.6 priced this at ~$77/month; that was wrong —
+          # it assumed a private repo.)
           #
           # LATENCY IS WHY THE LOOP IS HERE AND NOT INSIDE THE SCRIPT: every pass
-          # commits and dispatches on its own, so a 10:04 cross still books at
-          # ~10:07 rather than waiting for the run to end.
-          PASSES: "3"
+          # commits and dispatches on its own, so a 10:04 cross books at ~10:07
+          # rather than waiting for the session to end.
           PASS_INTERVAL_S: "300"
+          # Wall clock a single half may spend, from ITS OWN start. 3h35m inside a
+          # 3h50m timeout; two halves cover the 6h50m window with ~20 min of slack
+          # for a late bootstrap. Never set this above the timeout.
+          JOB_BUDGET_S: "12900"
+          # Backstop only — the window deadline and the budget are the real bounds.
+          # This exists so a clock or config fault cannot spin the runner.
+          MAX_PASSES: "60"
           # Per-pass dispatch channel. GITHUB_OUTPUT is append-only and collapses
-          # to one value per step, so it cannot carry three passes' ids.
+          # to one value per step, so it cannot carry a session's worth of passes.
           HOT_TAPE_IDS_FILE: /tmp/hot_tape_post_now_ids
+          # Which half of the session this job is — log-only, so a reader can
+          # tell the front from the back in the Actions list.
+          HALF: ${{ matrix.half }}
           # Empty on every scheduled pass, so the scheduled lane is provably
           # identical to one with no demo input at all.
           HOT_TAPE_DEMO: ${{ (github.event_name == 'workflow_dispatch' && inputs.demo_override) && '1' || '' }}
@@ -323,12 +382,61 @@ jobs:
             return 1
           }
 
-          for pass in $(seq 1 "${PASSES:-1}"); do
-            if [ "$pass" -gt 1 ]; then
-              echo "── sleeping ${PASS_INTERVAL_S}s before pass ${pass}/${PASSES} ──"
+          # The ET window is resolved by the RADAR, not re-derived here: bash
+          # re-implementing the DST reasoning is how the shipped crons came to
+          # describe a UTC window. `--window-status` detects nothing and writes
+          # nothing; it just answers "are we open, and when do we close".
+          window_status() {
+            python -m scripts.hot_tape_radar --window-status 2>/dev/null || true
+          }
+
+          JOB_END=$(( $(date -u +%s) + ${JOB_BUDGET_S:-0} ))
+          echo "hot-tape session: half=${HALF:-?} budget ends $(date -u -r "$JOB_END" +%FT%H:%M:%SZ 2>/dev/null || echo "+${JOB_BUDGET_S}s")"
+
+          # TWO counters, deliberately. `iter` bounds EVERY trip round the loop —
+          # passes and pre-open waits alike — because a backstop that only counts
+          # passes is not a backstop: an earlier draft decremented the counter on a
+          # wait ("a wait is not a pass"), which made MAX_PASSES unreachable and
+          # let a stuck `--window-status` spin the loop. `passes` is for the log.
+          iter=0
+          passes=0
+          while :; do
+            iter=$(( iter + 1 ))
+            if [ "$iter" -gt "${MAX_PASSES:-60}" ]; then
+              echo "::warning title=hot-tape::loop backstop (${MAX_PASSES} iterations) hit after ${passes} passes - stopping the session"
+              break
+            fi
+
+            ws="$(window_status)"
+            in_window="$(printf '%s\n' "$ws" | sed -n 's/^IN_WINDOW=//p')"
+            win_end="$(printf '%s\n' "$ws" | sed -n 's/^WINDOW_END_EPOCH=//p')"
+            now="$(date -u +%s)"
+
+            # Budget first: a half that is out of wall clock hands over to the
+            # other half rather than being killed by the job timeout mid-pass.
+            if [ "$now" -ge "$JOB_END" ]; then
+              echo "hot-tape session: half=${HALF:-?} budget spent after ${passes} passes - handing over"
+              break
+            fi
+            # Then the window. Three states, and PRE-OPEN is not the same as
+            # CLOSED: a run bootstrapped before the bell must wait for it, not
+            # exit and leave the session uncovered.
+            if [ "${in_window:-0}" != "1" ]; then
+              if [ -n "${win_end:-}" ] && [ "$now" -lt "$win_end" ]; then
+                echo "── pre-open: waiting ${PASS_INTERVAL_S}s for the window ($(date -u +%FT%H:%MZ)) ──"
+                sleep "${PASS_INTERVAL_S}"
+                continue
+              fi
+              echo "hot-tape session: window closed - releasing the runner after ${passes} passes"
+              break
+            fi
+
+            if [ "$passes" -gt 0 ]; then
+              echo "── sleeping ${PASS_INTERVAL_S}s before the next pass ──"
               sleep "${PASS_INTERVAL_S}"
             fi
-            echo "════════ hot-tape pass ${pass}/${PASSES} $(date -u +%FT%H:%M:%SZ) ════════"
+            passes=$(( passes + 1 ))
+            echo "════════ hot-tape pass ${passes} (half ${HALF:-?}) $(date -u +%FT%H:%M:%SZ) ════════"
 
             refresh_shared_tape
 
@@ -337,7 +445,7 @@ jobs:
               # nothing. No ring append, no outbox item, no push, no dispatch —
               # so there is nothing for the rest of the loop to do either.
               python -m scripts.hot_tape_radar --dry-run || \
-                echo "::warning::marketing-hot-tape: dry-run pass ${pass} exited non-zero"
+                echo "::warning::marketing-hot-tape: dry-run pass ${passes} exited non-zero"
               continue
             fi
 
@@ -346,7 +454,7 @@ jobs:
             # the NEXT pass honest.
             : > "${HOT_TAPE_IDS_FILE}"
             python -m scripts.hot_tape_radar || \
-              echo "::warning::marketing-hot-tape: pass ${pass} exited non-zero"
+              echo "::warning::marketing-hot-tape: pass ${passes} exited non-zero"
 
             if commit_and_push; then
               ids="$(cat "${HOT_TAPE_IDS_FILE}" 2>/dev/null || true)"
@@ -366,6 +474,6 @@ jobs:
                   || echo "::warning::marketing-hot-tape: dispatch failed for $ids"
               fi
             elif [ -s "${HOT_TAPE_IDS_FILE}" ]; then
-              echo "::warning::marketing-hot-tape: pass ${pass} booked $(cat "${HOT_TAPE_IDS_FILE}") but the push did not land - NOT dispatching (the publisher folds items from main)"
+              echo "::warning::marketing-hot-tape: pass ${passes} booked $(cat "${HOT_TAPE_IDS_FILE}") but the push did not land - NOT dispatching (the publisher folds items from main)"
             fi
           done

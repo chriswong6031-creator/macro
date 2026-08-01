@@ -229,7 +229,10 @@ def rich_packets() -> dict[str, FactPacket]:
             "contrarian_breadth", "contrarian:x", "up", facts={
                 "index_pct": -1.82, "index_ticker": "SPY",
                 "green": [["COST", 1.24], ["HD", 0.93], ["MMM", 0.71], ["KO", 0.55]],
-                "sectors_green": ["Consumer Defensive", "Utilities"], "n_green": 11}),
+                "sectors_green": ["Consumer Defensive", "Utilities"], "n_green": 11,
+                # The universe the count moves against. Without it the only
+                # count-bearing variant refuses (see TestContrarianDetector).
+                "n_defensive_members": 18}),
         "earnings_reaction": _packet(
             "earnings_reaction", "earnings:AAPL:up:x:0", "up", ticker="AAPL",
             sector="Technology", severity=95.0, facts={
@@ -818,14 +821,30 @@ class TestSectorDetector:
                                   fired_today=fired, now=NOW, cfg=HT.DEFAULTS)
         assert [e for e in events if e.trigger.startswith("sector_")] == []
 
-    def test_dollar_translation_needs_mcap_coverage(self):
+    def test_dollar_translation_needs_EVERY_members_cap(self, capsys):
+        """2026-07-31: the coverage floor was 70%, so the sum lost members.
+
+        Eight of ten caps cleared the old gate and the group shipped a total
+        computed over eight names as if it were the group's. The claim the copy
+        makes ("roughly $X billion in fresh market value") is about the GROUP,
+        so anything less than every member is a different number wearing the
+        same sentence.
+        """
         tiles = [_tile(f"S{i}", "Technology", -3.0, industry="Sub") for i in range(10)]
         recs = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(8)}
         events = HT.detect_events({}, pack=_pack(recs, FRESH_TRADE_DATE),
                                   heatmap=self._heatmap(tiles), now=NOW,
                                   cfg=HT.DEFAULTS)
         rout = [e for e in events if e.trigger == "sector_rout"][0]
-        assert rout.facts["dollar_moved_usd"] == round(8 * 100_000_000_000 * -0.03)
+        # PRE-FIX this was round(8 * 100e9 * -0.03) = -$24B, a group total with
+        # two members quietly missing from it.
+        assert rout.facts["dollar_moved_usd"] is None
+        assert rout.facts["dollar_missing_caps"] == 2
+        # ... and the loss is on the console, line-start so GitHub keeps it.
+        line = [ln for ln in capsys.readouterr().out.splitlines()
+                if "hot-tape-group-dollars-dropped" in ln]
+        assert line and line[0].startswith("::warning title=")
+        assert "2 of 10 members have no mcap_usd" in line[0]
 
         thin = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(5)}
         events = HT.detect_events({}, pack=_pack(thin, FRESH_TRADE_DATE),
@@ -833,6 +852,61 @@ class TestSectorDetector:
                                   cfg=HT.DEFAULTS)
         rout = [e for e in events if e.trigger == "sector_rout"][0]
         assert rout.facts["dollar_moved_usd"] is None
+        assert rout.facts["dollar_missing_caps"] == 5
+
+    def _rip(self, tiles, recs):
+        events = HT.detect_events({}, pack=_pack(recs, FRESH_TRADE_DATE),
+                                  heatmap=self._heatmap(tiles), now=NOW,
+                                  cfg=HT.DEFAULTS)
+        return [e for e in events if e.trigger == "sector_rip"][0]
+
+    def test_a_second_pass_that_loses_caps_withholds_the_dollar_total(self):
+        """The shipped contradiction, reproduced: same group, same names, same
+        session — 15:27 "median +11.8% ... roughly $148 billion in fresh market
+        value", 19:03 "median +13.4% ... roughly $135 billion". With a pinned
+        cap base a bigger move CANNOT be a smaller dollar figure; the only way
+        to print that pair is to sum over a silently smaller membership.
+
+        REGIME ONE of the invariant: incomplete coverage prints NOTHING. This
+        used to be the whole test, with a `if second is not None:` comparison
+        stapled on after `assert second is None` — a branch nothing could ever
+        reach, so the monotone rule itself was pinned by a dead line. The live
+        comparison is the test below.
+        """
+        tiles_a = [_tile(f"S{i}", "Technology", 3.0, industry="Sub") for i in range(10)]
+        tiles_b = [_tile(f"S{i}", "Technology", 4.0, industry="Sub") for i in range(10)]
+        full = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(10)}
+        # The second pass loses three caps — 70% coverage, which is exactly what
+        # the old gate admitted.
+        thinned = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(7)}
+
+        first, second = self._rip(tiles_a, full), self._rip(tiles_b, thinned)
+        assert second.facts["median_pct"] > first.facts["median_pct"]
+        # PRE-FIX: 7 * 100e9 * 0.04 = $280B against the first pass's $300B — a
+        # bigger median with a smaller total, on the same ten names.
+        assert first.facts["dollar_moved_usd"] == round(10 * 100_000_000_000 * 0.03)
+        assert second.facts["dollar_moved_usd"] is None
+        assert second.facts["dollar_missing_caps"] == 3
+
+    def test_with_full_coverage_a_bigger_median_is_never_a_smaller_total(self):
+        """REGIME TWO: both passes PRINT a number, and the invariant is checked
+        for real rather than guarded behind an unreachable `is not None`.
+
+        Two comparable claims about the same ten names cannot invert: the same
+        cap base times a larger move is a larger dollar figure, always.
+        """
+        tiles_a = [_tile(f"S{i}", "Technology", 3.0, industry="Sub") for i in range(10)]
+        tiles_b = [_tile(f"S{i}", "Technology", 4.0, industry="Sub") for i in range(10)]
+        full = {f"S{i}": _rec(mcap_usd=100_000_000_000) for i in range(10)}
+
+        first, second = self._rip(tiles_a, full), self._rip(tiles_b, full)
+        assert second.facts["median_pct"] > first.facts["median_pct"]
+        # Both numbers are REAL — the arm the old test could never enter.
+        assert first.facts["dollar_moved_usd"] is not None
+        assert second.facts["dollar_moved_usd"] is not None
+        assert (second.facts["dollar_moved_usd"]
+                > first.facts["dollar_moved_usd"]), (
+            first.facts["dollar_moved_usd"], second.facts["dollar_moved_usd"])
 
     def test_a_dollar_total_whose_sign_fights_the_direction_is_withheld(self):
         """M8 — the trigger is a MEDIAN, the total is CAP-WEIGHTED.
@@ -1179,6 +1253,216 @@ class TestThresholdDetector:
         assert "correction" not in {e.facts["kind"] for e in events}
 
 
+class TestThresholdFreshness:
+    """2026-07-29, the gap day: '$AAPL right now: just broke below $325.00'
+    booked at 16:00:27Z on a level the tape crossed at the opening gap, in the
+    same sweep that had the name 11% below its all-time high (~$302 against a
+    $325 'break'). The crossing test is prev_close vs the live price, so it is
+    true all session; 'just' is a claim about TIME and needs the prior tick.
+    """
+
+    # AAPL's real shape that day: gapped ~9% down through the $325 round level
+    # at the open and sat well below it for the rest of the session.
+    PREV, PRICE, LEVEL = 350.0, 302.0, 325.0
+
+    @classmethod
+    def _run(cls, *, ring, now=None, price=None, cfg=None):
+        recs = {"AAPL": _rec(round_above=cls.LEVEL, round_below=250.0,
+                             ath=340.0, px_correction=None, px_bear=None,
+                             mcap_usd=3_000_000_000_000, sp500=True,
+                             shares_est=None)}
+        px = cls.PRICE if price is None else price
+        quotes = {"AAPL": {"price": px, "prev_close": cls.PREV,
+                           "change_pct": round((px - cls.PREV) / cls.PREV * 100, 2),
+                           "ts_ms": int(NOW.timestamp() * 1000), "source": "quotes"}}
+        events = HT.detect_events(quotes, pack=_pack(recs, FRESH_TRADE_DATE),
+                                  ring=ring, now=now or NOW,
+                                  cfg=cfg or HT.DEFAULTS)
+        rounds = [e for e in events
+                  if e.trigger == "threshold_cross" and e.facts["kind"] == "round"]
+        assert len(rounds) == 1, [e.facts["kind"] for e in events]
+        return rounds[0]
+
+    @classmethod
+    def _ring_row(cls, *, minutes_ago: float, ids, complete=True, min_sev=80.0,
+                  day=None):
+        at = NOW - timedelta(minutes=minutes_ago)
+        return {"at": at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "day": day or NOW.date().isoformat(),
+                HT.RING_CROSS_IDS: list(ids),
+                HT.RING_CROSS_COMPLETE: complete,
+                HT.RING_CROSS_MIN_SEV: min_sev}
+
+    def test_a_level_crossed_at_the_open_cannot_say_just_broke_hours_later(self):
+        """THE SHIPPED DEFECT. The prior tick already had the crossing."""
+        cross_id = f"AAPL:round:{self.LEVEL}"
+        packet = self._run(ring=[self._ring_row(minutes_ago=305, ids=[cross_id]),
+                                 self._ring_row(minutes_ago=5, ids=[cross_id])])
+        assert packet.facts["cross_basis"] == HT.CROSS_EARLIER
+        assert packet.facts["crossed_in_window"] is False
+        out = W.compose_wire(packet)
+        assert out is not None
+        assert "just broke" not in out["text"], out["text"]
+        assert "trades below $325.00" in out["text"], out["text"]
+
+    def test_a_crossing_absent_from_the_prior_tick_is_fresh(self):
+        packet = self._run(ring=[self._ring_row(minutes_ago=5, ids=[])])
+        assert packet.facts["cross_basis"] == HT.CROSS_FIRST_SEEN
+        assert packet.facts["crossed_in_window"] is True
+        out = W.compose_wire(packet)
+        assert out is not None and "just broke below $325.00" in out["text"]
+
+    def test_no_ring_means_unknown_means_the_standing_phrasing(self):
+        packet = self._run(ring=[])
+        assert packet.facts["cross_basis"] == HT.CROSS_UNKNOWN
+        assert "just broke" not in (W.compose_wire(packet) or {"text": ""})["text"]
+
+    def test_a_gap_in_the_ring_is_not_evidence_of_a_fresh_break(self):
+        """A missed cron would otherwise turn every hours-old level into news:
+        the crossing is absent from a row that is 40 minutes stale, which says
+        nothing about the last five minutes."""
+        packet = self._run(ring=[self._ring_row(minutes_ago=40, ids=[])])
+        assert packet.facts["cross_basis"] == HT.CROSS_UNKNOWN
+        assert packet.facts["crossed_in_window"] is False
+
+    def test_an_incomplete_memory_is_not_evidence_either(self):
+        """xk is capped; a truncated list is missing crossings it DID see."""
+        packet = self._run(ring=[self._ring_row(minutes_ago=5, ids=[],
+                                                complete=False)])
+        assert packet.facts["cross_basis"] == HT.CROSS_UNKNOWN
+
+    def test_yesterdays_ring_is_not_this_sessions_prior_tick(self):
+        stale_day = (NOW.date() - timedelta(days=1)).isoformat()
+        packet = self._run(ring=[self._ring_row(minutes_ago=5, ids=[],
+                                                day=stale_day)])
+        assert packet.facts["cross_basis"] == HT.CROSS_UNKNOWN
+
+    def test_a_crossing_under_the_rows_severity_floor_is_unknown(self):
+        """The memory is complete AT OR ABOVE its own floor and says nothing
+        below it, so a cheap crossing cannot read its own absence as news."""
+        recs = {"MID": _rec(round_above=110.0, round_below=100.0, ath=140.0,
+                            px_correction=None, px_bear=None, sp500=False,
+                            mcap_usd=20_000_000_000, shares_est=None)}
+        quotes = {"MID": {"price": 111.0, "prev_close": 109.0, "change_pct": 1.83,
+                          "ts_ms": int(NOW.timestamp() * 1000), "source": "quotes"}}
+        ring = [self._ring_row(minutes_ago=5, ids=[], min_sev=80.0)]
+        events = [e for e in HT.detect_events(quotes, pack=_pack(recs, FRESH_TRADE_DATE),
+                                              ring=ring, now=NOW, cfg=HT.DEFAULTS)
+                  if e.trigger == "threshold_cross"]
+        assert events and events[0].severity == 60.0
+        assert events[0].facts["cross_basis"] == HT.CROSS_UNKNOWN
+
+    def test_the_ring_row_this_pass_writes_is_what_the_next_pass_reads(self):
+        """The two halves of the contract, wired together."""
+        fresh = self._run(ring=[self._ring_row(minutes_ago=5, ids=[])])
+        row = HT.cross_memory_row([fresh], HT.DEFAULTS)
+        assert row[HT.RING_CROSS_IDS] == [f"AAPL:round:{self.LEVEL}"]
+        assert row[HT.RING_CROSS_COMPLETE] is True
+        assert row[HT.RING_CROSS_MIN_SEV] == 80.0
+        row["at"] = (NOW - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        row["day"] = NOW.date().isoformat()
+        again = self._run(ring=[row])
+        assert again.facts["cross_basis"] == HT.CROSS_EARLIER
+
+    def test_the_memory_drops_crossings_under_the_floor_and_is_still_complete(self):
+        cheap = _packet("threshold_cross", "threshold:MID:round:110.0:x", "up",
+                        {"cross_id": "MID:round:110.0"}, severity=60.0)
+        rich = _packet("threshold_cross", "threshold:AAPL:round:325.0:x", "down",
+                       {"cross_id": "AAPL:round:325.0"}, severity=80.0)
+        row = HT.cross_memory_row([cheap, rich], HT.DEFAULTS)
+        assert row[HT.RING_CROSS_IDS] == ["AAPL:round:325.0"]
+        assert row[HT.RING_CROSS_COMPLETE] is True
+
+    def test_a_truncated_memory_marks_itself_incomplete(self):
+        cfg = HT._deep_merge(HT.DEFAULTS, {
+            "detectors": {"threshold": {"cross_memory_max_ids": 2}}})
+        packets = [_packet("threshold_cross", f"threshold:S{i}:round:1.0:x", "up",
+                           {"cross_id": f"S{i}:round:1.0"}, severity=90.0)
+                   for i in range(4)]
+        row = HT.cross_memory_row(packets, cfg)
+        assert len(row[HT.RING_CROSS_IDS]) == 2
+        assert row[HT.RING_CROSS_COMPLETE] is False
+
+    def test_the_standing_form_covers_every_kind_that_can_claim_freshness(self):
+        """One gate, all five milestone shapes — a kind that kept its event
+        verb would ship the same lie in a different sentence."""
+        base = {"ticker": "X", "price": 100.0, "prev_close": 110.0,
+                "pct_from_ath_live": -12.0, "ath": 140.0,
+                "ath_date": _ago(NOW, 50), "crossed_in_window": False}
+        for kind, extra in (("round", {"level": 100.0}),
+                            ("correction", {}),
+                            ("ath", {}),
+                            ("mcap", {"milestone_usd": int(1e12)})):
+            packet = _packet("threshold_cross", f"threshold:X:{kind}:1:x", "down",
+                             {**base, "kind": kind, **extra}, ticker="X")
+            clause = W._milestone_clause(packet, packet.facts)
+            assert clause and not clause.startswith("just"), (kind, clause)
+            assert "enters correction" not in clause, (kind, clause)
+
+
+class TestSignalFiredClaimsNoFreshness:
+    """The SAME law on the family the freshness fix skipped (review, 2026-07-31).
+
+    `_detect_signal` (engine/marketing/hot_tape.py) tests
+    ``prev_close < entry <= price`` against the live quote, so the crossing is
+    true for the REST OF THE SESSION once the level goes — and the packet is
+    re-detected on every five-minute pass and can be booked hours later. There
+    is no `crossed_in_window` leaf on a signal_fired packet, so nothing in the
+    module could ever have licensed the deterministic bank's "just traded
+    through": it was the exact construction TestThresholdFreshness above exists
+    to kill, shipping unguarded one family over.
+
+    Pinned on a STALE-BOOKED packet — plan level crossed at yesterday's plan,
+    quote taken hours into the session — across EVERY variant in the bank, so a
+    future variant cannot smuggle the word back in through the rotation.
+    """
+
+    @staticmethod
+    def _stale_booked() -> FactPacket:
+        """A signal_fired packet whose crossing is hours old by construction.
+
+        `prev_close` is yesterday's close, `price` is the live quote well
+        through the level, and `fired_at` is late in the RTH session: the
+        detector cannot tell this apart from a crossing that happened one tick
+        ago, which is the whole point.
+        """
+        return _packet(
+            "signal_fired", "signal:stale123", "up", ticker="MSFT",
+            facts={"ticker": "MSFT", "level": 310.5, "price": 338.9,
+                   "prev_close": 308.4, "pct": 9.89, "direction": "up",
+                   "plan_as_of": _prev_weekday(NOW.date()).isoformat(),
+                   "signal_id": "stale123"})
+
+    def test_no_variant_in_the_bank_claims_the_crossing_just_happened(self):
+        packet = self._stale_booked()
+        rendered: list[str] = []
+        for entry in W._SIGNAL_VARIANTS:
+            with forced_variant("signal_fired", entry):
+                out = W.compose_wire(packet)
+            assert out is not None, entry[0]
+            rendered.append(out["text"])
+            assert " just " not in f" {out['text']} ", out["text"]
+            assert not out["text"].lower().startswith("just"), out["text"]
+        # Every variant actually rendered — an empty loop would pass vacuously.
+        assert len(rendered) == len(W._SIGNAL_VARIANTS) >= 3
+
+    def test_the_live_marker_still_carries_the_immediacy(self):
+        """The fix removes an unlicensed claim, it does not mute the family:
+        every variant still says WHEN WE ARE LOOKING, which is lawful."""
+        markers = {m for pair in W._LIVE_MARKERS.values() for m in pair}
+        packet = self._stale_booked()
+        for entry in W._SIGNAL_VARIANTS:
+            with forced_variant("signal_fired", entry):
+                out = W.compose_wire(packet)
+            assert out is not None and any(m in out["text"] for m in markers), out
+
+    def test_the_detector_still_ships_no_freshness_receipt(self):
+        """The premise, asserted rather than assumed. If signal_fired ever GROWS
+        a `crossed_in_window` leaf this flips, and the event wording may come
+        back — behind that bool and a verb pair, never as a bare template."""
+        assert "crossed_in_window" not in self._stale_booked().facts
+
+
 class TestStreakDetector:
     @staticmethod
     def _run(pct, rec_over=None, trade_date=FRESH_TRADE_DATE):
@@ -1295,6 +1579,49 @@ class TestContrarianDetector:
         assert [e for e in HT.detect_events(quotes, heatmap=self._tiles(n=2),
                                             now=NOW, cfg=HT.DEFAULTS)
                 if e.trigger == "contrarian_breadth"] == []
+
+    def test_the_green_count_carries_its_universe(self):
+        """A COUNT WITH NO DENOMINATOR IS NOT A FACT (2026-07-31).
+
+        "31 names across Utilities and Consumer Defensive are green" — 31 of
+        how many? The same numerator-with-no-universe the desk feeds shipped as
+        "18 groups on the move today" eleven times. The detector now counts the
+        universe the numerator moves against: every live-quoted member of the
+        sectors that qualified, green AND red.
+        """
+        # LETTERS ONLY: the wire's cashtag regex stops at the first digit, so a
+        # generated `$CO0` would leave a bare "0" for the numeric gate.
+        tiles = [_tile(f"T{c}", "Technology", -3.0) for c in "ABCDEFGHIJ"]
+        for sector, prefix in (("Consumer Defensive", "CD"), ("Utilities", "UT")):
+            tiles += [_tile(f"{prefix}{c}", sector, 1.0) for c in "XYZ"]
+        # One red name inside a still-green defensive sector, so the count and
+        # its universe cannot be the same number by construction.
+        tiles.append(_tile("UTQ", "Utilities", -0.4))
+        quotes = {"SPY": _quote(-1.82)}
+        events = [e for e in HT.detect_events(
+            quotes, heatmap={"asof": FRESH_TRADE_DATE, "tiles": tiles},
+            now=NOW, cfg=HT.DEFAULTS) if e.trigger == "contrarian_breadth"]
+        assert len(events) == 1
+        packet = events[0]
+        assert packet.facts["n_green"] == 6
+        assert packet.facts["n_defensive_members"] == 7
+
+        with forced_variant("contrarian_breadth", W.WIRE_BANK["contrarian_breadth"][1]):
+            out = W.compose_wire(packet)
+        assert out is not None
+        assert "6 of 7 names across" in out["text"], out["text"]
+
+    def test_a_packet_with_no_universe_refuses_the_count_variant(self):
+        """The other two variants make no count claim, so the family still
+        ships — it just never ships a bare numerator."""
+        packet = _packet("contrarian_breadth", "contrarian:x", "up", {
+            "index_pct": -1.82, "index_ticker": "SPY",
+            "green": [["COST", 1.24], ["HD", 0.93], ["MMM", 0.71], ["KO", 0.55]],
+            "sectors_green": ["Consumer Defensive", "Utilities"], "n_green": 11})
+        with forced_variant("contrarian_breadth", W.WIRE_BANK["contrarian_breadth"][1]):
+            assert W.compose_wire(packet) is None
+        out = W.compose_wire(packet)
+        assert out is not None and "11 names" not in out["text"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1744,6 +2071,44 @@ class TestBriefPacket:
                                  "watch": {"kind": "level", "price": 84.2}})
         assert W._mechanism_clause(no_mech, no_mech.facts) is None
         assert W.compose_wire(no_mech) is None
+
+    def test_the_mechanism_count_is_agreeing_names_over_group_size(self):
+        """2026-07-31, the same defect class as "18 groups on the move today":
+        the clause read "{n_peers} names are trading together", and n_peers is
+        the SIZE of the peer group, not a count of names that moved. A group
+        where 3 of 9 names agreed was described as nine names trading together
+        — a bare numerator that was also the wrong number.
+        """
+        mech = {"kind": "group", "group": "Semiconductors",
+                "group_kind": "industry", "peer_median_pct": -6.4,
+                "n_peers": 9, "n_agree": 7}
+        packet = _packet("context_brief", "brief:x", "down", ticker="MU",
+                         facts={"ticker": "MU", "pct": -8.2, "price": 84.2,
+                                "mechanism": mech,
+                                "peers": [["SNDK", -14.3], ["STX", -8.5]],
+                                "watch": {"kind": "level", "price": 84.2}})
+        clause = W._mechanism_clause(packet, packet.facts)
+        assert clause == ("This is a group move: 7 of 9 names are trading "
+                          "together, median -6.4%")
+
+        lone = dict(mech, kind="single_name", n_agree=3, peer_median_pct=-0.3)
+        packet.facts["mechanism"] = lone
+        assert W._mechanism_clause(packet, packet.facts) == (
+            "The rest of Semiconductors is not following: 3 of 9 names moved "
+            "with it, median -0.3%, so this is one name and not the group")
+
+    def test_a_mechanism_with_no_agreement_count_refuses(self):
+        """Denominator law both ways: no numerator, no count claim, no brief."""
+        packet = _packet("context_brief", "brief:x", "down", ticker="MU",
+                         facts={"ticker": "MU", "pct": -8.2, "price": 84.2,
+                                "mechanism": {"kind": "group",
+                                              "group": "Semiconductors",
+                                              "peer_median_pct": -6.4,
+                                              "n_peers": 9},
+                                "peers": [["SNDK", -14.3], ["STX", -8.5]],
+                                "watch": {"kind": "level", "price": 84.2}})
+        assert W._mechanism_clause(packet, packet.facts) is None
+        assert W.compose_wire(packet) is None
 
 
 class TestDetectEventsContract:

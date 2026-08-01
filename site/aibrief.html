@@ -15,8 +15,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -25,7 +34,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<title>AI Daily Brief — 2026-07-30 09:41 UTC</title>
+<title>AI Daily Brief — 2026-08-01 03:31 UTC</title>
 
 <meta name="description" content="The market day in plain words — an AI-drafted, engine-grounded daily brief covering regimes, movers and what changed.">
 <link rel="canonical" href="https://www.mastermind-x.com/aibrief.html">
@@ -45,7 +54,7 @@
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
 <link rel="stylesheet" href="assets/css/eb7374ca.css?v=eb7374ca">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=6e249584">
+<link rel="preload" as="style" href="navigation-refresh.css?v=3ee9d113">
 </head>
 <body>
 
@@ -53,7 +62,7 @@
     
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=6e249584">
+    <link rel="stylesheet" href="navigation-refresh.css?v=3ee9d113">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -174,17 +183,19 @@
       <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
         <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
         <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Crypto Cockpit</span><span class="l-zh">加密驾驶舱</span><span class="d"><span class="l-en">Market board · flows · leverage</span><span class="l-zh">市场看板 · 资金流 · 杠杆</span></span></a>
-        <a href="vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">State · risk · cycle · strategy</span><span class="l-zh">状态 · 风险 · 周期 · 策略</span></span></a>
-        <a href="crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation</span><span class="l-zh">配置</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-        <a href="vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategy Track Record</span><span class="l-zh">策略历史表现</span><span class="d"><span class="l-en">Cycle and risk-allocation evidence</span><span class="l-zh">周期与风险配置证据</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -205,48 +216,46 @@
     
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-main">
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
-              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
-              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
-              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
-              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
-              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
-              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
-              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
-              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
-              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
             </div>
           </section>
         </div>
-        <aside class="nav-mega-rail">
-          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
-            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
-              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
             </button>
-            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+            <div class="nav-drill-panel" data-nav-drill-panel inert>
               <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
               <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
               <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
@@ -257,7 +266,11 @@
               <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+          <a class="rail-link nav-rail-item" href="intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
         </aside>
       </div>
     </div>
@@ -301,7 +314,7 @@
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
     <h2 style="margin:0"><span class="l-en">Right now</span><span class="l-zh">当前状态</span></h2>
     
-    <span class="muted" style="font-size:11px"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-29</span>
+    <span class="muted" style="font-size:11px"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-30</span>
     
     <span class="help">?<span class="tip"><span class="l-en">Snapshot of the deterministic dashboards at build time — regime, any signals pointing in different directions, and what liquidity is doing. Research context only.</span><span class="l-zh">构建时的确定性看板快照 — 周期状态、有无方向分歧信号，以及流动性动向。仅供研究参考。</span></span></span>
   </div>
@@ -310,8 +323,8 @@
     <div class="ctx-row">
       <span class="ctx-label"><span class="l-en">Regime</span><span class="l-zh">市场格局</span></span>
       <span class="ctx-chip regime">
-        <span class="l-en">Risk-off</span>
-        <span class="l-zh">避险</span>
+        <span class="l-en">Mixed</span>
+        <span class="l-zh">混合</span>
       </span>
     </div>
     
@@ -358,30 +371,6 @@
   <ul class="fwd-list">
     
     <li>
-      <span class="fwd-date">2026-07-30</span>
-      <span data-tip-en="Time: 08:30 ET · Source: static" data-tip-zh="时间：08:30 东部时间">
-        <span class="l-en">GDP (BEA estimate)</span>
-        <span class="l-zh">GDP 数据</span>
-      </span>
-    </li>
-    
-    <li>
-      <span class="fwd-date">2026-07-30</span>
-      <span data-tip-en="Time: 08:30 ET · Source: static" data-tip-zh="时间：08:30 东部时间">
-        <span class="l-en">PCE / personal income (BEA)</span>
-        <span class="l-zh">PCE 物价指数</span>
-      </span>
-    </li>
-    
-    <li>
-      <span class="fwd-date">2026-07-30</span>
-      <span data-tip-en="In 1 day(s). No accuracy record yet. model leans cool." data-tip-zh="距今 1 天。No accuracy record yet。 模型偏向低于预期。">
-        <span class="l-en">PCE</span>
-        <span class="l-zh">PCE</span>
-      </span>
-    </li>
-    
-    <li>
       <span class="fwd-date">2026-08-07</span>
       <span data-tip-en="Time: 08:30 ET · Source: static" data-tip-zh="时间：08:30 东部时间">
         <span class="l-en">Jobs report (nonfarm payrolls)</span>
@@ -391,7 +380,7 @@
     
     <li>
       <span class="fwd-date">2026-08-07</span>
-      <span data-tip-en="In 9 day(s). No accuracy record yet." data-tip-zh="距今 9 天。No accuracy record yet。">
+      <span data-tip-en="In 8 day(s). No accuracy record yet." data-tip-zh="距今 8 天。No accuracy record yet。">
         <span class="l-en">NFP</span>
         <span class="l-zh">NFP</span>
       </span>
@@ -407,7 +396,7 @@
     
     <li>
       <span class="fwd-date">2026-08-12</span>
-      <span data-tip-en="In 14 day(s). No accuracy record yet. model leans hot. Market implied: 2.4%." data-tip-zh="距今 14 天。No accuracy record yet。 模型偏向高于预期。">
+      <span data-tip-en="In 13 day(s). No accuracy record yet. model leans hot. Market implied: 2.4%." data-tip-zh="距今 13 天。No accuracy record yet。 模型偏向高于预期。">
         <span class="l-en">CPI</span>
         <span class="l-zh">CPI</span>
       </span>
@@ -418,6 +407,14 @@
       <span data-tip-en="Time: 08:30 ET · Source: static" data-tip-zh="时间：08:30 东部时间">
         <span class="l-en">PPI (producer prices)</span>
         <span class="l-zh">生产者物价指数（PPI）</span>
+      </span>
+    </li>
+    
+    <li>
+      <span class="fwd-date">2026-08-13</span>
+      <span data-tip-en="In 14 day(s). No accuracy record yet. model leans hot." data-tip-zh="距今 14 天。No accuracy record yet。 模型偏向高于预期。">
+        <span class="l-en">PPI</span>
+        <span class="l-zh">PPI</span>
       </span>
     </li>
     
@@ -446,29 +443,29 @@
     <div class="aib2-icon" aria-hidden="true">AI</div>
     <div class="aib2-hdr-meta">
       <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · cross-asset synthesis</span><span class="l-zh">AI 每日简报 · 跨资产综合</span></div>
-      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-29</span>
+      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-31</span>
         <span class="aib2-cadence"><span class="l-en">Updated daily</span><span class="l-zh">每日更新</span></span></div>
     </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The gist</span><span class="l-zh">要点</span></span></div>
   <div class="aib2-gist">
-    <ul class="aib2-gist-list"><li><span class="l-en"><b>AI unwind</b>: Tech-led sell-off continues with chip stocks lagging by a year-extreme margin.</span><span class="l-zh"><b>AI回调</b>：科技股主导的抛售持续，芯片股落后幅度创年度极端。</span></li><li><span class="l-en"><b>Growth cooling</b>: Goldilocks is on the edge — one more soft data point tips it to Reflation.</span><span class="l-zh"><b>增长放缓</b>：金发姑娘经济处于边缘——再多一个疲软数据点就会滑向再通胀。</span></li><li><span class="l-en"><b>Bonds and dollar</b>: Credit is widening and the dollar is strengthening, flashing caution equities haven't priced.</span><span class="l-zh"><b>债券和美元</b>：信用利差扩大，美元走强，发出股市尚未定价的警示信号。</span></li></ul><div class="aib2-stance aib2-stance--accent">
+    <ul class="aib2-gist-list"><li><span class="l-en"><b>Cooling reflation</b>: Growth and inflation are both edging lower, pulling the map toward Goldilocks.</span><span class="l-zh"><b>再通胀降温</b>：增长与通胀双双走低，格局正向金发女郎情景倾斜。</span></li><li><span class="l-en"><b>Dollar drop</b>: The falling dollar is today's tailwind — lifting commodities, EM, and risk appetite.</span><span class="l-zh"><b>美元下跌</b>：美元走低是今日的顺风，利好大宗商品、新兴市场与风险偏好。</span></li><li><span class="l-en"><b>Bonds worry</b>: Credit is starting to widen and the bond market is in a late-cycle posture — a caution equities haven't priced.</span><span class="l-zh"><b>债券担忧</b>：信用利差开始走阔，债市处于周期后期姿态——这是股市尚未定价的警示。</span></li></ul><div class="aib2-stance aib2-stance--accent">
       <span class="aib2-stance-mark" aria-hidden="true">&#x25B8;</span>
       <span class="aib2-stance-body">
         <span class="l-en"><b>What to do</b>: Watch — don't chase.</span>
-        <span class="l-zh"><b>操作建议</b>：观望——不要追涨。</span>
+        <span class="l-zh"><b>该怎么做</b>：观望——不要追涨。</span>
       </span>
     </div>
   </div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">Key readings</span><span class="l-zh">关键读数</span></span></div>
   <div class="aib2-kf-rail"><span class="aib2-kf aib2-kf--warn">
       <span class="aib2-kf-k"><span class="l-en">Regime</span><span class="l-zh">市场格局</span></span>
-      <span class="aib2-kf-v"><span class="l-en">Goldilocks · shifting</span><span class="l-zh">金发姑娘(不冷不热) · 转换中</span></span>
+      <span class="aib2-kf-v"><span class="l-en">Reflation · shifting</span><span class="l-zh">再通胀 · 转换中</span></span>
     </span><span class="aib2-kf aib2-kf--good">
       <span class="aib2-kf-k"><span class="l-en">Market risk</span><span class="l-zh">市场风险</span></span>
       <span class="aib2-kf-v"><span class="l-en">Low</span><span class="l-zh">低</span></span>
-    </span><span class="aib2-kf aib2-kf--good">
+    </span><span class="aib2-kf aib2-kf--neutral">
       <span class="aib2-kf-k"><span class="l-en">Money</span><span class="l-zh">资金面</span></span>
-      <span class="aib2-kf-v"><span class="l-en">Expanding</span><span class="l-zh">扩张</span></span>
+      <span class="aib2-kf-v"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
     </span><span class="aib2-kf aib2-kf--warn">
       <span class="aib2-kf-k"><span class="l-en">Bonds vs stocks</span><span class="l-zh">债股关系</span></span>
       <span class="aib2-kf-v"><span class="l-en">Disagree — bonds worried</span><span class="l-zh">分歧 — 债市担忧</span></span>
@@ -477,7 +474,7 @@
       <span class="aib2-kf-v"><span class="l-en">Tight, but widening</span><span class="l-zh">偏紧但在走宽</span></span>
     </span><span class="aib2-kf aib2-kf--info">
       <span class="aib2-kf-k"><span class="l-en">What's moving markets</span><span class="l-zh">当前主导</span></span>
-      <span class="aib2-kf-v"><span class="l-en">AI / semis</span><span class="l-zh">AI / semis</span></span>
+      <span class="aib2-kf-v"><span class="l-en">USD shock</span><span class="l-zh">USD shock</span></span>
     </span></div><div class="aib2-conf">
     <div class="aib2-conf-bar" role="img"
          data-tip-en="Confidence Medium — how firmly the read holds, from the AI synthesis."
@@ -486,59 +483,46 @@
       <span class="aib2-conf-seg on"></span>
       <span class="aib2-conf-seg"></span>
     </div>
-    <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-29</span></div>
+    <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-31</span></div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
   <div class="aib2-regime">
-    <span class="l-en">We are still in Goldilocks on the macro map, but growth has cooled to the very edge — the small-cap versus large-cap gauge is at the threshold, and one nudge lower would flip us into Reflation. Today's dominant driver is the AI semiconductor unwind: chip stocks have lagged the market by the widest margin in about a year, a tech-led de-rating that is dragging the whole market lower. The Fed held hawkish, keeping real yields high, which compresses long-duration growth names and reinforces the rotation out of AI leaders. Meanwhile, the broader economy is not yet in recession — the labor market is firm, financial conditions are loose, and there is no systemic stress — so this looks like a buyable washout, but one that hasn't stabilized yet.</span>
-    <span class="l-zh">我们在宏观地图上仍处于‘金发女孩’阶段，但增长已冷却至临界点——小盘股与大盘股指标已触及阈值，再低一点就会转向再通胀。今日的主导驱动因素是人工智能半导体平仓：芯片股落后市场的幅度创约一年来之最，科技股领跌的估值下调正拖累整个市场走低。美联储维持鹰派，保持实际收益率高企，这压缩了长久期成长股，并强化了从人工智能领导股的轮动。与此同时，整体经济尚未陷入衰退——劳动力市场坚挺，金融条件宽松，没有系统性压力——因此这看起来像是一次可抄底的清洗行情，但尚未企稳。</span>
+    <span class="l-en">We're still in Reflation on the macro map, but both the growth and inflation scores have been sliding — growth is down to a very faint positive, and inflation has cooled sharply from its recent peak. The regime is formally transitioning, and the odds are tilting toward Goldilocks. That's the backdrop: a softening expansion that the stock market is treating as a soft landing, while the bond market is showing a late-cycle bear steepener and credit is starting to widen. Today's dominant driver is a falling dollar — a risk-on move that's giving everything from copper to emerging markets a lift, even as the structural dollar backdrop remains supportive and the cross-asset check warns that bonds and FX are seeing risks equities are still blind to.</span>
+    <span class="l-zh">在宏观地图上，我们仍处于再通胀阶段，但增长和通胀两项评分都在下滑——增长已降至微弱正值，通胀则从近期高点大幅降温。这一机制正在正式转换，天平正倾向“金发女孩”情景。背景就是这样：扩张正在放缓，股市将其视为软着陆，而债市则呈现出周期后期的熊陡走势，信用利差也开始走阔。眼下主导因素是美元下跌——这是一种风险偏好升温的走势，推动从铜到新兴市场各类资产上涨，尽管美元的结构性背景依然坚挺，且跨资产检查显示债市和外汇市场已经看到股市仍视而不见的风险。</span>
   </div>
   <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
       <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
-      <ul class="aib2-items"><li><span class="l-en"><b>Equities vs bonds/dollar</b>: The stock market's Goldilocks label is contradicted by widening credit spreads and a strengthening dollar — the credit canary is chirping.</span><span class="l-zh"><b>股票与债券/美元</b>：股市的‘金发女孩’标签被不断扩大的信用利差和走强的美元所否定——信用金丝雀正在鸣叫。</span></li><li><span class="l-en"><b>Breadth vs leadership</b>: Three-quarters of stocks are above their 200-day line, but only a third of new buy signals clear the quality filters — the rally's conviction is thin.</span><span class="l-zh"><b>广度与领涨股</b>：四分之三的股票位于200日均线上方，但只有三分之一的新买入信号通过质量筛选——反弹的信心不足。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en"><b>Dollar split</b>: The dollar just fell hard, boosting risk — but its long-term trend and rate backdrop still lean strong, so this tailwind could flip.</span><span class="l-zh"><b>美元走势分化</b>：美元刚刚大幅下跌，提振了风险偏好——但其长期趋势和利率背景仍偏强，因此这一顺风可能逆转。</span></li><li><span class="l-en"><b>Bonds vs equities</b>: High-yield credit has begun to widen and the yield curve is bear-steepening — the bond desk sees late-cycle pressure, but stocks are still in a risk-on groove.</span><span class="l-zh"><b>债券与股票</b>：高收益信用利差已开始走阔，收益率曲线呈熊陡形态——债券部门看到周期后期压力，但股市仍处于风险偏好状态。</span></li></ul>
     </div><div class="aib2-card aib2-card--tx">
       <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
-      <ul class="aib2-items"><li><span class="l-en">If the dollar keeps rising → pressure on gold, copper, emerging markets, and bitcoin intensifies.</span><span class="l-zh">如果美元持续上涨→黄金、铜、新兴市场和比特币面临的压力加大。</span></li><li><span class="l-en">If the AI sell-off persists → rotation into value and defensive sectors accelerates.</span><span class="l-zh">若AI抛售持续，轮动至价值股和防御性板块将加速。</span></li></ul>
-    </div></div>
-  <div class="aib2-card aib2-card--full aib2-card--playbook">
-    <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
-    <div class="aib2-prose">
-      <span class="l-en">AI semis are unwinding, matching the first leg of the liquidity contraction sequence.</span>
-      <span class="l-zh">人工智能半导体正在平仓，与流动性收缩序列的第一阶段吻合。</span>
-    </div>
-  </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
+      <ul class="aib2-items"><li><span class="l-en">If the dollar keeps slipping and credit stays calm → the risk-on rotation into commodities and EM gets another leg.</span><span class="l-zh">如果美元继续走弱且信用市场保持平静→资金轮动进入大宗商品和新兴市场的风险偏好行情将再添动力。</span></li><li><span class="l-en">If credit widening picks up speed or the dollar firms again → the equity rally runs into a wall of bond-market caution.</span><span class="l-zh">如果信用利差走阔加快或美元再度走强→股市反弹将遭遇债市谨慎情绪构成的阻力。</span></li></ul>
+    </div></div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
   <div class="aib2-card aib2-card--full">
     <ul class="aib2-watch"><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Small-cap relative strength</b>: A break lower flips the macro regime to Reflation.</span>
-          <span class="l-zh"><b>小盘股相对强势</b>：向下突破将宏观格局切换至再通胀。</span>
+          <span class="l-en"><b>Aug 7th jobs report</b>: Soft numbers keep the Goldilocks drift alive, strong ones revive hawkish fears.</span>
+          <span class="l-zh"><b>8月7日就业报告</b>：疲软数据让金发女郎行情延续，强劲数据则重燃鹰派担忧。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Credit spreads</b>: Further widening turns the caution into a risk-off event.</span>
-          <span class="l-zh"><b>信用利差</b>：进一步扩大将谨慎转为避险事件。</span>
+          <span class="l-en"><b>Aug 12th CPI</b>: A cool print cements the cooling narrative; a hot one would challenge the soft landing.</span>
+          <span class="l-zh"><b>8月12日CPI</b>：温和读数巩固降温叙事，火热读数则挑战软着陆。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>Dollar direction</b>: A sustained rise deepens headwinds for risk assets.</span>
-          <span class="l-zh"><b>美元方向</b>：持续上涨加剧风险资产的逆风。</span>
-        </span>
-      </li><li class="aib2-watch-row">
-        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
-        <span class="aib2-watch-body">
-          <span class="l-en"><b>AI semis relative strength</b>: A reversal would signal the unwind is pausing.</span>
-          <span class="l-zh"><b>AI半导体相对强势</b>：反转将预示回调暂停。</span>
+          <span class="l-en"><b>Dollar reversal</b>: If the dollar snaps back, the risk-on trade loses its main engine today.</span>
+          <span class="l-zh"><b>美元反转</b>：若美元反弹，今日风险偏好交易将失去主要引擎。</span>
         </span>
       </li></ul>
   </div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">Upcoming catalysts</span><span class="l-zh">即将到来的催化剂</span></span></div>
   <div class="aib2-card aib2-card--full">
-    <div class="aib2-cat-rail"><span class="aib2-cat"><span class="aib2-cat-d num">07-29</span> FOMC rate decision</span><span class="aib2-cat"><span class="aib2-cat-d num">07-30</span> PCE / personal income (BEA)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-07</span> Jobs report (nonfarm payrolls)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-12</span> CPI (consumer prices)</span></div>
+    <div class="aib2-cat-rail"><span class="aib2-cat"><span class="aib2-cat-d num">08-07</span> Jobs report (nonfarm payrolls)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-12</span> CPI (consumer prices)</span><span class="aib2-cat"><span class="aib2-cat-d num">08-13</span> PPI (producer prices)</span></div>
     <div class="aib2-cat-read">
-      <span class="l-en">Today's FOMC held rates steady with a hawkish tone. Tomorrow's PCE is forecast to be cold — a soft print would ease growth-scare fears and slow the dollar's rise. The jobs report in nine days is the next major hurdle.</span>
-      <span class="l-zh">Today's FOMC held rates steady with a hawkish tone. Tomorrow's PCE is forecast to be cold — a soft print would ease growth-scare fears and slow the dollar's rise. The jobs report in nine days is the next major hurdle.</span>
+      <span class="l-en">The next two weeks could define whether the drift toward Goldilocks sticks. Jobs and CPI estimates lean soft, which would keep the cooling narrative intact. The cycle-hazard scan points to near-term upside risk in Chinese AI and appliance stocks and downside risk in European equities.</span>
+      <span class="l-zh">The next two weeks could define whether the drift toward Goldilocks sticks. Jobs and CPI estimates lean soft, which would keep the cooling narrative intact. The cycle-hazard scan points to near-term upside risk in Chinese AI and appliance stocks and downside risk in European equities.</span>
     </div></div>
 </div>
 
@@ -554,16 +538,16 @@
     <div class="aib2-icon" aria-hidden="true">AI</div>
     <div class="aib2-hdr-meta">
       <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · China &amp; HK synthesis</span><span class="l-zh">AI 每日简报 · 中港综合</span></div>
-      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-29</span>
+      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-31</span>
         <span class="aib2-cadence"><span class="l-en">Updated daily</span><span class="l-zh">每日更新</span></span></div>
     </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The gist</span><span class="l-zh">要点</span></span></div>
   <div class="aib2-gist">
-    <ul class="aib2-gist-list"><li><span class="l-en"><b>Stagflation grip</b>: Growth cools, inflation warms — contracting liquidity compounds the squeeze.</span><span class="l-zh"><b>滞胀笼罩</b>：增长降温，通胀升温——流动性收缩加剧压力。</span></li><li><span class="l-en"><b>Banks stretched</b>: Mainland banks up 19% in three weeks while chips crashed — reversal risk is high.</span><span class="l-zh"><b>银行承压</b>：内地银行三周内上涨19%，芯片股暴跌——逆转风险高企。</span></li><li><span class="l-en"><b>HK split</b>: Local Goldilocks but dollar strength and a weak-side peg force outflows.</span><span class="l-zh"><b>香港分化</b>：本地经济温和但美元走强及弱方挂钩迫使资金外流。</span></li><li><span class="l-en"><b>Policy pipes</b>: Easing is underway but hasn't reached the system — the turn matters.</span><span class="l-zh"><b>政策管道</b>：宽松已启动但尚未传导至系统——转折点至关重要。</span></li></ul><div class="aib2-stance aib2-stance--accent">
+    <ul class="aib2-gist-list"><li><span class="l-en"><b>Mainland</b>: Stagflation stuck — growth cooling, liquidity draining.</span><span class="l-zh"><b>内地</b>：滞胀持续——增长降温，流动性收紧。</span></li><li><span class="l-en"><b>Hong Kong</b>: Goldilocks for now, but weak peg and dollar headwinds.</span><span class="l-zh"><b>香港</b>：目前处于金发女孩状态，但联系汇率疲软和美元逆风。</span></li><li><span class="l-en"><b>Banks</b>: Top performer losing flow — mean-reversion risk rising.</span><span class="l-zh"><b>银行股</b>：领涨板块资金流出——均值回归风险上升。</span></li></ul><div class="aib2-stance aib2-stance--accent">
       <span class="aib2-stance-mark" aria-hidden="true">&#x25B8;</span>
       <span class="aib2-stance-body">
         <span class="l-en"><b>What to do</b>: Watch — don't chase.</span>
-        <span class="l-zh"><b>如何应对</b>：观望——不追涨。</span>
+        <span class="l-zh"><b>操作建议</b>：观望——不宜追高。</span>
       </span>
     </div>
   </div>
@@ -577,15 +561,15 @@
     </span><span class="aib2-kf aib2-kf--warn">
       <span class="aib2-kf-k"><span class="l-en">System money</span><span class="l-zh">系统流动性</span></span>
       <span class="aib2-kf-v"><span class="l-en">Tightening</span><span class="l-zh">收紧</span></span>
-    </span><span class="aib2-kf aib2-kf--neutral">
+    </span><span class="aib2-kf aib2-kf--good">
       <span class="aib2-kf-k"><span class="l-en">Hong Kong</span><span class="l-zh">香港</span></span>
-      <span class="aib2-kf-v"><span class="l-en">Neutral</span><span class="l-zh">中性</span></span>
+      <span class="aib2-kf-v"><span class="l-en">Risk-on</span><span class="l-zh">偏积极</span></span>
     </span><span class="aib2-kf aib2-kf--warn">
       <span class="aib2-kf-k"><span class="l-en">HK dollar</span><span class="l-zh">港元</span></span>
       <span class="aib2-kf-v"><span class="l-en">At weak edge — watching</span><span class="l-zh">贴近弱方 — 需留意</span></span>
     </span><span class="aib2-kf aib2-kf--info">
       <span class="aib2-kf-k"><span class="l-en">Leading sector</span><span class="l-zh">领涨板块</span></span>
-      <span class="aib2-kf-v"><span class="l-en">Semiconductors</span><span class="l-zh">Semiconductors</span></span>
+      <span class="aib2-kf-v"><span class="l-en">Banks</span><span class="l-zh">Banks</span></span>
     </span></div><div class="aib2-conf">
     <div class="aib2-conf-bar" role="img"
          data-tip-en="Confidence Low — how firmly the read holds, from the AI synthesis."
@@ -594,50 +578,48 @@
       <span class="aib2-conf-seg"></span>
       <span class="aib2-conf-seg"></span>
     </div>
-    <span class="aib2-conf-label"><span class="l-en">Confidence: Low</span><span class="l-zh">置信度：低</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-29</span></div>
+    <span class="aib2-conf-label"><span class="l-en">Confidence: Low</span><span class="l-zh">置信度：低</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-31</span></div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
   <div class="aib2-regime">
-    <span class="l-en">The mainland economy is firmly in stagflation — growth is sliding and inflation is warming, though confidence in the mapping is low. Liquidity is contracting even as the central bank has cut reserve requirements and loan rates, leaving a gap between what policy intends and what actually flows into the market. The day's rotation is defensive: banks and coal rallied, while semiconductors and solar sold off sharply. Hong Kong sits in a locally benign Goldilocks zone, but the outside world — a strengthening US dollar and a currency peg near its weak-side limit — is pulling money out, and that outside force is the dominant driver today.</span>
-    <span class="l-zh">内地经济深陷滞胀——增长下滑，通胀升温，尽管对经济图景的信心不足。尽管央行下调存款准备金率和贷款利率，流动性仍在收缩，政策意图与实际流入市场的资金之间存在缺口。当日的板块轮动呈防御性：银行和煤炭板块上涨，半导体和太阳能板块大幅下跌。香港处于本地良性的温和增长区间，但外部世界——美元走强以及联系汇率制度接近弱方兑换保证——正在抽走资金，而这一外部力量是今日的主导因素。</span>
+    <span class="l-en">China sits in Stagflation on the map, but the drift is grim: growth has cooled over the past three weeks and inflation is warming, pushing deeper into that corner. Bank liquidity is contracting even as the central bank has delivered cumulative rate and reserve-requirement cuts — the easing is in the pipes but not reaching the system yet.
+
+Hong Kong, by contrast, reads Goldilocks — global risk appetite is on and that props up the index. But the Hong Kong dollar is pinned to the weak side of its band, signalling outflows, and the mainland's own risk-off mood is selling Hong Kong shares via the southbound link. A strengthening US dollar makes that split worse.</span>
+    <span class="l-zh">中国在地图上处于滞胀区间，但趋势堪忧：过去三周增长降温、通胀升温，进一步滑向滞胀角落。尽管央行累计降息并下调存款准备金率，银行流动性仍在收缩——宽松政策已在管道中，却尚未到达系统。
+
+相比之下，香港的读数显现‘理想增长’状态——全球风险偏好升温支撑指数。但港元被压在兑换区间弱方，表明资金外流，而内地自身的避险情绪正通过南向通道抛售港股。美元走强加剧了这一分化。</span>
   </div>
   <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
       <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
-      <ul class="aib2-items"><li><span class="l-en"><b>Policy vs Liquidity</b>: Central bank easing is piling up, but system liquidity says contracting — the pump hasn't primed the pipes.</span><span class="l-zh"><b>政策与流动性</b>：央行宽松政策不断累积，但系统流动性显示收缩——注水未能激活管道。</span></li><li><span class="l-en"><b>Flow vs Price</b>: Smart money is fading the bank rally just as it becomes the crowd's favorite — that rally looks fragile.</span><span class="l-zh"><b>资金与价格</b>：聪明资金正在减持银行股，正当银行股成为散户最爱之时——这轮涨势看似脆弱。</span></li><li><span class="l-en"><b>HK vs Mainland</b>: Hong Kong says Goldilocks, but mainland stagflation and dollar outflows point the other way.</span><span class="l-zh"><b>香港与内地</b>：香港显示温和增长，但内地的滞胀和美元资金外流指向相反方向。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en"><b>Easing vs liquidity</b>: The central bank has cut rates and freed bank reserves, but system liquidity is still contracting — the medicine isn't working yet.</span><span class="l-zh"><b>宽松与流动性</b>：央行已降息并释放银行准备金，但体系流动性仍在收缩——药效尚未显现。</span></li><li><span class="l-en"><b>HK growth</b>: The growth score says Goldilocks, but manufacturing PMI and tech stocks paint a weaker picture — the label overstates the glow.</span><span class="l-zh"><b>香港增长</b>：增长评分显示‘理想增长’，但制造业PMI和科技股画出更弱图景——标签高估了光鲜程度。</span></li></ul>
     </div><div class="aib2-card aib2-card--tx">
       <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
-      <ul class="aib2-items"><li><span class="l-en">If the US dollar keeps strengthening → capital outflows from Hong Kong will intensify, pressuring the peg and local risk assets.</span><span class="l-zh">如果美元持续走强→资金从香港流出将加剧，对联系汇率制度和本地风险资产构成压力。</span></li><li><span class="l-en">If system liquidity stays tight → the rally in rate-sensitive groups like banks and brokers could reverse sharply.</span><span class="l-zh">如果系统流动性保持紧张→银行和券商等利率敏感板块的涨势可能急剧逆转。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en">If the US dollar keeps strengthening → Hong Kong's peg pressure deepens, dragging H-shares lower.</span><span class="l-zh">若美元持续走强 → 香港联系汇率压力加深，拖累H股走低。</span></li><li><span class="l-en">If mainland liquidity stays tight → the stagflation bite spreads, hitting cyclicals and small caps hardest.</span><span class="l-zh">如果内地流动性持续紧张 → 滞胀冲击蔓延，周期股和小盘股受创最重。</span></li></ul>
     </div></div>
   <div class="aib2-card aib2-card--full aib2-card--playbook">
     <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
     <div class="aib2-prose">
-      <span class="l-en">Banks surged to the top while chips and solar crashed — the reversal engine is firing, and smart-money flows agree.</span>
-      <span class="l-zh">银行股领涨，芯片和太阳能板块暴跌——反转引擎正在启动，聪明钱的流向也证实了这一点。</span>
+      <span class="l-en">This month's leader, Banks, is seeing smart-money outflows — the mean-reversion snap from stretched leaders may be brewing.</span>
+      <span class="l-zh">本月领涨的银行板块正出现聪明钱流出——超买领涨股的均值回归回撤可能正在酝酿。</span>
     </div>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
   <div class="aib2-card aib2-card--full">
     <ul class="aib2-watch"><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>PMI Jul 31</b>: A print below 50 cements stagflation fears.</span>
-          <span class="l-zh"><b>7月31日PMI</b>：数据低于50将加剧滞胀担忧。</span>
+          <span class="l-en"><b>NBS PMI release</b>: weak print deepens stagflation worry.</span>
+          <span class="l-zh"><b>国家统计局PMI发布</b>：数据疲软加深滞胀担忧。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>USD/CNY above 6.80</b>: triggers fresh outflow alarm for Hong Kong.</span>
-          <span class="l-zh"><b>美元/人民币突破6.80</b>：触发香港新一轮资金外流警报。</span>
+          <span class="l-en"><b>USDCNY above 6.80</b>: signals capital-outflow pressure.</span>
+          <span class="l-zh"><b>美元兑人民币汇率高于6.80</b>：预示资本外流压力。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en"><b>PBoC cut in the share of deposits banks must keep in reserve</b>: signals policy is pushing through, a potential turn for property and brokers.</span>
-          <span class="l-zh"><b>中国人民银行下调存款准备金率</b>：表明政策正在推进，房地产和券商可能迎来转折点。</span>
-        </span>
-      </li><li class="aib2-watch-row">
-        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
-        <span class="aib2-watch-body">
-          <span class="l-en"><b>Semiconductor ETF bounce</b>: would mark the first sign of a floor in the most washed-out group.</span>
-          <span class="l-zh"><b>半导体ETF反弹</b>：将标志着抛压最严重的板块首次出现触底迹象。</span>
+          <span class="l-en"><b>Southbound flow turns positive</b>: would hint at a tech bounce.</span>
+          <span class="l-zh"><b>南向资金转正</b>：可能暗示科技股反弹。</span>
         </span>
       </li></ul>
   </div>
@@ -655,16 +637,16 @@
     <div class="aib2-icon" aria-hidden="true">AI</div>
     <div class="aib2-hdr-meta">
       <div class="aib2-hdr-title"><span class="l-en">AI Daily Brief · Bitcoin synthesis</span><span class="l-zh">AI 每日简报 · 比特币综合</span></div>
-      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-07-29</span>
+      <div class="aib2-hdr-sub"><span class="aib2-hdr-date num">2026-08-01</span>
         <span class="aib2-cadence"><span class="l-en">Updated every 3 days</span><span class="l-zh">每3天更新</span></span></div>
     </div><span class="aib2-badge"><span class="l-en">A read-through of existing signals — not a signal source</span><span class="l-zh">仅为现有信号的汇总解读 — 非独立信号源</span></span>
   </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The gist</span><span class="l-zh">要点</span></span></div>
   <div class="aib2-gist">
-    <ul class="aib2-gist-list"><li><span class="l-en"><b>Distribution rules</b>: Bitcoin in markdown-froth, system says 0% — stand aside.</span><span class="l-zh"><b>派发规则</b>：比特币处于折价泡沫中，系统显示0%——按兵不动。</span></li><li><span class="l-en"><b>Cycle clock</b>: 68 days left in markdown, although on-chain shows cheap.</span><span class="l-zh"><b>周期时钟</b>：跌价阶段还剩68天，尽管链上显示廉价。</span></li><li><span class="l-en"><b>Liquidity expands</b>: Global money growing 7%, but Bitcoin not yet lifted.</span><span class="l-zh"><b>流动性扩张</b>：全球资金增长7%，但比特币尚未提振。</span></li><li><span class="l-en"><b>Conflicts</b>: Cheap asset against crowded leverage and a still-falling structure.</span><span class="l-zh"><b>冲突</b>：廉价资产与拥挤的杠杆及仍在下跌的结构对峙。</span></li></ul><div class="aib2-stance aib2-stance--warn">
+    <ul class="aib2-gist-list"><li><span class="l-en"><b>Zero exposure</b>: The dashboard says don't hold Bitcoin — an active override keeps the allocation at zero.</span><span class="l-zh"><b>零敞口</b>：仪表盘显示不应持有比特币——主动覆盖使配置保持为零。</span></li><li><span class="l-en"><b>Distribution</b>: The market is in a frothy distribution phase with bearish momentum, even though price structure hasn't collapsed yet.</span><span class="l-zh"><b>派发</b>：市场处于泡沫化的派发阶段，动能偏空，尽管价格结构尚未崩坏。</span></li><li><span class="l-en"><b>Cheap but heavy</b>: On-chain measures show fair value, but the cycle is marking down and liquidity headwinds dominate.</span><span class="l-zh"><b>廉价但沉重</b>：链上指标显示公允价值，但周期正在下调，流动性逆风占主导。</span></li></ul><div class="aib2-stance aib2-stance--warn">
       <span class="aib2-stance-mark" aria-hidden="true">&#x25B8;</span>
       <span class="aib2-stance-body">
-        <span class="l-en"><b>What to do</b>: Stand aside</span>
-        <span class="l-zh"><b>应对</b>：观望。</span>
+        <span class="l-en"><b>What to do</b>: Stand aside.</span>
+        <span class="l-zh"><b>该怎么做</b>：袖手旁观。</span>
       </span>
     </div>
   </div>
@@ -674,16 +656,16 @@
       <span class="aib2-kf-v"><span class="l-en">Distribute · allocation 0% (override)</span><span class="l-zh">系统减持 · 仓位 0%（人工覆盖）</span></span>
     </span><span class="aib2-kf aib2-kf--warn">
       <span class="aib2-kf-k"><span class="l-en">Cycle clock</span><span class="l-zh">周期时钟</span></span>
-      <span class="aib2-kf-v"><span class="l-en">Late decline · ~81% through</span><span class="l-zh">下行后段 · 约81%进度</span></span>
+      <span class="aib2-kf-v"><span class="l-en">Late decline · ~82% through</span><span class="l-zh">下行后段 · 约82%进度</span></span>
     </span><span class="aib2-kf aib2-kf--neutral">
       <span class="aib2-kf-k"><span class="l-en">On-chain value</span><span class="l-zh">链上估值</span></span>
       <span class="aib2-kf-v"><span class="l-en">Fair</span><span class="l-zh">中性</span></span>
     </span><span class="aib2-kf aib2-kf--neutral">
       <span class="aib2-kf-k"><span class="l-en">Leverage</span><span class="l-zh">杠杆</span></span>
       <span class="aib2-kf-v"><span class="l-en">Normal</span><span class="l-zh">正常</span></span>
-    </span><span class="aib2-kf aib2-kf--neutral">
+    </span><span class="aib2-kf aib2-kf--good">
       <span class="aib2-kf-k"><span class="l-en">ETF flows</span><span class="l-zh">ETF资金</span></span>
-      <span class="aib2-kf-v"><span class="l-en">Flat</span><span class="l-zh">持平</span></span>
+      <span class="aib2-kf-v"><span class="l-en">Money coming in</span><span class="l-zh">资金流入</span></span>
     </span><span class="aib2-kf aib2-kf--good">
       <span class="aib2-kf-k"><span class="l-en">Global money</span><span class="l-zh">全球流动性</span></span>
       <span class="aib2-kf-v"><span class="l-en">Expanding</span><span class="l-zh">扩张</span></span>
@@ -695,50 +677,37 @@
       <span class="aib2-conf-seg on"></span>
       <span class="aib2-conf-seg"></span>
     </div>
-    <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-07-29</span></div>
+    <span class="aib2-conf-label"><span class="l-en">Confidence: Medium</span><span class="l-zh">置信度：中</span></span><span class="aib2-conf-asof"><span class="l-en">as of</span><span class="l-zh">数据截至</span> 2026-08-01</span></div>
   <div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">The full read</span><span class="l-zh">完整解读</span></span></div>
   <div class="aib2-regime">
-    <span class="l-en">We are deep in a markdown cycle, sitting in the DISTRIBUTE zone labeled froth. Sellers still control despite on-chain metrics that look historically cheap. The cycle clock points about two months to the next pivot, but the weight today is the combination of high real yields and elevated leveraged bets that keep pressure on price, even with global liquidity expanding.</span>
-    <span class="l-zh">我们正处于深度降价周期，处于标有“泡沫”的派发区域。尽管链上指标显示历史低价，但卖家仍占主导。周期时钟显示距离下一个转折点约两个月，但当前的压力来源于高实际收益率和增加的杠杆押注的组合，即使全球流动性在扩张，这些因素仍对价格施加压力。</span>
+    <span class="l-en">We're in a high-risk 'Distribution' regime. The cycle clock is deep into its markdown phase — about 82% through — with the next pivot roughly two months away. Momentum is firmly negative, and while the price structure still looks constructive, the mood is 'sell the bounce' rather than accumulation. Liquidity is the dominant driver today. Global money supply is rising over the past year, but short-term net liquidity from central banks is shrinking and stablecoin supply is contracting. That's a headwind for Bitcoin, which usually needs expanding liquidity to rally. The result is a stand-off: cheap on-chain valuations aren't enough to overcome a heavy trend and tightening plumbing.</span>
+    <span class="l-zh">我们处于高风险的“派发”阶段。周期钟已深入其标记下行阶段——约完成82%——下一个转折点大约在两个月后。动能明显为负，虽然价格结构看起来仍有建设性，但情绪是“逢反弹卖出”而非吸筹。流动性是当今的主导驱动因素。全球货币供应量在过去一年上升，但央行短期净流动性正在收缩，稳定币供应也在减少。这对比特币构成逆风，比特币通常需要流动性扩张才能上涨。结果是僵局：便宜的链上估值不足以克服沉重的趋势和收紧的资金管道。</span>
   </div>
   <div class="aib2-grid"><div class="aib2-card aib2-card--conflicts">
       <div class="aib2-eyebrow"><span class="l-en">&#x2696;&#xFE0E; Where signals disagree</span><span class="l-zh">&#x2696;&#xFE0E; 信号分歧</span></div>
-      <ul class="aib2-items"><li><span class="l-en"><b>Cheap signal</b>: On-chain metrics near bottom of range, but distribution and crowded borrow prevent buyers.</span><span class="l-zh"><b>廉价信号</b>：链上指标接近区间底部，但派发和拥挤的借贷阻碍买家入场。</span></li><li><span class="l-en"><b>Flowing money</b>: Global liquidity expanding at 7%, yet Bitcoin's cycle still marking down and futures are backwardated.</span><span class="l-zh"><b>资金流动</b>：全球流动性以7%的速度扩张，但比特币的周期仍在降价，期货处于现货溢价状态。</span></li></ul>
+      <ul class="aib2-items"><li><span class="l-en"><b>Cheap price</b>: On-chain yardsticks say the market is undemanding, but momentum is bearish and the cycle keeps marking down — the trend trumps cheapness for now.</span><span class="l-zh"><b>价格便宜</b>：链上指标显示市场要求不高，但动能看跌，周期继续标记下行——趋势暂时胜过便宜。</span></li><li><span class="l-en"><b>Mixed flows</b>: ETF money is still accumulating, yet the dashboard's risk regime is high-risk distribution — smart money may be early or just swimming against the tide.</span><span class="l-zh"><b>资金流混杂</b>：ETF资金仍在积累，但仪表盘的风险状态是高风险的派发——聪明钱可能过早行动，或只是在逆流而上。</span></li><li><span class="l-en"><b>Stale signals</b>: The cross-market nerve-center that normally confirms liquidity and risk appetite is outdated today; we have no second opinion from that desk.</span><span class="l-zh"><b>信号过时</b>：通常确认流动性和风险偏好的跨市场神经中枢今天已过时；我们无法从该部门获得第二意见。</span></li></ul>
     </div><div class="aib2-card aib2-card--tx">
       <div class="aib2-eyebrow"><span class="l-en">&#x26D3;&#xFE0E; Chain reactions</span><span class="l-zh">&#x26D3;&#xFE0E; 连锁反应</span></div>
-      <ul class="aib2-items"><li><span class="l-en">If liquidity expansion keeps up and bond yields drop → Bitcoin likely shifts to accumulation near the October cycle turn.</span><span class="l-zh">如果流动性扩张持续且债券收益率下降→比特币可能在十月的周期转折点附近转为吸筹。</span></li><li><span class="l-en">If credit stress appears or funding rates stay high → the markdown drags on longer.</span><span class="l-zh">如果出现信贷压力或融资利率居高不下，则折价将持续更久。</span></li></ul>
-    </div></div>
-  <div class="aib2-card aib2-card--full aib2-card--playbook">
-    <div class="aib2-eyebrow"><span class="l-en">&#x267B;&#xFE0E; Playbook check</span><span class="l-zh">&#x267B;&#xFE0E; 剧本对照</span></div>
-    <div class="aib2-prose">
-      <span class="l-en">The liquidity tailwind grows, but Bitcoin's distribution and backwardation say the correlation has broken for now; we wait.</span>
-      <span class="l-zh">流动性顺风增强，但比特币的派发和现货溢价表明相关性暂时被打破；我们等待。</span>
-    </div>
-  </div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
+      <ul class="aib2-items"><li><span class="l-en">If net liquidity keeps shrinking → that typically pressures Bitcoin further, regardless of cheap on-chain numbers.</span><span class="l-zh">如果净流动性持续收缩→这通常会进一步施压比特币，无论链上数字多便宜。</span></li><li><span class="l-en">If global money supply keeps expanding while central-bank liquidity drains → confusing cross-currents may keep Bitcoin stuck until one force wins.</span><span class="l-zh">如果全球货币供应持续扩张而央行流动性收紧→混乱的交叉流向可能使比特币陷入僵局，直到某一方力量胜出。</span></li></ul>
+    </div></div><div class="aib2-sec"><span class="aib2-sec-label"><span class="l-en">What to watch</span><span class="l-zh">关注事项</span></span></div>
   <div class="aib2-card aib2-card--full">
     <ul class="aib2-watch"><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en">Break above $65k with ETF inflow revival — distribution ends.</span>
-          <span class="l-zh">突破6.5万美元且ETF资金流入复苏——派发结束。</span>
+          <span class="l-en"><b>Net liquidity turns positive</b>: may unlock the dashboard's allocation.</span>
+          <span class="l-zh"><b>净流动性转正</b>：可能解锁仪表盘的配置。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en">Funding annual rate drops below 5% — leverage cleans out.</span>
-          <span class="l-zh">融资年利率降至5%以下——杠杆出清。</span>
+          <span class="l-en"><b>ETF flows reverse suddenly</b>: confirms distribution, deeper lows ahead.</span>
+          <span class="l-zh"><b>ETF资金流突然逆转</b>：确认派发，后市或现更深低点。</span>
         </span>
       </li><li class="aib2-watch-row">
         <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
         <span class="aib2-watch-body">
-          <span class="l-en">Cycle pivot on Oct 5 — a possible structure turn.</span>
-          <span class="l-zh">10月5日的周期转折点——可能出现结构变化。</span>
-        </span>
-      </li><li class="aib2-watch-row">
-        <span class="aib2-watch-mark" aria-hidden="true">&#x25B9;</span>
-        <span class="aib2-watch-body">
-          <span class="l-en">High-yield spread above 3% — risk-off likely kicks in.</span>
-          <span class="l-zh">高收益利差超过3%——避险情绪可能占据主导。</span>
+          <span class="l-en"><b>Cycle pivot in October without improvement</b>: signals extended markdown phase.</span>
+          <span class="l-zh"><b>10月周期转折但无改善</b>：预示延长下跌阶段。</span>
         </span>
       </li></ul>
   </div>
@@ -768,14 +737,6 @@
   <div style="margin-top:6px">
     <div class="muted sm" style="margin-bottom:4px;font-weight:600;text-transform:uppercase;font-size:11px;letter-spacing:.05em">
       <span class="l-en">Open leans</span><span class="l-zh">待验证判断</span>
-    </div>
-    
-    <div class="open-lean">
-      <span class="l-en">Leaning toward China equities over the next 20 days.</span>
-      <span class="l-zh">倾向看好 China equities，未来 20 天。</span>
-      
-      <span class="help">?<span class="tip"><span class="l-en">Falsifier: China A-shares reverses and the China fingerprint (HK, copper) stops confirming. · Check by: 2026-08-06</span><span class="l-zh">证伪条件：China A-shares reverses and the China fingerprint (HK, copper) stops confirming. · 截止：2026-08-06</span></span></span>
-      
     </div>
     
     <div class="open-lean">
@@ -818,6 +779,14 @@
       
     </div>
     
+    <div class="open-lean">
+      <span class="l-en">Leaning away from Semiconductors over the next 21 days.</span>
+      <span class="l-zh">倾向回避 Semiconductors，未来 21 天。</span>
+      
+      <span class="help">?<span class="tip"><span class="l-en">Falsifier: If semis relative strength rises back above its 20‑day average within five sessions. · Check by: 2026-08-28</span><span class="l-zh">证伪条件：If semis relative strength rises back above its 20‑day average within five sessions. · 截止：2026-08-28</span></span></span>
+      
+    </div>
+    
   </div>
   
   
@@ -835,10 +804,10 @@
 
 <div class="panel">
   <p class="muted" style="font-size:12px;margin:0"><span class="l-en">AI research context, not investment advice — generated by an LLM from the day's free public data and the dashboards' own outputs.</span><span class="l-zh">AI 研究背景，非投资建议 — 由大模型根据当日免费公开数据及各看板自身输出生成。</span>
-     · <span class="l-en">Page built</span><span class="l-zh">页面生成于</span> 2026-07-30 09:41 UTC</p>
+     · <span class="l-en">Page built</span><span class="l-zh">页面生成于</span> 2026-08-01 03:31 UTC</p>
 </div>
 
-<script src="theme.js?v=0943b4d5" defer></script>
+<script src="theme.js?v=e4951de3" defer></script>
 <script src="aibrief.js?v=97303e2d" defer></script>
 <script>
 /* Market toggle — flips which .ai-brief panel is visible. */
@@ -866,5 +835,6 @@
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

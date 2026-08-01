@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "KKR-BULL-20260318",
-  "asof": "2026-07-29",
+  "asof": "2026-07-31",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 32.7,
@@ -11,20 +11,20 @@
   "human_state": "Overtime Stall",
   "components": {
     "validity": 100.0,
-    "progress": 12.1,
+    "progress": 19.7,
     "pace": 0.0,
-    "retention": 41.2,
-    "overlay": 53.0
+    "retention": 78.6,
+    "overlay": 59.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.151,
-    "dist_to_t1_r": 1.349,
-    "dist_to_t2_r": 2.849,
-    "horizon_pct_used": 295.6,
-    "p1": 0.1006,
-    "p2": 0.0503,
+    "dist_to_stop_r": 1.288,
+    "dist_to_t1_r": 1.212,
+    "dist_to_t2_r": 2.712,
+    "horizon_pct_used": 300.0,
+    "p1": 0.1918,
+    "p2": 0.0959,
     "p3": null,
-    "move_r": 0.151,
+    "move_r": 0.288,
     "mfe_r": 0.366,
     "mae_r": -0.507
   },
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-17",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 133,
-  "tau": 2.9556
+  "days_elapsed": 135,
+  "tau": 3.0
 }

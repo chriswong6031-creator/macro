@@ -1,0 +1,650 @@
+{
+  "schema": "international_macro_dashboard.v1",
+  "route": "south_korea.html",
+  "cc": "KR",
+  "name": "South Korea",
+  "name_zh": "韩国",
+  "flag": "🇰🇷",
+  "scope_en": "Republic of Korea national economy; KOSPI is market context.",
+  "scope_zh": "大韩民国全国经济；KOSPI仅作市场背景。",
+  "asof": "2026-07-30",
+  "built": "2026-08-01 03:03 UTC",
+  "regime": {
+    "quad": "Q3",
+    "name": "Stagflation",
+    "growth_score": -0.143,
+    "inflation_score": 0.5,
+    "confidence": 0.286,
+    "liquidity": "neutral",
+    "recession_score": 36.0,
+    "recession_band": "low",
+    "data_limited": false
+  },
+  "decision": {
+    "score": 35,
+    "state": "defensive",
+    "state_en": "Defensive",
+    "state_zh": "防御",
+    "action_en": "Reduce leverage sensitivity: won stress and household credit can amplify a slowdown.",
+    "action_zh": "降低杠杆敏感度：韩元压力与家庭信贷可放大下行。",
+    "transitions_en": [
+      "Upgrade: semiconductor/export momentum broadens into domestic demand.",
+      "Policy turn: BOK easing arrives without renewed won or housing stress.",
+      "Downgrade: exports roll over as household-credit and FX stress rise."
+    ],
+    "transitions_zh": [
+      "上调：半导体/出口动能扩散至内需。",
+      "政策转折：韩银宽松且未重新引发韩元或住房压力。",
+      "下调：出口回落，同时家庭信贷与汇率压力上升。"
+    ],
+    "parts": {
+      "base": 50.0,
+      "growth": -3.15,
+      "inflation": -5.0,
+      "recession": -6.48,
+      "liquidity": 0.0,
+      "risk_state": 0.0
+    },
+    "method_en": "50 + growth impulse − inflation pressure − recession stress + liquidity + current calibrated-risk state. Descriptive, not a forecast.",
+    "method_zh": "50 + 增长脉冲 − 通胀压力 − 衰退压力 + 流动性 + 当前校准风险状态。仅作描述，不是预测。"
+  },
+  "history": {
+    "values": [
+      59,
+      59,
+      53,
+      59,
+      59,
+      52,
+      52,
+      52,
+      57,
+      58,
+      58,
+      58,
+      59,
+      64,
+      51,
+      46,
+      46,
+      41,
+      41,
+      41,
+      40,
+      31,
+      38,
+      37,
+      37,
+      44,
+      46,
+      46,
+      46,
+      46,
+      46,
+      46,
+      38,
+      38,
+      46,
+      38,
+      51,
+      51,
+      50,
+      39,
+      50,
+      47,
+      46,
+      45,
+      45,
+      39,
+      40,
+      40,
+      42,
+      40,
+      32,
+      35,
+      35,
+      35,
+      36,
+      35,
+      32,
+      32,
+      35,
+      35
+    ],
+    "dates": [
+      "2026-05-08",
+      "2026-05-11",
+      "2026-05-12",
+      "2026-05-13",
+      "2026-05-14",
+      "2026-05-15",
+      "2026-05-18",
+      "2026-05-19",
+      "2026-05-20",
+      "2026-05-21",
+      "2026-05-22",
+      "2026-05-25",
+      "2026-05-26",
+      "2026-05-27",
+      "2026-05-28",
+      "2026-05-29",
+      "2026-06-01",
+      "2026-06-02",
+      "2026-06-03",
+      "2026-06-04",
+      "2026-06-05",
+      "2026-06-08",
+      "2026-06-09",
+      "2026-06-10",
+      "2026-06-11",
+      "2026-06-12",
+      "2026-06-15",
+      "2026-06-16",
+      "2026-06-17",
+      "2026-06-18",
+      "2026-06-19",
+      "2026-06-22",
+      "2026-06-23",
+      "2026-06-24",
+      "2026-06-25",
+      "2026-06-26",
+      "2026-06-29",
+      "2026-06-30",
+      "2026-07-01",
+      "2026-07-02",
+      "2026-07-03",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-20",
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+      "2026-07-27",
+      "2026-07-28",
+      "2026-07-29",
+      "2026-07-30"
+    ],
+    "points": "0.00,41.00 1.69,41.00 3.39,47.00 5.08,41.00 6.78,41.00 8.47,48.00 10.17,48.00 11.86,48.00 13.56,43.00 15.25,42.00 16.95,42.00 18.64,42.00 20.34,41.00 22.03,36.00 23.73,49.00 25.42,54.00 27.12,54.00 28.81,59.00 30.51,59.00 32.20,59.00 33.90,60.00 35.59,69.00 37.29,62.00 38.98,63.00 40.68,63.00 42.37,56.00 44.07,54.00 45.76,54.00 47.46,54.00 49.15,54.00 50.85,54.00 52.54,54.00 54.24,62.00 55.93,62.00 57.63,54.00 59.32,62.00 61.02,49.00 62.71,49.00 64.41,50.00 66.10,61.00 67.80,50.00 69.49,53.00 71.19,54.00 72.88,55.00 74.58,55.00 76.27,61.00 77.97,60.00 79.66,60.00 81.36,58.00 83.05,60.00 84.75,68.00 86.44,65.00 88.14,65.00 89.83,65.00 91.53,64.00 93.22,65.00 94.92,68.00 96.61,68.00 98.31,65.00 100.00,65.00",
+    "min": 31,
+    "max": 64,
+    "start": "2026-05-08",
+    "end": "2026-07-30"
+  },
+  "market": {
+    "index_label": "KOSPI",
+    "currency_label": "USD/KRW",
+    "equity": {
+      "price": 5593.56,
+      "off_52w_high": -38.6,
+      "above_50d": false,
+      "above_200d": false,
+      "realvol": 78.5,
+      "rsi": 31.0,
+      "ext_z": -2.41,
+      "ext_grade": "steady",
+      "drawdown_risk": 100.0,
+      "drawdown_band": "elevated",
+      "bubble_flag": false
+    }
+  },
+  "policy": {
+    "bank": "Bank of Korea",
+    "short": "BOK",
+    "rate": 2.91,
+    "curve": 1.27
+  },
+  "risk": {
+    "state": "calm",
+    "top_score": 41,
+    "dominant_en": "Calm — no driver elevated",
+    "dominant_zh": "平静 — 无驱动升高",
+    "h21": 0.289,
+    "measure": ">=5% index pullback within h business days (measured on this market's own history)",
+    "trajectory": {
+      "intensity": 40.9,
+      "peak": 92.9,
+      "peak_days_ago": 21,
+      "off_peak": 52.0,
+      "velocity": -24.0,
+      "phase": "receding",
+      "reached_risk": true,
+      "state_now": "calm",
+      "odds_now": 0.289,
+      "odds_peak": 0.289,
+      "odds_delta": 0.0,
+      "spark": [
+        87.1,
+        85.9,
+        92.9,
+        92.3,
+        91.1,
+        80.4,
+        62.9,
+        61.7,
+        68.0,
+        62.3,
+        73.6,
+        73.0,
+        72.8,
+        66.7,
+        58.3,
+        58.3,
+        60.1,
+        59.3,
+        64.9,
+        64.9,
+        64.3,
+        52.0,
+        36.3,
+        40.9
+      ],
+      "spark_pts": "3.0,5.0 6.9,5.5 10.8,3.0 14.7,3.2 18.7,3.6 22.6,7.4 26.5,13.6 30.4,14.0 34.3,11.8 38.2,13.8 42.1,9.8 46.0,10.0 50.0,10.1 53.9,12.3 57.8,15.2 61.7,15.2 65.6,14.6 69.5,14.9 73.4,12.9 77.3,12.9 81.3,13.1 85.2,17.5 89.1,23.0 93.0,21.4",
+      "spark_peak": {
+        "x": 10.8,
+        "y": 3.0
+      },
+      "spark_last": {
+        "x": 93.0,
+        "y": 21.4
+      },
+      "spark_w": 96,
+      "spark_h": 26,
+      "window": 30
+    },
+    "scares": [
+      {
+        "scare": "rate_shock",
+        "tier": "A",
+        "label_en": "US rate shock",
+        "label_zh": "美债利率冲击",
+        "score": 82.5,
+        "band": "elevated",
+        "firing_legs": [
+          {
+            "leg": "us_real_rate",
+            "pctile": 0.879,
+            "confirmed": true
+          },
+          {
+            "leg": "us_rate_10y",
+            "pctile": 0.879,
+            "confirmed": true
+          },
+          {
+            "leg": "us_rate_2y",
+            "pctile": 0.716,
+            "confirmed": false
+          }
+        ]
+      },
+      {
+        "scare": "extension",
+        "tier": "A",
+        "label_en": "Parabolic extension / exhaustion",
+        "label_zh": "抛物线伸展／透支",
+        "score": 57.5,
+        "band": "watch",
+        "firing_legs": [
+          {
+            "leg": "ext_etf",
+            "pctile": 0.849,
+            "confirmed": false
+          }
+        ]
+      },
+      {
+        "scare": "capital_flow",
+        "tier": "A",
+        "label_en": "Won depreciation / outflows",
+        "label_zh": "韩元贬值／资金外流",
+        "score": 0.2,
+        "band": "calm",
+        "firing_legs": []
+      }
+    ],
+    "calibrated": true
+  },
+  "metrics": [
+    {
+      "key": "cpi_yoy",
+      "label_en": "Inflation",
+      "label_zh": "通胀",
+      "raw": 2.05,
+      "value": "2.05% y/y",
+      "unit": "% y/y",
+      "asof": "2025-04"
+    },
+    {
+      "key": "gdp_yoy",
+      "label_en": "Real growth",
+      "label_zh": "实际增长",
+      "raw": 3.75,
+      "value": "3.75% y/y",
+      "unit": "% y/y",
+      "asof": "2026-04"
+    },
+    {
+      "key": "unemployment",
+      "label_en": "Unemployment",
+      "label_zh": "失业率",
+      "raw": 2.8,
+      "value": "2.80%",
+      "unit": "%",
+      "asof": "2026-05"
+    },
+    {
+      "key": "yield_10y",
+      "label_en": "10-year yield",
+      "label_zh": "10年期收益率",
+      "raw": 4.18,
+      "value": "4.18%",
+      "unit": "%",
+      "asof": "2026-06"
+    },
+    {
+      "key": "policy_rate",
+      "label_en": "Policy / short rate",
+      "label_zh": "政策/短端利率",
+      "raw": 2.91,
+      "value": "2.91%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "curve",
+      "label_en": "10y minus short rate",
+      "label_zh": "10年期减短端",
+      "raw": 1.27,
+      "value": "1.27pp",
+      "unit": "pp",
+      "asof": null
+    },
+    {
+      "key": "fx",
+      "label_en": "FX reference",
+      "label_zh": "汇率参考",
+      "raw": 1442.28,
+      "value": "1,442.28",
+      "unit": "",
+      "asof": null
+    },
+    {
+      "key": "fx_strength_3m",
+      "label_en": "Currency strength, 3m",
+      "label_zh": "货币强弱，3个月",
+      "raw": 3.35,
+      "value": "3.35%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "drawdown",
+      "label_en": "Index from 52w high",
+      "label_zh": "指数距52周高点",
+      "raw": -38.6,
+      "value": "-38.60%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "realvol",
+      "label_en": "Realized volatility",
+      "label_zh": "实现波动率",
+      "raw": 78.5,
+      "value": "78.50%",
+      "unit": "%",
+      "asof": null
+    }
+  ],
+  "lenses": [
+    {
+      "key": "policy",
+      "title_en": "BOK policy",
+      "title_zh": "韩银政策",
+      "why_en": "Policy must balance inflation, FX and household leverage.",
+      "why_zh": "政策需平衡通胀、汇率与家庭杠杆。",
+      "value": "2.91%",
+      "available": true,
+      "metric": "policy_rate",
+      "source_key": "bok",
+      "source": "Bank of Korea ECOS",
+      "source_url": "https://ecos.bok.or.kr/"
+    },
+    {
+      "key": "exports",
+      "title_en": "Exports & semiconductors",
+      "title_zh": "出口与半导体",
+      "why_en": "Korea’s fastest global-demand transmission channel.",
+      "why_zh": "韩国最敏感的全球需求传导渠道。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "motie",
+      "source": "Ministry of Trade, Industry and Energy",
+      "source_url": "https://english.motie.go.kr/eng/contents/104"
+    },
+    {
+      "key": "won",
+      "title_en": "Won pressure",
+      "title_zh": "韩元压力",
+      "why_en": "A live funding, inflation and foreign-flow stress signal.",
+      "why_zh": "融资、通胀与外资流压力的实时信号。",
+      "value": "1,442.28",
+      "available": true,
+      "metric": "fx",
+      "source_key": "bok",
+      "source": "Bank of Korea ECOS",
+      "source_url": "https://ecos.bok.or.kr/"
+    },
+    {
+      "key": "household",
+      "title_en": "Household credit",
+      "title_zh": "家庭信贷",
+      "why_en": "Leverage can mute consumption and constrain policy.",
+      "why_zh": "杠杆可抑制消费并约束政策。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "bok",
+      "source": "Bank of Korea ECOS",
+      "source_url": "https://ecos.bok.or.kr/"
+    },
+    {
+      "key": "housing",
+      "title_en": "Housing pulse",
+      "title_zh": "住房脉冲",
+      "why_en": "Collateral and household-balance-sheet transmission.",
+      "why_zh": "抵押品与家庭资产负债表传导。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "kosis",
+      "source": "KOSIS / Statistics Korea",
+      "source_url": "https://kosis.kr/openapi/index/index.jsp"
+    },
+    {
+      "key": "external",
+      "title_en": "Current account",
+      "title_zh": "经常账户",
+      "why_en": "Confirms whether export strength converts into external resilience.",
+      "why_zh": "确认出口强势是否转化为外部韧性。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "bok",
+      "source": "Bank of Korea ECOS",
+      "source_url": "https://ecos.bok.or.kr/"
+    }
+  ],
+  "events": [
+    {
+      "date": "2026-05-28",
+      "bank": "BOK",
+      "name_en": "Bank of Korea Monetary Policy Board",
+      "name_zh": "韩国银行金融通货委员会",
+      "state": "released",
+      "outcome_en": "Decision date passed — verify the official release",
+      "outcome_zh": "决议日期已过——请核对官方发布",
+      "source": "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+    },
+    {
+      "date": "2026-07-16",
+      "bank": "BOK",
+      "name_en": "Bank of Korea Monetary Policy Board",
+      "name_zh": "韩国银行金融通货委员会",
+      "state": "released",
+      "outcome_en": "Decision date passed — verify the official release",
+      "outcome_zh": "决议日期已过——请核对官方发布",
+      "source": "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+    },
+    {
+      "date": "2026-08-27",
+      "bank": "BOK",
+      "name_en": "Bank of Korea Monetary Policy Board",
+      "name_zh": "韩国银行金融通货委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+    },
+    {
+      "date": "2026-10-22",
+      "bank": "BOK",
+      "name_en": "Bank of Korea Monetary Policy Board",
+      "name_zh": "韩国银行金融通货委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+    },
+    {
+      "date": "2026-11-26",
+      "bank": "BOK",
+      "name_en": "Bank of Korea Monetary Policy Board",
+      "name_zh": "韩国银行金融通货委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.bok.or.kr/eng/bbs/E0000627/view.do?menuNo=400022&nttId=10094301"
+    }
+  ],
+  "health": [
+    {
+      "metric": "cpi_yoy",
+      "asof": "2025-04",
+      "age_days": 487,
+      "state": "stale",
+      "label_en": "Inflation",
+      "label_zh": "通胀"
+    },
+    {
+      "metric": "gdp",
+      "asof": "2026-04",
+      "age_days": 122,
+      "state": "fresh",
+      "label_en": "Growth",
+      "label_zh": "增长"
+    },
+    {
+      "metric": "unemployment",
+      "asof": "2026-05",
+      "age_days": 92,
+      "state": "stale",
+      "label_en": "Labour",
+      "label_zh": "就业"
+    },
+    {
+      "metric": "yield_10y",
+      "asof": "2026-06",
+      "age_days": 61,
+      "state": "fresh",
+      "label_en": "Rates",
+      "label_zh": "利率"
+    }
+  ],
+  "sources": [
+    {
+      "key": "bok",
+      "provider": "Bank of Korea ECOS",
+      "url": "https://ecos.bok.or.kr/",
+      "cadence": "Daily / monthly / quarterly",
+      "access": "Registered OpenAPI key",
+      "licence": "BOK ECOS terms",
+      "role": "Policy, money, credit, rates, current account and FX",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "kosis",
+      "provider": "KOSIS / Statistics Korea",
+      "url": "https://kosis.kr/openapi/index/index.jsp",
+      "cadence": "Monthly / quarterly",
+      "access": "Registered OpenAPI key",
+      "licence": "KOSIS terms",
+      "role": "CPI, labour, production, housing and population",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "motie",
+      "provider": "Ministry of Trade, Industry and Energy",
+      "url": "https://english.motie.go.kr/eng/contents/104",
+      "cadence": "Monthly",
+      "access": "Official releases",
+      "licence": "Government release terms",
+      "role": "Exports, imports and industry",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "fred",
+      "provider": "Federal Reserve Bank of St. Louis (official-source republisher)",
+      "url": "https://fred.stlouisfed.org/",
+      "cadence": "Source dependent",
+      "access": "Keyless CSV",
+      "licence": "FRED terms; underlying series terms retained",
+      "role": "Operational fallback for OECD, Eurostat and central-bank series",
+      "status": "active fallback"
+    }
+  ],
+  "caveat_en": "BOK ECOS and KOSIS OpenAPI require registered API keys for reliable automation; the live plane uses explicit OECD/FRED fallbacks where configured.",
+  "caveat_zh": "韩银ECOS与KOSIS OpenAPI的可靠自动化需要注册API密钥；当前数据层在已配置处明确使用OECD/FRED备用源。",
+  "navigation": [
+    {
+      "cc": "JP",
+      "name": "Japan",
+      "route": "japan.html",
+      "active": false
+    },
+    {
+      "cc": "KR",
+      "name": "South Korea",
+      "route": "south_korea.html",
+      "active": true
+    },
+    {
+      "cc": "EZ",
+      "name": "Euro Area",
+      "route": "euro_area.html",
+      "active": false
+    },
+    {
+      "cc": "GB",
+      "name": "United Kingdom",
+      "route": "united_kingdom.html",
+      "active": false
+    },
+    {
+      "cc": "IN",
+      "name": "India",
+      "route": "india.html",
+      "active": false
+    }
+  ]
+}

@@ -1,0 +1,287 @@
+/* Macro typography trial — Attio's primary type roles, scoped to macro.html.
+   Inter handles UI, body copy and market data; Inter Display handles headings,
+   card titles, overlines and ticker labels. San Francisco stays in the native
+   Apple system fallback rather than being redistributed as a webfont. */
+@font-face {
+  font-family: "MX Inter Display";
+  src: url("/fonts/InterDisplay-500.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MX Inter Display";
+  src: url("/fonts/InterDisplay-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MX Inter Display";
+  src: url("/fonts/InterDisplay-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+/* Role tokens. Higher specificity is deliberate: later feature styles inside
+   dashboard.html must consume this sheet instead of silently restoring the old
+   mono or text-face choices. The shared navigation keeps its own type. */
+html body.page-macro.mx4-grid {
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-display: "MX Inter Display", Inter, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-data: Inter, "SF Pro Text", "SF Pro Display", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+  /* Legacy widgets consume --font-mono/--num; remap both to the primary stack. */
+  --font-mono: var(--font-data);
+  --num: var(--font-data);
+  --trk: .06em;
+}
+html body.page-macro.mx4-grid > .grid {
+  font-family: var(--font-ui);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -.01em;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+/* Chinese keeps a native CJK face first; the Latin roles still apply to Latin,
+   figures and symbols inside bilingual rows. */
+html[data-lang="zh"] body.page-macro.mx4-grid > .grid {
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", "Microsoft JhengHei", "Heiti SC", Inter, sans-serif;
+  letter-spacing: normal;
+}
+
+/* Display role — hierarchy without the old blanket extra-bold treatment. */
+html body.page-macro.mx4-grid > .grid :is(
+  h1, h2, h3,
+  .mx5-card-title,
+  .mx5-dlg-title,
+  .mx5-popover-title,
+  .mx5-alert-title,
+  .mx5-path-title,
+  .mx5-dlg-cal-title,
+  .ms-pop-title,
+  .ms-sig-title,
+  .rkc-tx-ttl,
+  .fbm-bench-outcome,
+  .sg-hero-band,
+  .wnx-state
+) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -.01em;
+}
+html body.page-macro.mx4-grid > .grid :is(
+  h1,
+  h1.hr-name,
+  .v-word,
+  .mx5-big-score,
+  .mx5-dlg-title,
+  .sg-hero-band
+) {
+  font-weight: 700;
+  letter-spacing: -.02em;
+}
+
+/* Attio-style overlines: Display Semibold, 12/16 rhythm, 0.06em tracking.
+   This replaces the terminal-era 0.12–0.20em spacing that fragmented the page. */
+html body.page-macro.mx4-grid > .grid :is(
+  .eyebrow,
+  .cap,
+  .hero-eyebrow,
+  .ms-eyebrow,
+  .e-title,
+  .tape-title,
+  .ms-divider,
+  .wnx-eyebrow,
+  .wnx-kicker,
+  .mx5-dlg-eyebrow,
+  .mx5-path-labels,
+  .mx5-sector-heat-label,
+  .mx5-sector-sub-label,
+  .mx5-sentiment-label,
+  .mx5-dlg-driver-label,
+  .mx5-dlg-weakest-label,
+  .rkc-mood-lens-name,
+  .rkc-ov-state,
+  .rlx-k,
+  .rlx-chips-lbl,
+  .sg-pe-lbl,
+  .sg-pop-spark-lbl,
+  th
+) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+html[data-lang="zh"] body.page-macro.mx4-grid > .grid :is(
+  .eyebrow,
+  .cap,
+  .hero-eyebrow,
+  .ms-eyebrow,
+  .e-title,
+  .tape-title,
+  .ms-divider,
+  .wnx-eyebrow,
+  .wnx-kicker,
+  .mx5-dlg-eyebrow,
+  th
+) {
+  letter-spacing: 0;
+}
+
+/* UI/body role. Buttons and form controls are explicitly reset so browser
+   defaults (notably Arial on icon/settings buttons) cannot leak into Macro. */
+html body.page-macro.mx4-grid > .grid :is(
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  .mx5-action-label,
+  .mx5-action-text,
+  .mx5-card-sub,
+  .mx5-mkt-sub,
+  .nbx-title,
+  .nbx-sum,
+  .rkc-sig-lbl,
+  .rkc-ldr-state,
+  .rkc-tx-verdict,
+  .rlx-v,
+  .sg-split-lbl
+) {
+  font-family: var(--font-ui);
+  letter-spacing: -.005em;
+}
+
+/* Data role — proportional Inter/SF typography with tabular figures for alignment. */
+html body.page-macro.mx4-grid > .grid :is(
+  code,
+  pre,
+  kbd,
+  samp,
+  .num,
+  .num-lg,
+  .num-xl,
+  .v-score,
+  .v-outof,
+  .v-num,
+  .v-chip,
+  .v-label,
+  .mx5-big-score,
+  .mx5-factor-score,
+  .mx5-dlg-factor-score,
+  .mx5-fed-pct-overlay,
+  .mx5-path-tip-date,
+  .mx5-path-tip-score,
+  .mx5-tl-date,
+  .mx5-dlg-cal-date,
+  .mx5-mkt-ticker,
+  .mx5-mkt-price,
+  .mx5-mkt-delta,
+  .mx5-ai-ticker-pill,
+  .mx5-intl-score,
+  .mx5-pop-intl-legcount,
+  .mx5-scare-dominant-num,
+  .sct-delta-v,
+  .fbm-bench-odds,
+  .fbm-bench-arrow,
+  .rkc-ldr-count,
+  .rkc-ldr-tkr,
+  .rkc-ldr-pct,
+  .rkc-ov-val,
+  .rkc-mood-score,
+  .rsx-froth-score,
+  .sg-hero-num,
+  .sg-split-val,
+  .mx5-dlg-idx-ticker,
+  .mx5-dlg-idx-px,
+  .mx5-dlg-idx-chg,
+  .cal-date,
+  .plv-now,
+  .plv-lvl,
+  .plv-since
+) {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -.01em;
+}
+html body.page-macro.mx4-grid > .grid :is(
+  .v-score,
+  .mx5-big-score,
+  .mx5-factor-score,
+  .mx5-dlg-factor-score,
+  .rkc-mood-score,
+  .rsx-froth-score,
+  .sg-hero-num
+) {
+  font-weight: 700;
+}
+html body.page-macro.mx4-grid > .grid :is(
+  .mx5-mkt-ticker,
+  .mx5-ai-ticker-pill,
+  .rkc-ldr-tkr,
+  .mx5-dlg-idx-ticker
+) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Existing table semantics already distinguish label and measure columns. */
+html body.page-macro.mx4-grid > .grid table th {
+  font-family: var(--font-display);
+  font-variant-numeric: normal;
+}
+html body.page-macro.mx4-grid > .grid table td:not(:first-child):not(.l) {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+html body.page-macro.mx4-grid > .grid table td:first-child,
+html body.page-macro.mx4-grid > .grid table td.l {
+  font-family: var(--font-ui);
+}
+
+/* Inline and script-generated SVG labels used to carry hard-coded Inter or
+   ui-monospace attributes. Attribute matching keeps those graphics in the same
+   role system without rewriting their geometry or affecting other pages. */
+html body.page-macro.mx4-grid > .grid svg [font-family*="ui-monospace"],
+html body.page-macro.mx4-grid > .grid svg [font-family*="SF Mono"] {
+  font-family: var(--font-data);
+}
+html body.page-macro.mx4-grid > .grid svg [font-family*="Inter"] {
+  font-family: var(--font-display);
+}
+html body.page-macro.mx4-grid > .grid :is(.mxqm-axis-label, .mxqm-quad-label) {
+  font-family: var(--font-display);
+}
+html body.page-macro.mx4-grid > .grid :is(.mxqm-odds, .fbm-chart-node) {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dense labels stay calm: sentence copy carries Attio's light negative tracking;
+   uppercase metadata uses the single overline value instead of per-widget drift. */
+html body.page-macro.mx4-grid > .grid :is(
+  .mx5-regime-pill,
+  .mx5-action-label,
+  .plf-stance-row,
+  .nbx-meta,
+  .mx5-card-sub,
+  .mx5-mkt-sub,
+  .mx5-alert-meta,
+  .ms-pop-sub,
+  .ms-sig-what,
+  .ms-sig-edge
+) {
+  letter-spacing: -.005em;
+}

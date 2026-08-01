@@ -181,8 +181,11 @@ def test_vector_builder_regenerates_allocation_redirect(tmp_path):
 
 def test_crypto_is_first_class_in_navigation_workflows_and_products():
     nav = (ROOT / "templates" / "_navlinks.html.j2").read_text(encoding="utf-8")
-    assert "{{ t('Crypto', '加密') }}" in nav
-    assert 'href="{{ NP }}crypto.html"' in nav
+    nav_market = (ROOT / "templates" / "nav_market.js").read_text(encoding="utf-8")
+    assert "{{ t('Crypto', '加密') }}" not in nav
+    assert "Crypto Intelligence" in nav_market
+    assert "Bitcoin Vector" in nav_market
+    assert "Market state, flows, leverage and asset lanes" in nav_market
     assert "vector_allocation.html" not in nav
     assert "btc_strategy.html" not in nav
 

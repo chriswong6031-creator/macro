@@ -17,8 +17,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -26,7 +35,7 @@
 })();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Canada — S&P/TSX Regime — 2026-07-29</title>
+<title>Canada — S&P/TSX Regime — 2026-07-31</title>
 
 <meta name="description" content="Track the Canadian market regime — S&P/TSX sector rotation, factor signals and cycle position, updated daily.">
 <link rel="canonical" href="https://www.mastermind-x.com/canada.html">
@@ -45,14 +54,15 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=8d7800c8">
+
 <link rel="stylesheet" href="dashboard-icons.css?v=be32e541">
 <script defer src="dashboard-icons.js?v=e096076e"></script>
 <link rel="stylesheet" href="illus.css?v=816c67ce">
 <link rel="stylesheet" href="assets/css/38467254.css?v=38467254">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=6e249584">
+<link rel="preload" as="style" href="navigation-refresh.css?v=3ee9d113">
 <link rel="preload" as="style" href="assets/css/b0c0c009.css?v=b0c0c009">
-<link rel="preload" as="style" href="assets/css/93de4274.css?v=93de4274">
+<link rel="preload" as="style" href="assets/css/0ca60b0d.css?v=0ca60b0d">
 </head>
 <body class="page-canada">
 
@@ -60,7 +70,7 @@
     
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=6e249584">
+    <link rel="stylesheet" href="navigation-refresh.css?v=3ee9d113">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -181,17 +191,19 @@
       <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
         <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
         <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Crypto Cockpit</span><span class="l-zh">加密驾驶舱</span><span class="d"><span class="l-en">Market board · flows · leverage</span><span class="l-zh">市场看板 · 资金流 · 杠杆</span></span></a>
-        <a href="vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">State · risk · cycle · strategy</span><span class="l-zh">状态 · 风险 · 周期 · 策略</span></span></a>
-        <a href="crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation</span><span class="l-zh">配置</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-        <a href="vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategy Track Record</span><span class="l-zh">策略历史表现</span><span class="d"><span class="l-en">Cycle and risk-allocation evidence</span><span class="l-zh">周期与风险配置证据</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -212,48 +224,46 @@
     
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-main">
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
-              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
-              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
-              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
-              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
-              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
-              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
-              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
-              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
-              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
             </div>
           </section>
         </div>
-        <aside class="nav-mega-rail">
-          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
-            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
-              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
             </button>
-            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+            <div class="nav-drill-panel" data-nav-drill-panel inert>
               <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
               <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
               <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
@@ -264,7 +274,11 @@
               <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+          <a class="rail-link nav-rail-item" href="intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
         </aside>
       </div>
     </div>
@@ -299,7 +313,7 @@
   <div class="row">
     <h1><span class="l-en">TSX Stock Dashboard</span><span class="l-zh">标普/TSX 个股看板</span></h1>
     <span style="flex:1"></span>
-    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-29 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-07-30 08:44 UTC</span>
+    <span class="muted small"><span class="l-en">data through</span><span class="l-zh">数据截至</span> 2026-07-31 · <span class="l-en">built</span><span class="l-zh">生成</span> 2026-08-01 03:01 UTC</span>
   </div>
   <p class="muted small" style="margin:6px 0 0"><span class="l-en">A shortlist of TSX stocks that look ready to buy, with a suggested buy zone for each. Search any TSX stock in the box above, or click a card for the full breakdown.</span><span class="l-zh">一份看起来可以买入的 TSX 个股短名单，并为每只标注建议买入区间。可在上方搜索框查询任意 TSX 个股，或点击卡片查看完整拆解。</span>
     <a href="canada.html" style="color:var(--link);font-weight:600">← <span class="l-en">Canada macro dashboard</span><span class="l-zh">加拿大宏观看板</span></a></p>
@@ -308,6 +322,10 @@
 
 
 <!-- ===== Act-Now v2 — four-lane board, matching china_stocks.html ===== -->
+
+
+
+
 <style>
 .anv2-board .anv2-name-link{color:inherit;text-decoration:none}
 .anv2-board .anv2-name-link:hover .l-en,.anv2-board .anv2-name-link:hover .l-zh{text-decoration:underline}
@@ -321,37 +339,181 @@
       <span class="anv2-v2pill">v2</span>
       <span class="help">?<span class="tip"><span class="l-en">Four lanes, read left to right: Buy Now = a clean TSX sector entry today. In Favour = hold or wait for a dip rather than chase. Bottoming Watch = a sector setting up near a cycle low (watch only, not a buy signal). Reduce / Avoid = take profits or stay away as the trend weakens. This is a structure and risk map, not an allocation rule.</span><span class="l-zh">四个分栏从左到右：立即买入＝今天有干净的TSX板块入场点。看好＝持有或等待回调，勿追高。洗盘观察＝板块接近周期低点并开始形成形态（仅观察，非买入信号）。减仓／回避＝趋势转弱时止盈或避开。这是结构与风险图，不是配置规则。</span></span></span>
     </h2>
-    <div class="anv2-meta"><span class="muted" style="font-size:11px"><span class="l-en">sectors as of</span><span class="l-zh">板块截至</span> 2026-07-29</span></div>
+    <div class="anv2-meta">
+      <span class="muted" style="font-size:11px"><span class="l-en">sectors as of</span><span class="l-zh">板块截至</span> 2026-07-31</span>
+    </div>
   </div>
-  <div class="anv2-grid">
-    <div class="anv2-lane anv2-lane--buy" id="anv2-buy">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Buy Now</span><span class="l-zh">立即买入</span><span class="anv2-lane-count">(3)</span></div><div class="anv2-lane-sub"><span class="l-en">Clean entry point today</span><span class="l-zh">今日有干净入场点</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XST.TO.html"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat">XST.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XIT.TO.html"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat">XIT.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XCG.TO.html"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span></div><div class="anv2-stat">XCG.TO</div></div>
-      </div></div>
+  <div class="anv2-grid"><div class="anv2-lane anv2-lane--buy" id="anv2-buy">
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">Buy Now</span><span class="l-zh">立即买入</span><span class="anv2-lane-count">(3)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Clean entry point today</span><span class="l-zh">今日有干净入场点</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XST.TO.html"><span class="l-en">Consumer Staples</span><span class="l-zh">必需消费</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span> · XST.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XEG.TO.html"><span class="l-en">Energy</span><span class="l-zh">能源</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XEG.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XCD.TO.html"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-enter"><span class="l-en">ENTRY NOW</span><span class="l-zh">现在入场</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XCD.TO</div>
+    </div>
+          
+        </div>
+        
+      </div>
     </div>
     <div class="anv2-lane anv2-lane--pull" id="anv2-pull">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">In Favour</span><span class="l-zh">看好</span><span class="anv2-lane-count">(1)</span></div><div class="anv2-lane-sub"><span class="l-en">Hold or wait for a dip — do not chase</span><span class="l-zh">持有或等待回调 — 勿追高</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed"><div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XEG.TO.html"><span class="l-en">Energy</span><span class="l-zh">能源</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-tag"><span class="l-en">WAIT FOR DIP</span><span class="l-zh">等待回调</span></span></div><div class="anv2-stat">XEG.TO</div></div></div></div>
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">In Favour</span><span class="l-zh">看好</span><span class="anv2-lane-count">(1)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Hold or wait for a dip — do not chase</span><span class="l-zh">持有或等待回调 — 勿追高</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XIT.TO.html"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-tag"><span class="l-en">WAIT FOR DIP</span><span class="l-zh">等待回调</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · XIT.TO</div>
+    </div>
+          
+        </div>
+        
+      </div>
     </div>
     <div class="anv2-lane anv2-lane--bot" id="anv2-bot">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Bottoming Watch</span><span class="l-zh">洗盘观察</span><span class="anv2-lane-count">(0)</span></div><div class="anv2-lane-sub"><span class="l-en">Setting up near a cycle low — watch only</span><span class="l-zh">接近周期低点 — 仅观察</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed"><div class="anv2-empty"><span class="l-en">No sectors in this lane today.</span><span class="l-zh">今天此栏暂无板块。</span></div></div></div>
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">Bottoming Watch</span><span class="l-zh">洗盘观察</span><span class="anv2-lane-count">(0)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Setting up near a cycle low — watch only</span><span class="l-zh">接近周期低点 — 仅观察</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          
+          <div class="anv2-empty"><span class="l-en">No sectors in this lane today.</span><span class="l-zh">今天此栏暂无板块。</span></div>
+        </div>
+        
+      </div>
     </div>
     <div class="anv2-lane anv2-lane--red" id="anv2-red">
-      <div class="anv2-lane-hd"><div class="anv2-lane-title"><span class="l-en">Reduce / Avoid</span><span class="l-zh">减仓 / 回避</span><span class="anv2-lane-count">(8)</span></div><div class="anv2-lane-sub"><span class="l-en">Trend weakening — take profits or stay away</span><span class="l-zh">趋势转弱 — 止盈或回避</span></div></div>
-      <div class="anv2-lane-body lst-wrap"><div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XFN.TO.html"><span class="l-en">Financials</span><span class="l-zh">金融</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span></div><div class="anv2-stat">XFN.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XUT.TO.html"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span></div><div class="anv2-stat">XUT.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/ZEB.TO.html"><span class="l-en">Banks</span><span class="l-zh">银行</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">ZEB.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XRE.TO.html"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XRE.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XCD.TO.html"><span class="l-en">Communication Services</span><span class="l-zh">通信服务</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XCD.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XBM.TO.html"><span class="l-en">Base Metals</span><span class="l-zh">基本金属</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XBM.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XMA.TO.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XMA.TO</div></div>
-        <div class="anv2-row"><div class="anv2-row-top"><a class="anv2-name anv2-name-link" href="sectors/XGD.TO.html"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span><span class="anv2-go" aria-hidden="true">↗</span></a></div><div class="anv2-chips"><span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span></div><div class="anv2-stat">XGD.TO</div></div>
-      </div><button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button></div>
+      <div class="anv2-lane-hd">
+        <div class="anv2-lane-title"><span class="l-en">Reduce / Avoid</span><span class="l-zh">减仓 / 回避</span><span class="anv2-lane-count">(8)</span></div>
+        <div class="anv2-lane-sub"><span class="l-en">Trend weakening — take profits or stay away</span><span class="l-zh">趋势转弱 — 止盈或回避</span></div>
+      </div>
+      <div class="anv2-lane-body lst-wrap">
+        <div class="anv2-lst lst-collapse lst-cap4 is-collapsed">
+          <div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/ZEB.TO.html"><span class="l-en">Banks</span><span class="l-zh">银行</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · ZEB.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XFN.TO.html"><span class="l-en">Financials</span><span class="l-zh">金融</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span> · XFN.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XUT.TO.html"><span class="l-en">Utilities</span><span class="l-zh">公用事业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XUT.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XCG.TO.html"><span class="l-en">Consumer Discretionary</span><span class="l-zh">可选消费</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-trim"><span class="l-en">TAKE PROFITS</span><span class="l-zh">止盈</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span> · XCG.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XRE.TO.html"><span class="l-en">Real Estate</span><span class="l-zh">房地产</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · XRE.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XBM.TO.html"><span class="l-en">Base Metals</span><span class="l-zh">基本金属</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span> · ~34<span class="l-en">d</span><span class="l-zh">天</span> · XBM.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XMA.TO.html"><span class="l-en">Materials</span><span class="l-zh">原材料</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span> · ~34<span class="l-en">d</span><span class="l-zh">天</span> · XMA.TO</div>
+    </div><div class="anv2-row">
+      <div class="anv2-row-top">
+        <a class="anv2-name anv2-name-link" href="sectors/XGD.TO.html"><span class="l-en">Gold Miners</span><span class="l-zh">黄金矿业</span><span class="anv2-go" aria-hidden="true">↗</span></a>
+      </div>
+      <div class="anv2-chips">
+        
+        <span class="anv2-chip anv2-chip-reco-avoid"><span class="l-en">AVOID</span><span class="l-zh">回避</span></span>
+        
+      </div>
+      <div class="anv2-stat"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span> · XGD.TO</div>
+    </div>
+          
+        </div>
+        <button class="lst-more" type="button" aria-expanded="false"><span class="lm-show"><span class="l-en">Show more</span><span class="l-zh">显示更多</span> ▾</span><span class="lm-hide"><span class="l-en">Show less</span><span class="l-zh">收起</span> ▴</span></button>
+      </div>
     </div>
   </div>
 </div>
@@ -426,23 +588,11 @@
 
 <script type="application/json" id="stocktable-data">
 {
-  "rows": [{"_stage": "ENTRY", "alpha": -0.91, "conviction": 72, "days_since_signal": 12, "entry_status": "buy_now", "group": "entry_open", "name": "TERRAVEST INDUSTRIES INC", "off_high": -30.5, "price": 121.14, "sector": "Energy", "stage": "ENTRY", "ticker": "TVK.TO", "tier": "T1"}, {"_stage": "RIPENING", "alpha": 0.79, "conviction": 63, "days_since_signal": 29, "entry_status": "await_confluence", "group": "setting_up", "name": "DISCOVERY MINING LTD", "off_high": -27.2, "price": 8.57, "sector": "Materials", "stage": "RIPENING", "ticker": "DSV.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.23, "conviction": 44, "days_since_signal": 14, "entry_status": "await_confluence", "group": "setting_up", "name": "THE NORTH WEST COMPANY INC", "off_high": -7.5, "price": 51.92, "sector": "Consumer Staples", "stage": "RIPENING", "ticker": "NWC.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.45, "conviction": 35, "days_since_signal": 0, "entry_status": "await_confluence", "group": "setting_up", "name": "CHARTWELL RETIREMENT RESIDENCES", "off_high": -1.1, "price": 23.02, "sector": "Health Care", "stage": "RIPENING", "ticker": "CSH-UN.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.65, "conviction": 19, "days_since_signal": 0, "entry_status": "extended", "group": "setting_up", "name": "SUPERIOR PLUS CORP.", "off_high": -6.8, "price": 8.06, "sector": "Utilities", "stage": "RIPENING", "ticker": "SPB.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.71, "conviction": 20, "days_since_signal": 12, "entry_status": "extended", "group": "setting_up", "name": "KELT EXPLORATION LTD", "off_high": -5.5, "price": 9.69, "sector": "Energy", "stage": "RIPENING", "ticker": "KEL.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.79, "conviction": 41, "days_since_signal": 0, "entry_status": "buy_soon", "group": "setting_up", "name": "DOLLARAMA INC", "off_high": -8.0, "price": 189.42, "sector": "Consumer Discretionary", "stage": "RIPENING", "ticker": "DOL.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.79, "conviction": 38, "days_since_signal": 0, "entry_status": "buy_soon", "group": "setting_up", "name": "BOARDWALK REAL ESTATE INVESTMEN", "off_high": -4.5, "price": 67.1, "sector": "Real Estate", "stage": "RIPENING", "ticker": "BEI-UN.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.84, "conviction": 64, "days_since_signal": 16, "entry_status": "await_confluence", "group": "setting_up", "name": "LUNDIN GOLD INC", "off_high": -29.8, "price": 82.54, "sector": "Materials", "stage": "RIPENING", "ticker": "LUG.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -2.3, "conviction": 24, "days_since_signal": 26, "entry_status": "extended", "group": "setting_up", "name": "BROOKFIELD ASSET MANAGEMENT LTD", "off_high": -20.3, "price": 66.53, "sector": "Financials", "stage": "RIPENING", "ticker": "BAM.TO", "tier": ""}],
-  "as_of": "2026-07-29"
+  "rows": [{"_stage": "ENTRY", "alpha": -0.49, "conviction": 58, "days_since_signal": null, "entry_status": "partial", "group": "entry_open", "name": "GILDAN ACTIVEWEAR INC.", "off_high": -20.9, "price": 77.6, "sector": "Consumer Discretionary", "stage": "ENTRY", "ticker": "GIL.TO", "tier": "T2"}, {"_stage": "RIPENING", "alpha": 1.88, "conviction": 27, "days_since_signal": null, "entry_status": "wait_pullback", "group": "setting_up", "name": "MONTAGE GOLD CORP", "off_high": -9.8, "price": 15.86, "sector": "Materials", "stage": "RIPENING", "ticker": "MAU.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": 1.26, "conviction": 47, "days_since_signal": 31, "entry_status": "await_confluence", "group": "setting_up", "name": "IGM FINANCIAL INC.", "off_high": 0.0, "price": 87.16, "sector": "Financials", "stage": "RIPENING", "ticker": "IGM.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": 0.87, "conviction": 69, "days_since_signal": 31, "entry_status": "await_confluence", "group": "setting_up", "name": "DISCOVERY MINING LTD", "off_high": -25.7, "price": 8.75, "sector": "Materials", "stage": "RIPENING", "ticker": "DSV.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": 0.58, "conviction": 37, "days_since_signal": null, "entry_status": "wait_pullback", "group": "setting_up", "name": "BARRICK MINING CORPORATION", "off_high": -27.5, "price": 51.45, "sector": "Materials", "stage": "RIPENING", "ticker": "ABX.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.33, "conviction": 37, "days_since_signal": null, "entry_status": "wait_pullback", "group": "setting_up", "name": "PAN AMERICAN SILVER CORP", "off_high": -35.1, "price": 60.36, "sector": "Materials", "stage": "RIPENING", "ticker": "PAAS.TO", "tier": "T1"}, {"_stage": "RIPENING", "alpha": -0.49, "conviction": 35, "days_since_signal": null, "entry_status": "wait_pullback", "group": "setting_up", "name": "TRIPLE FLAG PRECIOUS METALS COR", "off_high": -28.5, "price": 40.27, "sector": "Materials", "stage": "RIPENING", "ticker": "TFPM.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.64, "conviction": 37, "days_since_signal": 14, "entry_status": "await_confluence", "group": "setting_up", "name": "KELT EXPLORATION LTD", "off_high": -2.6, "price": 9.98, "sector": "Energy", "stage": "RIPENING", "ticker": "KEL.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.67, "conviction": 21, "days_since_signal": 1, "entry_status": "wait_pullback", "group": "setting_up", "name": "NORTHLAND POWER INC.", "off_high": -13.4, "price": 21.82, "sector": "Utilities", "stage": "RIPENING", "ticker": "NPI.TO", "tier": ""}, {"_stage": "RIPENING", "alpha": -0.85, "conviction": 54, "days_since_signal": 16, "entry_status": "await_confluence", "group": "setting_up", "name": "ATS CORPORATION", "off_high": -21.9, "price": 38.25, "sector": "Industrials", "stage": "RIPENING", "ticker": "ATS.TO", "tier": ""}],
+  "as_of": "2026-07-31"
 }
 </script>
 
-
-<div class="panel" style="border-color:color-mix(in srgb,var(--warn) 40%,var(--line))">
-  <div class="row" style="gap:8px">
-    <b style="color:var(--warn)">⚠ <span class="l-en">Data health</span><span class="l-zh">数据健康</span></b>
-    <span class="muted small"><span class="l-en">some board inputs are degraded — the affected axes are suppressed, not silently filled</span><span class="l-zh">部分榜单输入已降级 — 受影响的轴已抑制，而非静默填充</span></span>
-  </div>
-  <div class="row small" style="gap:6px; margin-top:6px">
-    
-    <span class="chip off"><span class="l-en">Board ledger (append wrote 0 rows — see build log)</span><span class="l-zh">榜单账本（写入 0 行 — 查看构建日志）</span> <b>· ERROR</b> <span class="muted">(2026-07-29)</span></span>
-    
-  </div>
-</div>
 
 <div class="panel" id="standouts">
   <h2><span class="l-en">⚡ Prophet Stock Signals — TSX ripe list</span><span class="l-zh">⚡ 先知选股 — TSX 成熟清单</span>
@@ -461,8 +611,8 @@
     
     
     <p class="dh-conf" data-tip-en="Counts names with a fresh multi-timeframe buy cross today. Zero is normal." data-tip-zh="统计今日出现新鲜多周期买入金叉的个股。为零很正常。">
-      <span class="l-en">Confluence: <b class="pos">1</b> buyable cross today of 10 board names.</span>
-      <span class="l-zh">汇合：10 只榜单个股中今日有 <b class="pos">1</b> 只出现可买金叉。</span>
+      <span class="l-en">Confluence: <b class="pos">2</b> buyable crosses today of 10 board names.</span>
+      <span class="l-zh">汇合：10 只榜单个股中今日有 <b class="pos">2</b> 只出现可买金叉。</span>
     </p>
     
   </div>
@@ -513,7 +663,7 @@
         <div class="trd-card trd-card-wide trd-tl">
           <div class="trd-card-k"><span class="l-en">Building in public</span><span class="l-zh">公开累积中</span></div>
           <div class="trd-tl-bar"><span class="trd-tl-fill" style="width:22%"></span><span class="trd-tl-now" style="left:22%"></span></div>
-          <div class="trd-tl-ends"><span>None</span><span>2026-08-24</span></div><div class="trd-card-m" style="margin-top:6px"><span class="l-en">54 suspended names excluded</span><span class="l-zh">54 只停牌股已剔除</span></div></div></div>
+          <div class="trd-tl-ends"><span>None</span><span>2026-08-24</span></div><div class="trd-card-m" style="margin-top:6px"><span class="l-en">90 suspended names excluded</span><span class="l-zh">90 只停牌股已剔除</span></div></div></div>
       </div><div class="trd-stg trd-stg-2">
       <div class="trd-rail" id="trd-rail" role="toolbar" aria-label="Filter ledger">
         <div class="trd-chips" id="trd-status-chips" data-market="ca"></div>
@@ -816,7 +966,7 @@
   <div id="stocktable-wrap"></div>
   
   
-<link rel="stylesheet" href="assets/css/93de4274.css?v=93de4274">
+<link rel="stylesheet" href="assets/css/0ca60b0d.css?v=0ca60b0d">
 
   <div class="nb-grid-section">
   <div class="cards" data-showmore-rows="3">
@@ -853,24 +1003,25 @@
     
     
     
-    <a class="pvcard pv-buy" href="canada_stock.html#TVK.TO" data-ticker="TVK.TO">
+    <a class="pvcard pv-buy" href="canada_stock.html#GIL.TO" data-ticker="GIL.TO">
   <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="33.8" width="96.0" height="1.3" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="33.8" x2="240" y2="33.8" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="35.0" x2="240" y2="35.0" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,22.3 3.8,22.6 7.6,25.1 11.4,26.8 15.2,27.9 19.0,29.3 22.9,29.7 26.7,29.1 30.5,29.1 34.3,28.7 38.1,31.3 41.9,26.8 45.7,26.3 49.5,29.9 53.3,25.9 57.1,20.9 61.0,20.0 64.8,17.6 68.6,10.4 72.4,15.0 76.2,14.9 80.0,12.9 83.8,10.3 87.6,12.4 91.4,14.8 95.2,10.1 99.0,42.0 102.9,41.8 106.7,37.6 110.5,38.3 114.3,35.2 118.1,35.7 121.9,32.0 125.7,37.7 129.5,37.4 133.3,34.2 137.1,33.2 141.0,33.6 144.8,36.4 148.6,35.2 152.4,37.3 156.2,36.1 160.0,38.9 163.8,37.0 167.6,35.1 171.4,35.1 175.2,35.0 179.0,35.7 182.9,38.1 186.7,36.9 190.5,36.3 194.3,36.9 198.1,37.0 201.9,36.6 205.7,36.7 209.5,36.6 213.3,37.1 217.1,35.7 221.0,34.8 224.8,37.1 228.6,34.5 232.4,33.7 236.2,34.6 240.0,33.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,22.3 3.8,22.6 7.6,25.1 11.4,26.8 15.2,27.9 19.0,29.3 22.9,29.7 26.7,29.1 30.5,29.1 34.3,28.7 38.1,31.3 41.9,26.8 45.7,26.3 49.5,29.9 53.3,25.9 57.1,20.9 61.0,20.0 64.8,17.6 68.6,10.4 72.4,15.0 76.2,14.9 80.0,12.9 83.8,10.3 87.6,12.4 91.4,14.8 95.2,10.1 99.0,42.0 102.9,41.8 106.7,37.6 110.5,38.3 114.3,35.2 118.1,35.7 121.9,32.0 125.7,37.7 129.5,37.4 133.3,34.2 137.1,33.2 141.0,33.6 144.8,36.4 148.6,35.2 152.4,37.3 156.2,36.1 160.0,38.9 163.8,37.0 167.6,35.1 171.4,35.1 175.2,35.0 179.0,35.7 182.9,38.1 186.7,36.9 190.5,36.3 194.3,36.9 198.1,37.0 201.9,36.6 205.7,36.7 209.5,36.6 213.3,37.1 217.1,35.7 221.0,34.8 224.8,37.1 228.6,34.5 232.4,33.7 236.2,34.6 240.0,33.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="33.7" r="2.6" fill="var(--up)"/></svg>
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="27.3" width="96.0" height="4.7" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="27.3" x2="240" y2="27.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="32.0" x2="240" y2="32.0" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,16.6 3.8,25.3 7.6,20.8 11.4,16.6 15.2,21.5 19.0,21.3 22.9,25.6 26.7,26.7 30.5,27.7 34.3,26.5 38.1,27.8 41.9,32.6 45.7,25.7 49.5,22.6 53.3,22.1 57.1,18.1 61.0,17.7 64.8,15.2 68.6,14.4 72.4,14.9 76.2,19.2 80.0,21.1 83.8,21.0 87.6,22.0 91.4,22.1 95.2,23.7 99.0,17.9 102.9,23.4 106.7,16.4 110.5,12.9 114.3,10.1 118.1,41.1 121.9,32.3 125.7,35.7 129.5,36.4 133.3,34.7 137.1,32.5 141.0,28.4 144.8,30.6 148.6,32.5 152.4,35.5 156.2,35.9 160.0,36.2 163.8,36.7 167.6,35.0 171.4,34.4 175.2,37.9 179.0,37.6 182.9,33.6 186.7,35.8 190.5,37.1 194.3,34.9 198.1,31.8 201.9,30.9 205.7,29.0 209.5,30.6 213.3,32.2 217.1,42.0 221.0,40.9 224.8,38.8 228.6,36.1 232.4,38.3 236.2,35.4 240.0,27.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,16.6 3.8,25.3 7.6,20.8 11.4,16.6 15.2,21.5 19.0,21.3 22.9,25.6 26.7,26.7 30.5,27.7 34.3,26.5 38.1,27.8 41.9,32.6 45.7,25.7 49.5,22.6 53.3,22.1 57.1,18.1 61.0,17.7 64.8,15.2 68.6,14.4 72.4,14.9 76.2,19.2 80.0,21.1 83.8,21.0 87.6,22.0 91.4,22.1 95.2,23.7 99.0,17.9 102.9,23.4 106.7,16.4 110.5,12.9 114.3,10.1 118.1,41.1 121.9,32.3 125.7,35.7 129.5,36.4 133.3,34.7 137.1,32.5 141.0,28.4 144.8,30.6 148.6,32.5 152.4,35.5 156.2,35.9 160.0,36.2 163.8,36.7 167.6,35.0 171.4,34.4 175.2,37.9 179.0,37.6 182.9,33.6 186.7,35.8 190.5,37.1 194.3,34.9 198.1,31.8 201.9,30.9 205.7,29.0 209.5,30.6 213.3,32.2 217.1,42.0 221.0,40.9 224.8,38.8 228.6,36.1 232.4,38.3 236.2,35.4 240.0,27.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="27.3" r="2.6" fill="var(--up)"/></svg>
     <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Buy zone — entry open now — Main driver: CAD · buy now · anticipation fresh cross · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 买入区 — 入场窗口已开启 — 主要驱动：加元 · 现在可买 · anticipation 新鲜金叉 · 动量筛选 · 未验证"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
+      <span class="pv-chip" data-tip-en="Neutral — no clear edge · Partial entry — half size now — Main driver: Oil · buy now · anticipation fresh cross · oil tailwind · momentum screen · unproven" data-tip-zh="中性 — 无明显优势 · 部分入场 — 当前可建半仓 — 主要驱动：原油 · 现在可买 · anticipation 新鲜金叉 · 油价顺风 · 动量筛选 · 未验证"><span class="l-en">Buy</span><span class="l-zh">买入</span></span>
+      <span class="pv-live" hidden></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="TVK.TO" data-mkt="ca">$121.14</span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="GIL.TO" data-mkt="ca">$77.60</span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">TVK.TO</span><span class="pv-nm"><span class="l-en">TERRAVEST INDUSTRIES INC</span><span class="l-zh">TERRAVEST INDUSTRIES INC</span></span></span>
+      <span class="pv-idw"><span class="pv-tk">GIL.TO</span><span class="pv-nm"><span class="l-en">GILDAN ACTIVEWEAR INC.</span><span class="l-zh">GILDAN ACTIVEWEAR INC.</span></span></span>
       <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#1</span></span>
     </div>
-    <div class="pv-ind"><span class="l-en">Energy</span><span class="l-zh">Energy</span></div>
+    <div class="pv-ind"><span class="l-en">Consumer Discretionary</span><span class="l-zh">Consumer Discretionary</span></div>
     <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span class="on"><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$119.10–$121.10</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$75.13–$77.60</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
   </div>
 </a>
 
@@ -907,172 +1058,26 @@
     
     
     
-    <a class="pvcard pv-near" href="canada_stock.html#DSV.TO" data-ticker="DSV.TO">
+    <a class="pvcard pv-wait" href="canada_stock.html#MAU.TO" data-ticker="MAU.TO">
   <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="29.0" width="96.0" height="4.3" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="29.0" x2="240" y2="29.0" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="33.3" x2="240" y2="33.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,31.6 3.8,30.9 7.6,30.1 11.4,32.3 15.2,32.4 19.0,24.3 22.9,21.7 26.7,18.2 30.5,14.4 34.3,10.1 38.1,11.9 41.9,16.4 45.7,22.0 49.5,29.1 53.3,27.9 57.1,29.9 61.0,31.0 64.8,28.7 68.6,31.2 72.4,35.1 76.2,33.0 80.0,28.8 83.8,33.9 87.6,25.4 91.4,32.3 95.2,31.8 99.0,38.8 102.9,36.4 106.7,39.3 110.5,42.0 114.3,36.7 118.1,33.3 121.9,28.0 125.7,23.5 129.5,26.3 133.3,27.5 137.1,28.8 141.0,28.4 144.8,35.0 148.6,38.8 152.4,37.3 156.2,30.7 160.0,27.8 163.8,29.9 167.6,23.6 171.4,15.4 175.2,21.0 179.0,24.3 182.9,27.6 186.7,26.4 190.5,28.2 194.3,33.5 198.1,33.5 201.9,35.4 205.7,39.5 209.5,37.1 213.3,37.3 217.1,29.4 221.0,23.9 224.8,29.4 228.6,28.3 232.4,26.8 236.2,28.4 240.0,29.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.6 3.8,30.9 7.6,30.1 11.4,32.3 15.2,32.4 19.0,24.3 22.9,21.7 26.7,18.2 30.5,14.4 34.3,10.1 38.1,11.9 41.9,16.4 45.7,22.0 49.5,29.1 53.3,27.9 57.1,29.9 61.0,31.0 64.8,28.7 68.6,31.2 72.4,35.1 76.2,33.0 80.0,28.8 83.8,33.9 87.6,25.4 91.4,32.3 95.2,31.8 99.0,38.8 102.9,36.4 106.7,39.3 110.5,42.0 114.3,36.7 118.1,33.3 121.9,28.0 125.7,23.5 129.5,26.3 133.3,27.5 137.1,28.8 141.0,28.4 144.8,35.0 148.6,38.8 152.4,37.3 156.2,30.7 160.0,27.8 163.8,29.9 167.6,23.6 171.4,15.4 175.2,21.0 179.0,24.3 182.9,27.6 186.7,26.4 190.5,28.2 194.3,33.5 198.1,33.5 201.9,35.4 205.7,39.5 209.5,37.1 213.3,37.3 217.1,29.4 221.0,23.9 224.8,29.4 228.6,28.3 232.4,26.8 236.2,28.4 240.0,29.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="29.0" r="2.6" fill="var(--up)"/></svg>
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="26.0" x2="240" y2="26.0" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="29.7" x2="240" y2="29.7" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,39.0 3.8,39.8 7.6,42.0 11.4,35.6 15.2,35.2 19.0,31.9 22.9,28.0 26.7,25.7 30.5,23.5 34.3,19.5 38.1,28.8 41.9,35.3 45.7,35.0 49.5,35.0 53.3,33.1 57.1,26.1 61.0,22.1 64.8,23.5 68.6,25.1 72.4,16.0 76.2,20.3 80.0,17.3 83.8,23.7 87.6,23.5 91.4,32.2 95.2,31.6 99.0,35.0 102.9,38.8 106.7,33.7 110.5,21.8 114.3,10.1 118.1,15.2 121.9,16.3 125.7,20.2 129.5,16.8 133.3,17.1 137.1,25.4 141.0,31.9 144.8,29.7 148.6,21.8 152.4,21.3 156.2,20.4 160.0,13.8 163.8,12.1 167.6,12.9 171.4,16.9 175.2,19.4 179.0,14.9 182.9,12.7 186.7,25.3 190.5,20.9 194.3,23.8 198.1,28.8 201.9,26.9 205.7,28.7 209.5,25.7 213.3,14.4 217.1,19.4 221.0,18.5 224.8,17.1 228.6,17.8 232.4,20.8 236.2,15.9 240.0,22.3 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,39.0 3.8,39.8 7.6,42.0 11.4,35.6 15.2,35.2 19.0,31.9 22.9,28.0 26.7,25.7 30.5,23.5 34.3,19.5 38.1,28.8 41.9,35.3 45.7,35.0 49.5,35.0 53.3,33.1 57.1,26.1 61.0,22.1 64.8,23.5 68.6,25.1 72.4,16.0 76.2,20.3 80.0,17.3 83.8,23.7 87.6,23.5 91.4,32.2 95.2,31.6 99.0,35.0 102.9,38.8 106.7,33.7 110.5,21.8 114.3,10.1 118.1,15.2 121.9,16.3 125.7,20.2 129.5,16.8 133.3,17.1 137.1,25.4 141.0,31.9 144.8,29.7 148.6,21.8 152.4,21.3 156.2,20.4 160.0,13.8 163.8,12.1 167.6,12.9 171.4,16.9 175.2,19.4 179.0,14.9 182.9,12.7 186.7,25.3 190.5,20.9 194.3,23.8 198.1,28.8 201.9,26.9 205.7,28.7 209.5,25.7 213.3,14.4 217.1,19.4 221.0,18.5 224.8,17.1 228.6,17.8 232.4,20.8 236.2,15.9 240.0,22.3" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="22.3" r="2.6" fill="var(--down)"/></svg>
     <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Constructive — building a base · Cycle turn — awaiting confluence cross — Main driver: Gold · buy on a pullback to $8.13–$8.57 · momentum screen · unproven" data-tip-zh="建设性 — 正在筑底 · 周期拐点 — 等待共振交叉确认 — 主要驱动：黄金 · 回撤至 $8.13–$8.57 买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
+      <span class="pv-chip" data-tip-en="High-confluence leader (context) · Wait for the pullback — Main driver: Gold · buy on a pullback to $14.80–$15.33 · momentum screen · unproven" data-tip-zh="高共振 领先（参考） · 等待回撤 — 主要驱动：黄金 · 回撤至 $14.80–$15.33 买入 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
+      <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="DSV.TO" data-mkt="ca">$8.57</span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="MAU.TO" data-mkt="ca">$15.86</span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">DSV.TO</span><span class="pv-nm"><span class="l-en">DISCOVERY MINING LTD</span><span class="l-zh">DISCOVERY MINING LTD</span></span></span>
+      <span class="pv-idw"><span class="pv-tk">MAU.TO</span><span class="pv-nm"><span class="l-en">MONTAGE GOLD CORP</span><span class="l-zh">MONTAGE GOLD CORP</span></span></span>
       <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#2</span></span>
     </div>
     <div class="pv-ind"><span class="l-en">Materials</span><span class="l-zh">Materials</span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
-  </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$8.13–$8.57</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
-  </div>
-</a>
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <a class="pvcard pv-near" href="canada_stock.html#NWC.TO" data-ticker="NWC.TO">
-  <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="16.7" width="96.0" height="3.5" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="16.7" x2="240" y2="16.7" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="20.1" x2="240" y2="20.1" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,25.2 3.8,22.5 7.6,22.8 11.4,26.5 15.2,27.4 19.0,25.5 22.9,22.4 26.7,26.9 30.5,28.3 34.3,26.8 38.1,27.0 41.9,23.9 45.7,21.3 49.5,19.9 53.3,18.0 57.1,15.0 61.0,16.9 64.8,18.7 68.6,18.2 72.4,16.4 76.2,18.4 80.0,17.5 83.8,22.6 87.6,23.8 91.4,17.5 95.2,18.7 99.0,10.1 102.9,13.6 106.7,11.0 110.5,30.7 114.3,42.0 118.1,36.5 121.9,32.4 125.7,36.4 129.5,36.7 133.3,34.4 137.1,33.9 141.0,40.3 144.8,35.8 148.6,29.6 152.4,29.3 156.2,28.9 160.0,30.3 163.8,30.9 167.6,30.3 171.4,30.6 175.2,31.0 179.0,31.1 182.9,20.0 186.7,24.1 190.5,19.5 194.3,19.5 198.1,23.0 201.9,23.0 205.7,18.6 209.5,18.2 213.3,19.3 217.1,21.3 221.0,21.4 224.8,26.5 228.6,23.7 232.4,24.2 236.2,19.2 240.0,16.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,25.2 3.8,22.5 7.6,22.8 11.4,26.5 15.2,27.4 19.0,25.5 22.9,22.4 26.7,26.9 30.5,28.3 34.3,26.8 38.1,27.0 41.9,23.9 45.7,21.3 49.5,19.9 53.3,18.0 57.1,15.0 61.0,16.9 64.8,18.7 68.6,18.2 72.4,16.4 76.2,18.4 80.0,17.5 83.8,22.6 87.6,23.8 91.4,17.5 95.2,18.7 99.0,10.1 102.9,13.6 106.7,11.0 110.5,30.7 114.3,42.0 118.1,36.5 121.9,32.4 125.7,36.4 129.5,36.7 133.3,34.4 137.1,33.9 141.0,40.3 144.8,35.8 148.6,29.6 152.4,29.3 156.2,28.9 160.0,30.3 163.8,30.9 167.6,30.3 171.4,30.6 175.2,31.0 179.0,31.1 182.9,20.0 186.7,24.1 190.5,19.5 194.3,19.5 198.1,23.0 201.9,23.0 205.7,18.6 209.5,18.2 213.3,19.3 217.1,21.3 221.0,21.4 224.8,26.5 228.6,23.7 232.4,24.2 236.2,19.2 240.0,16.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="16.7" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Neutral — no clear edge · Cycle turn — awaiting confluence cross — Main driver: CAD · buy on a pullback to $51.30–$51.92 · momentum screen · unproven" data-tip-zh="中性 — 无明显优势 · 周期拐点 — 等待共振交叉确认 — 主要驱动：加元 · 回撤至 $51.30–$51.92 买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
-    </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="NWC.TO" data-mkt="ca">$51.92</span></span>
-  </div>
-  <div class="pv-bd">
-    <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">NWC.TO</span><span class="pv-nm"><span class="l-en">THE NORTH WEST COMPANY INC</span><span class="l-zh">THE NORTH WEST COMPANY INC</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#3</span></span>
-    </div>
-    <div class="pv-ind"><span class="l-en">Consumer Staples</span><span class="l-zh">Consumer Staples</span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
-  </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$51.30–$51.92</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
-  </div>
-</a>
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <a class="pvcard pv-near" href="canada_stock.html#CSH-UN.TO" data-ticker="CSH-UN.TO">
-  <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="12.5" width="96.0" height="2.6" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="12.5" x2="240" y2="12.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="15.1" x2="240" y2="15.1" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,31.0 3.8,27.4 7.6,25.2 11.4,23.9 15.2,20.3 19.0,21.5 22.9,27.0 26.7,26.5 30.5,32.1 34.3,35.2 38.1,34.0 41.9,35.9 45.7,35.7 49.5,36.7 53.3,33.9 57.1,34.0 61.0,34.6 64.8,34.9 68.6,34.4 72.4,36.6 76.2,42.0 80.0,40.3 83.8,41.8 87.6,38.9 91.4,35.2 95.2,35.9 99.0,28.1 102.9,28.7 106.7,30.3 110.5,31.0 114.3,34.8 118.1,35.3 121.9,34.2 125.7,31.3 129.5,31.7 133.3,27.5 137.1,27.0 141.0,25.0 144.8,21.1 148.6,16.9 152.4,17.3 156.2,19.5 160.0,18.8 163.8,19.0 167.6,12.2 171.4,10.1 175.2,10.7 179.0,12.0 182.9,12.3 186.7,10.6 190.5,12.6 194.3,13.2 198.1,14.2 201.9,14.5 205.7,14.2 209.5,12.4 213.3,15.7 217.1,15.9 221.0,19.5 224.8,19.7 228.6,13.5 232.4,10.9 236.2,10.8 240.0,12.5 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,31.0 3.8,27.4 7.6,25.2 11.4,23.9 15.2,20.3 19.0,21.5 22.9,27.0 26.7,26.5 30.5,32.1 34.3,35.2 38.1,34.0 41.9,35.9 45.7,35.7 49.5,36.7 53.3,33.9 57.1,34.0 61.0,34.6 64.8,34.9 68.6,34.4 72.4,36.6 76.2,42.0 80.0,40.3 83.8,41.8 87.6,38.9 91.4,35.2 95.2,35.9 99.0,28.1 102.9,28.7 106.7,30.3 110.5,31.0 114.3,34.8 118.1,35.3 121.9,34.2 125.7,31.3 129.5,31.7 133.3,27.5 137.1,27.0 141.0,25.0 144.8,21.1 148.6,16.9 152.4,17.3 156.2,19.5 160.0,18.8 163.8,19.0 167.6,12.2 171.4,10.1 175.2,10.7 179.0,12.0 182.9,12.3 186.7,10.6 190.5,12.6 194.3,13.2 198.1,14.2 201.9,14.5 205.7,14.2 209.5,12.4 213.3,15.7 217.1,15.9 221.0,19.5 224.8,19.7 228.6,13.5 232.4,10.9 236.2,10.8 240.0,12.5" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="12.5" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Neutral — no clear edge · Cycle turn — awaiting confluence cross — Main driver: CAD · buy on a pullback to $22.75–$23.02 · insider buying · momentum screen · unproven" data-tip-zh="中性 — 无明显优势 · 周期拐点 — 等待共振交叉确认 — 主要驱动：加元 · 回撤至 $22.75–$23.02 买入 · 内部人买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
-    </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="CSH-UN.TO" data-mkt="ca">$23.02</span></span>
-  </div>
-  <div class="pv-bd">
-    <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">CSH-UN.TO</span><span class="pv-nm"><span class="l-en">CHARTWELL RETIREMENT RESIDENCES</span><span class="l-zh">CHARTWELL RETIREMENT RESIDENCES</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#4</span></span>
-    </div>
-    <div class="pv-ind"><span class="l-en">Health Care</span><span class="l-zh">Health Care</span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
-  </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$22.75–$23.02</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
-  </div>
-</a>
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <a class="pvcard pv-wait" href="canada_stock.html#SPB.TO" data-ticker="SPB.TO">
-  <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="26.5" x2="240" y2="26.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="26.5" x2="240" y2="26.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,37.9 3.8,37.9 7.6,39.3 11.4,38.9 15.2,38.4 19.0,42.0 22.9,38.4 26.7,37.6 30.5,37.9 34.3,38.4 38.1,40.1 41.9,30.9 45.7,35.2 49.5,36.9 53.3,39.1 57.1,34.0 61.0,30.4 64.8,30.6 68.6,18.1 72.4,12.7 76.2,15.9 80.0,16.4 83.8,19.7 87.6,10.1 91.4,13.9 95.2,16.3 99.0,17.8 102.9,15.4 106.7,18.7 110.5,15.1 114.3,16.6 118.1,15.1 121.9,21.1 125.7,22.1 129.5,25.5 133.3,25.9 137.1,25.5 141.0,25.7 144.8,27.9 148.6,29.6 152.4,31.2 156.2,30.5 160.0,31.2 163.8,30.4 167.6,29.4 171.4,30.6 175.2,29.4 179.0,31.6 182.9,28.9 186.7,31.4 190.5,30.4 194.3,28.9 198.1,28.9 201.9,26.8 205.7,25.3 209.5,23.1 213.3,23.6 217.1,22.9 221.0,24.8 224.8,22.2 228.6,21.7 232.4,21.7 236.2,25.1 240.0,24.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,37.9 3.8,37.9 7.6,39.3 11.4,38.9 15.2,38.4 19.0,42.0 22.9,38.4 26.7,37.6 30.5,37.9 34.3,38.4 38.1,40.1 41.9,30.9 45.7,35.2 49.5,36.9 53.3,39.1 57.1,34.0 61.0,30.4 64.8,30.6 68.6,18.1 72.4,12.7 76.2,15.9 80.0,16.4 83.8,19.7 87.6,10.1 91.4,13.9 95.2,16.3 99.0,17.8 102.9,15.4 106.7,18.7 110.5,15.1 114.3,16.6 118.1,15.1 121.9,21.1 125.7,22.1 129.5,25.5 133.3,25.9 137.1,25.5 141.0,25.7 144.8,27.9 148.6,29.6 152.4,31.2 156.2,30.5 160.0,31.2 163.8,30.4 167.6,29.4 171.4,30.6 175.2,29.4 179.0,31.6 182.9,28.9 186.7,31.4 190.5,30.4 194.3,28.9 198.1,28.9 201.9,26.8 205.7,25.3 209.5,23.1 213.3,23.6 217.1,22.9 221.0,24.8 224.8,22.2 228.6,21.7 232.4,21.7 236.2,25.1 240.0,24.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.3" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Extended — wait for a pullback — Main driver: CAD · buy on a pullback to $7.97–$7.97 · insider buying · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 过度拉伸 — 等待回撤 — 主要驱动：加元 · 回撤至 $7.97–$7.97 买入 · 内部人买入 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
-    </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="SPB.TO" data-mkt="ca">$8.06</span></span>
-  </div>
-  <div class="pv-bd">
-    <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">SPB.TO</span><span class="pv-nm"><span class="l-en">SUPERIOR PLUS CORP.</span><span class="l-zh">SUPERIOR PLUS CORP.</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#5</span></span>
-    </div>
-    <div class="pv-ind"><span class="l-en">Utilities</span><span class="l-zh">Utilities</span></div>
     <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$7.97</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$14.80–$15.33</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
   </div>
 </a>
 
@@ -1103,221 +1108,374 @@
     
     
     
-    <a class="pvcard pv-wait" href="canada_stock.html#KEL.TO" data-ticker="KEL.TO">
+    <a class="pvcard pv-near" href="canada_stock.html#IGM.TO" data-ticker="IGM.TO">
   <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="23.5" x2="240" y2="23.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="23.5" x2="240" y2="23.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,14.0 3.8,14.0 7.6,15.9 11.4,10.9 15.2,11.6 19.0,23.1 22.9,22.0 26.7,20.2 30.5,19.4 34.3,19.2 38.1,21.6 41.9,18.1 45.7,14.9 49.5,11.2 53.3,16.1 57.1,15.1 61.0,15.7 64.8,24.5 68.6,25.7 72.4,32.1 76.2,29.2 80.0,33.0 83.8,25.5 87.6,17.3 91.4,11.6 95.2,11.1 99.0,20.4 102.9,15.1 106.7,22.0 110.5,13.4 114.3,14.4 118.1,17.7 121.9,23.9 125.7,29.0 129.5,32.3 133.3,40.2 137.1,36.7 141.0,39.1 144.8,38.9 148.6,41.6 152.4,41.0 156.2,42.0 160.0,40.1 163.8,39.3 167.6,34.4 171.4,30.9 175.2,32.9 179.0,30.7 182.9,26.2 186.7,26.6 190.5,28.4 194.3,19.8 198.1,21.4 201.9,22.7 205.7,23.5 209.5,25.5 213.3,23.5 217.1,21.0 221.0,12.8 224.8,10.1 228.6,13.0 232.4,20.6 236.2,26.2 240.0,21.0 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,14.0 3.8,14.0 7.6,15.9 11.4,10.9 15.2,11.6 19.0,23.1 22.9,22.0 26.7,20.2 30.5,19.4 34.3,19.2 38.1,21.6 41.9,18.1 45.7,14.9 49.5,11.2 53.3,16.1 57.1,15.1 61.0,15.7 64.8,24.5 68.6,25.7 72.4,32.1 76.2,29.2 80.0,33.0 83.8,25.5 87.6,17.3 91.4,11.6 95.2,11.1 99.0,20.4 102.9,15.1 106.7,22.0 110.5,13.4 114.3,14.4 118.1,17.7 121.9,23.9 125.7,29.0 129.5,32.3 133.3,40.2 137.1,36.7 141.0,39.1 144.8,38.9 148.6,41.6 152.4,41.0 156.2,42.0 160.0,40.1 163.8,39.3 167.6,34.4 171.4,30.9 175.2,32.9 179.0,30.7 182.9,26.2 186.7,26.6 190.5,28.4 194.3,19.8 198.1,21.4 201.9,22.7 205.7,23.5 209.5,25.5 213.3,23.5 217.1,21.0 221.0,12.8 224.8,10.1 228.6,13.0 232.4,20.6 236.2,26.2 240.0,21.0" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="21.0" r="2.6" fill="var(--up)"/></svg>
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="10.1" width="96.0" height="6.1" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="10.1" x2="240" y2="10.1" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="16.2" x2="240" y2="16.2" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,39.7 3.8,42.0 7.6,40.1 11.4,38.8 15.2,41.1 19.0,37.7 22.9,37.1 26.7,38.2 30.5,38.7 34.3,34.5 38.1,36.4 41.9,36.8 45.7,33.9 49.5,38.7 53.3,36.9 57.1,33.6 61.0,32.9 64.8,35.4 68.6,36.5 72.4,35.6 76.2,34.1 80.0,31.2 83.8,34.5 87.6,28.9 91.4,28.7 95.2,30.4 99.0,28.0 102.9,33.2 106.7,30.8 110.5,30.2 114.3,27.9 118.1,26.7 121.9,22.3 125.7,26.9 129.5,30.2 133.3,36.3 137.1,35.3 141.0,38.3 144.8,39.2 148.6,40.7 152.4,38.7 156.2,32.1 160.0,33.3 163.8,30.8 167.6,27.2 171.4,29.9 175.2,30.7 179.0,26.5 182.9,18.8 186.7,22.0 190.5,14.6 194.3,10.5 198.1,13.7 201.9,16.3 205.7,19.0 209.5,17.8 213.3,16.7 217.1,21.8 221.0,20.8 224.8,17.9 228.6,16.8 232.4,24.5 236.2,12.1 240.0,10.1 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,39.7 3.8,42.0 7.6,40.1 11.4,38.8 15.2,41.1 19.0,37.7 22.9,37.1 26.7,38.2 30.5,38.7 34.3,34.5 38.1,36.4 41.9,36.8 45.7,33.9 49.5,38.7 53.3,36.9 57.1,33.6 61.0,32.9 64.8,35.4 68.6,36.5 72.4,35.6 76.2,34.1 80.0,31.2 83.8,34.5 87.6,28.9 91.4,28.7 95.2,30.4 99.0,28.0 102.9,33.2 106.7,30.8 110.5,30.2 114.3,27.9 118.1,26.7 121.9,22.3 125.7,26.9 129.5,30.2 133.3,36.3 137.1,35.3 141.0,38.3 144.8,39.2 148.6,40.7 152.4,38.7 156.2,32.1 160.0,33.3 163.8,30.8 167.6,27.2 171.4,29.9 175.2,30.7 179.0,26.5 182.9,18.8 186.7,22.0 190.5,14.6 194.3,10.5 198.1,13.7 201.9,16.3 205.7,19.0 209.5,17.8 213.3,16.7 217.1,21.8 221.0,20.8 224.8,17.9 228.6,16.8 232.4,24.5 236.2,12.1 240.0,10.1" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="10.1" r="2.6" fill="var(--up)"/></svg>
     <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Extended — wait for a pullback — Main driver: Oil · buy on a pullback to $9.56–$9.56 · oil tailwind · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 过度拉伸 — 等待回撤 — 主要驱动：原油 · 回撤至 $9.56–$9.56 买入 · 油价顺风 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
-    </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="KEL.TO" data-mkt="ca">$9.69</span></span>
-  </div>
-  <div class="pv-bd">
-    <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">KEL.TO</span><span class="pv-nm"><span class="l-en">KELT EXPLORATION LTD</span><span class="l-zh">KELT EXPLORATION LTD</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#6</span></span>
-    </div>
-    <div class="pv-ind"><span class="l-en">Energy</span><span class="l-zh">Energy</span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
-  </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$9.56</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
-  </div>
-</a>
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <a class="pvcard pv-near" href="canada_stock.html#DOL.TO" data-ticker="DOL.TO">
-  <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="17.8" width="96.0" height="3.7" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="17.8" x2="240" y2="17.8" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="21.5" x2="240" y2="21.5" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,41.3 3.8,37.2 7.6,36.7 11.4,41.1 15.2,38.1 19.0,36.1 22.9,35.4 26.7,37.0 30.5,37.0 34.3,35.6 38.1,40.5 41.9,38.2 45.7,41.6 49.5,42.0 53.3,35.2 57.1,31.2 61.0,30.8 64.8,30.3 68.6,34.4 72.4,38.4 76.2,35.2 80.0,33.9 83.8,34.0 87.6,35.9 91.4,35.4 95.2,34.4 99.0,27.8 102.9,31.4 106.7,32.0 110.5,30.0 114.3,10.1 118.1,16.0 121.9,17.0 125.7,19.8 129.5,18.2 133.3,19.8 137.1,21.0 141.0,23.5 144.8,21.9 148.6,14.5 152.4,14.8 156.2,12.3 160.0,15.7 163.8,20.1 167.6,21.4 171.4,19.5 175.2,21.9 179.0,22.3 182.9,21.8 186.7,25.3 190.5,22.9 194.3,21.6 198.1,21.9 201.9,22.0 205.7,18.3 209.5,16.0 213.3,17.0 217.1,19.6 221.0,23.3 224.8,27.5 228.6,23.6 232.4,19.8 236.2,16.3 240.0,17.7 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,41.3 3.8,37.2 7.6,36.7 11.4,41.1 15.2,38.1 19.0,36.1 22.9,35.4 26.7,37.0 30.5,37.0 34.3,35.6 38.1,40.5 41.9,38.2 45.7,41.6 49.5,42.0 53.3,35.2 57.1,31.2 61.0,30.8 64.8,30.3 68.6,34.4 72.4,38.4 76.2,35.2 80.0,33.9 83.8,34.0 87.6,35.9 91.4,35.4 95.2,34.4 99.0,27.8 102.9,31.4 106.7,32.0 110.5,30.0 114.3,10.1 118.1,16.0 121.9,17.0 125.7,19.8 129.5,18.2 133.3,19.8 137.1,21.0 141.0,23.5 144.8,21.9 148.6,14.5 152.4,14.8 156.2,12.3 160.0,15.7 163.8,20.1 167.6,21.4 171.4,19.5 175.2,21.9 179.0,22.3 182.9,21.8 186.7,25.3 190.5,22.9 194.3,21.6 198.1,21.9 201.9,22.0 205.7,18.3 209.5,16.0 213.3,17.0 217.1,19.6 221.0,23.3 224.8,27.5 228.6,23.6 232.4,19.8 236.2,16.3 240.0,17.7" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="17.7" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Buy soon — on confirmation — Main driver: CAD · buy on a pullback to $186.40–$189.40 · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 即将买入 — 待确认 — 主要驱动：加元 · 回撤至 $186.40–$189.40 买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
-    </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="DOL.TO" data-mkt="ca">$189.42</span></span>
-  </div>
-  <div class="pv-bd">
-    <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">DOL.TO</span><span class="pv-nm"><span class="l-en">DOLLARAMA INC</span><span class="l-zh">DOLLARAMA INC</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#7</span></span>
-    </div>
-    <div class="pv-ind"><span class="l-en">Consumer Discretionary</span><span class="l-zh">Consumer Discretionary</span></div>
-    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
-    <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
-  </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$186.40–$189.40</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
-  </div>
-</a>
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <a class="pvcard pv-near" href="canada_stock.html#BEI-UN.TO" data-ticker="BEI-UN.TO">
-  <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="14.2" width="96.0" height="6.9" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="14.2" x2="240" y2="14.2" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="21.1" x2="240" y2="21.1" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,14.2 3.8,10.1 7.6,13.4 11.4,18.6 15.2,13.0 19.0,26.4 22.9,22.0 26.7,29.7 30.5,33.0 34.3,38.6 38.1,42.0 41.9,39.7 45.7,39.9 49.5,39.5 53.3,33.9 57.1,31.4 61.0,30.9 64.8,29.7 68.6,31.1 72.4,30.7 76.2,36.0 80.0,35.1 83.8,36.4 87.6,37.2 91.4,38.6 95.2,37.2 99.0,34.7 102.9,39.9 106.7,31.6 110.5,25.9 114.3,28.0 118.1,25.0 121.9,32.7 125.7,33.3 129.5,36.3 133.3,33.7 137.1,32.3 141.0,35.3 144.8,30.0 148.6,26.5 152.4,30.2 156.2,22.0 160.0,25.8 163.8,29.7 167.6,13.0 171.4,13.5 175.2,14.7 179.0,14.1 182.9,19.1 186.7,19.3 190.5,20.5 194.3,17.0 198.1,24.7 201.9,22.8 205.7,13.7 209.5,24.4 213.3,26.7 217.1,26.0 221.0,24.8 224.8,27.8 228.6,24.8 232.4,29.1 236.2,22.8 240.0,14.2 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,14.2 3.8,10.1 7.6,13.4 11.4,18.6 15.2,13.0 19.0,26.4 22.9,22.0 26.7,29.7 30.5,33.0 34.3,38.6 38.1,42.0 41.9,39.7 45.7,39.9 49.5,39.5 53.3,33.9 57.1,31.4 61.0,30.9 64.8,29.7 68.6,31.1 72.4,30.7 76.2,36.0 80.0,35.1 83.8,36.4 87.6,37.2 91.4,38.6 95.2,37.2 99.0,34.7 102.9,39.9 106.7,31.6 110.5,25.9 114.3,28.0 118.1,25.0 121.9,32.7 125.7,33.3 129.5,36.3 133.3,33.7 137.1,32.3 141.0,35.3 144.8,30.0 148.6,26.5 152.4,30.2 156.2,22.0 160.0,25.8 163.8,29.7 167.6,13.0 171.4,13.5 175.2,14.7 179.0,14.1 182.9,19.1 186.7,19.3 190.5,20.5 194.3,17.0 198.1,24.7 201.9,22.8 205.7,13.7 209.5,24.4 213.3,26.7 217.1,26.0 221.0,24.8 224.8,27.8 228.6,24.8 232.4,29.1 236.2,22.8 240.0,14.2" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="14.2" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Buy soon — on confirmation — Main driver: CAD · buy on a pullback to $66.05–$67.10 · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 即将买入 — 待确认 — 主要驱动：加元 · 回撤至 $66.05–$67.10 买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
+      <span class="pv-chip" data-tip-en="Leader · poor entry — wait for a base · Cycle turn — awaiting confluence cross — Main driver: Financials sector · buy on a pullback to $84.96–$87.16 · momentum screen · unproven" data-tip-zh="领先 · 入场点欠佳 — 等待筑底 · 周期拐点 — 等待共振交叉确认 — 主要驱动：Financials 板块 · 回撤至 $84.96–$87.16 买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
+      <span class="pv-live" hidden></span>
       <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (2)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 2</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span><span class="pv-cau-row"><span class="l-en">Already moving — don't chase above the zone</span><span class="l-zh">已在异动 — 勿在买区上方追高</span></span></span></span>
     </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="BEI-UN.TO" data-mkt="ca">$67.10</span></span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="IGM.TO" data-mkt="ca">$87.16</span></span>
   </div>
   <div class="pv-bd">
     <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">BEI-UN.TO</span><span class="pv-nm"><span class="l-en">BOARDWALK REAL ESTATE INVESTMEN</span><span class="l-zh">BOARDWALK REAL ESTATE INVESTMEN</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#8</span></span>
-    </div>
-    <div class="pv-ind"><span class="l-en">Real Estate</span><span class="l-zh">Real Estate</span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
-  </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$66.05–$67.10</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
-  </div>
-</a>
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <a class="pvcard pv-near" href="canada_stock.html#LUG.TO" data-ticker="LUG.TO">
-  <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="24.8" width="96.0" height="3.9" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="24.8" x2="240" y2="24.8" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="28.7" x2="240" y2="28.7" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,23.0 3.8,20.9 7.6,22.5 11.4,26.9 15.2,27.7 19.0,15.2 22.9,19.0 26.7,13.0 30.5,10.1 34.3,11.3 38.1,11.9 41.9,15.6 45.7,28.6 49.5,30.5 53.3,27.1 57.1,28.1 61.0,31.1 64.8,25.7 68.6,25.9 72.4,33.2 76.2,29.5 80.0,19.6 83.8,25.7 87.6,23.6 91.4,28.7 95.2,23.9 99.0,36.1 102.9,35.5 106.7,39.2 110.5,42.0 114.3,36.7 118.1,35.2 121.9,26.1 125.7,20.3 129.5,27.3 133.3,28.6 137.1,32.2 141.0,28.3 144.8,36.0 148.6,39.0 152.4,36.0 156.2,34.8 160.0,35.3 163.8,35.8 167.6,27.9 171.4,23.2 175.2,26.1 179.0,29.3 182.9,35.4 186.7,28.2 190.5,32.6 194.3,35.4 198.1,35.0 201.9,36.7 205.7,38.0 209.5,35.2 213.3,35.1 217.1,31.0 221.0,25.9 224.8,31.2 228.6,30.5 232.4,27.1 236.2,27.4 240.0,24.8 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,23.0 3.8,20.9 7.6,22.5 11.4,26.9 15.2,27.7 19.0,15.2 22.9,19.0 26.7,13.0 30.5,10.1 34.3,11.3 38.1,11.9 41.9,15.6 45.7,28.6 49.5,30.5 53.3,27.1 57.1,28.1 61.0,31.1 64.8,25.7 68.6,25.9 72.4,33.2 76.2,29.5 80.0,19.6 83.8,25.7 87.6,23.6 91.4,28.7 95.2,23.9 99.0,36.1 102.9,35.5 106.7,39.2 110.5,42.0 114.3,36.7 118.1,35.2 121.9,26.1 125.7,20.3 129.5,27.3 133.3,28.6 137.1,32.2 141.0,28.3 144.8,36.0 148.6,39.0 152.4,36.0 156.2,34.8 160.0,35.3 163.8,35.8 167.6,27.9 171.4,23.2 175.2,26.1 179.0,29.3 182.9,35.4 186.7,28.2 190.5,32.6 194.3,35.4 198.1,35.0 201.9,36.7 205.7,38.0 209.5,35.2 213.3,35.1 217.1,31.0 221.0,25.9 224.8,31.2 228.6,30.5 232.4,27.1 236.2,27.4 240.0,24.8" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="24.8" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Cycle turn — awaiting confluence cross — Main driver: Gold · buy on a pullback to $80.39–$82.54 · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 周期拐点 — 等待共振交叉确认 — 主要驱动：黄金 · 回撤至 $80.39–$82.54 买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
-    </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="LUG.TO" data-mkt="ca">$82.54</span></span>
-  </div>
-  <div class="pv-bd">
-    <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">LUG.TO</span><span class="pv-nm"><span class="l-en">LUNDIN GOLD INC</span><span class="l-zh">LUNDIN GOLD INC</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#9</span></span>
-    </div>
-    <div class="pv-ind"><span class="l-en">Materials</span><span class="l-zh">Materials</span></div>
-    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
-    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
-  </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$80.39–$82.54</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
-  </div>
-</a>
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    <a class="pvcard pv-wait" href="canada_stock.html#BAM.TO" data-ticker="BAM.TO">
-  <div class="pv-chart">
-    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="24.3" x2="240" y2="24.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="24.3" x2="240" y2="24.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,42.0 3.8,32.1 7.6,32.3 11.4,34.0 15.2,28.8 19.0,27.4 22.9,25.9 26.7,20.2 30.5,25.3 34.3,25.6 38.1,30.8 41.9,20.9 45.7,29.0 49.5,34.5 53.3,28.7 57.1,25.3 61.0,27.8 64.8,24.7 68.6,20.6 72.4,21.3 76.2,22.0 80.0,22.9 83.8,23.3 87.6,25.4 91.4,39.8 95.2,30.7 99.0,33.1 102.9,34.0 106.7,27.0 110.5,35.6 114.3,30.4 118.1,26.2 121.9,19.9 125.7,16.9 129.5,18.0 133.3,21.4 137.1,24.0 141.0,22.3 144.8,22.9 148.6,35.2 152.4,37.6 156.2,38.2 160.0,41.3 163.8,36.4 167.6,30.1 171.4,27.0 175.2,22.7 179.0,25.6 182.9,33.0 186.7,28.8 190.5,25.1 194.3,25.9 198.1,22.1 201.9,13.5 205.7,10.1 209.5,18.4 213.3,23.4 217.1,27.3 221.0,28.8 224.8,32.9 228.6,28.9 232.4,21.0 236.2,17.9 240.0,23.6 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,42.0 3.8,32.1 7.6,32.3 11.4,34.0 15.2,28.8 19.0,27.4 22.9,25.9 26.7,20.2 30.5,25.3 34.3,25.6 38.1,30.8 41.9,20.9 45.7,29.0 49.5,34.5 53.3,28.7 57.1,25.3 61.0,27.8 64.8,24.7 68.6,20.6 72.4,21.3 76.2,22.0 80.0,22.9 83.8,23.3 87.6,25.4 91.4,39.8 95.2,30.7 99.0,33.1 102.9,34.0 106.7,27.0 110.5,35.6 114.3,30.4 118.1,26.2 121.9,19.9 125.7,16.9 129.5,18.0 133.3,21.4 137.1,24.0 141.0,22.3 144.8,22.9 148.6,35.2 152.4,37.6 156.2,38.2 160.0,41.3 163.8,36.4 167.6,30.1 171.4,27.0 175.2,22.7 179.0,25.6 182.9,33.0 186.7,28.8 190.5,25.1 194.3,25.9 198.1,22.1 201.9,13.5 205.7,10.1 209.5,18.4 213.3,23.4 217.1,27.3 221.0,28.8 224.8,32.9 228.6,28.9 232.4,21.0 236.2,17.9 240.0,23.6" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="23.6" r="2.6" fill="var(--up)"/></svg>
-    <span class="pv-ov pv-ovl">
-      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Extended — wait for a pullback — Main driver: Gold · buy on a pullback to $66.37–$66.37 · insider buying · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 过度拉伸 — 等待回撤 — 主要驱动：黄金 · 回撤至 $66.37–$66.37 买入 · 内部人买入 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
-      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
-    </span>
-    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="BAM.TO" data-mkt="ca">$66.53</span></span>
-  </div>
-  <div class="pv-bd">
-    <div class="pv-hd">
-      <span class="pv-idw"><span class="pv-tk">BAM.TO</span><span class="pv-nm"><span class="l-en">BROOKFIELD ASSET MANAGEMENT LTD</span><span class="l-zh">BROOKFIELD ASSET MANAGEMENT LTD</span></span></span>
-      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#10</span></span>
+      <span class="pv-idw"><span class="pv-tk">IGM.TO</span><span class="pv-nm"><span class="l-en">IGM FINANCIAL INC.</span><span class="l-zh">IGM FINANCIAL INC.</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#3</span></span>
     </div>
     <div class="pv-ind"><span class="l-en">Financials</span><span class="l-zh">Financials</span></div>
     <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
     <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
   </div>
-  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$66.37</span><span class="pv-dt"><span class="l-en">Jul 27</span><span class="l-zh">07-27</span></span>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$84.96–$87.16</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
+  </div>
+</a>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <a class="pvcard pv-near" href="canada_stock.html#DSV.TO" data-ticker="DSV.TO">
+  <div class="pv-chart">
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="27.3" width="96.0" height="4.6" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="27.3" x2="240" y2="27.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="31.8" x2="240" y2="31.8" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,30.1 3.8,32.3 7.6,32.4 11.4,24.3 15.2,21.7 19.0,18.2 22.9,14.4 26.7,10.1 30.5,11.9 34.3,16.4 38.1,22.0 41.9,29.1 45.7,27.9 49.5,29.9 53.3,31.0 57.1,28.7 61.0,31.2 64.8,35.1 68.6,33.0 72.4,28.8 76.2,33.9 80.0,25.4 83.8,32.3 87.6,31.8 91.4,38.8 95.2,36.4 99.0,39.3 102.9,42.0 106.7,36.7 110.5,33.3 114.3,28.0 118.1,23.5 121.9,26.3 125.7,27.5 129.5,28.8 133.3,28.4 137.1,35.0 141.0,38.8 144.8,37.3 148.6,30.7 152.4,27.8 156.2,29.9 160.0,23.6 163.8,15.4 167.6,21.0 171.4,24.3 175.2,27.6 179.0,26.4 182.9,28.2 186.7,33.5 190.5,33.5 194.3,35.4 198.1,39.5 201.9,37.1 205.7,37.3 209.5,29.4 213.3,23.9 217.1,29.4 221.0,28.3 224.8,26.8 228.6,28.4 232.4,29.0 236.2,23.6 240.0,27.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,30.1 3.8,32.3 7.6,32.4 11.4,24.3 15.2,21.7 19.0,18.2 22.9,14.4 26.7,10.1 30.5,11.9 34.3,16.4 38.1,22.0 41.9,29.1 45.7,27.9 49.5,29.9 53.3,31.0 57.1,28.7 61.0,31.2 64.8,35.1 68.6,33.0 72.4,28.8 76.2,33.9 80.0,25.4 83.8,32.3 87.6,31.8 91.4,38.8 95.2,36.4 99.0,39.3 102.9,42.0 106.7,36.7 110.5,33.3 114.3,28.0 118.1,23.5 121.9,26.3 125.7,27.5 129.5,28.8 133.3,28.4 137.1,35.0 141.0,38.8 144.8,37.3 148.6,30.7 152.4,27.8 156.2,29.9 160.0,23.6 163.8,15.4 167.6,21.0 171.4,24.3 175.2,27.6 179.0,26.4 182.9,28.2 186.7,33.5 190.5,33.5 194.3,35.4 198.1,39.5 201.9,37.1 205.7,37.3 209.5,29.4 213.3,23.9 217.1,29.4 221.0,28.3 224.8,26.8 228.6,28.4 232.4,29.0 236.2,23.6 240.0,27.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="27.3" r="2.6" fill="var(--up)"/></svg>
+    <span class="pv-ov pv-ovl">
+      <span class="pv-chip" data-tip-en="Constructive — building a base · Cycle turn — awaiting confluence cross — Main driver: Gold · buy on a pullback to $8.28–$8.75 · momentum screen · unproven" data-tip-zh="建设性 — 正在筑底 · 周期拐点 — 等待共振交叉确认 — 主要驱动：黄金 · 回撤至 $8.28–$8.75 买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
+      <span class="pv-live" hidden></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
+    </span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="DSV.TO" data-mkt="ca">$8.75</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd">
+      <span class="pv-idw"><span class="pv-tk">DSV.TO</span><span class="pv-nm"><span class="l-en">DISCOVERY MINING LTD</span><span class="l-zh">DISCOVERY MINING LTD</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#4</span></span>
+    </div>
+    <div class="pv-ind"><span class="l-en">Materials</span><span class="l-zh">Materials</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$8.28–$8.75</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
+  </div>
+</a>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <a class="pvcard pv-wait" href="canada_stock.html#ABX.TO" data-ticker="ABX.TO">
+  <div class="pv-chart">
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="38.5" x2="240" y2="38.5" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="40.4" x2="240" y2="40.4" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,34.4 3.8,35.6 7.6,34.4 11.4,26.1 15.2,25.1 19.0,21.3 22.9,10.1 26.7,13.4 30.5,16.1 34.3,20.8 38.1,28.0 41.9,31.2 45.7,27.2 49.5,25.8 53.3,27.2 57.1,22.3 61.0,23.3 64.8,25.4 68.6,24.4 72.4,21.1 76.2,21.8 80.0,19.3 83.8,22.5 87.6,19.9 91.4,29.4 95.2,29.1 99.0,30.2 102.9,35.9 106.7,30.2 110.5,26.6 114.3,21.6 118.1,18.8 121.9,22.0 125.7,24.9 129.5,26.7 133.3,25.4 137.1,30.9 141.0,35.8 144.8,35.3 148.6,33.6 152.4,34.6 156.2,35.2 160.0,30.8 163.8,28.1 167.6,30.9 171.4,34.8 175.2,38.6 179.0,35.1 182.9,35.7 186.7,38.0 190.5,37.1 194.3,38.8 198.1,42.0 201.9,42.0 205.7,41.7 209.5,36.9 213.3,33.9 217.1,34.9 221.0,34.8 224.8,33.9 228.6,35.9 232.4,37.4 236.2,34.0 240.0,36.7 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,34.4 3.8,35.6 7.6,34.4 11.4,26.1 15.2,25.1 19.0,21.3 22.9,10.1 26.7,13.4 30.5,16.1 34.3,20.8 38.1,28.0 41.9,31.2 45.7,27.2 49.5,25.8 53.3,27.2 57.1,22.3 61.0,23.3 64.8,25.4 68.6,24.4 72.4,21.1 76.2,21.8 80.0,19.3 83.8,22.5 87.6,19.9 91.4,29.4 95.2,29.1 99.0,30.2 102.9,35.9 106.7,30.2 110.5,26.6 114.3,21.6 118.1,18.8 121.9,22.0 125.7,24.9 129.5,26.7 133.3,25.4 137.1,30.9 141.0,35.8 144.8,35.3 148.6,33.6 152.4,34.6 156.2,35.2 160.0,30.8 163.8,28.1 167.6,30.9 171.4,34.8 175.2,38.6 179.0,35.1 182.9,35.7 186.7,38.0 190.5,37.1 194.3,38.8 198.1,42.0 201.9,42.0 205.7,41.7 209.5,36.9 213.3,33.9 217.1,34.9 221.0,34.8 224.8,33.9 228.6,35.9 232.4,37.4 236.2,34.0 240.0,36.7" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="36.7" r="2.6" fill="var(--down)"/></svg>
+    <span class="pv-ov pv-ovl">
+      <span class="pv-chip" data-tip-en="Constructive — building a base · Wait for the pullback — Main driver: Gold · buy on a pullback to $49.70–$50.58 · momentum screen · unproven" data-tip-zh="建设性 — 正在筑底 · 等待回撤 — 主要驱动：黄金 · 回撤至 $49.70–$50.58 买入 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
+      <span class="pv-live" hidden></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
+    </span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="ABX.TO" data-mkt="ca">$51.45</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd">
+      <span class="pv-idw"><span class="pv-tk">ABX.TO</span><span class="pv-nm"><span class="l-en">BARRICK MINING CORPORATION</span><span class="l-zh">BARRICK MINING CORPORATION</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#5</span></span>
+    </div>
+    <div class="pv-ind"><span class="l-en">Materials</span><span class="l-zh">Materials</span></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$49.70–$50.58</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
+  </div>
+</a>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <a class="pvcard pv-wait" href="canada_stock.html#PAAS.TO" data-ticker="PAAS.TO">
+  <div class="pv-chart">
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="41.2" x2="240" y2="41.2" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="42.0" x2="240" y2="42.0" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,29.0 3.8,29.8 7.6,30.6 11.4,21.4 15.2,19.4 19.0,17.3 22.9,12.5 26.7,10.1 30.5,10.3 34.3,14.0 38.1,21.0 41.9,26.2 45.7,23.2 49.5,23.0 53.3,24.2 57.1,21.0 61.0,22.0 64.8,24.9 68.6,22.3 72.4,19.5 76.2,21.5 80.0,22.1 83.8,25.7 87.6,25.0 91.4,33.4 95.2,33.9 99.0,35.7 102.9,38.6 106.7,34.9 110.5,32.1 114.3,27.7 118.1,26.1 121.9,27.7 125.7,29.9 129.5,30.3 133.3,30.0 137.1,34.0 141.0,36.9 144.8,36.1 148.6,35.4 152.4,36.6 156.2,36.4 160.0,34.0 163.8,31.5 167.6,35.9 171.4,37.5 175.2,40.0 179.0,37.5 182.9,38.3 186.7,39.9 190.5,39.0 194.3,39.0 198.1,41.5 201.9,42.0 205.7,41.1 209.5,37.3 213.3,36.3 217.1,37.9 221.0,38.0 224.8,37.8 228.6,39.2 232.4,40.6 236.2,38.5 240.0,40.0 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,29.0 3.8,29.8 7.6,30.6 11.4,21.4 15.2,19.4 19.0,17.3 22.9,12.5 26.7,10.1 30.5,10.3 34.3,14.0 38.1,21.0 41.9,26.2 45.7,23.2 49.5,23.0 53.3,24.2 57.1,21.0 61.0,22.0 64.8,24.9 68.6,22.3 72.4,19.5 76.2,21.5 80.0,22.1 83.8,25.7 87.6,25.0 91.4,33.4 95.2,33.9 99.0,35.7 102.9,38.6 106.7,34.9 110.5,32.1 114.3,27.7 118.1,26.1 121.9,27.7 125.7,29.9 129.5,30.3 133.3,30.0 137.1,34.0 141.0,36.9 144.8,36.1 148.6,35.4 152.4,36.6 156.2,36.4 160.0,34.0 163.8,31.5 167.6,35.9 171.4,37.5 175.2,40.0 179.0,37.5 182.9,38.3 186.7,39.9 190.5,39.0 194.3,39.0 198.1,41.5 201.9,42.0 205.7,41.1 209.5,37.3 213.3,36.3 217.1,37.9 221.0,38.0 224.8,37.8 228.6,39.2 232.4,40.6 236.2,38.5 240.0,40.0" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="40.0" r="2.6" fill="var(--down)"/></svg>
+    <span class="pv-ov pv-ovl">
+      <span class="pv-chip" data-tip-en="Neutral — no clear edge · Wait for the pullback — Main driver: Gold · buy on a pullback to $58.08–$59.22 · anticipation fresh cross · momentum screen · unproven" data-tip-zh="中性 — 无明显优势 · 等待回撤 — 主要驱动：黄金 · 回撤至 $58.08–$59.22 买入 · anticipation 新鲜金叉 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
+      <span class="pv-live" hidden></span>
+    </span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="PAAS.TO" data-mkt="ca">$60.36</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd">
+      <span class="pv-idw"><span class="pv-tk">PAAS.TO</span><span class="pv-nm"><span class="l-en">PAN AMERICAN SILVER CORP</span><span class="l-zh">PAN AMERICAN SILVER CORP</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#6</span></span>
+    </div>
+    <div class="pv-ind"><span class="l-en">Materials</span><span class="l-zh">Materials</span></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$58.08–$59.22</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
+  </div>
+</a>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <a class="pvcard pv-wait" href="canada_stock.html#TFPM.TO" data-ticker="TFPM.TO">
+  <div class="pv-chart">
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="34.7" x2="240" y2="34.7" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="34.7" x2="240" y2="34.7" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,26.9 3.8,27.2 7.6,27.8 11.4,22.2 15.2,23.0 19.0,19.1 22.9,10.6 26.7,11.1 30.5,10.1 34.3,15.1 38.1,23.6 41.9,28.1 45.7,24.7 49.5,23.6 53.3,27.7 57.1,23.0 61.0,24.6 64.8,28.4 68.6,28.5 72.4,22.6 76.2,29.1 80.0,27.1 83.8,30.6 87.6,28.6 91.4,36.6 95.2,35.7 99.0,38.2 102.9,42.0 106.7,37.6 110.5,32.7 114.3,26.6 118.1,24.1 121.9,26.0 125.7,28.0 129.5,29.6 133.3,28.6 137.1,32.2 141.0,35.3 144.8,34.7 148.6,28.3 152.4,27.1 156.2,27.8 160.0,22.0 163.8,20.7 167.6,27.0 171.4,30.8 175.2,37.0 179.0,33.8 182.9,35.5 186.7,37.6 190.5,37.1 194.3,39.1 198.1,40.0 201.9,39.6 205.7,39.0 209.5,34.3 213.3,31.8 217.1,33.7 221.0,32.2 224.8,32.0 228.6,34.1 232.4,34.0 236.2,30.7 240.0,34.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,26.9 3.8,27.2 7.6,27.8 11.4,22.2 15.2,23.0 19.0,19.1 22.9,10.6 26.7,11.1 30.5,10.1 34.3,15.1 38.1,23.6 41.9,28.1 45.7,24.7 49.5,23.6 53.3,27.7 57.1,23.0 61.0,24.6 64.8,28.4 68.6,28.5 72.4,22.6 76.2,29.1 80.0,27.1 83.8,30.6 87.6,28.6 91.4,36.6 95.2,35.7 99.0,38.2 102.9,42.0 106.7,37.6 110.5,32.7 114.3,26.6 118.1,24.1 121.9,26.0 125.7,28.0 129.5,29.6 133.3,28.6 137.1,32.2 141.0,35.3 144.8,34.7 148.6,28.3 152.4,27.1 156.2,27.8 160.0,22.0 163.8,20.7 167.6,27.0 171.4,30.8 175.2,37.0 179.0,33.8 182.9,35.5 186.7,37.6 190.5,37.1 194.3,39.1 198.1,40.0 201.9,39.6 205.7,39.0 209.5,34.3 213.3,31.8 217.1,33.7 221.0,32.2 224.8,32.0 228.6,34.1 232.4,34.0 236.2,30.7 240.0,34.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="34.1" r="2.6" fill="var(--down)"/></svg>
+    <span class="pv-ov pv-ovl">
+      <span class="pv-chip" data-tip-en="Neutral — no clear edge · Wait for the pullback — Main driver: Gold · buy on a pullback to $40.08–$40.08 · momentum screen · unproven" data-tip-zh="中性 — 无明显优势 · 等待回撤 — 主要驱动：黄金 · 回撤至 $40.08–$40.08 买入 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
+      <span class="pv-live" hidden></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
+    </span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="TFPM.TO" data-mkt="ca">$40.27</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd">
+      <span class="pv-idw"><span class="pv-tk">TFPM.TO</span><span class="pv-nm"><span class="l-en">TRIPLE FLAG PRECIOUS METALS COR</span><span class="l-zh">TRIPLE FLAG PRECIOUS METALS COR</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#7</span></span>
+    </div>
+    <div class="pv-ind"><span class="l-en">Materials</span><span class="l-zh">Materials</span></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$40.08</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
+  </div>
+</a>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <a class="pvcard pv-near" href="canada_stock.html#KEL.TO" data-ticker="KEL.TO">
+  <div class="pv-chart">
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="15.3" width="96.0" height="5.3" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="15.3" x2="240" y2="15.3" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="20.6" x2="240" y2="20.6" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,15.9 3.8,10.9 7.6,11.6 11.4,23.1 15.2,22.0 19.0,20.2 22.9,19.4 26.7,19.2 30.5,21.6 34.3,18.1 38.1,14.9 41.9,11.2 45.7,16.1 49.5,15.1 53.3,15.7 57.1,24.5 61.0,25.7 64.8,32.1 68.6,29.2 72.4,33.0 76.2,25.5 80.0,17.3 83.8,11.6 87.6,11.1 91.4,20.4 95.2,15.1 99.0,22.0 102.9,13.4 106.7,14.4 110.5,17.7 114.3,23.9 118.1,29.0 121.9,32.3 125.7,40.2 129.5,36.7 133.3,39.1 137.1,38.9 141.0,41.6 144.8,41.0 148.6,42.0 152.4,40.1 156.2,39.3 160.0,34.4 163.8,30.9 167.6,32.9 171.4,30.7 175.2,26.2 179.0,26.6 182.9,28.4 186.7,19.8 190.5,21.4 194.3,22.7 198.1,23.5 201.9,25.5 205.7,23.5 209.5,21.0 213.3,12.8 217.1,10.1 221.0,13.0 224.8,20.6 228.6,26.2 232.4,21.0 236.2,18.6 240.0,15.3 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,15.9 3.8,10.9 7.6,11.6 11.4,23.1 15.2,22.0 19.0,20.2 22.9,19.4 26.7,19.2 30.5,21.6 34.3,18.1 38.1,14.9 41.9,11.2 45.7,16.1 49.5,15.1 53.3,15.7 57.1,24.5 61.0,25.7 64.8,32.1 68.6,29.2 72.4,33.0 76.2,25.5 80.0,17.3 83.8,11.6 87.6,11.1 91.4,20.4 95.2,15.1 99.0,22.0 102.9,13.4 106.7,14.4 110.5,17.7 114.3,23.9 118.1,29.0 121.9,32.3 125.7,40.2 129.5,36.7 133.3,39.1 137.1,38.9 141.0,41.6 144.8,41.0 148.6,42.0 152.4,40.1 156.2,39.3 160.0,34.4 163.8,30.9 167.6,32.9 171.4,30.7 175.2,26.2 179.0,26.6 182.9,28.4 186.7,19.8 190.5,21.4 194.3,22.7 198.1,23.5 201.9,25.5 205.7,23.5 209.5,21.0 213.3,12.8 217.1,10.1 221.0,13.0 224.8,20.6 228.6,26.2 232.4,21.0 236.2,18.6 240.0,15.3" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="15.3" r="2.6" fill="var(--up)"/></svg>
+    <span class="pv-ov pv-ovl">
+      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Cycle turn — awaiting confluence cross — Main driver: Oil · buy on a pullback to $9.71–$9.98 · oil tailwind · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 周期拐点 — 等待共振交叉确认 — 主要驱动：原油 · 回撤至 $9.71–$9.98 买入 · 油价顺风 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
+      <span class="pv-live" hidden></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
+    </span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="KEL.TO" data-mkt="ca">$9.98</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd">
+      <span class="pv-idw"><span class="pv-tk">KEL.TO</span><span class="pv-nm"><span class="l-en">KELT EXPLORATION LTD</span><span class="l-zh">KELT EXPLORATION LTD</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#8</span></span>
+    </div>
+    <div class="pv-ind"><span class="l-en">Energy</span><span class="l-zh">Energy</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span></div>
+    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span class="on"><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$9.71–$9.98</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
+  </div>
+</a>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <a class="pvcard pv-wait" href="canada_stock.html#NPI.TO" data-ticker="NPI.TO">
+  <div class="pv-chart">
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><line x1="144.0" y1="38.2" x2="240" y2="38.2" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="41.2" x2="240" y2="41.2" stroke="var(--down)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,18.4 3.8,19.8 7.6,18.5 11.4,16.7 15.2,14.8 19.0,17.5 22.9,18.7 26.7,19.0 30.5,14.0 34.3,25.7 38.1,21.3 41.9,24.5 45.7,27.2 49.5,21.2 53.3,18.0 57.1,21.3 61.0,16.0 64.8,11.9 68.6,15.2 72.4,13.8 76.2,15.8 80.0,10.1 83.8,14.7 87.6,17.1 91.4,23.8 95.2,23.6 99.0,28.1 102.9,27.3 106.7,23.6 110.5,25.2 114.3,23.6 118.1,24.5 121.9,22.7 125.7,23.0 129.5,24.8 133.3,23.5 137.1,30.2 141.0,32.6 144.8,32.2 148.6,33.0 152.4,34.6 156.2,28.6 160.0,37.6 163.8,38.6 167.6,37.9 171.4,36.5 175.2,33.8 179.0,30.2 182.9,30.1 186.7,33.0 190.5,30.7 194.3,35.6 198.1,42.0 201.9,36.0 205.7,32.2 209.5,34.8 213.3,34.5 217.1,31.7 221.0,31.8 224.8,37.5 228.6,36.4 232.4,39.4 236.2,35.4 240.0,35.1 240,42" fill="var(--down)" opacity="0.12" stroke="none"/><polyline points="0.0,18.4 3.8,19.8 7.6,18.5 11.4,16.7 15.2,14.8 19.0,17.5 22.9,18.7 26.7,19.0 30.5,14.0 34.3,25.7 38.1,21.3 41.9,24.5 45.7,27.2 49.5,21.2 53.3,18.0 57.1,21.3 61.0,16.0 64.8,11.9 68.6,15.2 72.4,13.8 76.2,15.8 80.0,10.1 83.8,14.7 87.6,17.1 91.4,23.8 95.2,23.6 99.0,28.1 102.9,27.3 106.7,23.6 110.5,25.2 114.3,23.6 118.1,24.5 121.9,22.7 125.7,23.0 129.5,24.8 133.3,23.5 137.1,30.2 141.0,32.6 144.8,32.2 148.6,33.0 152.4,34.6 156.2,28.6 160.0,37.6 163.8,38.6 167.6,37.9 171.4,36.5 175.2,33.8 179.0,30.2 182.9,30.1 186.7,33.0 190.5,30.7 194.3,35.6 198.1,42.0 201.9,36.0 205.7,32.2 209.5,34.8 213.3,34.5 217.1,31.7 221.0,31.8 224.8,37.5 228.6,36.4 232.4,39.4 236.2,35.4 240.0,35.1" fill="none" stroke="var(--down)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="35.1" r="2.6" fill="var(--down)"/></svg>
+    <span class="pv-ov pv-ovl">
+      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Wait for the pullback — Main driver: Utilities sector · buy on a pullback to $21.33–$21.57 · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 等待回撤 — 主要驱动：Utilities 板块 · 回撤至 $21.33–$21.57 买入 · 动量筛选 · 未验证"><span class="l-en">Wait</span><span class="l-zh">等待</span></span>
+      <span class="pv-live" hidden></span>
+      <span class="pv-cau"><button class="pv-cau-btn" type="button" aria-label="Caution notes (1)" onclick="event.preventDefault();event.stopPropagation();this.focus()">⚠ 1</button><span class="pv-cau-pop" role="tooltip"><span class="pv-cau-row"><span class="l-en">No fresh entry cross today — wait, don't chase</span><span class="l-zh">今日无新鲜入场金叉 — 等待，勿追</span></span></span></span>
+    </span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="NPI.TO" data-mkt="ca">$21.82</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd">
+      <span class="pv-idw"><span class="pv-tk">NPI.TO</span><span class="pv-nm"><span class="l-en">NORTHLAND POWER INC.</span><span class="l-zh">NORTHLAND POWER INC.</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#9</span></span>
+    </div>
+    <div class="pv-ind"><span class="l-en">Utilities</span><span class="l-zh">Utilities</span></div>
+    <div class="pv-stp"><span class="pv-dot pa"></span><span class="pv-seg pa"></span><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span class="on"><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znm">$21.33–$21.57</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
+  </div>
+</a>
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <a class="pvcard pv-near" href="canada_stock.html#ATS.TO" data-ticker="ATS.TO">
+  <div class="pv-chart">
+    <svg class="nch" viewBox="0 0 240 42" preserveAspectRatio="none" width="100%" height="42"><rect x="144.0" y="38.4" width="96.0" height="1.8" fill="var(--up)" fill-opacity="0.09" stroke="none"/><line x1="144.0" y1="38.4" x2="240" y2="38.4" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><line x1="144.0" y1="40.2" x2="240" y2="40.2" stroke="var(--up)" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.65"/><polyline points="0,42 0.0,23.5 3.8,23.9 7.6,16.2 11.4,16.7 15.2,14.3 19.0,11.5 22.9,15.6 26.7,18.8 30.5,20.1 34.3,21.9 38.1,22.9 41.9,25.2 45.7,22.3 49.5,19.5 53.3,14.5 57.1,14.0 61.0,13.3 64.8,10.1 68.6,28.5 72.4,26.8 76.2,31.4 80.0,30.1 83.8,33.3 87.6,35.7 91.4,40.3 95.2,38.9 99.0,38.4 102.9,42.0 106.7,40.9 110.5,38.3 114.3,35.0 118.1,35.9 121.9,33.8 125.7,35.0 129.5,35.7 133.3,35.1 137.1,36.9 141.0,34.3 144.8,33.9 148.6,34.4 152.4,36.0 156.2,31.5 160.0,35.8 163.8,34.1 167.6,32.6 171.4,35.9 175.2,37.7 179.0,35.6 182.9,34.8 186.7,37.2 190.5,38.3 194.3,37.8 198.1,36.1 201.9,37.3 205.7,40.6 209.5,39.6 213.3,39.4 217.1,41.0 221.0,41.0 224.8,40.5 228.6,38.9 232.4,40.9 236.2,40.3 240.0,38.4 240,42" fill="var(--up)" opacity="0.12" stroke="none"/><polyline points="0.0,23.5 3.8,23.9 7.6,16.2 11.4,16.7 15.2,14.3 19.0,11.5 22.9,15.6 26.7,18.8 30.5,20.1 34.3,21.9 38.1,22.9 41.9,25.2 45.7,22.3 49.5,19.5 53.3,14.5 57.1,14.0 61.0,13.3 64.8,10.1 68.6,28.5 72.4,26.8 76.2,31.4 80.0,30.1 83.8,33.3 87.6,35.7 91.4,40.3 95.2,38.9 99.0,38.4 102.9,42.0 106.7,40.9 110.5,38.3 114.3,35.0 118.1,35.9 121.9,33.8 125.7,35.0 129.5,35.7 133.3,35.1 137.1,36.9 141.0,34.3 144.8,33.9 148.6,34.4 152.4,36.0 156.2,31.5 160.0,35.8 163.8,34.1 167.6,32.6 171.4,35.9 175.2,37.7 179.0,35.6 182.9,34.8 186.7,37.2 190.5,38.3 194.3,37.8 198.1,36.1 201.9,37.3 205.7,40.6 209.5,39.6 213.3,39.4 217.1,41.0 221.0,41.0 224.8,40.5 228.6,38.9 232.4,40.9 236.2,40.3 240.0,38.4" fill="none" stroke="var(--up)" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="240.0" cy="38.4" r="2.6" fill="var(--up)"/></svg>
+    <span class="pv-ov pv-ovl">
+      <span class="pv-chip" data-tip-en="Lagging — relative weakness · Cycle turn — awaiting confluence cross — Main driver: CAD · buy on a pullback to $37.56–$38.25 · anticipation fresh cross · insider buying · momentum screen · unproven" data-tip-zh="落后 — 相对弱势 · 周期拐点 — 等待共振交叉确认 — 主要驱动：加元 · 回撤至 $37.56–$38.25 买入 · anticipation 新鲜金叉 · 内部人买入 · 动量筛选 · 未验证"><span class="l-en">Near</span><span class="l-zh">临近</span></span>
+      <span class="pv-live" hidden></span>
+    </span>
+    <span class="pv-ov pv-ovr"><span class="nb-px pv-px" data-sym="ATS.TO" data-mkt="ca">$38.25</span></span>
+  </div>
+  <div class="pv-bd">
+    <div class="pv-hd">
+      <span class="pv-idw"><span class="pv-tk">ATS.TO</span><span class="pv-nm"><span class="l-en">ATS CORPORATION</span><span class="l-zh">ATS CORPORATION</span></span></span>
+      <span class="pv-edge" data-tip-en="Rank within this group, not a score." data-tip-zh="组内顺序，不是分数。"><span class="pv-edl"><span class="l-en">Rank</span><span class="l-zh">排名</span></span><span class="pv-edn">#10</span></span>
+    </div>
+    <div class="pv-ind"><span class="l-en">Industrials</span><span class="l-zh">Industrials</span></div>
+    <div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span></div>
+    <div class="pv-stl"><span class="on"><span class="l-en">Bottoming</span><span class="l-zh">筑底</span></span><span><span class="l-en">Turning</span><span class="l-zh">转向</span></span><span><span class="l-en">Ready</span><span class="l-zh">就绪</span></span><span><span class="l-en">Trend</span><span class="l-zh">趋势</span></span></div>
+  </div>
+  <div class="pv-zn"><span class="pv-znl"><span class="l-en">Zone</span><span class="l-zh">买区</span></span><span class="pv-znr">$37.56–$38.25</span><span class="pv-dt"><span class="l-en">Jul 30</span><span class="l-zh">07-30</span></span>
   </div>
 </a>
 
@@ -1331,7 +1489,7 @@
       
       
       <a href="canada_stock.html#EIF.TO" class="wg-knife" title="High-confluence leader (context) · ">
-        <span class="wg-tk">EIF.TO <span class="muted small" style="font-weight:600">· 30</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +2.24</span></span>
+        <span class="wg-tk">EIF.TO <span class="muted small" style="font-weight:600">· 9</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +2.26</span></span>
         <span class="wg-v">EXCHANGE INCOME CORPORATION — <span class="l-en">High-confluence leader (context)</span><span class="l-zh">高共振 领先（参考）</span></span>
         
         <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
@@ -1342,7 +1500,7 @@
       
       
       <a href="canada_stock.html#QBR-B.TO" class="wg-knife" title="Strong name · wrong tape — wait for a base · ">
-        <span class="wg-tk">QBR-B.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.99</span></span>
+        <span class="wg-tk">QBR-B.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +2.20</span></span>
         <span class="wg-v">QUEBECOR INC CLASS B SV — <span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
         
         <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
@@ -1353,7 +1511,7 @@
       
       
       <a href="canada_stock.html#VNP.TO" class="wg-knife" title="Strong name · wrong tape — wait for a base · ">
-        <span class="wg-tk">VNP.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.80</span></span>
+        <span class="wg-tk">VNP.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.71</span></span>
         <span class="wg-v">5N PLUS INC. — <span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
         
         <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
@@ -1363,8 +1521,19 @@
       </a>
       
       
+      <a href="canada_stock.html#ALS.TO" class="wg-knife" title="High-confluence leader (context) · ">
+        <span class="wg-tk">ALS.TO <span class="muted small" style="font-weight:600">· 30</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.56</span></span>
+        <span class="wg-v">ALTIUS MINERALS CORPORATION — <span class="l-en">High-confluence leader (context)</span><span class="l-zh">高共振 领先（参考）</span></span>
+        
+        <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
+          <span class="l-en">🔻 weekly still falling — wait for the turn</span><span class="l-zh">🔻 周线仍下行 — 等待转向</span>
+        </span>
+        
+      </a>
+      
+      
       <a href="canada_stock.html#EFX.TO" class="wg-knife" title="Strong name · wrong tape — wait for a base · ">
-        <span class="wg-tk">EFX.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.65</span></span>
+        <span class="wg-tk">EFX.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.55</span></span>
         <span class="wg-v">ENERFLEX LTD — <span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
         
         <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
@@ -1374,19 +1543,8 @@
       </a>
       
       
-      <a href="canada_stock.html#ALS.TO" class="wg-knife" title="Extended — don't chase; wait for a pullback · ">
-        <span class="wg-tk">ALS.TO <span class="muted small" style="font-weight:600">· 5</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.61</span></span>
-        <span class="wg-v">ALTIUS MINERALS CORPORATION — <span class="l-en">Extended — don't chase; wait for a pullback</span><span class="l-zh">过度拉升 — 勿追高；等待回撤</span></span>
-        
-        <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
-          <span class="l-en">🔻 weekly still falling — wait for the turn</span><span class="l-zh">🔻 周线仍下行 — 等待转向</span>
-        </span>
-        
-      </a>
-      
-      
       <a href="canada_stock.html#REI-UN.TO" class="wg-knife" title="High-confluence leader (context) · ">
-        <span class="wg-tk">REI-UN.TO <span class="muted small" style="font-weight:600">· 8</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.45</span></span>
+        <span class="wg-tk">REI-UN.TO <span class="muted small" style="font-weight:600">· 26</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.32</span></span>
         <span class="wg-v">RIOCAN REAL EST UN — <span class="l-en">High-confluence leader (context)</span><span class="l-zh">高共振 领先（参考）</span></span>
         
         <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
@@ -1397,7 +1555,7 @@
       
       
       <a href="canada_stock.html#HPS-A.TO" class="wg-knife" title="Strong name · wrong tape — wait for a base · ">
-        <span class="wg-tk">HPS-A.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.22</span></span>
+        <span class="wg-tk">HPS-A.TO <span class="muted small" style="font-weight:600">· 0</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.09</span></span>
         <span class="wg-v">HAMMOND POWER SOLUTIONS INC., C — <span class="l-en">Strong name · wrong tape — wait for a base</span><span class="l-zh">强势个股 · 趋势不利 — 等待筑底</span></span>
         
         <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
@@ -1407,9 +1565,9 @@
       </a>
       
       
-      <a href="canada_stock.html#IGM.TO" class="wg-knife" title="Leader · poor entry — wait for a base · ">
-        <span class="wg-tk">IGM.TO <span class="muted small" style="font-weight:600">· 8</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.17</span></span>
-        <span class="wg-v">IGM FINANCIAL INC. — <span class="l-en">Leader · poor entry — wait for a base</span><span class="l-zh">领先 · 入场点欠佳 — 等待筑底</span></span>
+      <a href="canada_stock.html#GRT-UN.TO" class="wg-knife" title="High-confluence leader (context) · ">
+        <span class="wg-tk">GRT-UN.TO <span class="muted small" style="font-weight:600">· 7</span> <span class="muted small"><span class="l-en">mom</span><span class="l-zh">动量</span> +1.07</span></span>
+        <span class="wg-v">GRANITE REAL ESTATE INVESTMENT  — <span class="l-en">High-confluence leader (context)</span><span class="l-zh">高共振 领先（参考）</span></span>
         
         <span class="wg-knife-chip" data-tip-en="Weekly trend is still falling. Wait for the turn." data-tip-zh="周线仍在下行。等待转向。">
           <span class="l-en">🔻 weekly still falling — wait for the turn</span><span class="l-zh">🔻 周线仍下行 — 等待转向</span>
@@ -1424,7 +1582,7 @@
   
   <p class="note" style="margin:13px 0 5px; text-transform:none; color:var(--down); font-weight:700">⚠ <span class="l-en">Weakest screen (laggards) — distribution / avoid:</span><span class="l-zh">筛选最弱（落后股）— 派发／回避：</span></p>
   <p style="margin:0; line-height:2">
-    <a href="canada_stock.html#WSP.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>WSP.TO</b> <span class="note">WSP GLOBAL INC</span> <span class="neg">-2.58</span></a><a href="canada_stock.html#BAM.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>BAM.TO</b> <span class="note">BROOKFIELD ASSET MANAGEMENT LTD</span> <span class="neg">-2.30</span></a><a href="canada_stock.html#STN.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>STN.TO</b> <span class="note">STANTEC INC</span> <span class="neg">-2.30</span></a><a href="canada_stock.html#ONEX.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>ONEX.TO</b> <span class="note">ONEX CORPORATION</span> <span class="neg">-2.03</span></a><a href="canada_stock.html#CAR-UN.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>CAR-UN.TO</b> <span class="note">CDN APARTMENT UN</span> <span class="neg">-1.98</span></a><a href="canada_stock.html#T.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>T.TO</b> <span class="note">TELUS CORPORATION</span> <span class="neg">-1.92</span></a>
+    <a href="canada_stock.html#WSP.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>WSP.TO</b> <span class="note">WSP GLOBAL INC</span> <span class="neg">-2.62</span></a><a href="canada_stock.html#STN.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>STN.TO</b> <span class="note">STANTEC INC</span> <span class="neg">-2.28</span></a><a href="canada_stock.html#BAM.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>BAM.TO</b> <span class="note">BROOKFIELD ASSET MANAGEMENT LTD</span> <span class="neg">-2.19</span></a><a href="canada_stock.html#T.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>T.TO</b> <span class="note">TELUS CORPORATION</span> <span class="neg">-2.05</span></a><a href="canada_stock.html#CAR-UN.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>CAR-UN.TO</b> <span class="note">CDN APARTMENT UN</span> <span class="neg">-2.03</span></a><a href="canada_stock.html#AAV.TO" style="margin-right:14px; white-space:normal; overflow-wrap:anywhere"><b>AAV.TO</b> <span class="note">ADVANTAGE ENERGY LTD</span> <span class="neg">-1.92</span></a>
   </p>
   
   
@@ -1434,7 +1592,7 @@
 
 
 <script src="mtf.js?v=b62aea2f" defer></script>
-<script src="theme.js?v=0943b4d5" defer></script>
+<script src="theme.js?v=e4951de3" defer></script>
 <script defer src="illus.js?v=8e0a3779"></script>
 <script src="chart_i18n.js?v=23272c48" defer></script>
 <script src="charts.js?v=5372d2a2" defer></script>
@@ -1609,5 +1767,6 @@ if (document.readyState === 'loading') {
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

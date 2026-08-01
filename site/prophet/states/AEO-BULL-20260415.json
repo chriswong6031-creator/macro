@@ -1,7 +1,7 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "AEO-BULL-20260415",
-  "asof": "2026-07-29",
+  "asof": "2026-07-31",
   "phase": "overtime",
   "detection_phase": "overtime",
   "management_confidence": 41.5,
@@ -11,26 +11,26 @@
   "human_state": "Overtime Stall",
   "components": {
     "validity": 100.0,
-    "progress": 21.8,
+    "progress": 8.7,
     "pace": 0.0,
-    "retention": 45.9,
+    "retention": 13.5,
     "overlay": 53.0
   },
   "geometry": {
-    "dist_to_stop_r": 1.329,
-    "dist_to_t1_r": 1.171,
-    "dist_to_t2_r": 2.671,
-    "horizon_pct_used": 233.3,
-    "p1": 0.2194,
-    "p2": 0.1097,
+    "dist_to_stop_r": 1.097,
+    "dist_to_t1_r": 1.403,
+    "dist_to_t2_r": 2.903,
+    "horizon_pct_used": 237.8,
+    "p1": 0.0645,
+    "p2": 0.0323,
     "p3": null,
-    "move_r": 0.329,
+    "move_r": 0.097,
     "mfe_r": 0.716,
     "mae_r": -0.019
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Moving Away from Stop",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-20",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 105,
-  "tau": 2.3333
+  "days_elapsed": 107,
+  "tau": 2.3778
 }

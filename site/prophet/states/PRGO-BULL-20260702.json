@@ -1,36 +1,36 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "PRGO-BULL-20260702",
-  "asof": "2026-07-29",
+  "asof": "2026-07-31",
   "phase": "pre_trigger",
   "detection_phase": "pre_trigger",
-  "management_confidence": 50.6,
-  "raw_confidence": 52.0,
-  "delta_vs_base": -9.4,
+  "management_confidence": 49.6,
+  "raw_confidence": 48.4,
+  "delta_vs_base": -10.4,
   "recommended_action": "wait",
   "human_state": "Approaching Trigger",
   "components": {
-    "validity": 96.9,
+    "validity": 72.8,
     "progress": 0.0,
-    "pace": 5.7,
+    "pace": 4.3,
     "retention": 50.0,
-    "overlay": 53.0
+    "overlay": 47.0
   },
   "geometry": {
-    "dist_to_stop_r": 0.977,
+    "dist_to_stop_r": 0.791,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 60.0,
-    "p1": -0.0155,
-    "p2": -0.0078,
+    "horizon_pct_used": 64.4,
+    "p1": -0.1395,
+    "p2": -0.0698,
     "p3": null,
-    "move_r": -0.023,
+    "move_r": -0.209,
     "mfe_r": 0.0,
     "mae_r": -0.221
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "",
+  "change_reason": "Falling Behind Schedule",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": null,
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 27,
-  "tau": 0.6
+  "days_elapsed": 29,
+  "tau": 0.6444
 }

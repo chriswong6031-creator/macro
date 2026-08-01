@@ -1,0 +1,88 @@
+{
+  "handles": {
+    "Barchart": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 19
+    },
+    "DeItaone": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 20
+    },
+    "FirstSquawk": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 20
+    },
+    "KobeissiLetter": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 20
+    },
+    "LizAnnSonders": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 18
+    },
+    "Mr_Derivatives": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 18
+    },
+    "PeterLBrandt": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 19
+    },
+    "RyanDetrick": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 14
+    },
+    "StockMKTNewz": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 20
+    },
+    "alphatrends": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 19
+    },
+    "bespokeinvest": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 18
+    },
+    "charliebilello": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 11
+    },
+    "jam_croissant": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 5
+    },
+    "markminervini": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 14
+    },
+    "traderstewie": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 20
+    },
+    "unusual_whales": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 20
+    },
+    "wallstengine": {
+      "last_captured_at": "2026-07-31T23:47:24Z",
+      "last_kept": 20
+    }
+  },
+  "last_run": {
+    "at": "2026-07-31T23:47:24Z",
+    "calls": 17,
+    "rows": 295,
+    "stopped": null,
+    "usd": 0.051
+  },
+  "months": {
+    "2026-07": {
+      "calls": 27,
+      "tweets": 340,
+      "usd": 0.0525
+    }
+  },
+  "schema": "marketing.x_intel_state/v1",
+  "updated_at": "2026-07-31T23:47:24Z"
+}

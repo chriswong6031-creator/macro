@@ -135,8 +135,42 @@ jobs:
       - name: install deps
         # pyyaml: config/marketing.yml load. pandas+pyarrow: the tape gate's
         # earnings-day guard reads data/earnings/earnings.parquet (fail-soft —
-        # the guard degrades open if the import or file is missing).
-        run: pip install --quiet pyyaml pandas pyarrow
+        # the guard degrades open if the import or file is missing), and pyarrow
+        # is also chart_render's no-pandas parquet reader for the mover card's
+        # daily bars.
+        #
+        # pillow + boto3 JOIN 2026-07-31, with the R2 block on the publisher step
+        # below. THIS LANE NOW RENDERS ITS OWN CARDS AT PUBLISH TIME:
+        # engine/marketing/publish_time_content builds a watchlist card for every
+        # theme_list and a tape chart for every mover, because a mover/theme post
+        # with no picture is quarantined outright by the bare-cashtag law
+        # (scripts/marketing_publisher._TICKER_ROLLUP_KINDS) and the lane was
+        # therefore structurally dead. Rendering is only half the job:
+        #   * pillow — LOGO COMPOSITING, not rasterisation. Both cards embed the
+        #     company icon as a data: URI via chart_render.resolve_color_logo →
+        #     logo_cache.color_logo_datauri, which on a cache MISS fetches the
+        #     CDN png and hands it to logo_cache._downscale — a PIL call that
+        #     returns None the moment `from PIL import Image` fails, taking the
+        #     logo with it. The colour cache is the thin one: 57 `*_color.png`
+        #     are committed against 1,204 `*_white.png`, so on a shallow checkout
+        #     most tickers this lane picks MISS and need the fetch+downscale
+        #     path. Without pillow the card still renders and still posts — it
+        #     just ships with blank avatar chips, which is a silent quality
+        #     regression rather than an outage.
+        #     (An earlier version of this comment claimed pillow backstops
+        #     media_publish.publish_card's `legacy_png` PIL raster when Chrome is
+        #     missing. THAT WIRE DOES NOT EXIST HERE: publish_time_content's
+        #     _resolve_card calls publish_card(svg, chart_id=…, as_of=…, root=…)
+        #     and never passes `legacy_png`, so a Chrome-less host produces b""
+        #     and the candidate is dropped for `no-media-url` no matter what PIL
+        #     is installed. Chrome itself is not pip-installable and is not
+        #     installed here — ubuntu-latest ships Google Chrome in the runner
+        #     image, and chart_render.find_chrome picks it up off PATH.)
+        #   * boto3 — publish_chart_png needs an S3 client, and without one the
+        #     upload fail-softs to None on every card, which under the new law
+        #     means every candidate is dropped rather than shipped bare. This one
+        #     IS an outage dependency: no boto3, no post.
+        run: pip install --quiet pyyaml pandas pyarrow pillow boto3
 
       - name: humanizing jitter
         # Spread posts off perfectly round cron times (Actions cron is already
@@ -212,6 +246,25 @@ jobs:
           # Breaking dispatch: empty on every scheduled sweep, so the normal
           # ladder run is byte-identical to before this input existed.
           POST_NOW_ITEM: ${{ inputs.post_now_item }}
+
+          # ── R2: WHERE THE PUBLISH-TIME CARD BECOMES A PICTURE ──────────────
+          # Same arming contract, and the same failure mode, as the press wire
+          # (marketing-press-wire.yml): publish_card writes the SVG and the PNG
+          # locally, then publish_chart_png needs a client (boto3, added to the
+          # install line above) AND these credentials to produce the public https
+          # URL Buffer fetches — a repo path is not something X can load.
+          #
+          # Absent either, the upload fail-softs to None. Before 2026-07-31 that
+          # was silent and the post shipped text-only; now the lane refuses to
+          # enqueue an unhosted card at all (chartless DEFER), so an unconfigured
+          # secret here means the mover/theme lane generates NOTHING and says so
+          # with a ::warning per sweep rather than posting a naked ticker list.
+          # Unconfigured repo secrets resolve to "" and are treated as absent, so
+          # these lines are inert until the secrets land.
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: |
           # --live is safe here: with MARKETING_PUBLISH_ENABLED unset the runner
           # runs DRY-RUN, posts nothing, and writes no status transitions.

@@ -130,8 +130,9 @@ line "Setup intact; entry gate closed. Regime, theme and flow agree — wait for
 CENSUS-PINNED FACTS for this page (charting-app terminal, cited by the census lane —
 numbers usable in copy, nothing else): 14 timeframes in 5 groups · 5 chart types
 (candles/heikin/bars/line/area) · up to 4 chart panes + one-click MTF split · bar replay ·
-Day Trade Mode · 17 indicators in the picker + a Pine-style editor (saving custom scripts
-is a Pro feature) · 9 drawing tools + 4 auto-detection modes (auto trendlines, auto Fib,
+Day Trade Mode · 21 core studies + 31 advanced modules across five complementary systems ·
+a Pine-style editor (the complete system library and saved custom scripts are Pro;
+exact tier counts live on pricing surfaces) · 9 drawing tools + 4 auto-detection modes (auto trendlines, auto Fib,
 S/R heatmap, MTF S/R) · 5 markets (US · China A · Hong Kong · Canada · crypto) · honest
 freshness badges (LIVE / 15-MIN DELAYED / end-of-day basis tags) · full fundamentals
 dossier tabs (statements incl. earnings-call transcripts, earnings, dividends, forecast,
@@ -152,13 +153,18 @@ SECTIONS (feature/flip alternating; each with `.demo` vignette):
    D/3D/W/1M · **Replay the tape.** step history bar by bar. Vignette: chart panel with
    timeframe tab row (D · 3D · W · 1M), price strip + two stacked indicator panes, a
    replay scrubber chip.
-2. `#indicators` — Indicators/指标体系 · "Seventeen built in.<br>Then write your own." /
-   "内置十七种。<br>还能自己写。" · sub: moving averages, Bollinger, VWAP, MACD, RSI and a
-   day-trade suite — each with editable inputs and styles; a Pine-style editor compiles
-   your own studies (saving custom scripts is a Pro feature — stated plainly). fx:
-   **17 indicators in the picker.** · **Every input editable.** lengths, colors, widths ·
-   **A Pine-style editor.** write, compile, run. Vignette: indicator picker column +
-   a small editor card with a compile chip.
+2. `#indicators` — Indicator systems/指标体系 · "Five complementary systems.<br>One clearer
+   technical workflow." / "五套互补系统。<br>一条更清晰的技术流程。" · customer-level story, not documentation:
+   31 advanced modules grouped into Structure Core, Trend Waves, Pulse Oscillator,
+   RSI Ultimate and MACD Ultimate. fx: **31 advanced modules.** Focus / Workflow /
+   Research depth · **From structure to trade management.** context, rotation,
+   confirmation, risk and TP1–TP6 · **Honest multi-timeframe context.** responsive
+   Chart plus completed 2× and 4× blocks. Vignette: a finite four-stage illustration (structure → rotation →
+   confirmation → targets/risk) with manual steps, replay, visibility pause and a
+   reduced-motion final state. Below it, five compact system cards and one understated
+   "All five, complete · Available in Pro" signature. Insider is described as a curated
+   selection and the plans page owns exact tier counts; do not duplicate a pricing-card
+   ladder here. Pine-style editor stays a secondary note; saving custom scripts is Pro.
 3. `#watchlists` — Watchlists & quotes/自选与报价 · "Watchlists with<br>honest quotes." /
    "自选列表，<br>报价如实标注。" · sub: named lists with sections and drag order; every
    quote wears its basis — LIVE, 15-MIN DELAYED or end-of-day — because pretending

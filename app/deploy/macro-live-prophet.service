@@ -1,0 +1,47 @@
+# Prophet Live intraday evaluator — the product lane (masterplan §4.2a). GitHub's
+# scheduler throttles this repo's frequent crons far past the documented 15-45 min
+# (measured 2026-07-30: a */5 lane ran 09:07Z then 12:19Z, ~3h12m apart), so the
+# 5-minute cadence lives here and .github/workflows/prophet-live.yml is the backstop.
+#
+# The pass reads the box's own quote plane off disk, evaluates the nightly armed pack,
+# publishes to R2 and writes the served copy at
+# /var/lib/macro-live/public/live/prophet_live.json by atomic rename. It writes no
+# data/ path and runs no git command (LEDGER LAW G0.2).
+#
+# RESOURCE CAPS ARE MEASURED, not guessed (2026-07-30, production-shaped inputs: a
+# 1,742-name pack and the real 2,025-symbol quote snapshot):
+#   compute      0.006 s wall / 0.006 s CPU per pass for the whole state machine
+#   process      0.32 s wall / 0.30 s CPU for a stand-down tick (start + imports + yaml)
+#   boto3        0.29 s wall / 0.21 s CPU / 66.6 MB RSS for import + client build
+#   peak RSS     ~95 MB all-in (28.5 MB of data structures + the boto3 closure)
+#   wall clock   dominated by 2-4 R2 round trips, not by compute
+# So: MemoryHigh 256M is ~2.7x the measured peak and MemoryMax 512M a hard stop at
+# ~5x — a third of the smallest sibling lane's ceiling, on a 2-vCPU box with thin burst
+# headroom. CPUQuota 60% cannot starve the tape lanes it depends on (fast 180%,
+# snapshot 90%) yet is ~350x the CPU a pass actually spends; it exists to bound a
+# runaway, not the work. Nice/CPUWeight/IOWeight sit in the `bars` tier — the LOWEST
+# on the box, deliberately: this lane consumes what the quote lanes publish, so it must
+# always lose a scheduling contest with them. TimeoutStartSec 120 bounds a wedged R2
+# call well inside the 300 s timer period, so two passes can never overlap.
+[Unit]
+Description=Mastermind Prophet Live intraday provisional-close evaluator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.prophet_live_evaluator
+TimeoutStartSec=120
+Nice=10
+CPUWeight=20
+CPUQuota=60%
+MemoryHigh=256M
+MemoryMax=512M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -12,8 +12,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -21,6 +30,9 @@
 })();</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
+
+
 <meta name="description" content="The BTC, ETH, altcoin and cash allocation budget now lives inside the MastermindX Crypto Intelligence Cockpit.">
 <link rel="canonical" href="https://www.mastermind-x.com/crypto.html">
 <meta property="og:type" content="website">
@@ -48,5 +60,6 @@
 <p><a href="crypto.html#allocation">Open the allocation shelf →</a></p>
 </main>
 <script>location.replace("crypto.html#allocation")</script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
 </body>
 </html>

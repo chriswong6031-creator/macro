@@ -35,12 +35,13 @@ SCHEMA = "intel_hub.command.v2"   # v2: ranked by edge-remaining/opportunity (no
 # snapshot row so the forward grader can segment the pre/post-inversion-fix era.
 ENGINE_VERSION = "hub-v3-trajectory"
 
+# Footer copy: one sentence (DESIGN_DOCTRINE Law 4 — one footnote per panel, no stack).
+# The tripwire that docks conviction still runs; its LANGUAGE is not front-facing
+# (operator order 2026-07-27, #3821 — falsifier/refutation wording never ships to a
+# glance surface). The ranking method itself lives in the hero's `?` popover (Tier 2).
 DISCLAIMER = (
-    "Context only. A central command that fuses five independent desks — news flow, "
-    "alt-data smart-money, the divergence radar, the factor buy-board, and policy intent — "
-    "into one reasoned read per name. Composite conviction rewards INDEPENDENT agreement "
-    "across desks and is docked by an unanswered falsifier; the second/third-order flags "
-    "name the setup. The bot sizes through its own risk framework; nothing here sizes alone."
+    "Context only — five research desks fused into one read per name, never a trade "
+    "instruction and never a position size."
 )
 
 # lean text -> direction

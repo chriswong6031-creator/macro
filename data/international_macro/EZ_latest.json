@@ -1,0 +1,655 @@
+{
+  "schema": "international_macro_dashboard.v1",
+  "route": "euro_area.html",
+  "cc": "EZ",
+  "name": "Euro Area",
+  "name_zh": "欧元区",
+  "flag": "🇪🇺",
+  "scope_en": "Euro area aggregate (current EA21 composition), not the European Union. STOXX Europe 600 is broader market context only.",
+  "scope_zh": "欧元区当前21国总量（EA21），并非欧盟整体。STOXX Europe 600仅作更广泛市场背景。",
+  "asof": "2026-07-30",
+  "built": "2026-08-01 03:03 UTC",
+  "regime": {
+    "quad": "Q1",
+    "name": "Goldilocks",
+    "growth_score": 0.143,
+    "inflation_score": -0.333,
+    "confidence": 0.155,
+    "liquidity": "contracting",
+    "recession_score": 1.0,
+    "recession_band": "low",
+    "data_limited": false
+  },
+  "decision": {
+    "score": 44,
+    "state": "defensive",
+    "state_en": "Defensive",
+    "state_zh": "防御",
+    "action_en": "Protect against fragmentation: watch sovereign spreads, energy and bank credit.",
+    "action_zh": "防范碎片化：关注主权利差、能源与银行信贷。",
+    "transitions_en": [
+      "Upgrade: euro-area growth breadth improves as lending contraction bottoms.",
+      "Policy turn: ECB easing transmits into household and business borrowing.",
+      "Downgrade: periphery spreads, energy costs and credit stress rise together."
+    ],
+    "transitions_zh": [
+      "上调：欧元区增长广度改善，贷款收缩见底。",
+      "政策转折：欧洲央行宽松传导至家庭与企业借贷。",
+      "下调：外围利差、能源成本与信贷压力同步上升。"
+    ],
+    "parts": {
+      "base": 50.0,
+      "growth": 3.15,
+      "inflation": -0.0,
+      "recession": -0.18,
+      "liquidity": -5.0,
+      "risk_state": -4.0
+    },
+    "method_en": "50 + growth impulse − inflation pressure − recession stress + liquidity + current calibrated-risk state. Descriptive, not a forecast.",
+    "method_zh": "50 + 增长脉冲 − 通胀压力 − 衰退压力 + 流动性 + 当前校准风险状态。仅作描述，不是预测。"
+  },
+  "history": {
+    "values": [
+      57,
+      58,
+      54,
+      58,
+      58,
+      48,
+      54,
+      54,
+      58,
+      58,
+      59,
+      65,
+      65,
+      68,
+      62,
+      62,
+      62,
+      59,
+      52,
+      52,
+      52,
+      52,
+      55,
+      55,
+      55,
+      62,
+      62,
+      62,
+      57,
+      57,
+      51,
+      57,
+      51,
+      51,
+      57,
+      51,
+      54,
+      54,
+      54,
+      51,
+      54,
+      51,
+      51,
+      50,
+      51,
+      44,
+      47,
+      48,
+      48,
+      48,
+      44,
+      47,
+      48,
+      54,
+      47,
+      48,
+      45,
+      45,
+      48,
+      48
+    ],
+    "dates": [
+      "2026-05-08",
+      "2026-05-11",
+      "2026-05-12",
+      "2026-05-13",
+      "2026-05-14",
+      "2026-05-15",
+      "2026-05-18",
+      "2026-05-19",
+      "2026-05-20",
+      "2026-05-21",
+      "2026-05-22",
+      "2026-05-25",
+      "2026-05-26",
+      "2026-05-27",
+      "2026-05-28",
+      "2026-05-29",
+      "2026-06-01",
+      "2026-06-02",
+      "2026-06-03",
+      "2026-06-04",
+      "2026-06-05",
+      "2026-06-08",
+      "2026-06-09",
+      "2026-06-10",
+      "2026-06-11",
+      "2026-06-12",
+      "2026-06-15",
+      "2026-06-16",
+      "2026-06-17",
+      "2026-06-18",
+      "2026-06-19",
+      "2026-06-22",
+      "2026-06-23",
+      "2026-06-24",
+      "2026-06-25",
+      "2026-06-26",
+      "2026-06-29",
+      "2026-06-30",
+      "2026-07-01",
+      "2026-07-02",
+      "2026-07-03",
+      "2026-07-06",
+      "2026-07-07",
+      "2026-07-08",
+      "2026-07-09",
+      "2026-07-10",
+      "2026-07-13",
+      "2026-07-14",
+      "2026-07-15",
+      "2026-07-16",
+      "2026-07-17",
+      "2026-07-20",
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+      "2026-07-27",
+      "2026-07-28",
+      "2026-07-29",
+      "2026-07-30"
+    ],
+    "points": "0.00,43.00 1.69,42.00 3.39,46.00 5.08,42.00 6.78,42.00 8.47,52.00 10.17,46.00 11.86,46.00 13.56,42.00 15.25,42.00 16.95,41.00 18.64,35.00 20.34,35.00 22.03,32.00 23.73,38.00 25.42,38.00 27.12,38.00 28.81,41.00 30.51,48.00 32.20,48.00 33.90,48.00 35.59,48.00 37.29,45.00 38.98,45.00 40.68,45.00 42.37,38.00 44.07,38.00 45.76,38.00 47.46,43.00 49.15,43.00 50.85,49.00 52.54,43.00 54.24,49.00 55.93,49.00 57.63,43.00 59.32,49.00 61.02,46.00 62.71,46.00 64.41,46.00 66.10,49.00 67.80,46.00 69.49,49.00 71.19,49.00 72.88,50.00 74.58,49.00 76.27,56.00 77.97,53.00 79.66,52.00 81.36,52.00 83.05,52.00 84.75,56.00 86.44,53.00 88.14,52.00 89.83,46.00 91.53,53.00 93.22,52.00 94.92,55.00 96.61,55.00 98.31,52.00 100.00,52.00",
+    "min": 44,
+    "max": 68,
+    "start": "2026-05-08",
+    "end": "2026-07-30"
+  },
+  "market": {
+    "index_label": "Euro STOXX / Europe context",
+    "currency_label": "EUR/USD",
+    "equity": {
+      "price": 649.95,
+      "off_52w_high": -0.4,
+      "above_50d": true,
+      "above_200d": true,
+      "realvol": 11.1,
+      "rsi": 60.0,
+      "ext_z": 0.62,
+      "ext_grade": "steady",
+      "drawdown_risk": 1.0,
+      "drawdown_band": "low",
+      "bubble_flag": false
+    }
+  },
+  "policy": {
+    "bank": "European Central Bank",
+    "short": "ECB",
+    "rate": 2.25,
+    "curve": 1.19
+  },
+  "risk": {
+    "state": "caution",
+    "top_score": 75,
+    "dominant_en": "US rate shock",
+    "dominant_zh": "美债利率冲击",
+    "h21": 0.2,
+    "measure": ">=5% index pullback within h business days (measured on this market's own history)",
+    "trajectory": {
+      "intensity": 75.0,
+      "peak": 96.2,
+      "peak_days_ago": 12,
+      "off_peak": 21.2,
+      "velocity": -1.6,
+      "phase": "receding",
+      "reached_risk": true,
+      "state_now": "caution",
+      "odds_now": 0.2,
+      "odds_peak": 0.2,
+      "odds_delta": 0.0,
+      "spark": [
+        85.1,
+        91.3,
+        93.8,
+        95.6,
+        95.2,
+        75.4,
+        73.6,
+        74.8,
+        70.8,
+        90.1,
+        95.6,
+        96.2,
+        92.3,
+        73.8,
+        65.7,
+        67.7,
+        67.9,
+        80.4,
+        76.6,
+        85.3,
+        85.9,
+        89.7,
+        79.6,
+        75.0
+      ],
+      "spark_pts": "3.0,10.3 6.9,6.2 10.8,4.6 14.7,3.4 18.7,3.7 22.6,16.6 26.5,17.8 30.4,17.0 34.3,19.7 38.2,7.0 42.1,3.4 46.0,3.0 50.0,5.6 53.9,17.7 57.8,23.0 61.7,21.7 65.6,21.6 69.5,13.4 73.4,15.9 77.3,10.1 81.3,9.8 85.2,7.3 89.1,13.9 93.0,16.9",
+      "spark_peak": {
+        "x": 46.0,
+        "y": 3.0
+      },
+      "spark_last": {
+        "x": 93.0,
+        "y": 16.9
+      },
+      "spark_w": 96,
+      "spark_h": 26,
+      "window": 30
+    },
+    "scares": [
+      {
+        "scare": "rate_shock",
+        "tier": "A",
+        "label_en": "US rate shock",
+        "label_zh": "美债利率冲击",
+        "score": 76.5,
+        "band": "caution",
+        "firing_legs": [
+          {
+            "leg": "us_rate_10y",
+            "pctile": 0.833,
+            "confirmed": false
+          },
+          {
+            "leg": "us_real_rate",
+            "pctile": 0.812,
+            "confirmed": false
+          },
+          {
+            "leg": "us_rate_2y",
+            "pctile": 0.65,
+            "confirmed": false
+          }
+        ]
+      },
+      {
+        "scare": "extension",
+        "tier": "A",
+        "label_en": "Parabolic extension / exhaustion",
+        "label_zh": "抛物线伸展／透支",
+        "score": 71.6,
+        "band": "caution",
+        "firing_legs": [
+          {
+            "leg": "ext_idx",
+            "pctile": 0.803,
+            "confirmed": false
+          },
+          {
+            "leg": "ext_etf",
+            "pctile": 0.628,
+            "confirmed": false
+          }
+        ]
+      },
+      {
+        "scare": "capital_flow",
+        "tier": "A",
+        "label_en": "Euro depreciation / outflows",
+        "label_zh": "欧元贬值／资金外流",
+        "score": 45.2,
+        "band": "calm",
+        "firing_legs": []
+      }
+    ],
+    "calibrated": true
+  },
+  "metrics": [
+    {
+      "key": "cpi_yoy",
+      "label_en": "Inflation",
+      "label_zh": "通胀",
+      "raw": 2.73,
+      "value": "2.73% y/y",
+      "unit": "% y/y",
+      "asof": "2026-06"
+    },
+    {
+      "key": "gdp_yoy",
+      "label_en": "Real growth",
+      "label_zh": "实际增长",
+      "raw": 0.94,
+      "value": "0.94% y/y",
+      "unit": "% y/y",
+      "asof": "2026-04"
+    },
+    {
+      "key": "unemployment",
+      "label_en": "Unemployment",
+      "label_zh": "失业率",
+      "raw": 6.3,
+      "value": "6.30%",
+      "unit": "%",
+      "asof": "2026-06"
+    },
+    {
+      "key": "yield_10y",
+      "label_en": "10-year yield",
+      "label_zh": "10年期收益率",
+      "raw": 3.22,
+      "value": "3.22%",
+      "unit": "%",
+      "asof": "2026-01"
+    },
+    {
+      "key": "policy_rate",
+      "label_en": "Policy / short rate",
+      "label_zh": "政策/短端利率",
+      "raw": 2.25,
+      "value": "2.25%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "curve",
+      "label_en": "10y minus short rate",
+      "label_zh": "10年期减短端",
+      "raw": 1.19,
+      "value": "1.19pp",
+      "unit": "pp",
+      "asof": null
+    },
+    {
+      "key": "fx",
+      "label_en": "FX reference",
+      "label_zh": "汇率参考",
+      "raw": 1.1467,
+      "value": "1.15",
+      "unit": "",
+      "asof": null
+    },
+    {
+      "key": "fx_strength_3m",
+      "label_en": "Currency strength, 3m",
+      "label_zh": "货币强弱，3个月",
+      "raw": -1.61,
+      "value": "-1.61%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "drawdown",
+      "label_en": "Index from 52w high",
+      "label_zh": "指数距52周高点",
+      "raw": -0.4,
+      "value": "-0.40%",
+      "unit": "%",
+      "asof": null
+    },
+    {
+      "key": "realvol",
+      "label_en": "Realized volatility",
+      "label_zh": "实现波动率",
+      "raw": 11.1,
+      "value": "11.10%",
+      "unit": "%",
+      "asof": null
+    }
+  ],
+  "lenses": [
+    {
+      "key": "policy",
+      "title_en": "ECB transmission",
+      "title_zh": "欧洲央行传导",
+      "why_en": "The rate path matters only if financing conditions follow.",
+      "why_zh": "只有融资条件跟随，利率路径才有意义。",
+      "value": "2.25%",
+      "available": true,
+      "metric": "policy_rate",
+      "source_key": "ecb",
+      "source": "European Central Bank Data Portal",
+      "source_url": "https://data.ecb.europa.eu/help/api/data"
+    },
+    {
+      "key": "hicp",
+      "title_en": "HICP core/services",
+      "title_zh": "核心/服务HICP",
+      "why_en": "Tests whether disinflation is broad enough for durable easing.",
+      "why_zh": "检验通胀回落是否足够广泛以支持持续宽松。",
+      "value": "2.73% y/y",
+      "available": true,
+      "metric": "cpi_yoy",
+      "source_key": "eurostat",
+      "source": "Eurostat",
+      "source_url": "https://ec.europa.eu/eurostat/web/user-guides/data-browser/api-data-access/api-introduction"
+    },
+    {
+      "key": "credit",
+      "title_en": "Bank lending & credit",
+      "title_zh": "银行贷款与信贷",
+      "why_en": "The euro area’s dominant private-sector transmission channel.",
+      "why_zh": "欧元区私人部门的主要传导渠道。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "ecb",
+      "source": "European Central Bank Data Portal",
+      "source_url": "https://data.ecb.europa.eu/help/api/data"
+    },
+    {
+      "key": "spreads",
+      "title_en": "Sovereign spreads",
+      "title_zh": "主权利差",
+      "why_en": "Fragmentation risk can tighten conditions unevenly.",
+      "why_zh": "碎片化风险可导致各国金融条件不均衡收紧。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "ecb",
+      "source": "European Central Bank Data Portal",
+      "source_url": "https://data.ecb.europa.eu/help/api/data"
+    },
+    {
+      "key": "energy",
+      "title_en": "Energy sensitivity",
+      "title_zh": "能源敏感度",
+      "why_en": "Separates imported cost shocks from domestic inflation.",
+      "why_zh": "区分输入性成本冲击与国内通胀。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "eurostat",
+      "source": "Eurostat",
+      "source_url": "https://ec.europa.eu/eurostat/web/user-guides/data-browser/api-data-access/api-introduction"
+    },
+    {
+      "key": "external",
+      "title_en": "External balance",
+      "title_zh": "外部平衡",
+      "why_en": "Tracks competitiveness and imported-energy drag.",
+      "why_zh": "追踪竞争力与能源进口拖累。",
+      "value": "Awaiting verified official adapter",
+      "available": false,
+      "metric": null,
+      "source_key": "ecb",
+      "source": "European Central Bank Data Portal",
+      "source_url": "https://data.ecb.europa.eu/help/api/data"
+    }
+  ],
+  "events": [
+    {
+      "date": "2026-06-11",
+      "bank": "ECB",
+      "name_en": "European Central Bank Governing Council",
+      "name_zh": "欧洲央行管理委员会",
+      "state": "released",
+      "outcome_en": "Decision date passed — verify the official release",
+      "outcome_zh": "决议日期已过——请核对官方发布",
+      "source": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+    },
+    {
+      "date": "2026-07-23",
+      "bank": "ECB",
+      "name_en": "European Central Bank Governing Council",
+      "name_zh": "欧洲央行管理委员会",
+      "state": "released",
+      "outcome_en": "Decision date passed — verify the official release",
+      "outcome_zh": "决议日期已过——请核对官方发布",
+      "source": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+    },
+    {
+      "date": "2026-09-10",
+      "bank": "ECB",
+      "name_en": "European Central Bank Governing Council",
+      "name_zh": "欧洲央行管理委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+    },
+    {
+      "date": "2026-10-29",
+      "bank": "ECB",
+      "name_en": "European Central Bank Governing Council",
+      "name_zh": "欧洲央行管理委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+    },
+    {
+      "date": "2026-12-17",
+      "bank": "ECB",
+      "name_en": "European Central Bank Governing Council",
+      "name_zh": "欧洲央行管理委员会",
+      "state": "upcoming",
+      "outcome_en": "Scheduled — no outcome yet",
+      "outcome_zh": "已排期——尚无结果",
+      "source": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html"
+    }
+  ],
+  "health": [
+    {
+      "metric": "cpi_yoy",
+      "asof": "2026-06",
+      "age_days": 61,
+      "state": "fresh",
+      "label_en": "Inflation",
+      "label_zh": "通胀"
+    },
+    {
+      "metric": "gdp",
+      "asof": "2026-04",
+      "age_days": 122,
+      "state": "fresh",
+      "label_en": "Growth",
+      "label_zh": "增长"
+    },
+    {
+      "metric": "unemployment",
+      "asof": "2026-06",
+      "age_days": 61,
+      "state": "fresh",
+      "label_en": "Labour",
+      "label_zh": "就业"
+    },
+    {
+      "metric": "yield_10y",
+      "asof": "2026-01",
+      "age_days": 212,
+      "state": "stale",
+      "label_en": "Rates",
+      "label_zh": "利率"
+    }
+  ],
+  "sources": [
+    {
+      "key": "ecb",
+      "provider": "European Central Bank Data Portal",
+      "url": "https://data.ecb.europa.eu/help/api/data",
+      "cadence": "Daily / monthly / quarterly",
+      "access": "Keyless SDMX API",
+      "licence": "ECB copyright and reuse policy",
+      "role": "Policy, rates, money, credit, bank lending and external balance",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "eurostat",
+      "provider": "Eurostat",
+      "url": "https://ec.europa.eu/eurostat/web/user-guides/data-browser/api-data-access/api-introduction",
+      "cadence": "Twice-daily API refresh; release dependent",
+      "access": "Keyless Statistics and SDMX APIs",
+      "licence": "European Commission reuse decision",
+      "role": "Euro-area HICP, GDP, labour, industry and trade",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "ec",
+      "provider": "European Commission",
+      "url": "https://economy-finance.ec.europa.eu/economic-forecast-and-surveys/business-and-consumer-surveys_en",
+      "cadence": "Monthly / quarterly",
+      "access": "Official downloads",
+      "licence": "European Commission reuse policy",
+      "role": "Business surveys and fiscal context",
+      "status": "authoritative target / active where mapped"
+    },
+    {
+      "key": "fred",
+      "provider": "Federal Reserve Bank of St. Louis (official-source republisher)",
+      "url": "https://fred.stlouisfed.org/",
+      "cadence": "Source dependent",
+      "access": "Keyless CSV",
+      "licence": "FRED terms; underlying series terms retained",
+      "role": "Operational fallback for OECD, Eurostat and central-bank series",
+      "status": "active fallback"
+    }
+  ],
+  "caveat_en": "The official unemployment adapter uses current EA21 composition. Legacy EA19/EA20 fallback series remain labelled in provenance until their current-composition official adapters are verified. Broader-Europe equity indexes never substitute for euro-area macro data.",
+  "caveat_zh": "官方失业率适配器采用当前EA21口径。旧EA19/EA20备用序列在当前口径官方适配器验证完成前会在来源中明确标注；更广泛欧洲股票指数绝不替代欧元区宏观数据。",
+  "navigation": [
+    {
+      "cc": "JP",
+      "name": "Japan",
+      "route": "japan.html",
+      "active": false
+    },
+    {
+      "cc": "KR",
+      "name": "South Korea",
+      "route": "south_korea.html",
+      "active": false
+    },
+    {
+      "cc": "EZ",
+      "name": "Euro Area",
+      "route": "euro_area.html",
+      "active": true
+    },
+    {
+      "cc": "GB",
+      "name": "United Kingdom",
+      "route": "united_kingdom.html",
+      "active": false
+    },
+    {
+      "cc": "IN",
+      "name": "India",
+      "route": "india.html",
+      "active": false
+    }
+  ]
+}

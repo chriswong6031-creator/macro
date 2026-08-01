@@ -99,6 +99,7 @@ class IntlUniverseAdapter(Adapter):
         self.dir = config.data_dir() / "intl_search"
         self.closes_path = self.dir / "closes.parquet"
         self.members_path = self.dir / "members.parquet"
+        self._latest_volumes: dict[str, float] = {}
 
     # -- holdings CSV per fund -------------------------------------------------
     def _holdings_url(self, u: dict) -> str:
@@ -208,6 +209,20 @@ class IntlUniverseAdapter(Adapter):
                                      progress=False, group_by="column", threads=True)
                     if df is None or df.empty:
                         break
+                    try:
+                        volumes = (df["Volume"]
+                                   if isinstance(df.columns, pd.MultiIndex)
+                                   and "Volume" in df.columns.get_level_values(0)
+                                   else df.get("Volume"))
+                        if isinstance(volumes, pd.Series):
+                            volumes = volumes.to_frame(name=batch[0])
+                        if isinstance(volumes, pd.DataFrame):
+                            for ticker in volumes.columns:
+                                values = pd.to_numeric(volumes[ticker], errors="coerce").dropna()
+                                if not values.empty and float(values.iloc[-1]) > 0:
+                                    self._latest_volumes[str(ticker)] = float(values.iloc[-1])
+                    except Exception:  # noqa: BLE001 — ranking metadata is additive
+                        pass
                     closes = df["Close"] if "Close" in df.columns.get_level_values(0) else df
                     parts.append(closes)
                     break
@@ -266,10 +281,24 @@ class IntlUniverseAdapter(Adapter):
         if live < len(tickers) * float(self.cfg.get("min_coverage", 0.5)):
             raise RuntimeError(f"intl_universe closes too sparse: {live}/{len(tickers)}")
 
-        members = uni.loc[[t for t in uni.index if t in closes.columns]]
+        members = uni.loc[[t for t in uni.index if t in closes.columns]].copy()
+        previous_volumes = pd.Series(dtype=float)
+        if self.members_path.exists():
+            try:
+                previous = pd.read_parquet(self.members_path)
+                if "volume" in previous.columns:
+                    previous_volumes = pd.to_numeric(previous["volume"], errors="coerce")
+            except Exception:  # noqa: BLE001 — prior ranking metadata is optional
+                pass
+        current_volumes = pd.Series(self._latest_volumes, dtype=float)
+        members["volume"] = current_volumes.reindex(members.index).combine_first(
+            previous_volumes.reindex(members.index)
+        )
         if not full_history:
             closes.to_parquet(self.closes_path)
-        members[["name", "sector", "country", "flag", "market", "weight"]].to_parquet(self.members_path)
+        members[["name", "sector", "country", "flag", "market", "weight", "volume"]].to_parquet(
+            self.members_path
+        )
 
         cov = pd.DataFrame({"n_stocks": [len(members)]},
                            index=pd.DatetimeIndex([closes.index.max()], name="date"))

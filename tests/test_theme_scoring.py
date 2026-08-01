@@ -156,6 +156,18 @@ def test_ret_rel_is_basket_minus_bench():
     assert ts._ret_rel(lvl, bench, 5, 20) is None                  # not enough lookback
 
 
+def test_timing_snapshot_exposes_fast_windows_and_velocity_without_scoring():
+    idx = pd.date_range("2025-01-01", periods=50, freq="B")
+    x = np.arange(len(idx), dtype=float)
+    lvl = pd.Series(1.0 + 0.001 * x + 0.001 * np.maximum(x - 38, 0) ** 2, index=idx)
+    bench = pd.Series(1.0 + 0.0005 * x, index=idx)
+    snap = ts._timing_snapshot(lvl, bench, len(idx) - 1, {"accel_z": 0.9})
+    assert set(snap["relative"]) == {"1d", "5d", "10d", "20d"}
+    assert snap["velocity_5d"] > 0
+    assert snap["state"] == "accelerating"
+    assert snap["display_only"] is True
+
+
 # --------------------------------------------------------------- integration smoke
 def test_compute_theme_intel_contract_when_data_present():
     ti = ts.compute_theme_intel()

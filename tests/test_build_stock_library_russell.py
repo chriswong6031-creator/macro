@@ -158,6 +158,32 @@ def test_universe_russell_dedup_priority(tmp_path, monkeypatch):
     assert "RNEW" in found_tickers
 
 
+def test_universe_uses_tracked_basket_extras_when_yahoo_file_is_absent(tmp_path, monkeypatch):
+    """A curated search name can render on day one from the tracked basket close cache."""
+    data_root = tmp_path / "data"
+    extras_dir = data_root / "baskets"
+    extras_dir.mkdir(parents=True)
+    idx = pd.date_range("2023-01-03", periods=400, freq="B")
+    pd.DataFrame({"XAU": range(100, 500)}, index=idx).to_parquet(
+        extras_dir / "extras.parquet")
+    cfg = {
+        "yahoo": {"tickers": {"sectors": [], "extras": [], "factors": [],
+                               "credit": [], "fx_commod": [], "crypto": []}},
+        "stock_search": {
+            "extra_tickers": ["XAU"],
+            "extra_names": {"XAU": {"name": "Example Gold", "sector": "Materials"}},
+        },
+    }
+    monkeypatch.setattr(bsl.config, "data_dir", lambda: data_root)
+    monkeypatch.setattr(bsl.config, "load", lambda: cfg)
+    monkeypatch.setattr(bsl.store, "read", lambda *_args, **_kwargs: None)
+
+    result = bsl.universe()
+    row = next(r for r in result if r[0] == "XAU")
+    assert row[3:] == ("Example Gold", "Materials")
+    assert len(row[1]) == 400
+
+
 def test_notice_line_format(capsys):
     """The ::notice title=stock_library:: line in main() has universe= and
     elapsed= fields, matching the repo's ::notice title=<name>::<fields> pattern.

@@ -174,13 +174,11 @@ def test_baskets_perf_includes_10d():
 
 
 def test_baskets_default_sort_still_uses_20d():
-    """Adding '10d' must not change the default 20d-rel sort in compute_baskets.
-    This is a structural check — the sort key is a literal '20d' string in the code."""
+    """Adding fast display windows must not change the default 20d member sort."""
     from engine import baskets
     import inspect
     src = inspect.getsource(baskets.compute_baskets)
     assert '"20d"' in src, "expected the 20d sort key to remain in compute_baskets"
-    # Ensure the theme_scoring perf snapshot still excludes 10d (its own dict literal)
+    # Theme detail snapshots now carry the fast 1d/10d windows as display context.
     src_ts = inspect.getsource(ts.compute_theme_intel)
-    # theme_scoring explicitly picks ("5d", "20d", "60d", "ytd") — not "10d"
-    assert '"10d"' not in src_ts or '("5d", "20d", "60d", "ytd")' in src_ts
+    assert '"1d"' in src_ts and '"10d"' in src_ts

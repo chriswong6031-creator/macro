@@ -295,6 +295,13 @@ fred:
       UMCSENT: umich_sentiment    # UMich consumer sentiment (monthly)
       MICH: umich_infl_exp        # UMich 1y inflation expectations (%)
     curve:                        # fuller Treasury curve (engine only sampled 2y/10y)
+      # SOLE owner of the us3m alias. Constant-maturity, quoted on an INVESTMENT
+      # (bond-equivalent) basis — the same basis as every other DGS* node here, so
+      # the curve in engine/yield_curve.NODES is internally consistent. FRED's
+      # T10Y3M is exactly DGS10 - DGS3MO (verified to 4e-16 on 11,142 of 11,144
+      # shared dates), so the spread_10y3m fallback in engine/inputs reconciles
+      # with the published spread instead of contradicting it.
+      # NOT to be confused with DTB3 (discount-basis bill) -> us3m_bill, below.
       DGS3MO: us3m                # the short leg of the NY Fed recession spread
       DGS6MO: us6m
       DGS5: us5y
@@ -382,7 +389,17 @@ fred:
       DTWEXAFEGS: broad_dollar_afe
       DTWEXEMEGS: broad_dollar_eme
     fx_rates_short:               # short/policy rates -> carry differential vs US (DFF).
-      DTB3: us3m                  # piecewise-constant => monthly cadence + ffill is correct
+      # 3m T-bill SECONDARY MARKET rate on a DISCOUNT basis (360-day) — structurally
+      # ~13bp BELOW the bond-equivalent CMT (DGS3MO -> us3m) and not interchangeable
+      # with it. Until 2026-07-30 this was ALSO aliased us3m; being the later group it
+      # won the flattened dict-merge in engine/inputs.build_features, so the entire CMT
+      # curve read its 3m node off a discount-basis bill (the two constructions disagree
+      # on whether 3m10y is inverted on 99 of the last 1260 sessions). Consumers:
+      # the CP-bill funding spread (engine/conditions.py — basis-matched, since the Fed
+      # quotes CP as annual discount yields too), equity_alloc's deep cash leg (1954->,
+      # read by series id), and the scripts/*_phase0.py studies (read the parquet direct).
+      # No FX carry leg reads it — the US leg is DFF (forex.drivers.us_short).
+      DTB3: us3m_bill
       SOFR: sofr
       ECBDFR: ez_short            # ECB deposit facility (daily, current)
       ECBMRRFR: ez_mrr
@@ -622,6 +639,19 @@ live:
   # Empty string = no Worker; live.js then falls back to the static snapshot below.
   # Override without a commit via the GitHub repo VARIABLE LIVE_QUOTES_WORKER_URL.
   quotes_worker_url: ""
+  # The VPS live plane's public quote artifact, read by marketing lanes that opt in
+  # (engine/marketing/live_verify.remote_quote_urls -> load_live_quotes(remote_urls=)).
+  # Since VPS_LIVE_PRIMARY=true the repo-local quote artifacts are all written by
+  # throttled GitHub lanes; this one is not, and measured 31 SECONDS old on
+  # 2026-07-30T13:41Z while the live-data branch snapshot was 83 MINUTES old.
+  # Merged freshest-wins, never substituted, and fail-soft — an unreachable host
+  # degrades a consumer to its repo-local sources rather than breaking it.
+  # SCOPE: this is the 34-symbol DISPLAY set (indices/ETFs/futures/FX/crypto), NOT
+  # the ~2,100-name universe; the full snapshot is not web-addressable by design
+  # (app/deploy/Caddyfile @reg_asset). It cannot feed a single-name gate — a lane
+  # needing coverage still fetches its own tape (hot_tape_radar.refresh_live_snapshot).
+  # Set to "" (or []) to turn the remote source off estate-wide with no code change.
+  public_quotes_url: "https://www.mastermind-x.com/live/quotes.json"
   # Live Tape (Phase 1, research/LIVE_TAPE_SCOREBOARD_MASTERPLAN.md): when true
   # (default) the browser opens the same-origin /ws/tape websocket (app/tape.py,
   # served by macro-api behind Caddy) for the six macro.html futures/index/yield
@@ -654,6 +684,125 @@ live:
   # the discrete band WORD is debounced this many consecutive ticks before it flips (anti-whipsaw).
   china_risk_state:
     debounce_ticks: 2
+
+# ── PROPHET LIVE (research/PROPHET_LIVE_INTRADAY_SIGNALS_MASTERPLAN_BY_FABLE.md) ──
+# Two speeds, one engine. The nightly arming pass (scripts/build_prophet_live_pack.py)
+# probes the SAME close-only admission gate (engine/signal_gate.py) with candidate
+# provisional closes and records the price interval over which is_buyable() is true;
+# the */5 lane (scripts/prophet_live_evaluator.py, .github/workflows/prophet-live.yml)
+# compares a 15-min-delayed live price to those levels. NO second signal engine, and
+# the nightly build stays the sole confirmer, grader and ledger advancer.
+#
+# P0 IS MEASURE-DARK: no user surface reads any of this yet. States are display-tier
+# until the §6 promotion gauntlet is pre-registered on the forward ledger the nightly
+# reconciler accrues (data/prophet_live/forward.parquet).
+prophet_live:
+  # ── arming pass ──
+  # Half-width of the probed provisional-close band, percent of the as-of close. A
+  # bound on the SEARCH, not a claim about the tape: 15% is far past any plausible
+  # intraday move, so nothing reachable is excluded by the band itself.
+  band_pct: 15.0
+  # Structure grid across the probed span (endpoints included) then bisection per
+  # edge. 9 points = 1.875% cells on the up-only span; 8 halvings refine an edge to
+  # ~0.7 bp, inside the ~1 bp the published thresholds claim. RESOLUTION IS A BOUND,
+  # NOT A PROOF: a measured 294-name sweep found the buyable region single-contiguous
+  # in 59 of 59 armable cases, but it sampled at a 1.25% grid, so neither that sweep
+  # nor this probe can see an island or a notch NARROWER than one cell — the pack
+  # reports the range as continuous through it. Raising grid_points narrows the blind
+  # spot at a linear cost in gate calls, which comes straight out of max_probe below.
+  grid_points: 9
+  bisect_iters: 8
+  # BUDGET IS LAW, and it is what caps coverage — not the other way round. Sized from
+  # MEASURED 4-worker passes (the nightly pins STOCK_LIB_WORKERS=4, the box being
+  # 4-core-bound): the centre census over ~1,730 names is ~120s and cannot be skipped,
+  # which leaves ~195s of the 420s budget for probing once verification's reserve is set
+  # aside. max_probe 500 did NOT fit — a 4-worker run with that cap produced probed_n=3
+  # and armed_n=0, an empty pack, because the probe deadline cut 389 names and
+  # verification then withheld the rest.
+  #
+  # THE WALL CLOCK BINDS BEFORE THIS CAP at 4 workers — both full-universe receipts
+  # probed fewer names than the cap allows (116/180 pre-split, 99/180 post-split), and
+  # both slices hit their windows. So max_probe mostly sizes the QUEUE here (unfinished
+  # futures are cancelled, which costs nothing) and only starts to bind on a faster
+  # runner. Do not read it as the delivered coverage; read meta.by_class.
+  #
+  # MEASURED COVERAGE at the shipped split, both classes (receipt 2026-07-29):
+  #   board  109 candidates -> 45 probed -> 44 armed. ~64 board names ship with NO fade
+  #          level, i.e. no at-risk read at all; disclosed in meta.by_class.
+  #   cross  1631 candidates -> 54 probed -> 18 armed. Only cap - round(cap*share) = 108
+  #          slots ever reach this class (~31% of the ~350 names that have a trigger in
+  #          band), and the clock cuts that to 54.
+  # Whatever the caps or the clock cut is counted in meta.skipped (probe_cap_* /
+  # deadline_* / unverified / edge_mismatch / membership_mismatch) — never silently
+  # dropped, never re-labelled "dormant". Raising max_seconds is the lever if coverage
+  # matters more than the ~6.2-minute step; it trades against the render budget.
+  max_probe: 180
+  max_seconds: 420
+  # Share of the probe budget — BOTH the wall clock and the name cap — reserved for
+  # BOARD names (the two-sided sweep yielding fade_px, the at-risk read). CROSS
+  # candidates (the up-only sweep yielding trigger_px) get the remainder.
+  #
+  # Operator ruling 2026-07-29. Ordering alone could not fund both: every board name
+  # outranks every cross candidate in probe_priority, so the first 4-worker pass spent
+  # the whole budget on the board and armed 106 fade levels against 4 triggers. P0's
+  # core evidence is the CROSS ledger (confirm rate + entry advantage, masterplan
+  # §5-P0), so crosses must always be funded — but a global reorder would only invert
+  # the starvation onto the at-risk read. The split makes the cross floor an INVARIANT:
+  # the board slice is spent first under its own window, then the cross slice gets
+  # max(floor, remaining), so however long the board took the cross class still gets
+  # (1 - board_probe_share) x budget. Verification still covers every published price
+  # from both classes. Per-class probed/armed/seconds land in meta.by_class.
+  board_probe_share: 0.4
+  # A name whose own last bar trails the store tip by more than this is probed
+  # against a stale close — the mixed-asof fabrication trap. It ships its centre
+  # state unprobed, marked stale.
+  max_lag_sessions: 3
+  # ── intraday evaluator ──
+  # ET, never UTC (a UTC-pinned window is an hour wrong for half the year). 09:25
+  # catches the pre-open pass; the 16:15 tail pass records the close-side state.
+  window_et:
+    start: "09:25"
+    end: "16:15"
+  window_grace_min: 10          # GitHub cron drifts; grace on the END only
+  # A cross needs this many CONSECUTIVE passes above the trigger before it is a
+  # public state (CSP-R2: a 1-tick state flip is a killed class). One pass is an
+  # internal crossing marker, spooled for measurement, never surfaced.
+  debounce_passes: 2
+  fade_buffer_pct: 0.5          # hysteresis below the trigger before a forming name FADES
+  confirm_window_start: "15:30"  # from here on, conditions still met => confirming_into_close
+  # THE FRESHNESS CEILING IS DERIVED, not pinned here (P0 fix, operator ruling
+  # 2026-07-30). A quote's age is measured from its OWN timestamp, so it is
+  # (polling gap) + (feed delay), and the second term is a property of the DATA PLAN:
+  # US single names arrive ~15-min delayed by contract (live.delayed_min; measured
+  # 16.7m on QQQ/SPY off the VPS plane at 14:10Z). The old fixed 12 was the hot-tape
+  # convention copied without that second term — under a ~15-minute floor it is not a
+  # gate, it is an off switch, and it darked every US name on every pass while the lane
+  # reported success.
+  #
+  #   quote_max_age_min = live.delayed_min + quote_slack_min      (15 + 10 = 25 today)
+  #
+  # quote_slack_min is the OBSERVATION lag we tolerate — one 5-minute polling gap plus
+  # jitter — and it is the only half of the budget we control. Derived rather than a
+  # bigger constant so a future real-time entitlement (live.delayed_min -> 0) tightens
+  # this gate to 10 automatically instead of accepting 25-minute-old prints forever.
+  # Setting `quote_max_age_min:` explicitly still wins (the operator lever), and the
+  # evaluator warns on every pass when a ceiling sits at or below the declared delay.
+  quote_slack_min: 10
+  # ── host wiring (VPS lane, masterplan §4.2a/§4.4a) ──
+  # Quote files to try BEFORE the live_verify merge, in order, freshest-wins per ticker.
+  # These are the local twins of the merge's inputs, published by atomic rename by the
+  # systemd lanes on the same box: no network, no auth, no throttled git branch. An
+  # absent file is skipped silently (a GitHub runner has none of them and falls through
+  # to the merge, which is exactly the backstop's behaviour); an EMPTY list here turns
+  # the local plane off entirely without a code change.
+  local_quote_paths:
+    # ~2,100 symbols, the 5-minute `snapshot` lane — this is the coverage source.
+    - /var/lib/macro-live/state/quotes_full.json
+    # ~34 display symbols, the 60-second `fast` lane — freshest, but index/ETF only.
+    - /var/lib/macro-live/public/live/quotes.json
+  # Where the evaluator writes the served copy, atomically. Behind Caddy's @reg_asset
+  # default-deny route — NEVER one of the /live/ public exceptions. "" disables it.
+  served_path: /var/lib/macro-live/public/live/prophet_live.json
 
 fedboard:
   # Excess Bond Premium (Gilchrist-Zakrajšek): the component of corporate credit
@@ -1745,9 +1894,11 @@ bgeo:
 
 coinbase:
   spot_url: https://api.coinbase.com/v2/prices/BTC-USD/spot
-  candles_url: https://api.exchange.coinbase.com/products/BTC-USD/candles
+  candles_url: https://api.exchange.coinbase.com/products/{product}/candles
   earliest: "2015-07-20"          # BTC-USD on Coinbase Exchange
   hourly_earliest: "2016-01-01"   # hourly backfill floor (~92k rows)
+  eth_earliest: "2016-06-01"      # ETH-USD listing-era daily OHLCV
+  sol_earliest: "2021-06-17"      # SOL-USD listing-era daily OHLCV
   pace_seconds: 0.25              # public limit ~10 req/s; stay well under
   retries: 3
 
@@ -2369,6 +2520,19 @@ stock_search:
     - WRB    # W.R. Berkley
     - XOM    # Exxon Mobil
     - ZTS    # Zoetis
+    # Gold Miners detail sleeve — explicit so every holding has a stock profile.
+    - NEM    # Newmont
+    - AEM    # Agnico Eagle
+    - GOLD   # Barrick Mining
+    - KGC    # Kinross Gold
+    - AU     # AngloGold Ashanti
+    - GFI    # Gold Fields
+    - HMY    # Harmony Gold
+    - AGI    # Alamos Gold
+    - IAG    # IAMGOLD
+    - EQX    # Equinox Gold
+    - EGO    # Eldorado Gold
+    - BTG    # B2Gold
     # Additional intel-hub off-desk discovery names found post-build
     - HPE    # Hewlett Packard Enterprise
     - ROST   # Ross Stores
@@ -2406,6 +2570,18 @@ stock_search:
     SMR:  {name: "NuScale Power", sector: "Utilities"}
     OKLO: {name: "Oklo", sector: "Utilities"}
     NBIS: {name: "Nebius Group", sector: "Information Technology"}
+    NEM:  {name: "Newmont", sector: "Materials"}
+    AEM:  {name: "Agnico Eagle Mines", sector: "Materials"}
+    GOLD: {name: "Barrick Mining", sector: "Materials"}
+    KGC:  {name: "Kinross Gold", sector: "Materials"}
+    AU:   {name: "AngloGold Ashanti", sector: "Materials"}
+    GFI:  {name: "Gold Fields", sector: "Materials"}
+    HMY:  {name: "Harmony Gold", sector: "Materials"}
+    AGI:  {name: "Alamos Gold", sector: "Materials"}
+    IAG:  {name: "IAMGOLD", sector: "Materials"}
+    EQX:  {name: "Equinox Gold", sector: "Materials"}
+    EGO:  {name: "Eldorado Gold", sector: "Materials"}
+    BTG:  {name: "B2Gold", sector: "Materials"}
     TSM:  {name: "Taiwan Semiconductor (ADR)", sector: "Information Technology"}
     SE:   {name: "Sea Limited (ADR)", sector: "Communication Services"}
     NU:   {name: "Nu Holdings", sector: "Financials"}
@@ -3177,9 +3353,31 @@ healthcheck:
 
 r2_data_plane:
   public_base: "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev"
-  anchors: [stockdata, chinastockdata, feeds]  # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
+  anchors: [stockdata, chinastockdata, feeds, thetadata_eod, options_hub, live_flow, levels_ledger]
+                      # freshest of <dir>/_manifest.json (put on EVERY successful publish) / <dir>/index.json; feeds = the bot-consumable contract plane (scripts/build_feeds.py, daily lane)
+                      # thetadata_eod (2026-07-30): the ~60 GB ThetaData EOD store's SOLE offsite backup —
+                      # per ops/THETADATA_R2_SYNC_RUNBOOK.md the store "exists only on the ops Mac". It had NO
+                      # tripwire, so a 3-night manifest freeze went unnoticed until a human read the log.
+                      # options_hub / live_flow / levels_ledger (2026-07-31, R0.9): the options planes had NO
+                      # dead-man at all — the chain-heat lane served an 8-day-stale artifact unnoticed after the
+                      # M1 migration. Each anchors on its own beacon (oi_movers.json / meta.json / index.json,
+                      # see audit_r2._DIR_CANDIDATES) with per-lane budgets in anchor_max_age_hours below.
+                      # The gex_history dated accrual is probed separately (audit_r2.ACCRUAL_ANCHORS).
+                      # This list REPLACES audit_r2.DEFAULT_ANCHORS wholesale, so the anchor must be here to
+                      # take effect; tests/test_audit_r2.py pins it against a silent drop.
   max_age_hours: 26   # both lanes republish daily, landing ~05-10 UTC; the 14:30 UTC heartbeat sees ~5-9h
                       # fresh vs ~29-33h on the FIRST missed day — 26 trips on the first miss, ~30 can slide to day 2
+                      # thetadata_eod fits the same envelope: launchd 22:00 PT = ~05:00 UTC, so ~9.5h healthy
+                      # and ~33.5h on the first missed night. Only the heartbeat uses this list — daily.yml and
+                      # asia-close.yml pass their own --anchors, so their --max-age-hours 2/26 never reach it.
+  anchor_max_age_hours:   # per-lane budgets (hours) merged over audit_r2.PER_ANCHOR_MAX_AGE_H —
+    options_hub: 68       # nightly 23:45 UTC weekdays: Monday legitimately reads Friday at 62.75h;
+                          # one missed weekday nightly reads 86.75h → trips
+    live_flow: 22         # RTH-cycle lane: healthy heartbeat age ≈ minutes; clears the quiet
+                          # 18.4h overnight / 21.5h post-half-day reads; dead poller trips next day
+    levels_ledger: 30     # pre-open seal: a missed seal reads ~27h next heartbeat → trips; clears the
+                          # Tuesday-after-Monday-holiday 27h gap. Known false page: Monday after a
+                          # FRIDAY market holiday (~75h, no Friday session) — dismiss on sight
   asof_max_days: 6    # stockdata/SPY.json `asof` (content-level): last bar date; 3-day weekend + a holiday tolerated
 
 validation:
@@ -5183,6 +5381,7 @@ vector:
     scrape_enabled: false         # Farside per-fund scrape OFF by default (read-only otherwise)
     url: "https://farside.co.uk/bitcoin-etf-flow-all-data/"
   btc_dat:
+    enabled: false                # retired until a maintained, reproducible source is commissioned
     json_path: "data/dat_holdings.json"   # manual 8-K-sourced MSTR/DAT drop (NOT 13F)
     margin_haircut: 0.78          # forced-sell trigger ~ avg_cost x this (≈ -22%)
     stale_after_days: 14          # asof older than this → stale flag (manual feed; ~weekly 8-K cadence)
@@ -6139,6 +6338,26 @@ intl:
   macro:
     fred_base_url: https://fred.stlouisfed.org/graph/fredgraph.csv
     retries: 3
+    # Keyless official overrides. Each is fetched independently after the FRED
+    # operational plane; parser/unit/release-period failure keeps the fallback
+    # or last-known-good parquet and records the error in provenance.json.
+    official_series:
+      ez_depo_rate:
+        provider: ecb
+        flow: FM
+        series_key: D.U2.EUR.4F.KR.DFR.LEV
+        start_period: "1999-01-01"
+        unit: PCPA
+        timeout_s: 20
+        release_period_semantics: Daily effective policy-rate observation
+      EZ_unemployment:
+        provider: eurostat
+        dataset: une_rt_m
+        since: "2000-01"
+        unit: PC_ACT
+        timeout_s: 20
+        params: {geo: EA21, s_adj: SA, age: TOTAL, unit: PC_ACT, sex: T}
+        release_period_semantics: Monthly seasonally adjusted unemployment rate, current euro-area composition
     extra_series:                  # stored_col: FRED id (Eurozone policy/liquidity, periphery, US anchor)
       ez_depo_rate: ECBDFR         # ECB deposit facility rate (policy)
       ez_refi_rate: ECBMRRFR       # ECB main refinancing rate

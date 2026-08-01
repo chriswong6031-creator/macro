@@ -5,3 +5,5 @@
 {"asof":"2026-07-27","market":"us","state":"watch","incumbent_state":"watch","pressure_pct":0.86,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}
 {"asof":"2026-07-28","market":"us","state":"caution","incumbent_state":"caution","pressure_pct":0.86,"escalated":false,"top_score":null,"dominant_scare":"incumbent:caution","graded":null,"bench_path":null}
 {"asof":"2026-07-29","market":"us","state":"caution","incumbent_state":"caution","pressure_pct":0.82,"escalated":false,"top_score":null,"dominant_scare":"incumbent:caution","graded":null,"bench_path":null}
+{"asof":"2026-07-30","market":"us","state":"caution","incumbent_state":"caution","pressure_pct":0.85,"escalated":false,"top_score":null,"dominant_scare":"incumbent:caution","graded":null,"bench_path":null}
+{"asof":"2026-07-31","market":"us","state":"watch","incumbent_state":"watch","pressure_pct":0.84,"escalated":false,"top_score":null,"dominant_scare":"incumbent:watch","graded":null,"bench_path":null}

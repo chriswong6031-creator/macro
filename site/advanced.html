@@ -14,8 +14,17 @@
   window.fetch = function (u, o) {
     try {
       if (typeof u === "string") {
-        var rel = u.replace(/^(?:\.\.\/)+/, "");          // strip any ../ depth prefix
-        if (RE.test(rel)) u = B + "/" + rel;              // -> https://<data-host>/ohlc/AAPL.json
+        /* theme.js resolves shared assets from its own script URL, so its stock
+           libraries arrive here as absolute same-origin URLs.  The old shim only
+           recognized bare/../ paths, leaving those requests on the protected HTML
+           origin (401 on Start) and the search spinner alive forever.  Normalize
+           every same-origin string to a root-relative key before matching; preserve
+           query/hash cache keys, and never rewrite an already-external URL. */
+        var a = new URL(u, location.href);
+        if (a.origin === location.origin) {
+          var rel = a.pathname.replace(/^\/+/, "") + a.search + a.hash;
+          if (RE.test(rel)) u = B + "/" + rel;            // -> https://<data-host>/ohlc/AAPL.json
+        }
       }
     } catch (e) { /* never let the shim break a fetch */ }
     return orig.call(this, u, o);
@@ -23,7 +32,7 @@
 })();</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quant Lab — 2026-07-29</title>
+  <title>Quant Lab — 2026-07-31</title>
 
 <meta name="description" content="Mastermind&#39;s quant lab — advanced indicators, experiments and diagnostic boards for power users.">
 <link rel="canonical" href="https://www.mastermind-x.com/advanced.html">
@@ -44,14 +53,14 @@
   <link rel="stylesheet" href="theme.css?v=8d7800c8">
   <link rel="stylesheet" href="assets/css/afd3b2f9.css?v=afd3b2f9">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=6e249584">
+<link rel="preload" as="style" href="navigation-refresh.css?v=3ee9d113">
 </head>
 <body>
 <nav class="site-nav">
     
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=6e249584">
+    <link rel="stylesheet" href="navigation-refresh.css?v=3ee9d113">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -172,17 +181,19 @@
       <a class="nav-link" href="intl.html"><span class="menu-icon menu-icon-intl" aria-hidden="true"></span><span class="l-en">International</span><span class="l-zh">国际</span> <span class="caret">▾</span></a>
       <div class="nav-dd-menu" role="menu">
         <a href="intl.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Macro Dashboard</span><span class="l-zh">宏观仪表盘</span><span class="d"><span class="l-en">JP · KR · TW · UK · EU compared</span><span class="l-zh">日 · 韩 · 台 · 英 · 欧 对比</span></span></a>
+        
+        <div class="nav-dd nav-sub">
+          <a class="nav-sub-trig" href="japan.html"><span class="nav-sub-text"><span aria-hidden="true">🌐</span> <span class="l-en">Country Dashboards</span><span class="l-zh">国家看板</span><span class="d"><span class="l-en">Japan · Korea · Euro Area · UK · India</span><span class="l-zh">日本 · 韩国 · 欧元区 · 英国 · 印度</span></span></span><span class="caret-r">▸</span></a>
+          <div class="nav-dd-menu" role="menu">
+            <a href="japan.html" data-intl-country="jp"><span aria-hidden="true">🇯🇵</span> <span class="l-en">Japan Macro</span><span class="l-zh">日本宏观</span><span class="d"><span class="l-en">BoJ · wages · JGBs · yen</span><span class="l-zh">日银 · 工资 · JGB · 日元</span></span></a>
+            <a href="south_korea.html" data-intl-country="kr"><span aria-hidden="true">🇰🇷</span> <span class="l-en">South Korea Macro</span><span class="l-zh">韩国宏观</span><span class="d"><span class="l-en">BOK · exports · household credit · won</span><span class="l-zh">韩银 · 出口 · 家庭信贷 · 韩元</span></span></a>
+            <a href="euro_area.html" data-intl-country="ez"><span aria-hidden="true">🇪🇺</span> <span class="l-en">Euro Area Macro</span><span class="l-zh">欧元区宏观</span><span class="d"><span class="l-en">EA21 · ECB · HICP · bank credit</span><span class="l-zh">EA21 · 欧洲央行 · HICP · 银行信贷</span></span></a>
+            <a href="united_kingdom.html" data-intl-country="gb"><span aria-hidden="true">🇬🇧</span> <span class="l-en">United Kingdom Macro</span><span class="l-zh">英国宏观</span><span class="d"><span class="l-en">BoE · services CPI · wages · gilts</span><span class="l-zh">英央行 · 服务CPI · 工资 · 英债</span></span></a>
+            <a href="india.html" data-intl-country="in"><span aria-hidden="true">🇮🇳</span> <span class="l-en">India Macro</span><span class="l-zh">印度宏观</span><span class="d"><span class="l-en">RBI · food inflation · credit · rupee</span><span class="l-zh">RBI · 食品通胀 · 信贷 · 卢比</span></span></a>
+          </div>
+        </div>
         <a href="intl_stocks.html"><span class="submenu-icon submenu-icon-stocks" aria-hidden="true"></span><span class="l-en">Stock Dashboard</span><span class="l-zh">股票仪表盘</span><span class="d"><span class="l-en">Prophet cross-market · sectors</span><span class="l-zh">先知跨市场 · 板块</span></span></a>
         <a href="baskets_intl.html"><span class="submenu-icon submenu-icon-baskets" aria-hidden="true"></span><span class="l-en">Thematic Baskets</span><span class="l-zh">主题篮子</span><span class="d"><span class="l-en">Cross-country theme baskets · ex-US</span><span class="l-zh">跨国主题篮子 · 除美</span></span></a>
-      </div>
-    </div>
-    <div class="nav-dd">
-      <a class="nav-link" href="crypto.html"><span class="menu-icon menu-icon-assets" style="--menu-icon-mask:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='black' stroke-width='1.55' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='8.5'/%3E%3Cpath d='m12 7 4.4 2.5v5L12 17l-4.4-2.5v-5L12 7Zm0 0V4m0 13v3M7.6 9.5 5 8m11.4 6.5L19 16m-11.4-1.5L5 16m11.4-6.5L19 8'/%3E%3C/g%3E%3C/svg%3E&quot;)" aria-hidden="true"></span><span class="l-en">Crypto</span><span class="l-zh">加密</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu" role="menu">
-        <a href="crypto.html"><span class="submenu-icon submenu-icon-dashboard" aria-hidden="true"></span><span class="l-en">Crypto Cockpit</span><span class="l-zh">加密驾驶舱</span><span class="d"><span class="l-en">Market board · flows · leverage</span><span class="l-zh">市场看板 · 资金流 · 杠杆</span></span></a>
-        <a href="vector.html"><span class="submenu-icon submenu-icon-bitcoin" aria-hidden="true"></span><span class="l-en">Bitcoin Vector</span><span class="l-zh">比特币向量</span><span class="d"><span class="l-en">State · risk · cycle · strategy</span><span class="l-zh">状态 · 风险 · 周期 · 策略</span></span></a>
-        <a href="crypto.html#allocation"><span class="submenu-icon submenu-icon-allocation" aria-hidden="true"></span><span class="l-en">Allocation</span><span class="l-zh">配置</span><span class="d"><span class="l-en">BTC · ETH · alts · cash</span><span class="l-zh">BTC · ETH · 山寨 · 现金</span></span></a>
-        <a href="vector.html#strategy-track-record"><span class="submenu-icon submenu-icon-strategy" aria-hidden="true"></span><span class="l-en">Strategy Track Record</span><span class="l-zh">策略历史表现</span><span class="d"><span class="l-en">Cycle and risk-allocation evidence</span><span class="l-zh">周期与风险配置证据</span></span></a>
       </div>
     </div>
     <div class="nav-dd">
@@ -203,48 +214,46 @@
     
     <div class="nav-dd nav-mega-dd">
       <a class="nav-link" href="intelligence_hub.html"><span class="menu-icon menu-icon-research" aria-hidden="true"></span><span class="l-en">Research</span><span class="l-zh">研究</span> <span class="caret">▾</span></a>
-      <div class="nav-dd-menu nav-mega" role="menu">
-        <div class="nav-mega-main">
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nm-feat" href="intelligence_hub.html"><span class="nm-ic research-icon research-icon-intelligence-hub" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="d"><span class="l-en">Your market command center</span><span class="l-zh">你的市场指挥中心</span></span></span></a>
-              <a class="nm-feat" href="reports.html"><span class="nm-ic research-icon research-icon-reports" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
-              <a class="nm-feat" href="research_vault.html"><span class="nm-ic research-icon research-icon-vault" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="d"><span class="l-en">Search every published note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
-              <a class="nm-feat" href="neural_web.html"><span class="nm-ic research-icon research-icon-neural-web" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
+      <div class="nav-dd-menu nav-mega mega-menu" role="menu">
+        <div class="mega-main nav-mega-main">
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Core Research</span><span class="l-zh">核心研究</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nm-feat" href="intelligence_hub.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/><circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/><circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Intelligence Hub</span><span class="l-zh">情报中心</span></span><span class="item-desc d"><span class="l-en">Your complete market command center</span><span class="l-zh">你的完整市场指挥中心</span></span></span></a>
+              <a class="mega-item nm-feat" href="reports.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Reports</span><span class="l-zh">研究报告</span></span><span class="item-desc d"><span class="l-en">Deep dives and market calls</span><span class="l-zh">深度研究与市场判断</span></span></span></a>
+              <a class="mega-item nm-feat" href="research_vault.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Research Vault</span><span class="l-zh">研报库</span></span><span class="item-desc d"><span class="l-en">Search every published research note</span><span class="l-zh">搜索所有已发布研究</span></span></span></a>
+              <a class="mega-item nm-feat" href="neural_web.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Neural Web</span><span class="l-zh">智脑</span></span><span class="item-desc d"><span class="l-en">See how every signal votes</span><span class="l-zh">查看每个信号如何投票</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="foresight.html"><span class="nm-ic research-icon research-icon-foresight" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
-              <a class="nav-mega-item" href="state_of_themes.html"><span class="nm-ic research-icon research-icon-themes" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="d"><span class="l-en">What is strengthening and fading</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
-              <a class="nav-mega-item" href="radar.html"><span class="nm-ic research-icon research-icon-divergence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
-              <a class="nav-mega-item" href="confluence_screener.html"><span class="nm-ic research-icon research-icon-confluence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Find the Edge</span><span class="l-zh">寻找边际</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="foresight.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Foresight</span><span class="l-zh">前瞻</span></span><span class="item-desc d"><span class="l-en">Themes before markets price them</span><span class="l-zh">市场定价前的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="state_of_themes.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Theme Tracker</span><span class="l-zh">主题追踪</span></span><span class="item-desc d"><span class="l-en">What’s strengthening and fading now</span><span class="l-zh">正在增强与减弱的主题</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="radar.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Divergence Radar</span><span class="l-zh">背离雷达</span></span><span class="item-desc d"><span class="l-en">Where price and reality split</span><span class="l-zh">价格与现实的分歧</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="confluence_screener.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Signal Board</span><span class="l-zh">信号看板</span></span><span class="item-desc d"><span class="l-en">Today’s strongest confirmed setups</span><span class="l-zh">今日最强确认信号</span></span></span></a>
             </div>
           </section>
-          <section class="nav-mega-section">
-            <div class="nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></div>
-            <div class="nav-mega-item-grid">
-              <a class="nav-mega-item" href="smart_money.html"><span class="nm-ic research-icon research-icon-smart-money" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
-              <a class="nav-mega-item" href="etfs.html"><span class="nm-ic research-icon research-icon-fund-flows" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
-              <a class="nav-mega-item" href="cycle.html"><span class="nm-ic research-icon research-icon-cycle-intelligence" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
-              <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
+          <section class="mega-section nav-mega-section">
+            <h2 class="section-label nav-mega-h"><span class="l-en">Capital & Regimes</span><span class="l-zh">资金与周期</span></h2>
+            <div class="item-grid nav-mega-item-grid">
+              <a class="mega-item nav-mega-item" href="smart_money.html"><span class="icon-drawing nm-ic violet" aria-hidden="true"><svg viewBox="0 0 48 48"><rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Smart Money</span><span class="l-zh">聪明钱</span></span><span class="item-desc d"><span class="l-en">How top investors are positioned</span><span class="l-zh">顶级投资者的仓位</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="etfs.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Fund Flows</span><span class="l-zh">基金流向</span></span><span class="item-desc d"><span class="l-en">Where institutional capital is moving</span><span class="l-zh">机构资金流向</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="cycle.html"><span class="icon-drawing nm-ic" aria-hidden="true"><svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Cycle Intelligence</span><span class="l-zh">周期智慧</span></span><span class="item-desc d"><span class="l-en">Where the economy is heading</span><span class="l-zh">经济周期的下一站</span></span></span></a>
+              <a class="mega-item nav-mega-item" href="macro_context.html"><span class="icon-drawing nm-ic cyan" aria-hidden="true"><svg viewBox="0 0 48 48"><circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/></svg></span><span class="nm-tx"><span class="item-title nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="item-desc d"><span class="l-en">Growth, inflation and liquidity now</span><span class="l-zh">当前增长、通胀与流动性</span></span></span></a>
             </div>
           </section>
         </div>
-        <aside class="nav-mega-rail">
-          <div class="nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></div>
-          <a class="nav-rail-item" href="policy_watch.html"><span class="nm-ic research-icon research-icon-fed-policy" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="d"><span class="l-en">Policy and capital rotation</span><span class="l-zh">政策与资本轮动</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="alt_data.html"><span class="nm-ic research-icon research-icon-alt-data" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="d"><span class="l-en">Signals beyond price</span><span class="l-zh">价格之外的信号</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
-          <a class="nav-rail-item" href="special_situations.html"><span class="nm-ic research-icon research-icon-special-situations" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="d"><span class="l-en">Event-driven opportunities</span><span class="l-zh">事件驱动机会</span></span></span><span class="nav-drill-arrow" aria-hidden="true">↗</span></a>
+        <aside class="mega-rail nav-mega-rail" aria-label="Explore research">
+          <h2 class="section-label nav-mega-h"><span class="l-en">Explore</span><span class="l-zh">探索</span></h2>
+          <a class="rail-link nav-rail-item" href="policy_watch.html"><span><span class="l-en">Policy Watch</span><span class="l-zh">政策观察</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="alt_data.html"><span><span class="l-en">Alternative Data</span><span class="l-zh">替代数据</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
+          <a class="rail-link nav-rail-item" href="special_situations.html"><span><span class="l-en">Special Situations</span><span class="l-zh">特殊事件</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">↗</span></a>
           <div class="nav-drill" data-nav-drill>
-            <button class="nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
-              <span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span>
-              <span class="nm-tx"><span class="nm-t"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="d"><span class="l-en">Markets and sector clocks</span><span class="l-zh">市场与行业周期</span></span></span>
-              <span class="nav-drill-arrow" aria-hidden="true">›</span>
+            <button class="rail-link nav-rail-item nav-drill-trigger" type="button" data-nav-drill-open aria-expanded="false">
+              <span><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>
             </button>
-            <div class="nav-drill-panel" data-nav-drill-panel aria-hidden="true">
+            <div class="nav-drill-panel" data-nav-drill-panel inert>
               <button class="nav-drill-back" type="button" data-nav-drill-back>‹ <span><span class="l-en">Research</span><span class="l-zh">研究</span></span></button>
               <div class="nav-drill-heading"><span class="l-en">Global Cycles</span><span class="l-zh">全球周期</span></div>
               <a class="nav-mega-item" href="markets.html"><span class="nm-ic research-icon research-icon-global-cycles" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Global Market Cycles</span><span class="l-zh">全球市场周期</span></span><span class="d"><span class="l-en">Compare national equity clocks</span><span class="l-zh">比较各国股市周期</span></span></span></a>
@@ -255,7 +264,11 @@
               <a class="nav-mega-item" href="macro_context.html"><span class="nm-ic research-icon research-icon-macro-weather" aria-hidden="true"></span><span class="nm-tx"><span class="nm-t"><span class="l-en">Macro Weather</span><span class="l-zh">宏观气象</span></span><span class="d"><span class="l-en">Read today’s macro regime</span><span class="l-zh">读取当前宏观环境</span></span></span></a>
             </div>
           </div>
-          <a class="nav-mastermind-cta" href="https://bot.mastermind-x.com" target="_blank" rel="noopener"><span class="nav-mastermind-mark" aria-hidden="true"></span><span><strong><span class="l-en">Ask Mastermind</span><span class="l-zh">询问 Mastermind</span></strong><small><span class="l-en">Research the market with AI</span><span class="l-zh">使用 AI 研究市场</span></small></span><span aria-hidden="true">→</span></a>
+          <a class="rail-link nav-rail-item" href="intelligence_hub.html"><span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span></a>
+          <div class="rail-note">
+            <strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>
+            <span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span><span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>
+          </div>
         </aside>
       </div>
     </div>
@@ -289,7 +302,7 @@
   <div class="panel span12 lab-intro">
     <h1>🔬 <span class="l-en">Quant Lab — advanced analytics</span><span class="l-zh">量化实验室 — 进阶分析</span></h1>
     <p class="muted" style="margin:2px 0 0"><span class="l-en">The deeper, geekier reads behind the main dashboard — cross-asset concentration, risk budgeting, the factor scorecard, and the raw market-internals tables. Useful for sanity-checking the headline calls; not needed for day-to-day decisions.</span><span class="l-zh">主仪表盘背后更深、更技术的解读 — 跨资产集中度、风险预算、因子记分卡，以及原始的市场内部结构表。用于校验头条判断；日常决策并不需要。</span>
-      <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-29.</p>
+      <span class="l-en">As of</span><span class="l-zh">截至</span> 2026-07-31.</p>
   </div>
 
   
@@ -300,27 +313,27 @@
       <span class="help">?<span class="tip"><span class="l-en">How much the six markets (US equity, crypto, China, HK, commodities, the dollar) are really moving as ONE risk/liquidity bet vs independent bets. The absorption ratio is the share of total variance explained by the single dominant factor: 1/6≈0.17 means independent, →1 means everything moves together (a fragile, crowded regime that has historically preceded drawdowns). Stacking correlated views feels like diversification but doubles one exposure.</span><span class="l-zh">六大市场（美股、加密货币、中国、香港、大宗商品、美元）在多大程度上其实是同一笔风险／流动性押注，而非独立押注。吸收比率是单一主导因子所解释的总方差占比：1/6≈0.17 表示独立，→1 表示一切同向（脆弱、拥挤的状态，历史上常先于回撤出现）。叠加相关的观点感觉像分散，实则在加倍同一笔敞口。</span></span></span>
     </h2>
     <p><span class="verdict v-bad">CONCENTRATED</span></p>
-    <p style="margin:8px 0">3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 18% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.</p>
+    <p style="margin:8px 0">3 of 6 markets are one bet (US, Commodities, Dollar). Cross-asset correlation is in the top 16% of its 5y range: stacking these views is doubling one liquidity/risk exposure, not diversifying.</p>
     <div style="max-width:520px">
       <div class="muted" style="font-size:12px"><span class="l-en">absorption ratio (PC1 variance share)</span><span class="l-zh">吸收比率（PC1 方差占比）</span> —
-        <b style="color:var(--text)">0.402</b>
-        · 82<span class="l-en">th pctile of 5y</span><span class="l-zh"> 百分位（5年）</span>
+        <b style="color:var(--text)">0.407</b>
+        · 84<span class="l-en">th pctile of 5y</span><span class="l-zh"> 百分位（5年）</span>
         · <span class="l-en">independent floor</span><span class="l-zh">独立基准</span> 0.167</div>
-      <div class="bar"><i style="width: 40.2%"></i></div>
+      <div class="bar"><i style="width: 40.7%"></i></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px">
       <div>
         <h3><span class="l-en">Dominant cluster (PC1 loadings)</span><span class="l-zh">主导聚类（PC1 载荷）</span></h3>
         <p><span class="l-en">These markets are the one bet:</span><span class="l-zh">这些市场属于同一押注：</span> <b>US, Commodities, Dollar</b></p>
         <table>
-          <tr><td class="l">US</td><td>0.51</td></tr><tr><td class="l">Crypto</td><td>0.38</td></tr><tr><td class="l">China</td><td>0.33</td></tr><tr><td class="l">HK</td><td>0.23</td></tr><tr><td class="l">Commodities</td><td>0.5</td></tr><tr><td class="l">Dollar</td><td>0.43</td></tr>
+          <tr><td class="l">US</td><td>0.53</td></tr><tr><td class="l">Crypto</td><td>0.38</td></tr><tr><td class="l">China</td><td>0.29</td></tr><tr><td class="l">HK</td><td>0.21</td></tr><tr><td class="l">Commodities</td><td>0.5</td></tr><tr><td class="l">Dollar</td><td>0.45</td></tr>
         </table>
       </div>
       <div>
         <h3><span class="l-en">Most-correlated pairs</span><span class="l-zh">相关性最高的配对</span></h3>
         <table>
+          <tr><td class="l">US ↔ Commodities</td><td>0.56</td></tr>
           
-          <tr><td class="l muted"><span class="l-en">no pair above 0.5</span><span class="l-zh">无配对超过 0.5</span></td><td></td></tr>
         </table>
       </div>
     </div>
@@ -338,16 +351,16 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.41</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.35</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.33</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.07)">0.15</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.25)">0.50</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.28)">0.56</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.39</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.43</span></td>
         
       </tr>
       
@@ -360,7 +373,7 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.01</span></td>
+        <td><span class="heat" style="background: rgba(224,100,100,0.01)">-0.02</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.03</span></td>
@@ -369,17 +382,17 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.14)">0.27</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.43</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.22)">0.44</span></td>
         
       </tr>
       
       <tr><td class="l">China</td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.35</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.33</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.01</span></td>
+        <td><span class="heat" style="background: rgba(224,100,100,0.01)">-0.02</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
@@ -388,10 +401,10 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.15)">0.31</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.19)">0.38</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.35</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.03)">0.05</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.03</span></td>
         
       </tr>
       
@@ -410,7 +423,7 @@
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.09)">0.17</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.07)">0.14</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.07)">0.13</span></td>
@@ -420,41 +433,41 @@
       <tr><td class="l">Commodities</td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.25)">0.50</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.28)">0.56</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.14)">0.27</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.19)">0.38</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.17)">0.35</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.09)">0.17</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.07)">0.14</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.42</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.43</span></td>
         
       </tr>
       
       <tr><td class="l">Dollar</td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.2)">0.39</span></td>
-        
-        
         <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.43</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.03)">0.05</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.22)">0.44</span></td>
+        
+        
+        <td><span class="heat" style="background: rgba(69,184,115,0.01)">0.03</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.07)">0.13</span></td>
         
         
-        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.42</span></td>
+        <td><span class="heat" style="background: rgba(69,184,115,0.21)">0.43</span></td>
         
         
         <td><span class="heat" style="background: rgba(69,184,115,0.5)">1.00</span></td>
@@ -474,7 +487,7 @@
     <h2>⚖️ <span class="l-en">Risk budgeting across the six markets</span><span class="l-zh">六大市场的风险预算</span>
       <span class="help">?<span class="tip"><span class="l-en">If you expressed all six market views as one book, how should they be weighted? Equal-weight (1/6 each), inverse-vol (more in the calm markets), and equal-risk-contribution (ERC — each market contributes the SAME share of portfolio risk). The &#39;risk&#39; column is each market&#39;s share of total portfolio variance: equal-weight quietly concentrates risk in the most volatile market; ERC equalizes it. This is the honest &#39;size as uncorrelated bets&#39; weighting — a reference, not a trade list.</span><span class="l-zh">若把全部六个市场观点合成一个组合，该如何配权？等权（各 1/6）、逆波动率（在平静市场配得更多），以及等风险贡献（ERC — 每个市场对组合风险贡献相同份额）。&#39;风险&#39;列是各市场对组合总方差的占比：等权会悄悄把风险集中在波动最大的市场；ERC 将其均衡。这是诚实的&#39;按不相关押注定量&#39;配权 — 仅作参考，非交易清单。</span></span></span>
     </h2>
-    <p style="margin:0 0 8px">Equal-weighting all 6 market views puts 37% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.432). Diversification ratio 1.69.</p>
+    <p style="margin:0 0 8px">Equal-weighting all 6 market views puts 37% of portfolio RISK in one market (vs 17% if truly balanced); ERC rebalances to ~equal risk (heaviest weight: Dollar 0.426). Diversification ratio 1.69.</p>
     <table>
       <tr><th class="l"><span class="l-en">market</span><span class="l-zh">市场</span></th>
         <th>EW <span class="l-en">wt</span><span class="l-zh">权重</span></th><th><span class="l-en">IV</span><span class="l-zh">逆波</span></th><th>ERC</th><th><span class="l-en">EW risk</span><span class="l-zh">EW风险</span></th></tr>
@@ -496,13 +509,13 @@
       <tr><td class="l">China</td>
         <td class="muted">17%</td>
         <td class="muted">13%</td>
-        <td><b>13%</b></td>
+        <td><b>14%</b></td>
         <td class="muted">12%</td>
       </tr>
       
       <tr><td class="l">HK</td>
         <td class="muted">17%</td>
-        <td class="muted">12%</td>
+        <td class="muted">13%</td>
         <td><b>14%</b></td>
         <td class="muted">10%</td>
       </tr>
@@ -676,20 +689,20 @@
     <h2><span class="l-en">The two dials behind the regime</span><span class="l-zh">周期背后的两个刻度盘</span>
       <span class="help">?<span class="tip"><span class="l-en">The regime label comes from two scores between -1 and +1, built from market prices (which lead) plus a small weight on economic data (which confirms).</span><span class="l-zh">周期标签来自两个介于 -1 与 +1 之间的分数，由市场价格（领先）加上经济数据（确认）的小幅权重构建。</span></span></span>
     </h2>
-    <p style="margin:8px 0 0"><b><span class="l-en">Growth:</span><span class="l-zh">增长：</span> <span class="l-en">FALLING</span><span class="l-zh">下行</span></b>
-      <span class="muted">(-0.33 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 22%)</span></p>
-    <div class="bar"><i style="width: 33.4%"></i></div>
+    <p style="margin:8px 0 0"><b><span class="l-en">Growth:</span><span class="l-zh">增长：</span> <span class="l-en">RISING</span><span class="l-zh">上行</span></b>
+      <span class="muted">(+0.13 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 9%)</span></p>
+    <div class="bar"><i style="width: 56.6%"></i></div>
     <p style="margin:10px 0 0"><b><span class="l-en">Inflation pressure:</span><span class="l-zh">通胀压力：</span> <span class="l-en">RISING</span><span class="l-zh">上行</span></b>
-      <span class="muted">(+0.56 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 45%)</span></p>
-    <div class="bar"><i style="width: 78.0%"></i></div>
+      <span class="muted">(+0.72 <span class="l-en">of ±1 · agreement</span><span class="l-zh">／±1 · 一致度</span> 60%)</span></p>
+    <div class="bar"><i style="width: 86.0%"></i></div>
     <h3><span class="l-en">What&#39;s voting for this regime</span><span class="l-zh">哪些指标在为此周期投票</span></h3>
     <div>
-      <span class="chip chip-pos"><span class="l-en">growth · consumer confidence trade</span><span class="l-zh">增长 · 消费信心交易</span></span><span class="chip chip-pos"><span class="l-en">growth · small caps</span><span class="l-zh">增长 · 小盘股</span></span><span class="chip chip-pos"><span class="l-en">growth · cyclical sectors</span><span class="l-zh">增长 · 周期性板块</span></span><span class="chip chip-pos"><span class="l-en">growth · wei_trend</span><span class="l-zh">增长 · wei_trend</span></span><span class="chip chip-pos"><span class="l-en">inflation · long-run inflation expectations</span><span class="l-zh">通胀 · 长期通胀预期</span></span><span class="chip chip-pos"><span class="l-en">inflation · energy sector</span><span class="l-zh">通胀 · 能源板块</span></span><span class="chip chip-pos"><span class="l-en">inflation · oil</span><span class="l-zh">通胀 · 原油</span></span><span class="chip chip-pos"><span class="l-en">inflation · inflation-winners basket</span><span class="l-zh">通胀 · 通胀受益篮子</span></span>
-      <span class="chip chip-neg"><span class="l-en">growth · payrolls</span><span class="l-zh">增长 · 非农就业</span></span><span class="chip chip-neg"><span class="l-en">growth · industrial production</span><span class="l-zh">增长 · 工业生产</span></span><span class="chip chip-neg"><span class="l-en">inflation · sticky_cpi_direction</span><span class="l-zh">通胀 · sticky_cpi_direction</span></span>
+      <span class="chip chip-pos"><span class="l-en">growth · copper vs gold</span><span class="l-zh">增长 · 铜对黄金</span></span><span class="chip chip-pos"><span class="l-en">growth · payrolls</span><span class="l-zh">增长 · 非农就业</span></span><span class="chip chip-pos"><span class="l-en">growth · industrial production</span><span class="l-zh">增长 · 工业生产</span></span><span class="chip chip-pos"><span class="l-en">growth · gdpnow_trend</span><span class="l-zh">增长 · gdpnow_trend</span></span><span class="chip chip-pos"><span class="l-en">inflation · 10-yr inflation expectations</span><span class="l-zh">通胀 · 10年期通胀预期</span></span><span class="chip chip-pos"><span class="l-en">inflation · long-run inflation expectations</span><span class="l-zh">通胀 · 长期通胀预期</span></span><span class="chip chip-pos"><span class="l-en">inflation · energy sector</span><span class="l-zh">通胀 · 能源板块</span></span><span class="chip chip-pos"><span class="l-en">inflation · oil</span><span class="l-zh">通胀 · 原油</span></span><span class="chip chip-pos"><span class="l-en">inflation · inflation-winners basket</span><span class="l-zh">通胀 · 通胀受益篮子</span></span>
+      <span class="chip chip-neg"><span class="l-en">growth · small caps</span><span class="l-zh">增长 · 小盘股</span></span><span class="chip chip-neg"><span class="l-en">growth · wei_trend</span><span class="l-zh">增长 · wei_trend</span></span><span class="chip chip-neg"><span class="l-en">inflation · sticky_cpi_direction</span><span class="l-zh">通胀 · sticky_cpi_direction</span></span>
       
     </div>
     <h3><span class="l-en">Weakest link</span><span class="l-zh">最薄弱环节</span></h3>
-    <p class="muted"><span class="l-en">No single indicator is close to flipping — the regime call isn&#39;t hanging on one thread right now.</span><span class="l-zh">没有单一指标接近翻转 — 当前的周期判断目前并非系于一线。</span></p>
+    <p class="muted"><span class="l-en">Watch the copper-vs-gold price trend (a classic growth-expectations gauge) — of everything supporting the current call, it&#39;s the one closest to flipping sides. If it fades, the growth dial (and possibly the regime) goes with it.</span><span class="l-zh">关注 the copper-vs-gold price trend (a classic growth-expectations gauge) — 在支撑当前判断的所有因素中，它最接近翻转。若其转弱，growth 刻度（乃至周期）也会随之改变。</span></p>
     
     <h3><span class="l-en">Does the market agree with the regime?</span><span class="l-zh">市场是否认同此周期？</span></h3>
     <p class="muted">framework and tape agree</p>
@@ -705,27 +718,27 @@
       <tr><th class="l"><span class="l-en">gauge</span><span class="l-zh">指标</span></th><th><span class="l-en">past month</span><span class="l-zh">过去一月</span></th><th class="l"><span class="l-en">what it&#39;s saying</span><span class="l-zh">它在说什么</span></th></tr>
       
       <tr><td class="l"><span class="l-en">Shoppers: wants vs needs</span><span class="l-zh">购物者：想要 vs 必需</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening.</span><span class="l-zh">可选消费股 vs 必需消费股。上升 = 人们在买电视和度假，不只是买杂货 — 信心。下降 = 勒紧裤带。</span></span><span class="l-zh"><span class="l-en">Consumer-discretionary stocks vs consumer-staples stocks. Rising = people are buying TVs and vacations, not just groceries — confidence. Falling = belt-tightening.</span><span class="l-zh">可选消费股 vs 必需消费股。上升 = 人们在买电视和度假，不只是买杂货 — 信心。下降 = 勒紧裤带。</span></span></span></span></td>
-        <td class="neg">-9.88%</td>
+        <td class="neg">-0.95%</td>
         <td class="l muted"><span class="l-en">consumers cautious</span><span class="l-zh">消费者谨慎</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Tech vs utilities</span><span class="l-zh">科技 vs 公用事业</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">The market&#39;s boldest sector vs its sleepiest. Rising = growth appetite; falling = safety-seeking.</span><span class="l-zh">市场最大胆的板块 vs 最沉闷的板块。上升 = 增长偏好；下降 = 寻求安全。</span></span><span class="l-zh"><span class="l-en">The market&#39;s boldest sector vs its sleepiest. Rising = growth appetite; falling = safety-seeking.</span><span class="l-zh">市场最大胆的板块 vs 最沉闷的板块。上升 = 增长偏好；下降 = 寻求安全。</span></span></span></span></td>
-        <td class="neg">-10.54%</td>
-        <td class="l muted"><span class="l-en">safety-seeking</span><span class="l-zh">寻求安全</span></td></tr>
+        <td class="pos">+0.19%</td>
+        <td class="l muted"><span class="l-en">growth appetite</span><span class="l-zh">增长偏好</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Junk bonds vs quality bonds</span><span class="l-zh">垃圾债 vs 优质债</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; falling = they&#39;re getting picky — often an early warning.</span><span class="l-zh">高风险公司债 vs 蓝筹债。上升 = 信用投资者放松；下降 = 他们开始挑剔 — 往往是早期预警。</span></span><span class="l-zh"><span class="l-en">Risky-company bonds vs blue-chip bonds. Rising = credit investors relaxed; falling = they&#39;re getting picky — often an early warning.</span><span class="l-zh">高风险公司债 vs 蓝筹债。上升 = 信用投资者放松；下降 = 他们开始挑剔 — 往往是早期预警。</span></span></span></span></td>
-        <td class="pos">+1.66%</td>
+        <td class="pos">+1.95%</td>
         <td class="l muted"><span class="l-en">credit relaxed</span><span class="l-zh">信用放松</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Daring vs defensive stocks</span><span class="l-zh">进取股 vs 防御股</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">The most volatile S&amp;P stocks vs the calmest. The purest read on whether fund managers are playing offense or defense.</span><span class="l-zh">标普中波动最大的股票 vs 最平稳的股票。最纯粹地反映基金经理在打进攻还是防守。</span></span><span class="l-zh"><span class="l-en">The most volatile S&amp;P stocks vs the calmest. The purest read on whether fund managers are playing offense or defense.</span><span class="l-zh">标普中波动最大的股票 vs 最平稳的股票。最纯粹地反映基金经理在打进攻还是防守。</span></span></span></span></td>
-        <td class="neg">-14.38%</td>
+        <td class="neg">-4.97%</td>
         <td class="l muted"><span class="l-en">playing defense</span><span class="l-zh">打防守</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Panic gauge (now vs later)</span><span class="l-zh">恐慌指标（现在 vs 之后）</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; comfortably below 0.9 = calm.</span><span class="l-zh">近期恐慌 vs 3个月恐慌。升向1.0 = 压力正在累积；稳稳低于0.9 = 平静。</span></span><span class="l-zh"><span class="l-en">Near-term fear vs 3-month fear. Rising toward 1.0 = stress building right now; comfortably below 0.9 = calm.</span><span class="l-zh">近期恐慌 vs 3个月恐慌。升向1.0 = 压力正在累积；稳稳低于0.9 = 平静。</span></span></span></span></td>
-        <td class="neg">+10.98%</td>
-        <td class="l muted"><span class="l-en">near-term stress building</span><span class="l-zh">近期压力累积</span></td></tr>
+        <td class="pos">-0.89%</td>
+        <td class="l muted"><span class="l-en">calm</span><span class="l-zh">平静</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Copper vs gold</span><span class="l-zh">铜 vs 黄金</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">The economist&#39;s metal vs the doomsday metal. Rising = bets on real economic activity; falling = safety-seeking. Historically leads bond yields.</span><span class="l-zh">经济学家的金属 vs 末日金属。上升 = 押注真实经济活动；下降 = 寻求安全。历史上领先债券收益率。</span></span><span class="l-zh"><span class="l-en">The economist&#39;s metal vs the doomsday metal. Rising = bets on real economic activity; falling = safety-seeking. Historically leads bond yields.</span><span class="l-zh">经济学家的金属 vs 末日金属。上升 = 押注真实经济活动；下降 = 寻求安全。历史上领先债券收益率。</span></span></span></span></td>
-        <td class="pos">+2.18%</td>
+        <td class="pos">+6.82%</td>
         <td class="l muted"><span class="l-en">growth optimism</span><span class="l-zh">增长乐观</span></td></tr>
       
     </table>
@@ -740,22 +753,22 @@
       <tr><th class="l"><span class="l-en">lens</span><span class="l-zh">维度</span></th><th><span class="l-en">past month</span><span class="l-zh">过去一月</span></th><th class="l"><span class="l-en">what it&#39;s saying</span><span class="l-zh">它在说什么</span></th></tr>
       
       <tr><td class="l"><span class="l-en">Small caps vs large</span><span class="l-zh">小盘对大盘</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Russell 2000 vs S&amp;P 500 (IWM/SPY)</span><span class="l-zh">罗素2000 对 标普500 (IWM/SPY)</span></span><span class="l-zh"><span class="l-en">Russell 2000 vs S&amp;P 500 (IWM/SPY)</span><span class="l-zh">罗素2000 对 标普500 (IWM/SPY)</span></span></span></span></td>
-        <td class="neg">-1.44%</td>
+        <td class="neg">-2.44%</td>
         <td class="l muted"><span class="l-en">large-cap-led — narrowing participation</span><span class="l-zh">大盘主导 — 参与度收窄</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Mid caps vs large</span><span class="l-zh">中盘对大盘</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">S&amp;P MidCap 400 vs S&amp;P 500 (IJH/SPY)</span><span class="l-zh">标普中盘400 对 标普500 (IJH/SPY)</span></span><span class="l-zh"><span class="l-en">S&amp;P MidCap 400 vs S&amp;P 500 (IJH/SPY)</span><span class="l-zh">标普中盘400 对 标普500 (IJH/SPY)</span></span></span></span></td>
-        <td class="neg">-0.05%</td>
+        <td class="neg">-1.38%</td>
         <td class="l muted"><span class="l-en">mega-cap-led — narrowing</span><span class="l-zh">超大盘主导 — 收窄</span></td></tr>
       
       <tr><td class="l"><span class="l-en">Growth vs value</span><span class="l-zh">成长对价值</span> <span class="help">?<span class="tip"><span class="l-en"><span class="l-en">Russell 1000 Growth vs Value (IWF/IWD). Style rotation: growth tends to lead in disinflation/slowdowns, value in reflation.</span><span class="l-zh">罗素1000 成长 对 价值 (IWF/IWD)。风格轮动：成长在去通胀/放缓中领先，价值在再通胀中领先。</span></span><span class="l-zh"><span class="l-en">Russell 1000 Growth vs Value (IWF/IWD). Style rotation: growth tends to lead in disinflation/slowdowns, value in reflation.</span><span class="l-zh">罗素1000 成长 对 价值 (IWF/IWD)。风格轮动：成长在去通胀/放缓中领先，价值在再通胀中领先。</span></span></span></span></td>
-        <td class="muted">-9.39%</td>
+        <td class="muted">-4.29%</td>
         <td class="l muted"><span class="l-en">value leadership</span><span class="l-zh">价值领先</span></td></tr>
       
     </table>
     
     <p class="muted" style="margin:10px 2px 0;font-size:13px"><span class="l-en">Small-cap participation</span><span class="l-zh">小盘参与度</span>:
-      <b>65%</b> <span class="l-en">of S&amp;P 600 vs</span><span class="l-zh">的标普600 对</span>
-      <b>67%</b> <span class="l-en">for the S&amp;P 500</span><span class="l-zh">的标普500</span> — <span class="l-en">small- and large-cap participation roughly in line</span><span class="l-zh">小盘与大盘参与度大致一致</span>.</p>
+      <b>63%</b> <span class="l-en">of S&amp;P 600 vs</span><span class="l-zh">的标普600 对</span>
+      <b>62%</b> <span class="l-en">for the S&amp;P 500</span><span class="l-zh">的标普500</span> — <span class="l-en">small- and large-cap participation roughly in line</span><span class="l-zh">小盘与大盘参与度大致一致</span>.</p>
     
   </div>
 
@@ -768,62 +781,62 @@
     <table>
       <tr><th class="l"><span class="l-en">stock</span><span class="l-zh">个股</span></th><th><span class="l-en">active Δwt</span><span class="l-zh">主动权重Δ</span></th><th><span class="l-en">est. flow</span><span class="l-zh">估算资金流</span></th><th class="l"><span class="l-en">technical</span><span class="l-zh">技术面</span></th></tr>
       
-      <tr><td class="l"><a href="stock.html#CVX"><b>CVX</b></a> <span class="muted">XLE</span></td>
-        <td class="pos"><b>+0.02pp</b></td>
-        <td class="muted">+$9M</td>
+      <tr><td class="l"><a href="stock.html#VLO"><b>VLO</b></a> <span class="muted">XLE</span></td>
+        <td class="neg"><b>-0.02pp</b></td>
+        <td class="muted">−$9M</td>
         <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#XOM"><b>XOM</b></a> <span class="muted">XLE</span></td>
-        <td class="pos"><b>+0.02pp</b></td>
-        <td class="muted">+$8M</td>
-        <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
+      <tr><td class="l"><a href="stock.html#O"><b>O</b></a> <span class="muted">XLRE</span></td>
+        <td class="neg"><b>-0.02pp</b></td>
+        <td class="muted">−$2M</td>
+        <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#KO"><b>KO</b></a> <span class="muted">XLP</span></td>
-        <td class="pos"><b>+0.02pp</b></td>
-        <td class="muted">+$3M</td>
-        <td class="l"><span class="pill st-FRESH_BUY"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span> ✅</td></tr>
+      <tr><td class="l"><a href="stock.html#TRGP"><b>TRGP</b></a> <span class="muted">XLE</span></td>
+        <td class="neg"><b>-0.02pp</b></td>
+        <td class="muted">−$7M</td>
+        <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#WMT"><b>WMT</b></a> <span class="muted">XLP</span></td>
+      <tr><td class="l"><a href="stock.html#AMZN"><b>AMZN</b></a> <span class="muted">XLY</span></td>
         <td class="pos"><b>+0.02pp</b></td>
         <td class="muted">+$3M</td>
         <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#COST"><b>COST</b></a> <span class="muted">XLP</span></td>
-        <td class="pos"><b>+0.02pp</b></td>
-        <td class="muted">+$3M</td>
-        <td class="l"><span class="pill st-RALLY_ON"><span class="l-en">UPTREND</span><span class="l-zh">上涨趋势</span></span> ✅</td></tr>
+      <tr><td class="l"><a href="stock.html#MS"><b>MS</b></a> <span class="muted">XLF</span></td>
+        <td class="neg"><b>-0.02pp</b></td>
+        <td class="muted">−$9M</td>
+        <td class="l"><span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#COP"><b>COP</b></a> <span class="muted">XLE</span></td>
-        <td class="pos"><b>+0.02pp</b></td>
+      <tr><td class="l"><a href="stock.html#ABBV"><b>ABBV</b></a> <span class="muted">XLV</span></td>
+        <td class="pos"><b>+0.01pp</b></td>
+        <td class="muted">+$6M</td>
+        <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
+      
+      <tr><td class="l"><a href="stock.html#LLY"><b>LLY</b></a> <span class="muted">XLV</span></td>
+        <td class="pos"><b>+0.01pp</b></td>
+        <td class="muted">+$6M</td>
+        <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
+      
+      <tr><td class="l"><a href="stock.html#JPM"><b>JPM</b></a> <span class="muted">XLF</span></td>
+        <td class="pos"><b>+0.01pp</b></td>
         <td class="muted">+$7M</td>
         <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#MO"><b>MO</b></a> <span class="muted">XLP</span></td>
-        <td class="pos"><b>+0.02pp</b></td>
-        <td class="muted">+$2M</td>
+      <tr><td class="l"><a href="stock.html#BRK.B"><b>BRK.B</b></a> <span class="muted">XLF</span></td>
+        <td class="pos"><b>+0.01pp</b></td>
+        <td class="muted">+$7M</td>
         <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
       
       <tr><td class="l"><a href="stock.html#LIN"><b>LIN</b></a> <span class="muted">XLB</span></td>
-        <td class="pos"><b>+0.02pp</b></td>
-        <td class="muted">+$1M</td>
-        <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
+        <td class="neg"><b>-0.01pp</b></td>
+        <td class="muted">−$1M</td>
+        <td class="l"><span class="pill st-DECLINE"><span class="l-en">DOWNTREND</span><span class="l-zh">下跌趋势</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#MDLZ"><b>MDLZ</b></a> <span class="muted">XLP</span></td>
-        <td class="pos"><b>+0.01pp</b></td>
-        <td class="muted">+$2M</td>
-        <td class="l"><span class="pill st-FRESH_BUY"><span class="l-en">BUY ZONE</span><span class="l-zh">买入区</span></span> ✅</td></tr>
+      <tr><td class="l"><a href="stock.html#FCX"><b>FCX</b></a> <span class="muted">XLB</span></td>
+        <td class="neg"><b>-0.01pp</b></td>
+        <td class="muted">−$1M</td>
+        <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
       
-      <tr><td class="l"><a href="stock.html#PM"><b>PM</b></a> <span class="muted">XLP</span></td>
-        <td class="pos"><b>+0.01pp</b></td>
-        <td class="muted">+$2M</td>
-        <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
-      
-      <tr><td class="l"><a href="stock.html#NUE"><b>NUE</b></a> <span class="muted">XLB</span></td>
-        <td class="pos"><b>+0.01pp</b></td>
-        <td class="muted">+$1M</td>
-        <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
-      
-      <tr><td class="l"><a href="stock.html#PG"><b>PG</b></a> <span class="muted">XLP</span></td>
+      <tr><td class="l"><a href="stock.html#DUK"><b>DUK</b></a> <span class="muted">XLU</span></td>
         <td class="pos"><b>+0.01pp</b></td>
         <td class="muted">+$2M</td>
         <td class="l"><span class="pill st-BOTTOM_WATCH"><span class="l-en">NEARING A LOW</span><span class="l-zh">接近低点</span></span> ✅</td></tr>
@@ -844,90 +857,90 @@
       <tr><td class="l"><b>MARS</b></td>
           <td class="l"><a href="stock.html#SPCX"><b>SPCX</b></a> <span class="muted">Space Exploration Technologies Corp</span></td>
           <td class="l muted"><span class="l-en">Space</span><span class="l-zh">Space</span></td>
-          <td class="r muted">21.56%</td>
-          <td class="r pos"><b>+21.56pp</b></td>
+          <td class="r muted">19.88%</td>
+          <td class="r pos"><b>+19.88pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>REMX</b></td>
           <td class="l"><a href="stock.html#ALB"><b>ALB</b></a> <span class="muted">Albemarle Corp</span></td>
           <td class="l muted"><span class="l-en">Materials</span><span class="l-zh">原材料</span></td>
-          <td class="r muted">7.79%</td>
-          <td class="r pos"><b>+5.62pp</b></td>
+          <td class="r muted">8.12%</td>
+          <td class="r pos"><b>+5.64pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#LITE"><b>LITE</b></a> <span class="muted">Lumentum Holdings Inc</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
+          <td class="r muted">5.45%</td>
+          <td class="r pos"><b>+5.45pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
           <td class="l"><a href="stock.html#CBRS"><b>CBRS</b></a> <span class="muted">Cerebras Systems Inc</span></td>
           <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
-          <td class="r muted">5.53%</td>
-          <td class="r pos"><b>+5.53pp</b></td>
+          <td class="r muted">5.41%</td>
+          <td class="r pos"><b>+5.41pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
-          <td class="l"><a href="stock.html#STX"><b>STX</b></a> <span class="muted">Seagate Technology Holdings Plc</span></td>
-          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
-          <td class="r muted">5.47%</td>
-          <td class="r pos"><b>+5.47pp</b></td>
-          <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
-      
-      <tr><td class="l"><b>MEME</b></td>
-          <td class="l"><a href="stock.html#WDC"><b>WDC</b></a> <span class="muted">Western Digital Corp</span></td>
-          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
-          <td class="r muted">5.42%</td>
-          <td class="r pos"><b>+5.42pp</b></td>
-          <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
-      
-      <tr><td class="l"><b>REMX</b></td>
-          <td class="l"><a href="stock.html#600111 C1"><b>600111 C1</b></a> <span class="muted">China Northern Rare Earth Group High-Te</span></td>
-          <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-          <td class="r muted">7.37%</td>
-          <td class="r pos"><b>+5.32pp</b></td>
+          <td class="l"><a href="stock.html#CRDO"><b>CRDO</b></a> <span class="muted">Credo Technology Group Holding Ltd</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">5.37%</td>
+          <td class="r pos"><b>+5.37pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
-          <td class="l"><a href="stock.html#TER"><b>TER</b></a> <span class="muted">Teradyne Inc</span></td>
-          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
-          <td class="r muted">5.29%</td>
-          <td class="r pos"><b>+5.29pp</b></td>
+          <td class="l"><a href="stock.html#CRWV"><b>CRWV</b></a> <span class="muted">Coreweave Inc</span></td>
+          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
+          <td class="r muted">5.37%</td>
+          <td class="r pos"><b>+5.37pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>BUG</b></td>
           <td class="l"><a href="stock.html#CRWD"><b>CRWD</b></a> <span class="muted">Crowdstrike Holdings Inc - A</span></td>
           <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
-          <td class="r muted">7.03%</td>
-          <td class="r pos"><b>+5.25pp</b></td>
-          <td class="l"><span class="pill st-TURN_SIGNALED"><span class="l-en">BOTTOMING</span><span class="l-zh">筑底中</span></span> ✅</td></tr>
+          <td class="r muted">7.15%</td>
+          <td class="r pos"><b>+5.34pp</b></td>
+          <td class="l"><span class="pill st-TOP_WATCH"><span class="l-en">NEARING A HIGH</span><span class="l-zh">接近高点</span></span></td></tr>
       
       <tr><td class="l"><b>REMX</b></td>
           <td class="l"><a href="stock.html#PLS AU"><b>PLS AU</b></a> <span class="muted">Pilbara Minerals Ltd</span></td>
           <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-          <td class="r muted">7.14%</td>
-          <td class="r pos"><b>+5.15pp</b></td>
-          <td class="l"><span class="muted">—</span></td></tr>
-      
-      <tr><td class="l"><b>REMX</b></td>
-          <td class="l"><a href="stock.html#LYC AU"><b>LYC AU</b></a> <span class="muted">Lynas Rare Earths Ltd</span></td>
-          <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
-          <td class="r muted">7.04%</td>
-          <td class="r pos"><b>+5.08pp</b></td>
-          <td class="l"><span class="muted">—</span></td></tr>
-      
-      <tr><td class="l"><b>ARKK</b></td>
-          <td class="l"><a href="stock.html#SPCX"><b>SPCX</b></a> <span class="muted">Space Exploration Techn-Cl A</span></td>
-          <td class="l muted"><span class="l-en">Active / Innovation</span><span class="l-zh">Active / Innovation</span></td>
-          <td class="r muted">4.97%</td>
-          <td class="r pos"><b>+4.97pp</b></td>
+          <td class="r muted">7.58%</td>
+          <td class="r pos"><b>+5.27pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
       
       <tr><td class="l"><b>MEME</b></td>
-          <td class="l"><a href="stock.html#CIFR"><b>CIFR</b></a> <span class="muted">Cipher Digital Inc</span></td>
-          <td class="l muted"><span class="l-en">Meme / Retail</span><span class="l-zh">Meme / Retail</span></td>
-          <td class="r muted">4.87%</td>
-          <td class="r pos"><b>+4.87pp</b></td>
+          <td class="l"><a href="stock.html#COHR"><b>COHR</b></a> <span class="muted">Coherent Corp</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
+          <td class="r muted">5.26%</td>
+          <td class="r pos"><b>+5.26pp</b></td>
           <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#HIMS"><b>HIMS</b></a> <span class="muted">Hims &amp; Hers Health Inc</span></td>
+          <td class="l muted"><span class="l-en">Health Care</span><span class="l-zh">医疗保健</span></td>
+          <td class="r muted">5.25%</td>
+          <td class="r pos"><b>+5.25pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>REMX</b></td>
+          <td class="l"><a href="stock.html#600111 C1"><b>600111 C1</b></a> <span class="muted">China Northern Rare Earth Group High-Te</span></td>
+          <td class="l muted"><span class="l-en">Rare Earth</span><span class="l-zh">Rare Earth</span></td>
+          <td class="r muted">7.53%</td>
+          <td class="r pos"><b>+5.23pp</b></td>
+          <td class="l"><span class="muted">—</span></td></tr>
+      
+      <tr><td class="l"><b>MEME</b></td>
+          <td class="l"><a href="stock.html#WDC"><b>WDC</b></a> <span class="muted">Western Digital Corp</span></td>
+          <td class="l muted"><span class="l-en">Information Technology</span><span class="l-zh">信息技术</span></td>
+          <td class="r muted">5.00%</td>
+          <td class="r pos"><b>+5.00pp</b></td>
+          <td class="l"><span class="pill st-COUNTERTREND_BOUNCE"><span class="l-en">UNCONFIRMED TURN</span><span class="l-zh">未确认转向</span></span></td></tr>
       
     </table>
     
-    <div style="margin-top:12px"><table><tr><th class='l'>date</th><th>Materials</th><th>Communications</th><th>Energy</th><th>Financials</th><th>Industrials</th><th>Technology</th><th>Consumer Staples</th><th>Real Estate</th><th>Utilities</th><th>Health Care</th><th>Consumer Discretionary</th></tr><tr><td class='l muted'>2026-07-14</td><td class='neg'>−$67M</td><td class='neg'>−$58M</td><td class='neg'>−$24M</td><td class='neg'>−$195M</td><td class='pos'>+$81M</td><td class='pos'>+$78M</td><td class='neg'>−$120M</td><td class='neg'>−$0M</td><td class='neg'>−$107M</td><td class='neg'>−$126M</td><td class='pos'>+$105M</td></tr><tr><td class='l muted'>2026-07-16</td><td class='neg'>−$5M</td><td class='neg'>−$10M</td><td class='pos'>+$45M</td><td class='pos'>+$1.2B</td><td class='neg'>−$64M</td><td class='neg'>−$106M</td><td class='neg'>−$52M</td><td class='pos'>+$5M</td><td class='pos'>+$74M</td><td class='pos'>+$249M</td><td class='pos'>+$39M</td></tr><tr><td class='l muted'>2026-07-17</td><td class='neg'>−$0M</td><td class='pos'>+$34M</td><td class='neg'>−$34M</td><td class='pos'>+$766M</td><td class='neg'>−$126M</td><td class='pos'>+$236M</td><td class='pos'>+$85M</td><td class='pos'>+$27M</td><td class='neg'>−$24M</td><td class='pos'>+$122M</td><td class='pos'>+$58M</td></tr><tr><td class='l muted'>2026-07-20</td><td class='neg'>−$0M</td><td class='pos'>+$1M</td><td class='neg'>−$50M</td><td class='neg'>−$480M</td><td class='neg'>−$204M</td><td class='neg'>−$30M</td><td class='pos'>+$25M</td><td class='pos'>+$10M</td><td class='neg'>−$40M</td><td class='pos'>+$142M</td><td class='pos'>+$12M</td></tr><tr><td class='l muted'>2026-07-21</td><td class='pos'>+$10M</td><td class='neg'>−$133M</td><td class='pos'>+$199M</td><td class='neg'>−$451M</td><td class='neg'>−$215M</td><td class='pos'>+$130M</td><td class='neg'>−$139M</td><td class='neg'>−$4M</td><td class='neg'>−$96M</td><td class='pos'>+$0M</td><td class='neg'>−$56M</td></tr><tr><td class='l muted'>2026-07-22</td><td class='neg'>−$1M</td><td class='neg'>−$66M</td><td class='pos'>+$149M</td><td class='pos'>+$726M</td><td class='neg'>−$8M</td><td class='neg'>−$52M</td><td class='neg'>−$24M</td><td class='neg'>−$0M</td><td class='neg'>−$65M</td><td class='pos'>+$191M</td><td class='pos'>+$50M</td></tr><tr><td class='l muted'>2026-07-23</td><td class='pos'>+$124M</td><td class='pos'>+$101M</td><td class='neg'>−$76M</td><td class='neg'>−$39M</td><td class='pos'>+$9M</td><td class='pos'>+$109M</td><td class='neg'>−$34M</td><td class='neg'>−$5M</td><td class='pos'>+$3M</td><td class='neg'>−$574M</td><td class='neg'>−$141M</td></tr><tr><td class='l muted'>2026-07-24</td><td class='pos'>+$19M</td><td class='neg'>−$202M</td><td class='neg'>−$77M</td><td class='neg'>−$160M</td><td class='pos'>+$109M</td><td class='pos'>+$120M</td><td class='pos'>+$493M</td><td class='pos'>+$39M</td><td class='neg'>−$11M</td><td class='pos'>+$595M</td><td class='neg'>−$203M</td></tr><tr><td class='l muted'>2026-07-27</td><td class='neg'>−$63M</td><td class='neg'>−$6M</td><td class='neg'>−$81M</td><td class='neg'>−$317M</td><td class='neg'>−$110M</td><td class='pos'>+$81M</td><td class='neg'>−$274M</td><td class='pos'>+$3M</td><td class='pos'>+$54M</td><td class='neg'>−$612M</td><td class='pos'>+$145M</td></tr><tr><td class='l muted'>2026-07-28</td><td class='pos'>+$11M</td><td class='neg'>−$55M</td><td class='neg'>−$5M</td><td class='pos'>+$1.7B</td><td class='neg'>−$255M</td><td class='pos'>+$49M</td><td class='pos'>+$35M</td><td class='pos'>+$11M</td><td class='neg'>−$8M</td><td class='neg'>−$77M</td><td class='pos'>+$12M</td></tr></table></div>
+    <div style="margin-top:12px"><table><tr><th class='l'>date</th><th>Materials</th><th>Communications</th><th>Energy</th><th>Financials</th><th>Industrials</th><th>Technology</th><th>Consumer Staples</th><th>Real Estate</th><th>Utilities</th><th>Health Care</th><th>Consumer Discretionary</th></tr><tr><td class='l muted'>2026-07-17</td><td class='neg'>−$0M</td><td class='pos'>+$34M</td><td class='neg'>−$34M</td><td class='pos'>+$766M</td><td class='neg'>−$126M</td><td class='pos'>+$236M</td><td class='pos'>+$85M</td><td class='pos'>+$27M</td><td class='neg'>−$24M</td><td class='pos'>+$122M</td><td class='pos'>+$58M</td></tr><tr><td class='l muted'>2026-07-20</td><td class='neg'>−$0M</td><td class='pos'>+$1M</td><td class='neg'>−$50M</td><td class='neg'>−$480M</td><td class='neg'>−$204M</td><td class='neg'>−$30M</td><td class='pos'>+$25M</td><td class='pos'>+$10M</td><td class='neg'>−$40M</td><td class='pos'>+$142M</td><td class='pos'>+$12M</td></tr><tr><td class='l muted'>2026-07-21</td><td class='pos'>+$10M</td><td class='neg'>−$133M</td><td class='pos'>+$199M</td><td class='neg'>−$451M</td><td class='neg'>−$215M</td><td class='pos'>+$130M</td><td class='neg'>−$139M</td><td class='neg'>−$4M</td><td class='neg'>−$96M</td><td class='pos'>+$0M</td><td class='neg'>−$56M</td></tr><tr><td class='l muted'>2026-07-22</td><td class='neg'>−$1M</td><td class='neg'>−$66M</td><td class='pos'>+$149M</td><td class='pos'>+$726M</td><td class='neg'>−$8M</td><td class='neg'>−$52M</td><td class='neg'>−$24M</td><td class='neg'>−$0M</td><td class='neg'>−$65M</td><td class='pos'>+$191M</td><td class='pos'>+$50M</td></tr><tr><td class='l muted'>2026-07-23</td><td class='pos'>+$124M</td><td class='pos'>+$101M</td><td class='neg'>−$76M</td><td class='neg'>−$39M</td><td class='pos'>+$9M</td><td class='pos'>+$109M</td><td class='neg'>−$34M</td><td class='neg'>−$5M</td><td class='pos'>+$3M</td><td class='neg'>−$574M</td><td class='neg'>−$141M</td></tr><tr><td class='l muted'>2026-07-24</td><td class='pos'>+$19M</td><td class='neg'>−$202M</td><td class='neg'>−$77M</td><td class='neg'>−$160M</td><td class='pos'>+$109M</td><td class='pos'>+$120M</td><td class='pos'>+$493M</td><td class='pos'>+$39M</td><td class='neg'>−$11M</td><td class='pos'>+$595M</td><td class='neg'>−$203M</td></tr><tr><td class='l muted'>2026-07-27</td><td class='neg'>−$63M</td><td class='neg'>−$6M</td><td class='neg'>−$81M</td><td class='neg'>−$317M</td><td class='neg'>−$110M</td><td class='pos'>+$81M</td><td class='neg'>−$274M</td><td class='pos'>+$3M</td><td class='pos'>+$54M</td><td class='neg'>−$612M</td><td class='pos'>+$145M</td></tr><tr><td class='l muted'>2026-07-28</td><td class='pos'>+$11M</td><td class='neg'>−$55M</td><td class='neg'>−$5M</td><td class='pos'>+$1.7B</td><td class='neg'>−$255M</td><td class='pos'>+$49M</td><td class='pos'>+$35M</td><td class='pos'>+$11M</td><td class='neg'>−$8M</td><td class='neg'>−$77M</td><td class='pos'>+$12M</td></tr><tr><td class='l muted'>2026-07-29</td><td class='neg'>−$200M</td><td class='neg'>−$120M</td><td class='neg'>−$488M</td><td class='pos'>+$505M</td><td class='pos'>+$124M</td><td class='pos'>+$301M</td><td class='pos'>+$520M</td><td class='pos'>+$54M</td><td class='pos'>+$117M</td><td class='neg'>−$73M</td><td class='neg'>−$63M</td></tr><tr><td class='l muted'>2026-07-30</td><td class='neg'>−$10M</td><td class='neg'>−$86M</td><td class='pos'>+$75M</td><td class='neg'>−$904M</td><td class='pos'>+$35M</td><td class='pos'>+$164M</td><td class='neg'>−$115M</td><td class='neg'>−$50M</td><td class='neg'>−$58M</td><td class='pos'>+$81M</td><td class='pos'>+$1M</td></tr></table></div>
   </div>
 
   <div class="panel span12" style="text-align:center;background:var(--panel2)">
@@ -938,6 +951,11 @@
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script src="theme.js?v=0943b4d5" defer></script>
+<<<<<<< Updated upstream
+<script src="theme.js?v=e4951de3" defer></script>
+=======
+<script src="theme.js?v=e4951de3" defer></script>
+<script defer data-whb data-root="" src="wh_banner.js?v=37bf40aa"></script>
+>>>>>>> Stashed changes
 </body>
 </html>

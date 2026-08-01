@@ -5,8 +5,11 @@ Pins the integration half of research/MARKETING_HOT_TAPE_MASTERPLAN.md §0:
   0.5  the existing safety stack is untouched AND exercised (kill switch off by
        default, outbox transition legality, enqueue dedupe on a second pass)
   0.6  EVERY TICKER POST CARRIES A CHART — a single-name event whose card cannot
-       be drawn and hosted is DROPPED, never enqueued bare; sector/contrarian
-       breadth posts ship text-only in P1
+       be drawn and hosted is DROPPED, never enqueued bare. Since 2026-07-31
+       that covers GROUP posts too: sector/contrarian breadth used to ship
+       text-only, which the publisher's chart law then quarantined for naming
+       cashtags, so the whole family died in the queue. They now carry a
+       watchlist card and are dropped on the same terms if it cannot be hosted.
   0.7  every new suite is named in a run line in the lane it belongs to, plus
        ci.yml trigger paths for every new file — a suite that ships dark is the
        unrun-suite rot class, so this suite PINS ITS OWN WIRING (below)
@@ -189,6 +192,30 @@ def _fired_rows(root: Path) -> list[dict]:
     return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x]
 
 
+def _stub_group_card(monkeypatch,
+                     *, media_url: str = "https://pub-test.r2.dev/c/grp.png") -> list[dict]:
+    """Stand in for the group card's raster + upload. Returns the CALL LOG."""
+    calls: list[dict] = []
+
+    def _fake(packet, *, root, marketing_cfg, as_of, now, **kw):
+        calls.append({"key": packet.key, "trigger": packet.trigger,
+                      "rows": RADAR.group_rows(packet)})
+        chart_id = (f"hottape-{packet.trigger}-{RADAR._slug(packet.sector or 'market')}"
+                    f"-{now.strftime('%H%M')}Z")
+        return {
+            "media": {"kind": "chart_svg",
+                      "path": f"data/marketing/outbox/media/{as_of}/{chart_id}.svg",
+                      "chart_id": chart_id,
+                      "tickers": [r["ticker"] for r in RADAR.group_rows(packet)],
+                      "media_url": media_url},
+            "published": {"chart_id": chart_id, "media_url": media_url},
+            "reason": "ok",
+        }
+
+    monkeypatch.setattr(RADAR, "resolve_group_card", _fake)
+    return calls
+
+
 def _stub_chart(monkeypatch, *, media_url: str = "https://pub-test.r2.dev/c/hot.png") -> list[dict]:
     """Stand in for the Chrome raster + R2 upload with the shape they return.
 
@@ -330,8 +357,23 @@ class TestChartLaw:
         assert OB.read_items(root) == []
         assert "no-media-url" in capsys.readouterr().out
 
-    def test_sector_event_ships_text_only(self, tmp_path, capsys):
-        """A breadth post is about a GROUP — lawful without a card in P1."""
+    def test_sector_event_carries_a_watchlist_card(self, tmp_path, capsys, monkeypatch):
+        """A breadth post owes a picture too — it just is not a price chart.
+
+        THE RULE THIS REPLACES, and why. A group post used to ship text-only,
+        on the reasoning that a breadth read is not about one name and has no
+        chart to draw. Correct about the chart, wrong about the law: the copy
+        NAMES its movers ("Best: $SNDK +21.1%, $WDC +15.2%"), and the
+        publisher's chart law refuses any post that names tickers without a
+        picture, whatever kind it claims to be (operator 2026-07-30). Two rules
+        that were each right in isolation, and between them the entire group
+        family was unpublishable — 19 queued on 2026-07-30, all 19 quarantined,
+        none ever seen.
+
+        The picture is render_watchlist_card, the third member of the same card
+        family, whose rows come straight out of the packet.
+        """
+        calls = _stub_group_card(monkeypatch)
         root = _sector_root(tmp_path)
 
         assert RADAR.run(root, now=NOW, fetcher=_no_fetch) == 0
@@ -339,13 +381,39 @@ class TestChartLaw:
         items = OB.read_items(root)
         assert len(items) == 1, items
         assert items[0]["kind"] == "breaking"
-        assert items[0]["media"] == []
         assert items[0]["source"]["trigger"] in ("sector_rout", "sector_rip")
         assert items[0]["source"]["ticker"] is None
         # One story, one post: the industry and its parent sector both qualify
         # here and the detector emits only the more extreme of the pair.
         assert "Technology" in items[0]["text"]
         assert "hot-tape DROP" not in capsys.readouterr().out
+
+        assert len(calls) == 1, "the group card was not drawn"
+        media = items[0]["media"]
+        assert len(media) == 1, media
+        assert media[0]["kind"] == "chart_svg"
+        assert media[0]["media_url"].startswith("https://")
+        # Keyed on the GROUP, not a ticker — there is no one name to key on.
+        assert media[0]["chart_id"].startswith("hottape-sector_")
+        assert media[0]["tickers"], "the card must record the names it shows"
+
+    def test_a_group_post_with_no_card_is_dropped_like_any_other(self, tmp_path,
+                                                                 monkeypatch, capsys):
+        """The chart law is not softer for a group.
+
+        Without this, widening needs_chart would have been a downgrade: the
+        family would ask for a picture, fail to get one, and ship bare anyway —
+        which is exactly the state the publisher quarantines.
+        """
+        def _hostless(packet, *, root, marketing_cfg, as_of, now, **kw):
+            return {"media": None, "published": {}, "reason": "no-media-url"}
+        monkeypatch.setattr(RADAR, "resolve_group_card", _hostless)
+        root = _sector_root(tmp_path)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+
+        assert OB.read_items(root) == []
+        assert "no-media-url" in capsys.readouterr().out
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -370,7 +438,8 @@ class TestDedupe:
         assert "hot-tape BOOKED" not in out
         assert len(HT.load_ring(root)) == 2       # the ring still advances
 
-    def test_sector_event_fires_once_per_direction_per_day(self, tmp_path, capsys):
+    def test_sector_event_fires_once_per_direction_per_day(self, tmp_path, capsys, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         # Regression pin for the granularity flip-flop: the fired-key filter in
         # _detect_group_moves must run AFTER the industry/parent overlap
         # suppression, or a fired group's rival (the same names at the other
@@ -497,13 +566,14 @@ def _emit_three(root: Path, packets: list) -> list[str]:
 
 
 class TestFlagshipBudget:
-    def test_only_the_top_event_mirrors_to_flagship(self, tmp_path):
+    def test_only_the_top_event_mirrors_to_flagship(self, tmp_path, monkeypatch):
         """Three routs clear the floor in one sweep; exactly one may mirror.
 
         Group routs carry base severity 80-90, so a floor alone routes EVERY
         routine rout to the flagship and leaves the wire desk dark — measured on
         the 2026-07-28 tape, three industry routs in one sweep.
         """
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -519,8 +589,9 @@ class TestFlagshipBudget:
         accounts = [by_id[i]["account"] for i in booked]
         assert accounts == ["flagship", "mastermind_news", "mastermind_news"], accounts
 
-    def test_a_deduped_flagship_event_does_not_burn_the_budget(self, tmp_path):
+    def test_a_deduped_flagship_event_does_not_burn_the_budget(self, tmp_path, monkeypatch):
         """The budget is spent on a POST, not on an attempt."""
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -544,7 +615,8 @@ class TestFlagshipBudget:
                  (root / "data/marketing/hot_tape_fired.jsonl").read_text().splitlines() if x]
         assert [f["item_id"] for f in fired].count(None) == 1
 
-    def test_run_cap_stops_at_three(self, tmp_path):
+    def test_run_cap_stops_at_three(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         extra = _sector_packet("Oil & Gas Midstream", -2.90, 86.0,
@@ -553,7 +625,7 @@ class TestFlagshipBudget:
         booked = _emit_three(root, [_P_TOP, _P_MID, _P_LOW, extra])
         assert len(booked) == 3
 
-    def test_a_near_identical_rout_is_refused_by_the_existing_guard(self, tmp_path):
+    def test_a_near_identical_rout_is_refused_by_the_existing_guard(self, tmp_path, monkeypatch):
         """Gate 0.5, unchanged and load-bearing for this lane.
 
         Two desks posting the same sentence about different groups is the
@@ -561,6 +633,7 @@ class TestFlagshipBudget:
         radar does not get an exemption: it logs the skip, records the fire with
         NO item_id, and the day's emit budget is untouched.
         """
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         twin = _sector_packet("Semiconductors", -6.90, 88.0,
@@ -576,11 +649,114 @@ class TestFlagshipBudget:
         assert fired[1]["sector"] == "Semiconductors"
 
 
+class TestFlagshipBudgetIsChargedOnTheRoutingDecision:
+    """The mirror valve must be charged by the DECISION, not by the rescue.
+
+    THE DEFECT (adversarial review, 2026-07-31). `emit` reassigned `account` in
+    place — routing, then the dark-desk rescue — and then decremented
+    `flagship_budget` by reading the POST-rescue value, under a comment
+    promising the exact opposite ("NOT charged to flagship_budget below … a
+    fallback is a rescue, not a mirror"). Two ways to break one valve:
+
+      * flagship DARK: every intended mirror was rescued off the flagship desk,
+        so the decrement never fired and "only the biggest events get a second
+        desk" became "every event does", for the whole pass;
+      * wire DARK (the SHIPPED default, `mastermind_news`): budget exhaustion
+        routed to the wire desk, live_account rescued it back to flagship (it is
+        first in `fallbacks`), and the decrement then charged a mirror the budget
+        had already refused — driving the counter negative.
+
+    Both tests watch the CANDIDATE handed to `live_account`, which is the
+    routing decision itself. The desks the items finally land on are unchanged
+    by this fix (the rescue still runs, and it must) — what changes is which
+    events get to ask for a mirror.
+    """
+
+    @staticmethod
+    def _desks(*, flagship_on: bool, news_on: bool) -> dict:
+        return {"desk_network": {"accounts": [
+                    {"id": "flagship", "enabled": flagship_on},
+                    {"id": "mastermind_news", "enabled": news_on}]},
+                "wire_routing": {"default": "flagship"}}
+
+    @staticmethod
+    def _packet(label: str, severity: float) -> FactPacket:
+        return _sector_packet(label, -6.5, severity,
+                              [["AAA", -9.1], ["BBB", -8.4], ["CCC", -7.2]],
+                              members=9, down=8)
+
+    def _run(self, tmp_path, monkeypatch, packets, marketing_cfg):
+        """emit() with the booking stubbed, recording live_account candidates.
+
+        `book_packet` is stubbed because a real booking is a Chrome raster, an
+        R2 upload and an LLM call — none of which is the thing under test. The
+        `would_book` verdict takes the same budget branch a real `queued` does.
+        """
+        HT.reset_dark_account_warnings()
+        root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
+                           hot_tape_cfg=_ROUTING_CFG)
+        seen_accounts: list[str] = []
+        candidates: list[str] = []
+        real_live = HT.live_account
+
+        def _spy_live(candidate, **kw):
+            candidates.append(candidate)
+            return real_live(candidate, **kw)
+
+        def _fake_book(packet, *, account, **kw):
+            seen_accounts.append(account)
+            return {"status": "would_book", "item_id": None, "text": "x"}
+
+        monkeypatch.setattr(HT, "live_account", _spy_live)
+        monkeypatch.setattr(RADAR, "book_packet", _fake_book)
+        RADAR.emit(packets, root=root, cfg=HT.load_config(root),
+                   marketing_cfg=marketing_cfg, fired_today=[], now=NOW,
+                   as_of=DAY, demo=False, dry_run=True, fetcher=_no_fetch)
+        HT.reset_dark_account_warnings()
+        return candidates, seen_accounts
+
+    def test_a_dark_flagship_desk_does_not_make_the_mirror_budget_infinite(
+            self, tmp_path, monkeypatch):
+        """flagship_max_per_run is 1, so exactly ONE event may ask to mirror."""
+        packets = [self._packet(f"Group {i}", 90.0) for i in range(3)]
+        candidates, accounts = self._run(
+            tmp_path, monkeypatch, packets,
+            self._desks(flagship_on=False, news_on=True))
+        # PRE-FIX: ["flagship", "flagship", "flagship"] — the rescue moved the
+        # item off the flagship desk, the decrement read the rescued account,
+        # and the budget was never spent.
+        assert candidates == ["flagship", "mastermind_news", "mastermind_news"], candidates
+        # The rescue itself is untouched: nothing is enqueued to a dark desk.
+        assert accounts == ["mastermind_news"] * 3, accounts
+
+    def test_a_rescue_off_the_dark_wire_desk_does_not_eat_the_mirror_budget(
+            self, tmp_path, monkeypatch):
+        """The shipped posture: `mastermind_news` is the dark one.
+
+        A sub-85 event is routed to the wire desk and rescued to flagship for
+        LIVENESS — it never asked for a mirror. Charging it spent the pass's one
+        mirror slot before the 90-severity event that the valve exists for even
+        arrived, which is how a rescue silently reordered the desk's editorial
+        priority.
+        """
+        packets = [self._packet("Small Group", 80.0),
+                   self._packet("Big Group", 90.0)]
+        candidates, accounts = self._run(
+            tmp_path, monkeypatch, packets,
+            self._desks(flagship_on=True, news_on=False))
+        # PRE-FIX: ["mastermind_news", "mastermind_news"] — the sub-85 rescue
+        # burned the budget, so the big event found it empty and was routed to
+        # the wire desk (from which the same rescue then bounced it back).
+        assert candidates == ["mastermind_news", "flagship"], candidates
+        assert accounts == ["flagship", "flagship"], accounts
+
+
 class TestDemoBlastRadius:
     """M5 — demo relaxes EVERY threshold at once, and with the publisher armed
     those are real posts. One item, wire desk, never the flagship."""
 
-    def test_two_flagship_events_in_demo_book_one_wire_post(self, tmp_path):
+    def test_two_flagship_events_in_demo_book_one_wire_post(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         cfg = HT.load_config(root)
@@ -598,7 +774,8 @@ class TestDemoBlastRadius:
         assert len(items) == 1
         assert items[0]["account"] == "mastermind_news"
 
-    def test_the_same_events_outside_demo_keep_the_normal_budget(self, tmp_path):
+    def test_the_same_events_outside_demo_keep_the_normal_budget(self, tmp_path, monkeypatch):
+        _stub_group_card(monkeypatch)   # the card itself is TestChartLaw's job
         root = _write_root(tmp_path, quotes={}, tiles=[], pack_tickers={},
                            hot_tape_cfg=_ROUTING_CFG)
         booked = _emit_three(root, [_P_TOP, _P_MID])
@@ -632,6 +809,85 @@ class TestTerminalEnqueueVerdicts:
         assert "hot-tape DETECT" not in out         # the cooldown holds …
         assert len(calls) == 1                      # … so nothing is re-rendered
         assert len(_fired_rows(root)) == 1
+
+    def test_a_duplicate_costs_no_render_at_all(self, tmp_path, monkeypatch, capsys):
+        """The card is drawn AFTER the copy is known to be publishable.
+
+        The fired ledger stops a re-DETECT, but it cannot help the first time a
+        packet is offered against copy the outbox already holds. resolve_chart
+        is a Chrome raster plus an R2 upload and it used to run BEFORE enqueue,
+        so that first offer paid full price for an image the dedupe guard was
+        always going to refuse — charged to a nightly render budget that is law.
+
+        Nothing enqueue rejects on depends on the picture, so the verdict is
+        available before the render. Here the fired ledger is deliberately wiped
+        so the packet IS re-detected: the only thing standing between it and a
+        second raster is the preflight.
+        """
+        root = _mover_root(tmp_path)
+        calls = _stub_chart(monkeypatch)
+
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        assert len(OB.read_items(root)) == 1
+        assert len(calls) == 1, "the first, legitimate render"
+        capsys.readouterr()
+
+        # Wipe the cooldown memory: force the radar to offer the same event again.
+        (root / HT.FIRED_REL).unlink()
+
+        RADAR.run(root, now=NOW + timedelta(minutes=5), fetcher=_no_fetch)
+
+        out = capsys.readouterr().out
+        assert "hot-tape DETECT" in out, "the packet must actually be re-offered"
+        assert len(calls) == 1, (
+            "the duplicate was re-rendered — a Chrome raster and an R2 upload "
+            "spent on a post the outbox refuses on text alone"
+        )
+        assert "preflight, no render" in out
+        assert len(OB.read_items(root)) == 1, "and nothing extra was queued"
+
+    def test_the_preflight_answers_exactly_what_enqueue_would(self, tmp_path):
+        """A preflight that disagrees with the gate is worse than none.
+
+        It would either waste the render it promised to save, or drop a post
+        enqueue would have taken. Both callers therefore run the SAME
+        `_rejection_reason` over the SAME `_enqueue_ctx`; this pins that they
+        agree on every code, not just on the happy path.
+        """
+        import inspect
+
+        src = inspect.getsource(OB)
+        assert src.count("def _rejection_reason") == 1
+        # Both paths must go through the one definition.
+        assert "_rejection_reason(" in inspect.getsource(OB.preflight_enqueue)
+        assert "_rejection_reason(" in inspect.getsource(OB.enqueue)
+        assert "_enqueue_ctx(" in inspect.getsource(OB.preflight_enqueue)
+        assert "_enqueue_ctx(" in inspect.getsource(OB.enqueue)
+
+        # And it agrees in fact, not only in structure.
+        item = OB.make_item(account="mastermind_x", kind="breaking",
+                            text="A one-off line about $MU and its tape.",
+                            as_of="2026-07-30", provenance="hot_tape")
+        assert OB.preflight_enqueue(
+            account="mastermind_x", kind="breaking", text=item["text"],
+            as_of="2026-07-30", root=tmp_path) == "ok"
+        assert OB.enqueue(item, tmp_path) == "queued"
+        # Now the same copy is a duplicate to BOTH.
+        assert OB.preflight_enqueue(
+            account="mastermind_x", kind="breaking", text=item["text"],
+            as_of="2026-07-30", root=tmp_path) == "duplicate"
+        assert OB.enqueue(item, tmp_path) == "duplicate"
+
+    def test_the_preflight_fails_OPEN_and_can_never_cause_an_outage(self):
+        """It may only skip work. It may never be the reason a post is lost."""
+        import inspect
+
+        src = inspect.getsource(OB.preflight_enqueue)
+        tail = src.split("except Exception")[-1]
+        assert 'return "ok"' in tail, (
+            "a preflight that cannot read the corpus must assume the post is "
+            "fine — at worst that costs one wasted render"
+        )
 
     def test_a_cap_rejection_is_recorded_too(self, tmp_path, monkeypatch):
         root = _mover_root(tmp_path)
@@ -803,6 +1059,44 @@ class TestSuspectHistoryCard:
         assert "hot-tape DROP" in out                 # refused later, on the bars
 
 
+class TestRemoteQuotePlane:
+    """The VPS live plane is config-driven and must never fire in a bare checkout.
+
+    The radar reads a REMOTE quote source (config.yml ``live.public_quotes_url``)
+    because every repo-local artifact is written by a throttled GitHub lane. That
+    source is a bonus, never a dependency, and it must not turn a unit test into a
+    web request — hence "no config, no remote".
+    """
+
+    def test_a_root_without_config_yml_resolves_to_no_remote_source(self, tmp_path):
+        RADAR.remote_quote_urls.cache_clear()
+        assert RADAR.remote_quote_urls(tmp_path) == ()
+
+    def test_the_shipped_config_arms_the_plane(self):
+        RADAR.remote_quote_urls.cache_clear()
+        urls = RADAR.remote_quote_urls(REPO_ROOT)
+        assert urls and all(u.startswith("https://") for u in urls)
+
+    def test_an_operator_can_disable_it_with_an_empty_value(self, tmp_path):
+        (tmp_path / "config.yml").write_text('live:\n  public_quotes_url: ""\n')
+        RADAR.remote_quote_urls.cache_clear()
+        assert RADAR.remote_quote_urls(tmp_path) == ()
+
+    def test_load_quotes_passes_the_resolved_urls_through(self, tmp_path, monkeypatch):
+        """The wiring itself — a resolver nothing calls is the shape that ships dead."""
+        (tmp_path / "config.yml").write_text('live:\n  public_quotes_url: "https://vps/q"\n')
+        RADAR.remote_quote_urls.cache_clear()
+        seen: dict = {}
+
+        def _spy(root, *, remote_urls=None, **kw):
+            seen["urls"] = remote_urls
+            return {"quotes": {}, "asof": None, "source": "none", "feed_delay_min": 0.0}
+
+        monkeypatch.setattr(RADAR.LV, "load_live_quotes", _spy)
+        RADAR.load_quotes(tmp_path, now=NOW, cfg={}, demo=False)
+        assert seen["urls"] == ("https://vps/q",)
+
+
 class TestPerQuoteStaleness:
     """m4 — the freshness gate reads the FRESHEST quote, so a merge that passes
     still carries entries hours old, and a detector cannot tell them apart."""
@@ -905,6 +1199,19 @@ class TestSafetyStack:
         "engine/marketing/copywriter.py": ("hot_tape_llm", "numeric_violations"),
         "scripts/marketing_publisher.py": (
             "hot_tape", "LANE", "BRIEF_TRIGGER", "orphaned_brief_status"),
+        # 2026-07-31, the wire reaper (outbox.expire_stale_wire). The outbox is
+        # the SHARED queue and a provenance slug is its own vocabulary, not a
+        # reach into this program — and the direction of travel is the opposite
+        # of what this guard defends against: the reference exists so the outbox
+        # can KILL a stale hot-tape item, never to widen a rule so one can post.
+        #
+        # The allowance is as narrow as the mechanism allows: every token below
+        # must appear on EVERY line of outbox.py that says "hot_tape", so the
+        # only admissible line is the _WIRE_PROVENANCES literal itself. A later
+        # edit that reaches for a hot-tape threshold, config key or helper puts
+        # the word on some other line and this test fails, exactly as intended.
+        "engine/marketing/outbox.py": (
+            "hot_tape", "_WIRE_PROVENANCES", "press_lane", "publisher_live_movers"),
     }
 
     def test_safety_modules_are_not_edited_by_this_program(self):
@@ -1011,8 +1318,11 @@ class TestLLMPhrasing:
         item = OB.read_items(root)[0]
         assert item["text"] == model_text
         stamp = item["source"]["llm"]
+        # `violations` is the STRING LIST (2026-07-31), not the count: the count
+        # made the measured validation-fallback rate undiagnosable from the queue.
+        # `violations_n` keeps the cardinality for the tally.
         assert stamp == {"mode": "llm", "provider": "oauth",
-                         "latency_ms": 812, "violations": 0}
+                         "latency_ms": 812, "violations": [], "violations_n": 0}
         assert len(calls) == 1
         # The deterministic template is what the desk falls back TO, so it must
         # arrive as the fallback argument rather than being thrown away.
@@ -1056,7 +1366,13 @@ class TestLLMPhrasing:
         assert "accumulate" not in item["text"]
         assert item["text"].startswith("$MU")             # the template posted
         assert item["source"]["llm"]["mode"] == "fallback_validation"
-        assert item["source"]["llm"]["violations"] >= 1
+        # The NAMED violations reach the queue, not just their count — the whole
+        # point of the 2026-07-31 telemetry fix is that "why did it fall back"
+        # is answerable from items.jsonl alone.
+        assert item["source"]["llm"]["violations_n"] >= 1
+        _v = item["source"]["llm"]["violations"]
+        assert isinstance(_v, list) and _v and all(isinstance(x, str) for x in _v)
+        assert any("accumulate" in x for x in _v), _v
         out = capsys.readouterr().out
         assert any(l.startswith("::warning title=hot-tape-llm-banned::")
                    for l in out.splitlines()), out
@@ -1740,9 +2056,24 @@ class TestCIWiring:
         # anthropic joined for the P2 wire desk (§10 E1): engine/llm_auth builds
         # every provider on anthropic.Anthropic, DeepSeek included, so an armed
         # lane without it is mute by construction. pandas is still barred.
+        #
+        # boto3 joined 2026-07-31 and it is NOT optional decoration: the step
+        # below is handed four R2 secrets, and without the client
+        # media_publish.publish_chart_png returns None on every card, so
+        # resolve_chart reports `no-media-url` and book_packet DROPS the post
+        # rather than ship it bare. That is a whole day of single-name posts
+        # deleted by a missing package, at full green — 2026-07-30 rendered
+        # 8,081 cards and hosted none of them.
         installs = [l for l in text.splitlines() if l.strip().startswith("run: pip install")]
         assert installs == [
-            "        run: pip install --quiet pyyaml requests pyarrow anthropic"], installs
+            "        run: pip install --quiet pyyaml requests pyarrow anthropic boto3"], installs
+        # The two halves of that line stated as rules, so a future edit reads
+        # WHY the string is what it is rather than just re-pinning it.
+        assert "pandas" not in installs[0], "pandas is barred from the intraday path"
+        assert "boto3" in installs[0], (
+            "without boto3 this lane holds R2 credentials it cannot spend and "
+            "every ticker post it detects is dropped for a missing picture"
+        )
 
     def test_the_radar_step_carries_the_llm_arming_and_credential_block(self):
         """An armed lane with no visible credential is MUTE, not off (§10 E1).
@@ -2165,102 +2496,137 @@ class TestRunSelfFetchesAStaleTape:
                   fetcher=_no_fetch, quote_builder=_never)
 
 
-class TestMultiPassCadence:
-    """One delivered tick must do several passes — GitHub will not deliver */5.
+class TestSessionCadence:
+    """One delivered tick must cover the whole session — GitHub will not deliver */5.
 
-    Measured 2026-07-29, the 8h RTH window: GitHub delivered 104 scheduled runs
-    across ALL 46 scheduled workflows in this repo, of which this lane got 6 of
-    its ~92 ticks (6.5%) — ~1.4 passes an hour against a ~43-minute mean
-    detection gap, while gate 0.1 asks for booked-at-Buffer inside 20 minutes.
-    Starvation is GitHub-side, so the lever is spending each delivered tick
-    better rather than asking for more ticks.
+    Measured 2026-07-29, the 8h RTH window: GitHub created 104 scheduled runs
+    across ALL 46 scheduled workflows in this repo, of which this lane got 6 of its
+    ~92 ticks (6.5%) — ~1.4 passes an hour against a ~43-minute mean detection gap,
+    while gate 0.1 asks for booked-at-Buffer inside 20 minutes. Starvation is
+    GitHub-side and per-lane, so the lever is not depending on delivery: one
+    bootstrap tick runs a session-long poller at a real 5-minute cadence. Runner
+    minutes are free on this public repo, so the trade is runner time for latency.
     """
 
     @staticmethod
-    def _radar_step() -> dict:
+    def _wf() -> dict:
         import yaml as _yaml
 
-        wf = _yaml.safe_load(
+        return _yaml.safe_load(
             (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
                 encoding="utf-8"))
-        step = [s for s in wf["jobs"]["radar"]["steps"] if s.get("id") == "radar"]
+
+    @classmethod
+    def _radar_step(cls) -> dict:
+        step = [s for s in cls._wf()["jobs"]["radar"]["steps"] if s.get("id") == "radar"]
         assert len(step) == 1, "the radar step lost its id"
         return step[0]
 
-    def test_a_run_does_more_than_one_pass(self):
-        env = self._radar_step()["env"]
-        assert int(env["PASSES"]) >= 2, (
-            "single-pass runs put the cadence back in GitHub's hands, where it "
-            "measured 1.4 passes/hour against a 5-minute design target")
-        assert 60 <= int(env["PASS_INTERVAL_S"]) <= 600, env["PASS_INTERVAL_S"]
+    def test_the_session_is_covered_by_serialized_halves(self):
+        """A job caps at 6h; the ET window is 6h50m. Two halves, strictly ordered."""
+        job = self._wf()["jobs"]["radar"]
+        strat = job["strategy"]
+        assert strat["max-parallel"] == 1, (
+            "the halves would run CONCURRENTLY — two radar passes racing the same "
+            "fired ledger is the double-book this lane's concurrency group exists "
+            "to prevent")
+        assert strat["fail-fast"] is False, (
+            "fail-fast would cancel the second half when the first dies, so a crash "
+            "at 14:00Z would leave the rest of the session dark")
+        assert len(strat["matrix"]["half"]) == 2, strat["matrix"]
 
-    def test_the_timeout_covers_every_planned_pass(self):
-        """The coupling that would otherwise break silently.
-
-        PASSES and timeout-minutes are one decision. Raise PASSES alone and the
-        run is killed partway through its last pass — which looks exactly like a
-        wedged job, and the passes that never ran leave no trace at all.
-        """
+    def test_two_halves_cover_the_whole_et_window(self):
+        """The arithmetic that would otherwise rot silently."""
         import yaml as _yaml
 
-        wf = _yaml.safe_load(
-            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
-                encoding="utf-8"))
-        job = wf["jobs"]["radar"]
+        job = self._wf()["jobs"]["radar"]
         env = self._radar_step()["env"]
-        passes, interval = int(env["PASSES"]), int(env["PASS_INTERVAL_S"])
-        sleep_min = (passes - 1) * interval / 60.0
-        # ~2 min of work per pass: the radar itself, up to 3 Chrome rasters at
-        # ~13s, a possible ~25s self-fetch, and the push race.
-        need = sleep_min + 2.0 * passes
-        assert int(job["timeout-minutes"]) >= need, (
-            f"{passes} passes at {interval}s need >= {need:.0f}m but the job "
-            f"budget is {job['timeout-minutes']}m — the last pass would be killed")
+        budget_s = int(env["JOB_BUDGET_S"])
+        timeout_s = int(job["timeout-minutes"]) * 60
+        assert budget_s < timeout_s, (
+            f"budget {budget_s}s exceeds the {timeout_s}s job timeout — the half "
+            "would be killed mid-pass instead of handing over")
+        assert timeout_s < 6 * 3600, (
+            f"timeout {timeout_s}s is at or past GitHub's 6h job cap")
+
+        cfg = _yaml.safe_load((REPO_ROOT / "config/hot_tape.yml").read_text(
+            encoding="utf-8"))
+        h1, m1 = (int(x) for x in str(cfg["window_et"]["start"]).split(":"))
+        h2, m2 = (int(x) for x in str(cfg["window_et"]["end"]).split(":"))
+        window_s = ((h2 * 60 + m2) - (h1 * 60 + m1) + int(cfg["window_grace_min"])) * 60
+        halves = len(self._wf()["jobs"]["radar"]["strategy"]["matrix"]["half"])
+        assert halves * budget_s >= window_s, (
+            f"{halves} halves x {budget_s}s = {halves * budget_s}s cannot cover a "
+            f"{window_s}s window — the close would go uncovered")
+
+    def test_the_backstop_bounds_every_iteration_not_just_passes(self):
+        """A pre-open WAIT must consume the backstop too.
+
+        An earlier draft decremented the counter on a wait ("a wait is not a
+        pass"), which made the cap unreachable: a stuck `--window-status` would
+        spin the loop for the whole budget. Verified by simulation before shipping.
+        """
+        body = self._radar_step()["run"]
+        assert "iter=$(( iter + 1 ))" in body, "the loop no longer counts iterations"
+        assert "pass=$(( pass - 1 ))" not in body, (
+            "the counter is decremented again — the backstop is unreachable")
+        # The cap must allow a full session plus some pre-open waiting.
+        env = self._radar_step()["env"]
+        need = int(env["JOB_BUDGET_S"]) // int(env["PASS_INTERVAL_S"])
+        assert int(env["MAX_PASSES"]) > need, (
+            f"backstop {env['MAX_PASSES']} is below the {need} passes a full half "
+            "performs — it would cut the session short")
+
+    def test_the_loop_asks_the_radar_for_the_window(self):
+        """No second implementation of the DST reasoning in bash."""
+        body = self._radar_step()["run"]
+        assert "--window-status" in body, (
+            "the loop derives the window itself again; a UTC re-derivation in bash "
+            "is how the shipped crons came to describe the wrong window")
+        for token in ("IN_WINDOW=", "WINDOW_END_EPOCH="):
+            assert token in body, token
+
+    def test_pre_open_waits_and_closed_exits(self):
+        """Three states, and pre-open is not closed.
+
+        A run bootstrapped before the bell must wait for it. Treating pre-open as
+        closed would throw away the bootstrap and leave the session uncovered.
+        """
+        body = self._radar_step()["run"]
+        assert "pre-open" in body, "the pre-open wait is gone"
+        assert "window closed" in body, "the closed-window exit is gone"
 
     def test_every_pass_commits_and_dispatches_on_its_own(self):
-        """Latency is the whole point: a pass must not wait for the run to end.
+        """Latency is the whole point: a pass must not wait for the session to end.
 
-        A 10:04 cross detected on pass 1 has to reach Buffer at ~10:07, not when
-        the third pass finishes 10 minutes later. So the commit and the dispatch
-        live INSIDE the loop — which also means the old post-loop `commit`/
-        `dispatch` steps must be gone, not merely bypassed.
+        A 10:04 cross detected on one pass has to reach Buffer at ~10:07, not when
+        the half finishes hours later. So the commit and the dispatch live INSIDE
+        the loop — which also means the old post-loop `commit`/`dispatch` steps
+        must be gone, not merely bypassed.
         """
-        import yaml as _yaml
-
-        wf = _yaml.safe_load(
-            (REPO_ROOT / ".github/workflows/marketing-hot-tape.yml").read_text(
-                encoding="utf-8"))
-        names = [str(s.get("name") or "") for s in wf["jobs"]["radar"]["steps"]]
+        names = [str(s.get("name") or "") for s in self._wf()["jobs"]["radar"]["steps"]]
         assert not [n for n in names if n.startswith("commit radar state")], names
         assert not [n for n in names if n.startswith("dispatch the publisher")], names
 
         body = self._radar_step()["run"]
-        loop = body.split("for pass in", 1)
-        assert len(loop) == 2, "the multi-pass loop is gone"
-        head, inside = loop
+        head, _, inside = body.partition("while :; do")
+        assert inside, "the session loop is gone"
         for token in ("python -m scripts.hot_tape_radar", "commit_and_push",
                       "gh workflow run marketing-publish.yml"):
             assert token in inside, f"{token} moved out of the per-pass loop"
-        # …and the helpers they call are DEFINED before it.
-        for fn in ("refresh_shared_tape()", "commit_and_push()"):
+        for fn in ("refresh_shared_tape()", "commit_and_push()", "window_status()"):
             assert fn in head, f"{fn} is used in the loop but defined after it"
 
     def test_a_booked_pass_that_cannot_push_never_dispatches(self):
         """The publisher folds items.jsonl from main, so push-then-dispatch."""
         body = self._radar_step()["run"]
-        dispatch_at = body.index("gh workflow run marketing-publish.yml")
-        gate_at = body.index("if commit_and_push; then")
-        assert gate_at < dispatch_at, (
+        assert body.index("if commit_and_push; then") < body.index(
+            "gh workflow run marketing-publish.yml"), (
             "the dispatch is no longer gated on the push landing — the publisher "
             "would look for item ids that are not on main yet and post nothing")
 
     def test_the_ids_channel_is_per_pass_not_github_output(self):
-        """GITHUB_OUTPUT is append-only and collapses to one value per step.
-
-        Three passes in one step cannot each report their own booked ids through
-        it, so the loop uses a file it truncates before every pass. Reading a
-        stale value would re-dispatch the previous pass's items.
-        """
+        """GITHUB_OUTPUT is append-only and collapses to one value per step."""
         env = self._radar_step()["env"]
         assert env.get("HOT_TAPE_IDS_FILE"), "no per-pass ids channel"
         body = self._radar_step()["run"]
@@ -2271,20 +2637,63 @@ class TestMultiPassCadence:
             REPO_ROOT / "scripts/hot_tape_radar.py").read_text(encoding="utf-8"), (
             "the workflow reads an ids file the script never writes")
 
-    def test_the_script_writes_the_ids_file_when_asked(self, tmp_path, monkeypatch):
-        """The seam itself, exercised — not just asserted to exist."""
-        root = _mover_root(tmp_path)
-        ids_file = tmp_path / "ids"
-        monkeypatch.setenv("HOT_TAPE_IDS_FILE", str(ids_file))
-        RADAR.run(root, now=NOW, fetcher=_no_fetch)
-        # The mover fixture books; if the chart law drops it there are no ids and
-        # the file stays absent, which is also correct — assert the two agree.
-        booked = [r for r in _fired_rows(root) if r.get("item_id")]
-        if booked:
-            assert ids_file.exists(), "a pass booked items but wrote no ids file"
-            assert ids_file.read_text(encoding="utf-8").strip(), ids_file.read_text()
-        else:
-            assert not ids_file.exists() or not ids_file.read_text().strip()
+
+class TestWindowStatusSeam:
+    """`--window-status` is the loop's only source of truth about the session."""
+
+    def test_it_reports_closed_outside_the_window(self, capsys):
+        assert RADAR.main(["--window-status", "--root", str(REPO_ROOT)]) == 0
+        out = capsys.readouterr().out
+        # 06:00Z on a weekday is 02:00 ET — unambiguously outside any session.
+        assert "IN_WINDOW=" in out and "WINDOW_END_EPOCH=" in out, out
+
+    def test_demo_reports_open_with_a_far_deadline(self, capsys):
+        assert RADAR.main(["--window-status", "--demo", "--root", str(REPO_ROOT)]) == 0
+        out = capsys.readouterr().out
+        assert "IN_WINDOW=1" in out, out
+        end = int([l for l in out.splitlines()
+                   if l.startswith("WINDOW_END_EPOCH=")][0].split("=")[1])
+        assert end > datetime.now(timezone.utc).timestamp() + 3600, (
+            "a demo loop must not stop at the real window end — demo exists to run "
+            "on a closed tape")
+
+    def test_the_deadline_is_the_configured_close_plus_grace(self):
+        import yaml as _yaml
+
+        cfg = _yaml.safe_load((REPO_ROOT / "config/hot_tape.yml").read_text(
+            encoding="utf-8"))
+        end_h, end_m = (int(x) for x in str(cfg["window_et"]["end"]).split(":"))
+        grace = int(cfg["window_grace_min"])
+        epoch = RADAR.window_end_epoch(REPO_ROOT, now=NOW)
+        got = datetime.fromtimestamp(epoch, timezone.utc)
+        et = HT._et_clock(got)
+        assert (et.hour * 60 + et.minute) == end_h * 60 + end_m + grace, (
+            f"deadline {et} is not {end_h:02d}:{end_m:02d} ET + {grace}m grace")
+
+    def test_a_broken_config_keeps_the_loop_and_the_gate_agreeing(self, tmp_path):
+        """The invariant is AGREEMENT, not fail-closed.
+
+        `_parse_hhmm` falls back to the same 16:05 default `in_window` uses, so an
+        unparseable `window_et.end` leaves the loop's deadline and the gate's window
+        describing the same session. That is the property worth having: a loop that
+        stopped at a different time than the gate opens/closes would either drop the
+        close or spin past it. (A genuine exception — an unreadable config — still
+        returns `now`, which stops the loop after one pass rather than holding a
+        runner for the full budget.)
+        """
+        (tmp_path / "config").mkdir()
+        (tmp_path / "config" / "hot_tape.yml").write_text(
+            "window_et:\n  end: nonsense\n", encoding="utf-8")
+        epoch = RADAR.window_end_epoch(tmp_path, now=NOW)
+        cfg = HT.load_config(tmp_path)
+        # One minute inside the deadline the gate must still be open; one minute
+        # past it, shut. Same session, both sides.
+        before = datetime.fromtimestamp(epoch - 60, timezone.utc)
+        after = datetime.fromtimestamp(epoch + 60, timezone.utc)
+        assert HT.in_window(before, cfg), (
+            "the loop would keep passing after the gate had closed")
+        assert not HT.in_window(after, cfg), (
+            "the loop would stop while the gate was still open — dropping the close")
 
 
 class TestSelfFetchImportsResolveInTheCone:
@@ -2415,3 +2824,365 @@ class TestTheLogReportsTheCeilingItApplied:
         assert "effective_max_quote_age_min(live, cfg)" not in body, (
             "a raw-config ceiling resolution is back — in demo it prints a "
             "threshold the gate never applied")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The render litter.
+#
+# This lane renders a card for EVERY candidate it evaluates, BEFORE it knows
+# whether the post will ship, on every intraday sweep. In one day that wrote
+# 8,068 hottape-*.svg into data/marketing/outbox/media/<date>/ -- a directory
+# that is COMMITTED, because the nightly chart-NNN.svg snapshots there feed the
+# admin console preview. Result: 420 MB in the media tree, ~8k new TRACKED files
+# per day, and a git that had begun printing "too many unreachable loose
+# objects" on every command in the repo.
+#
+# Two halves to the fix. .gitignore now excludes hottape-*.svg specifically
+# (chart-NNN.svg stays committed, deliberately). This is the other half: without
+# a sweep the files still pile up on the runner's disk forever.
+# ─────────────────────────────────────────────────────────────────────────────
+class TestHotTapeRenderSweep:
+    def _tree(self, tmp_path, days):
+        base = tmp_path / "data" / "marketing" / "outbox" / "media"
+        for day, n in days.items():
+            d = base / day
+            d.mkdir(parents=True, exist_ok=True)
+            for i in range(n):
+                (d / f"hottape-mover_pop-aaa{i}-1400Z.svg").write_text("<svg/>")
+            # A nightly snapshot in the same directory, which must SURVIVE.
+            (d / "chart-001.svg").write_text("<svg/>")
+        return base
+
+    def _sweep(self, root, now):
+        from scripts.hot_tape_radar import sweep_hot_tape_renders
+        return sweep_hot_tape_renders(root, now=now)
+
+    def test_stale_render_litter_is_removed(self, tmp_path):
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-20": 40, "2026-07-21": 5})
+        n = self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc))
+        assert n == 45, n
+        assert not list(base.rglob("hottape-*"))
+
+    def test_the_committed_nightly_snapshots_are_never_touched(self, tmp_path):
+        """chart-NNN.svg feeds the admin preview and is committed ON PURPOSE."""
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-20": 10, "2026-07-21": 10})
+        self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc))
+        survivors = sorted(p.name for p in base.rglob("chart-*.svg"))
+        assert survivors == ["chart-001.svg", "chart-001.svg"], survivors
+
+    def test_recent_days_are_retained(self, tmp_path):
+        """Today and yesterday stay readable for an operator in the console."""
+        from datetime import datetime, timezone
+        base = self._tree(tmp_path, {"2026-07-29": 7, "2026-07-30": 9})
+        n = self._sweep(tmp_path, datetime(2026, 7, 30, 20, 0, tzinfo=timezone.utc))
+        assert n == 0, f"swept {n} files inside the retention window"
+        assert len(list(base.rglob("hottape-*"))) == 16
+
+    def test_a_non_date_directory_is_left_alone(self, tmp_path):
+        """An unparseable name must not be treated as infinitely old."""
+        from datetime import datetime, timezone
+        base = tmp_path / "data" / "marketing" / "outbox" / "media" / "scratch"
+        base.mkdir(parents=True)
+        (base / "hottape-x-y-0000Z.svg").write_text("<svg/>")
+        assert self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc)) == 0
+        assert (base / "hottape-x-y-0000Z.svg").exists()
+
+    def test_a_missing_tree_is_not_an_error(self, tmp_path):
+        from datetime import datetime, timezone
+        assert self._sweep(tmp_path, datetime(2026, 7, 30, tzinfo=timezone.utc)) == 0
+
+    def test_the_radar_actually_calls_the_sweep(self):
+        """A helper nothing invokes is the leak with extra steps."""
+        import inspect
+        import scripts.hot_tape_radar as htr
+        assert "sweep_hot_tape_renders(root, now=ts)" in inspect.getsource(htr.run)
+
+    def test_the_gitignore_is_hottape_scoped(self):
+        """It must NOT swallow the nightly snapshots the console renders from."""
+        from pathlib import Path
+        rules = Path(".gitignore").read_text(encoding="utf-8")
+        assert "data/marketing/outbox/media/**/hottape-*.svg" in rules
+        assert "data/marketing/outbox/media/**/*.svg" not in rules, (
+            "a blanket .svg ignore would silently stop committing the chart "
+            "snapshots the admin console previews from"
+        )
+
+
+class TestAnUnhostedCardIsNotSilent:
+    """8,081 cards, zero annotations.
+
+    A drop for a missing media URL prints one stdout line among hundreds and
+    the pass exits 0, so the lane reads healthy. That is exactly how
+    2026-07-30 spent a session rendering cards it could not host — the R2
+    client was not installed, every upload returned None, and nothing in the
+    Actions summary said so.
+
+    The retry is deliberate (an upload that blipped should come back next
+    pass), which is precisely why the loss has to be visible: without the
+    annotation, a blip and a day-long outage look identical from outside.
+    """
+
+    def test_a_dropped_card_raises_a_github_annotation(self, tmp_path, monkeypatch,
+                                                       capsys):
+        def _hostless(packet, *, root, marketing_cfg, as_of, now, fetcher=None, **kw):
+            return {"media": None, "published": {}, "reason": "no-media-url"}
+        monkeypatch.setattr(RADAR, "resolve_chart", _hostless)
+        monkeypatch.setattr(RADAR, "resolve_group_card", _hostless)
+
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+
+        out = capsys.readouterr().out
+        line = next((l for l in out.splitlines()
+                     if "hot-tape-unhosted-card" in l), None)
+        assert line is not None, out
+        # The annotation law: bare, at the START of the line, or GitHub drops it.
+        assert line.startswith("::warning title=hot-tape-unhosted-card::"), line
+        # It must name the cause an operator can act on.
+        assert "boto3" in line and "R2_" in line, line
+
+    def test_a_clean_pass_stays_quiet(self, tmp_path, monkeypatch, capsys):
+        """A warning that fires on healthy passes is one nobody reads."""
+        _stub_chart(monkeypatch)
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+        assert "hot-tape-unhosted-card" not in capsys.readouterr().out
+
+    def test_a_no_bars_drop_does_not_raise_it(self, tmp_path, capsys):
+        """Scoped to cards that were DRAWN and lost.
+
+        A name with no bars never reaches the renderer, so it cost nothing and
+        says nothing about R2. Folding it in here would point the operator at
+        the wrong subsystem on every quiet day.
+        """
+        RADAR.run(_mover_root(tmp_path), now=NOW, fetcher=_no_fetch)
+        out = capsys.readouterr().out
+        assert "no-bars" in out
+        assert "hot-tape-unhosted-card" not in out
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Chart render telemetry — a degraded picture must be distinguishable
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _stub_publish_card(monkeypatch, published: dict) -> list[dict]:
+    """Replace media_publish.publish_card with a canned result. Returns the log."""
+    from engine.marketing import media_publish as MP
+
+    calls: list[dict] = []
+
+    def _fake(svg, *, chart_id, as_of, root=None, legacy_png=None):
+        calls.append({"chart_id": chart_id, "as_of": as_of})
+        return dict(published)
+
+    monkeypatch.setattr(MP, "publish_card", _fake)
+    return calls
+
+
+def _stub_renderers(monkeypatch) -> None:
+    """Both card renderers return a trivial SVG — no Chrome, no bars, no logos."""
+    from engine.marketing import chart_render as CR
+
+    monkeypatch.setattr(CR, "render_chart_v2", lambda **kw: "<svg/>")
+    monkeypatch.setattr(CR, "render_watchlist_card", lambda *a, **kw: "<svg/>")
+    monkeypatch.setattr(CR, "chart_cta_enabled", lambda cfg: False)
+    monkeypatch.setattr(
+        RADAR, "load_bars",
+        lambda ticker, root, *, now, fetcher=None: (
+            ((["2026-01-02"], [1.0], [1.0], [1.0], [1.0], [1.0]), 0), "ok"))
+
+
+class TestChartRenderTelemetry:
+    """A LEGACY PNG AND A FULL CARD LOOKED IDENTICAL IN THE OUTBOX (2026-07-31).
+
+    publish_card returns `media_render` ("svg_raster" | "legacy_png") and both
+    of this lane's media builders dropped it on the floor, copying only the URL
+    and the PNG path. content_studio._attach_chart_media has copied it (and
+    warned on the fallback) since 2026-07-30 for the stated reason: the quality
+    of every image we post was a number nobody could see.
+    """
+
+    _URL = "https://pub-test.r2.dev/c/hot.png"
+
+    def _packet(self, **over) -> FactPacket:
+        base = dict(trigger="mover_drop", key="mover:MU:down:x:0",
+                    fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+                    ticker="MU", name=None, sector="Technology", direction="down",
+                    severity=90.0,
+                    facts={"ticker": "MU", "pct": -8.2, "price": 92.0},
+                    provenance={})
+        base.update(over)
+        return FactPacket(**base)
+
+    def _group_packet(self) -> FactPacket:
+        return self._packet(
+            trigger="sector_rout", key="sector:Semiconductors:down:x",
+            ticker=None, sector="Semiconductors",
+            facts={"sector": "Semiconductors", "group_kind": "industry",
+                   "median_pct": -7.8, "breadth_pct": 90.0, "n_members": 10,
+                   "n_down": 9,
+                   "leaders": [["MU", -9.1], ["STX", -8.4], ["AMD", -8.2]]})
+
+    def test_a_single_name_card_records_its_render_mode(self, tmp_path, monkeypatch):
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "a.svg", "media_url": self._URL,
+                                         "media_png_path": "a.png",
+                                         "media_render": "svg_raster"})
+        out = RADAR.resolve_chart(self._packet(), root=tmp_path, marketing_cfg={},
+                                  as_of=DAY, now=NOW)
+        assert out["reason"] == "ok"
+        assert out["media"]["media_render"] == "svg_raster"
+
+    def test_the_legacy_fallback_is_stamped_and_annotated(self, tmp_path,
+                                                          monkeypatch, capsys):
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "a.svg", "media_url": self._URL,
+                                         "media_png_path": "a.png",
+                                         "media_render": "legacy_png"})
+        out = RADAR.resolve_chart(self._packet(), root=tmp_path, marketing_cfg={},
+                                  as_of=DAY, now=NOW)
+        assert out["media"]["media_render"] == "legacy_png"
+        lines = [l for l in capsys.readouterr().out.splitlines()
+                 if "hot-tape-chart-legacy-fallback" in l]
+        # LINE START, or GitHub drops it (CLAUDE.md; it shipped dead five times).
+        assert lines and lines[0].startswith("::warning title="), lines
+        assert "DEGRADED legacy PNG" in lines[0]
+
+    def test_the_group_card_records_its_render_mode_too(self, tmp_path,
+                                                        monkeypatch, capsys):
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "g.svg", "media_url": self._URL,
+                                         "media_png_path": "g.png",
+                                         "media_render": "legacy_png"})
+        out = RADAR.resolve_group_card(self._group_packet(), root=tmp_path,
+                                       marketing_cfg={}, as_of=DAY, now=NOW)
+        assert out["reason"] == "ok"
+        assert out["media"]["media_render"] == "legacy_png"
+        assert any("hot-tape-chart-legacy-fallback" in l
+                   for l in capsys.readouterr().out.splitlines())
+
+    def test_a_full_raster_stays_quiet(self, tmp_path, monkeypatch, capsys):
+        """A warning that fires on healthy passes is one nobody reads."""
+        _stub_renderers(monkeypatch)
+        _stub_publish_card(monkeypatch, {"svg_path": "a.svg", "media_url": self._URL,
+                                         "media_png_path": "a.png",
+                                         "media_render": "svg_raster"})
+        RADAR.resolve_chart(self._packet(), root=tmp_path, marketing_cfg={},
+                            as_of=DAY, now=NOW)
+        assert "legacy-fallback" not in capsys.readouterr().out
+
+
+class TestRingCrossMemory:
+    """The write half of the threshold freshness contract (hot_tape reads it)."""
+
+    def _threshold_packet(self, sev: float = 80.0) -> FactPacket:
+        return FactPacket(
+            trigger="threshold_cross", key="threshold:AAPL:round:325.0:x",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="AAPL", name=None, sector=None, direction="down",
+            severity=sev,
+            facts={"ticker": "AAPL", "kind": "round", "level": 325.0,
+                   "cross_id": "AAPL:round:325.0"},
+            provenance={})
+
+    def test_the_row_carries_the_crossings_this_pass_saw(self):
+        row = RADAR.ring_entry(now=NOW, day=DAY,
+                               live={"quotes": {"AAPL": _quote(-9.3, 302.0, 350.0)},
+                                     "asof": NOW.isoformat()},
+                               events=[self._threshold_packet()],
+                               cfg=HT.DEFAULTS)
+        assert row[HT.RING_CROSS_IDS] == ["AAPL:round:325.0"]
+        assert row[HT.RING_CROSS_COMPLETE] is True
+        assert row[HT.RING_CROSS_MIN_SEV] == 80.0
+        # The row still carries everything the T6 claims need.
+        assert row["n_quotes"] == 1 and row["day"] == DAY
+
+    def test_an_eventless_pass_still_writes_a_memory(self):
+        """An empty COMPLETE row is the evidence that licenses the next tick's
+        "just broke" — a row that simply omitted the block would read as
+        unknown and the claim would never be earnable."""
+        row = RADAR.ring_entry(now=NOW, day=DAY, live={"quotes": {}}, events=[],
+                               cfg=HT.DEFAULTS)
+        assert row[HT.RING_CROSS_IDS] == []
+        assert row[HT.RING_CROSS_COMPLETE] is True
+
+    def test_the_radar_writes_the_memory_on_a_real_pass(self, tmp_path, monkeypatch):
+        root = _mover_root(tmp_path)
+        _stub_chart(monkeypatch)
+        RADAR.run(root, now=NOW, fetcher=_no_fetch)
+        rows = HT.load_ring(root, 0)
+        assert rows and HT.RING_CROSS_IDS in rows[-1]
+        assert rows[-1][HT.RING_CROSS_COMPLETE] is True
+
+
+class TestStaleTimingGate:
+    """The model branch has no timing gate of its own (hot_tape_llm validates
+    numbers, calls, hedging and cashtags), so the radar re-checks it: a packet
+    whose crossing was not observed in our window may not be phrased as
+    something that just happened, whoever wrote the sentence.
+    """
+
+    def _packet(self, *, fresh: bool) -> FactPacket:
+        return FactPacket(
+            trigger="threshold_cross", key="threshold:AAPL:round:325.0:x",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="AAPL", name=None, sector=None, direction="down",
+            severity=80.0,
+            facts={"ticker": "AAPL", "kind": "round", "level": 325.0,
+                   "price": 302.0, "crossed_in_window": fresh,
+                   "cross_basis": "first_seen" if fresh else "earlier"},
+            provenance={})
+
+    def test_model_copy_claiming_a_fresh_break_on_a_dead_level_falls_back(
+            self, monkeypatch, capsys):
+        _fake_phraser(monkeypatch, mode="llm", provider="anthropic",
+                      text="$AAPL just broke below $325.00 right now.")
+        out = RADAR.phrase(self._packet(fresh=False),
+                           "$AAPL trades below $325.00. Last $302.00 right now.",
+                           llm_cfg={"llm": {}})
+        assert out["mode"] == "fallback_validation"
+        assert out["text"].startswith("$AAPL trades below")
+        assert any("stale_timing" in v for v in out["violations"]), out["violations"]
+        line = [l for l in capsys.readouterr().out.splitlines()
+                if "hot-tape-llm-stale-timing" in l]
+        assert line and line[0].startswith("::warning title="), line
+
+    def test_the_same_sentence_survives_when_the_crossing_was_observed(
+            self, monkeypatch):
+        _fake_phraser(monkeypatch, mode="llm", provider="anthropic",
+                      text="$AAPL just broke below $325.00 right now.")
+        out = RADAR.phrase(self._packet(fresh=True), "template", llm_cfg={"llm": {}})
+        assert out["mode"] == "llm"
+        assert out["text"].startswith("$AAPL just broke")
+
+    def test_other_families_are_untouched(self, monkeypatch):
+        """A mover post saying "just" is about the move, not about a level."""
+        mover = FactPacket(
+            trigger="mover_drop", key="mover:MU:down:x:0",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker="MU", name=None, sector=None, direction="down", severity=90.0,
+            facts={"ticker": "MU", "pct": -8.2}, provenance={})
+        assert RADAR._stale_timing_hits(mover, "$MU just cleared its worst hour") == []
+
+
+class TestGroupCardSubtitleCarriesItsUniverse:
+    """The card is copy too. Its contrarian fallback read "31 names green" —
+    the same numerator with no universe the wire copy just closed, printed into
+    an image where no downstream gate can see it."""
+
+    def _packet(self, facts: dict) -> FactPacket:
+        return FactPacket(
+            trigger="contrarian_breadth", key="contrarian:x",
+            fired_at=NOW.strftime("%Y-%m-%dT%H:%M:%SZ"), session="rth",
+            ticker=None, name=None, sector=None, direction="up", severity=75.0,
+            facts=facts, provenance={})
+
+    def test_the_green_count_is_denominated(self):
+        subtitle = RADAR._group_card_subtitle(self._packet({
+            "n_green": 6, "n_defensive_members": 9,
+            "green": [["KO", 1.2], ["HD", 0.9]]}))
+        assert subtitle == "6 of 9 names green"
+
+    def test_a_count_with_no_universe_is_dropped_not_shipped(self):
+        assert RADAR._group_card_subtitle(self._packet({
+            "n_green": 6, "green": [["KO", 1.2]]})) is None

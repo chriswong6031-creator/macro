@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-07-30",
+  "as_of": "2026-08-01",
   "coverage": {
-    "end": "2026-07-30",
-    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 9 week(s) have events so far; chronicle event store begins 2025-07-22; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-04-30"
+    "end": "2026-08-01",
+    "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W31; 8 week(s) have events so far; chronicle event store begins 2025-07-22; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-05-02"
   },
   "iso_week": "2026-W31",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,7 +11,7 @@
     {
       "clusters": [
         {
-          "n_events": 190,
+          "n_events": 328,
           "source": "research_vault",
           "theme": null,
           "top_events": [
@@ -23,6 +23,26 @@
               "source_ref": "marketdesk-bms7cauktyp-277d6e",
               "tickers": [],
               "title": "Goldman Sachs: Japan Portfolio Strategy Trigger warnings Lessons from the July August 2024 sell off",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-31",
+              "id": "cev-research_vault-32f68ca29d0d",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-0natz1tlzak-bf2676",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM Europe Equity Research Today’s Morning Meeting",
+              "weight_hint": 3
+            },
+            {
+              "date": "2026-07-30",
+              "id": "cev-research_vault-440862b5bab5",
+              "kind": "report",
+              "source": "research_vault",
+              "source_ref": "marketdesk-4aoajzqskpx-37ff8b",
+              "tickers": [],
+              "title": "J.P. Morgan: JPM US Market Intell Afternoon Briefing 29.07",
               "weight_hint": 3
             },
             {
@@ -44,34 +64,24 @@
               "tickers": [],
               "title": "J.P. Morgan: JPM JPM Chips for Break",
               "weight_hint": 3
-            },
-            {
-              "date": "2026-07-29",
-              "id": "cev-research_vault-837a11f89077",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-tsseepkd2yv-59aabc",
-              "tickers": [],
-              "title": "J.P. Morgan: JPM JPM US Market Intell",
-              "weight_hint": 3
-            },
-            {
-              "date": "2026-07-28",
-              "id": "cev-research_vault-f1ecc4f598a6",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-cwta10ecnvl-186d33",
-              "tickers": [],
-              "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing",
-              "weight_hint": 3
             }
           ]
         },
         {
-          "n_events": 2,
+          "n_events": 3,
           "source": "risk_band",
           "theme": "risk",
           "top_events": [
+            {
+              "date": "2026-07-31",
+              "id": "cev-risk_band-5f63770b7eb0",
+              "kind": "state_flip",
+              "source": "risk_band",
+              "source_ref": "risk_radar_forward_log#2026-07-31",
+              "tickers": [],
+              "title": "Risk radar: caution → watch",
+              "weight_hint": 2
+            },
             {
               "date": "2026-07-27",
               "id": "cev-risk_band-8489299a6c95",
@@ -95,7 +105,7 @@
           ]
         },
         {
-          "n_events": 1,
+          "n_events": 2,
           "source": "prophet_ledger",
           "theme": null,
           "top_events": [
@@ -110,14 +120,36 @@
               ],
               "title": "Prophet close: FBRT BULL → INVALIDATED (-7.7% in 16d)",
               "weight_hint": 2
+            },
+            {
+              "date": "2026-07-31",
+              "id": "cev-prophet_ledger-f3a46ac4ce2c",
+              "kind": "signal_close",
+              "source": "prophet_ledger",
+              "source_ref": "COIN-BULL-20260702",
+              "tickers": [
+                "COIN"
+              ],
+              "title": "Prophet close: COIN BULL → INVALIDATED (-11.6% in 29d)",
+              "weight_hint": 2
             }
           ]
         },
         {
-          "n_events": 1,
+          "n_events": 2,
           "source": "regime_flip",
           "theme": "regime",
           "top_events": [
+            {
+              "date": "2026-07-30",
+              "id": "cev-regime_flip-195d6fe8d1a1",
+              "kind": "state_flip",
+              "source": "regime_flip",
+              "source_ref": "state_log#2026-07-30#regime_us",
+              "tickers": [],
+              "title": "US regime: Q1 Goldilocks → Q2 Reflation",
+              "weight_hint": 3
+            },
             {
               "date": "2026-07-28",
               "id": "cev-regime_flip-2c5d90609138",
@@ -127,6 +159,23 @@
               "tickers": [],
               "title": "HK regime: Q3 Stagflation → Q1 Goldilocks",
               "weight_hint": 3
+            }
+          ]
+        },
+        {
+          "n_events": 1,
+          "source": "macro_release",
+          "theme": "claims",
+          "top_events": [
+            {
+              "date": "2026-07-30",
+              "id": "cev-macro_release-7ac656fa4a6f",
+              "kind": "print",
+              "source": "macro_release",
+              "source_ref": "claims#2026-07-30",
+              "tickers": [],
+              "title": "Macro print: claims = +197 (2026-07-30)",
+              "weight_hint": 2
             }
           ]
         }
@@ -407,20 +456,7 @@
           "n_events": 1,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-07-02",
-              "id": "cev-prophet_ledger-8d6e6ad65ebe",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "SYK-BULL-20260518",
-              "tickers": [
-                "SYK"
-              ],
-              "title": "Prophet close: SYK BULL → EXPIRED (-1.1% in 45d)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W27"
@@ -455,20 +491,7 @@
           "n_events": 1,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-05-11",
-              "id": "cev-prophet_ledger-a71792cf3f1e",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "U-BULL-20260327",
-              "tickers": [
-                "U"
-              ],
-              "title": "Prophet close: U BULL → EXPIRED (-16.1% in 45d)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W20"
@@ -479,47 +502,10 @@
           "n_events": 1,
           "source": "prophet_ledger",
           "theme": null,
-          "top_events": [
-            {
-              "date": "2026-05-04",
-              "id": "cev-prophet_ledger-a8ba873f0e43",
-              "kind": "signal_close",
-              "source": "prophet_ledger",
-              "source_ref": "KKR-BULL-20260318",
-              "tickers": [
-                "KKR"
-              ],
-              "title": "Prophet close: KKR BULL → EXPIRED (+6.4% in 47d)",
-              "weight_hint": 1
-            }
-          ]
+          "top_events": []
         }
       ],
       "iso_week": "2026-W19"
-    },
-    {
-      "clusters": [
-        {
-          "n_events": 1,
-          "source": "earnings",
-          "theme": "earnings",
-          "top_events": [
-            {
-              "date": "2026-04-30",
-              "id": "cev-earnings-1f7fee519a2f",
-              "kind": "earnings",
-              "source": "earnings",
-              "source_ref": "AAPL#2026-04-30",
-              "tickers": [
-                "AAPL"
-              ],
-              "title": "Earnings: AAPL actual vs est",
-              "weight_hint": 1
-            }
-          ]
-        }
-      ],
-      "iso_week": "2026-W18"
     }
   ]
 }

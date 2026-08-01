@@ -49,6 +49,15 @@ jobs:
           fi
           python -m engine.marketing.seo_search_console --root . || echo "::warning::gsc ingest crashed (non-fatal)"
 
+      - name: IndexNow submit
+        if: always()
+        run: |
+          # No secrets: the IndexNow key is PUBLIC by protocol design (ownership is
+          # proven by serving site/<key>.txt, which the edge allowlists). Submits only
+          # the genuine new/changed/deleted diff vs data/marketing/seo/indexnow_state.json,
+          # which the commit step below ships. Fail-soft — never fails the audit.
+          python -m engine.marketing.indexnow --root . || echo "::warning::indexnow crashed (non-fatal)"
+
       - name: commit data/marketing/seo artifacts
         if: always()
         run: |

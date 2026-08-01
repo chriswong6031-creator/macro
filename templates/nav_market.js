@@ -67,15 +67,125 @@
     'intl.html': 'intl',
     'crypto.html': 'crypto'
   };
+
+  /* Exact drawing paths from the approved HTML mockup.  These are intentionally
+     inline SVG paths rather than the legacy CSS-mask icon library: the mockup's
+     ghost construction lines, soft fills, accent strokes, and 48px geometry are
+     part of the approved product, not a loose visual reference. */
+  var MOCKUP_ICON_PATHS = {
+    dashboard: '<rect x="6" y="7" width="36" height="32" rx="3"/><path class="ghost" d="M11 12h11v9H11zM26 12h11v9H26zM11 25h26v9H11z"/><path class="accent" d="m14 31 5-4 5 2 6-5 4 3"/>',
+    stocks: '<path class="ghost" d="M7 40h34M9 7v33"/><path class="accent" d="m11 33 7-9 6 4 10-14 5 4"/><path d="M16 14v14M13 18h6M29 8v18M26 12h6M37 12v12M34 16h6"/>',
+    sectors: '<path d="m8 14 10-6 10 6-10 6ZM20 28l10-6 10 6-10 6ZM6 31l8-5 8 5-8 5Z"/><path class="accent" d="M18 20v9M28 14v9M22 31h8"/>',
+    themes: '<path class="ghost" d="m8 12 16-8 16 8-16 8Z"/><path d="m8 19 16 8 16-8M8 27l16 8 16-8M8 35l16 8 16-8"/><path class="accent" d="M13 14 24 9l11 5"/>',
+    rotation: '<circle cx="24" cy="24" r="15"/><path class="accent" d="M13 14a15 15 0 0 1 21 0M34 10v5h-5M35 34a15 15 0 0 1-21 0M14 38v-5h5"/><circle class="soft-fill" cx="24" cy="24" r="4"/>',
+    strategy: '<path d="M8 11h32M8 24h32M8 37h32"/><circle class="soft-fill" cx="17" cy="11" r="4"/><circle class="soft-fill" cx="31" cy="24" r="4"/><circle class="soft-fill" cx="21" cy="37" r="4"/>',
+    alerts: '<path d="M24 7a11 11 0 0 0-11 11c0 8-3 11-5 14h32c-2-3-5-6-5-14A11 11 0 0 0 24 7Z"/><path class="accent" d="M19 38a5 5 0 0 0 10 0"/><path class="ghost" d="M24 3v4"/>',
+    news: '<path d="M9 6h25l6 6v30H9zM34 6v7h6"/><path class="accent" d="M15 18h18M15 24h18M15 30h12M15 36h15"/><rect class="soft-fill" x="15" y="10" width="10" height="5" rx="1"/>',
+    options: '<path class="ghost" d="M6 39h36M9 8v31"/><path d="M10 35c7 0 7-22 14-22s7 22 14 22"/><path class="accent" d="M14 29h20M24 13v22"/><circle class="soft-fill" cx="24" cy="22" r="3"/>',
+    flows: '<path d="M6 14c8-8 13 8 21 0s11 4 15 0M6 24c8-8 13 8 21 0s11 4 15 0M6 34c8-8 13 8 21 0s11 4 15 0"/><path class="accent" d="m35 10 7 4-7 4M35 30l7 4-7 4"/>',
+    scanner: '<circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="10"/><path d="M24 7v34M7 24h34"/><path class="accent" d="M24 24 37 13"/><circle class="soft-fill" cx="31" cy="19" r="3"/>',
+    darkpool: '<circle cx="24" cy="24" r="17"/><path class="ghost" d="M9 24h30M24 9v30"/><path d="M14 30c5-11 15-11 20 0"/><circle class="soft-fill" cx="24" cy="21" r="6"/><path class="accent" d="M18 35h12"/>',
+    intelligence: '<path class="ghost" d="M6 12 24 3l18 9v23l-18 10L6 35Z"/><path d="m24 9 12 7v15l-12 7-12-7V16Z"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 20V9M28 24h8M24 28v10M20 24h-8M21 21l-6-5M27 21l6-5M21 27l-6 5M27 27l6 5"/>',
+    heatmap: '<rect x="6" y="7" width="36" height="34" rx="3"/><path d="M18 7v34M30 7v34M6 18h36M6 30h36"/><rect class="soft-fill" x="19" y="19" width="10" height="10"/><path class="accent" d="M31 8h10v9M7 31h10v9"/>',
+    policy: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><circle class="soft-fill" cx="24" cy="12" r="2"/>',
+    mechanics: '<circle cx="18" cy="21" r="8"/><circle cx="32" cy="29" r="8"/><path class="accent" d="M18 9v4M18 29v4M6 21h4M26 21h4M32 17v4M32 37v4M20 29h4M40 29h4"/><circle class="soft-fill" cx="18" cy="21" r="3"/><circle class="soft-fill" cx="32" cy="29" r="3"/>',
+    narrative: '<circle cx="24" cy="24" r="17"/><path class="ghost" d="M24 7v34M7 24h34"/><path d="m18 30 4-11 11-5-5 11Z"/><path class="accent" d="m22 19 6 6"/><circle class="soft-fill" cx="24" cy="24" r="2"/>',
+    special: '<path d="M8 24h11M29 12h11M29 36h11M19 24c8 0 4-12 10-12M19 24c8 0 4 12 10 12"/><circle class="soft-fill" cx="8" cy="24" r="3"/><circle cx="40" cy="12" r="3"/><circle cx="40" cy="36" r="3"/><path class="accent" d="m24 7-5 9h6l-4 8"/>',
+    global: '<circle cx="24" cy="24" r="17"/><path d="M7 24h34M11 15h26M11 33h26M24 7c4 5 6 10 6 17s-2 12-6 17c-4-5-6-10-6-17s2-12 6-17Z"/><path class="accent" d="M36 8h6v6"/>',
+    country: '<path d="M24 42S10 31 10 19a14 14 0 0 1 28 0c0 12-14 23-14 23Z"/><circle class="soft-fill" cx="24" cy="19" r="5"/><path class="accent" d="M6 40c9 4 27 4 36 0"/>',
+    cycle: '<circle cx="24" cy="24" r="17"/><circle class="ghost" cx="24" cy="24" r="11"/><path d="M24 7v6M41 24h-6M24 41v-6M7 24h6"/><path class="accent" d="M24 24 34 14M34 10v4h4"/><circle class="soft-fill" cx="24" cy="24" r="3"/>',
+    crypto: '<path d="M18 9h11a6 6 0 0 1 0 12H18m0 0h13a7 7 0 0 1 0 14H18M18 9v26M15 9h3M15 35h3M23 4v5M29 4v5M23 35v5M29 35v5"/><path class="accent" d="M21 15h8M21 28h10"/>',
+    allocation: '<circle cx="24" cy="24" r="17"/><path d="M24 7v17h17"/><path class="accent" d="M36 12A17 17 0 0 1 41 24H24Z"/><path class="ghost" d="M24 24 13 37"/><circle class="soft-fill" cx="24" cy="24" r="3"/>',
+    commodity: '<path d="M12 10h24v28H12zM12 18h24M12 30h24"/><path class="accent" d="M19 10v28M29 10v28"/><path d="M24 4s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11Z"/>',
+    reserves: '<path d="M8 38h32M11 34V18h8v16M20 34V10h8v24M29 34V22h8v12"/><path class="accent" d="M7 14h13M16 6h13M25 18h13"/><path class="ghost" d="M5 42h38"/>',
+    forex: '<path d="M8 16h30M33 11l5 5-5 5M40 32H10M15 27l-5 5 5 5"/><circle class="soft-fill" cx="18" cy="16" r="5"/><circle class="soft-fill" cx="30" cy="32" r="5"/>',
+    bonds: '<path d="M7 17h34L24 6Z"/><path d="M11 20v17M19 20v17M29 20v17M37 20v17M7 40h34"/><path class="accent" d="M5 15h38M9 37h30"/><path class="ghost" d="M17 27h14"/>'
+  };
+  MOCKUP_ICON_PATHS.baskets = MOCKUP_ICON_PATHS.themes;
+  MOCKUP_ICON_PATHS.alert = MOCKUP_ICON_PATHS.alerts;
+  MOCKUP_ICON_PATHS.flow = MOCKUP_ICON_PATHS.flows;
+  MOCKUP_ICON_PATHS.event = MOCKUP_ICON_PATHS.special;
+  MOCKUP_ICON_PATHS.structure = MOCKUP_ICON_PATHS.mechanics;
+  MOCKUP_ICON_PATHS.commodities = MOCKUP_ICON_PATHS.commodity;
+  MOCKUP_ICON_PATHS.bitcoin = MOCKUP_ICON_PATHS.crypto;
+  MOCKUP_ICON_PATHS.confluence = '<rect x="6" y="8" width="36" height="28" rx="3"/><path class="ghost" d="M11 13h26v18H11z"/><path class="accent" d="m12 27 6-7 5 4 7-9 6 4"/><circle class="soft-fill" cx="30" cy="15" r="2.4"/><path d="M18 41h12M24 36v5"/>';
+  MOCKUP_ICON_PATHS.research = MOCKUP_ICON_PATHS.intelligence;
+  MOCKUP_ICON_PATHS.intelligence_hub = MOCKUP_ICON_PATHS.intelligence +
+    '<circle cx="24" cy="9" r="1.5"/><circle cx="36" cy="24" r="1.5"/>' +
+    '<circle cx="24" cy="38" r="1.5"/><circle cx="12" cy="24" r="1.5"/>';
+  MOCKUP_ICON_PATHS.reports = '<path class="ghost" d="M13 7h22l6 6v28H13z"/><path d="M9 4h22l6 6v28H9z"/><path d="M31 4v7h6"/><path class="accent" d="M15 29h16M15 33h12M15 16h16"/><path d="m15 25 4-4 4 2 6-7 3 3"/><circle class="soft-fill" cx="29" cy="16" r="2"/>';
+  MOCKUP_ICON_PATHS.vault = '<path class="ghost" d="m7 14 17-9 17 9v23l-17 8-17-8Z"/><path d="m10 16 14-7 14 7v19l-14 7-14-7Z"/><path d="M10 16l14 7 14-7M24 23v19"/><circle class="soft-fill" cx="24" cy="27" r="6"/><path class="accent" d="M24 24v6M21 27h6"/>';
+  MOCKUP_ICON_PATHS.neural = '<path class="ghost" d="M6 24h36M24 6v36"/><circle class="soft-fill" cx="24" cy="24" r="5"/><circle cx="11" cy="12" r="3"/><circle cx="37" cy="12" r="3"/><circle cx="9" cy="34" r="3"/><circle cx="39" cy="34" r="3"/><path class="accent" d="M20 21 13 14M28 21l7-7M20 27l-8 5M28 27l8 5M14 12h20M11 15l-2 16M37 15l2 16M12 34h24"/>';
+  MOCKUP_ICON_PATHS.foresight = '<path class="ghost" d="M4 24h40M24 4v40"/><path d="M7 25s7-11 17-11 17 11 17 11-7 11-17 11S7 25 7 25Z"/><circle class="soft-fill" cx="24" cy="25" r="5"/><path class="accent" d="M31 12 38 5M34 16h9M13 14 8 9"/>';
+  MOCKUP_ICON_PATHS.theme_tracker = '<path class="ghost" d="M8 11h30v23H8z"/><rect x="6" y="8" width="30" height="23" rx="2"/><rect x="12" y="15" width="30" height="23" rx="2"/><path class="accent" d="m17 31 5-6 5 3 8-9M31 19h4v4"/><circle class="soft-fill" cx="22" cy="25" r="2"/>';
+  MOCKUP_ICON_PATHS.divergence = '<path class="ghost" d="M6 39h36M9 7v32"/><path d="M10 32c7-1 10-6 15-8s8-1 13-10"/><path class="accent" d="M10 18c7 1 10 6 15 8s9 2 13 10"/><circle class="soft-fill" cx="25" cy="24" r="2.5"/><path d="M36 12h4v4M36 36h4v-4"/>';
+  MOCKUP_ICON_PATHS.signal_board = MOCKUP_ICON_PATHS.confluence;
+  MOCKUP_ICON_PATHS.smart_money = '<rect x="7" y="15" width="34" height="25" rx="4"/><path d="M17 15v-5h14v5M7 24h34"/><circle class="soft-fill" cx="24" cy="24" r="4"/><path class="accent" d="M24 21v6M21 24h6M13 10 8 5M35 10l5-5"/>';
+  MOCKUP_ICON_PATHS.fund_flows = '<path d="m8 14 16-8 16 8-16 8Z"/><path d="m8 22 16 8 16-8M8 30l16 8 16-8"/><path class="accent" d="M14 18v12c0 5 4 9 10 9s10-4 10-9V18"/><path class="ghost" d="M24 22v15"/>';
+  MOCKUP_ICON_PATHS.macro_weather = '<circle class="soft-fill" cx="31" cy="14" r="7"/><path class="accent" d="M31 3v4M31 21v4M20 14h4M38 14h4M23 6l3 3M36 19l3 3"/><path d="M11 34c-4 0-6-3-6-6s2-6 6-6c2-6 11-7 15-2 5-1 9 2 9 7 0 4-3 7-8 7Z"/><path d="m13 42 5-5 4 3 6-5 6 2"/>';
+
+  var MOCKUP_TONE_BY_ICON = {
+    stocks: 'cyan', sectors: 'violet', rotation: 'violet', alerts: 'cyan',
+    alert: 'cyan', options: 'violet', flows: 'cyan', flow: 'cyan',
+    scanner: 'violet', darkpool: 'violet', heatmap: 'violet',
+    narrative: 'cyan', event: 'violet', commodities: 'cyan',
+    commodity: 'cyan', bitcoin: 'violet', crypto: 'violet',
+    allocation: 'violet', forex: 'cyan', country: 'cyan', cycle: 'violet'
+  };
+
+  var MOCKUP_RESEARCH_ICON_BY_FILE = {
+    'intelligence_hub.html': ['intelligence_hub', ''],
+    'reports.html': ['reports', ''],
+    'research_vault.html': ['vault', 'violet'],
+    'neural_web.html': ['neural', 'cyan'],
+    'foresight.html': ['foresight', ''],
+    'state_of_themes.html': ['theme_tracker', 'violet'],
+    'radar.html': ['divergence', 'cyan'],
+    'confluence_screener.html': ['signal_board', ''],
+    'smart_money.html': ['smart_money', 'violet'],
+    'etfs.html': ['fund_flows', 'cyan'],
+    'cycle.html': ['cycle', ''],
+    'macro_context.html': ['macro_weather', 'cyan'],
+    'markets.html': ['global', ''],
+    'country_cycles.html': ['country', 'cyan'],
+    'sector_cycles.html': ['sectors', 'violet'],
+    'sector_cycles_china.html': ['rotation', ''],
+    'policy_watch.html': ['policy', ''],
+    'alt_data.html': ['research', 'cyan'],
+    'special_situations.html': ['special', 'violet']
+  };
+  var MOCKUP_RESEARCH_DESCRIPTION_BY_FILE = {
+    'intelligence_hub.html': 'Your complete market command center',
+    'reports.html': 'Deep dives and market calls',
+    'research_vault.html': 'Search every published research note',
+    'neural_web.html': 'See how every signal votes',
+    'foresight.html': 'Themes before markets price them',
+    'state_of_themes.html': 'What’s strengthening and fading now',
+    'radar.html': 'Where price and reality split',
+    'confluence_screener.html': 'Today’s strongest confirmed setups',
+    'smart_money.html': 'How top investors are positioned',
+    'etfs.html': 'Where institutional capital is moving',
+    'cycle.html': 'Where the economy is heading',
+    'macro_context.html': 'Growth, inflation and liquidity now'
+  };
+
+  /* Country macro hrefs live in _navlinks.html.j2.  Read those canonical
+     anchors here so the adaptive wide menu, folded rail and mobile accordion
+     all inherit the same destinations (including ../ prefixes on deep pages). */
+  function intlCountryHref(key, fallback) {
+    var anchor = document.querySelector('[data-intl-country="' + key + '"]');
+    return anchor ? anchor.getAttribute('href') : fallback;
+  }
+
   var MARKET_MENU = {
     us: {
       title: 'United States',
       subtitle: 'Macro context, stocks, sectors and live market desks.',
       sections: [
         ['Market overview', [
-          ['Macro Dashboard', 'Regime, growth and inflation now', 'macro.html', 'dashboard'],
+          ['Market Dashboard', 'Regime, growth and inflation now', 'macro.html', 'dashboard'],
           ['Stock Dashboard', 'Standouts, sectors and flows', 'us_stocks.html', 'stocks'],
-          ['Sector Central', 'Every sector in one view', 'sector_central.html', 'intelligence'],
+          ['Sector Central', 'Every sector in one view', 'sector_central.html', 'sectors'],
           ['Theme Baskets', 'Themes, leaders and rotation', 'baskets.html', 'baskets']
         ]],
         ['Signals & strategy', [
@@ -87,7 +197,7 @@
         ['Market structure', [
           ['Options Desk', 'Gamma, walls and volatility', 'gex.html', 'options'],
           ['Group Flow Heatmap', 'Follow sector capital flows', 'flow_desk.html', 'flow'],
-          ['Options Screener', 'Find liquid volatility setups', 'options_screener.html', 'dashboard'],
+          ['Options Screener', 'Find liquid volatility setups', 'options_screener.html', 'scanner', null, null, ''],
           ['Dark Pool Desk', 'Track off-exchange positioning', 'darkpool.html', 'darkpool']
         ]]
       ],
@@ -101,99 +211,106 @@
     },
     cn: {
       title: 'China',
-      subtitle: 'A-shares, policy, capital flow and narrative intelligence.',
+      subtitle: 'A-shares, policy, capital flows and fast-moving themes.',
       sections: [
         ['Market overview', [
-          ['Macro Dashboard', 'Regime, sectors and policy pulse', 'china.html', 'dashboard'],
-          ['Stock Dashboard', 'A-share leaders and setups', 'china_stocks.html', 'stocks'],
-          ['Market Heatmap', 'Every A-share in one view', 'china_heatmap.html', 'heatmap'],
-          ['China Intelligence', 'Policy, markets and signal context', 'china_intel.html', 'intelligence']
+          ['Market Dashboard', 'A-share regime and breadth', 'china.html', 'dashboard'],
+          ['Stock Dashboard', 'Standouts, alpha and setups', 'china_stocks.html', 'stocks'],
+          ['Market Heatmap', 'Every A-share at a glance', 'china_heatmap.html', 'heatmap'],
+          ['China Intelligence', 'Signals, policy and narratives', 'china_intel.html', 'intelligence']
         ]],
         ['Themes & rotation', [
-          ['Sector Central', 'Cycle map and gated reads', 'sector_central_china.html', 'intelligence'],
-          ['Theme Baskets', 'Equal-weight themes and leaders', 'baskets_china.html', 'baskets'],
-          ['Subsector Rotation', 'Catch concepts gaining speed', 'subsector_rotation_china.html', 'rotation'],
-          ['Narrative Radar', 'See which story is running', 'narrative_radar.html', 'narrative']
+          ['Sector Central', 'Cycles, heat and gated reads', 'sector_central_china.html', 'sectors'],
+          ['Theme Baskets', 'Tonghuashun concepts compared', 'baskets_china.html', 'baskets'],
+          ['Subsector Rotation', 'Catch concepts gaining velocity', 'subsector_rotation_china.html', 'rotation', null, null, 'cyan'],
+          ['Narrative Radar', 'See which stories are running', 'narrative_radar.html', 'narrative', null, null, '']
         ]],
         ['Flows & policy', [
-          ['Capital Flow Velocity', 'Track accelerating big money', 'flow_velocity.html', 'flow'],
-          ['Policy Watch', 'Rates, liquidity and sector policy', 'china_policy_watch.html', 'policy'],
-          ['Market Mechanics', 'Participation and policy tape', 'china_mechanics.html', 'structure'],
-          ['Special Situations', 'Unlocks, filings and stress', 'china_special_situations.html', 'event']
+          ['Capital Flow Velocity', 'Where big money accelerates', 'flow_velocity.html', 'flow'],
+          ['Policy Watch', 'PBoC and sector policy shifts', 'china_policy_watch.html', 'policy'],
+          ['Market Mechanics', 'Participation, limits and tape', 'china_mechanics.html', 'structure', null, null, 'violet'],
+          ['Special Situations', 'Unlocks, pledges and catalysts', 'china_special_situations.html', 'event', null, null, '']
         ]]
       ],
+      railTitle: 'Explore',
       rail: [
         ['China News', 'Official sources and catalysts', 'china_news.html', 'news'],
         ['Strategies', 'Tactical China scorecards', 'china_strategies.html', 'strategy'],
         ['Alternative Data', 'Signals beyond price', 'china_altdata.html', 'research'],
-        ['Browse China', 'All China research', 'china_intel.html', 'intelligence']
-      ]
+        ['Browse China research', 'All China research', 'china_intel.html', 'intelligence']
+      ],
+      note: ['One China system', 'Market, policy and capital context stay connected.']
     },
     hk: {
       title: 'Hong Kong',
-      subtitle: 'Hong Kong equities, southbound flow and thematic rotation.',
+      subtitle: 'HSI context, southbound flows and Hong Kong-listed leaders.',
       sections: [
         ['Market overview', [
-          ['Macro Dashboard', 'HSI, southbound and global risk', 'hk.html', 'dashboard'],
-          ['Stock Dashboard', 'Hong Kong leaders and setups', 'hk_stocks.html', 'stocks'],
-          ['Market Heatmap', 'Turnover-sized market map', 'hk_heatmap.html', 'heatmap'],
+          ['Market Dashboard', 'HSI, liquidity and global risk', 'hk.html', 'dashboard'],
+          ['Stock Dashboard', 'Hong Kong standouts and alpha', 'hk_stocks.html', 'stocks'],
+          ['Market Heatmap', 'Turnover-sized market overview', 'hk_heatmap.html', 'heatmap'],
           ['Capital Flow Velocity', 'Southbound money in motion', 'flow_velocity.html', 'flow']
         ]],
         ['Themes & rotation', [
           ['Thematic Baskets', 'Equal-weight themes versus HSI', 'baskets_hk.html', 'baskets'],
-          ['Narrative Rotation', 'What to hold and when to rotate', 'allocation_hk.html', 'rotation']
+          ['Narrative Rotation', 'What to hold and rotate', 'allocation_hk.html', 'rotation']
         ]]
       ],
+      railTitle: 'Quick access',
       rail: [
         ['China Intelligence', 'Shared policy context', 'china_intel.html', 'intelligence'],
         ['Policy Watch', 'Liquidity and policy shifts', 'china_policy_watch.html', 'policy'],
-        ['Hong Kong Baskets', 'Browse active themes', 'baskets_hk.html', 'baskets'],
+        ['Hong Kong baskets', 'Browse active themes', 'baskets_hk.html', 'baskets'],
         ['Browse Hong Kong', 'Return to market overview', 'hk.html', 'dashboard']
-      ]
+      ],
+      note: ['Lean by design', 'Six core destinations cover the Hong Kong workflow.']
     },
     ca: {
       title: 'Canada',
-      subtitle: 'TSX equities, Bank of Canada and commodity-sensitive leadership.',
+      subtitle: 'TSX context, commodity sensitivity and Canadian market leaders.',
       sections: [
         ['Market overview', [
-          ['Macro Dashboard', 'TSX, BoC and commodity overlay', 'canada.html', 'dashboard'],
-          ['Stock Dashboard', 'Canadian leaders and setups', 'canada_stocks.html', 'stocks'],
-          ['Market Heatmap', 'Every TSX name in one view', 'canada_heatmap.html', 'heatmap']
+          ['Market Dashboard', 'TSX, BoC and commodities', 'canada.html', 'dashboard'],
+          ['Stock Dashboard', 'Canadian standouts and alpha', 'canada_stocks.html', 'stocks'],
+          ['Market Heatmap', 'Every TSX name at a glance', 'canada_heatmap.html', 'heatmap']
         ]],
         ['Themes & rotation', [
-          ['Thematic Baskets', 'Equal-weight themes versus TSX', 'baskets_canada.html', 'baskets'],
-          ['Narrative Rotation', 'What to hold and when to rotate', 'allocation_canada.html', 'rotation']
+          ['Thematic Baskets', 'Themes versus the TSX', 'baskets_canada.html', 'baskets'],
+          ['Narrative Rotation', 'What to hold and rotate', 'allocation_canada.html', 'rotation']
         ]]
       ],
+      railTitle: 'Quick access',
       rail: [
         ['Banks & insurers', 'Canadian financial leadership', 'canada_stocks.html', 'stocks'],
         ['Energy complex', 'Oil-sensitive market context', 'commodities.html', 'commodities'],
         ['Gold & materials', 'Materials leadership', 'baskets_canada.html', 'baskets'],
         ['Browse Canada', 'Return to market overview', 'canada.html', 'dashboard']
-      ]
+      ],
+      note: ['Home-market aware', 'Search examples and popular tickers adapt to Canada.']
     },
     intl: {
       title: 'International',
-      subtitle: 'Compare the world’s equity markets, cycles and leadership.',
+      subtitle: 'Compare major markets, global leaders and cross-country themes.',
       sections: [
-        ['Global overview', [
-          ['World Dashboard', 'Major markets compared', 'intl.html', 'dashboard'],
-          ['Stock Dashboard', 'Cross-market leaders and sectors', 'intl_stocks.html', 'stocks'],
-          ['Global Market Cycles', 'Compare national equity clocks', 'markets.html', 'rotation'],
-          ['Country Cycles', 'Every country on one cycle map', 'country_cycles.html', 'intelligence']
+        ['Global markets', [
+          ['World Dashboard', 'Major markets compared together', 'intl.html', 'global'],
+          ['Stock Dashboard', 'Cross-market standouts and sectors', 'intl_stocks.html', 'stocks'],
+          ['Global Market Cycles', 'Every major market on one clock', 'markets.html', 'cycle'],
+          ['Country Cycles', 'Countries and regions compared', 'country_cycles.html', 'country', null, null, '']
         ]],
-        ['Themes & regions', [
-          ['Thematic Baskets', 'Cross-country themes beyond the U.S.', 'baskets_intl.html', 'baskets']
+        ['Themes', [
+          ['Thematic Baskets', 'Cross-country themes outside America', 'baskets_intl.html', 'baskets', null, null, 'cyan']
         ]]
       ],
+      railTitle: 'Regions',
       rail: [
-        ['Japan', 'Tokyo market overview', 'intl.html#japan', 'dashboard'],
-        ['South Korea', 'Seoul market overview', 'intl.html#south-korea', 'dashboard'],
-        ['Europe', 'Continental markets', 'intl.html#europe', 'dashboard'],
-        ['United Kingdom', 'London market overview', 'intl.html#united-kingdom', 'dashboard'],
-        ['India', 'Indian market overview', 'intl.html#india', 'dashboard']
+        ['Japan', 'BoJ, wages, JGBs and yen', intlCountryHref('jp', 'japan.html'), 'dashboard'],
+        ['South Korea', 'BOK, exports, credit and won', intlCountryHref('kr', 'south_korea.html'), 'dashboard'],
+        ['Euro Area', 'EA21, ECB, HICP and bank credit', intlCountryHref('ez', 'euro_area.html'), 'dashboard'],
+        ['United Kingdom', 'BoE, services inflation and gilts', intlCountryHref('gb', 'united_kingdom.html'), 'dashboard'],
+        ['India', 'RBI, food inflation, credit and rupee', intlCountryHref('in', 'india.html'), 'dashboard']
       ],
-      note: ['Your other markets appear here', 'The same panels move with your market preferences.']
+      note: ['One global lens', 'Country context without a maze of nested menus.']
     },
     crypto: {
       title: 'Crypto',
@@ -216,24 +333,32 @@
     },
     assets: {
       title: 'Other Assets',
-      subtitle: 'Commodities, currencies and bonds in one coherent workspace.',
+      subtitle: 'Digital assets, commodities, currencies and fixed income.',
       sections: [
-        ['Commodities', [
-          ['Commodity Dashboard', 'Gold, metals, energy and softs', 'commodities.html', 'commodities'],
-          ['Commodity Strategies', 'Tactical calls by commodity', 'commodity_strategies.html', 'strategy'],
-          ['Strategic Reserves', 'Global stockpiles versus price', 'spr.html', 'commodities']
+        ['Digital assets', [
+          ['Crypto Intelligence', 'Market state, flows, leverage and asset lanes', 'crypto.html', 'crypto'],
+          ['Bitcoin Vector', 'Bitcoin state, risk and cycle evidence', 'vector.html', 'bitcoin', null, null, ''],
+          ['Strategy Track Record', 'Cycle and allocation evidence', 'vector.html#strategy-track-record', 'strategy', null, null, 'cyan']
         ]],
-        ['Macro assets', [
-          ['Forex', 'Dollar, G10 carry and pairs', 'forex.html', 'forex'],
-          ['Bonds', 'Curve, credit and duration', 'bonds.html', 'policy']
+        ['Commodities', [
+          ['Commodity Dashboard', 'Gold, oil, copper and silver', 'commodities.html', 'commodity', null, null, ''],
+          ['Commodity Strategies', 'Tactical views by commodity', 'commodity_strategies.html', 'scanner', null, null, 'violet'],
+          ['Strategic Reserves', 'Global stockpiles versus oil', 'spr.html', 'reserves', null, null, 'cyan']
+        ]],
+        ['Rates & FX', [
+          ['Forex', 'Dollar, carry and currency pairs', 'forex.html', 'forex'],
+          ['Bonds', 'Curve, credit and duration', 'bonds.html', 'bonds']
         ]]
       ],
+      railTitle: 'Quick access',
       rail: [
         ['Gold', 'Precious metals context', 'commodities.html#gold', 'commodities'],
         ['Crude oil', 'Energy market context', 'commodities.html#oil', 'commodities'],
         ['Copper', 'Industrial metals context', 'commodities.html#copper', 'commodities'],
+        ['Bitcoin Terminal', 'Open the BTC chart', 'stock.html?ticker=BTC-USD', 'crypto'],
         ['Browse other assets', 'All non-equity desks', 'commodities.html', 'dashboard']
-      ]
+      ],
+      note: ['Grouped by behavior', 'Related assets sit together without extra hover layers.']
     }
   };
 
@@ -271,14 +396,23 @@
     return '<span class="l-en">' + esc(en) + '</span><span class="l-zh">' + esc(zh || en) + '</span>';
   }
 
+  function iconMarkup(type, tone) {
+    var path = MOCKUP_ICON_PATHS[type] || MOCKUP_ICON_PATHS.dashboard;
+    var resolvedTone = tone === undefined ? (MOCKUP_TONE_BY_ICON[type] || '') : tone;
+    return '<span class="icon-drawing nav-market-icon ' + esc(resolvedTone) + '" aria-hidden="true">' +
+      '<svg viewBox="0 0 48 48">' + path + '</svg></span>';
+  }
+
   function destinationMarkup(item, prefix, rail) {
-    var cls = rail ? 'nav-market-rail-item' : 'nav-market-item';
-    return '<a class="' + cls + '" href="' + esc(prefix + item[2]) + '">' +
-      '<span class="nav-market-icon submenu-icon submenu-icon-' + esc(item[3]) + '" aria-hidden="true"></span>' +
-      '<span class="nav-market-copy"><span class="nav-market-title">' + langText(item[0], item[4]) + '</span>' +
-      '<span class="d">' + langText(item[1], item[5]) + '</span></span>' +
-      (rail ? '<span class="nav-market-arrow" aria-hidden="true">↗</span>' : '') +
-      '</a>';
+    if (rail) {
+      return '<a class="rail-link nav-market-rail-item" href="' + esc(prefix + item[2]) + '">' +
+        '<span>' + langText(item[0], item[4]) + '</span>' +
+        '<span class="rail-arrow nav-market-arrow" aria-hidden="true">↗</span></a>';
+    }
+    return '<a class="mega-item nav-market-item" href="' + esc(prefix + item[2]) + '">' +
+      iconMarkup(item[3], item[6]) +
+      '<span class="nav-market-copy"><span class="item-title nav-market-title">' + langText(item[0], item[4]) + '</span>' +
+      '<span class="item-desc d">' + langText(item[1], item[5]) + '</span></span></a>';
   }
 
   function marketMarkup(key, prefix) {
@@ -287,20 +421,21 @@
     for (var i = 0; i < data.sections.length; i++) {
       var section = data.sections[i], items = '';
       for (var j = 0; j < section[1].length; j++) items += destinationMarkup(section[1][j], prefix, false);
-      main += '<section class="nav-market-section"><div class="nav-market-heading">' +
-        langText(section[0]) + '</div><div class="nav-market-grid">' + items + '</div></section>';
+      main += '<section class="mega-section nav-market-section"><div class="section-label nav-market-heading">' +
+        langText(section[0]) + '</div><div class="item-grid nav-market-grid">' + items + '</div></section>';
     }
     for (var k = 0; k < data.rail.length; k++) rail += destinationMarkup(data.rail[k], prefix, true);
     if (data.note) {
-      rail += '<div class="nav-market-note"><strong>' + langText(data.note[0]) +
+      rail += '<div class="rail-note nav-market-note"><strong>' + langText(data.note[0]) +
         '</strong><span>' + langText(data.note[1]) + '</span></div>';
     }
-    return '<div class="nav-market-main"><header class="nav-market-intro">' +
-      '<div><div class="nav-market-name">' + langText(data.title) + '</div>' +
-      '<div class="nav-market-subtitle">' + langText(data.subtitle) + '</div></div>' +
-      '<span class="nav-market-count">' + data.sections.reduce(function (n, s) { return n + s[1].length; }, 0) +
+    return '<div class="mega-main nav-market-main"><header class="menu-intro nav-market-intro">' +
+      '<div><h2 class="nav-market-name">' + langText(data.title) + '</h2>' +
+      '<p class="nav-market-subtitle">' + langText(data.subtitle) + '</p></div>' +
+      '<span class="menu-count nav-market-count">' + data.sections.reduce(function (n, s) { return n + s[1].length; }, 0) +
       ' destinations</span></header>' + main + '</div>' +
-      '<aside class="nav-market-rail"><div class="nav-market-heading">' + langText('Explore') +
+      '<aside class="mega-rail nav-market-rail"><div class="section-label nav-market-heading">' +
+      langText(data.railTitle || 'Explore') +
       '</div>' + rail + '</aside>';
   }
 
@@ -314,9 +449,111 @@
       if (!menu) continue;
       dd.setAttribute('data-nav-market-ready', '1');
       dd.classList.add('nav-market-dd');
-      menu.className = 'nav-dd-menu nav-market-menu';
+      menu.className = 'nav-dd-menu mega-menu nav-market-menu';
       menu.setAttribute('data-nav-market-key', key);
       menu.innerHTML = marketMarkup(key, prefixOf(dd));
+    }
+  }
+
+  function removeLegacyCryptoMenu(links) {
+    if (!links) return;
+    var top = links.querySelectorAll(':scope > .nav-dd');
+    for (var i = 0; i < top.length; i++) {
+      if (marketKeyOf(top[i]) === 'crypto') {
+        top[i].remove();
+        return;
+      }
+    }
+  }
+
+  /* Existing rendered pages are deployed independently from the shared
+     template.  During that rollout window, normalize their Research DOM to the
+     same exact component emitted by _navlinks.html.j2.  This is a compatibility
+     bridge only: it adds the approved classes and replaces the old mask glyphs
+     with the mockup's inline drawings; it does not maintain a second design. */
+  function enhanceResearchMenu(links) {
+    var menu = links && links.querySelector('.nav-dd-menu.nav-mega');
+    if (!menu || menu.getAttribute('data-mockup-exact') === '1') return;
+    menu.setAttribute('data-mockup-exact', '1');
+    menu.classList.add('mega-menu');
+
+    var main = menu.querySelector(':scope > .nav-mega-main');
+    var rail = menu.querySelector(':scope > .nav-mega-rail');
+    if (main) main.classList.add('mega-main');
+    if (rail) rail.classList.add('mega-rail');
+
+    menu.querySelectorAll('.nav-mega-section').forEach(function (section) {
+      section.classList.add('mega-section');
+    });
+    menu.querySelectorAll('.nav-mega-h').forEach(function (heading) {
+      heading.classList.add('section-label');
+    });
+    menu.querySelectorAll('.nav-mega-item-grid').forEach(function (grid) {
+      grid.classList.add('item-grid');
+    });
+
+    menu.querySelectorAll('.nm-feat, .nav-mega-item').forEach(function (item) {
+      item.classList.add('mega-item');
+      var title = item.querySelector('.nm-t');
+      var desc = item.querySelector('.d');
+      if (title) title.classList.add('item-title');
+      if (desc) desc.classList.add('item-desc');
+
+      var file = fileOf(item);
+      var iconSpec = MOCKUP_RESEARCH_ICON_BY_FILE[file] || ['dashboard', ''];
+      var exactDescription = MOCKUP_RESEARCH_DESCRIPTION_BY_FILE[file];
+      var englishDescription = desc && desc.querySelector('.l-en');
+      if (exactDescription && englishDescription) {
+        englishDescription.textContent = exactDescription;
+      }
+      var oldIcon = item.querySelector('.nm-ic');
+      if (oldIcon) {
+        oldIcon.className = 'icon-drawing nm-ic ' + iconSpec[1];
+        oldIcon.innerHTML = '<svg viewBox="0 0 48 48" aria-hidden="true">' +
+          (MOCKUP_ICON_PATHS[iconSpec[0]] || MOCKUP_ICON_PATHS.dashboard) + '</svg>';
+      }
+    });
+
+    if (!rail) return;
+    var railHeading = rail.querySelector(':scope > .nav-mega-h');
+    if (railHeading) railHeading.classList.add('section-label');
+
+    rail.querySelectorAll(':scope > .nav-rail-item').forEach(function (item) {
+      item.classList.add('rail-link');
+      var title = item.querySelector('.nm-t');
+      var arrow = item.querySelector('.nav-drill-arrow');
+      if (title) {
+        item.innerHTML = '<span>' + title.innerHTML + '</span>' +
+          '<span class="rail-arrow nav-drill-arrow" aria-hidden="true">' +
+          (arrow ? arrow.textContent : '↗') + '</span>';
+      }
+    });
+
+    var drillTrigger = rail.querySelector(':scope > .nav-drill > .nav-drill-trigger');
+    if (drillTrigger) {
+      var drillTitle = drillTrigger.querySelector('.nm-t');
+      drillTrigger.classList.add('rail-link');
+      drillTrigger.innerHTML = '<span>' + (drillTitle ? drillTitle.innerHTML : 'Global Cycles') +
+        '</span><span class="rail-arrow nav-drill-arrow" aria-hidden="true">›</span>';
+    }
+
+    var cta = rail.querySelector(':scope > .nav-mastermind-cta');
+    if (cta) cta.remove();
+    if (!rail.querySelector(':scope > .mockup-browse-research')) {
+      var browse = document.createElement('a');
+      browse.className = 'rail-link nav-rail-item mockup-browse-research';
+      browse.href = prefixOf(menu.closest('.nav-dd')) + 'intelligence_hub.html';
+      browse.innerHTML = '<span><span class="l-en">Browse all research</span><span class="l-zh">浏览全部研究</span></span>' +
+        '<span class="rail-arrow nav-drill-arrow" aria-hidden="true">→</span>';
+      rail.appendChild(browse);
+    }
+    if (!rail.querySelector(':scope > .rail-note')) {
+      var note = document.createElement('div');
+      note.className = 'rail-note';
+      note.innerHTML = '<strong><span class="l-en">Cleaner by design</span><span class="l-zh">简洁设计</span></strong>' +
+        '<span class="l-en">Detailed diagnostics and proprietary labs move to the admin console.</span>' +
+        '<span class="l-zh">详细诊断和专有实验室移至管理控制台。</span>';
+      rail.appendChild(note);
     }
   }
 
@@ -429,6 +666,10 @@
     var trig = dd.querySelector(':scope > a');
     if (!trig) return dd;
     dd.classList.add('nav-sub', 'nav-drill', 'nav-market-drill');
+    // This node was initialized while it still lived on the top rail. Folding
+    // it must synchronously clear any inherited hover-open state; from here on
+    // the explicit drill trigger is the only owner of its country panel.
+    dd.classList.remove('nav-hover-open');
 
     var text = document.createElement('span');
     text.className = 'nav-sub-text';
@@ -484,6 +725,74 @@
     });
   }
 
+  // Wide desktop menus are anchored to the full navigation rail so they can
+  // stay viewport-safe. That leaves the intentional visual air gap below the
+  // trigger outside the CSS :hover tree. Keep the current menu alive briefly
+  // while a fine pointer crosses the gap, then close it only if neither the
+  // trigger/menu nor keyboard focus was reached. Touch/mobile keeps its
+  // existing click accordion and never enters this path.
+  function bindHoverSafeDropdowns(links) {
+    var fineHover = window.matchMedia('(hover: hover) and (pointer: fine)');
+    links.querySelectorAll(':scope > .nav-dd').forEach(function (dd) {
+      if (dd.getAttribute('data-nav-hover-safe')) return;
+      dd.setAttribute('data-nav-hover-safe', '1');
+
+      var closeTimer = 0;
+      var trigger = dd.querySelector(':scope > a.nav-link');
+      var menu = dd.querySelector(':scope > .nav-dd-menu');
+      if (!trigger || !menu) return;
+
+      function canHover() {
+        // A country node may be moved under International after this listener
+        // is attached. Once folded, it is a click-owned drill and must never
+        // reuse its former top-rail hover behavior.
+        return dd.parentElement === links &&
+          !dd.classList.contains('nav-market-drill') &&
+          window.innerWidth > 900 && fineHover.matches;
+      }
+
+      function openMenu() {
+        if (!canHover()) {
+          dd.classList.remove('nav-hover-open');
+          return;
+        }
+        window.clearTimeout(closeTimer);
+        dd.parentElement.querySelectorAll(':scope > .nav-dd.nav-hover-open').forEach(function (other) {
+          if (other !== dd) other.classList.remove('nav-hover-open');
+        });
+        dd.classList.add('nav-hover-open');
+      }
+
+      function hoverGraceMs() {
+        var triggerRect = trigger.getBoundingClientRect();
+        var menuRect = menu.getBoundingClientRect();
+        var gap = Math.max(0, menuRect.top - triggerRect.bottom);
+        return Math.min(1000, Math.max(420, 360 + Math.round(gap * 8)));
+      }
+
+      function closeMenuSoon() {
+        window.clearTimeout(closeTimer);
+        closeTimer = window.setTimeout(function () {
+          if (!dd.matches(':hover') && !dd.contains(document.activeElement)) {
+            dd.classList.remove('nav-hover-open');
+          }
+        }, hoverGraceMs());
+      }
+
+      dd.addEventListener('pointerenter', openMenu);
+      dd.addEventListener('pointerleave', closeMenuSoon);
+      menu.addEventListener('pointerenter', openMenu);
+      menu.addEventListener('pointerleave', closeMenuSoon);
+      dd.addEventListener('focusin', openMenu);
+      dd.addEventListener('focusout', closeMenuSoon);
+      dd.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        window.clearTimeout(closeTimer);
+        dd.classList.remove('nav-hover-open');
+      });
+    });
+  }
+
   // Tracks what the rail is currently folded to, so an auth event that changes
   // nothing (theme.js emits several) does not needlessly rebuild the DOM.
   var applied = false;
@@ -508,6 +817,7 @@
     // The restored nodes are brand new, so the per-node accordion handlers
     // theme.js bound at DOMContentLoaded are gone. Re-bind before a tap can land.
     rebindAccordion(links);
+    bindHoverSafeDropdowns(links);
 
     if (!folding) { remarkActive(links); return; }   // nothing to fold
 
@@ -594,9 +904,12 @@
   function boot() {
     var links = document.querySelector('.site-nav .nav-links, .topbar .nav-links');
     if (links) {
+      removeLegacyCryptoMenu(links);
       enhanceMarketMenus(links);
+      enhanceResearchMenu(links);
       capture(links);
       remarkActive(links);
+      bindHoverSafeDropdowns(links);
     }
     if (!window.MDXAuth || !window.MDXAuth.onChange) return;
     window.MDXAuth.onChange(function (user) {

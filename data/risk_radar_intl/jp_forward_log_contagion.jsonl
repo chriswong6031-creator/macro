@@ -8,3 +8,5 @@
 {"asof":"2026-07-27","market":"jp","state":"elevated","incumbent_state":"elevated","pressure_pct":0.8333,"escalated":false,"top_score":null,"dominant_scare":"incumbent:elevated","graded":null,"bench_path":null}
 {"asof":"2026-07-28","market":"jp","state":"elevated","incumbent_state":"elevated","pressure_pct":0.8393,"escalated":false,"top_score":null,"dominant_scare":"incumbent:elevated","graded":null,"bench_path":null}
 {"asof":"2026-07-29","market":"jp","state":"caution","incumbent_state":"caution","pressure_pct":0.8869,"escalated":false,"top_score":null,"dominant_scare":"incumbent:caution","graded":null,"bench_path":null}
+{"asof":"2026-07-30","market":"jp","state":"calm","incumbent_state":"calm","pressure_pct":0.8671,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}
+{"asof":"2026-07-31","market":"jp","state":"calm","incumbent_state":"calm","pressure_pct":0.8591,"escalated":false,"top_score":null,"dominant_scare":"incumbent:calm","graded":null,"bench_path":null}

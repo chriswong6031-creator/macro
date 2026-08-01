@@ -32,7 +32,7 @@ from jinja2 import Environment, FileSystemLoader
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from lib import config  # noqa: E402
+from lib import config, nyse_calendar, options_coverage  # noqa: E402
 from lib.pages import write_page  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -237,14 +237,21 @@ def _market_context(data_dir: Path) -> dict:
     the index GEX state. Best-effort — a missing series just drops that field."""
     ctx: dict = {}
     try:
-        sk = pd.read_parquet(data_dir / "cboe" / "skew.parquet")["skew"].dropna()
+        # SESSION GUARD (#3721 class, review M2): these cboe collector stores accrue
+        # non-session rows (putcall 13 of 39, same dates as gex.parquet), and BOTH the
+        # published level and the *_asof stamp come from `.iloc[-1]` / `index[-1]`.
+        _skew_df = nyse_calendar.session_rows(
+            pd.read_parquet(data_dir / "cboe" / "skew.parquet"), label="cboe/skew")
+        sk = _skew_df["skew"].dropna()
         if len(sk):
             ctx["skew"] = round(float(sk.iloc[-1]), 2)
             ctx["skew_asof"] = str(pd.Timestamp(sk.index[-1]).date())
     except Exception:  # noqa: BLE001 — context is a nicety, never fatal
         pass
     try:
-        pc = pd.read_parquet(data_dir / "cboe" / "putcall.parquet").dropna(how="all")
+        pc = nyse_calendar.session_rows(
+            pd.read_parquet(data_dir / "cboe" / "putcall.parquet").dropna(how="all"),
+            label="cboe/putcall")
         if len(pc):
             last = pc.iloc[-1]
             for c in ("index_pc_ratio", "equity_pc_ratio"):
@@ -360,6 +367,27 @@ def main() -> int:
         covered[m["grp"]] = covered.get(m["grp"], 0) + 1
     coverage = {g: {"covered": covered.get(g, 0), "total": t} for g, t in attempted.items()}
     coverage["__all__"] = {"covered": len(manifest), "total": len(rows)}
+    # OIP R8 — the shared options coverage object, ADDITIVE. Every per-group key and
+    # "__all__" above is untouched, and site/gex.js reads coverage by explicit key
+    # (COV["__all__"], COV[grp]) and never iterates, so nothing new renders. One
+    # comparable shape across the four options-family builders (lib/options_coverage.py);
+    # surfaces adopt it in a later OIP wave.
+    coverage["coverage_v1"] = options_coverage.coverage_object(
+        universe_name_en="Symbols with liquid options",
+        universe_name_zh="有活跃期权的标的",
+        universe_n=len(rows),
+        covered_n=len(manifest),
+        # minor 5 (review): the SESSION date, never date.today(). A wall-clock stamp
+        # inside an honesty schema is how a Saturday run publishes "as of Saturday" for
+        # Friday's chains — the same class the session filters above exist to stop.
+        asof=str(nyse_calendar.session_date()),
+        sources=[
+            options_coverage.source(
+                "cboe_chains", "Option chains", "期权链",
+                asof=str(nyse_calendar.session_date()), n=len(manifest),
+            ),
+        ],
+    )
 
     (out_dir / "index.json").write_text(json.dumps(manifest, default=float, separators=(",", ":")))
     _write_archive_snapshot(manifest, config.data_dir())
