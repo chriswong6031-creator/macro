@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T12:52:46.376824+00:00",
-  "count": 527,
+  "generated_at": "2026-08-01T14:15:32.683799+00:00",
+  "count": 529,
   "institutions": [
     "Amova",
     "Apollo",
@@ -60,6 +60,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 16,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-izx8u1ojmbo-556ead",
+      "title": "BOJ REVVING UP",
+      "institution": "TS Lombard",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-07-31T16:42:05Z",
+      "summary_points": [
+        "**Policy Shift**: BoJ hawkish hold raises Sept hike probability to 40% (up 19 ppt), signaling explicit rate hike discussions from next meeting vs.",
+        "prior \"nothing at next meeting\" stance.",
+        "**Forward Guidance**: Explicit \"risks skewed upside\" and inflation at/above target accelerate policy normalization, pressuring Yen until further hikes confirmed.",
+        "**FX Coordination**: New BoJ phrasing indicates heightened MoF-BoJ FX coordination, aligning with inflation-driven policy normalization."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
@@ -1188,6 +1208,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-xl2wfutzxyc-0fb454",
+      "title": "Amazon July 31",
+      "institution": "Deutsche Bank",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T15:54:52Z",
+      "summary_points": [
+        "**AWS Growth Acceleration**: AWS revenue surged 37% y/y ($42.2B) with AI revenue exceeding $25B annualized (+66% q/q), backlog at $496B (triple-digit y/y growth), confirming leadership in AI infrastructure demand.",
+        "**Capex & Margin Strength**: 2026 capex guidance raised to $220B (from $200B) driven by memory costs, yet AWS operating margin (38% excluding energy benefit) offsets pressure, sustaining profitability.",
+        "**Price Target Momentum**: Price target raised to $325 (80% increase since Aug 2023), reflecting AWS’s AI-driven cloud leadership and SOTP model supporting multiple expansion.",
+        "**Critical MiFID Risk**: Global Companies under MiFID services show 94% Sell ratings (vs.",
+        "2% Covered), indicating extreme sell pressure risk for portfolio managers."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 16,
       "language": "en",
       "needs_metadata": false
     },
