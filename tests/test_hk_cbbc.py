@@ -1061,6 +1061,51 @@ class TestSldFailOpen:
         assert isinstance(result, dict)
         assert result["leverage_state"] == "no_data"
 
+    def test_missing_pdftotext_emits_line_start_warning(self, tmp_path, monkeypatch, capsys):
+        """A no-poppler host must produce ONE GitHub ::warning annotation at line
+        start (capsys, not caplog — the logger's prefixing format would make
+        GitHub drop it) and stamp pdftotext_available=false into the coverage
+        JSON. Pins the defect (silent host fault), not the wording: every
+        macstudio night 2026-07-10..07-31 that landed on the no-poppler M1
+        failed all 200 extractions with a green run and a frozen store."""
+        from collectors import hk_cbbc_sld as sld
+        monkeypatch.setattr(sld, "_pdftotext_available", lambda: False)
+        monkeypatch.setattr(sld, "_query_sld_servlet", lambda *a, **k: [
+            {"FILE_LINK": "/listedco/fake.pdf", "TITLE": "Issuer X - SLD",
+             "DATE_TIME": "31/07/2026 09:00"}])
+        monkeypatch.setattr(sld, "_download_pdf", lambda *a, **k: None)
+
+        result = sld.fetch_sld_call_levels(data_root=tmp_path)
+        assert result["parsed_records"] == 0
+
+        out = capsys.readouterr().out
+        warn_lines = [l for l in out.splitlines()
+                      if "pdftotext" in l and "::warning" in l]
+        assert warn_lines, "expected a ::warning annotation when pdftotext is absent"
+        assert all(l.startswith("::warning") for l in warn_lines), \
+            "annotation must START the line or GitHub silently drops it"
+
+        cov = json.loads((tmp_path / "hk_cbbc" / "sld_coverage.json").read_text())
+        assert cov["pdftotext_available"] is False
+
+    def test_present_pdftotext_stamps_coverage_true_no_warning(self, tmp_path, monkeypatch, capsys):
+        """Inverse scan (one-sided-guard law): with the binary present a run
+        must NOT emit the host-fault annotation, and the coverage JSON stamps
+        pdftotext_available=true."""
+        from collectors import hk_cbbc_sld as sld
+        monkeypatch.setattr(sld, "_pdftotext_available", lambda: True)
+        monkeypatch.setattr(sld, "_query_sld_servlet", lambda *a, **k: [
+            {"FILE_LINK": "/listedco/fake.pdf", "TITLE": "Issuer X - SLD",
+             "DATE_TIME": "31/07/2026 09:00"}])
+        monkeypatch.setattr(sld, "_download_pdf", lambda *a, **k: None)
+
+        sld.fetch_sld_call_levels(data_root=tmp_path)
+        out = capsys.readouterr().out
+        assert not [l for l in out.splitlines() if l.startswith("::warning")]
+
+        cov = json.loads((tmp_path / "hk_cbbc" / "sld_coverage.json").read_text())
+        assert cov["pdftotext_available"] is True
+
 
 # ---------------------------------------------------------------------------
 # W2.6: Engine snap includes W2 fields
