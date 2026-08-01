@@ -5,8 +5,10 @@ from __future__ import annotations
 import email.message
 import importlib.util
 import json
+import os
 import shutil
 import subprocess
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -69,6 +71,172 @@ def test_fingerprint_detects_new_and_deleted_paths(tmp_path):
     (repo / "new.txt").unlink()
     (repo / "kept.txt").unlink()
     assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == ["kept.txt"]
+
+
+def _nested_repo(repo: Path, rel: str) -> Path:
+    """Build the shape git reports as ONE untracked directory entry.
+
+    An agent worktree carries a `.git` entry, and git's status scan stops at
+    that boundary instead of recursing, so the whole tree arrives as a single
+    `?? <dir>/` line whose mtime moves whenever its owner touches a child.
+    Measured: a real nested repository produces `?? vendor/nested/`, while a
+    worktree whose gitdir has been pruned is recursed into and produces one
+    line per file — the fix has to survive both shapes.
+    """
+    nested = repo / rel
+    nested.mkdir(parents=True)
+    _git(nested, "init", "-b", "main")
+    _git(nested, "config", "user.name", "Other Session")
+    _git(nested, "config", "user.email", "other@example.com")
+    (nested / "work.py").write_text("owned by another session\n", encoding="utf-8")
+    return nested
+
+
+def test_a_path_that_becomes_ignored_mid_session_does_not_block(tmp_path):
+    """Ignoring foreign dirt must not itself register as this session's work.
+
+    Measured 2026-07-30: adding `.codex-worktrees/` to `.git/info/exclude`
+    mid-session turned 34 already-baselined directories into "outstanding
+    changes", because the union comparison read every vanished path as
+    `<fingerprint> != None`. The remedy for the noise CAUSED the block.
+    """
+    repo = _repo(tmp_path)
+    scratch = repo / "scratch"
+    scratch.mkdir()
+    (scratch / "note.txt").write_text("pre-existing dirt\n", encoding="utf-8")
+    baseline = GUARD._fingerprint(repo)
+    assert "scratch/note.txt" in baseline
+
+    exclude = repo / ".git" / "info" / "exclude"
+    exclude.parent.mkdir(parents=True, exist_ok=True)
+    exclude.write_text("scratch/\n", encoding="utf-8")
+
+    assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == []
+
+
+def test_a_foreign_worktree_does_not_block_while_its_owner_works(tmp_path):
+    """Another session's checkout is not this session's uncommitted work.
+
+    The blocked session can neither commit it nor delete it without destroying
+    live work, so any churn there is an unsatisfiable gate.
+    """
+    repo = _repo(tmp_path)
+    nested = _nested_repo(repo, ".codex-worktrees/other-session")
+    baseline = GUARD._fingerprint(repo)
+    assert not [path for path in baseline if path.startswith(".codex-worktrees/")]
+
+    # The owner keeps working: a new child, an edit, and a bumped directory mtime.
+    (nested / "another.py").write_text("more work\n", encoding="utf-8")
+    (nested / "work.py").write_text("edited by its owner\n", encoding="utf-8")
+    later = time.time() + 60
+    os.utime(nested, (later, later))
+
+    assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == []
+
+
+def test_a_pruned_worktree_git_recurses_into_is_excluded_too(tmp_path):
+    """The file-shaped variant of the same entry must be excluded as well.
+
+    A worktree whose gitdir was pruned is no longer a boundary, so git recurses
+    and reports each file. Both `.claire/worktrees/<x>/tests/test_y.py` and
+    `?? .codex-worktrees/<x>/` were present in the same measured status output.
+    """
+    repo = _repo(tmp_path)
+    stale = repo / ".claire" / "worktrees" / "pruned-session"
+    stale.mkdir(parents=True)
+    (stale / ".git").write_text("gitdir: /nonexistent/worktrees/pruned\n", encoding="utf-8")
+    (stale / "work.py").write_text("owned by another session\n", encoding="utf-8")
+
+    baseline = GUARD._fingerprint(repo)
+    assert not [path for path in baseline if path.startswith(".claire/")]
+
+    (stale / "work.py").write_text("edited by its owner\n", encoding="utf-8")
+    assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == []
+
+
+def test_a_nested_repository_is_fingerprinted_by_presence_not_by_metadata(tmp_path):
+    """A directory entry outside the known roots must be stable too.
+
+    Root exclusion alone would leave the next agent fleet's root — one nobody
+    has added to the list — churning on `st_mtime_ns`. Git already declined to
+    look inside a nested repository; whether it is dirty is a question about
+    its own repository, so presence is the whole signal.
+    """
+    repo = _repo(tmp_path)
+    nested = _nested_repo(repo, "vendor/nested")
+    baseline = GUARD._fingerprint(repo)
+    assert baseline["vendor/nested/"] == "??:dir"
+
+    (nested / "another.py").write_text("more work\n", encoding="utf-8")
+    later = time.time() + 60
+    os.utime(nested, (later, later))
+
+    assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == []
+
+
+def test_a_new_file_written_by_the_session_still_blocks(tmp_path):
+    """The gate's real job, asserted alongside a churning foreign worktree."""
+    repo = _repo(tmp_path)
+    _nested_repo(repo, ".codex-worktrees/other-session")
+    baseline = GUARD._fingerprint(repo)
+
+    (repo / "scripts").mkdir()
+    (repo / "scripts" / "new_builder.py").write_text("session work\n", encoding="utf-8")
+
+    assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == [
+        "scripts/new_builder.py"
+    ]
+
+
+def test_a_tracked_file_deleted_by_the_session_still_blocks(tmp_path):
+    """The inverse case: leaving the working tree is not leaving the status.
+
+    Narrowing the comparison to paths git still reports must not be confused
+    with narrowing it to paths that still EXIST. A deleted tracked file is gone
+    from disk but present in status as ` D`, so it keeps blocking.
+    """
+    repo = _repo(tmp_path)
+    baseline = GUARD._fingerprint(repo)
+    (repo / "kept.txt").unlink()
+
+    current = GUARD._fingerprint(repo)
+    assert current["kept.txt"].startswith(" D:")
+    assert GUARD._changed_since_baseline(baseline, current) == ["kept.txt"]
+
+
+def test_tracked_content_under_a_worktree_root_still_blocks(tmp_path):
+    """The exclusion is for UNTRACKED foreign checkouts, and fails closed.
+
+    These roots are ignored by construction, so anything git tracks under one
+    is real repository content and keeps gating normally.
+    """
+    repo = _repo(tmp_path)
+    root = repo / ".codex-worktrees"
+    root.mkdir()
+    (root / "README.md").write_text("tracked\n", encoding="utf-8")
+    _git(repo, "add", "-f", ".codex-worktrees/README.md")
+    _git(repo, "commit", "-m", "track a file under the root")
+
+    baseline = GUARD._fingerprint(repo)
+    (root / "README.md").write_text("session edit\n", encoding="utf-8")
+
+    assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == [
+        ".codex-worktrees/README.md"
+    ]
+
+
+def test_the_worktree_exclusion_is_anchored_at_the_repository_root(tmp_path):
+    """A root's name deeper in the tree is not a foreign checkout."""
+    repo = _repo(tmp_path)
+    stray = repo / "docs" / ".codex-worktrees"
+    stray.mkdir(parents=True)
+    baseline = GUARD._fingerprint(repo)
+
+    (stray / "note.md").write_text("session work\n", encoding="utf-8")
+
+    assert GUARD._changed_since_baseline(baseline, GUARD._fingerprint(repo)) == [
+        "docs/.codex-worktrees/note.md"
+    ]
 
 
 def test_github_slug_accepts_https_and_ssh(monkeypatch, tmp_path):
