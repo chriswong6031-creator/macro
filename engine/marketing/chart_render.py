@@ -3352,6 +3352,7 @@ def render_breaking_card(
     suppress_cta: bool = False,
     summary: "str | None" = None,
     event_class: "str | None" = None,
+    eyebrow: str = "BREAKING",
     logo_root: "Path | str | None" = None,  # noqa: ARG001 — reserved; text cashtags used
     width: int = 1000,
     height: int = 560,
@@ -3386,6 +3387,9 @@ def render_breaking_card(
             "geopolitical"|"company_news") rendered as a quiet plain-word
             kicker beside the BREAKING eyebrow; unknown/none/None → omitted
             (the raw snake_case key is never shown — plain-word law).
+        eyebrow: Plain-word desk label. Defaults to ``BREAKING`` for full
+            backward compatibility; deterministic derivative lanes may supply
+            a truthful sibling label such as ``EARNINGS CALL``.
         logo_root: Reserved for future logomark use; text cashtags are used now.
         width, height: Card dimensions (family default 1000×560).
 
@@ -3433,15 +3437,16 @@ def render_breaking_card(
         pad_l = 46
         content_top = header_h + 40
 
-        # ── BREAKING eyebrow (left) + tier chip + timestamp (dateline row) ────
+        # ── Desk eyebrow (left) + tier chip + timestamp (dateline row) ────────
         eyebrow_y = content_top
-        # A small amber square + "BREAKING" — restrained, not a siren.
+        # A small amber square + plain-word desk label — restrained, not a siren.
+        eyebrow_text = _xesc(str(eyebrow or "BREAKING").strip().upper()[:24])
         eyebrow_svg = (
             f'<rect x="{pad_l}" y="{eyebrow_y - 12:.1f}" width="11" height="11" '
             f'rx="2" fill="{_BREAK_AMBER}"/>'
             f'<text x="{pad_l + 19}" y="{eyebrow_y - 1:.1f}" fill="{_BREAK_AMBER}" '
             f'font-size="15" font-weight="900" font-family="sans-serif" '
-            f'letter-spacing="3.5">BREAKING</text>'
+            f'letter-spacing="3.5">{eyebrow_text}</text>'
         )
         # Plain-word event-class kicker — quiet grey, subordinate to the tier
         # chip (the signature). Unknown/none keys are omitted, never echoed raw.
