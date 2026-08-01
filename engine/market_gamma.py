@@ -137,6 +137,13 @@ def view(gex: "pd.DataFrame | None") -> dict | None:
     g = gex.iloc[-1]
     svf = g.get("spot_vs_flip_pct")
     if svf is None or pd.isna(svf):
+        # Present-but-NaN flip: the producer computed net GEX but resolved no flip.
+        # This quietly blanks the dashboard banner AND nulls latest['market_gamma'],
+        # so say it loudly in the Actions summary (bare line-start print — a logger
+        # prefix would make GitHub drop it; tests/test_gh_annotation_line_start.py).
+        print("::warning title=market gamma flip NaN::cboe/gex latest row (asof "
+              f"{str(gex.index.max())[:10]}) has NaN spot_vs_flip_pct — dealer-gamma "
+              "banner and latest['market_gamma'] will be null", flush=True)
         return None
     flip = int(round(float(g.get("flip_strike") or 0)))
     return {

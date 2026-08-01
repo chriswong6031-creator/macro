@@ -383,3 +383,57 @@ def test_resolve_not_matured_is_skipped(tmp_path):
                   "2026-06-20": 100.0, "2026-06-21": 100.0}
     assert vss.resolve(spy_closes, {}, path=p) == 0
     assert vss.track_record(path=p)["n"] == 0
+
+
+# --------------------------------------------------------------------------- #
+# Dealer-gamma input resolution — the _resolve_gex fallback CHAIN
+# (injected gex -> latest['market_gamma'] -> site/gex/SPX.json summary). Every
+# test above stubs _site_dir to None, so tier 3 was previously uncovered.
+# --------------------------------------------------------------------------- #
+def _write_site_spx(root, summary: dict) -> None:
+    """Lay down a site/gex/SPX.json shaped like the engine board's own summary
+    (ENGINE naming: gamma_regime / dist_to_flip_pct), under a fake site dir."""
+    p = root / "gex" / "SPX.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"summary": summary}))
+
+
+def test_resolve_gex_falls_back_to_site_spx_json_when_contract_null(monkeypatch, tmp_path):
+    """Tier 3: with latest['market_gamma'] NULL, the scorecard keeps its dealer-gamma
+    factor by reading the engine board's site/gex/SPX.json — and normalizes the ENGINE
+    field names onto the contract's (gamma_regime -> regime, dist_to_flip_pct ->
+    spot_vs_flip_pct).
+
+    Incident 2026-06-24 -> 07-28: the cboe/gex producer emitted a NaN flip on every
+    net-negative session, which nulled latest['market_gamma'] — and _resolve_gex did NOT
+    go dark, it silently dropped to this site-JSON tier, so the factor switched from
+    legacy-frame values to engine-board values with no signal. Since PR #4004 both tiers
+    carry the SAME engine grid flip, so the switch no longer changes definitions; this
+    test pins the fallback as a deliberate, tested contract rather than an accident."""
+    _write_site_spx(tmp_path, {"gamma_regime": "short", "dist_to_flip_pct": -1.6,
+                               "net_gex_bn": -55.0, "gamma_flip": 7435.0})
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    g = vss._resolve_gex({"market_gamma": None}, None)   # the incident shape
+    assert g["regime"] == "short"                         # aliased from gamma_regime
+    assert g["spot_vs_flip_pct"] == pytest.approx(-1.6)   # aliased from dist_to_flip_pct
+    assert g["gamma_flip"] == pytest.approx(7435.0)
+    assert g["net_gex_bn"] == pytest.approx(-55.0)
+
+
+def test_resolve_gex_prefers_live_contract_over_site_json(monkeypatch, tmp_path):
+    """Tier 2 beats tier 3: a LIVE latest['market_gamma'] wins and the (one-build-stale)
+    site JSON is never even read — so the fallback can't silently shadow a good contract."""
+    _write_site_spx(tmp_path, {"gamma_regime": "long", "dist_to_flip_pct": 2.0,
+                               "net_gex_bn": 12.0, "gamma_flip": 7100.0})
+    monkeypatch.setattr(vss, "_site_dir", lambda: tmp_path)
+    reads: list = []
+    real_read_json = vss._read_json
+    monkeypatch.setattr(vss, "_read_json",
+                        lambda path: (reads.append(path), real_read_json(path))[1])
+    g = vss._resolve_gex({"market_gamma": {"regime": "short", "spot_vs_flip_pct": -1.6,
+                                           "net_gex_bn": -55.0, "gamma_flip": 7435.0}},
+                         None)
+    assert g["regime"] == "short"                          # contract, not the "long" JSON
+    assert g["spot_vs_flip_pct"] == pytest.approx(-1.6)    # contract, not the +2.0 JSON
+    assert g["gamma_flip"] == pytest.approx(7435.0)
+    assert not reads, f"tier 3 must not be consulted when the contract is live: {reads}"
