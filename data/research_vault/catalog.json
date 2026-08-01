@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T11:15:15.379216+00:00",
-  "count": 524,
+  "generated_at": "2026-08-01T11:30:18.354005+00:00",
+  "count": 525,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1048,6 +1048,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 19,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-j8jsbhyp95c-f14ef1",
+      "title": "Meta Platforms Inc. (META) Q2'26 Review Core Business Provides Evidence of Near Term ROIC but Lack of Visibility into Long ...",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:38Z",
+      "summary_points": [
+        "**Compute Spend Uncertainty & Capex Shift**: Long-term compute visibility lacks clarity, driving 14% higher 2027-28 capex estimates ($130-145B) despite near-term AI monetization (Advanage+ at $7.5bn ARR) and Q3 guidance.",
+        "**Valuation Compression Amid Growth**: EBITDA growth accelerates to 37.6% (12/28E) but gross margin declines to 68.5%; P/E and EV/EBITDA contract to 15.5x and 7.5x, signaling market skepticism despite revenue strength.",
+        "**Cash Flow Strength & Relative Outperformance**: Operating cash flow rises to $236.4B (12/28E), outperforming S&P 500 by 27.2% over 12 months, confirming robust capital generation.",
+        "**Key Risk Catalysts**: $2.4bn Q2 litigation charge, active regulatory scrutiny (antitrust/M&A), and competition for ad spend/user growth threaten margin expansion and near-term EPS (GAAP EPS revised down to $31.65).",
+        "**Price Target & Flow Dynamics**: Goldman Sachs lowers PT to $725 (23.8% upside) from $815 amid revised estimates, yet 65% Buy rating in IB relationships and persistent upside price targets indicate institutional flow support."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 10,
       "language": "en",
       "needs_metadata": false
     },
