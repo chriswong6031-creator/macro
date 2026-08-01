@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T15:30:38.255725+00:00",
-  "count": 536,
+  "generated_at": "2026-08-01T15:45:42.424992+00:00",
+  "count": 537,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1698,6 +1698,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-joowrrj4hbd-f01181",
+      "title": "Middle East 4",
+      "institution": "MUFG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T00:01:08Z",
+      "summary_points": [
+        "**Oil market volatility**: US strikes on Iranian military targets triggered Brent drop to $89/b, but Red Sea threats and LNG attacks sustain supply fears, embedding geopolitical premium despite US crude inventories at 2018 lows.",
+        "**Geopolitical Disruption Reshaping Oil Logistics**: Houthi attacks force Saudi Aramco to adopt Mediterranean export pricing (OSP) for Asian buyers, increasing transport costs and altering export dynamics as Asian refiners seek discounts amid prolonged security risks.",
+        "**IMF's KSA Resilience Assessment**: IMF projects Saudi GDP growth to slow from 4.6% (2025) to 1.7% (2026) due to oil export disruptions, urging fiscal consolidation and non-oil revenue mobilization to enhance macro resilience amid regional conflict.",
+        "**Commodities divergence**: Gold down 6.37% YTD vs Brent up 50.69% YTD, reflecting shifting risk appetite (precious metals pressured, energy favored) amid sustained geopolitical tensions."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
