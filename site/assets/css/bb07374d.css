@@ -149,6 +149,10 @@ html[data-theme="light"] .arc-state .accent{color:color-mix(in srgb,var(--accent
 .filt input[type="number"]{width:74px}
 .filt select:focus,.filt input:focus{outline:2px solid color-mix(in srgb,var(--info) 60%,transparent);
   outline-offset:0;border-color:color-mix(in srgb,var(--info) 45%,var(--line))}
+@media(max-width:640px){
+  .filterbar .filt{min-width:0;flex:1 1 140px;max-width:100%}
+  .filterbar .filt select{width:100%;min-width:0;max-width:100%}
+}
 .fb-actions{margin-left:auto;display:flex;gap:8px;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:9px;font-size:12.5px;
   font-weight:600;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--text)}
