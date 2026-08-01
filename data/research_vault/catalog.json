@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T03:29:37.941817+00:00",
-  "count": 501,
+  "generated_at": "2026-08-01T03:44:57.913457+00:00",
+  "count": 502,
   "institutions": [
     "Amova",
     "Apollo",
@@ -180,6 +180,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-mnanodzk3jn-e5224b",
+      "title": "Reddit Inc",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:23:39Z",
+      "summary_points": [
+        "**EBITDA Surge vs.",
+        "Valuation Pressure**: EBITDA projected to surge 84.5% YoY (12/26E: $1,529.2m), but P/E drops 15.5x (37.7x → 22.5x), signaling potential overvaluation as market prices in aggressive growth expectations.",
+        "**Revenue Beat vs.",
+        "User Growth Headwinds**: Q2'26 revenues ($805m) and EBITDA ($343m) exceeded consensus by 11% and 17%, driven by ad revenue doubling YoY; however, Q3 US DAUs declined sequentially despite marketing spend, indicating user growth risks.",
+        "**Cash Flow Strength Amid Key Risks**: Operating cash flow surges 95.5% (12/26E: $1,353.4m), net debt/EBITDA at 2.3x; critical risks include data licensing uncertainty, advertiser demand volatility, and regulatory overhang (data/privacy)."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
