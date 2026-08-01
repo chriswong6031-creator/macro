@@ -45,6 +45,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import os
 import sys
 from datetime import date, datetime
@@ -75,6 +76,10 @@ LEDGER_DIR     = _REPO / "data" / "prophet"
 LEDGER_PATH    = LEDGER_DIR / "ledger.jsonl"
 
 R2_INDEX_KEY   = "prophet/index.json"
+
+# R0.7 market-overlay inputs (compute_management_state macro_stance/futures_chg)
+MARKET_STATE_PATH = _REPO / "data" / "market_state" / "latest.json"
+YAHOO_DIR         = _REPO / "data" / "yahoo"
 
 
 # ---------------------------------------------------------------------------
@@ -725,6 +730,78 @@ def _load_price_history_for_management(ticker: str):
 
 
 # ---------------------------------------------------------------------------
+# Market overlay inputs (R0.7 — macro_stance / futures_chg for the management
+# engine's overlay component; both loaded once per run, shared by every plan)
+# ---------------------------------------------------------------------------
+
+# market_state verdict vocabulary (engine/market_state.py) → engine stance
+# vocabulary (engine/prophet_management.py docstring: 'bull'|'bear'|'neutral').
+_VERDICT_TO_STANCE = {"RISK_ON": "bull", "MIXED": "neutral", "RISK_OFF": "bear"}
+
+# A market snapshot or index close older than this (vs asof) is omitted rather
+# than fed to the overlay as if it were current.
+_OVERLAY_MAX_AGE_DAYS = 7
+
+
+def _load_macro_stance(asof: str) -> str | None:
+    """Map data/market_state/latest.json risk verdict to the engine's stance.
+
+    PIT + freshness guarded: the snapshot must be dated on or before asof and
+    at most _OVERLAY_MAX_AGE_DAYS old; otherwise return None so the overlay
+    component omits the stance term instead of reading a stale or future-dated
+    market state (a backfill --date run must never see a later verdict).
+    """
+    try:
+        with MARKET_STATE_PATH.open(encoding="utf-8") as f:
+            ms = json.load(f)
+        ms_asof = date.fromisoformat(str(ms.get("asof", ""))[:10])
+        asof_d = date.fromisoformat(str(asof)[:10])
+        if ms_asof > asof_d or (asof_d - ms_asof).days > _OVERLAY_MAX_AGE_DAYS:
+            log.info(
+                "build_prophet: market_state asof=%s unusable for asof=%s — "
+                "macro_stance omitted", ms_asof, asof_d)
+            return None
+        return _VERDICT_TO_STANCE.get(str(ms.get("verdict", "")).upper())
+    except Exception as e:
+        log.info("build_prophet: macro_stance unavailable (%s) — omitted", e)
+        return None
+
+
+def _load_futures_chg(asof: str) -> dict | None:
+    """Prior close-to-close % change for SPY/QQQ from the yahoo price store.
+
+    Nightly-cadence proxy for the engine's futures overlay term (the
+    compute_management_state docstring specifies prior close-to-close changes,
+    not live futures). PIT-filtered to closes <= asof; a symbol whose latest
+    PIT close is older than _OVERLAY_MAX_AGE_DAYS is dropped. Returns None when
+    nothing resolves so the overlay omits the term honestly.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    out: dict[str, float] = {}
+    asof_ts = pd.Timestamp(str(asof)[:10])
+    for sym in ("SPY", "QQQ"):
+        p = YAHOO_DIR / f"{sym}.parquet"
+        if not p.exists():
+            continue
+        try:
+            df = pd.read_parquet(p)
+            df.index = pd.to_datetime(df.index)
+            closes = df.loc[df.index <= asof_ts, "close"].dropna()
+            if len(closes) < 2:
+                continue
+            if (asof_ts - closes.index[-1]).days > _OVERLAY_MAX_AGE_DAYS:
+                continue
+            prev = float(closes.iloc[-2])
+            if prev == 0.0:
+                continue
+            out[sym] = round((float(closes.iloc[-1]) - prev) / abs(prev), 6)
+        except Exception as e:
+            log.info("build_prophet: futures_chg %s unavailable (%s)", sym, e)
+    return out or None
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -799,6 +876,15 @@ def main() -> None:
         all_plans[p["id"]] = p
 
     # ── 3. Run management engine for every active plan ────────────────────────
+    # R0.7: market overlay inputs — one load per run, passed to every plan so
+    # the engine's dormant macro-stance/futures terms actually activate.
+    macro_stance = _load_macro_stance(asof)
+    futures_chg = _load_futures_chg(asof)
+    log.info(
+        "build_prophet: market overlay — macro_stance=%s futures_chg=%s",
+        macro_stance, futures_chg,
+    )
+
     active_entries: list[dict] = []
     import pandas as pd  # noqa: PLC0415
 
@@ -832,6 +918,8 @@ def main() -> None:
                 plan=plan,
                 price_history=ph_pit,
                 asof=asof,
+                macro_stance=macro_stance,
+                futures_chg=futures_chg,
                 prev_state=prev_state,
             )
         except Exception as e:
@@ -870,6 +958,11 @@ def main() -> None:
             t1=t1,
             t2=t2,
         )
+        # R0.7 last_price guard: 0 = missing for equity prices (house law), and
+        # a NaN would render json.dump output unparseable for the Terminal.
+        _last_close = float(ph_pit["close"].iloc[-1])
+        if not (math.isfinite(_last_close) and _last_close > 0.0):
+            _last_close = None  # type: ignore[assignment]
         active_entries.append({
             "id": plan_id,
             "asset": plan.get("asset"),
@@ -885,6 +978,22 @@ def main() -> None:
             "phase": resolved_phase,
             "management_confidence": state.get("management_confidence"),
             "recommended_action": state.get("recommended_action"),
+            # R0.7 — last close the management engine saw (same PIT frame).
+            # The Terminal's GAINERS sort and T1-progress/P&L bars render only
+            # when last_price is present.
+            "last_price": round(_last_close, 4) if _last_close is not None else None,
+            # R0.7 — nested state block. The Terminal reads components /
+            # geometry / change_reason via plan.state (SignalCard PlanSummary
+            # nested shape), so these ride under "state", not top-level. The
+            # hoisted flat trio above stays for existing consumers.
+            "state": {
+                "phase": resolved_phase,
+                "management_confidence": state.get("management_confidence"),
+                "recommended_action": state.get("recommended_action"),
+                "components": state.get("components"),
+                "geometry": state.get("geometry"),
+                "change_reason": state.get("change_reason"),
+            },
             # ── Content blocks (W2 — deterministic, no LLM) ───────────────────
             "what_to_do_now": what_to_do_now,
             "profit_plan": profit_plan,
