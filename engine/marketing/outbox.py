@@ -38,7 +38,7 @@ import tempfile
 import time
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any, Iterable, Iterator
 
 from engine.marketing.ledgers import append_jsonl, read_jsonl
 
@@ -1560,6 +1560,7 @@ def apply_decisions(
     actor: str = "actuator",
     note: str | None = None,
     max_attempts: int = MAX_POST_ATTEMPTS,
+    ids: Iterable[str] | None = None,
 ) -> dict[str, Any]:
     """Apply pending operator approvals as status transitions (batch, one fold).
 
@@ -1572,14 +1573,28 @@ def apply_decisions(
         the failure) does nothing — a failure always needs a fresh human look.
       * hold                                 → no transition (held overlay)
 
+    ``ids`` NARROWS THE SWEEP TO A NAMED SET, and exists because the admin's
+    Approve button now applies its own decision inline (2026-08-01: that click
+    wrote a decisions.jsonl row that NOTHING in production ever read — grep for
+    callers of this function found tests and a config comment, so every operator
+    approval since the panel shipped was a dead letter and the post stayed
+    `queued` forever). One click must move ONE post. A global sweep from a button
+    would fire every stale approve row still sitting in the ledger at once —
+    re-arming days-old market copy the operator never looked at again, which is
+    precisely the class the quarantine ledger is full of. None (the default) keeps
+    the actuator's batch semantics unchanged.
+
     Returns {"approved": [ids], "rearmed": [ids], "quarantined": [ids]}.
     Never raises.
     """
     out: dict[str, Any] = {"approved": [], "rearmed": [], "quarantined": []}
+    only = None if ids is None else {str(i) for i in ids}
     try:
         with _outbox_lock(root):
             state = fold_state(root)
             for item_id, dec in state["decisions"].items():
+                if only is not None and item_id not in only:
+                    continue
                 if dec.get("decision") != "approve":
                     continue
                 status = state["status"].get(item_id)
