@@ -460,9 +460,13 @@ def _run_importer(tmp_path: Path) -> dict:
     importlib.reload(imp)
 
     # Patch module-level constants
+    imp._REPO_ROOT = tmp_path
     imp.BACKFILL_SRC = FIXTURES_DIR
     imp.SEED_DIR = tmp_path
     imp.MANIFEST_PATH = tmp_path / "_manifest.json"
+    imp.EARNINGS_RECONCILIATION_PATH = (
+        tmp_path / "data" / "quality" / "earnings_import_reconciliation.json"
+    )
 
     # Reset manifest and run
     imp.main()
@@ -564,9 +568,13 @@ class TestImporterBasic:
         out_dir = tmp_path / "out"
         out_dir.mkdir()
 
+        imp._REPO_ROOT = tmp_path
         imp.BACKFILL_SRC = empty_dir
         imp.SEED_DIR = out_dir
         imp.MANIFEST_PATH = out_dir / "_manifest.json"
+        imp.EARNINGS_RECONCILIATION_PATH = (
+            tmp_path / "data" / "quality" / "earnings_import_reconciliation.json"
+        )
 
         imp.main()
 
