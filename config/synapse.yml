@@ -5716,7 +5716,12 @@ artifacts:
       - "scripts/build_flow_desk.py — calls engine.flow_cohorts.build_cohorts() which writes via store.upsert"
     owner_program: flow-continuity
     cadence: collect
-    storage: gitignored-local
+    # git, NOT gitignored-local (corrected 2026-07-30): all four cohorts_<key>.parquet
+    # are git-tracked, and options_flow is absent from publish_r2's DEFAULT_DIRS and
+    # _DATA_DIRS — so git is the store of record here and R2 holds no copy that could
+    # heal a repaired row back.  The mislabel matters: it invites a "just delete it,
+    # R2 will restore" reading of a store that has no R2 backing at all.
+    storage: git
     asof_field: null
     freshness_sla_hours: 30
     schema: implicit
@@ -5732,8 +5737,13 @@ artifacts:
       (cohorts_mag7, cohorts_memory_storage, cohorts_ai_semiconductors, cohorts_ai_software).
       Aggregates gross_premium_mn, net_premium_mn (SOFT direction), volume-weighted pc_ratio,
       zerodte_share, net_doi, n_members, n_members_covered per trading day.
-      Written via store.upsert (idempotent append). Used to compute percentile context
-      in build_cohorts() when >= 20 obs present (raw-fallback flag otherwise).
+      Written via store.upsert (idempotent append) for the requested asof, plus a bounded
+      nightly backfill (BACKFILL_LOOKBACK_DAYS) that re-aggregates in-window sessions with
+      per-ticker summary coverage but no usable row — the single-asof upsert alone strands
+      any session the nightly did not run at, and stranded the all-null rows an off-nightly
+      run wrote before #4007 gated them. A date with ZERO member coverage is never written.
+      Used to compute percentile context in build_cohorts() when >= 20 obs present
+      (raw-fallback flag otherwise).
       Display-only: no arithmetic path; direction is SOFT. FL-B deliverable (06-26 lesson:
       Mag7 call-bid and memory put-hedge invisible inside a single GICS bucket).
 
