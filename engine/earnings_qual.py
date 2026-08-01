@@ -1875,6 +1875,15 @@ def _overlay_forward_scores(df, source_tier: str, root: Path | None = None):
                 )
             )
             scores = scores[context_ok]
+        if "call_date" in scores.columns:
+            # Defense in depth: even if a producer bug or manually published
+            # parquet bypasses the worker quarantine, a future-labelled call
+            # cannot enter the Stage/product projection.
+            score_days = pd.to_datetime(
+                scores["call_date"], errors="coerce", utc=True,
+            )
+            today = datetime.now(timezone.utc).date()
+            scores = scores[score_days.notna() & score_days.dt.date.le(today)]
         for required in ("sentiment", "performance"):
             if required not in scores.columns:
                 return df, source_tier

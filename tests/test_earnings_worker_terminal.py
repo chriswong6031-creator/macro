@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import importlib.util
 import json
+from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -15,6 +16,24 @@ _SPEC = importlib.util.spec_from_file_location("earnings_worker_run", _WORKER_PA
 assert _SPEC and _SPEC.loader
 worker = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(worker)
+
+
+def test_future_call_date_requires_causal_source_marker():
+    assert worker._future_call_date(
+        "2026-08-06",
+        source_updated_at="2026-08-01T12:00:00+00:00",
+        today=date(2026, 8, 10),
+    ) is True
+    assert worker._future_call_date(
+        "2026-08-06",
+        source_updated_at="2026-08-06T12:00:00+00:00",
+        today=date(2026, 8, 10),
+    ) is False
+    assert worker._future_call_date(
+        "2026-08-06",
+        source_updated_at="2026-08-06T12:00:00+00:00",
+        today=date(2026, 8, 1),
+    ) is True
 
 
 def _write_terminal_archive(
@@ -137,6 +156,41 @@ def test_terminal_bootstrap_scores_and_acks_success(monkeypatch, tmp_path: Path)
     )
     assert scores.iloc[0]["source_revision_sha256"]
     assert scores.iloc[0]["degraded_reason"] is None
+
+
+def test_future_dated_terminal_body_is_quarantined_before_model(
+    monkeypatch, tmp_path: Path,
+):
+    tx_root = tmp_path / "tx"
+    _write_terminal_archive(tx_root, call_date="2099-08-06")
+    repo_root = tmp_path / "repo"
+    state_path = repo_root / "data" / "earnings_calls" / "terminal_intake_state.json"
+
+    from engine import earnings_qual as eq
+
+    def model_must_not_run(*_args, **_kwargs):
+        raise AssertionError("future-labelled transcript reached provider dispatch")
+
+    monkeypatch.setattr(eq, "score_text", model_must_not_run)
+    assert worker.run_terminal(
+        repo_root=repo_root,
+        provider_cfg={"provider_order": ["openai_compat"]},
+        limit=64,
+        do_publish=False,
+        base_url="unused",
+        tx_root=tx_root,
+        state_path=state_path,
+        bootstrap_since="2026-07-24",
+        seed_existing=False,
+    ) == 0
+
+    state = eti.load_state(state_path, source=f"local:{tx_root.resolve()}")
+    assert [eti.ref_from_pending(item).pair for item in state["pending"]] == [
+        "AAPL/2026Q3"
+    ]
+    revision = eti.ref_from_pending(state["pending"][0]).revision_key
+    assert state["retry"][revision]["last_error"] == "source_future_call_date"
+    assert not eq.store_path(repo_root).exists()
 
 
 def test_degraded_model_row_remains_retryable(monkeypatch, tmp_path: Path):

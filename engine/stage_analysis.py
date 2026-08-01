@@ -502,7 +502,16 @@ def _parse_earnings_parquet(p: Path) -> dict[str, dict]:
         if is_live:
             # A live row only earns the right to override the committed seed
             # when it is a healthy, context-only model result.  Provider outage
-            # receipts and partial JSON must remain invisible to the product.
+            # receipts, partial JSON, and upstream future-date errors must
+            # remain invisible to the product.
+            call_dt = pd.to_datetime(
+                r.get("call_date"), errors="coerce", utc=True,
+            )
+            if (
+                not pd.isna(call_dt)
+                and call_dt.date() > datetime.now(timezone.utc).date()
+            ):
+                continue
             degraded = r.get("degraded_reason")
             if degraded is not None and not pd.isna(degraded) and str(degraded).strip():
                 continue

@@ -44,6 +44,7 @@ import json
 import logging
 import os
 import sys
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 # --------------------------------------------------------------------------- #
@@ -56,6 +57,43 @@ def _default_repo_root() -> Path:
 
 
 log = logging.getLogger("earnings_worker")
+
+
+def _future_call_date(
+    raw: object,
+    *,
+    source_updated_at: object = None,
+    today: date | None = None,
+) -> bool:
+    """Return True when a source labels a transcript after the current UTC day.
+
+    Terminal is an upstream archive, not an oracle.  A provider can publish a
+    complete body with a bad future event date; scoring it would create
+    point-in-time leakage across Stage, Chronicle, Press, and X.  Keep the body
+    retryable until its advertised day instead of guessing a corrected date.
+    """
+
+    value = str(raw or "").strip()
+    if not value:
+        return False
+    try:
+        call_day = date.fromisoformat(value[:10])
+    except ValueError:
+        return False
+    observed_day = today or datetime.now(timezone.utc).date()
+    if call_day > observed_day:
+        return True
+    source_value = str(source_updated_at or "").strip()
+    if not source_value:
+        return False
+    try:
+        source_day = date.fromisoformat(source_value[:10])
+    except ValueError:
+        return True
+    # Require a causal source marker: the archive cannot credibly claim a call
+    # occurred after the commit marker that made its transcript visible.  A
+    # future-dated marker is quarantined as an upstream clock error as well.
+    return source_day > observed_day or call_day > source_day
 
 
 def _load_queue(repo_root: Path) -> list[str]:
@@ -322,6 +360,26 @@ def run_terminal(
                 state,
                 ref,
                 error=f"source_unavailable:{type(exc).__name__}",
+            )
+            intake.save_state(state_path, state)
+            continue
+
+        if _future_call_date(
+            payload.get("call_date"),
+            source_updated_at=payload.get("source_updated_at"),
+        ):
+            # Preserve the queued revision and retry it on a later run.  This
+            # is deliberately checked before provider dispatch, so a bad
+            # upstream timestamp costs no tokens and reaches no product store.
+            log.warning(
+                "Terminal transcript %s is future-dated (%s) -- quarantined",
+                ref.pair,
+                payload.get("call_date"),
+            )
+            state = intake.mark_failed(
+                state,
+                ref,
+                error="source_future_call_date",
             )
             intake.save_state(state_path, state)
             continue

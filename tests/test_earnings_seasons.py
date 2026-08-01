@@ -468,6 +468,34 @@ def test_new_score_event_advances_full_history_snapshot(tmp_path):
     assert health["qoq_eligible_tickers"] == 1
 
 
+def test_future_score_event_cannot_advance_full_history_snapshot(tmp_path):
+    live = tmp_path / "data" / "earnings_calls" / "history.parquet"
+    live.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([
+        _call("BASE", "Baseline", "Software", "2026-04-30", 20, 2, 22),
+    ]).to_parquet(live, index=False)
+    pd.DataFrame([{
+        "ticker": "FUTURE",
+        "quarter": "Q2",
+        "year": 2099,
+        "call_date": "2099-08-06",
+        "sentiment": 0.9,
+        "performance": 9.0,
+        "confidence": 0.9,
+        "tags": "[]",
+        "summary": "Not yet observable.",
+        "is_context_only": True,
+        "degraded_reason": None,
+    }]).to_parquet(live.parent / "scores.parquet", index=False)
+    _write_transport_manifest(tmp_path)
+
+    frame = eq.load_backfill_earnings(root=tmp_path)
+
+    tickers = set(frame["document_ticker"].astype(str).str.split().str[0])
+    assert tickers == {"BASE"}
+    assert frame.attrs["source_tier"] == "r2_history"
+
+
 def test_degraded_or_incomplete_scores_never_reach_stage_overlay(tmp_path):
     live = tmp_path / "data" / "earnings_calls" / "history.parquet"
     live.parent.mkdir(parents=True, exist_ok=True)
