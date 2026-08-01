@@ -10,6 +10,18 @@ name: research-ingest
 # collectors/hk_cbbc_sld.py) which lives on the self-hosted Macs, and this is a
 # ~hourly light job that must not queue behind the heavy nightly pool.
 #
+# The `preflight` step below is the one FAIL-CLOSED gate in an otherwise
+# never-raise lane, and it exists because a runner label is not a dependency
+# guarantee: on 2026-07-30 ~13Z the macstudio-light label moved to a Mac with no
+# poppler, so `pdftotext` was missing for two days. The pipeline degraded exactly
+# as designed — empty body, honest `text_layer='unavailable'` — but it also wrote
+# a RECEIPT for each of those 127 documents, and receipts make re-ingestion
+# impossible by design. A tooling outage therefore became permanent damage to the
+# published corpus. Failing before the ingest step keeps the documents in the
+# inbox (no receipts, retried next hour) and turns the outage into a red lane
+# instead of silently maimed documents. Rows already frozen by that window are
+# healed by ingest._reextract_bodies, which re-runs pdftotext over the vault PDF.
+#
 # The pipeline is idempotent + never-raise-per-item: a re-run ingests 0, and one
 # bad PDF/sidecar never aborts the batch (engine/research_vault/ingest.py).
 on:
@@ -53,6 +65,13 @@ jobs:
       # boto3 (R2 client) + pyyaml are already in requirements; pdftotext is a
       # system binary (poppler), not a pip dep. No heavy pandas/scipy needed here.
       - run: pip install --quiet boto3 pyyaml
+      - name: preflight — poppler pdftotext (HOST dependency)
+        run: |
+          echo "/opt/homebrew/bin" >> "$GITHUB_PATH"
+          if [ ! -x /opt/homebrew/bin/pdftotext ] && ! command -v pdftotext >/dev/null 2>&1; then
+            echo "::error title=research-ingest::pdftotext (poppler) missing on runner ${RUNNER_NAME} — refusing to ingest bodyless (docs stay in the inbox and retry next hour). Fix: brew install poppler on this host. Precedent: 2026-07-30 the macstudio-light label moved to a poppler-less M1 and 127 docs ingested with empty bodies."
+            exit 1
+          fi
       - name: research vault ingest (hourly)
         id: ingest
         run: |

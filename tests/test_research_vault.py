@@ -630,13 +630,14 @@ def test_corpus_upsert_replaces_not_duplicates(tmp_path):
 # the router and the Mastermind brain (same FastAPI process) share ONE local copy
 # — see the block comment above corpus.corpus_connection.
 
-def _seed_corpus_store(root: Path, rows: list[tuple[dict, str]]) -> LocalStore:
-    """A LocalStore holding a corpus.sqlite built from (item, body) pairs."""
+def _seed_corpus_store(root: Path, rows: list[tuple]) -> LocalStore:
+    """A LocalStore holding a corpus.sqlite built from (item, body[, facts]) rows."""
     store = LocalStore(root / "store")
     build = root / "_build_corpus.sqlite"
     conn = corpus_mod.open_db(build)
-    for item, body in rows:
-        corpus_mod.upsert(conn, item, body)
+    for row in rows:
+        item, body = row[0], row[1]
+        corpus_mod.upsert(conn, item, body, facts=(row[2] if len(row) > 2 else None))
     conn.close()
     store.put_bytes(corpus_mod.CORPUS_KEY, build.read_bytes(),
                     "application/octet-stream")
@@ -685,6 +686,31 @@ def test_get_document_carries_exactly_the_documented_fields(tmp_path, corpus_cac
                                "published_at": "2026-07-01"}), "body")])
     doc = corpus_mod.get_document("d1", store_factory=lambda: store)
     assert set(doc) == set(corpus_mod.DOCUMENT_FIELDS)
+
+
+def test_get_document_carries_the_text_layer_so_an_empty_body_can_be_explained(
+        tmp_path, corpus_cache):
+    """A consumer holding body='' must be able to tell "this PDF is a scan, there
+    is no more text" from "our extraction has not reached it yet" — the two owe
+    the user different sentences (the 2026-07-30 poppler-less window shipped 127
+    rows of the SECOND kind while every surface described them as the first)."""
+    store = _seed_corpus_store(tmp_path, [
+        (sidecar_mod.normalize({"id": "scan", "title": "Scanned", "institution": "UBS",
+                                "published_at": "2026-07-01"}), "",
+         {"text_layer": "none", "char_count": 0}),
+        (sidecar_mod.normalize({"id": "broken", "title": "Frozen", "institution": "UBS",
+                                "published_at": "2026-07-01"}), "",
+         {"text_layer": "unavailable"}),
+        (sidecar_mod.normalize({"id": "legacy", "title": "Pre-probe", "institution": "UBS",
+                                "published_at": "2026-07-01"}), "text"),
+    ])
+    factory = (lambda: store)
+    assert corpus_mod.get_document("scan", store_factory=factory)["text_layer"] == "none"
+    assert corpus_mod.get_document("broken", store_factory=factory)["text_layer"] \
+        == "unavailable"
+    # Never measured → '' , the honest null. NOT 'none', which would assert the
+    # document has no text on the strength of a column nobody ever wrote.
+    assert corpus_mod.get_document("legacy", store_factory=factory)["text_layer"] == ""
 
 
 def test_get_document_is_none_for_an_unknown_id(tmp_path, corpus_cache):
@@ -1874,6 +1900,310 @@ def test_corpus_summary_text_is_the_single_definition(tmp_path):
     stored = conn.execute("SELECT summary FROM documents WHERE doc_id='x'").fetchone()[0]
     assert stored == corpus_mod.summary_text(item)
     conn.close()
+
+
+# ===========================================================================
+# body re-extraction: the rows a BROKEN HOST froze (ingest._reextract_bodies)
+# ===========================================================================
+# Incident this pins (2026-07-30 → 08-01): the macstudio-light label moved to a
+# Mac with no poppler, so pdftotext was missing for two days. Every document
+# ingested in that window was published with body='' + text_layer='unavailable'
+# AND receipted — and a receipt makes re-ingestion impossible by design, so 127
+# rows stayed invisible to body search after the host was healed.
+
+# ~700 chars, so text_facts classifies it 'full' whether or not a probe rung is
+# available here (>=200 chars/page with a measured page count, >=500 absolute
+# without one). A shorter body would make the assertion poppler-dependent.
+_REEXTRACTED_BODY = ("hyperscaler capacity dominates the credible pipeline "
+                     "in Texas and Ohio. " * 10)
+
+
+@pytest.fixture
+def healed_pdftotext(monkeypatch):
+    """pdftotext works again: every PDF yields the same long, searchable body."""
+    monkeypatch.setattr(ingest_mod, "extract_pdf_text", lambda b: _REEXTRACTED_BODY)
+
+
+def _broken_host(monkeypatch):
+    """pdftotext is MISSING — the extractor's None (a HOST fault, not a document)."""
+    monkeypatch.setattr(ingest_mod, "extract_pdf_text", lambda b: None)
+
+
+def _seed_frozen_row(store, conn, doc_id, *, published_at="2026-07-30T09:00:00Z",
+                     text_layer="unavailable", body="", with_pdf=True):
+    """A published corpus row + its vault PDF, in the post-incident state.
+
+    ``text_layer=None`` seeds the OTHER candidate class: a pre-v2 row that was
+    never measured at all (every v2 column NULL).
+    """
+    item = sidecar_mod.normalize({
+        "id": doc_id, "title": f"Frozen {doc_id}", "institution": "UBS",
+        "published_at": published_at})
+    corpus_mod.upsert(conn, item, body,
+                      facts={"text_layer": text_layer} if text_layer else None)
+    if with_pdf:
+        store.put_bytes(f"research_vault/{doc_id}.pdf",
+                        _MINIMAL_PDF + doc_id.encode(), "application/pdf")
+    return item
+
+
+def _row(conn, doc_id):
+    return conn.execute(
+        "SELECT body, text_layer, char_count, pages FROM documents WHERE doc_id=?",
+        (doc_id,)).fetchone()
+
+
+def test_a_broken_host_freezes_a_bodyless_row_and_the_repair_heals_it(
+        tmp_path, monkeypatch):
+    """The whole incident, replayed: ingest under a dead pdftotext publishes a
+    receipted bodyless row, and the ONLY path back to it is the repair pass."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/frozen.pdf", {
+        "id": "ubs-2026-07-30-frozen", "title": "Rates Weekly",
+        "institution": "UBS", "published_at": "2026-07-30T09:00:00Z"})
+
+    _broken_host(monkeypatch)
+    first = ingest_mod.run(store, corpus_path)
+    assert first["ingested"] == 1
+    assert first["text_unavailable"] == 1
+
+    conn = corpus_mod.open_db(corpus_path)
+    frozen = _row(conn, "ubs-2026-07-30-frozen")
+    assert frozen["body"] == ""
+    assert frozen["text_layer"] == "unavailable"
+    assert corpus_mod.search(conn, "hyperscaler") == []
+    conn.close()
+
+    # The host is fixed. Ingest itself can never reach this document again (it is
+    # receipted), so a second run must heal it through the repair pass instead.
+    monkeypatch.setattr(ingest_mod, "extract_pdf_text", lambda b: _REEXTRACTED_BODY)
+    second = ingest_mod.run(store, corpus_path)
+    assert second["ingested"] == 0 and second["skipped"] == 1
+    assert second["bodies_reextracted"] == 1
+    assert second["reextract_checked"] == 1
+    assert second["reextract_remaining"] == 0        # the backlog is drained
+
+    conn = corpus_mod.open_db(corpus_path)
+    healed = _row(conn, "ubs-2026-07-30-frozen")
+    assert healed["body"] == _REEXTRACTED_BODY
+    assert healed["text_layer"] == "full"            # re-classified, not left broken
+    assert healed["char_count"] == len(_REEXTRACTED_BODY)
+    # The rv_docs_au trigger keeps the FTS postings in sync, so a body-ONLY token
+    # (absent from the title/summary/institution columns) now finds the document.
+    hits = corpus_mod.search(conn, "hyperscaler")
+    assert [h["id"] for h in hits] == ["ubs-2026-07-30-frozen"]
+    conn.close()
+
+    # Self-quiescing: the healed row is no longer a candidate.
+    third = ingest_mod.run(store, corpus_path)
+    assert third["reextract_checked"] == 0
+    assert third["bodies_reextracted"] == 0
+
+
+def test_reextraction_never_rewrites_a_body_the_row_already_has(
+        tmp_path, healed_pdftotext):
+    """FILL-ONLY. A NULL text_layer row is usually a fine pre-v2 row that was
+    simply never measured — stamping its facts must not touch its published text,
+    which the re-extraction could otherwise shorten or reflow."""
+    store = LocalStore(tmp_path / "store")
+    conn = corpus_mod.open_db(tmp_path / "corpus.sqlite")
+    original = "The ORIGINAL published body, extracted when the host was healthy."
+    _seed_frozen_row(store, conn, "ubs-legacy-row", text_layer=None, body=original)
+
+    out = ingest_mod._reextract_bodies(store, conn)
+
+    assert out["bodies"] == 0, "an existing body is never rewritten"
+    assert out["facts_only"] == 1
+    row = _row(conn, "ubs-legacy-row")
+    assert row["body"] == original                   # byte-for-byte
+    assert row["text_layer"] == "full"               # facts ARE stamped
+    assert row["char_count"] == len(_REEXTRACTED_BODY)
+    conn.close()
+
+
+def test_a_still_dead_tool_aborts_the_pass_before_it_touches_anything(
+        tmp_path, monkeypatch):
+    """None from the extractor means the HOST is broken again. No row may be
+    re-stamped from an extraction that did not run, and every further GET would
+    burn a multi-MB download to learn the same thing."""
+    store = LocalStore(tmp_path / "store")
+    conn = corpus_mod.open_db(tmp_path / "corpus.sqlite")
+    for i in range(3):
+        _seed_frozen_row(store, conn, f"ubs-dead-{i}",
+                         published_at=f"2026-07-3{i}T09:00:00Z")
+
+    gets: list = []
+
+    class Counting:
+        def __init__(self, inner):
+            self._inner = inner
+
+        def get_bytes(self, key):
+            gets.append(key)
+            return self._inner.get_bytes(key)
+
+    _broken_host(monkeypatch)
+    out = ingest_mod._reextract_bodies(Counting(store), conn)
+
+    assert out["aborted_tool_unavailable"] is True
+    assert out["checked"] == 0 and out["bodies"] == 0 and out["facts_only"] == 0
+    assert len(gets) == 1, "the pass stops at the FIRST candidate, not after all 3"
+    for i in range(3):
+        row = _row(conn, f"ubs-dead-{i}")
+        assert row["body"] == "" and row["text_layer"] == "unavailable"
+    conn.close()
+
+
+def test_a_missing_vault_pdf_leaves_the_row_completely_untouched(
+        tmp_path, healed_pdftotext):
+    """Absence of the object is not evidence about the document: stamping 'none'
+    over a storage gap would manufacture a fact."""
+    store = LocalStore(tmp_path / "store")
+    conn = corpus_mod.open_db(tmp_path / "corpus.sqlite")
+    _seed_frozen_row(store, conn, "ubs-no-pdf", with_pdf=False)
+    _seed_frozen_row(store, conn, "ubs-has-pdf")
+
+    out = ingest_mod._reextract_bodies(store, conn)
+
+    assert out["pdf_missing"] == 1
+    assert out["bodies"] == 1, "one bad row never stops the pass"
+    gone = _row(conn, "ubs-no-pdf")
+    assert gone["body"] == "" and gone["text_layer"] == "unavailable"
+    assert gone["char_count"] is None
+    conn.close()
+
+
+def test_an_unmeasurable_fact_never_deletes_one_the_row_already_carries(
+        tmp_path, healed_pdftotext, monkeypatch):
+    """The host that lost pdftotext could equally lose pdfinfo. Stamping the
+    probe's None over a `pages` this row already holds would DELETE a fact rather
+    than correct one — the same asymmetry _ingest_one applies to the sidecar's
+    page claim. Measurements that happen to be falsy (char_count 0) still land."""
+    store = LocalStore(tmp_path / "store")
+    conn = corpus_mod.open_db(tmp_path / "corpus.sqlite")
+    _seed_frozen_row(store, conn, "ubs-measured")
+    conn.execute("UPDATE documents SET pages=12, pdf_creator='Acrobat' "
+                 "WHERE doc_id='ubs-measured'")
+    conn.commit()
+    monkeypatch.setattr(probe_mod, "probe", lambda b: {
+        "content_sha256": "a" * 64, "byte_size": len(b), "pages": None,
+        "encrypted": None, "pdf_creator": "", "pdf_producer": "",
+        "pdf_created_at": "", "pdf_modified_at": ""})
+
+    ingest_mod._reextract_bodies(store, conn)
+
+    row = conn.execute("SELECT pages, pdf_creator, text_layer, char_count FROM "
+                       "documents WHERE doc_id='ubs-measured'").fetchone()
+    assert row["pages"] == 12 and row["pdf_creator"] == "Acrobat"
+    assert row["text_layer"] == "full"               # the measured facts DO land
+    assert row["char_count"] == len(_REEXTRACTED_BODY)
+    conn.close()
+
+
+def test_the_cap_takes_the_user_visibly_broken_rows_before_the_never_measured_ones(
+        tmp_path, healed_pdftotext):
+    """'unavailable' rows are serving a degraded answer to readers RIGHT NOW; a
+    NULL text_layer row usually has its body and is merely unmeasured."""
+    store = LocalStore(tmp_path / "store")
+    conn = corpus_mod.open_db(tmp_path / "corpus.sqlite")
+    _seed_frozen_row(store, conn, "ubs-null-newest", text_layer=None,
+                     published_at="2026-07-31T09:00:00Z")
+    _seed_frozen_row(store, conn, "ubs-broken-old", published_at="2026-07-29T09:00:00Z")
+    _seed_frozen_row(store, conn, "ubs-broken-new", published_at="2026-07-30T09:00:00Z")
+
+    out = ingest_mod._reextract_bodies(store, conn, cap=2)
+
+    assert out["remaining"] == 1                     # the cap BIT — and says so
+    assert out["bodies"] == 2
+    assert _row(conn, "ubs-broken-old")["text_layer"] == "full"
+    assert _row(conn, "ubs-broken-new")["text_layer"] == "full"
+    assert _row(conn, "ubs-null-newest")["text_layer"] is None, "queued behind them"
+    conn.close()
+
+
+def test_within_the_broken_group_the_newest_row_is_repaired_first(
+        tmp_path, healed_pdftotext):
+    store = LocalStore(tmp_path / "store")
+    conn = corpus_mod.open_db(tmp_path / "corpus.sqlite")
+    _seed_frozen_row(store, conn, "ubs-old", published_at="2026-07-29T09:00:00Z")
+    _seed_frozen_row(store, conn, "ubs-new", published_at="2026-07-31T09:00:00Z")
+
+    out = ingest_mod._reextract_bodies(store, conn, cap=1)
+
+    assert out["remaining"] == 1
+    assert _row(conn, "ubs-new")["text_layer"] == "full"
+    assert _row(conn, "ubs-old")["text_layer"] == "unavailable"
+    conn.close()
+
+
+def test_a_scan_re_extracts_to_none_and_stops_being_a_candidate(tmp_path, monkeypatch):
+    """The extractor RAN and found nothing: that is a document fact ('none'), the
+    honest end state — and the mechanism that keeps the pass self-quiescing."""
+    store = LocalStore(tmp_path / "store")
+    conn = corpus_mod.open_db(tmp_path / "corpus.sqlite")
+    _seed_frozen_row(store, conn, "ubs-scanned")
+    monkeypatch.setattr(ingest_mod, "extract_pdf_text", lambda b: "")
+
+    first = ingest_mod._reextract_bodies(store, conn)
+    assert first["checked"] == 1
+    assert first["bodies"] == 0 and first["facts_only"] == 1
+    row = _row(conn, "ubs-scanned")
+    assert row["text_layer"] == "none" and row["char_count"] == 0
+
+    second = ingest_mod._reextract_bodies(store, conn)
+    assert second["checked"] == 0, "a re-classified scan is no longer a candidate"
+    conn.close()
+
+
+def test_dry_run_performs_no_re_extraction_at_all(tmp_path, monkeypatch):
+    """The pass is pure mutation of ALREADY-published rows, so there is no
+    'would do' for a dry run to report — and nothing it may write."""
+    store = LocalStore(tmp_path / "store")
+    corpus_path = tmp_path / "corpus.sqlite"
+    _seed_pdf(store, "research_inbox/frozen.pdf", {
+        "id": "ubs-2026-07-30-frozen", "title": "Rates Weekly",
+        "institution": "UBS", "published_at": "2026-07-30T09:00:00Z"})
+    _broken_host(monkeypatch)
+    ingest_mod.run(store, corpus_path)
+
+    monkeypatch.setattr(ingest_mod, "extract_pdf_text", lambda b: _REEXTRACTED_BODY)
+    summary = ingest_mod.run(store, corpus_path, dry_run=True)
+
+    assert "bodies_reextracted" not in summary
+    conn = corpus_mod.open_db(corpus_path)
+    row = _row(conn, "ubs-2026-07-30-frozen")
+    assert row["body"] == "" and row["text_layer"] == "unavailable"
+    conn.close()
+
+
+def test_the_heal_and_its_cap_are_announced_not_silent(capsys):
+    """The CLI's annotations: a repair the operator cannot see is a repair nobody
+    knows happened, and a silent cap reads as 'the backlog is drained'."""
+    from scripts.ingest_research import _report_measured
+
+    capsys.readouterr()
+    _report_measured({"bodies_reextracted": 12, "reextract_checked": 50,
+                      "reextract_remaining": 77, "reextract_aborted": True})
+    lines = capsys.readouterr().out.splitlines()
+
+    # GitHub only parses a workflow command when "::" STARTS the line.
+    assert any(ln.startswith("::notice") and "12 empty body(ies) re-extracted" in ln
+               for ln in lines)
+    assert any(ln.startswith("::warning") and "capped" in ln and "77" in ln
+               for ln in lines)
+    assert any(ln.startswith("::warning") and "pdftotext is still unavailable" in ln
+               for ln in lines)
+
+
+def test_the_dry_run_claims_no_repair_it_did_not_make(capsys):
+    from scripts.ingest_research import _report_measured
+
+    capsys.readouterr()
+    _report_measured({"bodies_reextracted": 12, "reextract_checked": 50,
+                      "reextract_remaining": 77, "reextract_aborted": True},
+                     dry_run=True)
+    assert "re-extracted" not in capsys.readouterr().out
 
 
 # ===========================================================================

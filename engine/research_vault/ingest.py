@@ -13,12 +13,14 @@ For each new PDF in ``research_inbox/`` (one whose receipt
   7. upsert the catalog row + FTS corpus row (title/summary/body/institution/date),
   8. write the receipt ``research_inbox/_processed/<id>.json``.
 
-Receipted PDFs are never re-ingested, so two passes over the ALREADY-published
-catalog are the only way a later correction ever reaches them:
-:func:`_repair_titles` re-derives filename-shaped titles, and
+Receipted PDFs are never re-ingested, so three passes over the ALREADY-published
+catalog/corpus are the only way a later correction ever reaches them:
+:func:`_repair_titles` re-derives filename-shaped titles,
 :func:`_refresh_sidecars` re-reads the sidecar of any row still missing
 ``summary_points``/``tags``/``tickers``/``desk`` — the upstream desk writes those
-asynchronously, well after the PDF itself lands.
+asynchronously, well after the PDF itself lands — and
+:func:`_reextract_bodies` re-runs ``pdftotext`` over the vault PDF of any row whose
+body never extracted because the HOST was broken at ingest time.
 
 Every per-item step is wrapped so ONE bad document can never abort the batch
 (never-raise-per-item); the whole run is idempotent (a re-run ingests 0). A
@@ -513,6 +515,170 @@ def _refresh_sidecars(store, cat: dict, conn, id_to_pdf_key: dict[str, str],
 
 
 # ---------------------------------------------------------------------------
+# body re-extraction over the EXISTING corpus (a HOST fault froze these rows)
+# ---------------------------------------------------------------------------
+
+# Per-run bound on the re-extraction pass. Each candidate costs one R2 GET of a
+# multi-MB PDF plus a pdftotext subprocess, and the hourly job has a 15-minute
+# timeout it shares with the ingest itself — so a 127-row backlog drains over
+# three runs rather than risking the batch. Small on purpose: the pass is
+# self-quiescing (a healed row stops being a candidate), so a backlog only ever
+# shrinks.
+REEXTRACT_MAX = 50
+
+
+def _reextract_bodies(store, conn, cap: int = REEXTRACT_MAX) -> dict:
+    """Re-extract the body of published rows whose text never made it in.
+
+    WHY this exists — the THIRD published-row repair, sibling to
+    :func:`_repair_titles` and :func:`_refresh_sidecars`: receipts freeze an
+    ingest-time MISTAKE as permanently as they freeze an ingest-time success. On
+    2026-07-30 the ``macstudio-light`` runner label moved to a Mac without poppler,
+    so ``shutil.which("pdftotext")`` failed in every hourly run for two days; each
+    document ingested in that window was published with ``body=''`` and the honest
+    ``text_layer='unavailable'`` stamp, was receipted, and could never re-ingest.
+    127 rows were still bodyless when the host was healed — invisible to body
+    search, and served to the Mastermind full-report reader as excerpt-only.
+    ``unavailable`` is exactly the state that says "we know nothing about this
+    document because OUR tool was broken", so it is the state a repair pass can
+    act on without touching a single document-level fact.
+
+    Candidacy is read from the CORPUS, not the catalog: ``text_layer`` is a
+    server-side measured column (§5b keeps it out of the public catalog), so the
+    corpus row is the only place the fault is recorded. ``text_layer IS NULL``
+    rows join the queue behind them — they predate the probe entirely and carry no
+    measured facts at all — but they are ordered LAST because, unlike the
+    ``unavailable`` rows, they are not user-visibly broken.
+
+    Load-bearing rules:
+
+    - **Fill-only for ``body``.** A row that already holds text keeps it
+      byte-for-byte; only an empty/NULL body is written. A NULL-``text_layer`` row
+      is usually a fine pre-v2 row that simply was never measured, and re-extraction
+      must not be allowed to shorten (or otherwise rewrite) text already published.
+    - **Facts are ALWAYS stamped** (every measured value, not just the body). Even
+      a scan-only PDF gets its measured columns, which re-classifies it to
+      ``text_layer='none'`` — the honest "this document has no text" state — and
+      drops it out of candidacy forever. That is the quiescence mechanism, and it
+      is what lets a consumer tell "no text exists" apart from "text unreachable
+      right now". A fact that came back UNKNOWN (None/'') is the one thing not
+      written: on an already-published row that would delete a value rather than
+      correct one.
+    - **A missing vault PDF leaves the row COMPLETELY untouched.** Absence of the
+      object is not evidence about the document, so stamping "none" over it would
+      manufacture a fact out of a storage gap.
+    - **A still-dead tool aborts the WHOLE pass at the first candidate.** If
+      ``extract_pdf_text`` returns None the host is broken again; every further
+      GET would burn bandwidth to learn the same thing, and no row may be stamped
+      from an extraction that never ran.
+    - **A plain UPDATE, never delete+insert.** The ``rv_docs_au`` trigger keeps the
+      FTS postings in sync, so the re-extracted body becomes searchable in place.
+
+    Returns ``{checked, bodies, facts_only, pdf_missing, remaining,
+    aborted_tool_unavailable}``; ``remaining`` is the candidate count beyond the
+    cap (0 = the backlog is drained). Never raises — a repair is never worth
+    failing the hourly job — and never-raise-per-item, so one unreadable PDF
+    cannot stop the pass.
+    """
+    out = {"checked": 0, "bodies": 0, "facts_only": 0, "pdf_missing": 0,
+           "remaining": 0, "aborted_tool_unavailable": False}
+
+    have = corpus_mod._existing_columns(conn)
+    if "text_layer" not in have:
+        # Pre-v2 corpus whose migration did not land: there is no fault column to
+        # read, so there is nothing this pass can honestly select on.
+        return out
+
+    try:
+        rows = conn.execute(
+            "SELECT doc_id, body, text_layer FROM documents "
+            "WHERE text_layer = 'unavailable' OR text_layer IS NULL "
+            # 'unavailable' first (user-visibly broken), NULL after (never
+            # measured); newest published_at first inside each group.
+            "ORDER BY (text_layer IS NULL) ASC, published_at DESC"
+        ).fetchall()
+    except Exception as e:  # noqa: BLE001 — an unreadable corpus is not fatal here
+        log.warning("research_vault: body re-extraction query failed: %s", e)
+        return out
+
+    if not rows:
+        return out
+    if len(rows) > cap:
+        out["remaining"] = len(rows) - cap
+        rows = rows[:cap]
+
+    # The columns we may stamp — intersected with the columns the database
+    # ACTUALLY has, exactly like `upsert`, so a corpus whose migration partially
+    # failed still repairs what it can instead of raising per row.
+    fact_cols = [name for name, _decl in corpus_mod._V2_COLUMNS if name in have]
+
+    touched = False
+    for row in rows:
+        doc_id = row["doc_id"]
+        try:
+            pdf_bytes = store.get_bytes(f"{VAULT_PREFIX}{doc_id}.pdf")
+            if not pdf_bytes:
+                out["pdf_missing"] += 1
+                log.warning("research_vault: %s has no vault PDF — body left as-is",
+                            doc_id)
+                continue
+
+            raw_text = extract_pdf_text(pdf_bytes)
+            if raw_text is None:
+                # HOST fault, again. Stop before we touch anything: no row may be
+                # re-stamped from an extraction that did not run.
+                out["aborted_tool_unavailable"] = True
+                log.warning("research_vault: pdftotext still unavailable — body "
+                            "re-extraction aborted (0 rows changed this run)")
+                break
+
+            out["checked"] += 1
+
+            facts = probe_mod.probe(pdf_bytes)
+            facts.update(probe_mod.text_facts(raw_text, facts.get("pages")))
+
+            sets: list[str] = []
+            params: list = []
+            stored_body = row["body"] or ""
+            new_body = (raw_text or "")[:corpus_mod.BODY_MAX_CHARS]
+            filled = not stored_body and bool(new_body)
+            if filled:
+                sets.append("body=?")
+                params.append(new_body)
+            for name in fact_cols:
+                # A null is not a measurement, and this row is ALREADY published:
+                # stamping None/'' over a value it already carries would delete a
+                # fact rather than correct one (the host that lost pdftotext could
+                # equally lose pdfinfo, nulling every `pages` it touched). Same
+                # asymmetry _ingest_one applies when it falls back to the sidecar's
+                # page claim. `char_count=0`/`text_layer='none'` are MEASUREMENTS
+                # and pass this gate — only unknowns are dropped.
+                if name in facts and facts[name] not in (None, ""):
+                    sets.append(f"{name}=?")
+                    params.append(facts[name])
+            if not sets:
+                continue
+            params.append(doc_id)
+            conn.execute(f"UPDATE documents SET {','.join(sets)} WHERE doc_id=?",
+                         params)
+            touched = True
+            if filled:
+                out["bodies"] += 1
+                log.info("research_vault: re-extracted %s chars of body for %s "
+                         "(text_layer %s -> %s)", len(new_body), doc_id,
+                         row["text_layer"], facts.get("text_layer"))
+            else:
+                out["facts_only"] += 1
+        except Exception as e:  # noqa: BLE001 — one bad row never stops the pass
+            log.warning("research_vault: body re-extraction failed for %s: %s",
+                        doc_id, e)
+
+    if touched:
+        conn.commit()
+    return out
+
+
+# ---------------------------------------------------------------------------
 # corpus restore (the store copy is the source of truth)
 # ---------------------------------------------------------------------------
 
@@ -584,6 +750,8 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
          text_unavailable, titles_repaired, titles_recovered, titles_unresolved,
          sidecars_checked, sidecars_refreshed, summaries_recovered, sidecars_capped,
          summaries_resynced,
+         bodies_reextracted, reextract_facts_only, reextract_checked,
+         reextract_pdf_missing, reextract_remaining[, reextract_aborted],
          coverage, catalog_bytes[, corpus_published][, error]}
 
     ``coverage`` is the per-field fill rate over the final catalog
@@ -593,7 +761,9 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
     ``catalog_bytes`` is the serialized catalog.json (so the CLI can snapshot it to
     the repo). ``dry_run=True`` runs the full pipeline but mutates NOTHING in the
     store: no PDF promotion, no receipts, no catalog write, no corpus publish —
-    the counts still report what a real run WOULD do.
+    the counts still report what a real run WOULD do. The one pass a dry run does
+    not perform at all is :func:`_reextract_bodies`: it is pure mutation of rows
+    that are ALREADY published, so there is no "would do" for it to report.
     """
     now = now or datetime.now(timezone.utc)
     summary = {"ingested": 0, "skipped": 0, "failed": 0, "needs_metadata": 0,
@@ -744,6 +914,20 @@ def run(store, corpus_path: str | Path, now: datetime | None = None,
         summary["summaries_recovered"] = ref["summaries"]
         summary["sidecars_capped"] = ref["capped"]
         summary["summaries_resynced"] = ref["resynced"]
+
+        # Re-extract the bodies of rows that were published while the HOST was
+        # broken (see _reextract_bodies). Pure mutation of already-published rows,
+        # so a dry run — which publishes nothing — must not perform it at all;
+        # reporting a heal that was never written would be simply false.
+        if not dry_run:
+            rex = _reextract_bodies(store, conn)
+            summary["bodies_reextracted"] = rex["bodies"]
+            summary["reextract_facts_only"] = rex["facts_only"]
+            summary["reextract_checked"] = rex["checked"]
+            summary["reextract_pdf_missing"] = rex["pdf_missing"]
+            summary["reextract_remaining"] = rex["remaining"]
+            if rex["aborted_tool_unavailable"]:
+                summary["reextract_aborted"] = True
 
         # Per-field fill rate over the FINAL catalog — reported whether or not this
         # run ingested anything, because a dead contract field is a standing state,

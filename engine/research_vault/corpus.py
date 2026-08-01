@@ -17,7 +17,10 @@ Schema v2 adds the engine-MEASURED columns from :mod:`research_vault.probe`
 (page count, text-layer density, content hash, PDF provenance, page-1 text).
 They are metadata only — deliberately NOT added to the FTS table: ``first_page_text``
 is a prefix of ``body``, so indexing it would double-count those postings and
-silently reweight every BM25 score.
+silently reweight every BM25 score. Exactly one of them, ``text_layer``, is also
+projected by :func:`get_document` (see :data:`DOCUMENT_FIELDS`): it is the field
+that tells a consumer holding an empty ``body`` whether the document HAS no text
+('none') or whether our extraction merely did not reach it ('unavailable'/'').
 
 The bottom of this module holds the PROCESS-WIDE read-through cache
 (:func:`corpus_connection`) and the by-id reader (:func:`get_document`) that both
@@ -460,8 +463,18 @@ _DOC_ID_RE = re.compile(r"\A[a-z0-9][a-z0-9-]{0,120}\Z")
 # projection in this repo: a column added to ``documents`` later (the v2 probe
 # bundle, say) cannot reach a caller — or a chat context — without someone editing
 # this tuple and tripping tests/test_research_vault.py.
+#
+# ``text_layer`` is the ONE measured column that made the cut, because an empty
+# ``body`` is ambiguous without it and every consumer has to explain the shortfall
+# to a user: 'none' means the extractor ran and the document genuinely has no
+# machine-readable text (a scan — there is nothing more to serve, ever), while
+# 'unavailable'/'' means OUR extraction did not run or has not been retried yet
+# (temporary, and ingest._reextract_bodies is repairing it). Saying "not reachable
+# right now" about a scan is a false promise; saying "this is all there is" about
+# a host outage is a false ceiling.
 DOCUMENT_FIELDS: tuple[str, ...] = (
     "doc_id", "title", "institution", "side", "published_at", "summary", "body",
+    "text_layer",
 )
 
 
@@ -603,10 +616,17 @@ def reset_cache() -> None:
 def get_document(doc_id: str, store_factory=None) -> dict | None:
     """One document's stored row by id, or None. Never raises.
 
-    ``{doc_id, title, institution, side, published_at, summary, body}`` —
-    :data:`DOCUMENT_FIELDS`, built literally. ``body`` is the pdftotext extraction
+    ``{doc_id, title, institution, side, published_at, summary, body, text_layer}``
+    — :data:`DOCUMENT_FIELDS`, built literally. ``body`` is the pdftotext extraction
     capped at :data:`BODY_MAX_CHARS` when it was ingested; slicing it further for a
     given surface is that surface's decision, not this reader's.
+
+    ``text_layer`` is what lets a caller looking at an EMPTY ``body`` tell the two
+    causes apart: ``'none'`` — the extractor ran and this PDF is a scan, so the
+    public excerpt is all the text that will ever exist for it — versus
+    ``'unavailable'``/``''``, where our own extraction failed or was never measured
+    and a later run may still fill it (``ingest._reextract_bodies``). Both serve the
+    same excerpt; they owe the user different sentences.
 
     None covers every degraded case on purpose — malformed id, no store, corpus
     unreachable, unknown id, sqlite trouble — because every caller treats them the
@@ -623,9 +643,15 @@ def get_document(doc_id: str, store_factory=None) -> dict | None:
         return None
 
     try:
+        # ``text_layer`` is a v2 column: naming it unconditionally would raise on a
+        # corpus whose migration did not land, and this reader's never-raise
+        # contract would then turn that into "every document is missing". Selected
+        # only when the file actually has it (the `upsert`/`sha_index` idiom).
+        has_layer = "text_layer" in _existing_columns(conn)
         row = conn.execute(
-            "SELECT doc_id, title, institution, side, published_at, summary, body "
-            "FROM documents WHERE doc_id = ?", (doc_id,)).fetchone()
+            "SELECT doc_id, title, institution, side, published_at, summary, body"
+            + (", text_layer" if has_layer else "")
+            + " FROM documents WHERE doc_id = ?", (doc_id,)).fetchone()
     except Exception as exc:  # noqa: BLE001 — corrupt/partial copy → no document
         log.debug("research_vault: document read failed (%s)", exc)
         return None
@@ -645,4 +671,7 @@ def get_document(doc_id: str, store_factory=None) -> dict | None:
         "published_at": row["published_at"] or "",
         "summary": row["summary"] or "",
         "body": row["body"] or "",
+        # '' is the honest "not measured" — never 'none', which would assert the
+        # document HAS no text on the strength of a column we could not read.
+        "text_layer": (row["text_layer"] or "") if has_layer else "",
     }
