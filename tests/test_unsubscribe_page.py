@@ -676,6 +676,7 @@ PUBLIC_EXACT = frozenset({
     # Official agency event lifecycle/facts; no signal, portfolio or user data.
     "/live/release_publications.json",
     "/prophet/showcase.json",
+    "/seasonalitydata/methodology.json",
     "/factordata/tech_lab.json",
 })
 

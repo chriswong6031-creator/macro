@@ -154,6 +154,10 @@ public:
     - /live/breadth.json
     - /live/release_publications.json
     - /prophet/showcase.json
+    # Claim-bounded methodology only: explicitly reports that live forecasts,
+    # screener data, and the event graph are not yet commissioned. It contains
+    # no ticker rows, scores, customer data, or proprietary market payload.
+    - /seasonalitydata/methodology.json
     # Existing Terminal ingest compatibility. Remove after the separate
     # Terminal session moves these fetches behind authenticated transport.
     - /factordata/tech_lab.json
