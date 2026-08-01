@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-01T11:00:14.007453+00:00",
-  "count": 523,
+  "generated_at": "2026-08-01T11:15:15.379216+00:00",
+  "count": 524,
   "institutions": [
     "Amova",
     "Apollo",
@@ -1027,6 +1027,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-utuhfbth8cc-580e3c",
+      "title": "EM in Focus EM Output Gaps — Significant Room to Grow, But Mixed Picture",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-07-31T16:12:46Z",
+      "summary_points": [
+        "**Regional Output Gap Divergence**: CEEMEA/China exhibit negative output gaps (significant spare capacity), EM Asia ex-China shows positive gaps (supply-driven, semiconductor boom limited to firms), while LatAm near potential (Brazil overheating, Argentina/Chile slack).",
+        "**Spare Capacity Enables Growth Without Inflation**: Economies with negative gaps (China, Chile, Argentina, South Africa, CEE) can grow above trend without inflationary pressure, contrasting with Brazil (above potential, overheating risk).",
+        "**Inflation Dynamics Driven by Output Gaps**: Positive output gaps consistently correlate with higher wage growth and core inflation (lagged relationship), critical for anticipating EM inflation in labor-intensive markets.",
+        "**Country-Specific Inflation Risks**: Colombia/Brazil face inflation from tight labor markets (positive gaps); Turkey/Russia show elevated wage growth despite negative gaps, requiring tailored portfolio risk assessment.",
+        "**Data Reliability Risks in Key Economies**: Poland, Hungary, and Czechia show divergent output gap estimates (GS ProdFn vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 19,
       "language": "en",
       "needs_metadata": false
     },
