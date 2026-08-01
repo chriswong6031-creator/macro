@@ -124,14 +124,21 @@ DEFAULT_ASOF_MAX_DAYS = 6  # `asof` = last bar date: 3-day weekend + a market ho
 
 # Dated-accrual planes: one JSON per session at {prefix}/{root}/{YYYY-MM-DD}.json,
 # written nightly with NO manifest or index to anchor on (the gex_history index is
-# a known R0/R2 follow-up). Freshness = existence of the last two completed
-# weekdays' keys: BOTH missing → FAIL (lane dead); exactly one missing → WARN
-# (single-day hole / market holiday — the 07-18/07-20 holes were exactly this
-# shape). `gate` ties the probe to an active anchor so --anchors selections
-# behave consistently.
+# a known R0/R2 follow-up). Freshness = existence of two session keys: BOTH
+# missing → FAIL (lane dead); exactly one missing → WARN (single-day hole /
+# market holiday — the 07-18/07-20 holes were exactly this shape). `gate` ties
+# the probe to an active anchor so --anchors selections behave consistently.
+#
+# lag_bdays: how many of the most recent weekdays to SKIP before the two checked
+# days. gex_history needs 1: the hub builds from the EOD store (T-1 greeks), so
+# session D's file uploads on D+1 evening (~23:45 UTC; measured 2026-07-31:
+# COMPLETE asof=2026-07-30) — at the 14:30 UTC heartbeat the previous weekday's
+# file is never due yet, and checking it would emit a permanent daily
+# hole-warning (noise-trained warnings are how the 8-day chain-heat staleness
+# slipped by).
 ACCRUAL_ANCHORS: list[dict] = [
     {"name": "gex_history", "prefix": "options_hub/gex_history", "root": "SPY",
-     "gate": "options_hub"},
+     "gate": "options_hub", "lag_bdays": 1},
 ]
 
 # Data-dir stores whose publish-side manifest embeds the collector's own manifest under
@@ -373,12 +380,18 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
             continue
         prefix = acc["prefix"]
         root_sym = acc.get("root", "SPY")
+        lag = int(acc.get("lag_bdays", 0))
         days: list[date] = []
         dd = now.date()
+        skipped = 0
         while len(days) < 2:
             dd -= timedelta(days=1)
-            if dd.weekday() < 5:
-                days.append(dd)
+            if dd.weekday() >= 5:
+                continue
+            if skipped < lag:
+                skipped += 1
+                continue
+            days.append(dd)
         missing: list[str] = []
         acc_notes: list[str] = []
         indeterminate = False

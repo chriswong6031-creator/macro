@@ -316,15 +316,17 @@ def test_thetadata_eod_deliberately_carries_no_coverage_probe():
 
 
 # ── options planes (R0.9, 2026-07-31): per-anchor budgets + dated-accrual probe ──
-# NOW is Thursday 2026-07-02 14:30 UTC → the accrual probe checks the SPY dated
-# keys for Wed 2026-07-01 and Tue 2026-06-30.
+# NOW is Thursday 2026-07-02 14:30 UTC. gex_history carries lag_bdays=1 (session
+# D's file uploads on D+1 evening — see audit_r2.ACCRUAL_ANCHORS), so the probe
+# skips Wed 2026-07-01 (not due yet at the heartbeat) and checks the SPY dated
+# keys for Tue 2026-06-30 and Mon 2026-06-29.
 
 OPT_KEYS = {
     "options_hub/oi_movers.json":   (200, _lm(14.7), None),   # nightly, healthy
     "live_flow/meta.json":          (200, _lm(1.0), None),    # RTH cycle, healthy
     "levels_ledger/index.json":     (200, _lm(3.0), None),    # pre-open seal, healthy
-    "options_hub/gex_history/SPY/2026-07-01.json": (200, _lm(14.7), None),
     "options_hub/gex_history/SPY/2026-06-30.json": (200, _lm(38.7), None),
+    "options_hub/gex_history/SPY/2026-06-29.json": (200, _lm(62.7), None),
 }
 
 
@@ -400,28 +402,39 @@ def test_config_budget_overrides_module_default():
 
 
 def test_accrual_single_day_hole_warns_not_fails():
-    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": None})
+    r = _opt({"options_hub/gex_history/SPY/2026-06-30.json": None})
     assert r["ok"] is True
     assert any("R2 ACCRUAL HOLE" in w for w in r["warnings"])
-    assert r["anchors"]["options_hub/gex_history/accrual"]["missing"] == ["2026-07-01.json"]
+    assert r["anchors"]["options_hub/gex_history/accrual"]["missing"] == ["2026-06-30.json"]
 
 
 def test_accrual_two_missing_weekdays_fails():
-    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": None,
-              "options_hub/gex_history/SPY/2026-06-30.json": None})
+    r = _opt({"options_hub/gex_history/SPY/2026-06-30.json": None,
+              "options_hub/gex_history/SPY/2026-06-29.json": None})
     assert r["ok"] is False
     assert any("R2 ACCRUAL DEAD" in f for f in r["fail_reasons"])
 
 
 def test_accrual_probe_gated_on_options_hub_anchor():
-    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": None,
-              "options_hub/gex_history/SPY/2026-06-30.json": None},
+    r = _opt({"options_hub/gex_history/SPY/2026-06-30.json": None,
+              "options_hub/gex_history/SPY/2026-06-29.json": None},
              anchors=["stockdata", "chinastockdata"])
     assert not any("ACCRUAL" in f for f in r["fail_reasons"] + r["warnings"])
     assert "options_hub/gex_history/accrual" not in r["anchors"]
 
 
 def test_accrual_network_error_warns_only():
-    r = _opt({"options_hub/gex_history/SPY/2026-07-01.json": URLError("boom")})
+    r = _opt({"options_hub/gex_history/SPY/2026-06-30.json": URLError("boom")})
     assert r["ok"] is True
     assert any("R2 ACCRUAL UNREACHABLE" in w for w in r["warnings"])
+
+
+def test_accrual_lag_skips_the_not_yet_due_weekday():
+    """Session D's file uploads on D+1 evening, so the weekday immediately before
+    the heartbeat must NOT be probed — checking it would emit a permanent daily
+    hole-warning (warning-noise training). The healthy fixture deliberately has
+    NO 2026-07-01 key and must pass clean."""
+    r = _opt()
+    assert r["ok"] is True and not r["warnings"]
+    assert r["anchors"]["options_hub/gex_history/accrual"]["checked"] == \
+        ["2026-06-30", "2026-06-29"]
