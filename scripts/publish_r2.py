@@ -49,6 +49,7 @@ import json
 import logging
 import os
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -423,15 +424,30 @@ def publish(dirs, dry_run: bool = False, workers: int = 32,
 
         def _up(pk):
             p, key = pk
-            try:
-                s3.upload_file(str(p), bucket, key,
-                               ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")},
-                               **_xfer_kw)
-                return None
-            except Exception as e:  # noqa: BLE001 — one bad file must not kill the run
-                log.warning("%s: upload failed (%s) — the md5 delta retries it next run",
-                            key, e)
-                return key
+            # In-run retry with backoff (R0.8): the nightly thetadata_eod sync
+            # lost 1–12 files/night to transient multipart failures ("Connection
+            # was closed before we received a valid response") for ≥4 straight
+            # nights. Each failure withheld the manifest (correct) and pushed
+            # recovery a full day out to the next md5-delta pass. Two spaced
+            # retries absorb the transient; a file that fails all three attempts
+            # is genuinely left for the next run.
+            last_err = None
+            for attempt, pause in enumerate((0, 5, 15)):
+                if pause:
+                    time.sleep(pause)
+                try:
+                    s3.upload_file(str(p), bucket, key,
+                                   ExtraArgs={"ContentType": _CT.get(p.suffix, "application/octet-stream")},
+                                   **_xfer_kw)
+                    if attempt:
+                        log.info("%s: upload succeeded on retry %d", key, attempt)
+                    return None
+                except Exception as e:  # noqa: BLE001 — one bad file must not kill the run
+                    last_err = e
+                    log.warning("%s: upload attempt %d failed (%s)", key, attempt + 1, e)
+            log.warning("%s: upload failed after 3 attempts (%s) — the md5 delta "
+                        "retries it next run", key, last_err)
+            return key
 
         with ThreadPoolExecutor(max_workers=workers) as ex:
             failures = [k for k in ex.map(_up, todo) if k]

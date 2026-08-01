@@ -42,7 +42,7 @@ import sys
 import time
 import urllib.error
 import urllib.request
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
@@ -79,14 +79,60 @@ DEFAULT_ANCHORS = [
     # (as of 2026-07-03 the store has never been published; anchoring it now would
     # red-flag every heartbeat with DARK). Add via config r2_data_plane.anchors once
     # live; the coverage probe below then also checks its CONTENT continuity.
+    # ── options planes (R0.9, Options Superintelligence masterplan 2026-07-31) ──
+    # Until 2026-07-31 NO options plane had a dead-man's switch, which is exactly
+    # how the chain-heat lane served an 8-day-stale artifact unnoticed and the
+    # gex_history accrual grew silent holes. Each has its own age budget in
+    # PER_ANCHOR_MAX_AGE_H (their cadences are nothing like the daily lanes').
+    "options_hub",    # nightly hub payloads (M1 launchd 16:45 PT weekdays);
+                      # anchor = oi_movers.json, put on every successful run.
+    "live_flow",      # RTH poller cycles (M1 launchd, 09:25–16:05 ET weekdays);
+                      # anchor = meta.json, put every cycle.
+    "levels_ledger",  # pre-open sealed levels boards (M1 launchd 04:30/06:00 PT);
+                      # anchor = index.json, put on every successful seal.
 ]
 # Both lanes republish daily (daily.yml 02:00 UTC + cron lag lands ~05-10 UTC;
 # asia-close 08:30 UTC), so the manifest's expected age at the 14:30 UTC heartbeat is
 # ~5-9h and the FIRST missed day shows ~29-33h. 26 trips on the first miss; a ~30h
 # limit can let a late-publishing run slide to day 2.
 DEFAULT_MAX_AGE_H = 26.0
+# Per-anchor age budgets (hours) for lanes whose cadence does not fit the shared
+# daily budget. Reasoning is against the 14:30 UTC weekday heartbeat; config key
+# r2_data_plane.anchor_max_age_hours overrides per name (merged over these).
+#   options_hub 68h:  nightly 23:45 UTC weekdays → healthy Monday reads Friday's
+#                     put at 62.75h (must NOT trip); first missed weekday nightly
+#                     reads 86.75h → trips.
+#   live_flow 22h:    RTH cycles → healthy heartbeat age is minutes (poller has
+#                     been up ~1h at 14:30 UTC). Prior-day close (20:05 UTC) →
+#                     next 14:30 UTC = 18.4h and day-after-half-day = 21.5h, both
+#                     legitimately quiet — 22h clears them; a poller that never
+#                     starts trips the day after (42h), a dead-over-weekend
+#                     poller trips Monday (66h).
+#   levels_ledger 30h: seal puts index.json ~11:30-13:00 UTC weekdays; a missed
+#                     seal reads ~27h the next heartbeat → trips at 30h one day
+#                     late, but 30h clears the Tuesday-after-Monday-holiday 27h
+#                     no-session gap. KNOWN false positive: the Monday after a
+#                     FRIDAY market holiday reads ~75h (no Friday session to
+#                     seal) — ~2-3×/yr, dismiss on sight.
+PER_ANCHOR_MAX_AGE_H: dict[str, float] = {
+    "options_hub": 68.0,
+    "live_flow": 22.0,
+    "levels_ledger": 30.0,
+}
 ASOF_KEY = "stockdata/SPY.json"
 DEFAULT_ASOF_MAX_DAYS = 6  # `asof` = last bar date: 3-day weekend + a market holiday tolerated
+
+# Dated-accrual planes: one JSON per session at {prefix}/{root}/{YYYY-MM-DD}.json,
+# written nightly with NO manifest or index to anchor on (the gex_history index is
+# a known R0/R2 follow-up). Freshness = existence of the last two completed
+# weekdays' keys: BOTH missing → FAIL (lane dead); exactly one missing → WARN
+# (single-day hole / market holiday — the 07-18/07-20 holes were exactly this
+# shape). `gate` ties the probe to an active anchor so --anchors selections
+# behave consistently.
+ACCRUAL_ANCHORS: list[dict] = [
+    {"name": "gex_history", "prefix": "options_hub/gex_history", "root": "SPY",
+     "gate": "options_hub"},
+]
 
 # Data-dir stores whose publish-side manifest embeds the collector's own manifest under
 # "store" (see publish_r2) — carrying coverage/anchor blocks this audit can content-check.
@@ -131,9 +177,20 @@ def _try(fetch, url: str, retries: int, method: str = "HEAD"):
     raise last  # type: ignore[misc]
 
 
+# Options-plane lanes publish per-cycle/per-run artifacts directly (no publish_r2
+# manifest), so each anchors on its always-rewritten beacon object instead.
+_DIR_CANDIDATES = {
+    "options_hub":   ["options_hub/oi_movers.json"],
+    "live_flow":     ["live_flow/meta.json"],
+    "levels_ledger": ["levels_ledger/index.json"],
+}
+
+
 def _candidates(d: str) -> list[str]:
     # index.json exists only in the *stockdata search libraries; the OHLC trees are
     # per-ticker files + manifest only.
+    if d in _DIR_CANDIDATES:
+        return list(_DIR_CANDIDATES[d])
     keys = [f"{d}/_manifest.json"]
     if d.endswith("stockdata"):
         keys.append(f"{d}/index.json")
@@ -145,10 +202,14 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
           asof_max_days: int = DEFAULT_ASOF_MAX_DAYS, fetch=_fetch, retries: int = 2,
           coverage_anchors: list[str] | None = None,
           coverage_max_run_bdays: int = DEFAULT_COVERAGE_MAX_RUN_BDAYS,
-          coverage_max_age_days: int = DEFAULT_COVERAGE_MAX_AGE_DAYS) -> dict:
+          coverage_max_age_days: int = DEFAULT_COVERAGE_MAX_AGE_DAYS,
+          anchor_max_age: dict[str, float] | None = None,
+          accrual_anchors: list[dict] | None = None) -> dict:
     """Pure evaluation -> {ok, fail_reasons, warnings, anchors}. `fetch` injectable for tests."""
     base = base.rstrip("/")
     anchors = list(anchors or DEFAULT_ANCHORS)
+    per_anchor = dict(PER_ANCHOR_MAX_AGE_H)
+    per_anchor.update(anchor_max_age or {})
     fail: list[str] = []
     warn: list[str] = []
     detail: dict[str, dict] = {}
@@ -183,12 +244,13 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
             else:
                 notes.append(f"{key}: HTTP {st}")
         if best is not None:
+            limit_h = per_anchor.get(d, max_age_hours)
             age_h = (now - best[0]).total_seconds() / 3600.0
             detail[d] = {"anchor": best[1], "last_modified": best[0].isoformat(),
                          "age_hours": round(age_h, 1)}
-            if age_h > max_age_hours:
+            if age_h > limit_h:
                 fail.append(f"R2 STALE: {d} last published {age_h:.1f}h ago "
-                            f"(limit {max_age_hours:g}h; anchor {best[1]}) — the live site is "
+                            f"(limit {limit_h:g}h; anchor {best[1]}) — the live site is "
                             "serving stale per-ticker data")
         elif indeterminate:
             warn.append(f"R2 UNREACHABLE: {d} anchors could not be checked ({'; '.join(notes)}) — "
@@ -301,6 +363,51 @@ def probe(now: datetime, base: str = DEFAULT_BASE, anchors: list[str] | None = N
         if rec:
             detail[f"{d}/coverage"] = rec
 
+    # Dated-accrual probe: planes that write one JSON per session with no
+    # manifest/index (see ACCRUAL_ANCHORS). Existence of the last two completed
+    # weekdays' keys is the freshness signal — a manifest-style Last-Modified
+    # does not exist for these.
+    for acc in (accrual_anchors if accrual_anchors is not None else ACCRUAL_ANCHORS):
+        gate = acc.get("gate")
+        if gate and gate not in anchors:
+            continue
+        prefix = acc["prefix"]
+        root_sym = acc.get("root", "SPY")
+        days: list[date] = []
+        dd = now.date()
+        while len(days) < 2:
+            dd -= timedelta(days=1)
+            if dd.weekday() < 5:
+                days.append(dd)
+        missing: list[str] = []
+        acc_notes: list[str] = []
+        indeterminate = False
+        for day_ in days:
+            key = f"{prefix}/{root_sym}/{day_.isoformat()}.json"
+            try:
+                st, _, _ = _try(fetch, f"{base}/{key}", retries)
+            except OSError as e:
+                indeterminate = True
+                acc_notes.append(f"{key}: unreachable ({e})")
+                continue
+            if st != 200:
+                missing.append(key)
+                acc_notes.append(f"{key}: HTTP {st}")
+        detail[f"{prefix}/accrual"] = {
+            "checked": [day_.isoformat() for day_ in days],
+            "missing": [k.rsplit("/", 1)[-1] for k in missing],
+        }
+        if indeterminate:
+            warn.append(f"R2 ACCRUAL UNREACHABLE: {prefix} could not be checked "
+                        f"({'; '.join(acc_notes)}) — network-layer, not treated as an outage")
+        elif len(missing) == len(days):
+            fail.append(f"R2 ACCRUAL DEAD: {prefix} has no {root_sym} file for the last "
+                        f"{len(days)} weekdays ({'; '.join(acc_notes)}) — the accrual "
+                        "lane has stopped writing")
+        elif missing:
+            warn.append(f"R2 ACCRUAL HOLE: {prefix} missing {missing[0]} — single-day "
+                        "hole (market holiday, or a gap needing self-heal)")
+
     return {"ok": not fail, "fail_reasons": fail, "warnings": warn, "anchors": detail}
 
 
@@ -321,6 +428,8 @@ def run(now: datetime | None = None, anchors: list[str] | None = None,
                                            DEFAULT_COVERAGE_MAX_RUN_BDAYS)),
         coverage_max_age_days=int(cfg.get("coverage_max_age_days",
                                           DEFAULT_COVERAGE_MAX_AGE_DAYS)),
+        anchor_max_age=cfg.get("anchor_max_age_hours"),
+        accrual_anchors=cfg.get("accrual_anchors"),
     )
     out_dir = config.data_dir() / "quality"
     out_dir.mkdir(parents=True, exist_ok=True)

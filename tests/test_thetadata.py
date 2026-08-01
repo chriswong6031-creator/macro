@@ -1281,3 +1281,85 @@ class TestBulkTradeQuoteCurrentDayFallback:
         result = td.bulk_trade_quote("SPY", "call", "2026-07-06", "2026-07-06",
                                      near_dte_cap_days=90)
         assert result is None
+
+
+class TestBulkTradeQuoteSchemaV2:
+    """R0.4 'keep what we pay for': bulk_trade_quote retains OPRA condition codes
+    and NBBO sizes (schema v2) and never sends a windowed wildcard request
+    (silently-empty on terminal build 202607231)."""
+
+    _HEADER = ("symbol,expiration,strike,right,trade_timestamp,quote_timestamp,"
+               "sequence,ext_condition1,ext_condition2,ext_condition3,ext_condition4,"
+               "condition,size,exchange,price,bid_size,bid_exchange,bid,bid_condition,"
+               "ask_size,ask_exchange,ask,ask_condition")
+    _ROW = ('"SPY","2026-08-21",550.000,"CALL",2026-07-30T10:00:01.000,'
+            '2026-07-30T10:00:00.999,100001,255,254,253,252,18,10,7,2.50,'
+            '100,1,2.40,50,200,1,2.60,50')
+
+    def test_v2_columns_retained_and_typed(self, monkeypatch):
+        from collectors import thetadata as td
+
+        def _mock_stream_lines(session, path, params):
+            return iter([self._HEADER, self._ROW])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+
+        df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30")
+        assert df is not None and len(df) == 1
+        row = df.iloc[0]
+        # v2 additions
+        assert row["condition"] == "18"
+        assert [row[f"ext_condition{i}"] for i in (1, 2, 3, 4)] == \
+            ["255", "254", "253", "252"]
+        assert row["bid_size"] == 100 and row["ask_size"] == 200
+        # v1 columns unchanged
+        assert row["bid"] == 2.40 and row["ask"] == 2.60 and row["size"] == 10
+        assert td.BULK_TRADE_QUOTE_SCHEMA_VERSION == 2
+
+    def test_windowed_wildcard_routes_per_exp_never_wildcard(self, monkeypatch):
+        """expiration=* + time filter must NEVER reach the terminal as a wildcard
+        request — build 202607231 answers it HTTP 200 with zero rows (measured
+        2026-07-31), which would be trusted as an honest empty."""
+        from collectors import thetadata as td
+
+        wildcard_calls = []
+        per_exp_calls = []
+
+        def _mock_stream_lines(session, path, params):
+            if params.get("expiration") == "*":
+                wildcard_calls.append(params)
+                return iter([self._HEADER])   # the silent-empty failure mode
+            per_exp_calls.append(params)
+            return iter([self._HEADER, self._ROW])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+        monkeypatch.setattr(td, "list_expirations", lambda sym: ["2026-08-21"])
+
+        df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30",
+                                 start_time="10:00:00", end_time="10:15:00")
+        assert not wildcard_calls, "windowed wildcard request must not be sent"
+        assert per_exp_calls, "expected the per-expiration path"
+        assert all(p.get("start_time") == "10:00:00.000" for p in per_exp_calls)
+        assert df is not None and len(df) == 1
+
+    def test_explicit_expiration_passthrough(self, monkeypatch):
+        """expiration= (probe path) goes straight out with the explicit exp int,
+        even with a time window."""
+        from collectors import thetadata as td
+
+        seen = []
+
+        def _mock_stream_lines(session, path, params):
+            seen.append(params)
+            return iter([self._HEADER, self._ROW])
+
+        monkeypatch.setattr("collectors.thetadata.reachable", lambda: True)
+        monkeypatch.setattr(td, "_stream_lines", _mock_stream_lines)
+
+        df = td.bulk_trade_quote("SPY", "call", "2026-07-30", "2026-07-30",
+                                 start_time="10:00:00", end_time="10:15:00",
+                                 expiration="2026-08-21")
+        assert len(seen) == 1 and seen[0]["expiration"] == 20260821
+        assert df is not None and len(df) == 1
