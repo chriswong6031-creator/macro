@@ -1,11 +1,11 @@
 {
   "schema": "claim_accountability.v1",
-  "generated_at": "2026-08-01T00:48:06.784227+00:00",
+  "generated_at": "2026-08-01T09:15:12.194670+00:00",
   "global": {
-    "n_claims": 29575,
+    "n_claims": 29637,
     "n_grades": 34928,
     "n_with_falsifier": 403,
-    "falsifier_coverage": 0.013626,
+    "falsifier_coverage": 0.013598,
     "falsifier_coverage_note": "~146/9069 = 1.6% global as of 2026-07-06; falsifier-starvation is a structural property of importance-signal and china_news desks, not a grader failure"
   },
   "by_desk": {
@@ -155,15 +155,15 @@
       }
     },
     "intel_hub": {
-      "n_claims": 1604,
+      "n_claims": 1666,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
-      "hit_gradeable_share": 0.94389,
-      "n_hit_gradeable": 1514,
+      "hit_gradeable_share": 0.944778,
+      "n_hit_gradeable": 1574,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
         "graded_5d_count": 914,
-        "graded_5d_share": 0.569825,
+        "graded_5d_share": 0.548619,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
@@ -650,15 +650,15 @@
       }
     },
     "intel_hub": {
-      "n_claims": 1604,
+      "n_claims": 1666,
       "falsifier_coverage": 0.0,
       "n_with_falsifier": 0,
-      "hit_gradeable_share": 0.94389,
-      "n_hit_gradeable": 1514,
+      "hit_gradeable_share": 0.944778,
+      "n_hit_gradeable": 1574,
       "hit_gradeable_note": "direction=0 claims are not hit-gradeable (graded on excess only); this does not contradict the R2 audit CLOSED verdict",
       "maturity_mix": {
         "graded_5d_count": 914,
-        "graded_5d_share": 0.569825,
+        "graded_5d_share": 0.548619,
         "matured_21d_count": 0,
         "matured_63d_count": 0,
         "note": "21d/63d matured counts are 0 today \u2014 calendar-gated, not build-gated; earliest useful read ~2026-10-01"
@@ -883,7 +883,7 @@
     }
   },
   "track_record_ref": {
-    "generated_at": "2026-08-01T00:47:18.329559+00:00",
+    "generated_at": "2026-08-01T09:14:23.234421+00:00",
     "grade_horizons": [
       5,
       21,
