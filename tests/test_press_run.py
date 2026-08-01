@@ -65,8 +65,37 @@ def _snapshot(root: Path) -> set[str]:
     return {str(p.relative_to(root)) for p in root.rglob("*") if p.is_file()}
 
 
-def _write_earnings_event(root: Path, receipt_char: str, *, title="Corrected call") -> str:
+def _write_earnings_event(
+    root: Path,
+    receipt_char: str,
+    *,
+    title="Corrected call",
+    derived_receipt_char: str | None = None,
+    write_derived: bool = True,
+) -> str:
+    from engine.chronicle.earnings_calls import CALL_EVENTS_REL, project_score_row
+
     source_ref = "defeatbeta:AAPL:2026Q3"
+    canonical = project_score_row({
+        "ticker": "AAPL", "quarter": "Q3", "year": 2026,
+        "call_date": "2026-07-26", "source": "terminal_transcript",
+        "source_url": "/data/tx/AAPL/2026Q3.json.gz",
+        "source_sha256": receipt_char * 64,
+        "source_revision_sha256": receipt_char * 64,
+        "source_record_id": source_ref,
+        "source_updated_at": "2026-07-26T20:00:00Z",
+        "scored_at": "2026-07-26T20:05:00Z",
+        "model": "fixture", "prompt_version": "fixture-v1",
+        "analysis_schema_version": "fixture-v1", "sentiment": 0.2,
+        "performance": 6.0, "confidence": 0.8, "tone_word": "constructive",
+        "summary": "Services demand accelerated after guidance.",
+        "positive_highlights": [], "negative_highlights": [], "tags": [],
+        "is_context_only": True, "degraded_reason": None,
+    })
+    canonical_path = root / CALL_EVENTS_REL
+    canonical_path.parent.mkdir(parents=True, exist_ok=True)
+    canonical_path.write_text(json.dumps(canonical) + "\n", encoding="utf-8")
+    derived_char = derived_receipt_char or receipt_char
     event = {
         "id": "cev-earnings-call-aapl",
         "ts": "2026-07-26T00:00:00Z",
@@ -83,12 +112,13 @@ def _write_earnings_event(root: Path, receipt_char: str, *, title="Corrected cal
         "links": {
             "site": None,
             "source": "https://app.mastermind-x.com/data/tx/AAPL/2026Q3.json.gz",
-            "receipt": "sha256:" + receipt_char * 64,
+            "receipt": "sha256:" + derived_char * 64,
         },
     }
-    (root / "data" / "chronicle" / "events.jsonl").write_text(
-        json.dumps(event) + "\n", encoding="utf-8",
-    )
+    if write_derived:
+        (root / "data" / "chronicle" / "events.jsonl").write_text(
+            json.dumps(event) + "\n", encoding="utf-8",
+        )
     return f"chronicle:{source_ref}"
 
 
@@ -237,6 +267,29 @@ def test_pending_earnings_draft_is_superseded_when_receipt_changes(tmp_path):
     assert item["revision_state"]["current"][ref] == "sha256:" + "b" * 64
     blocked, slugs = P.staged_refs(root)
     assert ref not in blocked and "aapl-q3-call" not in slugs
+
+
+@pytest.mark.parametrize("derived", ["stale", "missing"])
+def test_reconciliation_uses_canonical_ledger_when_derived_view_diverges(
+    tmp_path, derived,
+):
+    root = F.fixture_root(tmp_path)
+    ref = _write_earnings_event(
+        root,
+        "b",
+        derived_receipt_char="a",
+        write_derived=derived != "missing",
+    )
+    path = root / "data" / "press" / "staging" / "old.json"
+    path.write_text(json.dumps(_revision_stage(ref, "a")), encoding="utf-8")
+
+    result = R.reconcile_earnings_call_revisions(root, P.load_config(root))
+
+    assert result["superseded"] == 1
+    item = json.loads(path.read_text(encoding="utf-8"))
+    assert item["status"] == "superseded"
+    assert item["revision_state"]["current"][ref] == "sha256:" + "b" * 64
+    assert R.run_emit(root, P.load_config(root))["emitted"] == 0
 
 
 def test_published_revision_change_creates_non_emittable_correction_state(tmp_path):

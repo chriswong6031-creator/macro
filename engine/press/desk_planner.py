@@ -367,17 +367,8 @@ def staged_refs(root=None, cfg: dict | None = None) -> tuple[set[str], set[str]]
     return refs, slugs
 
 
-def _earnings_call_receipt(event: dict) -> str:
-    """Validated canonical receipt for one Chronicle earnings-call event."""
-
-    if str(event.get("source") or "") != "earnings_call":
-        return ""
-    receipt = str((event.get("links") or {}).get("receipt") or "").lower()
-    return receipt if _SHA256_RECEIPT_RE.fullmatch(receipt) else ""
-
-
 def earnings_call_revisions(root=None) -> dict[str, dict]:
-    """Current Chronicle earnings-call revision by stable Press source ref.
+    """Current canonical call-ledger revision by stable Press source ref.
 
     The stable ref identifies the company-period story; ``receipt`` identifies
     the exact transcript revision used to build it.  Invalid/missing receipts
@@ -385,23 +376,31 @@ def earnings_call_revisions(root=None) -> dict[str, dict]:
     closed instead of treating an unverifiable event as unrelated.
     """
 
+    from engine.chronicle.earnings_calls import load_call_events  # noqa: PLC0415
+
     out: dict[str, dict] = {}
-    for event in _read_jsonl(repo_root(root) / "data" / "chronicle" / "events.jsonl"):
-        if not isinstance(event, dict) or event.get("source") != "earnings_call":
-            continue
-        source_ref = str(event.get("source_ref") or event.get("id") or "").strip()
+    rows, gap = load_call_events(repo_root(root))
+    if gap:
+        log.warning("press.desk_planner: canonical earnings-call ledger gap: %s", gap)
+        return out
+    for event in rows:
+        source_ref = str(event.get("source_record_id") or "").strip()
         if not source_ref:
             continue
         ref = f"chronicle:{source_ref}"
-        receipt = _earnings_call_receipt(event)
+        source_hash = str(event.get("source_sha256") or "").lower()
+        receipt = f"sha256:{source_hash}" if re.fullmatch(r"[0-9a-f]{64}", source_hash) else ""
         candidate = {
             "ref": ref,
             "receipt": receipt,
             "valid": bool(receipt),
             "event_id": str(event.get("id") or ""),
             "source_ref": source_ref,
-            "date": str(event.get("date") or ""),
-            "title": str(event.get("title") or ""),
+            "date": str(event.get("call_date") or ""),
+            "title": (
+                f"Earnings call: {event.get('ticker')} {event.get('quarter')} "
+                f"FY{event.get('year')}"
+            ),
         }
         # Chronicle is append-only in normal operation.  If a malformed fixture
         # or hand edit leaves two rows for one source ref, deterministic event
@@ -755,8 +754,16 @@ def _neg_ordinal(d) -> int:
 def _event_fact(ev: dict) -> dict:
     src = str(ev.get("source") or "")
     tier = "first_party" if src in _FIRST_PARTY_CHRONICLE_SOURCES else "third_party"
-    facts_txt = "; ".join(str(f) for f in (ev.get("facts") or []))
-    text = f"[{ev.get('date')}] {ev.get('title')}"
+    title = str(ev.get("title") or "")
+    facts = [str(f) for f in (ev.get("facts") or [])]
+    if src == "earnings_call":
+        from engine.chronicle.earnings_calls import sanitize_untrusted_prose  # noqa: PLC0415
+
+        title = sanitize_untrusted_prose(title, max_len=300)
+        facts = [sanitize_untrusted_prose(fact, max_len=1600) for fact in facts]
+        facts = [fact for fact in facts if fact]
+    facts_txt = "; ".join(facts)
+    text = f"[{ev.get('date')}] {title}"
     if facts_txt:
         text += f" — {facts_txt}"
     links = ev.get("links") or {}

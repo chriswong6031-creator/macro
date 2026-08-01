@@ -78,7 +78,9 @@ def build_and_write(
         now = now or datetime.now(timezone.utc)
         as_of = now.strftime("%Y-%m-%d")
 
-        earnings_call_sync = earnings_calls.sync_from_scores(repo, rebuild=rebuild)
+        earnings_call_sync = earnings_calls.sync_from_scores(
+            repo, rebuild=rebuild, as_of=now,
+        )
 
         state_appended = False
         state_gap: str | None = None
@@ -93,7 +95,7 @@ def build_and_write(
         prev_events = spine.load_events_jsonl(events_path)
         prev_ids = {e.get("id") for e in prev_events}
 
-        raw_events, adapter_report = spine.build_events(repo)
+        raw_events, adapter_report = spine.build_events(repo, as_of=now)
         sync_reason = str(earnings_call_sync.get("reason") or "")
         if sync_reason not in {"", "current", "updated", "rebuild_skipped"}:
             info = adapter_report.setdefault("earnings_call", {"count": 0, "gap": None})

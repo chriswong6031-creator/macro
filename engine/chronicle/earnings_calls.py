@@ -34,7 +34,7 @@ import re
 import tempfile
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import urlsplit
 
 from . import schema
@@ -80,6 +80,28 @@ _MAX_HIGHLIGHT = 400
 _MAX_HIGHLIGHTS = 3
 _MAX_TAGS = 16
 
+# ``summary`` and highlight strings originate in an upstream model.  They are
+# evidence, never instructions.  Keep the canonical row for auditability, but
+# every consumer must pass the prose through the shared boundary below before
+# placing it in another model prompt or a public derivative.
+_EVIDENCE_INJECTION_PATTERNS = (
+    re.compile(r"\breveal\b.{0,40}\b(prompt|instructions|rules|secrets?)\b", re.I),
+    re.compile(r"\b(follow|obey|execute)\b.{0,30}\b(instructions|commands?)\b", re.I),
+    re.compile(r"\b(developer|system)\s+(message|instructions?)\b", re.I),
+    re.compile(r"\byou\s+are\s+(?:chatgpt|an?\s+assistant|the\s+system)\b", re.I),
+    re.compile(r"<\/?(?:system|assistant|developer|tool)[^>]*>", re.I),
+)
+_CORE_INJECTION_FALLBACK = (
+    re.compile(r"ignore\s+(all\s+)?(the\s+|your\s+|previous\s+|prior\s+)*instructions", re.I),
+    re.compile(r"\bdisregard\b.{0,30}\binstructions\b", re.I),
+    re.compile(r"\bforget\b.{0,20}\b(your\s+)?(instructions|rules|guidelines)\b", re.I),
+    re.compile(r"system\s+prompt", re.I),
+    re.compile(r"override\s+(the|your|all)\s+(instructions|rules|guidelines)", re.I),
+    re.compile(r"tool\s*call\s*:", re.I),
+    re.compile(r'"\s*role\s*"\s*:\s*"\s*assistant\s*"', re.I),
+    re.compile(r'"\s*type\s*"\s*:\s*"\s*tool_result\s*"', re.I),
+)
+
 
 def _missing(value: Any) -> bool:
     if value is None:
@@ -94,6 +116,52 @@ def _text(value: Any, *, max_len: int | None = None) -> str:
         return ""
     out = re.sub(r"\s+", " ", str(value)).strip()
     return out[:max_len] if max_len is not None else out
+
+
+def sanitize_untrusted_prose(value: Any, *, max_len: int = _MAX_SUMMARY) -> str:
+    """Return financial evidence with instruction-like clauses removed.
+
+    Earnings prose is model-produced and therefore an untrusted data field.
+    We drop only the sentence/clause that matches the complete Brain injection
+    family (plus markup/reveal variants), preserving unrelated financial facts
+    from the same event.  The caller supplies the contract-specific length cap.
+    """
+
+    raw = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", " ", str(value or ""))
+    raw = re.sub(r"\s+", " ", raw).strip()
+    if not raw:
+        return ""
+    try:
+        from engine.neuralweb.ask_brain import _INJECTION_PATTERNS  # noqa: PLC0415
+
+        patterns = tuple(_INJECTION_PATTERNS) + _EVIDENCE_INJECTION_PATTERNS
+    except Exception:  # noqa: BLE001 - fail closed during partial imports
+        patterns = _CORE_INJECTION_FALLBACK + _EVIDENCE_INJECTION_PATTERNS
+
+    # Sentence boundaries are the narrowest stable unit we can quarantine
+    # without attempting semantic rewriting of source evidence.
+    clauses = re.split(r"(?<=[.!?])\s+|[\r\n]+", raw)
+    kept = [
+        clause.strip()
+        for clause in clauses
+        if clause.strip() and not any(pattern.search(clause) for pattern in patterns)
+    ]
+    return _text(" ".join(kept), max_len=max_len)
+
+
+def sanitize_call_event_evidence(row: Mapping[str, Any] | dict) -> dict:
+    """Copy a call event with only its untrusted prose fields sanitized."""
+
+    out = dict(row)
+    summary = sanitize_untrusted_prose(out.get("summary"), max_len=_MAX_SUMMARY)
+    out["summary"] = summary or None
+    for field in ("positive_highlights", "negative_highlights"):
+        cleaned = [
+            sanitize_untrusted_prose(item, max_len=_MAX_HIGHLIGHT)
+            for item in (out.get(field) or [])
+        ]
+        out[field] = [item for item in cleaned if item][:_MAX_HIGHLIGHTS]
+    return out
 
 
 def _float(value: Any, lo: float, hi: float) -> float:
@@ -133,10 +201,34 @@ def _timestamp(value: Any, field: str) -> str:
     ).replace("+00:00", "Z")
 
 
+def _as_of_datetime(value: date | datetime | str | None) -> datetime:
+    """Normalize an explicit knowledge ceiling; ``None`` means wall clock now."""
+
+    if value is None:
+        return datetime.now(timezone.utc)
+    if isinstance(value, datetime):
+        parsed = value
+    elif isinstance(value, date):
+        parsed = datetime.combine(value, datetime.max.time(), tzinfo=timezone.utc)
+    else:
+        raw = str(value).strip()
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw):
+            parsed = datetime.combine(
+                date.fromisoformat(raw), datetime.max.time(), tzinfo=timezone.utc,
+            )
+        else:
+            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
 def _event_timeline(
     call_value: Any,
     source_value: Any,
     scored_value: Any,
+    *,
+    as_of: date | datetime | str | None = None,
 ) -> tuple[str, str, str]:
     """Normalize and enforce the point-in-time lineage for one score row."""
 
@@ -150,7 +242,30 @@ def _event_timeline(
         raise ValueError("call_date occurs after source_updated_at")
     if source_dt > scored_dt:
         raise ValueError("source_updated_at occurs after scored_at")
+    if as_of is not None:
+        ceiling = _as_of_datetime(as_of)
+        if call_day > ceiling.date():
+            raise ValueError("call_date occurs after as_of")
+        if source_dt > ceiling:
+            raise ValueError("source_updated_at occurs after as_of")
+        if scored_dt > ceiling:
+            raise ValueError("scored_at occurs after as_of")
     return call_date, source_updated_at, scored_at
+
+
+def call_event_available_as_of(
+    row: Mapping[str, Any], as_of: date | datetime | str | None,
+) -> bool:
+    """True only when call, source revision, and score all existed by ``as_of``."""
+
+    try:
+        _event_timeline(
+            row.get("call_date"), row.get("source_updated_at"), row.get("scored_at"),
+            as_of=_as_of_datetime(as_of),
+        )
+    except (TypeError, ValueError):
+        return False
+    return True
 
 
 def _string_list(
@@ -282,7 +397,9 @@ def validate_call_event(row: dict) -> list[str]:
     return problems
 
 
-def project_score_row(row: Any) -> dict:
+def project_score_row(
+    row: Any, *, as_of: date | datetime | str | None = None,
+) -> dict:
     """Project one healthy scorer row into the committed public-safe contract."""
 
     get = row.get if hasattr(row, "get") else lambda key, default=None: default
@@ -318,6 +435,7 @@ def project_score_row(row: Any) -> dict:
 
     call_date, source_updated_at, scored_at = _event_timeline(
         get("call_date"), get("source_updated_at"), get("scored_at"),
+        as_of=_as_of_datetime(as_of),
     )
     summary = _text(get("summary"), max_len=_MAX_SUMMARY) or None
     event = {
@@ -413,7 +531,12 @@ def load_call_events(repo: Path) -> tuple[list[dict], str | None]:
     return rows, gap
 
 
-def latest_for_ticker(repo: Path, ticker: str) -> dict | None:
+def latest_for_ticker(
+    repo: Path,
+    ticker: str,
+    *,
+    as_of: date | datetime | str | None = None,
+) -> dict | None:
     """Return the newest valid committed call row for ``ticker``.
 
     This is the small read contract for ticker-scoped consumers.  It reads only
@@ -437,7 +560,11 @@ def latest_for_ticker(repo: Path, ticker: str) -> dict | None:
             gap or "unknown validation failure",
         )
         return None
-    candidates = [row for row in rows if row.get("ticker") == wanted]
+    ceiling = _as_of_datetime(as_of)
+    candidates = [
+        row for row in rows
+        if row.get("ticker") == wanted and call_event_available_as_of(row, ceiling)
+    ]
     if not candidates:
         return None
     winner = max(
@@ -452,7 +579,7 @@ def latest_for_ticker(repo: Path, ticker: str) -> dict | None:
             row.get("id") or "",
         ),
     )
-    return dict(winner)
+    return sanitize_call_event_evidence(winner)
 
 
 def _canonical_bytes(rows: list[dict]) -> bytes:
@@ -483,7 +610,12 @@ def _nightly_lane() -> bool:
     return lane.lower() == "nightly"
 
 
-def sync_from_scores(repo: Path, *, rebuild: bool = False) -> dict[str, Any]:
+def sync_from_scores(
+    repo: Path,
+    *,
+    rebuild: bool = False,
+    as_of: date | datetime | str | None = None,
+) -> dict[str, Any]:
     """Advance the committed projection from the current healthy score store.
 
     This function never raises and never deletes a ledger row.  ``updated`` is
@@ -534,12 +666,13 @@ def sync_from_scores(repo: Path, *, rebuild: bool = False) -> dict[str, Any]:
         return result
 
     projected: dict[str, dict] = {}
+    ceiling = _as_of_datetime(as_of)
     for _, score in frame.iterrows():
         if _text(score.get("degraded_reason")):
             result["degraded_rows"] += 1
             continue
         try:
-            event = project_score_row(score)
+            event = project_score_row(score, as_of=ceiling)
         except Exception as exc:  # noqa: BLE001
             result["rejected_rows"] += 1
             log.debug("chronicle.earnings_calls: rejected score row: %s", exc)
@@ -601,14 +734,21 @@ def sync_from_scores(repo: Path, *, rebuild: bool = False) -> dict[str, Any]:
     return result
 
 
-def adapt_earnings_calls(repo: Path) -> tuple[list[dict], str | None]:
+def adapt_earnings_calls(
+    repo: Path, *, as_of: date | datetime | str | None = None,
+) -> tuple[list[dict], str | None]:
     """Project committed call-event rows into ``chronicle.event.v1``."""
 
     rows, gap = load_call_events(Path(repo))
     events: list[dict] = []
     skipped = 0
-    for row in rows:
+    ceiling = _as_of_datetime(as_of)
+    for raw_row in rows:
         try:
+            if not call_event_available_as_of(raw_row, ceiling):
+                skipped += 1
+                continue
+            row = sanitize_call_event_evidence(raw_row)
             period = f"{row['quarter']} FY{row['year']}"
             facts: list[str] = [
                 (

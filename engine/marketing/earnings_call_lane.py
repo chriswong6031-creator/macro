@@ -45,7 +45,12 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 from urllib.parse import urlsplit
 
-from engine.chronicle.earnings_calls import load_call_events, validate_call_event
+from engine.chronicle.earnings_calls import (
+    call_event_available_as_of,
+    load_call_events,
+    sanitize_untrusted_prose,
+    validate_call_event,
+)
 
 
 LANE = "earnings_call"
@@ -100,7 +105,9 @@ def _short_clause(value: object, max_chars: int) -> str:
     by :func:`_structured_numbers` from the event's quarter/year fields.
     """
 
-    text = _clean(value, max_chars=max_chars * 2).strip(_TRAILING_PUNCT + " ")
+    text = sanitize_untrusted_prose(
+        _clean(value, max_chars=max_chars * 2), max_len=max_chars * 2,
+    ).strip(_TRAILING_PUNCT + " ")
     if not text or _ADVICE_RE.search(text) or _NUMBER_RE.search(text):
         return ""
     if len(text) > max_chars:
@@ -165,8 +172,15 @@ def story_identity(event: Mapping[str, Any]) -> str:
 def _candidate_bodies(event: Mapping[str, Any]) -> list[str]:
     positives = event.get("positive_highlights") or []
     negatives = event.get("negative_highlights") or []
-    pos = _short_clause(positives[0] if positives else "", 82)
-    neg = _short_clause(negatives[0] if negatives else "", 82)
+    def first_safe(items: Iterable[object]) -> str:
+        for item in items:
+            clause = _short_clause(item, 82)
+            if clause:
+                return clause
+        return ""
+
+    pos = first_safe(positives)
+    neg = first_safe(negatives)
     summary = _short_clause(event.get("summary"), 145)
 
     candidates: list[str] = []
@@ -445,6 +459,8 @@ def enqueue_event(
     now_utc = _utc(now)
     try:
         _valid_event(event)
+        if not call_event_available_as_of(event, now_utc):
+            raise ValueError("earnings-call evidence is not available as of enqueue time")
         account = wire_routing.route(EVENT_CLASS, cfg=cfg, root=repo)
         composed = compose_event(event, account=account, as_of=now_utc.date().isoformat())
     except Exception as exc:
@@ -554,6 +570,23 @@ def run_ledger(
     repo = Path(root)
     now_utc = _utc(now)
     rows, gap = load_call_events(repo)
+    if gap:
+        # A publication consumer must never continue from the valid-looking
+        # prefix of a duplicate/corrupt ledger.  Empty/absent ledgers also
+        # produce no work through the same fail-closed response.
+        return {
+            "input_rows": len(rows),
+            "eligible_rows": 0,
+            "stale_rows": 0,
+            "capped_rows": 0,
+            "gap": gap,
+            "integrity_blocked": True,
+            "results": [],
+            "queued": 0,
+            "dry_run": 0,
+            "duplicates": 0,
+            "corrections_required": 0,
+        }
     floor = now_utc.date() - timedelta(days=max(0, int(max_call_age_days)))
     eligible: list[dict] = []
     stale = 0
@@ -563,7 +596,11 @@ def run_ledger(
         except ValueError:
             stale += 1
             continue
-        if call_day < floor or call_day > now_utc.date():
+        if (
+            call_day < floor
+            or call_day > now_utc.date()
+            or not call_event_available_as_of(row, now_utc)
+        ):
             stale += 1
             continue
         eligible.append(row)
@@ -600,6 +637,7 @@ def run_ledger(
         "stale_rows": stale,
         "capped_rows": max(0, recent_rows - len(eligible)),
         "gap": gap,
+        "integrity_blocked": False,
         "results": results,
         "queued": sum(result.get("status") == "queued" for result in results),
         "dry_run": sum(result.get("status") == "dry_run" for result in results),

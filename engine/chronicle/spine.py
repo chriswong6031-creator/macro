@@ -72,7 +72,7 @@ _SOURCE_ADAPTERS: tuple[tuple[str, object], ...] = (
 )
 
 
-def build_events(repo: Path) -> tuple[list[dict], dict]:
+def build_events(repo: Path, *, as_of=None) -> tuple[list[dict], dict]:
     """Run every adapter and return (all_events, per_adapter_report).
 
     Never raises: an adapter that throws is caught here too (belt-and-braces —
@@ -83,7 +83,9 @@ def build_events(repo: Path) -> tuple[list[dict], dict]:
 
     for name, fn in _SOURCE_ADAPTERS:
         try:
-            events, gap = fn(repo)
+            events, gap = (
+                fn(repo, as_of=as_of) if name == "earnings_call" else fn(repo)
+            )
         except Exception as exc:  # noqa: BLE001
             events, gap = [], f"adapter raised: {exc}"
             log.warning("chronicle adapter %s raised: %s", name, exc)
